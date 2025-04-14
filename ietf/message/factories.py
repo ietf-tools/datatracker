@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 import factory
 
-from ietf.person.models import Person 
+from ietf.person.models import Person
 from .models import Message, SendQueue
 
 

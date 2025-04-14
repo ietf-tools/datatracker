@@ -8,37 +8,71 @@ from django.urls import reverse
 register = template.Library()
 
 
-
 # returns the a dictioary's value from it's key.
-@register.filter(name='lookup')
+@register.filter(name="lookup")
 def lookup(dict, index):
     if index in dict:
         return dict[index]
-    return ''
+    return ""
+
 
 # returns the length of the value of a dict.
 # We are doing this to how long the title for the calendar should be. (this should return the number of timeslots)
-@register.filter(name='colWidth')
+@register.filter(name="colWidth")
 def get_col_width(dict, index):
     if index in dict:
         return len(dict[index])
     return 0
 
+
 # Replaces characters that are not acceptable html ID's
-@register.filter(name='to_acceptable_id')
+@register.filter(name="to_acceptable_id")
 def to_acceptable_id(inp):
     # see http://api.jquery.com/category/selectors/?rdfrom=http%3A%2F%2Fdocs.jquery.com%2Fmw%2Findex.php%3Ftitle%3DSelectors%26redirect%3Dno
     # for more information.
-    invalid = ["!","\"", "#","$","%","&","'","(",")","*","+",",",".","/",":",";","<","=",">","?","@","[","\\","]","^","`","{","|","}","~"," "]
+    invalid = [
+        "!",
+        '"',
+        "#",
+        "$",
+        "%",
+        "&",
+        "'",
+        "(",
+        ")",
+        "*",
+        "+",
+        ",",
+        ".",
+        "/",
+        ":",
+        ";",
+        "<",
+        "=",
+        ">",
+        "?",
+        "@",
+        "[",
+        "\\",
+        "]",
+        "^",
+        "`",
+        "{",
+        "|",
+        "}",
+        "~",
+        " ",
+    ]
     out = str(inp)
     for i in invalid:
-        out = out.replace(i,'_')
+        out = out.replace(i, "_")
     return out
 
 
-@register.filter(name='durationFormat')
+@register.filter(name="durationFormat")
 def durationFormat(inp):
-    return "%.1f" % (float(inp)/3600)
+    return "%.1f" % (float(inp) / 3600)
+
 
 # from:
 #    http://www.sprklab.com/notes/13-passing-arguments-to-functions-in-django-template
@@ -53,6 +87,7 @@ def callMethod(obj, methodName):
         return ret
     return method()
 
+
 @register.filter(name="args")
 def args(obj, arg):
     if "__callArg" not in obj.__dict__:
@@ -61,18 +96,19 @@ def args(obj, arg):
     obj.__callArg += [arg]
     return obj
 
-@register.simple_tag(name='webcal_url', takes_context=True)
+
+@register.simple_tag(name="webcal_url", takes_context=True)
 def webcal_url(context, viewname, *args, **kwargs):
     """webcal URL for a view"""
-    return 'webcal://{}{}'.format(
-        context.request.get_host(),
-        reverse(viewname, args=args, kwargs=kwargs)
+    return "webcal://{}{}".format(
+        context.request.get_host(), reverse(viewname, args=args, kwargs=kwargs)
     )
+
 
 @register.simple_tag
 def assignment_display_name(assignment):
     """Get name for an assignment"""
-    if assignment.session.type.slug == 'regular':
+    if assignment.session.type.slug == "regular":
         return assignment.session.group_at_the_time().name
     else:
         return assignment.session.name or assignment.timeslot.name
@@ -85,11 +121,12 @@ class AnchorNode(template.Node):
     <a href="{{ self.resolve_url() }}"> ... </a>. If it returns None, the <a> will be omitted.
     The contents will be rendered in either case.
     """
+
     def __init__(self, nodelist):
         self.nodelist = nodelist
 
     def resolve_url(self, context):
-        raise NotImplementedError('Subclasses must define this method')
+        raise NotImplementedError("Subclasses must define this method")
 
     def render(self, context):
         url = self.resolve_url(context)
@@ -101,6 +138,7 @@ class AnchorNode(template.Node):
 
 class AgendaAnchorNode(AnchorNode):
     """Template node for the agenda_anchor tag"""
+
     def __init__(self, session, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.session = template.Variable(session)
@@ -119,14 +157,15 @@ def agenda_anchor(parser, token):
     try:
         tag_name, sess_var = token.split_contents()
     except ValueError:
-        raise template.TemplateSyntaxError('agenda_anchor requires a single argument')
-    nodelist = parser.parse(('end_agenda_anchor',))
+        raise template.TemplateSyntaxError("agenda_anchor requires a single argument")
+    nodelist = parser.parse(("end_agenda_anchor",))
     parser.delete_first_token()  # delete the end tag
     return AgendaAnchorNode(sess_var, nodelist)
 
 
 class LocationAnchorNode(AnchorNode):
     """Template node for the location_anchor tag"""
+
     def __init__(self, timeslot, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.timeslot = template.Variable(timeslot)
@@ -136,6 +175,7 @@ class LocationAnchorNode(AnchorNode):
         if ts.show_location and ts.location:
             return ts.location.floorplan_url()
         return None
+
 
 @register.tag
 def location_anchor(parser, token):
@@ -147,7 +187,7 @@ def location_anchor(parser, token):
     try:
         tag_name, ts_var = token.split_contents()
     except ValueError:
-        raise template.TemplateSyntaxError('location_anchor requires a single argument')
-    nodelist = parser.parse(('end_location_anchor',))
+        raise template.TemplateSyntaxError("location_anchor requires a single argument")
+    nodelist = parser.parse(("end_location_anchor",))
     parser.delete_first_token()  # delete the end tag
     return LocationAnchorNode(ts_var, nodelist)

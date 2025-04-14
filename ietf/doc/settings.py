@@ -1,6 +1,6 @@
 CHART_TYPE_COLUMN_OPTIONS = {
     "chart": {
-        "type": 'column',
+        "type": "column",
     },
     "credits": {
         "enabled": False,
@@ -8,30 +8,38 @@ CHART_TYPE_COLUMN_OPTIONS = {
     "exporting": {
         "fallbackToExportServer": False,
     },
-    "rangeSelector" : {
+    "rangeSelector": {
         "selected": 5,
         "allButtonsEnabled": True,
     },
-    "series" : [{
-        "name" : "Items",
-        "type" : "column",
-        "data" : [],
-        "dataGrouping": {
-            "units": [[
-                'week',                                 # unit name
-                [1,],                                   # allowed multiples
-            ], [
-                'month',
-                [1, 4,],
-            ]]
-        },
-        "turboThreshold": 1, # Only check format of first data point. All others are the same
-        "pointIntervalUnit": 'day',
-        "pointPadding": 0.05,
-    }],
-    "title" : {
-        "text" : "Items over time"
-    },
+    "series": [
+        {
+            "name": "Items",
+            "type": "column",
+            "data": [],
+            "dataGrouping": {
+                "units": [
+                    [
+                        "week",  # unit name
+                        [
+                            1,
+                        ],  # allowed multiples
+                    ],
+                    [
+                        "month",
+                        [
+                            1,
+                            4,
+                        ],
+                    ],
+                ]
+            },
+            "turboThreshold": 1,  # Only check format of first data point. All others are the same
+            "pointIntervalUnit": "day",
+            "pointPadding": 0.05,
+        }
+    ],
+    "title": {"text": "Items over time"},
     "xAxis": {
         "type": "datetime",
         # This makes the axis use the given coordinates, rather than
@@ -42,7 +50,7 @@ CHART_TYPE_COLUMN_OPTIONS = {
 
 CHART_TYPE_ACTIVITY_OPTIONS = {
     "chart": {
-        "type": 'column',
+        "type": "column",
     },
     "credits": {
         "enabled": False,
@@ -58,29 +66,35 @@ CHART_TYPE_ACTIVITY_OPTIONS = {
     "navigator": {
         "enabled": False,
     },
-    "rangeSelector" : {
+    "rangeSelector": {
         "enabled": False,
     },
     "scrollbar": {
         "enabled": False,
     },
-    "series" : [{
-        "name" : None,
-        "animation": False,
-        "type" : "column",
-        "data" : [],
-        "dataGrouping": {
-            "units": [[
-                'year',                                 # unit name
-                [1,],                                   # allowed multiples
-            ]]
-        },
-        "turboThreshold": 1, # Only check format of first data point. All others are the same
-        "pointIntervalUnit": 'day',
-        "pointPadding": -0.2,
-    }],
-    "title" : {
-        "text" : None,
+    "series": [
+        {
+            "name": None,
+            "animation": False,
+            "type": "column",
+            "data": [],
+            "dataGrouping": {
+                "units": [
+                    [
+                        "year",  # unit name
+                        [
+                            1,
+                        ],  # allowed multiples
+                    ]
+                ]
+            },
+            "turboThreshold": 1,  # Only check format of first data point. All others are the same
+            "pointIntervalUnit": "day",
+            "pointPadding": -0.2,
+        }
+    ],
+    "title": {
+        "text": None,
     },
     "xAxis": {
         "type": "datetime",
@@ -94,4 +108,3 @@ CHART_TYPE_ACTIVITY_OPTIONS = {
         }
     },
 }
-

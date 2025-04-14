@@ -3,36 +3,43 @@
 from django.db import migrations
 
 
-def get_helper(DocHistory, RelatedDocument, RelatedDocHistory, DocumentAuthor, DocHistoryAuthor):
+def get_helper(
+    DocHistory, RelatedDocument, RelatedDocHistory, DocumentAuthor, DocHistoryAuthor
+):
     """Dependency injection wrapper"""
 
     def save_document_in_history(doc):
         """Save a snapshot of document and related objects in the database.
-        
+
         Local copy of ietf.doc.utils.save_document_in_history() to avoid depending on the
         code base in a migration.
         """
-    
+
         def get_model_fields_as_dict(obj):
-            return dict((field.name, getattr(obj, field.name))
-                        for field in obj._meta.fields
-                        if field is not obj._meta.pk)
-    
+            return dict(
+                (field.name, getattr(obj, field.name))
+                for field in obj._meta.fields
+                if field is not obj._meta.pk
+            )
+
         # copy fields
         fields = get_model_fields_as_dict(doc)
         fields["doc"] = doc
         fields["name"] = doc.name
-    
+
         dochist = DocHistory(**fields)
         dochist.save()
-    
+
         # copy many to many
         for field in doc._meta.many_to_many:
-            if field.remote_field.through and field.remote_field.through._meta.auto_created:
+            if (
+                field.remote_field.through
+                and field.remote_field.through._meta.auto_created
+            ):
                 hist_field = getattr(dochist, field.name)
                 hist_field.clear()
                 hist_field.set(getattr(doc, field.name).all())
-    
+
         # copy remaining tricky many to many
         def transfer_fields(obj, HistModel):
             mfields = get_model_fields_as_dict(item)
@@ -41,15 +48,15 @@ def get_helper(DocHistory, RelatedDocument, RelatedDocHistory, DocumentAuthor, D
                 if v == doc:
                     mfields[k] = dochist
             HistModel.objects.create(**mfields)
-    
+
         for item in RelatedDocument.objects.filter(source=doc):
             transfer_fields(item, RelatedDocHistory)
-    
+
         for item in DocumentAuthor.objects.filter(document=doc):
             transfer_fields(item, DocHistoryAuthor)
-    
+
         return dochist
-    
+
     return save_document_in_history
 
 
@@ -60,7 +67,7 @@ def forward(apps, schema_editor):
     State = apps.get_model("doc", "State")
     StateType = apps.get_model("doc", "StateType")
     Person = apps.get_model("person", "Person")
-    
+
     save_document_in_history = get_helper(
         DocHistory=apps.get_model("doc", "DocHistory"),
         RelatedDocument=apps.get_model("doc", "RelatedDocument"),
@@ -100,7 +107,7 @@ def forward(apps, schema_editor):
 
 def reverse(apps, schema_editor):
     """Mark watching draft-iesg state as used
-    
+
     Does not try to re-apply the state to Documents modified by the forward migration. This
     could be done in theory, but would either require dangerous history rewriting or add a
     lot of history junk.

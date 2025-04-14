@@ -11,6 +11,7 @@ from django.template.defaultfilters import truncatewords
 from ietf.group.models import Group, GroupEvent
 from ietf.doc.models import DocEvent
 
+
 class GroupChangesFeed(Feed):
     feed_type = Atom1Feed
     description_template = "group/feed_item_description.html"
@@ -40,7 +41,9 @@ class GroupChangesFeed(Feed):
 
     def item_link(self, obj):
         if isinstance(obj, DocEvent):
-            return urlreverse("ietf.doc.views_doc.document_main", kwargs={'name': obj.doc.name })
+            return urlreverse(
+                "ietf.doc.views_doc.document_main", kwargs={"name": obj.doc.name}
+            )
         elif isinstance(obj, GroupEvent):
             return obj.group.about_url()
 

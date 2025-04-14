@@ -9,42 +9,60 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS
 from tastypie.cache import SimpleCache
 
 from ietf import api
-from ietf.submit.models import ( Preapproval, SubmissionCheck, Submission,
-    SubmissionEmailEvent, SubmissionEvent, SubmissionExtResource )
+from ietf.submit.models import (
+    Preapproval,
+    SubmissionCheck,
+    Submission,
+    SubmissionEmailEvent,
+    SubmissionEvent,
+    SubmissionExtResource,
+)
 from ietf.person.resources import PersonResource
 
 
 class PreapprovalResource(ModelResource):
-    by               = ToOneField(PersonResource, 'by')
+    by = ToOneField(PersonResource, "by")
+
     class Meta:
         cache = SimpleCache()
         queryset = Preapproval.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'preapproval'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'preapproval'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "name": ALL,
             "time": ALL,
             "by": ALL_WITH_RELATIONS,
         }
+
+
 api.submit.register(PreapprovalResource())
 
 from ietf.group.resources import GroupResource
 from ietf.name.resources import DraftSubmissionStateNameResource
 from ietf.doc.resources import DocumentResource
+
+
 class SubmissionResource(ModelResource):
-    state            = ToOneField(DraftSubmissionStateNameResource, 'state')
-    group            = ToOneField(GroupResource, 'group', null=True)
-    draft            = ToOneField(DocumentResource, 'draft', null=True)
-    checks           = ToManyField('ietf.submit.resources.SubmissionCheckResource', 'checks', null=True)
+    state = ToOneField(DraftSubmissionStateNameResource, "state")
+    group = ToOneField(GroupResource, "group", null=True)
+    draft = ToOneField(DocumentResource, "draft", null=True)
+    checks = ToManyField(
+        "ietf.submit.resources.SubmissionCheckResource", "checks", null=True
+    )
+
     class Meta:
         cache = SimpleCache()
         queryset = Submission.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'submission'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'submission'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "remote_ip": ALL,
             "access_key": ALL,
@@ -68,37 +86,50 @@ class SubmissionResource(ModelResource):
             "group": ALL_WITH_RELATIONS,
             "draft": ALL_WITH_RELATIONS,
         }
-        excludes = ('first_two_pages',)
+        excludes = ("first_two_pages",)
+
+
 api.submit.register(SubmissionResource())
 
 from ietf.person.resources import PersonResource
+
+
 class SubmissionEventResource(ModelResource):
-    submission       = ToOneField(SubmissionResource, 'submission')
-    by               = ToOneField(PersonResource, 'by', null=True)
+    submission = ToOneField(SubmissionResource, "submission")
+    by = ToOneField(PersonResource, "by", null=True)
+
     class Meta:
         cache = SimpleCache()
         queryset = SubmissionEvent.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'submissionevent'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'submissionevent'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "time": ALL,
             "desc": ALL,
             "submission": ALL_WITH_RELATIONS,
             "by": ALL_WITH_RELATIONS,
         }
+
+
 api.submit.register(SubmissionEventResource())
 
+
 class SubmissionCheckResource(ModelResource):
-    submission       = ToOneField(SubmissionResource, 'submission')
+    submission = ToOneField(SubmissionResource, "submission")
+
     class Meta:
         cache = SimpleCache()
         queryset = SubmissionCheck.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'submissioncheck'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'submissioncheck'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "time": ALL,
             "checker": ALL,
@@ -109,25 +140,31 @@ class SubmissionCheckResource(ModelResource):
             "items": ALL,
             "submission": ALL_WITH_RELATIONS,
         }
-api.submit.register(SubmissionCheckResource())
 
+
+api.submit.register(SubmissionCheckResource())
 
 
 from ietf.person.resources import PersonResource
 from ietf.message.resources import MessageResource
+
+
 class SubmissionEmailEventResource(ModelResource):
-    submission       = ToOneField(SubmissionResource, 'submission')
-    by               = ToOneField(PersonResource, 'by', null=True)
-    submissionevent_ptr = ToOneField(SubmissionEventResource, 'submissionevent_ptr')
-    message          = ToOneField(MessageResource, 'message', null=True)
-    in_reply_to      = ToOneField(MessageResource, 'in_reply_to', null=True)
+    submission = ToOneField(SubmissionResource, "submission")
+    by = ToOneField(PersonResource, "by", null=True)
+    submissionevent_ptr = ToOneField(SubmissionEventResource, "submissionevent_ptr")
+    message = ToOneField(MessageResource, "message", null=True)
+    in_reply_to = ToOneField(MessageResource, "in_reply_to", null=True)
+
     class Meta:
         queryset = SubmissionEmailEvent.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'submissionemailevent'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'submissionemailevent'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "time": ALL,
             "desc": ALL,
@@ -138,25 +175,33 @@ class SubmissionEmailEventResource(ModelResource):
             "message": ALL_WITH_RELATIONS,
             "in_reply_to": ALL_WITH_RELATIONS,
         }
+
+
 api.submit.register(SubmissionEmailEventResource())
 
 
-
 from ietf.name.resources import ExtResourceNameResource
+
+
 class SubmissionExtResourceResource(ModelResource):
-    name             = ToOneField(ExtResourceNameResource, 'name')
-    submission       = ToOneField(SubmissionResource, 'submission')
+    name = ToOneField(ExtResourceNameResource, "name")
+    submission = ToOneField(SubmissionResource, "submission")
+
     class Meta:
         queryset = SubmissionExtResource.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        resource_name = 'submissionextresource'
-        ordering = ['id', ]
-        filtering = { 
+        resource_name = "submissionextresource"
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "display_name": ALL,
             "value": ALL,
             "name": ALL_WITH_RELATIONS,
             "submission": ALL_WITH_RELATIONS,
         }
+
+
 api.submit.register(SubmissionExtResourceResource())

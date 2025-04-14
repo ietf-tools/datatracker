@@ -11,41 +11,83 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('person', '0001_initial'),
+        ("person", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='List',
+            name="List",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=32)),
-                ('description', models.CharField(max_length=256)),
-                ('advertised', models.BooleanField(default=True)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=32)),
+                ("description", models.CharField(max_length=256)),
+                ("advertised", models.BooleanField(default=True)),
             ],
         ),
         migrations.CreateModel(
-            name='Subscribed',
+            name="Subscribed",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('time', models.DateTimeField(auto_now_add=True)),
-                ('email', models.CharField(max_length=128, validators=[django.core.validators.EmailValidator()])),
-                ('lists', models.ManyToManyField(to='mailinglists.List')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("time", models.DateTimeField(auto_now_add=True)),
+                (
+                    "email",
+                    models.CharField(
+                        max_length=128,
+                        validators=[django.core.validators.EmailValidator()],
+                    ),
+                ),
+                ("lists", models.ManyToManyField(to="mailinglists.List")),
             ],
             options={
-                'verbose_name_plural': 'Subscribed',
+                "verbose_name_plural": "Subscribed",
             },
         ),
         migrations.CreateModel(
-            name='Allowlisted',
+            name="Allowlisted",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('time', models.DateTimeField(auto_now_add=True)),
-                ('email', models.CharField(max_length=64, validators=[django.core.validators.EmailValidator()], verbose_name='Email address')),
-                ('by', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='person.Person')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("time", models.DateTimeField(auto_now_add=True)),
+                (
+                    "email",
+                    models.CharField(
+                        max_length=64,
+                        validators=[django.core.validators.EmailValidator()],
+                        verbose_name="Email address",
+                    ),
+                ),
+                (
+                    "by",
+                    ietf.utils.models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="person.Person"
+                    ),
+                ),
             ],
             options={
-                'verbose_name_plural': 'Allowlisted',
+                "verbose_name_plural": "Allowlisted",
             },
         ),
     ]

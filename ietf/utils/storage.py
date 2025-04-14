@@ -47,7 +47,9 @@ class BlobShadowFileSystemStorage(NoLocationMigrationFileSystemStorage):
                 with self.open(saved_name, "rb") as f:
                     store_file(self.kind, blob_name, f, allow_overwrite=True)
             except Exception as err:
-                log(f"Blobstore Error: Failed to shadow {saved_name} at {self.kind}:{blob_name}: {repr(err)}")
+                log(
+                    f"Blobstore Error: Failed to shadow {saved_name} at {self.kind}:{blob_name}: {repr(err)}"
+                )
         return saved_name  # includes the path!
 
     def deconstruct(self):

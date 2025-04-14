@@ -53,21 +53,31 @@ import django.test
 from django.conf import settings
 from django.utils.text import slugify
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from ietf.utils.mail import get_payload_text
 
 real_database_name = settings.DATABASES["default"]["NAME"]
 
+
 def split_url(url):
     if "?" in url:
         url, args = url.split("?", 1)
-        args = dict([ list(map(unquote,arg.split("=", 1))) for arg in args.split("&") if "=" in arg ])
+        args = dict(
+            [
+                list(map(unquote, arg.split("=", 1)))
+                for arg in args.split("&")
+                if "=" in arg
+            ]
+        )
     else:
         args = {}
     return url, args
 
-def login_testing_unauthorized(test_case, username, url, password=None, method='get', request_kwargs=None):
+
+def login_testing_unauthorized(
+    test_case, username, url, password=None, method="get", request_kwargs=None
+):
     """Test that a request is refused or redirected for login, then log in as the named user
 
     Defaults to making a 'get'. Set method to one of the other django.test.Client request method names
@@ -79,19 +89,22 @@ def login_testing_unauthorized(test_case, username, url, password=None, method='
     r = request_method(url, **request_kwargs)
     test_case.assertIn(r.status_code, (302, 403))
     if r.status_code == 302:
-        test_case.assertTrue("/accounts/login" in r['Location'])
+        test_case.assertTrue("/accounts/login" in r["Location"])
     if not password:
         password = username + "+password"
     return test_case.client.login(username=username, password=password)
+
 
 def unicontent(r):
     "Return a HttpResponse object's content as unicode"
     return r.content.decode(r.charset)
 
+
 def textcontent(r):
-    text = BeautifulSoup(r.content, 'lxml').get_text()
-    text = re.sub(r'(\n\s+){2,}', '\n\n', text)
+    text = BeautifulSoup(r.content, "lxml").get_text()
+    text = re.sub(r"(\n\s+){2,}", "\n\n", text)
     return text
+
 
 def reload_db_objects(*objects):
     """Rerequest the given arguments from the database so they're refreshed, to be used like
@@ -104,8 +117,9 @@ def reload_db_objects(*objects):
     else:
         return t
 
+
 @contextmanager
-def name_of_file_containing(contents, mode='w'):
+def name_of_file_containing(contents, mode="w"):
     """Get a context with the name of an email file"""
     f = NamedTemporaryFile(mode, delete=False)
     f.write(contents)
@@ -114,8 +128,13 @@ def name_of_file_containing(contents, mode='w'):
     Path(f.name).unlink()  # clean up after context exits
 
 
-def assert_ical_response_is_valid(test_inst, response, expected_event_summaries=None,
-                                  expected_event_uids=None, expected_event_count=None):
+def assert_ical_response_is_valid(
+    test_inst,
+    response,
+    expected_event_summaries=None,
+    expected_event_uids=None,
+    expected_event_count=None,
+):
     """Validate an HTTP response containing iCal data
 
     Based on RFC5545, but not exhaustive by any means. Assumes a single iCalendar object. Checks that
@@ -123,13 +142,13 @@ def assert_ical_response_is_valid(test_inst, response, expected_event_summaries=
     expected_event_count if you want to reject additional events. If any of these are None,
     the check for that property is skipped.
     """
-    test_inst.assertEqual(response.get('Content-Type'), "text/calendar")
+    test_inst.assertEqual(response.get("Content-Type"), "text/calendar")
 
     # Validate iCalendar object
-    test_inst.assertContains(response, 'BEGIN:VCALENDAR', count=1)
-    test_inst.assertContains(response, 'END:VCALENDAR', count=1)
-    test_inst.assertContains(response, 'PRODID:', count=1)
-    test_inst.assertContains(response, 'VERSION', count=1)
+    test_inst.assertContains(response, "BEGIN:VCALENDAR", count=1)
+    test_inst.assertContains(response, "END:VCALENDAR", count=1)
+    test_inst.assertContains(response, "PRODID:", count=1)
+    test_inst.assertContains(response, "VERSION", count=1)
 
     # Validate event objects
     event_count = 0
@@ -139,12 +158,20 @@ def assert_ical_response_is_valid(test_inst, response, expected_event_summaries=
     cur_event_props = set()
     for line_num, line in enumerate(response.content.decode().split("\n")):
         line = line.rstrip()
-        if line == 'BEGIN:VEVENT':
-            test_inst.assertFalse(got_begin, f"Nested BEGIN:VEVENT found on line {line_num + 1}")
+        if line == "BEGIN:VEVENT":
+            test_inst.assertFalse(
+                got_begin, f"Nested BEGIN:VEVENT found on line {line_num + 1}"
+            )
             got_begin = True
-        elif line == 'END:VEVENT':
-            test_inst.assertTrue(got_begin, f"Unexpected END:VEVENT on line {line_num + 1}")
-            test_inst.assertIn("uid", cur_event_props, f"Found END:VEVENT without UID on line {line_num + 1}")
+        elif line == "END:VEVENT":
+            test_inst.assertTrue(
+                got_begin, f"Unexpected END:VEVENT on line {line_num + 1}"
+            )
+            test_inst.assertIn(
+                "uid",
+                cur_event_props,
+                f"Found END:VEVENT without UID on line {line_num + 1}",
+            )
             got_begin = False
             cur_event_props.clear()
             event_count += 1
@@ -152,12 +179,20 @@ def assert_ical_response_is_valid(test_inst, response, expected_event_summaries=
             # properties in an event
             if line.startswith("UID:"):
                 # mandatory, not more than once
-                test_inst.assertNotIn("uid", cur_event_props, f"Two UID properties in single event on line {line_num + 1}")
+                test_inst.assertNotIn(
+                    "uid",
+                    cur_event_props,
+                    f"Two UID properties in single event on line {line_num + 1}",
+                )
                 cur_event_props.add("uid")
                 uids_found.add(line.split(":", 1)[1])
             elif line.startswith("SUMMARY:"):
                 # optional, not more than once
-                test_inst.assertNotIn("summary", cur_event_props, f"Two SUMMARY properties in single event on line {line_num + 1}")
+                test_inst.assertNotIn(
+                    "summary",
+                    cur_event_props,
+                    f"Two SUMMARY properties in single event on line {line_num + 1}",
+                )
                 cur_event_props.add("summary")
                 summaries_found.add(line.split(":", 1)[1])
 
@@ -171,14 +206,14 @@ def assert_ical_response_is_valid(test_inst, response, expected_event_summaries=
         test_inst.assertEqual(event_count, expected_event_count)
 
     # make sure no doubled colons after timestamp properties
-    test_inst.assertNotContains(response, 'DTSTART::')
-    test_inst.assertNotContains(response, 'DTEND::')
-    test_inst.assertNotContains(response, 'DTSTAMP::')
+    test_inst.assertNotContains(response, "DTSTART::")
+    test_inst.assertNotContains(response, "DTEND::")
+    test_inst.assertNotContains(response, "DTSTAMP::")
 
 
 class ReverseLazyTest(django.test.TestCase):
     def test_redirect_with_lazy_reverse(self):
-        response = self.client.get('/ipr/update/')
+        response = self.client.get("/ipr/update/")
         self.assertRedirects(response, "/ipr/", status_code=301)
 
 
@@ -204,14 +239,15 @@ class TestCase(django.test.TestCase):
     not handled by a test's inner mock - even if the latter is created with
     real_http=True.
     """
+
     # These settings will be overridden with empty temporary directories
     settings_temp_path_overrides = [
-        'RFC_PATH',
-        'INTERNET_ALL_DRAFTS_ARCHIVE_DIR',
-        'INTERNET_DRAFT_ARCHIVE_DIR',
-        'INTERNET_DRAFT_PATH',
-        'BIBXML_BASE_PATH',
-        'FTP_DIR',
+        "RFC_PATH",
+        "INTERNET_ALL_DRAFTS_ARCHIVE_DIR",
+        "INTERNET_DRAFT_ARCHIVE_DIR",
+        "INTERNET_DRAFT_PATH",
+        "BIBXML_BASE_PATH",
+        "FTP_DIR",
     ]
 
     parser = html5lib.HTMLParser(strict=True)
@@ -224,21 +260,22 @@ class TestCase(django.test.TestCase):
 
     def assertValidHTMLResponse(self, resp):
         self.assertHttpOK(resp)
-        self.assertTrue(resp['Content-Type'].startswith('text/html'))
+        self.assertTrue(resp["Content-Type"].startswith("text/html"))
         self.assertValidHTML(resp.content)
 
     def assertSameEmail(self, a, b, msg=None):
         def normalize(x):
             if x:
                 if not isinstance(x, list):
-                    x = [ x ]
+                    x = [x]
                 x = email.utils.getaddresses(x)
                 x.sort()
             return x
+
         return self.assertEqual(normalize(a), normalize(b), msg)
 
     def tempdir(self, label):
-        slug = slugify(self.__class__.__name__.replace('.','-'))
+        slug = slugify(self.__class__.__name__.replace(".", "-"))
         suffix = "-{label}-{slug}-dir".format(**locals())
         return tempfile.mkdtemp(suffix=suffix)
 
@@ -255,15 +292,21 @@ class TestCase(django.test.TestCase):
         if response.status_code == 200:
             from pyquery import PyQuery
             from lxml import html
+
             self.maxDiff = None
 
-            errors = [html.tostring(n).decode() for n in PyQuery(response.content)(error_css_selector)]
+            errors = [
+                html.tostring(n).decode()
+                for n in PyQuery(response.content)(error_css_selector)
+            ]
             if errors:
-                explanation = "{} != {}\nGot form back with errors:\n----\n".format(response.status_code, 302) + "----\n".join(errors)
+                explanation = "{} != {}\nGot form back with errors:\n----\n".format(
+                    response.status_code, 302
+                ) + "----\n".join(errors)
                 self.assertEqual(response.status_code, 302, explanation)
 
         self.assertEqual(response.status_code, 302)
-        
+
     def assertMailboxContains(self, mailbox, subject=None, text=None, count=None):
         """
         Asserts that the given mailbox contains *count* mails with the given
@@ -272,25 +315,34 @@ class TestCase(django.test.TestCase):
         filtered mailbox must be non-empty.
         """
         if subject is None and text is None and count is None:
-            raise self.failureException("No assertion made, both text and count is None")
+            raise self.failureException(
+                "No assertion made, both text and count is None"
+            )
         mlist = mailbox
         if subject:
-            mlist = [ m for m in mlist if subject in m["Subject"] ]
+            mlist = [m for m in mlist if subject in m["Subject"]]
         if text:
             assert isinstance(text, str)
-            mlist = [ m for m in mlist if text in get_payload_text(m) ]
+            mlist = [m for m in mlist if text in get_payload_text(m)]
         if count and len(mlist) != count:
-            sys.stderr.write("Wrong count in assertMailboxContains().  The complete mailbox contains %s messages, only %s of them contain the searched-for text:\n\n" % (len(mailbox), len(mlist)))
+            sys.stderr.write(
+                "Wrong count in assertMailboxContains().  The complete mailbox contains %s messages, only %s of them contain the searched-for text:\n\n"
+                % (len(mailbox), len(mlist))
+            )
             for m in mailbox:
                 sys.stderr.write(m.as_string())
-                sys.stderr.write('\n\n')
+                sys.stderr.write("\n\n")
         if count:
             self.assertEqual(len(mlist), count)
         else:
             self.assertGreater(len(mlist), 0)
 
     def __str__(self):
-        return u"%s (%s.%s)" % (self._testMethodName, strclass(self.__class__),self._testMethodName)
+        return "%s (%s.%s)" % (
+            self._testMethodName,
+            strclass(self.__class__),
+            self._testMethodName,
+        )
 
     def setUp(self):
         super().setUp()
@@ -300,10 +352,14 @@ class TestCase(django.test.TestCase):
         self.requests_mock.start()
 
         # Replace settings paths with temporary directories.
-        self._ietf_temp_dirs = {}  # trashed during tearDown, DO NOT put paths you care about in this
+        self._ietf_temp_dirs = (
+            {}
+        )  # trashed during tearDown, DO NOT put paths you care about in this
         for setting in set(self.settings_temp_path_overrides):
             self._ietf_temp_dirs[setting] = self.tempdir(slugify(setting))
-        self._ietf_saved_context = django.test.utils.override_settings(**self._ietf_temp_dirs)
+        self._ietf_saved_context = django.test.utils.override_settings(
+            **self._ietf_temp_dirs
+        )
         self._ietf_saved_context.enable()
 
     def tearDown(self):

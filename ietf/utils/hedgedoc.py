@@ -40,7 +40,7 @@ class Note:
         if self._source is None:
             try:
                 r = requests.get(
-                    urljoin(self.base_url, f'{self.id}/download'),
+                    urljoin(self.base_url, f"{self.id}/download"),
                     allow_redirects=True,
                     timeout=settings.DEFAULT_REQUESTS_TIMEOUT,
                 )
@@ -61,20 +61,22 @@ class Note:
             metadata = self._retrieve_metadata()
         except NoteError:
             metadata = {}  # don't let an error retrieving the title prevent retrieval
-        return metadata.get('title', None)
+        return metadata.get("title", None)
 
     def get_update_time(self):
         try:
             metadata = self._retrieve_metadata()
         except NoteError:
-            metadata = {}  # don't let an error retrieving the update timestamp prevent retrieval
-        return metadata.get('updatetime', None)
+            metadata = (
+                {}
+            )  # don't let an error retrieving the update timestamp prevent retrieval
+        return metadata.get("updatetime", None)
 
     def _retrieve_metadata(self):
         if self._metadata is None:
             try:
                 r = requests.get(
-                    urljoin(self.base_url, f'{self.id}/info'),
+                    urljoin(self.base_url, f"{self.id}/info"),
                     allow_redirects=True,
                     timeout=settings.DEFAULT_REQUESTS_TIMEOUT,
                 )
@@ -98,7 +100,7 @@ def de_gfm(source: str):
         [settings.DE_GFM_BINARY, "-4"],
         capture_output=True,
         input=source,
-        encoding='utf8',
+        encoding="utf8",
         check=True,
     )
     return result.stdout
@@ -106,21 +108,22 @@ def de_gfm(source: str):
 
 class NoteError(Exception):
     """Base class for exceptions in this module"""
-    default_message = 'A note-related error occurred'
+
+    default_message = "A note-related error occurred"
 
     def __init__(self, *args, **kwargs):
         if not args:
-            args = (self.default_message, )
+            args = (self.default_message,)
         super().__init__(*args)
 
 
 class ServerNoteError(NoteError):
-    default_message = 'Could not reach the notes server'
+    default_message = "Could not reach the notes server"
 
 
 class NoteNotFound(NoteError):
-    default_message = 'Note did not exist or could not be loaded'
+    default_message = "Note did not exist or could not be loaded"
 
 
 class InvalidNote(NoteError):
-    default_message = 'Note data invalid'
+    default_message = "Note data invalid"

@@ -8,6 +8,7 @@ class ApiKeyAuthenticationScheme(OpenApiAuthenticationExtension):
 
     Used by drf-spectacular when rendering the OpenAPI schema
     """
+
     target_class = "ietf.api.authentication.ApiKeyAuthentication"
     name = "apiKeyAuth"
 

@@ -11,14 +11,19 @@ from ietf.utils.timezone import date_today
 
 
 class Command(BaseCommand):
-    help = 'Manage Meetecho conferences'
-    
+    help = "Manage Meetecho conferences"
+
     def add_arguments(self, parser) -> None:
-        parser.add_argument('group', type=str)
-        parser.add_argument('-d', '--delete', type=int, action='append',
-                            metavar='SESSION_PK',
-                            help='Delete the conference associated with the specified Session')
-    
+        parser.add_argument("group", type=str)
+        parser.add_argument(
+            "-d",
+            "--delete",
+            type=int,
+            action="append",
+            metavar="SESSION_PK",
+            help="Delete the conference associated with the specified Session",
+        )
+
     def handle(self, group, delete, *args, **options):
         conf_mgr = ConferenceManager(settings.MEETECHO_API_CONFIG)
         if delete:
@@ -28,18 +33,20 @@ class Command(BaseCommand):
 
     def handle_list_conferences(self, conf_mgr, group):
         confs, conf_sessions = self.fetch_conferences(conf_mgr, group)
-        self.stdout.write(f'Meetecho conferences for {group}:\n\n')
+        self.stdout.write(f"Meetecho conferences for {group}:\n\n")
         for conf in confs:
-            sessions_desc = ', '.join(str(s.pk) for s in conf_sessions[conf.id]) or None
+            sessions_desc = ", ".join(str(s.pk) for s in conf_sessions[conf.id]) or None
             self.stdout.write(
-                dedent(f'''\
+                dedent(
+                    f"""\
                 * {conf.description}
                     Start time: {conf.start_time} 
                     Duration: {int(conf.duration.total_seconds() // 60)} minutes
                     URL: {conf.url}
                     Associated session PKs: {sessions_desc}
                 
-                ''')
+                """
+                )
             )
 
     def handle_delete_conferences(self, conf_mgr, group, session_pks_to_delete):
@@ -52,33 +59,33 @@ class Command(BaseCommand):
                 associated = conf_sessions[conf.id]
                 if session in associated:
                     confs_to_delete.append(conf)
-                    sessions_desc = ', '.join(str(s.pk) for s in associated) or None
+                    sessions_desc = ", ".join(str(s.pk) for s in associated) or None
                     descriptions.append(
-                        f'{conf.description} ({conf.start_time}, {int(conf.duration.total_seconds() // 60)} mins) - used by {sessions_desc}'
+                        f"{conf.description} ({conf.start_time}, {int(conf.duration.total_seconds() // 60)} mins) - used by {sessions_desc}"
                     )
         if len(confs_to_delete) > 0:
-            self.stdout.write('Will delete:')
+            self.stdout.write("Will delete:")
             for desc in descriptions:
-                self.stdout.write(f'* {desc}')
+                self.stdout.write(f"* {desc}")
 
             try:
-                proceed = input('Proceed [y/N]? ').lower()
+                proceed = input("Proceed [y/N]? ").lower()
             except EOFError:
-                proceed = 'n'
-            if proceed in ['y', 'yes']:
+                proceed = "n"
+            if proceed in ["y", "yes"]:
                 for conf, desc in zip(confs_to_delete, descriptions):
                     conf.delete()
-                    self.stdout.write(f'Deleted {desc}')
+                    self.stdout.write(f"Deleted {desc}")
             else:
-                self.stdout.write('Nothing deleted.')
+                self.stdout.write("Nothing deleted.")
         else:
-            self.stdout.write('No associated Meetecho conferences found')
+            self.stdout.write("No associated Meetecho conferences found")
 
     def fetch_conferences(self, conf_mgr, group):
         try:
             confs = conf_mgr.fetch(group)
         except MeetechoAPIError as err:
-            raise CommandError('API error fetching Meetecho conference data') from err
+            raise CommandError("API error fetching Meetecho conference data") from err
 
         conf_sessions = {}
         for conf in confs:

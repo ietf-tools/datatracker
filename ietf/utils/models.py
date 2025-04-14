@@ -4,21 +4,27 @@ import itertools
 
 from django.db import models
 
+
 class DumpInfo(models.Model):
     date = models.DateTimeField()
     host = models.CharField(max_length=128)
-    tz   = models.CharField(max_length=32, default='UTC')
-    
+    tz = models.CharField(max_length=32, default="UTC")
+
+
 class ForeignKey(models.ForeignKey):
     "A local ForeignKey proxy which provides the on_delete value required under Django 2.0."
+
     def __init__(self, to, on_delete=models.CASCADE, **kwargs):
         return super(ForeignKey, self).__init__(to, on_delete=on_delete, **kwargs)
-        
+
+
 class OneToOneField(models.OneToOneField):
     "A local OneToOneField proxy which provides the on_delete value required under Django 2.0."
+
     def __init__(self, to, on_delete=models.CASCADE, **kwargs):
         return super(OneToOneField, self).__init__(to, on_delete=on_delete, **kwargs)
-        
+
+
 def object_to_dict(instance):
     """
     Similar to django.forms.models.model_to_dict() but more comprehensive.
@@ -32,4 +38,4 @@ def object_to_dict(instance):
         data[f.name] = f.value_from_object(instance)
     for f in opts.many_to_many:
         data[f.name] = [i.pk for i in f.value_from_object(instance)]
-    return data        
+    return data

@@ -6,13 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('nomcom', '0001_initial'),
+        ("nomcom", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='nomcom',
-            name='send_questionnaire',
-            field=models.BooleanField(default=False, help_text='If you check this box, questionnaires are sent automatically after nominations. DO NOT CHECK if they are not ready yet.', verbose_name='Send questionnaires automatically'),
+            model_name="nomcom",
+            name="send_questionnaire",
+            field=models.BooleanField(
+                default=False,
+                help_text="If you check this box, questionnaires are sent automatically after nominations. DO NOT CHECK if they are not ready yet.",
+                verbose_name="Send questionnaires automatically",
+            ),
         ),
     ]

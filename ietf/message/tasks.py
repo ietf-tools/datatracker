@@ -5,7 +5,10 @@
 from celery import shared_task
 from smtplib import SMTPException
 
-from ietf.message.utils import send_scheduled_message_from_send_queue, retry_send_messages
+from ietf.message.utils import (
+    send_scheduled_message_from_send_queue,
+    retry_send_messages,
+)
 from ietf.message.models import SendQueue, Message
 from ietf.utils import log
 from ietf.utils.mail import log_smtp_exception, send_error_email
@@ -14,7 +17,7 @@ from ietf.utils.mail import log_smtp_exception, send_error_email
 @shared_task
 def send_scheduled_mail_task():
     """Send scheduled email
-    
+
     This is equivalent to `ietf/bin/send-scheduled-mail all`, which was the only form used in the cron job.
     """
     needs_sending = SendQueue.objects.filter(sent_at=None).select_related("message")
@@ -30,7 +33,7 @@ def send_scheduled_mail_task():
 @shared_task
 def retry_send_messages_by_pk_task(message_pks: list, resend=False):
     """Task to retry sending Messages by PK
-    
+
     Sends Messages whose PK is included in the list.
     Only previously unsent messages are sent unless `resend` is true.
     """

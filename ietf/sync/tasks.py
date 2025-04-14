@@ -21,13 +21,13 @@ from ietf.utils.timezone import date_today
 @shared_task
 def rfc_editor_index_update_task(full_index=False):
     """Update metadata from the RFC index
-    
+
     Default is to examine only changes in the past 365 days. Call with full_index=True to update
     the full RFC index.
-    
+
     According to comments on the original script, a year's worth took about 20s on production as of
     August 2022
-    
+
     The original rfc-editor-index-update script had a long-disabled provision for running the
     rebuild_reference_relations scripts after the update. That has not been brought over
     at all because it should be implemented as its own task if it is needed.
@@ -45,7 +45,7 @@ def rfc_editor_index_update_task(full_index=False):
             timeout=30,  # seconds
         )
     except requests.Timeout as exc:
-        log.log(f'GET request timed out retrieving RFC editor index: {exc}')
+        log.log(f"GET request timed out retrieving RFC editor index: {exc}")
         return  # failed
     rfc_index_xml = response.text
     index_data = rfceditor.parse_index(io.StringIO(rfc_index_xml))
@@ -55,9 +55,9 @@ def rfc_editor_index_update_task(full_index=False):
             timeout=30,  # seconds
         )
     except requests.Timeout as exc:
-        log.log(f'GET request timed out retrieving RFC editor errata: {exc}')
+        log.log(f"GET request timed out retrieving RFC editor errata: {exc}")
         return  # failed
-    errata_data = response.json()   
+    errata_data = response.json()
     if len(index_data) < rfceditor.MIN_INDEX_RESULTS:
         log.log("Not enough index entries, only %s" % len(index_data))
         return  # failed
@@ -85,15 +85,15 @@ def rfc_editor_queue_updates_task():
     drafts, warnings = parse_queue(io.StringIO(response.text))
     for w in warnings:
         log.log(f"Warning: {w}")
-    
+
     if len(drafts) < MIN_QUEUE_RESULTS:
         log.log("Not enough results, only %s" % len(drafts))
         return  # failed
-    
+
     changed, warnings = update_drafts_from_queue(drafts)
     for w in warnings:
         log.log(f"Warning: {w}")
-    
+
     for c in changed:
         log.log(f"Updated {c}")
 
@@ -109,9 +109,11 @@ def iana_changes_update_task():
     MAX_INTERVAL_ACCEPTED_BY_IANA = datetime.timedelta(hours=23)
 
     start = (
-        timezone.now() 
-        - datetime.timedelta(hours=23) 
-        + datetime.timedelta(seconds=CLOCK_SKEW_COMPENSATION,)
+        timezone.now()
+        - datetime.timedelta(hours=23)
+        + datetime.timedelta(
+            seconds=CLOCK_SKEW_COMPENSATION,
+        )
     )
     end = start + datetime.timedelta(hours=23)
 
@@ -122,7 +124,9 @@ def iana_changes_update_task():
         # requests if necessary
 
         text = iana.fetch_changes_json(
-            settings.IANA_SYNC_CHANGES_URL, t, min(end, t + MAX_INTERVAL_ACCEPTED_BY_IANA)
+            settings.IANA_SYNC_CHANGES_URL,
+            t,
+            min(end, t + MAX_INTERVAL_ACCEPTED_BY_IANA),
         )
         log.log(f"Retrieved the JSON: {text}")
 
@@ -148,9 +152,9 @@ def iana_protocols_update_task():
     # "this needs to be the date where this tool is first deployed" in the original
     # iana-protocols-updates script)"
     rfc_must_published_later_than = datetime.datetime(
-        2012, 
-        11, 
-        26, 
+        2012,
+        11,
+        26,
         tzinfo=datetime.timezone.utc,
     )
 
@@ -160,17 +164,17 @@ def iana_protocols_update_task():
             timeout=30,
         )
     except requests.Timeout as exc:
-        log.log(f'GET request timed out retrieving IANA protocols page: {exc}')
+        log.log(f"GET request timed out retrieving IANA protocols page: {exc}")
         return
 
     rfc_numbers = iana.parse_protocol_page(response.text)
 
     def batched(l, n):
         """Split list l up in batches of max size n.
-        
+
         For Python 3.12 or later, replace this with itertools.batched()
         """
-        return (l[i:i + n] for i in range(0, len(l), n))
+        return (l[i : i + n] for i in range(0, len(l), n))
 
     for batch in batched(rfc_numbers, 100):
         updated = iana.update_rfc_log_from_protocol_page(

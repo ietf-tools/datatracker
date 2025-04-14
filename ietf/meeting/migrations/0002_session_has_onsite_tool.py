@@ -6,13 +6,16 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('meeting', '0001_initial'),
+        ("meeting", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='session',
-            name='has_onsite_tool',
-            field=models.BooleanField(default=False, help_text='Does this session use the officially supported onsite and remote tooling?'),
+            model_name="session",
+            name="has_onsite_tool",
+            field=models.BooleanField(
+                default=False,
+                help_text="Does this session use the officially supported onsite and remote tooling?",
+            ),
         ),
     ]

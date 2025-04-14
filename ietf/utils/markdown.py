@@ -16,7 +16,6 @@ from .html import clean_html, liberal_clean_html
 from .text import linkify
 
 
-
 class LinkifyExtension(Extension):
     """
     Simple Markdown extension inspired by https://github.com/daGrevis/mdx_linkify,
@@ -51,6 +50,7 @@ def markdown(text):
             )
         )
     )
+
 
 def liberal_markdown(text):
     return mark_safe(

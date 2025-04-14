@@ -47,7 +47,9 @@ class CommandTests(TestCase):
         with self.assertRaises(CommandError, msg="Cannot reset an RFC with no draft"):
             self._call_command(command_name, rfc.rfc_number)
 
-        with self.assertRaises(CommandError, msg="Cannot force-reset an RFC with no draft"):
+        with self.assertRaises(
+            CommandError, msg="Cannot force-reset an RFC with no draft"
+        ):
             self._call_command(command_name, rfc.rfc_number, "--force")
 
         # Link the draft to the rfc

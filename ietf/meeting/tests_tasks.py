@@ -19,7 +19,7 @@ class TaskTests(TestCase):
         # Generate a couple of meetings
         meeting120 = MeetingFactory(type_id="ietf", number="120")  # 24 * 5
         meeting127 = MeetingFactory(type_id="ietf", number="127")  # 24 * 5 + 7
-        
+
         # Times to be returned
         now_utc = datetime.datetime.now(tz=datetime.timezone.utc)
         hour_00_utc = now_utc.replace(hour=0)
@@ -32,19 +32,19 @@ class TaskTests(TestCase):
         self.assertEqual(mock_generate.call_count, 1)
         self.assertEqual(mock_generate.call_args, call(meeting120, force_refresh=True))
         mock_generate.reset_mock()
-    
+
         # hour 01 - should call no meetings
         with patch("ietf.meeting.tasks.timezone.now", return_value=hour_01_utc):
             proceedings_content_refresh_task()
         self.assertEqual(mock_generate.call_count, 0)
-    
+
         # hour 07 - should call meeting with number % 24 == 0
         with patch("ietf.meeting.tasks.timezone.now", return_value=hour_07_utc):
             proceedings_content_refresh_task()
         self.assertEqual(mock_generate.call_count, 1)
         self.assertEqual(mock_generate.call_args, call(meeting127, force_refresh=True))
         mock_generate.reset_mock()
-        
+
         # With all=True, all should be called regardless of time. Reuse hour_01_utc which called none before
         with patch("ietf.meeting.tasks.timezone.now", return_value=hour_01_utc):
             proceedings_content_refresh_task(all=True)

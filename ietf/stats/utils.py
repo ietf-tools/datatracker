@@ -9,15 +9,21 @@ from collections import defaultdict, namedtuple
 from django.conf import settings
 from django.db.models import Q
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
-from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, CountryAlias, MeetingRegistration
+from ietf.stats.models import (
+    AffiliationAlias,
+    AffiliationIgnoredEnding,
+    CountryAlias,
+    MeetingRegistration,
+)
 from ietf.name.models import CountryName
 from ietf.person.models import Person, Email
 from ietf.utils.log import log
 
 import logging
-logger = logging.getLogger('django')
+
+logger = logging.getLogger("django")
 
 
 def compile_affiliation_ending_stripping_regexp():
@@ -55,7 +61,10 @@ def get_aliased_affiliations(affiliations):
 
     ending_re = compile_affiliation_ending_stripping_regexp()
 
-    known_aliases = { alias.lower(): name for alias, name in AffiliationAlias.objects.values_list("alias", "name") }
+    known_aliases = {
+        alias.lower(): name
+        for alias, name in AffiliationAlias.objects.values_list("alias", "name")
+    }
 
     affiliations_with_case_spellings = defaultdict(set)
     case_spelling_count = defaultdict(int)
@@ -92,7 +101,9 @@ def get_aliased_affiliations(affiliations):
     # spelling for each affiliation with more than one
     for similar_affiliations in affiliations_with_case_spellings.values():
         if len(similar_affiliations) > 1:
-            most_popular = sorted(similar_affiliations, key=affiliation_sort_key, reverse=True)[0]
+            most_popular = sorted(
+                similar_affiliations, key=affiliation_sort_key, reverse=True
+            )[0]
             for affiliation in similar_affiliations:
                 if affiliation != most_popular:
                     res[affiliation] = most_popular
@@ -125,7 +136,9 @@ def get_aliased_countries(countries):
 
     # specific hack: check for zip codes from the US since in the
     # early days, the addresses often didn't include the country
-    us_zipcode_re = re.compile(r"\b(AL|AK|AZ|AR|CA|CO|CT|DE|DC|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|AS|GU|MP|PR|VI|UM|FM|MH|PW|Ca|Cal.|California|CALIFORNIA|Colorado|Georgia|Illinois|Ill|Maryland|Ma|Ma.|Mass|Massachuss?etts|Michigan|Minnesota|New Jersey|New York|Ny|N.Y.|North Carolina|NORTH CAROLINA|Ohio|Oregon|Pennsylvania|Tx|Texas|Tennessee|Utah|Vermont|Virginia|Va.|Washington)[., -]*[0-9]{5}\b")
+    us_zipcode_re = re.compile(
+        r"\b(AL|AK|AZ|AR|CA|CO|CT|DE|DC|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|AS|GU|MP|PR|VI|UM|FM|MH|PW|Ca|Cal.|California|CALIFORNIA|Colorado|Georgia|Illinois|Ill|Maryland|Ma|Ma.|Mass|Massachuss?etts|Michigan|Minnesota|New Jersey|New York|Ny|N.Y.|North Carolina|NORTH CAROLINA|Ohio|Oregon|Pennsylvania|Tx|Texas|Tennessee|Utah|Vermont|Virginia|Va.|Washington)[., -]*[0-9]{5}\b"
+    )
 
     us_country_name = CountryName.objects.get(slug="US").name
 
@@ -201,7 +214,9 @@ def get_aliased_countries(countries):
 
 def clean_country_name(country_name):
     if country_name:
-        country_name = get_aliased_countries([country_name]).get(country_name, country_name)
+        country_name = get_aliased_countries([country_name]).get(
+            country_name, country_name
+        )
         if country_name and CountryName.objects.filter(name=country_name).exists():
             return country_name
 
@@ -224,10 +239,10 @@ def compute_hirsch_index(citation_counts):
 
 
 def get_meeting_registration_data(meeting):
-    """"Retrieve registration attendee data and summary statistics.  Returns number
+    """ "Retrieve registration attendee data and summary statistics.  Returns number
     of Registration records created.
-    
-    MeetingRegistration records are created in realtime as people register for a 
+
+    MeetingRegistration records are created in realtime as people register for a
     meeting. This function serves as an audit / reconciliation. Most records are
     expected to already exist. The function has been optimized with this in mind.
     """
@@ -235,59 +250,69 @@ def get_meeting_registration_data(meeting):
     num_processed = 0
     try:
         response = requests.get(
-            settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number),
+            settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(
+                number=meeting.number
+            ),
             timeout=settings.DEFAULT_REQUESTS_TIMEOUT,
         )
     except requests.Timeout as exc:
-        log(f'GET request timed out for [{settings.STATS_REGISTRATION_ATTENDEES_JSON_URL}]: {exc}')
+        log(
+            f"GET request timed out for [{settings.STATS_REGISTRATION_ATTENDEES_JSON_URL}]: {exc}"
+        )
         raise RuntimeError("Timeout retrieving data from registrations API") from exc
     if response.status_code == 200:
         decoded = []
         try:
             decoded = response.json()
         except ValueError:
-            if response.content.strip() == 'Invalid meeting':
-                logger.info('Invalid meeting: {}'.format(meeting.number))
-                return (0,0,0)
+            if response.content.strip() == "Invalid meeting":
+                logger.info("Invalid meeting: {}".format(meeting.number))
+                return (0, 0, 0)
             else:
-                raise RuntimeError("Could not decode response from registrations API: '%s...'" % (response.content[:64], ))
+                raise RuntimeError(
+                    "Could not decode response from registrations API: '%s...'"
+                    % (response.content[:64],)
+                )
 
-        records = MeetingRegistration.objects.filter(meeting_id=meeting.pk).select_related('person')
-        meeting_registrations = {(r.email, r.reg_type):r for r in records}
+        records = MeetingRegistration.objects.filter(
+            meeting_id=meeting.pk
+        ).select_related("person")
+        meeting_registrations = {(r.email, r.reg_type): r for r in records}
         for registration in decoded:
             person = None
             # capture the stripped registration values for later use
-            first_name      = registration['FirstName'].strip()
-            last_name       = registration['LastName'].strip()
-            affiliation     = registration['Company'].strip()
-            country_code    = registration['Country'].strip()
-            address         = registration['Email'].strip()
-            reg_type        = registration['RegType'].strip()
-            ticket_type     = registration['TicketType'].strip()
-            checkedin       = bool(registration['CheckedIn'].strip().lower() == 'true')
+            first_name = registration["FirstName"].strip()
+            last_name = registration["LastName"].strip()
+            affiliation = registration["Company"].strip()
+            country_code = registration["Country"].strip()
+            address = registration["Email"].strip()
+            reg_type = registration["RegType"].strip()
+            ticket_type = registration["TicketType"].strip()
+            checkedin = bool(registration["CheckedIn"].strip().lower() == "true")
 
             if (address, reg_type) in meeting_registrations:
                 object = meeting_registrations.pop((address, reg_type))
                 created = False
             else:
                 object, created = MeetingRegistration.objects.get_or_create(
-                    meeting_id=meeting.pk,
-                    email=address,
-                    reg_type=reg_type)
-            
-            if (object.first_name != first_name[:200] or
-                object.last_name != last_name[:200] or
-                object.affiliation != affiliation or
-                object.country_code != country_code or
-                object.ticket_type != ticket_type or
-                object.checkedin != checkedin):
-                    object.first_name=first_name[:200]
-                    object.last_name=last_name[:200]
-                    object.affiliation=affiliation
-                    object.country_code=country_code
-                    object.ticket_type=ticket_type
-                    object.checkedin=checkedin
-                    object.save()
+                    meeting_id=meeting.pk, email=address, reg_type=reg_type
+                )
+
+            if (
+                object.first_name != first_name[:200]
+                or object.last_name != last_name[:200]
+                or object.affiliation != affiliation
+                or object.country_code != country_code
+                or object.ticket_type != ticket_type
+                or object.checkedin != checkedin
+            ):
+                object.first_name = first_name[:200]
+                object.last_name = last_name[:200]
+                object.affiliation = affiliation
+                object.country_code = country_code
+                object.ticket_type = ticket_type
+                object.checkedin = checkedin
+                object.save()
 
             # Add a Person object to MeetingRegistration object
             # if valid email is available
@@ -299,11 +324,13 @@ def get_meeting_registration_data(meeting):
                     person = emails.first().person
                 # Create a new Person object
                 else:
-                    logger.error("No Person record for registration. email={}".format(address))
+                    logger.error(
+                        "No Person record for registration. email={}".format(address)
+                    )
                 # update the person object to an actual value
                 object.person = person
                 object.save()
-            
+
             if created:
                 num_created += 1
             num_processed += 1
@@ -312,22 +339,33 @@ def get_meeting_registration_data(meeting):
         # so must have been deleted
         for r in meeting_registrations:
             try:
-                MeetingRegistration.objects.get(meeting=meeting,email=r[0],reg_type=r[1]).delete()
-                logger.info('Removing deleted registration. email={}, reg_type={}'.format(r[0], r[1]))
+                MeetingRegistration.objects.get(
+                    meeting=meeting, email=r[0], reg_type=r[1]
+                ).delete()
+                logger.info(
+                    "Removing deleted registration. email={}, reg_type={}".format(
+                        r[0], r[1]
+                    )
+                )
             except MeetingRegistration.DoesNotExist:
                 pass
     else:
-        raise RuntimeError("Bad response from registrations API: %s, '%s'" % (response.status_code, response.content))
-    num_total = MeetingRegistration.objects.filter(
-        meeting_id=meeting.pk,
-        reg_type__in=['onsite', 'remote']
-    ).filter(
-        Q(attended=True) | Q(checkedin=True)
-    ).count()
+        raise RuntimeError(
+            "Bad response from registrations API: %s, '%s'"
+            % (response.status_code, response.content)
+        )
+    num_total = (
+        MeetingRegistration.objects.filter(
+            meeting_id=meeting.pk, reg_type__in=["onsite", "remote"]
+        )
+        .filter(Q(attended=True) | Q(checkedin=True))
+        .count()
+    )
     if meeting.attendees is None or num_total > meeting.attendees:
         meeting.attendees = num_total
         meeting.save()
     return num_created, num_processed, num_total
+
 
 def repair_meetingregistration_person(meetings=None):
     repaired_records = 0
@@ -340,11 +378,13 @@ def repair_meetingregistration_person(meetings=None):
             if email_person:
                 mr.person = email_person
                 mr.save()
-                repaired_records += 1            
+                repaired_records += 1
     return repaired_records
+
 
 class MeetingRegistrationIssuesSummary(object):
     pass
+
 
 def find_meetingregistration_person_issues(meetings=None):
     summary = MeetingRegistrationIssuesSummary()
@@ -361,25 +401,41 @@ def find_meetingregistration_person_issues(meetings=None):
     if meetings:
         qs = qs.filter(meeting__number__in=meetings)
     for mr in qs:
-        if mr.person and mr.email and mr.email in mr.person.email_set.values_list('address',flat=True):
+        if (
+            mr.person
+            and mr.email
+            and mr.email in mr.person.email_set.values_list("address", flat=True)
+        ):
             summary.ok_records += 1
         elif mr.email:
             email_person = Person.objects.filter(email__address=mr.email).first()
             if mr.person:
                 if not email_person:
-                    summary.maybe_address.add(f'{mr.email} is not present in any Email object. The MeetingRegistration object implies this is an address for {mr.person} ({mr.person.pk})')
+                    summary.maybe_address.add(
+                        f"{mr.email} is not present in any Email object. The MeetingRegistration object implies this is an address for {mr.person} ({mr.person.pk})"
+                    )
                 elif email_person != mr.person:
-                    summary.different_person.add(f'{mr} ({mr.pk}) has person {mr.person} ({mr.person.pk}) but an email {mr.email} attached to a different person {email_person} ({email_person.pk}).')
+                    summary.different_person.add(
+                        f"{mr} ({mr.pk}) has person {mr.person} ({mr.person.pk}) but an email {mr.email} attached to a different person {email_person} ({email_person.pk})."
+                    )
             elif email_person:
-                summary.could_be_fixed.add(f'{mr} ({mr.pk}) has no person, but email {mr.email} matches {email_person} ({email_person.pk})')
+                summary.could_be_fixed.add(
+                    f"{mr} ({mr.pk}) has no person, but email {mr.email} matches {email_person} ({email_person.pk})"
+                )
             else:
-                maybe_person_qs = Person.objects.filter(name__icontains=mr.last_name).filter(name__icontains=mr.first_name)
+                maybe_person_qs = Person.objects.filter(
+                    name__icontains=mr.last_name
+                ).filter(name__icontains=mr.first_name)
                 if maybe_person_qs.exists():
-                    summary.maybe_person.add(f'{mr} ({mr.pk}) has email address {mr.email} which cannot be associated with any Person. Consider these possible people {[(p,p.pk) for p in maybe_person_qs]}')
+                    summary.maybe_person.add(
+                        f"{mr} ({mr.pk}) has email address {mr.email} which cannot be associated with any Person. Consider these possible people {[(p,p.pk) for p in maybe_person_qs]}"
+                    )
                 else:
-                    summary.no_person.add(f'{mr} ({mr.pk}) has email address {mr.email} which cannot be associated with any Person')
+                    summary.no_person.add(
+                        f"{mr} ({mr.pk}) has email address {mr.email} which cannot be associated with any Person"
+                    )
         else:
-            summary.no_email.add(f'{mr} ({mr.pk}) provides no email address')
+            summary.no_email.add(f"{mr} ({mr.pk}) provides no email address")
 
     return summary
 

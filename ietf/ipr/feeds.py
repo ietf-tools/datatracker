@@ -11,23 +11,26 @@ from django.utils.encoding import force_str
 
 from ietf.ipr.models import IprDisclosureBase
 
+
 class LatestIprDisclosuresFeed(Feed):
     feed_type = Atom1Feed
     title = "IPR Disclosures to the IETF"
-    link = reverse_lazy('ietf.ipr.views.showlist')
+    link = reverse_lazy("ietf.ipr.views.showlist")
     description = "Updates on new IPR Disclosures made to the IETF."
     language = "en"
     feed_url = "/feed/ipr/"
 
     def items(self):
-        return IprDisclosureBase.objects.filter(state__in=settings.PUBLISH_IPR_STATES).order_by('-time')[:30]
+        return IprDisclosureBase.objects.filter(
+            state__in=settings.PUBLISH_IPR_STATES
+        ).order_by("-time")[:30]
 
     def item_title(self, item):
         return mark_safe(item.title)
 
     def item_description(self, item):
         return force_str(item.title)
-        
+
     def item_pubdate(self, item):
         return item.time
 

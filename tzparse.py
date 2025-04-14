@@ -57,34 +57,103 @@ COPYRIGHT
 
 import re
 import time
-from datetime import datetime as Datetime, timedelta as Timedelta # For re-export.  pyflakes:ignore
+from datetime import (
+    datetime as Datetime,
+    timedelta as Timedelta,
+)  # For re-export.  pyflakes:ignore
 import pytz
 
 tzdef = {
-	"A":	"+0100",	"ACDT":	"+1030",	"ACST":	"+0930",	"ADT":	"-0300",
-	"AEDT":	"+1100",	"AEST":	"+1000",	"AKDT":	"-0800",	"AKST":	"-0900",
-	"AST":	"-0400",	"AWDT":	"+0900",	"AWST":	"+0800",	"B":	"+0200",
-	"BST":	"+0100",	"C":	"+0300",	"CDT":	"+1030",	"CDT":	"-0500",
-	"CEDT":	"+0200",	"CEST":	"+0200",	"CET":	"+0100",	"CST":	"+1030",
-	"CST":	"+0930",	"CST":	"-0600",	"CXT":	"+0700",	"D":	"+0400",
-	"E":	"+0500",	"EDT":	"+1100",	"EDT":	"-0400",	"EEDT":	"+0300",
-	"EEST":	"+0300",	"EET":	"+0200",	"EST":	"+1100",	"EST":	"+1000",
-	"EST":	"-0500",	"F":	"+0600",	"G":	"+0700",	"GMT":	"+0000",
-	"H":	"+0800",	"HAA":	"-0300",	"HAC":	"-0500",	"HADT":	"-0900",
-	"HAE":	"-0400",	"HAP":	"-0700",	"HAR":	"-0600",	"HAST":	"-1000",
-	"HAT":	"-0230",	"HAY":	"-0800",	"HNA":	"-0400",	"HNC":	"-0600",
-	"HNE":	"-0500",	"HNP":	"-0800",	"HNR":	"-0700",	"HNT":	"-0330",
-	"HNY":	"-0900",	"I":	"+0900",	"IST":	"+0100",	"K":	"+1000",
-	"L":	"+1100",	"M":	"+1200",	"MDT":	"-0600",	"MESZ":	"+0200",
-	"MEZ":	"+0100",	"MSD":	"+0400",	"MSK":	"+0300",	"MST":	"-0700",
-	"N":	"-0100",	"NDT":	"-0230",	"NFT":	"+1130",	"NST":	"-0330",
-	"O":	"-0200",	"P":	"-0300",	"PDT":	"-0700",	"PST":	"-0800",
-	"Q":	"-0400",	"R":	"-0500",	"S":	"-0600",	"T":	"-0700",
-	"U":	"-0800",	"UTC":	"+0000",	"V":	"-0900",	"W":	"-1000",
-	"WDT":	"+0900",	"WEDT":	"+0100",	"WEST":	"+0100",	"WET":	"+0000",
-	"WST":	"+0900",	"WST":	"+0800",	"X":	"-1100",	"Y":	"-1200",
-	"Z":	"+0000",
-    }
+    "A": "+0100",
+    "ACDT": "+1030",
+    "ACST": "+0930",
+    "ADT": "-0300",
+    "AEDT": "+1100",
+    "AEST": "+1000",
+    "AKDT": "-0800",
+    "AKST": "-0900",
+    "AST": "-0400",
+    "AWDT": "+0900",
+    "AWST": "+0800",
+    "B": "+0200",
+    "BST": "+0100",
+    "C": "+0300",
+    "CDT": "+1030",
+    "CDT": "-0500",
+    "CEDT": "+0200",
+    "CEST": "+0200",
+    "CET": "+0100",
+    "CST": "+1030",
+    "CST": "+0930",
+    "CST": "-0600",
+    "CXT": "+0700",
+    "D": "+0400",
+    "E": "+0500",
+    "EDT": "+1100",
+    "EDT": "-0400",
+    "EEDT": "+0300",
+    "EEST": "+0300",
+    "EET": "+0200",
+    "EST": "+1100",
+    "EST": "+1000",
+    "EST": "-0500",
+    "F": "+0600",
+    "G": "+0700",
+    "GMT": "+0000",
+    "H": "+0800",
+    "HAA": "-0300",
+    "HAC": "-0500",
+    "HADT": "-0900",
+    "HAE": "-0400",
+    "HAP": "-0700",
+    "HAR": "-0600",
+    "HAST": "-1000",
+    "HAT": "-0230",
+    "HAY": "-0800",
+    "HNA": "-0400",
+    "HNC": "-0600",
+    "HNE": "-0500",
+    "HNP": "-0800",
+    "HNR": "-0700",
+    "HNT": "-0330",
+    "HNY": "-0900",
+    "I": "+0900",
+    "IST": "+0100",
+    "K": "+1000",
+    "L": "+1100",
+    "M": "+1200",
+    "MDT": "-0600",
+    "MESZ": "+0200",
+    "MEZ": "+0100",
+    "MSD": "+0400",
+    "MSK": "+0300",
+    "MST": "-0700",
+    "N": "-0100",
+    "NDT": "-0230",
+    "NFT": "+1130",
+    "NST": "-0330",
+    "O": "-0200",
+    "P": "-0300",
+    "PDT": "-0700",
+    "PST": "-0800",
+    "Q": "-0400",
+    "R": "-0500",
+    "S": "-0600",
+    "T": "-0700",
+    "U": "-0800",
+    "UTC": "+0000",
+    "V": "-0900",
+    "W": "-1000",
+    "WDT": "+0900",
+    "WEDT": "+0100",
+    "WEST": "+0100",
+    "WET": "+0000",
+    "WST": "+0900",
+    "WST": "+0800",
+    "X": "-1100",
+    "Y": "-1200",
+    "Z": "+0000",
+}
 
 
 def tzparse(string, format):
@@ -112,7 +181,7 @@ def tzparse(string, format):
 
     >>> print(tzparse("2009-10-09 13:58:00+02:00", "%Y-%m-%d %H:%M:%S%Z"))
     2009-10-09 13:58:00+02:00
-    
+
     >>> print(tzparse("1985-04-12T23:20:50Z", "%Y-%m-%dT%H:%M:%S%Z"))
     1985-04-12 23:20:50+00:00
 
@@ -123,7 +192,7 @@ def tzparse(string, format):
     1996-12-19 16:39:57+01:00
 
     """
-    
+
     if not "%Z" in format:
         timetuple = time.strptime(string, format)
         tzstr = time.tzname[0]
@@ -140,19 +209,24 @@ def tzparse(string, format):
 
         frontfmt, backfmt = format.split("%Z")
         frontpat = "^" + fmt2pat(frontfmt)
-        backpat =  fmt2pat(backfmt) + "$"
+        backpat = fmt2pat(backfmt) + "$"
 
-        
-        frontstr = re.search(frontpat, string) and re.search(frontpat, string).group(0) or ""
-        backstr = re.search(backpat, string) and re.search(backpat, string).group(0) or ""
-        tzstr = string.replace(frontstr, "").replace(backstr, "") # This will fail is backstr occurs twice
+        frontstr = (
+            re.search(frontpat, string) and re.search(frontpat, string).group(0) or ""
+        )
+        backstr = (
+            re.search(backpat, string) and re.search(backpat, string).group(0) or ""
+        )
+        tzstr = string.replace(frontstr, "").replace(
+            backstr, ""
+        )  # This will fail is backstr occurs twice
 
-        timetuple = time.strptime(frontstr+backstr, frontfmt+backfmt)
+        timetuple = time.strptime(frontstr + backstr, frontfmt + backfmt)
     dt = Datetime(*timetuple[:6])
 
     if not tzstr:
         tzstr = time.tzname[0]
-        #raise ValueError("No timezone string found in '%s', but format contained %Z: '%s'."%(string, format))
+        # raise ValueError("No timezone string found in '%s', but format contained %Z: '%s'."%(string, format))
     try:
         tz = pytz.timezone(tzstr)
     except KeyError:
@@ -161,11 +235,11 @@ def tzparse(string, format):
             tzstr = tzdef[tzstr]
         if re.search("^[+-][0-9][0-9]:?[0-9][0-9]$", tzstr):
             if ":" in tzstr:
-                tzstr = tzstr[:3]+tzstr[4:]
+                tzstr = tzstr[:3] + tzstr[4:]
             # convert numeric timezone to minutes
             sign = tzstr[0]
             h = int(tzstr[1:3])
-            m = h*60 + int(tzstr[3:5])
+            m = h * 60 + int(tzstr[3:5])
             if sign == "-":
                 m = -m
             tz = pytz.FixedOffset(m)
@@ -175,12 +249,14 @@ def tzparse(string, format):
 
     return dt
 
+
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv[1:]) == 2:
         print(tzparse(sys.argv[1], sys.argv[2]))
     else:
         print("Running module tests:\n")
         import doctest
+
         print(doctest.testmod())
-    

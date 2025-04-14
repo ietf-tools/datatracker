@@ -5,7 +5,7 @@ from ietf.utils.urls import url
 from django.views.generic import RedirectView
 
 urlpatterns = [
-    url(r'^state/(?P<doc>[-\w]+)/(?P<type>[-\w]+)/?$', views.state),
-    url(r'^state/(?P<doc>[-\w]+)/?$', views.state),
-    url(r'^state/?$', RedirectView.as_view(url='/doc/help/state/', permanent=True)),
+    url(r"^state/(?P<doc>[-\w]+)/(?P<type>[-\w]+)/?$", views.state),
+    url(r"^state/(?P<doc>[-\w]+)/?$", views.state),
+    url(r"^state/?$", RedirectView.as_view(url="/doc/help/state/", permanent=True)),
 ]

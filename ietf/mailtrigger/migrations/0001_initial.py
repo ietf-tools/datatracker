@@ -8,31 +8,50 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies: List[Tuple[str, str]] = [
-    ]
+    dependencies: List[Tuple[str, str]] = []
 
     operations = [
         migrations.CreateModel(
-            name='Recipient',
+            name="Recipient",
             fields=[
-                ('slug', models.CharField(max_length=32, primary_key=True, serialize=False)),
-                ('desc', models.TextField(blank=True)),
-                ('template', models.TextField(blank=True, null=True)),
+                (
+                    "slug",
+                    models.CharField(max_length=32, primary_key=True, serialize=False),
+                ),
+                ("desc", models.TextField(blank=True)),
+                ("template", models.TextField(blank=True, null=True)),
             ],
             options={
-                'ordering': ['slug'],
+                "ordering": ["slug"],
             },
         ),
         migrations.CreateModel(
-            name='MailTrigger',
+            name="MailTrigger",
             fields=[
-                ('slug', models.CharField(max_length=64, primary_key=True, serialize=False)),
-                ('desc', models.TextField(blank=True)),
-                ('cc', models.ManyToManyField(blank=True, related_name='used_in_cc', to='mailtrigger.Recipient')),
-                ('to', models.ManyToManyField(blank=True, related_name='used_in_to', to='mailtrigger.Recipient')),
+                (
+                    "slug",
+                    models.CharField(max_length=64, primary_key=True, serialize=False),
+                ),
+                ("desc", models.TextField(blank=True)),
+                (
+                    "cc",
+                    models.ManyToManyField(
+                        blank=True,
+                        related_name="used_in_cc",
+                        to="mailtrigger.Recipient",
+                    ),
+                ),
+                (
+                    "to",
+                    models.ManyToManyField(
+                        blank=True,
+                        related_name="used_in_to",
+                        to="mailtrigger.Recipient",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['slug'],
+                "ordering": ["slug"],
             },
         ),
     ]

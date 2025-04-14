@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import mock
-import debug # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from pyquery import PyQuery
 
@@ -12,38 +12,90 @@ from ietf.utils.mail import empty_outbox, get_payload_text, outbox
 from ietf.utils.test_utils import TestCase, reload_db_objects
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.timezone import date_today, datetime_from_date
-from .factories import ReviewAssignmentFactory, ReviewRequestFactory, ReviewerSettingsFactory
+from .factories import (
+    ReviewAssignmentFactory,
+    ReviewRequestFactory,
+    ReviewerSettingsFactory,
+)
 from .mailarch import hash_list_message_id
-from .models import ReviewerSettings, ReviewSecretarySettings, ReviewTeamSettings, UnavailablePeriod
+from .models import (
+    ReviewerSettings,
+    ReviewSecretarySettings,
+    ReviewTeamSettings,
+    UnavailablePeriod,
+)
 from .tasks import send_review_reminders_task
-from .utils import (email_secretary_reminder, review_assignments_needing_secretary_reminder,
-                    email_reviewer_reminder, review_assignments_needing_reviewer_reminder,
-                    send_reminder_unconfirmed_assignments, send_review_reminder_overdue_assignment,
-                    send_reminder_all_open_reviews, send_unavailability_period_ending_reminder,
-                    ORIGIN_DATE_PERIODIC_REMINDERS)
+from .utils import (
+    email_secretary_reminder,
+    review_assignments_needing_secretary_reminder,
+    email_reviewer_reminder,
+    review_assignments_needing_reviewer_reminder,
+    send_reminder_unconfirmed_assignments,
+    send_review_reminder_overdue_assignment,
+    send_reminder_all_open_reviews,
+    send_unavailability_period_ending_reminder,
+    ORIGIN_DATE_PERIODIC_REMINDERS,
+)
 from django.urls import reverse as urlreverse
+
 
 class HashTest(TestCase):
 
     def test_hash_list_message_id(self):
         for list, msgid, hash in (
-                ('ietf', '156182196167.12901.11966487185176024571@ietfa.amsl.com',  'lr6RtZ4TiVMZn1fZbykhkXeKhEk'),
-                ('codesprints', 'E1hNffl-0004RM-Dh@zinfandel.tools.ietf.org',       'N1nFHHUXiFWYtdzBgjtqzzILFHI'),
-                ('xml2rfc', '3A0F4CD6-451F-44E2-9DA4-28235C638588@rfc-editor.org',  'g6DN4SxJGDrlSuKsubwb6rRSePU'),
-                (u'ietf', u'156182196167.12901.11966487185176024571@ietfa.amsl.com','lr6RtZ4TiVMZn1fZbykhkXeKhEk'),
-                (u'codesprints', u'E1hNffl-0004RM-Dh@zinfandel.tools.ietf.org',     'N1nFHHUXiFWYtdzBgjtqzzILFHI'),
-                (u'xml2rfc', u'3A0F4CD6-451F-44E2-9DA4-28235C638588@rfc-editor.org','g6DN4SxJGDrlSuKsubwb6rRSePU'),
-                (b'ietf', b'156182196167.12901.11966487185176024571@ietfa.amsl.com','lr6RtZ4TiVMZn1fZbykhkXeKhEk'),
-                (b'codesprints', b'E1hNffl-0004RM-Dh@zinfandel.tools.ietf.org',     'N1nFHHUXiFWYtdzBgjtqzzILFHI'),
-                (b'xml2rfc', b'3A0F4CD6-451F-44E2-9DA4-28235C638588@rfc-editor.org','g6DN4SxJGDrlSuKsubwb6rRSePU'),
-            ):
+            (
+                "ietf",
+                "156182196167.12901.11966487185176024571@ietfa.amsl.com",
+                "lr6RtZ4TiVMZn1fZbykhkXeKhEk",
+            ),
+            (
+                "codesprints",
+                "E1hNffl-0004RM-Dh@zinfandel.tools.ietf.org",
+                "N1nFHHUXiFWYtdzBgjtqzzILFHI",
+            ),
+            (
+                "xml2rfc",
+                "3A0F4CD6-451F-44E2-9DA4-28235C638588@rfc-editor.org",
+                "g6DN4SxJGDrlSuKsubwb6rRSePU",
+            ),
+            (
+                "ietf",
+                "156182196167.12901.11966487185176024571@ietfa.amsl.com",
+                "lr6RtZ4TiVMZn1fZbykhkXeKhEk",
+            ),
+            (
+                "codesprints",
+                "E1hNffl-0004RM-Dh@zinfandel.tools.ietf.org",
+                "N1nFHHUXiFWYtdzBgjtqzzILFHI",
+            ),
+            (
+                "xml2rfc",
+                "3A0F4CD6-451F-44E2-9DA4-28235C638588@rfc-editor.org",
+                "g6DN4SxJGDrlSuKsubwb6rRSePU",
+            ),
+            (
+                b"ietf",
+                b"156182196167.12901.11966487185176024571@ietfa.amsl.com",
+                "lr6RtZ4TiVMZn1fZbykhkXeKhEk",
+            ),
+            (
+                b"codesprints",
+                b"E1hNffl-0004RM-Dh@zinfandel.tools.ietf.org",
+                "N1nFHHUXiFWYtdzBgjtqzzILFHI",
+            ),
+            (
+                b"xml2rfc",
+                b"3A0F4CD6-451F-44E2-9DA4-28235C638588@rfc-editor.org",
+                "g6DN4SxJGDrlSuKsubwb6rRSePU",
+            ),
+        ):
             self.assertEqual(hash, hash_list_message_id(list, msgid))
 
 
 class ReviewAssignmentTest(TestCase):
     def do_test_update_review_req_status(self, assignment_state, expected_state):
-        review_req = ReviewRequestFactory(state_id='assigned')
-        ReviewAssignmentFactory(review_request=review_req, state_id='part-completed')
+        review_req = ReviewRequestFactory(state_id="assigned")
+        ReviewAssignmentFactory(review_request=review_req, state_id="part-completed")
         assignment = ReviewAssignmentFactory(review_request=review_req)
 
         assignment.state_id = assignment_state
@@ -53,33 +105,39 @@ class ReviewAssignmentTest(TestCase):
 
     def test_update_review_req_status(self):
         # Test change
-        for assignment_state in ['no-response', 'rejected', 'withdrawn', 'overtaken']:
-            self.do_test_update_review_req_status(assignment_state, 'requested')
+        for assignment_state in ["no-response", "rejected", "withdrawn", "overtaken"]:
+            self.do_test_update_review_req_status(assignment_state, "requested")
         # Test no-change
-        for assignment_state in ['accepted', 'assigned', 'completed', 'part-completed', 'unknown', ]:
-            self.do_test_update_review_req_status(assignment_state, 'assigned')
+        for assignment_state in [
+            "accepted",
+            "assigned",
+            "completed",
+            "part-completed",
+            "unknown",
+        ]:
+            self.do_test_update_review_req_status(assignment_state, "assigned")
 
     def test_no_update_review_req_status_when_other_active_assignment(self):
         # If there is another still active assignment, do not update review_req state
-        review_req = ReviewRequestFactory(state_id='assigned')
-        ReviewAssignmentFactory(review_request=review_req, state_id='assigned')
+        review_req = ReviewRequestFactory(state_id="assigned")
+        ReviewAssignmentFactory(review_request=review_req, state_id="assigned")
         assignment = ReviewAssignmentFactory(review_request=review_req)
 
-        assignment.state_id = 'no-response'
+        assignment.state_id = "no-response"
         assignment.save()
         review_req = reload_db_objects(review_req)
-        self.assertEqual(review_req.state_id, 'assigned')
+        self.assertEqual(review_req.state_id, "assigned")
 
     def test_no_update_review_req_status_when_review_req_withdrawn(self):
         # review_req state must only be changed to "requested", if old state was "assigned",
         # to prevent reviving dead review requests
-        review_req = ReviewRequestFactory(state_id='withdrawn')
+        review_req = ReviewRequestFactory(state_id="withdrawn")
         assignment = ReviewAssignmentFactory(review_request=review_req)
 
-        assignment.state_id = 'no-response'
+        assignment.state_id = "no-response"
         assignment.save()
         review_req = reload_db_objects(review_req)
-        self.assertEqual(review_req.state_id, 'withdrawn')
+        self.assertEqual(review_req.state_id, "withdrawn")
 
 
 class ReviewAssignmentReminderTests(TestCase):
@@ -89,25 +147,25 @@ class ReviewAssignmentReminderTests(TestCase):
     def setUp(self):
         super().setUp()
         self.review_req = ReviewRequestFactory(
-            state_id='assigned',
+            state_id="assigned",
             deadline=self.deadline,
         )
         self.team = self.review_req.team
         self.reviewer = RoleFactory(
-            name_id='reviewer',
+            name_id="reviewer",
             group=self.team,
-            person__user__username='reviewer',
+            person__user__username="reviewer",
         ).person
         self.assignment = ReviewAssignmentFactory(
             review_request=self.review_req,
-            state_id='assigned',
+            state_id="assigned",
             assigned_on=self.review_req.time,
             reviewer=self.reviewer.email_set.first(),
         )
 
     def make_secretary(self, username, remind_days=None):
         secretary_role = RoleFactory(
-            name_id='secr',
+            name_id="secr",
             group=self.team,
             person__user__username=username,
         )
@@ -125,7 +183,7 @@ class ReviewAssignmentReminderTests(TestCase):
         has a ReviewSecretarySettings record.
         """
         role = RoleFactory(
-            name_id='reviewer',
+            name_id="reviewer",
             group=self.team,
             person__user__username=username,
         )
@@ -140,53 +198,68 @@ class ReviewAssignmentReminderTests(TestCase):
         """Notification sent to multiple secretaries"""
         # Set up two secretaries with the same remind_days one with a different, and one with None.
         secretary_roles = [
-            self.make_secretary(username='reviewsecretary0', remind_days=6),
-            self.make_secretary(username='reviewsecretary1', remind_days=6),
-            self.make_secretary(username='reviewsecretary2', remind_days=5),
-            self.make_secretary(username='reviewsecretary3', remind_days=None),  # never notified
+            self.make_secretary(username="reviewsecretary0", remind_days=6),
+            self.make_secretary(username="reviewsecretary1", remind_days=6),
+            self.make_secretary(username="reviewsecretary2", remind_days=5),
+            self.make_secretary(
+                username="reviewsecretary3", remind_days=None
+            ),  # never notified
         ]
-        self.make_non_secretary(username='nonsecretary', remind_days=6)  # never notified
+        self.make_non_secretary(
+            username="nonsecretary", remind_days=6
+        )  # never notified
 
         # Check from more than remind_days before the deadline all the way through the day before.
         # Should only get reminders on the expected days.
         self.assertCountEqual(
-            review_assignments_needing_secretary_reminder(self.deadline - datetime.timedelta(days=7)),
+            review_assignments_needing_secretary_reminder(
+                self.deadline - datetime.timedelta(days=7)
+            ),
             [],
-            'No reminder needed when deadline is more than remind_days away',
+            "No reminder needed when deadline is more than remind_days away",
         )
         self.assertCountEqual(
-            review_assignments_needing_secretary_reminder(self.deadline - datetime.timedelta(days=6)),
-            [(self.assignment, secretary_roles[0]), (self.assignment, secretary_roles[1])],
-            'Reminders needed for all secretaries when deadline is exactly remind_days away',
+            review_assignments_needing_secretary_reminder(
+                self.deadline - datetime.timedelta(days=6)
+            ),
+            [
+                (self.assignment, secretary_roles[0]),
+                (self.assignment, secretary_roles[1]),
+            ],
+            "Reminders needed for all secretaries when deadline is exactly remind_days away",
         )
         self.assertCountEqual(
-            review_assignments_needing_secretary_reminder(self.deadline - datetime.timedelta(days=5)),
+            review_assignments_needing_secretary_reminder(
+                self.deadline - datetime.timedelta(days=5)
+            ),
             [(self.assignment, secretary_roles[2])],
-            'Reminder needed when deadline is exactly remind_days away',
+            "Reminder needed when deadline is exactly remind_days away",
         )
         for days in range(1, 5):
             self.assertCountEqual(
-                review_assignments_needing_secretary_reminder(self.deadline - datetime.timedelta(days=days)),
+                review_assignments_needing_secretary_reminder(
+                    self.deadline - datetime.timedelta(days=days)
+                ),
                 [],
-                f'No reminder needed when deadline is less than remind_days away (tried {days})',
+                f"No reminder needed when deadline is less than remind_days away (tried {days})",
             )
 
     def test_email_secretary_reminder_emails_secretaries(self):
         """Secretary review assignment reminders are sent to secretaries"""
-        secretary_role = self.make_secretary(username='reviewsecretary')
+        secretary_role = self.make_secretary(username="reviewsecretary")
         # create a couple other roles for the team to check that only the requested secretary is reminded
-        self.make_secretary(username='ignoredsecretary')
-        self.make_non_secretary(username='nonsecretary')
+        self.make_secretary(username="ignoredsecretary")
+        self.make_non_secretary(username="nonsecretary")
 
         empty_outbox()
         email_secretary_reminder(self.assignment, secretary_role)
         self.assertEqual(len(outbox), 1)
         msg = outbox[0]
         text = get_payload_text(msg)
-        self.assertIn(secretary_role.email.address, msg['to'])
-        self.assertIn(self.review_req.doc.name, msg['subject'])
+        self.assertIn(secretary_role.email.address, msg["to"])
+        self.assertIn(self.review_req.doc.name, msg["subject"])
         self.assertIn(self.review_req.doc.name, text)
-        self.assertIn(self.team.acronym, msg['subject'])
+        self.assertIn(self.team.acronym, msg["subject"])
         self.assertIn(self.team.acronym, text)
 
     def test_review_assignments_needing_reviewer_reminder(self):
@@ -199,11 +272,11 @@ class ReviewAssignmentReminderTests(TestCase):
 
         # Give this reviewer another team with a review to be sure
         # we don't have cross-talk between teams.
-        second_req = ReviewRequestFactory(state_id='assigned', deadline=self.deadline)
+        second_req = ReviewRequestFactory(state_id="assigned", deadline=self.deadline)
         second_team = second_req.team
         second_assignment = ReviewAssignmentFactory(
             review_request=second_req,
-            state_id='assigned',
+            state_id="assigned",
             assigned_on=second_req.time,
             reviewer=self.reviewer.email(),
         )
@@ -214,24 +287,32 @@ class ReviewAssignmentReminderTests(TestCase):
         )
 
         self.assertCountEqual(
-            review_assignments_needing_reviewer_reminder(self.deadline - datetime.timedelta(days=7)),
+            review_assignments_needing_reviewer_reminder(
+                self.deadline - datetime.timedelta(days=7)
+            ),
             [],
-            'No reminder needed when deadline is more than remind_days away'
+            "No reminder needed when deadline is more than remind_days away",
         )
         self.assertCountEqual(
-            review_assignments_needing_reviewer_reminder(self.deadline - datetime.timedelta(days=6)),
+            review_assignments_needing_reviewer_reminder(
+                self.deadline - datetime.timedelta(days=6)
+            ),
             [self.assignment],
-            'Reminder needed when deadline is exactly remind_days away',
+            "Reminder needed when deadline is exactly remind_days away",
         )
         self.assertCountEqual(
-            review_assignments_needing_reviewer_reminder(self.deadline - datetime.timedelta(days=5)),
+            review_assignments_needing_reviewer_reminder(
+                self.deadline - datetime.timedelta(days=5)
+            ),
             [second_assignment],
-            'Reminder needed for other assignment'
+            "Reminder needed for other assignment",
         )
         self.assertCountEqual(
-            review_assignments_needing_reviewer_reminder(self.deadline - datetime.timedelta(days=4)),
+            review_assignments_needing_reviewer_reminder(
+                self.deadline - datetime.timedelta(days=4)
+            ),
             [],
-            'No reminder needed when deadline is less than remind_days away'
+            "No reminder needed when deadline is less than remind_days away",
         )
 
         # should never send a reminder when disabled
@@ -242,9 +323,11 @@ class ReviewAssignmentReminderTests(TestCase):
         # test over a range that includes when we *did* send a reminder above
         for days in range(1, 8):
             self.assertCountEqual(
-                review_assignments_needing_reviewer_reminder(self.deadline - datetime.timedelta(days=days)),
+                review_assignments_needing_reviewer_reminder(
+                    self.deadline - datetime.timedelta(days=days)
+                ),
                 [],
-                f'No reminder should be sent when reminders are disabled (sent for days={days})',
+                f"No reminder should be sent when reminders are disabled (sent for days={days})",
             )
 
     def test_email_review_reminder_emails_reviewers(self):
@@ -254,39 +337,39 @@ class ReviewAssignmentReminderTests(TestCase):
         self.assertEqual(len(outbox), 1)
         msg = outbox[0]
         text = get_payload_text(msg)
-        self.assertIn(self.reviewer.email_address(), msg['to'])
-        self.assertIn(self.review_req.doc.name, msg['subject'])
+        self.assertIn(self.reviewer.email_address(), msg["to"])
+        self.assertIn(self.review_req.doc.name, msg["subject"])
         self.assertIn(self.review_req.doc.name, text)
-        self.assertIn(self.team.acronym, msg['subject'])
+        self.assertIn(self.team.acronym, msg["subject"])
 
     def test_send_reminder_unconfirmed_assignments(self):
         """Unconfirmed assignment reminders are sent to reviewer and team secretary"""
         assigned_on = self.assignment.assigned_on.date()
         secretaries = [
-            self.make_secretary(username='reviewsecretary0').person,
-            self.make_secretary(username='reviewsecretary1').person,
+            self.make_secretary(username="reviewsecretary0").person,
+            self.make_secretary(username="reviewsecretary1").person,
         ]
 
         # assignments that should be ignored (will result in extra emails being sent if not)
         ReviewAssignmentFactory(
             review_request=self.review_req,
-            state_id='accepted',
+            state_id="accepted",
             assigned_on=self.review_req.time,
         )
         ReviewAssignmentFactory(
             review_request=self.review_req,
-            state_id='completed',
+            state_id="completed",
             assigned_on=self.review_req.time,
         )
         ReviewAssignmentFactory(
             review_request=self.review_req,
-            state_id='rejected',
+            state_id="rejected",
             assigned_on=self.review_req.time,
         )
 
         # Create a second review for a different team to test for cross-talk between teams.
         ReviewAssignmentFactory(
-            state_id='completed',  # something that does not need a reminder
+            state_id="completed",  # something that does not need a reminder
             reviewer=self.reviewer.email(),
         )
 
@@ -294,23 +377,28 @@ class ReviewAssignmentReminderTests(TestCase):
         ReviewTeamSettings.objects.update(remind_days_unconfirmed_assignments=1)
 
         empty_outbox()
-        log = send_reminder_unconfirmed_assignments(assigned_on + datetime.timedelta(days=1))
+        log = send_reminder_unconfirmed_assignments(
+            assigned_on + datetime.timedelta(days=1)
+        )
         self.assertEqual(len(outbox), 1)
         self.assertIn(self.reviewer.email_address(), outbox[0]["To"])
         for secretary in secretaries:
             self.assertIn(
                 secretary.email_address(),
                 outbox[0]["Cc"],
-                f'Secretary {secretary.user.username} was not copied on the reminder',
+                f"Secretary {secretary.user.username} was not copied on the reminder",
             )
-        self.assertEqual(outbox[0]["Subject"], "Reminder: you have not responded to a review assignment")
+        self.assertEqual(
+            outbox[0]["Subject"],
+            "Reminder: you have not responded to a review assignment",
+        )
         message = get_payload_text(outbox[0])
         self.assertIn(self.team.acronym, message)
-        self.assertIn('accept or reject the assignment on', message)
+        self.assertIn("accept or reject the assignment on", message)
         self.assertIn(self.review_req.doc.name, message)
         self.assertEqual(len(log), 1)
         self.assertIn(self.reviewer.email_address(), log[0])
-        self.assertIn('not accepted/rejected review assignment', log[0])
+        self.assertIn("not accepted/rejected review assignment", log[0])
 
     def test_send_reminder_unconfirmed_assignments_respects_remind_days(self):
         """Unconfirmed assignment reminders should respect the team settings"""
@@ -319,7 +407,9 @@ class ReviewAssignmentReminderTests(TestCase):
         # By default, these reminders are disabled for all teams.
         empty_outbox()
         for days in range(10):
-            send_reminder_unconfirmed_assignments(assigned_on + datetime.timedelta(days=days))
+            send_reminder_unconfirmed_assignments(
+                assigned_on + datetime.timedelta(days=days)
+            )
         self.assertEqual(len(outbox), 0)
 
         # expect a notification every day except the day of assignment
@@ -352,7 +442,7 @@ class ReviewAssignmentReminderTests(TestCase):
         self.assertEqual(len(outbox), 3)  # no new message
 
     def test_send_unavailability_period_ending_reminder(self):
-        secretary = self.make_secretary(username='reviewsecretary')
+        secretary = self.make_secretary(username="reviewsecretary")
         empty_outbox()
         today = date_today()
         UnavailablePeriod.objects.create(
@@ -408,15 +498,15 @@ class ReviewAssignmentReminderTests(TestCase):
         sure that review teams without the ReviewTeamSettings should exist. It has the
         needed effect but might require rethinking in the future.
         """
-        secretary = self.make_secretary(username='reviewsecretary')
+        secretary = self.make_secretary(username="reviewsecretary")
 
         # Set the remind_date to be exactly one grace period after self.deadline
         remind_date = self.deadline + datetime.timedelta(days=5)
         # Create a second request for a second team that will not be sent reminders
         second_team = ReviewAssignmentFactory(
-            review_request__state_id='assigned',
+            review_request__state_id="assigned",
             review_request__deadline=self.deadline,
-            state_id='assigned',
+            state_id="assigned",
             assigned_on=datetime_from_date(self.deadline),
             reviewer=self.reviewer.email_set.first(),
         ).review_request.team
@@ -426,17 +516,17 @@ class ReviewAssignmentReminderTests(TestCase):
         not_overdue = remind_date + datetime.timedelta(days=1)
         ReviewAssignmentFactory(
             review_request__team=self.team,
-            review_request__state_id='assigned',
+            review_request__state_id="assigned",
             review_request__deadline=not_overdue,
-            state_id='assigned',
+            state_id="assigned",
             assigned_on=datetime_from_date(not_overdue),
             reviewer=self.reviewer.email_set.first(),
         )
         ReviewAssignmentFactory(
             review_request__team=second_team,
-            review_request__state_id='assigned',
+            review_request__state_id="assigned",
             review_request__deadline=not_overdue,
-            state_id='assigned',
+            state_id="assigned",
             assigned_on=datetime_from_date(not_overdue),
             reviewer=self.reviewer.email_set.first(),
         )
@@ -445,17 +535,17 @@ class ReviewAssignmentReminderTests(TestCase):
         in_grace_period = remind_date - datetime.timedelta(days=1)
         ReviewAssignmentFactory(
             review_request__team=self.team,
-            review_request__state_id='assigned',
+            review_request__state_id="assigned",
             review_request__deadline=in_grace_period,
-            state_id='assigned',
+            state_id="assigned",
             assigned_on=datetime_from_date(in_grace_period),
             reviewer=self.reviewer.email_set.first(),
         )
         ReviewAssignmentFactory(
             review_request__team=second_team,
-            review_request__state_id='assigned',
+            review_request__state_id="assigned",
             review_request__deadline=in_grace_period,
-            state_id='assigned',
+            state_id="assigned",
             assigned_on=datetime_from_date(in_grace_period),
             reviewer=self.reviewer.email_set.first(),
         )
@@ -466,31 +556,42 @@ class ReviewAssignmentReminderTests(TestCase):
 
         self.assertEqual(len(outbox), 1)
         self.assertTrue(secretary.person.email_address() in outbox[0]["To"])
-        self.assertEqual(outbox[0]["Subject"], "1 Overdue review for team {}".format(self.team.acronym))
+        self.assertEqual(
+            outbox[0]["Subject"],
+            "1 Overdue review for team {}".format(self.team.acronym),
+        )
         message = get_payload_text(outbox[0])
         self.assertIn(
-            self.team.acronym + ' has 1 accepted or assigned review overdue by at least 5 days.',
+            self.team.acronym
+            + " has 1 accepted or assigned review overdue by at least 5 days.",
             message,
         )
-        self.assertIn('Review of {} by {}'.format(self.review_req.doc.name, self.reviewer.plain_name()), message)
+        self.assertIn(
+            "Review of {} by {}".format(
+                self.review_req.doc.name, self.reviewer.plain_name()
+            ),
+            message,
+        )
         self.assertEqual(len(log), 1)
         self.assertIn(secretary.person.email_address(), log[0])
-        self.assertIn('1 overdue review', log[0])
+        self.assertIn("1 overdue review", log[0])
 
     def test_send_reminder_all_open_reviews(self):
         today = date_today()
-        self.make_secretary(username='reviewsecretary')
-        ReviewerSettingsFactory(team=self.team, person=self.reviewer, remind_days_open_reviews=1)
+        self.make_secretary(username="reviewsecretary")
+        ReviewerSettingsFactory(
+            team=self.team, person=self.reviewer, remind_days_open_reviews=1
+        )
 
         # Create another assignment for this reviewer in a different team.
         # Configure so that a reminder should not be sent for the date we test. It should not
         # be included in the reminder that's sent - only one open review assignment should be
         # reported.
-        second_req = ReviewRequestFactory(state_id='assigned', deadline=self.deadline)
+        second_req = ReviewRequestFactory(state_id="assigned", deadline=self.deadline)
         second_team = second_req.team
         ReviewAssignmentFactory(
             review_request=second_req,
-            state_id='assigned',
+            state_id="assigned",
             assigned_on=second_req.time,
             reviewer=self.reviewer.email(),
         )
@@ -506,24 +607,33 @@ class ReviewAssignmentReminderTests(TestCase):
 
         self.assertEqual(len(outbox), 1)
         self.assertTrue(self.reviewer.email_address() in outbox[0]["To"])
-        self.assertEqual(outbox[0]["Subject"], "Reminder: you have 1 open review assignment")
+        self.assertEqual(
+            outbox[0]["Subject"], "Reminder: you have 1 open review assignment"
+        )
         message = get_payload_text(outbox[0])
         self.assertTrue(self.team.acronym in message)
-        self.assertTrue('you have 1 open review' in message)
+        self.assertTrue("you have 1 open review" in message)
         self.assertTrue(self.review_req.doc.name in message)
-        self.assertTrue(self.review_req.deadline.strftime('%Y-%m-%d') in message)
+        self.assertTrue(self.review_req.deadline.strftime("%Y-%m-%d") in message)
         self.assertEqual(len(log), 1)
         self.assertTrue(self.reviewer.email_address() in log[0])
-        self.assertTrue('1 open review' in log[0])
+        self.assertTrue("1 open review" in log[0])
+
 
 class AddReviewCommentTestCase(TestCase):
     def test_review_add_comment(self):
-        draft = WgDraftFactory(name='draft-ietf-mars-test',group__acronym='mars')
-        review_req = ReviewRequestFactory(doc=draft, state_id='assigned')
-        ReviewAssignmentFactory(review_request=review_req, state_id='assigned')
+        draft = WgDraftFactory(name="draft-ietf-mars-test", group__acronym="mars")
+        review_req = ReviewRequestFactory(doc=draft, state_id="assigned")
+        ReviewAssignmentFactory(review_request=review_req, state_id="assigned")
 
-        url_post = urlreverse('ietf.doc.views_review.add_request_comment', kwargs=dict(name=draft.name, request_id=review_req.pk))
-        url_page = urlreverse('ietf.doc.views_review.review_request', kwargs=dict(name=draft.name, request_id=review_req.pk))
+        url_post = urlreverse(
+            "ietf.doc.views_review.add_request_comment",
+            kwargs=dict(name=draft.name, request_id=review_req.pk),
+        )
+        url_page = urlreverse(
+            "ietf.doc.views_review.review_request",
+            kwargs=dict(name=draft.name, request_id=review_req.pk),
+        )
 
         login_testing_unauthorized(self, "secretary", url_post)
 
@@ -531,15 +641,15 @@ class AddReviewCommentTestCase(TestCase):
         r = self.client.get(url_page)
         self.assertEqual(r.status_code, 200)
         # Needs to have history
-        self.assertContains(r, 'History')
+        self.assertContains(r, "History")
         # But can't have the comment we are goint to add.
-        self.assertNotContains(r, 'This is a test.')
+        self.assertNotContains(r, "This is a test.")
 
         # Get the form
         r = self.client.get(url_post)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(unicontent(r))
-        self.assertEqual(len(q('form textarea[name=comment]')), 1)
+        self.assertEqual(len(q("form textarea[name=comment]")), 1)
 
         # Post the comment
         r = self.client.post(url_post, dict(comment="This is a test."))
@@ -549,9 +659,9 @@ class AddReviewCommentTestCase(TestCase):
         r = self.client.get(url_page)
         self.assertEqual(r.status_code, 200)
         # Needs to have history
-        self.assertContains(r, 'History')
+        self.assertContains(r, "History")
         # But can't have the comment we are goint to add.
-        self.assertContains(r, 'This is a test.')
+        self.assertContains(r, "This is a test.")
 
 
 class TaskTests(TestCase):
@@ -561,7 +671,7 @@ class TaskTests(TestCase):
     @mock.patch("ietf.review.tasks.email_reviewer_reminder")
     @mock.patch("ietf.review.tasks.review_assignments_needing_secretary_reminder")
     @mock.patch("ietf.review.tasks.email_secretary_reminder")
-    @mock.patch("ietf.review.tasks.send_unavailability_period_ending_reminder") 
+    @mock.patch("ietf.review.tasks.send_unavailability_period_ending_reminder")
     @mock.patch("ietf.review.tasks.send_reminder_all_open_reviews")
     @mock.patch("ietf.review.tasks.send_review_reminder_overdue_assignment")
     @mock.patch("ietf.review.tasks.send_reminder_unconfirmed_assignments")
@@ -578,41 +688,71 @@ class TaskTests(TestCase):
         mock_date_today,
     ):
         """Test that send_review_reminders calls functions correctly
-        
+
         Does not test individual methods, just that they are called as expected.
         """
         mock_today = object()
         assignment = ReviewAssignmentFactory()
         secretary_role = RoleFactory(name_id="secr")
 
-        mock_date_today.return_value = mock_today 
+        mock_date_today.return_value = mock_today
         mock_review_assignments_needing_reviewer_reminder.return_value = [assignment]
-        mock_review_assignments_needing_secretary_reminder.return_value = [[assignment, secretary_role]]
-        mock_send_unavailability_period_ending_reminder.return_value = ["pretending I sent a period end reminder"]
-        mock_send_review_reminder_overdue_assignment.return_value = ["pretending I sent an overdue reminder"]
-        mock_send_reminder_all_open_reviews.return_value = ["pretending I sent an open review reminder"]
-        mock_send_reminder_unconfirmed_assignments.return_value = ["pretending I sent an unconfirmed reminder"]
-        
+        mock_review_assignments_needing_secretary_reminder.return_value = [
+            [assignment, secretary_role]
+        ]
+        mock_send_unavailability_period_ending_reminder.return_value = [
+            "pretending I sent a period end reminder"
+        ]
+        mock_send_review_reminder_overdue_assignment.return_value = [
+            "pretending I sent an overdue reminder"
+        ]
+        mock_send_reminder_all_open_reviews.return_value = [
+            "pretending I sent an open review reminder"
+        ]
+        mock_send_reminder_unconfirmed_assignments.return_value = [
+            "pretending I sent an unconfirmed reminder"
+        ]
+
         send_review_reminders_task()
 
-        self.assertEqual(mock_review_assignments_needing_reviewer_reminder.call_count, 1)
-        self.assertEqual(mock_review_assignments_needing_reviewer_reminder.call_args[0], (mock_today,))
+        self.assertEqual(
+            mock_review_assignments_needing_reviewer_reminder.call_count, 1
+        )
+        self.assertEqual(
+            mock_review_assignments_needing_reviewer_reminder.call_args[0],
+            (mock_today,),
+        )
         self.assertEqual(mock_email_reviewer_reminder.call_count, 1)
         self.assertEqual(mock_email_reviewer_reminder.call_args[0], (assignment,))
 
-        self.assertEqual(mock_review_assignments_needing_secretary_reminder.call_count, 1)
-        self.assertEqual(mock_review_assignments_needing_secretary_reminder.call_args[0], (mock_today,))
+        self.assertEqual(
+            mock_review_assignments_needing_secretary_reminder.call_count, 1
+        )
+        self.assertEqual(
+            mock_review_assignments_needing_secretary_reminder.call_args[0],
+            (mock_today,),
+        )
         self.assertEqual(mock_email_secretary_reminder.call_count, 1)
-        self.assertEqual(mock_email_secretary_reminder.call_args[0], (assignment, secretary_role))
+        self.assertEqual(
+            mock_email_secretary_reminder.call_args[0], (assignment, secretary_role)
+        )
 
         self.assertEqual(mock_send_unavailability_period_ending_reminder.call_count, 1)
-        self.assertEqual(mock_send_unavailability_period_ending_reminder.call_args[0], (mock_today,))
+        self.assertEqual(
+            mock_send_unavailability_period_ending_reminder.call_args[0], (mock_today,)
+        )
 
         self.assertEqual(mock_send_review_reminder_overdue_assignment.call_count, 1)
-        self.assertEqual(mock_send_review_reminder_overdue_assignment.call_args[0], (mock_today,))
+        self.assertEqual(
+            mock_send_review_reminder_overdue_assignment.call_args[0], (mock_today,)
+        )
 
         self.assertEqual(mock_send_reminder_all_open_reviews.call_count, 1)
-        self.assertEqual(mock_send_reminder_all_open_reviews.call_args[0], (mock_today,))
+        self.assertEqual(
+            mock_send_reminder_all_open_reviews.call_args[0], (mock_today,)
+        )
 
         self.assertEqual(mock_send_reminder_unconfirmed_assignments.call_count, 1)
-        self.assertEqual(mock_send_reminder_unconfirmed_assignments.call_args[0], (mock_today,))
+        self.assertEqual(
+            mock_send_reminder_unconfirmed_assignments.call_args[0], (mock_today,)
+        )

@@ -27,11 +27,13 @@ class EmailSerializer(serializers.ModelSerializer):
 
 class NewEmailSerializer(serializers.Serializer):
     """Serialize a new email address request"""
+
     address = serializers.EmailField(validators=[is_allowed_address])
 
 
 class PersonSerializer(serializers.ModelSerializer):
     """Person serializer"""
+
     emails = EmailSerializer(many=True, source="email_set")
 
     class Meta:

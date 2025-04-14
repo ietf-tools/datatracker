@@ -6,22 +6,25 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0001_initial'),
+        ("name", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='TelechatAgendaSectionName',
+            name="TelechatAgendaSectionName",
             fields=[
-                ('slug', models.CharField(max_length=32, primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=255)),
-                ('desc', models.TextField(blank=True)),
-                ('used', models.BooleanField(default=True)),
-                ('order', models.IntegerField(default=0)),
+                (
+                    "slug",
+                    models.CharField(max_length=32, primary_key=True, serialize=False),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("desc", models.TextField(blank=True)),
+                ("used", models.BooleanField(default=True)),
+                ("order", models.IntegerField(default=0)),
             ],
             options={
-                'ordering': ['order', 'name'],
-                'abstract': False,
+                "ordering": ["order", "name"],
+                "abstract": False,
             },
         ),
     ]

@@ -9,7 +9,7 @@ def insert_after_in_ordered_dict(dictionary, key, value, after):
     dictionary[key] = value
 
     reorder = False
-    l = list(dictionary.items()) # don't mutate the dict while looping
+    l = list(dictionary.items())  # don't mutate the dict while looping
     for k, v in l:
         if reorder and k != key:
             del dictionary[k]

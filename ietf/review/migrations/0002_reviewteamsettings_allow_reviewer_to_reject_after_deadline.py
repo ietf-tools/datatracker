@@ -6,13 +6,16 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('review', '0001_initial'),
+        ("review", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='reviewteamsettings',
-            name='allow_reviewer_to_reject_after_deadline',
-            field=models.BooleanField(default=False, verbose_name='Allow reviewer to reject request after deadline.'),
+            model_name="reviewteamsettings",
+            name="allow_reviewer_to_reject_after_deadline",
+            field=models.BooleanField(
+                default=False,
+                verbose_name="Allow reviewer to reject request after deadline.",
+            ),
         ),
     ]

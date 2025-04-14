@@ -15,16 +15,21 @@ from ietf.dbtemplate.models import DBTemplate
 
 from ietf.group.resources import GroupResource
 from ietf.name.resources import DBTemplateTypeNameResource
+
+
 class DBTemplateResource(ModelResource):
-    type             = ToOneField(DBTemplateTypeNameResource, 'type')
-    group            = ToOneField(GroupResource, 'group', null=True)
+    type = ToOneField(DBTemplateTypeNameResource, "type")
+    group = ToOneField(GroupResource, "group", null=True)
+
     class Meta:
         cache = SimpleCache()
         queryset = DBTemplate.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'dbtemplate'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'dbtemplate'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "path": ALL,
             "title": ALL,
@@ -33,5 +38,6 @@ class DBTemplateResource(ModelResource):
             "type": ALL_WITH_RELATIONS,
             "group": ALL_WITH_RELATIONS,
         }
-api.dbtemplate.register(DBTemplateResource())
 
+
+api.dbtemplate.register(DBTemplateResource())

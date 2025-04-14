@@ -8,12 +8,10 @@ def forward(apps, schema_editor):
     # As of 2024-01-05, there are 570 personal CommunityLists with a user
     # who has no associated Person. None of these has an EmailSubscription,
     # so the lists are doing nothing and can be safely deleted.
-    personal_lists_no_person = CommunityList.objects.exclude(
-        user__isnull=True
-    ).filter(
+    personal_lists_no_person = CommunityList.objects.exclude(user__isnull=True).filter(
         user__person__isnull=True
     )
-    # Confirm the assumption that none of the lists to be deleted has an EmailSubscription 
+    # Confirm the assumption that none of the lists to be deleted has an EmailSubscription
     assert not personal_lists_no_person.filter(emailsubscription__isnull=False).exists()
     personal_lists_no_person.delete()
 

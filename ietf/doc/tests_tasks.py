@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 
-import debug    # pyflakes:ignore
+import debug  # pyflakes:ignore
 import datetime
 import mock
 
@@ -23,6 +23,7 @@ from .tasks import (
     investigate_fragment_task,
     notify_expirations_task,
 )
+
 
 class TaskTests(TestCase):
     @mock.patch("ietf.doc.tasks.in_draft_expire_freeze")
@@ -87,7 +88,7 @@ class TaskTests(TestCase):
         self.assertEqual(mock_expire.call_args_list[0], mock.call(docs[0]))
         self.assertEqual(mock_expire.call_args_list[1], mock.call(docs[1]))
         self.assertEqual(mock_expire.call_args_list[2], mock.call(docs[2]))
-    
+
         # Check that it runs even if exceptions occur
         mock_get_expired.reset_mock()
         mock_expire.reset_mock()
@@ -113,7 +114,9 @@ class TaskTests(TestCase):
 
 
 class Idnits2SupportTests(TestCase):
-    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['DERIVED_DIR']
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [
+        "DERIVED_DIR"
+    ]
 
     @mock.patch("ietf.doc.tasks.generate_idnits2_rfcs_obsoleted")
     def test_generate_idnits2_rfcs_obsoleted_task(self, mock_generate):
@@ -151,7 +154,9 @@ class BIBXMLSupportTests(TestCase):
         )
         # a couple that should always be ignored
         NewRevisionDocEventFactory(
-            time=now - datetime.timedelta(days=6), rev="09", doc__type_id="rfc"  # not a draft
+            time=now - datetime.timedelta(days=6),
+            rev="09",
+            doc__type_id="rfc",  # not a draft
         )
         NewRevisionDocEventFactory(
             type="changed_document",  # not a "new_revision" type
@@ -164,7 +169,9 @@ class BIBXMLSupportTests(TestCase):
 
     @mock.patch("ietf.doc.tasks.ensure_draft_bibxml_path_exists")
     @mock.patch("ietf.doc.tasks.update_or_create_draft_bibxml_file")
-    def test_generate_bibxml_files_for_all_drafts_task(self, mock_create, mock_ensure_path):
+    def test_generate_bibxml_files_for_all_drafts_task(
+        self, mock_create, mock_ensure_path
+    ):
         generate_draft_bibxml_files_task(process_all=True)
         self.assertTrue(mock_ensure_path.called)
         self.assertCountEqual(
@@ -193,12 +200,15 @@ class BIBXMLSupportTests(TestCase):
 
     @mock.patch("ietf.doc.tasks.ensure_draft_bibxml_path_exists")
     @mock.patch("ietf.doc.tasks.update_or_create_draft_bibxml_file")
-    def test_generate_bibxml_files_for_recent_drafts_task(self, mock_create, mock_ensure_path):
+    def test_generate_bibxml_files_for_recent_drafts_task(
+        self, mock_create, mock_ensure_path
+    ):
         # default args - look back 7 days
         generate_draft_bibxml_files_task()
         self.assertTrue(mock_ensure_path.called)
         self.assertCountEqual(
-            mock_create.call_args_list, [mock.call(self.young_event.doc, self.young_event.rev)]
+            mock_create.call_args_list,
+            [mock.call(self.young_event.doc, self.young_event.rev)],
         )
         mock_create.reset_mock()
         mock_ensure_path.reset_mock()
@@ -223,7 +233,9 @@ class BIBXMLSupportTests(TestCase):
 
     @mock.patch("ietf.doc.tasks.ensure_draft_bibxml_path_exists")
     @mock.patch("ietf.doc.tasks.update_or_create_draft_bibxml_file")
-    def test_generate_bibxml_files_for_recent_drafts_task_with_bad_value(self, mock_create, mock_ensure_path):
+    def test_generate_bibxml_files_for_recent_drafts_task_with_bad_value(
+        self, mock_create, mock_ensure_path
+    ):
         with self.assertRaises(ValueError):
             generate_draft_bibxml_files_task(days=0)
         self.assertFalse(mock_create.called)

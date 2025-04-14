@@ -7,7 +7,7 @@ from django.urls import reverse as urlreverse
 from unittest import skipIf
 
 skip_selenium = False
-skip_message  = ""
+skip_message = ""
 try:
     from selenium import webdriver
     from selenium.webdriver.firefox.service import Service
@@ -23,16 +23,23 @@ except ImportError as e:
 from ietf.utils.pipe import pipe
 from ietf.utils.test_runner import IetfLiveServerTestCase
 
-executable_name = 'geckodriver'
-code, out, err = pipe('{} --version'.format(executable_name))
+executable_name = "geckodriver"
+code, out, err = pipe("{} --version".format(executable_name))
 if code != 0:
     skip_selenium = True
-    skip_message = "Skipping selenium tests: '{}' executable not found.".format(executable_name)
+    skip_message = "Skipping selenium tests: '{}' executable not found.".format(
+        executable_name
+    )
 if skip_selenium:
-    print("     "+skip_message)
+    print("     " + skip_message)
+
 
 def start_web_driver():
-    service = Service(executable_path=f"/usr/bin/{executable_name}", log_output=f"{executable_name}.log", service_args=['--log-no-truncate'])
+    service = Service(
+        executable_path=f"/usr/bin/{executable_name}",
+        log_output=f"{executable_name}.log",
+        service_args=["--log-no-truncate"],
+    )
     options = Options()
     options.add_argument("--headless")
     os.environ["MOZ_REMOTE_SETTINGS_DEVTOOLS"] = "1"
@@ -50,37 +57,39 @@ def ifSeleniumEnabled(func):
 
 
 class IetfSeleniumTestCase(IetfLiveServerTestCase):
-    login_view = 'ietf.ietfauth.views.login'
+    login_view = "ietf.ietfauth.views.login"
 
     def setUp(self):
         super(IetfSeleniumTestCase, self).setUp()
         self.driver = start_web_driver()
-        self.driver.set_window_size(1024,768)
-    
+        self.driver.set_window_size(1024, 768)
+
     def tearDown(self):
         super(IetfSeleniumTestCase, self).tearDown()
         self.driver.close()
 
-    def absreverse(self,*args,**kwargs):
-        return '%s%s'%(self.live_server_url, urlreverse(*args, **kwargs))
-    
-    def debug_snapshot(self,filename='debug_this.png'):
+    def absreverse(self, *args, **kwargs):
+        return "%s%s" % (self.live_server_url, urlreverse(*args, **kwargs))
+
+    def debug_snapshot(self, filename="debug_this.png"):
         self.driver.execute_script("document.body.bgColor = 'white';")
         self.driver.save_screenshot(filename)
 
-    def login(self, username='plain'):
+    def login(self, username="plain"):
         url = self.absreverse(self.login_view)
-        password = '%s+password' % username
+        password = "%s+password" % username
         self.driver.get(url)
-        self.driver.find_element(By.NAME, 'username').send_keys(username)
-        self.driver.find_element(By.NAME, 'password').send_keys(password)
-        self.driver.find_element(By.XPATH, '//*[@id="content"]//button[@type="submit"]').click()
+        self.driver.find_element(By.NAME, "username").send_keys(username)
+        self.driver.find_element(By.NAME, "password").send_keys(password)
+        self.driver.find_element(
+            By.XPATH, '//*[@id="content"]//button[@type="submit"]'
+        ).click()
 
     def scroll_to_element(self, element):
         """Scroll an element into view"""
         # Compute the offset to put the element in the center of the window
-        win_height = self.driver.get_window_rect()['height']
-        offset = element.rect['y'] + (element.rect['height'] - win_height) // 2
+        win_height = self.driver.get_window_rect()["height"]
+        offset = element.rect["y"] + (element.rect["height"] - win_height) // 2
         self.driver.execute_script(
             'window.scroll({top: arguments[0], behavior: "instant"})',
             offset,
@@ -98,13 +107,23 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
         """
 
         # so that we can restore the state of the webpage after clicking
-        original_html_scroll_behaviour_to_restore = self.driver.execute_script('return document.documentElement.style.scrollBehavior')
-        original_html_overflow_to_restore = self.driver.execute_script('return document.documentElement.style.overflow')
+        original_html_scroll_behaviour_to_restore = self.driver.execute_script(
+            "return document.documentElement.style.scrollBehavior"
+        )
+        original_html_overflow_to_restore = self.driver.execute_script(
+            "return document.documentElement.style.overflow"
+        )
 
-        original_body_scroll_behaviour_to_restore = self.driver.execute_script('return document.body.style.scrollBehavior')
-        original_body_overflow_to_restore = self.driver.execute_script('return document.body.style.overflow')
+        original_body_scroll_behaviour_to_restore = self.driver.execute_script(
+            "return document.body.style.scrollBehavior"
+        )
+        original_body_overflow_to_restore = self.driver.execute_script(
+            "return document.body.style.overflow"
+        )
 
-        self.driver.execute_script('document.documentElement.style.scrollBehavior = "auto"')
+        self.driver.execute_script(
+            'document.documentElement.style.scrollBehavior = "auto"'
+        )
         self.driver.execute_script('document.documentElement.style.overflow = "auto"')
 
         self.driver.execute_script('document.body.style.scrollBehavior = "auto"')
@@ -118,25 +137,37 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
         # would confirm that the following .click() would succeed but it doesn't.
         # That's why the preceeding code attempts to force scrolling to bring the
         # element into the viewport to allow clicking.
-        WebDriverWait(self.driver, timeout_seconds).until(expected_conditions.element_to_be_clickable(element_locator))
+        WebDriverWait(self.driver, timeout_seconds).until(
+            expected_conditions.element_to_be_clickable(element_locator)
+        )
 
         element.click()
 
         if original_html_scroll_behaviour_to_restore:
-            self.driver.execute_script(f'document.documentElement.style.scrollBehavior = "{original_html_scroll_behaviour_to_restore}"')
+            self.driver.execute_script(
+                f'document.documentElement.style.scrollBehavior = "{original_html_scroll_behaviour_to_restore}"'
+            )
         if original_html_overflow_to_restore:
-            self.driver.execute_script(f'document.documentElement.style.overflow = "{original_html_overflow_to_restore}"')
+            self.driver.execute_script(
+                f'document.documentElement.style.overflow = "{original_html_overflow_to_restore}"'
+            )
 
         if original_body_scroll_behaviour_to_restore:
-            self.driver.execute_script(f'document.body.style.scrollBehavior = "{original_body_scroll_behaviour_to_restore}"')
+            self.driver.execute_script(
+                f'document.body.style.scrollBehavior = "{original_body_scroll_behaviour_to_restore}"'
+            )
         if original_body_overflow_to_restore:
-            self.driver.execute_script(f'document.body.style.overflow = "{original_body_overflow_to_restore}"')
+            self.driver.execute_script(
+                f'document.body.style.overflow = "{original_body_overflow_to_restore}"'
+            )
+
 
 class presence_of_element_child_by_css_selector:
     """Wait for presence of a child of a WebElement matching a CSS selector
 
     This is a condition class for use with WebDriverWait.
     """
+
     def __init__(self, element, child_selector):
         self.element = element
         self.child_selector = child_selector

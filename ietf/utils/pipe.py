@@ -4,15 +4,19 @@
 
 # Simplified interface to os.popen3()
 
+
 def pipe(cmd, str=None):
     from subprocess import Popen, PIPE
-    bufsize = 4096
-    MAX = 65536*16
 
-    if str and len(str) > 4096:                 # XXX: Hardcoded Linux 2.4, 2.6 pipe buffer size
+    bufsize = 4096
+    MAX = 65536 * 16
+
+    if str and len(str) > 4096:  # XXX: Hardcoded Linux 2.4, 2.6 pipe buffer size
         bufsize = len(str)
 
-    with Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, bufsize=bufsize, shell=True) as pipe:
+    with Popen(
+        cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, bufsize=bufsize, shell=True
+    ) as pipe:
         if not str is None:
             pipe.stdin.write(str)
             pipe.stdin.close()

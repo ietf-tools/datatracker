@@ -5,15 +5,24 @@ import django.db.models.deletion
 from django.db.models import F, Subquery, OuterRef, CharField
 import ietf.utils.models
 
+
 def forward(apps, schema_editor):
     RelatedDocument = apps.get_model("doc", "RelatedDocument")
     DocAlias = apps.get_model("doc", "DocAlias")
-    target_subquery = Subquery(DocAlias.objects.filter(pk=OuterRef("deprecated_target")).values("docs")[:1])
-    name_subquery = Subquery(DocAlias.objects.filter(pk=OuterRef("deprecated_target")).values("name")[:1])
-    RelatedDocument.objects.annotate(firstdoc=target_subquery).annotate(aliasname=name_subquery).update(target=F("firstdoc"),originaltargetaliasname=F("aliasname"))
+    target_subquery = Subquery(
+        DocAlias.objects.filter(pk=OuterRef("deprecated_target")).values("docs")[:1]
+    )
+    name_subquery = Subquery(
+        DocAlias.objects.filter(pk=OuterRef("deprecated_target")).values("name")[:1]
+    )
+    RelatedDocument.objects.annotate(firstdoc=target_subquery).annotate(
+        aliasname=name_subquery
+    ).update(target=F("firstdoc"), originaltargetaliasname=F("aliasname"))
+
 
 def reverse(apps, schema_editor):
     pass
+
 
 class Migration(migrations.Migration):
     dependencies = [
@@ -22,33 +31,33 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AlterField(
-            model_name='relateddocument',
-            name='target',
+            model_name="relateddocument",
+            name="target",
             field=ietf.utils.models.ForeignKey(
                 db_index=False,
                 on_delete=django.db.models.deletion.CASCADE,
-                to='doc.docalias',
+                to="doc.docalias",
             ),
         ),
         migrations.RenameField(
             model_name="relateddocument",
             old_name="target",
-            new_name="deprecated_target"
+            new_name="deprecated_target",
         ),
         migrations.AlterField(
-            model_name='relateddocument',
-            name='deprecated_target',
+            model_name="relateddocument",
+            name="deprecated_target",
             field=ietf.utils.models.ForeignKey(
                 db_index=True,
                 on_delete=django.db.models.deletion.CASCADE,
-                to='doc.docalias',
+                to="doc.docalias",
             ),
         ),
         migrations.AddField(
             model_name="relateddocument",
             name="target",
             field=ietf.utils.models.ForeignKey(
-                default=1, # A lie, but a convenient one - no relations point here.
+                default=1,  # A lie, but a convenient one - no relations point here.
                 on_delete=django.db.models.deletion.CASCADE,
                 related_name="targets_related",
                 to="doc.document",
@@ -59,7 +68,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="relateddocument",
             name="originaltargetaliasname",
-            field=CharField(max_length=255,null=True,blank=True),
+            field=CharField(max_length=255, null=True, blank=True),
             preserve_default=True,
         ),
         migrations.RunPython(forward, reverse),
@@ -78,7 +87,7 @@ class Migration(migrations.Migration):
             name="deprecated_target",
             field=ietf.utils.models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,
-                to='doc.DocAlias',
+                to="doc.DocAlias",
             ),
         ),
     ]

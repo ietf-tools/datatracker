@@ -264,9 +264,7 @@ class RfcFeed(Feed):
         extra.update({"media_contents": media_contents})
 
         extra.update({"doi": "10.17487/%s" % item.name.upper()})
-        extra.update(
-            {"doiuri": "http://dx.doi.org/10.17487/%s" % item.name.upper()}
-        )
+        extra.update({"doiuri": "http://dx.doi.org/10.17487/%s" % item.name.upper()})
 
         # R104 Publisher (Mandatory - but we need a string from them first)
         extra.update({"dcterms_publisher": "rfc-editor.org"})

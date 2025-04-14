@@ -11,7 +11,7 @@ from django.template.defaultfilters import linebreaksbr, force_escape
 from django.utils.encoding import force_str, DjangoUnicodeDecodeError
 from django.utils.safestring import mark_safe
 
-import debug           # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from ietf.nomcom.utils import get_nomcom_by_year, retrieve_nomcom_private_key
 from ietf.person.models import Person
@@ -27,21 +27,23 @@ def is_chair_or_advisor(user, year):
     if not user or not year:
         return False
     nomcom = get_nomcom_by_year(year=year)
-    return nomcom.group.has_role(user, ["chair","advisor"])
+    return nomcom.group.has_role(user, ["chair", "advisor"])
 
 
 @register.filter
 def has_publickey(nomcom):
     return nomcom and nomcom.public_key and True or False
 
+
 @register.filter
-def lookup(container,key):
-    return container and container.get(key,None)
+def lookup(container, key):
+    return container and container.get(key, None)
+
 
 @register.filter
 def formatted_email(address):
     person = None
-    addrmatch = re.search('<([^>]+)>',address)
+    addrmatch = re.search("<([^>]+)>", address)
     if addrmatch:
         addr = addrmatch.group(1)
     else:
@@ -50,7 +52,7 @@ def formatted_email(address):
         persons = Person.objects.filter(email__address__in=[addr])
         person = persons and persons[0] or None
     if person and person.name:
-        return "%s <%s>" % (person.plain_name(), addr) 
+        return "%s <%s>" % (person.plain_name(), addr)
     else:
         return address
 
@@ -62,35 +64,37 @@ def decrypt(string, request, year, plain=False):
     except UnicodeError:
         return f"-*- Encrypted text [Error retrieving private key, contact the secretariat ({settings.SECRETARIAT_SUPPORT_EMAIL})]"
     if not key:
-        return '-*- Encrypted text [No private key provided] -*-'
+        return "-*- Encrypted text [No private key provided] -*-"
 
     encrypted_file = tempfile.NamedTemporaryFile(delete=False)
     encrypted_file.write(string)
     encrypted_file.close()
 
     command = "%s smime -decrypt -in %s -inkey /dev/stdin"
-    code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
-                            encrypted_file.name), key)
+    code, out, error = pipe(
+        command % (settings.OPENSSL_COMMAND, encrypted_file.name), key
+    )
     try:
         out = force_str(out)
     except DjangoUnicodeDecodeError:
         pass
     if code != 0:
-        log("openssl error: %s:\n  Error %s: %s" %(command, code, error))
+        log("openssl error: %s:\n  Error %s: %s" % (command, code, error))
 
     os.unlink(encrypted_file.name)
 
     if error:
-        return '-*- Encrypted text [Your private key is invalid] -*-'
+        return "-*- Encrypted text [Your private key is invalid] -*-"
 
     if not plain:
         return force_escape(linebreaksbr(out))
     return mark_safe(force_escape(out))
 
+
 @register.filter
 def feedback_totals(staterank_list):
     totals = defaultdict(lambda: 0)
     for fb_dict in staterank_list:
-        for fbtype_name, fbtype_count, _ in fb_dict['feedback']:
+        for fbtype_name, fbtype_count, _ in fb_dict["feedback"]:
             totals[fbtype_name] += fbtype_count
     return totals.values()

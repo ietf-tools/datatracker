@@ -3,6 +3,7 @@
 
 from django.urls import resolve as urlresolve, Resolver404
 
+
 def is_ajax(request):
     """Checks whether a request was an AJAX call
 
@@ -10,6 +11,7 @@ def is_ajax(request):
     exact reproduction of the deprecated method suggested there.
     """
     return request.headers.get("x-requested-with") == "XMLHttpRequest"
+
 
 def validate_return_to_path(path, get_default_path, allowed_path_handlers):
     if path is None:
@@ -22,7 +24,7 @@ def validate_return_to_path(path, get_default_path, allowed_path_handlers):
     # routes
     try:
         # urlresolve will throw if the url doesn't match a route known to Django
-        match = urlresolve(path)                
+        match = urlresolve(path)
         # further restrict by whether it's in the list of valid routes to prevent
         # (eg) redirecting to logout
         if match.url_name not in allowed_path_handlers:

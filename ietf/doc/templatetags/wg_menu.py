@@ -32,7 +32,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import debug    # pyflakes: ignore
+import debug  # pyflakes: ignore
 
 from django import template
 from django.template.loader import render_to_string
@@ -78,6 +78,4 @@ def wg_menu(flavor):
         elif p.acronym == "rfceditor":
             p.menu_url = "/rfcedtyp/"
 
-    return render_to_string(
-        "base/menu_wg.html", {"parents": parents, "flavor": flavor}
-    )
+    return render_to_string("base/menu_wg.html", {"parents": parents, "flavor": flavor})

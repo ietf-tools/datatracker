@@ -10,11 +10,12 @@ from ietf.utils import patch
 
 class Command(BaseCommand):
     """Apply IETF patches to libraries"""
+
     requires_system_checks = tuple()
 
     def handle(self, *args, **options):
         library_path = Path(django.__file__).parent.parent
-        top_dir = Path(settings.BASE_DIR).parent 
+        top_dir = Path(settings.BASE_DIR).parent
 
         # All patches in settings.CHECKS_LIBRARY_PATCHES_TO_APPLY must have a
         # relative file path starting from the site-packages dir, e.g.

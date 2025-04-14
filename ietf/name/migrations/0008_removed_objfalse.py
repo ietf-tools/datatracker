@@ -2,17 +2,24 @@
 
 from django.db import migrations
 
+
 def forward(apps, schema_editor):
     IprDisclosureStateName = apps.get_model("name", "IprDisclosureStateName")
-    IprDisclosureStateName.objects.create(slug="removed_objfalse", name="Removed Objectively False", order=5)
+    IprDisclosureStateName.objects.create(
+        slug="removed_objfalse", name="Removed Objectively False", order=5
+    )
     IprEventTypeName = apps.get_model("name", "IprEventTypeName")
-    IprEventTypeName.objects.create(slug="removed_objfalse", name="Removed Objectively False")
+    IprEventTypeName.objects.create(
+        slug="removed_objfalse", name="Removed Objectively False"
+    )
+
 
 def reverse(apps, schema_editor):
     IprDisclosureStateName = apps.get_model("name", "IprDisclosureStateName")
     IprDisclosureStateName.objects.filter(slug="removed_objfalse").delete()
     IprEventTypeName = apps.get_model("name", "IprEventTypeName")
     IprEventTypeName.objects.filter(slug="removed_objfalse").delete()
+
 
 class Migration(migrations.Migration):
     dependencies = [

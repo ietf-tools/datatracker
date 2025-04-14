@@ -11,7 +11,12 @@ from zoneinfo import ZoneInfo
 from django import template
 from django.conf import settings
 from django.utils.html import escape
-from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, striptags
+from django.template.defaultfilters import (
+    truncatewords_html,
+    linebreaksbr,
+    stringfilter,
+    striptags,
+)
 from django.utils.safestring import mark_safe, SafeData
 from django.utils.html import strip_tags
 from django.utils.encoding import force_str
@@ -21,11 +26,13 @@ from django.core.exceptions import ValidationError
 from django.urls import NoReverseMatch
 from django.utils import timezone
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from ietf.doc.models import BallotDocEvent, Document
 from ietf.doc.models import ConsensusDocEvent
-from ietf.ietfauth.utils import can_request_rfc_publication as utils_can_request_rfc_publication
+from ietf.ietfauth.utils import (
+    can_request_rfc_publication as utils_can_request_rfc_publication,
+)
 from ietf.utils import log
 from ietf.doc.utils import prettify_std_name
 from ietf.utils.html import clean_html
@@ -34,25 +41,31 @@ from ietf.utils.validators import validate_url
 
 register = template.Library()
 
+
 def collapsebr(html):
-    return re.sub('(<(br ?/|/p)>[ \n]*)(<(br) ?/?>[ \n]*)*(<(br|p) ?/?>[ \n]*)', '\\1\\5', html)
+    return re.sub(
+        "(<(br ?/|/p)>[ \n]*)(<(br) ?/?>[ \n]*)*(<(br|p) ?/?>[ \n]*)", "\\1\\5", html
+    )
+
 
 @register.filter
 def indent(value, numspaces=2):
     replacement = "\n" + " " * int(numspaces)
     res = value.replace("\n", replacement)
     if res.endswith(replacement):
-        res = res[:-int(numspaces)] # fix up superfluous spaces
+        res = res[: -int(numspaces)]  # fix up superfluous spaces
     return res
+
 
 @register.filter
 def unindent(value):
     """Remove indentation from string."""
     return re.sub("\n +", "\n", value)
 
+
 # there's an "ahref -> a href" in GEN_UTIL
 # but let's wait until we understand what that's for.
-@register.filter(name='make_one_per_line')
+@register.filter(name="make_one_per_line")
 def make_one_per_line(value):
     """
     Turn a comma-separated list into a carriage-return-seperated list.
@@ -71,18 +84,20 @@ def make_one_per_line(value):
     if value and isinstance(value, str):
         return re.sub(", ?", "\n", value)
     elif value and isinstance(value, bytes):
-        log.assertion('isinstance(value, str)')
+        log.assertion("isinstance(value, str)")
     else:
         return value
 
-@register.filter(name='keep_spacing')
+
+@register.filter(name="keep_spacing")
 def keep_spacing(value):
     """
     Replace any two spaces with one &nbsp; and one space so that
     HTML output doesn't collapse them."""
-    return value.replace('  ', '&nbsp; ')
+    return value.replace("  ", "&nbsp; ")
 
-@register.filter(name='format_textarea')
+
+@register.filter(name="format_textarea")
 def format_textarea(value):
     """
     Escapes HTML, except for <b>, </b>, <br>.
@@ -90,9 +105,17 @@ def format_textarea(value):
     Adds <br> at the end like the builtin linebreaksbr.
 
     Also calls keep_spacing."""
-    return keep_spacing(linebreaksbr(escape(value).replace('&lt;b&gt;','<b>').replace('&lt;/b&gt;','</b>').replace('&lt;br&gt;','<br>')))
+    return keep_spacing(
+        linebreaksbr(
+            escape(value)
+            .replace("&lt;b&gt;", "<b>")
+            .replace("&lt;/b&gt;", "</b>")
+            .replace("&lt;br&gt;", "<br>")
+        )
+    )
 
-@register.filter(name='sanitize')
+
+@register.filter(name="sanitize")
 def sanitize(value):
     """Sanitizes an HTML fragment.
     This means both fixing broken html and restricting elements and
@@ -103,15 +126,15 @@ def sanitize(value):
 
 
 # For use with ballot view
-@register.filter(name='bracket')
+@register.filter(name="bracket")
 def square_brackets(value):
     """Adds square brackets around text."""
     if isinstance(value, str):
         if value == "":
-             value = " "
+            value = " "
         return "[ %s ]" % value
     elif isinstance(value, bytes):
-        log.assertion('isinstance(value, str)')
+        log.assertion("isinstance(value, str)")
     elif value > 0:
         return "[ X ]"
     elif value < 0:
@@ -119,26 +142,31 @@ def square_brackets(value):
     else:
         return "[   ]"
 
-@register.filter(name='bracketpos')
-def bracketpos(pos,posslug):
-    if pos.pos.slug==posslug:
+
+@register.filter(name="bracketpos")
+def bracketpos(pos, posslug):
+    if pos.pos.slug == posslug:
         return "[ X ]"
     elif posslug in [x.slug for x in pos.old_positions]:
         return "[ . ]"
     else:
         return "[   ]"
 
-register.filter('fill', fill)
+
+register.filter("fill", fill)
+
 
 @register.filter
 def prettystdname(string, space=" "):
     from ietf.doc.utils import prettify_std_name
+
     return prettify_std_name(force_str(string or ""), space)
 
+
 @register.filter
-def rfceditor_info_url(rfcnum : str):
+def rfceditor_info_url(rfcnum: str):
     """Link to the RFC editor info page for an RFC"""
-    return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f'rfc{rfcnum}')
+    return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f"rfc{rfcnum}")
 
 
 def doc_name(name):
@@ -151,7 +179,7 @@ def doc_name(name):
             exact = Document.objects.filter(name=n).first()
             found = exact.name if exact else "_"
             # TODO review this cache policy (and the need for these entire function)
-            cache.set(key, found, timeout=60*60*24)  # cache for one day
+            cache.set(key, found, timeout=60 * 60 * 24)  # cache for one day
         return None if found == "_" else found
 
     # chop away extension
@@ -229,6 +257,7 @@ def link_other_doc_match(match):
     url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc + rev))
     return f'<a href="{url}">{match[1]}</a>'
 
+
 @register.filter(name="urlize_ietf_docs", is_safe=True, needs_autoescape=True)
 def urlize_ietf_docs(string, autoescape=None):
     """
@@ -263,60 +292,81 @@ def urlize_ietf_docs(string, autoescape=None):
 
 urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
-@register.filter(name='urlize_related_source_list', is_safe=True, document_html=False)
+
+@register.filter(name="urlize_related_source_list", is_safe=True, document_html=False)
 def urlize_related_source_list(related, document_html=False):
     """Convert a list of RelatedDocuments into list of links using the source document's canonical name"""
     links = []
     names = set()
     titles = set()
     for rel in related:
-        name=rel.source.name
+        name = rel.source.name
         title = rel.source.title
         if name in names and title in titles:
             continue
         names.add(name)
         titles.add(title)
-        url = urlreverse('ietf.doc.views_doc.document_main' if document_html is False else 'ietf.doc.views_doc.document_html', kwargs=dict(name=name))
+        url = urlreverse(
+            (
+                "ietf.doc.views_doc.document_main"
+                if document_html is False
+                else "ietf.doc.views_doc.document_html"
+            ),
+            kwargs=dict(name=name),
+        )
         name = escape(name)
         title = escape(title)
-        links.append(mark_safe(
-            '<a href="%(url)s" title="%(title)s">%(name)s</a>' % dict(name=prettify_std_name(name),
-                                                                      title=title,
-                                                                      url=url)
-        ))
+        links.append(
+            mark_safe(
+                '<a href="%(url)s" title="%(title)s">%(name)s</a>'
+                % dict(name=prettify_std_name(name), title=title, url=url)
+            )
+        )
     return links
-        
-@register.filter(name='urlize_related_target_list', is_safe=True, document_html=False)
+
+
+@register.filter(name="urlize_related_target_list", is_safe=True, document_html=False)
 def urlize_related_target_list(related, document_html=False):
     """Convert a list of RelatedDocuments into list of links using the target document's canonical name"""
     links = []
     for rel in related:
-        name=rel.target.name
+        name = rel.target.name
         title = rel.target.title
-        url = urlreverse('ietf.doc.views_doc.document_main' if document_html is False else 'ietf.doc.views_doc.document_html', kwargs=dict(name=name))
+        url = urlreverse(
+            (
+                "ietf.doc.views_doc.document_main"
+                if document_html is False
+                else "ietf.doc.views_doc.document_html"
+            ),
+            kwargs=dict(name=name),
+        )
         name = escape(name)
         title = escape(title)
-        links.append(mark_safe(
-            '<a href="%(url)s" title="%(title)s">%(name)s</a>' % dict(name=prettify_std_name(name),
-                                                                      title=title,
-                                                                      url=url)
-        ))
+        links.append(
+            mark_safe(
+                '<a href="%(url)s" title="%(title)s">%(name)s</a>'
+                % dict(name=prettify_std_name(name), title=title, url=url)
+            )
+        )
     return links
-        
-@register.filter(name='dashify')
+
+
+@register.filter(name="dashify")
 def dashify(string):
     """
     Replace each character in string with '-', to produce
     an underline effect for plain text files.
     """
-    return re.sub('.', '-', string)
+    return re.sub(".", "-", string)
+
 
 @register.filter
 def underline(string):
     """Return string with an extra line underneath of dashes, for plain text underlining."""
     return string + "\n" + ("-" * len(string))
 
-@register.filter(name='timesince_days')
+
+@register.filter(name="timesince_days")
 def timesince_days(date):
     """Returns the number of days since 'date' (relative to now)
 
@@ -329,24 +379,30 @@ def timesince_days(date):
 
     """
     if date.__class__ is not datetime.datetime:
-        date = datetime.datetime(date.year, date.month, date.day, tzinfo=ZoneInfo(settings.TIME_ZONE))
+        date = datetime.datetime(
+            date.year, date.month, date.day, tzinfo=ZoneInfo(settings.TIME_ZONE)
+        )
     delta = timezone.now() - date
     return delta.days
+
 
 @register.filter
 def split(text, splitter=None):
     return text.split(splitter)
 
+
 register.filter("maybewordwrap", stringfilter(wrap_text_if_unwrapped))
 
 register.filter("wordwrap", stringfilter(wordwrap))
+
 
 @register.filter(name="compress_empty_lines")
 def compress_empty_lines(text):
     text = re.sub("( *\n){3,}", "\n\n", text)
     return text
 
-@register.filter(name='linebreaks_crlf')
+
+@register.filter(name="linebreaks_crlf")
 def linebreaks_crlf(text):
     """
     Normalize all linebreaks to CRLF.
@@ -359,7 +415,8 @@ def linebreaks_crlf(text):
     text = text.replace("\n", "\r\n")
     return text
 
-@register.filter(name='linebreaks_lf')
+
+@register.filter(name="linebreaks_lf")
 def linebreaks_lf(text):
     """
     Normalize all linebreaks to LF.
@@ -370,7 +427,8 @@ def linebreaks_lf(text):
     text = text.replace("\r", "\n")
     return text
 
-@register.filter(name='clean_whitespace')
+
+@register.filter(name="clean_whitespace")
 def clean_whitespace(text):
     """
     Map all ASCII control characters (0x00-0x1F) to spaces, and
@@ -379,7 +437,8 @@ def clean_whitespace(text):
     text = re.sub("[\000-\040]+", " ", text)
     return text.strip()
 
-@register.filter(name='unescape')
+
+@register.filter(name="unescape")
 def unescape(text):
     """
     Unescape &nbsp;/&gt;/&lt;
@@ -391,31 +450,34 @@ def unescape(text):
     text = text.replace("<br/>", "\n")
     return text
 
-@register.filter(name='new_enough')
-def new_enough(x,request):
+
+@register.filter(name="new_enough")
+def new_enough(x, request):
     days = int(settings.USER_PREFERENCE_DEFAULTS["new_enough"])
     value = request.COOKIES.get("new_enough", None)
     if value and value.isdigit():
         days = int(value)
     return x < days
 
-@register.filter(name='expires_soon')
-def expires_soon(x,request):
+
+@register.filter(name="expires_soon")
+def expires_soon(x, request):
     days = int(settings.USER_PREFERENCE_DEFAULTS["expires_soon"])
     value = request.COOKIES.get("expires_soon", None)
     if value and value.isdigit():
         days = int(value)
     return x > -days
 
-@register.filter(name='startswith')
+
+@register.filter(name="startswith")
 def startswith(x, y):
     return str(x).startswith(y)
 
 
-@register.filter(name='removeprefix', is_safe=False)
+@register.filter(name="removeprefix", is_safe=False)
 def removeprefix(value, prefix):
     """Remove an exact-match prefix
-    
+
     The is_safe flag is False because indiscriminate use of this could result in non-safe output.
     See https://docs.djangoproject.com/en/2.2/howto/custom-template-tags/#filters-and-auto-escaping
     which describes the possibility that removing characters from an escaped string may introduce
@@ -423,7 +485,7 @@ def removeprefix(value, prefix):
     """
     base = str(value)
     if base.startswith(prefix):
-        return base[len(prefix):]
+        return base[len(prefix) :]
     else:
         return base
 
@@ -431,18 +493,24 @@ def removeprefix(value, prefix):
 @register.filter
 def has_role(user, role_names):
     from ietf.ietfauth.utils import has_role
+
     if not user:
         return False
-    return has_role(user, role_names.split(','))
+    return has_role(user, role_names.split(","))
+
 
 @register.filter
 def ad_area(user):
     if user and user.is_authenticated:
         from ietf.group.models import Group
-        g = Group.objects.filter(role__name__in=("pre-ad", "ad"), role__person__user=user)
+
+        g = Group.objects.filter(
+            role__name__in=("pre-ad", "ad"), role__person__user=user
+        )
         if g:
             return g[0].acronym
     return None
+
 
 @register.filter
 def format_history_text(text, trunc_words=25):
@@ -452,20 +520,29 @@ def format_history_text(text, trunc_words=25):
 
     return format_snippet(full, trunc_words)
 
+
 @register.filter
-def format_snippet(text, trunc_words=25): 
+def format_snippet(text, trunc_words=25):
     # urlize if there aren't already links present
     text = linkify(text)
     full = keep_spacing(collapsebr(linebreaksbr(mark_safe(clean_html(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
-        return mark_safe('<div class="snippet">%s<button type="button" aria-label="Expand" class="btn btn-sm btn-primary show-all"><i class="bi bi-caret-down"></i></button></div><div class="d-none full">%s</div>' % (snippet, full))
+        return mark_safe(
+            '<div class="snippet">%s<button type="button" aria-label="Expand" class="btn btn-sm btn-primary show-all"><i class="bi bi-caret-down"></i></button></div><div class="d-none full">%s</div>'
+            % (snippet, full)
+        )
     return mark_safe(full)
+
 
 @register.simple_tag
 def doc_edit_button(url_name, *args, **kwargs):
     """Given URL name/args/kwargs, looks up the URL just like "url" tag and returns a properly formatted button for the document material tables."""
-    return mark_safe('<a class="btn btn-primary btn-sm" href="%s">Edit</a>' % (urlreverse(url_name, args=args, kwargs=kwargs)))
+    return mark_safe(
+        '<a class="btn btn-primary btn-sm" href="%s">Edit</a>'
+        % (urlreverse(url_name, args=args, kwargs=kwargs))
+    )
+
 
 @register.filter
 def textify(text):
@@ -474,9 +551,10 @@ def textify(text):
     # There are probably additional conversions we should apply here
     return text
 
+
 @register.filter
 def state(doc, slug):
-    if slug == "stream": # convenient shorthand
+    if slug == "stream":  # convenient shorthand
         slug = "%s-stream-%s" % (doc.type_id, doc.stream_id)
     return doc.get_state(slug)
 
@@ -490,36 +568,54 @@ def is_unexpected_wg_state(doc):
     draft_iesg_state = doc.get_state("draft-iesg")
     draft_stream_state = doc.get_state("draft-stream-ietf")
 
-    return draft_iesg_state.slug != "idexists" and draft_stream_state is not None and draft_stream_state.slug != "sub-pub"
+    return (
+        draft_iesg_state.slug != "idexists"
+        and draft_stream_state is not None
+        and draft_stream_state.slug != "sub-pub"
+    )
 
 
 @register.filter
 def statehelp(state):
     "Output help icon with tooltip for state."
     from django.urls import reverse as urlreverse
+
     tooltip = escape(strip_tags(state.desc))
-    url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type=state.type_id)) + "#" + state.slug
-    return mark_safe('<a class="state-help-icon" href="%s" title="%s">?</a>' % (url, tooltip))
+    url = (
+        urlreverse("ietf.doc.views_help.state_help", kwargs=dict(type=state.type_id))
+        + "#"
+        + state.slug
+    )
+    return mark_safe(
+        '<a class="state-help-icon" href="%s" title="%s">?</a>' % (url, tooltip)
+    )
+
 
 @register.filter
 def sectionlevel(section_number):
     return section_number.count(".") + 1
 
+
 def _test():
     import doctest
+
     doctest.testmod()
+
 
 if __name__ == "__main__":
     _test()
 
+
 @register.filter
-def plural(text, seq, arg='s'):
+def plural(text, seq, arg="s"):
     "Similar to pluralize, but looks at the text, too"
     from django.template.defaultfilters import pluralize
-    if text.endswith('s'):
+
+    if text.endswith("s"):
         return text
     else:
         return text + pluralize(len(seq), arg)
+
 
 @register.filter
 def ics_esc(text):
@@ -552,12 +648,13 @@ def ics_date_time(dt, tzname):
     >>> ics_date_time(datetime.datetime(2022,1,2,3,4,5), 'America/Los_Angeles')
     ';TZID=America/Los_Angeles:20220102T030405'
     """
-    timestamp = dt.strftime('%Y%m%dT%H%M%S')
-    if tzname.lower() in ('gmt', 'utc'):
-        return f':{timestamp}Z'
+    timestamp = dt.strftime("%Y%m%dT%H%M%S")
+    if tzname.lower() in ("gmt", "utc"):
+        return f":{timestamp}Z"
     else:
-        return f';TZID={ics_esc(tzname)}:{timestamp}'
-    
+        return f";TZID={ics_esc(tzname)}:{timestamp}"
+
+
 @register.filter
 def next_day(value):
     return value + datetime.timedelta(days=1)
@@ -566,7 +663,7 @@ def next_day(value):
 @register.filter
 def consensus(doc):
     """Returns document consensus Yes/No/Unknown."""
-    event = doc.latest_event(ConsensusDocEvent,type="changed_consensus")
+    event = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
     if event:
         if event.consensus:
             return "Yes"
@@ -592,32 +689,33 @@ def std_level_to_label_format(doc):
 def pos_to_label_format(text):
     """Returns valid Bootstrap classes to label a ballot position."""
     return {
-        'Yes':          'bg-yes text-light',
-        'No Objection': 'bg-noobj text-dark',
-        'Abstain':      'bg-abstain text-light',
-        'Discuss':      'bg-discuss text-light',
-        'Block':        'bg-discuss text-light',
-        'Recuse':       'bg-recuse text-light',
-        'Not Ready':    'bg-discuss text-light',
-        'Need More Time': 'bg-discuss text-light',
-        'Concern': 'bg-discuss text-light',
+        "Yes": "bg-yes text-light",
+        "No Objection": "bg-noobj text-dark",
+        "Abstain": "bg-abstain text-light",
+        "Discuss": "bg-discuss text-light",
+        "Block": "bg-discuss text-light",
+        "Recuse": "bg-recuse text-light",
+        "Not Ready": "bg-discuss text-light",
+        "Need More Time": "bg-discuss text-light",
+        "Concern": "bg-discuss text-light",
+    }.get(str(text), "bg-norecord text-dark")
 
-    }.get(str(text), 'bg-norecord text-dark')
 
 @register.filter
 def pos_to_border_format(text):
     """Returns valid Bootstrap classes to label a ballot position border."""
     return {
-        'Yes':          'border-yes',
-        'No Objection': 'border-noobj',
-        'Abstain':      'border-abstain',
-        'Discuss':      'border-discuss',
-        'Block':        'border-discuss',
-        'Recuse':       'border-recuse',
-        'Not Ready':    'border-discuss',
-        'Need More Time': 'border-discuss',
-        'Concern': 'border-discuss',
-    }.get(str(text), 'border-norecord')
+        "Yes": "border-yes",
+        "No Objection": "border-noobj",
+        "Abstain": "border-abstain",
+        "Discuss": "border-discuss",
+        "Block": "border-discuss",
+        "Recuse": "border-recuse",
+        "Not Ready": "border-discuss",
+        "Need More Time": "border-discuss",
+        "Concern": "border-discuss",
+    }.get(str(text), "border-norecord")
+
 
 @register.filter
 def capfirst_allcaps(text):
@@ -633,6 +731,7 @@ def capfirst_allcaps(text):
                 result = result.replace(token, token.lower())
     return result
 
+
 @register.filter
 def lower_allcaps(text):
     """Like lower, except it doesn't lowercase words in ALL CAPS."""
@@ -642,75 +741,98 @@ def lower_allcaps(text):
             result = result.replace(token, token.lower())
     return result
 
+
 @register.filter
 def document_content(doc):
     if doc is None:
         return None
-    content = doc.text_or_error()         # pyflakes:ignore
+    content = doc.text_or_error()  # pyflakes:ignore
     return content
+
 
 @register.filter
 def format_timedelta(timedelta):
     s = timedelta.seconds
     hours, remainder = divmod(s, 3600)
     minutes, seconds = divmod(remainder, 60)
-    return '{hours:02d}:{minutes:02d}'.format(hours=hours,minutes=minutes)
+    return "{hours:02d}:{minutes:02d}".format(hours=hours, minutes=minutes)
+
 
 @register.filter()
 def comma_separated_list(seq, end_word="and"):
     if len(seq) < 2:
         return "".join(seq)
     else:
-        return ", ".join(seq[:-1]) + " %s %s"%(end_word, seq[-1])
+        return ", ".join(seq[:-1]) + " %s %s" % (end_word, seq[-1])
+
 
 @register.filter()
 def zaptmp(s):
-    return re.sub(r'/tmp/tmp[^/]+/', '', s)
+    return re.sub(r"/tmp/tmp[^/]+/", "", s)
+
 
 @register.filter()
 def rfcbis(s):
-    m = re.search(r'^.*-rfc(\d+)-?bis(-.*)?$', s)
-    return None if m is None else 'rfc' + m.group(1) 
+    m = re.search(r"^.*-rfc(\d+)-?bis(-.*)?$", s)
+    return None if m is None else "rfc" + m.group(1)
+
 
 @register.filter
 @stringfilter
 def urlize(value):
     raise RuntimeError("Use linkify from textfilters instead of urlize")
-    
+
+
 @register.filter
 @stringfilter
 def charter_major_rev(rev):
     return rev[:2]
+
 
 @register.filter
 @stringfilter
 def charter_minor_rev(rev):
     return rev[3:5]
 
+
 @register.filter()
-def can_defer(user,doc):
+def can_defer(user, doc):
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
-    if ballot and (doc.type_id == "draft" or doc.type_id == "conflrev" or doc.type_id=="statchg") and doc.stream_id == 'ietf' and has_role(user, 'Area Director,Secretariat'):
+    if (
+        ballot
+        and (
+            doc.type_id == "draft"
+            or doc.type_id == "conflrev"
+            or doc.type_id == "statchg"
+        )
+        and doc.stream_id == "ietf"
+        and has_role(user, "Area Director,Secretariat")
+    ):
         return True
     else:
         return False
+
 
 @register.filter()
 def can_clear_ballot(user, doc):
     return can_defer(user, doc)
 
+
 @register.filter()
 def can_request_rfc_publication(user, doc):
     return utils_can_request_rfc_publication(user, doc)
 
+
 @register.filter()
-def can_ballot(user,doc):
+def can_ballot(user, doc):
     if doc.stream_id == "irtf" and doc.type_id == "draft":
-        return has_role(user,"IRSG Member")
+        return has_role(user, "IRSG Member")
     elif doc.stream_id == "editorial" and doc.type_id == "draft":
-        return has_role(user,"RSAB Member")
+        return has_role(user, "RSAB Member")
     else:
-        return user.person.role_set.filter(name="ad", group__type="area", group__state="active")
+        return user.person.role_set.filter(
+            name="ad", group__type="area", group__state="active"
+        )
 
 
 @register.filter
@@ -764,7 +886,8 @@ def is_regular_agenda_item(assignment):
     >>> is_regular_agenda_item(None)
     False
     """
-    return assignment is not None and assignment.slot_type().slug == 'regular'
+    return assignment is not None and assignment.slot_type().slug == "regular"
+
 
 @register.filter
 def is_plenary_agenda_item(assignment):
@@ -785,7 +908,8 @@ def is_plenary_agenda_item(assignment):
     >>> is_plenary_agenda_item(None)
     False
     """
-    return assignment is not None and assignment.slot_type().slug == 'plenary'
+    return assignment is not None and assignment.slot_type().slug == "plenary"
+
 
 @register.filter
 def is_special_agenda_item(assignment):
@@ -807,11 +931,12 @@ def is_special_agenda_item(assignment):
     False
     """
     return assignment is not None and assignment.slot_type().slug in [
-        'break',
-        'reg',
-        'other',
-        'officehours',
+        "break",
+        "reg",
+        "other",
+        "officehours",
     ]
+
 
 @register.filter
 def should_show_agenda_session_buttons(assignment):
@@ -841,7 +966,7 @@ def should_show_agenda_session_buttons(assignment):
         return False
     num = assignment.meeting().number
     if num.isdigit() and int(num) <= settings.MEETING_LEGACY_OFFICE_HOURS_END:
-        return not assignment.session.name.lower().endswith(' office hours')
+        return not assignment.session.name.lower().endswith(" office hours")
     else:
         return True
 
@@ -900,6 +1025,7 @@ def badgeify(blob):
 
     return text
 
+
 @register.filter
 def simple_history_delta_changes(history):
     """Returns diff between given history and previous entry."""
@@ -908,6 +1034,7 @@ def simple_history_delta_changes(history):
         delta = history.diff_against(prev)
         return delta.changes
     return []
+
 
 @register.filter
 def simple_history_delta_change_cnt(history):
@@ -918,14 +1045,19 @@ def simple_history_delta_change_cnt(history):
         return len(delta.changes)
     return 0
 
+
 @register.filter
 def mtime(path):
     """Returns a datetime object representing mtime given a pathlib Path object"""
-    return datetime.datetime.fromtimestamp(path.stat().st_mtime).astimezone(ZoneInfo(settings.TIME_ZONE))
+    return datetime.datetime.fromtimestamp(path.stat().st_mtime).astimezone(
+        ZoneInfo(settings.TIME_ZONE)
+    )
+
 
 @register.filter
 def mtime_is_epoch(path):
     return path.stat().st_mtime == 0
+
 
 @register.filter
 def url_for_path(path):

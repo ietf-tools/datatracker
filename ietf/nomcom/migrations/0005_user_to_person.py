@@ -7,44 +7,38 @@ import ietf.utils.models
 
 
 def forward(apps, schema_editor):
-    Nomination = apps.get_model('nomcom', 'Nomination')
+    Nomination = apps.get_model("nomcom", "Nomination")
     Person = apps.get_model("person", "Person")
-    Nomination.objects.exclude(
-        user__isnull=True
-    ).update(
+    Nomination.objects.exclude(user__isnull=True).update(
         person=Subquery(
             Person.objects.filter(user_id=OuterRef("user_id")).values("pk")[:1]
         )
     )
 
-    Feedback = apps.get_model('nomcom', 'Feedback')
-    Feedback.objects.exclude(
-        user__isnull=True
-    ).update(
+    Feedback = apps.get_model("nomcom", "Feedback")
+    Feedback.objects.exclude(user__isnull=True).update(
         person=Subquery(
             Person.objects.filter(user_id=OuterRef("user_id")).values("pk")[:1]
         )
     )
+
 
 def reverse(apps, schema_editor):
-    Nomination = apps.get_model('nomcom', 'Nomination')
+    Nomination = apps.get_model("nomcom", "Nomination")
     Person = apps.get_model("person", "Person")
-    Nomination.objects.exclude(
-        person__isnull=True
-    ).update(
+    Nomination.objects.exclude(person__isnull=True).update(
         user_id=Subquery(
             Person.objects.filter(pk=OuterRef("person_id")).values("user_id")[:1]
         )
     )
 
-    Feedback = apps.get_model('nomcom', 'Feedback')
-    Feedback.objects.exclude(
-        person__isnull=True
-    ).update(
+    Feedback = apps.get_model("nomcom", "Feedback")
+    Feedback.objects.exclude(person__isnull=True).update(
         user_id=Subquery(
             Person.objects.filter(pk=OuterRef("person_id")).values("user_id")[:1]
         )
     )
+
 
 class Migration(migrations.Migration):
     dependencies = [

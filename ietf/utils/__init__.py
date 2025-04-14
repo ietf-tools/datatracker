@@ -16,11 +16,15 @@ class _ToolVersionManager:
             return "Unknown"
         elif item not in self._versions:
             try:
-                self._versions[item] = subprocess.run(
-                    [item, "--version"],
-                    capture_output=True,
-                    check=True,
-                ).stdout.decode().strip()
+                self._versions[item] = (
+                    subprocess.run(
+                        [item, "--version"],
+                        capture_output=True,
+                        check=True,
+                    )
+                    .stdout.decode()
+                    .strip()
+                )
             except subprocess.CalledProcessError:
                 return "Unknown"
         return self._versions[item]

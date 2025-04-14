@@ -16,7 +16,7 @@ from collections import namedtuple
 from pathlib import Path
 from urllib.parse import urljoin
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
@@ -32,19 +32,32 @@ from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import (
-    MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName,
-    ImportantDateName, TimerangeName, SlideSubmissionStatusName, ProceedingsMaterialTypeName,
+    MeetingTypeName,
+    TimeSlotTypeName,
+    SessionStatusName,
+    ConstraintName,
+    RoomResourceName,
+    ImportantDateName,
+    TimerangeName,
+    SlideSubmissionStatusName,
+    ProceedingsMaterialTypeName,
     SessionPurposeName,
 )
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
-from ietf.utils.history import find_history_replacements_active_at, find_history_active_at
+from ietf.utils.history import (
+    find_history_replacements_active_at,
+    find_history_active_at,
+)
 from ietf.utils.storage import BlobShadowFileSystemStorage
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import datetime_from_date, date_today
 from ietf.utils.models import ForeignKey
 from ietf.utils.validators import (
-    MaxImageSizeValidator, WrappedValidator, validate_file_size, validate_mime_type,
+    MaxImageSizeValidator,
+    WrappedValidator,
+    validate_file_size,
+    validate_mime_type,
     validate_file_extension,
 )
 from ietf.utils.fields import MissingOkImageField
@@ -69,64 +82,104 @@ class Meeting(models.Model):
     # is not used to determine date for timeslot instances thereafter, as
     # they have their own datetime field.
     date = models.DateField()
-    days = models.IntegerField(default=7, null=False, validators=[MinValueValidator(1)],
-        help_text="The number of days the meeting lasts")
+    days = models.IntegerField(
+        default=7,
+        null=False,
+        validators=[MinValueValidator(1)],
+        help_text="The number of days the meeting lasts",
+    )
     city = models.CharField(blank=True, max_length=255)
     country = models.CharField(blank=True, max_length=2, choices=countries)
     # We can't derive time-zone from country, as there are some that have
     # more than one timezone, and the pytz module doesn't provide timezone
     # lookup information for all relevant city/country combinations.
-    time_zone = models.CharField(max_length=255, choices=timezones, default='UTC')
-    idsubmit_cutoff_day_offset_00 = models.IntegerField(blank=True,
+    time_zone = models.CharField(max_length=255, choices=timezones, default="UTC")
+    idsubmit_cutoff_day_offset_00 = models.IntegerField(
+        blank=True,
         default=settings.IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_00,
-        help_text = "The number of days before the meeting start date when the submission of -00 drafts will be closed.")
-    idsubmit_cutoff_day_offset_01 = models.IntegerField(blank=True,
+        help_text="The number of days before the meeting start date when the submission of -00 drafts will be closed.",
+    )
+    idsubmit_cutoff_day_offset_01 = models.IntegerField(
+        blank=True,
         default=settings.IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_01,
-        help_text = "The number of days before the meeting start date when the submission of -01 drafts etc. will be closed.")        
-    idsubmit_cutoff_time_utc  = models.DurationField(blank=True,
+        help_text="The number of days before the meeting start date when the submission of -01 drafts etc. will be closed.",
+    )
+    idsubmit_cutoff_time_utc = models.DurationField(
+        blank=True,
         default=settings.IDSUBMIT_DEFAULT_CUTOFF_TIME_UTC,
-        help_text = "The time of day (UTC) after which submission will be closed.  Use for example 23:59:59.")
-    idsubmit_cutoff_warning_days  = models.DurationField(blank=True,
+        help_text="The time of day (UTC) after which submission will be closed.  Use for example 23:59:59.",
+    )
+    idsubmit_cutoff_warning_days = models.DurationField(
+        blank=True,
         default=settings.IDSUBMIT_DEFAULT_CUTOFF_WARNING_DAYS,
-        help_text = "How long before the 00 cutoff to start showing cutoff warnings.  Use for example '21' or '21 days'.")
-    submission_start_day_offset = models.IntegerField(blank=True,
+        help_text="How long before the 00 cutoff to start showing cutoff warnings.  Use for example '21' or '21 days'.",
+    )
+    submission_start_day_offset = models.IntegerField(
+        blank=True,
         default=settings.MEETING_MATERIALS_DEFAULT_SUBMISSION_START_DAYS,
-        help_text = "The number of days before the meeting start date after which meeting materials will be accepted.")
-    submission_cutoff_day_offset = models.IntegerField(blank=True,
+        help_text="The number of days before the meeting start date after which meeting materials will be accepted.",
+    )
+    submission_cutoff_day_offset = models.IntegerField(
+        blank=True,
         default=settings.MEETING_MATERIALS_DEFAULT_SUBMISSION_CUTOFF_DAYS,
-        help_text = "The number of days after the meeting start date in which new meeting materials will be accepted.")
-    submission_correction_day_offset = models.IntegerField(blank=True,
+        help_text="The number of days after the meeting start date in which new meeting materials will be accepted.",
+    )
+    submission_correction_day_offset = models.IntegerField(
+        blank=True,
         default=settings.MEETING_MATERIALS_DEFAULT_SUBMISSION_CORRECTION_DAYS,
-        help_text = "The number of days after the meeting start date in which updates to existing meeting materials will be accepted.")
+        help_text="The number of days after the meeting start date in which updates to existing meeting materials will be accepted.",
+    )
     venue_name = models.CharField(blank=True, max_length=255)
     venue_addr = models.TextField(blank=True)
     break_area = models.CharField(blank=True, max_length=255)
     reg_area = models.CharField(blank=True, max_length=255)
-    agenda_info_note = models.TextField(blank=True, help_text="Text in this field will be placed at the top of the html agenda page for the meeting.  HTML can be used, but will not be validated.")
-    agenda_warning_note = models.TextField(blank=True, help_text="Text in this field will be placed more prominently at the top of the html agenda page for the meeting.  HTML can be used, but will not be validated.")
-    schedule   = ForeignKey('Schedule',null=True,blank=True, related_name='+')
-    session_request_lock_message = models.CharField(blank=True,max_length=255) # locked if not empty
-    proceedings_final = models.BooleanField(default=False, help_text="Are the proceedings for this meeting complete?")
-    acknowledgements = models.TextField(blank=True, help_text="Acknowledgements for use in meeting proceedings.  Use ReStructuredText markup.")
-    overview = ForeignKey(DBTemplate, related_name='overview', null=True, editable=False)
+    agenda_info_note = models.TextField(
+        blank=True,
+        help_text="Text in this field will be placed at the top of the html agenda page for the meeting.  HTML can be used, but will not be validated.",
+    )
+    agenda_warning_note = models.TextField(
+        blank=True,
+        help_text="Text in this field will be placed more prominently at the top of the html agenda page for the meeting.  HTML can be used, but will not be validated.",
+    )
+    schedule = ForeignKey("Schedule", null=True, blank=True, related_name="+")
+    session_request_lock_message = models.CharField(
+        blank=True, max_length=255
+    )  # locked if not empty
+    proceedings_final = models.BooleanField(
+        default=False, help_text="Are the proceedings for this meeting complete?"
+    )
+    acknowledgements = models.TextField(
+        blank=True,
+        help_text="Acknowledgements for use in meeting proceedings.  Use ReStructuredText markup.",
+    )
+    overview = ForeignKey(
+        DBTemplate, related_name="overview", null=True, editable=False
+    )
     show_important_dates = models.BooleanField(default=False)
-    attendees = models.IntegerField(blank=True, null=True, default=None,
-                                    help_text="Number of Attendees for backfilled meetings, leave it blank for new meetings, and then it is calculated from the registrations")
+    attendees = models.IntegerField(
+        blank=True,
+        null=True,
+        default=None,
+        help_text="Number of Attendees for backfilled meetings, leave it blank for new meetings, and then it is calculated from the registrations",
+    )
     group_conflict_types = models.ManyToManyField(
-        ConstraintName, blank=True, limit_choices_to=dict(is_group_conflict=True),
-        help_text='Types of scheduling conflict between groups to consider')
+        ConstraintName,
+        blank=True,
+        limit_choices_to=dict(is_group_conflict=True),
+        help_text="Types of scheduling conflict between groups to consider",
+    )
 
     def __str__(self):
         if self.type_id == "ietf":
-            return u"IETF-%s" % (self.number)
+            return "IETF-%s" % (self.number)
         else:
             return self.number
 
-    def get_meeting_date (self,offset):
+    def get_meeting_date(self, offset):
         return self.date + datetime.timedelta(days=offset)
 
     def end_date(self):
-        return self.get_meeting_date(self.days-1)
+        return self.get_meeting_date(self.days - 1)
 
     def start_datetime(self):
         """Start-of-day on meeting.date in meeting time zone"""
@@ -138,26 +191,36 @@ class Meeting(models.Model):
 
     def get_00_cutoff(self):
         """Get the I-D submission 00 cutoff in UTC"""
-        importantdate = self.importantdate_set.filter(name_id='idcutoff').first()
+        importantdate = self.importantdate_set.filter(name_id="idcutoff").first()
         if not importantdate:
-            importantdate = self.importantdate_set.filter(name_id='00cutoff').first()
+            importantdate = self.importantdate_set.filter(name_id="00cutoff").first()
         if importantdate:
             cutoff_date = importantdate.date
         else:
-            cutoff_date = self.date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
-        cutoff_time = datetime_from_date(cutoff_date, datetime.timezone.utc) + self.idsubmit_cutoff_time_utc
+            cutoff_date = self.date + datetime.timedelta(
+                days=ImportantDateName.objects.get(slug="idcutoff").default_offset_days
+            )
+        cutoff_time = (
+            datetime_from_date(cutoff_date, datetime.timezone.utc)
+            + self.idsubmit_cutoff_time_utc
+        )
         return cutoff_time
 
     def get_01_cutoff(self):
         """Get the I-D submission 01 cutoff in UTC"""
-        importantdate = self.importantdate_set.filter(name_id='idcutoff').first()
+        importantdate = self.importantdate_set.filter(name_id="idcutoff").first()
         if not importantdate:
-            importantdate = self.importantdate_set.filter(name_id='01cutoff').first()
+            importantdate = self.importantdate_set.filter(name_id="01cutoff").first()
         if importantdate:
             cutoff_date = importantdate.date
         else:
-            cutoff_date = self.date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
-        cutoff_time = datetime_from_date(cutoff_date, datetime.timezone.utc) + self.idsubmit_cutoff_time_utc
+            cutoff_date = self.date + datetime.timedelta(
+                days=ImportantDateName.objects.get(slug="idcutoff").default_offset_days
+            )
+        cutoff_time = (
+            datetime_from_date(cutoff_date, datetime.timezone.utc)
+            + self.idsubmit_cutoff_time_utc
+        )
         return cutoff_time
 
     def get_reopen_time(self):
@@ -168,12 +231,20 @@ class Meeting(models.Model):
             reopen_time = cutoff
         else:
             # reopen time is in local timezone.  May need policy change??  XXX
-            reopen_time = datetime_from_date(self.date, self.tz()) + self.idsubmit_cutoff_time_utc
+            reopen_time = (
+                datetime_from_date(self.date, self.tz()) + self.idsubmit_cutoff_time_utc
+            )
         return reopen_time
 
     @classmethod
     def get_current_meeting(cls, type="ietf"):
-        return cls.objects.filter(type=type, date__gte=timezone.now()-datetime.timedelta(days=7) ).order_by('date').first()
+        return (
+            cls.objects.filter(
+                type=type, date__gte=timezone.now() - datetime.timedelta(days=7)
+            )
+            .order_by("date")
+            .first()
+        )
 
     def get_first_cut_off(self):
         return self.get_00_cutoff()
@@ -183,34 +254,41 @@ class Meeting(models.Model):
 
     def get_ietf_monday(self):
         for offset in range(self.days):
-            date = self.date+datetime.timedelta(days=offset)
-            if date.weekday() == 0:     # Monday is 0
+            date = self.date + datetime.timedelta(days=offset)
+            if date.weekday() == 0:  # Monday is 0
                 return date
 
     def get_materials_path(self):
-        return os.path.join(settings.AGENDA_PATH,self.number)
-    
+        return os.path.join(settings.AGENDA_PATH, self.number)
+
     # the various dates are currently computed
     def get_submission_start_date(self):
         return self.date - datetime.timedelta(days=self.submission_start_day_offset)
+
     def get_submission_cut_off_date(self):
-        importantdate = self.importantdate_set.filter(name_id='procsub').first()
+        importantdate = self.importantdate_set.filter(name_id="procsub").first()
         if importantdate:
             return importantdate.date
         else:
-            return self.date + datetime.timedelta(days=self.submission_cutoff_day_offset)
+            return self.date + datetime.timedelta(
+                days=self.submission_cutoff_day_offset
+            )
 
     def get_submission_correction_date(self):
-        importantdate = self.importantdate_set.filter(name_id='revsub').first()
+        importantdate = self.importantdate_set.filter(name_id="revsub").first()
         if importantdate:
             return importantdate.date
         else:
-            return self.date + datetime.timedelta(days=self.submission_correction_day_offset)
+            return self.date + datetime.timedelta(
+                days=self.submission_correction_day_offset
+            )
 
     def enabled_constraint_names(self):
         return ConstraintName.objects.filter(
             Q(is_group_conflict=False)  # any non-group-conflict constraints
-            | Q(is_group_conflict=True, meeting=self)  # or specifically enabled for this meeting
+            | Q(
+                is_group_conflict=True, meeting=self
+            )  # or specifically enabled for this meeting
         )
 
     def enabled_constraints(self):
@@ -229,8 +307,8 @@ class Meeting(models.Model):
     def get_proceedings_materials(self):
         """Get proceedings materials"""
         return self.proceedings_materials.filter(
-            document__states__slug='active', document__states__type_id='procmaterials'
-        ).order_by('type__order')
+            document__states__slug="active", document__states__type_id="procmaterials"
+        ).order_by("type__order")
 
     def get_attendance(self):
         """Get the meeting attendance from the MeetingRegistrations
@@ -241,17 +319,15 @@ class Meeting(models.Model):
         number = self.get_number()
         if number is None or number < 110:
             return None
-        Attendance = namedtuple('Attendance', 'onsite remote')
+        Attendance = namedtuple("Attendance", "onsite remote")
 
         # MeetingRegistration.attended started conflating badge-pickup and session attendance before IETF 114.
         # We've separated session attendance off to ietf.meeting.Attended, but need to report attendance at older
         # meetings correctly.
 
-        attended_per_meetingregistration = (
-            Q(meetingregistration__meeting=self) & (
-                Q(meetingregistration__attended=True) |
-                Q(meetingregistration__checkedin=True)
-            )
+        attended_per_meetingregistration = Q(meetingregistration__meeting=self) & (
+            Q(meetingregistration__attended=True)
+            | Q(meetingregistration__checkedin=True)
         )
         attended_per_meeting_attended = (
             Q(attended__session__meeting=self)
@@ -263,14 +339,21 @@ class Meeting(models.Model):
             attended_per_meetingregistration | attended_per_meeting_attended
         ).distinct()
 
-        onsite=set(attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='onsite'))
-        remote=set(attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='remote'))
+        onsite = set(
+            attended.filter(
+                meetingregistration__meeting=self,
+                meetingregistration__reg_type="onsite",
+            )
+        )
+        remote = set(
+            attended.filter(
+                meetingregistration__meeting=self,
+                meetingregistration__reg_type="remote",
+            )
+        )
         remote.difference_update(onsite)
 
-        return Attendance(
-            onsite=len(onsite),
-            remote=len(remote)
-        )
+        return Attendance(onsite=len(onsite), remote=len(remote))
 
     @property
     def proceedings_format_version(self):
@@ -281,11 +364,13 @@ class Meeting(models.Model):
         Uses settings.PROCEEDINGS_VERSION_CHANGES. Versions start at 1. Entries
         in the array are the first meeting number using each version.
         """
-        if not hasattr(self, '_proceedings_format_version'):
+        if not hasattr(self, "_proceedings_format_version"):
             if not self.number.isdigit():
                 version = None  # no version for non-IETF meeting
             else:
-                version = len(settings.PROCEEDINGS_VERSION_CHANGES)  # start assuming latest version
+                version = len(
+                    settings.PROCEEDINGS_VERSION_CHANGES
+                )  # start assuming latest version
                 mtg_number = self.get_number()
                 # Find the index of the first entry in the version change array that
                 # is >= this meeting's number. The first entry in the array is 0, so the
@@ -298,18 +383,18 @@ class Meeting(models.Model):
         return self._proceedings_format_version
 
     def base_url(self):
-        return "/meeting/%s" % (self.number, )
+        return "/meeting/%s" % (self.number,)
 
     def build_timeslices(self):
         """Get unique day/time/timeslot data for meeting
-        
+
         Returns a list of days, time intervals for each day, and timeslots for each day,
         with repeated days/time intervals removed. Ignores timeslots that do not have a
         location. The slots return value contains only one TimeSlot for each distinct
         time interval.
         """
-        days = []          # the days of the meetings
-        time_slices = {}   # the times on each day
+        days = []  # the days of the meetings
+        time_slices = {}  # the times on each day
         slots = {}
 
         for ts in self.timeslot_set.all():
@@ -323,8 +408,18 @@ class Meeting(models.Model):
 
             if ymd in time_slices:
                 # only keep unique entries
-                if [ts.local_start_time(), ts.local_end_time(), ts.duration.seconds] not in time_slices[ymd]:
-                    time_slices[ymd].append([ts.local_start_time(), ts.local_end_time(), ts.duration.seconds])
+                if [
+                    ts.local_start_time(),
+                    ts.local_end_time(),
+                    ts.duration.seconds,
+                ] not in time_slices[ymd]:
+                    time_slices[ymd].append(
+                        [
+                            ts.local_start_time(),
+                            ts.local_end_time(),
+                            ts.duration.seconds,
+                        ]
+                    )
                     slots[ymd].append(ts)
 
         days.sort()
@@ -332,23 +427,23 @@ class Meeting(models.Model):
             # Make sure these sort the same way
             time_slices[ymd].sort()
             slots[ymd].sort(key=lambda x: (x.local_start_time(), x.duration))
-        return days,time_slices,slots
+        return days, time_slices, slots
 
     # this functions makes a list of timeslices and rooms, and
     # makes sure that all schedules have all of them.
-#    def create_all_timeslots(self):
-#        alltimeslots = self.timeslot_set.all()
-#        for sched in self.schedule_set.all():
-#            ts_hash = {}
-#            for ss in sched.assignments.all():
-#                ts_hash[ss.timeslot] = ss
-#            for ts in alltimeslots:
-#                if not (ts in ts_hash):
-#                    SchedTimeSessAssignment.objects.create(schedule = sched,
-#                                                    timeslot = ts)
+    #    def create_all_timeslots(self):
+    #        alltimeslots = self.timeslot_set.all()
+    #        for sched in self.schedule_set.all():
+    #            ts_hash = {}
+    #            for ss in sched.assignments.all():
+    #                ts_hash[ss.timeslot] = ss
+    #            for ts in alltimeslots:
+    #                if not (ts in ts_hash):
+    #                    SchedTimeSessAssignment.objects.create(schedule = sched,
+    #                                                    timeslot = ts)
 
     def tz(self):
-        if not hasattr(self, '_cached_tz'):
+        if not hasattr(self, "_cached_tz"):
             self._cached_tz = pytz.timezone(self.time_zone)
         return self._cached_tz
 
@@ -358,7 +453,11 @@ class Meeting(models.Model):
             if os.path.exists(tzfn):
                 with io.open(tzfn) as tzf:
                     icstext = tzf.read()
-                vtimezone = re.search("(?sm)(\nBEGIN:VTIMEZONE.*\nEND:VTIMEZONE\n)", icstext).group(1).strip()
+                vtimezone = (
+                    re.search("(?sm)(\nBEGIN:VTIMEZONE.*\nEND:VTIMEZONE\n)", icstext)
+                    .group(1)
+                    .strip()
+                )
                 if vtimezone:
                     vtimezone += "\n"
                 return vtimezone
@@ -366,37 +465,47 @@ class Meeting(models.Model):
             pass
         return None
 
-
     def updated(self):
         # should be Meeting.modified, but we don't have that
-        timeslots_updated = self.timeslot_set.aggregate(Max('modified'))["modified__max"]
-        sessions_updated = self.session_set.aggregate(Max('modified'))["modified__max"]
+        timeslots_updated = self.timeslot_set.aggregate(Max("modified"))[
+            "modified__max"
+        ]
+        sessions_updated = self.session_set.aggregate(Max("modified"))["modified__max"]
         assignments_updated = None
         if self.schedule:
-            assignments_updated = SchedTimeSessAssignment.objects.filter(schedule__in=[self.schedule, self.schedule.base if self.schedule else None]).aggregate(Max('modified'))["modified__max"]
+            assignments_updated = SchedTimeSessAssignment.objects.filter(
+                schedule__in=[
+                    self.schedule,
+                    self.schedule.base if self.schedule else None,
+                ]
+            ).aggregate(Max("modified"))["modified__max"]
         dts = [timeslots_updated, sessions_updated, assignments_updated]
         valid_only = [dt for dt in dts if dt is not None]
         return max(valid_only) if valid_only else None
 
     @memoize
     def previous_meeting(self):
-        return Meeting.objects.filter(type_id=self.type_id,date__lt=self.date).order_by('-date').first()
+        return (
+            Meeting.objects.filter(type_id=self.type_id, date__lt=self.date)
+            .order_by("-date")
+            .first()
+        )
 
     def uses_notes(self):
-        if self.type_id != 'ietf':
+        if self.type_id != "ietf":
             return True
         num = self.get_number()
         return num is not None and num >= 108
 
     def has_recordings(self):
-        if self.type_id != 'ietf':
+        if self.type_id != "ietf":
             return True
         num = self.get_number()
         return num is not None and num >= 80
 
     def has_chat_logs(self):
-        if self.type_id != 'ietf':
-            return True;
+        if self.type_id != "ietf":
+            return True
         num = self.get_number()
         return num is not None and num >= 60
 
@@ -411,9 +520,11 @@ class Meeting(models.Model):
         parent was different at meeting time, that parent will not be in the cache. Use
         group_at_the_time() to look up values - that will fill in missing groups for you.
         """
-        if not hasattr(self,'cached_groups_at_the_time'):
-            all_group_pks = set(self.session_set.values_list('group__pk', flat=True))
-            all_group_pks.update(self.session_set.values_list('group__parent__pk', flat=True))
+        if not hasattr(self, "cached_groups_at_the_time"):
+            all_group_pks = set(self.session_set.values_list("group__pk", flat=True))
+            all_group_pks.update(
+                self.session_set.values_list("group__parent__pk", flat=True)
+            )
             all_group_pks.discard(None)
             self.cached_groups_at_the_time = find_history_replacements_active_at(
                 Group.objects.filter(pk__in=all_group_pks),
@@ -427,21 +538,25 @@ class Meeting(models.Model):
         if group.pk in gatt:
             return gatt[group.pk]
         # Cache miss - look up the missing historical group and add it to the cache.
-        new_item = find_history_active_at(group, self.meeting_start()) or group  # fall back to original if no history
+        new_item = (
+            find_history_active_at(group, self.meeting_start()) or group
+        )  # fall back to original if no history
         self.cached_groups_at_the_time[group.pk] = new_item
         return new_item
 
     class Meta:
         ordering = ["-date", "-id"]
         indexes = [
-            models.Index(fields=['-date', '-id']),
+            models.Index(fields=["-date", "-id"]),
         ]
+
 
 # === Rooms, Resources, Floorplans =============================================
 
+
 class ResourceAssociation(models.Model):
     name = ForeignKey(RoomResourceName)
-    icon = models.CharField(max_length=64)       # icon to be found in /static/img
+    icon = models.CharField(max_length=64)  # icon to be found in /static/img
     desc = models.CharField(max_length=256)
 
     def __str__(self):
@@ -452,12 +567,12 @@ class Room(models.Model):
     meeting = ForeignKey(Meeting)
     modified = models.DateTimeField(auto_now=True)
     name = models.CharField(max_length=255)
-    functional_name = models.CharField(max_length=255, blank = True)
+    functional_name = models.CharField(max_length=255, blank=True)
     capacity = models.IntegerField(null=True, blank=True)
-    resources = models.ManyToManyField(ResourceAssociation, blank = True)
-    session_types = models.ManyToManyField(TimeSlotTypeName, blank = True)
+    resources = models.ManyToManyField(ResourceAssociation, blank=True)
+    session_types = models.ManyToManyField(TimeSlotTypeName, blank=True)
     # floorplan-related properties
-    floorplan = ForeignKey('FloorPlan', null=True, blank=True, default=None)
+    floorplan = ForeignKey("FloorPlan", null=True, blank=True, default=None)
     # floorplan: room pixel position : (0,0) is top left of image, (xd, yd)
     # is room width, height.
     x1 = models.SmallIntegerField(null=True, blank=True, default=None)
@@ -468,8 +583,8 @@ class Room(models.Model):
 
     def __str__(self):
         if len(self.functional_name) > 0 and self.functional_name != self.name:
-            return f"{self.name} [{self.functional_name}] (size: {self.capacity})"    
-        return f"{self.name} (size: {self.capacity})"    
+            return f"{self.name} [{self.functional_name}] (size: {self.capacity})"
+        return f"{self.name} (size: {self.capacity})"
 
     def dom_id(self):
         return "room%u" % (self.pk)
@@ -480,32 +595,48 @@ class Room(models.Model):
         if not mtg_num:
             return None
         elif self.floorplan:
-            base_url = urlreverse('floor-plan', kwargs=dict(num=mtg_num))
+            base_url = urlreverse("floor-plan", kwargs=dict(num=mtg_num))
         else:
             return None
-        return f'{base_url}?room={xslugify(self.name)}'
+        return f"{base_url}?room={xslugify(self.name)}"
 
     def left(self):
         return min(self.x1, self.x2) if (self.x1 and self.x2) else 0
+
     def top(self):
         return min(self.y1, self.y2) if (self.y1 and self.y2) else 0
+
     def right(self):
         return max(self.x1, self.x2) if (self.x1 and self.x2) else 0
+
     def bottom(self):
         return max(self.y1, self.y2) if (self.y1 and self.y2) else 0
+
     # audio stream support
     def audio_stream_url(self):
-        urlresources = [ur for ur in self.urlresource_set.all() if ur.name_id == 'audiostream']
+        urlresources = [
+            ur for ur in self.urlresource_set.all() if ur.name_id == "audiostream"
+        ]
         return urlresources[0].url if urlresources else None
+
     def video_stream_url(self):
-        urlresources = [ur for ur in self.urlresource_set.all() if ur.name_id in ['meetecho']]
+        urlresources = [
+            ur for ur in self.urlresource_set.all() if ur.name_id in ["meetecho"]
+        ]
         return urlresources[0].url if urlresources else None
+
     def onsite_tool_url(self):
-        urlresources = [ur for ur in self.urlresource_set.all() if ur.name_id in ['meetecho_onsite']]
+        urlresources = [
+            ur for ur in self.urlresource_set.all() if ur.name_id in ["meetecho_onsite"]
+        ]
         return urlresources[0].url if urlresources else None
+
     def webex_url(self):
-        urlresources = [ur for ur in self.urlresource_set.all() if ur.name_id in ['webex']]
+        urlresources = [
+            ur for ur in self.urlresource_set.all() if ur.name_id in ["webex"]
+        ]
         return urlresources[0].url if urlresources else None
+
     #
     class Meta:
         ordering = ["-id"]
@@ -513,35 +644,47 @@ class Room(models.Model):
 
 class UrlResource(models.Model):
     "For things like audio stream urls, meetecho stream urls"
-    name    = ForeignKey(RoomResourceName)
-    room    = ForeignKey(Room)
-    url     = models.URLField(null=True, blank=True)
+    name = ForeignKey(RoomResourceName)
+    room = ForeignKey(Room)
+    url = models.URLField(null=True, blank=True)
+
 
 def floorplan_path(instance, filename):
     root, ext = os.path.splitext(filename)
-    return "%s/floorplan-%s-%s%s" % (settings.FLOORPLAN_MEDIA_DIR, instance.meeting.number, xslugify(instance.name), ext)
+    return "%s/floorplan-%s-%s%s" % (
+        settings.FLOORPLAN_MEDIA_DIR,
+        instance.meeting.number,
+        xslugify(instance.name),
+        ext,
+    )
+
 
 class FloorPlan(models.Model):
-    name    = models.CharField(max_length=255)
-    short   = models.CharField(max_length=3, default='')
-    modified= models.DateTimeField(auto_now=True)
+    name = models.CharField(max_length=255)
+    short = models.CharField(max_length=3, default="")
+    modified = models.DateTimeField(auto_now=True)
     meeting = ForeignKey(Meeting)
-    order   = models.SmallIntegerField()
-    image   = models.ImageField(
+    order = models.SmallIntegerField()
+    image = models.ImageField(
         storage=BlobShadowFileSystemStorage(kind="floorplan"),
         upload_to=floorplan_path,
         blank=True,
         default=None,
     )
+
     #
     class Meta:
-        ordering = ['-id',]
+        ordering = [
+            "-id",
+        ]
+
     #
     def __str__(self):
-        return u'floorplan-%s-%s' % (self.meeting.number, xslugify(self.name))
+        return "floorplan-%s-%s" % (self.meeting.number, xslugify(self.name))
 
 
 # === Schedules, Sessions, Timeslots and Assignments ===========================
+
 
 class TimeSlotQuerySet(models.QuerySet):
     def that_can_be_scheduled(self):
@@ -554,6 +697,7 @@ class TimeSlot(models.Model):
     mapped to a timeslot, including breaks. Sessions are connected to
     TimeSlots during scheduling.
     """
+
     objects = TimeSlotQuerySet.as_manager()
 
     meeting = ForeignKey(Meeting)
@@ -562,17 +706,30 @@ class TimeSlot(models.Model):
     time = models.DateTimeField()
     duration = models.DurationField(default=datetime.timedelta(0))
     location = ForeignKey(Room, blank=True, null=True)
-    show_location = models.BooleanField(default=True, help_text="Show location in agenda.")
-    sessions = models.ManyToManyField('meeting.Session', related_name='slots', through='meeting.SchedTimeSessAssignment', blank=True, help_text="Scheduled session, if any.")
+    show_location = models.BooleanField(
+        default=True, help_text="Show location in agenda."
+    )
+    sessions = models.ManyToManyField(
+        "meeting.Session",
+        related_name="slots",
+        through="meeting.SchedTimeSessAssignment",
+        blank=True,
+        help_text="Scheduled session, if any.",
+    )
     modified = models.DateTimeField(auto_now=True)
     #
 
-    TYPES_NOT_SCHEDULABLE = ('offagenda', 'reserved', 'unavail')
+    TYPES_NOT_SCHEDULABLE = ("offagenda", "reserved", "unavail")
 
     @property
     def session(self):
         if not hasattr(self, "_session_cache"):
-            self._session_cache = self.sessions.filter(timeslotassignments__schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting else None]).first()
+            self._session_cache = self.sessions.filter(
+                timeslotassignments__schedule__in=[
+                    self.meeting.schedule,
+                    self.meeting.schedule.base if self.meeting else None,
+                ]
+            ).first()
         return self._session_cache
 
     # Unused
@@ -596,15 +753,21 @@ class TimeSlot(models.Model):
     def __str__(self):
         location = self.get_location()
         if not location:
-            location = u"(no location)"
+            location = "(no location)"
 
-        return u"%s: %s-%s %s, %s" % (self.meeting.number, self.time.strftime("%m-%d %H:%M"), (self.time + self.duration).strftime("%H:%M"), self.name, location)
+        return "%s: %s-%s %s, %s" % (
+            self.meeting.number,
+            self.time.strftime("%m-%d %H:%M"),
+            (self.time + self.duration).strftime("%H:%M"),
+            self.name,
+            location,
+        )
 
     def end_time(self):
         return self.time + self.duration
 
     def get_hidden_location(self):
-        if not hasattr(self, '_cached_hidden_location'):
+        if not hasattr(self, "_cached_hidden_location"):
             location = self.location
             if location:
                 location = location.name
@@ -650,7 +813,9 @@ class TimeSlot(models.Model):
         return self.time.astimezone(pytz.utc)  # USE_TZ is True, so time is aware
 
     def utc_end_time(self):
-        return self.time.astimezone(pytz.utc) + self.duration  # USE_TZ is True, so time is aware
+        return (
+            self.time.astimezone(pytz.utc) + self.duration
+        )  # USE_TZ is True, so time is aware
 
     def local_start_time(self):
         return self.time.astimezone(self.tz())
@@ -689,22 +854,25 @@ class TimeSlot(models.Model):
     Find a timeslot that comes next, in the same room.   It must be on the same day,
     and it must have a gap of less than 11 minutes. (10 is the spec)
     """
+
     @property
     def slot_to_the_right(self):
         return self.meeting.timeslot_set.filter(
-            location = self.location,       # same room!
-            type     = self.type,           # must be same type (usually session)
-            time__gt = self.time + self.duration,  # must be after this session
-            time__lt = self.time + self.duration + datetime.timedelta(seconds=11*60)).first()
+            location=self.location,  # same room!
+            type=self.type,  # must be same type (usually session)
+            time__gt=self.time + self.duration,  # must be after this session
+            time__lt=self.time + self.duration + datetime.timedelta(seconds=11 * 60),
+        ).first()
 
     class Meta:
         ordering = ["-time", "-id"]
         indexes = [
-            models.Index(fields=['-time', '-id']),
+            models.Index(fields=["-time", "-id"]),
         ]
 
 
 # end of TimeSlot
+
 
 class Schedule(models.Model):
     """
@@ -716,47 +884,70 @@ class Schedule(models.Model):
     Secretariat to IESG members for review.  Only the owner may edit the
     schedule, others may copy it
     """
-    meeting  = ForeignKey(Meeting, null=True, related_name='schedule_set')
-    name     = models.CharField(max_length=64, blank=False, help_text="Letters, numbers and -:_ allowed.", validators=[RegexValidator(r'^[A-Za-z0-9-:_]*$')])
-    owner    = ForeignKey(Person)
-    visible  = models.BooleanField("Show in agenda list", default=True, help_text="Show in the list of possible agendas for the meeting.")
-    public   = models.BooleanField(default=True, help_text="Allow others to see this agenda.")
-    badness  = models.IntegerField(null=True, blank=True)
-    notes    = models.TextField(blank=True)
-    origin   = ForeignKey('Schedule', blank=True, null=True, on_delete=models.SET_NULL, related_name="+")
-    base     = ForeignKey('Schedule', blank=True, null=True, on_delete=models.SET_NULL,
-                          help_text="Sessions scheduled in the base schedule show up in this schedule too.", related_name="derivedschedule_set",
-                          limit_choices_to={'base': None}) # prevent the inheritance from being more than one layer deep (no recursion)
+
+    meeting = ForeignKey(Meeting, null=True, related_name="schedule_set")
+    name = models.CharField(
+        max_length=64,
+        blank=False,
+        help_text="Letters, numbers and -:_ allowed.",
+        validators=[RegexValidator(r"^[A-Za-z0-9-:_]*$")],
+    )
+    owner = ForeignKey(Person)
+    visible = models.BooleanField(
+        "Show in agenda list",
+        default=True,
+        help_text="Show in the list of possible agendas for the meeting.",
+    )
+    public = models.BooleanField(
+        default=True, help_text="Allow others to see this agenda."
+    )
+    badness = models.IntegerField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+    origin = ForeignKey(
+        "Schedule", blank=True, null=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    base = ForeignKey(
+        "Schedule",
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        help_text="Sessions scheduled in the base schedule show up in this schedule too.",
+        related_name="derivedschedule_set",
+        limit_choices_to={"base": None},
+    )  # prevent the inheritance from being more than one layer deep (no recursion)
 
     def __str__(self):
-        return u"%s:%s(%s)" % (self.meeting, self.name, self.owner)
+        return "%s:%s(%s)" % (self.meeting, self.name, self.owner)
 
     def base_url(self):
-        return "/meeting/%s/agenda/%s/%s" % (self.meeting.number, self.owner_email(), self.name)
+        return "/meeting/%s/agenda/%s/%s" % (
+            self.meeting.number,
+            self.owner_email(),
+            self.name,
+        )
 
     # temporary property to pacify the places where Schedule.assignments is used
-#    @property
-#    def schedtimesessassignment_set(self):
-#        return self.assignments
-# 
-#     def url_edit(self):
-#         return "/meeting/%s/agenda/%s/edit" % (self.meeting.number, self.name)
-#
-#     @property
-#     def relurl_edit(self):
-#         return self.url_edit("")
+    #    @property
+    #    def schedtimesessassignment_set(self):
+    #        return self.assignments
+    #
+    #     def url_edit(self):
+    #         return "/meeting/%s/agenda/%s/edit" % (self.meeting.number, self.name)
+    #
+    #     @property
+    #     def relurl_edit(self):
+    #         return self.url_edit("")
 
     def owner_email(self):
         return self.owner.email_address() or "noemail"
 
     @property
     def is_official(self):
-        return (self.meeting.schedule == self)
+        return self.meeting.schedule == self
 
     @property
     def is_official_record(self):
-        return (self.is_official and
-                self.meeting.end_date() <= date_today() )
+        return self.is_official and self.meeting.end_date() <= date_today()
 
     # returns a dictionary {group -> [schedtimesessassignment+]}
     # and it has [] if the session is not placed.
@@ -781,6 +972,7 @@ class Schedule(models.Model):
         """Get QuerySet containing sessions assigned to timeslots by this schedule"""
         return Session.objects.filter(timeslotassignments__schedule=self)
 
+
 # to be renamed SchedTimeSessAssignments (stsa)
 class SchedTimeSessAssignment(models.Model):
     """
@@ -788,23 +980,51 @@ class SchedTimeSessAssignment(models.Model):
     Each relationship is attached to the named schedule, which is owned by
     a specific person/user.
     """
-    timeslot = ForeignKey('TimeSlot', null=False, blank=False, related_name='sessionassignments')
-    session  = ForeignKey('Session', null=True, default=None, related_name='timeslotassignments', help_text="Scheduled session.")
-    schedule = ForeignKey('Schedule', null=False, blank=False, related_name='assignments')
-    extendedfrom = ForeignKey('self', null=True, default=None, help_text="Timeslot this session is an extension of.")
+
+    timeslot = ForeignKey(
+        "TimeSlot", null=False, blank=False, related_name="sessionassignments"
+    )
+    session = ForeignKey(
+        "Session",
+        null=True,
+        default=None,
+        related_name="timeslotassignments",
+        help_text="Scheduled session.",
+    )
+    schedule = ForeignKey(
+        "Schedule", null=False, blank=False, related_name="assignments"
+    )
+    extendedfrom = ForeignKey(
+        "self",
+        null=True,
+        default=None,
+        help_text="Timeslot this session is an extension of.",
+    )
     modified = models.DateTimeField(auto_now=True)
-    badness  = models.IntegerField(default=0, blank=True, null=True)
-    pinned   = models.BooleanField(default=False, help_text="Do not move session during automatic placement.")
+    badness = models.IntegerField(default=0, blank=True, null=True)
+    pinned = models.BooleanField(
+        default=False, help_text="Do not move session during automatic placement."
+    )
 
     class Meta:
-        ordering = ["timeslot__time", "timeslot__type__slug", "session__group__parent__name", "session__group__acronym", "session__name", ]
+        ordering = [
+            "timeslot__time",
+            "timeslot__type__slug",
+            "session__group__parent__name",
+            "session__group__acronym",
+            "session__name",
+        ]
 
     def __str__(self):
-        return u"%s [%s<->%s]" % (self.schedule, self.session, self.timeslot)
+        return "%s [%s<->%s]" % (self.schedule, self.session, self.timeslot)
 
     @property
     def room_name(self):
-        return self.timeslot.location.name if self.timeslot and self.timeslot.location else None
+        return (
+            self.timeslot.location.name
+            if self.timeslot and self.timeslot.location
+            else None
+        )
 
     @property
     def acronym(self):
@@ -843,16 +1063,16 @@ class SchedTimeSessAssignment(models.Model):
 
             g = self.session.group_at_the_time()
 
-            if self.timeslot.type.slug in ('break', 'reg', 'other'):
+            if self.timeslot.type.slug in ("break", "reg", "other"):
                 components.append(g.acronym)
                 components.append(slugify(self.session.name))
 
-            if self.timeslot.type.slug in ('regular', 'plenary'):
+            if self.timeslot.type.slug in ("regular", "plenary"):
                 if self.timeslot.type.slug == "plenary":
                     components.append("1plenary")
                 else:
                     p = self.session.group_parent_at_the_time()
-                    if p and p.type_id in ("area", "irtf", 'ietf'):
+                    if p and p.type_id in ("area", "irtf", "ietf"):
                         components.append(p.acronym)
 
                 components.append(g.acronym)
@@ -865,11 +1085,15 @@ class BusinessConstraint(models.Model):
     Constraints on the scheduling that apply across all qualifying
     sessions in all meetings. Used by the ScheduleGenerator.
     """
+
     slug = models.CharField(max_length=32, primary_key=True)
     name = models.CharField(max_length=255)
-    penalty = models.IntegerField(default=0, help_text="The penalty for violating this kind of constraint; for instance 10 (small penalty) or 10000 (large penalty)")
+    penalty = models.IntegerField(
+        default=0,
+        help_text="The penalty for violating this kind of constraint; for instance 10 (small penalty) or 10000 (large penalty)",
+    )
 
-    
+
 class Constraint(models.Model):
     """
     Specifies a constraint on the scheduling.
@@ -891,22 +1115,33 @@ class Constraint(models.Model):
     - joint_with_groups
     - responsible_ad
     """
+
     TIME_RELATION_CHOICES = (
-        ('subsequent-days', 'Schedule the sessions on subsequent days'),
-        ('one-day-seperation', 'Leave at least one free day in between the two sessions'),
+        ("subsequent-days", "Schedule the sessions on subsequent days"),
+        (
+            "one-day-seperation",
+            "Leave at least one free day in between the two sessions",
+        ),
     )
     meeting = ForeignKey(Meeting)
     source = ForeignKey(Group, related_name="constraint_source_set")
     target = ForeignKey(Group, related_name="constraint_target_set", null=True)
     person = ForeignKey(Person, null=True, blank=True)
-    name   = ForeignKey(ConstraintName)
-    time_relation = models.CharField(max_length=200, choices=TIME_RELATION_CHOICES, blank=True)
+    name = ForeignKey(ConstraintName)
+    time_relation = models.CharField(
+        max_length=200, choices=TIME_RELATION_CHOICES, blank=True
+    )
     timeranges = models.ManyToManyField(TimerangeName)
 
     active_status = None
 
     def __str__(self):
-        return u"%s %s target=%s person=%s" % (self.source, self.name.name.lower(), self.target, self.person)
+        return "%s %s target=%s person=%s" % (
+            self.source,
+            self.name.name.lower(),
+            self.target,
+            self.person,
+        )
 
     def brief_display(self):
         if self.name.slug == "wg_adjacent":
@@ -925,26 +1160,30 @@ class Constraint(models.Model):
 
 
 class SessionPresentation(models.Model):
-    session = ForeignKey('Session', related_name="presentations")
+    session = ForeignKey("Session", related_name="presentations")
     document = ForeignKey(Document, related_name="presentations")
-    rev = models.CharField(verbose_name="revision", max_length=16, null=True, blank=True)
+    rev = models.CharField(
+        verbose_name="revision", max_length=16, null=True, blank=True
+    )
     order = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
-        db_table = 'meeting_session_materials'
-        ordering = ('order',)
-        unique_together = (('session', 'document'),)
+        db_table = "meeting_session_materials"
+        ordering = ("order",)
+        unique_together = (("session", "document"),)
 
     def __str__(self):
-        return u"%s -> %s-%s" % (self.session, self.document.name, self.rev)
+        return "%s -> %s-%s" % (self.session, self.document.name, self.rev)
+
 
 constraint_cache_uses = 0
 constraint_cache_initials = 0
 
+
 class SessionQuerySet(models.QuerySet):
     def with_current_status(self):
         """Annotate session with its current status
-        
+
         Adds current_status, containing the text representation of the status.
         """
         return self.annotate(
@@ -953,69 +1192,71 @@ class SessionQuerySet(models.QuerySet):
             # skips rows with null in them
             current_status=Coalesce(
                 Subquery(
-                    SchedulingEvent.objects.filter(
-                        session=OuterRef('pk')
-                    ).order_by(
-                        '-time', '-id'
-                    ).values('status')[:1]),
-                Value(''), 
-                output_field=TextField()),
+                    SchedulingEvent.objects.filter(session=OuterRef("pk"))
+                    .order_by("-time", "-id")
+                    .values("status")[:1]
+                ),
+                Value(""),
+                output_field=TextField(),
+            ),
         )
 
     def with_requested_by(self):
         """Annotate session with requested_by field
-        
+
         Adds requested_by field - pk of the Person who made the request
         """
         return self.annotate(
             requested_by=Subquery(
-                SchedulingEvent.objects.filter(
-                    session=OuterRef('pk')
-                ).order_by(
-                    'time', 'id'
-                ).values('by')[:1]),
+                SchedulingEvent.objects.filter(session=OuterRef("pk"))
+                .order_by("time", "id")
+                .values("by")[:1]
+            ),
         )
 
     def with_requested_time(self):
         """Annotate session with requested_time field"""
         return self.annotate(
             requested_time=Subquery(
-                SchedulingEvent.objects.filter(
-                    session=OuterRef('pk')
-                ).order_by(
-                    'time', 'id'
-                ).values('time')[:1]),
+                SchedulingEvent.objects.filter(session=OuterRef("pk"))
+                .order_by("time", "id")
+                .values("time")[:1]
+            ),
         )
 
     def not_canceled(self):
         """Queryset containing all sessions not canceled
-                
+
         Results annotated with current_status
         """
-        return self.with_current_status().exclude(current_status__in=Session.CANCELED_STATUSES)
+        return self.with_current_status().exclude(
+            current_status__in=Session.CANCELED_STATUSES
+        )
 
     def not_deleted(self):
         """Queryset containing all sessions not deleted
 
         Results annotated with current_status
         """
-        return self.with_current_status().exclude(current_status='deleted')
+        return self.with_current_status().exclude(current_status="deleted")
 
     def that_can_meet(self):
         """Queryset containing sessions that can meet
-        
+
         Results annotated with current_status
         """
-        return self.with_current_status().exclude(
-            current_status__in=['notmeet', 'disappr', 'deleted', 'apprw']
-        ).filter(
-            type__slug='regular'
+        return (
+            self.with_current_status()
+            .exclude(current_status__in=["notmeet", "disappr", "deleted", "apprw"])
+            .filter(type__slug="regular")
         )
 
     def that_can_be_scheduled(self):
         """Queryset containing sessions that should be scheduled for a meeting"""
-        return self.requests().with_current_status().filter(
-            current_status__in=['appr', 'schedw', 'scheda', 'sched']
+        return (
+            self.requests()
+            .with_current_status()
+            .filter(current_status__in=["appr", "schedw", "scheda", "sched"])
         )
 
     def requests(self):
@@ -1029,44 +1270,86 @@ class Session(models.Model):
     timeslots are needed, multiple sessions will have to be created.
     Training sessions and similar are modeled by filling in a
     responsible group (e.g. Edu team) and filling in the name."""
+
     objects = SessionQuerySet.as_manager()  # sets default query manager
     meeting = ForeignKey(Meeting)
-    name = models.CharField(blank=True, max_length=255, help_text="Name of session, in case the session has a purpose rather than just being a group meeting.")
-    short = models.CharField(blank=True, max_length=32, help_text="Short version of 'name' above, for use in filenames.")
-    purpose = ForeignKey(SessionPurposeName, null=False, help_text='Purpose of the session')
+    name = models.CharField(
+        blank=True,
+        max_length=255,
+        help_text="Name of session, in case the session has a purpose rather than just being a group meeting.",
+    )
+    short = models.CharField(
+        blank=True,
+        max_length=32,
+        help_text="Short version of 'name' above, for use in filenames.",
+    )
+    purpose = ForeignKey(
+        SessionPurposeName, null=False, help_text="Purpose of the session"
+    )
     type = ForeignKey(TimeSlotTypeName)
-    group = ForeignKey(Group)    # The group type historically determined the session type.  BOFs also need to be added as a group. Note that not all meeting requests have a natural group to associate with.
-    joint_with_groups = models.ManyToManyField(Group, related_name='sessions_joint_in',blank=True)
+    group = ForeignKey(
+        Group
+    )  # The group type historically determined the session type.  BOFs also need to be added as a group. Note that not all meeting requests have a natural group to associate with.
+    joint_with_groups = models.ManyToManyField(
+        Group, related_name="sessions_joint_in", blank=True
+    )
     attendees = models.IntegerField(null=True, blank=True)
     agenda_note = models.CharField(blank=True, max_length=512)
     requested_duration = models.DurationField(default=datetime.timedelta(0))
     comments = models.TextField(blank=True)
     scheduled = models.DateTimeField(null=True, blank=True)
     modified = models.DateTimeField(auto_now=True)
-    remote_instructions = models.CharField(blank=True,max_length=1024)
-    on_agenda = models.BooleanField(default=True, help_text='Is this session visible on the meeting agenda?')
-    has_onsite_tool = models.BooleanField(default=False, help_text="Does this session use the officially supported onsite and remote tooling?")
-    chat_room = models.CharField(blank=True, max_length=32, help_text='Name of Zulip stream, if different from group acronym')
-    meetecho_recording_name = models.CharField(blank=True, max_length=64, help_text="Name of the meetecho recording")
+    remote_instructions = models.CharField(blank=True, max_length=1024)
+    on_agenda = models.BooleanField(
+        default=True, help_text="Is this session visible on the meeting agenda?"
+    )
+    has_onsite_tool = models.BooleanField(
+        default=False,
+        help_text="Does this session use the officially supported onsite and remote tooling?",
+    )
+    chat_room = models.CharField(
+        blank=True,
+        max_length=32,
+        help_text="Name of Zulip stream, if different from group acronym",
+    )
+    meetecho_recording_name = models.CharField(
+        blank=True, max_length=64, help_text="Name of the meetecho recording"
+    )
 
-    tombstone_for = models.ForeignKey('Session', blank=True, null=True, help_text="This session is the tombstone for a session that was rescheduled", on_delete=models.CASCADE)
+    tombstone_for = models.ForeignKey(
+        "Session",
+        blank=True,
+        null=True,
+        help_text="This session is the tombstone for a session that was rescheduled",
+        on_delete=models.CASCADE,
+    )
 
-    materials = models.ManyToManyField(Document, through=SessionPresentation, blank=True)
+    materials = models.ManyToManyField(
+        Document, through=SessionPresentation, blank=True
+    )
     resources = models.ManyToManyField(ResourceAssociation, blank=True)
 
     unique_constraints_dict = None
 
-    CANCELED_STATUSES = ['canceled', 'canceledpa']
-    
+    CANCELED_STATUSES = ["canceled", "canceledpa"]
+
     # Should work on how materials are captured so that deleted things are no longer associated with the session
     # (We can keep the information about something being added to and removed from a session in the document's history)
     def get_material(self, material_type, only_one):
         if hasattr(self, "prefetched_active_materials"):
-            l = [d for d in self.prefetched_active_materials if d.type_id == material_type]
+            l = [
+                d
+                for d in self.prefetched_active_materials
+                if d.type_id == material_type
+            ]
             for d in l:
                 d.meeting_related = lambda: True
         else:
-            l = self.materials.filter(type=material_type).exclude(states__type=material_type, states__slug='deleted').order_by('presentations__order')
+            l = (
+                self.materials.filter(type=material_type)
+                .exclude(states__type=material_type, states__slug="deleted")
+                .order_by("presentations__order")
+            )
 
         if only_one:
             if l:
@@ -1082,12 +1365,12 @@ class Session(models.Model):
         return self._agenda_cache
 
     def minutes(self):
-        if not hasattr(self, '_cached_minutes'):
+        if not hasattr(self, "_cached_minutes"):
             self._cached_minutes = self.get_material("minutes", only_one=True)
         return self._cached_minutes
 
     def narrative_minutes(self):
-        if not hasattr(self, '_cached_narrative_minutes'):
+        if not hasattr(self, "_cached_narrative_minutes"):
             self._cached_minutes = self.get_material("narrativeminutes", only_one=True)
         return self._cached_minutes
 
@@ -1104,10 +1387,9 @@ class Session(models.Model):
         if not hasattr(self, "_slides_cache"):
             self._slides_cache = list(self.get_material("slides", only_one=False))
         return self._slides_cache
-    
 
     def drafts(self):
-        return list(self.materials.filter(type='draft'))
+        return list(self.materials.filter(type="draft"))
 
     # The utilities below are used in the proceedings and materials
     # templates, and should be moved there - then we could also query
@@ -1115,28 +1397,42 @@ class Session(models.Model):
     # pages.
     def all_meeting_sessions_for_group(self):
         from ietf.meeting.utils import add_event_info_to_session_qs
+
         if self.group.features.has_meetings:
             if not hasattr(self, "_all_meeting_sessions_for_group_cache"):
-                sessions = [s for s in add_event_info_to_session_qs(self.meeting.session_set.filter(group=self.group)) if s.official_timeslotassignment()]
+                sessions = [
+                    s
+                    for s in add_event_info_to_session_qs(
+                        self.meeting.session_set.filter(group=self.group)
+                    )
+                    if s.official_timeslotassignment()
+                ]
                 for s in sessions:
                     s.ota = s.official_timeslotassignment()
                 # Align this sort with SchedTimeSessAssignment default sort order since many views base their order on that
                 self._all_meeting_sessions_for_group_cache = sorted(
-                    sessions, key = lambda x: (
+                    sessions,
+                    key=lambda x: (
                         x.ota.timeslot.time,
                         x.ota.timeslot.type.slug,
-                        x.ota.session.group.parent.name if x.ota.session.group.parent else None,
-                        x.ota.session.name
-                    )
+                        (
+                            x.ota.session.group.parent.name
+                            if x.ota.session.group.parent
+                            else None
+                        ),
+                        x.ota.session.name,
+                    ),
                 )
             return self._all_meeting_sessions_for_group_cache
         else:
             return [self]
 
     def order_in_meeting(self):
-        if not hasattr(self, '_order_in_meeting'):
+        if not hasattr(self, "_order_in_meeting"):
             session_list = self.all_meeting_sessions_for_group()
-            self._order_in_meeting = session_list.index(self) + 1 if self in session_list else 0
+            self._order_in_meeting = (
+                session_list.index(self) + 1 if self in session_list else 0
+            )
         return self._order_in_meeting
 
     def all_meeting_agendas(self):
@@ -1147,7 +1443,7 @@ class Session(models.Model):
             if agenda and agenda not in agendas:
                 agendas.append(agenda)
         return agendas
-        
+
     def all_meeting_slides(self):
         slides = []
         sessions = self.all_meeting_sessions_for_group()
@@ -1165,11 +1461,14 @@ class Session(models.Model):
         return minutes
 
     def can_manage_materials(self, user):
-        return can_manage_materials(user,self.group)
+        return can_manage_materials(user, self.group)
 
     def is_material_submission_cutoff(self):
-        return date_today(datetime.timezone.utc) > self.meeting.get_submission_correction_date()
-    
+        return (
+            date_today(datetime.timezone.utc)
+            > self.meeting.get_submission_correction_date()
+        )
+
     def joint_with_groups_acronyms(self):
         return [group.acronym for group in self.joint_with_groups.all()]
 
@@ -1178,20 +1477,29 @@ class Session(models.Model):
             return self.meeting.number
 
         status_id = None
-        if hasattr(self, 'current_status'):
+        if hasattr(self, "current_status"):
             status_id = self.current_status
         elif self.pk is not None:
-            latest_event = SchedulingEvent.objects.filter(session=self.pk).order_by('-time', '-id').first()
+            latest_event = (
+                SchedulingEvent.objects.filter(session=self.pk)
+                .order_by("-time", "-id")
+                .first()
+            )
             if latest_event:
                 status_id = latest_event.status_id
 
-        if status_id in ('canceled','disappr','notmeet','deleted'):
+        if status_id in ("canceled", "disappr", "notmeet", "deleted"):
             ss0name = "(%s)" % SessionStatusName.objects.get(slug=status_id).name
         else:
             ss0name = "(unscheduled)"
-            ss = self.timeslotassignments.filter(schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting.schedule else None]).order_by('timeslot__time')
+            ss = self.timeslotassignments.filter(
+                schedule__in=[
+                    self.meeting.schedule,
+                    self.meeting.schedule.base if self.meeting.schedule else None,
+                ]
+            ).order_by("timeslot__time")
             if ss:
-                ss0name = ','.join(x.timeslot.time.strftime("%a-%H%M") for x in ss)
+                ss0name = ",".join(x.timeslot.time.strftime("%a-%H%M") for x in ss)
         return "%s: %s %s %s" % (self.meeting, self.group.acronym, self.name, ss0name)
 
     @property
@@ -1206,7 +1514,7 @@ class Session(models.Model):
 
     @property
     def special_request_token(self):
-        if self.comments is not None and len(self.comments)>0:
+        if self.comments is not None and len(self.comments) > 0:
             return "*"
         else:
             return ""
@@ -1226,38 +1534,60 @@ class Session(models.Model):
         return "".join(chars[::-1])
 
     def docname_token(self):
-        sess_mtg = Session.objects.filter(meeting=self.meeting, group=self.group).order_by('pk')
+        sess_mtg = Session.objects.filter(
+            meeting=self.meeting, group=self.group
+        ).order_by("pk")
         index = list(sess_mtg).index(self)
         return f"sess{self._alpha_str(index)}"
 
     def docname_token_only_for_multiple(self):
-        sess_mtg = Session.objects.filter(meeting=self.meeting, group=self.group).order_by('pk')
+        sess_mtg = Session.objects.filter(
+            meeting=self.meeting, group=self.group
+        ).order_by("pk")
         if len(list(sess_mtg)) > 1:
             index = list(sess_mtg).index(self)
             token = f"sess{self._alpha_str(index)}"
             return token
         return None
-        
+
     def constraints(self):
-        return Constraint.objects.filter(source=self.group, meeting=self.meeting).order_by('name__name', 'target__acronym', 'person__name').prefetch_related("source","target","person")
+        return (
+            Constraint.objects.filter(source=self.group, meeting=self.meeting)
+            .order_by("name__name", "target__acronym", "person__name")
+            .prefetch_related("source", "target", "person")
+        )
 
     def reverse_constraints(self):
-        return Constraint.objects.filter(target=self.group, meeting=self.meeting).order_by('name__name')
+        return Constraint.objects.filter(
+            target=self.group, meeting=self.meeting
+        ).order_by("name__name")
 
     def official_timeslotassignment(self):
         # cache only non-None values
         if getattr(self, "_cache_official_timeslotassignment", None) is None:
-            self._cache_official_timeslotassignment = self.timeslotassignments.filter(schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting.schedule else None]).first()
+            self._cache_official_timeslotassignment = self.timeslotassignments.filter(
+                schedule__in=[
+                    self.meeting.schedule,
+                    self.meeting.schedule.base if self.meeting.schedule else None,
+                ]
+            ).first()
         return self._cache_official_timeslotassignment
 
     @property
     def people_constraints(self):
-        return self.group.constraint_source_set.filter(meeting=self.meeting, name='bethere')
+        return self.group.constraint_source_set.filter(
+            meeting=self.meeting, name="bethere"
+        )
 
     def agenda_text(self):
         doc = self.agenda()
         if doc:
-            path = os.path.join(settings.AGENDA_PATH, self.meeting.number, "agenda", doc.uploaded_filename)
+            path = os.path.join(
+                settings.AGENDA_PATH,
+                self.meeting.number,
+                "agenda",
+                doc.uploaded_filename,
+            )
             if os.path.exists(path):
                 with io.open(path) as f:
                     return f.read()
@@ -1270,8 +1600,8 @@ class Session(models.Model):
         if self.chat_room:
             return self.chat_room
         # At some point, add a migration to add "plenary" chat room name to existing sessions in the database.
-        elif self.type_id=='plenary':
-            return 'plenary'
+        elif self.type_id == "plenary":
+            return "plenary"
         else:
             return self.group_at_the_time().acronym
 
@@ -1280,38 +1610,41 @@ class Session(models.Model):
 
     def chat_archive_url(self):
 
-        if hasattr(self,"prefetched_active_materials"):
+        if hasattr(self, "prefetched_active_materials"):
             chatlog_doc = None
             for doc in self.prefetched_active_materials:
-                if doc.type_id=="chatlog":
+                if doc.type_id == "chatlog":
                     chatlog_doc = doc
                     break
             if chatlog_doc is not None:
                 return chatlog_doc.get_href()
         else:
-            chatlog = self.presentations.filter(document__type__slug='chatlog').first()
+            chatlog = self.presentations.filter(document__type__slug="chatlog").first()
             if chatlog is not None:
                 return chatlog.document.get_href()
-            
+
         if self.meeting.date <= datetime.date(2022, 7, 15):
             # datatracker 8.8.0 released on 2022 July 15; before that, fall back to old log URL
-            return f'https://www.ietf.org/jabber/logs/{ self.chat_room_name() }?C=M;O=D'
-        elif hasattr(settings,'CHAT_ARCHIVE_URL_PATTERN'):
-            return settings.CHAT_ARCHIVE_URL_PATTERN.format(chat_room_name=self.chat_room_name())
+            return f"https://www.ietf.org/jabber/logs/{ self.chat_room_name() }?C=M;O=D"
+        elif hasattr(settings, "CHAT_ARCHIVE_URL_PATTERN"):
+            return settings.CHAT_ARCHIVE_URL_PATTERN.format(
+                chat_room_name=self.chat_room_name()
+            )
         else:
             # Zulip has no separate archive
             return self.chat_room_url()
 
     def notes_id(self):
-        note_id_fragment = 'plenary' if self.type.slug == 'plenary' else self.group.acronym
-        return f'notes-ietf-{self.meeting.number}-{note_id_fragment}'
+        note_id_fragment = (
+            "plenary" if self.type.slug == "plenary" else self.group.acronym
+        )
+        return f"notes-ietf-{self.meeting.number}-{note_id_fragment}"
 
     def notes_url(self):
         return urljoin(settings.IETF_NOTES_URL, self.notes_id())
 
-
     def group_at_the_time(self):
-        if not hasattr(self,"_cached_group_at_the_time"):
+        if not hasattr(self, "_cached_group_at_the_time"):
             self._cached_group_at_the_time = self.meeting.group_at_the_time(self.group)
         return self._cached_group_at_the_time
 
@@ -1360,22 +1693,30 @@ class Session(models.Model):
 
 class SchedulingEvent(models.Model):
     session = ForeignKey(Session)
-    time = models.DateTimeField(default=timezone.now, help_text="When the event happened")
+    time = models.DateTimeField(
+        default=timezone.now, help_text="When the event happened"
+    )
     status = ForeignKey(SessionStatusName)
     by = ForeignKey(Person)
 
     def __str__(self):
-        return u'%s : %s : %s : %s' % (self.session, self.status, self.time, self.by)
+        return "%s : %s : %s : %s" % (self.session, self.status, self.time, self.by)
+
 
 class ImportantDate(models.Model):
     meeting = ForeignKey(Meeting)
     date = models.DateField()
     name = ForeignKey(ImportantDateName)
+
     class Meta:
-        ordering = ["-meeting_id","date", ]
+        ordering = [
+            "-meeting_id",
+            "date",
+        ]
 
     def __str__(self):
-        return u'%s : %s : %s' % ( self.meeting, self.name, self.date )
+        return "%s : %s : %s" % (self.meeting, self.name, self.date)
+
 
 class SlideSubmission(models.Model):
     time = models.DateTimeField(auto_now=True)
@@ -1384,57 +1725,64 @@ class SlideSubmission(models.Model):
     filename = models.CharField(max_length=255)
     apply_to_all = models.BooleanField(default=False)
     submitter = ForeignKey(Person)
-    status      = ForeignKey(SlideSubmissionStatusName, null=True, default='pending', on_delete=models.SET_NULL)
-    doc         = ForeignKey(Document, blank=True, null=True, on_delete=models.SET_NULL)
+    status = ForeignKey(
+        SlideSubmissionStatusName,
+        null=True,
+        default="pending",
+        on_delete=models.SET_NULL,
+    )
+    doc = ForeignKey(Document, blank=True, null=True, on_delete=models.SET_NULL)
 
     def staged_filepath(self):
-        return os.path.join(settings.SLIDE_STAGING_PATH , self.filename)
+        return os.path.join(settings.SLIDE_STAGING_PATH, self.filename)
 
     def staged_url(self):
         return "".join([settings.SLIDE_STAGING_URL, self.filename])
 
 
 class ProceedingsMaterial(models.Model):
-    meeting = ForeignKey(Meeting, related_name='proceedings_materials')
+    meeting = ForeignKey(Meeting, related_name="proceedings_materials")
     document = ForeignKey(
         Document,
-        limit_choices_to=dict(type_id='procmaterials'),
+        limit_choices_to=dict(type_id="procmaterials"),
         unique=True,
     )
     type = ForeignKey(ProceedingsMaterialTypeName)
 
     class Meta:
-        unique_together = (('meeting', 'type'),)
+        unique_together = (("meeting", "type"),)
 
     def __str__(self):
         return self.document.title
 
     def get_href(self):
-        return f'{self.document.get_href(self.meeting)}'
+        return f"{self.document.get_href(self.meeting)}"
 
     def active(self):
-        return self.document.get_state().slug == 'active'
+        return self.document.get_state().slug == "active"
 
     def is_url(self):
         return len(self.document.external_url) > 0
 
-def _host_upload_path(instance : 'MeetingHost', filename):
+
+def _host_upload_path(instance: "MeetingHost", filename):
     """Compute filename relative to the storage location
 
     Must live outside a class to allow migrations to deconstruct fields that use it
     """
     num = instance.meeting.number
     path = (
-            Path(num) / 'meetinghosts' / f'logo-{"".join(random.choices(string.ascii_lowercase, k=10))}'
-    ).with_suffix(
-        Path(filename).suffix
-    )
+        Path(num)
+        / "meetinghosts"
+        / f'logo-{"".join(random.choices(string.ascii_lowercase, k=10))}'
+    ).with_suffix(Path(filename).suffix)
     return str(path)
 
 
 class MeetingHost(models.Model):
     """Meeting sponsor"""
-    meeting = ForeignKey(Meeting, related_name='meetinghosts')
+
+    meeting = ForeignKey(Meeting, related_name="meetinghosts")
     name = models.CharField(max_length=255, blank=False)
     # TODO-BLOBSTORE - capture these logos and look for other ImageField like model fields.
     logo = MissingOkImageField(
@@ -1443,8 +1791,8 @@ class MeetingHost(models.Model):
             location=settings.MEETINGHOST_LOGO_PATH,
         ),
         upload_to=_host_upload_path,
-        width_field='logo_width',
-        height_field='logo_height',
+        width_field="logo_width",
+        height_field="logo_height",
         blank=False,
         validators=[
             MaxImageSizeValidator(
@@ -1454,11 +1802,11 @@ class MeetingHost(models.Model):
             WrappedValidator(validate_file_size, True),
             WrappedValidator(
                 validate_file_extension,
-                settings.MEETING_VALID_UPLOAD_EXTENSIONS['meetinghostlogo'],
+                settings.MEETING_VALID_UPLOAD_EXTENSIONS["meetinghostlogo"],
             ),
-   WrappedValidator(
+            WrappedValidator(
                 validate_mime_type,
-                settings.MEETING_VALID_UPLOAD_MIME_TYPES['meetinghostlogo'],
+                settings.MEETING_VALID_UPLOAD_MIME_TYPES["meetinghostlogo"],
                 True,
             ),
         ],
@@ -1469,17 +1817,18 @@ class MeetingHost(models.Model):
     logo_height = models.PositiveIntegerField(null=True)
 
     class Meta:
-        unique_together = (('meeting', 'name'),)
-        ordering = ('pk',)
+        unique_together = (("meeting", "name"),)
+        ordering = ("pk",)
+
 
 class Attended(models.Model):
     person = ForeignKey(Person)
     session = ForeignKey(Session)
     time = models.DateTimeField(default=timezone.now, null=True, blank=True)
-    origin = models.CharField(max_length=32, default='datatracker')
+    origin = models.CharField(max_length=32, default="datatracker")
 
     class Meta:
-        unique_together = (('person', 'session'),)
+        unique_together = (("person", "session"),)
 
     def __str__(self):
-        return f'{self.person} at {self.session}'
+        return f"{self.person} at {self.session}"

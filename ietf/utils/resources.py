@@ -17,6 +17,7 @@ from ietf.utils.models import DumpInfo
 
 class UserResource(ModelResource):
     username = CharField()
+
     class Meta:
         cache = SimpleCache()
         queryset = User.objects.all()
@@ -25,6 +26,7 @@ class UserResource(ModelResource):
 
 class ContentTypeResource(ModelResource):
     username = CharField()
+
     class Meta:
         cache = SimpleCache()
         queryset = ContentType.objects.all()
@@ -36,10 +38,14 @@ class DumpInfoResource(ModelResource):
         cache = SimpleCache()
         queryset = DumpInfo.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'dumpinfo'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'dumpinfo'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "date": ALL,
             "host": ALL,
         }
+
+
 api.utils.register(DumpInfoResource())

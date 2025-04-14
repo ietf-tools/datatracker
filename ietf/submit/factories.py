@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-import debug    # pyflakes:ignore
+import debug  # pyflakes:ignore
 import factory
 
 from ietf.doc.factories import draft_name_generator
@@ -13,18 +13,19 @@ from ietf.utils.accesstoken import generate_random_key
 
 class SubmissionExtResourceFactory(factory.django.DjangoModelFactory):
     name = factory.Iterator(ExtResourceName.objects.all())
-    value = factory.Faker('url')
-    submission = factory.SubFactory('ietf.submit.factories.SubmissionFactory')
+    value = factory.Faker("url")
+    submission = factory.SubFactory("ietf.submit.factories.SubmissionFactory")
 
     class Meta:
         model = SubmissionExtResource
 
+
 class SubmissionFactory(factory.django.DjangoModelFactory):
-    state_id = 'uploaded'
+    state_id = "uploaded"
 
     @factory.lazy_attribute_sequence
     def name(self, n):
-        return draft_name_generator('draft', getattr(self, 'group', None), n)
+        return draft_name_generator("draft", getattr(self, "group", None), n)
 
     @factory.lazy_attribute
     def auth_key(self):

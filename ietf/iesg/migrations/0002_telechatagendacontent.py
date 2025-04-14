@@ -7,17 +7,31 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0002_telechatagendasectionname'),
-        ('iesg', '0001_initial'),
+        ("name", "0002_telechatagendasectionname"),
+        ("iesg", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='TelechatAgendaContent',
+            name="TelechatAgendaContent",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('text', models.TextField(blank=True)),
-                ('section', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='name.TelechatAgendaSectionName')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("text", models.TextField(blank=True)),
+                (
+                    "section",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to="name.TelechatAgendaSectionName",
+                    ),
+                ),
             ],
         ),
     ]

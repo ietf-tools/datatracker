@@ -36,12 +36,12 @@ python manage.py makefixture --format=xml --indent=4 YourModel[3] AnotherModel a
 """
 # From http://www.djangosnippets.org/snippets/918/
 
-#save into anyapp/management/commands/makefixture.py
-#or back into django/core/management/commands/makefixture.py
-#v0.1 -- current version
-#known issues:
-#no support for generic relations
-#no support for one-to-one relations
+# save into anyapp/management/commands/makefixture.py
+# or back into django/core/management/commands/makefixture.py
+# v0.1 -- current version
+# known issues:
+# no support for generic relations
+# no support for one-to-one relations
 
 from django.core import serializers
 from django.core.management.base import CommandError
@@ -52,26 +52,47 @@ from django.apps import apps
 
 DEBUG = True
 
+
 def model_name(m):
-    module = m.__module__.split('.')[:-1] # remove .models
+    module = m.__module__.split(".")[:-1]  # remove .models
     return ".".join(module + [m._meta.object_name])
 
+
 class Command(LabelCommand):
-    help = 'Output the contents of the database as a fixture of the given format.'
-    args = 'modelname[pk] or modelname[id1:id2] repeated one or more times'
+    help = "Output the contents of the database as a fixture of the given format."
+    args = "modelname[pk] or modelname[id1:id2] repeated one or more times"
 
     def add_arguments(self, parser):
-        parser.add_argument('--skip-related', default=True, action='store_false', dest='propagate',
-            help='Specifies if we shall not add related objects.')
-        parser.add_argument('--reverse', default=[], action='append', dest='reverse',
-            help="Reverse relations to follow (e.g. 'Job.task_set').")
-        parser.add_argument('--format', default='json', dest='format',
-            help='Specifies the output serialization format for fixtures.')
-        parser.add_argument('--indent', default=None, dest='indent', type=int,
-            help='Specifies the indent level to use when pretty-printing output')
+        parser.add_argument(
+            "--skip-related",
+            default=True,
+            action="store_false",
+            dest="propagate",
+            help="Specifies if we shall not add related objects.",
+        )
+        parser.add_argument(
+            "--reverse",
+            default=[],
+            action="append",
+            dest="reverse",
+            help="Reverse relations to follow (e.g. 'Job.task_set').",
+        )
+        parser.add_argument(
+            "--format",
+            default="json",
+            dest="format",
+            help="Specifies the output serialization format for fixtures.",
+        )
+        parser.add_argument(
+            "--indent",
+            default=None,
+            dest="indent",
+            type=int,
+            help="Specifies the indent level to use when pretty-printing output",
+        )
 
     def handle_reverse(self, **options):
-        follow_reverse = options.get('reverse', [])
+        follow_reverse = options.get("reverse", [])
         to_reverse = {}
         for arg in follow_reverse:
             try:
@@ -82,16 +103,18 @@ class Command(LabelCommand):
             try:
                 getattr(model, related_set_name)
             except AttributeError:
-                raise CommandError("Field '%s' does not exist on model '%s'" % (
-                                   related_set_name, model_name))
+                raise CommandError(
+                    "Field '%s' does not exist on model '%s'"
+                    % (related_set_name, model_name)
+                )
             to_reverse.setdefault(model, []).append(related_set_name)
         return to_reverse
 
     def handle_models(self, models, **options):
-        format = options.get('format','json')
-        indent = options.get('indent',None)
-        show_traceback = options.get('traceback', False)
-        propagate = options.get('propagate', True)
+        format = options.get("format", "json")
+        indent = options.get("indent", None)
+        show_traceback = options.get("traceback", False)
+        propagate = options.get("propagate", True)
         follow_reverse = self.handle_reverse(**options)
 
         # Check that the serialization format exists; this is a shortcut to
@@ -139,9 +162,11 @@ class Command(LabelCommand):
                     if DEBUG:
                         print("Adding %s[%s]" % (model_name(obj), obj.pk))
                     # follow forward relation fields
-                    for f in obj.__class__._meta.fields + obj.__class__._meta.many_to_many:
+                    for f in (
+                        obj.__class__._meta.fields + obj.__class__._meta.many_to_many
+                    ):
                         if isinstance(f, ForeignKey):
-                            new = getattr(obj, f.name) # instantiate object
+                            new = getattr(obj, f.name)  # instantiate object
                             if new and not (new.__class__, new.pk) in collected:
                                 collected.add((new.__class__, new.pk))
                                 related.append(new)
@@ -166,39 +191,45 @@ class Command(LabelCommand):
     def get_model_from_name(self, search):
         """Given a name of a model, return the model object associated with it
 
-The name can be either fully specified or uniquely matching the
-end of the model name. e.g.
-django.contrib.auth.User
-or
-auth.User
-raises CommandError if model can't be found or uniquely determined
-"""
-        models = [model for model, name in self.get_models()
-                        if name.endswith('.'+name) or name == search]
+        The name can be either fully specified or uniquely matching the
+        end of the model name. e.g.
+        django.contrib.auth.User
+        or
+        auth.User
+        raises CommandError if model can't be found or uniquely determined
+        """
+        models = [
+            model
+            for model, name in self.get_models()
+            if name.endswith("." + name) or name == search
+        ]
         if not models:
             raise CommandError("Unknown model: %s" % search)
-        if len(models)>1:
+        if len(models) > 1:
             raise CommandError("Ambiguous model name: %s" % search)
         return models[0]
 
     def handle_label(self, labels, **options):
         parsed = []
         for label in labels:
-            search, pks = label, ''
-            if '[' in label:
-                search, pks = label.split('[', 1)
-            slice = ''
-            if ':' in pks:
-                slice = pks.rstrip(']').split(':', 1)
+            search, pks = label, ""
+            if "[" in label:
+                search, pks = label.split("[", 1)
+            slice = ""
+            if ":" in pks:
+                slice = pks.rstrip("]").split(":", 1)
             elif pks:
-                slice = pks.rstrip(']')
+                slice = pks.rstrip("]")
             model = self.get_model_from_name(search)
             parsed.append((model, slice))
         return self.handle_models(parsed, **options)
 
     def list_models(self):
         names = [name for _model, name in self.get_models()]
-        raise CommandError('Neither model name nor slice given. Installed model names: \n%s' % ",\n".join(names))
+        raise CommandError(
+            "Neither model name nor slice given. Installed model names: \n%s"
+            % ",\n".join(names)
+        )
 
     def handle(self, *labels, **options):
         if not labels:
@@ -208,4 +239,4 @@ raises CommandError if model can't be found or uniquely determined
         label_output = self.handle_label(labels, **options)
         if label_output:
             output.append(label_output)
-        return '\n'.join(output)
+        return "\n".join(output)

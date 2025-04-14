@@ -188,13 +188,13 @@ This test section has some text.
                     self.assertEqual(f"# {username}", doc.text())
                     self.assertEqual(
                         retrieve_str("statement", f"{doc.name}-{doc.rev}.md"),
-                        f"# {username}"
+                        f"# {username}",
                     )
                 else:
                     self.assertEqual("not valid pdf", doc.text())
                     self.assertEqual(
                         retrieve_str("statement", f"{doc.name}-{doc.rev}.pdf"),
-                        "not valid pdf"
+                        "not valid pdf",
                     )
                 self.assertEqual(docevent_count + 1, doc.docevent_set.count())
                 self.assertEqual(0, len(outbox))
@@ -250,29 +250,26 @@ This test section has some text.
             name = f"statement-{group.acronym}-{postdict['title']}".replace(
                 " ", "-"
             )  # cheap slugification
-            statement = Document.objects.filter(
-                name=name, type_id="statement"
-            ).first()
+            statement = Document.objects.filter(name=name, type_id="statement").first()
             self.assertIsNotNone(statement)
             self.assertEqual(statement.title, postdict["title"])
             self.assertEqual(statement.rev, "00")
             self.assertEqual(statement.get_state_slug(), "active")
-            self.assertEqual(
-                statement.latest_event(NewRevisionDocEvent).rev, "00"
-            )
+            self.assertEqual(statement.latest_event(NewRevisionDocEvent).rev, "00")
             self.assertIsNotNone(statement.latest_event(type="published_statement"))
-            self.assertIsNotNone(statement.history_set.last().latest_event(type="published_statement"))
+            self.assertIsNotNone(
+                statement.history_set.last().latest_event(type="published_statement")
+            )
             if postdict["statement_submission"] == "enter":
                 self.assertEqual(statement.text_or_error(), "some stuff")
                 self.assertEqual(
-                    retrieve_str("statement", statement.uploaded_filename),
-                    "some stuff"
+                    retrieve_str("statement", statement.uploaded_filename), "some stuff"
                 )
             else:
                 self.assertTrue(statement.uploaded_filename.endswith("pdf"))
                 self.assertEqual(
                     retrieve_str("statement", f"{statement.name}-{statement.rev}.pdf"),
-                    "not valid pdf"
+                    "not valid pdf",
                 )
             self.assertEqual(len(outbox), 0)
 

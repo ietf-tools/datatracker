@@ -33,7 +33,7 @@
 
 import datetime
 
-import debug      # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from django import template
 from django.urls import reverse as urlreverse
@@ -48,26 +48,37 @@ from ietf.name.models import BallotPositionName
 
 register = template.Library()
 
+
 @register.filter
 def showballoticon(doc):
     if doc.type_id == "draft":
-        if doc.stream_id == 'ietf' and doc.get_state_slug("draft-iesg") not in IESG_BALLOT_ACTIVE_STATES:
+        if (
+            doc.stream_id == "ietf"
+            and doc.get_state_slug("draft-iesg") not in IESG_BALLOT_ACTIVE_STATES
+        ):
             return False
-        elif doc.stream_id == 'irtf' and doc.get_state_slug("draft-stream-irtf") != "irsgpoll":
+        elif (
+            doc.stream_id == "irtf"
+            and doc.get_state_slug("draft-stream-irtf") != "irsgpoll"
+        ):
             return False
-        elif doc.stream_id == 'editorial' and doc.get_state_slug("draft-stream-rsab") != "rsabpoll":
+        elif (
+            doc.stream_id == "editorial"
+            and doc.get_state_slug("draft-stream-rsab") != "rsabpoll"
+        ):
             return False
     elif doc.type_id == "charter":
         if doc.get_state_slug() not in ("intrev", "extrev", "iesgrev"):
             return False
     elif doc.type_id == "conflrev":
-       if doc.get_state_slug() not in ("iesgeval","defer"):
-           return False
+        if doc.get_state_slug() not in ("iesgeval", "defer"):
+            return False
     elif doc.type_id == "statchg":
-       if doc.get_state_slug() not in ("iesgeval","defer", "in-lc"):
-           return False
+        if doc.get_state_slug() not in ("iesgeval", "defer", "in-lc"):
+            return False
 
     return True
+
 
 @register.simple_tag(takes_context=True)
 def ballot_icon(context, doc):
@@ -79,7 +90,7 @@ def ballot_icon(context, doc):
     if not showballoticon(doc):
         return ""
 
-    ballot = doc.ballot if hasattr(doc, 'ballot') else doc.active_ballot()
+    ballot = doc.ballot if hasattr(doc, "ballot") else doc.active_ballot()
 
     if not ballot:
         return ""
@@ -99,15 +110,21 @@ def ballot_icon(context, doc):
     request = context.get("request")
     ballot_edit_return_point_param = f"ballot_edit_return_point={request.path}"
 
-    right_click_string = ''
+    right_click_string = ""
     if has_role(user, "Area Director"):
-        right_click_string = 'oncontextmenu="window.location.href=\'{}?{}\';return false;"'.format(
-            urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=doc.name, ballot_id=ballot.pk)),
-            ballot_edit_return_point_param)
+        right_click_string = (
+            "oncontextmenu=\"window.location.href='{}?{}';return false;\"".format(
+                urlreverse(
+                    "ietf.doc.views_ballot.edit_position",
+                    kwargs=dict(name=doc.name, ballot_id=ballot.pk),
+                ),
+                ballot_edit_return_point_param,
+            )
+        )
 
     my_blocking = False
     for i, (balloter, pos) in enumerate(positions):
-        if user_is_person(user,balloter) and pos and pos.pos.blocking:
+        if user_is_person(user, balloter) and pos and pos.pos.blocking:
             my_blocking = True
             break
 
@@ -118,20 +135,28 @@ def ballot_icon(context, doc):
         typename = "RSAB"
     else:
         typename = "IESG"
-    
-    modal_url = "{}?{}".format(
-        urlreverse("ietf.doc.views_doc.ballot_popup", kwargs=dict(name=doc.name, ballot_id=ballot.pk)),
-        ballot_edit_return_point_param)
 
-    res = ['<a %s href="%s" data-bs-toggle="modal" data-bs-target="#modal-%d" aria-label="%s positions" title="%s positions (click to show more)" class="ballot-icon"><table' % (
+    modal_url = "{}?{}".format(
+        urlreverse(
+            "ietf.doc.views_doc.ballot_popup",
+            kwargs=dict(name=doc.name, ballot_id=ballot.pk),
+        ),
+        ballot_edit_return_point_param,
+    )
+
+    res = [
+        '<a %s href="%s" data-bs-toggle="modal" data-bs-target="#modal-%d" aria-label="%s positions" title="%s positions (click to show more)" class="ballot-icon"><table'
+        % (
             right_click_string,
             modal_url,
             ballot.pk,
             typename,
-            typename,)]
+            typename,
+        )
+    ]
     if my_blocking:
         res.append(' class="is-blocking" ')
-    res.append('><tbody>')
+    res.append("><tbody>")
 
     res.append("<tr>")
 
@@ -153,9 +178,13 @@ def ballot_icon(context, doc):
         i = i + 1
 
     res.append("</tr></tbody></table></a>")
-    res.append('<div id="modal-%d" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable modal-xl modal-fullscreen-lg-down"><div class="modal-content"></div></div></div>' % ballot.pk)
+    res.append(
+        '<div id="modal-%d" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable modal-xl modal-fullscreen-lg-down"><div class="modal-content"></div></div></div>'
+        % ballot.pk
+    )
 
     return mark_safe("".join(res))
+
 
 @register.filter
 def ballotposition(doc, user):
@@ -166,7 +195,12 @@ def ballotposition(doc, user):
     if not ballot:
         return None
 
-    changed_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", balloter__user=user, ballot=ballot)
+    changed_pos = doc.latest_event(
+        BallotPositionDocEvent,
+        type="changed_ballot_position",
+        balloter__user=user,
+        ballot=ballot,
+    )
     if changed_pos:
         pos = changed_pos.pos
     else:
@@ -247,15 +281,17 @@ def state_age_colored(doc):
 @register.filter
 def auth48_alert_badge(doc):
     """Return alert badge, if any, for a document"""
-    if doc.type_id != 'draft':
-        return ''
+    if doc.type_id != "draft":
+        return ""
 
-    iesg_state = doc.get_state_slug('draft-iesg')
-    if iesg_state != 'rfcqueue':
-        return ''
+    iesg_state = doc.get_state_slug("draft-iesg")
+    if iesg_state != "rfcqueue":
+        return ""
 
-    rfced_state = doc.get_state_slug('draft-rfceditor')
-    if rfced_state == 'auth48':
-        return mark_safe('<span class="badge rounded-pill text-bg-info" title="AUTH48">AUTH48</span>')
+    rfced_state = doc.get_state_slug("draft-rfceditor")
+    if rfced_state == "auth48":
+        return mark_safe(
+            '<span class="badge rounded-pill text-bg-info" title="AUTH48">AUTH48</span>'
+        )
 
-    return ''
+    return ""

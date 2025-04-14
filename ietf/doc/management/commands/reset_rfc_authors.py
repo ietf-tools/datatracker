@@ -35,7 +35,9 @@ class Command(BaseCommand):
                 raise CommandError(
                     f"{rfc.name} already has authors. Not resetting. Use '--force' to reset anyway."
                 )
-            removed_auth_names = list(orig_authors.values_list("person__name", flat=True))
+            removed_auth_names = list(
+                orig_authors.values_list("person__name", flat=True)
+            )
             rfc.documentauthor_set.all().delete()
             DocEvent.objects.create(
                 doc=rfc,
@@ -58,7 +60,9 @@ class Command(BaseCommand):
             author.document = rfc
             author.save()
             self.stdout.write(
-                self.style.SUCCESS(f"Added author {author.person.name} <{author.email}>")
+                self.style.SUCCESS(
+                    f"Added author {author.person.name} <{author.email}>"
+                )
             )
         auth_names = draft.documentauthor_set.values_list("person__name", flat=True)
         DocEvent.objects.create(

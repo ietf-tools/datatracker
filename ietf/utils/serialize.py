@@ -2,6 +2,7 @@ import datetime
 
 from django.db import models
 
+
 def object_as_shallow_dict(obj):
     """Turn a Django model object into a dict suitable for passing to
     create and for serializing to JSON."""
@@ -18,7 +19,7 @@ def object_as_shallow_dict(obj):
         elif isinstance(f, models.DateTimeField):
             v = v.astimezone(datetime.timezone.utc).isoformat()
         elif isinstance(f, models.DateField):
-            v = v.strftime('%Y-%m-%d')
+            v = v.strftime("%Y-%m-%d")
 
         d[n] = v
 

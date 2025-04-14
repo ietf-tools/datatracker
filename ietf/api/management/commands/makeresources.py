@@ -8,7 +8,7 @@ import io
 
 from importlib import import_module
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from django.core.management.base import AppCommand
 from django.db import models
@@ -54,10 +54,12 @@ class {{model.name}}Resource(ModelResource):{% if model.foreign_keys %}{% for fk
 api.{{app_label}}.register({{model.name}}Resource())
 {% endfor %}{% endautoescape %}"""
 
+
 def render(template, dictionary):
     template = Template(template, None, None)
     context = Context(dictionary)
     return template.render(context)
+
 
 class Command(AppCommand):
 
@@ -72,7 +74,7 @@ class Command(AppCommand):
             app_resources = {}
             if os.path.exists(resource_file_path):
                 resources = import_module("%s.resources" % app.name)
-                for n,v in resources.__dict__.items():
+                for n, v in resources.__dict__.items():
                     if issubclass(type(v), type(ModelResource)):
                         app_resources[n] = v
 
@@ -86,46 +88,51 @@ class Command(AppCommand):
             if missing_resources:
                 print("Updating resources.py for %s" % app.name)
                 with io.open(resource_file_path, "a") as rfile:
-                    info = dict(
-                        app=app.name,
-                        app_label=app.label,
-                        date=timezone.now()
-                    )
+                    info = dict(app=app.name, app_label=app.label, date=timezone.now())
                     new_models = {}
                     for model, rclass_name in missing_resources:
                         model_name = model.__name__
                         resource_name = model.__name__.lower()
-                        imports = collections.defaultdict(lambda: collections.defaultdict(list))
+                        imports = collections.defaultdict(
+                            lambda: collections.defaultdict(list)
+                        )
                         print("Adding resource class for %s" % model_name)
                         foreign_keys = []
                         plain_names = []
                         fk_names = []
                         m2m_names = []
                         pk_name = model._meta.pk.name
-                        #debug.pprint('dir(model)')
+                        # debug.pprint('dir(model)')
                         for field in model._meta.fields:
-                            if isinstance(field, (models.ForeignKey, models.OneToOneField)):
-                                #debug.show('field.name')
-                                #debug.pprint('dir(field.remote_field.to)')
-                                #exit()
-                                rel_app=field.remote_field.model._meta.app_label
-                                rel_model_name=field.remote_field.model.__name__
+                            if isinstance(
+                                field, (models.ForeignKey, models.OneToOneField)
+                            ):
+                                # debug.show('field.name')
+                                # debug.pprint('dir(field.remote_field.to)')
+                                # exit()
+                                rel_app = field.remote_field.model._meta.app_label
+                                rel_model_name = field.remote_field.model.__name__
                                 if rel_model_name == model_name:
                                     # foreign key to self class -- quote
                                     # the rmodel_name
-                                    rmodel_name="'%s.resources.%sResource'" % (app.name, rel_model_name)
+                                    rmodel_name = "'%s.resources.%sResource'" % (
+                                        app.name,
+                                        rel_model_name,
+                                    )
                                 else:
-                                    rmodel_name=rel_model_name+"Resource"
-                                foreign_keys.append(dict(
-                                    field=field,
-                                    name=field.name,
-                                    app=rel_app,
-                                    module=rel_app.split('.')[-1],
-                                    model=field.remote_field.model,
-                                    model_name=rel_model_name,
-                                    rmodel_name=rmodel_name,
-                                    resource_name=field.remote_field.model.__name__.lower(),
-                                    ))
+                                    rmodel_name = rel_model_name + "Resource"
+                                foreign_keys.append(
+                                    dict(
+                                        field=field,
+                                        name=field.name,
+                                        app=rel_app,
+                                        module=rel_app.split(".")[-1],
+                                        model=field.remote_field.model,
+                                        model_name=rel_model_name,
+                                        rmodel_name=rmodel_name,
+                                        resource_name=field.remote_field.model.__name__.lower(),
+                                    )
+                                )
                                 imports[rel_app]["module"] = rel_app
                                 imports[rel_app]["names"].append(rel_model_name)
                                 fk_names.append(field.name)
@@ -133,44 +140,49 @@ class Command(AppCommand):
                                 plain_names.append(field.name)
                         m2m_keys = []
                         for field in model._meta.many_to_many:
-                                #debug.show('field.name')
-                                #debug.pprint('dir(field.remote_field.model)')
-                                #exit()
-                                rel_app=field.remote_field.model._meta.app_label
-                                rel_model_name=field.remote_field.model.__name__
-                                if rel_model_name == model_name:
-                                    # foreign key to self class -- quote
-                                    # the rmodel_name
-                                    rmodel_name="'%s.resources.%sResource'" % (app.name, rel_model_name)
-                                else:
-                                    rmodel_name=rel_model_name+"Resource"
-                                m2m_keys.append(dict(
+                            # debug.show('field.name')
+                            # debug.pprint('dir(field.remote_field.model)')
+                            # exit()
+                            rel_app = field.remote_field.model._meta.app_label
+                            rel_model_name = field.remote_field.model.__name__
+                            if rel_model_name == model_name:
+                                # foreign key to self class -- quote
+                                # the rmodel_name
+                                rmodel_name = "'%s.resources.%sResource'" % (
+                                    app.name,
+                                    rel_model_name,
+                                )
+                            else:
+                                rmodel_name = rel_model_name + "Resource"
+                            m2m_keys.append(
+                                dict(
                                     field=field,
                                     name=field.name,
                                     app=rel_app,
-                                    module=rel_app.split('.')[-1],
+                                    module=rel_app.split(".")[-1],
                                     model=field.remote_field.model,
                                     model_name=rel_model_name,
                                     rmodel_name=rmodel_name,
                                     resource_name=field.remote_field.model.__name__.lower(),
-                                    ))
-                                imports[rel_app]["module"] = rel_app
-                                imports[rel_app]["names"].append(rel_model_name)
-                                m2m_names.append(field.name)
+                                )
+                            )
+                            imports[rel_app]["module"] = rel_app
+                            imports[rel_app]["names"].append(rel_model_name)
+                            m2m_names.append(field.name)
                         # some special import cases
                         if "auth" in imports:
-                            imports["auth"]["module"] = 'utils'
+                            imports["auth"]["module"] = "utils"
                         if "contenttypes" in imports:
-                            imports["contenttypes"]["module"] = 'utils'
+                            imports["contenttypes"]["module"] = "utils"
                         for k in imports:
                             imports[k]["names"] = set(imports[k]["names"])
                         new_models[model_name] = dict(
-                            app=app.name.split('.')[-1],
+                            app=app.name.split(".")[-1],
                             model=model,
                             fields=model._meta.fields,
                             m2m_fields=model._meta.many_to_many,
                             name=model_name,
-                            imports=[ v for k,v in list(imports.items()) ],
+                            imports=[v for k, v in list(imports.items())],
                             foreign_keys=foreign_keys,
                             m2m_keys=m2m_keys,
                             resource_name=resource_name,
@@ -178,7 +190,9 @@ class Command(AppCommand):
                             fk_names=fk_names,
                             m2m_names=m2m_names,
                             pk_name=pk_name,
-                            rn_comment=False if resource_name.endswith('resource') else True,
+                            rn_comment=(
+                                False if resource_name.endswith("resource") else True
+                            ),
                         )
 
                     # Sort resources according to internal FK reference depth
@@ -190,38 +204,53 @@ class Command(AppCommand):
                     internal_fk_count_limit = 0
                     while len(new_models) > 0:
                         list_len = len(new_models)
-                        #debug.show('len(new_models)')
+                        # debug.show('len(new_models)')
                         keys = list(new_models.keys())
                         for model_name in keys:
                             internal_fk_count = 0
-                            for fk in new_models[model_name]["foreign_keys"]+new_models[model_name]["m2m_keys"]:
-                                #debug.say("if statement comparison on:")
-                                #debug.show('fk["model_name"]')
-                                #debug.show('model_name')
-                                #debug.say('if fk["model_name"] in new_models and not fk["model_name"] == model_name:')
-                                if fk["model_name"] in new_models and not fk["model_name"] == model_name:
-                                    #print("Not a leaf model: %s: found fk to %s" % (model_name, fk["model"]))
+                            for fk in (
+                                new_models[model_name]["foreign_keys"]
+                                + new_models[model_name]["m2m_keys"]
+                            ):
+                                # debug.say("if statement comparison on:")
+                                # debug.show('fk["model_name"]')
+                                # debug.show('model_name')
+                                # debug.say('if fk["model_name"] in new_models and not fk["model_name"] == model_name:')
+                                if (
+                                    fk["model_name"] in new_models
+                                    and not fk["model_name"] == model_name
+                                ):
+                                    # print("Not a leaf model: %s: found fk to %s" % (model_name, fk["model"]))
                                     internal_fk_count += 1
                             if internal_fk_count <= internal_fk_count_limit:
-                                #print("Ordered: "+model_name)
+                                # print("Ordered: "+model_name)
                                 new_model_list.append(new_models[model_name])
                                 del new_models[model_name]
                         if list_len == len(new_models):
-                            #debug.show('list_len, len(new_models)')
-                            print("Circular FK dependencies -- cannot order resource classes")
+                            # debug.show('list_len, len(new_models)')
+                            print(
+                                "Circular FK dependencies -- cannot order resource classes"
+                            )
                             if internal_fk_count_limit < list_len:
                                 print("Attempting a partial ordering ...")
                                 internal_fk_count_limit += 1
                             else:
-                                print("Failed also with partial ordering, writing resource classes without ordering")
-                                new_model_list = [ v for k,v in list(new_models.items()) ]
+                                print(
+                                    "Failed also with partial ordering, writing resource classes without ordering"
+                                )
+                                new_model_list = [
+                                    v for k, v in list(new_models.items())
+                                ]
                                 break
 
                     if rfile.tell() == 0:
                         print("Writing resource file head")
                         rfile.write(render(resource_head_template, info))
                     else:
-                        print("\nNOTE: Not writing resource file head.\nYou may have to update the import from %s.models" % app.name)
+                        print(
+                            "\nNOTE: Not writing resource file head.\nYou may have to update the import from %s.models"
+                            % app.name
+                        )
 
                     info.update(dict(models=new_model_list))
                     rfile.write(render(resource_class_template, info))

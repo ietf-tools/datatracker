@@ -6,8 +6,9 @@ from django.core.management.base import BaseCommand
 
 from ietf.submit.models import Submission, SubmissionCheck
 
+
 class Command(BaseCommand):
-    help = ("Remove all but the first and last yangchecks for each Submission")
+    help = "Remove all but the first and last yangchecks for each Submission"
 
     def handle(self, *args, **options):
         print("Identifying purgeable SubmissionChecks")

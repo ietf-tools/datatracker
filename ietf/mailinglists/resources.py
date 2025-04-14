@@ -4,47 +4,56 @@
 
 
 from ietf.api import ModelResource
-from tastypie.fields import ToManyField                 # pyflakes:ignore
+from tastypie.fields import ToManyField  # pyflakes:ignore
 from tastypie.constants import ALL, ALL_WITH_RELATIONS  # pyflakes:ignore
 from tastypie.cache import SimpleCache
 
 from ietf import api
-from ietf.api import ToOneField                         # pyflakes:ignore
+from ietf.api import ToOneField  # pyflakes:ignore
 
 from ietf.mailinglists.models import Allowlisted, NonWgMailingList
 
 
 from ietf.person.resources import PersonResource
+
+
 class AllowlistedResource(ModelResource):
-    by               = ToOneField(PersonResource, 'by')
+    by = ToOneField(PersonResource, "by")
+
     class Meta:
         queryset = Allowlisted.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'allowlisted'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'allowlisted'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "time": ALL,
             "email": ALL,
             "by": ALL_WITH_RELATIONS,
         }
+
+
 api.mailinglists.register(AllowlistedResource())
+
 
 class NonWgMailingListResource(ModelResource):
     class Meta:
         queryset = NonWgMailingList.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'nonwgmailinglist'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'nonwgmailinglist'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "name": ALL,
             "domain": ALL,
             "description": ALL,
         }
+
+
 api.mailinglists.register(NonWgMailingListResource())
-
-
-

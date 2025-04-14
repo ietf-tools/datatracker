@@ -5,10 +5,11 @@
 from django.contrib import admin
 from django.utils.encoding import force_str
 
+
 def name(obj):
-    if hasattr(obj, 'abbrev'):
+    if hasattr(obj, "abbrev"):
         return obj.abbrev()
-    elif hasattr(obj, 'name'):
+    elif hasattr(obj, "name"):
         if callable(obj.name):
             name = obj.name()
         else:
@@ -16,12 +17,14 @@ def name(obj):
         if name:
             return name
     return str(obj)
-    
+
+
 def admin_link(field, label=None, ordering="", display=name, suffix=""):
     if not label:
         label = field.capitalize().replace("_", " ").strip()
     if ordering == "":
         ordering = field
+
     def _link(self):
         obj = self
         for attr in field.split("__"):
@@ -33,26 +36,40 @@ def admin_link(field, label=None, ordering="", display=name, suffix=""):
         elif callable(obj):
             objects = obj()
             if not hasattr(objects, "__iter__"):
-                objects = [ objects ]
+                objects = [objects]
         elif hasattr(obj, "__iter__"):
             objects = obj
         else:
-            objects = [ obj ]
+            objects = [obj]
         chunks = []
         for obj in objects:
             app = obj._meta.app_label
             model = obj.__class__.__name__.lower()
             id = obj.pk
-            chunks += [ '<a href="/admin/%(app)s/%(model)s/%(id)s/%(suffix)s">%(display)s</a>' %
-                {'app':app, "model": model, "id":id, "display": display(obj), "suffix":suffix, } ]
+            chunks += [
+                '<a href="/admin/%(app)s/%(model)s/%(id)s/%(suffix)s">%(display)s</a>'
+                % {
+                    "app": app,
+                    "model": model,
+                    "id": id,
+                    "display": display(obj),
+                    "suffix": suffix,
+                }
+            ]
         return ", ".join(chunks)
+
     _link.allow_tags = True
     _link.short_description = label
     _link.admin_order_field = ordering
     return _link
 
+
 from .models import DumpInfo
+
+
 class DumpInfoAdmin(admin.ModelAdmin):
-    list_display = ['date', 'host', 'tz']
-    list_filter = ['date']
+    list_display = ["date", "host", "tz"]
+    list_filter = ["date"]
+
+
 admin.site.register(DumpInfo, DumpInfoAdmin)

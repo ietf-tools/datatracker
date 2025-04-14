@@ -5,5 +5,5 @@ from ietf.redirects import views
 from ietf.utils.urls import url
 
 urlpatterns = [
-    url(r'^(?P<script>.*?\.cgi)(/.*)?$', views.redirect),
+    url(r"^(?P<script>.*?\.cgi)(/.*)?$", views.redirect),
 ]

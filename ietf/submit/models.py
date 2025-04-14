@@ -8,7 +8,7 @@ import jsonfield
 from django.db import models
 from django.utils import timezone
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from ietf.doc.models import Document, ExtResource
 from ietf.person.models import Person
@@ -26,8 +26,9 @@ def parse_email_line(line):
     Split email address into name and email like
     email.utils.parseaddr() but return a dictionary
     """
-    name, addr = email.utils.parseaddr(line) if '@' in line else (line, '')
+    name, addr = email.utils.parseaddr(line) if "@" in line else (line, "")
     return dict(name=parse_unicode(name), email=addr)
+
 
 class Submission(models.Model):
     state = ForeignKey(DraftSubmissionStateName)
@@ -44,9 +45,14 @@ class Submission(models.Model):
     rev = models.CharField(max_length=3, blank=True)
     pages = models.IntegerField(null=True, blank=True)
     words = models.IntegerField(null=True, blank=True)
-    formal_languages = models.ManyToManyField(FormalLanguageName, blank=True, help_text="Formal languages used in document")
+    formal_languages = models.ManyToManyField(
+        FormalLanguageName, blank=True, help_text="Formal languages used in document"
+    )
 
-    authors = jsonfield.JSONField(default=list, help_text="List of authors with name, email, affiliation and country.")
+    authors = jsonfield.JSONField(
+        default=list,
+        help_text="List of authors with name, email, affiliation and country.",
+    )
     note = models.TextField(blank=True)
     replaces = models.CharField(max_length=1000, blank=True)
 
@@ -57,7 +63,11 @@ class Submission(models.Model):
     submission_date = models.DateField(default=date_today)
     xml_version = models.CharField(null=True, max_length=4, default=None)
 
-    submitter = models.CharField(max_length=255, blank=True, help_text="Name and email of submitter, e.g. \"John Doe &lt;john@example.org&gt;\".")
+    submitter = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text='Name and email of submitter, e.g. "John Doe &lt;john@example.org&gt;".',
+    )
 
     draft = ForeignKey(Document, null=True, blank=True)
 
@@ -66,7 +76,7 @@ class Submission(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['submission_date']),
+            models.Index(fields=["submission_date"]),
         ]
 
     def submitter_parsed(self):
@@ -80,7 +90,7 @@ class Submission(models.Model):
 
     def latest_checks(self):
         """Latest check of each type, excluding any that did not apply
-        
+
         Ignores any checks where passed is None
         """
         latest_for_each_checker = [
@@ -94,7 +104,7 @@ class Submission(models.Model):
 
     @property
     def replaces_names(self):
-        return self.replaces.split(',')
+        return self.replaces.split(",")
 
     @property
     def area(self):
@@ -106,44 +116,46 @@ class Submission(models.Model):
 
     @property
     def revises_wg_draft(self):
-        return (
-            self.rev != '00'
-            and self.group
-            and self.group.is_wg
-        )
+        return self.rev != "00" and self.group and self.group.is_wg
 
     @property
     def active_wg_drafts_replaced(self):
         return Document.objects.filter(
-            name__in=self.replaces.split(','),
-            group__in=Group.objects.active_wgs()
+            name__in=self.replaces.split(","), group__in=Group.objects.active_wgs()
         )
 
     @property
     def closed_wg_drafts_replaced(self):
         return Document.objects.filter(
-            name__in=self.replaces.split(','),
-            group__in=Group.objects.closed_wgs()
+            name__in=self.replaces.split(","), group__in=Group.objects.closed_wgs()
         )
 
 
 class SubmissionCheck(models.Model):
     time = models.DateTimeField(default=timezone.now)
-    submission = ForeignKey(Submission, related_name='checks')
+    submission = ForeignKey(Submission, related_name="checks")
     checker = models.CharField(max_length=256, blank=True)
     passed = models.BooleanField(null=True, default=False)
     message = models.TextField(null=True, blank=True)
     errors = models.IntegerField(null=True, blank=True, default=None)
     warnings = models.IntegerField(null=True, blank=True, default=None)
-    items = jsonfield.JSONField(null=True, blank=True, default='{}')
-    symbol = models.CharField(max_length=64, default='')
+    items = jsonfield.JSONField(null=True, blank=True, default="{}")
+    symbol = models.CharField(max_length=64, default="")
+
     #
     def __str__(self):
-        return "%s submission check: %s: %s" % (self.checker, 'Passed' if self.passed else 'Failed', self.message[:48]+'...')
+        return "%s submission check: %s: %s" % (
+            self.checker,
+            "Passed" if self.passed else "Failed",
+            self.message[:48] + "...",
+        )
+
     def has_warnings(self):
-        return self.warnings != '[]'
+        return self.warnings != "[]"
+
     def has_errors(self):
-        return self.errors != '[]'
+        return self.errors != "[]"
+
 
 class SubmissionEvent(models.Model):
     submission = ForeignKey(Submission)
@@ -152,17 +164,23 @@ class SubmissionEvent(models.Model):
     desc = models.TextField()
 
     def __str__(self):
-        return "%s %s by %s at %s" % (self.submission.name, self.desc, self.by.plain_name() if self.by else "(unknown)", self.time)
+        return "%s %s by %s at %s" % (
+            self.submission.name,
+            self.desc,
+            self.by.plain_name() if self.by else "(unknown)",
+            self.time,
+        )
 
     class Meta:
         ordering = ("-time", "-id")
         indexes = [
-            models.Index(fields=['-time', '-id']),
+            models.Index(fields=["-time", "-id"]),
         ]
 
 
 class Preapproval(models.Model):
     """Pre-approved draft submission name."""
+
     name = models.CharField(max_length=255, db_index=True)
     by = ForeignKey(Person)
     time = models.DateTimeField(default=timezone.now)
@@ -170,17 +188,23 @@ class Preapproval(models.Model):
     def __str__(self):
         return self.name
 
+
 class SubmissionEmailEvent(SubmissionEvent):
-    message     = ForeignKey(Message, null=True, blank=True,related_name='manualevents')
-    msgtype     = models.CharField(max_length=25)
-    in_reply_to = ForeignKey(Message, null=True, blank=True,related_name='irtomanual')
+    message = ForeignKey(Message, null=True, blank=True, related_name="manualevents")
+    msgtype = models.CharField(max_length=25)
+    in_reply_to = ForeignKey(Message, null=True, blank=True, related_name="irtomanual")
 
     def __str__(self):
-        return "%s %s by %s at %s" % (self.submission.name, self.desc, self.by.plain_name() if self.by else "(unknown)", self.time)
+        return "%s %s by %s at %s" % (
+            self.submission.name,
+            self.desc,
+            self.by.plain_name() if self.by else "(unknown)",
+            self.time,
+        )
 
     class Meta:
-        ordering = ['-time', '-id']
+        ordering = ["-time", "-id"]
 
 
 class SubmissionExtResource(ExtResource):
-    submission = ForeignKey(Submission, related_name='external_resources')
+    submission = ForeignKey(Submission, related_name="external_resources")

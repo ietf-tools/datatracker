@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
+
 
 def find_history_active_at(obj, time):
     """Assumes obj has a corresponding history model (e.g. obj could
@@ -20,13 +21,14 @@ def find_history_active_at(obj, time):
     if obj.time <= time:
         return obj
 
-    histories = obj.history_set.order_by('-time')
+    histories = obj.history_set.order_by("-time")
 
     for h in histories:
         if h.time <= time:
             return h
 
     return None
+
 
 def find_history_replacements_active_at(objects, time):
     """Return dictionary mapping object pk to object or its history
@@ -40,7 +42,9 @@ def find_history_replacements_active_at(objects, time):
     # automatically figure out how to query history model
     history_model = objects[0].history_set.model
     # core_filters contains something like "group__exact": obj
-    relation_name = list(objects[0].history_set.core_filters.keys())[0].replace("__exact", "")
+    relation_name = list(objects[0].history_set.core_filters.keys())[0].replace(
+        "__exact", ""
+    )
 
     # now the querying is a bit tricky - we are only interested in the
     # history version just before time, or if we can't get that, the
@@ -48,9 +52,11 @@ def find_history_replacements_active_at(objects, time):
     # through SQL we just grab all of them and sort it out ourselves
     changed_objects = [o for o in objects if o.time > time]
 
-    histories = history_model.objects.filter(**{ relation_name + "__in": changed_objects }).order_by(relation_name, "-time", "-id")
+    histories = history_model.objects.filter(
+        **{relation_name + "__in": changed_objects}
+    ).order_by(relation_name, "-time", "-id")
 
-    history_for_obj = { o.pk: o for o in objects }
+    history_for_obj = {o.pk: o for o in objects}
     skip = None
     for h in histories:
         obj_id = getattr(h, relation_name + "_id")
@@ -59,9 +65,10 @@ def find_history_replacements_active_at(objects, time):
 
         history_for_obj[obj_id] = h
         if h.time <= time:
-            skip = obj_id # we're far enough, go to next obj
+            skip = obj_id  # we're far enough, go to next obj
 
     return history_for_obj
+
 
 def get_history_object_for(obj):
     """Construct history object for obj, i.e. instantiate history
@@ -92,6 +99,7 @@ def get_history_object_for(obj):
     # that to caller
 
     return h
+
 
 def copy_many_to_many_for_history(history_obj, obj):
     """Copy basic many-to-many fields from obj to history_obj."""

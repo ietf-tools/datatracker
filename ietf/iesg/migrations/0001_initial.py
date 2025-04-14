@@ -9,47 +9,70 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies: List[Tuple[str, str]] = [
-    ]
+    dependencies: List[Tuple[str, str]] = []
 
     operations = [
         migrations.CreateModel(
-            name='Telechat',
+            name="Telechat",
             fields=[
-                ('telechat_id', models.IntegerField(primary_key=True, serialize=False)),
-                ('telechat_date', models.DateField(blank=True, null=True)),
-                ('minute_approved', models.IntegerField(blank=True, null=True)),
-                ('wg_news_txt', models.TextField(blank=True)),
-                ('iab_news_txt', models.TextField(blank=True)),
-                ('management_issue', models.TextField(blank=True)),
-                ('frozen', models.IntegerField(blank=True, null=True)),
-                ('mi_frozen', models.IntegerField(blank=True, null=True)),
+                ("telechat_id", models.IntegerField(primary_key=True, serialize=False)),
+                ("telechat_date", models.DateField(blank=True, null=True)),
+                ("minute_approved", models.IntegerField(blank=True, null=True)),
+                ("wg_news_txt", models.TextField(blank=True)),
+                ("iab_news_txt", models.TextField(blank=True)),
+                ("management_issue", models.TextField(blank=True)),
+                ("frozen", models.IntegerField(blank=True, null=True)),
+                ("mi_frozen", models.IntegerField(blank=True, null=True)),
             ],
             options={
-                'db_table': 'telechat',
+                "db_table": "telechat",
             },
         ),
         migrations.CreateModel(
-            name='TelechatAgendaItem',
+            name="TelechatAgendaItem",
             fields=[
-                ('id', models.AutoField(db_column='template_id', primary_key=True, serialize=False)),
-                ('text', models.TextField(blank=True, db_column='template_text')),
-                ('type', models.IntegerField(choices=[(1, 'Any Other Business (WG News, New Proposals, etc.)'), (2, 'IAB News'), (3, 'Management Item')], db_column='template_type', default=3)),
-                ('title', models.CharField(db_column='template_title', max_length=255)),
+                (
+                    "id",
+                    models.AutoField(
+                        db_column="template_id", primary_key=True, serialize=False
+                    ),
+                ),
+                ("text", models.TextField(blank=True, db_column="template_text")),
+                (
+                    "type",
+                    models.IntegerField(
+                        choices=[
+                            (1, "Any Other Business (WG News, New Proposals, etc.)"),
+                            (2, "IAB News"),
+                            (3, "Management Item"),
+                        ],
+                        db_column="template_type",
+                        default=3,
+                    ),
+                ),
+                ("title", models.CharField(db_column="template_title", max_length=255)),
             ],
         ),
         migrations.CreateModel(
-            name='TelechatDate',
+            name="TelechatDate",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date', models.DateField(default=ietf.iesg.models.next_telechat_date)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("date", models.DateField(default=ietf.iesg.models.next_telechat_date)),
             ],
             options={
-                'ordering': ['-date'],
+                "ordering": ["-date"],
             },
         ),
         migrations.AddIndex(
-            model_name='telechatdate',
-            index=models.Index(fields=['-date'], name='iesg_telech_date_a0e0ed_idx'),
+            model_name="telechatdate",
+            index=models.Index(fields=["-date"], name="iesg_telech_date_a0e0ed_idx"),
         ),
     ]

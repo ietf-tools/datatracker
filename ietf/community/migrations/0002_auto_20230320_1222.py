@@ -11,57 +11,87 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('person', '0001_initial'),
+        ("person", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('community', '0001_initial'),
-        ('group', '0001_initial'),
-        ('doc', '0001_initial'),
+        ("community", "0001_initial"),
+        ("group", "0001_initial"),
+        ("doc", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='searchrule',
-            name='group',
-            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='group.Group'),
+            model_name="searchrule",
+            name="group",
+            field=ietf.utils.models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="group.Group",
+            ),
         ),
         migrations.AddField(
-            model_name='searchrule',
-            name='name_contains_index',
-            field=models.ManyToManyField(to='doc.Document'),
+            model_name="searchrule",
+            name="name_contains_index",
+            field=models.ManyToManyField(to="doc.Document"),
         ),
         migrations.AddField(
-            model_name='searchrule',
-            name='person',
-            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='person.Person'),
+            model_name="searchrule",
+            name="person",
+            field=ietf.utils.models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="person.Person",
+            ),
         ),
         migrations.AddField(
-            model_name='searchrule',
-            name='state',
-            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='doc.State'),
+            model_name="searchrule",
+            name="state",
+            field=ietf.utils.models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="doc.State",
+            ),
         ),
         migrations.AddField(
-            model_name='emailsubscription',
-            name='community_list',
-            field=ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='community.CommunityList'),
+            model_name="emailsubscription",
+            name="community_list",
+            field=ietf.utils.models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                to="community.CommunityList",
+            ),
         ),
         migrations.AddField(
-            model_name='emailsubscription',
-            name='email',
-            field=ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='person.Email'),
+            model_name="emailsubscription",
+            name="email",
+            field=ietf.utils.models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="person.Email"
+            ),
         ),
         migrations.AddField(
-            model_name='communitylist',
-            name='added_docs',
-            field=models.ManyToManyField(to='doc.Document'),
+            model_name="communitylist",
+            name="added_docs",
+            field=models.ManyToManyField(to="doc.Document"),
         ),
         migrations.AddField(
-            model_name='communitylist',
-            name='group',
-            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='group.Group'),
+            model_name="communitylist",
+            name="group",
+            field=ietf.utils.models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="group.Group",
+            ),
         ),
         migrations.AddField(
-            model_name='communitylist',
-            name='user',
-            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
+            model_name="communitylist",
+            name="user",
+            field=ietf.utils.models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

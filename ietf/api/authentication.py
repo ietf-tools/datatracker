@@ -9,7 +9,7 @@ class ApiKeyAuthentication(authentication.BaseAuthentication):
 
     def authenticate(self, request):
         """Extract the authentication token, if present
-        
+
         This does not validate the token, it just arranges for it to be available in request.auth.
         It's up to a Permissions class to validate it for the appropriate endpoint.
         """

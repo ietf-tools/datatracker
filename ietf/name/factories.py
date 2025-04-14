@@ -7,6 +7,7 @@ from .models import (
     AppealArtifactTypeName,
 )
 
+
 class AppealArtifactTypeNameFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = AppealArtifactTypeName

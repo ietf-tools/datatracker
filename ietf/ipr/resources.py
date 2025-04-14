@@ -5,30 +5,44 @@
 
 from ietf.api import ModelResource
 from ietf.api import ToOneField
-from tastypie.fields import ToManyField     # pyflakes:ignore
+from tastypie.fields import ToManyField  # pyflakes:ignore
 from tastypie.constants import ALL, ALL_WITH_RELATIONS  # pyflakes:ignore
 from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.ipr.models import ( IprDisclosureBase, IprDocRel, HolderIprDisclosure, ThirdPartyIprDisclosure,
-    RelatedIpr, NonDocSpecificIprDisclosure, GenericIprDisclosure, IprEvent, LegacyMigrationIprEvent )
+from ietf.ipr.models import (
+    IprDisclosureBase,
+    IprDocRel,
+    HolderIprDisclosure,
+    ThirdPartyIprDisclosure,
+    RelatedIpr,
+    NonDocSpecificIprDisclosure,
+    GenericIprDisclosure,
+    IprEvent,
+    LegacyMigrationIprEvent,
+)
 
 from ietf.person.resources import PersonResource
 from ietf.name.resources import IprDisclosureStateNameResource
 from ietf.doc.resources import DocumentResource
+
+
 class IprDisclosureBaseResource(ModelResource):
-    by               = ToOneField(PersonResource, 'by')
-    state            = ToOneField(IprDisclosureStateNameResource, 'state')
-    docs             = ToManyField(DocumentResource, 'docs', null=True)
-    rel              = ToManyField('ietf.ipr.resources.IprDisclosureBaseResource', 'rel', null=True)
+    by = ToOneField(PersonResource, "by")
+    state = ToOneField(IprDisclosureStateNameResource, "state")
+    docs = ToManyField(DocumentResource, "docs", null=True)
+    rel = ToManyField("ietf.ipr.resources.IprDisclosureBaseResource", "rel", null=True)
+
     class Meta:
         queryset = IprDisclosureBase.objects.all()
         cache = SimpleCache()
         serializer = api.Serializer()
-        #resource_name = 'iprdisclosurebase'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'iprdisclosurebase'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "compliant": ALL,
             "holder_legal_name": ALL,
@@ -43,42 +57,60 @@ class IprDisclosureBaseResource(ModelResource):
             "docs": ALL_WITH_RELATIONS,
             "rel": ALL_WITH_RELATIONS,
         }
+
+
 api.ipr.register(IprDisclosureBaseResource())
 
+
 class IprDocRelResource(ModelResource):
-    disclosure       = ToOneField(IprDisclosureBaseResource, 'disclosure')
-    document         = ToOneField(DocumentResource, 'document')
+    disclosure = ToOneField(IprDisclosureBaseResource, "disclosure")
+    document = ToOneField(DocumentResource, "document")
+
     class Meta:
         cache = SimpleCache()
         queryset = IprDocRel.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'iprdocrel'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'iprdocrel'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "sections": ALL,
             "revisions": ALL,
             "disclosure": ALL_WITH_RELATIONS,
             "document": ALL_WITH_RELATIONS,
         }
+
+
 api.ipr.register(IprDocRelResource())
 
 from ietf.person.resources import PersonResource
-from ietf.name.resources import IprDisclosureStateNameResource, IprLicenseTypeNameResource
+from ietf.name.resources import (
+    IprDisclosureStateNameResource,
+    IprLicenseTypeNameResource,
+)
+
+
 class HolderIprDisclosureResource(ModelResource):
-    by               = ToOneField(PersonResource, 'by')
-    state            = ToOneField(IprDisclosureStateNameResource, 'state')
-    iprdisclosurebase_ptr = ToOneField(IprDisclosureBaseResource, 'iprdisclosurebase_ptr')
-    licensing        = ToOneField(IprLicenseTypeNameResource, 'licensing')
-    docs             = ToManyField(DocumentResource, 'docs', null=True)
-    rel              = ToManyField(IprDisclosureBaseResource, 'rel', null=True)
+    by = ToOneField(PersonResource, "by")
+    state = ToOneField(IprDisclosureStateNameResource, "state")
+    iprdisclosurebase_ptr = ToOneField(
+        IprDisclosureBaseResource, "iprdisclosurebase_ptr"
+    )
+    licensing = ToOneField(IprLicenseTypeNameResource, "licensing")
+    docs = ToManyField(DocumentResource, "docs", null=True)
+    rel = ToManyField(IprDisclosureBaseResource, "rel", null=True)
+
     class Meta:
         cache = SimpleCache()
         queryset = HolderIprDisclosure.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'holderiprdisclosure'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'holderiprdisclosure'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "compliant": ALL,
             "holder_legal_name": ALL,
@@ -105,23 +137,32 @@ class HolderIprDisclosureResource(ModelResource):
             "docs": ALL_WITH_RELATIONS,
             "rel": ALL_WITH_RELATIONS,
         }
+
+
 api.ipr.register(HolderIprDisclosureResource())
 
 from ietf.person.resources import PersonResource
 from ietf.name.resources import IprDisclosureStateNameResource
+
+
 class ThirdPartyIprDisclosureResource(ModelResource):
-    by               = ToOneField(PersonResource, 'by')
-    state            = ToOneField(IprDisclosureStateNameResource, 'state')
-    iprdisclosurebase_ptr = ToOneField(IprDisclosureBaseResource, 'iprdisclosurebase_ptr')
-    docs             = ToManyField(DocumentResource, 'docs', null=True)
-    rel              = ToManyField(IprDisclosureBaseResource, 'rel', null=True)
+    by = ToOneField(PersonResource, "by")
+    state = ToOneField(IprDisclosureStateNameResource, "state")
+    iprdisclosurebase_ptr = ToOneField(
+        IprDisclosureBaseResource, "iprdisclosurebase_ptr"
+    )
+    docs = ToManyField(DocumentResource, "docs", null=True)
+    rel = ToManyField(IprDisclosureBaseResource, "rel", null=True)
+
     class Meta:
         cache = SimpleCache()
         queryset = ThirdPartyIprDisclosure.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'thirdpartyiprdisclosure'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'thirdpartyiprdisclosure'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "compliant": ALL,
             "holder_legal_name": ALL,
@@ -142,42 +183,58 @@ class ThirdPartyIprDisclosureResource(ModelResource):
             "docs": ALL_WITH_RELATIONS,
             "rel": ALL_WITH_RELATIONS,
         }
+
+
 api.ipr.register(ThirdPartyIprDisclosureResource())
 
 from ietf.name.resources import DocRelationshipNameResource
+
+
 class RelatedIprResource(ModelResource):
-    source           = ToOneField(IprDisclosureBaseResource, 'source')
-    target           = ToOneField(IprDisclosureBaseResource, 'target')
-    relationship     = ToOneField(DocRelationshipNameResource, 'relationship')
+    source = ToOneField(IprDisclosureBaseResource, "source")
+    target = ToOneField(IprDisclosureBaseResource, "target")
+    relationship = ToOneField(DocRelationshipNameResource, "relationship")
+
     class Meta:
         cache = SimpleCache()
         queryset = RelatedIpr.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'relatedipr'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'relatedipr'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "source": ALL_WITH_RELATIONS,
             "target": ALL_WITH_RELATIONS,
             "relationship": ALL_WITH_RELATIONS,
         }
+
+
 api.ipr.register(RelatedIprResource())
 
 from ietf.person.resources import PersonResource
 from ietf.name.resources import IprDisclosureStateNameResource
+
+
 class NonDocSpecificIprDisclosureResource(ModelResource):
-    by               = ToOneField(PersonResource, 'by')
-    state            = ToOneField(IprDisclosureStateNameResource, 'state')
-    iprdisclosurebase_ptr = ToOneField(IprDisclosureBaseResource, 'iprdisclosurebase_ptr')
-    docs             = ToManyField(DocumentResource, 'docs', null=True)
-    rel              = ToManyField(IprDisclosureBaseResource, 'rel', null=True)
+    by = ToOneField(PersonResource, "by")
+    state = ToOneField(IprDisclosureStateNameResource, "state")
+    iprdisclosurebase_ptr = ToOneField(
+        IprDisclosureBaseResource, "iprdisclosurebase_ptr"
+    )
+    docs = ToManyField(DocumentResource, "docs", null=True)
+    rel = ToManyField(IprDisclosureBaseResource, "rel", null=True)
+
     class Meta:
         cache = SimpleCache()
         queryset = NonDocSpecificIprDisclosure.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'nondocspecificiprdisclosure'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'nondocspecificiprdisclosure'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "compliant": ALL,
             "holder_legal_name": ALL,
@@ -199,23 +256,32 @@ class NonDocSpecificIprDisclosureResource(ModelResource):
             "docs": ALL_WITH_RELATIONS,
             "rel": ALL_WITH_RELATIONS,
         }
+
+
 api.ipr.register(NonDocSpecificIprDisclosureResource())
 
 from ietf.person.resources import PersonResource
 from ietf.name.resources import IprDisclosureStateNameResource
+
+
 class GenericIprDisclosureResource(ModelResource):
-    by               = ToOneField(PersonResource, 'by')
-    state            = ToOneField(IprDisclosureStateNameResource, 'state')
-    iprdisclosurebase_ptr = ToOneField(IprDisclosureBaseResource, 'iprdisclosurebase_ptr')
-    docs             = ToManyField(DocumentResource, 'docs', null=True)
-    rel              = ToManyField(IprDisclosureBaseResource, 'rel', null=True)
+    by = ToOneField(PersonResource, "by")
+    state = ToOneField(IprDisclosureStateNameResource, "state")
+    iprdisclosurebase_ptr = ToOneField(
+        IprDisclosureBaseResource, "iprdisclosurebase_ptr"
+    )
+    docs = ToManyField(DocumentResource, "docs", null=True)
+    rel = ToManyField(IprDisclosureBaseResource, "rel", null=True)
+
     class Meta:
         cache = SimpleCache()
         queryset = GenericIprDisclosure.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'genericiprdisclosure'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'genericiprdisclosure'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "compliant": ALL,
             "holder_legal_name": ALL,
@@ -235,24 +301,31 @@ class GenericIprDisclosureResource(ModelResource):
             "docs": ALL_WITH_RELATIONS,
             "rel": ALL_WITH_RELATIONS,
         }
+
+
 api.ipr.register(GenericIprDisclosureResource())
 
 from ietf.person.resources import PersonResource
 from ietf.message.resources import MessageResource
 from ietf.name.resources import IprEventTypeNameResource
+
+
 class IprEventResource(ModelResource):
-    type             = ToOneField(IprEventTypeNameResource, 'type')
-    by               = ToOneField(PersonResource, 'by')
-    disclosure       = ToOneField(IprDisclosureBaseResource, 'disclosure')
-    message          = ToOneField(MessageResource, 'message', null=True)
-    in_reply_to      = ToOneField(MessageResource, 'in_reply_to', null=True)
+    type = ToOneField(IprEventTypeNameResource, "type")
+    by = ToOneField(PersonResource, "by")
+    disclosure = ToOneField(IprDisclosureBaseResource, "disclosure")
+    message = ToOneField(MessageResource, "message", null=True)
+    in_reply_to = ToOneField(MessageResource, "in_reply_to", null=True)
+
     class Meta:
         cache = SimpleCache()
         queryset = IprEvent.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'iprevent'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'iprevent'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "time": ALL,
             "desc": ALL,
@@ -263,25 +336,32 @@ class IprEventResource(ModelResource):
             "message": ALL_WITH_RELATIONS,
             "in_reply_to": ALL_WITH_RELATIONS,
         }
+
+
 api.ipr.register(IprEventResource())
 
 from ietf.person.resources import PersonResource
 from ietf.message.resources import MessageResource
 from ietf.name.resources import IprEventTypeNameResource
+
+
 class LegacyMigrationIprEventResource(ModelResource):
-    type             = ToOneField(IprEventTypeNameResource, 'type')
-    by               = ToOneField(PersonResource, 'by')
-    disclosure       = ToOneField(IprDisclosureBaseResource, 'disclosure')
-    message          = ToOneField(MessageResource, 'message', null=True)
-    in_reply_to      = ToOneField(MessageResource, 'in_reply_to', null=True)
-    iprevent_ptr     = ToOneField(IprEventResource, 'iprevent_ptr')
+    type = ToOneField(IprEventTypeNameResource, "type")
+    by = ToOneField(PersonResource, "by")
+    disclosure = ToOneField(IprDisclosureBaseResource, "disclosure")
+    message = ToOneField(MessageResource, "message", null=True)
+    in_reply_to = ToOneField(MessageResource, "in_reply_to", null=True)
+    iprevent_ptr = ToOneField(IprEventResource, "iprevent_ptr")
+
     class Meta:
         cache = SimpleCache()
         queryset = LegacyMigrationIprEvent.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'legacymigrationiprevent'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'legacymigrationiprevent'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "time": ALL,
             "desc": ALL,
@@ -293,5 +373,6 @@ class LegacyMigrationIprEventResource(ModelResource):
             "in_reply_to": ALL_WITH_RELATIONS,
             "iprevent_ptr": ALL_WITH_RELATIONS,
         }
-api.ipr.register(LegacyMigrationIprEventResource())
 
+
+api.ipr.register(LegacyMigrationIprEventResource())

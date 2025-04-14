@@ -8,5 +8,5 @@ from ietf.ipr.models import IprDisclosureBase
 # so skip giving one
 
 queryset = IprDisclosureBase.objects.filter(state__in=settings.PUBLISH_IPR_STATES)
-archive = {'queryset':queryset, 'date_field': 'time', 'allow_empty':True }
-IPRMap = GenericSitemap(archive)        # type: ignore
+archive = {"queryset": queryset, "date_field": "time", "allow_empty": True}
+IPRMap = GenericSitemap(archive)  # type: ignore

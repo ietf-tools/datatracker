@@ -7,13 +7,21 @@ import random
 
 from faker import Faker
 
-from ietf.nomcom.models import NomCom, Position, Feedback, Nominee, NomineePosition, Nomination, Topic
+from ietf.nomcom.models import (
+    NomCom,
+    Position,
+    Feedback,
+    Nominee,
+    NomineePosition,
+    Nomination,
+    Topic,
+)
 from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
-cert = b'''-----BEGIN CERTIFICATE-----
+cert = b"""-----BEGIN CERTIFICATE-----
 MIIDHjCCAgagAwIBAgIJAKDCCjbQboJzMA0GCSqGSIb3DQEBCwUAMBMxETAPBgNV
 BAMMCE5vbUNvbTE1MB4XDTE0MDQwNDIxMTQxNFoXDTE2MDQwMzIxMTQxNFowEzER
 MA8GA1UEAwwITm9tQ29tMTUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIB
@@ -32,9 +40,9 @@ Vr7HZH5Dv/lsjGHHf8uJO7+mcMh+tqxLn3DzPrm61OfeWdkoVX2pTz0imRQ3Es+8
 I7zNMk+fNNaEEyPnEyHfuWq0uD/qKeP27NZIoINy6E3INQ5QaE2uc1nQULg5y7uJ
 toX3j+FUe2UiUak3ACXdrOPSsFP0KRrFwuMnuHHXkGj/Uw==
 -----END CERTIFICATE-----
-'''
+"""
 
-key = b'''-----BEGIN PRIVATE KEY-----
+key = b"""-----BEGIN PRIVATE KEY-----
 MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC2QXCsAitYSOgP
 Yor77zQnEeHuVqlcuhpH1wpKB+N6WcScA5N3AnX9uZEFOt6McJ+MCiHECdqDlH6n
 pQTJlpCpIVgAD4B6xzjRBRww8d3lClA/kKwsKzuX93RS0Uv30hAD6q9wjqK/m6vR
@@ -62,22 +70,24 @@ IecEZb4Gkp1hVhOpNT4U+T2LROxrZtFxxsw2vuIRa5a5FtMbDq9Xyhkm0QppliBd
 KQ38jTT0EaD2+vstTqL8vxupo25RQWV1XsmLL4pLbKnm2HnnwB3vEtsiokWKW0q0
 Tdb0MiLc+r/zvx8oXtgDjDUa
 -----END PRIVATE KEY-----
-'''
+"""
+
 
 def provide_private_key_to_test_client(testcase):
     session = testcase.client.session
-    session['NOMCOM_PRIVATE_KEY_%s'%testcase.nc.year()] = key.decode("utf8")
+    session["NOMCOM_PRIVATE_KEY_%s" % testcase.nc.year()] = key.decode("utf8")
     session.save()
+
 
 def nomcom_kwargs_for_year(year=None, *args, **kwargs):
     if not year:
-        year = random.randint(1990,2100)
-    if 'group__state_id' not in kwargs:
-        kwargs['group__state_id']='active'
-    if 'group__acronym' not in kwargs:
-        kwargs['group__acronym'] = 'nomcom%d'%year
-    if 'group__name' not in kwargs:
-        kwargs['group__name'] = 'TEST VERSION of NomCom %d/%d'%(year,year+1)
+        year = random.randint(1990, 2100)
+    if "group__state_id" not in kwargs:
+        kwargs["group__state_id"] = "active"
+    if "group__acronym" not in kwargs:
+        kwargs["group__acronym"] = "nomcom%d" % year
+    if "group__name" not in kwargs:
+        kwargs["group__name"] = "TEST VERSION of NomCom %d/%d" % (year, year + 1)
     return kwargs
 
 
@@ -86,68 +96,79 @@ class NomComFactory(factory.django.DjangoModelFactory):
         model = NomCom
         skip_postgeneration_save = True
 
-    group = factory.SubFactory(GroupFactory,type_id='nomcom')
+    group = factory.SubFactory(GroupFactory, type_id="nomcom")
 
-    public_key = factory.django.FileField(data=cert)    
+    public_key = factory.django.FileField(data=cert)
 
     @factory.post_generation
-    def populate_positions(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
-        ''' 
+    def populate_positions(
+        obj, create, extracted, **kwargs
+    ):  # pylint: disable=no-self-argument
+        """
         Create a set of nominees and positions unless NomcomFactory is called
         with populate_positions=False
-        '''
+        """
         if extracted is None:
             extracted = True
         if create and extracted:
             nominees = [NomineeFactory(nomcom=obj) for i in range(4)]
             positions = [PositionFactory(nomcom=obj) for i in range(3)]
 
-            def npc(position,nominee,state_id):
-                return NomineePosition.objects.create(position=position,
-                                                      nominee=nominee,
-                                                      state_id=state_id) 
+            def npc(position, nominee, state_id):
+                return NomineePosition.objects.create(
+                    position=position, nominee=nominee, state_id=state_id
+                )
+
             # This gives us positions with 0, 1 and 2 nominees, and
             # one person who's been nominated for more than one position
-            npc(positions[0],nominees[0],'accepted')
-            npc(positions[1],nominees[0],'accepted')
-            npc(positions[1],nominees[1],'accepted')
-            npc(positions[0],nominees[2],'pending')
-            npc(positions[0],nominees[3],'declined')
+            npc(positions[0], nominees[0], "accepted")
+            npc(positions[1], nominees[0], "accepted")
+            npc(positions[1], nominees[1], "accepted")
+            npc(positions[0], nominees[2], "pending")
+            npc(positions[0], nominees[3], "declined")
 
     @factory.post_generation
-    def populate_personnel(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
-        '''
+    def populate_personnel(
+        obj, create, extracted, **kwargs
+    ):  # pylint: disable=no-self-argument
+        """
         Create a default set of role holders, unless the factory is called
         with populate_personnel=False
-        '''
+        """
         if extracted is None:
             extracted = True
         if create and extracted:
-            #roles= ['chair', 'advisor'] + ['member']*10
-            roles = ['chair', 'advisor', 'member']
+            # roles= ['chair', 'advisor'] + ['member']*10
+            roles = ["chair", "advisor", "member"]
             for role in roles:
                 p = PersonFactory()
-                obj.group.role_set.create(name_id=role,person=p,email=p.email_set.first())
+                obj.group.role_set.create(
+                    name_id=role, person=p, email=p.email_set.first()
+                )
 
     @factory.post_generation
-    def populate_topics(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
-        '''
+    def populate_topics(
+        obj, create, extracted, **kwargs
+    ):  # pylint: disable=no-self-argument
+        """
         Create a set of topics unless the factory is called with populate_topics=False
-        '''
+        """
         if extracted is None:
             extracted = True
         if create and extracted:
             for i in range(3):
                 TopicFactory(nomcom=obj)
 
+
 class PositionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Position
 
-    name = factory.Faker('sentence',nb_words=5)
+    name = factory.Faker("sentence", nb_words=5)
     is_open = True
     accepting_nominations = True
     accepting_feedback = True
+
 
 class NomineeFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -157,13 +178,15 @@ class NomineeFactory(factory.django.DjangoModelFactory):
     person = factory.SubFactory(PersonFactory)
     email = factory.LazyAttribute(lambda obj: obj.person.email())
 
+
 class NomineePositionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = NomineePosition
 
     position = factory.SubFactory(PositionFactory)
     nominee = factory.SubFactory(NomineeFactory)
-    state_id = 'accepted'
+    state_id = "accepted"
+
 
 class FeedbackFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -171,8 +194,8 @@ class FeedbackFactory(factory.django.DjangoModelFactory):
         skip_postgeneration_save = True
 
     nomcom = factory.SubFactory(NomComFactory)
-    subject = factory.Faker('sentence')
-    type_id = 'comment'
+    subject = factory.Faker("sentence")
+    type_id = "comment"
 
     @factory.post_generation
     def comments(obj, create, extracted, **kwargs):
@@ -180,14 +203,16 @@ class FeedbackFactory(factory.django.DjangoModelFactory):
         obj.comments = obj.nomcom.encrypt(comment_text)
         obj.save()
 
+
 class TopicFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Topic
 
     nomcom = factory.SubFactory(NomComFactory)
-    subject = factory.Faker('sentence')
+    subject = factory.Faker("sentence")
     accepting_feedback = True
-    audience_id = 'general'
+    audience_id = "general"
+
 
 class NominationFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -197,9 +222,8 @@ class NominationFactory(factory.django.DjangoModelFactory):
     position = factory.SubFactory(NomineePositionFactory)
     candidate_name = factory.LazyAttribute(lambda obj: obj.nominee.person.name)
     candidate_email = factory.LazyAttribute(lambda obj: obj.nominee.person.email())
-    candidate_phone = factory.Faker('phone_number')
+    candidate_phone = factory.Faker("phone_number")
     comments = factory.SubFactory(FeedbackFactory)
     nominator_email = factory.LazyAttribute(lambda obj: obj.person.user.email)
     person = factory.SubFactory(PersonFactory)
     share_nominator = False
-    

@@ -4,8 +4,9 @@
 
 import re
 
+
 def normalize_draftname(string):
     string = string.strip()
-    string = re.sub(r"\.txt$","",string)
-    string = re.sub(r"-\d\d$","",string)
+    string = re.sub(r"\.txt$", "", string)
+    string = re.sub(r"-\d\d$", "", string)
     return string

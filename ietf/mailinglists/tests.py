@@ -6,7 +6,7 @@ from pyquery import PyQuery
 
 from django.urls import reverse as urlreverse
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from ietf.group.factories import GroupFactory
 from ietf.mailinglists.factories import NonWgMailingListFactory
@@ -22,14 +22,13 @@ class MailingListTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q("#content a:contains(\"%s\")" % group.acronym)), 0)
+        self.assertEqual(len(q('#content a:contains("%s")' % group.acronym)), 0)
 
         # successful get
-        group = GroupFactory(list_archive = "https://example.com/foo")
+        group = GroupFactory(list_archive="https://example.com/foo")
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertEqual(len(q("#content a:contains(\"%s\")" % group.acronym)), 1)
-
+        self.assertEqual(len(q('#content a:contains("%s")' % group.acronym)), 1)
 
     def test_nonwg(self):
 
@@ -40,7 +39,6 @@ class MailingListTests(TestCase):
         r = self.client.get(url)
         q = PyQuery(r.content)
         for l in lists:
-                self.assertContains(r, l.name)
-                self.assertContains(r, l.description)
-                self.assertNotEqual(q(f"a[href=\"{l.info_url()}\"]"), [])
-
+            self.assertContains(r, l.name)
+            self.assertContains(r, l.description)
+            self.assertNotEqual(q(f'a[href="{l.info_url()}"]'), [])

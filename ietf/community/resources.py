@@ -16,17 +16,22 @@ from ietf.community.models import CommunityList, SearchRule, EmailSubscription
 from ietf.doc.resources import DocumentResource
 from ietf.group.resources import GroupResource
 from ietf.utils.resources import UserResource
+
+
 class CommunityListResource(ModelResource):
-    user             = ToOneField(UserResource, 'user', null=True)
-    group            = ToOneField(GroupResource, 'group', null=True)
-    added_docs       = ToManyField(DocumentResource, 'added_docs', null=True)
+    user = ToOneField(UserResource, "user", null=True)
+    group = ToOneField(GroupResource, "group", null=True)
+    added_docs = ToManyField(DocumentResource, "added_docs", null=True)
+
     class Meta:
         cache = SimpleCache()
         queryset = CommunityList.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'communitylist'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'communitylist'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "secret": ALL,
             "cached": ALL,
@@ -34,35 +39,49 @@ class CommunityListResource(ModelResource):
             "group": ALL_WITH_RELATIONS,
             "added_docs": ALL_WITH_RELATIONS,
         }
+
+
 api.community.register(CommunityListResource())
 
+
 class SearchRuleResource(ModelResource):
-    community_list   = ToOneField(CommunityListResource, 'community_list')
+    community_list = ToOneField(CommunityListResource, "community_list")
+
     class Meta:
         cache = SimpleCache()
         queryset = SearchRule.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'rule'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'rule'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "rule_type": ALL,
             "community_list": ALL_WITH_RELATIONS,
         }
+
+
 api.community.register(SearchRuleResource())
 
+
 class EmailSubscriptionResource(ModelResource):
-    community_list   = ToOneField(CommunityListResource, 'community_list')
+    community_list = ToOneField(CommunityListResource, "community_list")
+
     class Meta:
         cache = SimpleCache()
         queryset = EmailSubscription.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'emailsubscription'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'emailsubscription'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "email": ALL_WITH_RELATIONS,
             "notify_on": ALL,
             "community_list": ALL_WITH_RELATIONS,
         }
+
+
 api.community.register(EmailSubscriptionResource())

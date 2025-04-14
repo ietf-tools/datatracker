@@ -176,17 +176,44 @@ class IetfFiltersTests(TestCase):
         for input, output in cases:
             # debug.show("(input, urlize_ietf_docs(input), output)")
             self.assertEqual(urlize_ietf_docs(input), output)
-    
+
     def test_is_unexpected_wg_state(self):
         """
         Test that the unexpected_wg_state function works correctly
         """
         # test documents with expected wg states
         self.assertFalse(is_unexpected_wg_state(RfcFactory()))
-        self.assertFalse(is_unexpected_wg_state(WgDraftFactory (states=[('draft-stream-ietf', 'sub-pub')])))
-        self.assertFalse(is_unexpected_wg_state(WgDraftFactory (states=[('draft-iesg', 'idexists')])))
-        self.assertFalse(is_unexpected_wg_state(WgDraftFactory (states=[('draft-stream-ietf', 'wg-cand'), ('draft-iesg','idexists')])))
+        self.assertFalse(
+            is_unexpected_wg_state(
+                WgDraftFactory(states=[("draft-stream-ietf", "sub-pub")])
+            )
+        )
+        self.assertFalse(
+            is_unexpected_wg_state(WgDraftFactory(states=[("draft-iesg", "idexists")]))
+        )
+        self.assertFalse(
+            is_unexpected_wg_state(
+                WgDraftFactory(
+                    states=[
+                        ("draft-stream-ietf", "wg-cand"),
+                        ("draft-iesg", "idexists"),
+                    ]
+                )
+            )
+        )
 
         # test documents with unexpected wg states due to invalid combination of states
-        self.assertTrue(is_unexpected_wg_state(WgDraftFactory (states=[('draft-stream-ietf', 'wg-cand'), ('draft-iesg','lc-req')])))
-        self.assertTrue(is_unexpected_wg_state(WgDraftFactory (states=[('draft-stream-ietf', 'chair-w'), ('draft-iesg','pub-req')])))
+        self.assertTrue(
+            is_unexpected_wg_state(
+                WgDraftFactory(
+                    states=[("draft-stream-ietf", "wg-cand"), ("draft-iesg", "lc-req")]
+                )
+            )
+        )
+        self.assertTrue(
+            is_unexpected_wg_state(
+                WgDraftFactory(
+                    states=[("draft-stream-ietf", "chair-w"), ("draft-iesg", "pub-req")]
+                )
+            )
+        )

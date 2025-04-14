@@ -5,7 +5,7 @@ from pathlib import Path
 from django import template
 from django.conf import settings
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 from ietf.utils import log
 
 register = template.Library()
@@ -21,17 +21,19 @@ class OriginNode(template.Node):
         try:
             return origin_path.relative_to(settings.BASE_DIR)
         except ValueError:
-            log.log(f'Rendering a template from outside the project root: {self.origin}')
-            return '** path outside project root **'
+            log.log(
+                f"Rendering a template from outside the project root: {self.origin}"
+            )
+            return "** path outside project root **"
 
     def render(self, context):
-        if self.origin and settings.SERVER_MODE != 'production':
-            return f'<!-- template: {self.relative_path()} -->'
+        if self.origin and settings.SERVER_MODE != "production":
+            return f"<!-- template: {self.relative_path()} -->"
         else:
             return ""
 
 
-@register.tag('origin')
+@register.tag("origin")
 def origin_tag(parser, token):
     """Create a node indicating the path to the current template"""
     if hasattr(token, "source"):

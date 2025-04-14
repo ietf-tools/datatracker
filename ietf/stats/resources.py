@@ -4,71 +4,98 @@
 
 
 from tastypie.resources import ModelResource
-from tastypie.fields import ToManyField                 # pyflakes:ignore
+from tastypie.fields import ToManyField  # pyflakes:ignore
 from tastypie.constants import ALL, ALL_WITH_RELATIONS  # pyflakes:ignore
 from tastypie.cache import SimpleCache
 
 from ietf import api
-from ietf.api import ToOneField                         # pyflakes:ignore
+from ietf.api import ToOneField  # pyflakes:ignore
 
-from ietf.stats.models import CountryAlias, AffiliationIgnoredEnding, AffiliationAlias, MeetingRegistration
+from ietf.stats.models import (
+    CountryAlias,
+    AffiliationIgnoredEnding,
+    AffiliationAlias,
+    MeetingRegistration,
+)
 
 
 from ietf.name.resources import CountryNameResource
+
+
 class CountryAliasResource(ModelResource):
-    country          = ToOneField(CountryNameResource, 'country')
+    country = ToOneField(CountryNameResource, "country")
+
     class Meta:
         queryset = CountryAlias.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'countryalias'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'countryalias'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "alias": ALL,
             "country": ALL_WITH_RELATIONS,
         }
+
+
 api.stats.register(CountryAliasResource())
+
 
 class AffiliationIgnoredEndingResource(ModelResource):
     class Meta:
         queryset = AffiliationIgnoredEnding.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'affiliationignoredending'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'affiliationignoredending'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "ending": ALL,
         }
+
+
 api.stats.register(AffiliationIgnoredEndingResource())
+
 
 class AffiliationAliasResource(ModelResource):
     class Meta:
         queryset = AffiliationAlias.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'affiliationalias'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'affiliationalias'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "alias": ALL,
             "name": ALL,
         }
+
+
 api.stats.register(AffiliationAliasResource())
 
 from ietf.meeting.resources import MeetingResource
 from ietf.person.resources import PersonResource
+
+
 class MeetingRegistrationResource(ModelResource):
-    meeting          = ToOneField(MeetingResource, 'meeting')
-    person           = ToOneField(PersonResource, 'person', null=True)
+    meeting = ToOneField(MeetingResource, "meeting")
+    person = ToOneField(PersonResource, "person", null=True)
+
     class Meta:
         queryset = MeetingRegistration.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'meetingregistration'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'meetingregistration'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "first_name": ALL,
             "last_name": ALL,
@@ -81,4 +108,6 @@ class MeetingRegistrationResource(ModelResource):
             "meeting": ALL_WITH_RELATIONS,
             "person": ALL_WITH_RELATIONS,
         }
+
+
 api.stats.register(MeetingRegistrationResource())

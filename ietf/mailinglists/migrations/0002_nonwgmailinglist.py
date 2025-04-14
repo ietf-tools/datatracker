@@ -601,6 +601,7 @@ def forward(apps, schema_editor):
     ):
         NonWgMailingList.objects.create(name=l.name, description=l.description)
 
+
 class Migration(migrations.Migration):
 
     dependencies = [

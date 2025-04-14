@@ -7,16 +7,16 @@ import json
 from collections import Counter
 from urllib.parse import urlencode
 
-from typing import Type # pyflakes:ignore
+from typing import Type  # pyflakes:ignore
 
 import unidecode
 from django import forms
 from django.core.validators import validate_email
-from django.db import models # pyflakes:ignore
+from django.db import models  # pyflakes:ignore
 from django.urls import reverse as urlreverse
 from django.utils.html import escape
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from ietf.person.models import Email, Person
 from ietf.utils.fields import SearchableField
@@ -25,9 +25,13 @@ from ietf.utils.fields import SearchableField
 def select2_id_name(objs):
     def format_email(e):
         return escape("%s <%s>" % (e.person.name, e.address))
+
     def format_person(p):
         if p.name_count > 1:
-            return escape('%s (%s)' % (p.name,p.email().address if p.email() else 'no email address'))
+            return escape(
+                "%s (%s)"
+                % (p.name, p.email().address if p.email() else "no email address")
+            )
         else:
             return escape(p.name)
 
@@ -37,10 +41,10 @@ def select2_id_name(objs):
         formatter = format_person
         c = Counter([p.name for p in objs])
         for p in objs:
-           p.name_count = c[p.name]
-        
+            p.name_count = c[p.name]
+
     formatter = format_email if objs and isinstance(objs[0], Email) else format_person
-    return [{ "id": o.pk, "text": formatter(o) } for o in objs if o]
+    return [{"id": o.pk, "text": formatter(o)} for o in objs if o]
 
 
 def select2_id_name_json(objs):
@@ -58,7 +62,7 @@ class SearchablePersonsField(SearchableField):
     The field uses a comma-separated list of primary keys in a
     CharField element as its API with some extra attributes used by
     the Javascript part.
-    
+
     If the field will be programmatically updated, any model instances
     that may be added to the initial set should be included in the extra_prefetch
     list. These can then be added by updating val() and triggering the 'change'
@@ -67,14 +71,19 @@ class SearchablePersonsField(SearchableField):
     If disable_ajax is True, only objects that are prefetched can be selected. This
     will be any currently selected items plus any in extra_prefetch.
     """
-    model = Person # type: Type[models.Model]
+
+    model = Person  # type: Type[models.Model]
     default_hint_text = "Type name to search for person."
-    def __init__(self,
-                 only_users=False, # only select persons who also have a user
-                 all_emails=False, # select only active email addresses
-                 extra_prefetch=None, # extra data records to include in prefetch
-                 disable_ajax=False, # use ajax to search outside of prefetched set
-                 *args, **kwargs):
+
+    def __init__(
+        self,
+        only_users=False,  # only select persons who also have a user
+        all_emails=False,  # select only active email addresses
+        extra_prefetch=None,  # extra data records to include in prefetch
+        disable_ajax=False,  # use ajax to search outside of prefetched set
+        *args,
+        **kwargs
+    ):
         super(SearchablePersonsField, self).__init__(*args, **kwargs)
         self.only_users = only_users
         self.all_emails = all_emails
@@ -89,13 +98,15 @@ class SearchablePersonsField(SearchableField):
                 raise forms.ValidationError("Unexpected value: %s" % pk)
 
     def make_select2_data(self, model_instances):
-        # Include records needed by the initial value of the field plus any added 
+        # Include records needed by the initial value of the field plus any added
         # via the extra_prefetch property.
         prefetch_set = set(model_instances) if model_instances else set()
-        prefetch_set = prefetch_set.union(set(self.extra_prefetch))  # eliminate duplicates
+        prefetch_set = prefetch_set.union(
+            set(self.extra_prefetch)
+        )  # eliminate duplicates
         return sorted(
             select2_id_name(list(prefetch_set)),
-            key=lambda item: unidecode.unidecode(item['text']),
+            key=lambda item: unidecode.unidecode(item["text"]),
         )
 
     def ajax_url(self):
@@ -104,7 +115,7 @@ class SearchablePersonsField(SearchableField):
         else:
             url = urlreverse(
                 "ietf.person.views.ajax_select2_search",
-                kwargs={ "model_name": self.model.__name__.lower() }
+                kwargs={"model_name": self.model.__name__.lower()},
             )
             query_args = {}
             if self.only_users:
@@ -112,18 +123,20 @@ class SearchablePersonsField(SearchableField):
             if self.all_emails:
                 query_args["a"] = "1"
             if len(query_args) > 0:
-                url += '?%s' % urlencode(query_args)
+                url += "?%s" % urlencode(query_args)
             return url
 
 
 class SearchablePersonField(SearchablePersonsField):
     """Version of SearchablePersonsField specialized to a single object."""
+
     max_entries = 1
 
 
 class SearchableEmailsField(SearchablePersonsField):
     """Version of SearchablePersonsField with the defaults right for Emails."""
-    model = Email # type: Type[models.Model]
+
+    model = Email  # type: Type[models.Model]
     default_hint_text = "Type name or email to search for person and email address."
 
     def validate_pks(self, pks):
@@ -136,6 +149,7 @@ class SearchableEmailsField(SearchablePersonsField):
 
 class SearchableEmailField(SearchableEmailsField):
     """Version of SearchableEmailsField specialized to a single object."""
+
     max_entries = 1
 
 
@@ -143,6 +157,7 @@ class PersonEmailChoiceField(forms.ModelChoiceField):
     """ModelChoiceField targeting Email and displaying choices with the
     person name as well as the email address. Needs further
     restrictions, e.g. on role, to useful."""
+
     def __init__(self, *args, **kwargs):
         if not "queryset" in kwargs:
             kwargs["queryset"] = Email.objects.select_related("person")

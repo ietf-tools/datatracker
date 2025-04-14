@@ -12,12 +12,12 @@ from django.utils import timezone
 # require code changes.
 #
 # Default time zone for deadlines / expiration dates.
-DEADLINE_TZINFO = ZoneInfo('PST8PDT')
+DEADLINE_TZINFO = ZoneInfo("PST8PDT")
 
 # Time zone for dates from the RPC. This value is baked into the timestamps on DocEvents
 # of type="published_rfc" - see Document.pub_date() and ietf.sync.refceditor.update_docs_from_rfc_index()
 # for more information about how that works.
-RPC_TZINFO = ZoneInfo('PST8PDT')
+RPC_TZINFO = ZoneInfo("PST8PDT")
 
 
 def _tzinfo(tz: Union[str, datetime.tzinfo, None]):
@@ -39,7 +39,7 @@ def make_aware(dt, tz):
     Helper to deal with both pytz and zoneinfo type time zones. Can go away when pytz is removed.
     """
     tzinfo = _tzinfo(tz)
-    if hasattr(tzinfo, 'localize'):
+    if hasattr(tzinfo, "localize"):
         return tzinfo.localize(dt)  # pytz-style
     else:
         return dt.replace(tzinfo=tzinfo)  # zoneinfo- / datetime.timezone-style
@@ -59,7 +59,11 @@ def datetime_today(tz=None):
     """
     if tz is None:
         tz = settings.TIME_ZONE
-    return timezone.now().astimezone(_tzinfo(tz)).replace(hour=0, minute=0, second=0, microsecond=0)
+    return (
+        timezone.now()
+        .astimezone(_tzinfo(tz))
+        .replace(hour=0, minute=0, second=0, microsecond=0)
+    )
 
 
 def date_today(tz=None):
@@ -90,7 +94,9 @@ def timezone_not_near_midnight():
     a time zone satisfying this constraint.
     """
     timezone_options = list(
-        available_timezones().difference(['Factory', 'localtime'])  # these two are not known to pytz
+        available_timezones().difference(
+            ["Factory", "localtime"]
+        )  # these two are not known to pytz
     )
     tzname = random.choice(timezone_options)
     right_now = timezone.now().astimezone(ZoneInfo(tzname))
@@ -102,5 +108,5 @@ def timezone_not_near_midnight():
         right_now = right_now.astimezone(ZoneInfo(tzname))
         tries_left -= 1
         if tries_left <= 0:
-            raise RuntimeError('Unable to find a time zone not near midnight')
+            raise RuntimeError("Unable to find a time zone not near midnight")
     return tzname

@@ -11,9 +11,10 @@ import sys
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
-# BlackHole, PySyntaxError and checking based on 
+
+# BlackHole, PySyntaxError and checking based on
 # https://github.com/patrys/gedit-pyflakes-plugin.git
 class BlackHole(object):
     write = flush = lambda *args, **kwargs: None
@@ -26,14 +27,16 @@ class BlackHole(object):
 
 
 class PySyntaxError(messages.Message):
-    message = 'syntax error in line %d: %s'
+    message = "syntax error in line %d: %s"
 
     def __init__(self, filename, lineno, col, message):
         try:
             super(PySyntaxError, self).__init__(filename, lineno)
         except Exception:
-            sys.stderr.write("\nAn exception occurred while processing file %s\n"
-                "The file could contain syntax errors.\n\n" % filename)
+            sys.stderr.write(
+                "\nAn exception occurred while processing file %s\n"
+                "The file could contain syntax errors.\n\n" % filename
+            )
             raise
 
         self.message_args = (col, message)
@@ -64,18 +67,24 @@ def check(codeString, filename, verbosity=1):
         # it.
         w = checker.Checker(tree, filename)
 
-        lines = codeString.split(b'\n')
+        lines = codeString.split(b"\n")
         # honour pyflakes:ignore comments
-        messages = [message for message in w.messages
-                    if (lines[message.lineno-1].find(b'pyflakes:ignore') < 0 and lines[message.lineno-1].find(b'pyflakes: ignore') < 0) ]
+        messages = [
+            message
+            for message in w.messages
+            if (
+                lines[message.lineno - 1].find(b"pyflakes:ignore") < 0
+                and lines[message.lineno - 1].find(b"pyflakes: ignore") < 0
+            )
+        ]
         # honour pyflakes:
 
         messages.sort(key=lambda x: x.lineno)
         if verbosity > 0:
             if len(messages):
-                sys.stderr.write('F')
+                sys.stderr.write("F")
             else:
-                sys.stderr.write('.')
+                sys.stderr.write(".")
             sys.stderr.flush()
         if verbosity > 1:
             sys.stderr.write("  %s\n" % filename)
@@ -92,13 +101,14 @@ def checkPath(filename, verbosity):
         sys.stderr.write("\n  %-78s " % filename)
         sys.stderr.flush()
     try:
-        with io.open(filename, 'br') as f:
+        with io.open(filename, "br") as f:
             text = f.read()
-        return check(text + b'\n', filename, verbosity)
+        return check(text + b"\n", filename, verbosity)
     except IOError as msg:
         return ["%s: %s" % (filename, msg.args[1])]
     except TypeError:
         pass
+
 
 def checkPaths(filenames, verbosity):
     warnings = []
@@ -106,32 +116,38 @@ def checkPaths(filenames, verbosity):
         if os.path.isdir(arg):
             for dirpath, dirnames, filenames in os.walk(arg):
                 for filename in filenames:
-                    if filename.endswith('.py'):
+                    if filename.endswith(".py"):
                         try:
-                            warnings.extend(checkPath(os.path.join(dirpath, filename), verbosity))
+                            warnings.extend(
+                                checkPath(os.path.join(dirpath, filename), verbosity)
+                            )
                         except TypeError as e:
-                            print("Exception while processing dirpath=%s, filename=%s: %s" % (dirpath, filename, e ))
+                            print(
+                                "Exception while processing dirpath=%s, filename=%s: %s"
+                                % (dirpath, filename, e)
+                            )
                             raise
         else:
             warnings.extend(checkPath(arg, verbosity))
     return warnings
+
+
 #### pyflakes.scripts.pyflakes ends.
 
 
 class Command(BaseCommand):
     help = "Run pyflakes syntax checks."
-    args = '[path [path [...]]]'
+    args = "[path [path [...]]]"
 
     def handle(self, *filenames, **options):
         if not filenames:
-            filenames = getattr(settings, 'PYFLAKES_DEFAULT_ARGS', ['.'])
-        verbosity = int(options.get('verbosity'))
+            filenames = getattr(settings, "PYFLAKES_DEFAULT_ARGS", ["."])
+        verbosity = int(options.get("verbosity"))
         warnings = checkPaths(filenames, verbosity=verbosity)
         print("")
         for warning in warnings:
             print(warning)
 
         if warnings:
-            print('Total warnings: %d' % len(warnings))
+            print("Total warnings: %d" % len(warnings))
             raise SystemExit(1)
-            

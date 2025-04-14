@@ -71,7 +71,9 @@ class MeetechoAPI:
         return None
 
     def _deserialize_time(self, s: str) -> datetime.datetime:
-        return datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S").replace(tzinfo=self.timezone)
+        return datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S").replace(
+            tzinfo=self.timezone
+        )
 
     def _serialize_time(self, dt: datetime.datetime) -> str:
         return dt.astimezone(self.timezone).strftime("%Y-%m-%d %H:%M:%S")
@@ -140,7 +142,7 @@ class MeetechoAPI:
           }
 
         :param wg_token: token retrieved via retrieve_wg_tokens()
-        :param room_id: int id to identify the room (will be echoed as room.id) 
+        :param room_id: int id to identify the room (will be echoed as room.id)
         :param description: str describing the meeting
         :param start_time: starting time as a datetime
         :param duration: duration as a timedelta
@@ -209,30 +211,30 @@ class MeetechoAPI:
         order: int
 
     def add_slide_deck(
-        self, 
+        self,
         wg_token: str,
         session: str,  # unique identifier
         deck: SlideDeckDict,
     ):
         """Add a slide deck for the specified session
-        
-        API spec:
-       ⠀POST /materials
-        + Authentication -> same as interim scheduler
-        + content application/json
-        + body
-            {
-                "session": String, // Unique session identifier
-                "title": String,
-                "id": Number,
-                "url": String,
-                "rev": String,
-                "order": Number
-            }
-         
-        + Results 
-            202 Accepted 
-            {4xx}
+
+         API spec:
+        ⠀POST /materials
+         + Authentication -> same as interim scheduler
+         + content application/json
+         + body
+             {
+                 "session": String, // Unique session identifier
+                 "title": String,
+                 "id": Number,
+                 "url": String,
+                 "rev": String,
+                 "order": Number
+             }
+
+         + Results
+             202 Accepted
+             {4xx}
         """
         self._request(
             "POST",
@@ -251,8 +253,8 @@ class MeetechoAPI:
     def delete_slide_deck(
         self,
         wg_token: str,
-        session: str, # unique identifier
-        id: int, 
+        session: str,  # unique identifier
+        id: int,
     ):
         """Delete a slide deck from the specified session
 
@@ -265,8 +267,8 @@ class MeetechoAPI:
                 "session": String,
                 "id": Number
             }
-         
-        + Results 
+
+        + Results
             202 Accepted
             {4xx}
         """
@@ -312,8 +314,8 @@ class MeetechoAPI:
                     ...
                 ]
             }
-         
-        + Results 
+
+        + Results
             202 Accepted
         """
         self._request(
@@ -323,27 +325,30 @@ class MeetechoAPI:
             json={
                 "session": session,
                 "decks": decks,
-            }
+            },
         )
 
 
 class DebugMeetechoAPI(MeetechoAPI):
     """Meetecho API stand-in that writes to stdout instead of making requests"""
+
     def _request(self, method, url, api_token=None, json=None):
         json_lines = pformat(json, width=60).split("\n")
         debug.say(
-            "\n" +
-            "\n".join(
+            "\n"
+            + "\n".join(
                 [
                     f">> MeetechoAPI: request(method={method},",
                     f">> MeetechoAPI:         url={url},",
                     f">> MeetechoAPI:         api_token={api_token},",
                     ">> MeetechoAPI:         json=" + json_lines[0],
                     (
-                        ">> MeetechoAPI:              " +
-                        "\n>> MeetechoAPI:              ".join(l for l in json_lines[1:])
+                        ">> MeetechoAPI:              "
+                        + "\n>> MeetechoAPI:              ".join(
+                            l for l in json_lines[1:]
+                        )
                     ),
-                    ">> MeetechoAPI: )"
+                    ">> MeetechoAPI: )",
                 ]
             )
         )
@@ -351,12 +356,7 @@ class DebugMeetechoAPI(MeetechoAPI):
     def retrieve_wg_tokens(self, acronyms: Union[str, Sequence[str]]):
         super().retrieve_wg_tokens(acronyms)  # so that we capture the outgoing request
         acronyms = [acronyms] if isinstance(acronyms, str) else acronyms
-        return {
-            "tokens": {
-                acro: f"{acro}-token"
-                for acro in acronyms
-            }
-        }    
+        return {"tokens": {acro: f"{acro}-token" for acro in acronyms}}
 
 
 class MeetechoAPIError(Exception):
@@ -458,7 +458,9 @@ class ConferenceManager(Manager):
         response = self.api.fetch_meetings(self.wg_token(group))
         return Conference.from_api_dict(self, response["rooms"])
 
-    def create(self, group, session_id, description, start_time, duration, extrainfo=""):
+    def create(
+        self, group, session_id, description, start_time, duration, extrainfo=""
+    ):
         response = self.api.schedule_meeting(
             wg_token=self.wg_token(group),
             room_id=int(session_id),
@@ -480,7 +482,7 @@ class ConferenceManager(Manager):
 
 class SlidesManager(Manager):
     """Interface between Datatracker models and Meetecho API
-    
+
     Note: the URL sent for a slide deck comes from DocumentInfo.get_href() and includes the revision
     of the slides being sent. Be sure that 1) the URL matches what api_get_session_materials() returns
     for the slides; and 2) the URL is valid if it is fetched immediately - possibly even before the call
@@ -505,7 +507,11 @@ class SlidesManager(Manager):
             return True  # < 0 means "always" for a scheduled session
         else:
             now = datetime.datetime.now(tz=datetime.timezone.utc)
-            return (timeslot.time - self.slides_notify_time) < now < (timeslot.end_time() + self.slides_notify_time)
+            return (
+                (timeslot.time - self.slides_notify_time)
+                < now
+                < (timeslot.end_time() + self.slides_notify_time)
+            )
 
     def add(self, session: "Session", slides: "Document", order: int):
         if not self._should_send_update(session):
@@ -522,7 +528,7 @@ class SlidesManager(Manager):
                 "url": slides.get_href(),
                 "rev": slides.rev,
                 "order": order,
-            }
+            },
         )
 
     def delete(self, session: "Session", slides: "Document"):
@@ -543,8 +549,8 @@ class SlidesManager(Manager):
             id=slides.pk,
         )
         if session.presentations.filter(document__type_id="slides").exists():
-            self.send_update(session)  # adjust order to fill in the hole        
-    
+            self.send_update(session)  # adjust order to fill in the hole
+
     def revise(self, session: "Session", slides: "Document"):
         """Replace existing deck with its current state"""
         if not self._should_send_update(session):
@@ -561,7 +567,7 @@ class SlidesManager(Manager):
             id=slides.pk,
         )
         self.add(session, slides, order)  # fill in the hole
-        
+
     def send_update(self, session: "Session"):
         if not self._should_send_update(session):
             return
@@ -578,5 +584,5 @@ class SlidesManager(Manager):
                     "order": deck.order,
                 }
                 for deck in session.presentations.filter(document__type="slides")
-            ]
+            ],
         )

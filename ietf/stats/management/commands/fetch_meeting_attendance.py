@@ -4,7 +4,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from ietf.meeting.models import Meeting
 from ietf.stats.utils import fetch_attendance_from_meetings
@@ -16,19 +16,25 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--meeting", help="meeting to fetch data for")
-        parser.add_argument("--all", action="store_true", help="fetch data for all meetings")
-        parser.add_argument("--latest", type=int, help="fetch data for latest N meetings")
+        parser.add_argument(
+            "--all", action="store_true", help="fetch data for all meetings"
+        )
+        parser.add_argument(
+            "--latest", type=int, help="fetch data for latest N meetings"
+        )
 
     def handle(self, *args, **options):
-        self.verbosity = options['verbosity']
+        self.verbosity = options["verbosity"]
 
         meetings = Meeting.objects.none()
-        if options['meeting']:
-            meetings = Meeting.objects.filter(number=options['meeting'], type="ietf")
-        elif options['all']:
+        if options["meeting"]:
+            meetings = Meeting.objects.filter(number=options["meeting"], type="ietf")
+        elif options["all"]:
             meetings = Meeting.objects.filter(type="ietf").order_by("date")
-        elif options['latest']:
-            meetings = Meeting.objects.filter(type="ietf", date__lte=timezone.now()).order_by("-date")[:options['latest']]
+        elif options["latest"]:
+            meetings = Meeting.objects.filter(
+                type="ietf", date__lte=timezone.now()
+            ).order_by("-date")[: options["latest"]]
         else:
             raise CommandError("Please use one of --meeting, --all or --latest")
 
@@ -37,6 +43,6 @@ class Command(BaseCommand):
                 meeting.number, stats.processed, stats.added, stats.total
             )
             if self.stdout.isatty():
-                self.stdout.write(msg+'\n') # make debugging a bit easier
+                self.stdout.write(msg + "\n")  # make debugging a bit easier
             else:
                 log.log(msg)

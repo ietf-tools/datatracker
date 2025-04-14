@@ -18,8 +18,8 @@ def removetags(value, tags):
     """Removes a comma-separated list of [X]HTML tags from the output."""
     return remove_tags(value, re.split(r"\s*,\s*", tags))
 
+
 @register.filter(name="markdown", is_safe=True)
 def markdown(string):
     # One issue is that the string is enclosed in <p></p>... Let's remove the leading/trailing ones...
     return utils_markdown(string)[3:-4]
-

@@ -74,17 +74,19 @@ def expire_last_calls_task():
         try:
             expire_last_call(doc)
         except Exception:
-            log.log(f"ERROR: Failed to expire last call for {doc.file_tag()} (id={doc.pk})")
+            log.log(
+                f"ERROR: Failed to expire last call for {doc.file_tag()} (id={doc.pk})"
+            )
         else:
             log.log(f"Expired last call for {doc.file_tag()} (id={doc.pk})")
 
 
-@shared_task            
+@shared_task
 def generate_idnits2_rfc_status_task():
     outpath = Path(settings.DERIVED_DIR) / "idnits2-rfc-status"
     blob = generate_idnits2_rfc_status()
     try:
-        outpath.write_text(blob, encoding="utf8") # TODO-BLOBSTORE
+        outpath.write_text(blob, encoding="utf8")  # TODO-BLOBSTORE
     except Exception as e:
         log.log(f"failed to write idnits2-rfc-status: {e}")
 
@@ -94,7 +96,7 @@ def generate_idnits2_rfcs_obsoleted_task():
     outpath = Path(settings.DERIVED_DIR) / "idnits2-rfcs-obsoleted"
     blob = generate_idnits2_rfcs_obsoleted()
     try:
-        outpath.write_text(blob, encoding="utf8") # TODO-BLOBSTORE
+        outpath.write_text(blob, encoding="utf8")  # TODO-BLOBSTORE
     except Exception as e:
         log.log(f"failed to write idnits2-rfcs-obsoleted: {e}")
 
@@ -102,7 +104,7 @@ def generate_idnits2_rfcs_obsoleted_task():
 @shared_task
 def generate_draft_bibxml_files_task(days=7, process_all=False):
     """Generate bibxml files for recently updated docs
-    
+
     If process_all is False (the default), processes only docs with new revisions
     in the last specified number of days.
     """
@@ -114,7 +116,9 @@ def generate_draft_bibxml_files_task(days=7, process_all=False):
         doc__type_id="draft",
     ).order_by("time")
     if not process_all:
-        doc_events = doc_events.filter(time__gte=timezone.now() - datetime.timedelta(days=days))
+        doc_events = doc_events.filter(
+            time__gte=timezone.now() - datetime.timedelta(days=days)
+        )
     for event in doc_events:
         try:
             update_or_create_draft_bibxml_file(event.doc, event.rev)

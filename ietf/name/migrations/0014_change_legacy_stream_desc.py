@@ -2,13 +2,16 @@
 
 from django.db import migrations
 
+
 def forward(apps, schema_editor):
     StreamName = apps.get_model("name", "StreamName")
     StreamName.objects.filter(pk="legacy").update(desc="Legacy")
 
+
 def reverse(apps, schema_editor):
     StreamName = apps.get_model("name", "StreamName")
     StreamName.objects.filter(pk="legacy").update(desc="Legacy stream")
+
 
 class Migration(migrations.Migration):
 
@@ -16,6 +19,4 @@ class Migration(migrations.Migration):
         ("name", "0013_narrativeminutes"),
     ]
 
-    operations = [
-        migrations.RunPython(forward, reverse)
-    ]
+    operations = [migrations.RunPython(forward, reverse)]

@@ -12,16 +12,18 @@ from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 
 
 class Command(BaseCommand):
-    help = ("Check liaison deadlines and send a reminder if we are close to a deadline")
+    help = "Check liaison deadlines and send a reminder if we are close to a deadline"
 
     def handle(self, *args, **options):
         today = date_today(DEADLINE_TZINFO)
         cutoff = today - datetime.timedelta(14)
 
         msgs = []
-        for l in LiaisonStatement.objects.filter(deadline__gte=cutoff).exclude(tags__slug='taken'):
+        for l in LiaisonStatement.objects.filter(deadline__gte=cutoff).exclude(
+            tags__slug="taken"
+        ):
             r = possibly_send_deadline_reminder(l)
             if r:
-                msgs.append('Liaison %05s#: Deadline reminder sent!' % l.pk)
+                msgs.append("Liaison %05s#: Deadline reminder sent!" % l.pk)
 
-        return '\n'.join(msgs)
+        return "\n".join(msgs)

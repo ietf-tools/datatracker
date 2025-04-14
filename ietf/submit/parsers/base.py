@@ -101,6 +101,6 @@ class FileParser:
                 "Invalid {} byte(s) starting at byte {}: [{}]".format(
                     err.encoding,
                     err.start + 1,
-                    ", ".join(f"0x{b:x}" for b in invalid_bytes)
+                    ", ".join(f"0x{b:x}" for b in invalid_bytes),
                 )
             )

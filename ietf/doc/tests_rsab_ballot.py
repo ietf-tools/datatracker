@@ -41,8 +41,7 @@ class IssueRSABBallotTests(TestCase):
         self.client.login(username="rsab-chair", password="rsab-chair+password")
 
         for name in [
-            doc.name
-            for doc in (individual_draft, wg_draft, rg_draft, ed_rfc)
+            doc.name for doc in (individual_draft, wg_draft, rg_draft, ed_rfc)
         ]:
             url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=name))
             r = self.client.get(url)

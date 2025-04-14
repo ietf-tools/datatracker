@@ -7,7 +7,7 @@ import re
 from django.db.models import Q
 from django.conf import settings
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from ietf.community.models import CommunityList, EmailSubscription, SearchRule
 from ietf.doc.models import Document, State
@@ -17,15 +17,26 @@ from ietf.ietfauth.utils import has_role
 
 from ietf.utils.mail import send_mail
 
+
 def states_of_significant_change():
     return State.objects.filter(used=True).filter(
-        Q(type="draft-stream-ietf", slug__in=['adopt-wg', 'wg-lc', 'writeupw', 'parked', 'dead']) |
-        Q(type="draft-iesg", slug__in=['pub-req', 'lc', 'iesg-eva', 'rfcqueue']) |
-        Q(type="draft-stream-iab", slug__in=['active', 'review-c', 'rfc-edit']) |
-        Q(type="draft-stream-irtf", slug__in=['active', 'rg-lc', 'irsg-w', 'iesg-rev', 'rfc-edit', 'iesghold']) |
-        Q(type="draft-stream-ise", slug__in=['receive', 'ise-rev', 'iesg-rev', 'rfc-edit', 'iesghold']) |
-        Q(type="draft", slug__in=['rfc', 'dead'])
+        Q(
+            type="draft-stream-ietf",
+            slug__in=["adopt-wg", "wg-lc", "writeupw", "parked", "dead"],
+        )
+        | Q(type="draft-iesg", slug__in=["pub-req", "lc", "iesg-eva", "rfcqueue"])
+        | Q(type="draft-stream-iab", slug__in=["active", "review-c", "rfc-edit"])
+        | Q(
+            type="draft-stream-irtf",
+            slug__in=["active", "rg-lc", "irsg-w", "iesg-rev", "rfc-edit", "iesghold"],
+        )
+        | Q(
+            type="draft-stream-ise",
+            slug__in=["receive", "ise-rev", "iesg-rev", "rfc-edit", "iesghold"],
+        )
+        | Q(type="draft", slug__in=["rfc", "dead"])
     )
+
 
 def can_manage_community_list(user, clist):
     if not user or not user.is_authenticated:
@@ -34,19 +45,32 @@ def can_manage_community_list(user, clist):
     if clist.person:
         return user == clist.person.user
     elif clist.group:
-        if has_role(user, 'Secretariat'):
+        if has_role(user, "Secretariat"):
             return True
 
-        if clist.group.type_id in ['area', 'wg', 'rg', 'ag', 'rag', 'program', ]:
-            return Role.objects.filter(name__slug__in=clist.group.features.groupman_roles, person__user=user, group=clist.group).exists()
+        if clist.group.type_id in [
+            "area",
+            "wg",
+            "rg",
+            "ag",
+            "rag",
+            "program",
+        ]:
+            return Role.objects.filter(
+                name__slug__in=clist.group.features.groupman_roles,
+                person__user=user,
+                group=clist.group,
+            ).exists()
 
     return False
+
 
 def reset_name_contains_index_for_rule(rule):
     if not rule.rule_type == "name_contains":
         return
 
     rule.name_contains_index.set(Document.objects.filter(name__regex=rule.text))
+
 
 def update_name_contains_indexes_with_new_doc(doc):
     for r in SearchRule.objects.filter(rule_type="name_contains"):
@@ -60,15 +84,15 @@ def update_name_contains_indexes_with_new_doc(doc):
 
 def docs_matching_community_list_rule(rule):
     docs = Document.objects.all()
-    
+
     if rule.rule_type.endswith("_rfc"):
         docs = docs.filter(type_id="rfc")  # rule.state is ignored for RFCs
     else:
         docs = docs.filter(type_id="draft", states=rule.state)
-    
-    if rule.rule_type in ['group', 'area', 'group_rfc', 'area_rfc']:
+
+    if rule.rule_type in ["group", "area", "group_rfc", "area_rfc"]:
         return docs.filter(Q(group=rule.group_id) | Q(group__parent=rule.group_id))
-    elif rule.rule_type in ['group_exp']:
+    elif rule.rule_type in ["group_exp"]:
         return docs.filter(group=rule.group_id)
     elif rule.rule_type.startswith("state_"):
         return docs
@@ -171,31 +195,46 @@ def docs_tracked_by_community_list(clist):
         doc_ids.update(rfc.pk for rfc in doc.related_that_doc("became_rfc"))
 
     for rule in clist.searchrule_set.all():
-        doc_ids = doc_ids | set(docs_matching_community_list_rule(rule).values_list("pk", flat=True))
+        doc_ids = doc_ids | set(
+            docs_matching_community_list_rule(rule).values_list("pk", flat=True)
+        )
 
     return Document.objects.filter(pk__in=doc_ids)
 
+
 def community_lists_tracking_doc(doc):
-    return CommunityList.objects.filter(Q(added_docs=doc) | Q(searchrule__in=community_list_rules_matching_doc(doc)))
+    return CommunityList.objects.filter(
+        Q(added_docs=doc) | Q(searchrule__in=community_list_rules_matching_doc(doc))
+    )
 
 
 def notify_event_to_subscribers(event):
     try:
-        significant = event.type == "changed_state" and event.state_id in [s.pk for s in states_of_significant_change()]
+        significant = event.type == "changed_state" and event.state_id in [
+            s.pk for s in states_of_significant_change()
+        ]
     except AttributeError:
         significant = False
 
-    subscriptions = EmailSubscription.objects.filter(community_list__in=community_lists_tracking_doc(event.doc)).distinct()
+    subscriptions = EmailSubscription.objects.filter(
+        community_list__in=community_lists_tracking_doc(event.doc)
+    ).distinct()
 
     if not significant:
         subscriptions = subscriptions.filter(notify_on="all")
 
     for sub in subscriptions.select_related("community_list", "email"):
         clist = sub.community_list
-        subject = '%s notification: Changes to %s' % (clist.long_name(), event.doc.name)
+        subject = "%s notification: Changes to %s" % (clist.long_name(), event.doc.name)
 
-        send_mail(None, sub.email.address, settings.DEFAULT_FROM_EMAIL, subject, 'community/notification_email.txt',
-                  context = {
-                      'event': event,
-                      'clist': clist,
-                  })
+        send_mail(
+            None,
+            sub.email.address,
+            settings.DEFAULT_FROM_EMAIL,
+            subject,
+            "community/notification_email.txt",
+            context={
+                "event": event,
+                "clist": clist,
+            },
+        )

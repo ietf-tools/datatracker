@@ -36,9 +36,11 @@
 
 import os
 import sys
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
 import django
+
 django.setup()
 
 from ietf.idindex.index import all_id_txt

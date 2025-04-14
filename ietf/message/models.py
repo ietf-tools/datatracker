@@ -8,7 +8,7 @@ from django.forms import TextInput
 from django.db import models
 from django.utils import timezone
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from ietf.person.models import Person
 from ietf.group.models import Group
@@ -20,8 +20,9 @@ from ietf.utils.mail import get_email_addresses_from_text
 
 class HeaderField(models.TextField):
     """TextField that defaults to a TextInput widget"""
+
     def formfield(self, **kwargs):
-        return super().formfield(**{'widget': TextInput, **kwargs})
+        return super().formfield(**{"widget": TextInput, **kwargs})
 
 
 class Message(models.Model):
@@ -44,9 +45,13 @@ class Message(models.Model):
     sent = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        ordering = ['time']
+        ordering = ["time"]
         indexes = [
-            models.Index(fields=['time',]),
+            models.Index(
+                fields=[
+                    "time",
+                ]
+            ),
         ]
 
     def __str__(self):
@@ -55,7 +60,7 @@ class Message(models.Model):
     def get(self, field):
         r = getattr(self, field)
         return r if isinstance(r, list) else get_email_addresses_from_text(r)
-            
+
 
 class MessageAttachment(models.Model):
     message = ForeignKey(Message)
@@ -72,22 +77,31 @@ class MessageAttachment(models.Model):
 class SendQueue(models.Model):
     time = models.DateTimeField(default=timezone.now)
     by = ForeignKey(Person)
-    
+
     message = ForeignKey(Message)
-    
+
     send_at = models.DateTimeField(blank=True, null=True)
     sent_at = models.DateTimeField(blank=True, null=True)
 
     note = models.TextField(blank=True)
-    
+
     class Meta:
-        ordering = ['time']
+        ordering = ["time"]
         indexes = [
-            models.Index(fields=['time',]),
+            models.Index(
+                fields=[
+                    "time",
+                ]
+            ),
         ]
 
     def __str__(self):
-        return "'%s' %s -> %s (sent at %s)" % (self.message.subject, self.message.frm, self.message.to, self.sent_at or "<not yet>")
+        return "'%s' %s -> %s (sent at %s)" % (
+            self.message.subject,
+            self.message.frm,
+            self.message.to,
+            self.sent_at or "<not yet>",
+        )
 
 
 class AnnouncementFrom(models.Model):
@@ -99,5 +113,4 @@ class AnnouncementFrom(models.Model):
         return self.address
 
     class Meta:
-        verbose_name_plural='Announcement From addresses'
-        
+        verbose_name_plural = "Announcement From addresses"

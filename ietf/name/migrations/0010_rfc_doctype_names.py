@@ -11,7 +11,7 @@ def forward(apps, schema_editor):
         used=True,
         prefix="rfc",
     )
-    
+
     DocRelationshipName = apps.get_model("name", "DocRelationshipName")
     DocRelationshipName.objects.get_or_create(
         slug="became_rfc",
@@ -19,6 +19,7 @@ def forward(apps, schema_editor):
         used=True,
         revname="came from draft",
     )
+
 
 class Migration(migrations.Migration):
     dependencies = [

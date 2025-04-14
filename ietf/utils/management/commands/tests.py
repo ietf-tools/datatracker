@@ -8,14 +8,16 @@ import tempfile
 
 from django.core.management import call_command
 from django.test import TestCase
-#from io import StringIO
 
-import debug                            # pyflakes:ignore
+# from io import StringIO
+
+import debug  # pyflakes:ignore
+
 
 class CoverageChangeTestCase(TestCase):
 
     def test_coverage_change(self):
-        main_txt ="""{
+        main_txt = """{
               "5.12.0": {
                 "code": {
                   "coverage": 0.5921474057048117, 
@@ -81,14 +83,14 @@ class CoverageChangeTestCase(TestCase):
               "version":"latest"
             }
             """
-        mfh, main = tempfile.mkstemp(suffix='.json')
+        mfh, main = tempfile.mkstemp(suffix=".json")
         with io.open(main, "w") as file:
             file.write(main_txt)
-        lfh, latest = tempfile.mkstemp(suffix='.json')
+        lfh, latest = tempfile.mkstemp(suffix=".json")
         with io.open(latest, "w") as file:
             file.write(latest_txt)
         output = io.StringIO()
-        call_command('coverage_changes', main, latest, stdout=output)
+        call_command("coverage_changes", main, latest, stdout=output)
         text = output.getvalue()
         os.unlink(main)
         os.unlink(latest)
@@ -98,5 +100,7 @@ class CoverageChangeTestCase(TestCase):
             r"    True     False  ^api/v1/?$                                                ",
             r"   False      True  ^community/personal/$                                     ",
             r"       -   50.0  %  ietf/community/constants                                  ",
-            ]:
-            self.assertTrue(l in text, msg="Missing line in coverage_change output:\n'%s'\n"%l)
+        ]:
+            self.assertTrue(
+                l in text, msg="Missing line in coverage_change output:\n'%s'\n" % l
+            )

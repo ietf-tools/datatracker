@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2020, All Rights Reserved
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 import factory
 
 from hashlib import sha224
@@ -11,22 +11,23 @@ from oidc_provider.models import Client as OidClientRecord, ResponseType
 
 from ietf.person.factories import UserFactory, PersonFactory
 
+
 class OidClientRecordFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = OidClientRecord
         skip_postgeneration_save = True
 
-    name = factory.Faker('company')
+    name = factory.Faker("company")
     owner = factory.SubFactory(UserFactory)
-    client_type = 'confidential'
+    client_type = "confidential"
     client_id = str(randint(1, 999999)).zfill(6)
 
     @factory.lazy_attribute
     def client_secret(self):
-        if self.client_type == 'confidential':
+        if self.client_type == "confidential":
             secret = sha224(uuid4().hex.encode()).hexdigest()
         else:
-            secret = ''
+            secret = ""
         return secret
 
     @factory.post_generation
@@ -36,7 +37,9 @@ class OidClientRecordFactory(factory.django.DjangoModelFactory):
             return
 
         if not extracted:
-            extracted = ['code', ]
+            extracted = [
+                "code",
+            ]
 
         # A list of groups were passed in, use them
         for value in extracted:
@@ -54,4 +57,4 @@ class OidClientRecordFactory(factory.django.DjangoModelFactory):
             extracted.user = user
             extracted.save()
         else:
-            PersonFactory(name='%s %s' % (user.first_name, user.last_name), user=user)
+            PersonFactory(name="%s %s" % (user.first_name, user.last_name), user=user)

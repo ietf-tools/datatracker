@@ -5,25 +5,35 @@ from django.core import serializers
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
-        parser.add_argument('--format', default='json', dest='format',
-            help='Specifies the output serialization format for fixtures.')
-        parser.add_argument('--indent', default=None, dest='indent', type='int',
-            help='Specifies the indent level to use when pretty-printing output')
+        parser.add_argument(
+            "--format",
+            default="json",
+            dest="format",
+            help="Specifies the output serialization format for fixtures.",
+        )
+        parser.add_argument(
+            "--indent",
+            default=None,
+            dest="indent",
+            type="int",
+            help="Specifies the indent level to use when pretty-printing output",
+        )
+
     #    parser.add_argument('--schedulename', action='store',  dest='schedulename', default=False,
     #        help='Tells Django to stop running the test suite after first failed test.')
 
-    help = 'Saves the scheduled information for a named schedule in JSON format'
-    args = 'meetingname [owner] schedname'
+    help = "Saves the scheduled information for a named schedule in JSON format"
+    args = "meetingname [owner] schedname"
 
     def handle(self, *labels, **options):
 
         meetingname = labels[0]
-        schedname   = labels[1]
+        schedname = labels[1]
 
-        from ietf.meeting.helpers import get_meeting,get_schedule
+        from ietf.meeting.helpers import get_meeting, get_schedule
 
-        format = options.get('format','json')
-        indent = options.get('indent', 2)
+        format = options.get("format", "json")
+        indent = options.get("indent", 2)
         meeting = get_meeting(meetingname)
         schedule = get_schedule(meeting, schedname)
 
@@ -35,7 +45,6 @@ class Command(BaseCommand):
         if format not in serializers.get_public_serializer_formats():
             raise CommandError("Unknown serialization format: %s" % format)
 
-        return serializers.serialize(format, assignments, indent=indent,
-                                     use_natural_keys=True)
-
-
+        return serializers.serialize(
+            format, assignments, indent=indent, use_natural_keys=True
+        )

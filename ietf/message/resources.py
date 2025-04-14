@@ -16,17 +16,21 @@ from ietf.person.resources import PersonResource
 from ietf.group.resources import GroupResource
 from ietf.doc.resources import DocumentResource
 
+
 class MessageResource(ModelResource):
-    by               = ToOneField(PersonResource, 'by')
-    related_groups   = ToManyField(GroupResource, 'related_groups', null=True)
-    related_docs     = ToManyField(DocumentResource, 'related_docs', null=True)
+    by = ToOneField(PersonResource, "by")
+    related_groups = ToManyField(GroupResource, "related_groups", null=True)
+    related_docs = ToManyField(DocumentResource, "related_docs", null=True)
+
     class Meta:
         cache = SimpleCache()
         queryset = Message.objects.none()
         serializer = api.Serializer()
-        #resource_name = 'message'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'message'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "time": ALL,
             "subject": ALL,
@@ -41,19 +45,26 @@ class MessageResource(ModelResource):
             "related_groups": ALL_WITH_RELATIONS,
             "related_docs": ALL_WITH_RELATIONS,
         }
+
+
 api.message.register(MessageResource())
 
 from ietf.person.resources import PersonResource
+
+
 class SendQueueResource(ModelResource):
-    by               = ToOneField(PersonResource, 'by')
-    message          = ToOneField(MessageResource, 'message')
+    by = ToOneField(PersonResource, "by")
+    message = ToOneField(MessageResource, "message")
+
     class Meta:
         cache = SimpleCache()
         queryset = SendQueue.objects.all()
         serializer = api.Serializer()
-        #resource_name = 'sendqueue'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'sendqueue'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "time": ALL,
             "send_at": ALL,
@@ -62,44 +73,56 @@ class SendQueueResource(ModelResource):
             "by": ALL_WITH_RELATIONS,
             "message": ALL_WITH_RELATIONS,
         }
+
+
 api.message.register(SendQueueResource())
 
 
-
 class MessageAttachmentResource(ModelResource):
-    message          = ToOneField(MessageResource, 'message')
+    message = ToOneField(MessageResource, "message")
+
     class Meta:
         queryset = MessageAttachment.objects.none()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'messageattachment'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'messageattachment'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "filename": ALL,
             "removed": ALL,
             "body": ALL,
             "message": ALL_WITH_RELATIONS,
         }
-api.message.register(MessageAttachmentResource())
 
+
+api.message.register(MessageAttachmentResource())
 
 
 from ietf.group.resources import GroupResource
 from ietf.name.resources import RoleNameResource
+
+
 class AnnouncementFromResource(ModelResource):
-    name             = ToOneField(RoleNameResource, 'name')
-    group            = ToOneField(GroupResource, 'group')
+    name = ToOneField(RoleNameResource, "name")
+    group = ToOneField(GroupResource, "group")
+
     class Meta:
         queryset = AnnouncementFrom.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'announcementfrom'
-        ordering = ['id', ]
-        filtering = { 
+        # resource_name = 'announcementfrom'
+        ordering = [
+            "id",
+        ]
+        filtering = {
             "id": ALL,
             "address": ALL,
             "name": ALL_WITH_RELATIONS,
             "group": ALL_WITH_RELATIONS,
         }
+
+
 api.message.register(AnnouncementFromResource())

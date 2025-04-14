@@ -3,13 +3,20 @@
 
 import re
 import datetime
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
 
-from ietf.doc.models import Document, RelatedDocument, DocEvent, TelechatDocEvent, BallotDocEvent, DocTypeName
+from ietf.doc.models import (
+    Document,
+    RelatedDocument,
+    DocEvent,
+    TelechatDocEvent,
+    BallotDocEvent,
+    DocTypeName,
+)
 from ietf.doc.expire import expirable_drafts
 from ietf.doc.utils import augment_docs_and_person_with_person_info
 from ietf.meeting.models import SessionPresentation, Meeting, Session
@@ -29,32 +36,40 @@ def fill_in_telechat_date(docs, doc_dict=None, doc_ids=None):
         doc_ids = list(doc_dict.keys())
 
     seen = set()
-    for e in TelechatDocEvent.objects.filter(doc__id__in=doc_ids, type="scheduled_for_telechat").order_by('-time'):
+    for e in TelechatDocEvent.objects.filter(
+        doc__id__in=doc_ids, type="scheduled_for_telechat"
+    ).order_by("-time"):
         if e.doc_id not in seen:
-            #d = doc_dict[e.doc_id]
-            #d.telechat_date = wrap_value(d.telechat_date(e))
+            # d = doc_dict[e.doc_id]
+            # d.telechat_date = wrap_value(d.telechat_date(e))
             seen.add(e.doc_id)
+
 
 def fill_in_document_sessions(docs, doc_dict, doc_ids):
     today = date_today()
-    beg_date = today-datetime.timedelta(days=7)
-    end_date = today+datetime.timedelta(days=30)
-    meetings = Meeting.objects.filter(date__gte=beg_date, date__lte=end_date).prefetch_related('session_set')
+    beg_date = today - datetime.timedelta(days=7)
+    end_date = today + datetime.timedelta(days=30)
+    meetings = Meeting.objects.filter(
+        date__gte=beg_date, date__lte=end_date
+    ).prefetch_related("session_set")
     # get sessions
-    sessions = Session.objects.filter(meeting_id__in=[ m.id for m in meetings ])
+    sessions = Session.objects.filter(meeting_id__in=[m.id for m in meetings])
     # get presentations
-    presentations = SessionPresentation.objects.filter(session_id__in=[ s.id for s in sessions ])
-    session_list = [ (p.document_id, p.session) for p in presentations ]
+    presentations = SessionPresentation.objects.filter(
+        session_id__in=[s.id for s in sessions]
+    )
+    session_list = [(p.document_id, p.session) for p in presentations]
     for d in list(doc_dict.values()):
         d.sessions = []
-    for (i, s) in session_list:
+    for i, s in session_list:
         if i in doc_ids:
             doc_dict[i].sessions.append(s)
+
 
 def fill_in_document_table_attributes(docs, have_telechat_date=False):
     # fill in some attributes for the document table results to save
     # some hairy template code and avoid repeated SQL queries
-    # TODO - this function evolved from something that assumed it was handling only drafts. 
+    # TODO - this function evolved from something that assumed it was handling only drafts.
     #        It still has places where it assumes all docs are drafts where that is not a correct assumption
 
     doc_dict = dict((d.pk, d) for d in docs)
@@ -63,22 +78,28 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
     rfcs = dict((d.pk, d.name) for d in docs if d.type_id == "rfc")
 
     # latest event cache
-    event_types = ("published_rfc",
-                   "changed_ballot_position",
-                   "started_iesg_process",
-                   "new_revision")
+    event_types = (
+        "published_rfc",
+        "changed_ballot_position",
+        "started_iesg_process",
+        "new_revision",
+    )
     for d in docs:
         d.latest_event_cache = dict()
         for e in event_types:
             d.latest_event_cache[e] = None
 
-    for e in DocEvent.objects.filter(doc__id__in=doc_ids, type__in=event_types).order_by('time'):
+    for e in DocEvent.objects.filter(
+        doc__id__in=doc_ids, type__in=event_types
+    ).order_by("time"):
         doc_dict[e.doc_id].latest_event_cache[e.type] = e
 
     seen = set()
-    for e in BallotDocEvent.objects.filter(doc__id__in=doc_ids, type__in=('created_ballot', 'closed_ballot')).order_by('-time','-id'):
+    for e in BallotDocEvent.objects.filter(
+        doc__id__in=doc_ids, type__in=("created_ballot", "closed_ballot")
+    ).order_by("-time", "-id"):
         if not e.doc_id in seen:
-            doc_dict[e.doc_id].ballot = e if e.type == 'created_ballot' else None
+            doc_dict[e.doc_id].ballot = e if e.type == "created_ballot" else None
             seen.add(e.doc_id)
 
     if not have_telechat_date:
@@ -89,7 +110,9 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
     fill_in_document_sessions(docs, doc_dict, doc_ids)
 
     # misc
-    expirable_pks = expirable_drafts(Document.objects.filter(pk__in=doc_ids)).values_list('pk', flat=True)
+    expirable_pks = expirable_drafts(
+        Document.objects.filter(pk__in=doc_ids)
+    ).values_list("pk", flat=True)
     for d in docs:
 
         if d.type_id == "rfc" and d.latest_event_cache["published_rfc"]:
@@ -118,17 +141,36 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
             d.expirable = False
 
         if d.type_id == "draft" and d.get_state_slug() != "rfc":
-            d.milestones = [ m for (t, s, v, m) in sorted(((m.time, m.state.slug, m.desc, m) for m in d.groupmilestone_set.all() if m.state_id == "active")) ]
-            d.review_assignments = review_assignments_to_list_for_docs([d]).get(d.name, [])
+            d.milestones = [
+                m
+                for (t, s, v, m) in sorted(
+                    (
+                        (m.time, m.state.slug, m.desc, m)
+                        for m in d.groupmilestone_set.all()
+                        if m.state_id == "active"
+                    )
+                )
+            ]
+            d.review_assignments = review_assignments_to_list_for_docs([d]).get(
+                d.name, []
+            )
 
-        e = d.latest_event_cache.get('started_iesg_process', None)
+        e = d.latest_event_cache.get("started_iesg_process", None)
         d.balloting_started = e.time if e else datetime.datetime.min
 
     # RFCs
 
     # errata
-    erratas = set(Document.objects.filter(tags="errata", id__in=list(rfcs.keys())).distinct().values_list("name", flat=True))
-    verified_erratas = set(Document.objects.filter(tags="verified-errata", id__in=list(rfcs.keys())).distinct().values_list("name", flat=True))
+    erratas = set(
+        Document.objects.filter(tags="errata", id__in=list(rfcs.keys()))
+        .distinct()
+        .values_list("name", flat=True)
+    )
+    verified_erratas = set(
+        Document.objects.filter(tags="verified-errata", id__in=list(rfcs.keys()))
+        .distinct()
+        .values_list("name", flat=True)
+    )
     for d in docs:
         d.has_errata = d.name in erratas
         d.has_verified_errata = d.name in verified_erratas
@@ -170,18 +212,23 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         elif rel.relationship_id == "updates":
             d.updated_by_list.append(rel.source)
 
+
 def augment_docs_with_related_docs_info(docs):
     """Augment all documents with related documents information.
-    At first, it handles only conflict review document page count to mirror the original document page count."""
+    At first, it handles only conflict review document page count to mirror the original document page count.
+    """
 
     for d in docs:
-        if d.type_id == 'conflrev':
-            if len(d.related_that_doc('conflrev')) != 1:
+        if d.type_id == "conflrev":
+            if len(d.related_that_doc("conflrev")) != 1:
                 continue
-            originalDoc = d.related_that_doc('conflrev')[0]
+            originalDoc = d.related_that_doc("conflrev")[0]
             d.pages = originalDoc.pages
 
-def prepare_document_table(request, docs, query=None, max_results=200, show_ad_and_shepherd=True):
+
+def prepare_document_table(
+    request, docs, query=None, max_results=200, show_ad_and_shepherd=True
+):
     """Take a queryset of documents and a QueryDict with sorting info
     and return list of documents with attributes filled in for
     displaying a full table of information about the documents, plus
@@ -190,10 +237,23 @@ def prepare_document_table(request, docs, query=None, max_results=200, show_ad_a
     if not isinstance(docs, list):
         # evaluate and fill in attribute results immediately to decrease
         # the number of queries
-        docs = docs.select_related("ad", "std_level", "intended_std_level", "group", "stream", "shepherd", )
-        docs = docs.prefetch_related("states__type", "tags", "groupmilestone_set__group", "reviewrequest_set__team",
-                                     "ad__email_set", "iprdocrel_set")
-        docs = docs[:max_results] # <- that is still a queryset, but with a LIMIT now
+        docs = docs.select_related(
+            "ad",
+            "std_level",
+            "intended_std_level",
+            "group",
+            "stream",
+            "shepherd",
+        )
+        docs = docs.prefetch_related(
+            "states__type",
+            "tags",
+            "groupmilestone_set__group",
+            "reviewrequest_set__team",
+            "ad__email_set",
+            "iprdocrel_set",
+        )
+        docs = docs[:max_results]  # <- that is still a queryset, but with a LIMIT now
         docs = list(docs)
     else:
         docs = docs[:max_results]
@@ -205,7 +265,7 @@ def prepare_document_table(request, docs, query=None, max_results=200, show_ad_a
 
     meta = {}
 
-    sort_key = query and query.get('sort') or ""
+    sort_key = query and query.get("sort") or ""
     sort_reversed = sort_key.startswith("-")
     sort_key = sort_key.lstrip("-")
 
@@ -213,24 +273,32 @@ def prepare_document_table(request, docs, query=None, max_results=200, show_ad_a
     def generate_sort_key(d):
         def num(i):
             # sortable representation of number as string
-            return ('%09d' % int(i))
+            return "%09d" % int(i)
 
         res = []
 
         rfc_num = num(d.rfc_number) if d.rfc_number else None
 
         if d.type_id == "draft":
-            res.append(num(["Active", "Expired", "Replaced", "Withdrawn", "RFC"].index(d.search_heading.split()[0])))
+            res.append(
+                num(
+                    ["Active", "Expired", "Replaced", "Withdrawn", "RFC"].index(
+                        d.search_heading.split()[0]
+                    )
+                )
+            )
         else:
-            res.append(d.type_id);
-            res.append("-");
-            res.append(d.get_state_slug() or '');
-            res.append("-");
+            res.append(d.type_id)
+            res.append("-")
+            res.append(d.get_state_slug() or "")
+            res.append("-")
 
         if sort_key == "title":
             res.append(d.title)
         elif sort_key == "date":
-            res.append(str(d.latest_revision_date.astimezone(ZoneInfo(settings.TIME_ZONE))))
+            res.append(
+                str(d.latest_revision_date.astimezone(ZoneInfo(settings.TIME_ZONE)))
+            )
         elif sort_key == "status":
             if rfc_num is not None:
                 res.append(rfc_num)
@@ -258,27 +326,29 @@ def prepare_document_table(request, docs, query=None, max_results=200, show_ad_a
 
     # fill in a meta dict with some information for rendering the table
     if len(docs) == max_results:
-        meta['max'] = max_results
+        meta["max"] = max_results
 
-    meta['headers'] = [{'title': 'Document', 'key': 'document'},
-                       {'title': 'Title', 'key': 'title'},
-                       {'title': 'Date', 'key': 'date'},
-                       {'title': 'Status', 'key': 'status'},
-                       {'title': 'IPR', 'key': 'ipr'}]
+    meta["headers"] = [
+        {"title": "Document", "key": "document"},
+        {"title": "Title", "key": "title"},
+        {"title": "Date", "key": "date"},
+        {"title": "Status", "key": "status"},
+        {"title": "IPR", "key": "ipr"},
+    ]
     if show_ad_and_shepherd:
-        meta['headers'].append({'title': 'AD / Shepherd', 'key': 'ad'})
-    meta['show_ad_and_shepherd'] = show_ad_and_shepherd
+        meta["headers"].append({"title": "AD / Shepherd", "key": "ad"})
+    meta["show_ad_and_shepherd"] = show_ad_and_shepherd
 
     if query and hasattr(query, "urlencode"):  # fed a Django QueryDict
         d = query.copy()
-        for h in meta['headers']:
-            if h['key'] == sort_key:
-                h['sorted'] = True
+        for h in meta["headers"]:
+            if h["key"] == sort_key:
+                h["sorted"] = True
                 if sort_reversed:
-                    h['direction'] = 'desc'
+                    h["direction"] = "desc"
                     d["sort"] = h["key"]
                 else:
-                    h['direction'] = 'asc'
+                    h["direction"] = "asc"
                     d["sort"] = "-" + h["key"]
             else:
                 d["sort"] = h["key"]

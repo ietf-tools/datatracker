@@ -7,7 +7,7 @@ import ietf.utils.models
 
 
 def forward(apps, schema_editor):
-    CommunityList = apps.get_model('community', 'CommunityList')
+    CommunityList = apps.get_model("community", "CommunityList")
     for clist in CommunityList.objects.all():
         try:
             clist.person = clist.user.person
@@ -15,14 +15,16 @@ def forward(apps, schema_editor):
             clist.person = None
         clist.save()
 
+
 def reverse(apps, schema_editor):
-    CommunityList = apps.get_model('community', 'CommunityList')
+    CommunityList = apps.get_model("community", "CommunityList")
     for clist in CommunityList.objects.all():
         try:
             clist.user = clist.person.user
         except:
             clist.user = None
         clist.save()
+
 
 class Migration(migrations.Migration):
     dependencies = [
@@ -49,6 +51,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 null=True,
                 on_delete=django.db.models.deletion.CASCADE,
-                to=settings.AUTH_USER_MODEL),
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

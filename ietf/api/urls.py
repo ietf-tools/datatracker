@@ -16,7 +16,7 @@ from . import views as api_views
 # from drf_spectacular.views import SpectacularAPIView
 # from django.urls import path
 # from ietf.person import api as person_api
-# from .routers import PrefixedSimpleRouter 
+# from .routers import PrefixedSimpleRouter
 # core_router = PrefixedSimpleRouter(name_prefix="ietf.api.core_api")  # core api router
 # core_router.register("email", person_api.EmailViewSet)
 # core_router.register("person", person_api.PersonViewSet)
@@ -25,75 +25,100 @@ api.autodiscover()
 
 urlpatterns = [
     # General API help page
-    url(r'^$', api_views.api_help),
+    url(r"^$", api_views.api_help),
     # Top endpoint for Tastypie's REST API (this isn't standard Tastypie):
-    url(r'^v1/?$', api_views.top_level),
+    url(r"^v1/?$", api_views.top_level),
     # For mailarchive use, requires secretariat role
-    url(r'^v2/person/person', api_views.ApiV2PersonExportView.as_view()),
+    url(r"^v2/person/person", api_views.ApiV2PersonExportView.as_view()),
     # --- DRF API ---
     # path("core/", include(core_router.urls)),
     # path("schema/", SpectacularAPIView.as_view()),
     #
     # --- Custom API endpoints, sorted alphabetically ---
     # Email alias information for drafts
-    url(r'^doc/draft-aliases/$', api_views.draft_aliases),
+    url(r"^doc/draft-aliases/$", api_views.draft_aliases),
     # email ingestor
-    url(r'email/$', api_views.ingest_email),
+    url(r"email/$", api_views.ingest_email),
     # email ingestor
-    url(r'email/test/$', api_views.ingest_email_test),
+    url(r"email/test/$", api_views.ingest_email_test),
     # GDPR: export of personal information for the logged-in person
-    url(r'^export/personal-information/$', api_views.PersonalInformationExportView.as_view()),
+    url(
+        r"^export/personal-information/$",
+        api_views.PersonalInformationExportView.as_view(),
+    ),
     # Email alias information for groups
-    url(r'^group/group-aliases/$', api_views.group_aliases),
+    url(r"^group/group-aliases/$", api_views.group_aliases),
     # Email addresses belonging to role holders
-    url(r'^group/role-holder-addresses/$', api_views.role_holder_addresses),
+    url(r"^group/role-holder-addresses/$", api_views.role_holder_addresses),
     # Let IESG members set positions programmatically
-    url(r'^iesg/position', views_ballot.api_set_position),
+    url(r"^iesg/position", views_ballot.api_set_position),
     # Let Meetecho set session video URLs
-    url(r'^meeting/session/video/url$', meeting_views.api_set_session_video_url),
+    url(r"^meeting/session/video/url$", meeting_views.api_set_session_video_url),
     # Let Meetecho tell us the name of its recordings
-    url(r'^meeting/session/recording-name$', meeting_views.api_set_meetecho_recording_name),
+    url(
+        r"^meeting/session/recording-name$",
+        meeting_views.api_set_meetecho_recording_name,
+    ),
     # Meeting agenda + floorplan data
-    url(r'^meeting/(?P<num>[A-Za-z0-9._+-]+)/agenda-data$', meeting_views.api_get_agenda_data),
+    url(
+        r"^meeting/(?P<num>[A-Za-z0-9._+-]+)/agenda-data$",
+        meeting_views.api_get_agenda_data,
+    ),
     # Meeting session materials
-    url(r'^meeting/session/(?P<session_id>[A-Za-z0-9._+-]+)/materials$', meeting_views.api_get_session_materials),
+    url(
+        r"^meeting/session/(?P<session_id>[A-Za-z0-9._+-]+)/materials$",
+        meeting_views.api_get_session_materials,
+    ),
     # Let MeetEcho upload bluesheets
-    url(r'^notify/meeting/bluesheet/?$', meeting_views.api_upload_bluesheet),
+    url(r"^notify/meeting/bluesheet/?$", meeting_views.api_upload_bluesheet),
     # Let MeetEcho tell us about session attendees
-    url(r'^notify/session/attendees/?$', meeting_views.api_add_session_attendees),
+    url(r"^notify/session/attendees/?$", meeting_views.api_add_session_attendees),
     # Let MeetEcho upload session chatlog
-    url(r'^notify/session/chatlog/?$', meeting_views.api_upload_chatlog),    
+    url(r"^notify/session/chatlog/?$", meeting_views.api_upload_chatlog),
     # Let MeetEcho upload session polls
-    url(r'^notify/session/polls/?$', meeting_views.api_upload_polls),    
+    url(r"^notify/session/polls/?$", meeting_views.api_upload_polls),
     # Let the registration system notify us about registrations
-    url(r'^notify/meeting/registration/?', api_views.api_new_meeting_registration),
+    url(r"^notify/meeting/registration/?", api_views.api_new_meeting_registration),
     # OpenID authentication provider
-    url(r'^openid/$', TemplateView.as_view(template_name='api/openid-issuer.html'), name='ietf.api.urls.oidc_issuer'),
-    url(r'^openid/', include('oidc_provider.urls', namespace='oidc_provider')),
+    url(
+        r"^openid/$",
+        TemplateView.as_view(template_name="api/openid-issuer.html"),
+        name="ietf.api.urls.oidc_issuer",
+    ),
+    url(r"^openid/", include("oidc_provider.urls", namespace="oidc_provider")),
     # Email alias listing
-    url(r'^person/email/$', api_views.active_email_list),
+    url(r"^person/email/$", api_views.active_email_list),
     # Draft submission API
-    url(r'^submit/?$', submit_views.api_submit_tombstone),
+    url(r"^submit/?$", submit_views.api_submit_tombstone),
     # Draft upload API
-    url(r'^submission/?$', submit_views.api_submission),
+    url(r"^submission/?$", submit_views.api_submission),
     # Draft submission state API
-    url(r'^submission/(?P<submission_id>[0-9]+)/status/?', submit_views.api_submission_status),
+    url(
+        r"^submission/(?P<submission_id>[0-9]+)/status/?",
+        submit_views.api_submission_status,
+    ),
     # Datatracker version
-    url(r'^version/?$', api_views.version),
+    url(r"^version/?$", api_views.version),
     # Application authentication API key
-    url(r'^appauth/(?P<app>authortools|bibxml)$', api_views.app_auth),
+    url(r"^appauth/(?P<app>authortools|bibxml)$", api_views.app_auth),
     # NFS metrics endpoint
-    url(r'^metrics/nfs/?$', api_views.nfs_metrics),
+    url(r"^metrics/nfs/?$", api_views.nfs_metrics),
     # latest versions
-    url(r'^rfcdiff-latest-json/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, api_views.rfcdiff_latest_json),
-    url(r'^rfcdiff-latest-json/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', api_views.rfcdiff_latest_json),
+    url(
+        r"^rfcdiff-latest-json/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$"
+        % settings.URL_REGEXPS,
+        api_views.rfcdiff_latest_json,
+    ),
+    url(
+        r"^rfcdiff-latest-json/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$",
+        api_views.rfcdiff_latest_json,
+    ),
     # direct authentication
-    url(r'^directauth/?$', api_views.directauth),
+    url(r"^directauth/?$", api_views.directauth),
 ]
 
 # Additional (standard) Tastypie endpoints
-for n,a in api._api_list:
+for n, a in api._api_list:
     urlpatterns += [
-        url(r'^v1/', include(a.urls)),
+        url(r"^v1/", include(a.urls)),
     ]
-

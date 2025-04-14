@@ -11,6 +11,7 @@ from django.utils.html import escape
 
 from ietf.doc.models import Document
 
+
 class LatestMeetingMaterialFeed(Feed):
     feed_type = Atom1Feed
     link = "/meeting/"
@@ -20,15 +21,20 @@ class LatestMeetingMaterialFeed(Feed):
     def items(self):
         objs = []
         # FIXME: why aren't other materials types in here?
-        for doc in Document.objects.filter(type__in=("agenda", "minutes", "slides")).order_by('-time')[:60]:
+        for doc in Document.objects.filter(
+            type__in=("agenda", "minutes", "slides")
+        ).order_by("-time")[:60]:
             obj = dict(
                 title=doc.type_id,
                 group_acronym=doc.name.split("-")[2],
                 date=doc.time,
                 # FIXME: why isn't this using get_versionless_href or get_href?
-                link=self.base_url + os.path.join(doc.get_file_path(), doc.uploaded_filename)[len(settings.AGENDA_PATH):],
-                author=""
-                )
+                link=self.base_url
+                + os.path.join(doc.get_file_path(), doc.uploaded_filename)[
+                    len(settings.AGENDA_PATH) :
+                ],
+                author="",
+            )
             objs.append(obj)
 
         return objs
@@ -43,13 +49,13 @@ class LatestMeetingMaterialFeed(Feed):
         return ""
 
     def item_link(self, item):
-        return item['link']
+        return item["link"]
 
     def item_pubdate(self, item):
-        return item['date']
+        return item["date"]
 
     def item_author_name(self, item):
-        return item['author']
+        return item["author"]
 
     def item_author_email(self, item):
         return None

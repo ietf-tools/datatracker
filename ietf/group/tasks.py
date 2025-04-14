@@ -50,7 +50,7 @@ def generate_wg_charters_files_task():
         store_file("indexes", "1wg-charters-by-acronym.txt", f, allow_overwrite=True)
 
     charter_copy_dests = [
-        getattr(settings, "CHARTER_COPY_PATH", None), 
+        getattr(settings, "CHARTER_COPY_PATH", None),
         getattr(settings, "CHARTER_COPY_OTHER_PATH", None),
         getattr(settings, "CHARTER_COPY_THIRD_PATH", None),
     ]
@@ -64,7 +64,9 @@ def generate_wg_charters_files_task():
                 try:
                     shutil.copy2(charters_file, charter_copy_dest)
                 except IOError as err:
-                    log.log(f"Error copying {charters_file} to {charter_copy_dest}: {err}")
+                    log.log(
+                        f"Error copying {charters_file} to {charter_copy_dest}: {err}"
+                    )
                 try:
                     shutil.copy2(charters_by_acronym_file, charter_copy_dest)
                 except IOError as err:
@@ -85,12 +87,16 @@ def generate_wg_summary_files_task():
     for group in groups:
         group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
 
-    # Active areas with one or more active groups in them 
-    areas = Group.objects.filter(
-        type="area",
-        state="active",
-        group__in=groups,
-    ).distinct().order_by("name")
+    # Active areas with one or more active groups in them
+    areas = (
+        Group.objects.filter(
+            type="area",
+            state="active",
+            group__in=groups,
+        )
+        .distinct()
+        .order_by("name")
+    )
     # Augment areas with their groups
     for area in areas:
         area.groups = [g for g in groups if g.parent_id == area.pk]

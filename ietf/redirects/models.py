@@ -6,6 +6,7 @@ from django.db import models
 
 from ietf.utils.models import ForeignKey
 
+
 class Redirect(models.Model):
     """Mapping of CGI script to url.  The "rest" is a
     sprintf-style string with %(param)s entries to insert
@@ -19,23 +20,30 @@ class Redirect(models.Model):
     searched for in the Command table to see if there
     is a different value of rest= and remove=.
     """
+
     cgi = models.CharField(max_length=50, unique=True, blank=True)
     url = models.CharField(max_length=255)
     rest = models.CharField(max_length=100, blank=True)
     remove = models.CharField(max_length=50, blank=True)
+
     def __str__(self):
         return "%s -> %s/%s" % (self.cgi, self.url, self.rest)
+
 
 class Suffix(models.Model):
     """This is a "rest" and "remove" (see Redirect class)
     for requests with command=.
     """
+
     rest = models.CharField(max_length=100, blank=True)
     remove = models.CharField(max_length=50, blank=True)
+
     def __str__(self):
         return "-> %s - %s" % (self.rest, self.remove)
+
     class Meta:
-        verbose_name_plural="Suffixes"
+        verbose_name_plural = "Suffixes"
+
 
 class Command(models.Model):
     """When a request comes in with a command= argument,
@@ -44,17 +52,21 @@ class Command(models.Model):
     use than those specified in the Redirect class that
     matched.  The optional "url" is prepended to the "rest".
     """
+
     command = models.CharField(max_length=50)
     url = models.CharField(max_length=50, blank=True)
-    script = ForeignKey(Redirect, related_name='commands', editable=False)
+    script = ForeignKey(Redirect, related_name="commands", editable=False)
     suffix = ForeignKey(Suffix, null=True, blank=True)
+
     def __str__(self):
         ret = "%s?command=%s" % (self.script.cgi, self.command)
         if self.suffix_id:
             ret += " %s" % (self.suffix)
         return ret
+
     class Meta:
-        unique_together = (("script", "command"), )
+        unique_together = (("script", "command"),)
+
 
 # changes done by convert-096.py:changed maxlength to max_length
 # removed core

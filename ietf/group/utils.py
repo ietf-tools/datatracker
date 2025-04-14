@@ -12,10 +12,13 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.urls import reverse as urlreverse
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from ietf.community.models import CommunityList, SearchRule
-from ietf.community.utils import reset_name_contains_index_for_rule, can_manage_community_list
+from ietf.community.utils import (
+    reset_name_contains_index_for_rule,
+    can_manage_community_list,
+)
 from ietf.doc.models import Document, State, RelatedDocument
 from ietf.group.models import Group, RoleHistory, Role, GroupFeatures, GroupEvent
 from ietf.ietfauth.utils import has_role
@@ -26,6 +29,7 @@ from ietf.utils import log, markdown
 from ietf.utils.history import get_history_object_for, copy_many_to_many_for_history
 from ietf.doc.templatetags.ietf_filters import is_valid_url
 from functools import reduce
+
 
 def save_group_in_history(group):
     """This should be called before saving changes to a Group instance,
@@ -45,6 +49,7 @@ def save_group_in_history(group):
 
     return h
 
+
 def get_charter_text(group):
     # get file path from settings. Syntesize file name from path, acronym, and suffix
     c = group.charter
@@ -60,21 +65,23 @@ def get_charter_text(group):
     try:
         text = filename.read_bytes()
         try:
-            text = text.decode('utf8')
+            text = text.decode("utf8")
         except UnicodeDecodeError:
-            text = text.decode('latin1')
+            text = text.decode("latin1")
         return text
     except IOError:
-        return 'Error Loading Group Charter'
+        return "Error Loading Group Charter"
+
 
 def get_group_role_emails(group, roles):
     "Get a list of email addresses for a given WG and Role"
-    if not group or not group.acronym or group.acronym == 'none':
+    if not group or not group.acronym or group.acronym == "none":
         return set()
     emails = Email.objects.filter(role__group=group, role__name__in=roles)
     return set([_f for _f in [e.email_address() for e in emails] if _f])
 
-def get_child_group_role_emails(parent, roles, group_type='wg'):
+
+def get_child_group_role_emails(parent, roles, group_type="wg"):
     """Get a list of email addresses for a given set of
     roles for all child groups of a given type"""
     emails = set()
@@ -83,20 +90,22 @@ def get_child_group_role_emails(parent, roles, group_type='wg'):
         emails |= get_group_role_emails(group, roles)
     return emails
 
+
 def get_group_ad_emails(group):
-    " Get list of area directors' email addresses for a given GROUP "
-    if not group.acronym or group.acronym == 'none':
+    "Get list of area directors' email addresses for a given GROUP"
+    if not group.acronym or group.acronym == "none":
         return set()
-    if group.type.slug == 'area':
-        emails = get_group_role_emails(group, roles=('pre-ad', 'ad', 'chair'))
+    if group.type.slug == "area":
+        emails = get_group_role_emails(group, roles=("pre-ad", "ad", "chair"))
     else:
-        emails = get_group_role_emails(group.parent, roles=('pre-ad', 'ad', 'chair'))
+        emails = get_group_role_emails(group.parent, roles=("pre-ad", "ad", "chair"))
     # Make sure the assigned AD is included (in case that is not one of the area ADs)
-    if group.state.slug=='active':
+    if group.state.slug == "active":
         wg_ad_email = group.ad_role() and group.ad_role().email.address
         if wg_ad_email:
             emails.add(wg_ad_email)
     return emails
+
 
 def save_milestone_in_history(milestone):
     h = get_history_object_for(milestone)
@@ -107,11 +116,13 @@ def save_milestone_in_history(milestone):
 
     return h
 
+
 def can_manage_all_groups_of_type(user, type_id):
     if not user.is_authenticated:
         return False
     log.assertion("isinstance(type_id, (type(''), type(u'')))")
-    return has_role(user, GroupFeatures.objects.get(type_id=type_id).groupman_authroles) 
+    return has_role(user, GroupFeatures.objects.get(type_id=type_id).groupman_authroles)
+
 
 def can_manage_group(user, group):
     if not user.is_authenticated:
@@ -120,27 +131,33 @@ def can_manage_group(user, group):
         return True
     return group.has_role(user, group.features.groupman_roles)
 
+
 def groups_managed_by(user, group_queryset=None):
     """Find groups user can manage"""
     if group_queryset is None:
         group_queryset = Group.objects.all()
-    query_terms = Q(pk__in=[])  # ensure empty set is returned if no other terms are added
+    query_terms = Q(
+        pk__in=[]
+    )  # ensure empty set is returned if no other terms are added
     if user.is_authenticated or user.person:
         # find the GroupTypes entirely managed by this user based on groupman_authroles
         types_can_manage = []
-        for type_id, groupman_authroles in GroupFeatures.objects.values_list('type_id', 'groupman_authroles'):
+        for type_id, groupman_authroles in GroupFeatures.objects.values_list(
+            "type_id", "groupman_authroles"
+        ):
             if has_role(user, groupman_authroles):
                 types_can_manage.append(type_id)
         query_terms |= Q(type_id__in=types_can_manage)
         # find the Groups managed by this user based on groupman_roles
         groups_can_manage = []
         for group_id, role_name, groupman_roles in user.person.role_set.values_list(
-                'group_id', 'name_id', 'group__type__features__groupman_roles'
+            "group_id", "name_id", "group__type__features__groupman_roles"
         ):
             if role_name in groupman_roles:
                 groups_can_manage.append(group_id)
         query_terms |= Q(pk__in=groups_can_manage)
     return group_queryset.filter(query_terms)
+
 
 def milestone_reviewer_for_group_type(group_type):
     if group_type == "rg":
@@ -148,11 +165,19 @@ def milestone_reviewer_for_group_type(group_type):
     else:
         return "Area Director"
 
+
 def can_manage_materials(user, group):
-    return has_role(user, 'Secretariat') or (group is not None and group.has_role(user, group.features.matman_roles))
+    return has_role(user, "Secretariat") or (
+        group is not None and group.has_role(user, group.features.matman_roles)
+    )
+
 
 def can_manage_session_materials(user, group, session):
-    return has_role(user, 'Secretariat') or (group.has_role(user, group.features.matman_roles) and not session.is_material_submission_cutoff())
+    return has_role(user, "Secretariat") or (
+        group.has_role(user, group.features.matman_roles)
+        and not session.is_material_submission_cutoff()
+    )
+
 
 def can_manage_some_groups(user):
     if not user.is_authenticated:
@@ -170,12 +195,15 @@ def can_manage_some_groups(user):
             group__state__in=["active", "bof", "proposed"],
         )
     return has_role(user, authroles, extra_role_qs=extra_role_qs)
-       
+
 
 def can_provide_status_update(user, group):
     if not group.features.acts_like_wg:
         return False
-    return has_role(user, 'Secretariat') or group.has_role(user, group.features.groupman_roles)
+    return has_role(user, "Secretariat") or group.has_role(
+        user, group.features.groupman_roles
+    )
+
 
 def get_group_or_404(acronym, group_type):
     """Helper to overcome the schism between group-type prefixed URLs and generic."""
@@ -184,6 +212,7 @@ def get_group_or_404(acronym, group_type):
         possible_groups = possible_groups.filter(type=group_type)
 
     return get_object_or_404(possible_groups, acronym=acronym)
+
 
 def setup_default_community_list_for_group(group):
     clist = CommunityList.objects.create(group=group)
@@ -213,11 +242,12 @@ def setup_default_community_list_for_group(group):
     )
     reset_name_contains_index_for_rule(related_docs_rule)
 
+
 def get_group_materials(group):
     return Document.objects.filter(
-        group=group,
-        type__in=group.features.material_types
-    ).exclude(states__slug__in=['deleted','archived'])
+        group=group, type__in=group.features.material_types
+    ).exclude(states__slug__in=["deleted", "archived"])
+
 
 def construct_group_menu_context(request, group, selected, group_type, others):
     """Return context with info for the group menu filled in."""
@@ -229,64 +259,162 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     entries = []
     entries.append(("About", urlreverse("ietf.group.views.group_about", kwargs=kwargs)))
     if group.features.has_documents:
-        entries.append(("Documents", urlreverse("ietf.group.views.group_documents", kwargs=kwargs)))
+        entries.append(
+            ("Documents", urlreverse("ietf.group.views.group_documents", kwargs=kwargs))
+        )
     if group.features.has_nonsession_materials and get_group_materials(group).exists():
-        entries.append(("Materials", urlreverse("ietf.group.views.materials", kwargs=kwargs)))
+        entries.append(
+            ("Materials", urlreverse("ietf.group.views.materials", kwargs=kwargs))
+        )
     if group.features.has_reviews:
         import ietf.group.views
-        entries.append(("Review requests", urlreverse(ietf.group.views.review_requests, kwargs=kwargs)))
-        entries.append(("Reviewers", urlreverse(ietf.group.views.reviewer_overview, kwargs=kwargs)))
+
+        entries.append(
+            (
+                "Review requests",
+                urlreverse(ietf.group.views.review_requests, kwargs=kwargs),
+            )
+        )
+        entries.append(
+            ("Reviewers", urlreverse(ietf.group.views.reviewer_overview, kwargs=kwargs))
+        )
 
     if group.features.has_meetings:
-        entries.append(("Meetings", urlreverse("ietf.group.views.meetings", kwargs=kwargs)))
+        entries.append(
+            ("Meetings", urlreverse("ietf.group.views.meetings", kwargs=kwargs))
+        )
     if group.acronym in ["iab", "iesg"]:
-        entries.append(("Statements", urlreverse("ietf.group.views.statements", kwargs=kwargs)))
-        entries.append(("Appeals", urlreverse("ietf.group.views.appeals", kwargs=kwargs)))
+        entries.append(
+            ("Statements", urlreverse("ietf.group.views.statements", kwargs=kwargs))
+        )
+        entries.append(
+            ("Appeals", urlreverse("ietf.group.views.appeals", kwargs=kwargs))
+        )
     entries.append(("History", urlreverse("ietf.group.views.history", kwargs=kwargs)))
-    entries.append(("Photos", urlreverse("ietf.group.views.group_photos", kwargs=kwargs)))
-    entries.append(("Email expansions", urlreverse("ietf.group.views.email", kwargs=kwargs)))
-    if group.list_archive.startswith("http:") or group.list_archive.startswith("https:") or group.list_archive.startswith("ftp:"):
+    entries.append(
+        ("Photos", urlreverse("ietf.group.views.group_photos", kwargs=kwargs))
+    )
+    entries.append(
+        ("Email expansions", urlreverse("ietf.group.views.email", kwargs=kwargs))
+    )
+    if (
+        group.list_archive.startswith("http:")
+        or group.list_archive.startswith("https:")
+        or group.list_archive.startswith("ftp:")
+    ):
         if is_valid_url(group.list_archive):
             entries.append((mark_safe("List archive &raquo;"), group.list_archive))
-
 
     # actions
     actions = []
 
     can_manage = can_manage_group(request.user, group)
-    can_edit_group = False              # we'll set this further down
+    can_edit_group = False  # we'll set this further down
 
     if group.features.has_milestones:
         if group.state_id != "proposed" and can_manage:
-            actions.append(("Edit milestones", urlreverse('ietf.group.milestones.edit_milestones;current', kwargs=kwargs)))
+            actions.append(
+                (
+                    "Edit milestones",
+                    urlreverse(
+                        "ietf.group.milestones.edit_milestones;current", kwargs=kwargs
+                    ),
+                )
+            )
 
     if group.features.has_documents:
         clist = CommunityList.objects.filter(group=group).first()
         if clist and can_manage_community_list(request.user, clist):
             import ietf.community.views
-            actions.append(('Manage document list', urlreverse(ietf.community.views.manage_list, kwargs=kwargs)))
 
-    if group.features.has_nonsession_materials and can_manage_materials(request.user, group):
-        actions.append(("Upload material", urlreverse("ietf.doc.views_material.choose_material_type", kwargs=kwargs)))
+            actions.append(
+                (
+                    "Manage document list",
+                    urlreverse(ietf.community.views.manage_list, kwargs=kwargs),
+                )
+            )
 
-    if group.features.has_reviews and can_manage_review_requests_for_team(request.user, group):
+    if group.features.has_nonsession_materials and can_manage_materials(
+        request.user, group
+    ):
+        actions.append(
+            (
+                "Upload material",
+                urlreverse(
+                    "ietf.doc.views_material.choose_material_type", kwargs=kwargs
+                ),
+            )
+        )
+
+    if group.features.has_reviews and can_manage_review_requests_for_team(
+        request.user, group
+    ):
         import ietf.group.views
-        actions.append(("Manage unassigned reviews", urlreverse(ietf.group.views.manage_review_requests, kwargs=dict(assignment_status="unassigned", **kwargs))))
-        #actions.append((u"Manage assigned reviews", urlreverse(ietf.group.views.manage_review_requests, kwargs=dict(assignment_status="assigned", **kwargs))))
 
-        if Role.objects.filter(name="secr", group=group, person__user=request.user).exists():
-            actions.append(("Secretary settings", urlreverse(ietf.group.views.change_review_secretary_settings, kwargs=kwargs)))
-            actions.append(("Email open assignments summary", urlreverse(ietf.group.views.email_open_review_assignments, kwargs=dict(acronym=group.acronym, group_type=group.type_id))))
+        actions.append(
+            (
+                "Manage unassigned reviews",
+                urlreverse(
+                    ietf.group.views.manage_review_requests,
+                    kwargs=dict(assignment_status="unassigned", **kwargs),
+                ),
+            )
+        )
+        # actions.append((u"Manage assigned reviews", urlreverse(ietf.group.views.manage_review_requests, kwargs=dict(assignment_status="assigned", **kwargs))))
+
+        if Role.objects.filter(
+            name="secr", group=group, person__user=request.user
+        ).exists():
+            actions.append(
+                (
+                    "Secretary settings",
+                    urlreverse(
+                        ietf.group.views.change_review_secretary_settings, kwargs=kwargs
+                    ),
+                )
+            )
+            actions.append(
+                (
+                    "Email open assignments summary",
+                    urlreverse(
+                        ietf.group.views.email_open_review_assignments,
+                        kwargs=dict(acronym=group.acronym, group_type=group.type_id),
+                    ),
+                )
+            )
 
     if group.state_id != "conclude" and can_manage:
         can_edit_group = True
-        actions.append(("Edit group", urlreverse("ietf.group.views.edit", kwargs=dict(kwargs, action="edit"))))
+        actions.append(
+            (
+                "Edit group",
+                urlreverse("ietf.group.views.edit", kwargs=dict(kwargs, action="edit")),
+            )
+        )
 
     if group.features.customize_workflow and can_manage:
-        actions.append(("Customize workflow", urlreverse("ietf.group.views.customize_workflow", kwargs=kwargs)))
+        actions.append(
+            (
+                "Customize workflow",
+                urlreverse("ietf.group.views.customize_workflow", kwargs=kwargs),
+            )
+        )
 
-    if group.state_id in ("active", "dormant") and group.type_id in ["wg", "rg", ] and can_manage_all_groups_of_type(request.user, group.type_id):
-        actions.append(("Request closing group", urlreverse("ietf.group.views.conclude", kwargs=kwargs)))
+    if (
+        group.state_id in ("active", "dormant")
+        and group.type_id
+        in [
+            "wg",
+            "rg",
+        ]
+        and can_manage_all_groups_of_type(request.user, group.type_id)
+    ):
+        actions.append(
+            (
+                "Request closing group",
+                urlreverse("ietf.group.views.conclude", kwargs=kwargs),
+            )
+        )
 
     d = {
         "group": group,
@@ -312,20 +440,27 @@ def group_features_group_filter(groups, person, feature):
                 feature_groups.add(g)
     return list(feature_groups)
 
+
 def group_features_role_filter(roles, person, feature):
-    type_slugs = set(roles.values_list('group__type__slug', flat=True))
+    type_slugs = set(roles.values_list("group__type__slug", flat=True))
     group_types = GroupTypeName.objects.filter(slug__in=type_slugs)
     if not group_types.exists():
         return roles.none()
-    q = reduce(lambda a,b:a|b, [ Q(person=person, name__slug__in=getattr(t.features, feature)) for t in group_types ])
+    q = reduce(
+        lambda a, b: a | b,
+        [
+            Q(person=person, name__slug__in=getattr(t.features, feature))
+            for t in group_types
+        ],
+    )
     return roles.filter(q)
 
 
 def group_attribute_change_desc(attr, new, old=None):
     if old is None:
-        return format_html('{} changed to <b>{}</b>', attr, new)
+        return format_html("{} changed to <b>{}</b>", attr, new)
     else:
-        return format_html('{} changed to <b>{}</b> from {}', attr, new, old)
+        return format_html("{} changed to <b>{}</b> from {}", attr, new, old)
 
 
 def update_role_set(group, role_name, new_value, by):
@@ -336,19 +471,24 @@ def update_role_set(group, role_name, new_value, by):
     if isinstance(role_name, str):
         role_name = RoleName.objects.get(slug=role_name)
     new = set(new_value)
-    old = set(r.email for r in group.role_set.filter(name=role_name).distinct().select_related("person"))
+    old = set(
+        r.email
+        for r in group.role_set.filter(name=role_name)
+        .distinct()
+        .select_related("person")
+    )
     removed = old - new
     added = new - old
     if added or removed:
         GroupEvent.objects.create(
             group=group,
             by=by,
-            type='info_changed',
+            type="info_changed",
             desc=group_attribute_change_desc(
                 role_name.name,
                 ", ".join(sorted(x.get_name() for x in new)),
                 ", ".join(sorted(x.get_name() for x in old)),
-            )
+            ),
         )
 
         group.role_set.filter(name=role_name, email__in=removed).delete()
@@ -425,7 +565,9 @@ class GroupAliasGenerator:
             area_ad_emails = get_group_role_emails(area, ["pre-ad", "ad", "chair"])
             if area_ad_emails:
                 yield name + "-ads", ["ietf"], list(area_ad_emails)
-            chair_emails = get_child_group_role_emails(area, ["chair", "secr"]) | area_ad_emails
+            chair_emails = (
+                get_child_group_role_emails(area, ["chair", "secr"]) | area_ad_emails
+            )
             if chair_emails:
                 yield name + "-chairs", ["ietf"], list(chair_emails)
 
@@ -447,14 +589,16 @@ def get_group_email_aliases(acronym, group_type):
         group_queryset = group_queryset.filter(acronym=acronym)
     if group_type:
         group_queryset = group_queryset.filter(type__slug=group_type)
-    for (alias, _, alist) in GroupAliasGenerator(group_queryset):
+    for alias, _, alist in GroupAliasGenerator(group_queryset):
         acro, _hyphen, alias_type = alias.partition("-")
         expansion = ", ".join(sorted(alist))
-        aliases.append({
-            "acronym": acro,
-            "alias_type": f"-{alias_type}" if alias_type else "",
-            "expansion": expansion,
-        })
+        aliases.append(
+            {
+                "acronym": acro,
+                "alias_type": f"-{alias_type}" if alias_type else "",
+                "expansion": expansion,
+            }
+        )
     return sorted(aliases, key=lambda a: a["acronym"])
 
 
@@ -484,16 +628,29 @@ def role_holder_emails():
 
 
 def fill_in_charter_info(group, include_drafts=False):
-    group.areadirector = getattr(group.ad_role(),'email',None)
+    group.areadirector = getattr(group.ad_role(), "email", None)
 
     personnel = {}
-    for r in Role.objects.filter(group=group).order_by('person__name').select_related("email", "person", "name"):
+    for r in (
+        Role.objects.filter(group=group)
+        .order_by("person__name")
+        .select_related("email", "person", "name")
+    ):
         if r.name_id not in personnel:
             personnel[r.name_id] = []
         personnel[r.name_id].append(r)
 
-    if group.parent and group.parent.type_id == "area" and group.ad_role() and "ad" not in personnel:
-        ad_roles = list(Role.objects.filter(group=group.parent, name="ad", person=group.ad_role().person))
+    if (
+        group.parent
+        and group.parent.type_id == "area"
+        and group.ad_role()
+        and "ad" not in personnel
+    ):
+        ad_roles = list(
+            Role.objects.filter(
+                group=group.parent, name="ad", person=group.ad_role().person
+            )
+        )
         if ad_roles:
             personnel["ad"] = ad_roles
 
@@ -513,9 +670,9 @@ def fill_in_charter_info(group, include_drafts=False):
     milestone_state = "charter" if group.state_id == "proposed" else "active"
     group.milestones = group.groupmilestone_set.filter(state=milestone_state)
     if group.uses_milestone_dates:
-        group.milestones = group.milestones.order_by('resolved', 'due')
+        group.milestones = group.milestones.order_by("resolved", "due")
     else:
-        group.milestones = group.milestones.order_by('resolved', 'order')
+        group.milestones = group.milestones.order_by("resolved", "order")
 
     if group.charter:
         group.charter_text = get_charter_text(group)
@@ -540,9 +697,17 @@ def fill_in_wg_roles(group):
 
 
 def fill_in_wg_drafts(group):
-    group.drafts = Document.objects.filter(type_id="draft", group=group).order_by("name")
-    group.rfcs = Document.objects.filter(type_id="rfc", group=group).order_by("rfc_number")
+    group.drafts = Document.objects.filter(type_id="draft", group=group).order_by(
+        "name"
+    )
+    group.rfcs = Document.objects.filter(type_id="rfc", group=group).order_by(
+        "rfc_number"
+    )
     for rfc in group.rfcs:
         # TODO: remote_field?
-        rfc.remote_field = RelatedDocument.objects.filter(source=rfc,relationship_id__in=['obs','updates']).distinct()
-        rfc.invrel = RelatedDocument.objects.filter(target=rfc,relationship_id__in=['obs','updates']).distinct()
+        rfc.remote_field = RelatedDocument.objects.filter(
+            source=rfc, relationship_id__in=["obs", "updates"]
+        ).distinct()
+        rfc.invrel = RelatedDocument.objects.filter(
+            target=rfc, relationship_id__in=["obs", "updates"]
+        ).distinct()

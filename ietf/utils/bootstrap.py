@@ -4,7 +4,10 @@
 
 import django_bootstrap5.renderers
 
-class SeparateErrorsFromHelpTextFieldRenderer(django_bootstrap5.renderers.FieldRenderer):
+
+class SeparateErrorsFromHelpTextFieldRenderer(
+    django_bootstrap5.renderers.FieldRenderer
+):
     def append_to_field(self, html):
         if self.field_help:
             html += '<div class="form-text">{}</div>'.format(self.field_help)

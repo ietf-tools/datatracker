@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 """Core API tests"""
 from unittest.mock import patch
+
 # from unittest.mock import patch, call
 
 from django.urls import reverse as urlreverse, NoReverseMatch
@@ -17,9 +18,11 @@ class CoreApiTestCase(TestCase):
 
 class PersonTests(CoreApiTestCase):
     # Tests disabled until we activate the DRF URLs in api/urls.py
-    
+
     def test_person_detail(self):
-        with self.assertRaises(NoReverseMatch, msg="Re-enable test when this view is enabled"):
+        with self.assertRaises(
+            NoReverseMatch, msg="Re-enable test when this view is enabled"
+        ):
             urlreverse("ietf.api.core_api.person-detail", kwargs={"pk": 1})
 
         # person = PersonFactory()
@@ -70,19 +73,21 @@ class PersonTests(CoreApiTestCase):
 
     @patch("ietf.person.api.send_new_email_confirmation_request")
     def test_add_email(self, send_confirmation_mock):
-        with self.assertRaises(NoReverseMatch, msg="Re-enable this test when this view is enabled"):
+        with self.assertRaises(
+            NoReverseMatch, msg="Re-enable this test when this view is enabled"
+        ):
             urlreverse("ietf.api.core_api.person-email", kwargs={"pk": 1})
-            
+
         # email = EmailFactory(address="old@example.org")
         # person = email.person
         # other_person = PersonFactory()
         # url = urlreverse("ietf.api.core_api.person-email", kwargs={"pk": person.pk})
         # post_data = {"address": "new@example.org"}
-        # 
+        #
         # r = self.client.post(url, data=post_data, format="json")
         # self.assertEqual(r.status_code, 403, "Must be logged in")
         # self.assertFalse(send_confirmation_mock.called)
-        # 
+        #
         # self.client.login(
         #     username=other_person.user.username,
         #     password=other_person.user.username + "+password",
@@ -90,7 +95,7 @@ class PersonTests(CoreApiTestCase):
         # r = self.client.post(url, data=post_data, format="json")
         # self.assertEqual(r.status_code, 403, "Can only retrieve self")
         # self.assertFalse(send_confirmation_mock.called)
-        # 
+        #
         # self.client.login(
         #     username=person.user.username, password=person.user.username + "+password"
         # )
@@ -105,7 +110,9 @@ class PersonTests(CoreApiTestCase):
 
 class EmailTests(CoreApiTestCase):
     def test_email_update(self):
-        with self.assertRaises(NoReverseMatch, msg="Re-enable this test when the view is enabled"):
+        with self.assertRaises(
+            NoReverseMatch, msg="Re-enable this test when the view is enabled"
+        ):
             urlreverse(
                 "ietf.api.core_api.email-detail", kwargs={"pk": "original@example.org"}
             )
@@ -122,14 +129,14 @@ class EmailTests(CoreApiTestCase):
         #     "ietf.api.core_api.email-detail",
         #     kwargs={"pk": "not-original@example.org"},
         # )
-        # 
+        #
         # r = self.client.put(
         #     bad_url, data={"primary": True, "active": False}, format="json"
         # )
         # self.assertEqual(r.status_code, 403, "Must be logged in preferred to 404")
         # r = self.client.put(url, data={"primary": True, "active": False}, format="json")
         # self.assertEqual(r.status_code, 403, "Must be logged in")
-        # 
+        #
         # self.client.login(
         #     username=other_person.user.username,
         #     password=other_person.user.username + "+password",
@@ -140,7 +147,7 @@ class EmailTests(CoreApiTestCase):
         # self.assertEqual(r.status_code, 404, "No such address")
         # r = self.client.put(url, data={"primary": True, "active": False}, format="json")
         # self.assertEqual(r.status_code, 403, "Can only access own addresses")
-        # 
+        #
         # self.client.login(
         #     username=person.user.username, password=person.user.username + "+password"
         # )
@@ -162,7 +169,7 @@ class EmailTests(CoreApiTestCase):
         # self.assertTrue(email.primary)
         # self.assertFalse(email.active)
         # self.assertEqual(email.origin, "factory")
-        # 
+        #
         # # address / origin should be immutable
         # r = self.client.put(
         #     url,
@@ -193,7 +200,9 @@ class EmailTests(CoreApiTestCase):
         # self.assertEqual(email.origin, "factory")
 
     def test_email_partial_update(self):
-        with self.assertRaises(NoReverseMatch, msg="Re-enable this test when the view is enabled"):
+        with self.assertRaises(
+            NoReverseMatch, msg="Re-enable this test when the view is enabled"
+        ):
             urlreverse(
                 "ietf.api.core_api.email-detail", kwargs={"pk": "original@example.org"}
             )
@@ -210,14 +219,14 @@ class EmailTests(CoreApiTestCase):
         #     "ietf.api.core_api.email-detail",
         #     kwargs={"pk": "not-original@example.org"},
         # )
-        # 
+        #
         # r = self.client.patch(
         #     bad_url, data={"primary": True}, format="json"
         # )
         # self.assertEqual(r.status_code, 403, "Must be logged in preferred to 404")
         # r = self.client.patch(url, data={"primary": True}, format="json")
         # self.assertEqual(r.status_code, 403, "Must be logged in")
-        # 
+        #
         # self.client.login(
         #     username=other_person.user.username,
         #     password=other_person.user.username + "+password",
@@ -228,7 +237,7 @@ class EmailTests(CoreApiTestCase):
         # self.assertEqual(r.status_code, 404, "No such address")
         # r = self.client.patch(url, data={"primary": True}, format="json")
         # self.assertEqual(r.status_code, 403, "Can only access own addresses")
-        # 
+        #
         # self.client.login(
         #     username=person.user.username, password=person.user.username + "+password"
         # )
@@ -250,7 +259,7 @@ class EmailTests(CoreApiTestCase):
         # self.assertTrue(email.primary)
         # self.assertTrue(email.active)
         # self.assertEqual(email.origin, "factory")
-        # 
+        #
         # r = self.client.patch(url, data={"active": False}, format="json")
         # self.assertEqual(r.status_code, 200)
         # self.assertEqual(
@@ -269,7 +278,7 @@ class EmailTests(CoreApiTestCase):
         # self.assertTrue(email.primary)
         # self.assertFalse(email.active)
         # self.assertEqual(email.origin, "factory")
-        # 
+        #
         # r = self.client.patch(url, data={"address": "modified@example.org"}, format="json")
         # self.assertEqual(r.status_code, 200)  # extra fields allowed, but ignored
         # email.refresh_from_db()
@@ -278,7 +287,7 @@ class EmailTests(CoreApiTestCase):
         # self.assertTrue(email.primary)
         # self.assertFalse(email.active)
         # self.assertEqual(email.origin, "factory")
-        # 
+        #
         # r = self.client.patch(url, data={"origin": "hacker"}, format="json")
         # self.assertEqual(r.status_code, 200)  # extra fields allowed, but ignored
         # email.refresh_from_db()

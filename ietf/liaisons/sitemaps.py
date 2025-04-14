@@ -4,6 +4,7 @@ from django.contrib.sitemaps import Sitemap
 
 from ietf.liaisons.models import LiaisonStatement
 
+
 class LiaisonMap(Sitemap):
     changefreq = "never"
 

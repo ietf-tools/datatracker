@@ -3,7 +3,7 @@
 
 
 import datetime
-import debug      # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from pyquery import PyQuery
 
@@ -12,38 +12,70 @@ from django.urls import reverse as urlreverse
 from django.utils import timezone
 
 from ietf.review.policies import get_reviewer_queue_policy
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase, reload_db_objects
+from ietf.utils.test_utils import (
+    login_testing_unauthorized,
+    TestCase,
+    reload_db_objects,
+)
 from ietf.doc.models import TelechatDocEvent, LastCallDocEvent, State
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
-from ietf.review.models import ReviewerSettings, UnavailablePeriod, ReviewSecretarySettings,NextReviewerInTeam
+from ietf.review.models import (
+    ReviewerSettings,
+    UnavailablePeriod,
+    ReviewSecretarySettings,
+    NextReviewerInTeam,
+)
 from ietf.review.utils import suggested_review_requests_for_team
-from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewAssignmentStateName, \
-    ReviewTypeName
+from ietf.name.models import (
+    ReviewResultName,
+    ReviewRequestStateName,
+    ReviewAssignmentStateName,
+    ReviewTypeName,
+)
 import ietf.group.views
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.dbtemplate.factories import DBTemplateFactory
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.doc.factories import DocumentFactory
 from ietf.group.factories import RoleFactory, ReviewTeamFactory, GroupFactory
-from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
+from ietf.review.factories import (
+    ReviewRequestFactory,
+    ReviewerSettingsFactory,
+    ReviewAssignmentFactory,
+)
 from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO
 from django.utils.html import escape
 
+
 class ReviewTests(TestCase):
     def test_review_requests(self):
-        review_req = ReviewRequestFactory(state_id='assigned')
-        assignment = ReviewAssignmentFactory(review_request=review_req, state_id='assigned', reviewer=EmailFactory(), assigned_on = review_req.time)
+        review_req = ReviewRequestFactory(state_id="assigned")
+        assignment = ReviewAssignmentFactory(
+            review_request=review_req,
+            state_id="assigned",
+            reviewer=EmailFactory(),
+            assigned_on=review_req.time,
+        )
         group = review_req.team
 
-        for url in [urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym }),
-                    urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym , 'group_type': group.type_id})]:
+        for url in [
+            urlreverse(
+                ietf.group.views.review_requests, kwargs={"acronym": group.acronym}
+            ),
+            urlreverse(
+                ietf.group.views.review_requests,
+                kwargs={"acronym": group.acronym, "group_type": group.type_id},
+            ),
+        ]:
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             self.assertContains(r, review_req.doc.name)
             self.assertContains(r, escape(assignment.reviewer.person.name))
 
-        url = urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym })
+        url = urlreverse(
+            ietf.group.views.review_requests, kwargs={"acronym": group.acronym}
+        )
 
         # close request, listed under closed
         review_req.state = ReviewRequestStateName.objects.get(slug="completed")
@@ -55,8 +87,10 @@ class ReviewTests(TestCase):
         self.assertContains(r, review_req.doc.name)
 
     def test_suggested_review_requests(self):
-        review_req = ReviewRequestFactory(state_id='assigned')
-        assignment = ReviewAssignmentFactory(review_request=review_req, state_id='assigned')
+        review_req = ReviewRequestFactory(state_id="assigned")
+        assignment = ReviewAssignmentFactory(
+            review_request=review_req, state_id="assigned"
+        )
         doc = review_req.doc
         team = review_req.team
 
@@ -86,7 +120,7 @@ class ReviewTests(TestCase):
         self.assertEqual(len(suggestions), 1)
         self.assertEqual(suggestions[0].doc, doc)
         self.assertEqual(suggestions[0].team, team)
-        self.assertFalse(getattr(suggestions[0], 'in_lc_and_telechat', None))
+        self.assertFalse(getattr(suggestions[0], "in_lc_and_telechat", None))
 
         # blocked by non-versioned refusal
         review_req.requested_rev = ""
@@ -111,7 +145,6 @@ class ReviewTests(TestCase):
         review_req.save()
         self.assertEqual(len(suggested_review_requests_for_team(team)), 1)
 
-
         # blocked by completion
         review_req.state = ReviewRequestStateName.objects.get(slug="assigned")
         review_req.requested_rev = ""
@@ -128,9 +161,8 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(suggested_review_requests_for_team(team)), 1)
 
-
     def test_suggested_review_requests_on_lc_and_telechat(self):
-        review_req = ReviewRequestFactory(state_id='assigned')
+        review_req = ReviewRequestFactory(state_id="assigned")
         doc = review_req.doc
         team = review_req.team
 
@@ -149,7 +181,7 @@ class ReviewTests(TestCase):
             doc=doc,
             expires=timezone.now() + datetime.timedelta(days=365),
             by=Person.objects.get(name="(System)"),
-            rev=doc.rev
+            rev=doc.rev,
         )
 
         suggestions = suggested_review_requests_for_team(team)
@@ -160,21 +192,24 @@ class ReviewTests(TestCase):
 
     def test_reviewer_overview(self):
         team = ReviewTeamFactory()
-        reviewer = RoleFactory(name_id='reviewer',group=team,person__user__username='reviewer').person
-        ReviewerSettingsFactory(person=reviewer,team=team)
-        review_req1 = ReviewRequestFactory(state_id='completed',team=team)
+        reviewer = RoleFactory(
+            name_id="reviewer", group=team, person__user__username="reviewer"
+        ).person
+        ReviewerSettingsFactory(person=reviewer, team=team)
+        review_req1 = ReviewRequestFactory(state_id="completed", team=team)
         secretary = Person.objects.get(user__username="secretary")
-        ReviewAssignmentFactory(review_request = review_req1, reviewer=reviewer.email())
-        PersonFactory(user__username='plain')
+        ReviewAssignmentFactory(review_request=review_req1, reviewer=reviewer.email())
+        PersonFactory(user__username="plain")
 
         ReviewAssignmentFactory(
             review_request__doc=review_req1.doc,
             review_request__team=review_req1.team,
             review_request__type_id="early",
-            review_request__deadline=date_today(DEADLINE_TZINFO) + datetime.timedelta(days=30),
+            review_request__deadline=date_today(DEADLINE_TZINFO)
+            + datetime.timedelta(days=30),
             review_request__state_id="assigned",
             review_request__requested_by=Person.objects.get(user__username="reviewer"),
-            state_id = "accepted",
+            state_id="accepted",
             reviewer=reviewer.email_set.first(),
         )
 
@@ -185,15 +220,22 @@ class ReviewTests(TestCase):
             availability="unavailable",
         )
 
-        settings = ReviewerSettings.objects.get(person=reviewer,team=review_req1.team)
+        settings = ReviewerSettings.objects.get(person=reviewer, team=review_req1.team)
         settings.skip_next = 1
         settings.save()
 
         group = review_req1.team
 
         # get
-        for url in [urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym }),
-                    urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })]:
+        for url in [
+            urlreverse(
+                ietf.group.views.reviewer_overview, kwargs={"acronym": group.acronym}
+            ),
+            urlreverse(
+                ietf.group.views.reviewer_overview,
+                kwargs={"acronym": group.acronym, "group_type": group.type_id},
+            ),
+        ]:
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             self.assertContains(r, escape(reviewer.name))
@@ -201,7 +243,9 @@ class ReviewTests(TestCase):
             # without a login, reason for being unavailable should not be seen
             self.assertNotContains(r, "Availability")
 
-        url = urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym })
+        url = urlreverse(
+            ietf.group.views.reviewer_overview, kwargs={"acronym": group.acronym}
+        )
         self.client.login(username="plain", password="plain+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -221,15 +265,16 @@ class ReviewTests(TestCase):
         self.assertContains(r, "Available")
 
         # add one closed review with no response and see it is visible
-        review_req2 = ReviewRequestFactory(state_id='completed',team=team)
+        review_req2 = ReviewRequestFactory(state_id="completed", team=team)
         ReviewAssignmentFactory(
             review_request__doc=review_req2.doc,
             review_request__team=review_req2.team,
             review_request__type_id="lc",
-            review_request__deadline=date_today(DEADLINE_TZINFO) - datetime.timedelta(days=30),
+            review_request__deadline=date_today(DEADLINE_TZINFO)
+            - datetime.timedelta(days=30),
             review_request__state_id="assigned",
             review_request__requested_by=Person.objects.get(user__username="reviewer"),
-            state_id = "no-response",
+            state_id="no-response",
             reviewer=reviewer.email_set.first(),
         )
         self.client.login(username="secretary", password="secretary+password")
@@ -244,18 +289,19 @@ class ReviewTests(TestCase):
         # will not match
         self.assertNotContains(r, "Completed")
         # add multiple completed reviews
-        review_req3 = ReviewRequestFactory(state_id='completed', team=team)
+        review_req3 = ReviewRequestFactory(state_id="completed", team=team)
         ReviewAssignmentFactory(
             review_request__doc=review_req3.doc,
             review_request__time=datetime_today() - datetime.timedelta(days=30),
             review_request__team=review_req3.team,
             review_request__type_id="telechat",
-            review_request__deadline=date_today(DEADLINE_TZINFO) - datetime.timedelta(days=25),
+            review_request__deadline=date_today(DEADLINE_TZINFO)
+            - datetime.timedelta(days=25),
             review_request__state_id="completed",
             review_request__requested_by=Person.objects.get(user__username="reviewer"),
-            state_id = "completed",
+            state_id="completed",
             reviewer=reviewer.email_set.first(),
-            assigned_on=datetime_today() - datetime.timedelta(days=30)
+            assigned_on=datetime_today() - datetime.timedelta(days=30),
         )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -264,19 +310,24 @@ class ReviewTests(TestCase):
         self.assertContains(r, review_req2.doc.name)
         self.assertContains(r, review_req3.doc.name)
         # Few more to make sure we hit the limit
-        reqs = [ReviewRequestFactory(state_id='completed', team=team) for i in range(10)]
+        reqs = [
+            ReviewRequestFactory(state_id="completed", team=team) for i in range(10)
+        ]
         for i in range(10):
             ReviewAssignmentFactory(
                 review_request__doc=reqs[i].doc,
-                review_request__time=datetime_today() - datetime.timedelta(days=i*30),
+                review_request__time=datetime_today() - datetime.timedelta(days=i * 30),
                 review_request__team=reqs[i].team,
                 review_request__type_id="telechat",
-                review_request__deadline=date_today(DEADLINE_TZINFO) - datetime.timedelta(days=i*20),
+                review_request__deadline=date_today(DEADLINE_TZINFO)
+                - datetime.timedelta(days=i * 20),
                 review_request__state_id="completed",
-                review_request__requested_by=Person.objects.get(user__username="reviewer"),
-                state_id = "completed",
+                review_request__requested_by=Person.objects.get(
+                    user__username="reviewer"
+                ),
+                state_id="completed",
                 reviewer=reviewer.email_set.first(),
-                assigned_on=datetime_today() - datetime.timedelta(days=i*30)
+                assigned_on=datetime_today() - datetime.timedelta(days=i * 30),
             )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -317,31 +368,33 @@ class ReviewTests(TestCase):
                 self.assertNotContains(r, reqs[i].doc.name)
         # Add assigned items, they should be visible as long as they
         # are within time period
-        review_req4 = ReviewRequestFactory(state_id='completed', team=team)
+        review_req4 = ReviewRequestFactory(state_id="completed", team=team)
         ReviewAssignmentFactory(
             review_request__doc=review_req4.doc,
             review_request__time=datetime_today() - datetime.timedelta(days=80),
             review_request__team=review_req4.team,
             review_request__type_id="lc",
-            review_request__deadline=date_today(DEADLINE_TZINFO) - datetime.timedelta(days=60),
+            review_request__deadline=date_today(DEADLINE_TZINFO)
+            - datetime.timedelta(days=60),
             review_request__state_id="assigned",
             review_request__requested_by=Person.objects.get(user__username="reviewer"),
-            state_id = "accepted",
+            state_id="accepted",
             reviewer=reviewer.email_set.first(),
-            assigned_on=datetime_today() - datetime.timedelta(days=80)
+            assigned_on=datetime_today() - datetime.timedelta(days=80),
         )
-        review_req5 = ReviewRequestFactory(state_id='completed', team=team)
+        review_req5 = ReviewRequestFactory(state_id="completed", team=team)
         ReviewAssignmentFactory(
             review_request__doc=review_req5.doc,
             review_request__time=datetime_today() - datetime.timedelta(days=120),
             review_request__team=review_req5.team,
             review_request__type_id="lc",
-            review_request__deadline=date_today(DEADLINE_TZINFO) - datetime.timedelta(days=100),
+            review_request__deadline=date_today(DEADLINE_TZINFO)
+            - datetime.timedelta(days=100),
             review_request__state_id="assigned",
             review_request__requested_by=Person.objects.get(user__username="reviewer"),
-            state_id = "accepted",
+            state_id="accepted",
             reviewer=reviewer.email_set.first(),
-            assigned_on=datetime_today() - datetime.timedelta(days=120)
+            assigned_on=datetime_today() - datetime.timedelta(days=120),
         )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -370,24 +423,54 @@ class ReviewTests(TestCase):
 
     def test_manage_review_requests(self):
         group = ReviewTeamFactory()
-        RoleFactory(name_id='reviewer',group=group,person__user__username='reviewer').person
-        marsperson = RoleFactory(name_id='reviewer',group=group,person=PersonFactory(name="Mars Anders Chairman",user__username='marschairman')).person
+        RoleFactory(
+            name_id="reviewer", group=group, person__user__username="reviewer"
+        ).person
+        marsperson = RoleFactory(
+            name_id="reviewer",
+            group=group,
+            person=PersonFactory(
+                name="Mars Anders Chairman", user__username="marschairman"
+            ),
+        ).person
         doc_author = PersonFactory()
-        review_req1 = ReviewRequestFactory(doc__pages=2,doc__shepherd=marsperson.email(),team=group, doc__authors=[doc_author])
+        review_req1 = ReviewRequestFactory(
+            doc__pages=2,
+            doc__shepherd=marsperson.email(),
+            team=group,
+            doc__authors=[doc_author],
+        )
         review_req2 = ReviewRequestFactory(team=group)
         review_req3 = ReviewRequestFactory(team=group)
-        RoleFactory(name_id='chair',group=review_req1.doc.group,person=marsperson)
+        RoleFactory(name_id="chair", group=review_req1.doc.group, person=marsperson)
 
-        unassigned_url = urlreverse(ietf.group.views.manage_review_requests, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id, "assignment_status": "unassigned" })
+        unassigned_url = urlreverse(
+            ietf.group.views.manage_review_requests,
+            kwargs={
+                "acronym": group.acronym,
+                "group_type": group.type_id,
+                "assignment_status": "unassigned",
+            },
+        )
         login_testing_unauthorized(self, "secretary", unassigned_url)
 
         # Need one more person in review team one so we can test incrementing skip_count without immediately decrementing it
-        another_reviewer = PersonFactory.create(name = "Extra TestReviewer") # needs to be lexically greater than the existing one
-        another_reviewer.role_set.create(name_id='reviewer', email=another_reviewer.email(), group=review_req1.team)
-        ReviewerSettingsFactory(team=review_req3.team, person = another_reviewer)
-        yet_another_reviewer = PersonFactory.create(name = "YetAnotherExtra TestReviewer") # needs to be lexically greater than the existing one
-        yet_another_reviewer.role_set.create(name_id='reviewer', email=yet_another_reviewer.email(), group=review_req1.team)
-        ReviewerSettingsFactory(team=review_req3.team, person = yet_another_reviewer)
+        another_reviewer = PersonFactory.create(
+            name="Extra TestReviewer"
+        )  # needs to be lexically greater than the existing one
+        another_reviewer.role_set.create(
+            name_id="reviewer", email=another_reviewer.email(), group=review_req1.team
+        )
+        ReviewerSettingsFactory(team=review_req3.team, person=another_reviewer)
+        yet_another_reviewer = PersonFactory.create(
+            name="YetAnotherExtra TestReviewer"
+        )  # needs to be lexically greater than the existing one
+        yet_another_reviewer.role_set.create(
+            name_id="reviewer",
+            email=yet_another_reviewer.email(),
+            group=review_req1.team,
+        )
+        ReviewerSettingsFactory(team=review_req3.team, person=yet_another_reviewer)
 
         # get
         r = self.client.get(unassigned_url)
@@ -396,35 +479,49 @@ class ReviewTests(TestCase):
         self.assertContains(r, escape(doc_author.name))
 
         # Test that conflicts are detected
-        r = self.client.post(unassigned_url, {
-            "reviewrequest": [str(review_req3.pk)],
-
-            "r{}-existing_reviewer".format(review_req3.pk): "",
-            "r{}-action".format(review_req3.pk): "assign",
-            "r{}-reviewer".format(review_req3.pk): another_reviewer.email_set.first().pk,
-            "r{}-add_skip".format(review_req3.pk): 1,
-            
-            "action": "save",
-        })
+        r = self.client.post(
+            unassigned_url,
+            {
+                "reviewrequest": [str(review_req3.pk)],
+                "r{}-existing_reviewer".format(review_req3.pk): "",
+                "r{}-action".format(review_req3.pk): "assign",
+                "r{}-reviewer".format(
+                    review_req3.pk
+                ): another_reviewer.email_set.first().pk,
+                "r{}-add_skip".format(review_req3.pk): 1,
+                "action": "save",
+            },
+        )
         self.assertContains(r, "2 requests opened")
 
-        r = self.client.post(unassigned_url, {
-            "reviewrequest": [str(review_req1.pk),str(review_req2.pk),str(review_req3.pk)],
-
-            "r{}-existing_reviewer".format(review_req3.pk): "",
-            "r{}-action".format(review_req3.pk): "assign",
-            "r{}-reviewer".format(review_req3.pk): another_reviewer.email_set.first().pk,
-            "r{}-add_skip".format(review_req3.pk): 1,
-            # Should be ignored, setting review_type only applies to suggested reviews
-            "r{}-review_type".format(review_req3.pk): ReviewTypeName.objects.get(slug='telechat').pk,
-
-            "action": "save",
-        })
+        r = self.client.post(
+            unassigned_url,
+            {
+                "reviewrequest": [
+                    str(review_req1.pk),
+                    str(review_req2.pk),
+                    str(review_req3.pk),
+                ],
+                "r{}-existing_reviewer".format(review_req3.pk): "",
+                "r{}-action".format(review_req3.pk): "assign",
+                "r{}-reviewer".format(
+                    review_req3.pk
+                ): another_reviewer.email_set.first().pk,
+                "r{}-add_skip".format(review_req3.pk): 1,
+                # Should be ignored, setting review_type only applies to suggested reviews
+                "r{}-review_type".format(review_req3.pk): ReviewTypeName.objects.get(
+                    slug="telechat"
+                ).pk,
+                "action": "save",
+            },
+        )
         self.assertEqual(r.status_code, 302)
 
         review_req3 = reload_db_objects(review_req3)
-        settings = ReviewerSettings.objects.filter(team=review_req3.team, person=another_reviewer).first()
-        self.assertEqual(settings.skip_next,1)
+        settings = ReviewerSettings.objects.filter(
+            team=review_req3.team, person=another_reviewer
+        ).first()
+        self.assertEqual(settings.skip_next, 1)
         self.assertEqual(review_req3.state_id, "assigned")
         self.assertEqual(review_req3.type_id, "lc")
 
@@ -447,11 +544,20 @@ class ReviewTests(TestCase):
             doc=doc,
             expires=timezone.now() + datetime.timedelta(days=365),
             by=Person.objects.get(name="(System)"),
-            rev=doc.rev
+            rev=doc.rev,
         )
 
-        reviewer = RoleFactory(name_id='reviewer', group=team, person__user__username='reviewer')
-        unassigned_url = urlreverse(ietf.group.views.manage_review_requests, kwargs={ 'acronym': team.acronym, 'group_type': team.type_id, "assignment_status": "unassigned" })
+        reviewer = RoleFactory(
+            name_id="reviewer", group=team, person__user__username="reviewer"
+        )
+        unassigned_url = urlreverse(
+            ietf.group.views.manage_review_requests,
+            kwargs={
+                "acronym": team.acronym,
+                "group_type": team.type_id,
+                "assignment_status": "unassigned",
+            },
+        )
 
         login_testing_unauthorized(self, "secretary", unassigned_url)
 
@@ -461,41 +567,67 @@ class ReviewTests(TestCase):
         self.assertContains(r, doc.name)
 
         # Submit as lc review
-        r = self.client.post(unassigned_url, {
-            "rlc-{}-action".format(doc.name): "assign",
-            "rlc-{}-review_type".format(doc.name): ReviewTypeName.objects.get(slug='lc').pk,
-            "rlc-{}-reviewer".format(doc.name): reviewer.person.email_set.first().pk,
-
-            "action": "save",
-        })
+        r = self.client.post(
+            unassigned_url,
+            {
+                "rlc-{}-action".format(doc.name): "assign",
+                "rlc-{}-review_type".format(doc.name): ReviewTypeName.objects.get(
+                    slug="lc"
+                ).pk,
+                "rlc-{}-reviewer".format(
+                    doc.name
+                ): reviewer.person.email_set.first().pk,
+                "action": "save",
+            },
+        )
         self.assertEqual(r.status_code, 302)
         review_request = doc.reviewrequest_set.get()
-        self.assertEqual(review_request.type_id, 'lc')
-        
+        self.assertEqual(review_request.type_id, "lc")
+
         # Clean up and try again as telechat
         review_request.reviewassignment_set.all().delete()
         review_request.delete()
-        
-        r = self.client.post(unassigned_url, {
-            "rlc-{}-action".format(doc.name): "assign",
-            "rlc-{}-review_type".format(doc.name): ReviewTypeName.objects.get(slug='telechat').pk,
-            "rlc-{}-reviewer".format(doc.name): reviewer.person.email_set.first().pk,
 
-            "action": "save",
-        })
+        r = self.client.post(
+            unassigned_url,
+            {
+                "rlc-{}-action".format(doc.name): "assign",
+                "rlc-{}-review_type".format(doc.name): ReviewTypeName.objects.get(
+                    slug="telechat"
+                ).pk,
+                "rlc-{}-reviewer".format(
+                    doc.name
+                ): reviewer.person.email_set.first().pk,
+                "action": "save",
+            },
+        )
         self.assertEqual(r.status_code, 302)
         review_request = doc.reviewrequest_set.get()
-        self.assertEqual(review_request.type_id, 'telechat')
-        
+        self.assertEqual(review_request.type_id, "telechat")
+
     def test_email_open_review_assignments(self):
         review_req1 = ReviewRequestFactory()
-        review_assignment_completed = ReviewAssignmentFactory(review_request=review_req1,reviewer=EmailFactory(person__user__username='marschairman'), state_id='completed', reviewed_rev=0)
-        ReviewAssignmentFactory(review_request=review_req1,reviewer=review_assignment_completed.reviewer)
-        TelechatDocEvent.objects.create(telechat_date=date_today(settings.TIME_ZONE), type='scheduled_for_telechat', by=review_assignment_completed.reviewer.person, doc=review_req1.doc, rev=0)
+        review_assignment_completed = ReviewAssignmentFactory(
+            review_request=review_req1,
+            reviewer=EmailFactory(person__user__username="marschairman"),
+            state_id="completed",
+            reviewed_rev=0,
+        )
+        ReviewAssignmentFactory(
+            review_request=review_req1, reviewer=review_assignment_completed.reviewer
+        )
+        TelechatDocEvent.objects.create(
+            telechat_date=date_today(settings.TIME_ZONE),
+            type="scheduled_for_telechat",
+            by=review_assignment_completed.reviewer.person,
+            doc=review_req1.doc,
+            rev=0,
+        )
 
-        DBTemplateFactory.create(path='/group/defaults/email/open_assignments.txt',
-                                 type_id='django',
-                                 content = """
+        DBTemplateFactory.create(
+            path="/group/defaults/email/open_assignments.txt",
+            type_id="django",
+            content="""
                                         {% autoescape off %}Subject: Open review assignments in {{group.acronym}}
 
                                         The following reviewers have assignments:{% for r in review_assignments %}{% ifchanged r.section %}
@@ -509,15 +641,22 @@ class ReviewTests(TestCase):
                                         
                                         {% for p in rotation_list %}  {{ p }}
                                         {% endfor %}{% endif %}{% endautoescape %}
-                                 """)
+                                 """,
+        )
 
         group = review_req1.team
 
-        url = urlreverse(ietf.group.views.email_open_review_assignments, kwargs={ 'acronym': group.acronym })
+        url = urlreverse(
+            ietf.group.views.email_open_review_assignments,
+            kwargs={"acronym": group.acronym},
+        )
 
         login_testing_unauthorized(self, "secretary", url)
 
-        url = urlreverse(ietf.group.views.email_open_review_assignments, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })
+        url = urlreverse(
+            ietf.group.views.email_open_review_assignments,
+            kwargs={"acronym": group.acronym, "group_type": group.type_id},
+        )
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -526,64 +665,86 @@ class ReviewTests(TestCase):
         # The document should be listed both for the telechat, and in the last call section,
         # i.e. the document name is expected twice in the output (#2118)
         self.assertEqual(generated_text.count(review_req1.doc.name), 2)
-        self.assertEqual(generated_text.count('(-0 lc reviewed)'), 2)  # previous completed assignment
-        self.assertTrue(str(Person.objects.get(user__username="marschairman")) in generated_text)
+        self.assertEqual(
+            generated_text.count("(-0 lc reviewed)"), 2
+        )  # previous completed assignment
+        self.assertTrue(
+            str(Person.objects.get(user__username="marschairman")) in generated_text
+        )
 
         empty_outbox()
-        r = self.client.post(url, {
-            "to": 'toaddr@bogus.test',
-            "cc": 'ccaddr@bogus.test',
-            "reply_to": 'replytoaddr@bogus.test',
-            "frm" : 'fromaddr@bogus.test',
-            "subject": "Test subject",
-            "body": "Test body",
-            "action": "email",
-        })
+        r = self.client.post(
+            url,
+            {
+                "to": "toaddr@bogus.test",
+                "cc": "ccaddr@bogus.test",
+                "reply_to": "replytoaddr@bogus.test",
+                "frm": "fromaddr@bogus.test",
+                "subject": "Test subject",
+                "body": "Test body",
+                "action": "email",
+            },
+        )
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), 1)
-        self.assertIn('toaddr', outbox[0]["To"])
-        self.assertIn('ccaddr', outbox[0]["Cc"])
-        self.assertIn('replytoaddr', outbox[0]["Reply-To"])
-        self.assertIn('fromaddr', outbox[0]["From"])
+        self.assertIn("toaddr", outbox[0]["To"])
+        self.assertIn("ccaddr", outbox[0]["Cc"])
+        self.assertIn("replytoaddr", outbox[0]["Reply-To"])
+        self.assertIn("fromaddr", outbox[0]["From"])
         self.assertEqual(outbox[0]["subject"], "Test subject")
         self.assertIn("Test body", get_payload_text(outbox[0]))
 
     def test_change_reviewer_settings(self):
-        reviewer = ReviewerSettingsFactory(person__user__username='reviewer',expertise='Some expertise').person
+        reviewer = ReviewerSettingsFactory(
+            person__user__username="reviewer", expertise="Some expertise"
+        ).person
         review_req = ReviewRequestFactory()
-        assignment = ReviewAssignmentFactory(review_request=review_req,reviewer=reviewer.email())
-        RoleFactory(name_id='reviewer',group=review_req.team,person=assignment.reviewer.person)
-        RoleFactory(name_id='secr',group=review_req.team)
+        assignment = ReviewAssignmentFactory(
+            review_request=review_req, reviewer=reviewer.email()
+        )
+        RoleFactory(
+            name_id="reviewer", group=review_req.team, person=assignment.reviewer.person
+        )
+        RoleFactory(name_id="secr", group=review_req.team)
 
-        url = urlreverse(ietf.group.views.change_reviewer_settings, kwargs={
-            "acronym": review_req.team.acronym,
-            "reviewer_email": assignment.reviewer_id,
-        })
+        url = urlreverse(
+            ietf.group.views.change_reviewer_settings,
+            kwargs={
+                "acronym": review_req.team.acronym,
+                "reviewer_email": assignment.reviewer_id,
+            },
+        )
 
         login_testing_unauthorized(self, reviewer.user.username, url)
 
-        url = urlreverse(ietf.group.views.change_reviewer_settings, kwargs={
-            "group_type": review_req.team.type_id,
-            "acronym": review_req.team.acronym,
-            "reviewer_email": assignment.reviewer_id,
-        })
+        url = urlreverse(
+            ietf.group.views.change_reviewer_settings,
+            kwargs={
+                "group_type": review_req.team.type_id,
+                "acronym": review_req.team.acronym,
+                "reviewer_email": assignment.reviewer_id,
+            },
+        )
 
         # get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.context['period_form']['start_date'].initial, date_today())
+        self.assertEqual(r.context["period_form"]["start_date"].initial, date_today())
 
         # set settings
         empty_outbox()
-        r = self.client.post(url, {
-            "action": "change_settings",
-            "min_interval": "7",
-            "filter_re": "test-[regexp]",
-            "remind_days_before_deadline": "6",
-            "remind_days_open_reviews": "8",
-            "request_assignment_next": "1",
-            "expertise": "Some expertise",
-        })
+        r = self.client.post(
+            url,
+            {
+                "action": "change_settings",
+                "min_interval": "7",
+                "filter_re": "test-[regexp]",
+                "remind_days_before_deadline": "6",
+                "remind_days_open_reviews": "8",
+                "request_assignment_next": "1",
+                "expertise": "Some expertise",
+            },
+        )
         self.assertEqual(r.status_code, 302)
         settings = ReviewerSettings.objects.get(person=reviewer, team=review_req.team)
         self.assertEqual(settings.min_interval, 7)
@@ -600,13 +761,16 @@ class ReviewTests(TestCase):
         self.assertTrue("requested to be the next person", msg_content)
 
         # Normal reviewer should not be able to change skip_next
-        r = self.client.post(url, {
-            "action": "change_settings",
-            "min_interval": "7",
-            "filter_re": "test-[regexp]",
-            "remind_days_before_deadline": "6",
-            "skip_next" : "2",
-        })
+        r = self.client.post(
+            url,
+            {
+                "action": "change_settings",
+                "min_interval": "7",
+                "filter_re": "test-[regexp]",
+                "remind_days_before_deadline": "6",
+                "skip_next": "2",
+            },
+        )
         self.assertEqual(r.status_code, 302)
         settings = ReviewerSettings.objects.get(person=reviewer, team=review_req.team)
         self.assertEqual(settings.skip_next, 0)
@@ -614,15 +778,20 @@ class ReviewTests(TestCase):
         # add unavailable period
         start_date = date_today() + datetime.timedelta(days=10)
         empty_outbox()
-        r = self.client.post(url, {
-            "action": "add_period",
-            'start_date': start_date.isoformat(),
-            'end_date': "",
-            'availability': "unavailable",
-            'reason': "Whimsy",
-        })
+        r = self.client.post(
+            url,
+            {
+                "action": "add_period",
+                "start_date": start_date.isoformat(),
+                "end_date": "",
+                "availability": "unavailable",
+                "reason": "Whimsy",
+            },
+        )
         self.assertEqual(r.status_code, 302)
-        period = UnavailablePeriod.objects.get(person=reviewer, team=review_req.team, start_date=start_date)
+        period = UnavailablePeriod.objects.get(
+            person=reviewer, team=review_req.team, start_date=start_date
+        )
         self.assertEqual(period.end_date, None)
         self.assertEqual(period.availability, "unavailable")
         self.assertEqual(len(outbox), 1)
@@ -635,96 +804,135 @@ class ReviewTests(TestCase):
         # end unavailable period
         empty_outbox()
         end_date = start_date + datetime.timedelta(days=10)
-        r = self.client.post(url, {
-            "action": "end_period",
-            'period_id': period.pk,
-            'end_date': end_date.isoformat(),
-        })
+        r = self.client.post(
+            url,
+            {
+                "action": "end_period",
+                "period_id": period.pk,
+                "end_date": end_date.isoformat(),
+            },
+        )
         self.assertEqual(r.status_code, 302)
         period = reload_db_objects(period)
         self.assertEqual(period.end_date, end_date)
         self.assertEqual(len(outbox), 1)
         msg_content = get_payload_text(outbox[0])
-        self.assertTrue('Set end date', msg_content)
+        self.assertTrue("Set end date", msg_content)
         self.assertTrue(start_date.isoformat(), msg_content)
         self.assertTrue(end_date.isoformat(), msg_content)
         self.assertTrue("indefinite", msg_content)
 
         # delete unavailable period
         empty_outbox()
-        r = self.client.post(url, {
-            "action": "delete_period",
-            'period_id': period.pk,
-        })
+        r = self.client.post(
+            url,
+            {
+                "action": "delete_period",
+                "period_id": period.pk,
+            },
+        )
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(UnavailablePeriod.objects.filter(person=reviewer, team=review_req.team, start_date=start_date).count(), 0)
+        self.assertEqual(
+            UnavailablePeriod.objects.filter(
+                person=reviewer, team=review_req.team, start_date=start_date
+            ).count(),
+            0,
+        )
         self.assertEqual(len(outbox), 1)
         msg_content = get_payload_text(outbox[0])
-        self.assertTrue('Removed', msg_content)
+        self.assertTrue("Removed", msg_content)
         self.assertTrue(start_date.isoformat(), msg_content)
         self.assertTrue(end_date.isoformat(), msg_content)
 
         # secretaries and the secretariat should be able to change skip_next
-        for username in ["secretary","reviewsecretary"]:
-            skip_next_val = {'secretary':'3','reviewsecretary':'4'}[username]
-            self.client.login(username=username,password=username+"+password")
-            r = self.client.post(url, {
-                "action": "change_settings",
-                "min_interval": "7",
-                "filter_re": "test-[regexp]",
-                "remind_days_before_deadline": "6",
-                "skip_next" : skip_next_val,
-            })
+        for username in ["secretary", "reviewsecretary"]:
+            skip_next_val = {"secretary": "3", "reviewsecretary": "4"}[username]
+            self.client.login(username=username, password=username + "+password")
+            r = self.client.post(
+                url,
+                {
+                    "action": "change_settings",
+                    "min_interval": "7",
+                    "filter_re": "test-[regexp]",
+                    "remind_days_before_deadline": "6",
+                    "skip_next": skip_next_val,
+                },
+            )
             self.assertEqual(r.status_code, 302)
-            settings = ReviewerSettings.objects.get(person=reviewer, team=review_req.team)
+            settings = ReviewerSettings.objects.get(
+                person=reviewer, team=review_req.team
+            )
             self.assertEqual(settings.skip_next, int(skip_next_val))
-            
 
     def test_change_review_secretary_settings(self):
         review_req = ReviewRequestFactory()
-        secretary = RoleFactory(name_id='secr',group=review_req.team,person__user__username='reviewsecretary').person
+        secretary = RoleFactory(
+            name_id="secr",
+            group=review_req.team,
+            person__user__username="reviewsecretary",
+        ).person
 
-        url = urlreverse(ietf.group.views.change_review_secretary_settings, kwargs={
-            "acronym": review_req.team.acronym,
-        })
+        url = urlreverse(
+            ietf.group.views.change_review_secretary_settings,
+            kwargs={
+                "acronym": review_req.team.acronym,
+            },
+        )
 
         login_testing_unauthorized(self, secretary.user.username, url)
 
-        url = urlreverse(ietf.group.views.change_review_secretary_settings, kwargs={
-            "group_type": review_req.team.type_id,
-            "acronym": review_req.team.acronym,
-        })
+        url = urlreverse(
+            ietf.group.views.change_review_secretary_settings,
+            kwargs={
+                "group_type": review_req.team.type_id,
+                "acronym": review_req.team.acronym,
+            },
+        )
 
         # get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
         # set settings
-        r = self.client.post(url, {
-            "remind_days_before_deadline": "6",
-            "max_items_to_show_in_reviewer_list": 10,
-            "days_to_show_in_reviewer_list": 365
-        })
+        r = self.client.post(
+            url,
+            {
+                "remind_days_before_deadline": "6",
+                "max_items_to_show_in_reviewer_list": 10,
+                "days_to_show_in_reviewer_list": 365,
+            },
+        )
         self.assertEqual(r.status_code, 302)
-        settings = ReviewSecretarySettings.objects.get(person=secretary, team=review_req.team)
+        settings = ReviewSecretarySettings.objects.get(
+            person=secretary, team=review_req.team
+        )
         self.assertEqual(settings.remind_days_before_deadline, 6)
         self.assertEqual(settings.max_items_to_show_in_reviewer_list, 10)
         self.assertEqual(settings.days_to_show_in_reviewer_list, 365)
 
     def test_assign_reviewer_after_reject(self):
         team = ReviewTeamFactory()
-        reviewer = RoleFactory(name_id='reviewer', group=team).person
+        reviewer = RoleFactory(name_id="reviewer", group=team).person
         ReviewerSettingsFactory(person=reviewer, team=team)
         review_req = ReviewRequestFactory(team=team)
-        ReviewAssignmentFactory(review_request=review_req, state_id='rejected', reviewer=reviewer.email())
+        ReviewAssignmentFactory(
+            review_request=review_req, state_id="rejected", reviewer=reviewer.email()
+        )
 
-        unassigned_url = urlreverse(ietf.group.views.manage_review_requests, kwargs={ 'acronym': team.acronym, 'group_type': team.type_id, "assignment_status": "unassigned" })
+        unassigned_url = urlreverse(
+            ietf.group.views.manage_review_requests,
+            kwargs={
+                "acronym": team.acronym,
+                "group_type": team.type_id,
+                "assignment_status": "unassigned",
+            },
+        )
         login_testing_unauthorized(self, "secretary", unassigned_url)
 
         r = self.client.get(unassigned_url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        reviewer_label = q("option[value=\"{}\"]".format(reviewer.email())).text().lower()
+        reviewer_label = q('option[value="{}"]'.format(reviewer.email())).text().lower()
         self.assertIn("rejected review of document before", reviewer_label)
 
 
@@ -733,85 +941,122 @@ class BulkAssignmentTests(TestCase):
     def test_rotation_queue_update(self):
         group = ReviewTeamFactory.create()
         empty_outbox()
-        reviewers = [RoleFactory.create(group=group,name_id='reviewer') for i in range(6)] # pyflakes:ignore
-        secretary = RoleFactory.create(group=group,name_id='secr')
-        docs = [DocumentFactory.create(type_id='draft',group=None) for i in range(4)]
-        requests = [ReviewRequestFactory(team=group,doc=docs[i]) for i in range(4)]
+        reviewers = [
+            RoleFactory.create(group=group, name_id="reviewer") for i in range(6)
+        ]  # pyflakes:ignore
+        secretary = RoleFactory.create(group=group, name_id="secr")
+        docs = [DocumentFactory.create(type_id="draft", group=None) for i in range(4)]
+        requests = [ReviewRequestFactory(team=group, doc=docs[i]) for i in range(4)]
         policy = get_reviewer_queue_policy(group)
         rot_list = policy.default_reviewer_rotation_list()
 
         expected_ending_head_of_rotation = rot_list[3]
-    
-        unassigned_url = urlreverse(ietf.group.views.manage_review_requests, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id, "assignment_status": "unassigned" })
+
+        unassigned_url = urlreverse(
+            ietf.group.views.manage_review_requests,
+            kwargs={
+                "acronym": group.acronym,
+                "group_type": group.type_id,
+                "assignment_status": "unassigned",
+            },
+        )
 
         postdict = {}
-        postdict['reviewrequest'] = [r.id for r in requests]
+        postdict["reviewrequest"] = [r.id for r in requests]
         # assignments that affect the first 3 reviewers in queue
         for i in range(3):
-            postdict['r{}-existing_reviewer'.format(requests[i].pk)] = ''
-            postdict['r{}-action'.format(requests[i].pk)] = 'assign'
-            postdict['r{}-reviewer'.format(requests[i].pk)] = rot_list[i].email_address()
+            postdict["r{}-existing_reviewer".format(requests[i].pk)] = ""
+            postdict["r{}-action".format(requests[i].pk)] = "assign"
+            postdict["r{}-reviewer".format(requests[i].pk)] = rot_list[
+                i
+            ].email_address()
         # and one out of order assignment
-        postdict['r{}-existing_reviewer'.format(requests[3].pk)] = ''
-        postdict['r{}-action'.format(requests[3].pk)] = 'assign'
-        postdict['r{}-reviewer'.format(requests[3].pk)] = rot_list[5].email_address()
-        postdict['action'] = 'save'
-        self.client.login(username=secretary.person.user.username,password=secretary.person.user.username+'+password')
+        postdict["r{}-existing_reviewer".format(requests[3].pk)] = ""
+        postdict["r{}-action".format(requests[3].pk)] = "assign"
+        postdict["r{}-reviewer".format(requests[3].pk)] = rot_list[5].email_address()
+        postdict["action"] = "save"
+        self.client.login(
+            username=secretary.person.user.username,
+            password=secretary.person.user.username + "+password",
+        )
         r = self.client.post(unassigned_url, postdict)
-        self.assertEqual(r.status_code,302)
-        self.assertEqual(expected_ending_head_of_rotation, policy.default_reviewer_rotation_list()[0])
-        self.assertMailboxContains(outbox, subject='Last Call', text='Requested by', count=4)
-     
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(
+            expected_ending_head_of_rotation, policy.default_reviewer_rotation_list()[0]
+        )
+        self.assertMailboxContains(
+            outbox, subject="Last Call", text="Requested by", count=4
+        )
+
+
 class ResetNextReviewerInTeamTests(TestCase):
 
     def test_reviewer_overview_navigation(self):
-        group = ReviewTeamFactory(settings__reviewer_queue_policy_id = 'RotateAlphabetically')
-        url = urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym })
+        group = ReviewTeamFactory(
+            settings__reviewer_queue_policy_id="RotateAlphabetically"
+        )
+        url = urlreverse(
+            ietf.group.views.reviewer_overview, kwargs={"acronym": group.acronym}
+        )
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertFalse(q('#reset_next_reviewer'))
+        self.assertFalse(q("#reset_next_reviewer"))
 
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(q('#reset_next_reviewer'))
+        self.assertTrue(q("#reset_next_reviewer"))
 
-        group.reviewteamsettings.reviewer_queue_policy_id='LeastRecentlyUsed'
+        group.reviewteamsettings.reviewer_queue_policy_id = "LeastRecentlyUsed"
         group.reviewteamsettings.save()
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertFalse(q('#reset_next_reviewer'))
-
+        self.assertFalse(q("#reset_next_reviewer"))
 
     def test_reset_next_reviewer(self):
-        PersonFactory(user__username='plain')
-        for group in (GroupFactory(), ReviewTeamFactory(settings__reviewer_queue_policy_id='LeastRecentlyUsed')):
-            url = urlreverse('ietf.group.views.reset_next_reviewer', kwargs=dict(acronym=group.acronym))
+        PersonFactory(user__username="plain")
+        for group in (
+            GroupFactory(),
+            ReviewTeamFactory(settings__reviewer_queue_policy_id="LeastRecentlyUsed"),
+        ):
+            url = urlreverse(
+                "ietf.group.views.reset_next_reviewer",
+                kwargs=dict(acronym=group.acronym),
+            )
             r = self.client.get(url)
             self.assertEqual(r.status_code, 302)
-            self.client.login(username='plain',password='plain+password')
+            self.client.login(username="plain", password="plain+password")
             r = self.client.get(url)
             self.assertEqual(r.status_code, 404)
             self.client.logout()
 
-        group = ReviewTeamFactory(settings__reviewer_queue_policy_id='RotateAlphabetically')
-        secr = RoleFactory(name_id='secr',group=group).person
-        reviewers = RoleFactory.create_batch(10, name_id='reviewer',group=group)
-        NextReviewerInTeam.objects.create(team = group, next_reviewer=reviewers[4].person)
+        group = ReviewTeamFactory(
+            settings__reviewer_queue_policy_id="RotateAlphabetically"
+        )
+        secr = RoleFactory(name_id="secr", group=group).person
+        reviewers = RoleFactory.create_batch(10, name_id="reviewer", group=group)
+        NextReviewerInTeam.objects.create(team=group, next_reviewer=reviewers[4].person)
 
         target_index = 6
-        url = urlreverse('ietf.group.views.reset_next_reviewer', kwargs=dict(acronym=group.acronym))
-        for user in (secr.user.username, 'secretary'):
-            login_testing_unauthorized(self,user,url)
+        url = urlreverse(
+            "ietf.group.views.reset_next_reviewer", kwargs=dict(acronym=group.acronym)
+        )
+        for user in (secr.user.username, "secretary"):
+            login_testing_unauthorized(self, user, url)
             r = self.client.get(url)
-            self.assertEqual(r.status_code,200)
-            r = self.client.post(url,{'next_reviewer':reviewers[target_index].person.pk})
-            self.assertEqual(r.status_code,302)
-            self.assertEqual(NextReviewerInTeam.objects.get(team=group).next_reviewer, reviewers[target_index].person)
+            self.assertEqual(r.status_code, 200)
+            r = self.client.post(
+                url, {"next_reviewer": reviewers[target_index].person.pk}
+            )
+            self.assertEqual(r.status_code, 302)
+            self.assertEqual(
+                NextReviewerInTeam.objects.get(team=group).next_reviewer,
+                reviewers[target_index].person,
+            )
             self.client.logout()
             target_index += 2

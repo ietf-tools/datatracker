@@ -17,7 +17,7 @@ import tempfile
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from pyquery import PyQuery
 
@@ -32,7 +32,8 @@ def list_name_from_email(list_email):
     if not list_email.endswith("@ietf.org"):
         return None
 
-    return list_email[:-len("@ietf.org")]
+    return list_email[: -len("@ietf.org")]
+
 
 def hash_list_message_id(list_name, msgid):
     # hash in mailarch is computed similar to
@@ -43,6 +44,7 @@ def hash_list_message_id(list_name, msgid):
     sha.update(force_bytes(list_name))
     return force_str(base64.urlsafe_b64encode(sha.digest()).rstrip(b"="))
 
+
 def construct_query_urls(doc, team, query=None):
     list_name = list_name_from_email(team.list_email)
     if not list_name:
@@ -51,22 +53,34 @@ def construct_query_urls(doc, team, query=None):
     if not query:
         query = doc.name
 
-    encoded_query = "?" + urlencode({
-        "qdr": "c", # custom time frame
-        "start_date": (date_today() - datetime.timedelta(days=180)).isoformat(),
-        "email_list": list_name,
-        "q": "subject:({})".format(query),
-        "as": "1", # this is an advanced search
-    })
+    encoded_query = "?" + urlencode(
+        {
+            "qdr": "c",  # custom time frame
+            "start_date": (date_today() - datetime.timedelta(days=180)).isoformat(),
+            "email_list": list_name,
+            "q": "subject:({})".format(query),
+            "as": "1",  # this is an advanced search
+        }
+    )
 
     return {
         "query": query,
-        "query_url": settings.MAILING_LIST_ARCHIVE_URL + "/arch/search/" + encoded_query,
-        "query_data_url": settings.MAILING_LIST_ARCHIVE_URL + "/arch/export/mbox/" + encoded_query,
+        "query_url": settings.MAILING_LIST_ARCHIVE_URL
+        + "/arch/search/"
+        + encoded_query,
+        "query_data_url": settings.MAILING_LIST_ARCHIVE_URL
+        + "/arch/export/mbox/"
+        + encoded_query,
     }
 
+
 def construct_message_url(list_name, msgid):
-    return "{}/arch/msg/{}/{}".format(settings.MAILING_LIST_ARCHIVE_URL, list_name, hash_list_message_id(list_name, msgid))
+    return "{}/arch/msg/{}/{}".format(
+        settings.MAILING_LIST_ARCHIVE_URL,
+        list_name,
+        hash_list_message_id(list_name, msgid),
+    )
+
 
 def retrieve_messages_from_mbox(mbox_fileobj):
     """Return selected content in message from mbox from mailarch."""
@@ -91,21 +105,32 @@ def retrieve_messages_from_mbox(mbox_fileobj):
             utcdate = None
             d = email.utils.parsedate_tz(msg["Date"])
             if d:
-                utcdate = datetime.datetime.fromtimestamp(email.utils.mktime_tz(d), datetime.timezone.utc)
+                utcdate = datetime.datetime.fromtimestamp(
+                    email.utils.mktime_tz(d), datetime.timezone.utc
+                )
 
-            res.append({
-                "from": msg["From"],
-                "splitfrom": email.utils.parseaddr(msg["From"]),
-                "subject": msg["Subject"],
-                "content": content.replace("\r\n", "\n").replace("\r", "\n").strip("\n"),
-                "message_id": email.utils.unquote(msg["Message-ID"].strip()),
-                "url": email.utils.unquote(msg["Archived-At"].strip()),
-                "date": msg["Date"],
-                "utcdate": (utcdate.date().isoformat(), utcdate.time().isoformat()) if utcdate else ("", ""),
-            })
+            res.append(
+                {
+                    "from": msg["From"],
+                    "splitfrom": email.utils.parseaddr(msg["From"]),
+                    "subject": msg["Subject"],
+                    "content": content.replace("\r\n", "\n")
+                    .replace("\r", "\n")
+                    .strip("\n"),
+                    "message_id": email.utils.unquote(msg["Message-ID"].strip()),
+                    "url": email.utils.unquote(msg["Archived-At"].strip()),
+                    "date": msg["Date"],
+                    "utcdate": (
+                        (utcdate.date().isoformat(), utcdate.time().isoformat())
+                        if utcdate
+                        else ("", "")
+                    ),
+                }
+            )
         mbox.close()
 
     return res
+
 
 def retrieve_messages(query_data_url):
     """Retrieve and return selected content from mailarch."""
@@ -121,10 +146,16 @@ def retrieve_messages(query_data_url):
                 q = PyQuery(r)
                 div = q('div[class~="no-results"]')
                 if div:
-                    raise KeyError("No results: %s -> %s" % (query_data_url, div.text(), ))
+                    raise KeyError(
+                        "No results: %s -> %s"
+                        % (
+                            query_data_url,
+                            div.text(),
+                        )
+                    )
             raise Exception("Export failed - this usually means no matches were found")
 
-        with tarfile.open(fileobj=fileobj, mode='r|*') as tar:
+        with tarfile.open(fileobj=fileobj, mode="r|*") as tar:
             for entry in tar:
                 if entry.isfile():
                     mbox_fileobj = tar.extractfile(entry)

@@ -7,7 +7,7 @@
 import bleach
 import html2text
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from django import forms
 from django.utils.functional import keep_lazy
@@ -77,11 +77,15 @@ def remove_tags(html, tags):
 # ----------------------------------------------------------------------
 # Text field cleaning
 
+
 def clean_text_field(text):
-    mime_type, encoding = get_mime_type(text.encode('utf8'))
-    if   mime_type == 'text/html': #  or re.search(r'<\w+>', text):
+    mime_type, encoding = get_mime_type(text.encode("utf8"))
+    if mime_type == "text/html":  #  or re.search(r'<\w+>', text):
         text = html2text.html2text(text)
-    elif mime_type in ['text/plain', 'application/x-empty', ]:
+    elif mime_type in [
+        "text/plain",
+        "application/x-empty",
+    ]:
         pass
     else:
         raise forms.ValidationError("Unexpected text field mime type: %s" % mime_type)
@@ -95,6 +99,10 @@ def unescape(text):
 
     This function undoes what django.utils.html.escape() does
     """
-    return text.replace('&amp;', '&').replace('&#39;', "'").replace('&quot;', '"').replace('&gt;', '>').replace('&lt;', '<' )
-
-
+    return (
+        text.replace("&amp;", "&")
+        .replace("&#39;", "'")
+        .replace("&quot;", '"')
+        .replace("&gt;", ">")
+        .replace("&lt;", "<")
+    )

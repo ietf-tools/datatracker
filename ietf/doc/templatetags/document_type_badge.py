@@ -9,7 +9,12 @@ register = template.Library()
 
 @register.simple_tag
 def document_type_badge(doc, snapshot, submission, resurrected_by):
-    context = {"doc": doc, "snapshot": snapshot, "submission": submission, "resurrected_by": resurrected_by}
+    context = {
+        "doc": doc,
+        "snapshot": snapshot,
+        "submission": submission,
+        "resurrected_by": resurrected_by,
+    }
     if doc.type_id == "rfc":
         return render_to_string(
             "doc/badge/doc-badge-rfc.html",
@@ -22,7 +27,7 @@ def document_type_badge(doc, snapshot, submission, resurrected_by):
         )
     else:
         error_message = f"Unsupported document type {doc.type_id}."
-        if settings.SERVER_MODE != 'production':
+        if settings.SERVER_MODE != "production":
             raise ValueError(error_message)
         else:
             log(error_message)

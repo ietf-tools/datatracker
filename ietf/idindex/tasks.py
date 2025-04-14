@@ -5,7 +5,7 @@
 import os
 import shutil
 
-import debug    # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from celery import shared_task
 from contextlib import AbstractContextManager
@@ -32,14 +32,16 @@ class TempFileManager(AbstractContextManager):
             tf.write(content)
         return tf_path
 
-    def move_into_place(self, src_path: Path, dest_path: Path, hardlink_dirs: List[Path] = []):
+    def move_into_place(
+        self, src_path: Path, dest_path: Path, hardlink_dirs: List[Path] = []
+    ):
         shutil.move(src_path, dest_path)
         dest_path.chmod(0o644)
         self.cleanup_list.remove(src_path)
         for path in hardlink_dirs:
             target = path / dest_path.name
             target.unlink(missing_ok=True)
-            os.link(dest_path, target) # until python>=3.10
+            os.link(dest_path, target)  # until python>=3.10
         with dest_path.open("rb") as f:
             store_file("indexes", dest_path.name, f, allow_overwrite=True)
 
@@ -83,17 +85,35 @@ def idindex_update_task():
         derived_all_id2_tmpfile = tmp_mgr.make_temp_file(all_id2_content)
 
         # Move temp files as-atomically-as-possible into place
-        tmp_mgr.move_into_place(all_id_tmpfile, id_path / "all_id.txt", [ftp_path, all_archive_path])
+        tmp_mgr.move_into_place(
+            all_id_tmpfile, id_path / "all_id.txt", [ftp_path, all_archive_path]
+        )
         tmp_mgr.move_into_place(derived_all_id_tmpfile, derived_path / "all_id.txt")
         tmp_mgr.move_into_place(download_all_id_tmpfile, download_path / "id-all.txt")
 
-        tmp_mgr.move_into_place(id_index_tmpfile, id_path / "1id-index.txt", [ftp_path, all_archive_path])
-        tmp_mgr.move_into_place(derived_id_index_tmpfile, derived_path / "1id-index.txt")
-        tmp_mgr.move_into_place(download_id_index_tmpfile, download_path / "id-index.txt")
+        tmp_mgr.move_into_place(
+            id_index_tmpfile, id_path / "1id-index.txt", [ftp_path, all_archive_path]
+        )
+        tmp_mgr.move_into_place(
+            derived_id_index_tmpfile, derived_path / "1id-index.txt"
+        )
+        tmp_mgr.move_into_place(
+            download_id_index_tmpfile, download_path / "id-index.txt"
+        )
 
-        tmp_mgr.move_into_place(id_abstracts_tmpfile, id_path / "1id-abstracts.txt", [ftp_path, all_archive_path])
-        tmp_mgr.move_into_place(derived_id_abstracts_tmpfile, derived_path / "1id-abstracts.txt")
-        tmp_mgr.move_into_place(download_id_abstracts_tmpfile, download_path / "id-abstract.txt")
+        tmp_mgr.move_into_place(
+            id_abstracts_tmpfile,
+            id_path / "1id-abstracts.txt",
+            [ftp_path, all_archive_path],
+        )
+        tmp_mgr.move_into_place(
+            derived_id_abstracts_tmpfile, derived_path / "1id-abstracts.txt"
+        )
+        tmp_mgr.move_into_place(
+            download_id_abstracts_tmpfile, download_path / "id-abstract.txt"
+        )
 
-        tmp_mgr.move_into_place(all_id2_tmpfile, id_path / "all_id2.txt", [ftp_path, all_archive_path])
+        tmp_mgr.move_into_place(
+            all_id2_tmpfile, id_path / "all_id2.txt", [ftp_path, all_archive_path]
+        )
         tmp_mgr.move_into_place(derived_all_id2_tmpfile, derived_path / "all_id2.txt")

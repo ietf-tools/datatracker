@@ -9,57 +9,66 @@
 #   bin/test-crawl --settings=ietf.settings_testcrawl
 #
 
-from .settings import *                  # pyflakes:ignore
+from .settings import *  # pyflakes:ignore
 from .settings import TEMPLATES
 
-TEMPLATES[0]['OPTIONS']['loaders'] = (
-    ('django.template.loaders.cached.Loader', (
-        'django.template.loaders.filesystem.Loader',
-        'django.template.loaders.app_directories.Loader',
-    )),
-    'ietf.dbtemplate.template.Loader',
+TEMPLATES[0]["OPTIONS"]["loaders"] = (
+    (
+        "django.template.loaders.cached.Loader",
+        (
+            "django.template.loaders.filesystem.Loader",
+            "django.template.loaders.app_directories.Loader",
+        ),
+    ),
+    "ietf.dbtemplate.template.Loader",
 )
 
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'OPTIONS': {
-            'MAX_ENTRIES': 10000,
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "OPTIONS": {
+            "MAX_ENTRIES": 10000,
         },
     },
-    'sessions': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    "sessions": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         # No version-specific VERSION setting.
     },
-    'htmlized': {
-        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    "htmlized": {
+        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
         #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/var/cache/datatracker/htmlized',
-        'OPTIONS': {
-            'MAX_ENTRIES': 100000,
+        "LOCATION": "/var/cache/datatracker/htmlized",
+        "OPTIONS": {
+            "MAX_ENTRIES": 100000,
         },
     },
-    'pdfized': {
-        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    "pdfized": {
+        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
         #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/var/cache/datatracker/pdfized',
-        'OPTIONS': {
-            'MAX_ENTRIES': 100000,
+        "LOCATION": "/var/cache/datatracker/pdfized",
+        "OPTIONS": {
+            "MAX_ENTRIES": 100000,
         },
     },
-    'slowpages': {
-        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    "slowpages": {
+        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
         #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/var/cache/datatracker/slowpages',
-        'OPTIONS': {
-            'MAX_ENTRIES': 5000,
+        "LOCATION": "/var/cache/datatracker/slowpages",
+        "OPTIONS": {
+            "MAX_ENTRIES": 5000,
         },
     },
 }
 
-PASSWORD_HASHERS = [ 'django.contrib.auth.hashers.MD5PasswordHasher', ]
-SERVER_MODE = 'test'
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "testserver", ]
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.MD5PasswordHasher",
+]
+SERVER_MODE = "test"
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+    "testserver",
+]
 
 SILENCED_SYSTEM_CHECKS = [
     "fields.W342",  # Setting unique=True on a ForeignKey has the same effect as using a OneToOneField.

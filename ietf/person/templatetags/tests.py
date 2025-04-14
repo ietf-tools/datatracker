@@ -14,51 +14,51 @@ class PersonLinkTests(TestCase):
         self.assertEqual(
             person_link(person),
             {
-                'name': person.name,
-                'plain_name': person.plain_name(),
-                'email': person.email_address(),
-                'title': '',
-                'class': '',
-                'with_email': True,
-            }
+                "name": person.name,
+                "plain_name": person.plain_name(),
+                "email": person.email_address(),
+                "title": "",
+                "class": "",
+                "with_email": True,
+            },
         )
         self.assertEqual(
             person_link(person, with_email=False),
             {
-                'name': person.name,
-                'plain_name': person.plain_name(),
-                'email': person.email_address(),
-                'title': '',
-                'class': '',
-                'with_email': False,
-            }
+                "name": person.name,
+                "plain_name": person.plain_name(),
+                "email": person.email_address(),
+                "title": "",
+                "class": "",
+                "with_email": False,
+            },
         )
         self.assertEqual(
-            person_link(person, title='Random Title'),
+            person_link(person, title="Random Title"),
             {
-                'name': person.name,
-                'plain_name': person.plain_name(),
-                'email': person.email_address(),
-                'title': 'Random Title',
-                'class': '',
-                'with_email': True,
-            }
+                "name": person.name,
+                "plain_name": person.plain_name(),
+                "email": person.email_address(),
+                "title": "Random Title",
+                "class": "",
+                "with_email": True,
+            },
         )
         self.assertEqual(
             # funny syntax because 'class' is a Python keyword
-            person_link(person, **{'class': 'some-class'}),
+            person_link(person, **{"class": "some-class"}),
             {
-                'name': person.name,
-                'plain_name': person.plain_name(),
-                'email': person.email_address(),
-                'title': '',
-                'class': 'some-class',
-                'with_email': True,
-            }
+                "name": person.name,
+                "plain_name": person.plain_name(),
+                "email": person.email_address(),
+                "title": "",
+                "class": "some-class",
+                "with_email": True,
+            },
         )
 
     def test_invalid_person(self):
         """Generates correct context dict when input is invalid/missing"""
         self.assertEqual(person_link(None), {})
-        self.assertEqual(person_link(''), {})
+        self.assertEqual(person_link(""), {})
         self.assertEqual(person_link("** No value found for 'somevar' **"), {})

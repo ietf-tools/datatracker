@@ -49,6 +49,7 @@ CRONTAB_DEFS = {
 
 class Command(BaseCommand):
     """Manage periodic tasks"""
+
     crontabs = None
 
     def add_arguments(self, parser):
@@ -79,7 +80,7 @@ class Command(BaseCommand):
             defaults=dict(
                 enabled=False,
                 crontab=self.crontabs["every_15m"],
-                description="Send mail scheduled to go out at certain times"
+                description="Send mail scheduled to go out at certain times",
             ),
         )
 
@@ -89,12 +90,14 @@ class Command(BaseCommand):
             kwargs=json.dumps(dict(full_index=False)),
             defaults=dict(
                 enabled=False,
-                crontab=self.crontabs["every_15m_except_midnight"],  # don't collide with full sync
+                crontab=self.crontabs[
+                    "every_15m_except_midnight"
+                ],  # don't collide with full sync
                 description=(
                     "Reparse the last _year_ of RFC index entries until "
                     "https://github.com/ietf-tools/datatracker/issues/3734 is addressed. "
                     "This takes about 20s on production as of 2022-08-11."
-                )
+                ),
             ),
         )
 
@@ -180,7 +183,7 @@ class Command(BaseCommand):
                 description="Update I-D index files",
             ),
         )
-        
+
         PeriodicTask.objects.get_or_create(
             name="Send expiration notifications",
             task="ietf.doc.tasks.notify_expirations_task",
@@ -188,7 +191,7 @@ class Command(BaseCommand):
                 enabled=False,
                 crontab=self.crontabs["weekly"],
                 description="Send notifications about I-Ds that will expire in the next 14 days",
-            )
+            ),
         )
 
         PeriodicTask.objects.get_or_create(
@@ -261,7 +264,7 @@ class Command(BaseCommand):
                 description="Send personal API key usage summary emails for the past week",
             ),
         )
-        
+
         PeriodicTask.objects.get_or_create(
             name="Purge old personal API key events",
             task="ietf.person.tasks.purge_personal_api_key_events_task",

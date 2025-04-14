@@ -50,6 +50,7 @@ def send_apikey_usage_emails_task(days):
                 },
             )
 
+
 @shared_task
 def purge_personal_api_key_events_task(keep_days):
     keep_since = timezone.now() - datetime.timedelta(days=keep_days)

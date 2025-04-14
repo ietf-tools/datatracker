@@ -7,12 +7,13 @@ from ietf.utils import markdown
 from django.shortcuts import render, get_object_or_404
 from ietf.status.models import Status
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
+
 
 def get_last_active_status():
     status = Status.objects.filter(active=True).order_by("-date").first()
     if status is None:
-        return { "hasMessage": False }
+        return {"hasMessage": False}
 
     context = {
         "hasMessage": True,
@@ -20,24 +21,34 @@ def get_last_active_status():
         "slug": status.slug,
         "title": status.title,
         "body": status.body,
-        "url": urlreverse("ietf.status.views.status_page", kwargs={ "slug": status.slug }),
-        "date": status.date.isoformat()
+        "url": urlreverse(
+            "ietf.status.views.status_page", kwargs={"slug": status.slug}
+        ),
+        "date": status.date.isoformat(),
     }
     return context
+
 
 def status_latest_html(request):
     return render(request, "status/latest.html", context=get_last_active_status())
 
+
 def status_page(request, slug):
     sanitised_slug = slug.rstrip("/")
     status = get_object_or_404(Status, slug=sanitised_slug)
-    return render(request, "status/status.html", context={
-        'status': status,
-        'status_page_html': markdown.markdown(status.page or ""),
-    })
+    return render(
+        request,
+        "status/status.html",
+        context={
+            "status": status,
+            "status_page_html": markdown.markdown(status.page or ""),
+        },
+    )
+
 
 def status_latest_json(request):
     return JsonResponse(get_last_active_status())
+
 
 def status_latest_redirect(request):
     context = get_last_active_status()

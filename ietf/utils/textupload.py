@@ -7,7 +7,8 @@ import re
 from django.conf import settings
 from django.core.exceptions import ValidationError
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
+
 
 def get_cleaned_text_file_content(uploaded_file):
     """Read uploaded file, try to fix up encoding to UTF-8 and
@@ -25,20 +26,26 @@ def get_cleaned_text_file_content(uploaded_file):
 
     # try to fixup encoding
     import magic
+
     if hasattr(magic, "open"):
         m = magic.open(magic.MAGIC_MIME)
         m.load()
         filetype = m.buffer(content)
     else:
         m = magic.Magic()
-        m.cookie = magic.magic_open(magic.MAGIC_NONE | magic.MAGIC_MIME | magic.MAGIC_MIME_ENCODING)
+        m.cookie = magic.magic_open(
+            magic.MAGIC_NONE | magic.MAGIC_MIME | magic.MAGIC_MIME_ENCODING
+        )
         magic.magic_load(m.cookie, None)
         filetype = m.from_buffer(content)
 
     if not filetype.startswith(settings.DOC_TEXT_FILE_VALID_UPLOAD_MIME_TYPES):
-        raise ValidationError("Uploaded file does not appear to be a text file. "
-                              "Permitted MIME types are {}, this file is {}"
-                              .format(', '.join(settings.DOC_TEXT_FILE_VALID_UPLOAD_MIME_TYPES), filetype))
+        raise ValidationError(
+            "Uploaded file does not appear to be a text file. "
+            "Permitted MIME types are {}, this file is {}".format(
+                ", ".join(settings.DOC_TEXT_FILE_VALID_UPLOAD_MIME_TYPES), filetype
+            )
+        )
 
     match = re.search(r"charset=([\w-]+)", filetype)
     if not match:
@@ -48,7 +55,10 @@ def get_cleaned_text_file_content(uploaded_file):
     try:
         content = content.decode(encoding)
     except Exception as e:
-        raise ValidationError("Error decoding file (%s). Try submitting with UTF-8 encoding or remove non-ASCII characters." % str(e))
+        raise ValidationError(
+            "Error decoding file (%s). Try submitting with UTF-8 encoding or remove non-ASCII characters."
+            % str(e)
+        )
 
     # turn line-endings into Unix style
     content = content.replace("\r\n", "\n").replace("\r", "\n")

@@ -7,7 +7,7 @@ import inspect
 import io
 import os, sys
 
-from typing import Any, List        # pyflakes:ignore
+from typing import Any, List  # pyflakes:ignore
 
 
 from django.conf import settings
@@ -15,12 +15,14 @@ from django.core.management.base import BaseCommand
 from django.core.serializers import serialize
 from django.core.serializers.json import DjangoJSONEncoder
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
+
 
 class SortedJsonEncoder(DjangoJSONEncoder):
     def __init__(self, *args, **kwargs):
-        kwargs['sort_keys'] = True
+        kwargs["sort_keys"] = True
         return super(SortedJsonEncoder, self).__init__(*args, **kwargs)
+
 
 class Command(BaseCommand):
     help = """
@@ -33,28 +35,39 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser):
-        parser.add_argument('--stdout', action='store_true', default=False, help="Send fixture to stdout instead of ietf/name/fixtures/names.json")
+        parser.add_argument(
+            "--stdout",
+            action="store_true",
+            default=False,
+            help="Send fixture to stdout instead of ietf/name/fixtures/names.json",
+        )
 
     def say(self, msg):
         if self.verbosity > 0:
             sys.stdout.write(msg)
-            sys.stdout.write('\n')
+            sys.stdout.write("\n")
 
     def note(self, msg):
         if self.verbosity > 1:
             sys.stdout.write(msg)
-            sys.stdout.write('\n')
+            sys.stdout.write("\n")
 
     def mutter(self, msg):
         if self.verbosity > 2:
             sys.stdout.write(msg)
-            sys.stdout.write('\n')
+            sys.stdout.write("\n")
 
     def handle(self, *args, **options):
-        self.output = sys.stdout if options.get('stdout') else io.open(os.path.join(settings.BASE_DIR, "name/fixtures/names.json"), 'w')
+        self.output = (
+            sys.stdout
+            if options.get("stdout")
+            else io.open(
+                os.path.join(settings.BASE_DIR, "name/fixtures/names.json"), "w"
+            )
+        )
 
         def model_name(m):
-            return '%s.%s' % (m._meta.app_label, m.__name__)
+            return "%s.%s" % (m._meta.app_label, m.__name__)
 
         def output(seq):
             try:
@@ -64,6 +77,7 @@ class Command(BaseCommand):
             except:
                 from django.db import connection
                 from pprint import pprint
+
                 pprint(connection.queries)
                 raise
 
@@ -83,17 +97,26 @@ class Command(BaseCommand):
             item = getattr(ietf.name.models, n)
             if inspect.isclass(item) and issubclass(item, ietf.name.models.NameModel):
                 if not item._meta.abstract:
-                    model_objects[model_name(item)] = list(item.objects.all().order_by('pk'))
+                    model_objects[model_name(item)] = list(
+                        item.objects.all().order_by("pk")
+                    )
 
-        for m in ( BallotType, State, StateType, GroupFeatures, MailTrigger, Recipient,
-                    CountryAlias, BusinessConstraint ):
-            model_objects[model_name(m)] = list(m.objects.all().order_by('pk'))
+        for m in (
+            BallotType,
+            State,
+            StateType,
+            GroupFeatures,
+            MailTrigger,
+            Recipient,
+            CountryAlias,
+            BusinessConstraint,
+        ):
+            model_objects[model_name(m)] = list(m.objects.all().order_by("pk"))
 
-        for m in ( DBTemplate, ):
-            model_objects[model_name(m)] = [ m.objects.get(pk=354) ]
+        for m in (DBTemplate,):
+            model_objects[model_name(m)] = [m.objects.get(pk=354)]
 
         for model_name in sorted(model_objects.keys()):
             objects += model_objects[model_name]
 
         output(objects)
-

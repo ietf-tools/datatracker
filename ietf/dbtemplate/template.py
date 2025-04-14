@@ -6,7 +6,7 @@ import os
 import string
 from docutils.core import publish_string
 from docutils.utils import SystemMessage
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from django.template import Origin, TemplateDoesNotExist, Template as DjangoTemplate
 from django.template.loaders.base import Loader as BaseLoader
@@ -16,12 +16,14 @@ from ietf.dbtemplate.models import DBTemplate
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-RST_TEMPLATE = os.path.join(BASE_DIR, 'resources/rst.txt')
+RST_TEMPLATE = os.path.join(BASE_DIR, "resources/rst.txt")
 
 
 class Template(DjangoTemplate):
 
-    def __init__(self, template_string, origin=None, name='<Unknown Template>', engine=None):
+    def __init__(
+        self, template_string, origin=None, name="<Unknown Template>", engine=None
+    ):
         super(Template, self).__init__(template_string, origin, name, engine)
         self.template_string = string.Template(template_string)
 
@@ -43,21 +45,27 @@ class RSTTemplate(PlainTemplate):
     def render(self, context):
         interpolated_string = super(RSTTemplate, self).render(context)
         try:
-            return publish_string(source=interpolated_string,
-                                  writer_name='html',
-                                  settings_overrides={
-                                      'input_encoding': 'unicode',
-                                      'output_encoding': 'unicode',
-                                      'embed_stylesheet': False,
-                                      'xml_declaration': False,
-                                      'template': RST_TEMPLATE,
-                                      'halt_level': 2,
-                                  })
+            return publish_string(
+                source=interpolated_string,
+                writer_name="html",
+                settings_overrides={
+                    "input_encoding": "unicode",
+                    "output_encoding": "unicode",
+                    "embed_stylesheet": False,
+                    "xml_declaration": False,
+                    "template": RST_TEMPLATE,
+                    "halt_level": 2,
+                },
+            )
         except SystemMessage as e:
             args = list(e.args)
-            args[0] = mark_safe('<div class="danger preformatted">%s</div>' % args[0].replace('<string>:', 'line '))
+            args[0] = mark_safe(
+                '<div class="danger preformatted">%s</div>'
+                % args[0].replace("<string>:", "line ")
+            )
             e.args = tuple(args)
             raise e
+
 
 class Loader(BaseLoader):
     def __init__(self, engine):
@@ -75,22 +83,28 @@ class Loader(BaseLoader):
 
         for origin in self.get_template_sources(template_name):
             if skip is not None and origin in skip:
-                tried.append((origin, 'Skipped'))
+                tried.append((origin, "Skipped"))
                 continue
 
             try:
                 template = DBTemplate.objects.get(path=origin)
                 contents = template.content
             except DBTemplate.DoesNotExist:
-                tried.append((origin, 'Source does not exist'))
+                tried.append((origin, "Source does not exist"))
                 continue
             else:
-                if   template.type_id == 'rst':
-                    return RSTTemplate(contents, origin, origin.template_name, self.engine)
-                elif template.type_id == 'plain':
-                    return PlainTemplate(contents, origin, origin.template_name, self.engine)
-                elif template.type_id == 'django':
-                    return DjangoTemplate(contents, origin, origin.template_name, self.engine)
+                if template.type_id == "rst":
+                    return RSTTemplate(
+                        contents, origin, origin.template_name, self.engine
+                    )
+                elif template.type_id == "plain":
+                    return PlainTemplate(
+                        contents, origin, origin.template_name, self.engine
+                    )
+                elif template.type_id == "django":
+                    return DjangoTemplate(
+                        contents, origin, origin.template_name, self.engine
+                    )
                 else:
                     return Template(contents, origin, origin.template_name, self.engine)
 
@@ -103,4 +117,3 @@ class Loader(BaseLoader):
                 template_name=template_name,
                 loader=self,
             )
-

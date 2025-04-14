@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 from ietf.doc.factories import WgDraftFactory
 from ietf.group.factories import GroupFactory, RoleFactory, DatedGroupMilestoneFactory
@@ -20,31 +20,35 @@ if selenium_enabled():
 class MilestoneTests(IetfSeleniumTestCase):
     def setUp(self):
         super(MilestoneTests, self).setUp()
-        
+
         self.wait = WebDriverWait(self.driver, 2)
         self.group = GroupFactory()
-        self.chair = RoleFactory(group=self.group, name_id='chair').person
+        self.chair = RoleFactory(group=self.group, name_id="chair").person
 
     def _search_draft_and_locate_result(self, draft_input, search_string, draft):
         """Search for a draft and get the search result element"""
         draft_input.send_keys(search_string)
 
-        result_selector = 'ul.select2-results__options > li.select2-results__option--selectable'
+        result_selector = (
+            "ul.select2-results__options > li.select2-results__option--selectable"
+        )
         self.wait.until(
             expected_conditions.text_to_be_present_in_element(
-                (By.CSS_SELECTOR, result_selector),
-                draft.name
-            ))
+                (By.CSS_SELECTOR, result_selector), draft.name
+            )
+        )
 
         results = self.driver.find_elements(By.CSS_SELECTOR, result_selector)
         matching_results = [r for r in results if draft.name in r.text]
         self.assertEqual(len(matching_results), 1)
         return matching_results[0]
-        
+
     def _click_milestone_submit_button(self, label):
         submit_button_selector = 'form#milestones-form button[type="submit"]'
         submit_button = self.wait.until(
-            expected_conditions.element_to_be_clickable((By.CSS_SELECTOR, submit_button_selector))
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, submit_button_selector)
+            )
         )
         self.assertIn(label, submit_button.text)
         self.scroll_to_element(submit_button)
@@ -52,12 +56,11 @@ class MilestoneTests(IetfSeleniumTestCase):
 
     def _assert_milestone_changed(self):
         """Wait for milestone to be marked as changed and assert that this succeeded"""
-        milestone_selector = 'form#milestones-form .milestone'
+        milestone_selector = "form#milestones-form .milestone"
         try:
             found_expected_text = self.wait.until(
                 expected_conditions.text_to_be_present_in_element(
-                    (By.CSS_SELECTOR, milestone_selector),
-                    'Changed'
+                    (By.CSS_SELECTOR, milestone_selector), "Changed"
                 )
             )
         except TimeoutException:
@@ -68,77 +71,88 @@ class MilestoneTests(IetfSeleniumTestCase):
     def test_add_milestone(self):
         draft = WgDraftFactory()
         WgDraftFactory.create_batch(3)  # some drafts to ignore
-        description = 'some description'
+        description = "some description"
         due_date = date_today() + datetime.timedelta(days=60)
 
-        assert(len(draft.name) > 5)
+        assert len(draft.name) > 5
         draft_search_string = draft.name[-5:]
-        
+
         self.login(self.chair.user.username)
-        url = self.absreverse('ietf.group.milestones.edit_milestones;current',
-                              kwargs=dict(acronym=self.group.acronym))
+        url = self.absreverse(
+            "ietf.group.milestones.edit_milestones;current",
+            kwargs=dict(acronym=self.group.acronym),
+        )
         self.driver.get(url)
 
         add_milestone_button = self.wait.until(
             expected_conditions.element_to_be_clickable(
-                (By.CSS_SELECTOR, 'button.add-milestone')
-            ))
+                (By.CSS_SELECTOR, "button.add-milestone")
+            )
+        )
         self.scroll_to_element(add_milestone_button)
         add_milestone_button.click()
 
         edit_div = self.wait.until(
             expected_conditions.visibility_of_element_located(
-                (By.CSS_SELECTOR, 'form#milestones-form div.edit-milestone')
-            ))
+                (By.CSS_SELECTOR, "form#milestones-form div.edit-milestone")
+            )
+        )
 
         desc_input = edit_div.find_element(By.CSS_SELECTOR, 'input[id$="_desc"]')
         due_input = edit_div.find_element(By.CSS_SELECTOR, 'input[id$="_due"]')
         draft_input = self.wait.until(
             expected_conditions.visibility_of_element_located(
-                (By.CSS_SELECTOR, '.select2-container textarea[aria-describedby*="_docs"]')
-            ))
+                (
+                    By.CSS_SELECTOR,
+                    '.select2-container textarea[aria-describedby*="_docs"]',
+                )
+            )
+        )
 
         # fill in the edit milestone form
         desc_input.send_keys(description)
-        self._search_draft_and_locate_result(draft_input, draft_search_string, draft).click()
-        due_input.send_keys(due_date.strftime('%m %Y'))
+        self._search_draft_and_locate_result(
+            draft_input, draft_search_string, draft
+        ).click()
+        due_input.send_keys(due_date.strftime("%m %Y"))
 
-        self._click_milestone_submit_button('Review')
+        self._click_milestone_submit_button("Review")
         result_row = self._assert_milestone_changed()
         self.assertIn(description, result_row.text)
-        self._click_milestone_submit_button('Save')
-        
+        self._click_milestone_submit_button("Save")
+
         # Wait for page to return to group page
         self.wait.until(
             expected_conditions.text_to_be_present_in_element(
-                (By.CSS_SELECTOR, 'div#content h1'),
-                self.group.name
+                (By.CSS_SELECTOR, "div#content h1"), self.group.name
             )
         )
-        self.assertIn('1 new milestone', self.driver.page_source)
+        self.assertIn("1 new milestone", self.driver.page_source)
         self.assertEqual(self.group.groupmilestone_set.count(), 1)
         gms = self.group.groupmilestone_set.first()
         self.assertEqual(gms.desc, description)
-        self.assertEqual(gms.due.strftime('%m %Y'), due_date.strftime('%m %Y'))
+        self.assertEqual(gms.due.strftime("%m %Y"), due_date.strftime("%m %Y"))
         self.assertEqual(list(gms.docs.all()), [draft])
-        
+
     def test_edit_milestone(self):
         milestone = DatedGroupMilestoneFactory(group=self.group)
         draft = WgDraftFactory()
         WgDraftFactory.create_batch(3)  # some drafts to ignore
 
-        assert(len(draft.name) > 5)
+        assert len(draft.name) > 5
         draft_search_string = draft.name[-5:]
 
-        url = self.absreverse('ietf.group.milestones.edit_milestones;current',
-                              kwargs=dict(acronym=self.group.acronym))
+        url = self.absreverse(
+            "ietf.group.milestones.edit_milestones;current",
+            kwargs=dict(acronym=self.group.acronym),
+        )
         self.login(self.chair.user.username)
         self.driver.get(url)
 
         # should only be one milestone row - test will fail later if we somehow get the wrong one
         edit_element = self.wait.until(
             expected_conditions.element_to_be_clickable(
-                (By.CSS_SELECTOR, 'form#milestones-form div.milestonerow')
+                (By.CSS_SELECTOR, "form#milestones-form div.milestonerow")
             )
         )
         edit_element.click()
@@ -150,34 +164,45 @@ class MilestoneTests(IetfSeleniumTestCase):
             )
         )
         # Get the prefix used to identify inputs related to this milestone
-        prefix = desc_field.get_attribute('id')[:-4]  # -4 to strip off 'desc', leave '-'
+        prefix = desc_field.get_attribute("id")[
+            :-4
+        ]  # -4 to strip off 'desc', leave '-'
 
-        due_field = self.driver.find_element(By.ID, prefix + 'due')
-        hidden_drafts_field = self.driver.find_element(By.ID, prefix + 'docs')
+        due_field = self.driver.find_element(By.ID, prefix + "due")
+        hidden_drafts_field = self.driver.find_element(By.ID, prefix + "docs")
         draft_input = self.wait.until(
             expected_conditions.visibility_of_element_located(
-                (By.CSS_SELECTOR, '.select2-container textarea[aria-describedby*="%sdocs"]' % prefix)
-            ))
-        self.assertEqual(due_field.get_attribute('value'), milestone.due.strftime('%B %Y'))
-        self.assertEqual(hidden_drafts_field.get_attribute('value'),
-                         ','.join([str(doc.pk) for doc in milestone.docs.all()]))
+                (
+                    By.CSS_SELECTOR,
+                    '.select2-container textarea[aria-describedby*="%sdocs"]' % prefix,
+                )
+            )
+        )
+        self.assertEqual(
+            due_field.get_attribute("value"), milestone.due.strftime("%B %Y")
+        )
+        self.assertEqual(
+            hidden_drafts_field.get_attribute("value"),
+            ",".join([str(doc.pk) for doc in milestone.docs.all()]),
+        )
 
         # modify the fields
-        new_due_date = (milestone.due + datetime.timedelta(days=31)).strftime('%m %Y')
+        new_due_date = (milestone.due + datetime.timedelta(days=31)).strftime("%m %Y")
         due_field.clear()
         due_field.send_keys(new_due_date)
 
-        self._search_draft_and_locate_result(draft_input, draft_search_string, draft).click()
+        self._search_draft_and_locate_result(
+            draft_input, draft_search_string, draft
+        ).click()
 
-        self._click_milestone_submit_button('Review')
+        self._click_milestone_submit_button("Review")
         self._assert_milestone_changed()
-        self._click_milestone_submit_button('Save')
+        self._click_milestone_submit_button("Save")
 
         # Wait for page to return to group page
         self.wait.until(
             expected_conditions.text_to_be_present_in_element(
-                (By.CSS_SELECTOR, 'div#content h1'),
-                self.group.name
+                (By.CSS_SELECTOR, "div#content h1"), self.group.name
             )
         )
 
@@ -188,5 +213,5 @@ class MilestoneTests(IetfSeleniumTestCase):
         self.assertEqual(self.group.groupmilestone_set.count(), 1)
         gms = self.group.groupmilestone_set.first()
         self.assertEqual(gms.desc, expected_desc)
-        self.assertEqual(gms.due.strftime('%m %Y'), expected_due_date)
+        self.assertEqual(gms.due.strftime("%m %Y"), expected_due_date)
         self.assertCountEqual(expected_docs, gms.docs.all())

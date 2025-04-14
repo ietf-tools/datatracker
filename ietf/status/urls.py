@@ -8,5 +8,5 @@ urlpatterns = [
     url(r"^$", views.status_latest_redirect),
     url(r"^latest$", views.status_latest_html),
     url(r"^latest.json$", views.status_latest_json),
-    url(r"(?P<slug>.*)", views.status_page)
+    url(r"(?P<slug>.*)", views.status_page),
 ]

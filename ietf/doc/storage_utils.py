@@ -28,7 +28,9 @@ def exists_in_storage(kind: str, name: str) -> bool:
             store = _get_storage(kind)
             return store.exists_in_storage(kind, name)
         except Exception as err:
-            log(f"Blobstore Error: Failed to test existence of {kind}:{name}: {repr(err)}")
+            log(
+                f"Blobstore Error: Failed to test existence of {kind}:{name}: {repr(err)}"
+            )
     return False
 
 
@@ -92,26 +94,34 @@ def store_str(
             store_bytes(kind, name, content_bytes, allow_overwrite)
         except Exception as err:
             # n.b., not likely to get an exception here because store_file or store_bytes will catch it
-            log(f"Blobstore Error: Failed to store string to {kind}:{name}: {repr(err)}")
+            log(
+                f"Blobstore Error: Failed to store string to {kind}:{name}: {repr(err)}"
+            )
     return None
 
 
 def retrieve_bytes(kind: str, name: str) -> bytes:
     from ietf.doc.storage_backends import maybe_log_timing
+
     content = b""
     if settings.ENABLE_BLOBSTORAGE:
         try:
             store = _get_storage(kind)
             with store.open(name) as f:
                 with maybe_log_timing(
-                    hasattr(store, "ietf_log_blob_timing") and store.ietf_log_blob_timing,
+                    hasattr(store, "ietf_log_blob_timing")
+                    and store.ietf_log_blob_timing,
                     "read",
-                    bucket_name=store.bucket_name if hasattr(store, "bucket_name") else "",
+                    bucket_name=(
+                        store.bucket_name if hasattr(store, "bucket_name") else ""
+                    ),
                     name=name,
                 ):
                     content = f.read()
         except Exception as err:
-            log(f"Blobstore Error: Failed to read bytes from {kind}:{name}: {repr(err)}")
+            log(
+                f"Blobstore Error: Failed to read bytes from {kind}:{name}: {repr(err)}"
+            )
     return content
 
 
@@ -123,5 +133,7 @@ def retrieve_str(kind: str, name: str) -> str:
             # TODO-BLOBSTORE: try to decode all the different ways doc.text() does
             content = content_bytes.decode("utf-8")
         except Exception as err:
-            log(f"Blobstore Error: Failed to read string from {kind}:{name}: {repr(err)}")
+            log(
+                f"Blobstore Error: Failed to read string from {kind}:{name}: {repr(err)}"
+            )
     return content

@@ -10,20 +10,28 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('dbtemplate', '0001_initial'),
-        ('group', '0001_initial'),
-        ('name', '0001_initial'),
+        ("dbtemplate", "0001_initial"),
+        ("group", "0001_initial"),
+        ("name", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='dbtemplate',
-            name='group',
-            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='group.Group'),
+            model_name="dbtemplate",
+            name="group",
+            field=ietf.utils.models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="group.Group",
+            ),
         ),
         migrations.AddField(
-            model_name='dbtemplate',
-            name='type',
-            field=ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='name.DBTemplateTypeName'),
+            model_name="dbtemplate",
+            name="type",
+            field=ietf.utils.models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                to="name.DBTemplateTypeName",
+            ),
         ),
     ]

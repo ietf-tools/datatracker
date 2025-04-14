@@ -7,8 +7,9 @@ from ietf.name.models import SessionPurposeName, TimeSlotTypeName
 
 import debug  # pyflakes: ignore
 
+
 class SessionPurposeAndTypeWidget(forms.MultiWidget):
-    css_class = 'session_purpose_widget'  # class to apply to all widgets
+    css_class = "session_purpose_widget"  # class to apply to all widgets
 
     def __init__(self, purpose_choices, type_choices, *args, **kwargs):
         # Avoid queries on models that need to be migrated into existence - this widget is
@@ -18,14 +19,14 @@ class SessionPurposeAndTypeWidget(forms.MultiWidget):
             forms.Select(
                 choices=purpose_choices,
                 attrs={
-                    'class': self.css_class,
+                    "class": self.css_class,
                 },
             ),
             forms.Select(
                 choices=type_choices,
                 attrs={
-                    'class': self.css_class,
-                    'data-allowed-options': None,
+                    "class": self.css_class,
+                    "data-allowed-options": None,
                 },
             ),
         )
@@ -53,17 +54,19 @@ class SessionPurposeAndTypeWidget(forms.MultiWidget):
     def render(self, *args, **kwargs):
         # Fill in the data-allowed-options (could not do this in init because it needs to
         # query SessionPurposeName, which will break the migration if done during initialization)
-        self.widgets[1].attrs['data-allowed-options'] = json.dumps(self._allowed_types())
+        self.widgets[1].attrs["data-allowed-options"] = json.dumps(
+            self._allowed_types()
+        )
         return super().render(*args, **kwargs)
 
     def decompress(self, value):
         if value:
-            return [getattr(val, 'pk', val) for val in value]
+            return [getattr(val, "pk", val) for val in value]
         else:
             return [None, None]
 
     class Media:
-        js = ('secr/js/session_purpose_and_type_widget.js',)
+        js = ("secr/js/session_purpose_and_type_widget.js",)
 
     def _allowed_types(self):
         """Map from purpose to allowed type values"""
@@ -80,14 +83,15 @@ class SessionPurposeAndTypeField(forms.MultiValueField):
     combinations. Its value should be a tuple with (purpose, type). Its cleaned value is a
     namedtuple with purpose and value properties.
     """
+
     def __init__(self, purpose_queryset=None, type_queryset=None, **kwargs):
         if purpose_queryset is None:
             purpose_queryset = SessionPurposeName.objects.none()
         if type_queryset is None:
             type_queryset = TimeSlotTypeName.objects.none()
         fields = (
-            forms.ModelChoiceField(queryset=purpose_queryset, label='Purpose'),
-            forms.ModelChoiceField(queryset=type_queryset, label='Type'),
+            forms.ModelChoiceField(queryset=purpose_queryset, label="Purpose"),
+            forms.ModelChoiceField(queryset=type_queryset, label="Type"),
         )
         self.widget = SessionPurposeAndTypeWidget(*(field.choices for field in fields))
         super().__init__(fields=fields, **kwargs)
@@ -113,7 +117,7 @@ class SessionPurposeAndTypeField(forms.MultiValueField):
     def compress(self, data_list):
         # Convert data from the cleaned list from the widget into a namedtuple
         if data_list:
-            compressed = namedtuple('CompressedSessionPurposeAndType', 'purpose type')
+            compressed = namedtuple("CompressedSessionPurposeAndType", "purpose type")
             return compressed(*data_list)
         return None
 
@@ -122,9 +126,6 @@ class SessionPurposeAndTypeField(forms.MultiValueField):
         if value.type.pk not in value.purpose.timeslot_types:
             raise forms.ValidationError(
                 '"%(type)s" is not an allowed type for the purpose "%(purpose)s"',
-                params={'type': value.type, 'purpose': value.purpose},
-                code='invalid_type',
+                params={"type": value.type, "purpose": value.purpose},
+                code="invalid_type",
             )
-
-
-

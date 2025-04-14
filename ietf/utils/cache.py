@@ -10,6 +10,7 @@ from .log import log
 
 class LenientMemcacheCache(PyMemcacheCache):
     """PyMemcacheCache backend that tolerates failed inserts due to object size"""
+
     def set(self, key, value, timeout=DEFAULT_TIMEOUT, version=None):
         try:
             super().set(key, value, timeout, version)

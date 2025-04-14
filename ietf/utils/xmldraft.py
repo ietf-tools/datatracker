@@ -35,6 +35,7 @@ class XMLDraft(Draft):
 
     Not all methods from the superclass are implemented yet.
     """
+
     def __init__(self, xml_file):
         """Initialize XMLDraft instance
 
@@ -66,8 +67,8 @@ class XMLDraft(Draft):
                     parser_logs["stderr"].getvalue(),
                 ) from e
 
-            xml_version = tree.getroot().get('version', '2')
-            if xml_version == '2':
+            xml_version = tree.getroot().get("version", "2")
+            if xml_version == "2":
                 v2v3 = xml2rfc.V2v3XmlWriter(tree)
                 tree.tree = v2v3.convert2to3()
         return tree, xml_version
@@ -119,35 +120,34 @@ class XMLDraft(Draft):
         """Determine reference type from name of references section"""
         if section_name:
             section_name = section_name.lower()
-            if 'normative' in section_name:
+            if "normative" in section_name:
                 return self.REF_TYPE_NORMATIVE
-            elif 'informative' in section_name:
+            elif "informative" in section_name:
                 return self.REF_TYPE_INFORMATIVE
         return self.REF_TYPE_UNKNOWN
 
     def _reference_section_name(self, section_elt):
-        section_name = section_elt.findtext('name')
-        if section_name is None and 'title' in section_elt.keys():
-            section_name = section_elt.get('title')  # fall back to title if we have it
+        section_name = section_elt.findtext("name")
+        if section_name is None and "title" in section_elt.keys():
+            section_name = section_elt.get("title")  # fall back to title if we have it
         return section_name
 
     @staticmethod
     def parse_docname(xmlroot):
-        docname = xmlroot.attrib.get('docName')
+        docname = xmlroot.attrib.get("docName")
         if docname is None:
             raise ValueError("Missing docName attribute in the XML root element")
         revmatch = re.match(
-            r'^(?P<filename>.+?)(?:-(?P<rev>[0-9][0-9]))?$',
+            r"^(?P<filename>.+?)(?:-(?P<rev>[0-9][0-9]))?$",
             docname,
-
         )
         if revmatch is None:
-            raise ValueError('Unable to parse docName')
+            raise ValueError("Unable to parse docName")
         # If a group had no match it is None
-        return revmatch.group('filename'), revmatch.group('rev')
+        return revmatch.group("filename"), revmatch.group("rev")
 
     def get_title(self):
-        return self.xmlroot.findtext('front/title').strip()
+        return self.xmlroot.findtext("front/title").strip()
 
     @staticmethod
     def parse_creation_date(date_elt):
@@ -221,11 +221,11 @@ class XMLDraft(Draft):
     @staticmethod
     def render_author_name(author_elt):
         """Get a displayable name for an author, if possible
-        
+
         Based on TextWriter.render_author_name() from xml2rfc. If fullname is present, uses that.
         If not, uses either initials + surname or just surname. Finally, returns None because this
         author is evidently an organization, not a person.
-        
+
         Does not involve ascii* attributes because rfc7991 requires fullname if any of those are
         present.
         """
@@ -240,7 +240,7 @@ class XMLDraft(Draft):
             # but seems to be technically allowed by RFC 7991.
             return f"{initials} {surname}".strip()
         return None
-        
+
     def get_author_list(self):
         """Get detailed author list
 
@@ -251,22 +251,29 @@ class XMLDraft(Draft):
         """
         result = []
         empty_author = {
-            k: None for k in [
-                'name', 'first_name', 'middle_initial', 'last_name',
-                'name_suffix', 'email', 'country', 'affiliation',
+            k: None
+            for k in [
+                "name",
+                "first_name",
+                "middle_initial",
+                "last_name",
+                "name_suffix",
+                "email",
+                "country",
+                "affiliation",
             ]
         }
 
-        for author in self.xmlroot.findall('front/author'):
+        for author in self.xmlroot.findall("front/author"):
             info = {
-                'name': self.render_author_name(author),
-                'email': author.findtext('address/email'),
-                'affiliation': author.findtext('organization'),
+                "name": self.render_author_name(author),
+                "email": author.findtext("address/email"),
+                "affiliation": author.findtext("organization"),
             }
-            elem = author.find('address/postal/country')
+            elem = author.find("address/postal/country")
             if elem is not None:
-                ascii_country = elem.get('ascii', None)
-                info['country'] = ascii_country if ascii_country else elem.text
+                ascii_country = elem.get("ascii", None)
+                info["country"] = ascii_country if ascii_country else elem.text
             for item in info:
                 if info[item]:
                     info[item] = info[item].strip()
@@ -296,6 +303,7 @@ class XMLDraft(Draft):
 
 class XMLParseError(Exception):
     """An error occurred while parsing"""
+
     def __init__(self, out: str, err: str, *args):
         super().__init__(*args)
         self._out = out
@@ -307,6 +315,7 @@ class XMLParseError(Exception):
 
 class InvalidXMLError(Exception):
     """File is not valid XML"""
+
     pass
 
 

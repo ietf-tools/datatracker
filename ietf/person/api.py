@@ -14,17 +14,19 @@ from .serializers import NewEmailSerializer, EmailSerializer, PersonSerializer
 
 class EmailViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     """Email viewset
-    
+
     Only allows updating an existing email for now.
     """
+
     permission_classes = [IsAuthenticated & BelongsToOwnPerson]
     queryset = Email.objects.all()
     serializer_class = EmailSerializer
-    lookup_value_regex = '.+@.+'  # allow @-sign in the pk
+    lookup_value_regex = ".+@.+"  # allow @-sign in the pk
 
 
 class PersonViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """Person viewset"""
+
     permission_classes = [IsAuthenticated & IsOwnPerson]
     queryset = Person.objects.all()
     serializer_class = PersonSerializer
@@ -32,7 +34,7 @@ class PersonViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     @action(detail=True, methods=["post"], serializer_class=NewEmailSerializer)
     def email(self, request, pk=None):
         """Add an email address for this Person
-        
+
         Always succeeds if the email address is valid. Causes a confirmation email to be sent to the
         requested address and completion of that handshake will actually add the email address. If the
         address already exists, an alert will be sent instead of the confirmation email.
@@ -41,5 +43,7 @@ class PersonViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         # This may or may not actually send a confirmation, but doesn't reveal that to the user.
-        send_new_email_confirmation_request(person, serializer.validated_data["address"])
+        send_new_email_confirmation_request(
+            person, serializer.validated_data["address"]
+        )
         return Response(serializer.data)

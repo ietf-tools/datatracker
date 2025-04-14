@@ -22,13 +22,14 @@ from ietf.utils.log import log
 from ietf.utils.response import permission_denied
 
 
-#@role_required('Secretariat', 'IANA', 'RFC Editor')
+# @role_required('Secretariat', 'IANA', 'RFC Editor')
 def discrepancies(request):
     sections = find_discrepancies()
 
     return render(request, "sync/discrepancies.html", dict(sections=sections))
 
-@csrf_exempt # external API so we can't expect the other end to have a token
+
+@csrf_exempt  # external API so we can't expect the other end to have a token
 def notify(request, org, notification):
     """Notify us that something has changed on an external site so we need to
     run a sync script."""
@@ -36,7 +37,7 @@ def notify(request, org, notification):
     known_orgs = {
         "iana": "IANA",
         "rfceditor": "RFC Editor",
-        }
+    }
 
     if org not in known_orgs:
         raise Http404
@@ -62,14 +63,20 @@ def notify(request, org, notification):
                 return HttpResponse("Invalid username/password")
 
     if not has_role(user, ("Secretariat", known_orgs[org])):
-        permission_denied(request, "You do not have the necessary permissions to view this page.")
+        permission_denied(
+            request, "You do not have the necessary permissions to view this page."
+        )
 
     known_notifications = {
-        "protocols": "an added reference to an RFC at <a href=\"%s\">the IANA protocols page</a>" % settings.IANA_SYNC_PROTOCOLS_URL,
-        "changes": "new changes at <a href=\"%s\">the changes JSON dump</a>" % settings.IANA_SYNC_CHANGES_URL,
-        "queue": "new changes to <a href=\"%s\">queue2.xml</a>" % settings.RFC_EDITOR_QUEUE_URL,
-        "index": "new changes to <a href=\"%s\">rfc-index.xml</a>" % settings.RFC_EDITOR_INDEX_URL,
-        }
+        "protocols": 'an added reference to an RFC at <a href="%s">the IANA protocols page</a>'
+        % settings.IANA_SYNC_PROTOCOLS_URL,
+        "changes": 'new changes at <a href="%s">the changes JSON dump</a>'
+        % settings.IANA_SYNC_CHANGES_URL,
+        "queue": 'new changes to <a href="%s">queue2.xml</a>'
+        % settings.RFC_EDITOR_QUEUE_URL,
+        "index": 'new changes to <a href="%s">rfc-index.xml</a>'
+        % settings.RFC_EDITOR_INDEX_URL,
+    }
 
     if notification not in known_notifications:
         raise Http404
@@ -79,52 +86,55 @@ def notify(request, org, notification):
             log("Queuing RFC Editor index sync from notify view POST")
             # Wrap in on_commit in case a transaction is open
             # (As of 2024-11-08, this only runs in a transaction during tests)
-            transaction.on_commit(
-                lambda: tasks.rfc_editor_index_update_task.delay()
-            )
+            transaction.on_commit(lambda: tasks.rfc_editor_index_update_task.delay())
         elif notification == "queue":
             log("Queuing RFC Editor queue sync from notify view POST")
             # Wrap in on_commit in case a transaction is open
             # (As of 2024-11-08, this only runs in a transaction during tests)
-            transaction.on_commit(
-                lambda: tasks.rfc_editor_queue_updates_task.delay()
-            )
+            transaction.on_commit(lambda: tasks.rfc_editor_queue_updates_task.delay())
         elif notification == "changes":
             log("Queuing IANA changes sync from notify view POST")
             # Wrap in on_commit in case a transaction is open
             # (As of 2024-11-08, this only runs in a transaction during tests)
-            transaction.on_commit(
-                lambda: tasks.iana_changes_update_task.delay()
-            )
+            transaction.on_commit(lambda: tasks.iana_changes_update_task.delay())
         elif notification == "protocols":
             log("Queuing IANA protocols sync from notify view POST")
             # Wrap in on_commit in case a transaction is open
             # (As of 2024-11-08, this only runs in a transaction during tests)
-            transaction.on_commit(
-                lambda: tasks.iana_protocols_update_task.delay()
-            )
+            transaction.on_commit(lambda: tasks.iana_protocols_update_task.delay())
 
-        return HttpResponse("OK", content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
+        return HttpResponse(
+            "OK", content_type="text/plain; charset=%s" % settings.DEFAULT_CHARSET
+        )
 
-    return render(request, 'sync/notify.html',
-                  dict(org=known_orgs[org],
-                       notification=notification,
-                       help_text=known_notifications[notification],
-                  ))
+    return render(
+        request,
+        "sync/notify.html",
+        dict(
+            org=known_orgs[org],
+            notification=notification,
+            help_text=known_notifications[notification],
+        ),
+    )
 
-@role_required('Secretariat', 'RFC Editor')
+
+@role_required("Secretariat", "RFC Editor")
 def rfceditor_undo(request):
     """Undo a DocEvent."""
     events = []
-    events.extend(StateDocEvent.objects.filter(
-        state_type="draft-rfceditor",
-        time__gte=timezone.now() - datetime.timedelta(weeks=1)
-    ).order_by("-time", "-id"))
+    events.extend(
+        StateDocEvent.objects.filter(
+            state_type="draft-rfceditor",
+            time__gte=timezone.now() - datetime.timedelta(weeks=1),
+        ).order_by("-time", "-id")
+    )
 
-    events.extend(DocEvent.objects.filter(
-        type="sync_from_rfc_editor",
-        time__gte=timezone.now() - datetime.timedelta(weeks=1)
-    ).order_by("-time", "-id"))
+    events.extend(
+        DocEvent.objects.filter(
+            type="sync_from_rfc_editor",
+            time__gte=timezone.now() - datetime.timedelta(weeks=1),
+        ).order_by("-time", "-id")
+    )
 
     events.sort(key=lambda e: (e.time, e.id), reverse=True)
 
@@ -143,7 +153,9 @@ def rfceditor_undo(request):
         doc = e.doc
 
         # possibly reset the state of the document
-        all_events = StateDocEvent.objects.filter(doc=doc, state_type="draft-rfceditor").order_by("-time", "-id")
+        all_events = StateDocEvent.objects.filter(
+            doc=doc, state_type="draft-rfceditor"
+        ).order_by("-time", "-id")
         if all_events and all_events[0] == e:
             if len(all_events) > 1:
                 doc.set_state(all_events[1].state)
@@ -160,4 +172,4 @@ def rfceditor_undo(request):
 
         return HttpResponseRedirect("")
 
-    return render(request, 'sync/rfceditor_undo.html', dict(events=events))
+    return render(request, "sync/rfceditor_undo.html", dict(events=events))

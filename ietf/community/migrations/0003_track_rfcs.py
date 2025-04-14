@@ -28,6 +28,7 @@ def forward(apps, schema_editor):
     rfc_rules = SearchRule.objects.filter(rule_type__endswith="_rfc")
     rfc_rules.update(state=None)
 
+
 def reverse(apps, schema_editor):
     Document = apps.get_model("doc", "Document")
     for rfc in Document.objects.filter(type__slug="rfc"):

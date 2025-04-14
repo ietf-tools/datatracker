@@ -27,7 +27,7 @@ ADOMAINS = {
 
 def generate_files(records, adest, vdest, postconfirm, vdomain):
     """Generate files from an iterable of records
-    
+
     If adest or vdest exists as a file, it will be overwritten. If it is a directory, files
     with the default names (draft-aliases and draft-virtual) will be created, but existing
     files _will not_ be overwritten!
@@ -49,10 +49,14 @@ def generate_files(records, adest, vdest, postconfirm, vdomain):
                 domains = item["domains"]
                 address_list = item["addresses"]
                 filtername = f"xfilter-{alias}"
-                afile.write(f'{filtername + ":":64s}  "|{postconfirm} filter expand-{alias} {vdomain}"\n')
+                afile.write(
+                    f'{filtername + ":":64s}  "|{postconfirm} filter expand-{alias} {vdomain}"\n'
+                )
                 for dom in domains:
                     vfile.write(f"{f'{alias}@{ADOMAINS[dom]}':64s}  {filtername}\n")
-                vfile.write(f"{f'expand-{alias}@{vdomain}':64s}  {', '.join(sorted(address_list))}\n")
+                vfile.write(
+                    f"{f'expand-{alias}@{vdomain}':64s}  {', '.join(sorted(address_list))}\n"
+                )
 
         perms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
         apath.chmod(perms)
@@ -68,6 +72,7 @@ def directory_path(val):
     else:
         raise argparse.ArgumentTypeError(f"{p} is not a directory")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Convert a JSON stream of draft alias definitions into alias / virtual alias files."
@@ -75,7 +80,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--prefix",
         required=True,
-        help="Prefix for output files. Files will be named <prefix>-aliases and <prefix>-virtual."
+        help="Prefix for output files. Files will be named <prefix>-aliases and <prefix>-virtual.",
     )
     parser.add_argument(
         "--output-dir",

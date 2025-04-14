@@ -4,9 +4,10 @@
 from django import template
 from ietf.meeting.helpers import can_request_interim_meeting
 
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 register = template.Library()
+
 
 @register.filter
 def can_request_interim(user):
