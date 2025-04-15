@@ -28,7 +28,7 @@ from django.views.generic.detail import DetailView
 from email.message import EmailMessage
 from importlib.metadata import version as metadata_version
 from jwcrypto.jwk import JWK
-from tastypie.exceptions import BadRequest, UnsupportedFormat
+from tastypie.exceptions import BadRequest
 from tastypie.serializers import Serializer
 from tastypie.utils import is_valid_jsonp_callback_value
 from tastypie.utils.mime import determine_format, build_content_type
