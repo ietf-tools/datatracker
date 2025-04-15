@@ -18,7 +18,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.http import HttpResponse, Http404, JsonResponse
+from django.http import HttpResponse, Http404, JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -68,7 +68,10 @@ def top_level(request):
         }
 
     serializer = Serializer()
-    desired_format = determine_format(request, serializer)
+    try:
+        desired_format = determine_format(request, serializer)
+    except BadRequest as err:
+        return HttpResponseBadRequest(str(err))
 
     options = {}
 
@@ -76,10 +79,12 @@ def top_level(request):
         callback = request.GET.get('callback', 'callback')
 
         if not is_valid_jsonp_callback_value(callback):
-            raise BadRequest('JSONP callback name is invalid.')
+            return HttpResponseBadRequest("JSONP callback name is invalid")
 
         options['callback'] = callback
 
+    # This might raise UnsupportedFormat, but that indicates a real server misconfiguration
+    # so let it bubble up unhandled and trigger a 500 / email to admins.
     serialized = serializer.serialize(available_resources, desired_format, options)
     return HttpResponse(content=serialized, content_type=build_content_type(desired_format))
 
