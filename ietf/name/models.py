@@ -151,6 +151,9 @@ class SlideSubmissionStatusName(NameModel):
     "Pending, Accepted, Rejected"
 class TelechatAgendaSectionName(NameModel):
     """roll_call, minutes, action_items"""
-
 class AppealArtifactTypeName(NameModel):
     pass
+class AttendanceTypeName(NameModel):
+    """onsite, remote, hackathon_onsite, hackathon_remote"""
+class RegistrationTicketTypeName(NameModel):
+    """week, one_day, student"""
