@@ -16,7 +16,8 @@ export default defineConfig(({ command, mode }) => {
           main: 'client/main.js',
           embedded: 'client/embedded.js'
         }
-      }
+      },
+      sourcemap: true
     },
     cacheDir: '.vite',
     plugins: [

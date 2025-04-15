@@ -14,7 +14,8 @@ from ietf import api
 from ietf.meeting.models import ( Meeting, ResourceAssociation, Constraint, Room, Schedule, Session,
                                 TimeSlot, SchedTimeSessAssignment, SessionPresentation, FloorPlan,
                                 UrlResource, ImportantDate, SlideSubmission, SchedulingEvent,
-                                BusinessConstraint, ProceedingsMaterial, MeetingHost, Attended)
+                                BusinessConstraint, ProceedingsMaterial, MeetingHost, Attended,
+                                Registration, RegistrationTicket)
 
 from ietf.name.resources import MeetingTypeNameResource
 class MeetingResource(ModelResource):
@@ -431,3 +432,43 @@ class AttendedResource(ModelResource):
             "session": ALL_WITH_RELATIONS,
         }
 api.meeting.register(AttendedResource())
+
+from ietf.meeting.resources import MeetingResource
+from ietf.person.resources import PersonResource
+class RegistrationResource(ModelResource):
+    meeting          = ToOneField(MeetingResource, 'meeting')
+    person           = ToOneField(PersonResource, 'person', null=True)
+    class Meta:
+        queryset = Registration.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'registration'
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "first_name": ALL,
+            "last_name": ALL,
+            "affiliation": ALL,
+            "country_code": ALL,
+            "email": ALL,
+            "attended": ALL,
+            "meeting": ALL_WITH_RELATIONS,
+            "person": ALL_WITH_RELATIONS,
+        }
+api.meeting.register(RegistrationResource())
+
+class RegistrationTicketResource(ModelResource):
+    registration          = ToOneField(RegistrationResource, 'registration')
+    class Meta:
+        queryset = RegistrationTicket.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'registrationticket'
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "ticket_type": ALL,
+            "attendance_type": ALL,
+            "registration": ALL_WITH_RELATIONS,
+        }
+api.meeting.register(RegistrationTicketResource())
