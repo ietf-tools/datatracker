@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ("name", "0017_populate_new_reg_names"),
         ("person", "0004_alter_person_photo_alter_person_photo_thumb"),
-        ("meeting", "0010_alter_floorplan_image_alter_meetinghost_logo"),
+        ("meeting", "0011_alter_slidesubmission_doc"),
     ]
 
     operations = [
