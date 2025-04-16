@@ -863,7 +863,7 @@ class IetfTestRunner(DiscoverRunner):
             try:
                 # remember the value so ietf.utils.mail.send_smtp() will use the same
                 ietf.utils.mail.SMTP_ADDR['port'] = base + offset
-                self.smtpd_driver = SMTPTestServerDriver((ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port']),None)
+                self.smtpd_driver = SMTPTestServerDriver(ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port'], None)
                 self.smtpd_driver.start()
                 print(("     Running an SMTP test server on %(ip4)s:%(port)s to catch outgoing email." % ietf.utils.mail.SMTP_ADDR))
                 break

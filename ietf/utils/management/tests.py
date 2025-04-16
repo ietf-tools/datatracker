@@ -12,7 +12,7 @@ from ietf.utils.management.base import EmailOnFailureCommand
 from ietf.utils.test_utils import TestCase
 
 
-@mock.patch.object(EmailOnFailureCommand, 'handle')
+@mock.patch.object(EmailOnFailureCommand, 'handle', return_value=None)
 class EmailOnFailureCommandTests(TestCase):
     def test_calls_handle(self, handle_method):
         call_command(EmailOnFailureCommand())
