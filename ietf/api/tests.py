@@ -1164,6 +1164,39 @@ class CustomApiTests(TestCase):
         self.assertCountEqual(result.keys(), ["addresses"])
         self.assertCountEqual(result["addresses"], Email.objects.filter(active=True).values_list("address", flat=True))
 
+    @override_settings(APP_API_TOKENS={"ietf.api.views.related_email_list": ["valid-token"]})
+    def test_related_email_list(self):
+        joe = EmailFactory(address='joe@work.com')
+        EmailFactory(address='joe@home.com', person=joe.person)
+        EmailFactory(address='jòe@spain.com', person=joe.person)
+        url = urlreverse("ietf.api.views.related_email_list", kwargs={'email': 'joe@home.com'})
+        # no api key
+        r = self.client.get(url, headers={})
+        self.assertEqual(r.status_code, 403)
+        # invalid api key
+        r = self.client.get(url, headers={"X-Api-Key": "not-the-valid-token"})
+        self.assertEqual(r.status_code, 403)
+        # wrong method
+        r = self.client.post(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 405)
+        # valid
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        result = json.loads(r.content)
+        self.assertCountEqual(result.keys(), ["addresses"])
+        self.assertCountEqual(result["addresses"], joe.person.email_set.exclude(address='joe@home.com').values_list("address", flat=True))
+        # non-ascii
+        non_ascii_url = urlreverse("ietf.api.views.related_email_list", kwargs={'email': 'jòe@spain.com'})
+        r = self.client.get(non_ascii_url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        result = json.loads(r.content)
+        self.assertTrue('joe@home.com' in result["addresses"])
+        # email not found
+        not_found_url = urlreverse("ietf.api.views.related_email_list", kwargs={'email': 'nobody@nowhere.com'})
+        r = self.client.get(not_found_url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 404)
+
     @override_settings(APP_API_TOKENS={"ietf.api.views.role_holder_addresses": ["valid-token"]})
     def test_role_holder_addresses(self):
         url = urlreverse("ietf.api.views.role_holder_addresses")

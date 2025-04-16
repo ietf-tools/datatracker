@@ -692,6 +692,31 @@ def active_email_list(request):
 
 
 @requires_api_token
+@csrf_exempt
+def related_email_list(request, email):
+    """Given an email address, returns all other email addresses known
+    to Datatracker, via Person object
+    """
+    def _http_err(code, text):
+        return HttpResponse(text, status=code, content_type="text/plain")
+
+    if request.method == "GET":
+        try:
+            email_obj = Email.objects.get(address=email)
+        except Email.DoesNotExist:
+            return _http_err(404, "Email not found")
+        person = email_obj.person
+        if not person:
+            return JsonResponse({"addresses": []})
+        return JsonResponse(
+            {
+                "addresses": list(person.email_set.exclude(address=email).values_list("address", flat=True)),
+            }
+        )
+    return HttpResponse(status=405)
+
+
+@requires_api_token
 def role_holder_addresses(request):
     if request.method == "GET":
         return JsonResponse(
