@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from aiosmtpd.controller import Controller
+from aiosmtpd.smtp import SMTP
 from email.utils import parseaddr
 from typing import Optional
 
@@ -38,6 +39,10 @@ class SMTPTestHandler:
 class SMTPTestServerDriver:
 
     def __init__(self, address: str, port: int, inbox: Optional[list] = None):
+        # Allow longer lines than the 1001 that RFC 5321 requires. As of 2025-04-16 the
+        # datatracker emits some non-compliant messages.
+        # See https://aiosmtpd.aio-libs.org/en/latest/smtp.html
+        SMTP.line_length_limit = 4000  # tests start failing between 3000 and 4000
         self.controller = Controller(
             hostname=address,
             port=port,
