@@ -18,7 +18,7 @@ from ietf.person.models import Person
 from ietf.utils.timezone import date_today
 
 
-epochday = datetime.datetime.utcfromtimestamp(0).date().toordinal()
+epochday = datetime.datetime.fromtimestamp(0, datetime.UTC).date().toordinal()
 
 
 def dt(s):
