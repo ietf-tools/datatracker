@@ -650,7 +650,7 @@ class ReviewTests(TestCase):
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.state_id, "accepted")
 
-    @patch('requests.post')
+    @patch('ietf.review.mailarch.requests.post')
     def test_retrieve_messages(self, mock_post):
         mock_data = {
             "results": [
@@ -696,7 +696,7 @@ class ReviewTests(TestCase):
         self.assertEqual(data['query'], f'subject:({doc.name})')
         self.assertEqual(data['limit'], '30')
 
-    @patch('requests.post')
+    @patch('ietf.doc.views_review.requests.post')
     def test_search_mail_archive(self, mock_post):
         doc = WgDraftFactory(group__acronym='mars', rev='01')
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
