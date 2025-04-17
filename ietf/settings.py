@@ -28,6 +28,7 @@ warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'col
 warnings.filterwarnings("ignore", message="HTTPResponse.getheader\\(\\) is deprecated", module='selenium.webdriver')
 warnings.filterwarnings("ignore", message="datetime.datetime.utcnow\\(\\) is deprecated", module="botocore.auth")
 warnings.filterwarnings("ignore", message="currentThread\\(\\) is deprecated", module="coverage.pytracer")
+warnings.filterwarnings("ignore", message="co_lnotab is deprecated", module="coverage.parser")
 warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="pytz.tzinfo")
 warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="oic.utils.time_util")
 
