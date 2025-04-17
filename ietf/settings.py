@@ -31,6 +31,7 @@ warnings.filterwarnings("ignore", message="currentThread\\(\\) is deprecated", m
 warnings.filterwarnings("ignore", message="co_lnotab is deprecated", module="coverage.parser")
 warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="pytz.tzinfo")
 warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="oic.utils.time_util")
+warnings.filterwarnings("ignore", message="datetime.datetime.utcnow\\(\\) is deprecated", module="oic.utils.time_util")
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
