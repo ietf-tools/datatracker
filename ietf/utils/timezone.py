@@ -26,7 +26,7 @@ def _tzinfo(tz: Union[str, datetime.tzinfo, None]):
     Accepts a tzinfo or string containing a timezone name. Defaults to UTC if tz is None.
     """
     if tz is None:
-        return datetime.timezone.utc
+        return datetime.UTC
     elif isinstance(tz, datetime.tzinfo):
         return tz
     else:

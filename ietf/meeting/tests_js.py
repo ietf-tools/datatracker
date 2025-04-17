@@ -1576,7 +1576,7 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
 
     def do_delete_time_interval_test(self, cancel=False):
         delete_time_local = datetime_from_date(self.meeting.date, self.meeting.tz()).replace(hour=10)
-        delete_time = delete_time_local.astimezone(datetime.timezone.utc)
+        delete_time = delete_time_local.astimezone(datetime.UTC)
         duration = datetime.timedelta(minutes=60)
 
         delete: [TimeSlot] = TimeSlotFactory.create_batch(  # type: ignore[annotation-unchecked]
