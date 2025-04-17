@@ -9,7 +9,6 @@ import base64
 import datetime
 import email.utils
 import hashlib
-import json
 import requests
 
 import debug                            # pyflakes:ignore
@@ -46,7 +45,6 @@ def construct_query_data(doc, team, query=None):
         query = doc.name
 
     query_data = {
-        'url': settings.MAILING_LIST_ARCHIVE_SEARCH_URL,
         'start_date': (date_today() - datetime.timedelta(days=180)).isoformat(),
         'email_list': list_name,
         'query_value': query,
@@ -61,16 +59,12 @@ def construct_message_url(list_name, msgid):
 def retrieve_messages(query_data):
     """Retrieve and return selected content from mailarch."""
 
-    headers = {'X-Api-Key': settings.MAILING_LIST_ARCHIVE_API_KEY,
-               'Content-Type': 'application/json'}
-    post_data = query_data.copy()
-    del post_data['url']
-    json_data = json.dumps(post_data)
+    headers = {'X-Api-Key': settings.MAILING_LIST_ARCHIVE_API_KEY}
     try:
         response = requests.post(
-            query_data['url'],
+            settings.MAILING_LIST_ARCHIVE_SEARCH_URL,
             headers=headers,
-            data=json_data,
+            json=query_data,
             timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
     except requests.Timeout as exc:
         log(f'POST request failed for [{query_data["url"]}]: {exc}')
