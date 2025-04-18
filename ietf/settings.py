@@ -713,9 +713,15 @@ TEST_COVERAGE_MAIN_FILE = os.path.join(BASE_DIR, "../release-coverage.json")
 TEST_COVERAGE_LATEST_FILE = os.path.join(BASE_DIR, "../latest-coverage.json")
 
 TEST_CODE_COVERAGE_CHECKER = None
-if SERVER_MODE != 'production':
-    import coverage
-    TEST_CODE_COVERAGE_CHECKER = coverage.Coverage(source=[ BASE_DIR ], cover_pylib=False, omit=TEST_CODE_COVERAGE_EXCLUDE_FILES)
+# TODO-PY312: figure out how to run coverage
+# Context: the old version of coverage that we use (4.5.4, ca 2019) is falling back from its
+# fast CTracer module to its very slow PyTracer when used on Python 3.12. It's not clear exactly
+# why, but it's almost 3x slower. The situation may be better if we can update to a current
+# version of coverage, but see https://github.com/nedbat/coveragepy/issues/1665 for more info.
+# For now at least, disabling the checker completely.
+# if SERVER_MODE != 'production':
+#     import coverage
+#     TEST_CODE_COVERAGE_CHECKER = coverage.Coverage(source=[ BASE_DIR ], cover_pylib=False, omit=TEST_CODE_COVERAGE_EXCLUDE_FILES)
 
 TEST_CODE_COVERAGE_REPORT_PATH = "coverage/"
 TEST_CODE_COVERAGE_REPORT_URL = os.path.join(STATIC_URL, TEST_CODE_COVERAGE_REPORT_PATH, "index.html")
