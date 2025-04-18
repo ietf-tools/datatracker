@@ -518,7 +518,7 @@ def confirm_password_reset(request, auth):
         password = data['password']
         last_login = None
         if data['last_login']:
-            last_login = datetime.datetime.fromtimestamp(data['last_login'], datetime.timezone.utc)
+            last_login = datetime.datetime.fromtimestamp(data['last_login'], datetime.UTC)
     except django.core.signing.BadSignature:
         raise Http404("Invalid or expired auth")
 

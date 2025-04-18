@@ -462,7 +462,7 @@ def set_coverage_checking(flag=True):
     global template_coverage_collection
     global code_coverage_collection
     global url_coverage_collection
-    if settings.SERVER_MODE == 'test':
+    if settings.SERVER_MODE == 'test' and settings.TEST_CODE_COVERAGE_CHECKER is not None:
         if flag:
             settings.TEST_CODE_COVERAGE_CHECKER.collector.resume()
             template_coverage_collection = True
@@ -589,7 +589,7 @@ class CoverageTest(unittest.TestCase):
             self.skipTest("Coverage switched off with --skip-coverage")
 
     def code_coverage_test(self):
-        if self.runner.check_coverage:
+        if self.runner.check_coverage and self.runner.code_coverage_checker is not None:
             include = [ os.path.join(path, '*') for path in self.runner.test_paths ]
             checker = self.runner.code_coverage_checker
             checker.stop()
@@ -830,7 +830,7 @@ class IetfTestRunner(DiscoverRunner):
             settings.MIDDLEWARE = ('ietf.utils.test_runner.record_urls_middleware',) + tuple(settings.MIDDLEWARE)
 
             self.code_coverage_checker = settings.TEST_CODE_COVERAGE_CHECKER
-            if not self.code_coverage_checker._started:
+            if self.code_coverage_checker and not self.code_coverage_checker._started:
                 sys.stderr.write(" **  Warning: In %s: Expected the coverage checker to have\n"
                                  "       been started already, but it wasn't. Doing so now.  Coverage numbers\n"
                                  "       will be off, though.\n" % __name__)
@@ -863,7 +863,7 @@ class IetfTestRunner(DiscoverRunner):
             try:
                 # remember the value so ietf.utils.mail.send_smtp() will use the same
                 ietf.utils.mail.SMTP_ADDR['port'] = base + offset
-                self.smtpd_driver = SMTPTestServerDriver((ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port']),None)
+                self.smtpd_driver = SMTPTestServerDriver(ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port'], None)
                 self.smtpd_driver.start()
                 print(("     Running an SMTP test server on %(ip4)s:%(port)s to catch outgoing email." % ietf.utils.mail.SMTP_ADDR))
                 break

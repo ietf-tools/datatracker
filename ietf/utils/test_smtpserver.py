@@ -1,92 +1,56 @@
-# Copyright The IETF Trust 2014-2020, All Rights Reserved
+# Copyright The IETF Trust 2014-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
-import smtpd
-import threading
-import asyncore
-
-import debug                            # pyflakes:ignore
-
-class AsyncCoreLoopThread(object):
-
-    def wrap_loop(self, exit_condition, timeout=1.0, use_poll=False, map=None):
-        if map is None:
-            map = asyncore.socket_map
-            while map and not exit_condition:
-                asyncore.loop(timeout=1.0, use_poll=False, map=map, count=1)
-
-    def start(self):
-        """Start the listening service"""
-        self.exit_condition = []
-        kwargs={'exit_condition':self.exit_condition,'timeout':1.0} 
-        self.thread = threading.Thread(target=self.wrap_loop, kwargs=kwargs)
-        self.thread.daemon = True
-        self.thread.daemon = True
-        self.thread.start()     
-
-    def stop(self):
-        """Stop the listening service"""
-        self.exit_condition.append(True)
-        self.thread.join()
+from aiosmtpd.controller import Controller
+from aiosmtpd.smtp import SMTP
+from email.utils import parseaddr
+from typing import Optional
 
 
-class SMTPTestChannel(smtpd.SMTPChannel):
+class SMTPTestHandler:
 
-#    mail_options = ['BODY=8BITMIME', 'SMTPUTF8']
+    def __init__(self, inbox: list):
+        self.inbox = inbox
 
-    def smtp_RCPT(self, arg):
-        if not self.mailfrom:
-            self.push(str('503 Error: need MAIL command'))
-            return
-        arg = self._strip_command_keyword('TO:', arg)
-        address, __ = self._getaddr(arg)
-        if not address:
-            self.push(str('501 Syntax: RCPT TO: <address>'))
-            return
+    async def handle_DATA(self, server, session, envelope):
+        """Handle the DATA command and 'deliver' the message"""
+
+        self.inbox.append(envelope.content)
+        # Per RFC2033: https://datatracker.ietf.org/doc/html/rfc2033.html#section-4.2
+        #     ...after the final ".", the server returns one reply
+        #     for each previously successful RCPT command in the mail transaction,
+        #     in the order that the RCPT commands were issued.  Even if there were
+        #     multiple successful RCPT commands giving the same forward-path, there
+        #     must be one reply for each successful RCPT command.
+        return "\n".join("250 OK" for _ in envelope.rcpt_tos)
+
+    async def handle_RCPT(self, server, session, envelope, address, rcpt_options):
+        """Handle an RCPT command and add the address to the envelope if it is acceptable"""
+        _, address = parseaddr(address)
+        if address == "":
+            return "501 Syntax: RCPT TO: <address>"
         if "poison" in address:
-            self.push(str('550 Error: Not touching that'))
-            return
-        self.rcpt_options = []
-        self.rcpttos.append(address)
-        self.push(str('250 Ok'))
-
-class SMTPTestServer(smtpd.SMTPServer):
-
-    def __init__(self,localaddr,remoteaddr,inbox):
-        if inbox is not None:
-            self.inbox=inbox
-        else:
-            self.inbox = []
-        smtpd.SMTPServer.__init__(self,localaddr,remoteaddr)
-
-    def handle_accept(self):
-        pair = self.accept()
-        if pair is not None:
-            conn, addr = pair
-            #channel = SMTPTestChannel(self, conn, addr)
-            SMTPTestChannel(self, conn, addr)
-
-    def process_message(self, peer, mailfrom, rcpttos, data, mail_options=None, rcpt_options=None):
-        self.inbox.append(data)
+            return "550 Error: Not touching that"
+        # At this point the address is acceptable
+        envelope.rcpt_tos.append(address)
+        return "250 OK"
 
 
-class SMTPTestServerDriver(object):
-    def __init__(self, localaddr, remoteaddr, inbox=None):
-        self.localaddr=localaddr
-        self.remoteaddr=remoteaddr
-        if inbox is not None:
-            self.inbox = inbox
-        else:
-            self.inbox = []
-        self.thread_driver = None
+class SMTPTestServerDriver:
+
+    def __init__(self, address: str, port: int, inbox: Optional[list] = None):
+        # Allow longer lines than the 1001 that RFC 5321 requires. As of 2025-04-16 the
+        # datatracker emits some non-compliant messages.
+        # See https://aiosmtpd.aio-libs.org/en/latest/smtp.html
+        SMTP.line_length_limit = 4000  # tests start failing between 3000 and 4000
+        self.controller = Controller(
+            hostname=address,
+            port=port,
+            handler=SMTPTestHandler(inbox=[] if inbox is None else inbox),
+        )
 
     def start(self):
-        self.smtpserver = SMTPTestServer(self.localaddr,self.remoteaddr,self.inbox)
-        self.thread_driver = AsyncCoreLoopThread()
-        self.thread_driver.start()
+        self.controller.start()
 
     def stop(self):
-        if self.thread_driver:
-            self.thread_driver.stop()
-
+        self.controller.stop()
