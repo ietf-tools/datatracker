@@ -18,27 +18,30 @@ from ietf.utils.response import permission_denied
 # Helper Functions
 # -------------------------------------------------
 def check_access(user):
-    '''
+    """
     This function takes a Django User object and returns true if the user has access to
     the Announcement app.
-    '''
+    """
     if hasattr(user, "person"):
         person = user.person
         if has_role(user, "Secretariat"):
             return True
-        
+
         for role in person.role_set.all():
-            if AnnouncementFrom.objects.filter(name=role.name,group=role.group):
+            if AnnouncementFrom.objects.filter(name=role.name, group=role.group):
                 return True
 
-        if Role.objects.filter(name="chair",
-                               group__acronym__startswith="nomcom",
-                               group__state="active",
-                               group__type="nomcom",
-                               person=person):
+        if Role.objects.filter(
+            name="chair",
+            group__acronym__startswith="nomcom",
+            group__state="active",
+            group__type="nomcom",
+            person=person,
+        ):
             return True
 
     return False
+
 
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
@@ -46,58 +49,62 @@ def check_access(user):
 # this seems to cause some kind of circular problem
 # @check_for_cancel(reverse('home'))
 @login_required
-@check_for_cancel('../')
+@check_for_cancel("../")
 def main(request):
-    '''
+    """
     Main view for Announcement tool.  Authrozied users can fill out email details: header, body, etc
     and send.
-    '''
+    """
     if not check_access(request.user):
-        permission_denied(request, 'Restricted to: Secretariat, IAD, or chair of IETF, IAB, RSOC, RSE, IAOC, ISOC, NomCom.')
+        permission_denied(
+            request,
+            "Restricted to: Secretariat, IAD, or chair of IETF, IAB, RSOC, RSE, IAOC, ISOC, NomCom.",
+        )
 
-    form = AnnounceForm(request.POST or None,user=request.user)
+    form = AnnounceForm(request.POST or None, user=request.user)
 
     if form.is_valid():
         # recast as hidden form for next page of process
         form = AnnounceForm(request.POST, user=request.user, hidden=True)
-        if form.data['to'] == 'Other...':
-            to = form.data['to_custom']
+        if form.data["to"] == "Other...":
+            to = form.data["to_custom"]
         else:
-            to = form.data['to']
+            to = form.data["to"]
 
-        return render(request, 'announcement/confirm.html', {
-            'message': form.data,
-            'to': to,
-            'form': form},
+        return render(
+            request,
+            "announcement/confirm.html",
+            {"message": form.data, "to": to, "form": form},
         )
 
-    return render(request, 'announcement/main.html', { 'form': form} )
+    return render(request, "announcement/index.html", {"form": form})
+
 
 @login_required
-@check_for_cancel('../')
+@check_for_cancel("../")
 def confirm(request):
 
     if not check_access(request.user):
-        permission_denied(request, 'Restricted to: Secretariat, IAD, or chair of IETF, IAB, RSOC, RSE, IAOC, ISOC, NomCom.')
+        permission_denied(
+            request,
+            "Restricted to: Secretariat, IAD, or chair of IETF, IAB, RSOC, RSE, IAOC, ISOC, NomCom.",
+        )
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = AnnounceForm(request.POST, user=request.user)
-        if request.method == 'POST':
-            message = form.save(user=request.user,commit=True)
-            extra = {'Reply-To': message.get('reply_to') }
-            send_mail_text(None,
-                           message.to,
-                           message.frm,
-                           message.subject,
-                           message.body,
-                           cc=message.cc,
-                           bcc=message.bcc,
-                           extra=extra,
-                       )
+        if request.method == "POST":
+            message = form.save(user=request.user, commit=True)
+            extra = {"Reply-To": message.get("reply_to")}
+            send_mail_text(
+                None,
+                message.to,
+                message.frm,
+                message.subject,
+                message.body,
+                cc=message.cc,
+                bcc=message.bcc,
+                extra=extra,
+            )
 
-            messages.success(request, 'The announcement was sent.')
-            return redirect('ietf.secr.announcement.views.main')
-
-
-
-
+            messages.success(request, "The announcement was sent.")
+            return redirect("ietf.secr.announcement.views.main")
