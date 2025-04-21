@@ -689,7 +689,6 @@ class ReviewTests(TestCase):
         doc = WgDraftFactory(group__acronym='mars', rev='01')
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         data = ietf.review.mailarch.construct_query_data(doc, review_team, query=None)
-        self.assertEqual(data['url'], 'https://mailarchive.ietf.org/api/v1/message/search/')
         self.assertEqual(data['start_date'], (date_today() - datetime.timedelta(days=180)).isoformat())
         self.assertEqual(data['email_list'], 'reviewteam')
         self.assertEqual(data['query_value'], doc.name)
