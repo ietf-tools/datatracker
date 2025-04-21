@@ -75,7 +75,9 @@ def retrieve_messages(query_data):
     if 'results' not in jresponse or len(jresponse['results']) == 0:
         raise KeyError(f'No results: {query_data["query"]}')
     for msg in jresponse['results']:
-        utcdate = datetime.datetime.fromisoformat(msg['date'])   # date is already UTC
+        # datetime is already UTC
+        dt = datetime.datetime.fromisoformat(msg['date'])
+        dt_utc = dt.replace(tzinfo=datetime.timezone.utc)
         results.append({
             "from": msg["from"],
             "splitfrom": email.utils.parseaddr(msg["from"]),
@@ -83,7 +85,7 @@ def retrieve_messages(query_data):
             "content": msg["content"].replace("\r\n", "\n").replace("\r", "\n").strip("\n"),
             "message_id": msg["message_id"],
             "url": msg["url"],
-            "utcdate": (utcdate.date().isoformat(), utcdate.time().isoformat()),
+            "utcdate": (dt_utc.date().isoformat(), dt_utc.time().isoformat()),
         })
 
     return results

@@ -660,7 +660,7 @@ class ReviewTests(TestCase):
                     "content": "Hi\n This is a really good document.\n",
                     "message_id": "abc123",
                     "url": "https://example.com/message",
-                    "date": "2025-04-07T12:00:00+00:00",
+                    "date": "2025-04-07T12:00:00",
                 }
             ]
         }
@@ -713,7 +713,7 @@ class ReviewTests(TestCase):
                     "content": "Hi\n This is a really good document.\n",
                     "message_id": "abc123",
                     "url": "https://example.com/message",
-                    "date": "2025-04-07T12:00:00+00:00",
+                    "date": "2025-04-07T12:00:00",
                 },
                 {
                     "from": "Joe <joe@example.com>",
@@ -721,7 +721,7 @@ class ReviewTests(TestCase):
                     "content": "Hi\n I believe this is the best document.\n",
                     "message_id": "abc456",
                     "url": "https://example.com/message",
-                    "date": "2025-04-07T12:00:00+00:00",
+                    "date": "2025-04-07T12:00:00",
                 }
             ]
         }
