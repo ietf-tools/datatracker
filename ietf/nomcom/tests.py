@@ -2927,7 +2927,7 @@ class VolunteerDecoratorUnitTests(TestCase):
                     elig_date.year - 3,
                     elig_date.month,
                     28 if elig_date.month == 2 and elig_date.day == 29 else elig_date.day,
-                    tzinfo=datetime.timezone.utc,
+                    tzinfo=datetime.UTC,
                 )
             )
         nomcom.volunteer_set.create(person=author_person)
