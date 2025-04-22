@@ -235,7 +235,7 @@ jobs:
         docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:${{ env.TARGET_BASE }} sh dev/build/collectstatics.sh
         echo "Pushing statics..."
         cd static
-        aws s3 sync . s3://static/dt/$PKG_VERSION --only-show-errors
+        aws s3 sync . s3://static/dt/$PKG_VERSION --only-show-errors --checksum-algorithm CRC32
 
     - name: Augment dockerignore for docker image build
       env:
