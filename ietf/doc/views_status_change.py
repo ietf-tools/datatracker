@@ -5,6 +5,7 @@
 import datetime
 import io
 import os
+from pathlib import Path
 import re
 
 from typing import Dict             # pyflakes:ignore
@@ -33,6 +34,7 @@ from ietf.ietfauth.utils import has_role, role_required
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.name.models import DocRelationshipName, StdLevelName
 from ietf.person.models import Person
+from ietf.utils.log import log
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
@@ -154,12 +156,23 @@ class UploadForm(forms.Form):
         return get_cleaned_text_file_content(self.cleaned_data["txt"])
 
     def save(self, doc):
-       filename = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.name, doc.rev))
-       with io.open(filename, 'w', encoding='utf-8') as destination:
-           if self.cleaned_data['txt']:
-               destination.write(self.cleaned_data['txt'])
-           else:
-               destination.write(self.cleaned_data['content'])
+        basename = f"{doc.name}-{doc.rev}.txt"
+        filename = Path(settings.STATUS_CHANGE_PATH) / basename
+        with io.open(filename, 'w', encoding='utf-8') as destination:
+            if self.cleaned_data['txt']:
+                content = self.cleaned_data['txt']
+            else:
+                content = self.cleaned_data['content']
+            destination.write(content)
+            doc.store_str(basename, content)
+        try:
+            ftp_filename = Path(settings.FTP_DIR) / "status-changes" / basename
+            os.link(filename, ftp_filename) # Path.hardlink is not available until 3.10
+        except IOError as ex:
+            log(
+                "There was an error creating a hardlink at %s pointing to %s: %s"
+                % (ftp_filename, filename, ex)
+            )
 
 #This is very close to submit on charter - can we get better reuse?
 @role_required('Area Director','Secretariat')

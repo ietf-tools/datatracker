@@ -101,6 +101,7 @@ def submit(request, name):
                 content = form.cleaned_data['bofreq_content']
             with io.open(bofreq.get_file_name(), 'w', encoding='utf-8') as destination:
                 destination.write(content)
+            bofreq.store_str(bofreq.get_base_name(), content)
             email_bofreq_new_revision(request, bofreq)
             return redirect('ietf.doc.views_doc.document_main', name=bofreq.name)
 
@@ -175,6 +176,7 @@ def new_bof_request(request):
                 content = form.cleaned_data['bofreq_content']
             with io.open(bofreq.get_file_name(), 'w', encoding='utf-8') as destination:
                 destination.write(content)
+            bofreq.store_str(bofreq.get_base_name(), content)
             email_bofreq_new_revision(request, bofreq)
             return redirect('ietf.doc.views_doc.document_main', name=bofreq.name)
 

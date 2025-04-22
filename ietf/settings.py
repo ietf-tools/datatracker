@@ -183,6 +183,12 @@ STATIC_IETF_ORG = "https://static.ietf.org"
 # Server-side static.ietf.org URL (used in pdfized)
 STATIC_IETF_ORG_INTERNAL = STATIC_IETF_ORG
 
+ENABLE_BLOBSTORAGE = True
+
+BLOBSTORAGE_MAX_ATTEMPTS = 1
+BLOBSTORAGE_CONNECT_TIMEOUT = 2
+BLOBSTORAGE_READ_TIMEOUT = 2
+
 WSGI_APPLICATION = "ietf.wsgi.application"
 
 AUTHENTICATION_BACKENDS = ( 'ietf.ietfauth.backends.CaseInsensitiveModelBackend', )
@@ -452,9 +458,14 @@ INSTALLED_APPS = [
     'django_vite',
     'django_bootstrap5',
     'django_celery_beat',
+    'django_celery_results',
     'corsheaders',
     'django_markup',
     'oidc_provider',
+    'drf_spectacular',
+    'drf_standardized_errors',
+    'rest_framework',
+    'rangefilter',
     'simple_history',
     'tastypie',
     'widget_tweaks',
@@ -549,6 +560,76 @@ INTERNAL_IPS = (
         '127.0.0.1',
         '::1',
 )
+
+# django-rest-framework configuration
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "ietf.api.authentication.ApiKeyAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "ietf.api.permissions.HasApiKey",
+    ],
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_standardized_errors.openapi.AutoSchema",
+    "EXCEPTION_HANDLER": "drf_standardized_errors.handler.exception_handler",
+}
+
+# DRF OpenApi schema settings
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Datatracker API",
+    "DESCRIPTION": "Datatracker API",
+    "VERSION": "1.0.0",
+    "SCHEMA_PATH_PREFIX": "/api/",
+    "COMPONENT_SPLIT_REQUEST": True,
+    "COMPONENT_NO_READ_ONLY_REQUIRED": True,
+    "SERVERS": [
+        {"url": "http://localhost:8000", "description": "local dev server"},
+        {"url": "https://datatracker.ietf.org", "description": "production server"},
+    ],
+    # The following settings are needed for drf-standardized-errors
+    "ENUM_NAME_OVERRIDES": {
+        "ValidationErrorEnum": "drf_standardized_errors.openapi_serializers.ValidationErrorEnum.choices",
+        "ClientErrorEnum": "drf_standardized_errors.openapi_serializers.ClientErrorEnum.choices",
+        "ServerErrorEnum": "drf_standardized_errors.openapi_serializers.ServerErrorEnum.choices",
+        "ErrorCode401Enum": "drf_standardized_errors.openapi_serializers.ErrorCode401Enum.choices",
+        "ErrorCode403Enum": "drf_standardized_errors.openapi_serializers.ErrorCode403Enum.choices",
+        "ErrorCode404Enum": "drf_standardized_errors.openapi_serializers.ErrorCode404Enum.choices",
+        "ErrorCode405Enum": "drf_standardized_errors.openapi_serializers.ErrorCode405Enum.choices",
+        "ErrorCode406Enum": "drf_standardized_errors.openapi_serializers.ErrorCode406Enum.choices",
+        "ErrorCode415Enum": "drf_standardized_errors.openapi_serializers.ErrorCode415Enum.choices",
+        "ErrorCode429Enum": "drf_standardized_errors.openapi_serializers.ErrorCode429Enum.choices",
+        "ErrorCode500Enum": "drf_standardized_errors.openapi_serializers.ErrorCode500Enum.choices",
+    },
+    "POSTPROCESSING_HOOKS": ["drf_standardized_errors.openapi_hooks.postprocess_schema_enums"],
+}
+
+# DRF Standardized Errors settings
+DRF_STANDARDIZED_ERRORS = {
+    # enable the standardized errors when DEBUG=True for unhandled exceptions.
+    # By default, this is set to False so you're able to view the traceback in
+    # the terminal and get more information about the exception.
+    "ENABLE_IN_DEBUG_FOR_UNHANDLED_EXCEPTIONS": False,
+    # ONLY the responses that correspond to these status codes will appear
+    # in the API schema.
+    "ALLOWED_ERROR_STATUS_CODES": [
+        "400",
+        # "401",
+        # "403",
+        "404",
+        # "405",
+        # "406",
+        # "415",
+        # "429",
+        # "500",
+    ],
+
+}
 
 # no slash at end
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
@@ -662,6 +743,38 @@ URL_REGEXPS = {
     "schedule_name": r"(?P<name>[A-Za-z0-9-:_]+)",
 }
 
+STORAGES: dict[str, Any] = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
+# settings_local will need to configure storages for these names
+MORE_STORAGE_NAMES: list[str] = [
+    "bofreq",
+    "charter",
+    "conflrev",
+    "active-draft",
+    "draft",
+    "slides",
+    "minutes",
+    "agenda",
+    "bluesheets",
+    "procmaterials",
+    "narrativeminutes",
+    "statement",
+    "statchg",
+    "liai-att",
+    "chatlog",
+    "polls",
+    "staging",
+    "bibxml-ids",
+    "indexes",
+    "floorplan",
+    "meetinghostlogo",
+    "photo",
+    "review",
+]
+
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
 
@@ -671,13 +784,14 @@ INTERNET_DRAFT_PDF_PATH = '/a/www/ietf-datatracker/pdf/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
 CHARTER_PATH = '/a/ietfdata/doc/charter/'
 CHARTER_COPY_PATH = '/a/www/ietf-ftp/ietf'  # copy 1wg-charters files here if set
+CHARTER_COPY_OTHER_PATH = '/a/ftp/ietf'
+CHARTER_COPY_THIRD_PATH = '/a/ftp/charter'
 GROUP_SUMMARY_PATH = '/a/www/ietf-ftp/ietf'
 BOFREQ_PATH = '/a/ietfdata/doc/bofreq/'
 CONFLICT_REVIEW_PATH = '/a/ietfdata/doc/conflict-review'
 STATUS_CHANGE_PATH = '/a/ietfdata/doc/status-change'
 AGENDA_PATH = '/a/www/www6s/proceedings/'
 MEETINGHOST_LOGO_PATH = AGENDA_PATH  # put these in the same place as other proceedings files
-IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
 # Move drafts to this directory when they expire
 INTERNET_DRAFT_ARCHIVE_DIR = '/a/ietfdata/doc/draft/collection/draft-archive/'
 # The following directory contains copies of all drafts - it used to be
@@ -687,6 +801,7 @@ MEETING_RECORDINGS_DIR = '/a/www/audio'
 DERIVED_DIR = '/a/ietfdata/derived'
 FTP_DIR = '/a/ftp'
 ALL_ID_DOWNLOAD_DIR = '/a/www/www6s/download'
+NFS_METRICS_TMP_DIR = '/a/tmp'
 
 DOCUMENT_FORMAT_ALLOWLIST = ["txt", "ps", "pdf", "xml", "html", ]
 
@@ -736,8 +851,8 @@ AUDIO_IMPORT_EMAIL = ['ietf@meetecho.com']
 SESSION_REQUEST_FROM_EMAIL = 'IETF Meeting Session Request Tool <session-request@ietf.org>' 
 
 SECRETARIAT_SUPPORT_EMAIL = "support@ietf.org"
-SECRETARIAT_ACTION_EMAIL = "ietf-action@ietf.org"
-SECRETARIAT_INFO_EMAIL = "ietf-info@ietf.org"
+SECRETARIAT_ACTION_EMAIL = SECRETARIAT_SUPPORT_EMAIL
+SECRETARIAT_INFO_EMAIL = SECRETARIAT_SUPPORT_EMAIL
 
 # Put real password in settings_local.py
 IANA_SYNC_PASSWORD = "secret"
@@ -988,7 +1103,12 @@ TZDATA_ICS_PATH = BASE_DIR + '/../vzic/zoneinfo/'
 
 DATATRACKER_MAX_UPLOAD_SIZE = 40960000
 PPT2PDF_COMMAND = [
-    "/usr/bin/soffice", "--headless", "--convert-to", "pdf:writer_globaldocument_pdf_Export", "--outdir"
+    "/usr/bin/soffice",
+    "--headless", # no GUI
+    "--safe-mode", # use a new libreoffice profile every time (ensures no reliance on accumulated profile config)
+    "--norestore", # don't attempt to restore files after a previous crash (ensures that one crash won't block future conversions until UI intervention)
+    "--convert-to", "pdf:writer_globaldocument_pdf_Export",
+    "--outdir"
 ]
 
 STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/'
@@ -1076,11 +1196,14 @@ EXCLUDED_PERSONAL_EMAIL_REGEX_PATTERNS = [
 MARKUP_SETTINGS = {
     'restructuredtext': {
         'settings_overrides': {
+            'report_level': 3,  # error (3) or severe (4) only
             'initial_header_level': 3,
             'doctitle_xform': False,
             'footnote_references': 'superscript',
             'trim_footnote_reference_space': True,
             'default_reference_context': 'view',
+            'raw_enabled': False,  # critical for security
+            'file_insertion_enabled': False,  # critical for security
             'link_base': ''
         }
     }
@@ -1148,7 +1271,9 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # the default, but setting it 
 # https://docs.celeryq.dev/en/stable/userguide/tasks.html#rpc-result-backend-rabbitmq-qpid
 # Results can be retrieved only once and only by the caller of the task. Results will be
 # lost if the message broker restarts.
-CELERY_RESULT_BACKEND = 'rpc://'  # sends a msg via the msg broker
+CELERY_RESULT_BACKEND = 'django-cache'  # use a Django cache for results
+CELERY_CACHE_BACKEND = 'celery-results'  # which Django cache to use
+CELERY_RESULT_EXPIRES = datetime.timedelta(minutes=5)  # how long are results valid? (Default is 1 day)
 CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled for a task
 
 # Meetecho API setup: Uncomment this and provide real credentials to enable
@@ -1231,6 +1356,11 @@ if "CACHES" not in locals():
                     "MAX_ENTRIES": 5000,
                 },
             },
+            "celery-results": {
+                "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+                "KEY_PREFIX": "ietf:celery",
+            },
         }
     else:
         CACHES = {
@@ -1269,9 +1399,16 @@ if "CACHES" not in locals():
                     "MAX_ENTRIES": 5000,
                 },
             },
+            "celery-results": {
+                "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+                "LOCATION": "app:11211",
+                "KEY_PREFIX": "ietf:celery",
+            },
         }
 
 PUBLISH_IPR_STATES = ['posted', 'removed', 'removed_objfalse']
+
+ADVERTISE_VERSIONS = ["markdown", "pyang", "rfc2html", "xml2rfc"]
 
 # We provide a secret key only for test and development modes.  It's
 # absolutely vital that django fails to start in production mode unless a
@@ -1304,3 +1441,6 @@ if SERVER_MODE != 'production':
     CSRF_TRUSTED_ORIGINS += ['http://localhost:8000', 'http://127.0.0.1:8000', 'http://[::1]:8000']
     SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_SAMESITE = 'Lax'
+
+
+YOUTUBE_DOMAINS = ['www.youtube.com', 'youtube.com', 'youtu.be', 'm.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com']

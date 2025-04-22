@@ -44,6 +44,7 @@
 
 This project is following the standard **Git Feature Workflow** development model. Learn about all the various steps of the development workflow, from creating a fork to submitting a pull request, in the [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md) guide.
 
+> [!TIP]  
 > Make sure to read the [Styleguides](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md#styleguides) section to ensure a cohesive code format across the project.
 
 You can submit bug reports, enhancement and new feature requests in the [discussions](https://github.com/ietf-tools/datatracker/discussions) area. Accepted tickets will be converted to issues.
@@ -52,7 +53,8 @@ You can submit bug reports, enhancement and new feature requests in the [discuss
 
 Click the <kbd>Fork</kbd> button in the top-right corner of the repository to create a personal copy that you can work on.
 
-> Note that some GitHub Actions might be enabled by default in your fork. You should disable them by going to **Settings** > **Actions** > **General** and selecting **Disable actions** (then Save).
+> [!NOTE]  
+> Some GitHub Actions might be enabled by default in your fork. You should disable them by going to **Settings** > **Actions** > **General** and selecting **Disable actions** (then Save).
 
 #### Git Cloning Tips
 
@@ -104,7 +106,25 @@ Read the [Docker Dev Environment](docker/README.md) guide to get started.
 
 Nightly database dumps of the datatracker are available as Docker images: `ghcr.io/ietf-tools/datatracker-db:latest`  
 
-> Note that to update the database in your dev environment to the latest version, you should run the `docker/cleandb` script.
+> [!TIP]  
+> In order to update the database in your dev environment to the latest version, you should run the `docker/cleandb` script.
+
+### Blob storage for dev/test
+
+The dev and test environments use [minio](https://github.com/minio/minio) to provide local blob storage. See the settings files for how the app container communicates with the blobstore container. If you need to work with minio directly from outside the containers (to interact with its api or console), use `docker compose` from the top level directory of your clone to expose it at an ephemeral port.
+
+```
+$ docker compose port blobstore 9001
+0.0.0.0:<some ephemeral port>
+
+$ curl -I http://localhost:<some ephemeral port>
+HTTP/1.1 200 OK
+...
+```
+
+
+The minio container exposes the minio api at port 9000 and the minio console at port 9001
+
 
 ### Frontend Development
 
@@ -231,6 +251,7 @@ From a datatracker container, run the command:
 ./ietf/manage.py test --settings=settings_test
 ```
 
+> [!TIP]  
 > You can limit the run to specific tests using the `--pattern` argument.
 
 ### Frontend Tests
@@ -240,11 +261,13 @@ Frontend tests are done via Playwright. There're 2 different type of tests:
 - Tests that test Vue pages / components and run natively without any external dependency.
 - Tests that require a running datatracker instance to test against (usually legacy views).
 
+> [!IMPORTANT]  
 > Make sure you have Node.js 16.x or later installed on your machine.
 
 #### Run Vue Tests
 
-> :warning: All commands below **MUST** be run from the `./playwright` directory, unless noted otherwise.
+> [!WARNING]  
+> All commands below **MUST** be run from the `./playwright` directory, unless noted otherwise.
 
 1. Run **once** to install dependencies on your system:
     ```sh
@@ -277,7 +300,8 @@ Frontend tests are done via Playwright. There're 2 different type of tests:
 
 First, you need to start a datatracker instance (dev or prod), ideally from a docker container, exposing the 8000 port.
 
-> :warning: All commands below **MUST** be run from the `./playwright` directory.
+> [!WARNING]  
+> All commands below **MUST** be run from the `./playwright` directory.
 
 1. Run **once** to install dependencies on your system:
 ```sh

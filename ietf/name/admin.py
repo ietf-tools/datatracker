@@ -3,6 +3,7 @@ from django.contrib import admin
 
 from ietf.name.models import (
     AgendaTypeName,
+    AttendanceTypeName,
     BallotPositionName,
     ConstraintName,
     ContinentName,
@@ -29,6 +30,7 @@ from ietf.name.models import (
     LiaisonStatementTagName,
     MeetingTypeName,
     NomineePositionStateName,
+    RegistrationTicketTypeName,
     ReviewRequestStateName,
     ReviewResultName,
     ReviewTypeName,
@@ -137,6 +139,7 @@ admin.site.register(ProceedingsMaterialTypeName, ProceedingsMaterialTypeNameAdmi
 admin.site.register(AgendaFilterTypeName, NameAdmin)
 admin.site.register(AgendaTypeName, NameAdmin)
 admin.site.register(AppealArtifactTypeName, NameAdmin)
+admin.site.register(AttendanceTypeName, NameAdmin)
 admin.site.register(BallotPositionName, NameAdmin)
 admin.site.register(ConstraintName, NameAdmin)
 admin.site.register(ContinentName, NameAdmin)
@@ -158,6 +161,7 @@ admin.site.register(LiaisonStatementState, NameAdmin)
 admin.site.register(LiaisonStatementTagName, NameAdmin)
 admin.site.register(MeetingTypeName, NameAdmin)
 admin.site.register(NomineePositionStateName, NameAdmin)
+admin.site.register(RegistrationTicketTypeName, NameAdmin)
 admin.site.register(ReviewRequestStateName, NameAdmin)
 admin.site.register(ReviewAssignmentStateName, NameAdmin)
 admin.site.register(ReviewResultName, NameAdmin)

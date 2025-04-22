@@ -1,7 +1,9 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-from ietf.settings import *                                          # pyflakes:ignore
+from ietf.settings import *   # pyflakes:ignore
+from ietf.settings import STORAGES, MORE_STORAGE_NAMES, BLOBSTORAGE_CONNECT_TIMEOUT, BLOBSTORAGE_READ_TIMEOUT, BLOBSTORAGE_MAX_ATTEMPTS
+import botocore.config
 
 ALLOWED_HOSTS = ['*']
 
@@ -40,7 +42,6 @@ PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
 
 SUBMIT_YANG_CATALOG_MODEL_DIR = '/assets/ietf-ftp/yang/catalogmod/'
 SUBMIT_YANG_DRAFT_MODEL_DIR = '/assets/ietf-ftp/yang/draftmod/'
-SUBMIT_YANG_INVAL_MODEL_DIR = '/assets/ietf-ftp/yang/invalmod/'
 SUBMIT_YANG_IANA_MODEL_DIR = '/assets/ietf-ftp/yang/ianamod/'
 SUBMIT_YANG_RFC_MODEL_DIR   = '/assets/ietf-ftp/yang/rfcmod/'
 
@@ -65,6 +66,7 @@ INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/assets/archive/id'
 BIBXML_BASE_PATH = '/assets/ietfdata/derived/bibxml'
 IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 FTP_DIR = '/assets/ftp'
+NFS_METRICS_TMP_DIR = '/assets/tmp'
 
 NOMCOM_PUBLIC_KEYS_DIR = 'data/nomcom_keys/public_keys/'
 SLIDE_STAGING_PATH = '/test/staging/'
@@ -79,3 +81,22 @@ APP_API_TOKENS = {
 
 # OIDC configuration
 SITE_URL = 'https://__HOSTNAME__'
+
+for storagename in MORE_STORAGE_NAMES:
+    STORAGES[storagename] = {
+        "BACKEND": "ietf.doc.storage_backends.CustomS3Storage",
+        "OPTIONS": dict(
+            endpoint_url="http://blobstore:9000",
+            access_key="minio_root",
+            secret_key="minio_pass",
+            security_token=None,
+            client_config=botocore.config.Config(
+                signature_version="s3v4",
+                connect_timeout=BLOBSTORAGE_CONNECT_TIMEOUT,
+                read_timeout=BLOBSTORAGE_READ_TIMEOUT,
+                retries={"total_max_attempts": BLOBSTORAGE_MAX_ATTEMPTS},
+            ),
+            verify=False,
+            bucket_name=f"test-{storagename}",
+        ),
+    }

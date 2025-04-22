@@ -29,6 +29,7 @@ from ietf.community.models import CommunityList
 from ietf.community.utils import reset_name_contains_index_for_rule
 from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, CharterFactory, BallotDocEventFactory
 from ietf.doc.models import Document, DocEvent, State
+from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.admin import GroupForm as AdminGroupForm
 from ietf.group.factories import (GroupFactory, RoleFactory, GroupEventFactory, 
@@ -62,6 +63,8 @@ class GroupPagesTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [
         "CHARTER_PATH",
         "CHARTER_COPY_PATH",
+        "CHARTER_COPY_OTHER_PATH", # Note: not explicitly testing use of 
+        "CHARTER_COPY_THIRD_PATH", #       either of these settings
         "GROUP_SUMMARY_PATH",
     ]
 
@@ -301,20 +304,26 @@ class GroupPagesTests(TestCase):
 
         generate_wg_summary_files_task()
 
-        summary_by_area_contents = (
-            Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary.txt"
-        ).read_text(encoding="utf8")
-        self.assertIn(group.parent.name, summary_by_area_contents)
-        self.assertIn(group.acronym, summary_by_area_contents)
-        self.assertIn(group.name, summary_by_area_contents)
-        self.assertIn(chair.address, summary_by_area_contents)
+        for summary_by_area_contents in [
+            (
+                Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary.txt"
+            ).read_text(encoding="utf8"),
+            retrieve_str("indexes", "1wg-summary.txt")
+        ]:
+            self.assertIn(group.parent.name, summary_by_area_contents)
+            self.assertIn(group.acronym, summary_by_area_contents)
+            self.assertIn(group.name, summary_by_area_contents)
+            self.assertIn(chair.address, summary_by_area_contents)
 
-        summary_by_acronym_contents = (
-            Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary-by-acronym.txt"
-        ).read_text(encoding="utf8")
-        self.assertIn(group.acronym, summary_by_acronym_contents)
-        self.assertIn(group.name, summary_by_acronym_contents)
-        self.assertIn(chair.address, summary_by_acronym_contents)
+        for summary_by_acronym_contents in [
+            (
+                Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary-by-acronym.txt"
+            ).read_text(encoding="utf8"),
+            retrieve_str("indexes", "1wg-summary-by-acronym.txt")
+        ]:
+            self.assertIn(group.acronym, summary_by_acronym_contents)
+            self.assertIn(group.name, summary_by_acronym_contents)
+            self.assertIn(chair.address, summary_by_acronym_contents)
 
     def test_chartering_groups(self):
         group = CharterFactory(group__type_id='wg',group__parent=GroupFactory(type_id='area'),states=[('charter','intrev')]).group
@@ -1431,7 +1440,7 @@ class MilestoneTests(TestCase):
         RoleFactory(group=group,name_id='chair',person=PersonFactory(user__username='marschairman'))
         draft = WgDraftFactory(group=group)
 
-        m1 = GroupMilestone.objects.create(id=1,
+        m1 = GroupMilestone.objects.create(
                                            group=group,
                                            desc="Test 1",
                                            due=date_today(DEADLINE_TZINFO),
@@ -1439,7 +1448,7 @@ class MilestoneTests(TestCase):
                                            state_id="active")
         m1.docs.set([draft])
 
-        m2 = GroupMilestone.objects.create(id=2,
+        m2 = GroupMilestone.objects.create(
                                            group=group,
                                            desc="Test 2",
                                            due=date_today(DEADLINE_TZINFO),
@@ -1580,13 +1589,14 @@ class MilestoneTests(TestCase):
         events_before = group.groupevent_set.count()
 
         # add
-        r = self.client.post(url, { 'prefix': "m1",
-                                    'm1-id': m1.id,
-                                    'm1-desc': m1.desc,
-                                    'm1-due': m1.due.strftime("%B %Y"),
-                                    'm1-resolved': m1.resolved,
-                                    'm1-docs': pklist(m1.docs),
-                                    'm1-review': "accept",
+        mstr = f"m{m1.id}"
+        r = self.client.post(url, { 'prefix': mstr,
+                                    f'{mstr}-id': m1.id,
+                                    f'{mstr}-desc': m1.desc,
+                                    f'{mstr}-due': m1.due.strftime("%B %Y"),
+                                    f'{mstr}-resolved': m1.resolved,
+                                    f'{mstr}-docs': pklist(m1.docs),
+                                    f'{mstr}-review': "accept",
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)
@@ -1606,13 +1616,14 @@ class MilestoneTests(TestCase):
         events_before = group.groupevent_set.count()
 
         # delete
-        r = self.client.post(url, { 'prefix': "m1",
-                                    'm1-id': m1.id,
-                                    'm1-desc': m1.desc,
-                                    'm1-due': m1.due.strftime("%B %Y"),
-                                    'm1-resolved': "",
-                                    'm1-docs': pklist(m1.docs),
-                                    'm1-delete': "checked",
+        mstr = f"m{m1.id}"
+        r = self.client.post(url, { 'prefix': mstr,
+                                    f'{mstr}-id': m1.id,
+                                    f'{mstr}-desc': m1.desc,
+                                    f'{mstr}-due': m1.due.strftime("%B %Y"),
+                                    f'{mstr}-resolved': "",
+                                    f'{mstr}-docs': pklist(m1.docs),
+                                    f'{mstr}-delete': "checked",
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)
@@ -1635,13 +1646,14 @@ class MilestoneTests(TestCase):
 
         due = self.last_day_of_month(date_today(DEADLINE_TZINFO) + datetime.timedelta(days=365))
 
+        mstr = f"m{m1.id}"
         # faulty post
-        r = self.client.post(url, { 'prefix': "m1",
-                                    'm1-id': m1.id,
-                                    'm1-desc': "", # no description
-                                    'm1-due': due.strftime("%B %Y"),
-                                    'm1-resolved': "",
-                                    'm1-docs': doc_pks,
+        r = self.client.post(url, { 'prefix': mstr,
+                                    f'{mstr}-id': m1.id,
+                                    f'{mstr}-desc': "", # no description
+                                    f'{mstr}-due': due.strftime("%B %Y"),
+                                    f'{mstr}-resolved': "",
+                                    f'{mstr}-docs': doc_pks,
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 200)
@@ -1653,13 +1665,13 @@ class MilestoneTests(TestCase):
 
         # edit
         mailbox_before = len(outbox)
-        r = self.client.post(url, { 'prefix': "m1",
-                                    'm1-id': m1.id,
-                                    'm1-desc': "Test 2 - changed",
-                                    'm1-due': due.strftime("%B %Y"),
-                                    'm1-resolved': "Done",
-                                    'm1-resolved_checkbox': "checked",
-                                    'm1-docs': doc_pks,
+        r = self.client.post(url, { 'prefix': mstr,
+                                    f'{mstr}-id': m1.id,
+                                    f'{mstr}-desc': "Test 2 - changed",
+                                    f'{mstr}-due': due.strftime("%B %Y"),
+                                    f'{mstr}-resolved': "Done",
+                                    f'{mstr}-resolved_checkbox': "checked",
+                                    f'{mstr}-docs': doc_pks,
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)

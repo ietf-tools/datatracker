@@ -20,6 +20,7 @@ from pyquery import PyQuery
 
 import debug                            # pyflakes:ignore
 
+from ietf.doc.storage_utils import retrieve_str
 import ietf.review.mailarch
 
 from ietf.doc.factories import ( NewRevisionDocEventFactory, IndividualDraftFactory, WgDraftFactory,
@@ -63,6 +64,10 @@ class ReviewTests(TestCase):
         review_file = Path(self.review_subdir) / f"{assignment.review.name}.txt"
         content = review_file.read_text()
         self.assertEqual(content, expected_content)
+        self.assertEqual(
+            retrieve_str("review", review_file.name),
+            expected_content
+        )
         review_ftp_file = Path(settings.FTP_DIR) / "review" / review_file.name
         self.assertTrue(review_file.samefile(review_ftp_file))
 
@@ -897,7 +902,10 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(outbox), 1)
         self.assertIn(assignment.review_request.team.list_email, outbox[0]["To"])
-        self.assertIn("This is a review", get_payload_text(outbox[0]))
+        payload = get_payload_text(outbox[0])
+        self.assertIn("This is a review", payload)
+        self.assertIn(f"Document: {assignment.review_request.doc.name}", payload)
+        self.assertIn(f"Title: {assignment.review_request.doc.title}", payload)
 
         self.assertIn(settings.MAILING_LIST_ARCHIVE_URL, assignment.review.external_url)
 

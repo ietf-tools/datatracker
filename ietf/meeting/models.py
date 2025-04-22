@@ -1,5 +1,5 @@
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2007-2024, All Rights Reserved
 
 
 # old meeting models can be found in ../proceedings/models.py
@@ -34,12 +34,12 @@ from ietf.group.utils import can_manage_materials
 from ietf.name.models import (
     MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName,
     ImportantDateName, TimerangeName, SlideSubmissionStatusName, ProceedingsMaterialTypeName,
-    SessionPurposeName,
+    SessionPurposeName, AttendanceTypeName, RegistrationTicketTypeName
 )
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
 from ietf.utils.history import find_history_replacements_active_at, find_history_active_at
-from ietf.utils.storage import NoLocationMigrationFileSystemStorage
+from ietf.utils.storage import BlobShadowFileSystemStorage
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import datetime_from_date, date_today
 from ietf.utils.models import ForeignKey
@@ -527,7 +527,12 @@ class FloorPlan(models.Model):
     modified= models.DateTimeField(auto_now=True)
     meeting = ForeignKey(Meeting)
     order   = models.SmallIntegerField()
-    image   = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=floorplan_path, blank=True, default=None)
+    image   = models.ImageField(
+        storage=BlobShadowFileSystemStorage(kind="floorplan"),
+        upload_to=floorplan_path,
+        blank=True,
+        default=None,
+    )
     #
     class Meta:
         ordering = ['-id',]
@@ -1380,7 +1385,7 @@ class SlideSubmission(models.Model):
     apply_to_all = models.BooleanField(default=False)
     submitter = ForeignKey(Person)
     status      = ForeignKey(SlideSubmissionStatusName, null=True, default='pending', on_delete=models.SET_NULL)
-    doc         = ForeignKey(Document, null=True, on_delete=models.SET_NULL)
+    doc         = ForeignKey(Document, blank=True, null=True, on_delete=models.SET_NULL)
 
     def staged_filepath(self):
         return os.path.join(settings.SLIDE_STAGING_PATH , self.filename)
@@ -1431,8 +1436,12 @@ class MeetingHost(models.Model):
     """Meeting sponsor"""
     meeting = ForeignKey(Meeting, related_name='meetinghosts')
     name = models.CharField(max_length=255, blank=False)
+    # TODO-BLOBSTORE - capture these logos and look for other ImageField like model fields.
     logo = MissingOkImageField(
-        storage=NoLocationMigrationFileSystemStorage(location=settings.MEETINGHOST_LOGO_PATH),
+        storage=BlobShadowFileSystemStorage(
+            kind="meetinghostlogo",
+            location=settings.MEETINGHOST_LOGO_PATH,
+        ),
         upload_to=_host_upload_path,
         width_field='logo_width',
         height_field='logo_height',
@@ -1474,3 +1483,40 @@ class Attended(models.Model):
 
     def __str__(self):
         return f'{self.person} at {self.session}'
+
+
+class RegistrationManager(models.Manager):
+    def onsite(self):
+        return self.get_queryset().filter(registrationticket__attendance_type__slug='onsite')
+
+    def remote(self):
+        return self.get_queryset().filter(registrationticket__attendance_type__slug='remote').exclude(registrationticket__attendance_type__slug='onsite')
+
+class Registration(models.Model):
+    """Registration attendee records from the IETF registration system"""
+    meeting = ForeignKey(Meeting)
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    affiliation = models.CharField(blank=True, max_length=255)
+    country_code = models.CharField(max_length=2)        # ISO 3166
+    person = ForeignKey(Person, blank=True, null=True, on_delete=models.PROTECT)
+    email = models.EmailField(blank=True, null=True)
+    # attended was used prior to the introduction of the ietf.meeting.Attended model and is still used by
+    # Meeting.get_attendance() for older meetings. It should not be used except for dealing with legacy data.
+    attended = models.BooleanField(default=False)
+    # checkedin indicates that the badge was picked up
+    checkedin = models.BooleanField(default=False)
+
+    # custom manager
+    objects = RegistrationManager()
+
+    def __str__(self):
+        return "{} {}".format(self.first_name, self.last_name)
+
+class RegistrationTicket(models.Model):
+    registration = ForeignKey(Registration, related_name='tickets')
+    attendance_type = ForeignKey(AttendanceTypeName, on_delete=models.PROTECT)
+    ticket_type = ForeignKey(RegistrationTicketTypeName, on_delete=models.PROTECT)
+
+    def __str__(self):
+        return "{}:{}".format(self.attendance_type, self.ticket_type)

@@ -4,20 +4,21 @@
 
 import datetime
 import logging
-import io
 import os
 
 import django.db
 import rfc2html
 
+from io import BufferedReader
 from pathlib import Path
 from lxml import etree
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, Protocol, TYPE_CHECKING, Union
 from weasyprint import HTML as wpHTML
 from weasyprint.text.fonts import FontConfiguration
 
 from django.db import models
 from django.core import checks
+from django.core.files.base import File
 from django.core.cache import caches
 from django.core.validators import URLValidator, RegexValidator
 from django.urls import reverse as urlreverse
@@ -31,6 +32,11 @@ from django.contrib.staticfiles import finders
 import debug                            # pyflakes:ignore
 
 from ietf.group.models import Group
+from ietf.doc.storage_utils import (
+    store_str as utils_store_str,
+    store_bytes as utils_store_bytes,
+    store_file as utils_store_file
+)
 from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdLevelName, StdLevelName,
     DocRelationshipName, DocReminderTypeName, BallotPositionName, ReviewRequestStateName, ReviewAssignmentStateName, FormalLanguageName,
     DocUrlTagName, ExtResourceName)
@@ -530,16 +536,27 @@ class DocumentInfo(models.Model):
     def replaced_by(self):
         return set([ r.document for r in self.related_that("replaces") ])
 
-    def text(self, size = -1):
+    def _text_path(self):
         path = self.get_file_name()
         root, ext =  os.path.splitext(path)
         txtpath = root+'.txt'
         if ext != '.txt' and os.path.exists(txtpath):
             path = txtpath
+        return path
+    
+    def text_exists(self):
+        path = Path(self._text_path())
+        return path.exists()
+
+    def text(self, size = -1):
+        path = Path(self._text_path())
+        if not path.exists():
+            return None
         try:
-            with io.open(path, 'rb') as file:
+            with path.open('rb') as file:
                 raw = file.read(size)
-        except IOError:
+        except IOError as e:
+            log.log(f"Error reading text for {path}: {e}")
             return None
         text = None
         try:
@@ -704,9 +721,51 @@ class DocumentInfo(models.Model):
         if self.type_id == "rfc" and self.came_from_draft():
             refs_to |= self.came_from_draft().referenced_by_rfcs()
         return refs_to
-
+    
     class Meta:
         abstract = True
+
+
+class HasNameRevAndTypeIdProtocol(Protocol):
+    """Typing Protocol describing a class that has name, rev, and type_id properties"""
+    @property
+    def name(self) -> str: ...
+    @property
+    def rev(self) -> str: ...
+    @property
+    def type_id(self) -> str: ...
+
+
+class StorableMixin:
+    """Mixin that adds storage helpers to a DocumentInfo subclass"""
+    def store_str(
+        self: HasNameRevAndTypeIdProtocol,
+        name: str,
+        content: str,
+        allow_overwrite: bool = False
+    ) -> None:
+        return utils_store_str(self.type_id, name, content, allow_overwrite, self.name, self.rev)
+
+    def store_bytes(
+        self: HasNameRevAndTypeIdProtocol,
+        name: str,
+        content: bytes,
+        allow_overwrite: bool = False,
+        doc_name: Optional[str] = None,
+        doc_rev: Optional[str] = None
+    ) -> None:
+        return utils_store_bytes(self.type_id, name, content, allow_overwrite, self.name, self.rev)
+
+    def store_file(
+        self: HasNameRevAndTypeIdProtocol,
+        name: str,
+        file: Union[File, BufferedReader],
+        allow_overwrite: bool = False,
+        doc_name: Optional[str] = None,
+        doc_rev: Optional[str] = None
+    ) -> None:
+        return utils_store_file(self.type_id, name, file, allow_overwrite, self.name, self.rev)
+
 
 STATUSCHANGE_RELATIONS = ('tops','tois','tohist','toinf','tobcp','toexp')
 
@@ -860,7 +919,7 @@ validate_docname = RegexValidator(
     'invalid'
 )
 
-class Document(DocumentInfo):
+class Document(StorableMixin, DocumentInfo):
     name = models.CharField(max_length=255, validators=[validate_docname,], unique=True)           # immutable
     
     action_holders = models.ManyToManyField(Person, through=DocumentActionHolder, blank=True)
@@ -1182,7 +1241,7 @@ class DocHistoryAuthor(DocumentAuthorInfo):
     def __str__(self):
         return u"%s %s (%s)" % (self.document.doc.name, self.person, self.order)
 
-class DocHistory(DocumentInfo):
+class DocHistory(StorableMixin, DocumentInfo):
     doc = ForeignKey(Document, related_name="history_set")
 
     name = models.CharField(max_length=255)
@@ -1528,3 +1587,31 @@ class BofreqEditorDocEvent(DocEvent):
 class BofreqResponsibleDocEvent(DocEvent):
     """ Capture the responsible leadership (IAB and IESG members) for a BOF Request """
     responsible = models.ManyToManyField('person.Person', blank=True)
+
+class StoredObject(models.Model):
+    """Hold metadata about objects placed in object storage"""
+
+    store = models.CharField(max_length=256)
+    name = models.CharField(max_length=1024, null=False, blank=False) # N.B. the 1024 limit on name comes from S3
+    sha384 = models.CharField(max_length=96)
+    len = models.PositiveBigIntegerField()
+    store_created = models.DateTimeField(help_text="The instant the object ws first placed in the store")
+    created = models.DateTimeField(
+        null=False,
+        help_text="Instant object became known. May not be the same as the storage's created value for the instance. It will hold ctime for objects imported from older disk storage"
+    )
+    modified = models.DateTimeField(
+        null=False,
+        help_text="Last instant object was modified. May not be the same as the storage's modified value for the instance. It will hold mtime for objects imported from older disk storage unless they've actually been overwritten more recently"
+    )
+    doc_name = models.CharField(max_length=255, null=True, blank=True)
+    doc_rev = models.CharField(max_length=16, null=True, blank=True)
+    deleted = models.DateTimeField(null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['store', 'name'], name='unique_name_per_store'),
+        ]
+        indexes = [
+            models.Index(fields=["doc_name", "doc_rev"]),
+        ]

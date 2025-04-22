@@ -65,6 +65,53 @@ class StreamTests(TestCase):
         self.assertTrue(Role.objects.filter(name="delegate", group__acronym=stream_acronym, email__address="ad2@ietf.org"))
 
 
+class GroupLeadershipTests(TestCase):
+    def test_leadership_wg(self):
+        # setup various group states
+        bof_role = RoleFactory(
+            group__type_id="wg", group__state_id="bof", name_id="chair"
+        )
+        proposed_role = RoleFactory(
+            group__type_id="wg", group__state_id="proposed", name_id="chair"
+        )
+        active_role = RoleFactory(
+            group__type_id="wg", group__state_id="active", name_id="chair"
+        )
+        conclude_role = RoleFactory(
+            group__type_id="wg", group__state_id="conclude", name_id="chair"
+        )
+        url = urlreverse(
+            "ietf.group.views.group_leadership", kwargs={"group_type": "wg"}
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Group Leadership")
+        self.assertContains(r, bof_role.person.last_name())
+        self.assertContains(r, proposed_role.person.last_name())
+        self.assertContains(r, active_role.person.last_name())
+        self.assertNotContains(r, conclude_role.person.last_name())
+
+    def test_leadership_wg_csv(self):
+        url = urlreverse(
+            "ietf.group.views.group_leadership_csv", kwargs={"group_type": "wg"}
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "text/csv")
+        self.assertContains(r, "Chairman, Sops")
+
+    def test_leadership_rg(self):
+        role = RoleFactory(group__type_id="rg", name_id="chair")
+        url = urlreverse(
+            "ietf.group.views.group_leadership", kwargs={"group_type": "rg"}
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Group Leadership")
+        self.assertContains(r, role.person.last_name())
+        self.assertNotContains(r, "Chairman, Sops")
+
+
 class GroupStatsTests(TestCase):
     def setUp(self):
         super().setUp()

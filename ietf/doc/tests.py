@@ -5,6 +5,9 @@
 import os
 import datetime
 import io
+from hashlib import sha384
+
+from django.http import HttpRequest
 import lxml
 import bibtexparser
 import mock
@@ -52,6 +55,7 @@ from ietf.doc.utils import (
     generate_idnits2_rfcs_obsoleted,
     get_doc_email_aliases,
 )
+from ietf.doc.views_doc import get_diff_revisions
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
@@ -71,163 +75,96 @@ from ietf.doc.utils_search import AD_WORKLOAD
 
 
 class SearchTests(TestCase):
-    def test_search_handles_querystring_parameters(self):
-        """Search parameters via querystring should not actually search"""
-        url = urlreverse("ietf.doc.views_search.search")
-        r = self.client.get(url + "?name=some-document-name&oldDrafts=on")
-        # Check that we got a valid response and that the warning about query string parameters is shown.
-        self.assertContains(
-            r,
-            "Searching via the URL query string is no longer supported.",
-            status_code=200,
-        )
-        # Check that the form was filled in correctly (not an exhaustive check, but different from the
-        # form defaults)
-        pq = PyQuery(r.content)
-        self.assertEqual(
-            pq("form#search_form input#id_name").attr("value"),
-            "some-document-name",
-            "The name field should be set in the SearchForm",
-        )
-        self.assertEqual(
-            pq("form#search_form input#id_olddrafts").attr("checked"),
-            "checked",
-            "The old drafts checkbox should be selected in the SearchForm",
-        )
-        self.assertIsNone(
-            pq("form#search_form input#id_rfcs").attr("checked"),
-            "The RFCs checkbox should not be selected in the SearchForm",
-        )
-        self.assertIsNone(
-            pq("form#search_form input#id_activedrafts").attr("checked"),
-            "The active drafts checkbox should not be selected in the SearchForm",
-        )
-
     def test_search(self):
-        draft = WgDraftFactory(
-            name="draft-ietf-mars-test",
-            group=GroupFactory(acronym="mars", parent=Group.objects.get(acronym="farfut")),
-            authors=[PersonFactory()],
-            ad=PersonFactory(),
-        )
+
+        draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
         rfc = WgRfcFactory()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="pub-req"))
-        old_draft = IndividualDraftFactory(
-            name="draft-foo-mars-test",
-            authors=[PersonFactory()],
-            title="Optimizing Martian Network Topologies",
-        )
+        old_draft = IndividualDraftFactory(name='draft-foo-mars-test',authors=[PersonFactory()],title="Optimizing Martian Network Topologies")
         old_draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
-    
-        url = urlreverse("ietf.doc.views_search.search")
-    
+
+        base_url = urlreverse('ietf.doc.views_search.search')
+
         # only show form, no search yet
-        r = self.client.get(url)
+        r = self.client.get(base_url)
         self.assertEqual(r.status_code, 200)
-    
+
         # no match
-        r = self.client.post(url, {"activedrafts": "on", "name": "thisisnotadocumentname"})
+        r = self.client.get(base_url + "?activedrafts=on&name=thisisnotadocumentname")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "No documents match")
-    
-        r = self.client.post(url, {"rfcs": "on", "name": "xyzzy"})
+
+        r = self.client.get(base_url + "?rfcs=on&name=xyzzy")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "No documents match")
-    
-        r = self.client.post(url, {"olddrafts": "on", "name": "bar"})
+
+        r = self.client.get(base_url + "?olddrafts=on&name=bar")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "No documents match")
-    
-        r = self.client.post(url, {"olddrafts": "on", "name": "foo"})
+
+        r = self.client.get(base_url + "?olddrafts=on&name=foo")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "draft-foo-mars-test")
-    
-        r = self.client.post(url, {"olddrafts": "on", "name": "FoO"})  # mixed case
+
+        r = self.client.get(base_url + "?olddrafts=on&name=FoO")  # mixed case
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "draft-foo-mars-test")
-    
+
         # find by RFC
-        r = self.client.post(url, {"rfcs": "on", "name": rfc.name})
+        r = self.client.get(base_url + "?rfcs=on&name=%s" % rfc.name)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, rfc.title)
-    
+
         # find by active/inactive
-    
+
         draft.set_state(State.objects.get(type="draft", slug="active"))
-        r = self.client.post(url, {"activedrafts": "on", "name": draft.name})
+        r = self.client.get(base_url + "?activedrafts=on&name=%s" % draft.name)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-    
+
         draft.set_state(State.objects.get(type="draft", slug="expired"))
-        r = self.client.post(url, {"olddrafts": "on", "name": draft.name})
+        r = self.client.get(base_url + "?olddrafts=on&name=%s" % draft.name)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-    
+        
         draft.set_state(State.objects.get(type="draft", slug="active"))
-    
+
         # find by title
-        r = self.client.post(url, {"activedrafts": "on", "name": draft.title.split()[0]})
+        r = self.client.get(base_url + "?activedrafts=on&name=%s" % draft.title.split()[0])
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-    
+
         # find by author
-        r = self.client.post(
-            url,
-            {
-                "activedrafts": "on",
-                "by": "author",
-                "author": draft.documentauthor_set.first().person.name_parts()[1],
-            },
-        )
+        r = self.client.get(base_url + "?activedrafts=on&by=author&author=%s" % draft.documentauthor_set.first().person.name_parts()[1])
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-    
+
         # find by group
-        r = self.client.post(
-            url,
-            {"activedrafts": "on", "by": "group", "group": draft.group.acronym},
-        )
+        r = self.client.get(base_url + "?activedrafts=on&by=group&group=%s" % draft.group.acronym)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-    
-        r = self.client.post(
-            url,
-            {"activedrafts": "on", "by": "group", "group": draft.group.acronym.swapcase()},
-        )
+
+        r = self.client.get(base_url + "?activedrafts=on&by=group&group=%s" % draft.group.acronym.swapcase())
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-    
+
         # find by area
-        r = self.client.post(
-            url,
-            {"activedrafts": "on", "by": "area", "area": draft.group.parent_id},
-        )
+        r = self.client.get(base_url + "?activedrafts=on&by=area&area=%s" % draft.group.parent_id)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-    
+
         # find by area
-        r = self.client.post(
-            url,
-            {"activedrafts": "on", "by": "area", "area": draft.group.parent_id},
-        )
+        r = self.client.get(base_url + "?activedrafts=on&by=area&area=%s" % draft.group.parent_id)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-    
+
         # find by AD
-        r = self.client.post(url, {"activedrafts": "on", "by": "ad", "ad": draft.ad_id})
+        r = self.client.get(base_url + "?activedrafts=on&by=ad&ad=%s" % draft.ad_id)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-    
+
         # find by IESG state
-        r = self.client.post(
-            url,
-            {
-                "activedrafts": "on",
-                "by": "state",
-                "state": draft.get_state("draft-iesg").pk,
-                "substate": "",
-            },
-        )
+        r = self.client.get(base_url + "?activedrafts=on&by=state&state=%s&substate=" % draft.get_state("draft-iesg").pk)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
 
@@ -236,15 +173,15 @@ class SearchTests(TestCase):
         rfc = WgRfcFactory()
         draft.set_state(State.objects.get(type="draft", slug="rfc"))
         draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
-        url = urlreverse("ietf.doc.views_search.search")
+        base_url = urlreverse('ietf.doc.views_search.search')
 
         # find by RFC
-        r = self.client.post(url, {"rfcs": "on", "name": rfc.name})
+        r = self.client.get(base_url + f"?rfcs=on&name={rfc.name}")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, rfc.title)
 
         # find by draft
-        r = self.client.post(url, {"activedrafts": "on", "rfcs": "on", "name": draft.name})
+        r = self.client.get(base_url + f"?activedrafts=on&rfcs=on&name={draft.name}")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, rfc.title)
 
@@ -1954,6 +1891,18 @@ class DocTestCase(TestCase):
         self.assertContains(r, notes.text)
         self.assertContains(r, rfced_note.text)
 
+    def test_diff_revisions(self):
+        ind_doc = IndividualDraftFactory(create_revisions=range(2))
+        wg_doc = WgDraftFactory(
+            relations=[("replaces", ind_doc)], create_revisions=range(2)
+        )
+        diff_revisions = get_diff_revisions(HttpRequest(), wg_doc.name, wg_doc)
+        self.assertEqual(len(diff_revisions), 4)
+        self.assertEqual(
+            [t[3] for t in diff_revisions],
+            [f"{n}-{v:02d}" for n in [wg_doc.name, ind_doc.name] for v in [1, 0]],
+        )
+
     def test_history(self):
         doc = IndividualDraftFactory()
 
@@ -3333,7 +3282,43 @@ class InvestigateTests(TestCase):
             "draft-this-should-not-be-possible-00.txt",
         )
 
-    def test_investigate(self):
+    @mock.patch("ietf.doc.utils.caches")
+    def test_investigate_fragment_cache(self, mock_caches):
+        """investigate_fragment should cache its result"""
+        mock_default_cache = mock_caches["default"]
+        mock_default_cache.get.return_value = None  # disable cache
+        result = investigate_fragment("this-is-active")
+        self.assertEqual(len(result["can_verify"]), 1)
+        self.assertEqual(len(result["unverifiable_collections"]), 0)
+        self.assertEqual(len(result["unexpected"]), 0)
+        self.assertEqual(
+            list(result["can_verify"])[0].name, "draft-this-is-active-00.txt"
+        )
+        self.assertTrue(mock_default_cache.get.called)
+        self.assertTrue(mock_default_cache.set.called)
+        expected_key = f"investigate_fragment:{sha384(b'this-is-active').hexdigest()}"
+        self.assertEqual(mock_default_cache.set.call_args.kwargs["key"], expected_key)
+        cached_value = mock_default_cache.set.call_args.kwargs["value"]  # hang on to this
+        mock_default_cache.reset_mock()
+
+        # Check that a cached value is used
+        mock_default_cache.get.return_value = cached_value
+        with mock.patch("ietf.doc.utils.Path") as mock_path:
+            result = investigate_fragment("this-is-active")
+        # Check that we got the same results
+        self.assertEqual(len(result["can_verify"]), 1)
+        self.assertEqual(len(result["unverifiable_collections"]), 0)
+        self.assertEqual(len(result["unexpected"]), 0)
+        self.assertEqual(
+            list(result["can_verify"])[0].name, "draft-this-is-active-00.txt"
+        )
+        # And that we used the cache
+        self.assertFalse(mock_path.called)  # a proxy for "did the method do any real work"
+        self.assertTrue(mock_default_cache.get.called)
+        self.assertEqual(mock_default_cache.get.call_args, mock.call(expected_key))
+
+    def test_investigate_get(self):
+        """GET with no querystring should retrieve the investigate UI"""
         url = urlreverse("ietf.doc.views_doc.investigate")
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
@@ -3341,33 +3326,155 @@ class InvestigateTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q("form#investigate")), 1)
         self.assertEqual(len(q("div#results")), 0)
-        r = self.client.post(url, dict(name_fragment="this-is-not-found"))
+
+    @mock.patch("ietf.doc.views_doc.AsyncResult")
+    def test_investgate_get_task_id(self, mock_asyncresult):
+        """GET with querystring should lookup task status"""
+        url = urlreverse("ietf.doc.views_doc.investigate")
+        login_testing_unauthorized(self, "secretary", url)
+        mock_asyncresult.return_value.ready.return_value = True
+        r = self.client.get(url + "?id=a-task-id")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), {"status": "ready"})
+        self.assertTrue(mock_asyncresult.called)
+        self.assertEqual(mock_asyncresult.call_args, mock.call("a-task-id"))
+        mock_asyncresult.reset_mock()
+
+        mock_asyncresult.return_value.ready.return_value = False
+        r = self.client.get(url + "?id=a-task-id")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), {"status": "notready"})
+        self.assertTrue(mock_asyncresult.called)
+        self.assertEqual(mock_asyncresult.call_args, mock.call("a-task-id"))
+
+    @mock.patch("ietf.doc.views_doc.investigate_fragment_task")
+    def test_investigate_post(self, mock_investigate_fragment_task):
+        """POST with a name_fragment and no task_id should start a celery task"""
+        url = urlreverse("ietf.doc.views_doc.investigate")
+        login_testing_unauthorized(self, "secretary", url)
+
+        # test some invalid cases
+        r = self.client.post(url, {"name_fragment": "short"})  # limit is >= 8 characters
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
+        self.assertEqual(len(q("#id_name_fragment.is-invalid")), 1)
+        self.assertFalse(mock_investigate_fragment_task.delay.called)
+        for char in ["*", "%", "/", "\\"]:
+            r = self.client.post(url, {"name_fragment": f"bad{char}character"})
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q("#id_name_fragment.is-invalid")), 1)
+            self.assertFalse(mock_investigate_fragment_task.delay.called)
+        
+        # now a valid one
+        mock_investigate_fragment_task.delay.return_value.id = "a-task-id"
+        r = self.client.post(url, {"name_fragment": "this-is-a-valid-fragment"})
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(mock_investigate_fragment_task.delay.called)
+        self.assertEqual(mock_investigate_fragment_task.delay.call_args, mock.call("this-is-a-valid-fragment"))
+        self.assertEqual(r.json(), {"id": "a-task-id"})
+
+    @mock.patch("ietf.doc.views_doc.AsyncResult")
+    def test_investigate_post_task_id(self, mock_asyncresult):
+        """POST with name_fragment and task_id should retrieve results"""
+        url = urlreverse("ietf.doc.views_doc.investigate")
+        login_testing_unauthorized(self, "secretary", url)
+
+        # First, test a non-successful result - this could be a failure or non-existent task id
+        mock_result = mock_asyncresult.return_value
+        mock_result.successful.return_value = False
+        r = self.client.post(url, {"name_fragment": "some-fragment", "task_id": "a-task-id"})
+        self.assertContains(r, "The investigation task failed.", status_code=200)
+        self.assertTrue(mock_asyncresult.called)
+        self.assertEqual(mock_asyncresult.call_args, mock.call("a-task-id"))
+        self.assertFalse(mock_result.get.called)
+        mock_asyncresult.reset_mock()
+        q = PyQuery(r.content)
+        self.assertEqual(q("#id_name_fragment").val(), "some-fragment")
+        self.assertEqual(q("#id_task_id").val(), "a-task-id")
+
+        # now the various successful result mixes
+        mock_result = mock_asyncresult.return_value
+        mock_result.successful.return_value = True
+        mock_result.get.return_value = {
+            "name_fragment": "different-fragment",
+            "results": {
+                "can_verify": set(),
+                "unverifiable_collections": set(),
+                "unexpected": set(),
+            }
+        }
+        r = self.client.post(url, {"name_fragment": "some-fragment", "task_id": "a-task-id"})
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(mock_asyncresult.called)
+        self.assertEqual(mock_asyncresult.call_args, mock.call("a-task-id"))
+        mock_asyncresult.reset_mock()
+        q = PyQuery(r.content)
+        self.assertEqual(q("#id_name_fragment").val(), "different-fragment", "name_fragment should be reset")
+        self.assertEqual(q("#id_task_id").val(), "", "task_id should be cleared")
         self.assertEqual(len(q("div#results")), 1)
         self.assertEqual(len(q("table#authenticated")), 0)
         self.assertEqual(len(q("table#unverifiable")), 0)
         self.assertEqual(len(q("table#unexpected")), 0)
-        r = self.client.post(url, dict(name_fragment="mixed-provenance"))
+
+        # This file was created in setUp. It allows the view to render properly
+        # but its location / content don't matter for this test otherwise.
+        a_file_that_exists = Path(settings.INTERNET_DRAFT_PATH) / "draft-this-is-active-00.txt"
+
+        mock_result.get.return_value = {
+            "name_fragment": "different-fragment",
+            "results": {
+                "can_verify": {a_file_that_exists},
+                "unverifiable_collections": {a_file_that_exists},
+                "unexpected": set(),
+            }
+        }
+        r = self.client.post(url, {"name_fragment": "some-fragment", "task_id": "a-task-id"})
         self.assertEqual(r.status_code, 200)
+        self.assertTrue(mock_asyncresult.called)
+        self.assertEqual(mock_asyncresult.call_args, mock.call("a-task-id"))
+        mock_asyncresult.reset_mock()
         q = PyQuery(r.content)
+        self.assertEqual(q("#id_name_fragment").val(), "different-fragment", "name_fragment should be reset")
+        self.assertEqual(q("#id_task_id").val(), "", "task_id should be cleared")
         self.assertEqual(len(q("div#results")), 1)
         self.assertEqual(len(q("table#authenticated")), 1)
         self.assertEqual(len(q("table#unverifiable")), 1)
         self.assertEqual(len(q("table#unexpected")), 0)
-        r = self.client.post(url, dict(name_fragment="not-be-possible"))
+
+        mock_result.get.return_value = {
+            "name_fragment": "different-fragment",
+            "results": {
+                "can_verify": set(),
+                "unverifiable_collections": set(),
+                "unexpected": {a_file_that_exists},
+            }
+        }
+        r = self.client.post(url, {"name_fragment": "some-fragment", "task_id": "a-task-id"})
         self.assertEqual(r.status_code, 200)
+        self.assertTrue(mock_asyncresult.called)
+        self.assertEqual(mock_asyncresult.call_args, mock.call("a-task-id"))
+        mock_asyncresult.reset_mock()
         q = PyQuery(r.content)
+        self.assertEqual(q("#id_name_fragment").val(), "different-fragment", "name_fragment should be reset")
+        self.assertEqual(q("#id_task_id").val(), "", "task_id should be cleared")
         self.assertEqual(len(q("div#results")), 1)
         self.assertEqual(len(q("table#authenticated")), 0)
         self.assertEqual(len(q("table#unverifiable")), 0)
         self.assertEqual(len(q("table#unexpected")), 1)
-        r = self.client.post(url, dict(name_fragment="short"))
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q("#id_name_fragment.is-invalid")), 1)
-        for char in ["*", "%", "/", "\\"]:
-            r = self.client.post(url, dict(name_fragment=f"bad{char}character"))
-            self.assertEqual(r.status_code, 200)
-            q = PyQuery(r.content)
-            self.assertEqual(len(q("#id_name_fragment.is-invalid")), 1)
+
+
+class LogIOErrorTests(TestCase):
+
+    def test_doc_text_io_error(self):
+
+        d = IndividualDraftFactory()
+
+        with mock.patch("ietf.doc.models.Path") as path_cls_mock:
+            with mock.patch("ietf.doc.models.log.log") as log_mock:
+                path_cls_mock.return_value.exists.return_value = True
+                path_cls_mock.return_value.open.return_value.__enter__.return_value.read.side_effect = IOError("Bad things happened")
+                text = d.text()
+                self.assertIsNone(text)
+                self.assertTrue(log_mock.called)
+                self.assertIn("Bad things happened", log_mock.call_args[0][0])

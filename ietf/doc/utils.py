@@ -11,12 +11,14 @@ import textwrap
 
 from collections import defaultdict, namedtuple, Counter
 from dataclasses import dataclass
+from hashlib import sha384
 from pathlib import Path
 from typing import Iterator, Optional, Union
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib import messages
+from django.core.cache import caches
 from django.db.models import OuterRef
 from django.forms import ValidationError
 from django.http import Http404
@@ -491,8 +493,9 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
     
     Returns an event describing the change which should be passed to doc.save_with_history()
     
-    Only cares about draft-iesg state changes. Places where other state types are updated
-    may not call this method. If you add rules for updating action holders on other state
+    Only cares about draft-iesg state changes and draft expiration. 
+    Places where other state types are updated may not call this method. 
+    If you add rules for updating action holders on other state
     types, be sure this is called in the places that change that state.
     """
     # Should not call this with different state types
@@ -511,41 +514,50 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
     
     # Remember original list of action holders to later check if it changed
     prev_set = list(doc.action_holders.all())
-    
-    # Update the action holders. To get this right for people with more
-    # than one relationship to the document, do removals first, then adds.
-    # Remove outdated action holders
-    iesg_state_changed = (prev_state != new_state) and (getattr(new_state, "type_id", None) == "draft-iesg") 
-    if iesg_state_changed:
-        # Clear the action_holders list on a state change. This will reset the age of any that get added back.
+
+    if new_state and new_state.type_id=="draft" and new_state.slug=="expired":
         doc.action_holders.clear()
-    if tags.removed("need-rev"):
-        # Removed the 'need-rev' tag - drop authors from the action holders list
-        DocumentActionHolder.objects.filter(document=doc, person__in=doc.authors()).delete()
-    elif tags.added("need-rev"):
-        # Remove the AD if we're asking for a new revision
-        DocumentActionHolder.objects.filter(document=doc, person=doc.ad).delete()
+        return add_action_holder_change_event(
+            doc, 
+            Person.objects.get(name='(System)'), 
+            prev_set,
+            reason='draft expired',
+        )
+    else:
+        # Update the action holders. To get this right for people with more
+        # than one relationship to the document, do removals first, then adds.
+        # Remove outdated action holders
+        iesg_state_changed = (prev_state != new_state) and (getattr(new_state, "type_id", None) == "draft-iesg") 
+        if iesg_state_changed:
+            # Clear the action_holders list on a state change. This will reset the age of any that get added back.
+            doc.action_holders.clear()
+        if tags.removed("need-rev"):
+            # Removed the 'need-rev' tag - drop authors from the action holders list
+            DocumentActionHolder.objects.filter(document=doc, person__in=doc.authors()).delete()
+        elif tags.added("need-rev"):
+            # Remove the AD if we're asking for a new revision
+            DocumentActionHolder.objects.filter(document=doc, person=doc.ad).delete()
 
-    # Add new action holders
-    if doc.ad:
-        # AD is an action holder unless specified otherwise for the new state
-        if iesg_state_changed and new_state.slug not in DocumentActionHolder.CLEAR_ACTION_HOLDERS_STATES:
-            doc.action_holders.add(doc.ad)
-        # If AD follow-up is needed, make sure they are an action holder 
-        if tags.added("ad-f-up"):
-            doc.action_holders.add(doc.ad)
-    # Authors get the action if a revision is needed
-    if tags.added("need-rev"):
-        for auth in doc.authors():
-            doc.action_holders.add(auth)
+        # Add new action holders
+        if doc.ad:
+            # AD is an action holder unless specified otherwise for the new state
+            if iesg_state_changed and new_state.slug not in DocumentActionHolder.CLEAR_ACTION_HOLDERS_STATES:
+                doc.action_holders.add(doc.ad)
+            # If AD follow-up is needed, make sure they are an action holder 
+            if tags.added("ad-f-up"):
+                doc.action_holders.add(doc.ad)
+        # Authors get the action if a revision is needed
+        if tags.added("need-rev"):
+            for auth in doc.authors():
+                doc.action_holders.add(auth)
 
-    # Now create an event if we changed the set
-    return add_action_holder_change_event(
-        doc, 
-        Person.objects.get(name='(System)'), 
-        prev_set,
-        reason='IESG state changed',
-    )
+        # Now create an event if we changed the set
+        return add_action_holder_change_event(
+            doc, 
+            Person.objects.get(name='(System)'), 
+            prev_set,
+            reason='IESG state changed',
+        )
 
 
 def update_documentauthors(doc, new_docauthors, by=None, basis=None):
@@ -1046,10 +1058,6 @@ def make_rev_history(doc):
     return sorted(history, key=lambda x: x['published'])
 
 
-def get_search_cache_key(key_fragment):
-    return f"doc:document:search:{key_fragment}"
-
-
 def build_file_urls(doc: Union[Document, DocHistory]):
     if doc.type_id == "rfc":
         base_path = os.path.join(settings.RFC_PATH, doc.name + ".")
@@ -1085,7 +1093,7 @@ def build_file_urls(doc: Union[Document, DocHistory]):
             label = "plain text" if t == "txt" else t
             file_urls.append((label, base + doc.name + "-" + doc.rev + "." + t))
 
-        if doc.text():
+        if doc.text_exists():
             file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev))))
             file_urls.append(("pdfized", urlreverse('ietf.doc.views_doc.document_pdfized', kwargs=dict(name=doc.name, rev=doc.rev))))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name,rev=doc.rev))))
@@ -1453,35 +1461,43 @@ def get_doc_email_aliases(name: Optional[str] = None):
     return sorted(aliases, key=lambda a: (a["doc_name"]))
 
 
-def investigate_fragment(name_fragment):
-    can_verify = set()
-    for root in [settings.INTERNET_DRAFT_PATH, settings.INTERNET_DRAFT_ARCHIVE_DIR]:
-        can_verify.update(list(Path(root).glob(f"*{name_fragment}*")))
-    archive_verifiable_names = set([p.name for p in can_verify])
-    # Can also verify drafts in proceedings directories
-    can_verify.update(list(Path(settings.AGENDA_PATH).glob(f"**/*{name_fragment}*")))
-
-    # N.B. This reflects the assumption that the internet draft archive dir is in the
-    # a directory with other collections (at /a/ietfdata/draft/collections as this is written)
-    unverifiable_collections = set([
-        p for p in
-        Path(settings.INTERNET_DRAFT_ARCHIVE_DIR).parent.glob(f"**/*{name_fragment}*")
-        if p.name not in archive_verifiable_names
-    ])
+def investigate_fragment(name_fragment: str):
+    cache = caches["default"]
+    # Ensure name_fragment does not interact badly with the cache key handling
+    name_digest = sha384(name_fragment.encode("utf8")).hexdigest()
+    cache_key = f"investigate_fragment:{name_digest}"
+    result = cache.get(cache_key)
+    if result is None:
+        can_verify = set()
+        for root in [settings.INTERNET_DRAFT_PATH, settings.INTERNET_DRAFT_ARCHIVE_DIR]:
+            can_verify.update(list(Path(root).glob(f"*{name_fragment}*")))
+        archive_verifiable_names = set([p.name for p in can_verify])
+        # Can also verify drafts in proceedings directories
+        can_verify.update(list(Path(settings.AGENDA_PATH).glob(f"**/*{name_fragment}*")))
     
-    unverifiable_collections.difference_update(can_verify)
-
-    expected_names = set([p.name for p in can_verify.union(unverifiable_collections)])
-    maybe_unexpected = list(
-        Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR).glob(f"*{name_fragment}*")
-    )
-    unexpected = [p for p in maybe_unexpected if p.name not in expected_names]
-
-    return dict(
-        can_verify=can_verify,
-        unverifiable_collections=unverifiable_collections,
-        unexpected=unexpected,
-    )
+        # N.B. This reflects the assumption that the internet draft archive dir is in the
+        # a directory with other collections (at /a/ietfdata/draft/collections as this is written)
+        unverifiable_collections = set([
+            p for p in
+            Path(settings.INTERNET_DRAFT_ARCHIVE_DIR).parent.glob(f"**/*{name_fragment}*")
+            if p.name not in archive_verifiable_names
+        ])
+        
+        unverifiable_collections.difference_update(can_verify)
+    
+        expected_names = set([p.name for p in can_verify.union(unverifiable_collections)])
+        maybe_unexpected = list(
+            Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR).glob(f"*{name_fragment}*")
+        )
+        unexpected = [p for p in maybe_unexpected if p.name not in expected_names]
+        result = dict(
+            can_verify=can_verify,
+            unverifiable_collections=unverifiable_collections,
+            unexpected=unexpected,
+        )
+        # 1 hour caching
+        cache.set(key=cache_key, timeout=3600, value=result)
+    return result
 
 
 def update_or_create_draft_bibxml_file(doc, rev):
@@ -1494,7 +1510,7 @@ def update_or_create_draft_bibxml_file(doc, rev):
         existing_bibxml = ""
     if normalized_bibxml.strip() != existing_bibxml.strip():
         log.log(f"Writing {ref_rev_file_path}")
-        ref_rev_file_path.write_text(normalized_bibxml, encoding="utf8")
+        ref_rev_file_path.write_text(normalized_bibxml, encoding="utf8") # TODO-BLOBSTORE
 
 
 def ensure_draft_bibxml_path_exists():

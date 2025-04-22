@@ -35,6 +35,7 @@
 
 
 import copy
+import csv
 import datetime
 import itertools
 import math
@@ -436,6 +437,48 @@ def prepare_group_documents(request, group, clist):
     meta_related = meta.copy()
 
     return docs, meta, docs_related, meta_related
+
+
+def get_leadership(group_type):
+    people = Person.objects.filter(
+        role__name__slug="chair",
+        role__group__type=group_type,
+        role__group__state__slug__in=("active", "bof", "proposed"),
+    ).distinct()
+    leaders = []
+    for person in people:
+        parts = person.name_parts()
+        groups = [
+            r.group.acronym
+            for r in person.role_set.filter(
+                name__slug="chair",
+                group__type=group_type,
+                group__state__slug__in=("active", "bof", "proposed"),
+            )
+        ]
+        entry = {"name": "%s, %s" % (parts[3], parts[1]), "groups": ", ".join(groups)}
+        leaders.append(entry)
+    return sorted(leaders, key=lambda a: a["name"])
+
+
+def group_leadership(request, group_type=None):
+    context = {}
+    context["leaders"] = get_leadership(group_type)
+    context["group_type"] = group_type
+    return render(request, "group/group_leadership.html", context)
+
+
+def group_leadership_csv(request, group_type=None):
+    leaders = get_leadership(group_type)
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = (
+        f'attachment; filename="group_leadership_{group_type}.csv"'
+    )
+    writer = csv.writer(response, dialect=csv.excel, delimiter=str(","))
+    writer.writerow(["Name", "Groups"])
+    for leader in leaders:
+        writer.writerow([leader["name"], leader["groups"]])
+    return response
 
 def group_home(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)

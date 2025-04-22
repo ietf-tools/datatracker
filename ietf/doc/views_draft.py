@@ -32,6 +32,7 @@ from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_reques
     generate_publication_request, email_adopted, email_intended_status_changed,
     email_iesg_processing_document, email_ad_approved_doc,
     email_iana_expert_review_state_changed )
+from ietf.doc.storage_utils import retrieve_bytes, store_bytes
 from ietf.doc.utils import ( add_state_change_event, can_adopt_draft, can_unadopt_draft,
     get_tags_for_stream_id, nice_consensus, update_action_holders,
     update_reminder, update_telechat, make_notify_changed_event, get_initial_notify,
@@ -95,7 +96,8 @@ def change_state(request, name):
     and logging the change as a comment."""
     doc = get_object_or_404(Document, name=name)
 
-    if (not doc.latest_event(type="started_iesg_process")) or doc.get_state_slug() == "expired":
+    # Steer ADs towards "Begin IESG Processing"
+    if doc.get_state_slug("draft-iesg")=="idexists" and not has_role(request.user,"Secretariat"):
         raise Http404
 
     login = request.user.person
@@ -896,6 +898,11 @@ def restore_draft_file(request, draft):
         except shutil.Error as ex:
             messages.warning(request, 'There was an error restoring the Internet-Draft file: {} ({})'.format(file, ex))
             log.log("  Exception %s when attempting to move %s" % (ex, file))
+        _, ext = os.path.splitext(os.path.basename(file))
+        if ext:
+            ext = ext[1:]
+            blobname = f"{ext}/{basename}.{ext}"
+            store_bytes("active-draft", blobname, retrieve_bytes("draft", blobname))
 
 
 class ShepherdWriteupUploadForm(forms.Form):

@@ -13,13 +13,23 @@ spec:
       labels:
         app: rabbitmq
     spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - datatracker
+              topologyKey: "kubernetes.io/hostname"
       securityContext:
         runAsNonRoot: true
       containers:
         # -----------------------------------------------------
         # RabbitMQ Container
         # -----------------------------------------------------
-        - image: "ghcr.io/ietf-tools/datatracker-mq:3.12-alpine"
+        - image: "ghcr.io/ietf-tools/datatracker-mq:3.13-alpine"
           imagePullPolicy: Always
           name: rabbitmq
           ports:

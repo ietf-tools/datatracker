@@ -5,12 +5,21 @@ from django.urls import include
 from django.views.generic import TemplateView
 
 from ietf import api
-from ietf.api import views as api_views
 from ietf.doc import views_ballot
 from ietf.meeting import views as meeting_views
 from ietf.submit import views as submit_views
 from ietf.utils.urls import url
 
+from . import views as api_views
+
+# DRF API routing - disabled until we plan to use it
+# from drf_spectacular.views import SpectacularAPIView
+# from django.urls import path
+# from ietf.person import api as person_api
+# from .routers import PrefixedSimpleRouter 
+# core_router = PrefixedSimpleRouter(name_prefix="ietf.api.core_api")  # core api router
+# core_router.register("email", person_api.EmailViewSet)
+# core_router.register("person", person_api.PersonViewSet)
 
 api.autodiscover()
 
@@ -21,6 +30,9 @@ urlpatterns = [
     url(r'^v1/?$', api_views.top_level),
     # For mailarchive use, requires secretariat role
     url(r'^v2/person/person', api_views.ApiV2PersonExportView.as_view()),
+    # --- DRF API ---
+    # path("core/", include(core_router.urls)),
+    # path("schema/", SpectacularAPIView.as_view()),
     #
     # --- Custom API endpoints, sorted alphabetically ---
     # Email alias information for drafts
@@ -54,12 +66,15 @@ urlpatterns = [
     # Let MeetEcho upload session polls
     url(r'^notify/session/polls/?$', meeting_views.api_upload_polls),    
     # Let the registration system notify us about registrations
+    url(r'^notify/meeting/registration/v2/?', api_views.api_new_meeting_registration_v2),
     url(r'^notify/meeting/registration/?', api_views.api_new_meeting_registration),
     # OpenID authentication provider
     url(r'^openid/$', TemplateView.as_view(template_name='api/openid-issuer.html'), name='ietf.api.urls.oidc_issuer'),
     url(r'^openid/', include('oidc_provider.urls', namespace='oidc_provider')),
     # Email alias listing
     url(r'^person/email/$', api_views.active_email_list),
+    # Related Email listing
+    url(r'^person/email/(?P<email>[^/\x00]+)/related/$', api_views.related_email_list),
     # Draft submission API
     url(r'^submit/?$', submit_views.api_submit_tombstone),
     # Draft upload API
@@ -70,6 +85,8 @@ urlpatterns = [
     url(r'^version/?$', api_views.version),
     # Application authentication API key
     url(r'^appauth/(?P<app>authortools|bibxml)$', api_views.app_auth),
+    # NFS metrics endpoint
+    url(r'^metrics/nfs/?$', api_views.nfs_metrics),
     # latest versions
     url(r'^rfcdiff-latest-json/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, api_views.rfcdiff_latest_json),
     url(r'^rfcdiff-latest-json/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', api_views.rfcdiff_latest_json),

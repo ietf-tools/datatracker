@@ -9,9 +9,10 @@ import datetime
 from django.core.files.base import ContentFile
 from django.db.models import Q
 
+from ietf.doc.storage_utils import store_str
 from ietf.meeting.models import (Attended, Meeting, Session, SchedulingEvent, Schedule,
     TimeSlot, SessionPresentation, FloorPlan, Room, SlideSubmission, Constraint,
-    MeetingHost, ProceedingsMaterial)
+    MeetingHost, ProceedingsMaterial, Registration, RegistrationTicket)
 from ietf.name.models import (ConstraintName, SessionStatusName, ProceedingsMaterialTypeName,
                               TimerangeName, SessionPurposeName)
 from ietf.doc.factories import ProceedingsMaterialDocFactory
@@ -239,6 +240,10 @@ class SlideSubmissionFactory(factory.django.DjangoModelFactory):
     make_file = factory.PostGeneration(
                     lambda obj, create, extracted, **kwargs: open(obj.staged_filepath(),'a').close()
                 )
+    
+    store_submission = factory.PostGeneration(
+        lambda obj, create, extracted, **kwargs: store_str("staging", obj.filename, "")
+    )
 
 class ConstraintFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -313,3 +318,29 @@ class AttendedFactory(factory.django.DjangoModelFactory):
 
     session = factory.SubFactory(SessionFactory)
     person = factory.SubFactory(PersonFactory)
+
+
+class RegistrationFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Registration
+        skip_postgeneration_save = True
+
+    meeting = factory.SubFactory(MeetingFactory)
+    person = factory.SubFactory(PersonFactory)
+    email = factory.LazyAttribute(lambda obj: obj.person.email())
+    first_name = factory.LazyAttribute(lambda obj: obj.person.first_name())
+    last_name = factory.LazyAttribute(lambda obj: obj.person.last_name())
+    affiliation = factory.Faker('company')
+    country_code = factory.Faker('country_code')
+    attended = False
+    checkedin = False
+
+
+class RegistrationTicketFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = RegistrationTicket
+        skip_postgeneration_save = True
+
+    registration = factory.SubFactory(RegistrationFactory)
+    attendance_type_id = 'onsite'
+    ticket_type_id = 'week_pass'

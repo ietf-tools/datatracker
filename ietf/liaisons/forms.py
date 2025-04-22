@@ -203,7 +203,6 @@ class SearchLiaisonForm(forms.Form):
 class CustomModelMultipleChoiceField(ModelMultipleChoiceField):
     '''If value is a QuerySet, return it as is (for use in widget.render)'''
     def prepare_value(self, value):
-        # Need QuerySetAny instead of QuerySet until django-stubs 5.0.1
         if isinstance(value, QuerySetAny):
             return value
         if (hasattr(value, '__iter__') and
@@ -380,6 +379,8 @@ class LiaisonModelForm(forms.ModelForm):
             attach_file = io.open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'wb')
             attach_file.write(attached_file.read())
             attach_file.close()
+            attached_file.seek(0)
+            attach.store_file(attach.uploaded_filename, attached_file)
 
             if not self.is_new:
                 # create modified event

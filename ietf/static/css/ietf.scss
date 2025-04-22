@@ -236,8 +236,12 @@ th,
 
 // Helper to constrain the size of the main logo
 .ietflogo {
-    width: 75%;
+    width: 100%;
     max-width: 300px;
+}
+.ietflogo > img {
+    min-width: 100px;
+    width: 100%;
 }
 
 // Make revision numbers pagination items fixed-width
@@ -691,8 +695,8 @@ td.position-empty {
 }
 
 .edit-meeting-schedule .session.other-session-selected {
-    outline: var(--bs-info) solid 0.2em;
-    /* width matches margin on .session */
+    outline: 0.3em solid var(--bs-info);
+    box-shadow: 0 0 1em var(--bs-info);
     z-index: 2;
     /* render above timeslot outlines */
 }
