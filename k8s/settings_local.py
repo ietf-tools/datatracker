@@ -179,7 +179,13 @@ else:
         "DATATRACKER_MEETECHO_CLIENT_ID and DATATRACKER_MEETECHO_CLIENT_SECRET must be set"
     )
 
-# For APP_API_TOKENS, accept either base64-encoded JSON or raw JSON, but not both
+# For APP_API_TOKENS, accept either base64-encoded JSON or raw JSON, but not both.
+# To decode / pretty-print the encoded form, run:
+#    base64 -d | jq .
+# paste the encoded secret into stdin. Copy/paste that into an editor you trust not
+# to leave a copy lying around. When done editing, copy/paste the final JSON through
+#    jq -c | base64
+# and copy/paste the output into the secret store. 
 if "DATATRACKER_APP_API_TOKENS_JSON_B64" in os.environ:
     if "DATATRACKER_APP_API_TOKENS_JSON" in os.environ:
         raise RuntimeError(
