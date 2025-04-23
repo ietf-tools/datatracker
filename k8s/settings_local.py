@@ -141,7 +141,6 @@ if _mailing_list_archive_api_key is None:
     raise RuntimeError("DATATRACKER_MAILING_LIST_ARCHIVE_API_KEY must be set")
 MAILING_LIST_ARCHIVE_API_KEY = _mailing_list_archive_api_key
 
-
 IANA_SYNC_USERNAME = "ietfsync"
 IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"
 IANA_SYNC_PROTOCOLS_URL = "http://www.iana.org/protocols/"
