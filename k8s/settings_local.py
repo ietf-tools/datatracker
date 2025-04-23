@@ -135,6 +135,13 @@ CELERY_BROKER_URL = "amqp://datatracker:{password}@{host}/{queue}".format(
     queue=os.environ.get("RABBITMQ_QUEUE", "dt"),
 )
 
+# mailarchive API key
+_mailing_list_archive_api_key = os.environ.get("DATATRACKER_MAILING_LIST_ARCHIVE_API_KEY", None)
+if _mailing_list_archive_api_key is None:
+    raise RuntimeError("DATATRACKER_MAILING_LIST_ARCHIVE_API_KEY must be set")
+MAILING_LIST_ARCHIVE_API_KEY = _mailing_list_archive_api_key
+
+
 IANA_SYNC_USERNAME = "ietfsync"
 IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"
 IANA_SYNC_PROTOCOLS_URL = "http://www.iana.org/protocols/"
@@ -173,7 +180,7 @@ else:
         "DATATRACKER_MEETECHO_CLIENT_ID and DATATRACKER_MEETECHO_CLIENT_SECRET must be set"
     )
 
-# For APP_API_TOKENS, ccept either base64-encoded JSON or raw JSON, but not both
+# For APP_API_TOKENS, accept either base64-encoded JSON or raw JSON, but not both
 if "DATATRACKER_APP_API_TOKENS_JSON_B64" in os.environ:
     if "DATATRACKER_APP_API_TOKENS_JSON" in os.environ:
         raise RuntimeError(
