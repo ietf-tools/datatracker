@@ -187,6 +187,7 @@ function refreshData () {
   let earliestDate = DateTime.fromISO('2200-01-01')
   let latestDate = DateTime.fromISO('1990-01-01')
   let nowDate = DateTime.now()
+  let hasCrossDayEvents = false
 
   calendarOptions.events = agendaStore.scheduleAdjusted.map(ev => {
     // -> Determine boundaries
@@ -202,6 +203,9 @@ function refreshData () {
     if (ev.adjustedEnd < latestDate) {
       latestDate = ev.adjustedEnd
     }
+    if (ev.adjustedStart.day !== ev.adjustedEnd.day) {
+      hasCrossDayEvents = true
+    }
     // -> Build event object
     return {
       id: ev.id,
@@ -214,8 +218,8 @@ function refreshData () {
   })
 
   // -> Display settings
-  calendarOptions.slotMinTime = `${earliestHour.toString().padStart(2, '0')}:00:00`
-  calendarOptions.slotMaxTime = `${latestHour.toString().padStart(2, '0')}:00:00`
+  calendarOptions.slotMinTime = hasCrossDayEvents ? '00:00:00' : `${earliestHour.toString().padStart(2, '0')}:00:00`
+  calendarOptions.slotMaxTime = hasCrossDayEvents ? '23:59:59' : `${latestHour.toString().padStart(2, '0')}:00:00`
   calendarOptions.validRange.start = earliestDate.minus({ days: 1 }).toISODate()
   calendarOptions.validRange.end = latestDate.plus({ days: 1 }).toISODate()
   // calendarOptions.scrollTime = `${earliestHour.toString().padStart(2, '0')}:00:00`
@@ -326,7 +330,6 @@ function close () {
     }
 
     .badge {
-      width: 30px;
       font-size: .7em;
       border: 1px solid #CCC;
       text-transform: uppercase;

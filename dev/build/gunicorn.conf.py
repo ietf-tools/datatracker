@@ -1,5 +1,11 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 
+# Configure security scheme headers for forwarded requests. Cloudflare sets X-Forwarded-Proto 
+# for us. Don't trust any of the other similar headers. Only trust the header if it's coming
+# from localhost, as all legitimate traffic will reach gunicorn via co-located nginx.
+secure_scheme_headers = {"X-FORWARDED-PROTO": "https"}
+forwarded_allow_ips = "127.0.0.1, ::1"  # this is the default 
+
 # Log as JSON on stdout (to distinguish from Django's logs on stderr)
 #
 # This is applied as an update to gunicorn's glogging.CONFIG_DEFAULTS.

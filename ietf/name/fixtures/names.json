@@ -2628,7 +2628,7 @@
       "used": true
     },
     "model": "doc.state",
-    "pk": 182
+    "pk": 181
   },
   {
     "fields": {
@@ -6826,6 +6826,66 @@
     },
     "model": "name.appealartifacttypename",
     "pk": "response"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "ANRW Onsite",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.attendancetypename",
+    "pk": "anrw_onsite"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Hackathon Onsite",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.attendancetypename",
+    "pk": "hackathon_onsite"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Hackathon Remote",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.attendancetypename",
+    "pk": "hackathon_remote"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Onsite",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.attendancetypename",
+    "pk": "onsite"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Remote",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.attendancetypename",
+    "pk": "remote"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Unknown",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.attendancetypename",
+    "pk": "unknown"
   },
   {
     "fields": {
@@ -12879,6 +12939,86 @@
   },
   {
     "fields": {
+      "desc": "",
+      "name": "ANRW Combo",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.registrationtickettypename",
+    "pk": "anrw_combo"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "ANRW Only",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.registrationtickettypename",
+    "pk": "anrw_only"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Hackathon Combo",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.registrationtickettypename",
+    "pk": "hackathon_combo"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Hackathon Only",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.registrationtickettypename",
+    "pk": "hackathon_only"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "One Day",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.registrationtickettypename",
+    "pk": "one_day"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Student",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.registrationtickettypename",
+    "pk": "student"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Unknown",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.registrationtickettypename",
+    "pk": "unknown"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Week Pass",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.registrationtickettypename",
+    "pk": "week_pass"
+  },
+  {
+    "fields": {
       "desc": "The reviewer has accepted the assignment",
       "name": "Accepted",
       "order": 0,
@@ -13210,7 +13350,7 @@
   {
     "fields": {
       "desc": "",
-      "name": "Last Call",
+      "name": "IETF Last Call",
       "order": 2,
       "used": true
     },
