@@ -444,6 +444,19 @@ jobs:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
       
     steps:
+      - name: Refresh Staging DB
+        uses: the-actions-org/workflow-dispatch@v4
+        with:
+          workflow: update-staging-db.yml
+          repo: ietf-tools/infra-k8s
+          ref: main
+          token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
+          inputs: '{ "sourceDb":"datatracker" }'
+          wait-for-completion: true
+          wait-for-completion-timeout: 5m
+          wait-for-completion-interval: 20s
+          display-workflow-run-url: false
+
       - name: Deploy to staging
         uses: the-actions-org/workflow-dispatch@v4
         with:

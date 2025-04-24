@@ -141,7 +141,7 @@ export const useAgendaStore = defineStore('agenda', {
           meetingNumber = meetingData.meetingNumber
         }
 
-        const resp = await fetch(`/api/meeting/${meetingNumber}/agenda-data`, { credentials: 'omit' })
+        const resp = await fetch(`/api/meeting/${meetingNumber}/agenda-data`)
         if (!resp.ok) {
           throw new Error(resp.statusText)
         }
