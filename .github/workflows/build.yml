@@ -453,7 +453,7 @@ jobs:
           token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
           inputs: '{ "sourceDb":"datatracker" }'
           wait-for-completion: true
-          wait-for-completion-timeout: 5m
+          wait-for-completion-timeout: 10m
           wait-for-completion-interval: 20s
           display-workflow-run-url: false
 
