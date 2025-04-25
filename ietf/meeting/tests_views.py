@@ -8679,7 +8679,8 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertTrue(mock_default_cache.get.called)
         self.assertEqual(mock_default_cache.get.call_args.args[0], cache_key, "same cache key each time")
         self.assertTrue(mock_default_cache.set.called)
-        self.assertEqual(mock_default_cache.set.call_args, call(cache_key, proceedings_content, timeout=86400))
+        self.assertEqual(mock_default_cache.set.call_args.args, (cache_key, proceedings_content))
+        self.assertGreater(mock_default_cache.set.call_args.kwargs["timeout"], 86400)
         mock_default_cache.get.reset_mock()
         mock_default_cache.set.reset_mock()
 
@@ -8725,7 +8726,8 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertEqual(result, proceedings_content)  # should have recomputed the same thing
         self.assertFalse(mock_default_cache.get.called, "don't bother reading cache when force_refresh is True")
         self.assertTrue(mock_default_cache.set.called)
-        self.assertEqual(mock_default_cache.set.call_args, call(cache_key, proceedings_content, timeout=86400))
+        self.assertEqual(mock_default_cache.set.call_args.args, (cache_key, proceedings_content))
+        self.assertGreater(mock_default_cache.set.call_args.kwargs["timeout"], 86400)
 
     def test_named_session(self):
         """Session with a name should appear separately in the proceedings"""
