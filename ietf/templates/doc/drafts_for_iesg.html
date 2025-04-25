@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin static %}
+{% load ietf_filters %}
+{% load person_filters %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
+{% block title %}Documents for the IESG{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1 class="mt-4">Documents for the IESG</h1>
+    {% include "doc/search/search_results.html" with start_table=True end_table=True %}
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
+{% endblock %}
