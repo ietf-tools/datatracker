@@ -130,7 +130,7 @@ class AnnounceForm(forms.ModelForm):
         # nomcom field is defined declaratively so label and help_text must be set here
         self.fields["nomcom"].label = "NomCom message:"
         self.fields["nomcom"].help_text = (
-            "If this is a NomCom announcement specifiy which NomCom group here"
+            "If this is a NomCom announcement specify which NomCom group here"
         )
         nomcom_roles = person.role_set.filter(
             group__in=self.fields["nomcom"].queryset, name="chair"
