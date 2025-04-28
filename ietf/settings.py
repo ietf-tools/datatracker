@@ -46,7 +46,7 @@ SERVER_MODE = 'development'
 # Domain name of the IETF
 IETF_DOMAIN = 'ietf.org'
 
-# Overriden in settings_local
+# Overridden in settings_local
 ADMINS = [
     ('Tools Help', 'tools-help@ietf.org'),
 ]                                       # type: List[Tuple[str, str]]
