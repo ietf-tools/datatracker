@@ -28,3 +28,10 @@ ENV POSTGRES_PASSWORD=hk2j22sfiv
 ENV POSTGRES_USER=django
 ENV POSTGRES_DB=datatracker
 ENV POSTGRES_HOST_AUTH_METHOD=trust
+
+# build-args for db dump tagging - exposed in the environment and
+# in image metadata
+ARG datatracker_dumpinfo_date=""
+ENV DATATRACKER_DUMPINFO_DATE=$datatracker_dumpinfo_date
+ARG datatracker_snapshot=""
+ENV DATATRACKER_SNAPSHOT=$datatracker_snapshot

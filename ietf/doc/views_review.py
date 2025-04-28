@@ -897,7 +897,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
 
             if need_to_email_review:
                 # email the review
-                subject = "{} {} {} of {}-{}".format(assignment.review_request.team.acronym.capitalize(),assignment.review_request.type.name.lower(),"partial review" if assignment.state_id == "part-completed" else "review", assignment.review_request.doc.name, assignment.reviewed_rev)
+                subject = "{}-{} {} {} {}".format(assignment.review_request.doc.name, assignment.reviewed_rev, assignment.review_request.type.name.lower(), assignment.review_request.team.acronym.capitalize(), "partial review" if assignment.state_id == "part-completed" else "review")
                 related_groups = [ assignment.review_request.team, ]
                 if assignment.review_request.doc.group:
                     related_groups.append(assignment.review_request.doc.group)
