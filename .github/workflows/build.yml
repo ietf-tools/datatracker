@@ -79,6 +79,7 @@ jobs:
         token: ${{ github.token }}
         branch: release
         skipInvalidTags: true
+        patchList: fix, bugfix, perf, refactor, test, tests, chore
 
     - name: Get Dev Version
       if: ${{ github.ref_name != 'release' }}
