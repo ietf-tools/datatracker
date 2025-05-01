@@ -770,6 +770,28 @@ def docs_for_iesg(request):
                     role__group__state="active",
                 )
             )
+        ).exclude(
+            type_id="rfc",
+        ).exclude(
+            type_id="draft",
+            states__type="draft", 
+            states__slug__in=["repl", "rfc"],
+        ).exclude(
+            type_id="draft",
+            states__type="draft-iesg",
+            states__slug__in=["idexists", "rfcqueue"],
+        ).exclude(
+            type_id="conflrev",
+            states__type="conflrev",
+            states__slug__in=["appr-noprob-sent", "appr-reqnopub-sent", "withdraw", "dead"],
+        ).exclude(
+            type_id="statchg",
+            states__type="statchg",
+            states__slug__in=["appr-sent", "dead"],
+        ).exclude(
+            type_id="charter",
+            states__type="charter",
+            states__slug__in=["notrev", "infrev", "approved", "replaced"],
         ),
         max_results=1000,
         show_ad_and_shepherd=True,

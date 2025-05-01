@@ -422,7 +422,7 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
         self.assertContains(r, escape(draft.action_holders.first().name))
-        self.assertContains(r, rfc.name)
+        self.assertNotContains(r, rfc.name)
         self.assertContains(r, conflrev.name)
         self.assertContains(r, statchg.name)
         self.assertContains(r, charter.name)
