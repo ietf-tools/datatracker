@@ -5,6 +5,7 @@
 import io
 import os
 import operator
+from itertools import groupby
 
 from typing import Union            # pyflakes:ignore
 
@@ -66,14 +67,24 @@ def get_internal_choices(user):
     Returns a grouped list of choices suitable for use with a ChoiceField. If user is None,
     includes all groups.
     """
-    choices = []
     groups = get_groups_for_person(user.person if user else None)
-    main = [ (g.pk, 'The {}'.format(g.acronym.upper())) for g in groups.filter(acronym__in=('ietf','iesg','iab')) ]
-    areas = [ (g.pk, '{} - {}'.format(g.acronym,g.name)) for g in groups.filter(type='area') ]
-    wgs = [ (g.pk, '{} - {}'.format(g.acronym,g.name)) for g in groups.filter(type='wg') ]
-    choices.append(('Main IETF Entities', main))
-    choices.append(('IETF Areas', areas))
-    choices.append(('IETF Working Groups', wgs ))
+    main = []
+    areas = []
+    wgs = []
+    for g in groups.order_by("acronym"):
+        if g.acronym in ("ietf", "iesg", "iab"):
+            main.append((g.pk, f"The {g.acronym.upper()}"))
+        elif g.type_id == "area":
+            areas.append((g.pk, f"{g.acronym} - {g.name}"))
+        elif g.type_id == "wg":
+            areas.append((g.pk, f"{g.acronym} - {g.name}"))
+    choices = []
+    if len(main) > 0:
+        choices.append(("Main IETF Entities", main))
+    if len(areas) > 0:
+        choices.append(("IETF Areas", areas))
+    if len(wgs) > 0:
+        choices.append(("IETF Working Groups", wgs))
     return choices
 
 
