@@ -82,7 +82,10 @@ def get_groups_for_person(person):
     This is a refactor of IETFHierarchyManager.get_entities_for_person().  If Person
     is None or Secretariat or Liaison Manager all internal IETF groups are returned.
     '''
-    if person == None or has_role(person.user, "Secretariat") or has_role(person.user, "Liaison Manager"):
+    if person is None or has_role(
+        person.user,
+        ("Secretariat", "IETF Chair", "IAB Chair", "Liaison Manager"),  # todo liaison coordinator as well
+    ):
         # collect all internal IETF groups
         queries = [Q(acronym__in=('ietf','iesg','iab')),
                    Q(type='area',state='active'),
@@ -94,6 +97,8 @@ def get_groups_for_person(person):
                    Q(role__person=person,role__name='ad',type='area',state='active'),
                    Q(role__person=person,role__name__in=('chair','secretary'),type='wg',state='active'),
                    Q(parent__role__person=person,parent__role__name='ad',type='wg',state='active')]
+        if has_role(person.user, "Area Director"):
+            queries.append(Q(acronym__in=("ietf", "iesg")))
     return Group.objects.filter(reduce(operator.or_,queries)).order_by('acronym').distinct()
 
 def liaison_form_factory(request, type=None, **kwargs):
