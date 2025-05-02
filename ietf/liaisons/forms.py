@@ -519,7 +519,7 @@ class OutgoingLiaisonForm(LiaisonModelForm):
     @staticmethod
     def from_contact_queryset(person):
         if person.role_set.filter(name='liaiman',group__state='active'):
-            email = person.role_set.filter(name='liaiman',group__state='active').first.email
+            email = person.role_set.filter(name='liaiman',group__state='active').first().email
         elif person.role_set.filter(name__in=('ad','chair'),group__state='active'):
             email = person.role_set.filter(name__in=('ad','chair'),group__state='active').first().email
         else:
