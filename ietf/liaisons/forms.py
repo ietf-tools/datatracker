@@ -5,7 +5,6 @@
 import io
 import os
 import operator
-from itertools import groupby
 
 from typing import Union            # pyflakes:ignore
 
@@ -18,8 +17,6 @@ from django.forms.utils import ErrorList
 from django.db.models import Q, QuerySet
 from django.core.validators import validate_email
 from django_stubs_ext import QuerySetAny
-
-import debug                            # pyflakes:ignore
 
 from ietf.ietfauth.utils import has_role
 from ietf.name.models import DocRelationshipName
@@ -508,14 +505,6 @@ class OutgoingLiaisonForm(LiaisonModelForm):
         return self.cleaned_data['approved']
 
     @staticmethod
-    def from_groups_choices(person):
-        return choices_from_group_queryset(internal_groups_for_person(person))
-
-    @staticmethod
-    def to_groups_choices(user):
-        return Group.objects.none()
-
-    @staticmethod
     def from_contact_queryset(person):
         if person.role_set.filter(name='liaiman',group__state='active'):
             email = person.role_set.filter(name='liaiman',group__state='active').first.email
@@ -536,7 +525,7 @@ class OutgoingLiaisonForm(LiaisonModelForm):
         
     def set_from_groups_field(self):
         """Configure the from_groups field based on roles"""
-        grouped_choices = self.from_groups_choices(self.person)
+        grouped_choices = choices_from_group_queryset(internal_groups_for_person(self.person))
         flat_choices = flatten_choices(grouped_choices)
         if len(flat_choices) == 1:
             self.fields["from_groups"].choices = flat_choices
