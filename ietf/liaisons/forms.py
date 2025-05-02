@@ -20,7 +20,8 @@ from django_stubs_ext import QuerySetAny
 
 from ietf.ietfauth.utils import has_role
 from ietf.name.models import DocRelationshipName
-from ietf.liaisons.utils import get_person_for_user,is_authorized_individual
+from ietf.liaisons.utils import get_person_for_user, is_authorized_individual, OUTGOING_LIAISON_ROLES, \
+    INCOMING_LIAISON_ROLES
 from ietf.liaisons.widgets import ButtonWidget,ShowAttachmentsWidget
 from ietf.liaisons.models import (LiaisonStatement,
     LiaisonStatementEvent,LiaisonStatementAttachment,LiaisonStatementPurposeName)
@@ -122,6 +123,17 @@ def internal_groups_for_person(person):
         queries.append(Q(acronym__in=("ietf", "iesg")))  # AD can also choose these
     return Group.objects.filter(reduce(operator.or_, queries)).distinct()
 
+
+def external_groups_for_person(person):
+    filter_expr = Q(pk__in=[])  # start with no groups
+    # These roles can add all external sdo groups
+    if has_role(person.user, set(INCOMING_LIAISON_ROLES + OUTGOING_LIAISON_ROLES) - {"Liaison Manager"}):
+        filter_expr |= Q(type="sdo")
+    else:
+        # The person cannot add all external sdo groups; add any for which they are Liaison Manager
+        filter_expr |= Q(type="sdo", role__person=person, role__name="liaiman")
+    return Group.objects.filter(state="active").filter(filter_expr).distinct()
+    
 
 def liaison_form_factory(request, type=None, **kwargs):
     """Returns appropriate Liaison entry form"""
@@ -514,12 +526,8 @@ class OutgoingLiaisonForm(LiaisonModelForm):
             email = person.email()
         return Email.objects.filter(pk=email)
 
-    @staticmethod
-    def to_contact_queryset(person):
-        return Email.objects.none()
-
     def set_from_fields(self):
-        """Configure from from_groups and from_contact based on user roles"""
+        """Configure from "From" fields based on user roles"""
         self.set_from_groups_field()
         self.set_from_contact_field()
         
@@ -544,20 +552,15 @@ class OutgoingLiaisonForm(LiaisonModelForm):
             self.fields['from_contact'].initial = allowed_from_emails.first().address  # todo actually allow choice
 
     def set_to_fields(self):
-        '''Set to_groups and to_contacts options and initial value based on user
-        accessing the form'''
-        # set options. if the user is a Liaison Manager and nothing more, reduce set to his SDOs
-        if has_role(self.user, "Liaison Manager") and not self.person.role_set.filter(name__in=('ad','chair'),group__state='active'):
-            queryset = Group.objects.filter(type="sdo", state="active", role__person=self.person, role__name="liaiman").distinct().order_by('name')
-        else:
-            # get all outgoing entities
-            queryset = Group.objects.filter(type="sdo", state="active").order_by('name')
-
-        self.fields['to_groups'].queryset = queryset
+        """Configure the "To" fields based on user roles"""
+        qs = external_groups_for_person(self.person).order_by("name")
+        self.fields['to_groups'].queryset = qs 
 
         # set initial
         if has_role(self.user, "Liaison Manager"):
-            self.fields['to_groups'].initial = [queryset.first()]
+            self.fields['to_groups'].initial = [
+                qs.filter(role__person=self.person, role__name="liaiman").first()
+            ]
 
 
 class EditLiaisonForm(LiaisonModelForm):
