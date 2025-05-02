@@ -15,7 +15,6 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.forms.utils import ErrorList
 from django.db.models import Q
-#from django.forms.widgets import RadioFieldRenderer
 from django.core.validators import validate_email
 from django_stubs_ext import QuerySetAny
 
@@ -51,17 +50,22 @@ with the IAB).
 def liaison_manager_sdos(person):
     return Group.objects.filter(type="sdo", state="active", role__person=person, role__name="liaiman").distinct()
 
+
 def flatten_choices(choices):
-    '''Returns a flat choice list given one with option groups defined'''
+    """Returns a flat choice list given one with option groups defined"""
+    # TODO this does not handle mixed grouped and ungrouped options properly
     flat = []
-    for optgroup,options in choices:
+    for optgroup, options in choices:
         flat.extend(options)
     return flat
-    
+
+
 def get_internal_choices(user):
-    '''Returns the set of internal IETF groups the user has permissions for, as a list
-    of choices suitable for use in a select widget.  If user == None, all active internal
-    groups are included.'''
+    """Get choices list for internal IETF groups user is authorized to select
+    
+    Returns a grouped list of choices suitable for use with a ChoiceField. If user is None,
+    includes all groups.
+    """
     choices = []
     groups = get_groups_for_person(user.person if user else None)
     main = [ (g.pk, 'The {}'.format(g.acronym.upper())) for g in groups.filter(acronym__in=('ietf','iesg','iab')) ]
@@ -71,6 +75,7 @@ def get_internal_choices(user):
     choices.append(('IETF Areas', areas))
     choices.append(('IETF Working Groups', wgs ))
     return choices
+
 
 def get_groups_for_person(person):
     '''Returns queryset of internal Groups the person has interesting roles in.
@@ -216,8 +221,6 @@ class LiaisonModelForm(forms.ModelForm):
     '''Specify fields which require a custom widget or that are not part of the model.
     '''
     from_groups = ModelMultipleChoiceField(queryset=Group.objects.all(),label='Groups',required=False)
-    from_groups.widget.attrs["class"] = "select2-field"
-    from_groups.widget.attrs['data-minimum-input-length'] = 0
     from_contact = forms.EmailField()   # type: Union[forms.EmailField, SearchableEmailField]
     to_contacts = forms.CharField(label="Contacts", widget=forms.Textarea(attrs={'rows':'3', }), strip=False)
     to_groups = ModelMultipleChoiceField(queryset=Group.objects,label='Groups',required=False)
@@ -245,11 +248,13 @@ class LiaisonModelForm(forms.ModelForm):
         self.person = get_person_for_user(user)
         self.is_new = not self.instance.pk
 
+        self.fields["from_groups"].widget.attrs["class"] = "select2-field"
+        self.fields["from_groups"].widget.attrs["data-minimum-input-length"] = 0
         self.fields["from_groups"].widget.attrs["data-placeholder"] = "Type in name to search for group"
         self.fields["to_groups"].widget.attrs["data-placeholder"] = "Type in name to search for group"
         self.fields["to_contacts"].label = 'Contacts'
         self.fields["other_identifiers"].widget.attrs["rows"] = 2
-        
+
         # add email validators
         for field in ['from_contact','to_contacts','technical_contacts','action_holder_contacts','cc_contacts']:
             if field in self.fields:
@@ -472,31 +477,52 @@ class OutgoingLiaisonForm(LiaisonModelForm):
     def is_approved(self):
         return self.cleaned_data['approved']
 
+    @staticmethod
+    def from_groups_choices(user):
+        return get_internal_choices(user)
+
+    @staticmethod
+    def to_groups_choices(user):
+        return Group.objects.none()
+
+    @staticmethod
+    def from_contact_queryset(person):
+        if person.role_set.filter(name='liaiman',group__state='active'):
+            email = person.role_set.filter(name='liaiman',group__state='active').first.email
+        elif person.role_set.filter(name__in=('ad','chair'),group__state='active'):
+            email = person.role_set.filter(name__in=('ad','chair'),group__state='active').first().email
+        else:
+            email = person.email()
+        return Email.objects.filter(pk=email)
+
+    @staticmethod
+    def to_contact_queryset(person):
+        return Email.objects.none()
+
     def set_from_fields(self):
-        '''Set from_groups and from_contact options and initial value based on user
-        accessing the form'''
-        choices = get_internal_choices(self.user)
-        self.fields['from_groups'].choices = choices
+        """Configure from from_groups and from_contact based on user roles"""
+        self.set_from_groups_field()
+        self.set_from_contact_field()
         
-        # set initial value if only one entry 
-        flat_choices = flatten_choices(choices)
+    def set_from_groups_field(self):
+        """Configure the from_groups field based on user roles"""
+        grouped_choices = self.from_groups_choices(self.user)
+        flat_choices = flatten_choices(grouped_choices)
         if len(flat_choices) == 1:
-            self.fields['from_groups'].initial = [flat_choices[0][0]]
-        
+            self.fields["from_groups"].choices = flat_choices
+            self.fields["from_groups"].initial = [flat_choices[0][0]]
+        else:
+            self.fields["from_groups"].choices = grouped_choices
+
+    def set_from_contact_field(self):
+        """Configure the from_contact field based on user roles"""
         if has_role(self.user, "Secretariat"):
             self.fields['from_contact'] = SearchableEmailField(only_users=True)  # secretariat can edit this field!
-            return
-
-        if self.person.role_set.filter(name='liaiman',group__state='active'):
-            email = self.person.role_set.filter(name='liaiman',group__state='active').first().email.address
-        elif self.person.role_set.filter(name__in=('ad','chair'),group__state='active'):
-            email = self.person.role_set.filter(name__in=('ad','chair'),group__state='active').first().email.address
         else:
-            email = self.person.email_address()
-
-        # Non-secretariat user cannot change the from_contact field. Fill in its value.
-        self.fields['from_contact'].disabled = True
-        self.fields['from_contact'].initial = email
+            # Non-secretariat user cannot change the from_contact field. Fill in its value.
+            allowed_from_emails = self.from_contact_queryset(self.person)
+            self.fields['from_contact'].disabled = True
+            self.fields['from_contact'].initial = allowed_from_emails.first().address  # todo actually allow choice
 
     def set_to_fields(self):
         '''Set to_groups and to_contacts options and initial value based on user
