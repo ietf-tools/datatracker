@@ -74,7 +74,7 @@ def choices_from_group_queryset(groups: QuerySet[Group]):
         elif g.type_id == "area":
             areas.append((g.pk, f"{g.acronym} - {g.name}"))
         elif g.type_id == "wg":
-            areas.append((g.pk, f"{g.acronym} - {g.name}"))
+            wgs.append((g.pk, f"{g.acronym} - {g.name}"))
     choices = []
     if len(main) > 0:
         choices.append(("Main IETF Entities", main))
@@ -125,6 +125,7 @@ def internal_groups_for_person(person):
 
 
 def external_groups_for_person(person):
+    """Get a queryset of external groups suitable for LS To/From assignment by person"""
     filter_expr = Q(pk__in=[])  # start with no groups
     # These roles can add all external sdo groups
     if has_role(person.user, set(INCOMING_LIAISON_ROLES + OUTGOING_LIAISON_ROLES) - {"Liaison Manager"}):
