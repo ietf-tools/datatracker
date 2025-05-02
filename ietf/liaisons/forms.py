@@ -251,8 +251,6 @@ class LiaisonModelForm(forms.ModelForm):
     from_contact = forms.EmailField()   # type: Union[forms.EmailField, SearchableEmailField]
     to_contacts = forms.CharField(label="Contacts", widget=forms.Textarea(attrs={'rows':'3', }), strip=False)
     to_groups = ModelMultipleChoiceField(queryset=Group.objects,label='Groups',required=False)
-    to_groups.widget.attrs["class"] = "select2-field"
-    to_groups.widget.attrs['data-minimum-input-length'] = 0
     deadline = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Deadline', required=True)
     related_to = SearchableLiaisonStatementsField(label='Related Liaison Statement', required=False)
     submitted_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Submission date', required=True, initial=lambda: date_today(DEADLINE_TZINFO))
@@ -278,6 +276,8 @@ class LiaisonModelForm(forms.ModelForm):
         self.fields["from_groups"].widget.attrs["class"] = "select2-field"
         self.fields["from_groups"].widget.attrs["data-minimum-input-length"] = 0
         self.fields["from_groups"].widget.attrs["data-placeholder"] = "Type in name to search for group"
+        self.fields["to_groups"].widget.attrs["class"] = "select2-field"
+        self.fields["to_groups"].widget.attrs["data-minimum-input-length"] = 0
         self.fields["to_groups"].widget.attrs["data-placeholder"] = "Type in name to search for group"
         self.fields["to_contacts"].label = 'Contacts'
         self.fields["other_identifiers"].widget.attrs["rows"] = 2
