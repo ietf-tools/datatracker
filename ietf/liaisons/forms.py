@@ -484,20 +484,17 @@ class IncomingLiaisonForm(LiaisonModelForm):
         return True
 
     def set_from_fields(self):
-        '''Set from_groups and from_contact options and initial value based on user
-        accessing the form.'''
-        if has_role(self.user, "Secretariat"):
-            queryset = Group.objects.filter(type="sdo", state="active").order_by('name')
-        else:
-            queryset = Group.objects.filter(type="sdo", state="active", role__person=self.person, role__name__in=("liaiman", "auth")).distinct().order_by('name')
-            self.fields['from_contact'].initial = self.person.role_set.filter(group=queryset[0]).first().email.address
-            self.fields['from_contact'].widget.attrs['disabled'] = True
-        self.fields['from_groups'].queryset = queryset
-        self.fields['from_groups'].widget.submitter = str(self.person)
-
+        """Configure from "From" fields based on user roles"""
+        qs = external_groups_for_person(self.person)
+        self.fields["from_groups"].queryset = qs
+        self.fields["from_groups"].widget.submitter = str(self.person)
         # if there's only one possibility make it the default
-        if len(queryset) == 1:
-            self.fields['from_groups'].initial = queryset
+        if len(qs) == 1:
+            self.fields['from_groups'].initial = qs
+
+        if not has_role(self.user, "Secretariat"):
+            self.fields["from_contact"].initial = self.person.role_set.filter(group=qs[0]).first().email.address
+            self.fields["from_contact"].widget.attrs["disabled"] = True
 
     def set_to_fields(self):
         '''Set to_groups and to_contacts options and initial value based on user
