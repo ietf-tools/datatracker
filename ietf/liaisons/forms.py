@@ -132,7 +132,7 @@ def external_groups_for_person(person):
     else:
         # The person cannot add all external sdo groups; add any for which they are Liaison Manager
         filter_expr |= Q(type="sdo", role__person=person, role__name="liaiman")
-    return Group.objects.filter(state="active").filter(filter_expr).distinct()
+    return Group.objects.filter(state="active").filter(filter_expr).distinct().order_by("name")
     
 
 def liaison_form_factory(request, type=None, **kwargs):
@@ -553,7 +553,7 @@ class OutgoingLiaisonForm(LiaisonModelForm):
 
     def set_to_fields(self):
         """Configure the "To" fields based on user roles"""
-        qs = external_groups_for_person(self.person).order_by("name")
+        qs = external_groups_for_person(self.person)
         self.fields['to_groups'].queryset = qs 
 
         # set initial
@@ -581,30 +581,18 @@ class EditLiaisonForm(LiaisonModelForm):
         return self.instance
 
     def set_from_fields(self):
-        '''Set from_groups and from_contact options and initial value based on user
-        accessing the form.'''
+        """Configure from "From" fields based on user roles"""
         if self.instance.is_outgoing():
             self.fields['from_groups'].choices = choices_from_group_queryset(internal_groups_for_person(self.person))
         else:
-            if has_role(self.user, "Secretariat"):
-                queryset = Group.objects.filter(type="sdo").order_by('name')
-            else:
-                queryset = Group.objects.filter(type="sdo", role__person=self.person, role__name__in=("liaiman", "auth")).distinct().order_by('name')
+            self.fields["from_groups"].queryset = external_groups_for_person(self.person)
+            if not has_role(self.user, "Secretariat"):
                 self.fields['from_contact'].widget.attrs['disabled'] = True
-            self.fields['from_groups'].queryset = queryset
 
     def set_to_fields(self):
-        '''Set to_groups and to_contacts options and initial value based on user
-        accessing the form.  For incoming Liaisons, to_groups choices is the full set.
-        '''
+        """Configure the "To" fields based on user roles"""
         if self.instance.is_outgoing():
-            # if the user is a Liaison Manager and nothing more, reduce to set to his SDOs
-            if has_role(self.user, "Liaison Manager") and not self.person.role_set.filter(name__in=('ad','chair'),group__state='active'):
-                queryset = Group.objects.filter(type="sdo", role__person=self.person, role__name="liaiman").distinct().order_by('name')
-            else:
-                # get all outgoing entities
-                queryset = Group.objects.filter(type="sdo").order_by('name')
-            self.fields['to_groups'].queryset = queryset
+            self.fields['to_groups'].queryset = external_groups_for_person(self.person)
         else:
             self.fields['to_groups'].choices = choices_from_group_queryset(all_internal_groups())
 
