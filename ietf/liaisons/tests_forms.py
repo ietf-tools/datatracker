@@ -1,7 +1,11 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 from ietf.group.factories import GroupFactory
 from ietf.group.models import Group
-from ietf.liaisons.forms import flatten_choices, choices_from_group_queryset
+from ietf.liaisons.forms import (
+    flatten_choices,
+    choices_from_group_queryset,
+    all_internal_groups,
+)
 from ietf.utils.test_utils import TestCase
 
 
@@ -77,7 +81,11 @@ class HelperTests(TestCase):
         )
 
     def test_all_internal_groups(self):
-        raise NotImplementedError()
+        # relies on the data created in ietf.utils.test_data.make_immutable_test_data()
+        self.assertCountEqual(
+            all_internal_groups().values_list("acronym", flat=True),
+            {"ietf", "iab", "iesg", "farfut", "ops", "sops"},
+        )
 
     def test_internal_groups_for_person(self):
         raise NotImplementedError()
