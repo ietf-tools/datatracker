@@ -6,9 +6,8 @@ import io
 import os
 import operator
 
-from typing import Union            # pyflakes:ignore
-
 from email.utils import parseaddr
+from typing import Union, Optional  # pyflakes:ignore
 
 from django import forms
 from django.conf import settings
@@ -27,7 +26,7 @@ from ietf.liaisons.models import (LiaisonStatement,
     LiaisonStatementEvent,LiaisonStatementAttachment,LiaisonStatementPurposeName)
 from ietf.liaisons.fields import SearchableLiaisonStatementsField
 from ietf.group.models import Group
-from ietf.person.models import Email
+from ietf.person.models import Email, Person
 from ietf.person.fields import SearchableEmailField
 from ietf.doc.models import Document
 from ietf.utils.fields import DatepickerDateField, ModelMultipleChoiceField
@@ -97,9 +96,12 @@ def all_internal_groups():
     ).distinct()
 
 
-def internal_groups_for_person(person):
+def internal_groups_for_person(person: Optional[Person]):
     """Get a queryset of IETF groups suitable for LS To/From assignment by person"""
-    if person is None or has_role(
+    if person is None:
+        return Group.objects.none()  # no person = no roles
+
+    if has_role(
         person.user,
         ("Secretariat", "IETF Chair", "IAB Chair", "Liaison Manager"),  # todo liaison coordinator as well
     ):
@@ -137,7 +139,7 @@ def external_groups_for_person(person):
         # The person cannot add all external sdo groups; add any for which they are Liaison Manager
         filter_expr |= Q(type="sdo", role__person=person, role__name="liaiman")
     return Group.objects.filter(state="active").filter(filter_expr).distinct().order_by("name")
-    
+
 
 def liaison_form_factory(request, type=None, **kwargs):
     """Returns appropriate Liaison entry form"""
