@@ -51,8 +51,11 @@ def liaison_manager_sdos(person):
 
 
 def flatten_choices(choices):
-    """Returns a flat choice list given one with option groups defined"""
-    # TODO this does not handle mixed grouped and ungrouped options properly
+    """Returns a flat choice list given one with option groups defined
+    
+    n.b., Django allows mixing grouped options and top-level options. This helper only supports
+    the non-mixed case where every option is in an option group.
+    """
     flat = []
     for optgroup, options in choices:
         flat.extend(options)
