@@ -6,6 +6,7 @@ from ietf.liaisons.forms import (
     choices_from_group_queryset,
     all_internal_groups,
     internal_groups_for_person,
+    external_groups_for_person,
 )
 from ietf.person.factories import PersonFactory
 from ietf.person.models import Person
@@ -133,7 +134,43 @@ class HelperTests(TestCase):
         )
 
     def test_external_groups_for_person(self):
-        raise NotImplementedError()
+        liaison_manager = RoleFactory(
+            name_id="liaiman", group__type_id="sdo", group__acronym="the-sdo"
+        ).person
+        other_sdo = GroupFactory(acronym="other-sdo", type_id="sdo")
+        for username in (
+            "secretary",
+            "ietf-chair",
+            "iab-chair",
+            "ad",
+            "sopschairman",
+            "sopssecretary",
+        ):
+            person = Person.objects.get(user__username=username)
+            self.assertCountEqual(
+                external_groups_for_person(
+                    person,
+                ).values_list("acronym", flat=True),
+                {"the-sdo", "other-sdo"},
+                f"{username} should get all SDO groups",
+            )
+            tmp_role = RoleFactory(name_id="chair", group__type_id="wg", person=person)
+            self.assertCountEqual(
+                external_groups_for_person(
+                    person,
+                ).values_list("acronym", flat=True),
+                {"the-sdo", "other-sdo"},
+                f"{username} should still get all SDO groups when they also a liaison manager",
+            )
+            tmp_role.delete()
+
+        self.assertCountEqual(
+            external_groups_for_person(liaison_manager).values_list(
+                "acronym", flat=True
+            ),
+            {"the-sdo"},
+            f"{username} should get only their SDO group",
+        )
 
     def test_flatten_choices(self):
         self.assertEqual(flatten_choices([]), [])
