@@ -103,7 +103,14 @@ def internal_groups_for_person(person: Optional[Person]):
 
     if has_role(
         person.user,
-        ("Secretariat", "IETF Chair", "IAB Chair", "Liaison Manager"),  # todo liaison coordinator as well
+        (
+                "Secretariat",
+                "IETF Chair",
+                "IAB Chair",
+                "IAB Executive Director",
+                "Liaison Manager",
+                "Authorized Individual",
+        ),  # todo liaison coordinator as well
     ):
         return all_internal_groups()
     # Interesting roles, as Group queries
@@ -133,11 +140,11 @@ def external_groups_for_person(person):
     """Get a queryset of external groups suitable for LS To/From assignment by person"""
     filter_expr = Q(pk__in=[])  # start with no groups
     # These roles can add all external sdo groups
-    if has_role(person.user, set(INCOMING_LIAISON_ROLES + OUTGOING_LIAISON_ROLES) - {"Liaison Manager"}):
+    if has_role(person.user, set(INCOMING_LIAISON_ROLES + OUTGOING_LIAISON_ROLES) - {"Liaison Manager", "Authorized Individual"}):
         filter_expr |= Q(type="sdo")
     else:
         # The person cannot add all external sdo groups; add any for which they are Liaison Manager
-        filter_expr |= Q(type="sdo", role__person=person, role__name="liaiman")
+        filter_expr |= Q(type="sdo", role__person=person, role__name__in=["auth", "liaiman"])
     return Group.objects.filter(state="active").filter(filter_expr).distinct().order_by("name")
 
 

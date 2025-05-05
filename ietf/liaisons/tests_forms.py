@@ -94,7 +94,18 @@ class HelperTests(TestCase):
     def test_internal_groups_for_person(self):
         # test relies on the data created in ietf.utils.test_data.make_immutable_test_data()
         # todo add liaison coordinator when modeled
-        # todo ensure that all roles that can add LS have a group to choose from
+        RoleFactory(
+            name_id="execdir",
+            group=Group.objects.get(acronym="iab"),
+            person__user__username="iab-execdir",
+        )
+        RoleFactory(
+            name_id="auth",
+            group__type_id="sdo",
+            group__acronym="sdo",
+            person__user__username="sdo-authperson",
+        )
+
         self.assertQuerysetEqual(
             internal_groups_for_person(None),
             Group.objects.none(),
@@ -106,7 +117,13 @@ class HelperTests(TestCase):
             msg="no Role means no groups",
         )
 
-        for username in ("secretary", "ietf-chair", "iab-chair"):
+        for username in (
+            "secretary",
+            "ietf-chair",
+            "iab-chair",
+            "iab-execdir",
+            "sdo-authperson",
+        ):
             returned_queryset = internal_groups_for_person(
                 Person.objects.get(user__username=username)
             )
@@ -134,14 +151,21 @@ class HelperTests(TestCase):
         )
 
     def test_external_groups_for_person(self):
-        liaison_manager = RoleFactory(
-            name_id="liaiman", group__type_id="sdo", group__acronym="the-sdo"
-        ).person
-        other_sdo = GroupFactory(acronym="other-sdo", type_id="sdo")
+        RoleFactory(
+            name_id="execdir",
+            group=Group.objects.get(acronym="iab"),
+            person__user__username="iab-execdir",
+        )
+        the_sdo = GroupFactory(type_id="sdo", acronym="the-sdo")
+        liaison_manager = RoleFactory(name_id="liaiman", group=the_sdo).person
+        authperson = RoleFactory(name_id="auth", group=the_sdo).person
+
+        GroupFactory(acronym="other-sdo", type_id="sdo")
         for username in (
             "secretary",
             "ietf-chair",
             "iab-chair",
+            "iab-execdir",
             "ad",
             "sopschairman",
             "sopssecretary",
@@ -169,7 +193,12 @@ class HelperTests(TestCase):
                 "acronym", flat=True
             ),
             {"the-sdo"},
-            f"{username} should get only their SDO group",
+            f"liaison manager should get only their SDO group",
+        )
+        self.assertCountEqual(
+            external_groups_for_person(authperson).values_list("acronym", flat=True),
+            {"the-sdo"},
+            f"authorized individual should get only their SDO group",
         )
 
     def test_flatten_choices(self):
