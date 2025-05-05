@@ -1,11 +1,14 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
-from ietf.group.factories import GroupFactory
+from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group
 from ietf.liaisons.forms import (
     flatten_choices,
     choices_from_group_queryset,
     all_internal_groups,
+    internal_groups_for_person,
 )
+from ietf.person.factories import PersonFactory
+from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
 
 
@@ -81,14 +84,53 @@ class HelperTests(TestCase):
         )
 
     def test_all_internal_groups(self):
-        # relies on the data created in ietf.utils.test_data.make_immutable_test_data()
+        # test relies on the data created in ietf.utils.test_data.make_immutable_test_data()
         self.assertCountEqual(
             all_internal_groups().values_list("acronym", flat=True),
             {"ietf", "iab", "iesg", "farfut", "ops", "sops"},
         )
 
     def test_internal_groups_for_person(self):
-        raise NotImplementedError()
+        # test relies on the data created in ietf.utils.test_data.make_immutable_test_data()
+        # todo add liaison coordinator when modeled
+        # todo ensure that all roles that can add LS have a group to choose from
+        self.assertQuerysetEqual(
+            internal_groups_for_person(None),
+            Group.objects.none(),
+            msg="no Person means no groups",
+        )
+        self.assertQuerysetEqual(
+            internal_groups_for_person(PersonFactory()),
+            Group.objects.none(),
+            msg="no Role means no groups",
+        )
+
+        for username in ("secretary", "ietf-chair", "iab-chair"):
+            returned_queryset = internal_groups_for_person(
+                Person.objects.get(user__username=username)
+            )
+            self.assertCountEqual(
+                returned_queryset.values_list("acronym", flat=True),
+                {"ietf", "iab", "iesg", "farfut", "ops", "sops"},
+                f"{username} should get all groups",
+            )
+
+        # "ops-ad" user is the AD of the "ops" area, which contains the "sops" wg
+        self.assertCountEqual(
+            internal_groups_for_person(
+                Person.objects.get(user__username="ops-ad")
+            ).values_list("acronym", flat=True),
+            {"ietf", "iesg", "ops", "sops"},
+            "area director should get only their area, its wgs, and the ietf/iesg groups",
+        )
+
+        self.assertCountEqual(
+            internal_groups_for_person(
+                Person.objects.get(user__username="sopschairman"),
+            ).values_list("acronym", flat=True),
+            {"sops"},
+            "wg chair should get only their wg",
+        )
 
     def test_external_groups_for_person(self):
         raise NotImplementedError()
