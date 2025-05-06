@@ -18,7 +18,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.http import HttpResponse, Http404, JsonResponse
+from django.http import HttpResponse, Http404, JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -45,7 +45,7 @@ from ietf.group.utils import GroupAliasGenerator, role_holder_emails
 from ietf.ietfauth.utils import role_required
 from ietf.ietfauth.views import send_account_creation_email
 from ietf.ipr.utils import ingest_response_email as ipr_ingest_response_email
-from ietf.meeting.models import Meeting
+from ietf.meeting.models import Meeting, Registration
 from ietf.nomcom.models import Volunteer, NomCom
 from ietf.nomcom.utils import ingest_feedback_email as nomcom_ingest_feedback_email
 from ietf.person.models import Person, Email
@@ -68,7 +68,10 @@ def top_level(request):
         }
 
     serializer = Serializer()
-    desired_format = determine_format(request, serializer)
+    try:
+        desired_format = determine_format(request, serializer)
+    except BadRequest as err:
+        return HttpResponseBadRequest(str(err))
 
     options = {}
 
@@ -76,10 +79,12 @@ def top_level(request):
         callback = request.GET.get('callback', 'callback')
 
         if not is_valid_jsonp_callback_value(callback):
-            raise BadRequest('JSONP callback name is invalid.')
+            return HttpResponseBadRequest("JSONP callback name is invalid")
 
         options['callback'] = callback
 
+    # This might raise UnsupportedFormat, but that indicates a real server misconfiguration
+    # so let it bubble up unhandled and trigger a 500 / email to admins.
     serialized = serializer.serialize(available_resources, desired_format, options)
     return HttpResponse(content=serialized, content_type=build_content_type(desired_format))
 
@@ -234,6 +239,147 @@ def api_new_meeting_registration(request):
             return HttpResponse(response, status=202, content_type='text/plain')
     else:
         return HttpResponse(status=405)
+
+
+_new_registration_json_validator = jsonschema.Draft202012Validator(
+    schema={
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "meeting": {"type": "string"},
+                "first_name": {"type": "string"},
+                "last_name": {"type": "string"},
+                "affiliation": {"type": "string"},
+                "country_code": {"type": "string"},
+                "email": {"type": "string"},
+                "reg_type": {"type": "string"},
+                "ticket_type": {"type": "string"},
+                "checkedin": {"type": "boolean"},
+                "is_nomcom_volunteer": {"type": "boolean"},
+                "cancelled": {"type": "boolean"},
+            },
+            "required": ["meeting", "first_name", "last_name", "affiliation", "country_code", "email", "reg_type", "ticket_type", "checkedin", "is_nomcom_volunteer", "cancelled"],
+            "additionalProperties": "false"
+        }
+    }
+)
+
+
+@requires_api_token
+@csrf_exempt
+def api_new_meeting_registration_v2(request):
+    '''REST API to notify the datatracker about a new meeting registration'''
+    def _http_err(code, text):
+        return HttpResponse(text, status=code, content_type="text/plain")
+
+    def _api_response(result):
+        return JsonResponse(data={"result": result})
+
+    if request.method != "POST":
+        return _http_err(405, "Method not allowed")
+
+    if request.content_type != "application/json":
+        return _http_err(415, "Content-Type must be application/json")
+
+    # Validate
+    try:
+        payload = json.loads(request.body)
+        _new_registration_json_validator.validate(payload)
+    except json.decoder.JSONDecodeError as err:
+        return _http_err(400, f"JSON parse error at line {err.lineno} col {err.colno}: {err.msg}")
+    except jsonschema.exceptions.ValidationError as err:
+        return _http_err(400, f"JSON schema error at {err.json_path}: {err.message}")
+    except Exception:
+        return _http_err(400, "Invalid request format")
+
+    # Validate consistency
+    # - if receive multiple records they should be for same meeting, same person (email)
+    if len(payload) > 1:
+        if len(set([r['meeting'] for r in payload])) != 1:
+            return _http_err(400, "Different meeting values")
+        if len(set([r['email'] for r in payload])) != 1:
+            return _http_err(400, "Different email values")
+
+    # Validate meeting
+    number = payload[0]['meeting']
+    try:
+        meeting = Meeting.objects.get(number=number)
+    except Meeting.DoesNotExist:
+        return _http_err(400, "Invalid meeting value: '%s'" % (number, ))
+
+    # Validate email
+    email = payload[0]['email']
+    try:
+        validate_email(email)
+    except ValidationError:
+        return _http_err(400, "Invalid email value: '%s'" % (email, ))
+
+    # get person
+    person = Person.objects.filter(email__address=email).first()
+    if not person:
+        log.log(f"api_new_meeting_registration_v2 no Person found for {email}")
+
+    registration = payload[0]
+    # handle cancelled
+    if registration['cancelled']:
+        if len(payload) > 1:
+            return _http_err(400, "Error. Received cancelled registration notification with more than one record. ({})".format(email))
+        try:
+            obj = Registration.objects.get(meeting=meeting, email=email)
+        except Registration.DoesNotExist:
+            return _http_err(400, "Error. Received cancelled registration notification for non-existing registration. ({})".format(email))
+        if obj.tickets.count() == 1:
+            obj.delete()
+        else:
+            obj.tickets.filter(
+                attendance_type__slug=registration.reg_type,
+                ticket_type__slug=registration.ticket_type).delete()
+        return HttpResponse('Success', status=202, content_type='text/plain')
+
+    # create or update MeetingRegistration
+    update_fields = ['first_name', 'last_name', 'affiliation', 'country_code', 'checkedin', 'is_nomcom_volunteer']
+    try:
+        reg = Registration.objects.get(meeting=meeting, email=email)
+        for key, value in registration.items():
+            if key in update_fields:
+                setattr(reg, key, value)
+        reg.save()
+    except Registration.DoesNotExist:
+        reg = Registration.objects.create(
+            meeting_id=meeting.pk,
+            person=person,
+            email=email,
+            first_name=registration['first_name'],
+            last_name=registration['last_name'],
+            affiliation=registration['affiliation'],
+            country_code=registration['country_code'],
+            checkedin=registration['checkedin'])
+
+    # handle registration tickets
+    reg.tickets.all().delete()
+    for registration in payload:
+        reg.tickets.create(
+            attendance_type_id=registration['reg_type'],
+            ticket_type_id=registration['ticket_type'],
+        )
+        # handle nomcom volunteer
+        if registration['is_nomcom_volunteer'] and person:
+            try:
+                nomcom = NomCom.objects.get(is_accepting_volunteers=True)
+            except (NomCom.DoesNotExist, NomCom.MultipleObjectsReturned):
+                nomcom = None
+            if nomcom:
+                Volunteer.objects.get_or_create(
+                    nomcom=nomcom,
+                    person=person,
+                    defaults={
+                        "affiliation": registration["affiliation"],
+                        "origin": "registration"
+                    }
+                )
+
+    return HttpResponse('Success', status=202, content_type='text/plain')
 
 
 def version(request):
@@ -540,6 +686,31 @@ def active_email_list(request):
         return JsonResponse(
             {
                 "addresses": list(Email.objects.filter(active=True).values_list("address", flat=True)),
+            }
+        )
+    return HttpResponse(status=405)
+
+
+@requires_api_token
+@csrf_exempt
+def related_email_list(request, email):
+    """Given an email address, returns all other email addresses known
+    to Datatracker, via Person object
+    """
+    def _http_err(code, text):
+        return HttpResponse(text, status=code, content_type="text/plain")
+
+    if request.method == "GET":
+        try:
+            email_obj = Email.objects.get(address=email)
+        except Email.DoesNotExist:
+            return _http_err(404, "Email not found")
+        person = email_obj.person
+        if not person:
+            return JsonResponse({"addresses": []})
+        return JsonResponse(
+            {
+                "addresses": list(person.email_set.exclude(address=email).values_list("address", flat=True)),
             }
         )
     return HttpResponse(status=405)
