@@ -328,7 +328,7 @@ _blob_store_read_timeout = float(
 )
 for storage_name in MORE_STORAGE_NAMES:
     STORAGES[storage_name] = {
-        "BACKEND": "ietf.doc.storage_backends.CustomS3Storage",
+        "BACKEND": "ietf.doc.storage.CustomS3Storage",
         "OPTIONS": dict(
             endpoint_url=_blob_store_endpoint_url,
             access_key=_blob_store_access_key,

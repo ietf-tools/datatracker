@@ -71,7 +71,7 @@ DE_GFM_BINARY = '/usr/local/bin/de-gfm'
 
 for storagename in MORE_STORAGE_NAMES:
     STORAGES[storagename] = {
-        "BACKEND": "ietf.doc.storage_backends.CustomS3Storage",
+        "BACKEND": "ietf.doc.storage.CustomS3Storage",
         "OPTIONS": dict(
             endpoint_url="http://blobstore:9000",
             access_key="minio_root",

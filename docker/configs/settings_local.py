@@ -43,7 +43,7 @@ INTERNAL_IPS = [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips] + ['127.0.0.
 # ]
 for storagename in MORE_STORAGE_NAMES:
     STORAGES[storagename] = {
-        "BACKEND": "ietf.doc.storage_backends.StoredObjectStagedBlobStorage",
+        "BACKEND": "ietf.doc.storage.StoredObjectStagedBlobStorage",
         "OPTIONS": {
             "kind": storagename,
             "async_commit": True,  # TODO-BLOBSTORE should probably be false for Celery containers
@@ -52,7 +52,7 @@ for storagename in MORE_STORAGE_NAMES:
                 "OPTIONS": {"bucket_name": storagename},
             },
             "final_storage": {
-                "BACKEND": "ietf.doc.storage_backends.MetadataS3Storage",
+                "BACKEND": "ietf.doc.storage.MetadataS3Storage",
                 "OPTIONS": dict(
                     endpoint_url="http://blobstore:9000",
                     access_key="minio_root",

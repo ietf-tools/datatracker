@@ -65,7 +65,7 @@ def store_file(
     content_type: str="",
     mtime: datetime.datetime=None,
 ) -> None:
-    from .storage_backends import StoredObjectFile  # avoid circular import
+    from .storage import StoredObjectFile  # avoid circular import
     if settings.ENABLE_BLOBSTORAGE:
         try:
             is_new = not exists_in_storage(kind, name)
@@ -157,7 +157,7 @@ def store_str(
 
 
 def retrieve_bytes(kind: str, name: str) -> bytes:
-    from ietf.doc.storage_backends import maybe_log_timing
+    from ietf.doc.storage import maybe_log_timing
     content = b""
     if settings.ENABLE_BLOBSTORAGE:
         try:

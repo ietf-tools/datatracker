@@ -120,7 +120,7 @@ _blob_store_enable_profiling = (
 )
 for storagename in MORE_STORAGE_NAMES:
     STORAGES[storagename] = {
-        "BACKEND": "ietf.doc.storage_backends.StoredObjectStagedBlobStorage",
+        "BACKEND": "ietf.doc.storage.StoredObjectStagedBlobStorage",
         "OPTIONS": {
             "kind": storagename,
             "async_commit": False,  # write immediately to the final_storage
@@ -129,7 +129,7 @@ for storagename in MORE_STORAGE_NAMES:
                 "OPTIONS": {"bucket_name": storagename},
             },
             "final_storage": {
-                "BACKEND": "ietf.doc.storage_backends.MetadataS3Storage",
+                "BACKEND": "ietf.doc.storage.MetadataS3Storage",
                 "OPTIONS": dict(
                     endpoint_url=_blob_store_endpoint_url,
                     access_key=_blob_store_access_key,

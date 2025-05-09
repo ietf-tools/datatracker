@@ -133,7 +133,7 @@ def investigate_fragment_task(name_fragment: str):
 
 @shared_task
 def stagedblobstorage_commit_save_task(kind, name):
-    from .storage_backends import StagedBlobStorage
+    from .storage import StagedBlobStorage
     storage = storages[kind]  # will raise KeyError on misconfiguration
     if not isinstance(storage, StagedBlobStorage):
         raise RuntimeError(
@@ -145,7 +145,7 @@ def stagedblobstorage_commit_save_task(kind, name):
 
 @shared_task
 def stagedblobstorage_commit_delete_task(kind, name):
-    from .storage_backends import StagedBlobStorage
+    from .storage import StagedBlobStorage
     storage = storages[kind]  # will raise KeyError on misconfiguration
     if not isinstance(storage, StagedBlobStorage):
         raise RuntimeError(
