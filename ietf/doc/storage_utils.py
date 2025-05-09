@@ -63,7 +63,7 @@ def store_file(
     doc_name: Optional[str] = None,
     doc_rev: Optional[str] = None,
     content_type: str="",
-    mtime: datetime.datetime=None,
+    mtime: Optional[datetime.datetime]=None,
 ) -> None:
     from .storage import StoredObjectFile  # avoid circular import
     if settings.ENABLE_BLOBSTORAGE:
@@ -103,7 +103,7 @@ def store_bytes(
     doc_name: Optional[str] = None,
     doc_rev: Optional[str] = None,
     content_type: str = "",
-    mtime: datetime.datetime = None,
+    mtime: Optional[datetime.datetime] = None,
 ) -> None:
     if settings.ENABLE_BLOBSTORAGE:
         try:
@@ -133,7 +133,7 @@ def store_str(
     doc_name: Optional[str] = None,
     doc_rev: Optional[str] = None,
     content_type: str = "",
-    mtime: datetime.datetime = None,
+    mtime: Optional[datetime.datetime] = None,
 ) -> None:
     if settings.ENABLE_BLOBSTORAGE:
         try:
