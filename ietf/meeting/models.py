@@ -233,9 +233,9 @@ class Meeting(models.Model):
         ).order_by('type__order')
 
     def get_attendance(self):
-        """Get the meeting attendance from the MeetingRegistrations
+        """Get the meeting attendance from the Registrations
 
-        Returns a NamedTuple with onsite and online attributes. Returns None if the record is unavailable
+        Returns a NamedTuple with onsite and remote attributes. Returns None if the record is unavailable
         for this meeting.
         """
         number = self.get_number()
@@ -247,10 +247,10 @@ class Meeting(models.Model):
         # We've separated session attendance off to ietf.meeting.Attended, but need to report attendance at older
         # meetings correctly.
 
-        attended_per_meetingregistration = (
-            Q(meetingregistration__meeting=self) & (
-                Q(meetingregistration__attended=True) |
-                Q(meetingregistration__checkedin=True)
+        attended_per_meeting_registration = (
+            Q(registration__meeting=self) & (
+                Q(registration__attended=True) |
+                Q(registration__checkedin=True)
             )
         )
         attended_per_meeting_attended = (
@@ -260,11 +260,11 @@ class Meeting(models.Model):
             # is good enough, just attending e.g. a training session is also good enough
         )
         attended = Person.objects.filter(
-            attended_per_meetingregistration | attended_per_meeting_attended
+            attended_per_meeting_registration | attended_per_meeting_attended
         ).distinct()
 
-        onsite=set(attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='onsite'))
-        remote=set(attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='remote'))
+        onsite = set(attended.filter(registration__meeting=self, registration__tickets__attendance_type__slug='onsite'))
+        remote = set(attended.filter(registration__meeting=self, registration__tickets__attendance_type__slug='remote'))
         remote.difference_update(onsite)
 
         return Attendance(
@@ -1487,10 +1487,10 @@ class Attended(models.Model):
 
 class RegistrationManager(models.Manager):
     def onsite(self):
-        return self.get_queryset().filter(registrationticket__attendance_type__slug='onsite')
+        return self.get_queryset().filter(tickets__attendance_type__slug='onsite')
 
     def remote(self):
-        return self.get_queryset().filter(registrationticket__attendance_type__slug='remote').exclude(registrationticket__attendance_type__slug='onsite')
+        return self.get_queryset().filter(tickets__attendance_type__slug='remote').exclude(tickets__attendance_type__slug='onsite')
 
 class Registration(models.Model):
     """Registration attendee records from the IETF registration system"""
@@ -1499,7 +1499,7 @@ class Registration(models.Model):
     last_name = models.CharField(max_length=255)
     affiliation = models.CharField(blank=True, max_length=255)
     country_code = models.CharField(max_length=2)        # ISO 3166
-    person = ForeignKey(Person, blank=True, null=True, on_delete=models.PROTECT)
+    person = ForeignKey(Person, blank=True, null=True, on_delete=models.SET_NULL)
     email = models.EmailField(blank=True, null=True)
     # attended was used prior to the introduction of the ietf.meeting.Attended model and is still used by
     # Meeting.get_attendance() for older meetings. It should not be used except for dealing with legacy data.
@@ -1512,6 +1512,13 @@ class Registration(models.Model):
 
     def __str__(self):
         return "{} {}".format(self.first_name, self.last_name)
+
+    @property
+    def attendance_type(self):
+        if self.tickets.filter(attendance_type__slug='onsite').exists():
+            return 'onsite'
+        elif self.tickets.filter(attendance_type__slug='remote').exists():
+            return 'remote'
 
 class RegistrationTicket(models.Model):
     registration = ForeignKey(Registration, related_name='tickets')
