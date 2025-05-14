@@ -129,27 +129,3 @@ def investigate_fragment_task(name_fragment: str):
         "name_fragment": name_fragment,
         "results": investigate_fragment(name_fragment),
     }
-
-
-@shared_task
-def stagedblobstorage_commit_save_task(kind, name):
-    from .storage import StagedBlobStorage
-    storage = storages[kind]  # will raise KeyError on misconfiguration
-    if not isinstance(storage, StagedBlobStorage):
-        raise RuntimeError(
-            f"STORAGES is misconfigured: storages[{kind}] "
-            f"should be a StagedBlobStorage but is {type(storage)}"
-        )
-    storage.commit_save(name)
-    
-
-@shared_task
-def stagedblobstorage_commit_delete_task(kind, name):
-    from .storage import StagedBlobStorage
-    storage = storages[kind]  # will raise KeyError on misconfiguration
-    if not isinstance(storage, StagedBlobStorage):
-        raise RuntimeError(
-            f"STORAGES is misconfigured: storages[{kind}] "
-            f"should be a StagedBlobStorage but is {type(storage)}"
-        )
-    storage.commit_delete(name)
