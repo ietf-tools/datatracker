@@ -1499,7 +1499,7 @@ class Registration(models.Model):
     last_name = models.CharField(max_length=255)
     affiliation = models.CharField(blank=True, max_length=255)
     country_code = models.CharField(max_length=2)        # ISO 3166
-    person = ForeignKey(Person, blank=True, null=True, on_delete=models.SET_NULL)
+    person = ForeignKey(Person, blank=True, null=True, on_delete=models.PROTECT)
     email = models.EmailField(blank=True, null=True)
     # attended was used prior to the introduction of the ietf.meeting.Attended model and is still used by
     # Meeting.get_attendance() for older meetings. It should not be used except for dealing with legacy data.
