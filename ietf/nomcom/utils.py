@@ -612,7 +612,7 @@ def get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable):
     iesgappr_pks = set(DocEvent.objects.filter(type='iesg_approved', time__gte=five_years_ago, time__lte=date_as_dt).values_list('doc__pk',flat=True))
     qualifying_pks = rfc_pks.union(iesgappr_pks.difference(rfc_pks))
     author_qs = base_qs.filter(
-            documentauthor__document__pk__in=qualifying_pks
+            documentauthor__document__pk__in=qualifying_pks # BIG TODO: make sure rfcauthor gets counted here - overqualify if necessary
         ).annotate(
             document_author_count = Count('documentauthor')
         ).filter(document_author_count__gte=2)
@@ -702,6 +702,7 @@ def suggest_affiliation(person):
         recent_draft_revision =  NewRevisionDocEvent.objects.filter(doc__type_id='draft',doc__documentauthor__person=person).order_by('-time').first()
         if recent_draft_revision:
             affiliation = recent_draft_revision.doc.documentauthor_set.filter(person=person).first().affiliation
+    # TODO: When RfcAuthor affiliation comes from something other than copyforward from DocumentAuthor, add a clause that looks there too. Maybe just add it now as a no-op.
     return affiliation
 
 def extract_volunteers(year):

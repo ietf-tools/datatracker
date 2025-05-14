@@ -236,7 +236,9 @@ def retrieve_search_results(form, all_types=False):
     if by == "author":
         docs = docs.filter(
             Q(documentauthor__person__alias__name__icontains=query["author"]) |
-            Q(documentauthor__person__email__address__icontains=query["author"])
+            Q(documentauthor__person__email__address__icontains=query["author"]) |
+            Q(rfcauthor__person__alias__name__icontains=query["author"]) |
+            Q(rfcauthor__person__email__address__icontains=query["author"])
         )
     elif by == "group":
         docs = docs.filter(group__acronym__iexact=query["group"])

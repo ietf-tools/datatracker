@@ -12,7 +12,7 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
     ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
-    BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject )
+    BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject, RfcAuthor )
 
 from ietf.utils.validators import validate_external_resource_value
 
@@ -224,3 +224,9 @@ class StoredObjectAdmin(admin.ModelAdmin):
     list_filter = ['deleted']
     search_fields = ['store', 'name', 'doc_name', 'doc_rev', 'deleted']
 admin.site.register(StoredObject, StoredObjectAdmin)
+
+class RfcAuthorAdmin(admin.ModelAdmin):
+    list_display = ['id', 'document', 'person', 'email', 'affiliation', 'country', 'order']
+    search_fields = ['document__name', 'person__name', 'email__address', 'affiliation', 'country']
+    raw_id_fields = ["document", "person", "email"]
+admin.site.register(RfcAuthor, RfcAuthorAdmin)

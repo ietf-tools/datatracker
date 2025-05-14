@@ -1,0 +1,81 @@
+# Copyright The IETF Trust 2025, All Rights Reserved
+
+from django.db import migrations, models
+import django.db.models.deletion
+import ietf.utils.models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ("person", "0004_alter_person_photo_alter_person_photo_thumb"),
+        ("doc", "0025_storedobject_storedobject_unique_name_per_store"),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name="RfcAuthor",
+            fields=[
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("titlepage_name", models.CharField(max_length=128)),
+                (
+                    "affiliation",
+                    models.CharField(
+                        blank=True,
+                        help_text="Organization/company used by author for submission",
+                        max_length=100,
+                    ),
+                ),
+                (
+                    "country",
+                    models.CharField(
+                        blank=True,
+                        help_text="Country used by author for submission",
+                        max_length=255,
+                    ),
+                ),
+                ("order", models.IntegerField(default=1)),
+                (
+                    "document",
+                    ietf.utils.models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT, to="doc.document"
+                    ),
+                ),
+                (
+                    "email",
+                    ietf.utils.models.ForeignKey(
+                        blank=True,
+                        help_text="Email address used by author for submission",
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to="person.email",
+                    ),
+                ),
+                (
+                    "person",
+                    ietf.utils.models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to="person.person",
+                    ),
+                ),
+            ],
+            options={
+                "ordering": ["document", "order"],
+                "indexes": [
+                    models.Index(
+                        fields=["document", "order"],
+                        name="doc_rfcauth_documen_6b5dc4_idx",
+                    )
+                ],
+            },
+        ),
+    ]
