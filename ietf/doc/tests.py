@@ -403,6 +403,30 @@ class SearchTests(TestCase):
         self.assertContains(r, discuss_other.doc.name)
         self.assertContains(r, block_other.doc.name)
 
+    def test_docs_for_iesg(self):
+        ad1 = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person
+        ad2 = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person
+
+        draft = IndividualDraftFactory(ad=ad1)
+        draft.action_holders.set([PersonFactory()])
+        draft.set_state(State.objects.get(type='draft-iesg', slug='lc'))
+        rfc = IndividualRfcFactory(ad=ad2)
+        conflrev = DocumentFactory(type_id='conflrev',ad=ad1)
+        conflrev.set_state(State.objects.get(type='conflrev', slug='iesgeval'))
+        statchg = DocumentFactory(type_id='statchg',ad=ad2)
+        statchg.set_state(State.objects.get(type='statchg', slug='iesgeval'))
+        charter = CharterFactory(name='charter-ietf-ames',ad=ad1)
+        charter.set_state(State.objects.get(type='charter', slug='iesgrev'))
+
+        r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_iesg'))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, draft.name)
+        self.assertContains(r, escape(draft.action_holders.first().name))
+        self.assertNotContains(r, rfc.name)
+        self.assertContains(r, conflrev.name)
+        self.assertContains(r, statchg.name)
+        self.assertContains(r, charter.name)
+
     def test_auth48_doc_for_ad(self):
         """Docs in AUTH48 state should have a decoration"""
         ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person

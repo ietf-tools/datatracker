@@ -53,6 +53,7 @@ urlpatterns = [
     url(r'^ad/?$', views_search.ad_workload),
     url(r'^ad/(?P<name>[^/]+)/?$', views_search.docs_for_ad),
     url(r'^ad2/(?P<name>[\w.-]+)/$', RedirectView.as_view(url='/doc/ad/%(name)s/', permanent=True)),
+    url(r'^for_iesg/?$', views_search.docs_for_iesg),
     url(r'^rfc-status-changes/?$', views_status_change.rfc_status_changes),
     url(r'^start-rfc-status-change/(?:%(name)s/)?$' % settings.URL_REGEXPS, views_status_change.start_rfc_status_change),
     url(r'^bof-requests/?$', views_bofreq.bof_requests),
