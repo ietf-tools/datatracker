@@ -129,7 +129,7 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
                 store_created=now,
                 created=now,
                 modified=now,
-                committed=None,  # we haven't saved yet
+                replicated=None,
                 doc_name=getattr(
                     content,
                     "doc_name",  # Note that these are assumed to be invariant
@@ -147,7 +147,7 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
             record.len = int(content.custom_metadata["len"])
             record.modified = now
             record.deleted = None
-            record.committed = None
+            record.replicated = None
             record.save()
 
     def _delete_stored_object(self, name):
