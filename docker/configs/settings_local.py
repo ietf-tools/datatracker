@@ -42,9 +42,33 @@ INTERNAL_IPS = [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips] + ['127.0.0.
 #    'ietf.context_processors.sql_debug',
 # ]
 for storagename in MORE_STORAGE_NAMES:
-    STORAGES[storagename] = {
+    _primary_storage_name = storagename
+    _replica_storage_name = f"{storagename}-replica"
+    assert _primary_storage_name not in STORAGES
+    assert _replica_storage_name not in STORAGES
+    STORAGES[_primary_storage_name] = {
         "BACKEND": "ietf.doc.storage.StoredObjectBlobdbStorage",
         "OPTIONS": {"bucket_name": storagename},
+    }
+    STORAGES[_replica_storage_name] = {
+        "BACKEND": "ietf.doc.storage.MetadataS3Storage",
+        "OPTIONS": {
+            "endpoint_url": "http://blobstore:9000",
+            "access_key": "minio_root",
+            "secret_key": "minio_pass",
+            "security_token": None,
+            "client_config": botocore.config.Config(
+                signature_version="s3v4",
+                connect_timeout=BLOBSTORAGE_CONNECT_TIMEOUT,
+                read_timeout=BLOBSTORAGE_READ_TIMEOUT,
+                retries={
+                    "mode": "standard",
+                    "total_max_attempts": BLOBSTORAGE_MAX_ATTEMPTS,
+                },
+            ),
+            "verify": False,
+            "bucket_name": storagename,
+        },
     }
 
 

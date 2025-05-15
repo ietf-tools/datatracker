@@ -185,9 +185,11 @@ STATIC_IETF_ORG_INTERNAL = STATIC_IETF_ORG
 
 ENABLE_BLOBSTORAGE = True
 
-BLOBSTORAGE_MAX_ATTEMPTS = 1
-BLOBSTORAGE_CONNECT_TIMEOUT = 2
-BLOBSTORAGE_READ_TIMEOUT = 2
+# "standard" retry mode is used, which does exponential backoff with a base factor of 2
+# and a cap of 20. 
+BLOBSTORAGE_MAX_ATTEMPTS = 5  # boto3 default is 3 (for "standard" retry mode)
+BLOBSTORAGE_CONNECT_TIMEOUT = 10  # seconds; boto3 default is 60
+BLOBSTORAGE_READ_TIMEOUT = 10  # seconds; boto3 default is 60
 
 WSGI_APPLICATION = "ietf.wsgi.application"
 
