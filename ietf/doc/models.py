@@ -891,8 +891,9 @@ class RfcAuthor(models.Model):
     ignored.
     """
 
-    document = ForeignKey("Document", on_delete=models.PROTECT)
+    document = ForeignKey("Document", on_delete=models.CASCADE)
     titlepage_name = models.CharField(max_length=128)
+    is_editor = models.BooleanField(default=False)
     person = ForeignKey(Person, null=True, on_delete=models.PROTECT)
     email = ForeignKey(Email, help_text="Email address used by author for submission", blank=True, null=True, on_delete=models.PROTECT)
     affiliation = models.CharField(max_length=100, blank=True, help_text="Organization/company used by author for submission")

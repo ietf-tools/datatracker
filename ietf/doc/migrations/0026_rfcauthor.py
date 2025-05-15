@@ -26,6 +26,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("titlepage_name", models.CharField(max_length=128)),
+                ("is_editor", models.BooleanField(default=False)),
                 (
                     "affiliation",
                     models.CharField(
@@ -46,7 +47,7 @@ class Migration(migrations.Migration):
                 (
                     "document",
                     ietf.utils.models.ForeignKey(
-                        on_delete=django.db.models.deletion.PROTECT, to="doc.document"
+                        on_delete=django.db.models.deletion.CASCADE, to="doc.document"
                     ),
                 ),
                 (

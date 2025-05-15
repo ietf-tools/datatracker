@@ -866,7 +866,8 @@ class StoredObjectResource(ModelResource):
         }
 api.doc.register(StoredObjectResource())
 
-from ietf.person.resources import PersonResource, EmailResource
+
+from ietf.person.resources import EmailResource, PersonResource
 class RfcAuthorResource(ModelResource):
     document         = ToOneField(DocumentResource, 'document')
     person           = ToOneField(PersonResource, 'person', null=True)
@@ -879,6 +880,8 @@ class RfcAuthorResource(ModelResource):
         ordering = ['id', ]
         filtering = { 
             "id": ALL,
+            "titlepage_name": ALL,
+            "is_editor": ALL,
             "affiliation": ALL,
             "country": ALL,
             "order": ALL,
