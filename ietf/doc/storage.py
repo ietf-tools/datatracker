@@ -1,4 +1,9 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
+from functools import partial
+from typing import Optional
+
+from django.db import transaction
+
 import debug  # pyflakes:ignore
 import json
 
@@ -9,6 +14,7 @@ from django.core.files.base import File
 
 from ietf.blobdb.storage import BlobdbStorage
 from ietf.doc.models import StoredObject
+from ietf.doc.tasks import replicate_storedobject_task
 from ietf.utils.log import log
 from ietf.utils.storage import MetadataFile
 from ietf.utils.timezone import timezone
@@ -118,7 +124,11 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
     ietf_log_blob_timing = True
     warn_if_missing = True  # TODO-BLOBSTORE make this configurable (or remove it)
 
-    def _save_stored_object(self, name, content):
+    def __init__(self, bucket_name=None, replicate_to=None):
+        super().__init__(bucket_name)
+        self._replicate_to: Optional[str] = replicate_to
+
+    def _save_stored_object(self, name, content) -> StoredObject:
         now = timezone.now()
         record, created = StoredObject.objects.get_or_create(
             store=self.bucket_name,
@@ -149,6 +159,7 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
             record.deleted = None
             record.replicated = None
             record.save()
+        return record
 
     def _delete_stored_object(self, name):
         existing_record = StoredObject.objects.filter(store=self.bucket_name, name=name)
@@ -165,9 +176,22 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
             existing_record.filter(deleted__isnull=True).update(deleted=now)
 
     def _save(self, name, content):
-        self._save_stored_object(name, content)
-        return super()._save(name, content)
+        """Perform the save operation 
+        
+        In principle the name could change on save to the blob store. As of now, BlobdbStorage
+        will not change it, but allow for that possibility. Callers should be prepared for this.
+        """
+        saved_name = super()._save(name, content)
+        stored_object = self._save_stored_object(saved_name, content)
+        self._maybe_schedule_save_replication(stored_object.pk)
+        return saved_name
 
+    def _maybe_schedule_save_replication(self, storedobject_id):
+        if self._replicate_to is not None:
+            transaction.on_commit(
+                partial(replicate_storedobject_task, storedobject_id, self._replicate_to)
+            )
+            
     def delete(self, name):
         self._delete_stored_object(name)
         super().delete(name)

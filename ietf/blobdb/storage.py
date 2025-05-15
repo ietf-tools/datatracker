@@ -24,7 +24,9 @@ class BlobFile(MetadataFile):
 class BlobdbStorage(Storage):
 
     def __init__(self, bucket_name=None):
-        self.bucket_name = bucket_name
+        if bucket_name is None:
+            raise ValueError("BlobdbStorage bucket_name must be specified")
+        self.bucket_name: str = bucket_name
 
     def get_queryset(self):
         return Blob.objects.filter(bucket=self.bucket_name)
@@ -63,6 +65,11 @@ class BlobdbStorage(Storage):
         )
 
     def _save(self, name, content):
+        """Perform the save operation
+        
+        The storage API allows _save() to save to a different name than was requested. This method will
+        never do that, instead overwriting the existing blob.
+        """
         Blob.objects.update_or_create(
             name=name,
             bucket=self.bucket_name,

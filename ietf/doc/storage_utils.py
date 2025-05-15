@@ -1,20 +1,23 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 import datetime
 from io import BufferedReader
-from typing import Optional, Union
+from typing import Optional, TYPE_CHECKING, Union
+
+from django.utils import timezone
 
 import debug  # pyflakes ignore
 
 from django.conf import settings
 from django.core.files.base import ContentFile, File
-from django.core.files.storage import storages
+from django.core.files.storage import storages, Storage
 
 from ietf.utils.log import log
 
+if TYPE_CHECKING:
+    from .models import StoredObject
 
-# TODO-BLOBSTORE (Future, maybe after leaving 3.9) : add a return type
-def _get_storage(kind: str):
 
+def _get_storage(kind: str) -> Storage:
     if kind in settings.MORE_STORAGE_NAMES:
         return storages[kind]
     else:
@@ -189,3 +192,28 @@ def retrieve_str(kind: str, name: str) -> str:
             if settings.SERVER_MODE == "development":
                 raise
     return content
+
+
+def replicate(storedobject: "StoredObject", dest_storage_name):
+    original_storage = _get_storage(storedobject.store)
+    try:
+        dest_storage = storages[dest_storage_name]
+    except KeyError:
+        log(f"Error replicating StoredObject(pk={storedobject.pk}) to {dest_storage_name}: unknown storage name")
+        raise
+    try:
+        with original_storage.open(storedobject.name) as original:
+            new_name = dest_storage.save(name=storedobject.name, content=original)
+    except FileNotFoundError:
+        log(
+            f"Failed to replicate {storedobject} to {dest_storage_name}: FileNotFoundError"
+        )
+        raise
+    if new_name != storedobject.name:
+        log(
+            f"Error: file {storedobject} was replicated as {new_name} in {dest_storage_name}! Removing."
+        )
+        dest_storage.delete(new_name)
+        raise RuntimeError(f"Unable to replicate {storedobject} to {dest_storage_name} due to name collision")
+    storedobject.replicated = timezone.now()
+    storedobject.save()

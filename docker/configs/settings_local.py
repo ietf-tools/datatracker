@@ -48,7 +48,10 @@ for storagename in MORE_STORAGE_NAMES:
     assert _replica_storage_name not in STORAGES
     STORAGES[_primary_storage_name] = {
         "BACKEND": "ietf.doc.storage.StoredObjectBlobdbStorage",
-        "OPTIONS": {"bucket_name": storagename},
+        "OPTIONS": {
+            "bucket_name": storagename,
+            "replicate_to": _replica_storage_name,
+        },
     }
     STORAGES[_replica_storage_name] = {
         "BACKEND": "ietf.doc.storage.MetadataS3Storage",

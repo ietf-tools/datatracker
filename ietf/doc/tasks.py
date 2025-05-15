@@ -26,7 +26,8 @@ from .expire import (
     send_expire_warning_for_draft,
 )
 from .lastcall import get_expired_last_calls, expire_last_call
-from .models import Document, NewRevisionDocEvent
+from .models import Document, NewRevisionDocEvent, StoredObject
+from .storage_utils import replicate
 from .utils import (
     generate_idnits2_rfc_status,
     generate_idnits2_rfcs_obsoleted,
@@ -129,3 +130,14 @@ def investigate_fragment_task(name_fragment: str):
         "name_fragment": name_fragment,
         "results": investigate_fragment(name_fragment),
     }
+
+
+@shared_task
+def replicate_storedobject_task(storedobject_id, dest_storage_name):
+    """Copy a Blobdb blob to another storage"""
+    try:
+        storedobject = StoredObject.objects.get(pk=storedobject_id)
+    except StoredObject.DoesNotExist:
+        log.log(f"Error replicating StoredObject(pk={storedobject_id}) to {dest_storage_name}: object not found")
+        raise
+    replicate(storedobject, dest_storage_name)
