@@ -160,7 +160,7 @@ def bluesheet_data(session):
         .annotate(
             affiliation=Coalesce(
                 Subquery(
-                    MeetingRegistration.objects.filter(
+                    Registration.objects.filter(
                         Q(meeting=session.meeting),
                         Q(person=OuterRef("person")) | Q(email=OuterRef("person__email")),
                     ).values("affiliation")[:1]
@@ -1008,7 +1008,7 @@ def participants_for_meeting(meeting):
         checked_in = queryset of onsite, checkedin participants values_list('person')
         attended = queryset of remote participants who attended a session values_list('person')
     """
-    checked_in = meeting.meetingregistration_set.filter(reg_type='onsite', checkedin=True).values_list('person', flat=True).distinct()
+    checked_in = meeting.registration_set.onsite().filter(checkedin=True).values_list('person', flat=True).distinct()
     sessions = meeting.session_set.filter(Q(type='plenary') | Q(group__type__in=['wg', 'rg']))
     attended = Attended.objects.filter(session__in=sessions).values_list('person', flat=True).distinct()
     return (checked_in, attended)

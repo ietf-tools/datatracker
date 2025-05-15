@@ -31,7 +31,8 @@ from ietf.doc.factories import DocEventFactory, WgDocumentAuthorFactory, \
                                NewRevisionDocEventFactory, DocumentAuthorFactory
 from ietf.group.factories import GroupFactory, GroupHistoryFactory, RoleFactory, RoleHistoryFactory
 from ietf.group.models import Group, Role
-from ietf.meeting.factories import MeetingFactory, AttendedFactory
+from ietf.meeting.factories import MeetingFactory, AttendedFactory, RegistrationFactory
+from ietf.meeting.models import Registration
 from ietf.message.models import Message
 from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comments, \
                                   COMMUNITY_USER, CHAIR_USER, \
@@ -50,8 +51,6 @@ from ietf.nomcom.utils import get_nomcom_by_year, make_nomineeposition, \
                               decorate_volunteers_with_qualifications, send_reminders, _is_time_to_send_reminder
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import Email, Person
-from ietf.stats.models import MeetingRegistration
-from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 from ietf.utils.timezone import date_today, datetime_today, datetime_from_date, DEADLINE_TZINFO
@@ -2061,7 +2060,15 @@ Junk body for testing
                 if not ' ' in ascii:
                     continue
                 first_name, last_name = ascii.rsplit(None, 1)
-                MeetingRegistration.objects.create(meeting=meeting, first_name=first_name, last_name=last_name, person=person, country_code='WO', email=email, attended=True)
+                RegistrationFactory(
+                    meeting=meeting,
+                    first_name=first_name,
+                    last_name=last_name,
+                    person=person,
+                    country_code='WO',
+                    email=email,
+                    attended=True
+                )
         for view in ('public_eligible','private_eligible'):
             url = reverse(f'ietf.nomcom.views.{view}',kwargs={'year':self.nc.year()})
             for username in (self.chair.user.username,'secretary'):
@@ -2084,7 +2091,7 @@ Junk body for testing
         for number in range(meeting_start, meeting_start+8):
             m = MeetingFactory.create(type_id='ietf', number=number)
             for p in people:
-                m.meetingregistration_set.create(person=p, reg_type="onsite", checkedin=True, attended=True)
+                RegistrationFactory(meeting=m, person=p, checkedin=True, attended=True)
         for p in people:
             self.nc.volunteer_set.create(person=p,affiliation='something')
         for view in ('public_volunteers','private_volunteers'):
@@ -2109,10 +2116,6 @@ Junk body for testing
         response = self.client.get(url)
         self.assertContains(response, people[-1].plain_name(), status_code=200)
         self.assertNotContains(response, unqualified_person.plain_name())
-
-
-
-
 
 class NomComIndexTests(TestCase):
     def setUp(self):
@@ -2460,7 +2463,7 @@ class rfc8713EligibilityTests(TestCase):
             for combo in combinations(meetings,combo_len):
                 p = PersonFactory()
                 for m in combo:
-                    MeetingRegistrationFactory(person=p, meeting=m, attended=True)
+                    RegistrationFactory(person=p, meeting=m, attended=True)
                 if combo_len<3:
                     self.ineligible_people.append(p)
                 else:
@@ -2470,7 +2473,7 @@ class rfc8713EligibilityTests(TestCase):
         def ineligible_person_with_role(**kwargs):
             p = RoleFactory(**kwargs).person
             for m in meetings:
-                MeetingRegistrationFactory(person=p, meeting=m, attended=True)
+                RegistrationFactory(person=p, meeting=m, attended=True)
             self.ineligible_people.append(p)
         for group in ['isocbot', 'ietf-trust', 'llc-board', 'iab']:
             for role in ['member', 'chair']:
@@ -2485,8 +2488,7 @@ class rfc8713EligibilityTests(TestCase):
         self.other_date = datetime.date(2009,5,1)
         self.other_people = PersonFactory.create_batch(1)
         for date in (datetime.date(2009,3,1), datetime.date(2008,11,1), datetime.date(2008,7,1)):
-            MeetingRegistrationFactory(person=self.other_people[0],meeting__date=date, meeting__type_id='ietf', attended=True)
-
+            RegistrationFactory(person=self.other_people[0], meeting__date=date, meeting__type_id='ietf', attended=True)
 
     def test_is_person_eligible(self):
         for person in self.eligible_people:
@@ -2530,7 +2532,7 @@ class rfc8788EligibilityTests(TestCase):
             for combo in combinations(meetings,combo_len):
                 p = PersonFactory()
                 for m in combo:
-                    MeetingRegistrationFactory(person=p, meeting=m, attended=True)
+                    RegistrationFactory(person=p, meeting=m, attended=True)
                 if combo_len<3:
                     self.ineligible_people.append(p)
                 else:
@@ -2578,7 +2580,7 @@ class rfc8989EligibilityTests(TestCase):
                 for combo in combinations(prev_five,combo_len):
                     p = PersonFactory()
                     for m in combo:
-                        MeetingRegistrationFactory(person=p, meeting=m, attended=True) # not checkedin because this forces looking at older meetings
+                        RegistrationFactory(person=p, meeting=m, attended=True) # not checkedin because this forces looking at older meetings
                         AttendedFactory(session__meeting=m, session__type_id='plenary',person=p)
                     if combo_len<3:
                         ineligible_people.append(p)
@@ -2593,8 +2595,9 @@ class rfc8989EligibilityTests(TestCase):
             for person in ineligible_people:
                 self.assertFalse(is_eligible(person,nomcom))
 
-            Person.objects.filter(pk__in=[p.pk for p in eligible_people+ineligible_people]).delete()
-
+            people = Person.objects.filter(pk__in=[p.pk for p in eligible_people + ineligible_people])
+            Registration.objects.filter(person__in=people).delete()
+            people.delete()
 
     def test_elig_by_office_active_groups(self):
 
@@ -2778,7 +2781,7 @@ class rfc9389EligibilityTests(TestCase):
     def test_registration_is_not_enough(self):
         p = PersonFactory()
         for meeting in self.meetings:
-            MeetingRegistrationFactory(person=p, meeting=meeting, checkedin=False)
+            RegistrationFactory(person=p, meeting=meeting, checkedin=False)
         self.assertFalse(is_eligible(p, self.nomcom))
 
     def test_elig_by_meetings(self):
@@ -2795,7 +2798,7 @@ class rfc9389EligibilityTests(TestCase):
                 for method in attendance_methods:
                     p = PersonFactory()
                     for meeting in combo:
-                        MeetingRegistrationFactory(person=p, meeting=meeting, reg_type='onsite', checkedin=(method in ('checkedin', 'both')))
+                        RegistrationFactory(person=p, meeting=meeting, checkedin=(method in ('checkedin', 'both')))
                         if method in ('session', 'both'):
                             AttendedFactory(session__meeting=meeting, session__type_id='plenary',person=p)
                         if combo_len<3:
@@ -2828,7 +2831,7 @@ class VolunteerTests(TestCase):
         self.assertContains(r, 'NomCom is not accepting volunteers at this time', status_code=200)
         nomcom.is_accepting_volunteers = True
         nomcom.save()
-        MeetingRegistrationFactory(person=person, affiliation='mtg_affiliation', checkedin=True)
+        RegistrationFactory(person=person, affiliation='mtg_affiliation', checkedin=True)
         r = self.client.get(url)
         self.assertContains(r, 'Volunteer for NomCom', status_code=200)
         self.assertContains(r, 'mtg_affiliation')
@@ -2882,7 +2885,7 @@ class VolunteerTests(TestCase):
         nc = NomComFactory()
         nc.volunteer_set.create(person=person,affiliation='volunteer_affil')
         self.assertEqual(suggest_affiliation(person), 'volunteer_affil')
-        MeetingRegistrationFactory(person=person, affiliation='meeting_affil')
+        RegistrationFactory(person=person, affiliation='meeting_affil')
         self.assertEqual(suggest_affiliation(person), 'meeting_affil')
 
 class VolunteerDecoratorUnitTests(TestCase):
@@ -2900,7 +2903,7 @@ class VolunteerDecoratorUnitTests(TestCase):
             ('106', datetime.date(2019, 11, 16)),
         ]]
         for m in meetings:
-            MeetingRegistrationFactory(meeting=m, person=meeting_person, attended=True)
+            RegistrationFactory(meeting=m, person=meeting_person, attended=True)
             AttendedFactory(session__meeting=m, session__type_id='plenary', person=meeting_person)
         nomcom.volunteer_set.create(person=meeting_person)
 

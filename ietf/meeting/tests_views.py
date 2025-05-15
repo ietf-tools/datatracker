@@ -66,8 +66,7 @@ from ietf.meeting.factories import (SessionFactory, ScheduleFactory,
     SessionPresentationFactory, MeetingFactory, FloorPlanFactory,
     TimeSlotFactory, SlideSubmissionFactory, RoomFactory,
     ConstraintFactory, MeetingHostFactory, ProceedingsMaterialFactory,
-    AttendedFactory)
-from ietf.stats.factories import MeetingRegistrationFactory
+    AttendedFactory, RegistrationFactory)
 from ietf.doc.factories import DocumentFactory, WgDraftFactory
 from ietf.submit.tests import submission_file
 from ietf.utils.test_utils import assert_ical_response_is_valid
@@ -8852,25 +8851,24 @@ class ProceedingsTests(BaseMeetingTestCase):
            - prefer onsite checkedin=True to remote attended when same person has both
         """
 
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2023, 11, 4), number="118")
+        m = MeetingFactory(type_id='ietf', date=datetime.date(2023, 11, 4), number="118")
         person_a = PersonFactory(name='Person A')
         person_b = PersonFactory(name='Person B')
         person_c = PersonFactory(name='Person C')
         person_d = PersonFactory(name='Person D')
-        MeetingRegistrationFactory(meeting=meeting, person=person_a, reg_type='onsite', checkedin=True)
-        MeetingRegistrationFactory(meeting=meeting, person=person_b, reg_type='onsite', checkedin=False)
-        MeetingRegistrationFactory(meeting=meeting, person=person_a, reg_type='remote')
-        AttendedFactory(session__meeting=meeting, session__type_id='plenary', person=person_a)
-        MeetingRegistrationFactory(meeting=meeting, person=person_c, reg_type='remote')
-        AttendedFactory(session__meeting=meeting, session__type_id='plenary', person=person_c)
-        MeetingRegistrationFactory(meeting=meeting, person=person_d, reg_type='remote')
+        areg = RegistrationFactory(meeting=m, person=person_a, checkedin=True, with_ticket={'attendance_type_id': 'onsite'})
+        RegistrationFactory(meeting=m, person=person_b, checkedin=False, with_ticket={'attendance_type_id': 'onsite'})
+        creg = RegistrationFactory(meeting=m, person=person_c, with_ticket={'attendance_type_id': 'remote'})
+        RegistrationFactory(meeting=m, person=person_d, with_ticket={'attendance_type_id': 'remote'})
+        AttendedFactory(session__meeting=m, session__type_id='plenary', person=person_a)
+        AttendedFactory(session__meeting=m, session__type_id='plenary', person=person_c)
         url = urlreverse('ietf.meeting.views.proceedings_attendees',kwargs={'num': 118})
         response = self.client.get(url)
         self.assertContains(response, 'Attendee list')
         q = PyQuery(response.content)
         self.assertEqual(2, len(q("#id_attendees tbody tr")))
         text = q('#id_attendees tbody tr').text().replace('\n', ' ')
-        self.assertEqual(text, "A Person onsite C Person remote")
+        self.assertEqual(text, f"A Person {areg.affiliation} {areg.country_code} onsite C Person {creg.affiliation} {creg.country_code} remote")
 
     def test_proceedings_overview(self):
         '''Test proceedings IETF Overview page.
@@ -9271,27 +9269,23 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertEqual(sequence,1)
 
     def test_participants_for_meeting(self):
-        person_a = PersonFactory()
-        person_b = PersonFactory()
-        person_c = PersonFactory()
-        person_d = PersonFactory()
         m = MeetingFactory.create(type_id='ietf')
-        MeetingRegistrationFactory(meeting=m, person=person_a, reg_type='onsite', checkedin=True)
-        MeetingRegistrationFactory(meeting=m, person=person_b, reg_type='onsite', checkedin=False)
-        MeetingRegistrationFactory(meeting=m, person=person_c, reg_type='remote')
-        MeetingRegistrationFactory(meeting=m, person=person_d, reg_type='remote')
-        AttendedFactory(session__meeting=m, session__type_id='plenary', person=person_c)
+        areg = RegistrationFactory(meeting=m, checkedin=True, with_ticket={'attendance_type_id': 'onsite'})
+        breg = RegistrationFactory(meeting=m, checkedin=False, with_ticket={'attendance_type_id': 'onsite'})
+        creg = RegistrationFactory(meeting=m, with_ticket={'attendance_type_id': 'remote'})
+        dreg = RegistrationFactory(meeting=m, with_ticket={'attendance_type_id': 'remote'})
+        AttendedFactory(session__meeting=m, session__type_id='plenary', person=creg.person)
         checked_in, attended = participants_for_meeting(m)
-        self.assertTrue(person_a.pk in checked_in)
-        self.assertTrue(person_b.pk not in checked_in)
-        self.assertTrue(person_c.pk in attended)
-        self.assertTrue(person_d.pk not in attended)
+        self.assertTrue(areg.person.pk in checked_in)
+        self.assertTrue(breg.person.pk not in checked_in)
+        self.assertTrue(creg.person.pk in attended)
+        self.assertTrue(dreg.person.pk not in attended)
 
     def test_session_attendance(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2023, 11, 4), number='118')
         make_meeting_test_data(meeting=meeting)
         session = Session.objects.filter(meeting=meeting, group__acronym='mars').first()
-        regs = MeetingRegistrationFactory.create_batch(3, meeting=meeting)
+        regs = RegistrationFactory.create_batch(3, meeting=meeting)
         persons = [reg.person for reg in regs]
         self.assertEqual(session.attended_set.count(), 0)
 
@@ -9337,7 +9331,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         # person0 is already on the bluesheet
         _test_button(persons[0], False)
         # person3 attests he was there
-        persons.append(MeetingRegistrationFactory(meeting=meeting).person)
+        persons.append(RegistrationFactory(meeting=meeting).person)
         # button isn't shown if we're outside the corrections windows
         meeting.importantdate_set.create(name_id='revsub',date=date_today() - datetime.timedelta(days=20))
         _test_button(persons[3], False)
@@ -9395,12 +9389,12 @@ class ProceedingsTests(BaseMeetingTestCase):
 
     def test_bluesheet_data(self):
         session = SessionFactory(meeting__type_id="ietf") 
-        attended_with_affil = MeetingRegistrationFactory(meeting=session.meeting, affiliation="Somewhere")
+        attended_with_affil = RegistrationFactory(meeting=session.meeting, affiliation="Somewhere")
         AttendedFactory(session=session, person=attended_with_affil.person, time="2023-03-13T01:24:00Z")  # joined 2nd
-        attended_no_affil = MeetingRegistrationFactory(meeting=session.meeting)
+        attended_no_affil = RegistrationFactory(meeting=session.meeting, affiliation="")
         AttendedFactory(session=session, person=attended_no_affil.person, time="2023-03-13T01:23:00Z")  # joined 1st
-        MeetingRegistrationFactory(meeting=session.meeting)  # did not attend
-        
+        RegistrationFactory(meeting=session.meeting)  # did not attend
+
         data = bluesheet_data(session)
         self.assertEqual(
             data,
