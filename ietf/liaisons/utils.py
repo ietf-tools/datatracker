@@ -4,6 +4,21 @@ from ietf.group.models import Role
 from ietf.liaisons.models import LiaisonStatement
 from ietf.ietfauth.utils import has_role, passes_test_decorator
 
+# Roles allowed to create and manage outgoing liaison statements.
+OUTGOING_LIAISON_ROLES = [
+    "Area Director",
+    "IAB Chair",
+    "IAB Executive Director",
+    "IETF Chair",
+    "Liaison Manager",
+    "Secretariat",
+    "WG Chair",
+    "WG Secretary",
+]
+
+# Roles allowed to create and manage incoming liaison statements.
+INCOMING_LIAISON_ROLES = ["Authorized Individual", "Liaison Manager", "Secretariat"]
+
 can_submit_liaison_required = passes_test_decorator(
     lambda u, *args, **kwargs: can_add_liaison(u),
     "Restricted to participants who are authorized to submit liaison statements on behalf of the various IETF entities")
@@ -59,11 +74,10 @@ def get_person_for_user(user):
         return None
 
 def can_add_outgoing_liaison(user):
-    return has_role(user, ["Area Director","WG Chair","WG Secretary","IETF Chair","IAB Chair",
-        "IAB Executive Director","Liaison Manager","Secretariat"])
+    return has_role(user, OUTGOING_LIAISON_ROLES)
 
 def can_add_incoming_liaison(user):
-    return has_role(user, ["Liaison Manager","Authorized Individual","Secretariat"])
+    return has_role(user, INCOMING_LIAISON_ROLES)
 
 def can_add_liaison(user):
     return can_add_incoming_liaison(user) or can_add_outgoing_liaison(user)
