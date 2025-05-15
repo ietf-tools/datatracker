@@ -465,7 +465,7 @@ def update_docs_from_rfc_index(
             doc.set_state(rfc_published_state)
             if draft:
                 doc.formal_languages.set(draft.formal_languages.all())
-                for author in draft.documentauthor_set.all():
+                for author in draft.documentauthor_set.all(): # BIG TODO: instead of (in addition to?) just copying forward from the draft, populate rfcauthor from the index
                     # Copy the author but point at the new doc. 
                     # See https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
                     author.pk = None
