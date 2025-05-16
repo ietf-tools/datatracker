@@ -14,7 +14,7 @@ from django.core.files.base import File
 
 from ietf.blobdb.storage import BlobdbStorage
 from ietf.doc.models import StoredObject
-from ietf.doc.tasks import replicate_storedobject_task
+from ietf.doc.tasks import replicate_storedobject_task, push_storedobject_delete_task
 from ietf.utils.log import log
 from ietf.utils.storage import MetadataFile
 from ietf.utils.timezone import timezone
@@ -174,6 +174,7 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
             now = timezone.now()
             # Note that existing_record is a queryset that will have one matching object
             existing_record.filter(deleted__isnull=True).update(deleted=now)
+        return existing_record.first()
 
     def _save(self, name, content):
         """Perform the save operation 
@@ -183,15 +184,22 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
         """
         saved_name = super()._save(name, content)
         stored_object = self._save_stored_object(saved_name, content)
-        self._maybe_schedule_save_replication(stored_object.pk)
+        self._maybe_schedule_save_replication(stored_object)
         return saved_name
 
-    def _maybe_schedule_save_replication(self, storedobject_id):
+    def delete(self, name):
+        deleted_object = self._delete_stored_object(name)
+        self._maybe_schedule_delete_replication(deleted_object)
+        super().delete(name)
+
+    def _maybe_schedule_save_replication(self, storedobject):
         if self._replicate_to is not None:
             transaction.on_commit(
-                partial(replicate_storedobject_task, storedobject_id, self._replicate_to)
+                partial(replicate_storedobject_task.delay, storedobject.pk, self._replicate_to)
             )
-            
-    def delete(self, name):
-        self._delete_stored_object(name)
-        super().delete(name)
+
+    def _maybe_schedule_delete_replication(self, storedobject):
+        if self._replicate_to is not None:
+            transaction.on_commit(
+                partial(push_storedobject_delete_task.delay, storedobject.pk, self._replicate_to)
+            )

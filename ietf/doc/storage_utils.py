@@ -194,7 +194,7 @@ def retrieve_str(kind: str, name: str) -> str:
     return content
 
 
-def replicate(storedobject: "StoredObject", dest_storage_name):
+def replicate(storedobject: "StoredObject", dest_storage_name: str):
     original_storage = _get_storage(storedobject.store)
     try:
         dest_storage = storages[dest_storage_name]
@@ -215,5 +215,16 @@ def replicate(storedobject: "StoredObject", dest_storage_name):
         )
         dest_storage.delete(new_name)
         raise RuntimeError(f"Unable to replicate {storedobject} to {dest_storage_name} due to name collision")
+    storedobject.replicated = timezone.now()
+    storedobject.save()
+
+
+def push_storedobject_delete(storedobject: "StoredObject", dest_storage_name: str):
+    try:
+        dest_storage = storages[dest_storage_name]
+    except KeyError:
+        log(f"Error replicating StoredObject(pk={storedobject.pk}) to {dest_storage_name}: unknown storage name")
+        raise
+    dest_storage.delete(storedobject.name)
     storedobject.replicated = timezone.now()
     storedobject.save()

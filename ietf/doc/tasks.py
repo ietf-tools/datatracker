@@ -9,7 +9,6 @@ from celery import shared_task
 from pathlib import Path
 
 from django.conf import settings
-from django.core.files.storage import storages
 from django.utils import timezone
 
 from ietf.utils import log
@@ -27,7 +26,7 @@ from .expire import (
 )
 from .lastcall import get_expired_last_calls, expire_last_call
 from .models import Document, NewRevisionDocEvent, StoredObject
-from .storage_utils import replicate
+from .storage_utils import replicate, push_storedobject_delete
 from .utils import (
     generate_idnits2_rfc_status,
     generate_idnits2_rfcs_obsoleted,
@@ -141,3 +140,14 @@ def replicate_storedobject_task(storedobject_id, dest_storage_name):
         log.log(f"Error replicating StoredObject(pk={storedobject_id}) to {dest_storage_name}: object not found")
         raise
     replicate(storedobject, dest_storage_name)
+
+
+@shared_task
+def push_storedobject_delete_task(storedobject_id, dest_storage_name):
+    """Propagate deletion of a Blobdb blob to another storage"""
+    try:
+        storedobject = StoredObject.objects.get(pk=storedobject_id)
+    except StoredObject.DoesNotExist:
+        log.log(f"Error replicating StoredObject(pk={storedobject_id}) to {dest_storage_name}: object not found")
+        raise
+    push_storedobject_delete(storedobject, dest_storage_name)
