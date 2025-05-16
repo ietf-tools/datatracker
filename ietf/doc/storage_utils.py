@@ -1,9 +1,7 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 import datetime
 from io import BufferedReader
-from typing import Optional, TYPE_CHECKING, Union
-
-from django.utils import timezone
+from typing import Optional, Union
 
 import debug  # pyflakes ignore
 
@@ -12,9 +10,6 @@ from django.core.files.base import ContentFile, File
 from django.core.files.storage import storages, Storage
 
 from ietf.utils.log import log
-
-if TYPE_CHECKING:
-    from .models import StoredObject
 
 
 def _get_storage(kind: str) -> Storage:

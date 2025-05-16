@@ -1,8 +1,5 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
-from functools import partial
 from typing import Optional
-
-from django.db import transaction
 
 import debug  # pyflakes:ignore
 import json

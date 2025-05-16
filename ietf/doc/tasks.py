@@ -25,7 +25,7 @@ from .expire import (
     send_expire_warning_for_draft,
 )
 from .lastcall import get_expired_last_calls, expire_last_call
-from .models import Document, NewRevisionDocEvent, StoredObject
+from .models import Document, NewRevisionDocEvent
 from .utils import (
     generate_idnits2_rfc_status,
     generate_idnits2_rfcs_obsoleted,
