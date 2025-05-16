@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 from typing import Optional
 
+from django.core.exceptions import SuspiciousFileOperation
 from django.core.files.base import ContentFile
 from django.core.files.storage import Storage
 from django.db.models.functions import Length
@@ -83,3 +84,11 @@ class BlobdbStorage(Storage):
             },
         )
         return name
+
+    def get_available_name(self, name, max_length=None):
+        if max_length is not None and len(name) > max_length:
+            raise SuspiciousFileOperation(
+                f"BlobdbStorage only allows names up to {max_length}, but was"
+                f"asked to store the name '{name[:5]}...{name[-5:]} of length {len(name)}"
+            )
+        return name  # overwrite is permitted
