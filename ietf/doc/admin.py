@@ -221,12 +221,11 @@ class DocExtResourceAdmin(admin.ModelAdmin):
 admin.site.register(DocExtResource, DocExtResourceAdmin)
 
 class StoredObjectAdmin(admin.ModelAdmin):
-    list_display = ['store', 'name', 'doc_name', 'modified', 'is_deleted', 'is_replicated']
+    list_display = ['store', 'name', 'doc_name', 'modified', 'is_deleted']
     list_filter = [
         'store',
         ('modified', DateRangeQuickSelectListFilterBuilder()),
         ('deleted', DateRangeQuickSelectListFilterBuilder()),
-        ('replicated', DateRangeQuickSelectListFilterBuilder()),
     ]
     search_fields = ['name', 'doc_name', 'doc_rev']
     list_display_links = ['name']
@@ -234,10 +233,6 @@ class StoredObjectAdmin(admin.ModelAdmin):
     @admin.display(boolean=True, description="Deleted?", ordering="deleted")
     def is_deleted(self, instance):
         return instance.deleted is not None
-    
-    @admin.display(boolean=True, description="Replicated?", ordering="replicated")
-    def is_replicated(self, instance):
-        return instance.replicated is not None
     
 
 admin.site.register(StoredObject, StoredObjectAdmin)

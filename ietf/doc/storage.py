@@ -14,7 +14,6 @@ from django.core.files.base import File
 
 from ietf.blobdb.storage import BlobdbStorage
 from ietf.doc.models import StoredObject
-from ietf.doc.tasks import replicate_storedobject_task, push_storedobject_delete_task
 from ietf.utils.log import log
 from ietf.utils.storage import MetadataFile
 from ietf.utils.timezone import timezone
@@ -124,10 +123,6 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
     ietf_log_blob_timing = True
     warn_if_missing = True  # TODO-BLOBSTORE make this configurable (or remove it)
 
-    def __init__(self, bucket_name=None, replicate_to=None):
-        super().__init__(bucket_name)
-        self._replicate_to: Optional[str] = replicate_to
-
     def _save_stored_object(self, name, content) -> StoredObject:
         now = timezone.now()
         record, created = StoredObject.objects.get_or_create(
@@ -139,7 +134,6 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
                 store_created=now,
                 created=now,
                 modified=now,
-                replicated=None,
                 doc_name=getattr(
                     content,
                     "doc_name",  # Note that these are assumed to be invariant
@@ -157,11 +151,10 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
             record.len = int(content.custom_metadata["len"])
             record.modified = now
             record.deleted = None
-            record.replicated = None
             record.save()
         return record
 
-    def _delete_stored_object(self, name):
+    def _delete_stored_object(self, name) -> Optional[StoredObject]:
         existing_record = StoredObject.objects.filter(store=self.bucket_name, name=name)
         if not existing_record.exists() and self.warn_if_missing:
             complaint = (
@@ -173,7 +166,7 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
         else:
             now = timezone.now()
             # Note that existing_record is a queryset that will have one matching object
-            existing_record.filter(deleted__isnull=True).update(deleted=now, replicated=None)
+            existing_record.filter(deleted__isnull=True).update(deleted=now)
         return existing_record.first()
 
     def _save(self, name, content):
@@ -183,23 +176,9 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
         will not change it, but allow for that possibility. Callers should be prepared for this.
         """
         saved_name = super()._save(name, content)
-        stored_object = self._save_stored_object(saved_name, content)
-        self._maybe_schedule_save_replication(stored_object)
+        self._save_stored_object(saved_name, content)
         return saved_name
 
     def delete(self, name):
-        deleted_object = self._delete_stored_object(name)
-        self._maybe_schedule_delete_replication(deleted_object)
+        self._delete_stored_object(name)
         super().delete(name)
-
-    def _maybe_schedule_save_replication(self, storedobject):
-        if self._replicate_to is not None:
-            transaction.on_commit(
-                partial(replicate_storedobject_task.delay, storedobject.pk, self._replicate_to)
-            )
-
-    def _maybe_schedule_delete_replication(self, storedobject):
-        if self._replicate_to is not None:
-            transaction.on_commit(
-                partial(push_storedobject_delete_task.delay, storedobject.pk, self._replicate_to)
-            )

@@ -1607,7 +1607,6 @@ class StoredObject(models.Model):
     doc_name = models.CharField(max_length=255, null=True, blank=True)
     doc_rev = models.CharField(max_length=16, null=True, blank=True)
     deleted = models.DateTimeField(null=True)
-    replicated = models.DateTimeField(null=True)
 
     class Meta:
         constraints = [

@@ -192,39 +192,3 @@ def retrieve_str(kind: str, name: str) -> str:
             if settings.SERVER_MODE == "development":
                 raise
     return content
-
-
-def replicate(storedobject: "StoredObject", dest_storage_name: str):
-    original_storage = _get_storage(storedobject.store)
-    try:
-        dest_storage = storages[dest_storage_name]
-    except KeyError:
-        log(f"Error replicating StoredObject(pk={storedobject.pk}) to {dest_storage_name}: unknown storage name")
-        raise
-    try:
-        with original_storage.open(storedobject.name) as original:
-            new_name = dest_storage.save(name=storedobject.name, content=original)
-    except FileNotFoundError:
-        log(
-            f"Failed to replicate {storedobject} to {dest_storage_name}: FileNotFoundError"
-        )
-        raise
-    if new_name != storedobject.name:
-        log(
-            f"Error: file {storedobject} was replicated as {new_name} in {dest_storage_name}! Removing."
-        )
-        dest_storage.delete(new_name)
-        raise RuntimeError(f"Unable to replicate {storedobject} to {dest_storage_name} due to name collision")
-    storedobject.replicated = timezone.now()
-    storedobject.save()
-
-
-def push_storedobject_delete(storedobject: "StoredObject", dest_storage_name: str):
-    try:
-        dest_storage = storages[dest_storage_name]
-    except KeyError:
-        log(f"Error replicating StoredObject(pk={storedobject.pk}) to {dest_storage_name}: unknown storage name")
-        raise
-    dest_storage.delete(storedobject.name)
-    storedobject.replicated = timezone.now()
-    storedobject.save()
