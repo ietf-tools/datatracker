@@ -14,7 +14,7 @@ import os
 import shutil
 import tempfile
 from ietf.settings import *                                          # pyflakes:ignore
-from ietf.settings import STORAGES, TEST_CODE_COVERAGE_CHECKER, MORE_STORAGE_NAMES, BLOBSTORAGE_CONNECT_TIMEOUT, BLOBSTORAGE_READ_TIMEOUT, BLOBSTORAGE_MAX_ATTEMPTS
+from ietf.settings import STORAGES, TEST_CODE_COVERAGE_CHECKER, ARTIFACT_STORAGE_NAMES, BLOBSTORAGE_CONNECT_TIMEOUT, BLOBSTORAGE_READ_TIMEOUT, BLOBSTORAGE_MAX_ATTEMPTS
 import botocore.config
 import debug                            # pyflakes:ignore
 debug.debug = True
@@ -119,8 +119,3 @@ _blob_store_bucket_prefix = os.environ.get("DATATRACKER_BLOB_STORE_BUCKET_PREFIX
 _blob_store_enable_profiling = (
     os.environ.get("DATATRACKER_BLOB_STORE_ENABLE_PROFILING", "false").lower() == "true"
 )
-for storagename in MORE_STORAGE_NAMES:
-    STORAGES[storagename] = {
-        "BACKEND": "ietf.doc.storage.StoredObjectBlobdbStorage",
-        "OPTIONS": {"bucket_name": storagename},
-    }

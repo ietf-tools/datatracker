@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 def _get_storage(kind: str) -> Storage:
-    if kind in settings.MORE_STORAGE_NAMES:
+    if kind in settings.ARTIFACT_STORAGE_NAMES:
         return storages[kind]
     else:
         debug.say(f"Got into not-implemented looking for {kind}")

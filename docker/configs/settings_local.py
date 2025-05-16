@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from ietf.settings import *  # pyflakes:ignore
-from ietf.settings import STORAGES, MORE_STORAGE_NAMES, BLOBSTORAGE_CONNECT_TIMEOUT, BLOBSTORAGE_READ_TIMEOUT, BLOBSTORAGE_MAX_ATTEMPTS
+from ietf.settings import STORAGES, ARTIFACT_STORAGE_NAMES, BLOBSTORAGE_CONNECT_TIMEOUT, BLOBSTORAGE_READ_TIMEOUT, BLOBSTORAGE_MAX_ATTEMPTS
 import botocore.config
 
 ALLOWED_HOSTS = ['*']
@@ -41,13 +41,6 @@ INTERNAL_IPS = [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips] + ['127.0.0.
 # DEV_TEMPLATE_CONTEXT_PROCESSORS = [
 #    'ietf.context_processors.sql_debug',
 # ]
-for storagename in MORE_STORAGE_NAMES:
-    assert storagename not in STORAGES
-    STORAGES[storagename] = {
-        "BACKEND": "ietf.doc.storage.StoredObjectBlobdbStorage",
-        "OPTIONS": {"bucket_name": storagename},
-    }
-
 
 DOCUMENT_PATH_PATTERN = '/assets/ietfdata/doc/{doc.type_id}/'
 INTERNET_DRAFT_PATH = '/assets/ietf-ftp/internet-drafts/'

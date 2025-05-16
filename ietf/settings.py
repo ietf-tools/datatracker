@@ -751,8 +751,8 @@ STORAGES: dict[str, Any] = {
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 
-# settings_local will need to configure storages for these names
-MORE_STORAGE_NAMES: list[str] = [
+# Storages for artifacts stored as blobs
+ARTIFACT_STORAGE_NAMES: list[str] = [
     "bofreq",
     "charter",
     "conflrev",
@@ -777,6 +777,12 @@ MORE_STORAGE_NAMES: list[str] = [
     "photo",
     "review",
 ]
+for storagename in ARTIFACT_STORAGE_NAMES:
+    assert storagename not in STORAGES
+    STORAGES[storagename] = {
+        "BACKEND": "ietf.doc.storage.StoredObjectBlobdbStorage",
+        "OPTIONS": {"bucket_name": storagename},
+    }
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
