@@ -173,7 +173,7 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
         else:
             now = timezone.now()
             # Note that existing_record is a queryset that will have one matching object
-            existing_record.filter(deleted__isnull=True).update(deleted=now)
+            existing_record.filter(deleted__isnull=True).update(deleted=now, replicated=None)
         return existing_record.first()
 
     def _save(self, name, content):
