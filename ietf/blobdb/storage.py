@@ -1,4 +1,6 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
+from typing import Optional
+
 from django.core.files.base import ContentFile
 from django.core.files.storage import Storage
 from django.db.models.functions import Length
@@ -23,10 +25,10 @@ class BlobFile(MetadataFile):
 @deconstructible
 class BlobdbStorage(Storage):
 
-    def __init__(self, bucket_name=None):
+    def __init__(self, bucket_name: Optional[str]=None):
         if bucket_name is None:
             raise ValueError("BlobdbStorage bucket_name must be specified")
-        self.bucket_name: str = bucket_name
+        self.bucket_name = bucket_name
 
     def get_queryset(self):
         return Blob.objects.filter(bucket=self.bucket_name)

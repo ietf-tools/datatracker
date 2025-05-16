@@ -158,7 +158,7 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
         existing_record = StoredObject.objects.filter(store=self.bucket_name, name=name)
         if not existing_record.exists() and self.warn_if_missing:
             complaint = (
-                f"WARNING: Asked to delete {name} from {self.kind} storage, "
+                f"WARNING: Asked to delete {name} from {self.bucket_name} storage, "
                 f"but there was no matching StoredObject"
             )
             log(complaint)
