@@ -1,21 +1,24 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 import datetime
 from io import BufferedReader
-from typing import Optional, Union
+from typing import Optional, TYPE_CHECKING, Union
+
+from django.utils import timezone
 
 import debug  # pyflakes ignore
 
 from django.conf import settings
 from django.core.files.base import ContentFile, File
-from django.core.files.storage import storages
+from django.core.files.storage import storages, Storage
 
 from ietf.utils.log import log
 
+if TYPE_CHECKING:
+    from .models import StoredObject
 
-# TODO-BLOBSTORE (Future, maybe after leaving 3.9) : add a return type
-def _get_storage(kind: str):
 
-    if kind in settings.MORE_STORAGE_NAMES:
+def _get_storage(kind: str) -> Storage:
+    if kind in settings.ARTIFACT_STORAGE_NAMES:
         return storages[kind]
     else:
         debug.say(f"Got into not-implemented looking for {kind}")
@@ -63,9 +66,9 @@ def store_file(
     doc_name: Optional[str] = None,
     doc_rev: Optional[str] = None,
     content_type: str="",
-    mtime: datetime.datetime=None,
+    mtime: Optional[datetime.datetime]=None,
 ) -> None:
-    from .storage_backends import StoredObjectFile  # avoid circular import
+    from .storage import StoredObjectFile  # avoid circular import
     if settings.ENABLE_BLOBSTORAGE:
         try:
             is_new = not exists_in_storage(kind, name)
@@ -103,7 +106,7 @@ def store_bytes(
     doc_name: Optional[str] = None,
     doc_rev: Optional[str] = None,
     content_type: str = "",
-    mtime: datetime.datetime = None,
+    mtime: Optional[datetime.datetime] = None,
 ) -> None:
     if settings.ENABLE_BLOBSTORAGE:
         try:
@@ -133,7 +136,7 @@ def store_str(
     doc_name: Optional[str] = None,
     doc_rev: Optional[str] = None,
     content_type: str = "",
-    mtime: datetime.datetime = None,
+    mtime: Optional[datetime.datetime] = None,
 ) -> None:
     if settings.ENABLE_BLOBSTORAGE:
         try:
@@ -157,7 +160,7 @@ def store_str(
 
 
 def retrieve_bytes(kind: str, name: str) -> bytes:
-    from ietf.doc.storage_backends import maybe_log_timing
+    from ietf.doc.storage import maybe_log_timing
     content = b""
     if settings.ENABLE_BLOBSTORAGE:
         try:

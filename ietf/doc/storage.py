@@ -1,18 +1,19 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
+from functools import partial
+from typing import Optional
+
+from django.db import transaction
+
 import debug  # pyflakes:ignore
 import json
 
 from contextlib import contextmanager
-from functools import cached_property
 from storages.backends.s3 import S3Storage
-from typing import Union,  Any
 
 from django.core.files.base import File
-from django.core.files.storage import Storage, storages
-from django.db import transaction
 
+from ietf.blobdb.storage import BlobdbStorage
 from ietf.doc.models import StoredObject
-from ietf.doc.tasks import stagedblobstorage_commit_save_task, stagedblobstorage_commit_delete_task
 from ietf.utils.log import log
 from ietf.utils.storage import MetadataFile
 from ietf.utils.timezone import timezone
@@ -118,117 +119,14 @@ class MetadataS3Storage(S3Storage):
         return params
 
 
-class StagedBlobStorage(Storage):
-    """Storage using an intermediate staging step
-    
-    Relies on `kind` being the same as its key in Django's STORAGES
-    configuration.
-    """
-
-    def __init__(
-        self,
-        kind: str,
-        async_commit: bool,
-        staging_storage: Union[str, Storage, dict[str, Any]],
-        final_storage: Union[str, Storage, dict[str, Any]],
-    ):
-        self.kind = kind
-        self.async_commit = async_commit
-        self._staging_storage = staging_storage
-        self._final_storage = final_storage
-
-    @cached_property
-    def staging_storage(self) -> Storage:
-        if isinstance(self._staging_storage, str):
-            return storages[self._staging_storage]  # str = alias of another STORAGES entry
-        elif isinstance(self._staging_storage, Storage):
-            return self._staging_storage  # Storage = actual storage instance
-        else:
-            return storages.create_storage(params=self._staging_storage)  # dict = def of another Storage
-
-    @cached_property
-    def final_storage(self) -> Storage:
-        if isinstance(self._final_storage, str):
-            return storages[self._final_storage]  # str = alias of another STORAGES entry
-        elif isinstance(self._final_storage, Storage):
-            return self._final_storage  # Storage = actual storage instance
-        else:
-            return storages.create_storage(params=self._final_storage)  # dict = def of another Storage
-
-    def _open(self, name, mode="rb"):
-        try:
-            return self.staging_storage.open(name, mode)
-        except FileNotFoundError:
-            pass
-        return self.final_storage.open(name, mode)
-
-    def _save(self, name, content):
-        # Save to staging immediately
-        new_name = self.staging_storage.save(name, content)
-        if self.async_commit:
-            # Queue a task to delete from final storage later
-            transaction.on_commit(
-                lambda: stagedblobstorage_commit_save_task.delay(
-                    kind=self.kind,
-                    name=name,
-                )
-            )
-        else:
-            self.commit_save(name)  # TODO-BLOBSTORE: deal with name change in this call
-        return new_name
-
-    def commit_save(self, name):
-        # debug.say(f"StagedBlobStorage.commit_save('{name}') called")
-        try:
-            with self.staging_storage.open(name) as staged:
-                new_name = self.final_storage.save(
-                    name=name,
-                    content=staged,
-                )
-        except FileNotFoundError:
-            log(f"Failed to commit save of {self.kind}:{name} due to FileNotFoundError from staging storage")
-        else:
-            if new_name != name:
-                log(f"Staged file {self.kind}:{name} was committed as {self.kind}:{new_name}")
-            self.staging_storage.delete(name)
-
-    def exists(self, name):        
-        return False  # TODO-BLOBSTORE implement this
-
-    def delete(self, name):
-        # Immediately delete from staging, if possible
-        try:
-            self.staging_storage.delete(name)
-        except NotImplementedError:
-            log(f"Staging storage does not implement delete() for {self.kind}:{name}")
-        # Queue a task to delete from final storage later
-        if self.async_commit:
-            transaction.on_commit(
-                lambda: stagedblobstorage_commit_delete_task.delay(
-                    kind=self.kind,
-                    name=name,
-                )
-            )
-        else:
-            self.commit_delete(name)
-
-    def commit_delete(self, name):
-        # debug.say(f"StagedBlobStorage.commit_delete('{name}') called")
-        try:
-            self.final_storage.delete(name)
-        except NotImplementedError:
-            log(f"Final storage does not implement delete() for {self.kind}:{name}")
-
-
-class StoredObjectStagedBlobStorage(StagedBlobStorage):
-    commit_on_save = False  # files not committed until they're moved to the final_storage
+class StoredObjectBlobdbStorage(BlobdbStorage):
     ietf_log_blob_timing = True
     warn_if_missing = True  # TODO-BLOBSTORE make this configurable (or remove it)
 
-    def _save(self, name, content):
+    def _save_stored_object(self, name, content) -> StoredObject:
         now = timezone.now()
         record, created = StoredObject.objects.get_or_create(
-            store=self.kind,
+            store=self.bucket_name,
             name=name,
             defaults=dict(
                 sha384=content.custom_metadata["sha384"],
@@ -236,7 +134,6 @@ class StoredObjectStagedBlobStorage(StagedBlobStorage):
                 store_created=now,
                 created=now,
                 modified=now,
-                committed=None,  # we haven't saved yet
                 doc_name=getattr(
                     content,
                     "doc_name",  # Note that these are assumed to be invariant
@@ -254,19 +151,14 @@ class StoredObjectStagedBlobStorage(StagedBlobStorage):
             record.len = int(content.custom_metadata["len"])
             record.modified = now
             record.deleted = None
-            record.committed = None
             record.save()
-        new_name = super()._save(name, content)
-        if self.commit_on_save:
-            record.committed = timezone.now()
-            record.save()
-        return new_name
+        return record
 
-    def delete(self, name):
-        existing_record = StoredObject.objects.filter(store=self.kind, name=name)
+    def _delete_stored_object(self, name) -> Optional[StoredObject]:
+        existing_record = StoredObject.objects.filter(store=self.bucket_name, name=name)
         if not existing_record.exists() and self.warn_if_missing:
             complaint = (
-                f"WARNING: Asked to delete {name} from {self.kind} storage, "
+                f"WARNING: Asked to delete {name} from {self.bucket_name} storage, "
                 f"but there was no matching StoredObject"
             )
             log(complaint)
@@ -274,26 +166,19 @@ class StoredObjectStagedBlobStorage(StagedBlobStorage):
         else:
             now = timezone.now()
             # Note that existing_record is a queryset that will have one matching object
-            existing_record.filter(deleted__isnull=True).update(
-                deleted=now,
-                committed=now if self.commit_on_save else None,
-            )
+            existing_record.filter(deleted__isnull=True).update(deleted=now)
+        return existing_record.first()
+
+    def _save(self, name, content):
+        """Perform the save operation 
+        
+        In principle the name could change on save to the blob store. As of now, BlobdbStorage
+        will not change it, but allow for that possibility. Callers should be prepared for this.
+        """
+        saved_name = super()._save(name, content)
+        self._save_stored_object(saved_name, content)
+        return saved_name
+
+    def delete(self, name):
+        self._delete_stored_object(name)
         super().delete(name)
-
-    def commit_save(self, name):
-        super().commit_save(name)
-        StoredObject.objects.filter(
-            store=self.kind,
-            name=name,
-            deleted__isnull=True,  # don't "commit" a deleted file on save
-            committed__isnull=True,
-        ).update(committed=timezone.now())
-
-    def commit_delete(self, name):
-        super().commit_delete(name)
-        StoredObject.objects.filter(
-            store=self.kind,
-            name=name,
-            deleted__isnull=False,  # only "commit" a deleted file on delete
-            committed__isnull=True,
-        ).update(committed=timezone.now())

@@ -3,6 +3,7 @@
 import datetime
 from hashlib import sha384
 from pathlib import Path
+from typing import Optional
 
 from django.conf import settings
 from django.core.files.base import File
@@ -64,7 +65,7 @@ class BlobShadowFileSystemStorage(NoLocationMigrationFileSystemStorage):
 class MetadataFile(File):
     """File that includes metadata"""
 
-    def __init__(self, file, name=None, mtime: datetime.datetime=None, content_type=""):
+    def __init__(self, file, name=None, mtime: Optional[datetime.datetime]=None, content_type=""):
         super().__init__(file=file, name=name)
         self.mtime = mtime
         self.content_type = content_type

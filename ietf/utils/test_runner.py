@@ -1268,7 +1268,7 @@ class TestBlobstoreManager():
     )
 
     def createTestBlobstores(self):
-        for storagename in settings.MORE_STORAGE_NAMES:
+        for storagename in settings.ARTIFACT_STORAGE_NAMES:
             bucketname = f"test-{storagename}"
             try:
                 bucket = self.blobstore.create_bucket(Bucket=bucketname)

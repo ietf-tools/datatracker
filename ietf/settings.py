@@ -185,9 +185,11 @@ STATIC_IETF_ORG_INTERNAL = STATIC_IETF_ORG
 
 ENABLE_BLOBSTORAGE = True
 
-BLOBSTORAGE_MAX_ATTEMPTS = 1
-BLOBSTORAGE_CONNECT_TIMEOUT = 2
-BLOBSTORAGE_READ_TIMEOUT = 2
+# "standard" retry mode is used, which does exponential backoff with a base factor of 2
+# and a cap of 20. 
+BLOBSTORAGE_MAX_ATTEMPTS = 5  # boto3 default is 3 (for "standard" retry mode)
+BLOBSTORAGE_CONNECT_TIMEOUT = 10  # seconds; boto3 default is 60
+BLOBSTORAGE_READ_TIMEOUT = 10  # seconds; boto3 default is 60
 
 WSGI_APPLICATION = "ietf.wsgi.application"
 
@@ -749,8 +751,8 @@ STORAGES: dict[str, Any] = {
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 
-# settings_local will need to configure storages for these names
-MORE_STORAGE_NAMES: list[str] = [
+# Storages for artifacts stored as blobs
+ARTIFACT_STORAGE_NAMES: list[str] = [
     "bofreq",
     "charter",
     "conflrev",
@@ -775,6 +777,12 @@ MORE_STORAGE_NAMES: list[str] = [
     "photo",
     "review",
 ]
+for storagename in ARTIFACT_STORAGE_NAMES:
+    assert storagename not in STORAGES
+    STORAGES[storagename] = {
+        "BACKEND": "ietf.doc.storage.StoredObjectBlobdbStorage",
+        "OPTIONS": {"bucket_name": storagename},
+    }
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .

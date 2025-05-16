@@ -1607,7 +1607,6 @@ class StoredObject(models.Model):
     doc_name = models.CharField(max_length=255, null=True, blank=True)
     doc_rev = models.CharField(max_length=16, null=True, blank=True)
     deleted = models.DateTimeField(null=True)
-    committed = models.DateTimeField(null=True)
 
     class Meta:
         constraints = [
@@ -1616,3 +1615,6 @@ class StoredObject(models.Model):
         indexes = [
             models.Index(fields=["doc_name", "doc_rev"]),
         ]
+
+    def __str__(self):
+        return f"{self.store}:{self.name}"
