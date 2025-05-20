@@ -1519,6 +1519,7 @@ class Registration(models.Model):
             return 'onsite'
         elif self.tickets.filter(attendance_type__slug='remote').exists():
             return 'remote'
+        return None
 
 class RegistrationTicket(models.Model):
     registration = ForeignKey(Registration, related_name='tickets')

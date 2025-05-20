@@ -9276,10 +9276,12 @@ class ProceedingsTests(BaseMeetingTestCase):
         dreg = RegistrationFactory(meeting=m, with_ticket={'attendance_type_id': 'remote'})
         AttendedFactory(session__meeting=m, session__type_id='plenary', person=creg.person)
         checked_in, attended = participants_for_meeting(m)
-        self.assertTrue(areg.person.pk in checked_in)
-        self.assertTrue(breg.person.pk not in checked_in)
-        self.assertTrue(creg.person.pk in attended)
-        self.assertTrue(dreg.person.pk not in attended)
+        self.assertIn(areg.person.pk, checked_in)
+        self.assertNotIn(breg.person.pk, checked_in)
+        self.assertNotIn(areg.person.pk not in attended)
+        self.assertNotIn(breg.person.pk not in attended)
+        self.assertIn(creg.person.pk, attended)
+        self.assertNotIn(dreg.person.pk not in attended)
 
     def test_session_attendance(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2023, 11, 4), number='118')
