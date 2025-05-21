@@ -1,19 +1,23 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
+import json
 from hashlib import sha384
 
 from django.db import models
 from django.utils import timezone
 
+from ietf.blobdb.tasks import pybob_the_blob_replicator_task
+
 
 class BlobQuerySet(models.QuerySet):
     """QuerySet customized for Blob management
-    
+
     Operations that bypass save() / delete() won't correctly notify watchers of changes
     to the blob contents. Disallow them.
-    """    
+    """
+
     def delete(self):
         raise NotImplementedError("Only deleting individual Blobs is supported")
-    
+
     def bulk_create(self, *args, **kwargs):
         raise NotImplementedError("Only creating individual Blobs is supported")
 
@@ -60,15 +64,20 @@ class Blob(models.Model):
     def save(self, **kwargs):
         self.checksum = sha384(self.content, usedforsecurity=False).hexdigest()
         super().save(**kwargs)
-        self._notify_watchers_of_save()
+        self._emit_blob_change_event()
 
     def delete(self, **kwargs):
         retval = super().delete(**kwargs)
         self._notify_watchers_of_delete()
         return retval
 
-    def _notify_watchers_of_save(self):
-        pass
-
-    def _notify_watchers_of_delete(self):
-        pass
+    def _emit_blob_change_event(self):
+        # For now, fire a celery task we've arranged to guarantee in-order processing.
+        # Later becomes pushing an event onto a queue to a dedicated worker.
+        pybob_the_blob_replicator_task.delay(
+            json.dumps(
+                {
+                    "name": self.name,
+                }
+            )
+        )
