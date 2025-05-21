@@ -1,8 +1,9 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 import json
+from functools import partial
 from hashlib import sha384
 
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 from ietf.blobdb.tasks import pybob_the_blob_replicator_task
@@ -68,16 +69,20 @@ class Blob(models.Model):
 
     def delete(self, **kwargs):
         retval = super().delete(**kwargs)
-        self._notify_watchers_of_delete()
+        self._emit_blob_change_event()
         return retval
 
     def _emit_blob_change_event(self):
         # For now, fire a celery task we've arranged to guarantee in-order processing.
         # Later becomes pushing an event onto a queue to a dedicated worker.
-        pybob_the_blob_replicator_task.delay(
-            json.dumps(
-                {
-                    "name": self.name,
-                }
+        transaction.on_commit(
+            partial(
+                pybob_the_blob_replicator_task.delay,
+                json.dumps(
+                    {
+                        "name": self.name,
+                        "bucket": self.bucket,
+                    }
+                )
             )
         )

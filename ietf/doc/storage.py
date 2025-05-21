@@ -81,8 +81,6 @@ class MetadataS3Storage(S3Storage):
         with maybe_log_timing(
             self.ietf_log_blob_timing, "_save", bucket_name=self.bucket_name, name=name
         ):
-            if not isinstance(content, MetadataFile):
-                raise NotImplementedError("Only handle MetadataFile so far")
             return super()._save(name, content)
 
     def _open(self, name, mode="rb"):
@@ -110,9 +108,8 @@ class MetadataS3Storage(S3Storage):
             params["ContentType"] = content_type
         if "Metadata" not in params:
             params["Metadata"] = {}
-        if not isinstance(content, MetadataFile):
-            raise NotImplementedError("Can only handle content of type MetadataFile")
-        params["Metadata"].update(content.custom_metadata)
+        if hasattr(content, "custom_metadata"):
+            params["Metadata"].update(content.custom_metadata)
         return params
 
 

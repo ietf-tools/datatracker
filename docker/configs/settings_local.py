@@ -61,3 +61,27 @@ DE_GFM_BINARY = '/usr/local/bin/de-gfm'
 
 STATIC_IETF_ORG = "/_static"
 STATIC_IETF_ORG_INTERNAL = "http://static"
+
+
+# Blob replication storage for dev
+import botocore.config
+for storagename in ARTIFACT_STORAGE_NAMES:
+    replica_storagename = f"r2-{storagename}"
+    assert replica_storagename not in STORAGES
+    STORAGES[replica_storagename] = {
+        "BACKEND": "ietf.doc.storage.MetadataS3Storage",
+        "OPTIONS": dict(
+            endpoint_url="http://blobstore:9000",
+            access_key="minio_root",
+            secret_key="minio_pass",
+            security_token=None,
+            client_config=botocore.config.Config(
+                signature_version="s3v4",
+                connect_timeout=BLOBSTORAGE_CONNECT_TIMEOUT,
+                read_timeout=BLOBSTORAGE_READ_TIMEOUT,
+                retries={"total_max_attempts": BLOBSTORAGE_MAX_ATTEMPTS},
+            ),
+            verify=False,
+            bucket_name=f"{storagename}",
+        ),
+    }
