@@ -7,7 +7,7 @@ import json
 
 from ietf import __release_hash__
 from ietf.settings import *  # pyflakes:ignore
-from ietf.settings import STORAGES, MORE_STORAGE_NAMES, BLOBSTORAGE_CONNECT_TIMEOUT, BLOBSTORAGE_READ_TIMEOUT, BLOBSTORAGE_MAX_ATTEMPTS
+from ietf.settings import STORAGES, ARTIFACT_STORAGE_NAMES, BLOBSTORAGE_CONNECT_TIMEOUT, BLOBSTORAGE_READ_TIMEOUT, BLOBSTORAGE_MAX_ATTEMPTS
 import botocore.config
 
 
@@ -326,21 +326,3 @@ _blob_store_connect_timeout = float(
 _blob_store_read_timeout = float(
     os.environ.get("DATATRACKER_BLOB_STORE_READ_TIMEOUT", BLOBSTORAGE_READ_TIMEOUT)
 )
-for storage_name in MORE_STORAGE_NAMES:
-    STORAGES[storage_name] = {
-        "BACKEND": "ietf.doc.storage_backends.CustomS3Storage",
-        "OPTIONS": dict(
-            endpoint_url=_blob_store_endpoint_url,
-            access_key=_blob_store_access_key,
-            secret_key=_blob_store_secret_key,
-            security_token=None,
-            client_config=botocore.config.Config(
-                signature_version="s3v4",
-                connect_timeout=_blob_store_connect_timeout,
-                read_timeout=_blob_store_read_timeout,
-                retries={"total_max_attempts": _blob_store_max_attempts},
-            ),
-            bucket_name=f"{_blob_store_bucket_prefix}{storage_name}".strip(),
-            ietf_log_blob_timing=_blob_store_enable_profiling,
-        ),
-    }

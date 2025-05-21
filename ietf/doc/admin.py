@@ -5,6 +5,7 @@
 from django.contrib import admin
 from django.db import models
 from django import forms
+from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document, RelatedDocHistory,
     DocHistoryAuthor, DocHistory, DocReminder, DocEvent, NewRevisionDocEvent,
@@ -220,8 +221,18 @@ class DocExtResourceAdmin(admin.ModelAdmin):
 admin.site.register(DocExtResource, DocExtResourceAdmin)
 
 class StoredObjectAdmin(admin.ModelAdmin):
-    list_display = ['store', 'name', 'modified', 'deleted', 'committed']
-    list_filter = ['deleted']
-    search_fields = ['store', 'name', 'doc_name', 'doc_rev', 'deleted']
+    list_display = ['store', 'name', 'doc_name', 'modified', 'is_deleted']
+    list_filter = [
+        'store',
+        ('modified', DateRangeQuickSelectListFilterBuilder()),
+        ('deleted', DateRangeQuickSelectListFilterBuilder()),
+    ]
+    search_fields = ['name', 'doc_name', 'doc_rev']
     list_display_links = ['name']
+
+    @admin.display(boolean=True, description="Deleted?", ordering="deleted")
+    def is_deleted(self, instance):
+        return instance.deleted is not None
+    
+
 admin.site.register(StoredObject, StoredObjectAdmin)

@@ -86,6 +86,29 @@ services:
             - .:/workspace
             - app-assets:/assets
 
+    replicator:
+        build:
+            context: .
+            dockerfile: docker/celery.Dockerfile
+        init: true
+        environment:
+            CELERY_APP: ietf
+            CELERY_ROLE: worker
+            UPDATE_REQUIREMENTS_FROM: requirements.txt
+            DEV_MODE: "yes"
+        command:
+            - '--loglevel=INFO'
+            - '--queues=blobdb'
+            - '--concurrency=1'
+                 
+        depends_on:
+            - db
+        restart: unless-stopped
+        stop_grace_period: 1m
+        volumes:
+            - .:/workspace
+            - app-assets:/assets
+
     blobstore:
         image: ghcr.io/ietf-tools/datatracker-devblobstore:latest
         restart: unless-stopped

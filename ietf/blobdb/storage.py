@@ -1,4 +1,7 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
+from typing import Optional
+
+from django.core.exceptions import SuspiciousFileOperation
 from django.core.files.base import ContentFile
 from django.core.files.storage import Storage
 from django.db.models.functions import Length
@@ -23,14 +26,18 @@ class BlobFile(MetadataFile):
 @deconstructible
 class BlobdbStorage(Storage):
 
-    def __init__(self, bucket_name=None):
+    def __init__(self, bucket_name: Optional[str]=None):
+        if bucket_name is None:
+            raise ValueError("BlobdbStorage bucket_name must be specified")
         self.bucket_name = bucket_name
 
     def get_queryset(self):
         return Blob.objects.filter(bucket=self.bucket_name)
 
     def delete(self, name):
-        self.get_queryset().filter(name=name).delete()
+        blob = self.get_queryset().filter(name=name).first()
+        if blob is not None:
+            blob.delete()
 
     def exists(self, name):
         return self.get_queryset().filter(name=name).exists()
@@ -63,6 +70,11 @@ class BlobdbStorage(Storage):
         )
 
     def _save(self, name, content):
+        """Perform the save operation
+        
+        The storage API allows _save() to save to a different name than was requested. This method will
+        never do that, instead overwriting the existing blob.
+        """
         Blob.objects.update_or_create(
             name=name,
             bucket=self.bucket_name,
@@ -74,3 +86,11 @@ class BlobdbStorage(Storage):
             },
         )
         return name
+
+    def get_available_name(self, name, max_length=None):
+        if max_length is not None and len(name) > max_length:
+            raise SuspiciousFileOperation(
+                f"BlobdbStorage only allows names up to {max_length}, but was"
+                f"asked to store the name '{name[:5]}...{name[-5:]} of length {len(name)}"
+            )
+        return name  # overwrite is permitted
