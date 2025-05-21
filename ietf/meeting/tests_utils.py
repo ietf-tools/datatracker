@@ -97,9 +97,14 @@ class MigrateRegistrationsTests(TestCase):
     def test_get_preferred(self):
         meeting = MeetingFactory(type_id='ietf', number='109')
         onsite = MeetingRegistrationFactory(meeting=meeting, reg_type='onsite', ticket_type='week_pass')
+        remote = MeetingRegistrationFactory(meeting=meeting, reg_type='remote', ticket_type='week_pass')
         hackathon = MeetingRegistrationFactory(meeting=meeting, reg_type='hackathon_onsite', ticket_type='week_pass')
-        result = get_preferred([onsite, hackathon])
+        result = get_preferred([remote, onsite, hackathon])
         self.assertEqual(result, onsite)
+        result = get_preferred([hackathon, remote])
+        self.assertEqual(result, remote)
+        result = get_preferred([hackathon])
+        self.assertEqual(result, hackathon)
 
 
 class JsonResponseWithJson(JsonResponse):

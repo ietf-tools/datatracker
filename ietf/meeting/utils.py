@@ -1018,13 +1018,18 @@ def participants_for_meeting(meeting):
 
 
 def get_preferred(regs):
-    """ Return a preferred regular registration (non hackathon) from 
-        a list of registrations if there is one, otherwise any.
+    """ If there are multiple registrations return preferred in
+        this order: onsite, remote, any (ie hackathon_onsite)
     """
-    for reg in regs:
-        if reg.reg_type in ['onsite', 'remote']:
-            return reg
-    return reg
+    if len(regs) == 1:
+        return regs[0]
+    reg_types = [r.reg_type for r in regs]
+    if 'onsite' in reg_types:
+        return regs[reg_types.index('onsite')]
+    elif 'remote' in reg_types:
+        return regs[reg_types.index('remote')]
+    else:
+        return regs[0]
 
 
 def migrate_registrations(initial=False):
