@@ -35,7 +35,9 @@ class BlobdbStorage(Storage):
         return Blob.objects.filter(bucket=self.bucket_name)
 
     def delete(self, name):
-        self.get_queryset().filter(name=name).delete()
+        blob = self.get_queryset().filter(name=name).first()
+        if blob is not None:
+            blob.delete()
 
     def exists(self, name):
         return self.get_queryset().filter(name=name).exists()
