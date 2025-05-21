@@ -1284,6 +1284,9 @@ CELERY_RESULT_BACKEND = 'django-cache'  # use a Django cache for results
 CELERY_CACHE_BACKEND = 'celery-results'  # which Django cache to use
 CELERY_RESULT_EXPIRES = datetime.timedelta(minutes=5)  # how long are results valid? (Default is 1 day)
 CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled for a task
+CELERY_TASK_ROUTES = {
+    "ietf.blobdb.tasks.pybob_the_blob_replicator_task": {"queue": "blobdb"}
+}
 
 # Meetecho API setup: Uncomment this and provide real credentials to enable
 # Meetecho conference creation for interim session requests
