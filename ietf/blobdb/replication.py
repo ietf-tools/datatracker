@@ -65,7 +65,14 @@ def destination_storage_for(bucket: str):
     return storages[storage_name]
 
 
+def replication_enabled():
+    return bool(get_replication_settings()["ENABLED"])
+
+
 def replicate_blob(bucket, name):
+    if not replication_enabled():
+        return
+
     destination_storage = destination_storage_for(bucket)
 
     blob = fetch_blob_via_sql(bucket, name)
