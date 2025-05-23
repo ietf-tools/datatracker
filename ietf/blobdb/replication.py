@@ -101,7 +101,7 @@ def fetch_blob_via_sql(bucket: str, name: str) -> Optional[namedtuple]:
     cursor = blobdb_connection.cursor()
     cursor.execute(
         """
-        SELECT content, checksum, mtime, content_type FROM blobdb_blob
+        SELECT content, checksum, modified, mtime, content_type FROM blobdb_blob
         WHERE bucket=%s AND name=%s LIMIT 1
         """,
         [bucket, name],
@@ -138,8 +138,7 @@ def replicate_blob(bucket, name):
         file_with_metadata = SimpleMetadataFile(file=BytesIO(blob.content))
         file_with_metadata.content_type = blob.content_type
         file_with_metadata.custom_metadata = {"sha384": blob.checksum}
-        if blob.mtime is not None:
-            file_with_metadata.custom_metadata["mtime"] = blob.mtime.isoformat()
+        file_with_metadata.custom_metadata["mtime"] = (blob.mtime or blob.modified).isoformat()
         if verbose_logging_enabled():
             log.log(f"Saving {bucket}:{name} to replica (sha384: {blob.checksum[:16]}...)")
         try:
