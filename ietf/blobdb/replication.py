@@ -5,15 +5,17 @@ from typing import Optional
 
 from django.conf import settings
 from django.core.files import File
-from django.core.files.storage import storages
+from django.core.files.storage import storages, InvalidStorageError
 from django.db import connections
 
+from ietf.utils import log
 
 DEFAULT_SETTINGS = {
     "ENABLED": False,
     "DEST_STORAGE_PATTERN": "r2-{bucket}",
     "INCLUDE_BUCKETS": (),  # empty means include all
     "EXCLUDE_BUCKETS": (),  # empty means exclude none
+    "VERBOSE_LOGGING": False,
 }
 
 
@@ -75,6 +77,10 @@ def replication_enabled(bucket: str):
     return included and not excluded
 
 
+def verbose_logging_enabled():
+    return bool(get_replication_settings()["VERBOSE_LOGGING"])
+
+
 def fetch_blob_via_sql(bucket: str, name: str) -> Optional[namedtuple]:
     blobdb_connection = connections["blobdb"]
     cursor = blobdb_connection.cursor()
@@ -91,14 +97,27 @@ def fetch_blob_via_sql(bucket: str, name: str) -> Optional[namedtuple]:
 
 
 def replicate_blob(bucket, name):
+    """Replicate a Blobdb blob to a Storage"""
     if not replication_enabled(bucket):
+        if verbose_logging_enabled():
+            log.log(f"Not replicating {bucket}:{name} because replication is not enabled for this {bucket}")
         return
 
-    destination_storage = destination_storage_for(bucket)
+    try:
+        destination_storage = destination_storage_for(bucket)
+    except InvalidStorageError as e:
+        log.log(f"Failed to replicate {bucket}:{name} because destination storage for {bucket} is not configured")
+        raise ReplicationError from e
 
     blob = fetch_blob_via_sql(bucket, name)
     if blob is None:
-        destination_storage.delete(name)
+        if verbose_logging_enabled():
+            log.log("Deleting {bucket}:{name} from replica")
+        try:
+            destination_storage.delete(name)
+        except Exception as e:
+            log.log("Failed to delete {bucket}:{name} from replica: {e}")
+            raise ReplicationError from e
     else:
         # Add metadata expected by the MetadataS3Storage
         file_with_metadata = SimpleMetadataFile(file=BytesIO(blob.content))
@@ -106,4 +125,14 @@ def replicate_blob(bucket, name):
         file_with_metadata.custom_metadata = {"sha384": blob.checksum}
         if blob.mtime is not None:
             file_with_metadata.custom_metadata["mtime"] = blob.mtime.isoformat()
-        destination_storage.save(name, file_with_metadata)
+        if verbose_logging_enabled():
+            log.log(f"Saving {bucket}:{name} to replica (sha384: {blob.checksum[:16]}...)")
+        try:
+            destination_storage.save(name, file_with_metadata)
+        except Exception as e:
+            log.log("Failed to save {bucket}:{name} to replica: {e}")
+            raise ReplicationError from e
+
+
+class ReplicationError(Exception):
+    pass
