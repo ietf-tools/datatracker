@@ -129,7 +129,7 @@ def rpc_draft_refs(request, doc_id):
     norminative_references = []
 
     for r in references:
-        if r.relationship.name == "normatively references":
+        if r.relationship.name == "normatively references" and r.target.type_id == "draft":
             norminative_references.append(
                 {
                     "id": r.target.id,
