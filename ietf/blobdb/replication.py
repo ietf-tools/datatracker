@@ -30,7 +30,7 @@ def get_replication_settings():
     return DEFAULT_SETTINGS | getattr(settings, "BLOBDB_REPLICATION", {})
 
 
-def validate_replicator_settings():
+def validate_replication_settings():
     replicator_settings = get_replication_settings()
     unknown_settings = set(DEFAULT_SETTINGS.keys()) - set(replicator_settings.keys())
     if len(unknown_settings) > 0:

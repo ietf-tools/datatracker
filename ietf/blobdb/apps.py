@@ -17,6 +17,6 @@ class BlobdbConfig(AppConfig):
             )
 
         # Validate replication settings
-        from .replication import validate_replicator_settings
+        from .replication import validate_replication_settings
 
-        validate_replicator_settings()
+        validate_replication_settings()
