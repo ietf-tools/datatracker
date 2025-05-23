@@ -8,6 +8,10 @@ ALLOWED_HOSTS = ['*']
 from ietf.settings_postgresqldb import DATABASES  # pyflakes:ignore
 DATABASE_ROUTERS = ["ietf.blobdb.routers.BlobdbStorageRouter"]
 BLOBDB_DATABASE = "blobdb"
+BLOBDB_REPLICATION = {
+    "ENABLED": True,
+    "DEST_STORAGE_PATTERN": "r2-{buckets}",
+}
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 IDSUBMIT_STAGING_PATH = "/assets/www6s/staging/"
