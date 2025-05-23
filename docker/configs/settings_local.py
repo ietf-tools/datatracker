@@ -10,7 +10,7 @@ DATABASE_ROUTERS = ["ietf.blobdb.routers.BlobdbStorageRouter"]
 BLOBDB_DATABASE = "blobdb"
 BLOBDB_REPLICATION = {
     "ENABLED": True,
-    "DEST_STORAGE_PATTERN": "r2-{buckets}",
+    "DEST_STORAGE_PATTERN": "r2-{bucket}",
     "EXCLUDE_BUCKETS": ["staging"],
     "VERBOSE_LOGGING": True,
 }
