@@ -10,6 +10,7 @@
 {% block content %}
     {% origin %}
     <h1>{{ title }}</h1>
+    <h2><i class="bi bi-exclamation-triangle"></i>This view is deprecated, and will soon redirect to a <a href="{% url 'ietf.doc.views_search.docs_for_iesg' %}">different representation</a></h2>
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
