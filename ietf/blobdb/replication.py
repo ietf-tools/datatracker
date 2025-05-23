@@ -52,21 +52,6 @@ def validate_replicator_settings():
         raise RuntimeError("EXCLUDE_BUCKETS must be a list, tuple, or set")
 
 
-def fetch_blob_via_sql(bucket: str, name: str) -> Optional[namedtuple]:
-    blobdb_connection = connections["blobdb"]
-    cursor = blobdb_connection.cursor()
-    cursor.execute(
-        """
-        SELECT content, checksum, mtime, content_type FROM blobdb_blob
-        WHERE bucket=%s AND name=%s LIMIT 1
-        """,
-        [bucket, name],
-    )
-    row = cursor.fetchone()
-    BlobTuple = namedtuple("BlobTuple", [col[0] for col in cursor.description])
-    return None if row is None else BlobTuple(*row)
-
-
 def destination_storage_for(bucket: str):
     pattern = get_replication_settings()["DEST_STORAGE_PATTERN"]
     storage_name = pattern.format(bucket=bucket)
@@ -88,6 +73,21 @@ def replication_enabled(bucket: str):
         and bucket in replication_settings["EXCLUDE_BUCKETS"]
     )
     return included and not excluded
+
+
+def fetch_blob_via_sql(bucket: str, name: str) -> Optional[namedtuple]:
+    blobdb_connection = connections["blobdb"]
+    cursor = blobdb_connection.cursor()
+    cursor.execute(
+        """
+        SELECT content, checksum, mtime, content_type FROM blobdb_blob
+        WHERE bucket=%s AND name=%s LIMIT 1
+        """,
+        [bucket, name],
+    )
+    row = cursor.fetchone()
+    BlobTuple = namedtuple("BlobTuple", [col[0] for col in cursor.description])
+    return None if row is None else BlobTuple(*row)
 
 
 def replicate_blob(bucket, name):
