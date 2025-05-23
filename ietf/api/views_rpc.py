@@ -114,6 +114,33 @@ def rpc_draft(request, doc_id):
 
 
 @csrf_exempt
+#@requires_api_token("ietf.api.views_rpc")
+def rpc_draft_refs(request, doc_id):
+    """Return norminative references"""
+    if request.method != "GET":
+        return HttpResponseNotAllowed(["GET"])
+
+    try:
+        d = Document.objects.get(pk=doc_id, type_id="draft")
+    except Document.DoesNotExist:
+        return HttpResponseNotFound()
+
+    references = d.references()
+    norminative_references = []
+
+    for r in references:
+        if r.relationship.name == "normatively references":
+            norminative_references.append(
+                {
+                    "id": r.target.id,
+                    "name": r.target.name,
+                }
+            )
+
+    return JsonResponse({"references": norminative_references})
+
+
+@csrf_exempt
 @requires_api_token("ietf.api.views_rpc")
 def drafts_by_names(request):
     if request.method != "POST":
