@@ -74,7 +74,7 @@ class Blob(models.Model):
         return retval
 
     def _emit_blob_change_event(self):
-        if not replication_enabled():
+        if not replication_enabled(self.bucket):
             return
 
         # For now, fire a celery task we've arranged to guarantee in-order processing.

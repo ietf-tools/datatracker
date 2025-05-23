@@ -12,6 +12,8 @@ from django.db import connections
 DEFAULT_SETTINGS = {
     "ENABLED": False,
     "DEST_STORAGE_PATTERN": "r2-{bucket}",
+    "INCLUDE_BUCKETS": (),  # empty means include all
+    "EXCLUDE_BUCKETS": (),  # empty means exclude none
 }
 
 
@@ -42,6 +44,12 @@ def validate_replicator_settings():
         raise RuntimeError(
             f"DEST_STORAGE_PATTERN must contain the substring '{{bucket}}' (found '{pattern}')"
         )
+    include_buckets = replicator_settings["INCLUDE_BUCKETS"]
+    if not isinstance(include_buckets, (list, tuple, set)):
+        raise RuntimeError("INCLUDE_BUCKETS must be a list, tuple, or set")
+    exclude_buckets = replicator_settings["EXCLUDE_BUCKETS"]
+    if not isinstance(exclude_buckets, (list, tuple, set)):
+        raise RuntimeError("EXCLUDE_BUCKETS must be a list, tuple, or set")
 
 
 def fetch_blob_via_sql(bucket: str, name: str) -> Optional[namedtuple]:
@@ -65,12 +73,25 @@ def destination_storage_for(bucket: str):
     return storages[storage_name]
 
 
-def replication_enabled():
-    return bool(get_replication_settings()["ENABLED"])
+def replication_enabled(bucket: str):
+    replication_settings = get_replication_settings()
+    if not replication_settings["ENABLED"]:
+        return False
+    # Default is all buckets are included
+    included = (
+        len(replication_settings["INCLUDE_BUCKETS"]) == 0
+        or bucket in replication_settings["INCLUDE_BUCKETS"]
+    )
+    # Default is no buckets are excluded
+    excluded = (
+        len(replication_settings["EXCLUDE_BUCKETS"]) > 0
+        and bucket in replication_settings["EXCLUDE_BUCKETS"]
+    )
+    return included and not excluded
 
 
 def replicate_blob(bucket, name):
-    if not replication_enabled():
+    if not replication_enabled(bucket):
         return
 
     destination_storage = destination_storage_for(bucket)
