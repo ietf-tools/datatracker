@@ -32,11 +32,13 @@ def get_replication_settings():
 
 def validate_replication_settings():
     replicator_settings = get_replication_settings()
+    # No extra settings allowed
     unknown_settings = set(DEFAULT_SETTINGS.keys()) - set(replicator_settings.keys())
     if len(unknown_settings) > 0:
         raise RuntimeError(
             f"Unrecognized BLOBDB_REPLICATOR settings: {', '.join(str(unknown_settings))}"
         )
+    # destination storage pattern must be a string that includes {bucket}
     pattern = replicator_settings["DEST_STORAGE_PATTERN"]
     if not isinstance(pattern, str):
         raise RuntimeError(
@@ -46,17 +48,30 @@ def validate_replication_settings():
         raise RuntimeError(
             f"DEST_STORAGE_PATTERN must contain the substring '{{bucket}}' (found '{pattern}')"
         )
+    # include/exclude buckets must be list-like
     include_buckets = replicator_settings["INCLUDE_BUCKETS"]
     if not isinstance(include_buckets, (list, tuple, set)):
         raise RuntimeError("INCLUDE_BUCKETS must be a list, tuple, or set")
     exclude_buckets = replicator_settings["EXCLUDE_BUCKETS"]
     if not isinstance(exclude_buckets, (list, tuple, set)):
         raise RuntimeError("EXCLUDE_BUCKETS must be a list, tuple, or set")
+    # if we have explicit include_buckets, make sure the necessary storages exist
+    if len(include_buckets) > 0:
+        include_storages = {destination_storage_name_for(b) for b in include_buckets}
+        exclude_storages = {destination_storage_name_for(b) for b in exclude_buckets}
+        configured_storages = set(settings.STORAGES.keys())
+        missing_storages = include_storages - exclude_storages - configured_storages
+        if len(missing_storages) > 0:
+            raise RuntimeError(f"Replication requires unknown storage(s): {', '.join(missing_storages)}")
+
+
+def destination_storage_name_for(bucket: str):
+    pattern = get_replication_settings()["DEST_STORAGE_PATTERN"]
+    return pattern.format(bucket=bucket)
 
 
 def destination_storage_for(bucket: str):
-    pattern = get_replication_settings()["DEST_STORAGE_PATTERN"]
-    storage_name = pattern.format(bucket=bucket)
+    storage_name = destination_storage_name_for(bucket)
     return storages[storage_name]
 
 
