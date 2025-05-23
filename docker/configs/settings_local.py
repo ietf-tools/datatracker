@@ -11,7 +11,7 @@ BLOBDB_DATABASE = "blobdb"
 BLOBDB_REPLICATION = {
     "ENABLED": True,
     "DEST_STORAGE_PATTERN": "r2-{buckets}",
-    "EXCLUDE_BUCKETS": "staging",
+    "EXCLUDE_BUCKETS": ["staging"],
 }
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
