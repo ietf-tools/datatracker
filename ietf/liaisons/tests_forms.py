@@ -193,12 +193,12 @@ class HelperTests(TestCase):
                 "acronym", flat=True
             ),
             {"the-sdo"},
-            f"liaison manager should get only their SDO group",
+            "liaison manager should get only their SDO group",
         )
         self.assertCountEqual(
             external_groups_for_person(authperson).values_list("acronym", flat=True),
             {"the-sdo"},
-            f"authorized individual should get only their SDO group",
+            "authorized individual should get only their SDO group",
         )
 
     def test_flatten_choices(self):
