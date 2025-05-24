@@ -115,7 +115,7 @@ def replicate_blob(bucket, name):
     """Replicate a Blobdb blob to a Storage"""
     if not replication_enabled(bucket):
         if verbose_logging_enabled():
-            log.log(f"Not replicating {bucket}:{name} because replication is not enabled for this {bucket}")
+            log.log(f"Not replicating {bucket}:{name} because replication is not enabled for {bucket}")
         return
 
     try:
