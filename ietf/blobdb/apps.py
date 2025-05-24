@@ -9,8 +9,14 @@ class BlobdbConfig(AppConfig):
     def ready(self):
         from django.conf import settings  # settings should be ready now
 
+        # Validate that the DB is set up
         db = getattr(settings, "BLOBDB_DATABASE", None)
         if db is not None and db not in settings.DATABASES:
             raise RuntimeError(
                 f"settings.BLOBDB_DATABASE is '{db}' but that is not present in settings.DATABASES"
             )
+
+        # Validate replication settings
+        from .replication import validate_replication_settings
+
+        validate_replication_settings()

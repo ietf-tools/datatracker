@@ -6,7 +6,8 @@ from hashlib import sha384
 from django.db import models, transaction
 from django.utils import timezone
 
-from ietf.blobdb.tasks import pybob_the_blob_replicator_task
+from .replication import replication_enabled
+from .tasks import pybob_the_blob_replicator_task
 
 
 class BlobQuerySet(models.QuerySet):
@@ -73,6 +74,9 @@ class Blob(models.Model):
         return retval
 
     def _emit_blob_change_event(self):
+        if not replication_enabled(self.bucket):
+            return
+
         # For now, fire a celery task we've arranged to guarantee in-order processing.
         # Later becomes pushing an event onto a queue to a dedicated worker.
         transaction.on_commit(

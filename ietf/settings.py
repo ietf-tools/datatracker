@@ -778,7 +778,6 @@ ARTIFACT_STORAGE_NAMES: list[str] = [
     "review",
 ]
 for storagename in ARTIFACT_STORAGE_NAMES:
-    assert storagename not in STORAGES
     STORAGES[storagename] = {
         "BACKEND": "ietf.doc.storage.StoredObjectBlobdbStorage",
         "OPTIONS": {"bucket_name": storagename},
