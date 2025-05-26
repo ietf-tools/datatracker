@@ -6,30 +6,27 @@ import io
 import os
 import operator
 
-from typing import Union            # pyflakes:ignore
-
 from email.utils import parseaddr
+from typing import Union, Optional  # pyflakes:ignore
 
 from django import forms
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.forms.utils import ErrorList
-from django.db.models import Q
-#from django.forms.widgets import RadioFieldRenderer
+from django.db.models import Q, QuerySet
 from django.core.validators import validate_email
 from django_stubs_ext import QuerySetAny
 
-import debug                            # pyflakes:ignore
-
 from ietf.ietfauth.utils import has_role
 from ietf.name.models import DocRelationshipName
-from ietf.liaisons.utils import get_person_for_user,is_authorized_individual
+from ietf.liaisons.utils import get_person_for_user, is_authorized_individual, OUTGOING_LIAISON_ROLES, \
+    INCOMING_LIAISON_ROLES
 from ietf.liaisons.widgets import ButtonWidget,ShowAttachmentsWidget
 from ietf.liaisons.models import (LiaisonStatement,
     LiaisonStatementEvent,LiaisonStatementAttachment,LiaisonStatementPurposeName)
 from ietf.liaisons.fields import SearchableLiaisonStatementsField
 from ietf.group.models import Group
-from ietf.person.models import Email
+from ietf.person.models import Email, Person
 from ietf.person.fields import SearchableEmailField
 from ietf.doc.models import Document
 from ietf.utils.fields import DatepickerDateField, ModelMultipleChoiceField
@@ -51,45 +48,105 @@ with the IAB).
 def liaison_manager_sdos(person):
     return Group.objects.filter(type="sdo", state="active", role__person=person, role__name="liaiman").distinct()
 
+
 def flatten_choices(choices):
-    '''Returns a flat choice list given one with option groups defined'''
+    """Returns a flat choice list given one with option groups defined
+    
+    n.b., Django allows mixing grouped options and top-level options. This helper only supports
+    the non-mixed case where every option is in an option group.
+    """
     flat = []
-    for optgroup,options in choices:
+    for optgroup, options in choices:
         flat.extend(options)
     return flat
+
+
+def choices_from_group_queryset(groups: QuerySet[Group]):
+    """Get choices list for internal IETF groups user is authorized to select
     
-def get_internal_choices(user):
-    '''Returns the set of internal IETF groups the user has permissions for, as a list
-    of choices suitable for use in a select widget.  If user == None, all active internal
-    groups are included.'''
+    Returns a grouped list of choices suitable for use with a ChoiceField. If user is None,
+    includes all groups.
+    """
+    main = []
+    areas = []
+    wgs = []
+    for g in groups.distinct().order_by("acronym"):
+        if g.acronym in ("ietf", "iesg", "iab"):
+            main.append((g.pk, f"The {g.acronym.upper()}"))
+        elif g.type_id == "area":
+            areas.append((g.pk, f"{g.acronym} - {g.name}"))
+        elif g.type_id == "wg":
+            wgs.append((g.pk, f"{g.acronym} - {g.name}"))
     choices = []
-    groups = get_groups_for_person(user.person if user else None)
-    main = [ (g.pk, 'The {}'.format(g.acronym.upper())) for g in groups.filter(acronym__in=('ietf','iesg','iab')) ]
-    areas = [ (g.pk, '{} - {}'.format(g.acronym,g.name)) for g in groups.filter(type='area') ]
-    wgs = [ (g.pk, '{} - {}'.format(g.acronym,g.name)) for g in groups.filter(type='wg') ]
-    choices.append(('Main IETF Entities', main))
-    choices.append(('IETF Areas', areas))
-    choices.append(('IETF Working Groups', wgs ))
+    if len(main) > 0:
+        choices.append(("Main IETF Entities", main))
+    if len(areas) > 0:
+        choices.append(("IETF Areas", areas))
+    if len(wgs) > 0:
+        choices.append(("IETF Working Groups", wgs))
     return choices
 
-def get_groups_for_person(person):
-    '''Returns queryset of internal Groups the person has interesting roles in.
-    This is a refactor of IETFHierarchyManager.get_entities_for_person().  If Person
-    is None or Secretariat or Liaison Manager all internal IETF groups are returned.
-    '''
-    if person == None or has_role(person.user, "Secretariat") or has_role(person.user, "Liaison Manager"):
-        # collect all internal IETF groups
-        queries = [Q(acronym__in=('ietf','iesg','iab')),
-                   Q(type='area',state='active'),
-                   Q(type='wg',state='active')]
+
+def all_internal_groups():
+    """Get a queryset of all IETF groups suitable for LS To/From assignment"""
+    return Group.objects.filter(
+        Q(acronym__in=("ietf", "iesg", "iab"))
+        | Q(type="area", state="active")
+        | Q(type="wg", state="active")
+    ).distinct()
+
+
+def internal_groups_for_person(person: Optional[Person]):
+    """Get a queryset of IETF groups suitable for LS To/From assignment by person"""
+    if person is None:
+        return Group.objects.none()  # no person = no roles
+
+    if has_role(
+        person.user,
+        (
+                "Secretariat",
+                "IETF Chair",
+                "IAB Chair",
+                "IAB Executive Director",
+                "Liaison Manager",
+                "Authorized Individual",
+        ),  # todo liaison coordinator as well
+    ):
+        return all_internal_groups()
+    # Interesting roles, as Group queries
+    queries = [
+        Q(role__person=person, role__name="chair", acronym="ietf"),
+        Q(role__person=person, role__name__in=("chair", "execdir"), acronym="iab"),
+        Q(role__person=person, role__name="ad", type="area", state="active"),
+        Q(
+            role__person=person,
+            role__name__in=("chair", "secretary"),
+            type="wg",
+            state="active",
+        ),
+        Q(
+            parent__role__person=person,
+            parent__role__name="ad",
+            type="wg",
+            state="active",
+        ),
+    ]
+    if has_role(person.user, "Area Director"):
+        queries.append(Q(acronym__in=("ietf", "iesg")))  # AD can also choose these
+    return Group.objects.filter(reduce(operator.or_, queries)).distinct()
+
+
+def external_groups_for_person(person):
+    """Get a queryset of external groups suitable for LS To/From assignment by person"""
+    filter_expr = Q(pk__in=[])  # start with no groups
+    # These roles can add all external sdo groups
+    if has_role(person.user, set(INCOMING_LIAISON_ROLES + OUTGOING_LIAISON_ROLES) - {"Liaison Manager", "Authorized Individual"}):
+        filter_expr |= Q(type="sdo")
     else:
-        # Interesting roles, as Group queries
-        queries = [Q(role__person=person,role__name='chair',acronym='ietf'),
-                   Q(role__person=person,role__name__in=('chair','execdir'),acronym='iab'),
-                   Q(role__person=person,role__name='ad',type='area',state='active'),
-                   Q(role__person=person,role__name__in=('chair','secretary'),type='wg',state='active'),
-                   Q(parent__role__person=person,parent__role__name='ad',type='wg',state='active')]
-    return Group.objects.filter(reduce(operator.or_,queries)).order_by('acronym').distinct()
+        # The person cannot add all external sdo groups; add any for which they are Liaison Manager
+        filter_expr |= Q(type="sdo", role__person=person, role__name__in=["auth", "liaiman"])
+    return Group.objects.filter(state="active").filter(filter_expr).distinct().order_by("name")
+
 
 def liaison_form_factory(request, type=None, **kwargs):
     """Returns appropriate Liaison entry form"""
@@ -216,13 +273,9 @@ class LiaisonModelForm(forms.ModelForm):
     '''Specify fields which require a custom widget or that are not part of the model.
     '''
     from_groups = ModelMultipleChoiceField(queryset=Group.objects.all(),label='Groups',required=False)
-    from_groups.widget.attrs["class"] = "select2-field"
-    from_groups.widget.attrs['data-minimum-input-length'] = 0
     from_contact = forms.EmailField()   # type: Union[forms.EmailField, SearchableEmailField]
     to_contacts = forms.CharField(label="Contacts", widget=forms.Textarea(attrs={'rows':'3', }), strip=False)
     to_groups = ModelMultipleChoiceField(queryset=Group.objects,label='Groups',required=False)
-    to_groups.widget.attrs["class"] = "select2-field"
-    to_groups.widget.attrs['data-minimum-input-length'] = 0
     deadline = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Deadline', required=True)
     related_to = SearchableLiaisonStatementsField(label='Related Liaison Statement', required=False)
     submitted_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Submission date', required=True, initial=lambda: date_today(DEADLINE_TZINFO))
@@ -245,11 +298,15 @@ class LiaisonModelForm(forms.ModelForm):
         self.person = get_person_for_user(user)
         self.is_new = not self.instance.pk
 
+        self.fields["from_groups"].widget.attrs["class"] = "select2-field"
+        self.fields["from_groups"].widget.attrs["data-minimum-input-length"] = 0
         self.fields["from_groups"].widget.attrs["data-placeholder"] = "Type in name to search for group"
+        self.fields["to_groups"].widget.attrs["class"] = "select2-field"
+        self.fields["to_groups"].widget.attrs["data-minimum-input-length"] = 0
         self.fields["to_groups"].widget.attrs["data-placeholder"] = "Type in name to search for group"
         self.fields["to_contacts"].label = 'Contacts'
         self.fields["other_identifiers"].widget.attrs["rows"] = 2
-        
+
         # add email validators
         for field in ['from_contact','to_contacts','technical_contacts','action_holder_contacts','cc_contacts']:
             if field in self.fields:
@@ -440,26 +497,23 @@ class IncomingLiaisonForm(LiaisonModelForm):
         return True
 
     def set_from_fields(self):
-        '''Set from_groups and from_contact options and initial value based on user
-        accessing the form.'''
-        if has_role(self.user, "Secretariat"):
-            queryset = Group.objects.filter(type="sdo", state="active").order_by('name')
-        else:
-            queryset = Group.objects.filter(type="sdo", state="active", role__person=self.person, role__name__in=("liaiman", "auth")).distinct().order_by('name')
-            self.fields['from_contact'].initial = self.person.role_set.filter(group=queryset[0]).first().email.address
-            self.fields['from_contact'].widget.attrs['disabled'] = True
-        self.fields['from_groups'].queryset = queryset
-        self.fields['from_groups'].widget.submitter = str(self.person)
-
+        """Configure from "From" fields based on user roles"""
+        qs = external_groups_for_person(self.person)
+        self.fields["from_groups"].queryset = qs
+        self.fields["from_groups"].widget.submitter = str(self.person)
         # if there's only one possibility make it the default
-        if len(queryset) == 1:
-            self.fields['from_groups'].initial = queryset
+        if len(qs) == 1:
+            self.fields['from_groups'].initial = qs
+
+        if not has_role(self.user, "Secretariat"):
+            self.fields["from_contact"].initial = self.person.role_set.filter(group=qs[0]).first().email.address
+            self.fields["from_contact"].widget.attrs["disabled"] = True
 
     def set_to_fields(self):
         '''Set to_groups and to_contacts options and initial value based on user
         accessing the form.  For incoming Liaisons, to_groups choices is the full set.
         '''
-        self.fields['to_groups'].choices = get_internal_choices(None)
+        self.fields['to_groups'].choices = choices_from_group_queryset(all_internal_groups())
 
 
 class OutgoingLiaisonForm(LiaisonModelForm):
@@ -472,47 +526,51 @@ class OutgoingLiaisonForm(LiaisonModelForm):
     def is_approved(self):
         return self.cleaned_data['approved']
 
+    @staticmethod
+    def from_contact_queryset(person):
+        if person.role_set.filter(name='liaiman',group__state='active'):
+            email = person.role_set.filter(name='liaiman',group__state='active').first().email
+        elif person.role_set.filter(name__in=('ad','chair'),group__state='active'):
+            email = person.role_set.filter(name__in=('ad','chair'),group__state='active').first().email
+        else:
+            email = person.email()
+        return Email.objects.filter(pk=email)
+
     def set_from_fields(self):
-        '''Set from_groups and from_contact options and initial value based on user
-        accessing the form'''
-        choices = get_internal_choices(self.user)
-        self.fields['from_groups'].choices = choices
+        """Configure from "From" fields based on user roles"""
+        self.set_from_groups_field()
+        self.set_from_contact_field()
         
-        # set initial value if only one entry 
-        flat_choices = flatten_choices(choices)
+    def set_from_groups_field(self):
+        """Configure the from_groups field based on roles"""
+        grouped_choices = choices_from_group_queryset(internal_groups_for_person(self.person))
+        flat_choices = flatten_choices(grouped_choices)
         if len(flat_choices) == 1:
-            self.fields['from_groups'].initial = [flat_choices[0][0]]
-        
+            self.fields["from_groups"].choices = flat_choices
+            self.fields["from_groups"].initial = [flat_choices[0][0]]
+        else:
+            self.fields["from_groups"].choices = grouped_choices
+
+    def set_from_contact_field(self):
+        """Configure the from_contact field based on user roles"""
         if has_role(self.user, "Secretariat"):
             self.fields['from_contact'] = SearchableEmailField(only_users=True)  # secretariat can edit this field!
-            return
-
-        if self.person.role_set.filter(name='liaiman',group__state='active'):
-            email = self.person.role_set.filter(name='liaiman',group__state='active').first().email.address
-        elif self.person.role_set.filter(name__in=('ad','chair'),group__state='active'):
-            email = self.person.role_set.filter(name__in=('ad','chair'),group__state='active').first().email.address
         else:
-            email = self.person.email_address()
-
-        # Non-secretariat user cannot change the from_contact field. Fill in its value.
-        self.fields['from_contact'].disabled = True
-        self.fields['from_contact'].initial = email
+            # Non-secretariat user cannot change the from_contact field. Fill in its value.
+            allowed_from_emails = self.from_contact_queryset(self.person)
+            self.fields['from_contact'].disabled = True
+            self.fields['from_contact'].initial = allowed_from_emails.first().address  # todo actually allow choice
 
     def set_to_fields(self):
-        '''Set to_groups and to_contacts options and initial value based on user
-        accessing the form'''
-        # set options. if the user is a Liaison Manager and nothing more, reduce set to his SDOs
-        if has_role(self.user, "Liaison Manager") and not self.person.role_set.filter(name__in=('ad','chair'),group__state='active'):
-            queryset = Group.objects.filter(type="sdo", state="active", role__person=self.person, role__name="liaiman").distinct().order_by('name')
-        else:
-            # get all outgoing entities
-            queryset = Group.objects.filter(type="sdo", state="active").order_by('name')
-
-        self.fields['to_groups'].queryset = queryset
+        """Configure the "To" fields based on user roles"""
+        qs = external_groups_for_person(self.person)
+        self.fields['to_groups'].queryset = qs 
 
         # set initial
         if has_role(self.user, "Liaison Manager"):
-            self.fields['to_groups'].initial = [queryset.first()]
+            self.fields['to_groups'].initial = [
+                qs.filter(role__person=self.person, role__name="liaiman").first()
+            ]
 
 
 class EditLiaisonForm(LiaisonModelForm):
@@ -533,32 +591,20 @@ class EditLiaisonForm(LiaisonModelForm):
         return self.instance
 
     def set_from_fields(self):
-        '''Set from_groups and from_contact options and initial value based on user
-        accessing the form.'''
+        """Configure from "From" fields based on user roles"""
         if self.instance.is_outgoing():
-            self.fields['from_groups'].choices = get_internal_choices(self.user)
+            self.fields['from_groups'].choices = choices_from_group_queryset(internal_groups_for_person(self.person))
         else:
-            if has_role(self.user, "Secretariat"):
-                queryset = Group.objects.filter(type="sdo").order_by('name')
-            else:
-                queryset = Group.objects.filter(type="sdo", role__person=self.person, role__name__in=("liaiman", "auth")).distinct().order_by('name')
+            self.fields["from_groups"].queryset = external_groups_for_person(self.person)
+            if not has_role(self.user, "Secretariat"):
                 self.fields['from_contact'].widget.attrs['disabled'] = True
-            self.fields['from_groups'].queryset = queryset
 
     def set_to_fields(self):
-        '''Set to_groups and to_contacts options and initial value based on user
-        accessing the form.  For incoming Liaisons, to_groups choices is the full set.
-        '''
+        """Configure the "To" fields based on user roles"""
         if self.instance.is_outgoing():
-            # if the user is a Liaison Manager and nothing more, reduce to set to his SDOs
-            if has_role(self.user, "Liaison Manager") and not self.person.role_set.filter(name__in=('ad','chair'),group__state='active'):
-                queryset = Group.objects.filter(type="sdo", role__person=self.person, role__name="liaiman").distinct().order_by('name')
-            else:
-                # get all outgoing entities
-                queryset = Group.objects.filter(type="sdo").order_by('name')
-            self.fields['to_groups'].queryset = queryset
+            self.fields['to_groups'].queryset = external_groups_for_person(self.person)
         else:
-            self.fields['to_groups'].choices = get_internal_choices(None)
+            self.fields['to_groups'].choices = choices_from_group_queryset(all_internal_groups())
 
 
 class EditAttachmentForm(forms.Form):
