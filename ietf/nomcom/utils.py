@@ -666,14 +666,14 @@ def previous_five_meetings(date = None):
     return Meeting.objects.filter(type='ietf',date__lte=date).order_by('-date')[:5]
 
 def three_of_five_eligible_8713(previous_five, queryset=None):
-    """ Return a list of Person records who attended at least 
+    """ Return a list of Person records who attended at least
         3 of the 5 type_id='ietf' meetings before the given
         date. Does not disqualify anyone based on held roles.
         This variant bases the calculation on MeetingRegistration.attended
     """
     if queryset is None:
         queryset = Person.objects.all()
-    return queryset.filter(meetingregistration__meeting__in=list(previous_five),meetingregistration__attended=True).annotate(mtg_count=Count('meetingregistration')).filter(mtg_count__gte=3)
+    return queryset.filter(registration__meeting__in=list(previous_five), registration__attended=True).annotate(mtg_count=Count('registration')).filter(mtg_count__gte=3)
 
 def three_of_five_eligible_9389(previous_five, queryset=None):
     """ Return a list of Person records who attended at least
@@ -692,7 +692,7 @@ def three_of_five_eligible_9389(previous_five, queryset=None):
     return queryset.filter(pk__in=[id for id, count in counts.items() if count >= 3])
 
 def suggest_affiliation(person):
-    recent_meeting = person.meetingregistration_set.order_by('-meeting__date').first()
+    recent_meeting = person.registration_set.order_by('-meeting__date').first()
     affiliation = recent_meeting.affiliation if recent_meeting else ''
     if not affiliation:
         recent_volunteer = person.volunteer_set.order_by('-nomcom__group__acronym').first()
