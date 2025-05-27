@@ -1648,7 +1648,7 @@ def document_json(request, name, rev=None):
              email=author.email.address if author.email else None,
              affiliation=author.affiliation)
         for author in doc.documentauthor_set.all().select_related("person", "email").order_by("order")
-    ]
+    ] # TODO: report differntly if we have RfcAuthors
     data["shepherd"] = doc.shepherd.formatted_email() if doc.shepherd else None
     data["ad"] = doc.ad.role_email("ad").formatted_email() if doc.ad else None
 

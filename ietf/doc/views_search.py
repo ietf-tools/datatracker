@@ -219,7 +219,7 @@ def retrieve_search_results(form, all_types=False):
             queries.extend([Q(targets_related__source__name__icontains=look_for, targets_related__relationship_id="became_rfc")])
 
         combined_query = reduce(operator.or_, queries)
-        docs = docs.filter(combined_query).distinct()
+        docs = docs.filter(combined_query)
 
     # rfc/active/old check buttons
     allowed_draft_states = []
@@ -229,20 +229,23 @@ def retrieve_search_results(form, all_types=False):
         allowed_draft_states.extend(['repl', 'expired', 'auth-rm', 'ietf-rm'])
 
     docs = docs.filter(Q(states__slug__in=allowed_draft_states) |
-                       ~Q(type__slug='draft')).distinct()
+                       ~Q(type__slug='draft'))
 
     # radio choices
     by = query["by"]
     if by == "author":
         docs = docs.filter(
             Q(documentauthor__person__alias__name__icontains=query["author"]) |
-            Q(documentauthor__person__email__address__icontains=query["author"])
+            Q(documentauthor__person__email__address__icontains=query["author"]) |
+            Q(rfcauthor__person__alias__name__icontains=query["author"]) |
+            Q(rfcauthor__person__email__address__icontains=query["author"]) |
+            Q(rfcauthor__titlepage_name__icontains=query["author"])
         )
     elif by == "group":
         docs = docs.filter(group__acronym__iexact=query["group"])
     elif by == "area":
         docs = docs.filter(Q(group__type="wg", group__parent=query["area"]) |
-                           Q(group=query["area"])).distinct()
+                           Q(group=query["area"]))
     elif by == "ad":
         docs = docs.filter(ad=query["ad"])
     elif by == "state":
@@ -254,6 +257,8 @@ def retrieve_search_results(form, all_types=False):
         docs = docs.filter(states=query["irtfstate"])
     elif by == "stream":
         docs = docs.filter(stream=query["stream"])
+
+    docs=docs.distinct()
 
     return docs
 
