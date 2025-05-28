@@ -116,7 +116,7 @@ def rpc_draft(request, doc_id):
 @csrf_exempt
 @requires_api_token("ietf.api.views_rpc")
 def rpc_draft_refs(request, doc_id):
-    """Return norminative references"""
+    """Return normative references"""
     if request.method != "GET":
         return HttpResponseNotAllowed(["GET"])
 

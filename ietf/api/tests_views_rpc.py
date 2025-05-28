@@ -21,7 +21,7 @@ class RpcApiTests(TestCase):
         refs = jsondata["references"]
         self.assertEqual(refs, [])
 
-        # draft without any nominative references
+        # draft without any normative references
         draft = IndividualDraftFactory()
         draft = reload_db_objects(draft)
         url = urlreverse(
@@ -34,7 +34,7 @@ class RpcApiTests(TestCase):
         refs = jsondata["references"]
         self.assertEqual(refs, [])
 
-        # draft without any nominative references but with an informative reference
+        # draft without any normative references but with an informative reference
         draft_foo = IndividualDraftFactory()
         draft_foo = reload_db_objects(draft_foo)
         RelatedDocument.objects.create(
@@ -50,7 +50,7 @@ class RpcApiTests(TestCase):
         refs = jsondata["references"]
         self.assertEqual(refs, [])
 
-        # draft with a nominative reference
+        # draft with a normative reference
         draft_bar = IndividualDraftFactory()
         draft_bar = reload_db_objects(draft_bar)
         RelatedDocument.objects.create(
