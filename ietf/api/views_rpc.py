@@ -16,7 +16,7 @@ from django.contrib.auth.models import User
 
 from ietf.api.ietf_utils import requires_api_token
 from ietf.doc.factories import WgDraftFactory  # DO NOT MERGE INTO MAIN
-from ietf.doc.models import Document, DocHistory
+from ietf.doc.models import Document, DocHistory, RelatedDocument
 from ietf.person.factories import PersonFactory  # DO NOT MERGE INTO MAIN
 from ietf.person.models import Email, Person
 
@@ -110,6 +110,25 @@ def rpc_draft(request, doc_id):
                 d.intended_std_level.slug if d.intended_std_level else ""
             ),
         }
+    )
+
+
+@csrf_exempt
+@requires_api_token("ietf.api.views_rpc")
+def rpc_draft_refs(request, doc_id):
+    """Return normative references"""
+    if request.method != "GET":
+        return HttpResponseNotAllowed(["GET"])
+
+    return JsonResponse(
+        dict(
+            references=[
+                dict(id=t[0], name=t[1])
+                for t in RelatedDocument.objects.filter(
+                    source_id=doc_id, target__type_id="draft", relationship_id="refnorm"
+                ).values_list("target_id", "target__name")
+            ]
+        )
     )
 
 
