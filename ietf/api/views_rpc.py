@@ -16,7 +16,7 @@ from django.contrib.auth.models import User
 
 from ietf.api.ietf_utils import requires_api_token
 from ietf.doc.factories import WgDraftFactory  # DO NOT MERGE INTO MAIN
-from ietf.doc.models import Document, DocHistory
+from ietf.doc.models import Document, DocHistory, RelatedDocument
 from ietf.person.factories import PersonFactory  # DO NOT MERGE INTO MAIN
 from ietf.person.models import Email, Person
 
@@ -114,30 +114,22 @@ def rpc_draft(request, doc_id):
 
 
 @csrf_exempt
-#@requires_api_token("ietf.api.views_rpc")
+@requires_api_token("ietf.api.views_rpc")
 def rpc_draft_refs(request, doc_id):
     """Return norminative references"""
     if request.method != "GET":
         return HttpResponseNotAllowed(["GET"])
 
-    try:
-        d = Document.objects.get(pk=doc_id, type_id="draft")
-    except Document.DoesNotExist:
-        return HttpResponseNotFound()
-
-    references = d.references()
-    norminative_references = []
-
-    for r in references:
-        if r.relationship.name == "normatively references" and r.target.type_id == "draft":
-            norminative_references.append(
-                {
-                    "id": r.target.id,
-                    "name": r.target.name,
-                }
-            )
-
-    return JsonResponse({"references": norminative_references})
+    return JsonResponse(
+        dict(
+            references=[
+                dict(id=t[0], name=t[1])
+                for t in RelatedDocument.objects.filter(
+                    source_id=doc_id, target__type_id="draft", relationship_id="refnorm"
+                ).values_list("target_id", "target__name")
+            ]
+        )
+    )
 
 
 @csrf_exempt
