@@ -36,6 +36,7 @@
 
 import datetime
 import importlib
+import string
 
 # needed if we revert to higher barrier for account creation
 #from datetime import datetime as DateTime, timedelta as TimeDelta, date as Date
@@ -729,7 +730,32 @@ def change_username(request):
     return render(request, 'registration/change_username.html', {'form': form})
 
 
-class AnyEmailAuthenticationForm(AuthenticationForm):
+class StrongPasswordAuthenticationForm(AuthenticationForm):
+    def _is_strong_password(self, password: str):
+        if settings.SERVER_MODE == "development":
+            return True
+    
+        # todo choose a real set of password strength criteria
+        has_lowercase = not set(string.ascii_lowercase).isdisjoint(password)
+        has_uppercase = not set(string.ascii_uppercase).isdisjoint(password)
+        has_digit = not set(string.digits).isdisjoint(password)
+        return has_lowercase and has_uppercase and has_digit and len(password) >= 10  
+    
+    def clean(self):
+        result = super().clean()  # raises an exception on login failure
+        
+        # Check whether the otherwise successfully authenticated user has a strong password 
+        if not self._is_strong_password(self.cleaned_data.get("password")):
+            self.add_error(
+                "password",
+                'Your password does not meet complexity requirements and is easily guessable. '
+                    'Please use the "Forgot your password?" button below to set a new password '
+                    'for your account.',
+            )
+        return result
+
+
+class AnyEmailAuthenticationForm(StrongPasswordAuthenticationForm):
     """AuthenticationForm that allows any email address as the username
     
     Also performs a check for a cleared password field and provides a helpful error message
