@@ -86,7 +86,6 @@ paths:
                                 additionalProperties:
                                     type: string
 
-                
     /person/create_demo_person/:
         post:
             operationId: create_demo_person
@@ -163,7 +162,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SubmittedToQueue'
-                                
+
     /doc/drafts/{docId}/:
         get:
             operationId: get_draft_by_id
@@ -306,7 +305,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/OriginalStream'   
+                                $ref: '#/components/schemas/OriginalStream'
 
     /subject/{subjectId}/person/:
         get:
@@ -369,13 +368,13 @@ components:
                             submitted: 
                                 type: string
                                 format: date-time
-        
+
         ErrorResponse:
             type: object
             properties:
                 error:
                     type: string
-            
+
         Draft:
             type: object
             properties: 
