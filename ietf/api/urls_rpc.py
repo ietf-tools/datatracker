@@ -19,7 +19,7 @@ urlpatterns = [
     url(r"^subject/(?P<subject_id>[0-9]+)/person/$", views_rpc.rpc_subject_person),
 ]
 
-if settings.SERVER_MODE != "production":
+if settings.SERVER_MODE not in {"production", "test"}:
     # for non production demos
     urlpatterns.append(
         url(r"^doc/create_demo_draft/$", views_rpc_demo.create_demo_draft)
