@@ -185,6 +185,26 @@ paths:
                 '404':
                     description: Not found
 
+    /doc/drafts/{docId}/references/:
+        get:
+            operationId: get_draft_references
+            summary: Get a normative references
+            description: Returns the normative for the requested ID
+            parameters:
+                - name: docId
+                  in: path
+                  description: ID of draft
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/References'
+
     /doc/drafts_by_names/:
         post:
             operationId: get_drafts_by_names
@@ -406,6 +426,19 @@ components:
                     format: email
                 intended_std_level:
                     type: string
+
+        References:
+            type: object
+            properties:
+                references:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
 
         OriginalStream:
             type: object
