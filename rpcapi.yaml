@@ -188,8 +188,8 @@ paths:
     /doc/drafts/{docId}/references/:
         get:
             operationId: get_draft_references
-            summary: Get a normative references
-            description: Returns the normative for the requested ID
+            summary: Get normative references to Internet-Drafts
+            description: Returns the id and name of each normatively referenced Internet-Draft for the given docId
             parameters:
                 - name: docId
                   in: path
