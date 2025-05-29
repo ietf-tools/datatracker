@@ -771,7 +771,7 @@ def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None
         else:
             e.desc = "Removed from agenda for telechat"
     elif on_agenda and new_telechat_date != prev_telechat:
-        e.desc = "Telechat date has been changed to <b>%s</b> from <b>%s</b>" % (
+        e.desc = "Telechat date has been changed to <b>%s</b> (Previous date was <b>%s</b>)" % (
             new_telechat_date, prev_telechat)
     else:
         # we didn't reschedule but flipped returning item bit - let's

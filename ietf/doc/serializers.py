@@ -36,7 +36,13 @@ class DocIdentifierSerializer(serializers.Serializer):
 # This should become "type RfcStatusSlugT ..." when we drop pre-py3.12 support
 # It should be "RfcStatusSlugT: TypeAlias ..." when we drop py3.9 support
 RfcStatusSlugT = Literal[
-    "standard", "bcp", "informational", "experimental", "historic", "unknown"
+    "standard",
+    "bcp",
+    "informational",
+    "experimental",
+    "historic",
+    "unknown",
+    "not-issued",
 ]
 
 

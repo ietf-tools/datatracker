@@ -299,10 +299,10 @@ AD_WORKLOAD = {
         "ad-eval",
         "lc-req",
         "lc",
+        "goaheadw",
         "writeupw",
         # "defer",  # probably not a useful state to show, since it's rare
         "iesg-eva",
-        "goaheadw",
         "approved",
         "ann",
     ],
