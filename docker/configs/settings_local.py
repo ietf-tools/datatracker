@@ -74,7 +74,6 @@ STATIC_IETF_ORG_INTERNAL = "http://static"
 import botocore.config
 for storagename in ARTIFACT_STORAGE_NAMES:
     replica_storagename = f"r2-{storagename}"
-    assert replica_storagename not in STORAGES
     STORAGES[replica_storagename] = {
         "BACKEND": "ietf.doc.storage.MetadataS3Storage",
         "OPTIONS": dict(
