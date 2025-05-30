@@ -226,7 +226,7 @@ paths:
                             schema:
                                 type: object
                                 additionalProperties:
-                                    $ref:'#/components/schemas/Draft'
+                                    $ref: '#/components/schemas/Draft'
 
     /doc/rfc/authors/:
         post:
@@ -379,13 +379,13 @@ components:
                     items:
                         type: object
                         properties:
-                            name: 
+                            name:
                               type: string
-                            id: 
+                            id:
                               type: integer
-                            stream: 
+                            stream:
                               type: string
-                            submitted: 
+                            submitted:
                                 type: string
                                 format: date-time
 
@@ -397,7 +397,7 @@ components:
 
         Draft:
             type: object
-            properties: 
+            properties:
                 id:
                     type: integer
                 name:
@@ -444,7 +444,7 @@ components:
             type: object
             properties:
                 original_stream:
-                    type: list
+                    type: array
                     items:
                         properties:
                             rfc_number:
@@ -452,7 +452,7 @@ components:
                             stream:
                                 type: string
 
-    securitySchemes: 
+    securitySchemes:
         ApiKeyAuth:
             type: apiKey
             in: header
