@@ -11,13 +11,14 @@ OUTGOING_LIAISON_ROLES = [
     "IAB Executive Director",
     "IETF Chair",
     "Liaison Manager",
+    "Liaison Coordinator",
     "Secretariat",
     "WG Chair",
     "WG Secretary",
 ]
 
 # Roles allowed to create and manage incoming liaison statements.
-INCOMING_LIAISON_ROLES = ["Authorized Individual", "Liaison Manager", "Secretariat"]
+INCOMING_LIAISON_ROLES = ["Authorized Individual", "Liaison Manager", "Liaison Coordinator", "Secretariat"]
 
 can_submit_liaison_required = passes_test_decorator(
     lambda u, *args, **kwargs: can_add_liaison(u),

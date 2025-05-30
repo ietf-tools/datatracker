@@ -156,6 +156,7 @@ class HelperTests(TestCase):
             group=Group.objects.get(acronym="iab"),
             person__user__username="iab-execdir",
         )
+        RoleFactory(name_id="liaison_coordinator", group__acronym="iab", person__user__username="liaison-coordinator")
         the_sdo = GroupFactory(type_id="sdo", acronym="the-sdo")
         liaison_manager = RoleFactory(name_id="liaiman", group=the_sdo).person
         authperson = RoleFactory(name_id="auth", group=the_sdo).person
@@ -166,6 +167,7 @@ class HelperTests(TestCase):
             "ietf-chair",
             "iab-chair",
             "iab-execdir",
+            "liaison-coordinator",
             "ad",
             "sopschairman",
             "sopssecretary",

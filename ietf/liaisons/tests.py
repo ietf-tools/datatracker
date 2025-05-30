@@ -462,11 +462,12 @@ class LiaisonManagementTests(TestCase):
 
 
     def test_incoming_access(self):
-        '''Ensure only Secretariat, Liaison Managers, and Authorized Individuals
+        '''Ensure only Secretariat, Liaison Managers, Liaison Coordinators, and Authorized Individuals
         have access to incoming liaisons.
         '''
         sdo = RoleFactory(name_id='liaiman',group__type_id='sdo', person__user__username='ulm-liaiman').group
         RoleFactory(name_id='auth',group=sdo,person__user__username='ulm-auth')
+        RoleFactory(name_id='liaison_coordinator', group__acronym='iab', person__user__username='liaison-coordinator')
         stmt = LiaisonStatementFactory(from_groups=[sdo,])
         LiaisonStatementEventFactory(statement=stmt,type_id='posted')
         RoleFactory(name_id='chair',person__user__username='marschairman',group__acronym='mars')
@@ -499,6 +500,15 @@ class LiaisonManagementTests(TestCase):
         r = self.client.get(addurl)
         self.assertEqual(r.status_code, 200)
 
+        # Liaison Coordinator has access
+        self.client.login(username="liaison-coordinator", password="liaison-coordinator+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('a.btn:contains("New incoming liaison")')), 1)
+        r = self.client.get(addurl)
+        self.assertEqual(r.status_code, 200)
+
         # Authorized Individual has access
         self.client.login(username="ulm-auth", password="ulm-auth+password")
         r = self.client.get(url)
@@ -521,6 +531,7 @@ class LiaisonManagementTests(TestCase):
 
         sdo = RoleFactory(name_id='liaiman',group__type_id='sdo', person__user__username='ulm-liaiman').group
         RoleFactory(name_id='auth',group=sdo,person__user__username='ulm-auth')
+        RoleFactory(name_id='liaison_coordinator', group__acronym='iab', person__user__username='liaison-coordinator')
         mars = RoleFactory(name_id='chair',person__user__username='marschairman',group__acronym='mars').group
         RoleFactory(name_id='secr',group=mars,person__user__username='mars-secr')
         RoleFactory(name_id='execdir',group=Group.objects.get(acronym='iab'),person__user__username='iab-execdir')
@@ -592,6 +603,15 @@ class LiaisonManagementTests(TestCase):
 
         # Liaison Manager has access
         self.assertTrue(self.client.login(username="ulm-liaiman", password="ulm-liaiman+password"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('a.btn:contains("New outgoing liaison")')), 1)
+        r = self.client.get(addurl)
+        self.assertEqual(r.status_code, 200)
+
+        # Liaison Coordinator has access
+        self.assertTrue(self.client.login(username="liaison-coordinator", password="liaison-coordinator+password"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)

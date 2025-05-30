@@ -104,13 +104,14 @@ def internal_groups_for_person(person: Optional[Person]):
     if has_role(
         person.user,
         (
-                "Secretariat",
-                "IETF Chair",
-                "IAB Chair",
-                "IAB Executive Director",
-                "Liaison Manager",
-                "Authorized Individual",
-        ),  # todo liaison coordinator as well
+            "Secretariat",
+            "IETF Chair",
+            "IAB Chair",
+            "IAB Executive Director",
+            "Liaison Manager",
+            "Liaison Coordinator",
+            "Authorized Individual",
+        ),
     ):
         return all_internal_groups()
     # Interesting roles, as Group queries
@@ -505,8 +506,14 @@ class IncomingLiaisonForm(LiaisonModelForm):
         if len(qs) == 1:
             self.fields['from_groups'].initial = qs
 
-        if not has_role(self.user, "Secretariat"):
-            self.fields["from_contact"].initial = self.person.role_set.filter(group=qs[0]).first().email.address
+        # Note that the IAB chair currently doesn't get to work with incoming liaison statements
+        if not (
+            has_role(self.user, "Secretariat")
+            or has_role(self.user, "Liaison Coordinator")
+        ):
+            self.fields["from_contact"].initial = (
+                self.person.role_set.filter(group=qs[0]).first().email.address
+            )
             self.fields["from_contact"].widget.attrs["disabled"] = True
 
     def set_to_fields(self):
