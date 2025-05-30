@@ -226,7 +226,7 @@ paths:
                             schema:
                                 type: object
                                 additionalProperties:
-                                    $ref:'#/components/schemas/Draft'
+                                    $ref: '#/components/schemas/Draft'
 
     /doc/rfc/authors/:
         post:
@@ -444,7 +444,7 @@ components:
             type: object
             properties:
                 original_stream:
-                    type: list
+                    type: array
                     items:
                         properties:
                             rfc_number:
