@@ -28,6 +28,6 @@ cleanup () {
 trap 'trap "" TERM; cleanup' TERM
 
 # start celery in the background so we can trap the TERM signal
-celery $@ &
+celery "$@" &
 celery_pid=$!
 wait "${celery_pid}"
