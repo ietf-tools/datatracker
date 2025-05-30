@@ -86,7 +86,6 @@ paths:
                                 additionalProperties:
                                     type: string
 
-                
     /person/create_demo_person/:
         post:
             operationId: create_demo_person
@@ -163,7 +162,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SubmittedToQueue'
-                                
+
     /doc/drafts/{docId}/:
         get:
             operationId: get_draft_by_id
@@ -185,6 +184,26 @@ paths:
                                 $ref: '#/components/schemas/Draft'
                 '404':
                     description: Not found
+
+    /doc/drafts/{docId}/references/:
+        get:
+            operationId: get_draft_references
+            summary: Get normative references to Internet-Drafts
+            description: Returns the id and name of each normatively referenced Internet-Draft for the given docId
+            parameters:
+                - name: docId
+                  in: path
+                  description: ID of draft
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/References'
 
     /doc/drafts_by_names/:
         post:
@@ -306,7 +325,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/OriginalStream'   
+                                $ref: '#/components/schemas/OriginalStream'
 
     /subject/{subjectId}/person/:
         get:
@@ -369,13 +388,13 @@ components:
                             submitted: 
                                 type: string
                                 format: date-time
-        
+
         ErrorResponse:
             type: object
             properties:
                 error:
                     type: string
-            
+
         Draft:
             type: object
             properties: 
@@ -407,6 +426,19 @@ components:
                     format: email
                 intended_std_level:
                     type: string
+
+        References:
+            type: object
+            properties:
+                references:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
 
         OriginalStream:
             type: object
