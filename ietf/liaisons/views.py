@@ -196,7 +196,13 @@ def post_only(group,person):
     - Authorized Individuals have full access for the group they are associated with
     - Liaison Managers can post only
     '''
-    if group.type_id == 'sdo' and ( not(has_role(person.user,"Secretariat") or group.role_set.filter(name='auth',person=person)) ):
+    if group.type_id == "sdo" and (
+        not (
+            has_role(person.user, "Secretariat")
+            or has_role(person.user, "Liaison Coordinator")
+            or group.role_set.filter(name="auth", person=person)
+        )
+    ):
         return True
     else:
         return False

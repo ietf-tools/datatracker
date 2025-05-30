@@ -137,6 +137,10 @@ def has_role(user, role_names, *args, **kwargs):
                 group__type="sdo",
                 group__state="active",
             ),
+            "Liaison Coordinator": Q(
+                name="liaison_coordinator",
+                group__acronym="iab",
+            ),
             "Authorized Individual": Q(
                 name="auth",
                 group__type="sdo",
