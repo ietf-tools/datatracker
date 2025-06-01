@@ -371,7 +371,7 @@ for storagename in ARTIFACT_STORAGE_NAMES:
             ),
             verify=False,
             bucket_name=f"{_blob_store_bucket_prefix}{storagename}".strip(),
-            ietf_log_blog_timing=_blob_store_enable_profiling,
+            ietf_log_blob_timing=_blob_store_enable_profiling,
         ),
     }
 
