@@ -492,8 +492,12 @@ class IncomingLiaisonForm(LiaisonModelForm):
         return True
 
     def get_post_only(self):
-        from_groups = self.cleaned_data.get('from_groups')
-        if has_role(self.user, "Secretariat") or is_authorized_individual(self.user,from_groups):
+        from_groups = self.cleaned_data.get("from_groups")
+        if (
+            has_role(self.user, "Secretariat")
+            or has_role(self.user, "Liaison Coordinator")
+            or is_authorized_individual(self.user, from_groups)
+        ):
             return False
         return True
 
