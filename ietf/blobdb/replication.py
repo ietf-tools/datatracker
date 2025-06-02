@@ -62,7 +62,9 @@ def validate_replication_settings():
         configured_storages = set(settings.STORAGES.keys())
         missing_storages = include_storages - exclude_storages - configured_storages
         if len(missing_storages) > 0:
-            raise RuntimeError(f"Replication requires unknown storage(s): {', '.join(missing_storages)}")
+            raise RuntimeError(
+                f"Replication requires unknown storage(s): {', '.join(missing_storages)}"
+            )
 
 
 def destination_storage_name_for(bucket: str):
@@ -115,13 +117,17 @@ def replicate_blob(bucket, name):
     """Replicate a Blobdb blob to a Storage"""
     if not replication_enabled(bucket):
         if verbose_logging_enabled():
-            log.log(f"Not replicating {bucket}:{name} because replication is not enabled for {bucket}")
+            log.log(
+                f"Not replicating {bucket}:{name} because replication is not enabled for {bucket}"
+            )
         return
 
     try:
         destination_storage = destination_storage_for(bucket)
     except InvalidStorageError as e:
-        log.log(f"Failed to replicate {bucket}:{name} because destination storage for {bucket} is not configured")
+        log.log(
+            f"Failed to replicate {bucket}:{name} because destination storage for {bucket} is not configured"
+        )
         raise ReplicationError from e
 
     blob = fetch_blob_via_sql(bucket, name)
@@ -137,10 +143,17 @@ def replicate_blob(bucket, name):
         # Add metadata expected by the MetadataS3Storage
         file_with_metadata = SimpleMetadataFile(file=BytesIO(blob.content))
         file_with_metadata.content_type = blob.content_type
-        file_with_metadata.custom_metadata = {"sha384": blob.checksum}
-        file_with_metadata.custom_metadata["mtime"] = (blob.mtime or blob.modified).isoformat()
+        file_with_metadata.custom_metadata = {
+            "sha384": blob.checksum,
+            "mtime": (blob.mtime or blob.modified).isoformat(),
+        }
         if verbose_logging_enabled():
-            log.log(f"Saving {bucket}:{name} to replica (sha384: {blob.checksum[:16]}...)")
+            log.log(
+                f"Saving {bucket}:{name} to replica ("
+                f"sha384: '{file_with_metadata.custom_metadata['sha384'][:16]}...', "
+                f"content_type: '{file_with_metadata.content_type}', "
+                f"mtime: '{file_with_metadata.custom_metadata['mtime']})"
+            )
         try:
             destination_storage.save(name, file_with_metadata)
         except Exception as e:
