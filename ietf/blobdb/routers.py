@@ -2,11 +2,11 @@
 from django.apps import apps
 from django.conf import settings
 
-from .apps import BlobdbConfig
+from .apps import BlobdbConfig, get_blobdb
 
 
 class BlobdbStorageRouter:
-    """Database router for the DbbStorage class"""
+    """Database router for the Blobdb"""
 
     _app_label = None
 
@@ -25,7 +25,7 @@ class BlobdbStorageRouter:
 
     @property
     def db(self):
-        return getattr(settings, "BLOBDB_DATABASE", None)
+        return get_blobdb()
 
     def db_for_read(self, model, **hints):
         """Suggest the database that should be used for read operations for objects of type model
