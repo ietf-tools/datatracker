@@ -149,7 +149,10 @@ def replicate_blob(bucket, name):
         }
         if verbose_logging_enabled():
             log.log(
-                f"Saving {bucket}:{name} to replica (sha384: {blob.checksum[:16]}...)"
+                f"Saving {bucket}:{name} to replica ("
+                f"sha384: '{file_with_metadata.custom_metadata['sha384'][:16]}...', "
+                f"content_type: '{file_with_metadata.content_type}', "
+                f"mtime: '{file_with_metadata.custom_metadata['mtime']})"
             )
         try:
             destination_storage.save(name, file_with_metadata)
