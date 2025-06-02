@@ -63,11 +63,13 @@ class Blob(models.Model):
             ),
         ]
 
+    @transaction.atomic
     def save(self, **kwargs):
         self.checksum = sha384(self.content, usedforsecurity=False).hexdigest()
         super().save(**kwargs)
         self._emit_blob_change_event()
 
+    @transaction.atomic
     def delete(self, **kwargs):
         retval = super().delete(**kwargs)
         self._emit_blob_change_event()
@@ -87,6 +89,6 @@ class Blob(models.Model):
                         "name": self.name,
                         "bucket": self.bucket,
                     }
-                )
+                ),
             )
         )
