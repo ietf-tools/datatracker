@@ -24,10 +24,7 @@ class BlobdbConfig(AppConfig):
 
 
 def get_blobdb():
-    """Retrieve the blobdb setting from Django's settings
-
-    Pass in the settings. It's not imported
-    """
+    """Retrieve the blobdb setting from Django's settings"""
     from django.conf import settings
 
     return getattr(settings, "BLOBDB_DATABASE", None)
