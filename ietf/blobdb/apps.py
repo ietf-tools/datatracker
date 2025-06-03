@@ -7,10 +7,11 @@ class BlobdbConfig(AppConfig):
     name = "ietf.blobdb"
 
     def ready(self):
-        from django.conf import settings  # settings should be ready now
+        """Initialize app once the registries / settings are populated"""
+        from django.conf import settings
 
         # Validate that the DB is set up
-        db = getattr(settings, "BLOBDB_DATABASE", None)
+        db = get_blobdb()  # depends on settings.BLOBDB_DATABASE
         if db is not None and db not in settings.DATABASES:
             raise RuntimeError(
                 f"settings.BLOBDB_DATABASE is '{db}' but that is not present in settings.DATABASES"
@@ -20,3 +21,10 @@ class BlobdbConfig(AppConfig):
         from .replication import validate_replication_settings
 
         validate_replication_settings()
+
+
+def get_blobdb():
+    """Retrieve the blobdb setting from Django's settings"""
+    from django.conf import settings
+
+    return getattr(settings, "BLOBDB_DATABASE", None)

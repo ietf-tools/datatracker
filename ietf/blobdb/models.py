@@ -6,6 +6,7 @@ from hashlib import sha384
 from django.db import models, transaction
 from django.utils import timezone
 
+from .apps import get_blobdb
 from .replication import replication_enabled
 from .tasks import pybob_the_blob_replicator_task
 
@@ -63,16 +64,16 @@ class Blob(models.Model):
             ),
         ]
 
-    @transaction.atomic
     def save(self, **kwargs):
-        self.checksum = sha384(self.content, usedforsecurity=False).hexdigest()
-        super().save(**kwargs)
-        self._emit_blob_change_event()
+        with transaction.atomic(using=get_blobdb()):
+            self.checksum = sha384(self.content, usedforsecurity=False).hexdigest()
+            super().save(**kwargs)
+            self._emit_blob_change_event()
 
-    @transaction.atomic
     def delete(self, **kwargs):
-        retval = super().delete(**kwargs)
-        self._emit_blob_change_event()
+        with transaction.atomic(using=get_blobdb()):
+            retval = super().delete(**kwargs)
+            self._emit_blob_change_event()
         return retval
 
     def _emit_blob_change_event(self):
