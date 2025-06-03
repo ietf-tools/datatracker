@@ -30,7 +30,7 @@ STATE_EVENT_MAPPING = {
 class LiaisonStatement(models.Model):
     title = models.CharField(max_length=255)
     from_groups = models.ManyToManyField(Group, blank=True, related_name='liaisonstatement_from_set')
-    from_contact_tmp = models.CharField(
+    from_contact = models.CharField(
         blank=True,
         max_length=512,
         help_text="Address of the formal sender of the statement",
