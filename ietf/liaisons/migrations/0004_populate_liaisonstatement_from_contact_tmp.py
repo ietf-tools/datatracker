@@ -43,7 +43,9 @@ def forward(apps, schema_editor):
     ):
         for ls in batch:
             ls.from_contact_tmp = _formatted_email(ls.from_contact)
-            validate_mailbox_address(ls.from_contact_tmp)  # be sure it's permitted before we accept it
+            validate_mailbox_address(
+                ls.from_contact_tmp
+            )  # be sure it's permitted before we accept it
 
         LiaisonStatement.objects.bulk_update(batch, fields=["from_contact_tmp"])
 
