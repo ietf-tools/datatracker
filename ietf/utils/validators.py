@@ -19,6 +19,7 @@ from django.utils.regex_helper import _lazy_re_compile  # type: ignore
 from django.utils.translation import gettext_lazy as _
 
 import debug                            # pyflakes:ignore
+from ietf.utils.mail import parseaddr
 
 from ietf.utils.mime import get_mime_type
 
@@ -138,6 +139,15 @@ def validate_no_html_frame(file):
 validate_url = URLValidator()
 validate_http_url = URLValidator(schemes=['http','https'])
 validate_email = EmailValidator()
+
+
+def validate_mailbox_address(s):
+    if parseaddr(s) == ("", ""):
+        raise ValidationError(
+            'Enter a valid address (e.g., "Some Person" <someone@example.org>).',
+            code="invalid",
+        )
+
 
 def validate_ipv6_address(value):
     if not is_valid_ipv6_address(value):

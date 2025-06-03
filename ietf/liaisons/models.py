@@ -14,6 +14,7 @@ from ietf.name.models import (LiaisonStatementPurposeName, LiaisonStatementState
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.utils.models import ForeignKey
+from ietf.utils.validators import validate_mailbox_address
 
 # maps (previous state id, new state id) to event type id
 STATE_EVENT_MAPPING = {
@@ -29,7 +30,12 @@ STATE_EVENT_MAPPING = {
 class LiaisonStatement(models.Model):
     title = models.CharField(max_length=255)
     from_groups = models.ManyToManyField(Group, blank=True, related_name='liaisonstatement_from_set')
-    from_contact = ForeignKey(Email, blank=True, null=True)
+    from_contact_tmp = models.CharField(
+        blank=True,
+        max_length=512,
+        help_text="Address of the formal sender of the statement",
+        validators=(validate_mailbox_address,)
+    )
     to_groups = models.ManyToManyField(Group, blank=True, related_name='liaisonstatement_to_set')
     to_contacts = models.CharField(max_length=2000, help_text="Contacts at recipient group")
 
