@@ -65,18 +65,20 @@ class Blob(models.Model):
         ]
 
     def save(self, **kwargs):
-        with transaction.atomic(using=get_blobdb()):
+        db = get_blobdb()
+        with transaction.atomic(using=db):
             self.checksum = sha384(self.content, usedforsecurity=False).hexdigest()
             super().save(**kwargs)
-            self._emit_blob_change_event()
+            self._emit_blob_change_event(using=db)
 
     def delete(self, **kwargs):
-        with transaction.atomic(using=get_blobdb()):
+        db = get_blobdb()
+        with transaction.atomic(using=db):
             retval = super().delete(**kwargs)
-            self._emit_blob_change_event()
+            self._emit_blob_change_event(using=db)
         return retval
 
-    def _emit_blob_change_event(self):
+    def _emit_blob_change_event(self, using=None):
         if not replication_enabled(self.bucket):
             return
 
@@ -90,6 +92,7 @@ class Blob(models.Model):
                         "name": self.name,
                         "bucket": self.bucket,
                     }
-                ),
-            )
+                )
+            ),
+            using=using,
         )
