@@ -7,7 +7,7 @@ from django.urls import reverse as urlreverse
 from django.db import models
 from django.utils.text import slugify
 
-from ietf.person.models import Email, Person
+from ietf.person.models import Person
 from ietf.name.models import (LiaisonStatementPurposeName, LiaisonStatementState,
                               LiaisonStatementEventTypeName, LiaisonStatementTagName,
                               DocRelationshipName)
@@ -91,7 +91,7 @@ class LiaisonStatement(models.Model):
         if self.from_groups.count():
             frm = ', '.join([i.acronym or i.name for i in self.from_groups.all()])
         else:
-            frm = self.from_contact.person.name
+            frm = self.from_contact
         if self.to_groups.count():
             to = ', '.join([i.acronym or i.name for i in self.to_groups.all()])
         else:

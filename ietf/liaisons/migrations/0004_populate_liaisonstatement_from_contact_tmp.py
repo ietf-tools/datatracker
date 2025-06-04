@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 from itertools import islice
 
-from django.db import migrations, models
+from django.db import migrations
 
 from ietf.person.name import plain_name
 from ietf.utils.mail import formataddr
@@ -33,7 +33,7 @@ def forward(apps, schema_editor):
             yield batch
             batch = list(islice(iterator, n))  # consumes next n iterations
 
-    LiaisonStatement: models.Model = apps.get_model("liaisons", "LiaisonStatement")
+    LiaisonStatement = apps.get_model("liaisons", "LiaisonStatement")
     LiaisonStatement.objects.update(from_contact_tmp="")  # ensure they're all blank
     for batch in _batched(
         LiaisonStatement.objects.exclude(from_contact=None).select_related(
