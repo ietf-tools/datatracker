@@ -15,12 +15,10 @@ from ietf.liaisons.models import (LiaisonStatement, LiaisonStatementEvent, Liais
                                   RelatedLiaisonStatement)
 
 
-from ietf.person.resources import EmailResource
 from ietf.group.resources import GroupResource
 from ietf.name.resources import LiaisonStatementPurposeNameResource, LiaisonStatementTagNameResource, LiaisonStatementStateResource
 from ietf.doc.resources import DocumentResource
 class LiaisonStatementResource(ModelResource):
-    from_contact     = ToOneField(EmailResource, 'from_contact', null=True)
     purpose          = ToOneField(LiaisonStatementPurposeNameResource, 'purpose')
     state            = ToOneField(LiaisonStatementStateResource, 'state')
     from_groups      = ToManyField(GroupResource, 'from_groups', null=True)
@@ -36,6 +34,7 @@ class LiaisonStatementResource(ModelResource):
         filtering = { 
             "id": ALL,
             "title": ALL,
+            "from_contact": ALL,
             "to_contacts": ALL,
             "response_contacts": ALL,
             "technical_contacts": ALL,
@@ -44,9 +43,6 @@ class LiaisonStatementResource(ModelResource):
             "deadline": ALL,
             "other_identifiers": ALL,
             "body": ALL,
-            "from_name": ALL,
-            "to_name": ALL,
-            "from_contact": ALL_WITH_RELATIONS,
             "purpose": ALL_WITH_RELATIONS,
             "state": ALL_WITH_RELATIONS,
             "from_groups": ALL_WITH_RELATIONS,
