@@ -32,7 +32,7 @@
         {% if liaison.from_contact %}
             <tr>
                 <th scope="row">From Contact</th>
-                <td>{% person_link liaison.from_contact.person %}</td>
+                <td>{{ liaison.from_contact }}</td>
             </tr>
         {% endif %}
         <tr>

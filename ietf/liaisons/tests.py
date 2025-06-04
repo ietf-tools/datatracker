@@ -760,7 +760,7 @@ class LiaisonManagementTests(TestCase):
 
         l = LiaisonStatement.objects.all().order_by("-id")[0]
         self.assertEqual(l.from_groups.count(),2)
-        self.assertEqual(l.from_contact.address, submitter.email_address())
+        self.assertEqual(l.from_contact, submitter.email_address())
         self.assertSequenceEqual(l.to_groups.all(),[to_group])
         self.assertEqual(l.technical_contacts, "technical_contact@example.com")
         self.assertEqual(l.action_holder_contacts, "action_holder_contacts@example.com")
@@ -845,7 +845,7 @@ class LiaisonManagementTests(TestCase):
 
         l = LiaisonStatement.objects.all().order_by("-id")[0]
         self.assertSequenceEqual(l.from_groups.all(), [from_group])
-        self.assertEqual(l.from_contact.address, submitter.email_address())
+        self.assertEqual(l.from_contact, submitter.email_address())
         self.assertSequenceEqual(l.to_groups.all(), [to_group])
         self.assertEqual(l.to_contacts, "to_contacts@example.com")
         self.assertEqual(l.technical_contacts, "technical_contact@example.com")
@@ -921,7 +921,7 @@ class LiaisonManagementTests(TestCase):
         file.name = "upload.txt"
         post_data = dict(
             from_groups = ','.join([ str(x.pk) for x in liaison.from_groups.all() ]),
-            from_contact = liaison.from_contact.address,
+            from_contact = liaison.from_contact,
             to_groups = ','.join([ str(x.pk) for x in liaison.to_groups.all() ]),
             to_contacts = 'to_contacts@example.com',
             purpose = liaison.purpose.slug,

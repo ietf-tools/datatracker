@@ -3,35 +3,33 @@
 
 
 import io
-import os
 import operator
-
+import os
 from email.utils import parseaddr
+from functools import reduce
 from typing import Union, Optional  # pyflakes:ignore
 
 from django import forms
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.forms.utils import ErrorList
-from django.db.models import Q, QuerySet
+from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.db.models import Q, QuerySet
+from django.forms.utils import ErrorList
 from django_stubs_ext import QuerySetAny
 
+from ietf.doc.models import Document
+from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
-from ietf.name.models import DocRelationshipName
+from ietf.liaisons.fields import SearchableLiaisonStatementsField
+from ietf.liaisons.models import (LiaisonStatement,
+                                  LiaisonStatementEvent, LiaisonStatementAttachment, LiaisonStatementPurposeName)
 from ietf.liaisons.utils import get_person_for_user, is_authorized_individual, OUTGOING_LIAISON_ROLES, \
     INCOMING_LIAISON_ROLES
-from ietf.liaisons.widgets import ButtonWidget,ShowAttachmentsWidget
-from ietf.liaisons.models import (LiaisonStatement,
-    LiaisonStatementEvent,LiaisonStatementAttachment,LiaisonStatementPurposeName)
-from ietf.liaisons.fields import SearchableLiaisonStatementsField
-from ietf.group.models import Group
-from ietf.person.models import Email, Person
-from ietf.person.fields import SearchableEmailField
-from ietf.doc.models import Document
+from ietf.liaisons.widgets import ButtonWidget, ShowAttachmentsWidget
+from ietf.name.models import DocRelationshipName
+from ietf.person.models import Person
 from ietf.utils.fields import DatepickerDateField, ModelMultipleChoiceField
 from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
-from functools import reduce
 
 '''
 NOTES:
@@ -212,7 +210,7 @@ class SearchLiaisonForm(forms.Form):
             query = self.cleaned_data.get('text')
             if query:
                 q = (Q(title__icontains=query) |
-                    Q(from_contact__address__icontains=query) |
+                    Q(from_contact__icontains=query) |
                     Q(to_contacts__icontains=query) |
                     Q(other_identifiers__icontains=query) |
                     Q(body__icontains=query) |
@@ -274,7 +272,6 @@ class LiaisonModelForm(forms.ModelForm):
     '''Specify fields which require a custom widget or that are not part of the model.
     '''
     from_groups = ModelMultipleChoiceField(queryset=Group.objects.all(),label='Groups',required=False)
-    from_contact = forms.EmailField()   # type: Union[forms.EmailField, SearchableEmailField]
     to_contacts = forms.CharField(label="Contacts", widget=forms.Textarea(attrs={'rows':'3', }), strip=False)
     to_groups = ModelMultipleChoiceField(queryset=Group.objects,label='Groups',required=False)
     deadline = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Deadline', required=True)
@@ -309,7 +306,7 @@ class LiaisonModelForm(forms.ModelForm):
         self.fields["other_identifiers"].widget.attrs["rows"] = 2
 
         # add email validators
-        for field in ['from_contact','to_contacts','technical_contacts','action_holder_contacts','cc_contacts']:
+        for field in ['to_contacts','technical_contacts','action_holder_contacts','cc_contacts']:
             if field in self.fields:
                 self.fields[field].validators.append(validate_emails)
 
@@ -328,18 +325,6 @@ class LiaisonModelForm(forms.ModelForm):
             raise forms.ValidationError('You must specify a To Group')
         return to_groups
         
-    def clean_from_contact(self):
-        contact = self.cleaned_data.get('from_contact')
-        from_groups = self.cleaned_data.get('from_groups')
-        try:
-            email = Email.objects.get(address=contact)
-            if not email.origin:
-                email.origin = "liaison: %s" % (','.join([ g.acronym for g in from_groups.all() ]))
-                email.save()
-        except ObjectDoesNotExist:
-            raise forms.ValidationError('Email address does not exist')
-        return email
-
 # Note to future person: This is the wrong place to fix the new lines
 # in cc_contacts and to_contacts. Those belong in the save function.
 # Or at least somewhere other than here.
@@ -516,7 +501,7 @@ class IncomingLiaisonForm(LiaisonModelForm):
             or has_role(self.user, "Liaison Coordinator")
         ):
             self.fields["from_contact"].initial = (
-                self.person.role_set.filter(group=qs[0]).first().email.address
+                self.person.role_set.filter(group=qs[0]).first().email.formatted_email()
             )
             self.fields["from_contact"].widget.attrs["disabled"] = True
 
@@ -537,21 +522,11 @@ class OutgoingLiaisonForm(LiaisonModelForm):
     def is_approved(self):
         return self.cleaned_data['approved']
 
-    @staticmethod
-    def from_contact_queryset(person):
-        if person.role_set.filter(name='liaiman',group__state='active'):
-            email = person.role_set.filter(name='liaiman',group__state='active').first().email
-        elif person.role_set.filter(name__in=('ad','chair'),group__state='active'):
-            email = person.role_set.filter(name__in=('ad','chair'),group__state='active').first().email
-        else:
-            email = person.email()
-        return Email.objects.filter(pk=email)
-
     def set_from_fields(self):
         """Configure from "From" fields based on user roles"""
         self.set_from_groups_field()
         self.set_from_contact_field()
-        
+
     def set_from_groups_field(self):
         """Configure the from_groups field based on roles"""
         grouped_choices = choices_from_group_queryset(internal_groups_for_person(self.person))
@@ -564,13 +539,29 @@ class OutgoingLiaisonForm(LiaisonModelForm):
 
     def set_from_contact_field(self):
         """Configure the from_contact field based on user roles"""
+        # Secretariat can set this to any valid address but gets no default
         if has_role(self.user, "Secretariat"):
-            self.fields['from_contact'] = SearchableEmailField(only_users=True)  # secretariat can edit this field!
+            return
+        elif has_role(self.user, ["IAB Chair", "Liaison Coordinator"]):
+            self.fields["from_contact"].initial = "IAB Chair <iab-chair@iab.org>"
+            return
+        elif has_role(self.user, "IETF Chair"):
+            self.fields["from_contact"].initial = "IETF Chair <chair@ietf.org>"
+            return
+        # ... others have it set to the correct value and cannot change it
+        self.fields['from_contact'].disabled = True
+        # Set up the querysets we might use - only evaluated as needed
+        liaison_manager_role = self.person.role_set.filter(name="liaiman", group__state="active")
+        chair_or_ad_role = self.person.role_set.filter(
+                    name__in=("ad", "chair"), group__state="active"
+                )  
+        if liaison_manager_role.exists():
+            from_contact_email = liaison_manager_role.first().email
+        elif chair_or_ad_role.exists():
+            from_contact_email = chair_or_ad_role.first().email
         else:
-            # Non-secretariat user cannot change the from_contact field. Fill in its value.
-            allowed_from_emails = self.from_contact_queryset(self.person)
-            self.fields['from_contact'].disabled = True
-            self.fields['from_contact'].initial = allowed_from_emails.first().address  # todo actually allow choice
+            from_contact_email = self.person.email()
+        self.fields['from_contact'].initial = from_contact_email.formatted_email()
 
     def set_to_fields(self):
         """Configure the "To" fields based on user roles"""
