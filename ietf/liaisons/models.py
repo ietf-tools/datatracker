@@ -33,7 +33,7 @@ class LiaisonStatement(models.Model):
     to_groups = models.ManyToManyField(Group, blank=True, related_name='liaisonstatement_to_set')
     to_contacts = models.CharField(max_length=2000, help_text="Contacts at recipient group")
 
-    response_contacts = models.CharField(blank=True, max_length=255, help_text="Where to send a response") # RFC4053
+    response_contacts = models.TextField(blank=True, max_length=1024, help_text="Where to send a response") # RFC4053
     technical_contacts = models.CharField(blank=True, max_length=255, help_text="Who to contact for clarification") # RFC4053
     action_holder_contacts = models.CharField(blank=True, max_length=255, help_text="Who makes sure action is completed")  # incoming only?
     cc_contacts = models.TextField(blank=True)

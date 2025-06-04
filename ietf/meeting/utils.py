@@ -1123,6 +1123,9 @@ def check_migrate_registrations():
 def generate_proceedings_content(meeting, force_refresh=False):
     """Render proceedings content for a meeting and update cache
     
+    Caches its value for 25 hours to ensure that the cache never expires if
+    we recompute the value daily.
+
     :meeting: meeting whose proceedings should be rendered
     :force_refresh: true to force regeneration and cache refresh
     """
@@ -1205,7 +1208,7 @@ def generate_proceedings_content(meeting, force_refresh=False):
     cache.set(
         cache_key,
         rendered_content,
-        timeout=86400,  # one day, in seconds
+        timeout=3600 + 86400,  # one day + one hour, in seconds
     )
     return rendered_content
 
