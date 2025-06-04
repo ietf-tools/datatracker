@@ -272,7 +272,6 @@ class LiaisonModelForm(forms.ModelForm):
     '''Specify fields which require a custom widget or that are not part of the model.
     '''
     from_groups = ModelMultipleChoiceField(queryset=Group.objects.all(),label='Groups',required=False)
-    from_contact = forms.EmailField()
     to_contacts = forms.CharField(label="Contacts", widget=forms.Textarea(attrs={'rows':'3', }), strip=False)
     to_groups = ModelMultipleChoiceField(queryset=Group.objects,label='Groups',required=False)
     deadline = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Deadline', required=True)
