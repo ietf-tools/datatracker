@@ -4,6 +4,8 @@
 
 import os
 import re
+from email.utils import parseaddr
+
 from pyquery import PyQuery
 from urllib.parse import urlparse, urlsplit, urlunsplit
 
@@ -11,7 +13,13 @@ from urllib.parse import urlparse, urlsplit, urlunsplit
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.core.validators import RegexValidator, URLValidator, EmailValidator, BaseValidator
+from django.core.validators import (
+    RegexValidator,
+    URLValidator,
+    BaseValidator,
+    validate_email,
+    ProhibitNullCharactersValidator,
+)
 from django.template.defaultfilters import filesizeformat
 from django.utils.deconstruct import deconstructible
 from django.utils.ipv6 import is_valid_ipv6_address
@@ -19,7 +27,6 @@ from django.utils.regex_helper import _lazy_re_compile  # type: ignore
 from django.utils.translation import gettext_lazy as _
 
 import debug                            # pyflakes:ignore
-from ietf.utils.mail import parseaddr
 
 from ietf.utils.mime import get_mime_type
 
@@ -137,16 +144,16 @@ def validate_no_html_frame(file):
 # instantiations of sub-validiators used by the external_resource validator
 
 validate_url = URLValidator()
-validate_http_url = URLValidator(schemes=['http','https'])
-validate_email = EmailValidator()
+validate_http_url = URLValidator(schemes=["http", "https"])
+validate_no_nulls = ProhibitNullCharactersValidator()
 
 
 def validate_mailbox_address(s):
-    if parseaddr(s) == ("", ""):
-        raise ValidationError(
-            'Enter a valid address (e.g., "Some Person" <someone@example.org>).',
-            code="invalid",
-        )
+    """Validate an RFC 5322 'mailbox' (e.g., "Some Person" <some@example.com>)"""
+    # parseaddr() returns ("", "") on err; validate_email() will reject that for us
+    name, addr = parseaddr(s)
+    validate_no_nulls(name)  # could be stricter...
+    validate_email(addr)
 
 
 def validate_ipv6_address(value):
