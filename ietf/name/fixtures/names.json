@@ -3341,7 +3341,7 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"ad\",\n    \"member\",\n    \"comdir\",\n    \"delegate\",\n    \"execdir\",\n    \"recman\",\n    \"secr\",\n    \"trac-editor\",\n    \"trac-admin\",\n    \"chair\"\n]",
+      "default_used_roles": "[\n    \"ad\",\n    \"member\",\n    \"comdir\",\n    \"delegate\",\n    \"execdir\",\n    \"recman\",\n    \"secr\",\n    \"chair\"\n]",
       "docman_roles": "[\n    \"chair\"\n]",
       "groupman_authroles": "[\n    \"Secretariat\"\n]",
       "groupman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
@@ -13607,7 +13607,7 @@
     "fields": {
       "desc": "Coordinates liaison handling for the IAB",
       "name": "Liaison Coordinator",
-      "order": 0,
+      "order": 14,
       "used": true
     },
     "model": "name.rolename",
@@ -13698,7 +13698,7 @@
       "desc": "Assigned permission TRAC_ADMIN in datatracker-managed Trac Wiki instances",
       "name": "Trac Admin",
       "order": 0,
-      "used": true
+      "used": false
     },
     "model": "name.rolename",
     "pk": "trac-admin"
@@ -13708,7 +13708,7 @@
       "desc": "Provides log-in permission to restricted Trac instances.  Used by the generate_apache_perms management command, called from ../../scripts/Cron-runner",
       "name": "Trac Editor",
       "order": 0,
-      "used": true
+      "used": false
     },
     "model": "name.rolename",
     "pk": "trac-editor"

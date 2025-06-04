@@ -13,8 +13,10 @@ def forward(apps, schema_editor):
         defaults={
             "name": "Liaison Coordinator",
             "desc": "Coordinates liaison handling for the IAB",
+            "order": 14,
         },
     )
+    RoleName.objects.filter(slug__contains="trac-").update(used=False)
 
 
 def reverse(apps, schema_editor):
@@ -23,6 +25,7 @@ def reverse(apps, schema_editor):
         used=True
     )
     RoleName.objects.filter(slug="liaison_coordinator").delete()
+    # Intentionally not restoring trac-* RoleNames to used=True
 
 
 class Migration(migrations.Migration):
