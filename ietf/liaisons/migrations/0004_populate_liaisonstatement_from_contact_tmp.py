@@ -28,10 +28,10 @@ def forward(apps, schema_editor):
         (based on itertools example code for batched(), which is added in py312)
         """
         iterator = iter(iterable)
-        batch = islice(iterator, n)  # consumes first n iterations
+        batch = list(islice(iterator, n))  # consumes first n iterations
         while batch:
-            yield list(batch)
-            batch = islice(iterator, n)  # consumes next n iterations
+            yield batch
+            batch = list(islice(iterator, n))  # consumes next n iterations
 
     LiaisonStatement: models.Model = apps.get_model("liaisons", "LiaisonStatement")
     LiaisonStatement.objects.update(from_contact_tmp="")  # ensure they're all blank
