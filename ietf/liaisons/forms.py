@@ -539,8 +539,14 @@ class OutgoingLiaisonForm(LiaisonModelForm):
 
     def set_from_contact_field(self):
         """Configure the from_contact field based on user roles"""
-        # Secretariat can set this to any valid address...
+        # Secretariat can set this to any valid address but gets no default
         if has_role(self.user, "Secretariat"):
+            return
+        elif has_role(self.user, ["IAB Chair", "Liaison Coordinator"]):
+            self.fields["from_contact"].initial = "IAB Chair <iab-chair@iab.org>"
+            return
+        elif has_role(self.user, "IETF Chair"):
+            self.fields["from_contact"].initial = "IETF Chair <chair@ietf.org>"
             return
         # ... others have it set to the correct value and cannot change it
         self.fields['from_contact'].disabled = True
