@@ -145,7 +145,7 @@ class Meeting(models.Model):
             cutoff_date = importantdate.date
         else:
             cutoff_date = self.date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
-        cutoff_time = datetime_from_date(cutoff_date, datetime.timezone.utc) + self.idsubmit_cutoff_time_utc
+        cutoff_time = datetime_from_date(cutoff_date, datetime.UTC) + self.idsubmit_cutoff_time_utc
         return cutoff_time
 
     def get_01_cutoff(self):
@@ -157,7 +157,7 @@ class Meeting(models.Model):
             cutoff_date = importantdate.date
         else:
             cutoff_date = self.date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
-        cutoff_time = datetime_from_date(cutoff_date, datetime.timezone.utc) + self.idsubmit_cutoff_time_utc
+        cutoff_time = datetime_from_date(cutoff_date, datetime.UTC) + self.idsubmit_cutoff_time_utc
         return cutoff_time
 
     def get_reopen_time(self):
@@ -1168,7 +1168,7 @@ class Session(models.Model):
         return can_manage_materials(user,self.group)
 
     def is_material_submission_cutoff(self):
-        return date_today(datetime.timezone.utc) > self.meeting.get_submission_correction_date()
+        return date_today(datetime.UTC) > self.meeting.get_submission_correction_date()
     
     def joint_with_groups_acronyms(self):
         return [group.acronym for group in self.joint_with_groups.all()]

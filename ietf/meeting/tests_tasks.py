@@ -21,7 +21,7 @@ class TaskTests(TestCase):
         meeting127 = MeetingFactory(type_id="ietf", number="127")  # 24 * 5 + 7
         
         # Times to be returned
-        now_utc = datetime.datetime.now(tz=datetime.timezone.utc)
+        now_utc = datetime.datetime.now(tz=datetime.UTC)
         hour_00_utc = now_utc.replace(hour=0)
         hour_01_utc = now_utc.replace(hour=1)
         hour_07_utc = now_utc.replace(hour=7)
