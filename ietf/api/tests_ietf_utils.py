@@ -32,10 +32,15 @@ class IetfUtilsTests(TestCase):
         result = protected_function(request)
         self.assertEqual(result, "Access granted: GET")
 
-        # request with an valid token
+        # request with an invalid token
         request = RequestFactory().get(
             "/some/url", headers={"X_API_KEY": "invalid-token"}
         )
+        result = protected_function(request)
+        self.assertEqual(result.status_code, 403)
+
+        # request without a token
+        request = RequestFactory().get("/some/url", headers={"X_API_KEY": ""})
         result = protected_function(request)
         self.assertEqual(result.status_code, 403)
 
