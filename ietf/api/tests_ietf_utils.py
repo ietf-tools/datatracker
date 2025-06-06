@@ -8,11 +8,22 @@ from ietf.utils.test_utils import TestCase
 
 
 class IetfUtilsTests(TestCase):
-    @override_settings(APP_API_TOKENS={"ietf.api.foobar": ["valid-token"]})
+    @override_settings(
+        APP_API_TOKENS={
+            "ietf.api.foobar": ["valid-token"],
+            "ietf.api.misconfigured": "valid-token",  # misconfigured
+        }
+    )
     def test_is_valid_token(self):
         self.assertFalse(is_valid_token("ietf.fake.endpoint", "valid-token"))
         self.assertFalse(is_valid_token("ietf.api.foobar", "invalid-token"))
+        self.assertFalse(is_valid_token("ietf.api.foobar", None))
         self.assertTrue(is_valid_token("ietf.api.foobar", "valid-token"))
+
+        # misconfiguration
+        self.assertFalse(is_valid_token("ietf.api.misconfigured", "v"))
+        self.assertFalse(is_valid_token("ietf.api.misconfigured", None))
+        self.assertTrue(is_valid_token("ietf.api.misconfigured", "valid-token"))
 
     @override_settings(
         APP_API_TOKENS={
@@ -52,14 +63,19 @@ class IetfUtilsTests(TestCase):
         result = protected_function(request)
         self.assertEqual(result.status_code, 403)
 
-        # request for a misconfigured endpoint
+        # requests for a misconfigured endpoint
         @requires_api_token("ietf.api.misconfigured")
         def another_protected_function(request):
             return f"Access granted: {request.method}"
 
+        # request with valid token
         request = RequestFactory().get(
             "/some/url", headers={"X_API_KEY": "valid-token"}
         )
         result = another_protected_function(request)
-        # self.assertEqual(result.status_code, 403)
         self.assertEqual(result, "Access granted: GET")
+
+        # request with invalid token with the correct initial character
+        request = RequestFactory().get("/some/url", headers={"X_API_KEY": "v"})
+        result = another_protected_function(request)
+        self.assertEqual(result.status_code, 403)
