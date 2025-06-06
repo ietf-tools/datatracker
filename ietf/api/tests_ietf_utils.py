@@ -1,9 +1,10 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
-from django.test import TestCase, RequestFactory
+from django.test import RequestFactory
 from django.test.utils import override_settings
 
 from ietf.api.ietf_utils import is_valid_token, requires_api_token
+from ietf.utils.test_utils import TestCase
 
 
 class IetfUtilsTests(TestCase):
