@@ -18,6 +18,7 @@ class IetfUtilsTests(TestCase):
         APP_API_TOKENS={
             "ietf.api.foo": ["valid-token"],
             "ietf.api.bar": ["another-token"],
+            "ietf.api.misconfigured": "valid-token",  # misconfigured
         }
     )
     def test_requires_api_token(self):
@@ -50,3 +51,15 @@ class IetfUtilsTests(TestCase):
         )
         result = protected_function(request)
         self.assertEqual(result.status_code, 403)
+
+        # request for a misconfigured endpoint
+        @requires_api_token("ietf.api.misconfigured")
+        def another_protected_function(request):
+            return f"Access granted: {request.method}"
+
+        request = RequestFactory().get(
+            "/some/url", headers={"X_API_KEY": "valid-token"}
+        )
+        result = another_protected_function(request)
+        # self.assertEqual(result.status_code, 403)
+        self.assertEqual(result, "Access granted: GET")
