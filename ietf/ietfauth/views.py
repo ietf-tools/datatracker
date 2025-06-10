@@ -733,17 +733,18 @@ def change_username(request):
 
 
 class StrongPasswordAuthenticationForm(AuthenticationForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["password"].validators.append(
-            StrongPasswordValidator(
-                message=(
-                    "Your password does not meet complexity requirements and is "
-                    'easily guessable. Please use the "Forgot your password?" '
-                    "button below to set a new password for your account."
-                )
-            )
+    validate_password_strength = StrongPasswordValidator(
+        message=(
+            "Your password does not meet complexity requirements and is "
+            'easily guessable. Please use the "Forgot your password?" '
+            "button below to set a new password for your account."
         )
+    )
+
+    def confirm_login_allowed(self, user):
+        """Raises validation error if login is not allowed"""
+        super().confirm_login_allowed(user)
+        self.validate_password_strength(self.cleaned_data["password"])
 
 
 class AnyEmailAuthenticationForm(StrongPasswordAuthenticationForm):
