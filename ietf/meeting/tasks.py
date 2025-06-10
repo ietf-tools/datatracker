@@ -34,6 +34,7 @@ def check_migrate_registrations_task():
     check_migrate_registrations()
 
 
+@shared_task
 def proceedings_content_refresh_task(*, all=False):
     """Refresh meeting proceedings cache
 

@@ -752,6 +752,90 @@ def docs_for_ad(request, name):
     )
 
 
+def docs_for_iesg(request):
+    def sort_key(doc):
+        dt = doc_type(doc)
+        dt_key = list(AD_WORKLOAD.keys()).index(dt)
+        ds = doc_state(doc)
+        ds_key = AD_WORKLOAD[dt].index(ds) if ds in AD_WORKLOAD[dt] else 99
+        return dt_key * 100 + ds_key
+
+    results, meta = prepare_document_table(
+        request,
+        Document.objects.filter(
+            ad__in=Person.objects.filter(
+                Q(
+                    role__name__in=("pre-ad", "ad"),
+                    role__group__type="area",
+                    role__group__state="active",
+                )
+            )
+        ).exclude(
+            type_id="rfc",
+        ).exclude(
+            type_id="draft",
+            states__type="draft", 
+            states__slug__in=["repl", "rfc"],
+        ).exclude(
+            type_id="draft",
+            states__type="draft-iesg",
+            states__slug__in=["idexists", "rfcqueue"],
+        ).exclude(
+            type_id="conflrev",
+            states__type="conflrev",
+            states__slug__in=["appr-noprob-sent", "appr-reqnopub-sent", "withdraw", "dead"],
+        ).exclude(
+            type_id="statchg",
+            states__type="statchg",
+            states__slug__in=["appr-sent", "dead"],
+        ).exclude(
+            type_id="charter",
+            states__type="charter",
+            states__slug__in=["notrev", "infrev", "approved", "replaced"],
+        ),
+        max_results=1000,
+        show_ad_and_shepherd=True,
+    )
+    results.sort(key=lambda d: sort_key(d))
+
+    # filter out some results
+    results = [
+        r
+        for r in results
+        if not (
+            r.type_id == "charter"
+            and (
+                r.group.state_id == "abandon"
+                or r.get_state_slug("charter") == "replaced"
+            )
+        )
+        and not (
+            r.type_id == "draft"
+            and (
+                r.get_state_slug("draft-iesg") == "dead"
+                or r.get_state_slug("draft") == "repl"
+                or r.get_state_slug("draft") == "rfc"
+            )
+        )
+    ]
+
+    _calculate_state_name = get_state_name_calculator()
+    for d in results:
+        dt = d.type.slug
+        d.search_heading = _calculate_state_name(dt, doc_state(d))
+        if d.search_heading != "RFC":
+            d.search_heading += f" {doc_type_name(dt)}"
+
+    return render(
+        request,
+        "doc/drafts_for_iesg.html",
+        {
+            "docs": results,
+            "meta": meta,
+        },
+    )
+
+
 def drafts_in_last_call(request):
     lc_state = State.objects.get(type="draft-iesg", slug="lc").pk
     form = SearchForm({'by':'state','state': lc_state, 'rfcs':'on', 'activedrafts':'on'})
