@@ -14,7 +14,8 @@ from ietf.person.models import Person, Email
 from ietf.mailinglists.models import Allowlisted
 from ietf.utils.text import isascii
 
-from .validators import prevent_at_symbol, prevent_system_name, prevent_anonymous_name, is_allowed_address
+from .validators import prevent_at_symbol, prevent_system_name, prevent_anonymous_name, is_allowed_address, \
+    StrongPasswordValidator
 from .widgets import PasswordStrengthInput, PasswordConfirmationInput
 
 
@@ -177,7 +178,10 @@ from django import forms
 class ChangePasswordForm(forms.Form):
     current_password = forms.CharField(widget=forms.PasswordInput)
 
-    new_password = forms.CharField(widget=PasswordStrengthInput(attrs={'class':'password_strength'}))
+    new_password = forms.CharField(
+        validators=[StrongPasswordValidator()],
+        widget=PasswordStrengthInput(attrs={'class':'password_strength'}),
+    )
     new_password_confirmation = forms.CharField(widget=PasswordConfirmationInput(
                                                     confirm_with='new_password',
                                                     attrs={'class':'password_confirmation'}))
