@@ -56,6 +56,11 @@ class IetfUtilsTests(TestCase):
         result = protected_function(request)
         self.assertEqual(result.status_code, 403)
 
+        # request without a X_API_KEY token
+        request = RequestFactory().get("/some/url")
+        result = protected_function(request)
+        self.assertEqual(result.status_code, 403)
+
         # request with a valid token for another API endpoint
         request = RequestFactory().get(
             "/some/url", headers={"X_API_KEY": "another-token"}
