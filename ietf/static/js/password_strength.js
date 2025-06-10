@@ -57,6 +57,8 @@
                         .parent()
                         .parent()
                         .find('.password_strength_offline_info');
+                    let password_improvement_hint = $(password_strength_info)
+                        .find('.password_improvement_hint');
 
                     if ($(this)
                         .val()) {
@@ -71,6 +73,7 @@
                             // Mark input as invalid
                             this.setCustomValidity('This password does not meet complexity requirements');
                             this.classList.add('is-invalid')
+                            password_improvement_hint.removeClass('d-none');
                         } else {
                             password_strength_bar.removeClass('text-bg-warning')
                                 .addClass('text-bg-success');
@@ -79,6 +82,7 @@
                             // Mark input as valid
                             this.setCustomValidity('');
                             this.classList.remove('is-invalid')
+                            password_improvement_hint.addClass('d-none');
                         }
 
                         password_strength_bar.width(((result.score + 1) / 5) * 100 + '%')
