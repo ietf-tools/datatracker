@@ -68,11 +68,17 @@
                                 .addClass('text-bg-warning');
                             password_strength_info.find('.badge')
                                 .removeClass('d-none');
+                            // Mark input as invalid
+                            this.setCustomValidity('This password does not meet complexity requirements');
+                            this.classList.add('is-invalid')
                         } else {
                             password_strength_bar.removeClass('text-bg-warning')
                                 .addClass('text-bg-success');
                             password_strength_info.find('.badge')
                                 .addClass('d-none');
+                            // Mark input as valid
+                            this.setCustomValidity('');
+                            this.classList.remove('is-invalid')
                         }
 
                         password_strength_bar.width(((result.score + 1) / 5) * 100 + '%')
@@ -152,23 +158,31 @@
                     .data('confirm-with');
 
                 if (confirm_with && confirm_with == password_field.attr('id')) {
-                    if (confirm_value && password) {
+                    if (password) {
                         if (confirm_value === password) {
                             $(confirm_field)
                                 .parent()
                                 .find('.password_strength_info')
                                 .addClass('d-none');
+                            confirm_field.setCustomValidity('')
+                            confirm_field.classList.remove('is-invalid')
                         } else {
-                            $(confirm_field)
-                                .parent()
-                                .find('.password_strength_info')
-                                .removeClass('d-none');
+                            if (confirm_value !== '') {
+                                $(confirm_field)
+                                    .parent()
+                                    .find('.password_strength_info')
+                                    .removeClass('d-none');
+                            }
+                            confirm_field.setCustomValidity('Does not match new password')
+                            confirm_field.classList.add('is-invalid')
                         }
                     } else {
                         $(confirm_field)
                             .parent()
                             .find('.password_strength_info')
                             .addClass('d-none');
+                        confirm_field.setCustomValidity('')
+                        confirm_field.classList.remove('is-invalid')
                     }
                 }
             });
