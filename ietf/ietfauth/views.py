@@ -59,6 +59,7 @@ from django.urls import reverse as urlreverse
 from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.encoding import force_bytes
+from zxcvbn import zxcvbn
 
 import debug                            # pyflakes:ignore
 
@@ -67,6 +68,7 @@ from ietf.ietfauth.forms import ( RegistrationForm, PasswordForm, ResetPasswordF
                                 ChangePasswordForm, get_person_form, RoleEmailForm,
                                 NewEmailForm, ChangeUsernameForm, PersonPasswordForm)
 from ietf.ietfauth.utils import has_role, send_new_email_confirmation_request
+from ietf.ietfauth.validators import StrongPasswordValidator
 from ietf.name.models import ExtResourceName
 from ietf.nomcom.models import NomCom
 from ietf.person.models import Person, Email, Alias, PersonalApiKey, PERSON_API_KEY_VALUES
@@ -731,28 +733,17 @@ def change_username(request):
 
 
 class StrongPasswordAuthenticationForm(AuthenticationForm):
-    def _is_strong_password(self, password: str):
-        if settings.SERVER_MODE == "development":
-            return True
-    
-        # todo choose a real set of password strength criteria
-        has_lowercase = not set(string.ascii_lowercase).isdisjoint(password)
-        has_uppercase = not set(string.ascii_uppercase).isdisjoint(password)
-        has_digit = not set(string.digits).isdisjoint(password)
-        return has_lowercase and has_uppercase and has_digit and len(password) >= 10  
-    
-    def clean(self):
-        result = super().clean()  # raises an exception on login failure
-        
-        # Check whether the otherwise successfully authenticated user has a strong password 
-        if not self._is_strong_password(self.cleaned_data.get("password")):
-            self.add_error(
-                "password",
-                'Your password does not meet complexity requirements and is easily guessable. '
-                    'Please use the "Forgot your password?" button below to set a new password '
-                    'for your account.',
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["password"].validators.append(
+            StrongPasswordValidator(
+                message=(
+                    "Your password does not meet complexity requirements and is "
+                    'easily guessable. Please use the "Forgot your password?" '
+                    "button below to set a new password for your account."
+                )
             )
-        return result
+        )
 
 
 class AnyEmailAuthenticationForm(StrongPasswordAuthenticationForm):
