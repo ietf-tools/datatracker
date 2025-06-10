@@ -84,3 +84,4 @@ urllib3>=1.26,<2
 weasyprint>=64.1
 xml2rfc>=3.23.0
 xym>=0.6,<1.0
+zxcvbn>=4.5.0
