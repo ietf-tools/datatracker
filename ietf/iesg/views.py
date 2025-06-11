@@ -34,6 +34,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+from collections import Counter, defaultdict
 import datetime
 import io
 import itertools
@@ -50,6 +51,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.sites.models import Site
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 from django.utils.encoding import force_bytes
 #from django.views.decorators.cache import cache_page
 #from django.views.decorators.vary import vary_on_cookie
@@ -58,13 +60,14 @@ import debug               # pyflakes:ignore
 
 from ietf.doc.models import Document, State, LastCallDocEvent, ConsensusDocEvent, DocEvent, IESG_BALLOT_ACTIVE_STATES
 from ietf.doc.utils import update_telechat, augment_events_with_revision
-from ietf.group.models import GroupMilestone, Role
+from ietf.group.models import Group, GroupMilestone, Role
 from ietf.iesg.agenda import agenda_data, agenda_sections, fill_in_agenda_docs, get_agenda_date
 from ietf.iesg.models import TelechatDate, TelechatAgendaContent
 from ietf.iesg.utils import telechat_page_count
 from ietf.ietfauth.utils import has_role, role_required, user_is_person
 from ietf.name.models import TelechatAgendaSectionName
 from ietf.person.models import Person
+from ietf.person.utils import get_active_ads
 from ietf.meeting.utils import get_activity_stats
 from ietf.doc.utils_search import fill_in_document_table_attributes, fill_in_telechat_date
 from ietf.utils.timezone import date_today, datetime_from_date
@@ -611,3 +614,223 @@ def telechat_agenda_content_manage(request):
 def telechat_agenda_content_view(request, section):
     content = get_object_or_404(TelechatAgendaContent, section__slug=section, section__used=True)
     return HttpResponse(content=content.text, content_type="text/plain")
+
+def working_groups(request):
+    docs = (
+        Document.objects.filter(
+            group__type="wg",
+            group__state="active",
+            states__type="draft",
+            states__slug="active",
+        )
+        .filter(models.Q(ad__isnull=True)|models.Q(ad__in=get_active_ads()))
+        .distinct()
+        .prefetch_related("group", "group__parent")
+        .exclude(
+            states__type="draft-stream-ietf",
+            states__slug__in=["c-adopt", "wg-cand", "dead", "parked", "info"],
+        )
+    )
+    groups = Group.objects.filter(state="active", type="wg")
+    areas = Group.objects.filter(state="active", type="area")
+
+    total_group_count = groups.count()
+    total_doc_count = docs.count()
+    total_page_count = docs.aggregate(models.Sum("pages"))["pages__sum"]
+    totals = {
+        "group_count": total_group_count,
+        "doc_count": total_doc_count,
+        "page_count": total_page_count,
+    }
+
+    # Since this view is primarily about counting subsets of the above docs query and the
+    # expected number of returned documents is just under 1000 typically - do the totaling
+    # work in python rather than asking the db to do it.
+    
+    groups_for_area = defaultdict(set)
+    pages_for_area = defaultdict(lambda:0)
+    docs_for_area = defaultdict(lambda:0)
+    groups_for_ad = defaultdict(lambda:defaultdict(set))
+    pages_for_ad = defaultdict(lambda:defaultdict(lambda:0))
+    docs_for_ad = defaultdict(lambda:defaultdict(lambda:0))
+    groups_for_noad = defaultdict(lambda:defaultdict(set))
+    pages_for_noad = defaultdict(lambda:defaultdict(lambda:0))
+    docs_for_noad = defaultdict(lambda:defaultdict(lambda:0))
+    docs_for_wg = defaultdict(lambda:0)
+    pages_for_wg = defaultdict(lambda:0)
+    groups_total = set()
+    pages_total = 0
+    docs_total = 0
+
+
+    responsible_for_group = defaultdict(lambda:defaultdict(lambda:"None"))
+    responsible_count = defaultdict(lambda:defaultdict(lambda:0))
+    for group in groups:
+        responsible = f'{", ".join([r.person.plain_name() for r in group.role_set.filter(name_id="ad")])}'
+        docs_for_noad[responsible][group.parent.acronym]=0 # Ensure these keys are present later
+        docs_for_ad[responsible][group.parent.acronym]=0
+        responsible_for_group[group.acronym][group.parent.acronym] = responsible
+        responsible_count[responsible][group.parent.acronym] += 1
+
+
+    for doc in docs:
+        docs_for_wg[doc.group] += 1
+        pages_for_wg[doc.group] += doc.pages 
+        groups_for_area[doc.group.area.acronym].add(doc.group.acronym)
+        pages_for_area[doc.group.area.acronym] += doc.pages
+        docs_for_area[doc.group.area.acronym] += 1
+
+        if doc.ad is None:
+            responsible = responsible_for_group[doc.group.acronym][doc.group.parent.acronym]
+            groups_for_noad[responsible][doc.group.parent.acronym].add(doc.group.acronym)
+            pages_for_noad[responsible][doc.group.parent.acronym] += doc.pages
+            docs_for_noad[responsible][doc.group.parent.acronym] += 1
+        else:
+            responsible = f"{doc.ad.plain_name()}"
+            groups_for_ad[responsible][doc.group.parent.acronym].add(doc.group.acronym)
+            pages_for_ad[responsible][doc.group.parent.acronym] += doc.pages
+            docs_for_ad[responsible][doc.group.parent.acronym] += 1
+
+        docs_total +=1
+        groups_total.add(doc.group.acronym)
+        pages_total += doc.pages
+
+    groups_total = len(groups_total)
+    totals["groups_with_docs_count"]=groups_total
+
+    groups_without_docs = defaultdict(list)
+    for area, group in set(groups.values_list("parent__acronym","acronym"))-set([(d.group.parent.acronym,d.group.acronym) for d in docs]):
+        groups_without_docs[area].append(group)
+
+    totals["groups_without_docs_count"] = len([g for g in groups_without_docs[area] for area in groups_without_docs])
+
+    area_summary = []
+
+    for area in areas:
+        group_count = len(groups_for_area[area.acronym])
+        doc_count = docs_for_area[area.acronym]
+        page_count = pages_for_area[area.acronym]
+        area_summary.append(
+            {
+                "area": area.acronym,
+                "groups_in_area": groups.filter(parent=area).count(),
+                "groups_with_docs": group_count,
+                "groups_without_docs": f'{len(groups_without_docs[area.acronym])} ({", ".join(groups_without_docs[area.acronym])})',
+                "doc_count": doc_count,
+                "page_count": page_count,
+                "group_percent": group_count / groups_total * 100
+                if groups_total != 0
+                else 0,
+                "doc_percent": doc_count / docs_total * 100
+                if docs_total != 0
+                else 0,
+                "page_percent": page_count / pages_total * 100
+                if pages_total != 0
+                else 0,
+            }
+        )
+    area_totals = {
+            "group_count": groups_total,
+            "doc_count": docs_total,
+            "page_count": pages_total,            
+    }
+
+    noad_summary = []
+    noad_totals = {
+        "ad_group_count": 0,
+        "doc_group_count": 0,
+        "doc_count": 0,
+        "page_count": 0,
+    }
+    for ad in docs_for_noad:
+        for area in docs_for_noad[ad]:
+            noad_totals["ad_group_count"] += responsible_count[ad][area]
+            noad_totals["doc_group_count"] += len(groups_for_noad[ad][area])
+            noad_totals["doc_count"] += docs_for_noad[ad][area]
+            noad_totals["page_count"] += pages_for_noad[ad][area]
+    for ad in docs_for_noad:
+        for area in docs_for_noad[ad]:
+            noad_summary.append(
+                {
+                    "ad": ad,
+                    "area": area,
+                    "ad_group_count": responsible_count[ad][area],
+                    "doc_group_count": len(groups_for_noad[ad][area]),
+                    "doc_count": docs_for_noad[ad][area],
+                    "page_count": pages_for_noad[ad][area],
+                    "group_percent": len(groups_for_noad[ad][area]) / noad_totals["doc_group_count"] * 100
+                    if noad_totals["doc_group_count"] != 0
+                    else 0,
+                    "doc_percent": docs_for_noad[ad][area] / noad_totals["doc_count"] * 100
+                    if noad_totals["doc_count"] != 0
+                    else 0,
+                    "page_percent": pages_for_noad[ad][area] / noad_totals["page_count"] * 100
+                    if noad_totals["page_count"] != 0
+                    else 0,
+                }
+            )
+    noad_summary.sort(key=lambda r: (r["ad"], r["area"]))
+
+    ad_summary = []
+    ad_totals = {
+        "ad_group_count": 0,
+        "doc_group_count": 0,
+        "doc_count": 0,
+        "page_count": 0,
+    }
+    for ad in docs_for_ad:
+        for area in docs_for_ad[ad]:
+            ad_totals["ad_group_count"] += responsible_count[ad][area]
+            ad_totals["doc_group_count"] += len(groups_for_ad[ad][area])
+            ad_totals["doc_count"] += docs_for_ad[ad][area]
+            ad_totals["page_count"] += pages_for_ad[ad][area]
+    for ad in docs_for_ad:
+        for area in docs_for_ad[ad]:
+            ad_summary.append(
+                {
+                    "ad": ad,
+                    "area": area,
+                    "ad_group_count": responsible_count[ad][area],
+                    "doc_group_count": len(groups_for_ad[ad][area]),
+                    "doc_count": docs_for_ad[ad][area],
+                    "page_count": pages_for_ad[ad][area],
+                    "group_percent": len(groups_for_ad[ad][area]) / ad_totals["doc_group_count"] * 100
+                    if ad_totals["doc_group_count"] != 0
+                    else 0,
+                    "doc_percent": docs_for_ad[ad][area] / ad_totals["doc_count"] * 100
+                    if ad_totals["doc_count"] != 0
+                    else 0,
+                    "page_percent": pages_for_ad[ad][area] / ad_totals["page_count"] * 100
+                    if ad_totals["page_count"] != 0
+                    else 0,
+                }
+            )
+    ad_summary.sort(key=lambda r: (r["ad"], r["area"]))
+
+    rfc_counter = Counter(Document.objects.filter(type="rfc").values_list("group__acronym",flat=True))
+    recent_rfc_counter = Counter(Document.objects.filter(type="rfc",docevent__type="published_rfc",docevent__time__gte=timezone.now()-datetime.timedelta(weeks=104)).values_list("group__acronym",flat=True))
+    wg_summary=[]
+    for wg in docs_for_wg:
+        wg_summary.append(
+            {
+                "wg": wg.acronym,
+                "area": wg.parent.acronym,
+                "ad": responsible_for_group[wg.acronym][wg.parent.acronym],
+                "doc_count": docs_for_wg[wg],
+                "page_count": pages_for_wg[wg],
+                "rfc_count": rfc_counter[wg.acronym],
+                "recent_rfc_count": recent_rfc_counter[wg.acronym],
+                "related_doc_count": "-",
+                "open_milestone_count": "-",
+                "open_past_milestone_count": "-",
+                "last_meeting_date": "-" 
+            }
+        )
+    wg_summary.sort(key=lambda r: (r["wg"],r["area"]))
+
+
+    return render(
+        request,
+        "iesg/working_groups.html",
+        dict(area_summary=area_summary, area_totals=area_totals, ad_summary=ad_summary, noad_summary=noad_summary, ad_totals=ad_totals, noad_totals=noad_totals, totals=totals, wg_summary=wg_summary),
+    )
