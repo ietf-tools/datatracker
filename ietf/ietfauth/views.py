@@ -68,7 +68,7 @@ from ietf.ietfauth.forms import ( RegistrationForm, PasswordForm, ResetPasswordF
                                 ChangePasswordForm, get_person_form, RoleEmailForm,
                                 NewEmailForm, ChangeUsernameForm, PersonPasswordForm)
 from ietf.ietfauth.utils import has_role, send_new_email_confirmation_request
-from ietf.ietfauth.validators import StrongPasswordValidator
+from ietf.ietfauth.password_validation import StrongPasswordValidator
 from ietf.name.models import ExtResourceName
 from ietf.nomcom.models import NomCom
 from ietf.person.models import Person, Email, Alias, PersonalApiKey, PERSON_API_KEY_VALUES
@@ -733,7 +733,7 @@ def change_username(request):
 
 
 class StrongPasswordAuthenticationForm(AuthenticationForm):
-    validate_password_strength = StrongPasswordValidator(
+    password_strength_validator = StrongPasswordValidator(
         message=(
             "Your password does not meet complexity requirements and is "
             'easily guessable. Please use the "Forgot your password?" '
@@ -744,7 +744,7 @@ class StrongPasswordAuthenticationForm(AuthenticationForm):
     def confirm_login_allowed(self, user):
         """Raises validation error if login is not allowed"""
         super().confirm_login_allowed(user)
-        self.validate_password_strength(self.cleaned_data["password"])
+        self.password_strength_validator.validate(self.cleaned_data["password"], user)
 
 
 class AnyEmailAuthenticationForm(StrongPasswordAuthenticationForm):

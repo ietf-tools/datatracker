@@ -6,16 +6,16 @@ import re
 from unidecode import unidecode
 
 from django import forms
+from django.contrib.auth.models import User
+from django.contrib.auth import password_validation
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.contrib.auth.models import User
 
 from ietf.person.models import Person, Email
 from ietf.mailinglists.models import Allowlisted
 from ietf.utils.text import isascii
 
-from .validators import prevent_at_symbol, prevent_system_name, prevent_anonymous_name, is_allowed_address, \
-    StrongPasswordValidator
+from .validators import prevent_at_symbol, prevent_system_name, prevent_anonymous_name, is_allowed_address
 from .widgets import PasswordStrengthInput, PasswordConfirmationInput
 
 
@@ -179,7 +179,6 @@ class ChangePasswordForm(forms.Form):
     current_password = forms.CharField(widget=forms.PasswordInput)
 
     new_password = forms.CharField(
-        validators=[StrongPasswordValidator()],
         widget=PasswordStrengthInput(attrs={'class':'password_strength'}),
     )
     new_password_confirmation = forms.CharField(widget=PasswordConfirmationInput(
@@ -191,16 +190,20 @@ class ChangePasswordForm(forms.Form):
         super(ChangePasswordForm, self).__init__(data)
 
     def clean_current_password(self):
+        # n.b., password = None is handled by check_password and results in a failed check
         password = self.cleaned_data.get('current_password', None)
         if not self.user.check_password(password):
             raise ValidationError('Invalid password')
         return password
-            
+
     def clean(self):
-        new_password = self.cleaned_data.get('new_password', None)
-        conf_password = self.cleaned_data.get('new_password_confirmation', None)
-        if not new_password == conf_password:
-            raise ValidationError("The password confirmation is different than the new password")
+        new_password = self.cleaned_data.get("new_password", "")
+        conf_password = self.cleaned_data.get("new_password_confirmation", "")
+        if new_password != conf_password:
+            raise ValidationError(
+                "The password confirmation is different than the new password"
+            )
+        password_validation.validate_password(conf_password, self.user)
 
 
 class ChangeUsernameForm(forms.Form):
