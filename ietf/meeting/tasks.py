@@ -10,6 +10,7 @@ from .models import Meeting
 from .utils import generate_proceedings_content
 from .views import generate_agenda_data
 from .utils import migrate_registrations, check_migrate_registrations
+from .utils import fetch_attendance_from_meetings
 
 
 @shared_task
@@ -60,3 +61,21 @@ def proceedings_content_refresh_task(*, all=False):
         elif all or (num % 24 == now.hour):
             log.log(f"Refreshing proceedings for meeting {meeting.number}...")
             generate_proceedings_content(meeting, force_refresh=True)
+
+
+@shared_task
+def fetch_meeting_attendance_task():
+    # fetch most recent two meetings
+    meetings = Meeting.objects.filter(type="ietf", date__lte=timezone.now()).order_by("-date")[:2]
+    try:
+        stats = fetch_attendance_from_meetings(meetings)
+    except RuntimeError as err:
+        log.log(f"Error in fetch_meeting_attendance_task: {err}")
+    else:
+        for meeting, meeting_stats in zip(meetings, stats):
+            log.log(
+                "Fetched data for meeting {:>3}: {:4d} created, {:4d} updated, {:4d} deleted, {:4d} processed".format(
+                    meeting.number, meeting_stats['created'], meeting_stats['updated'], meeting_stats['deleted'],
+                    meeting_stats['processed']
+                )
+            )
