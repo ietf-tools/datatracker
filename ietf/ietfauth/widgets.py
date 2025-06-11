@@ -48,9 +48,7 @@ class PasswordStrengthInput(PasswordInput):
                 <span style="margin-left:5px;">
                     {}
                 </span>
-                <span class="password_improvement_hint d-none">
-                    You must choose a more complex password.
-                </span>
+                <span class="password_improvement_hint d-none"></span>
             </p>
         </div>
         """.format(

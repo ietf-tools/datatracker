@@ -3,6 +3,8 @@
 
 
 import re
+
+from django.conf import settings
 from unidecode import unidecode
 
 from django import forms
@@ -180,6 +182,7 @@ class ChangePasswordForm(forms.Form):
 
     new_password = forms.CharField(
         widget=PasswordStrengthInput(attrs={'class':'password_strength'}),
+        min_length=settings.PASSWORD_POLICY_MIN_LENGTH,
     )
     new_password_confirmation = forms.CharField(widget=PasswordConfirmationInput(
                                                     confirm_with='new_password',

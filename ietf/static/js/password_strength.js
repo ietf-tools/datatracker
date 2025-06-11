@@ -64,25 +64,32 @@
                         .val()) {
                         var result = zxcvbn($(this)
                             .val());
-
-                        if (result.score < 3) {
-                            password_strength_bar.removeClass('text-bg-success')
-                                .addClass('text-bg-warning');
-                            password_strength_info.find('.badge')
-                                .removeClass('d-none');
+                        const strongEnough = result.score >= 3;
+                        if (strongEnough) {
+                            // Mark input as valid
+                            this.setCustomValidity('');
+                        } else {
                             // Mark input as invalid
                             this.setCustomValidity('This password does not meet complexity requirements');
-                            this.classList.add('is-invalid')
-                            password_improvement_hint.removeClass('d-none');
-                        } else {
+                        }
+                        
+                        if (this.checkValidity()) {
                             password_strength_bar.removeClass('text-bg-warning')
                                 .addClass('text-bg-success');
                             password_strength_info.find('.badge')
                                 .addClass('d-none');
-                            // Mark input as valid
-                            this.setCustomValidity('');
                             this.classList.remove('is-invalid')
                             password_improvement_hint.addClass('d-none');
+                            password_improvement_hint.text('')
+                        } else {
+                            this.classList.add('is-invalid')
+                            password_improvement_hint.text(this.validationMessage)
+                            password_improvement_hint.removeClass('d-none');
+
+                            password_strength_bar.removeClass('text-bg-success')
+                                .addClass('text-bg-warning');
+                            password_strength_info.find('.badge')
+                                .removeClass('d-none');
                         }
 
                         password_strength_bar.width(((result.score + 1) / 5) * 100 + '%')
