@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
-from collections import namedtuple
+import datetime
+from dataclasses import dataclass
 from io import BytesIO
 from typing import Optional
 
@@ -98,7 +99,16 @@ def verbose_logging_enabled():
     return bool(get_replication_settings()["VERBOSE_LOGGING"])
 
 
-def fetch_blob_via_sql(bucket: str, name: str) -> Optional[namedtuple]:
+@dataclass
+class SqlBlob:
+    content: bytes
+    checksum: str
+    modified: datetime.datetime
+    mtime: Optional[datetime.datetime]
+    content_type: str
+
+
+def fetch_blob_via_sql(bucket: str, name: str) -> Optional[SqlBlob]:
     blobdb_connection = connections["blobdb"]
     cursor = blobdb_connection.cursor()
     cursor.execute(
@@ -109,8 +119,11 @@ def fetch_blob_via_sql(bucket: str, name: str) -> Optional[namedtuple]:
         [bucket, name],
     )
     row = cursor.fetchone()
-    BlobTuple = namedtuple("BlobTuple", [col[0] for col in cursor.description])
-    return None if row is None else BlobTuple(*row)
+    col_names = [col[0] for col in cursor.description]
+    return None if row is None else SqlBlob(**{
+        col_name: row_val
+        for col_name, row_val in zip(col_names, row)
+    })
 
 
 def replicate_blob(bucket, name):
