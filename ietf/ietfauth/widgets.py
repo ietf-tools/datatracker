@@ -39,18 +39,19 @@ class PasswordStrengthInput(PasswordInput):
         strength_markup = """
         <div style="margin-top: 10px;">
             <div class="progress" style="margin-bottom: 10px;">
-                <div class="progress-bar progress-bar-warning password_strength_bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="5" style="width: 0%%"></div>
+                <div class="progress-bar progress-bar-warning password_strength_bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="5" style="width: 0%"></div>
             </div>
             <p class="text-body-secondary password_strength_info hidden">
                 <span class="label label-danger">
-                    %s
+                    {}
                 </span>
                 <span style="margin-left:5px;">
-                    %s
+                    {}
                 </span>
+                <span class="password_improvement_hint d-none"></span>
             </p>
         </div>
-        """ % (
+        """.format(
             _("Warning"),
             _(
                 'This password would take <em class="password_strength_time"></em> to crack.'

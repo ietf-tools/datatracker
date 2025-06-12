@@ -36,16 +36,17 @@
 
 import datetime
 import importlib
+import string
 
 # needed if we revert to higher barrier for account creation
-#from datetime import datetime as DateTime, timedelta as TimeDelta, date as Date
+# from datetime import datetime as DateTime, timedelta as TimeDelta, date as Date
 from collections import defaultdict
 
 import django.core.signing
 from django import forms
 from django.contrib import messages
 from django.conf import settings
-from django.contrib.auth import logout, update_session_auth_hash
+from django.contrib.auth import logout, update_session_auth_hash, password_validation
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.hashers import identify_hasher
@@ -58,6 +59,7 @@ from django.urls import reverse as urlreverse
 from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.encoding import force_bytes
+from zxcvbn import zxcvbn
 
 import debug                            # pyflakes:ignore
 
@@ -66,6 +68,7 @@ from ietf.ietfauth.forms import ( RegistrationForm, PasswordForm, ResetPasswordF
                                 ChangePasswordForm, get_person_form, RoleEmailForm,
                                 NewEmailForm, ChangeUsernameForm, PersonPasswordForm)
 from ietf.ietfauth.utils import has_role, send_new_email_confirmation_request
+from ietf.ietfauth.password_validation import StrongPasswordValidator
 from ietf.name.models import ExtResourceName
 from ietf.nomcom.models import NomCom
 from ietf.person.models import Person, Email, Alias, PersonalApiKey, PERSON_API_KEY_VALUES
@@ -78,7 +81,6 @@ from ietf.utils.validators import validate_external_resource_value
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 
 # These are needed if we revert to the higher bar for account creation
-
 
 
 def index(request):
@@ -97,7 +99,7 @@ def index(request):
 # def ietf_login(request):
 #     if not request.user.is_authenticated:
 #         return HttpResponse("Not authenticated?", status=500)
-# 
+#
 #     redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
 #     request.session.set_test_cookie()
 #     return HttpResponseRedirect('/accounts/loggedin/?%s=%s' % (REDIRECT_FIELD_NAME, urlquote(redirect_to)))
@@ -582,7 +584,6 @@ def test_email(request):
     return r
 
 
-
 class AddReviewWishForm(forms.Form):
     doc = SearchableDocumentField(label="Document", doc_type="draft")
     team = forms.ModelChoiceField(queryset=Group.objects.all(), empty_label="(Choose review team)")
@@ -696,7 +697,7 @@ def change_password(request):
         'hasher': hasher,
     })
 
-    
+
 @login_required
 @person_required
 def change_username(request):
@@ -764,6 +765,23 @@ class AnyEmailAuthenticationForm(AuthenticationForm):
                 )
         return super().clean()
 
+    def confirm_login_allowed(self, user):
+        """Only allow login if password complies with current validators"""
+        super().confirm_login_allowed(user)
+        try:
+            password_validation.validate_password(self.cleaned_data["password"], user)
+        except ValidationError as error:
+            raise ValidationError(
+                # dict mapping field to error / error list
+                {
+                    "password": error.error_list,
+                    "__all__": ValidationError(
+                        f'Please use the "Forgot your password?" button below to '
+                        f'set a new password for your account.'
+                    ),
+                }
+            )
+
 
 class AnyEmailLoginView(LoginView):
     """LoginView that allows any email address as the username
@@ -779,7 +797,7 @@ class AnyEmailLoginView(LoginView):
             logout(self.request)  # should not be logged in yet, but just in case...
             return render(self.request, "registration/missing_person.html")
         return super().form_valid(form)
-        
+
 
 @login_required
 @person_required
