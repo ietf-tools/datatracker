@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: celery
+  name: flower
   labels:
     deleteBeforeUpgrade: yes
 spec:
@@ -9,13 +9,13 @@ spec:
   revisionHistoryLimit: 2
   selector:
     matchLabels:
-      app: celery
+      app: flower
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: celery
+        app: flower
     spec:
       affinity:
         podAffinity:
@@ -31,13 +31,13 @@ spec:
         runAsNonRoot: true
       containers:
         # -----------------------------------------------------
-        # Celery Container
+        # Flower Container
         # -----------------------------------------------------
-        - name: celery
+        - name: flower
           image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
           imagePullPolicy: Always
           ports:
-            - containerPort: 8000
+            - containerPort: 5555
               name: http
               protocol: TCP
           volumeMounts:
@@ -45,16 +45,12 @@ spec:
               mountPath: /a
             - name: dt-tmp
               mountPath: /tmp
-            - name: dt-home
-              mountPath: /home/datatracker
-            - name: dt-xml2rfc-cache
-              mountPath: /var/cache/xml2rfc
             - name: dt-cfg
               mountPath: /workspace/ietf/settings_local.py
               subPath: settings_local.py
           env:
             - name: "CONTAINER_ROLE"
-              value: "celery"
+              value: "flower"
           envFrom:
             - secretRef:
                 name: dt-secrets-env
@@ -66,41 +62,10 @@ spec:
             readOnlyRootFilesystem: true
             runAsUser: 1000
             runAsGroup: 1000
-        # -----------------------------------------------------
-        # ScoutAPM Container
-        # -----------------------------------------------------
-        - name: scoutapm
-          image: "scoutapp/scoutapm:version-1.4.0"
-          imagePullPolicy: IfNotPresent
-          # Replace command with one that will shut down on a TERM signal
-          # The ./core-agent start command line is from the scoutapm docker image
-          command:
-            - "sh"
-            - "-c"
-            - >-
-              trap './core-agent shutdown --tcp 0.0.0.0:6590' TERM;
-              ./core-agent start --daemonize false --log-level debug --tcp 0.0.0.0:6590 &
-              wait $!
-          livenessProbe:
-            exec:
-              command:
-                - "sh"
-                - "-c"
-                - "./core-agent probe --tcp 0.0.0.0:6590 | grep -q 'Agent found'"
-          securityContext:
-            readOnlyRootFilesystem: true
-            runAsUser: 65534 # "nobody" user by default
-            runAsGroup: 65534  # "nogroup" group by default
       volumes:
         # To be overridden with the actual shared volume
         - name: dt-vol
         - name: dt-tmp
-          emptyDir:
-            sizeLimit: "2Gi"
-        - name: dt-xml2rfc-cache
-          emptyDir:
-            sizeLimit: "2Gi"
-        - name: dt-home
           emptyDir:
             sizeLimit: "2Gi"
         - name: dt-cfg
@@ -109,3 +74,19 @@ spec:
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 600
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flower
+  annotations:
+    k8s.grafana.com/scrape: "true"  # this is not a bool
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: flower
