@@ -13,7 +13,7 @@ from django.http import HttpResponse, JsonResponse
 from ietf.meeting.factories import MeetingFactory, RegistrationFactory, RegistrationTicketFactory
 from ietf.meeting.models import Registration
 from ietf.meeting.utils import (migrate_registrations, get_preferred, process_single_registration,
-    get_registration_data, sync_registration_data)
+    get_registration_data, sync_registration_data, fetch_attendance_from_meetings)
 from ietf.nomcom.models import Volunteer
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
 from ietf.person.factories import PersonFactory
@@ -341,3 +341,17 @@ class GetRegistrationsTests(TestCase):
         new_reg, action = process_single_registration(reg_data, meeting)
         self.assertEqual((new_reg, action), (None, 'deleted'))
         self.assertEqual(meeting.registration_set.count(), 0)
+
+    @patch("ietf.meeting.utils.sync_registration_data")
+    def test_fetch_attendance_from_meetings(self, mock_sync_reg_data):
+        mock_meetings = [object(), object(), object()]
+        d1 = dict(created=1, updated=2, deleted=0, processed=3)
+        d2 = dict(created=2, updated=2, deleted=0, processed=4)
+        d3 = dict(created=1, updated=4, deleted=1, processed=5)
+        mock_sync_reg_data.side_effect = (d1, d2, d3)
+        stats = fetch_attendance_from_meetings(mock_meetings)
+        self.assertEqual(
+            [mock_sync_reg_data.call_args_list[n][0][0] for n in range(3)],
+            mock_meetings,
+        )
+        self.assertEqual(stats, [d1, d2, d3])

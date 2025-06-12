@@ -1402,11 +1402,13 @@ def sync_registration_data(meeting):
         'created': 0,
         'updated': 0,
         'deleted': 0,
+        'processed': 0,
     }
 
     # Process registrations from reg_data
     reg_emails = set()
     for email, data in reg_data['objects'].items():
+        stats['processed'] += 1
         reg_emails.add(email)
 
         # Process this registration
@@ -1577,3 +1579,7 @@ def process_single_registration(reg_data, meeting):
         action_taken = 'updated'
 
     return registration, action_taken
+
+
+def fetch_attendance_from_meetings(meetings):
+    return [sync_registration_data(meeting) for meeting in meetings]
