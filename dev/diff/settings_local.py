@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from ietf.settings import *  # pyflakes:ignore
-from ietf.settings import STORAGES, ARTIFACT_STORAGE_NAMES, BLOBSTORAGE_CONNECT_TIMEOUT, BLOBSTORAGE_READ_TIMEOUT, BLOBSTORAGE_MAX_ATTEMPTS
-import botocore.config
 
 ALLOWED_HOSTS = ['*']
 
