@@ -64,7 +64,8 @@
                         .val()) {
                         var result = zxcvbn($(this)
                             .val());
-                        const strongEnough = result.score >= 3;
+                        const enforceStrength = !('disableStrengthEnforcement' in this.dataset);
+                        const strongEnough = !enforceStrength || (result.score >= 3);
                         if (strongEnough) {
                             // Mark input as valid
                             this.setCustomValidity('');

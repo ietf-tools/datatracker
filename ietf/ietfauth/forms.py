@@ -16,6 +16,7 @@ from django.db import models
 from ietf.person.models import Person, Email
 from ietf.mailinglists.models import Allowlisted
 from ietf.utils.text import isascii
+from .password_validation import StrongPasswordValidator
 
 from .validators import prevent_at_symbol, prevent_system_name, prevent_anonymous_name, is_allowed_address
 from .widgets import PasswordStrengthInput, PasswordConfirmationInput
@@ -173,16 +174,16 @@ class AllowlistForm(forms.ModelForm):
         model = Allowlisted
         exclude = ['by', 'time' ]
 
-    
-from django import forms
-
 
 class ChangePasswordForm(forms.Form):
     current_password = forms.CharField(widget=forms.PasswordInput)
 
     new_password = forms.CharField(
-        widget=PasswordStrengthInput(attrs={'class':'password_strength'}),
-        min_length=settings.PASSWORD_POLICY_MIN_LENGTH,
+        widget=PasswordStrengthInput(
+            attrs={
+                'class':'password_strength',
+                'data-disable-strength-enforcement': '',  # usually removed in init
+            }),
     )
     new_password_confirmation = forms.CharField(widget=PasswordConfirmationInput(
                                                     confirm_with='new_password',
@@ -190,7 +191,14 @@ class ChangePasswordForm(forms.Form):
 
     def __init__(self, user, data=None):
         self.user = user
-        super(ChangePasswordForm, self).__init__(data)
+        super().__init__(data)
+        # Check whether we have validators to enforce
+        new_password_field = self.fields["new_password"]
+        for pwval in password_validation.get_default_password_validators():
+            if isinstance(pwval, password_validation.MinimumLengthValidator):
+                new_password_field.widget.attrs["minlength"] = pwval.min_length
+            elif isinstance(pwval, StrongPasswordValidator):
+                new_password_field.widget.attrs.pop("data-disable-strength-enforcement", None)
 
     def clean_current_password(self):
         # n.b., password = None is handled by check_password and results in a failed check
