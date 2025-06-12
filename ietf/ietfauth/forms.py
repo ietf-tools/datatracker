@@ -181,13 +181,16 @@ class ChangePasswordForm(forms.Form):
     new_password = forms.CharField(
         widget=PasswordStrengthInput(
             attrs={
-                'class':'password_strength',
-                'data-disable-strength-enforcement': '',  # usually removed in init
-            }),
+                "class": "password_strength",
+                "data-disable-strength-enforcement": "",  # usually removed in init
+            }
+        ),
     )
-    new_password_confirmation = forms.CharField(widget=PasswordConfirmationInput(
-                                                    confirm_with='new_password',
-                                                    attrs={'class':'password_confirmation'}))
+    new_password_confirmation = forms.CharField(
+        widget=PasswordConfirmationInput(
+            confirm_with="new_password", attrs={"class": "password_confirmation"}
+        )
+    )
 
     def __init__(self, user, data=None):
         self.user = user
@@ -198,13 +201,15 @@ class ChangePasswordForm(forms.Form):
             if isinstance(pwval, password_validation.MinimumLengthValidator):
                 new_password_field.widget.attrs["minlength"] = pwval.min_length
             elif isinstance(pwval, StrongPasswordValidator):
-                new_password_field.widget.attrs.pop("data-disable-strength-enforcement", None)
+                new_password_field.widget.attrs.pop(
+                    "data-disable-strength-enforcement", None
+                )
 
     def clean_current_password(self):
         # n.b., password = None is handled by check_password and results in a failed check
-        password = self.cleaned_data.get('current_password', None)
+        password = self.cleaned_data.get("current_password", None)
         if not self.user.check_password(password):
-            raise ValidationError('Invalid password')
+            raise ValidationError("Invalid password")
         return password
 
     def clean(self):
