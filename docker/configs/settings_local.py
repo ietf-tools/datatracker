@@ -2,12 +2,26 @@
 # -*- coding: utf-8 -*-
 
 from ietf.settings import *  # pyflakes:ignore
-from ietf.settings import STORAGES, MORE_STORAGE_NAMES, BLOBSTORAGE_CONNECT_TIMEOUT, BLOBSTORAGE_READ_TIMEOUT, BLOBSTORAGE_MAX_ATTEMPTS
-import botocore.config
+from ietf.settings import (
+    ARTIFACT_STORAGE_NAMES,
+    STORAGES,
+    BLOBSTORAGE_MAX_ATTEMPTS,
+    BLOBSTORAGE_READ_TIMEOUT,
+    BLOBSTORAGE_CONNECT_TIMEOUT,
+)
 
 ALLOWED_HOSTS = ['*']
 
 from ietf.settings_postgresqldb import DATABASES  # pyflakes:ignore
+DATABASE_ROUTERS = ["ietf.blobdb.routers.BlobdbStorageRouter"]
+BLOBDB_DATABASE = "blobdb"
+BLOBDB_REPLICATION = {
+    "ENABLED": True,
+    "DEST_STORAGE_PATTERN": "r2-{bucket}",
+    "INCLUDE_BUCKETS": ARTIFACT_STORAGE_NAMES,
+    "EXCLUDE_BUCKETS": ["staging"],
+    "VERBOSE_LOGGING": True,
+}
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 IDSUBMIT_STAGING_PATH = "/assets/www6s/staging/"
@@ -39,25 +53,6 @@ INTERNAL_IPS = [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips] + ['127.0.0.
 # DEV_TEMPLATE_CONTEXT_PROCESSORS = [
 #    'ietf.context_processors.sql_debug',
 # ]
-for storagename in MORE_STORAGE_NAMES:
-    STORAGES[storagename] = {
-        "BACKEND": "ietf.doc.storage_backends.CustomS3Storage",
-        "OPTIONS": dict(
-            endpoint_url="http://blobstore:9000",
-            access_key="minio_root",
-            secret_key="minio_pass",
-            security_token=None,
-            client_config=botocore.config.Config(
-                signature_version="s3v4",
-                connect_timeout=BLOBSTORAGE_CONNECT_TIMEOUT,
-                read_timeout=BLOBSTORAGE_READ_TIMEOUT,
-                retries={"total_max_attempts": BLOBSTORAGE_MAX_ATTEMPTS},
-            ),
-            verify=False,
-            bucket_name=storagename,
-        ),
-    }
-
 
 DOCUMENT_PATH_PATTERN = '/assets/ietfdata/doc/{doc.type_id}/'
 INTERNET_DRAFT_PATH = '/assets/ietf-ftp/internet-drafts/'
@@ -80,3 +75,26 @@ DE_GFM_BINARY = '/usr/local/bin/de-gfm'
 
 STATIC_IETF_ORG = "/_static"
 STATIC_IETF_ORG_INTERNAL = "http://static"
+
+
+# Blob replication storage for dev
+import botocore.config
+for storagename in ARTIFACT_STORAGE_NAMES:
+    replica_storagename = f"r2-{storagename}"
+    STORAGES[replica_storagename] = {
+        "BACKEND": "ietf.doc.storage.MetadataS3Storage",
+        "OPTIONS": dict(
+            endpoint_url="http://blobstore:9000",
+            access_key="minio_root",
+            secret_key="minio_pass",
+            security_token=None,
+            client_config=botocore.config.Config(
+                signature_version="s3v4",
+                connect_timeout=BLOBSTORAGE_CONNECT_TIMEOUT,
+                read_timeout=BLOBSTORAGE_READ_TIMEOUT,
+                retries={"total_max_attempts": BLOBSTORAGE_MAX_ATTEMPTS},
+            ),
+            verify=False,
+            bucket_name=f"{storagename}",
+        ),
+    }

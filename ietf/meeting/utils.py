@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 import datetime
 import itertools
+import jsonschema
 import os
+import requests
 from hashlib import sha384
 
 import pytz
@@ -15,6 +17,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.cache import caches
 from django.core.files.base import ContentFile
+from django.db import IntegrityError
 from django.db.models import OuterRef, Subquery, TextField, Q, Value, Max
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
@@ -27,7 +30,7 @@ from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.storage_utils import store_bytes, store_str
 from ietf.meeting.models import (Session, SchedulingEvent, TimeSlot,
     Constraint, SchedTimeSessAssignment, SessionPresentation, Attended,
-    Registration, Meeting)
+    Registration, Meeting, RegistrationTicket)
 from ietf.doc.models import Document, State, NewRevisionDocEvent, StateDocEvent
 from ietf.doc.models import DocEvent
 from ietf.group.models import Group
@@ -160,7 +163,7 @@ def bluesheet_data(session):
         .annotate(
             affiliation=Coalesce(
                 Subquery(
-                    MeetingRegistration.objects.filter(
+                    Registration.objects.filter(
                         Q(meeting=session.meeting),
                         Q(person=OuterRef("person")) | Q(email=OuterRef("person__email")),
                     ).values("affiliation")[:1]
@@ -1008,20 +1011,25 @@ def participants_for_meeting(meeting):
         checked_in = queryset of onsite, checkedin participants values_list('person')
         attended = queryset of remote participants who attended a session values_list('person')
     """
-    checked_in = meeting.meetingregistration_set.filter(reg_type='onsite', checkedin=True).values_list('person', flat=True).distinct()
+    checked_in = meeting.registration_set.onsite().filter(checkedin=True).values_list('person', flat=True).distinct()
     sessions = meeting.session_set.filter(Q(type='plenary') | Q(group__type__in=['wg', 'rg']))
     attended = Attended.objects.filter(session__in=sessions).values_list('person', flat=True).distinct()
     return (checked_in, attended)
 
 
 def get_preferred(regs):
-    """ Return a preferred regular registration (non hackathon) from 
-        a list of registrations if there is one, otherwise any.
+    """ If there are multiple registrations return preferred in
+        this order: onsite, remote, any (ie hackathon_onsite)
     """
-    for reg in regs:
-        if reg.reg_type in ['onsite', 'remote']:
-            return reg
-    return reg
+    if len(regs) == 1:
+        return regs[0]
+    reg_types = [r.reg_type for r in regs]
+    if 'onsite' in reg_types:
+        return regs[reg_types.index('onsite')]
+    elif 'remote' in reg_types:
+        return regs[reg_types.index('remote')]
+    else:
+        return regs[0]
 
 
 def migrate_registrations(initial=False):
@@ -1287,3 +1295,291 @@ def organize_proceedings_sessions(sessions):
             else:
                 not_meeting_groups.append(entry)
     return meeting_groups, not_meeting_groups
+
+
+import_registration_json_validator = jsonschema.Draft202012Validator(
+    schema={
+        "type": "object",
+        "properties": {
+            "objects": {
+                "type": "object",
+                "patternProperties": {
+                    # Email address as key (simplified pattern or just allow any key)
+                    ".*": {
+                        "type": "object",
+                        "properties": {
+                            "first_name": {"type": "string"},
+                            "last_name": {"type": "string"},
+                            "email": {"type": "string", "format": "email"},
+                            "affiliation": {"type": "string"},
+                            "country_code": {"type": "string", "minLength": 2, "maxLength": 2},
+                            "meeting": {"type": "string"},
+                            "checkedin": {"type": "boolean"},
+                            "cancelled": {"type": "boolean"},
+                            "is_nomcom_volunteer": {"type": "boolean"},
+                            "tickets": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "attendance_type": {"type": "string"},
+                                        "ticket_type": {"type": "string"}
+                                    },
+                                    "required": ["attendance_type", "ticket_type"]
+                                }
+                            }
+                        },
+                        "required": [
+                            "first_name", "last_name", "email",
+                            "country_code", "meeting", 'affiliation',
+                            "checkedin", "is_nomcom_volunteer", "tickets",
+                            "cancelled",
+                        ]
+                    }
+                },
+                "additionalProperties": False
+            }
+        },
+        "required": ["objects"]
+    }
+)
+
+
+def get_registration_data(meeting):
+    '''Retrieve data from registation system for meeting'''
+    url = settings.REGISTRATION_PARTICIPANTS_API_URL
+    key = settings.REGISTRATION_PARTICIPANTS_API_KEY
+    params = {'meeting': meeting.number, 'apikey': key}
+    try:
+        response = requests.get(url, params=params, timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
+    except requests.Timeout as e:
+        log(f'GET request timed out for [{url}]: {e}')
+        raise Exception("Timeout retrieving data from registration API") from e
+    if response.status_code == 200:
+        try:
+            decoded = response.json()
+        except ValueError as e:
+            raise ValueError(f'Could not decode response from registration API: {e}')
+    else:
+        raise Exception(f'Bad response from registration API: {response.status_code}, {response.content[:64]}')
+
+    # validate registration data
+    import_registration_json_validator.validate(decoded)
+    return decoded
+
+
+def sync_registration_data(meeting):
+    """"Sync meeting.Registration with registration system.
+
+    Registration records are created in realtime as people register for a
+    meeting. This function serves as an audit / reconciliation. Most records are
+    expected to already exist. The function has been optimized with this in mind.
+
+    - Creates new registrations if they don't exist
+    - Updates existing registrations if fields differ
+    - Updates tickets as needed
+    - Deletes registrations that exist in the database but not in the JSON data
+
+    Returns:
+        dict: Summary of changes made (created, updated, deleted counts)
+    """
+    reg_data = get_registration_data(meeting)
+
+    # Get the meeting ID from the first registration, the API only deals with one meeting at a time
+    first_email = next(iter(reg_data['objects']))
+    meeting_number = reg_data['objects'][first_email]['meeting']
+    try:
+        Meeting.objects.get(number=meeting_number)
+    except Meeting.DoesNotExist:
+        raise Exception(f'meeting does not exist {meeting_number}')
+
+    # Get all existing registrations for this meeting
+    existing_registrations = meeting.registration_set.all()
+    existing_emails = set(reg.email for reg in existing_registrations if reg.email)
+
+    # Track changes for reporting
+    stats = {
+        'created': 0,
+        'updated': 0,
+        'deleted': 0,
+        'processed': 0,
+    }
+
+    # Process registrations from reg_data
+    reg_emails = set()
+    for email, data in reg_data['objects'].items():
+        stats['processed'] += 1
+        reg_emails.add(email)
+
+        # Process this registration
+        _, action_taken = process_single_registration(data, meeting)
+
+        # Update stats
+        if action_taken == 'created':
+            stats['created'] += 1
+        elif action_taken == 'updated':
+            stats['updated'] += 1
+
+    # Delete registrations that exist in the DB but not in registration data, they've been cancelled
+    emails_to_delete = existing_emails - reg_emails
+    if emails_to_delete:
+        result = Registration.objects.filter(
+            email__in=emails_to_delete,
+            meeting=meeting
+        ).delete()
+        if 'meeting.Registration' in result[1]:
+            deleted_count = result[1]['meeting.Registration']
+        else:
+            deleted_count = 0
+        stats['deleted'] = deleted_count
+
+    # set meeting.attendees
+    count = Registration.objects.onsite().filter(meeting=meeting, checkedin=True).count()
+    if meeting.attendees != count:
+        meeting.attendees = count
+        meeting.save()
+
+    return stats
+
+
+def process_single_registration(reg_data, meeting):
+    """
+    Process a single registration record - create, update, or leave unchanged as needed.
+
+    Args:
+        reg_data (dict): Registration data
+        meeting (obj): The IETF meeting
+
+    Returns:
+        tuple: (registration, action_taken)
+            - registration: Registration object
+            - action_taken: String indicating 'created', 'updated', or None
+    """
+    # import here to avoid circular imports
+    from ietf.nomcom.models import Volunteer, NomCom
+
+    action_taken = None
+    fields_updated = False
+    tickets_modified = False
+
+    # handle deleted
+    # should not see cancelled records during nightly sync but can see
+    # them from realtime notifications
+    if reg_data['cancelled']:
+        try:
+            registration = Registration.objects.get(meeting=meeting, email=reg_data['email'])
+        except Registration.DoesNotExist:
+            return (None, None)
+        for ticket in reg_data['tickets']:
+            target = registration.tickets.filter(
+                attendance_type__slug=ticket['attendance_type'],
+                ticket_type__slug=ticket['ticket_type']).first()
+            target.delete()
+        if registration.tickets.count() == 0:
+            registration.delete()
+        return (None, 'deleted')
+
+    person = Person.objects.filter(email__address=reg_data['email']).first()
+    if not person:
+        log.log(f"ERROR: meeting registration email unknown {reg_data['email']}")
+
+    registration, created = Registration.objects.get_or_create(
+        email=reg_data['email'],
+        meeting=meeting,
+        defaults={
+            'first_name': reg_data['first_name'],
+            'last_name': reg_data['last_name'],
+            'person': person,
+            'affiliation': reg_data['affiliation'],
+            'country_code': reg_data['country_code'],
+            'checkedin': reg_data['checkedin'],
+        }
+    )
+
+    # If not created, check if we need to update
+    if not created:
+        for field in ['first_name', 'last_name', 'affiliation', 'country_code', 'checkedin']:
+            if getattr(registration, field) != reg_data[field]:
+                setattr(registration, field, reg_data[field])
+                fields_updated = True
+
+    if fields_updated:
+        registration.save()
+
+    # Process tickets - handle counting properly for multiple same-type tickets
+    # Build count dictionaries for existing and new tickets
+    existing_ticket_counts = {}
+    for ticket in registration.tickets.all():
+        key = (ticket.attendance_type.slug, ticket.ticket_type.slug)
+        existing_ticket_counts[key] = existing_ticket_counts.get(key, 0) + 1
+
+    # Get new tickets from reg_data and count them
+    reg_data_ticket_counts = {}
+    for ticket_data in reg_data.get('tickets', []):
+        key = (ticket_data['attendance_type'], ticket_data['ticket_type'])
+        reg_data_ticket_counts[key] = reg_data_ticket_counts.get(key, 0) + 1
+
+    # Calculate tickets to add and remove
+    all_ticket_types = set(existing_ticket_counts.keys()) | set(reg_data_ticket_counts.keys())
+
+    for ticket_type in all_ticket_types:
+        existing_count = existing_ticket_counts.get(ticket_type, 0)
+        new_count = reg_data_ticket_counts.get(ticket_type, 0)
+
+        # Delete excess tickets
+        if existing_count > new_count:
+            tickets_to_delete = existing_count - new_count
+            # Get all tickets of this type
+            matching_tickets = registration.tickets.filter(
+                attendance_type__slug=ticket_type[0],
+                ticket_type__slug=ticket_type[1]
+            ).order_by('id')  # Use a consistent order for deterministic deletion
+
+            # Delete the required number
+            for ticket in matching_tickets[:tickets_to_delete]:
+                ticket.delete()
+            tickets_modified = True
+
+        # Add missing tickets
+        elif new_count > existing_count:
+            tickets_to_add = new_count - existing_count
+
+            # Create the new tickets
+            for _ in range(tickets_to_add):
+                try:
+                    RegistrationTicket.objects.create(
+                        registration=registration,
+                        attendance_type_id=ticket_type[0],
+                        ticket_type_id=ticket_type[1],
+                    )
+                    tickets_modified = True
+                except IntegrityError as e:
+                    log(f"Error adding RegistrationTicket {e}")
+
+    # handle nomcom volunteer
+    if reg_data['is_nomcom_volunteer'] and person:
+        try:
+            nomcom = NomCom.objects.get(is_accepting_volunteers=True)
+        except (NomCom.DoesNotExist, NomCom.MultipleObjectsReturned):
+            nomcom = None
+        if nomcom:
+            Volunteer.objects.get_or_create(
+                nomcom=nomcom,
+                person=person,
+                defaults={
+                    "affiliation": reg_data["affiliation"],
+                    "origin": "registration"
+                }
+            )
+
+    # set action_taken
+    if created:
+        action_taken = 'created'
+    elif fields_updated or tickets_modified:
+        action_taken = 'updated'
+
+    return registration, action_taken
+
+
+def fetch_attendance_from_meetings(meetings):
+    return [sync_registration_data(meeting) for meeting in meetings]
