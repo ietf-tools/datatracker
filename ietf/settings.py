@@ -1122,6 +1122,9 @@ PPT2PDF_COMMAND = [
 ]
 
 STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/'
+REGISTRATION_PARTICIPANTS_API_URL = 'https://registration.ietf.org/api/v1/participants-dt/'
+REGISTRATION_PARTICIPANTS_API_KEY = 'changeme'
+
 PROCEEDINGS_VERSION_CHANGES = [
     0,   # version 1
     97,  # version 2: meeting 97 and later (was number was NEW_PROCEEDINGS_START)
