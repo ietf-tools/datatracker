@@ -2,6 +2,13 @@
 # -*- coding: utf-8 -*-
 
 from ietf.settings import *  # pyflakes:ignore
+from ietf.settings import (
+    ARTIFACT_STORAGE_NAMES,
+    STORAGES,
+    BLOBSTORAGE_MAX_ATTEMPTS,
+    BLOBSTORAGE_READ_TIMEOUT,
+    BLOBSTORAGE_CONNECT_TIMEOUT,
+)
 
 ALLOWED_HOSTS = ['*']
 

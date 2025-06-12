@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 from django.apps import apps
-from django.conf import settings
 
 from .apps import BlobdbConfig, get_blobdb
 
