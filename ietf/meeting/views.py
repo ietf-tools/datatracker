@@ -61,6 +61,7 @@ from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission, Attended
 from ietf.meeting.models import ImportantDate, SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
+from ietf.meeting.models import Registration
 from ietf.meeting.forms import ( CustomDurationField, SwapDaysForm, SwapTimeslotsForm, ImportMinutesForm,
                                  TimeSlotCreateForm, TimeSlotEditForm, SessionCancelForm, SessionEditForm )
 from ietf.meeting.helpers import get_person_by_email, get_schedule_by_name
@@ -98,7 +99,6 @@ from ietf.meeting.utils import get_activity_stats, post_process, create_recordin
 from ietf.meeting.utils import participants_for_meeting, generate_bluesheet, bluesheet_data, save_bluesheet
 from ietf.message.utils import infer_message
 from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
-from ietf.stats.models import MeetingRegistration
 from ietf.utils import markdown
 from ietf.utils.decorators import require_api_key
 from ietf.utils.hedgedoc import Note, NoteError
@@ -2710,7 +2710,7 @@ def session_attendance(request, session_id, num):
             was_there = Attended.objects.filter(session=session, person=person).exists()
             can_add = (
                 today_utc <= cor_cut_off_date
-                and MeetingRegistration.objects.filter(
+                and Registration.objects.filter(
                     meeting=session.meeting, person=person
                 ).exists()
                 and not was_there
@@ -4210,17 +4210,17 @@ def proceedings_attendees(request, num=None):
         return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}/attendee.html')
 
     template = None
-    meeting_registrations = None
+    registrations = None
 
     if int(meeting.number) >= 118:
         checked_in, attended = participants_for_meeting(meeting)
-        regs = list(MeetingRegistration.objects.filter(meeting__number=num, reg_type='onsite', checkedin=True))
+        regs = list(Registration.objects.onsite().filter(meeting__number=num, checkedin=True))
 
-        for mr in MeetingRegistration.objects.filter(meeting__number=num, reg_type='remote').select_related('person'):
-            if mr.person.pk in attended and mr.person.pk not in checked_in:
-                regs.append(mr)
+        for reg in Registration.objects.remote().filter(meeting__number=num).select_related('person'):
+            if reg.person.pk in attended and reg.person.pk not in checked_in:
+                regs.append(reg)
 
-        meeting_registrations = sorted(regs, key=lambda x: (x.last_name, x.first_name))
+        registrations = sorted(regs, key=lambda x: (x.last_name, x.first_name))
     else:
         overview_template = "/meeting/proceedings/%s/attendees.html" % meeting.number
         try:
@@ -4230,7 +4230,7 @@ def proceedings_attendees(request, num=None):
 
     return render(request, "meeting/proceedings_attendees.html", {
         'meeting': meeting,
-        'meeting_registrations': meeting_registrations,
+        'registrations': registrations,
         'template': template,
     })
 

@@ -29,13 +29,13 @@
             </tr>
         </thead>
         <tbody>
-            {% for reg in meeting_registrations %}
+            {% for reg in registrations %}
             <tr>
                 <td>{{ reg.last_name }}</td>
                 <td>{{ reg.first_name }}</td>
                 <td>{{ reg.affiliation }}</td>
                 <td>{{ reg.country_code }}</td>
-                <td>{{ reg.reg_type }}</td>
+                <td>{{ reg.attendance_type }}</td>
             </tr>
             {% endfor %}
         </tbody>
