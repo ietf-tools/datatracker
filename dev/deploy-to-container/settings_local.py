@@ -100,3 +100,6 @@ for storagename in MORE_STORAGE_NAMES:
             bucket_name=f"test-{storagename}",
         ),
     }
+
+# Disable password validators for dev sites - comment this out to enable them.
+AUTH_PASSWORD_VALIDATORS = []
