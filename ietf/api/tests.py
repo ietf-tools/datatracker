@@ -50,6 +50,7 @@ OMITTED_APPS = (
     'ietf.secr.proceedings',
     'ietf.ipr',
     'ietf.status',
+    'ietf.blobdb',
 )
 
 class CustomApiTests(TestCase):
