@@ -50,7 +50,7 @@ DATABASES = {
 
 # test with a single DB - do not use a DB router
 BLOBDB_DATABASE = "default"
-DATABASE_ROUTERS: list[str] = []
+DATABASE_ROUTERS = []  # type: ignore
 
 if TEST_CODE_COVERAGE_CHECKER and not TEST_CODE_COVERAGE_CHECKER._started: # pyflakes:ignore
     TEST_CODE_COVERAGE_CHECKER.start()                          # pyflakes:ignore
