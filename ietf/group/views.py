@@ -881,7 +881,7 @@ def meetings(request, acronym, group_type=None):
             cutoff_date = revsub_dates_by_meeting[s.meeting.pk]
         else:
             cutoff_date = s.meeting.date + datetime.timedelta(days=s.meeting.submission_correction_day_offset)
-        s.cached_is_cutoff = date_today(datetime.timezone.utc) > cutoff_date
+        s.cached_is_cutoff = date_today(datetime.UTC) > cutoff_date
 
     future, in_progress, recent, past = group_sessions(sessions)
 
