@@ -54,9 +54,11 @@ countries.sort(key=lambda x: x[1])
 
 timezones = []
 for name in pytz.common_timezones:
-    tzfn = os.path.join(settings.TZDATA_ICS_PATH, name + ".ics")
-    if not os.path.islink(tzfn):
-        timezones.append((name, name))
+    # Do not want GMT in list of selectable timezones
+    if name != 'GMT':
+        tzfn = os.path.join(settings.TZDATA_ICS_PATH, name + ".ics")
+        if not os.path.islink(tzfn):
+            timezones.append((name, name))
 timezones.sort()
 
 
