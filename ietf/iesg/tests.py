@@ -182,6 +182,11 @@ class IESGTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
+    def test_working_groups(self):
+        url = urlreverse("ietf.iesg.views.working_groups")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
 
 class IESGAgendaTests(TestCase):
     def setUp(self):
