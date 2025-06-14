@@ -610,4 +610,4 @@ def telechat_agenda_content_manage(request):
 @role_required("Secretariat", "IAB Chair", "Area Director")
 def telechat_agenda_content_view(request, section):
     content = get_object_or_404(TelechatAgendaContent, section__slug=section, section__used=True)
-    return HttpResponse(content=content.text, content_type="text/plain")
+    return HttpResponse(content=content.text, content_type="text/plain; charset=utf-8")

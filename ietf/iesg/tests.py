@@ -759,7 +759,7 @@ class TelechatAgendaContentTests(TestCase):
                 urlreverse("ietf.iesg.views.telechat_agenda_content_view", kwargs={"section": section})
             )
             self.assertContains(r, content, status_code=200)
-            self.assertEqual(r.get("Content-Type", None), "text/plain")
+            self.assertEqual(r.get("Content-Type", None), "text/plain; charset=utf-8")
 
     def test_telechat_agenda_content_view_permissions(self):
         for section in TelechatAgendaSectionName.objects.filter(used=True).values_list("slug", flat=True):
