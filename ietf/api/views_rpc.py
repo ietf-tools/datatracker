@@ -26,6 +26,7 @@ def rpc_person(request, person_id):
         {
             "id": person.id,
             "plain_name": person.plain_name(),
+            "picture": person.cdn_photo_url() or None,
         }
     )
 
