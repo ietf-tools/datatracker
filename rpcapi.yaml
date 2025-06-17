@@ -370,6 +370,11 @@ components:
                 plain_name:
                     type: string
                     example: John Doe
+                picture:
+                    type: string
+                    example: https://cdn.example.com/avatars/some-photo.png
+                    format: uri
+                    nullable: true
 
         SubmittedToQueue:
             type: object
