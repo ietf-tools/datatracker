@@ -82,4 +82,4 @@ STATIC_IETF_ORG = "/_static"
 STATIC_IETF_ORG_INTERNAL = "http://static"
 
 # Disable password validators in dev mode - comment this out to enable them
-AUTH_PASSWORD_VALIDATORS = []
+AUTH_PASSWORD_VALIDATORS = []  # type:ignore
