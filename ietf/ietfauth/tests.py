@@ -32,14 +32,13 @@ import debug                            # pyflakes:ignore
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group, Role, RoleName
 from ietf.ietfauth.utils import has_role
-from ietf.meeting.factories import MeetingFactory
+from ietf.meeting.factories import MeetingFactory, RegistrationFactory, RegistrationTicketFactory
 from ietf.nomcom.factories import NomComFactory
 from ietf.person.factories import PersonFactory, EmailFactory, UserFactory, PersonalApiKeyFactory
 from ietf.person.models import Person, Email
 from ietf.person.tasks import send_apikey_usage_emails_task
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import ReviewWish, UnavailablePeriod
-from ietf.stats.models import MeetingRegistration
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.timezone import date_today
@@ -1079,11 +1078,15 @@ class OpenIDConnectTests(TestCase):
             EmailFactory(person=person)
             email_list = person.email_set.all().values_list('address', flat=True)
             meeting = MeetingFactory(type_id='ietf', date=date_today())
-            MeetingRegistration.objects.create(
-                    meeting=meeting, person=None, first_name=person.first_name(), last_name=person.last_name(),
-                    email=email_list[0], ticket_type='full_week', reg_type='remote', affiliation='Some Company',
-                )
-
+            reg_person = RegistrationFactory(
+                meeting=meeting,
+                person=person,
+                first_name=person.first_name(),
+                last_name=person.last_name(),
+                email=email_list[0],
+                affiliation='Some Company',
+                with_ticket={'attendance_type_id': 'remote', 'ticket_type_id': 'week_pass'},
+            )
             # Get access authorisation
             session = {}
             session["state"] = rndstr()
@@ -1136,35 +1139,48 @@ class OpenIDConnectTests(TestCase):
             for key in ['iss', 'sub', 'aud', 'exp', 'iat', 'auth_time', 'nonce', 'at_hash']:
                 self.assertIn(key, access_token_info['id_token'])
 
-            # Get userinfo, check keys present
+            # Get userinfo, check keys present, most common scenario
             userinfo = client.do_user_info_request(state=params["state"], scope=args['scope'])
             for key in [ 'email', 'family_name', 'given_name', 'meeting', 'name', 'pronouns', 'roles',
                          'ticket_type', 'reg_type', 'affiliation', 'picture', 'dots', ]:
                 self.assertIn(key, userinfo)
                 self.assertTrue(userinfo[key])
             self.assertIn('remote', set(userinfo['reg_type'].split()))
-            self.assertNotIn('hackathon', set(userinfo['reg_type'].split()))
+            self.assertNotIn('hackathon_onsite', set(userinfo['reg_type'].split()))
             self.assertIn(active_group.acronym, [i[1] for i in userinfo['roles']])
             self.assertNotIn(closed_group.acronym, [i[1] for i in userinfo['roles']])
 
-            # Create another registration, with a different email
-            MeetingRegistration.objects.create(
-                    meeting=meeting, person=None, first_name=person.first_name(), last_name=person.last_name(),
-                    email=email_list[1], ticket_type='one_day', reg_type='hackathon', affiliation='Some Company, Inc',
-                )
+            # Create a registration, with only email, no person (rare if at all)
+            reg_person.delete()
+            reg_email = RegistrationFactory(
+                meeting=meeting,
+                person=None,
+                first_name=person.first_name(),
+                last_name=person.last_name(),
+                email=email_list[1],
+                affiliation='Some Company, Inc',
+                with_ticket={'attendance_type_id': 'hackathon_onsite', 'ticket_type_id': 'one_day'},
+            )
             userinfo = client.do_user_info_request(state=params["state"], scope=args['scope'])
-            self.assertIn('hackathon', set(userinfo['reg_type'].split()))
-            self.assertIn('remote', set(userinfo['reg_type'].split()))
-            self.assertIn('full_week', set(userinfo['ticket_type'].split()))
-            self.assertIn('Some Company', userinfo['affiliation'])
+            self.assertIn('hackathon_onsite', set(userinfo['reg_type'].split()))
+            self.assertNotIn('remote', set(userinfo['reg_type'].split()))
+            self.assertIn('one_day', set(userinfo['ticket_type'].split()))
+            self.assertIn('Some Company, Inc', userinfo['affiliation'])
 
-            # Create a third registration, with a composite reg type
-            MeetingRegistration.objects.create(
-                    meeting=meeting, person=None, first_name=person.first_name(), last_name=person.last_name(),
-                    email=email_list[1], ticket_type='one_day', reg_type='hackathon remote', affiliation='Some Company, Inc',
-                )
+            # Test with multiple tickets
+            reg_email.delete()
+            creg = RegistrationFactory(
+                meeting=meeting,
+                person=None,
+                first_name=person.first_name(),
+                last_name=person.last_name(),
+                email=email_list[1],
+                affiliation='Some Company, Inc',
+                with_ticket={'attendance_type_id': 'hackathon_remote', 'ticket_type_id': 'week_pass'},
+            )
+            RegistrationTicketFactory(registration=creg, attendance_type_id='remote', ticket_type_id='week_pass')
             userinfo = client.do_user_info_request(state=params["state"], scope=args['scope'])
-            self.assertEqual(set(userinfo['reg_type'].split()), set(['remote', 'hackathon']))
+            self.assertEqual(set(userinfo['reg_type'].split()), set(['remote', 'hackathon_remote']))
 
             # Check that ending a session works
             r = client.do_end_session_request(state=params["state"], scope=args['scope'])
