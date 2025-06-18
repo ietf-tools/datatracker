@@ -763,8 +763,28 @@ class AnyEmailAuthenticationForm(AuthenticationForm):
         return super().clean()
 
     def confirm_login_allowed(self, user):
-        """Only allow login if password complies with current validators"""
-        super().confirm_login_allowed(user)
+        """Determine whether user is allowed to log in
+
+        Only allow login if:
+          * account is active (and other Django default checks)
+          * password complies with current validators
+          * last_login is not too long ago
+        """
+        please_reset_message = (
+            'Please use the "Forgot your password?" button below to '
+            "set a new password for your account."
+        )
+        super().confirm_login_allowed(user)  # default checks
+        # Check time since last login
+        if hasattr(settings, "PASSWORD_POLICY_MAX_LOGIN_AGE"):
+            now = datetime.datetime.now(datetime.timezone.utc)
+            last_login = user.last_login or user.date_joined
+            login_age = now - last_login
+            if login_age > settings.PASSWORD_POLICY_MAX_LOGIN_AGE:
+                raise ValidationError(
+                    "It has been too long since your last login. "
+                    + please_reset_message
+                )
         try:
             password_validation.validate_password(self.cleaned_data["password"], user)
         except ValidationError as error:
@@ -772,10 +792,7 @@ class AnyEmailAuthenticationForm(AuthenticationForm):
                 # dict mapping field to error / error list
                 {
                     "password": error.error_list,
-                    "__all__": ValidationError(
-                        'Please use the "Forgot your password?" button below to '
-                        'set a new password for your account.'
-                    ),
+                    "__all__": ValidationError(please_reset_message),
                 }
             )
 
