@@ -4,7 +4,6 @@
 
 import re
 
-from django.conf import settings
 from unidecode import unidecode
 
 from django import forms

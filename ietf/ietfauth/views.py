@@ -36,7 +36,6 @@
 
 import datetime
 import importlib
-import string
 
 # needed if we revert to higher barrier for account creation
 # from datetime import datetime as DateTime, timedelta as TimeDelta, date as Date
@@ -59,7 +58,6 @@ from django.urls import reverse as urlreverse
 from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.encoding import force_bytes
-from zxcvbn import zxcvbn
 
 import debug                            # pyflakes:ignore
 
@@ -68,7 +66,6 @@ from ietf.ietfauth.forms import ( RegistrationForm, PasswordForm, ResetPasswordF
                                 ChangePasswordForm, get_person_form, RoleEmailForm,
                                 NewEmailForm, ChangeUsernameForm, PersonPasswordForm)
 from ietf.ietfauth.utils import has_role, send_new_email_confirmation_request
-from ietf.ietfauth.password_validation import StrongPasswordValidator
 from ietf.name.models import ExtResourceName
 from ietf.nomcom.models import NomCom
 from ietf.person.models import Person, Email, Alias, PersonalApiKey, PERSON_API_KEY_VALUES
@@ -776,8 +773,8 @@ class AnyEmailAuthenticationForm(AuthenticationForm):
                 {
                     "password": error.error_list,
                     "__all__": ValidationError(
-                        f'Please use the "Forgot your password?" button below to '
-                        f'set a new password for your account.'
+                        'Please use the "Forgot your password?" button below to '
+                        'set a new password for your account.'
                     ),
                 }
             )
