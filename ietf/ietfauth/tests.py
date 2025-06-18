@@ -635,7 +635,7 @@ class IetfAuthTests(TestCase):
         self.assertTrue(user.check_password(ANOTHER_VALID_PASSWORD))
 
     def test_change_username(self):
-
+        VALID_PASSWORD = "complex-and-long-valid-password"
         chun_url = urlreverse("ietf.ietfauth.views.change_username")
         prof_url = urlreverse("ietf.ietfauth.views.profile")
         login_url = urlreverse("ietf.ietfauth.views.login")
@@ -646,19 +646,19 @@ class IetfAuthTests(TestCase):
         self.assertRedirects(r, redir_url)
 
         user = User.objects.create(username="someone@example.com", email="someone@example.com")
-        user.set_password("password")
+        user.set_password(VALID_PASSWORD)
         user.save()
         p = Person.objects.create(name="Some One", ascii="Some One", user=user)
         Email.objects.create(address=user.username, person=p, origin=user.username)
         Email.objects.create(address="othername@example.org", person=p, origin=user.username)
 
         # log in
-        r = self.client.post(redir_url, {"username":user.username, "password":"password"})
+        r = self.client.post(redir_url, {"username":user.username, "password":VALID_PASSWORD})
         self.assertRedirects(r, chun_url)
 
         # wrong username
         r = self.client.post(chun_url, {"username": "fiddlesticks",
-                                        "password": "password",
+                                        "password": VALID_PASSWORD,
                                        })
         self.assertEqual(r.status_code, 200)
         self.assertFormError(r.context["form"], 'username',
@@ -673,14 +673,14 @@ class IetfAuthTests(TestCase):
 
         # correct username change
         r = self.client.post(chun_url, {"username": "othername@example.org",
-                                        "password": "password",
+                                        "password": VALID_PASSWORD,
                                        })
         self.assertRedirects(r, prof_url)
         # refresh user object
         prev = user
         user = User.objects.get(username="othername@example.org")
         self.assertEqual(prev, user)
-        self.assertTrue(user.check_password('password'))
+        self.assertTrue(user.check_password(VALID_PASSWORD))
 
     def test_apikey_management(self):
         # Create a person with a role that will give at least one valid apikey
