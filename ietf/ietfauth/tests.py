@@ -25,6 +25,7 @@ from django.urls import reverse as urlreverse
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.test.utils import override_settings
 from django.utils import timezone
 
 import debug                            # pyflakes:ignore
@@ -42,6 +43,7 @@ from ietf.review.models import ReviewWish, UnavailablePeriod
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.timezone import date_today
+from ..settings import PASSWORD_POLICY_MAX_LOGIN_AGE
 
 
 class IetfAuthTests(TestCase):
@@ -115,6 +117,46 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlsplit(r["Location"])[2], urlreverse("ietf.ietfauth.views.profile"))
 
+    def test_login_with_stale_account(self):
+        VALID_PASSWORD = "complex-and-long-valid-password"
+        LONG_TIME = datetime.timedelta(days=730)
+        now = datetime.datetime.now(datetime.timezone.utc)
+        login_url = urlreverse("ietf.ietfauth.views.login")
+        success_url = urlreverse("ietf.ietfauth.views.profile")  # redirect target
+        user = PersonFactory(user__username="stale@example.com").user
+        user.set_password(VALID_PASSWORD)
+        user.save()
+        login_data = {
+            "username": user.username,
+            "password": VALID_PASSWORD,
+        }
+
+        # newly-created user (no last_login, recent date_joined)
+        with override_settings(PASSWORD_POLICY_MAX_LOGIN_AGE=LONG_TIME):
+            r = self.client.post(login_url, login_data)
+            self.assertEqual(r.status_code, 302)
+            self.assertEqual(urlsplit(r["Location"])[2], success_url)
+
+        # just barely recent enough
+        user.date_joined = now - 2 * LONG_TIME  # joined long, long ago...
+        user.last_login = now - LONG_TIME + datetime.timedelta(days=1)
+        user.save()
+        with override_settings(PASSWORD_POLICY_MAX_LOGIN_AGE=LONG_TIME):
+            r = self.client.post(login_url, login_data)
+            self.assertEqual(r.status_code, 302)
+            self.assertEqual(urlsplit(r["Location"])[2], success_url)
+
+        # too long ago
+        user.last_login = now - LONG_TIME - datetime.timedelta(days=1)
+        user.save()
+        with override_settings(PASSWORD_POLICY_MAX_LOGIN_AGE=LONG_TIME):
+            r = self.client.post(login_url, login_data)
+            self.assertContains(
+                r,
+                "too long since your last login",
+                status_code=200,
+            )
+
     def extract_confirm_url(self, confirm_email):
         # dig out confirm_email link
         msg = get_payload_text(confirm_email)
@@ -127,8 +169,7 @@ class IetfAuthTests(TestCase):
 
         return confirm_url
 
-
-# For the lowered barrier to account creation period, we are disabling this kind of failure
+    # For the lowered barrier to account creation period, we are disabling this kind of failure
     # def test_create_account_failure(self):
 
     #     url = urlreverse("ietf.ietfauth.views.create_account")
@@ -144,7 +185,7 @@ class IetfAuthTests(TestCase):
     #     self.assertEqual(r.status_code, 200)
     #     self.assertContains(r, "Additional Assistance Required")
 
-# Rather than delete the failure template just yet, here's a test to make sure it still renders should we need to revert to it.
+    # Rather than delete the failure template just yet, here's a test to make sure it still renders should we need to revert to it.
     def test_create_account_failure_template(self):
         r = render_to_string('registration/manual.html', { 'account_request_email': settings.ACCOUNT_REQUEST_EMAIL })
         self.assertTrue("Additional Assistance Required" in r)
@@ -179,7 +220,6 @@ class IetfAuthTests(TestCase):
         self.assertEqual(Person.objects.filter(user__username=email).count(), 1)
         self.assertEqual(Email.objects.filter(person__user__username=email).count(), 1)
 
-        
     # This also tests new account creation.
     def test_create_existing_account(self):
         # create account once
@@ -204,7 +244,6 @@ class IetfAuthTests(TestCase):
 
         url = urlreverse("ietf.ietfauth.views.profile")
         login_testing_unauthorized(self, username, url)
-
 
         # get
         r = self.client.get(url)
@@ -325,7 +364,6 @@ class IetfAuthTests(TestCase):
         q = PyQuery(r.content)
         self.assertTrue(len(q("form div.invalid-feedback")) == 1)
 
-
         # change role email
         role = Role.objects.create(
             person=Person.objects.get(user__username=username),
@@ -340,7 +378,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('[name="%s"]' % role_email_input_name)), 1)
-        
+
         with_changed_role_email = base_data.copy()
         with_changed_role_email["active_emails"] = new_email_address
         with_changed_role_email[role_email_input_name] = new_email_address
@@ -767,7 +805,7 @@ class IetfAuthTests(TestCase):
         for endpoint, display in endpoints:
             r = self.client.post(url, {'endpoint': endpoint})
             self.assertRedirects(r, urlreverse('ietf.ietfauth.views.apikey_index'))
-        
+
         # Check api key list content
         url = urlreverse('ietf.ietfauth.views.apikey_index')
         r = self.client.get(url)
@@ -798,7 +836,7 @@ class IetfAuthTests(TestCase):
         r = self.client.post(url, {'hash': otherkey.hash()})
         self.assertEqual(r.status_code, 200)
         self.assertContains(r,"Key validation failed; key not disabled")
-        
+
         # Delete a key
         r = self.client.post(url, {'hash': key.hash()})
         self.assertRedirects(r, urlreverse('ietf.ietfauth.views.apikey_index'))
@@ -885,7 +923,7 @@ class IetfAuthTests(TestCase):
         for endpoint, display in endpoints:
             r = self.client.post(url, {'endpoint': endpoint})
             self.assertRedirects(r, urlreverse('ietf.ietfauth.views.apikey_index'))
-        
+
         # Use the endpoints (the form content will not be acceptable, but the
         # apikey usage will be registered)
         count = 2
