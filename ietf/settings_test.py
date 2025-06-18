@@ -14,7 +14,15 @@ import os
 import shutil
 import tempfile
 from ietf.settings import *                                          # pyflakes:ignore
-from ietf.settings import STORAGES, TEST_CODE_COVERAGE_CHECKER, MORE_STORAGE_NAMES, BLOBSTORAGE_CONNECT_TIMEOUT, BLOBSTORAGE_READ_TIMEOUT, BLOBSTORAGE_MAX_ATTEMPTS
+from ietf.settings import (
+    STORAGES,
+    TEST_CODE_COVERAGE_CHECKER,
+    MORE_STORAGE_NAMES,
+    BLOBSTORAGE_CONNECT_TIMEOUT,
+    BLOBSTORAGE_READ_TIMEOUT,
+    BLOBSTORAGE_MAX_ATTEMPTS,
+    ORIG_AUTH_PASSWORD_VALIDATORS,
+)
 import botocore.config
 import debug                            # pyflakes:ignore
 debug.debug = True
@@ -133,3 +141,9 @@ for storagename in MORE_STORAGE_NAMES:
             ietf_log_blob_timing=_blob_store_enable_profiling,
         ),
     }
+
+# Restore AUTH_PASSWORD_VALIDATORS if they were reset in settings_local
+try:
+    AUTH_PASSWORD_VALIDATORS = ORIG_AUTH_PASSWORD_VALIDATORS
+except NameError:
+    pass

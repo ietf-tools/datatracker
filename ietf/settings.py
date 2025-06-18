@@ -75,6 +75,10 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "ietf.ietfauth.password_validation.StrongPasswordValidator",
     },
 ]
+# In dev environments, settings_local overrides the password validators. Save
+# a handle to the original value so settings_test can restore it so tests match
+# production.
+ORIG_AUTH_PASSWORD_VALIDATORS = AUTH_PASSWORD_VALIDATORS
 
 ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", "127.0.0.1", "localhost", ]
 
