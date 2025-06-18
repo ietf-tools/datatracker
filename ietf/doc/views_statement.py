@@ -310,15 +310,12 @@ def change_statement_state(request, name):
                 messages.success(request, f"State changed to {new_state}.")
             return HttpResponseRedirect(statement.get_absolute_url())
     else:
-        form = ChangeStatementStateForm(
-            initial={"state": statement.get_state()}
-        )
+        form = ChangeStatementStateForm(initial={"state": statement.get_state()})
     return render(
         request,
         "doc/statement/change_statement_state.html",
         {
             "form": form,
             "statement": statement,
-        }
+        },
     )
-    
