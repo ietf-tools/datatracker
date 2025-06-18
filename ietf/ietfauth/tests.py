@@ -43,7 +43,6 @@ from ietf.review.models import ReviewWish, UnavailablePeriod
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.timezone import date_today
-from ..settings import PASSWORD_POLICY_MAX_LOGIN_AGE
 
 
 class IetfAuthTests(TestCase):
@@ -695,6 +694,40 @@ class IetfAuthTests(TestCase):
             r.context["form"],
             None,
             "The password confirmation is different than the new password",
+        )
+
+        # password too short
+        r = self.client.post(
+            chpw_url,
+            {
+                "current_password": VALID_PASSWORD,
+                "new_password": "sh0rtpw0rd",
+                "new_password_confirmation": "sh0rtpw0rd",
+            }
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertFormError(
+            r.context["form"],
+            None,
+            "This password is too short. It must contain at least "
+            f"{settings.PASSWORD_POLICY_MIN_LENGTH} characters."
+        )
+
+        # password too simple
+        r = self.client.post(
+            chpw_url,
+            {
+                "current_password": VALID_PASSWORD,
+                "new_password": "passwordpassword",
+                "new_password_confirmation": "passwordpassword",
+            }
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertFormError(
+            r.context["form"],
+            None,
+            "This password does not meet complexity requirements "
+            "and is easily guessable."
         )
 
         # correct password change
