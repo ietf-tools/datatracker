@@ -395,12 +395,13 @@ class IetfAuthTests(TestCase):
 
 
     def test_reset_password(self):
+        VALID_PASSWORD = "complex-and-long-valid-password"
+        ANOTHER_VALID_PASSWORD = "very-complicated-and-lengthy-password"
         url = urlreverse("ietf.ietfauth.views.password_reset")
         email = 'someone@example.com'
-        password = 'foobar'
 
         user = PersonFactory(user__email=email).user
-        user.set_password(password)
+        user.set_password(VALID_PASSWORD)
         user.save()
 
         # get
@@ -435,13 +436,13 @@ class IetfAuthTests(TestCase):
                          'user should not appear signed in while resetting password')
 
         # password mismatch
-        r = self.client.post(confirm_url, { 'password': 'secret', 'password_confirmation': 'nosecret' })
+        r = self.client.post(confirm_url, { 'password': ANOTHER_VALID_PASSWORD, 'password_confirmation': ANOTHER_VALID_PASSWORD[::-1] })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q("form .is-invalid")) > 0)
 
         # confirm
-        r = self.client.post(confirm_url, { 'password': 'secret', 'password_confirmation': 'secret' })
+        r = self.client.post(confirm_url, { 'password': ANOTHER_VALID_PASSWORD, 'password_confirmation': ANOTHER_VALID_PASSWORD })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("form .is-invalid")), 0)
@@ -452,7 +453,7 @@ class IetfAuthTests(TestCase):
 
         # login after reset request
         empty_outbox()
-        user.set_password(password)
+        user.set_password(VALID_PASSWORD)
         user.save()
 
         r = self.client.post(url, { 'username': user.username })
@@ -460,7 +461,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(len(outbox), 1)
         confirm_url = self.extract_confirm_url(outbox[-1])
 
-        r = self.client.post(urlreverse("ietf.ietfauth.views.login"), {'username': email, 'password': password})
+        r = self.client.post(urlreverse("ietf.ietfauth.views.login"), {'username': email, 'password': VALID_PASSWORD})
 
         r = self.client.get(confirm_url)
         self.assertEqual(r.status_code, 404)
@@ -473,7 +474,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(len(outbox), 1)
         confirm_url = self.extract_confirm_url(outbox[-1])
 
-        user.set_password('newpassword')
+        user.set_password(ANOTHER_VALID_PASSWORD)
         user.save()
 
         r = self.client.get(confirm_url)
