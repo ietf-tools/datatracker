@@ -587,6 +587,8 @@ class IetfAuthTests(TestCase):
         self.assertEqual(ReviewWish.objects.filter(doc=doc, team=review_req.team).count(), 0)
 
     def test_change_password(self):
+        VALID_PASSWORD = "complex-and-long-valid-password"
+        ANOTHER_VALID_PASSWORD = "very-complicated-and-lengthy-password"
         chpw_url = urlreverse("ietf.ietfauth.views.change_password")
         prof_url = urlreverse("ietf.ietfauth.views.profile")
         login_url = urlreverse("ietf.ietfauth.views.login")
@@ -597,40 +599,40 @@ class IetfAuthTests(TestCase):
         self.assertRedirects(r, redir_url)
 
         user = User.objects.create(username="someone@example.com", email="someone@example.com")
-        user.set_password("password")
+        user.set_password(VALID_PASSWORD)
         user.save()
         p = Person.objects.create(name="Some One", ascii="Some One", user=user)
         Email.objects.create(address=user.username, person=p, origin=user.username)
 
         # log in
-        r = self.client.post(redir_url, {"username":user.username, "password":"password"})
+        r = self.client.post(redir_url, {"username":user.username, "password": VALID_PASSWORD})
         self.assertRedirects(r, chpw_url)
 
         # wrong current password
         r = self.client.post(chpw_url, {"current_password": "fiddlesticks",
-                                        "new_password": "foobar",
-                                        "new_password_confirmation": "foobar",
+                                        "new_password": ANOTHER_VALID_PASSWORD,
+                                        "new_password_confirmation": ANOTHER_VALID_PASSWORD,
                                        })
         self.assertEqual(r.status_code, 200)
         self.assertFormError(r.context["form"], 'current_password', 'Invalid password')
 
         # mismatching new passwords
-        r = self.client.post(chpw_url, {"current_password": "password",
-                                        "new_password": "foobar",
-                                        "new_password_confirmation": "barfoo",
+        r = self.client.post(chpw_url, {"current_password": VALID_PASSWORD,
+                                        "new_password": ANOTHER_VALID_PASSWORD,
+                                        "new_password_confirmation": ANOTHER_VALID_PASSWORD[::-1],
                                        })
         self.assertEqual(r.status_code, 200)
         self.assertFormError(r.context["form"], None, "The password confirmation is different than the new password")
 
         # correct password change
-        r = self.client.post(chpw_url, {"current_password": "password",
-                                        "new_password": "foobar",
-                                        "new_password_confirmation": "foobar",
+        r = self.client.post(chpw_url, {"current_password": VALID_PASSWORD,
+                                        "new_password": ANOTHER_VALID_PASSWORD,
+                                        "new_password_confirmation": ANOTHER_VALID_PASSWORD,
                                        })
         self.assertRedirects(r, prof_url)
         # refresh user object
         user = User.objects.get(username="someone@example.com")
-        self.assertTrue(user.check_password('foobar'))
+        self.assertTrue(user.check_password(ANOTHER_VALID_PASSWORD))
 
     def test_change_username(self):
 
