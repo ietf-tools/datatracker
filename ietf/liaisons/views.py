@@ -57,7 +57,7 @@ def _can_take_care(liaison, user):
         return False
 
     if user.is_authenticated:
-        if has_role(user, "Secretariat"):
+        if has_role(user, "Secretariat") or has_role(user, "Liaison Coordinator"):
             return True
         else:
             return _find_person_in_emails(liaison, get_person_for_user(user))

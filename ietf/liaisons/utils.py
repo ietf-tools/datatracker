@@ -46,13 +46,13 @@ def can_edit_liaison(user, liaison):
     '''Returns True if user has edit / approval authority.
     
     True if:
-    - user is Secretariat
+    - user is Secretariat or Liaison Coordinator
     - liaison is outgoing and user has approval authority
     - user is liaison manager of all SDOs involved
     '''
     if not user.is_authenticated:
         return False
-    if has_role(user, "Secretariat"):
+    if has_role(user, "Secretariat") or has_role(user, "Liaison Coordinator"):
         return True
 
     if liaison.is_outgoing() and liaison in approvable_liaison_statements(user):
