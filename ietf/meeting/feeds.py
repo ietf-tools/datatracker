@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -45,7 +45,7 @@ class LatestMeetingMaterialFeed(Feed):
     def item_link(self, item):
         return item['link']
 
-    def item_pubdate(self, item):
+    def item_updateddate(self, item):
         return item['date']
 
     def item_author_name(self, item):
