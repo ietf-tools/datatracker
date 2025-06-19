@@ -18,7 +18,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.http import HttpResponse, Http404, JsonResponse
+from django.http import HttpResponse, Http404, JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -46,6 +46,7 @@ from ietf.ietfauth.utils import role_required
 from ietf.ietfauth.views import send_account_creation_email
 from ietf.ipr.utils import ingest_response_email as ipr_ingest_response_email
 from ietf.meeting.models import Meeting
+from ietf.meeting.utils import import_registration_json_validator, process_single_registration
 from ietf.nomcom.models import Volunteer, NomCom
 from ietf.nomcom.utils import ingest_feedback_email as nomcom_ingest_feedback_email
 from ietf.person.models import Person, Email
@@ -68,7 +69,10 @@ def top_level(request):
         }
 
     serializer = Serializer()
-    desired_format = determine_format(request, serializer)
+    try:
+        desired_format = determine_format(request, serializer)
+    except BadRequest as err:
+        return HttpResponseBadRequest(str(err))
 
     options = {}
 
@@ -76,10 +80,12 @@ def top_level(request):
         callback = request.GET.get('callback', 'callback')
 
         if not is_valid_jsonp_callback_value(callback):
-            raise BadRequest('JSONP callback name is invalid.')
+            return HttpResponseBadRequest("JSONP callback name is invalid")
 
         options['callback'] = callback
 
+    # This might raise UnsupportedFormat, but that indicates a real server misconfiguration
+    # so let it bubble up unhandled and trigger a 500 / email to admins.
     serialized = serializer.serialize(available_resources, desired_format, options)
     return HttpResponse(content=serialized, content_type=build_content_type(desired_format))
 
@@ -234,6 +240,54 @@ def api_new_meeting_registration(request):
             return HttpResponse(response, status=202, content_type='text/plain')
     else:
         return HttpResponse(status=405)
+
+
+@requires_api_token
+@csrf_exempt
+def api_new_meeting_registration_v2(request):
+    '''REST API to notify the datatracker about a new meeting registration'''
+    def _http_err(code, text):
+        return HttpResponse(text, status=code, content_type="text/plain")
+
+    def _api_response(result):
+        return JsonResponse(data={"result": result})
+
+    if request.method != "POST":
+        return _http_err(405, "Method not allowed")
+
+    if request.content_type != "application/json":
+        return _http_err(415, "Content-Type must be application/json")
+
+    # Validate
+    try:
+        payload = json.loads(request.body)
+        import_registration_json_validator.validate(payload)
+    except json.decoder.JSONDecodeError as err:
+        return _http_err(400, f"JSON parse error at line {err.lineno} col {err.colno}: {err.msg}")
+    except jsonschema.exceptions.ValidationError as err:
+        return _http_err(400, f"JSON schema error at {err.json_path}: {err.message}")
+    except Exception:
+        return _http_err(400, "Invalid request format")
+
+    # Get the meeting ID from the first registration, the API only deals with one meeting at a time
+    first_email = next(iter(payload['objects']))
+    meeting_number = payload['objects'][first_email]['meeting']
+    try:
+        meeting = Meeting.objects.get(number=meeting_number)
+    except Meeting.DoesNotExist:
+        return _http_err(400, f"Invalid meeting value: {meeting_number}")
+
+    # confirm email exists
+    try:
+        Email.objects.get(address=first_email)
+    except Email.DoesNotExist:
+        return _http_err(400, f"Unknown email: {first_email}")
+
+    reg_data = payload['objects'][first_email]
+
+    process_single_registration(reg_data, meeting)
+
+    return HttpResponse('Success', status=202, content_type='text/plain')
 
 
 def version(request):
@@ -540,6 +594,31 @@ def active_email_list(request):
         return JsonResponse(
             {
                 "addresses": list(Email.objects.filter(active=True).values_list("address", flat=True)),
+            }
+        )
+    return HttpResponse(status=405)
+
+
+@requires_api_token
+@csrf_exempt
+def related_email_list(request, email):
+    """Given an email address, returns all other email addresses known
+    to Datatracker, via Person object
+    """
+    def _http_err(code, text):
+        return HttpResponse(text, status=code, content_type="text/plain")
+
+    if request.method == "GET":
+        try:
+            email_obj = Email.objects.get(address=email)
+        except Email.DoesNotExist:
+            return _http_err(404, "Email not found")
+        person = email_obj.person
+        if not person:
+            return JsonResponse({"addresses": []})
+        return JsonResponse(
+            {
+                "addresses": list(person.email_set.values_list("address", flat=True)),
             }
         )
     return HttpResponse(status=405)

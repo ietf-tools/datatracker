@@ -7,8 +7,8 @@
   "license": "BSD-3-Clause",
   "dependencies": {
     "@actions/core": "1.11.1",
-    "@actions/github": "6.0.0",
+    "@actions/github": "6.0.1",
     "lodash": "4.17.21",
-    "luxon": "3.5.0"
+    "luxon": "3.6.1"
   }
 }

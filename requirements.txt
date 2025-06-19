@@ -1,6 +1,7 @@
 # -*- conf-mode -*-
 setuptools>=51.1.0    # Require this first, to prevent later errors
 #
+aiosmtpd>=1.4.6
 argon2-cffi>=21.3.0    # For the Argon2 password hasher option
 beautifulsoup4>=4.11.1    # Only used in tests
 bibtexparser>=1.2.0    # Only used in tests
@@ -16,7 +17,7 @@ Django>4.2,<5
 django-admin-rangefilter>=0.13.2
 django-analytical>=3.1.0
 django-bootstrap5>=21.3
-django-celery-beat>=2.3.0
+django-celery-beat>=2.3.0,<2.8.0  # pin until https://github.com/celery/django-celery-beat/issues/875 is resolved, then revisit
 django-celery-results>=2.5.1
 django-csp>=3.7
 django-cors-headers>=3.11.0
@@ -42,7 +43,6 @@ gunicorn>=20.1.0
 hashids>=1.3.1
 html2text>=2020.1.16    # Used only to clean comment field of secr/sreq
 html5lib>=1.1    # Only used in tests
-importlib-metadata<8.5.0  # indirect req of Markdown/inflect; https://github.com/ietf-tools/datatracker/issues/7924
 inflect>= 6.0.2
 jsonfield>=3.1.0    # for SubmissionCheck.  This is https://github.com/bradjasper/django-jsonfield/.
 jsonschema[format]>=4.2.1

@@ -66,8 +66,7 @@ from ietf.meeting.factories import (SessionFactory, ScheduleFactory,
     SessionPresentationFactory, MeetingFactory, FloorPlanFactory,
     TimeSlotFactory, SlideSubmissionFactory, RoomFactory,
     ConstraintFactory, MeetingHostFactory, ProceedingsMaterialFactory,
-    AttendedFactory)
-from ietf.stats.factories import MeetingRegistrationFactory
+    AttendedFactory, RegistrationFactory)
 from ietf.doc.factories import DocumentFactory, WgDraftFactory
 from ietf.submit.tests import submission_file
 from ietf.utils.test_utils import assert_ical_response_is_valid
@@ -233,6 +232,7 @@ class MeetingTests(BaseMeetingTestCase):
         session.save()
         slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule=meeting.schedule)
         meeting.timeslot_set.filter(type_id="break").update(show_location=False)
+        meeting.importantdate_set.create(name_id='prelimagenda',date=date_today() + datetime.timedelta(days=20))
         #
         self.write_materials_files(meeting, session)
         #
@@ -262,7 +262,8 @@ class MeetingTests(BaseMeetingTestCase):
                     "updated": generated_data.get("meeting").get("updated"),  # Just expect the value to exist
                     "timezone": meeting.time_zone,
                     "infoNote": meeting.agenda_info_note,
-                    "warningNote": meeting.agenda_warning_note
+                    "warningNote": meeting.agenda_warning_note,
+                    "prelimAgendaDate": (date_today() + datetime.timedelta(days=20)).isoformat()
                 },
                 "categories": generated_data.get("categories"),  # Just expect the value to exist
                 "isCurrentMeeting": True,
@@ -4527,6 +4528,7 @@ class EditTests(TestCase):
 
 
 class SessionDetailsTests(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['SLIDE_STAGING_PATH']
 
     def test_session_details(self):
 
@@ -4658,6 +4660,85 @@ class SessionDetailsTests(TestCase):
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
         self.assertEqual(1,len(q(".alert-warning:contains('may affect published proceedings')")))
+
+    def test_proposed_slides_for_approval(self):
+        # This test overlaps somewhat with MaterialsTests of proposed slides handling. The focus
+        # here is on the display of slides, not the approval action.
+        group = GroupFactory()
+        meeting = MeetingFactory(
+            type_id="ietf", date=date_today() + datetime.timedelta(days=10)
+        )
+        sessions = SessionFactory.create_batch(
+            2,
+            group=group,
+            meeting=meeting,
+        )
+    
+        # slides submission _not_ in the `pending` state
+        do_not_show = [
+            SlideSubmissionFactory(
+                session=sessions[0],
+                title="already approved",
+                status_id="approved",
+            ),
+            SlideSubmissionFactory(
+                session=sessions[1],
+                title="already rejected",
+                status_id="rejected",
+            ),
+        ]
+    
+        # pending submissions
+        first_session_pending = SlideSubmissionFactory(
+            session=sessions[0], title="first session title"
+        )
+        second_session_pending = SlideSubmissionFactory(
+            session=sessions[1], title="second session title"
+        )
+    
+        # and their approval URLs
+        def _approval_url(slidesub):
+            return urlreverse(
+                "ietf.meeting.views.approve_proposed_slides",
+                kwargs={"slidesubmission_id": slidesub.pk, "num": meeting.number},
+            )
+    
+        first_approval_url = _approval_url(first_session_pending)
+        second_approval_url = _approval_url(second_session_pending)
+        do_not_show_urls = [_approval_url(ss) for ss in do_not_show]
+    
+        # Retrieve the URL as a group chair
+        url = urlreverse(
+            "ietf.meeting.views.session_details",
+            kwargs={
+                "num": meeting.number,
+                "acronym": group.acronym,
+            },
+        )
+        chair = RoleFactory(group=group, name_id="chair").person
+        self.client.login(
+            username=chair.user.username, password=f"{chair.user.username}+password"
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        pq = PyQuery(r.content)
+        self.assertEqual(
+            len(pq(f'a[href="{first_approval_url}"]')),
+            1,
+            "first session proposed slides should be linked for approval",
+        )
+        self.assertEqual(
+            len(pq(f'a[href="{second_approval_url}"]')),
+            1,
+            "second session proposed slides should be linked for approval",
+        )
+        for no_show_url in do_not_show_urls:
+            self.assertEqual(
+                len(pq(f'a[href="{no_show_url}"]')),
+                0,
+                "second session proposed slides should be linked for approval",
+            )
+        
 
 class EditScheduleListTests(TestCase):
     def setUp(self):
@@ -6459,110 +6540,130 @@ class MaterialsTests(TestCase):
         self.assertIn('Upload', str(q("title")))
         
 
+    def test_label_future_sessions(self):
+        self.client.login(username='secretary', password='secretary+password')
+        for future in (True, False):
+            mtg_date = date_today()+datetime.timedelta(days=180 if future else -180)
+            session = SessionFactory(meeting__type_id='ietf', meeting__date=mtg_date)
+            # Verify future warning shows on the session details panel
+            url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number, 'acronym': session.group.acronym})
+            r = self.client.get(url)
+            self.assertTrue(r.status_code==200)
+            if future:
+                self.assertContains(r, "Session has not ended yet")
+            else:
+                self.assertNotContains(r, "Session has not ended yet")
+
     def test_upload_minutes_agenda(self):
         for doctype in ('minutes','agenda'):
-            session = SessionFactory(meeting__type_id='ietf')
-            if doctype == 'minutes':
-                url = urlreverse('ietf.meeting.views.upload_session_minutes',kwargs={'num':session.meeting.number,'session_id':session.id})
-            else:
-                url = urlreverse('ietf.meeting.views.upload_session_agenda',kwargs={'num':session.meeting.number,'session_id':session.id})
-            self.client.logout()
-            login_testing_unauthorized(self,"secretary",url)
-            r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
-            q = PyQuery(r.content)
-            self.assertIn('Upload', str(q("Title")))
-            self.assertFalse(session.presentations.exists())
-            self.assertFalse(q('form input[type="checkbox"]'))
-    
-            session2 = SessionFactory(meeting=session.meeting,group=session.group)
-            r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
-            q = PyQuery(r.content)
-            self.assertTrue(q('form input[type="checkbox"]'))
-    
-            # test not submitting a file
-            r = self.client.post(url, dict(submission_method="upload"))
-            self.assertEqual(r.status_code, 200)
-            q = PyQuery(r.content)
-            self.assertTrue(q("form .is-invalid"))
-    
-            test_file = BytesIO(b'this is some text for a test')
-            test_file.name = "not_really.json"
-            r = self.client.post(url,dict(submission_method="upload",file=test_file))
-            self.assertEqual(r.status_code, 200)
-            q = PyQuery(r.content)
-            self.assertTrue(q('form .is-invalid'))
-    
-            test_file = BytesIO(b'this is some text for a test'*1510000)
-            test_file.name = "not_really.pdf"
-            r = self.client.post(url,dict(submission_method="upload",file=test_file))
-            self.assertEqual(r.status_code, 200)
-            q = PyQuery(r.content)
-            self.assertTrue(q('form .is-invalid'))
-    
-            test_file = BytesIO(b'<html><frameset><frame src="foo.html"></frame><frame src="bar.html"></frame></frameset></html>')
-            test_file.name = "not_really.html"
-            r = self.client.post(url,dict(submission_method="upload",file=test_file))
-            self.assertEqual(r.status_code, 200)
-            q = PyQuery(r.content)
-            self.assertTrue(q('form .is-invalid'))
+            for future in (True, False):
+                mtg_date = date_today()+datetime.timedelta(days=180 if future else -180)
+                session = SessionFactory(meeting__type_id='ietf', meeting__date=mtg_date)
+                if doctype == 'minutes':
+                    url = urlreverse('ietf.meeting.views.upload_session_minutes',kwargs={'num':session.meeting.number,'session_id':session.id})
+                else:
+                    url = urlreverse('ietf.meeting.views.upload_session_agenda',kwargs={'num':session.meeting.number,'session_id':session.id})
+                self.client.logout()
+                login_testing_unauthorized(self,"secretary",url)
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 200)
+                q = PyQuery(r.content)
+                self.assertIn('Upload', str(q("Title")))
+                self.assertFalse(session.presentations.exists())
+                self.assertFalse(q('form input[type="checkbox"]'))
+                if future and doctype == "minutes":
+                    self.assertContains(r, "Session has not ended yet")
+                else:
+                    self.assertNotContains(r, "Session has not ended yet")
+        
+                session2 = SessionFactory(meeting=session.meeting,group=session.group)
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 200)
+                q = PyQuery(r.content)
+                self.assertTrue(q('form input[type="checkbox"]'))
+        
+                # test not submitting a file
+                r = self.client.post(url, dict(submission_method="upload"))
+                self.assertEqual(r.status_code, 200)
+                q = PyQuery(r.content)
+                self.assertTrue(q("form .is-invalid"))
+        
+                test_file = BytesIO(b'this is some text for a test')
+                test_file.name = "not_really.json"
+                r = self.client.post(url,dict(submission_method="upload",file=test_file))
+                self.assertEqual(r.status_code, 200)
+                q = PyQuery(r.content)
+                self.assertTrue(q('form .is-invalid'))
+        
+                test_file = BytesIO(b'this is some text for a test'*1510000)
+                test_file.name = "not_really.pdf"
+                r = self.client.post(url,dict(submission_method="upload",file=test_file))
+                self.assertEqual(r.status_code, 200)
+                q = PyQuery(r.content)
+                self.assertTrue(q('form .is-invalid'))
+        
+                test_file = BytesIO(b'<html><frameset><frame src="foo.html"></frame><frame src="bar.html"></frame></frameset></html>')
+                test_file.name = "not_really.html"
+                r = self.client.post(url,dict(submission_method="upload",file=test_file))
+                self.assertEqual(r.status_code, 200)
+                q = PyQuery(r.content)
+                self.assertTrue(q('form .is-invalid'))
 
-            # Test html sanitization
-            test_file = BytesIO(b'<html><head><title>Title</title></head><body><h1>Title</h1><section>Some text</section></body></html>')
-            test_file.name = "some.html"
-            r = self.client.post(url,dict(submission_method="upload",file=test_file))
-            self.assertEqual(r.status_code, 302)
-            doc = session.presentations.filter(document__type_id=doctype).first().document
-            self.assertEqual(doc.rev,'00')
-            text = doc.text()
-            self.assertIn('Some text', text)
-            self.assertNotIn('<section>', text)
-            text = retrieve_str(doctype, f"{doc.name}-{doc.rev}.html")
-            self.assertIn('Some text', text)
-            self.assertNotIn('<section>', text)
+                # Test html sanitization
+                test_file = BytesIO(b'<html><head><title>Title</title></head><body><h1>Title</h1><section>Some text</section></body></html>')
+                test_file.name = "some.html"
+                r = self.client.post(url,dict(submission_method="upload",file=test_file))
+                self.assertEqual(r.status_code, 302)
+                doc = session.presentations.filter(document__type_id=doctype).first().document
+                self.assertEqual(doc.rev,'00')
+                text = doc.text()
+                self.assertIn('Some text', text)
+                self.assertNotIn('<section>', text)
+                text = retrieve_str(doctype, f"{doc.name}-{doc.rev}.html")
+                self.assertIn('Some text', text)
+                self.assertNotIn('<section>', text)
 
-            # txt upload
-            test_bytes = b'This is some text for a test, with the word\nvirtual at the beginning of a line.'
-            test_file = BytesIO(test_bytes)
-            test_file.name = "some.txt"
-            r = self.client.post(url,dict(submission_method="upload",file=test_file,apply_to_all=False))
-            self.assertEqual(r.status_code, 302)
-            doc = session.presentations.filter(document__type_id=doctype).first().document
-            self.assertEqual(doc.rev,'01')
-            self.assertFalse(session2.presentations.filter(document__type_id=doctype))
-            retrieved_bytes = retrieve_bytes(doctype, f"{doc.name}-{doc.rev}.txt")
-            self.assertEqual(retrieved_bytes, test_bytes)
-    
-            r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
-            q = PyQuery(r.content)
-            self.assertIn('Revise', str(q("Title")))
-            test_bytes = b'this is some different text for a test'
-            test_file = BytesIO(test_bytes)
-            test_file.name = "also_some.txt"
-            r = self.client.post(url,dict(submission_method="upload",file=test_file,apply_to_all=True))
-            self.assertEqual(r.status_code, 302)
-            doc = Document.objects.get(pk=doc.pk)
-            self.assertEqual(doc.rev,'02')
-            self.assertTrue(session2.presentations.filter(document__type_id=doctype))
-            retrieved_bytes = retrieve_bytes(doctype, f"{doc.name}-{doc.rev}.txt")
-            self.assertEqual(retrieved_bytes, test_bytes)
+                # txt upload
+                test_bytes = b'This is some text for a test, with the word\nvirtual at the beginning of a line.'
+                test_file = BytesIO(test_bytes)
+                test_file.name = "some.txt"
+                r = self.client.post(url,dict(submission_method="upload",file=test_file,apply_to_all=False))
+                self.assertEqual(r.status_code, 302)
+                doc = session.presentations.filter(document__type_id=doctype).first().document
+                self.assertEqual(doc.rev,'01')
+                self.assertFalse(session2.presentations.filter(document__type_id=doctype))
+                retrieved_bytes = retrieve_bytes(doctype, f"{doc.name}-{doc.rev}.txt")
+                self.assertEqual(retrieved_bytes, test_bytes)
+        
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 200)
+                q = PyQuery(r.content)
+                self.assertIn('Revise', str(q("Title")))
+                test_bytes = b'this is some different text for a test'
+                test_file = BytesIO(test_bytes)
+                test_file.name = "also_some.txt"
+                r = self.client.post(url,dict(submission_method="upload",file=test_file,apply_to_all=True))
+                self.assertEqual(r.status_code, 302)
+                doc = Document.objects.get(pk=doc.pk)
+                self.assertEqual(doc.rev,'02')
+                self.assertTrue(session2.presentations.filter(document__type_id=doctype))
+                retrieved_bytes = retrieve_bytes(doctype, f"{doc.name}-{doc.rev}.txt")
+                self.assertEqual(retrieved_bytes, test_bytes)
 
-            # Test bad encoding
-            test_file = BytesIO('<html><h1>Title</h1><section>Some\x93text</section></html>'.encode('latin1'))
-            test_file.name = "some.html"
-            r = self.client.post(url,dict(submission_method="upload",file=test_file))
-            self.assertContains(r, 'Could not identify the file encoding')
-            doc = Document.objects.get(pk=doc.pk)
-            self.assertEqual(doc.rev,'02')
+                # Test bad encoding
+                test_file = BytesIO('<html><h1>Title</h1><section>Some\x93text</section></html>'.encode('latin1'))
+                test_file.name = "some.html"
+                r = self.client.post(url,dict(submission_method="upload",file=test_file))
+                self.assertContains(r, 'Could not identify the file encoding')
+                doc = Document.objects.get(pk=doc.pk)
+                self.assertEqual(doc.rev,'02')
 
-            # Verify that we don't have dead links
-            url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number, 'acronym': session.group.acronym})
-            top = '/meeting/%s/' % session.meeting.number
-            self.requests_mock.get(f'{session.notes_url()}/download', text='markdown notes')
-            self.requests_mock.get(f'{session.notes_url()}/info', text=json.dumps({'title': 'title', 'updatetime': '2021-12-01T17:11:00z'}))
-            self.crawl_materials(url=url, top=top)
+                # Verify that we don't have dead links
+                url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number, 'acronym': session.group.acronym})
+                top = '/meeting/%s/' % session.meeting.number
+                self.requests_mock.get(f'{session.notes_url()}/download', text='markdown notes')
+                self.requests_mock.get(f'{session.notes_url()}/info', text=json.dumps({'title': 'title', 'updatetime': '2021-12-01T17:11:00z'}))
+                self.crawl_materials(url=url, top=top)
 
     def test_upload_minutes_agenda_unscheduled(self):
         for doctype in ('minutes','agenda'):
@@ -6579,6 +6680,7 @@ class MaterialsTests(TestCase):
             self.assertIn('Upload', str(q("Title")))
             self.assertFalse(session.presentations.exists())
             self.assertFalse(q('form input[type="checkbox"]'))
+            self.assertNotContains(r, "Session has not ended yet")
 
             test_file = BytesIO(b'this is some text for a test')
             test_file.name = "not_really.txt"
@@ -6587,35 +6689,40 @@ class MaterialsTests(TestCase):
 
     @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
     def test_upload_minutes_agenda_interim(self):
-        session=SessionFactory(meeting__type_id='interim')
         for doctype in ('minutes','agenda'):
-            if doctype=='minutes':
-                url = urlreverse('ietf.meeting.views.upload_session_minutes',kwargs={'num':session.meeting.number,'session_id':session.id})
-            else:
-                url = urlreverse('ietf.meeting.views.upload_session_agenda',kwargs={'num':session.meeting.number,'session_id':session.id})
-            self.client.logout()
-            login_testing_unauthorized(self,"secretary",url)
-            r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
-            q = PyQuery(r.content)
-            self.assertIn('Upload', str(q("title")))
-            self.assertFalse(session.presentations.filter(document__type_id=doctype))
-            test_bytes = b'this is some text for a test'
-            test_file = BytesIO(test_bytes)
-            test_file.name = "not_really.txt"
-            r = self.client.post(url,dict(submission_method="upload",file=test_file))
-            self.assertEqual(r.status_code, 302)
-            doc = session.presentations.filter(document__type_id=doctype).first().document
-            self.assertEqual(doc.rev,'00')
-            retrieved_bytes = retrieve_bytes(doctype, f"{doc.name}-{doc.rev}.txt")
-            self.assertEqual(retrieved_bytes, test_bytes)
+            for future in (True, False):
+                session=SessionFactory(meeting__type_id='interim', meeting__date = date_today()+datetime.timedelta(days=180 if future else -180))
+                if doctype=='minutes':
+                    url = urlreverse('ietf.meeting.views.upload_session_minutes',kwargs={'num':session.meeting.number,'session_id':session.id})
+                else:
+                    url = urlreverse('ietf.meeting.views.upload_session_agenda',kwargs={'num':session.meeting.number,'session_id':session.id})
+                self.client.logout()
+                login_testing_unauthorized(self,"secretary",url)
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 200)
+                q = PyQuery(r.content)
+                self.assertIn('Upload', str(q("title")))
+                self.assertFalse(session.presentations.filter(document__type_id=doctype))
+                if future and doctype == "minutes":
+                    self.assertContains(r, "Session has not ended yet")
+                else:
+                    self.assertNotContains(r, "Session has not ended yet")
+                test_bytes = b'this is some text for a test'
+                test_file = BytesIO(test_bytes)
+                test_file.name = "not_really.txt"
+                r = self.client.post(url,dict(submission_method="upload",file=test_file))
+                self.assertEqual(r.status_code, 302)
+                doc = session.presentations.filter(document__type_id=doctype).first().document
+                self.assertEqual(doc.rev,'00')
+                retrieved_bytes = retrieve_bytes(doctype, f"{doc.name}-{doc.rev}.txt")
+                self.assertEqual(retrieved_bytes, test_bytes)
 
-            # Verify that we don't have dead links
-            url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number, 'acronym': session.group.acronym})
-            top = '/meeting/%s/' % session.meeting.number
-            self.requests_mock.get(f'{session.notes_url()}/download', text='markdown notes')
-            self.requests_mock.get(f'{session.notes_url()}/info', text=json.dumps({'title': 'title', 'updatetime': '2021-12-01T17:11:00z'}))
-            self.crawl_materials(url=url, top=top)
+                # Verify that we don't have dead links
+                url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number, 'acronym': session.group.acronym})
+                top = '/meeting/%s/' % session.meeting.number
+                self.requests_mock.get(f'{session.notes_url()}/download', text='markdown notes')
+                self.requests_mock.get(f'{session.notes_url()}/info', text=json.dumps({'title': 'title', 'updatetime': '2021-12-01T17:11:00z'}))
+                self.crawl_materials(url=url, top=top)
 
     @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
     def test_upload_narrativeminutes(self):
@@ -7628,6 +7735,44 @@ class SessionTests(TestCase):
         self.assertEqual(r.status_code, 404)
         self.assertFalse(mock_delete.called)
 
+    def test_show_chatlog_links(self):
+        meeting = MeetingFactory(type_id='ietf', number='122')
+        session = SessionFactory(meeting=meeting)
+        doc_name = 'chatlog-72-mars-197001010000'
+        SessionPresentation.objects.create(session=session,document=DocumentFactory(type_id='chatlog', name=doc_name))
+
+        session_url = urlreverse('ietf.meeting.views.session_details', 
+                                 kwargs={'num':meeting.number, 'acronym':session.group.acronym})
+
+        r = self.client.get(session_url)
+
+        self.assertEqual(r.status_code, 200)
+
+        q = PyQuery(r.content)
+
+        # Find the chatlog link in the desktop view
+        link_chatlog_box = q(f'a[title="Chat logs for {session.group.acronym}"]')
+        self.assertTrue(link_chatlog_box, 'Expected <a> element with title "Chat logs for {group.acronym}" not found.')
+        self.assertEqual(link_chatlog_box.attr('href'), '/doc/'+ doc_name)
+
+        # Find the chatlog link in the mobile view
+        link_chatlog_list = q('li:contains("Chat logs")')
+        self.assertTrue(link_chatlog_list, 'Expected <li> element containing "Chat logs" not found.')
+        self.assertEqual(link_chatlog_list.find('a').attr('href'), '/doc/'+ doc_name)
+
+    def test_hide_chatlog_links(self):
+        # mock meeting and session, but no chatlog document
+        meeting = MeetingFactory(type_id='ietf', number='122')
+        session = SessionFactory(meeting=meeting)
+
+        session_url = urlreverse('ietf.meeting.views.session_details', 
+                                 kwargs={'num':meeting.number, 'acronym':session.group.acronym})
+
+        r = self.client.get(session_url)
+
+        self.assertEqual(r.status_code, 200)
+        # validate no links for chat logs exist
+        self.assertNotContains(r, 'Chat logs')
 
 
 class HasMeetingsTests(TestCase):
@@ -8533,7 +8678,8 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertTrue(mock_default_cache.get.called)
         self.assertEqual(mock_default_cache.get.call_args.args[0], cache_key, "same cache key each time")
         self.assertTrue(mock_default_cache.set.called)
-        self.assertEqual(mock_default_cache.set.call_args, call(cache_key, proceedings_content, timeout=86400))
+        self.assertEqual(mock_default_cache.set.call_args.args, (cache_key, proceedings_content))
+        self.assertGreater(mock_default_cache.set.call_args.kwargs["timeout"], 86400)
         mock_default_cache.get.reset_mock()
         mock_default_cache.set.reset_mock()
 
@@ -8579,7 +8725,8 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertEqual(result, proceedings_content)  # should have recomputed the same thing
         self.assertFalse(mock_default_cache.get.called, "don't bother reading cache when force_refresh is True")
         self.assertTrue(mock_default_cache.set.called)
-        self.assertEqual(mock_default_cache.set.call_args, call(cache_key, proceedings_content, timeout=86400))
+        self.assertEqual(mock_default_cache.set.call_args.args, (cache_key, proceedings_content))
+        self.assertGreater(mock_default_cache.set.call_args.kwargs["timeout"], 86400)
 
     def test_named_session(self):
         """Session with a name should appear separately in the proceedings"""
@@ -8704,25 +8851,24 @@ class ProceedingsTests(BaseMeetingTestCase):
            - prefer onsite checkedin=True to remote attended when same person has both
         """
 
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2023, 11, 4), number="118")
+        m = MeetingFactory(type_id='ietf', date=datetime.date(2023, 11, 4), number="118")
         person_a = PersonFactory(name='Person A')
         person_b = PersonFactory(name='Person B')
         person_c = PersonFactory(name='Person C')
         person_d = PersonFactory(name='Person D')
-        MeetingRegistrationFactory(meeting=meeting, person=person_a, reg_type='onsite', checkedin=True)
-        MeetingRegistrationFactory(meeting=meeting, person=person_b, reg_type='onsite', checkedin=False)
-        MeetingRegistrationFactory(meeting=meeting, person=person_a, reg_type='remote')
-        AttendedFactory(session__meeting=meeting, session__type_id='plenary', person=person_a)
-        MeetingRegistrationFactory(meeting=meeting, person=person_c, reg_type='remote')
-        AttendedFactory(session__meeting=meeting, session__type_id='plenary', person=person_c)
-        MeetingRegistrationFactory(meeting=meeting, person=person_d, reg_type='remote')
+        areg = RegistrationFactory(meeting=m, person=person_a, checkedin=True, with_ticket={'attendance_type_id': 'onsite'})
+        RegistrationFactory(meeting=m, person=person_b, checkedin=False, with_ticket={'attendance_type_id': 'onsite'})
+        creg = RegistrationFactory(meeting=m, person=person_c, with_ticket={'attendance_type_id': 'remote'})
+        RegistrationFactory(meeting=m, person=person_d, with_ticket={'attendance_type_id': 'remote'})
+        AttendedFactory(session__meeting=m, session__type_id='plenary', person=person_a)
+        AttendedFactory(session__meeting=m, session__type_id='plenary', person=person_c)
         url = urlreverse('ietf.meeting.views.proceedings_attendees',kwargs={'num': 118})
         response = self.client.get(url)
         self.assertContains(response, 'Attendee list')
         q = PyQuery(response.content)
         self.assertEqual(2, len(q("#id_attendees tbody tr")))
         text = q('#id_attendees tbody tr').text().replace('\n', ' ')
-        self.assertEqual(text, "A Person onsite C Person remote")
+        self.assertEqual(text, f"A Person {areg.affiliation} {areg.country_code} onsite C Person {creg.affiliation} {creg.country_code} remote")
 
     def test_proceedings_overview(self):
         '''Test proceedings IETF Overview page.
@@ -9123,27 +9269,25 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertEqual(sequence,1)
 
     def test_participants_for_meeting(self):
-        person_a = PersonFactory()
-        person_b = PersonFactory()
-        person_c = PersonFactory()
-        person_d = PersonFactory()
         m = MeetingFactory.create(type_id='ietf')
-        MeetingRegistrationFactory(meeting=m, person=person_a, reg_type='onsite', checkedin=True)
-        MeetingRegistrationFactory(meeting=m, person=person_b, reg_type='onsite', checkedin=False)
-        MeetingRegistrationFactory(meeting=m, person=person_c, reg_type='remote')
-        MeetingRegistrationFactory(meeting=m, person=person_d, reg_type='remote')
-        AttendedFactory(session__meeting=m, session__type_id='plenary', person=person_c)
+        areg = RegistrationFactory(meeting=m, checkedin=True, with_ticket={'attendance_type_id': 'onsite'})
+        breg = RegistrationFactory(meeting=m, checkedin=False, with_ticket={'attendance_type_id': 'onsite'})
+        creg = RegistrationFactory(meeting=m, with_ticket={'attendance_type_id': 'remote'})
+        dreg = RegistrationFactory(meeting=m, with_ticket={'attendance_type_id': 'remote'})
+        AttendedFactory(session__meeting=m, session__type_id='plenary', person=creg.person)
         checked_in, attended = participants_for_meeting(m)
-        self.assertTrue(person_a.pk in checked_in)
-        self.assertTrue(person_b.pk not in checked_in)
-        self.assertTrue(person_c.pk in attended)
-        self.assertTrue(person_d.pk not in attended)
+        self.assertIn(areg.person.pk, checked_in)
+        self.assertNotIn(breg.person.pk, checked_in)
+        self.assertNotIn(areg.person.pk, attended)
+        self.assertNotIn(breg.person.pk, attended)
+        self.assertIn(creg.person.pk, attended)
+        self.assertNotIn(dreg.person.pk, attended)
 
     def test_session_attendance(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2023, 11, 4), number='118')
         make_meeting_test_data(meeting=meeting)
         session = Session.objects.filter(meeting=meeting, group__acronym='mars').first()
-        regs = MeetingRegistrationFactory.create_batch(3, meeting=meeting)
+        regs = RegistrationFactory.create_batch(3, meeting=meeting)
         persons = [reg.person for reg in regs]
         self.assertEqual(session.attended_set.count(), 0)
 
@@ -9189,7 +9333,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         # person0 is already on the bluesheet
         _test_button(persons[0], False)
         # person3 attests he was there
-        persons.append(MeetingRegistrationFactory(meeting=meeting).person)
+        persons.append(RegistrationFactory(meeting=meeting).person)
         # button isn't shown if we're outside the corrections windows
         meeting.importantdate_set.create(name_id='revsub',date=date_today() - datetime.timedelta(days=20))
         _test_button(persons[3], False)
@@ -9247,12 +9391,12 @@ class ProceedingsTests(BaseMeetingTestCase):
 
     def test_bluesheet_data(self):
         session = SessionFactory(meeting__type_id="ietf") 
-        attended_with_affil = MeetingRegistrationFactory(meeting=session.meeting, affiliation="Somewhere")
+        attended_with_affil = RegistrationFactory(meeting=session.meeting, affiliation="Somewhere")
         AttendedFactory(session=session, person=attended_with_affil.person, time="2023-03-13T01:24:00Z")  # joined 2nd
-        attended_no_affil = MeetingRegistrationFactory(meeting=session.meeting)
+        attended_no_affil = RegistrationFactory(meeting=session.meeting, affiliation="")
         AttendedFactory(session=session, person=attended_no_affil.person, time="2023-03-13T01:23:00Z")  # joined 1st
-        MeetingRegistrationFactory(meeting=session.meeting)  # did not attend
-        
+        RegistrationFactory(meeting=session.meeting)  # did not attend
+
         data = bluesheet_data(session)
         self.assertEqual(
             data,
@@ -9261,4 +9405,3 @@ class ProceedingsTests(BaseMeetingTestCase):
                 {"name": attended_with_affil.person.plain_name(), "affiliation": "Somewhere"},
             ]
         )
-

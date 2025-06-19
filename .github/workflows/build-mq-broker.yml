@@ -8,10 +8,13 @@ on:
       - 'dev/mq/**'
       - '.github/workflows/build-mq-broker.yml'
 
-  workflow_dispatch: 
-
-env:
-  RABBITMQ_VERSION: 3.12-alpine
+  workflow_dispatch:
+    inputs:
+      rabbitmq_version:
+        description: 'RabbitMQ Version'
+        default: '3.13-alpine'
+        required: true
+        type: string
 
 jobs:
   publish:
@@ -45,7 +48,7 @@ jobs:
         file: dev/mq/Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
-        build-args: RABBITMQ_VERSION=${{ env.RABBITMQ_VERSION }}
+        build-args: RABBITMQ_VERSION=${{ inputs.rabbitmq_version }}
         tags: |
-          ghcr.io/ietf-tools/datatracker-mq:${{ env.RABBITMQ_VERSION }}
+          ghcr.io/ietf-tools/datatracker-mq:${{ inputs.rabbitmq_version }}
           ghcr.io/ietf-tools/datatracker-mq:latest

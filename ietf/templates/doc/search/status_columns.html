@@ -78,6 +78,10 @@
                 {% person_link action_holder.person title=action_holder.role_for_doc %}{% if action_holder|action_holder_badge %} {{ action_holder|action_holder_badge }}{% endif %}{% if not forloop.last %},{% endif %}
             {% endfor %}
         {% endif %}
+        {% if doc|is_unexpected_wg_state %}
+            <br>
+            <span class="badge rounded-pill text-bg-warning">Unexpected WG state</span>
+        {% endif %}
     {% else %}
         {# RFC #}
         {{ doc.std_level|safe }} RFC

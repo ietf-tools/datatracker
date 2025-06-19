@@ -114,6 +114,7 @@
         "ietf/static/js/add_session_recordings.js",
         "ietf/static/js/agenda_filter.js",
         "ietf/static/js/agenda_materials.js",
+        "ietf/static/js/announcement.js",
         "ietf/static/js/complete-review.js",
         "ietf/static/js/create_timeslot.js",
         "ietf/static/js/create_timeslot.js",

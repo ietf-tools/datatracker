@@ -19,7 +19,7 @@ from ietf.name.models import ( AgendaFilterTypeName, AgendaTypeName, BallotPosit
     RoleName, RoomResourceName, SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName,
     TopicAudienceName, ReviewerQueuePolicyName, TimerangeName, ExtResourceTypeName, ExtResourceName,
     SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName, TelechatAgendaSectionName,
-    AppealArtifactTypeName )
+    AppealArtifactTypeName, AttendanceTypeName, RegistrationTicketTypeName )
 
 class TimeSlotTypeNameResource(ModelResource):
     class Meta:
@@ -752,3 +752,33 @@ class AppealArtifactTypeNameResource(ModelResource):
             "order": ALL,
         }
 api.name.register(AppealArtifactTypeNameResource())
+
+
+class AttendanceTypeNameResource(ModelResource):
+    class Meta:
+        cache = SimpleCache()
+        queryset = AttendanceTypeName.objects.all()
+        serializer = api.Serializer()
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(AttendanceTypeNameResource())
+
+
+class RegistrationTicketTypeNameResource(ModelResource):
+    class Meta:
+        cache = SimpleCache()
+        queryset = RegistrationTicketTypeName.objects.all()
+        serializer = api.Serializer()
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(RegistrationTicketTypeNameResource())
