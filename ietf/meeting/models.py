@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
+# Copyright The IETF Trust 2007-2025, All Rights Reserved
 
 
 # old meeting models can be found in ../proceedings/models.py
