@@ -151,7 +151,7 @@ def iana_protocols_update_task():
         2012, 
         11, 
         26, 
-        tzinfo=datetime.timezone.utc,
+        tzinfo=datetime.UTC,
     )
 
     try:

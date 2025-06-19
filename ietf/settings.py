@@ -13,19 +13,27 @@ import warnings
 from hashlib import sha384
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
+# DeprecationWarnings are suppressed by default, enable them
 warnings.simplefilter("always", DeprecationWarning)
-warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API")
-warnings.filterwarnings("ignore", "Log out via GET requests is deprecated")  # happens in oidc_provider
-warnings.filterwarnings("ignore", module="tastypie", message="The django.utils.datetime_safe module is deprecated.")
-warnings.filterwarnings("ignore", module="oidc_provider", message="The django.utils.timezone.utc alias is deprecated.")
+
+# Warnings that must be resolved for Django 5.x
+warnings.filterwarnings("ignore", "Log out via GET requests is deprecated")  # caused by oidc_provider
+warnings.filterwarnings("ignore", message="The django.utils.timezone.utc alias is deprecated.", module="oidc_provider")
+warnings.filterwarnings("ignore", message="The django.utils.datetime_safe module is deprecated.", module="tastypie")
 warnings.filterwarnings("ignore", message="The USE_DEPRECATED_PYTZ setting,")  # https://github.com/ietf-tools/datatracker/issues/5635
 warnings.filterwarnings("ignore", message="The USE_L10N setting is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5648
 warnings.filterwarnings("ignore", message="django.contrib.auth.hashers.CryptPasswordHasher is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5663
-warnings.filterwarnings("ignore", message="'urllib3\\[secure\\]' extra is deprecated")
-warnings.filterwarnings("ignore", message="The logout\\(\\) view is superseded by")
+
+# Other DeprecationWarnings
+warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API", module="pyang.plugin")
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
-warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated", module="bleach")
-warnings.filterwarnings("ignore", message="HTTPResponse.getheader\\(\\) is deprecated", module='selenium.webdriver')
+warnings.filterwarnings("ignore", message="currentThread\\(\\) is deprecated", module="coverage.pytracer")
+warnings.filterwarnings("ignore", message="co_lnotab is deprecated", module="coverage.parser")
+warnings.filterwarnings("ignore", message="datetime.datetime.utcnow\\(\\) is deprecated", module="botocore.auth")
+warnings.filterwarnings("ignore", message="datetime.datetime.utcnow\\(\\) is deprecated", module="oic.utils.time_util")
+warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="oic.utils.time_util")
+warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="pytz.tzinfo")
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.abspath(BASE_DIR + "/.."))
@@ -708,9 +716,15 @@ TEST_COVERAGE_MAIN_FILE = os.path.join(BASE_DIR, "../release-coverage.json")
 TEST_COVERAGE_LATEST_FILE = os.path.join(BASE_DIR, "../latest-coverage.json")
 
 TEST_CODE_COVERAGE_CHECKER = None
-if SERVER_MODE != 'production':
-    import coverage
-    TEST_CODE_COVERAGE_CHECKER = coverage.Coverage(source=[ BASE_DIR ], cover_pylib=False, omit=TEST_CODE_COVERAGE_EXCLUDE_FILES)
+# TODO-PY312: figure out how to run coverage
+# Context: the old version of coverage that we use (4.5.4, ca 2019) is falling back from its
+# fast CTracer module to its very slow PyTracer when used on Python 3.12. It's not clear exactly
+# why, but it's almost 3x slower. The situation may be better if we can update to a current
+# version of coverage, but see https://github.com/nedbat/coveragepy/issues/1665 for more info.
+# For now at least, disabling the checker completely.
+# if SERVER_MODE != 'production':
+#     import coverage
+#     TEST_CODE_COVERAGE_CHECKER = coverage.Coverage(source=[ BASE_DIR ], cover_pylib=False, omit=TEST_CODE_COVERAGE_EXCLUDE_FILES)
 
 TEST_CODE_COVERAGE_REPORT_PATH = "coverage/"
 TEST_CODE_COVERAGE_REPORT_URL = os.path.join(STATIC_URL, TEST_CODE_COVERAGE_REPORT_PATH, "index.html")

@@ -1157,7 +1157,7 @@ class Document(StorableMixin, DocumentInfo):
             elif rev_events.exists():
                 time = rev_events.first().time
             else:
-                time = datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
+                time = datetime.datetime.fromtimestamp(0, datetime.UTC)
             dh = DocHistory(name=self.name, rev=rev, doc=self, time=time, type=self.type, title=self.title,
                              stream=self.stream, group=self.group)
 
