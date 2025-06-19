@@ -385,6 +385,9 @@ This test section has some text.
         events_before = statement.docevent_set.count()
         login_testing_unauthorized(self, "secretary", url)
 
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+
         r = self.client.post(url, {"state": active_state.pk}, follow=True)
         self.assertContains(r, "State not changed", status_code=200)
         statement = Document.objects.get(pk=statement.pk)  # bust the state cache
