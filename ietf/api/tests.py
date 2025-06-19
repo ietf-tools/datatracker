@@ -1161,7 +1161,7 @@ class CustomApiTests(TestCase):
         self.assertEqual(r.headers["Content-Type"], "application/json")
         result = json.loads(r.content)
         self.assertCountEqual(result.keys(), ["addresses"])
-        self.assertCountEqual(result["addresses"], joe.person.email_set.exclude(address='joe@home.com').values_list("address", flat=True))
+        self.assertCountEqual(result["addresses"], joe.person.email_set.values_list("address", flat=True))
         # non-ascii
         non_ascii_url = urlreverse("ietf.api.views.related_email_list", kwargs={'email': 'jòe@spain.com'})
         r = self.client.get(non_ascii_url, headers={"X-Api-Key": "valid-token"})
