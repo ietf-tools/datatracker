@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
+# Copyright The IETF Trust 2007-2025, All Rights Reserved
 
 
 # old meeting models can be found in ../proceedings/models.py
@@ -60,7 +59,7 @@ TIMEZONES = (EMPTY_CHOICE,) + tuple(
     sorted(
         (name, name)
         for name in pytz.common_timezones
-        if not (_tzdata_ics_path / f"{name}.ics").is_symlink()
+        if name != "GMT" and not (_tzdata_ics_path / f"{name}.ics").is_symlink()
     )
 )
 
