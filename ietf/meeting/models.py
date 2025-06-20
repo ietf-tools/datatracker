@@ -530,7 +530,7 @@ class FloorPlan(models.Model):
     image   = models.ImageField(
         storage=BlobShadowFileSystemStorage(kind="floorplan"),
         upload_to=floorplan_path,
-        blank=True,
+        blank=False,
         default=None,
     )
     #
