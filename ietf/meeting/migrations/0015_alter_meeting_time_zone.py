@@ -16,7 +16,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("meeting", "0013_correct_reg_checkedin"),
+        ("meeting", "0014_alter_floorplan_image"),
     ]
 
     operations = [
