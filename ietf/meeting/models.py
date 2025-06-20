@@ -50,15 +50,20 @@ from ietf.utils.validators import (
 from ietf.utils.fields import MissingOkImageField
 
 # Set up countries / timezones, including an empty choice for fields
-EMPTY_CHOICE = ('', '-' * 9)
-countries = [EMPTY_CHOICE] + sorted(pytz.country_names.items(), key=lambda x: x[1])
+EMPTY_CHOICE = ("", "-" * 9)
+COUNTRIES = (EMPTY_CHOICE,) + tuple(
+    sorted(pytz.country_names.items(), key=lambda x: x[1])
+)
 
 _tzdata_ics_path = Path(settings.TZDATA_ICS_PATH)
-timezones = [EMPTY_CHOICE] + sorted(
-    (name, name)
-    for name in pytz.common_timezones
-    if not (_tzdata_ics_path / f"{name}.ics").is_symlink()
+TIMEZONES = (EMPTY_CHOICE,) + tuple(
+    sorted(
+        (name, name)
+        for name in pytz.common_timezones
+        if not (_tzdata_ics_path / f"{name}.ics").is_symlink()
+    )
 )
+
 
 class Meeting(models.Model):
     # number is either the number for IETF meetings, or some other
@@ -72,11 +77,11 @@ class Meeting(models.Model):
     days = models.IntegerField(default=7, null=False, validators=[MinValueValidator(1)],
         help_text="The number of days the meeting lasts")
     city = models.CharField(blank=True, max_length=255)
-    country = models.CharField(blank=True, max_length=2, choices=countries)
+    country = models.CharField(blank=True, max_length=2, choices=COUNTRIES)
     # We can't derive time-zone from country, as there are some that have
     # more than one timezone, and the pytz module doesn't provide timezone
     # lookup information for all relevant city/country combinations.
-    time_zone = models.CharField(max_length=255, choices=timezones, default='UTC')
+    time_zone = models.CharField(max_length=255, choices=TIMEZONES, default='UTC')
     idsubmit_cutoff_day_offset_00 = models.IntegerField(blank=True,
         default=settings.IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_00,
         help_text = "The number of days before the meeting start date when the submission of -00 drafts will be closed.")
