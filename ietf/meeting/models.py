@@ -49,16 +49,16 @@ from ietf.utils.validators import (
 )
 from ietf.utils.fields import MissingOkImageField
 
-countries = list(pytz.country_names.items())
-countries.sort(key=lambda x: x[1])
+# Set up countries / timezones, including an empty choice for fields
+EMPTY_CHOICE = ('', '-' * 9)
+countries = [EMPTY_CHOICE] + sorted(pytz.country_names.items(), key=lambda x: x[1])
 
-timezones = []
-for name in pytz.common_timezones:
-    tzfn = os.path.join(settings.TZDATA_ICS_PATH, name + ".ics")
-    if not os.path.islink(tzfn):
-        timezones.append((name, name))
-timezones.sort()
-
+_tzdata_ics_path = Path(settings.TZDATA_ICS_PATH)
+timezones = [EMPTY_CHOICE] + sorted(
+    (name, name)
+    for name in pytz.common_timezones
+    if not (_tzdata_ics_path / f"{name}.ics").is_symlink()
+)
 
 class Meeting(models.Model):
     # number is either the number for IETF meetings, or some other
