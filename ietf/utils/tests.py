@@ -5,7 +5,6 @@
 import datetime
 import io
 import json
-
 import lxml.etree
 import os.path
 import pytz
