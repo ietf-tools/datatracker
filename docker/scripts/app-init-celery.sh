@@ -95,7 +95,7 @@ WATCHMEDO="$USER_BIN_PATH/watchmedo"
 CELERY="$USER_BIN_PATH/celery"
 trap 'trap "" TERM; cleanup' TERM
 # start celery in the background so we can trap the TERM signal
-if [[ -n "${DEV_MODE}" ]]; then
+if [[ -n "${DEV_MODE}" && -x "${WATCHMEDO}" ]]; then
   $WATCHMEDO auto-restart \
             --patterns '*.py' \
             --directory 'ietf' \
