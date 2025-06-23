@@ -102,7 +102,7 @@ if [[ -n "${DEV_MODE}" && -x "${WATCHMEDO}" ]]; then
             --recursive \
             --debounce-interval 5 \
             -- \
-            $CELERY --app="${CELERY_APP:-ietf}" "${CELERY_OPTS[@]}" "$@" &
+            $CELERY --app="${CELERY_APP:-ietf}" "${CELERY_OPTS[@]}" $@ &
   celery_pid=$!
 else
   $CELERY --app="${CELERY_APP:-ietf}" "${CELERY_OPTS[@]}" "$@" &

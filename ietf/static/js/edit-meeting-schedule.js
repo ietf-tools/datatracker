@@ -50,6 +50,7 @@ $(function () {
     let sessionPurposeInputs = schedEditor.find('.session-purpose-toggles input');
     let timeSlotGroupInputs = schedEditor.find("#timeslot-group-toggles-modal .modal-body .individual-timeslots input");
     let sessionParentInputs = schedEditor.find(".session-parent-toggles input");
+    let sessionParentToggleAll = schedEditor.find(".session-parent-toggles .session-parent-toggle-all")
     const classes_to_hide = '.hidden-timeslot-group,.hidden-timeslot-type';
 
     // hack to work around lack of position sticky support in old browsers, see https://caniuse.com/#feat=css-sticky
@@ -768,6 +769,17 @@ $(function () {
 
     sessionParentInputs.on("click", updateSessionParentToggling);
     updateSessionParentToggling();
+
+    // Toggle _all_ session parents
+    function toggleAllSessionParents() {
+        if (sessionParentInputs.filter(":checked").length < sessionParentInputs.length) {
+            sessionParentInputs.prop("checked", true);
+        } else {
+            sessionParentInputs.prop("checked", false);
+        }
+        updateSessionParentToggling();
+    }
+    sessionParentToggleAll.on("click", toggleAllSessionParents);
 
     // Toggling timeslot types
     function updateTimeSlotTypeToggling() {

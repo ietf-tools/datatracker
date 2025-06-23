@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2023, All Rights Reserved
+# Copyright The IETF Trust 2010-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -1615,3 +1615,6 @@ class StoredObject(models.Model):
         indexes = [
             models.Index(fields=["doc_name", "doc_rev"]),
         ]
+
+    def __str__(self):
+        return f"{self.store}:{self.name}"
