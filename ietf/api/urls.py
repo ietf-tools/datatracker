@@ -66,12 +66,15 @@ urlpatterns = [
     # Let MeetEcho upload session polls
     url(r'^notify/session/polls/?$', meeting_views.api_upload_polls),    
     # Let the registration system notify us about registrations
+    url(r'^notify/meeting/registration/v2/?', api_views.api_new_meeting_registration_v2),
     url(r'^notify/meeting/registration/?', api_views.api_new_meeting_registration),
     # OpenID authentication provider
     url(r'^openid/$', TemplateView.as_view(template_name='api/openid-issuer.html'), name='ietf.api.urls.oidc_issuer'),
     url(r'^openid/', include('oidc_provider.urls', namespace='oidc_provider')),
     # Email alias listing
     url(r'^person/email/$', api_views.active_email_list),
+    # Related Email listing
+    url(r'^person/email/(?P<email>[^/\x00]+)/related/$', api_views.related_email_list),
     # Draft submission API
     url(r'^submit/?$', submit_views.api_submit_tombstone),
     # Draft upload API
@@ -82,6 +85,8 @@ urlpatterns = [
     url(r'^version/?$', api_views.version),
     # Application authentication API key
     url(r'^appauth/(?P<app>authortools|bibxml)$', api_views.app_auth),
+    # NFS metrics endpoint
+    url(r'^metrics/nfs/?$', api_views.nfs_metrics),
     # latest versions
     url(r'^rfcdiff-latest-json/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, api_views.rfcdiff_latest_json),
     url(r'^rfcdiff-latest-json/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', api_views.rfcdiff_latest_json),

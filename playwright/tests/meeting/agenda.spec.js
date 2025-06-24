@@ -238,7 +238,7 @@ test.describe('past - desktop', () => {
       // Name column
       // -----------
       // Event icon
-      if (['break', 'plenary'].includes(event.type) || (event.type === 'other' && ['office hours', 'hackathon'].some(s => event.name.toLowerCase().indexOf(s) >= 0))) {
+      if (['break', 'plenary'].includes(event.type) || (event.type === 'other' && event.name.toLowerCase().indexOf('office hours') >= 0)) {
         await expect(row.locator('.agenda-table-cell-name > i.bi')).toBeVisible()
       }
       // Name link
@@ -275,7 +275,7 @@ test.describe('past - desktop', () => {
             const eventButtons = row.locator('.agenda-table-cell-links > .agenda-table-cell-links-buttons')
             if (event.flags.agenda) {
               // Show meeting materials button
-              await expect(eventButtons.locator('i.bi.bi-collection')).toBeVisible()
+              await expect(eventButtons.locator(`#btn-btn-${event.id}-mat`)).toBeVisible()
               // ZIP materials button
               await expect(eventButtons.locator(`#btn-lnk-${event.id}-tar`)).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.tgz`)
               await expect(eventButtons.locator(`#btn-lnk-${event.id}-tar > i.bi`)).toBeVisible()
@@ -286,10 +286,17 @@ test.describe('past - desktop', () => {
               // No meeting materials yet warning badge
               await expect(eventButtons.locator('.no-meeting-materials')).toBeVisible()
             }
-            // Notepad button
-            const hedgeDocLink = `https://notes.ietf.org/notes-ietf-${meetingData.meeting.number}-${event.type === 'plenary' ? 'plenary' : event.acronym}`
-            await expect(eventButtons.locator(`#btn-lnk-${event.id}-note`)).toHaveAttribute('href', hedgeDocLink)
-            await expect(eventButtons.locator(`#btn-lnk-${event.id}-note > i.bi`)).toBeVisible()
+            if (event.groupAcronym === 'hackathon') {
+              // Hackathon Wiki button
+              const hackathonWikiLink = `https://wiki.ietf.org/meeting/${meetingData.meeting.number}/hackathon`
+              await expect(eventButtons.locator(`#btn-lnk-${event.id}-wiki`)).toHaveAttribute('href', hackathonWikiLink)
+              await expect(eventButtons.locator(`#btn-lnk-${event.id}-wiki > i.bi`)).toBeVisible()
+            } else {
+              // Notepad button
+              const hedgeDocLink = `https://notes.ietf.org/notes-ietf-${meetingData.meeting.number}-${event.type === 'plenary' ? 'plenary' : event.acronym}`
+              await expect(eventButtons.locator(`#btn-lnk-${event.id}-note`)).toHaveAttribute('href', hedgeDocLink)
+              await expect(eventButtons.locator(`#btn-lnk-${event.id}-note > i.bi`)).toBeVisible()
+            }
             // Chat logs
             await expect(eventButtons.locator(`#btn-lnk-${event.id}-logs`)).toHaveAttribute('href', event.links.chatArchive)
             await expect(eventButtons.locator(`#btn-lnk-${event.id}-logs > i.bi`)).toBeVisible()
@@ -418,7 +425,7 @@ test.describe('past - desktop', () => {
       })
     })
     // Open dialog
-    await page.locator(`#agenda-rowid-${event.id} #btn-lnk-${event.id}-mat`).click()
+    await page.locator(`#agenda-rowid-${event.id} #btn-btn-${event.id}-mat`).click()
     await expect(page.locator('.agenda-eventdetails')).toBeVisible()
     // Header
     await expect(page.locator('.agenda-eventdetails .n-card-header__main > .detail-header > .bi')).toBeVisible()
@@ -500,7 +507,7 @@ test.describe('past - desktop', () => {
       })
     })
     // Open dialog
-    await page.locator(`#btn-lnk-${event.id}-mat`).click()
+    await page.locator(`#btn-btn-${event.id}-mat`).click()
     await expect(page.locator('.agenda-eventdetails')).toBeVisible()
     // Slides Tab
     await page.locator('.agenda-eventdetails .detail-nav > a').nth(1).click()
@@ -1151,7 +1158,7 @@ test.describe('future - desktop', () => {
         if (event.flags.showAgenda || (['regular', 'plenary', 'other'].includes(event.type) && !['admin', 'closed_meeting', 'officehours', 'social'].includes(event.purpose))) {
           if (event.flags.agenda) {
             // Show meeting materials button
-            await expect(eventButtons.locator('i.bi.bi-collection')).toBeVisible()
+            await expect(eventButtons.locator(`#btn-btn-${event.id}-mat`)).toBeVisible()
             // ZIP materials button
             await expect(eventButtons.locator(`#btn-lnk-${event.id}-tar`)).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.tgz`)
             await expect(eventButtons.locator(`#btn-lnk-${event.id}-tar > i.bi`)).toBeVisible()
@@ -1162,10 +1169,17 @@ test.describe('future - desktop', () => {
             // No meeting materials yet warning badge
             await expect(eventButtons.locator('.no-meeting-materials')).toBeVisible()
           }
-          // Notepad button
-          const hedgeDocLink = `https://notes.ietf.org/notes-ietf-${meetingData.meeting.number}-${event.type === 'plenary' ? 'plenary' : event.acronym}`
-          await expect(eventButtons.locator(`#btn-lnk-${event.id}-note`)).toHaveAttribute('href', hedgeDocLink)
-          await expect(eventButtons.locator(`#btn-lnk-${event.id}-note > i.bi`)).toBeVisible()
+          if (event.groupAcronym === 'hackathon') {
+            // Hackathon Wiki button
+            const hackathonWikiLink = `https://wiki.ietf.org/meeting/${meetingData.meeting.number}/hackathon`
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-wiki`)).toHaveAttribute('href', hackathonWikiLink)
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-wiki > i.bi`)).toBeVisible()
+          } else {
+            // Notepad button
+            const hedgeDocLink = `https://notes.ietf.org/notes-ietf-${meetingData.meeting.number}-${event.type === 'plenary' ? 'plenary' : event.acronym}`
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-note`)).toHaveAttribute('href', hedgeDocLink)
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-note > i.bi`)).toBeVisible()
+          }
           // Chat room
           await expect(eventButtons.locator(`#btn-lnk-${event.id}-room`)).toHaveAttribute('href', event.links.chat)
           await expect(eventButtons.locator(`#btn-lnk-${event.id}-room > i.bi`)).toBeVisible()
@@ -1199,7 +1213,7 @@ test.describe('future - desktop', () => {
             await expect(eventButtons.locator(`#btn-lnk-${event.id}-remotecallin`)).toHaveAttribute('href', remoteCallInUrl)
             await expect(eventButtons.locator(`#btn-lnk-${event.id}-remotecallin > i.bi`)).toBeVisible()
           }
-          // calendar
+          // Calendar
           if (event.links.calendar) {
             await expect(eventButtons.locator(`#btn-lnk-${event.id}-calendar`)).toHaveAttribute('href', event.links.calendar)
             await expect(eventButtons.locator(`#btn-lnk-${event.id}-calendar > i.bi`)).toBeVisible()
@@ -1264,22 +1278,7 @@ test.describe('live - desktop', () => {
     })
 
     // Override Date in page to fixed time
-    await page.addInitScript(`{
-      // Extend Date constructor to default to fixed time
-      Date = class extends Date {
-        constructor(...args) {
-          if (args.length === 0) {
-            super(${currentTime.toMillis()});
-          } else {
-            super(...args);
-          }
-        }
-      }
-      // Override Date.now() to start from fixed time
-      const __DateNowOffset = ${currentTime.toMillis()} - Date.now();
-      const __DateNow = Date.now;
-      Date.now = () => __DateNow() + __DateNowOffset;
-    }`)
+    await commonHelper.overridePageDateTime(page, currentTime)
 
     // Visit agenda page and await Meeting Data API call to complete
     await Promise.all([
@@ -1331,6 +1330,89 @@ test.describe('live - desktop', () => {
     // Close dialog
     await page.locator('.agenda-settings .agenda-settings-actions > button').last().click()
     await expect(page.locator('.agenda-settings')).not.toBeVisible()
+  })
+})
+
+// ====================================================================
+// AGENDA (live meeting) | DESKTOP viewport | Plenary Extended Time Buttons
+// ====================================================================
+
+test.describe('live - desktop - plenary extended time buttons', () => {
+  let meetingData
+  let plenarySessionId
+
+  test.beforeAll(async () => {
+    // Generate meeting data
+    meetingData = meetingHelper.generateAgendaResponse({ dateMode: 'current' })
+    plenarySessionId = meetingData.schedule.find(s => s.type === 'plenary').id
+  })
+
+  test.beforeEach(async ({ page }) => {
+    // Intercept Meeting Data API
+    await page.route(`**/api/meeting/${meetingData.meeting.number}/agenda-data`, route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(meetingData)
+      })
+    })
+
+    await page.setViewportSize({
+      width: viewports.desktop[0],
+      height: viewports.desktop[1]
+    })
+  })
+
+  // -> BUTTONS PRESENT AFTER EVENT, SAME DAY
+
+  test('same day - after event', async ({ page }) => {
+    // Override Date in page to fixed time
+    const currentTime = DateTime.fromISO('2022-02-01T13:45:15', { zone: 'Asia/Tokyo' }).plus({ days: 1 }).set({ hour: 20, minute: 30 })
+    await commonHelper.overridePageDateTime(page, currentTime)
+
+    // Visit agenda page and await Meeting Data API call to complete
+    await Promise.all([
+      page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
+      page.goto(`/meeting/${meetingData.meeting.number}/agenda`)
+    ])
+
+    // Wait for page to be ready
+    await page.locator('.agenda h1').waitFor({ state: 'visible' })
+    await setTimeout(500)
+
+    // Check for plenary event
+    await expect(page.locator('.agenda .agenda-table-display-event.agenda-table-type-plenary')).toBeVisible()
+    await page.locator('.agenda .agenda-table-display-event.agenda-table-type-plenary').scrollIntoViewIfNeeded()
+
+    // Check for full video client + on-site tool
+    await expect(page.locator(`.agenda .agenda-table-display-event.agenda-table-type-plenary .agenda-table-cell-links-buttons a#btn-lnk-${plenarySessionId}-video`)).toBeVisible()
+    await expect(page.locator(`.agenda .agenda-table-display-event.agenda-table-type-plenary .agenda-table-cell-links-buttons a#btn-lnk-${plenarySessionId}-onsitetool`)).toBeVisible()
+  })
+
+  // -> BUTTONS NO LONGER PRESENT AFTER EVENT, NEXT DAY
+
+  test('next day - after event', async ({ page }) => {
+    // Override Date in page to fixed time
+    const currentTime = DateTime.fromISO('2022-02-01T13:45:15', { zone: 'Asia/Tokyo' }).plus({ days: 2 }).set({ hour: 2, minute: 30 })
+    await commonHelper.overridePageDateTime(page, currentTime)
+
+    // Visit agenda page and await Meeting Data API call to complete
+    await Promise.all([
+      page.waitForResponse(`**/api/meeting/${meetingData.meeting.number}/agenda-data`),
+      page.goto(`/meeting/${meetingData.meeting.number}/agenda`)
+    ])
+
+    // Wait for page to be ready
+    await page.locator('.agenda h1').waitFor({ state: 'visible' })
+    await setTimeout(500)
+
+    // Check for plenary event
+    await expect(page.locator('.agenda .agenda-table-display-event.agenda-table-type-plenary')).toBeVisible()
+    await page.locator('.agenda .agenda-table-display-event.agenda-table-type-plenary').scrollIntoViewIfNeeded()
+
+    // Check for full video client + on-site tool
+    await expect(page.locator(`.agenda .agenda-table-display-event.agenda-table-type-plenary .agenda-table-cell-links-buttons a#btn-lnk-${plenarySessionId}-video`)).not.toBeVisible()
+    await expect(page.locator(`.agenda .agenda-table-display-event.agenda-table-type-plenary .agenda-table-cell-links-buttons a#btn-lnk-${plenarySessionId}-onsitetool`)).not.toBeVisible()
   })
 })
 

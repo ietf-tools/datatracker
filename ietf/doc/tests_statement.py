@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2023, All Rights Reserved
+# Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import debug  # pyflakes:ignore
 
@@ -14,6 +14,7 @@ from django.urls import reverse as urlreverse
 
 from ietf.doc.factories import StatementFactory, DocEventFactory
 from ietf.doc.models import Document, State, NewRevisionDocEvent
+from ietf.doc.storage_utils import retrieve_str
 from ietf.group.models import Group
 from ietf.person.factories import PersonFactory
 from ietf.utils.mail import outbox, empty_outbox
@@ -185,8 +186,16 @@ This test section has some text.
                 self.assertEqual("%02d" % (int(rev) + 1), doc.rev)
                 if postdict["statement_submission"] == "enter":
                     self.assertEqual(f"# {username}", doc.text())
+                    self.assertEqual(
+                        retrieve_str("statement", f"{doc.name}-{doc.rev}.md"),
+                        f"# {username}"
+                    )
                 else:
                     self.assertEqual("not valid pdf", doc.text())
+                    self.assertEqual(
+                        retrieve_str("statement", f"{doc.name}-{doc.rev}.pdf"),
+                        "not valid pdf"
+                    )
                 self.assertEqual(docevent_count + 1, doc.docevent_set.count())
                 self.assertEqual(0, len(outbox))
                 rev = doc.rev
@@ -255,8 +264,16 @@ This test section has some text.
             self.assertIsNotNone(statement.history_set.last().latest_event(type="published_statement"))
             if postdict["statement_submission"] == "enter":
                 self.assertEqual(statement.text_or_error(), "some stuff")
+                self.assertEqual(
+                    retrieve_str("statement", statement.uploaded_filename),
+                    "some stuff"
+                )
             else:
                 self.assertTrue(statement.uploaded_filename.endswith("pdf"))
+                self.assertEqual(
+                    retrieve_str("statement", f"{statement.name}-{statement.rev}.pdf"),
+                    "not valid pdf"
+                )
             self.assertEqual(len(outbox), 0)
 
         existing_statement = StatementFactory()
@@ -355,3 +372,36 @@ This test section has some text.
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue("Unexpected content" in q("#id_statement_file").next().text())
+
+    def test_change_statement_state(self):
+        statement = StatementFactory()  # starts in "active" state
+        active_state = State.objects.get(type_id="statement", slug="active")
+        replaced_state = State.objects.get(type_id="statement", slug="replaced")
+        url = urlreverse(
+            "ietf.doc.views_statement.change_statement_state",
+            kwargs={"name": statement.name},
+        )
+
+        events_before = statement.docevent_set.count()
+        login_testing_unauthorized(self, "secretary", url)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+
+        r = self.client.post(url, {"state": active_state.pk}, follow=True)
+        self.assertContains(r, "State not changed", status_code=200)
+        statement = Document.objects.get(pk=statement.pk)  # bust the state cache
+        self.assertEqual(statement.get_state(), active_state)
+
+        r = self.client.post(url, {"state": replaced_state.pk}, follow=True)
+        self.assertContains(r, "State changed to", status_code=200)
+        statement = Document.objects.get(pk=statement.pk)  # bust the state cache
+        self.assertEqual(statement.get_state(), replaced_state)
+
+        events_after = statement.docevent_set.count()
+        self.assertEqual(events_after, events_before + 1)
+        event = statement.docevent_set.first()
+        self.assertEqual(event.type, "changed_state")
+        self.assertEqual(
+            event.desc, "Statement State changed to <b>Replaced</b> from Active"
+        )

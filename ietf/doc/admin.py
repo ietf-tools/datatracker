@@ -1,10 +1,11 @@
-# Copyright The IETF Trust 2010-2021, All Rights Reserved
+# Copyright The IETF Trust 2010-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 from django.contrib import admin
 from django.db import models
 from django import forms
+from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document, RelatedDocHistory,
     DocHistoryAuthor, DocHistory, DocReminder, DocEvent, NewRevisionDocEvent,
@@ -12,7 +13,7 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
     ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
-    BofreqEditorDocEvent, BofreqResponsibleDocEvent )
+    BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject )
 
 from ietf.utils.validators import validate_external_resource_value
 
@@ -218,3 +219,20 @@ class DocExtResourceAdmin(admin.ModelAdmin):
     search_fields = ['doc__name', 'value', 'display_name', 'name__slug',]
     raw_id_fields = ['doc', ]
 admin.site.register(DocExtResource, DocExtResourceAdmin)
+
+class StoredObjectAdmin(admin.ModelAdmin):
+    list_display = ['store', 'name', 'doc_name', 'modified', 'is_deleted']
+    list_filter = [
+        'store',
+        ('modified', DateRangeQuickSelectListFilterBuilder()),
+        ('deleted', DateRangeQuickSelectListFilterBuilder()),
+    ]
+    search_fields = ['name', 'doc_name', 'doc_rev']
+    list_display_links = ['name']
+
+    @admin.display(boolean=True, description="Deleted?", ordering="deleted")
+    def is_deleted(self, instance):
+        return instance.deleted is not None
+    
+
+admin.site.register(StoredObject, StoredObjectAdmin)

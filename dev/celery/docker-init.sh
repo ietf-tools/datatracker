@@ -49,11 +49,16 @@ if [[ -n "${CELERY_GID}" ]]; then
 fi
 
 run_as_celery_uid () {
-  SU_OPTS=()
-  if [[ -n "${CELERY_GROUP}" ]]; then
-    SU_OPTS+=("-g" "${CELERY_GROUP}")
+  IAM=$(whoami)
+  if [ "${IAM}" = "${CELERY_USERNAME:-root}" ]; then
+    SU_OPTS=()
+    if [[ -n "${CELERY_GROUP}" ]]; then
+      SU_OPTS+=("-g" "${CELERY_GROUP}")
+    fi
+    su "${SU_OPTS[@]}" "${CELERY_USERNAME:-root}" -s /bin/sh -c "$*"
+  else
+    /bin/sh -c "$*"
   fi
-  su "${SU_OPTS[@]}" "${CELERY_USERNAME:-root}" -s /bin/sh -c "$@"
 }
 
 log_term_timing_msgs () {
@@ -94,7 +99,7 @@ if [[ -n "${DEV_MODE}" ]]; then
             --recursive \
             --debounce-interval 5 \
             -- \
-            celery --app="${CELERY_APP:-ietf}" "${CELERY_OPTS[@]}" "$@" &
+            celery --app="${CELERY_APP:-ietf}" "${CELERY_OPTS[@]}" $@ &
   celery_pid=$!
 else
   celery --app="${CELERY_APP:-ietf}" "${CELERY_OPTS[@]}" "$@" &

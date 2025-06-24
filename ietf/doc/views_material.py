@@ -3,8 +3,8 @@
 
 
 # views for managing group materials (slides, ...)
-import io
 import os
+from pathlib import Path
 import re
 
 from django import forms
@@ -162,9 +162,23 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                 f = form.cleaned_data["material"]
                 file_ext = os.path.splitext(f.name)[1]
 
-                with io.open(os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + file_ext), 'wb+') as dest:
+                basename = f"{doc.name}-{doc.rev}{file_ext}" # Note the lack of a . before file_ext - see os.path.splitext
+                filepath = Path(doc.get_file_path()) / basename
+                with filepath.open('wb+') as dest:
                     for chunk in f.chunks():
                         dest.write(chunk)
+                f.seek(0)
+                doc.store_file(basename, f)
+                if not doc.meeting_related():
+                    log.assertion('doc.type_id == "slides"')
+                    ftp_filepath = Path(settings.FTP_DIR) / doc.type_id / basename
+                    try:
+                        os.link(filepath, ftp_filepath) # Path.hardlink is not available until 3.10
+                    except IOError as ex:
+                        log.log(
+                            "There was an error creating a hardlink at %s pointing to %s: %s"
+                            % (ftp_filepath, filepath, ex)
+                        )
 
             if prev_rev != doc.rev:
                 e = NewRevisionDocEvent(type="new_revision", doc=doc, rev=doc.rev)

@@ -183,6 +183,14 @@ STATIC_IETF_ORG = "https://static.ietf.org"
 # Server-side static.ietf.org URL (used in pdfized)
 STATIC_IETF_ORG_INTERNAL = STATIC_IETF_ORG
 
+ENABLE_BLOBSTORAGE = True
+
+# "standard" retry mode is used, which does exponential backoff with a base factor of 2
+# and a cap of 20. 
+BLOBSTORAGE_MAX_ATTEMPTS = 5  # boto3 default is 3 (for "standard" retry mode)
+BLOBSTORAGE_CONNECT_TIMEOUT = 10  # seconds; boto3 default is 60
+BLOBSTORAGE_READ_TIMEOUT = 10  # seconds; boto3 default is 60
+
 WSGI_APPLICATION = "ietf.wsgi.application"
 
 AUTHENTICATION_BACKENDS = ( 'ietf.ietfauth.backends.CaseInsensitiveModelBackend', )
@@ -452,17 +460,20 @@ INSTALLED_APPS = [
     'django_vite',
     'django_bootstrap5',
     'django_celery_beat',
+    'django_celery_results',
     'corsheaders',
     'django_markup',
     'oidc_provider',
     'drf_spectacular',
     'drf_standardized_errors',
     'rest_framework',
+    'rangefilter',
     'simple_history',
     'tastypie',
     'widget_tweaks',
     # IETF apps
     'ietf.api',
+    'ietf.blobdb',
     'ietf.community',
     'ietf.dbtemplate',
     'ietf.doc',
@@ -735,6 +746,43 @@ URL_REGEXPS = {
     "schedule_name": r"(?P<name>[A-Za-z0-9-:_]+)",
 }
 
+STORAGES: dict[str, Any] = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
+# Storages for artifacts stored as blobs
+ARTIFACT_STORAGE_NAMES: list[str] = [
+    "bofreq",
+    "charter",
+    "conflrev",
+    "active-draft",
+    "draft",
+    "slides",
+    "minutes",
+    "agenda",
+    "bluesheets",
+    "procmaterials",
+    "narrativeminutes",
+    "statement",
+    "statchg",
+    "liai-att",
+    "chatlog",
+    "polls",
+    "staging",
+    "bibxml-ids",
+    "indexes",
+    "floorplan",
+    "meetinghostlogo",
+    "photo",
+    "review",
+]
+for storagename in ARTIFACT_STORAGE_NAMES:
+    STORAGES[storagename] = {
+        "BACKEND": "ietf.doc.storage.StoredObjectBlobdbStorage",
+        "OPTIONS": {"bucket_name": storagename},
+    }
+
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
 
@@ -744,13 +792,14 @@ INTERNET_DRAFT_PDF_PATH = '/a/www/ietf-datatracker/pdf/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
 CHARTER_PATH = '/a/ietfdata/doc/charter/'
 CHARTER_COPY_PATH = '/a/www/ietf-ftp/ietf'  # copy 1wg-charters files here if set
+CHARTER_COPY_OTHER_PATH = '/a/ftp/ietf'
+CHARTER_COPY_THIRD_PATH = '/a/ftp/charter'
 GROUP_SUMMARY_PATH = '/a/www/ietf-ftp/ietf'
 BOFREQ_PATH = '/a/ietfdata/doc/bofreq/'
 CONFLICT_REVIEW_PATH = '/a/ietfdata/doc/conflict-review'
 STATUS_CHANGE_PATH = '/a/ietfdata/doc/status-change'
 AGENDA_PATH = '/a/www/www6s/proceedings/'
 MEETINGHOST_LOGO_PATH = AGENDA_PATH  # put these in the same place as other proceedings files
-IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
 # Move drafts to this directory when they expire
 INTERNET_DRAFT_ARCHIVE_DIR = '/a/ietfdata/doc/draft/collection/draft-archive/'
 # The following directory contains copies of all drafts - it used to be
@@ -760,12 +809,15 @@ MEETING_RECORDINGS_DIR = '/a/www/audio'
 DERIVED_DIR = '/a/ietfdata/derived'
 FTP_DIR = '/a/ftp'
 ALL_ID_DOWNLOAD_DIR = '/a/www/www6s/download'
+NFS_METRICS_TMP_DIR = '/a/tmp'
 
 DOCUMENT_FORMAT_ALLOWLIST = ["txt", "ps", "pdf", "xml", "html", ]
 
 # Mailing list info URL for lists hosted on the IETF servers
 MAILING_LIST_INFO_URL = "https://mailman3.%(domain)s/mailman3/lists/%(list_addr)s.%(domain)s"
 MAILING_LIST_ARCHIVE_URL = "https://mailarchive.ietf.org"
+MAILING_LIST_ARCHIVE_SEARCH_URL = "https://mailarchive.ietf.org/api/v1/message/search/"
+MAILING_LIST_ARCHIVE_API_KEY = "changeme"
 
 # Liaison Statement Tool settings (one is used in DOC_HREFS below)
 LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <statements@' + IETF_DOMAIN + '>'
@@ -1061,10 +1113,18 @@ TZDATA_ICS_PATH = BASE_DIR + '/../vzic/zoneinfo/'
 
 DATATRACKER_MAX_UPLOAD_SIZE = 40960000
 PPT2PDF_COMMAND = [
-    "/usr/bin/soffice", "--headless", "--convert-to", "pdf:writer_globaldocument_pdf_Export", "--outdir"
+    "/usr/bin/soffice",
+    "--headless", # no GUI
+    "--safe-mode", # use a new libreoffice profile every time (ensures no reliance on accumulated profile config)
+    "--norestore", # don't attempt to restore files after a previous crash (ensures that one crash won't block future conversions until UI intervention)
+    "--convert-to", "pdf:writer_globaldocument_pdf_Export",
+    "--outdir"
 ]
 
 STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/'
+REGISTRATION_PARTICIPANTS_API_URL = 'https://registration.ietf.org/api/v1/participants-dt/'
+REGISTRATION_PARTICIPANTS_API_KEY = 'changeme'
+
 PROCEEDINGS_VERSION_CHANGES = [
     0,   # version 1
     97,  # version 2: meeting 97 and later (was number was NEW_PROCEEDINGS_START)
@@ -1219,13 +1279,19 @@ CELERY_TIMEZONE = 'UTC'
 CELERY_BROKER_URL = 'amqp://mq/'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
+CELERY_BEAT_CRON_STARTING_DEADLINE = 1800  # seconds after a missed deadline before abandoning a cron task
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # the default, but setting it squelches a warning
 # Use a result backend so we can chain tasks. This uses the rpc backend, see
 # https://docs.celeryq.dev/en/stable/userguide/tasks.html#rpc-result-backend-rabbitmq-qpid
 # Results can be retrieved only once and only by the caller of the task. Results will be
 # lost if the message broker restarts.
-CELERY_RESULT_BACKEND = 'rpc://'  # sends a msg via the msg broker
+CELERY_RESULT_BACKEND = 'django-cache'  # use a Django cache for results
+CELERY_CACHE_BACKEND = 'celery-results'  # which Django cache to use
+CELERY_RESULT_EXPIRES = datetime.timedelta(minutes=5)  # how long are results valid? (Default is 1 day)
 CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled for a task
+CELERY_TASK_ROUTES = {
+    "ietf.blobdb.tasks.pybob_the_blob_replicator_task": {"queue": "blobdb"}
+}
 
 # Meetecho API setup: Uncomment this and provide real credentials to enable
 # Meetecho conference creation for interim session requests
@@ -1307,6 +1373,11 @@ if "CACHES" not in locals():
                     "MAX_ENTRIES": 5000,
                 },
             },
+            "celery-results": {
+                "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+                "KEY_PREFIX": "ietf:celery",
+            },
         }
     else:
         CACHES = {
@@ -1345,6 +1416,11 @@ if "CACHES" not in locals():
                     "MAX_ENTRIES": 5000,
                 },
             },
+            "celery-results": {
+                "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+                "LOCATION": "app:11211",
+                "KEY_PREFIX": "ietf:celery",
+            },
         }
 
 PUBLISH_IPR_STATES = ['posted', 'removed', 'removed_objfalse']
@@ -1382,3 +1458,6 @@ if SERVER_MODE != 'production':
     CSRF_TRUSTED_ORIGINS += ['http://localhost:8000', 'http://127.0.0.1:8000', 'http://[::1]:8000']
     SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_SAMESITE = 'Lax'
+
+
+YOUTUBE_DOMAINS = ['www.youtube.com', 'youtube.com', 'youtu.be', 'm.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com']

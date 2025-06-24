@@ -1,6 +1,7 @@
 name: Report a Datatracker bug
 description: Something in the datatracker's behavior isn't right? File a bug report. Don't use this to report RFC errata or issues with the content of Internet-Drafts.
 labels: ["bug"]
+type: Bug
 body:
   - type: markdown
     attributes:

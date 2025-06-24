@@ -29,6 +29,7 @@ from ietf.community.models import CommunityList
 from ietf.community.utils import reset_name_contains_index_for_rule
 from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, CharterFactory, BallotDocEventFactory
 from ietf.doc.models import Document, DocEvent, State
+from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.admin import GroupForm as AdminGroupForm
 from ietf.group.factories import (GroupFactory, RoleFactory, GroupEventFactory, 
@@ -62,6 +63,8 @@ class GroupPagesTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [
         "CHARTER_PATH",
         "CHARTER_COPY_PATH",
+        "CHARTER_COPY_OTHER_PATH", # Note: not explicitly testing use of 
+        "CHARTER_COPY_THIRD_PATH", #       either of these settings
         "GROUP_SUMMARY_PATH",
     ]
 
@@ -301,20 +304,26 @@ class GroupPagesTests(TestCase):
 
         generate_wg_summary_files_task()
 
-        summary_by_area_contents = (
-            Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary.txt"
-        ).read_text(encoding="utf8")
-        self.assertIn(group.parent.name, summary_by_area_contents)
-        self.assertIn(group.acronym, summary_by_area_contents)
-        self.assertIn(group.name, summary_by_area_contents)
-        self.assertIn(chair.address, summary_by_area_contents)
+        for summary_by_area_contents in [
+            (
+                Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary.txt"
+            ).read_text(encoding="utf8"),
+            retrieve_str("indexes", "1wg-summary.txt")
+        ]:
+            self.assertIn(group.parent.name, summary_by_area_contents)
+            self.assertIn(group.acronym, summary_by_area_contents)
+            self.assertIn(group.name, summary_by_area_contents)
+            self.assertIn(chair.address, summary_by_area_contents)
 
-        summary_by_acronym_contents = (
-            Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary-by-acronym.txt"
-        ).read_text(encoding="utf8")
-        self.assertIn(group.acronym, summary_by_acronym_contents)
-        self.assertIn(group.name, summary_by_acronym_contents)
-        self.assertIn(chair.address, summary_by_acronym_contents)
+        for summary_by_acronym_contents in [
+            (
+                Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary-by-acronym.txt"
+            ).read_text(encoding="utf8"),
+            retrieve_str("indexes", "1wg-summary-by-acronym.txt")
+        ]:
+            self.assertIn(group.acronym, summary_by_acronym_contents)
+            self.assertIn(group.name, summary_by_acronym_contents)
+            self.assertIn(chair.address, summary_by_acronym_contents)
 
     def test_chartering_groups(self):
         group = CharterFactory(group__type_id='wg',group__parent=GroupFactory(type_id='area'),states=[('charter','intrev')]).group

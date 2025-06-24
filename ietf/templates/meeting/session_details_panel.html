@@ -109,7 +109,7 @@
                 </a>
             {% endif %}
             {% if not session.type_counter.minutes %}
-                <a class="btn btn-primary" href="{% url 'ietf.meeting.views.import_session_minutes' num=session.meeting.number session_id=session.pk %}">Import minutes from notes.ietf.org</a>
+                <a class="btn {% if future %}btn-warning" title="Session has not ended yet{% else %}btn-primary{% endif %}" href="{% url 'ietf.meeting.views.import_session_minutes' num=session.meeting.number session_id=session.pk %}">Import minutes from notes.ietf.org</a>
                 <a class="btn btn-primary"
                    href="{% url 'ietf.meeting.views.upload_session_minutes' session_id=session.pk num=session.meeting.number %}">
                     Upload minutes
@@ -310,7 +310,7 @@
         <table class="table table-sm table-striped meeting-tools"
                id="notes_and_recordings_{{ session.pk }}">
             <tbody>
-            {% if session.uses_notes %}
+            {% if meeting.uses_notes %}
                 <tr>
                     <td>
                         <a href="{{ session.notes_url }}">
@@ -368,5 +368,13 @@
             </tbody>
         </table>
     {% endif %}
+
+    {% if can_manage_materials %}
+        <a class="btn btn-primary"
+            href="{% url 'ietf.meeting.views.add_session_recordings' session_id=session.pk num=session.meeting.number %}">
+            Link additional recordings to session
+        </a>
+    {% endif %}
+
 {% endwith %}{% endwith %}
 {% endfor %}

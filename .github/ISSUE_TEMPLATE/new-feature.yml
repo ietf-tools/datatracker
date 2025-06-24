@@ -1,6 +1,7 @@
 name: Suggest new feature or enhancement
 description: Propose a new idea to be implemented.
 labels: ["enhancement"]
+type: Feature
 body:
   - type: markdown
     attributes:

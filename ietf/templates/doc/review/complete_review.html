@@ -93,14 +93,20 @@
             <a class="btn btn-secondary float-end" href="{{ doc.get_absolute_url }}">Back</a>
         {% endif %}
         <div class="template d-none">
-            {% if mail_archive_query_urls %}
-                <div class="mail-archive-search">
+            {% if mail_archive_query_data %}
+                <div class="mail-archive-search"
+                    {% if assignment %}
+                     data-search-mail-archive-url="{% url "ietf.doc.views_review.search_mail_archive" name=doc.name assignment_id=assignment.pk %}"
+                    {% else %}
+                     data-search-mail-archive-url="{% url "ietf.doc.views_review.search_mail_archive" name=doc.name acronym=team.acronym %}"
+                    {% endif %}
+                     data-is-reviewer="{{ is_reviewer|yesno:"true,false" }}">
                     <div class="offset-md-2 col-md-10">
                         <label for="mail-archive-subjects" class="form-label">Search {{team.list_email}} mail archive subjects for:</label>
                         <div class="input-group mb-3">
                             <input type="text" id="mail-archive-subjects"
                                    class="query-input form-control"
-                                   value="{{ mail_archive_query_urls.query }}">
+                                   value="{{ mail_archive_query_data.query_value }}">
                             <button type="button" class="search btn btn-primary">Search</button>
                         </div>
                         <div class="retrieving d-none my-3">
@@ -144,13 +150,5 @@
 {% endblock %}
 {% block js %}
     <script src="{% static 'ietf/js/datepicker.js' %}"></script>
-    <script>
-        {% if assignment %}
-            var searchMailArchiveUrl = "{% url "ietf.doc.views_review.search_mail_archive" name=doc.name assignment_id=assignment.pk %}";
-        {% else %}
-            var searchMailArchiveUrl = "{% url "ietf.doc.views_review.search_mail_archive" name=doc.name acronym=team.acronym %}";
-        {% endif %}
-        var isReviewer = {{ is_reviewer|yesno:'true,false' }};
-    </script>
     <script src="{% static 'ietf/js/complete-review.js' %}"></script>
 {% endblock %}

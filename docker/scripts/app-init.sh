@@ -73,6 +73,11 @@ echo "Creating data directories..."
 chmod +x ./docker/scripts/app-create-dirs.sh
 ./docker/scripts/app-create-dirs.sh
 
+# Configure the development blobstore
+
+echo "Configuring blobstore..."
+PYTHONPATH=/workspace python ./docker/scripts/app-configure-blobstore.py
+
 # Download latest coverage results file
 
 echo "Downloading latest coverage results file..."
@@ -96,8 +101,10 @@ echo "Running initial checks..."
 /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check --settings=settings_local
 
 # Migrate, adjusting to what the current state of the underlying database might be:
-
 /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --fake-initial --settings=settings_local
+
+# Apply migrations to the blobdb database as well (most are skipped)
+/usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local --database=blobdb
 
 if [ -z "$EDITOR_VSCODE" ]; then
     CODE=0

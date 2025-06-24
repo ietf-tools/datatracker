@@ -22,7 +22,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import Document, State, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.group.utils import groups_managed_by
-from ietf.meeting.models import Session, Meeting, Schedule, countries, timezones, TimeSlot, Room
+from ietf.meeting.models import Session, Meeting, Schedule, COUNTRIES, TIMEZONES, TimeSlot, Room
 from ietf.meeting.helpers import get_next_interim_number, make_materials_directories
 from ietf.meeting.helpers import is_interim_meeting_approved, get_next_agenda_name
 from ietf.message.models import Message
@@ -37,11 +37,6 @@ from ietf.utils.fields import (
 )
 from ietf.utils.validators import ( validate_file_size, validate_mime_type,
     validate_file_extension, validate_no_html_frame)
-
-# need to insert empty option for use in ChoiceField
-# countries.insert(0, ('', '-'*9 ))
-countries.insert(0, ('', '-' * 9))
-timezones.insert(0, ('', '-' * 9))
 
 # -------------------------------------------------
 # Helpers
@@ -140,12 +135,12 @@ class InterimMeetingModelForm(forms.ModelForm):
     approved = forms.BooleanField(required=False)
     city = forms.CharField(max_length=255, required=False)
     city.widget.attrs['placeholder'] = "City"
-    country = forms.ChoiceField(choices=countries, required=False)
+    country = forms.ChoiceField(choices=COUNTRIES, required=False)
     country.widget.attrs['class'] = "select2-field"
     country.widget.attrs['data-max-entries'] = 1
     country.widget.attrs['data-placeholder'] = "Country"
     country.widget.attrs['data-minimum-input-length'] = 0
-    time_zone = forms.ChoiceField(choices=timezones)
+    time_zone = forms.ChoiceField(choices=TIMEZONES)
     time_zone.widget.attrs['class'] = "select2-field"
     time_zone.widget.attrs['data-max-entries'] = 1
     time_zone.widget.attrs['data-minimum-input-length'] = 0
@@ -361,6 +356,7 @@ class InterimSessionModelForm(forms.ModelForm):
             os.makedirs(directory)
         with io.open(path, "w", encoding='utf-8') as file:
             file.write(self.cleaned_data['agenda'])
+        doc.store_str(doc.uploaded_filename, self.cleaned_data['agenda'])
 
 
 class InterimAnnounceForm(forms.ModelForm):

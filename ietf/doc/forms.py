@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2020, All Rights Reserved
+# Copyright The IETF Trust 2013-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -9,7 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import validate_email
 
 from ietf.doc.fields import SearchableDocumentField, SearchableDocumentsField
-from ietf.doc.models import RelatedDocument, DocExtResource
+from ietf.doc.models import RelatedDocument, DocExtResource, State
 from ietf.iesg.models import TelechatDate
 from ietf.iesg.utils import telechat_page_count
 from ietf.person.fields import SearchablePersonField, SearchablePersonsField
@@ -61,7 +61,7 @@ class DocAuthorChangeBasisForm(forms.Form):
     basis = forms.CharField(max_length=255, 
                             label='Reason for change', 
                             help_text='What is the source or reasoning for the changes to the author list?')
-    
+
 class AdForm(forms.Form):
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active", role__group__type='area').order_by('name'),
                                 label="Shepherding AD", empty_label="(None)", required=True)
@@ -276,6 +276,7 @@ class InvestigateForm(forms.Form):
         ),
         min_length=8,
     )
+    task_id = forms.CharField(required=False, widget=forms.HiddenInput)
 
     def clean_name_fragment(self):
         disallowed_characters = ["%", "/", "\\", "*"]
@@ -287,3 +288,10 @@ class InvestigateForm(forms.Form):
         if any(c in name_fragment for c in disallowed_characters):
             raise ValidationError(f"The following characters are disallowed: {', '.join(disallowed_characters)}")
         return name_fragment
+
+
+class ChangeStatementStateForm(forms.Form):
+    state = forms.ModelChoiceField(
+        State.objects.filter(used=True, type="statement"),
+        empty_label=None,
+    )

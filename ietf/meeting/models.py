@@ -1,5 +1,4 @@
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
-# -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2007-2025, All Rights Reserved
 
 
 # old meeting models can be found in ../proceedings/models.py
@@ -34,12 +33,12 @@ from ietf.group.utils import can_manage_materials
 from ietf.name.models import (
     MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName,
     ImportantDateName, TimerangeName, SlideSubmissionStatusName, ProceedingsMaterialTypeName,
-    SessionPurposeName,
+    SessionPurposeName, AttendanceTypeName, RegistrationTicketTypeName
 )
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
 from ietf.utils.history import find_history_replacements_active_at, find_history_active_at
-from ietf.utils.storage import NoLocationMigrationFileSystemStorage
+from ietf.utils.storage import BlobShadowFileSystemStorage
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import datetime_from_date, date_today
 from ietf.utils.models import ForeignKey
@@ -49,15 +48,20 @@ from ietf.utils.validators import (
 )
 from ietf.utils.fields import MissingOkImageField
 
-countries = list(pytz.country_names.items())
-countries.sort(key=lambda x: x[1])
+# Set up countries / timezones, including an empty choice for fields
+EMPTY_CHOICE = ("", "-" * 9)
+COUNTRIES = (EMPTY_CHOICE,) + tuple(
+    sorted(pytz.country_names.items(), key=lambda x: x[1])
+)
 
-timezones = []
-for name in pytz.common_timezones:
-    tzfn = os.path.join(settings.TZDATA_ICS_PATH, name + ".ics")
-    if not os.path.islink(tzfn):
-        timezones.append((name, name))
-timezones.sort()
+_tzdata_ics_path = Path(settings.TZDATA_ICS_PATH)
+TIMEZONES = (EMPTY_CHOICE,) + tuple(
+    sorted(
+        (name, name)
+        for name in pytz.common_timezones
+        if name != "GMT" and not (_tzdata_ics_path / f"{name}.ics").is_symlink()
+    )
+)
 
 
 class Meeting(models.Model):
@@ -72,11 +76,11 @@ class Meeting(models.Model):
     days = models.IntegerField(default=7, null=False, validators=[MinValueValidator(1)],
         help_text="The number of days the meeting lasts")
     city = models.CharField(blank=True, max_length=255)
-    country = models.CharField(blank=True, max_length=2, choices=countries)
+    country = models.CharField(blank=True, max_length=2, choices=COUNTRIES)
     # We can't derive time-zone from country, as there are some that have
     # more than one timezone, and the pytz module doesn't provide timezone
     # lookup information for all relevant city/country combinations.
-    time_zone = models.CharField(max_length=255, choices=timezones, default='UTC')
+    time_zone = models.CharField(max_length=255, choices=TIMEZONES, default='UTC')
     idsubmit_cutoff_day_offset_00 = models.IntegerField(blank=True,
         default=settings.IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_00,
         help_text = "The number of days before the meeting start date when the submission of -00 drafts will be closed.")
@@ -233,9 +237,9 @@ class Meeting(models.Model):
         ).order_by('type__order')
 
     def get_attendance(self):
-        """Get the meeting attendance from the MeetingRegistrations
+        """Get the meeting attendance from the Registrations
 
-        Returns a NamedTuple with onsite and online attributes. Returns None if the record is unavailable
+        Returns a NamedTuple with onsite and remote attributes. Returns None if the record is unavailable
         for this meeting.
         """
         number = self.get_number()
@@ -247,10 +251,10 @@ class Meeting(models.Model):
         # We've separated session attendance off to ietf.meeting.Attended, but need to report attendance at older
         # meetings correctly.
 
-        attended_per_meetingregistration = (
-            Q(meetingregistration__meeting=self) & (
-                Q(meetingregistration__attended=True) |
-                Q(meetingregistration__checkedin=True)
+        attended_per_meeting_registration = (
+            Q(registration__meeting=self) & (
+                Q(registration__attended=True) |
+                Q(registration__checkedin=True)
             )
         )
         attended_per_meeting_attended = (
@@ -260,11 +264,11 @@ class Meeting(models.Model):
             # is good enough, just attending e.g. a training session is also good enough
         )
         attended = Person.objects.filter(
-            attended_per_meetingregistration | attended_per_meeting_attended
+            attended_per_meeting_registration | attended_per_meeting_attended
         ).distinct()
 
-        onsite=set(attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='onsite'))
-        remote=set(attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='remote'))
+        onsite = set(attended.filter(registration__meeting=self, registration__tickets__attendance_type__slug='onsite'))
+        remote = set(attended.filter(registration__meeting=self, registration__tickets__attendance_type__slug='remote'))
         remote.difference_update(onsite)
 
         return Attendance(
@@ -527,7 +531,12 @@ class FloorPlan(models.Model):
     modified= models.DateTimeField(auto_now=True)
     meeting = ForeignKey(Meeting)
     order   = models.SmallIntegerField()
-    image   = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=floorplan_path, blank=True, default=None)
+    image   = models.ImageField(
+        storage=BlobShadowFileSystemStorage(kind="floorplan"),
+        upload_to=floorplan_path,
+        blank=False,
+        default=None,
+    )
     #
     class Meta:
         ordering = ['-id',]
@@ -1380,7 +1389,7 @@ class SlideSubmission(models.Model):
     apply_to_all = models.BooleanField(default=False)
     submitter = ForeignKey(Person)
     status      = ForeignKey(SlideSubmissionStatusName, null=True, default='pending', on_delete=models.SET_NULL)
-    doc         = ForeignKey(Document, null=True, on_delete=models.SET_NULL)
+    doc         = ForeignKey(Document, blank=True, null=True, on_delete=models.SET_NULL)
 
     def staged_filepath(self):
         return os.path.join(settings.SLIDE_STAGING_PATH , self.filename)
@@ -1431,8 +1440,12 @@ class MeetingHost(models.Model):
     """Meeting sponsor"""
     meeting = ForeignKey(Meeting, related_name='meetinghosts')
     name = models.CharField(max_length=255, blank=False)
+    # TODO-BLOBSTORE - capture these logos and look for other ImageField like model fields.
     logo = MissingOkImageField(
-        storage=NoLocationMigrationFileSystemStorage(location=settings.MEETINGHOST_LOGO_PATH),
+        storage=BlobShadowFileSystemStorage(
+            kind="meetinghostlogo",
+            location=settings.MEETINGHOST_LOGO_PATH,
+        ),
         upload_to=_host_upload_path,
         width_field='logo_width',
         height_field='logo_height',
@@ -1474,3 +1487,48 @@ class Attended(models.Model):
 
     def __str__(self):
         return f'{self.person} at {self.session}'
+
+
+class RegistrationManager(models.Manager):
+    def onsite(self):
+        return self.get_queryset().filter(tickets__attendance_type__slug='onsite')
+
+    def remote(self):
+        return self.get_queryset().filter(tickets__attendance_type__slug='remote').exclude(tickets__attendance_type__slug='onsite')
+
+class Registration(models.Model):
+    """Registration attendee records from the IETF registration system"""
+    meeting = ForeignKey(Meeting)
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    affiliation = models.CharField(blank=True, max_length=255)
+    country_code = models.CharField(max_length=2)        # ISO 3166
+    person = ForeignKey(Person, blank=True, null=True, on_delete=models.PROTECT)
+    email = models.EmailField(blank=True, null=True)
+    # attended was used prior to the introduction of the ietf.meeting.Attended model and is still used by
+    # Meeting.get_attendance() for older meetings. It should not be used except for dealing with legacy data.
+    attended = models.BooleanField(default=False)
+    # checkedin indicates that the badge was picked up
+    checkedin = models.BooleanField(default=False)
+
+    # custom manager
+    objects = RegistrationManager()
+
+    def __str__(self):
+        return "{} {}".format(self.first_name, self.last_name)
+
+    @property
+    def attendance_type(self):
+        if self.tickets.filter(attendance_type__slug='onsite').exists():
+            return 'onsite'
+        elif self.tickets.filter(attendance_type__slug='remote').exists():
+            return 'remote'
+        return None
+
+class RegistrationTicket(models.Model):
+    registration = ForeignKey(Registration, related_name='tickets')
+    attendance_type = ForeignKey(AttendanceTypeName, on_delete=models.PROTECT)
+    ticket_type = ForeignKey(RegistrationTicketTypeName, on_delete=models.PROTECT)
+
+    def __str__(self):
+        return "{}:{}".format(self.attendance_type, self.ticket_type)

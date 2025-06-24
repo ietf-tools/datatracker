@@ -38,7 +38,7 @@ jobs:
         ssh-keyscan -t rsa $vminfo >> ~/.ssh/known_hosts
 
     - name: Remote SSH into VM
-      uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17
+      uses: appleboy/ssh-action@2ead5e36573f08b82fbfce1504f1a4b05a647c6f
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:

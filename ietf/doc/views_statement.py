@@ -1,4 +1,5 @@
-# Copyright The IETF Trust 2023, All Rights Reserved
+# Copyright The IETF Trust 2023-2025, All Rights Reserved
+from django.contrib import messages
 
 import debug  # pyflakes: ignore
 
@@ -6,10 +7,13 @@ from pathlib import Path
 
 from django import forms
 from django.conf import settings
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponseRedirect
 from django.views.decorators.cache import cache_control
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template.loader import render_to_string
+
+from ietf.doc.forms import ChangeStatementStateForm
+from ietf.doc.utils import add_state_change_event
 from ietf.utils import markdown
 from django.utils.html import escape
 
@@ -137,12 +141,15 @@ def submit(request, name):
                 mode="wb" if writing_pdf else "w"
             ) as destination:
                 if writing_pdf:
-                    for chunk in form.cleaned_data["statement_file"].chunks():
+                    f = form.cleaned_data["statement_file"]
+                    for chunk in f.chunks():
                         destination.write(chunk)
+                    f.seek(0)
+                    statement.store_file(statement.uploaded_filename, f)
                 else:
                     destination.write(markdown_content)
+                    statement.store_str(statement.uploaded_filename, markdown_content)
             return redirect("ietf.doc.views_doc.document_main", name=statement.name)
-
     else:
         if statement.uploaded_filename.endswith("pdf"):
             text = CONST_PDF_REV_NOTICE
@@ -254,10 +261,14 @@ def new_statement(request):
                 mode="wb" if writing_pdf else "w"
             ) as destination:
                 if writing_pdf:
-                    for chunk in form.cleaned_data["statement_file"].chunks():
+                    f = form.cleaned_data["statement_file"]
+                    for chunk in f.chunks():
                         destination.write(chunk)
+                        f.seek(0)
+                        statement.store_file(statement.uploaded_filename, f)
                 else:
                     destination.write(markdown_content)
+                    statement.store_str(statement.uploaded_filename, markdown_content)
             return redirect("ietf.doc.views_doc.document_main", name=statement.name)
 
     else:
@@ -271,3 +282,40 @@ def new_statement(request):
         }
         form = NewStatementForm(initial=init)
     return render(request, "doc/statement/new_statement.html", {"form": form})
+
+
+@role_required("Secretariat")
+def change_statement_state(request, name):
+    """Change state of a statement Document"""
+    statement = get_object_or_404(
+        Document.objects.filter(type_id="statement"),
+        name=name,
+    )
+    if request.method == "POST":
+        form = ChangeStatementStateForm(request.POST)
+        if form.is_valid():
+            new_state = form.cleaned_data["state"]
+            prev_state = statement.get_state()
+            if new_state == prev_state:
+                messages.info(request, f"State not changed, remains {prev_state}.")
+            else:
+                statement.set_state(new_state)
+                e = add_state_change_event(
+                    statement,
+                    request.user.person,
+                    prev_state,
+                    new_state,
+                )
+                statement.save_with_history([e])
+                messages.success(request, f"State changed to {new_state}.")
+            return HttpResponseRedirect(statement.get_absolute_url())
+    else:
+        form = ChangeStatementStateForm(initial={"state": statement.get_state()})
+    return render(
+        request,
+        "doc/statement/change_statement_state.html",
+        {
+            "form": form,
+            "statement": statement,
+        },
+    )

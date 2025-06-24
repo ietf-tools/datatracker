@@ -26,10 +26,11 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import BallotDocEvent, Document
 from ietf.doc.models import ConsensusDocEvent
 from ietf.ietfauth.utils import can_request_rfc_publication as utils_can_request_rfc_publication
-from ietf.utils.html import sanitize_fragment
 from ietf.utils import log
 from ietf.doc.utils import prettify_std_name
-from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped, bleach_linker, bleach_cleaner, validate_url
+from ietf.utils.html import clean_html
+from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped, linkify
+from ietf.utils.validators import validate_url
 
 register = template.Library()
 
@@ -98,7 +99,7 @@ def sanitize(value):
     attributes to those deemed acceptable.  See ietf/utils/html.py
     for the details.
     """
-    return mark_safe(sanitize_fragment(value))
+    return mark_safe(clean_html(value))
 
 
 # For use with ballot view
@@ -446,16 +447,16 @@ def ad_area(user):
 @register.filter
 def format_history_text(text, trunc_words=25):
     """Run history text through some cleaning and add ellipsis if it's too long."""
-    full = mark_safe(bleach_cleaner.clean(text))
-    full = bleach_linker.linkify(urlize_ietf_docs(full))
+    full = mark_safe(clean_html(text))
+    full = linkify(urlize_ietf_docs(full))
 
     return format_snippet(full, trunc_words)
 
 @register.filter
 def format_snippet(text, trunc_words=25): 
     # urlize if there aren't already links present
-    text = bleach_linker.linkify(text)
-    full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_fragment(text)))))
+    text = linkify(text)
+    full = keep_spacing(collapsebr(linebreaksbr(mark_safe(clean_html(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
         return mark_safe('<div class="snippet">%s<button type="button" aria-label="Expand" class="btn btn-sm btn-primary show-all"><i class="bi bi-caret-down"></i></button></div><div class="d-none full">%s</div>' % (snippet, full))
@@ -478,6 +479,19 @@ def state(doc, slug):
     if slug == "stream": # convenient shorthand
         slug = "%s-stream-%s" % (doc.type_id, doc.stream_id)
     return doc.get_state(slug)
+
+
+@register.filter
+def is_unexpected_wg_state(doc):
+    """Returns a flag indicating whether the document has an unexpected wg state."""
+    if not doc.type_id == "draft":
+        return False
+
+    draft_iesg_state = doc.get_state("draft-iesg")
+    draft_stream_state = doc.get_state("draft-stream-ietf")
+
+    return draft_iesg_state.slug != "idexists" and draft_stream_state is not None and draft_stream_state.slug != "sub-pub"
+
 
 @register.filter
 def statehelp(state):
@@ -532,11 +546,14 @@ def ics_date_time(dt, tzname):
     >>> ics_date_time(datetime.datetime(2022,1,2,3,4,5), 'UTC')
     ':20220102T030405Z'
 
+    >>> ics_date_time(datetime.datetime(2022,1,2,3,4,5), 'GmT')
+    ':20220102T030405Z'
+
     >>> ics_date_time(datetime.datetime(2022,1,2,3,4,5), 'America/Los_Angeles')
     ';TZID=America/Los_Angeles:20220102T030405'
     """
     timestamp = dt.strftime('%Y%m%dT%H%M%S')
-    if tzname.lower() == 'utc':
+    if tzname.lower() in ('gmt', 'utc'):
         return f':{timestamp}Z'
     else:
         return f';TZID={ics_esc(tzname)}:{timestamp}'

@@ -4,6 +4,7 @@
 
 import io
 import os
+from pathlib import Path
 
 import debug    # pyflakes:ignore
 
@@ -18,6 +19,7 @@ from ietf.doc.factories import ( DocumentFactory, IndividualRfcFactory,
     WgRfcFactory, DocEventFactory, WgDraftFactory )
 from ietf.doc.models import ( Document, State, DocEvent,
     BallotPositionDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent )
+from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_status_change import default_approval_text
 from ietf.group.models import Person
@@ -70,7 +72,7 @@ class StatusChangeTests(TestCase):
             statchg_relation_row_blah="tois")
         )
         self.assertEqual(r.status_code, 302)
-        status_change = Document.objects.get(name='status-change-imaginary-new')        
+        status_change = Document.objects.get(name='status-change-imaginary-new')
         self.assertEqual(status_change.get_state('statchg').slug,'adrev')
         self.assertEqual(status_change.rev,'00')
         self.assertEqual(status_change.ad.name,'Areað Irector')
@@ -540,7 +542,7 @@ class StatusChangeTests(TestCase):
         DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review',notify='notify@example.org')
 
 class StatusChangeSubmitTests(TestCase):
-    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['STATUS_CHANGE_PATH']
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['STATUS_CHANGE_PATH', 'FTP_PATH']
     def test_initial_submission(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         url = urlreverse('ietf.doc.views_status_change.submit',kwargs=dict(name=doc.name))
@@ -556,15 +558,27 @@ class StatusChangeSubmitTests(TestCase):
         # Right now, nothing to test - we let people put whatever the web browser will let them put into that textbox
 
         # sane post using textbox
-        path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.name, doc.rev))
         self.assertEqual(doc.rev,'00')
-        self.assertFalse(os.path.exists(path))
+        basename = f"{doc.name}-{doc.rev}.txt"
+        filepath = Path(settings.STATUS_CHANGE_PATH) / basename
+        ftp_filepath = Path(settings.FTP_DIR) / "status-changes" / basename
+        self.assertFalse(filepath.exists())
+        self.assertFalse(ftp_filepath.exists())
+        # TODO-BLOBSTORE: next assert is disabled because we currently suppress all exceptions 
+        # with self.assertRaises(FileNotFoundError):
+        #     retrieve_str("statchg",basename)
         r = self.client.post(url,dict(content="Some initial review text\n",submit_response="1"))
         self.assertEqual(r.status_code,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.rev,'00')
-        with io.open(path) as f:
+        with filepath.open() as f:
             self.assertEqual(f.read(),"Some initial review text\n")
+        with ftp_filepath.open() as f:
+            self.assertEqual(f.read(),"Some initial review text\n")
+        self.assertEqual(
+            retrieve_str("statchg", basename),
+            "Some initial review text\n"
+        )
         self.assertTrue( "mid-review-00" in doc.latest_event(NewRevisionDocEvent).desc)
 
     def test_subsequent_submission(self):
@@ -601,7 +615,8 @@ class StatusChangeSubmitTests(TestCase):
         self.assertContains(r, "does not appear to be a text file")
 
         # sane post uploading a file
-        test_file = StringIO("This is a new proposal.")
+        test_content = "This is a new proposal."
+        test_file = StringIO(test_content)
         test_file.name = "unnamed"
         r = self.client.post(url,dict(txt=test_file,submit_response="1"))
         self.assertEqual(r.status_code, 302)
@@ -609,8 +624,12 @@ class StatusChangeSubmitTests(TestCase):
         self.assertEqual(doc.rev,'01')
         path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.name, doc.rev))
         with io.open(path) as f:
-            self.assertEqual(f.read(),"This is a new proposal.")
+            self.assertEqual(f.read(), test_content)
             f.close()
+        self.assertEqual(
+            retrieve_str("statchg", f"{doc.name}-{doc.rev}.txt"),
+            test_content
+        )
         self.assertTrue( "mid-review-01" in doc.latest_event(NewRevisionDocEvent).desc)
 
         # verify reset text button works
@@ -628,3 +647,6 @@ class StatusChangeSubmitTests(TestCase):
     def setUp(self):
         super().setUp()
         DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review',notify='notify@example.org')
+        ftp_subdir=Path(settings.FTP_DIR)/"status-changes"
+        if not ftp_subdir.exists():
+            ftp_subdir.mkdir()

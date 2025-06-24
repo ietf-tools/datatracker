@@ -4,6 +4,7 @@
 
 import io
 import os
+from pathlib import Path
 
 from pyquery import PyQuery
 from textwrap import wrap
@@ -15,6 +16,7 @@ import debug    # pyflakes:ignore
 
 from ietf.doc.factories import IndividualDraftFactory, ConflictReviewFactory, RgDraftFactory
 from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, BallotPositionDocEvent, TelechatDocEvent, State, DocTagName
+from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_conflict_review import default_approval_text
 from ietf.group.models import Person
@@ -387,7 +389,7 @@ class ConflictReviewTests(TestCase):
 
 
 class ConflictReviewSubmitTests(TestCase):
-    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['CONFLICT_REVIEW_PATH']
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['CONFLICT_REVIEW_PATH','FTP_PATH']
     def test_initial_submission(self):
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         url = urlreverse('ietf.doc.views_conflict_review.submit',kwargs=dict(name=doc.name))
@@ -403,9 +405,15 @@ class ConflictReviewSubmitTests(TestCase):
         # Right now, nothing to test - we let people put whatever the web browser will let them put into that textbox
 
         # sane post using textbox
-        path = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (doc.name, doc.rev))
+        basename = f"{doc.name}-{doc.rev}.txt"
+        path = Path(settings.CONFLICT_REVIEW_PATH) / basename
+        ftp_dir = Path(settings.FTP_DIR) / "conflict-reviews"
+        if not ftp_dir.exists():
+            ftp_dir.mkdir()
+        ftp_path = ftp_dir / basename
         self.assertEqual(doc.rev,'00')
-        self.assertFalse(os.path.exists(path))
+        self.assertFalse(path.exists())
+        self.assertFalse(ftp_path.exists())
         r = self.client.post(url,dict(content="Some initial review text\n",submit_response="1"))
         self.assertEqual(r.status_code,302)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
@@ -413,7 +421,9 @@ class ConflictReviewSubmitTests(TestCase):
         with io.open(path) as f:
             self.assertEqual(f.read(),"Some initial review text\n")
             f.close()
+        self.assertTrue(ftp_path.exists())
         self.assertTrue( "submission-00" in doc.latest_event(NewRevisionDocEvent).desc)
+        self.assertEqual(retrieve_str("conflrev",basename), "Some initial review text\n")
 
     def test_subsequent_submission(self):
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')

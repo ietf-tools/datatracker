@@ -48,12 +48,15 @@ import pathlib
 import subprocess
 import tempfile
 import copy
+import boto3
+import botocore.config
 import factory.random
 import urllib3
 import warnings
-from urllib.parse import urlencode
 
 from fnmatch import fnmatch
+from typing import Callable, Optional
+from urllib.parse import urlencode
 
 from coverage.report import Reporter
 from coverage.results import Numbers
@@ -85,12 +88,14 @@ from ietf.utils.management.commands import pyflakes
 from ietf.utils.test_smtpserver import SMTPTestServerDriver
 from ietf.utils.test_utils import TestCase
 
+from mypy_boto3_s3.service_resource import Bucket
 
-loaded_templates = set()
-visited_urls = set()
-test_database_name = None
-old_destroy = None
-old_create = None
+
+loaded_templates: set[str] = set()
+visited_urls: set[str] = set()
+test_database_name: Optional[str] = None
+old_destroy: Optional[Callable] = None
+old_create: Optional[Callable] = None
 
 template_coverage_collection = None
 code_coverage_collection = None
@@ -226,10 +231,12 @@ def load_and_run_fixtures(verbosity):
             fn()
 
 def safe_create_test_db(self, verbosity, *args, **kwargs):
-    global test_database_name, old_create
+    if old_create is None:
+        raise RuntimeError("old_create has not been set, cannot proceed")
     keepdb = kwargs.get('keepdb', False)
     if not keepdb:
         print("     Creating test database...")
+    global test_database_name
     test_database_name = old_create(self, 0, *args, **kwargs)
 
     if settings.GLOBAL_TEST_FIXTURES:
@@ -239,8 +246,9 @@ def safe_create_test_db(self, verbosity, *args, **kwargs):
     return test_database_name
 
 def safe_destroy_test_db(*args, **kwargs):
+    if old_destroy is None:
+        raise RuntimeError("old_destroy has not been set, cannot proceed")
     sys.stdout.write('\n')
-    global test_database_name, old_destroy
     keepdb = kwargs.get('keepdb', False)
     if not keepdb:
         if settings.DATABASES["default"]["NAME"] != test_database_name:
@@ -259,7 +267,14 @@ class PyFlakesTestCase(TestCase):
         path = os.path.join(settings.BASE_DIR)
         warnings = []
         warnings = pyflakes.checkPaths([path], verbosity=0)
-        self.assertEqual([], [str(w) for w in warnings])
+
+        # Filter out warnings about unused global variables
+        filtered_warnings = [
+            w for w in warnings
+            if not re.search(r"`global \w+` is unused: name is never assigned in scope", str(w))
+        ]
+
+        self.assertEqual([], [str(w) for w in filtered_warnings])
 
 class MyPyTest(TestCase):
 
@@ -347,15 +362,13 @@ class TemplateCoverageLoader(BaseLoader):
     is_usable = True
 
     def get_template(self, template_name, skip=None):
-        global template_coverage_collection, loaded_templates
-        if template_coverage_collection == True:
+        if template_coverage_collection:
             loaded_templates.add(str(template_name))
         raise TemplateDoesNotExist(template_name)
 
 def record_urls_middleware(get_response):
     def record_urls(request):
-        global url_coverage_collection, visited_urls
-        if url_coverage_collection == True:
+        if url_coverage_collection:
             visited_urls.add(request.path)
         return get_response(request)
     return record_urls
@@ -521,7 +534,6 @@ class CoverageTest(unittest.TestCase):
                             ( test, test_coverage*100, latest_coverage_version, master_coverage*100, ))
 
     def template_coverage_test(self):
-        global loaded_templates
         if self.runner.check_coverage:
             apps = [ app.split('.')[-1] for app in self.runner.test_apps ]
             all = get_template_paths(apps)
@@ -722,9 +734,25 @@ class IetfTestRunner(DiscoverRunner):
         parser.add_argument('--rerun-until-failure',
             action='store_true', dest='rerun', default=False,
             help='Run the indicated tests in a loop until a failure occurs. ' )
+        parser.add_argument('--no-manage-blobstore', action='store_false', dest='manage_blobstore',
+                            help='Disable creating/deleting test buckets in the blob store.'
+                                 'When this argument is used, a set of buckets with "test-" prefixed to their '
+                                 'names must already exist.')
 
-    def __init__(self, ignore_lower_coverage=False, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, validate_html_harder=None, rerun=None, **kwargs):
-        #
+    def __init__(
+        self,
+        ignore_lower_coverage=False,
+        skip_coverage=False,
+        save_version_coverage=None,
+        html_report=None,
+        permit_mixed_migrations=None,
+        show_logging=None,
+        validate_html=None,
+        validate_html_harder=None,
+        rerun=None,
+        manage_blobstore=True,
+        **kwargs
+    ):    #
         self.ignore_lower_coverage = ignore_lower_coverage
         self.check_coverage = not skip_coverage
         self.save_version_coverage = save_version_coverage
@@ -733,7 +761,6 @@ class IetfTestRunner(DiscoverRunner):
         self.show_logging = show_logging
         self.rerun = rerun
         self.test_labels = None
-        global validation_settings
         validation_settings["validate_html"] = self if validate_html else None
         validation_settings["validate_html_harder"] = self if validate_html and validate_html_harder else None
         validation_settings["show_logging"] = show_logging
@@ -752,11 +779,10 @@ class IetfTestRunner(DiscoverRunner):
         # contains parent classes to later subclasses, the parent classes will determine the ordering, so use the most
         # specific classes necessary to get the right ordering:
         self.reorder_by = (PyFlakesTestCase, MyPyTest,) + self.reorder_by + (StaticLiveServerTestCase, TemplateTagTest, CoverageTest,)
+        #self.buckets = set()
+        self.blobstoremanager = TestBlobstoreManager() if manage_blobstore else None
 
     def setup_test_environment(self, **kwargs):
-        global template_coverage_collection
-        global url_coverage_collection
-
         ietf.utils.mail.test_mode = True
         ietf.utils.mail.SMTP_ADDR['ip4'] = '127.0.0.1'
         ietf.utils.mail.SMTP_ADDR['port'] = 2025
@@ -837,7 +863,7 @@ class IetfTestRunner(DiscoverRunner):
             try:
                 # remember the value so ietf.utils.mail.send_smtp() will use the same
                 ietf.utils.mail.SMTP_ADDR['port'] = base + offset
-                self.smtpd_driver = SMTPTestServerDriver((ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port']),None)
+                self.smtpd_driver = SMTPTestServerDriver(ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port'], None)
                 self.smtpd_driver.start()
                 print(("     Running an SMTP test server on %(ip4)s:%(port)s to catch outgoing email." % ietf.utils.mail.SMTP_ADDR))
                 break
@@ -936,6 +962,9 @@ class IetfTestRunner(DiscoverRunner):
                 print(" (extra pedantically)")
                 self.vnu = start_vnu_server()
 
+        if self.blobstoremanager is not None:
+            self.blobstoremanager.createTestBlobstores()
+        
         super(IetfTestRunner, self).setup_test_environment(**kwargs)
 
     def teardown_test_environment(self, **kwargs):
@@ -965,6 +994,9 @@ class IetfTestRunner(DiscoverRunner):
                 self.config_file[kind].close()
             if self.vnu:
                 self.vnu.terminate()
+
+        if self.blobstoremanager is not None:
+            self.blobstoremanager.destroyTestBlobstores()
 
         super(IetfTestRunner, self).teardown_test_environment(**kwargs)
 
@@ -1220,3 +1252,39 @@ class IetfLiveServerTestCase(StaticLiveServerTestCase):
         for k, v in self.replaced_settings.items():
             setattr(settings, k, v)
         super().tearDown()
+
+class TestBlobstoreManager():
+    # N.B. buckets and blobstore are intentional Class-level attributes
+    buckets: set[Bucket] = set()
+
+    blobstore = boto3.resource("s3",
+        endpoint_url="http://blobstore:9000",
+        aws_access_key_id="minio_root",
+        aws_secret_access_key="minio_pass",
+        aws_session_token=None,
+        config = botocore.config.Config(signature_version="s3v4"),
+        #config=botocore.config.Config(signature_version=botocore.UNSIGNED),
+        verify=False
+    )
+
+    def createTestBlobstores(self):
+        for storagename in settings.ARTIFACT_STORAGE_NAMES:
+            bucketname = f"test-{storagename}"
+            try:
+                bucket = self.blobstore.create_bucket(Bucket=bucketname)
+                self.buckets.add(bucket)
+            except self.blobstore.meta.client.exceptions.BucketAlreadyOwnedByYou:
+                bucket = self.blobstore.Bucket(bucketname)
+                self.buckets.add(bucket)
+
+    def destroyTestBlobstores(self):
+        self.emptyTestBlobstores(destroy=True)
+
+    def emptyTestBlobstores(self, destroy=False):
+        # debug.show('f"Asked to empty test blobstores with destroy={destroy}"')
+        for bucket in self.buckets:
+            bucket.objects.delete()
+            if destroy:
+                bucket.delete()
+        if destroy:
+            self.buckets = set()

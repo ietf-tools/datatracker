@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2014-2020, All Rights Reserved
+# Copyright The IETF Trust 2014-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -23,6 +23,8 @@ from fnmatch import fnmatch
 from importlib import import_module
 from textwrap import dedent
 from tempfile import mkdtemp
+from xml2rfc import log as xml2rfc_log
+from xml2rfc.util.date import extract_date as xml2rfc_extract_date
 
 from django.apps import apps
 from django.contrib.auth.models import User
@@ -57,7 +59,7 @@ from ietf.utils.test_runner import get_template_paths, set_coverage_checking
 from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.text import parse_unicode
 from ietf.utils.timezone import timezone_not_near_midnight
-from ietf.utils.xmldraft import XMLDraft
+from ietf.utils.xmldraft import XMLDraft, InvalidMetadataError, capture_xml2rfc_output
 
 class SendingMail(TestCase):
 
@@ -544,7 +546,7 @@ class XMLDraftTests(TestCase):
     def test_parse_creation_date(self):
         # override date_today to avoid skew when test runs around midnight
         today = datetime.date.today()
-        with patch("ietf.utils.xmldraft.date_today", return_value=today):
+        with capture_xml2rfc_output(), patch("ietf.utils.xmldraft.date_today", return_value=today):
             # Note: using a dict as a stand-in for XML elements, which rely on the get() method
             self.assertEqual(
                 XMLDraft.parse_creation_date({"year": "2022", "month": "11", "day": "24"}),
@@ -590,6 +592,74 @@ class XMLDraftTests(TestCase):
                 ),
                 datetime.date(today.year, 1 if today.month != 1 else 2, 15),
             )
+            # Some exeception-inducing conditions
+            with self.assertRaises(
+                InvalidMetadataError,
+                msg="raise an InvalidMetadataError if a year-only date is not current",
+            ):
+                XMLDraft.parse_creation_date(
+                    {
+                        "year": str(today.year - 1),
+                        "month": "",
+                        "day": "",
+                    }
+                )
+            with self.assertRaises(
+                InvalidMetadataError,
+                msg="raise an InvalidMetadataError for a non-numeric year"
+            ):
+                XMLDraft.parse_creation_date(
+                    {
+                        "year": "two thousand twenty-five",
+                        "month": "2",
+                        "day": "28",
+                    }
+                )
+            with self.assertRaises(
+                InvalidMetadataError,
+                msg="raise an InvalidMetadataError for an invalid month"
+            ):
+                XMLDraft.parse_creation_date(
+                    {
+                        "year": "2024",
+                        "month": "13",
+                        "day": "28",
+                    }
+                )
+            with self.assertRaises(
+                InvalidMetadataError,
+                msg="raise an InvalidMetadataError for a misspelled month"
+            ):
+                XMLDraft.parse_creation_date(
+                    {
+                        "year": "2024",
+                        "month": "Oktobur",
+                        "day": "28",
+                    }
+                )
+            with self.assertRaises(
+                InvalidMetadataError,
+                msg="raise an InvalidMetadataError for an invalid day"
+            ):
+                XMLDraft.parse_creation_date(
+                    {
+                        "year": "2024",
+                        "month": "feb",
+                        "day": "31",
+                    }
+                )
+            with self.assertRaises(
+                InvalidMetadataError,
+                msg="raise an InvalidMetadataError for a non-numeric day"
+            ):
+                XMLDraft.parse_creation_date(
+                    {
+                        "year": "2024",
+                        "month": "feb",
+                        "day": "twenty-four",
+                    }
+                )
+
 
     def test_parse_docname(self):
         with self.assertRaises(ValueError) as cm:
@@ -670,6 +740,56 @@ class XMLDraftTests(TestCase):
             )),
             "J. Q.",
         )
+
+    @patch("ietf.utils.xmldraft.XMLDraft.__init__", return_value=None)
+    def test_get_title(self, mock_init):
+        xmldraft = XMLDraft("fake")
+        self.assertTrue(mock_init.called)
+        # Stub XML that does not have a front/title element
+        xmldraft.xmlroot = lxml.etree.XML(
+            "<rfc><front></front></rfc>"  # no title
+        )
+        self.assertEqual(xmldraft.get_title(), "")
+
+        # Stub XML that has a front/title element
+        xmldraft.xmlroot = lxml.etree.XML(
+            "<rfc><front><title>This Is the Title</title></front></rfc>"
+        )
+        self.assertEqual(xmldraft.get_title(), "This Is the Title")
+
+        
+    def test_capture_xml2rfc_output(self):
+        """capture_xml2rfc_output reroutes and captures xml2rfc logs"""
+        orig_write_out = xml2rfc_log.write_out
+        orig_write_err = xml2rfc_log.write_err
+        with capture_xml2rfc_output() as outer_log_streams:  # ensure no output
+            # such meta! very Inception!
+            with capture_xml2rfc_output() as inner_log_streams:
+                # arbitrary xml2rfc method that triggers a log, nothing special otherwise
+                xml2rfc_extract_date({"year": "fish"}, datetime.date(2025,3,1))
+            self.assertNotEqual(inner_log_streams, outer_log_streams)
+            self.assertEqual(xml2rfc_log.write_out, outer_log_streams["stdout"], "out stream should be restored")
+            self.assertEqual(xml2rfc_log.write_err, outer_log_streams["stderr"], "err stream should be restored")
+        self.assertEqual(xml2rfc_log.write_out, orig_write_out, "original out stream should be restored")
+        self.assertEqual(xml2rfc_log.write_err, orig_write_err, "original err stream should be restored")
+
+        # don't happen to get any output on stdout and not paranoid enough to force some, just test stderr
+        self.assertGreater(len(inner_log_streams["stderr"].getvalue()), 0, "want output on inner streams")
+        self.assertEqual(len(outer_log_streams["stdout"].getvalue()), 0, "no output on outer streams")
+        self.assertEqual(len(outer_log_streams["stderr"].getvalue()), 0, "no output on outer streams")
+
+    def test_capture_xml2rfc_output_exception_handling(self):
+        """capture_xml2rfc_output restores streams after an exception"""
+        orig_write_out = xml2rfc_log.write_out
+        orig_write_err = xml2rfc_log.write_err
+        with capture_xml2rfc_output() as outer_log_streams:  # ensure no output
+            with self.assertRaises(RuntimeError), capture_xml2rfc_output() as inner_log_streams:
+                raise RuntimeError("nooo")
+            self.assertNotEqual(inner_log_streams, outer_log_streams)
+            self.assertEqual(xml2rfc_log.write_out, outer_log_streams["stdout"], "out stream should be restored")
+            self.assertEqual(xml2rfc_log.write_err, outer_log_streams["stderr"], "err stream should be restored")
+        self.assertEqual(xml2rfc_log.write_out, orig_write_out, "original out stream should be restored")
+        self.assertEqual(xml2rfc_log.write_err, orig_write_err, "original err stream should be restored")
 
 
 class NameTests(TestCase):

@@ -19,11 +19,12 @@ from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.expire import get_expired_drafts, send_expire_notice_for_draft, expire_draft
+from ietf.doc.expire import expirable_drafts, get_expired_drafts, send_expire_notice_for_draft, expire_draft
 from ietf.doc.factories import EditorialDraftFactory, IndividualDraftFactory, WgDraftFactory, RgDraftFactory, DocEventFactory
 from ietf.doc.models import ( Document, DocReminder, DocEvent,
     ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
     WriteupDocEvent, DocRelationshipName, IanaExpertDocEvent )
+from ietf.doc.storage_utils import exists_in_storage, store_str
 from ietf.doc.utils import get_tags_for_stream_id, create_ballot_if_not_open
 from ietf.doc.views_draft import AdoptDraftForm
 from ietf.name.models import DocTagName, RoleName
@@ -577,6 +578,11 @@ class DraftFileMixin():
     def write_draft_file(self, name, size):
         with (Path(settings.INTERNET_DRAFT_PATH) / name).open('w') as f:
             f.write("a" * size)
+        _, ext = os.path.splitext(name)
+        if ext:
+            ext=ext[1:]
+            store_str("active-draft", f"{ext}/{name}", "a"*size, allow_overwrite=True)
+            store_str("draft", f"{ext}/{name}", "a"*size, allow_overwrite=True)
 
 
 class ResurrectTests(DraftFileMixin, TestCase):
@@ -649,6 +655,7 @@ class ResurrectTests(DraftFileMixin, TestCase):
         # ensure file restored from archive directory
         self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, txt)))
         self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, txt)))
+        self.assertTrue(exists_in_storage("active-draft",f"txt/{txt}"))
 
 
 class ExpireIDsTests(DraftFileMixin, TestCase):
@@ -763,15 +770,19 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         txt = "%s-%s.txt" % (draft.name, draft.rev)
         self.write_draft_file(txt, 5000)
 
+        self.assertFalse(expirable_drafts(Document.objects.filter(pk=draft.pk)).exists())
+        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="idexists"))
+        self.assertTrue(expirable_drafts(Document.objects.filter(pk=draft.pk)).exists())
         expire_draft(draft)
 
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug(), "expired")
-        self.assertEqual(draft.get_state_slug("draft-iesg"), "dead")
+        self.assertEqual(draft.get_state_slug("draft-iesg"), "idexists")
         self.assertTrue(draft.latest_event(type="expired_document"))
-        self.assertCountEqual(draft.action_holders.all(), [])
+        self.assertEqual(draft.action_holders.count(), 0)
         self.assertIn('Removed all action holders', draft.latest_event(type='changed_action_holders').desc)
         self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, txt)))
+        self.assertFalse(exists_in_storage("active-draft", f"txt/{txt}"))
         self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, txt)))
 
         draft.delete()
@@ -795,6 +806,7 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         clean_up_draft_files()
         
         self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, unknown)))
+        self.assertFalse(exists_in_storage("active-draft", f"txt/{unknown}"))
         self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, "unknown_ids", unknown)))
 
         
@@ -805,6 +817,7 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         clean_up_draft_files()
         
         self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, malformed)))
+        self.assertFalse(exists_in_storage("active-draft", f"txt/{malformed}"))
         self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, "unknown_ids", malformed)))
 
         
@@ -819,9 +832,11 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         clean_up_draft_files()
         
         self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, txt)))
+        self.assertFalse(exists_in_storage("active-draft", f"txt/{txt}"))
         self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, txt)))
 
         self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, pdf)))
+        self.assertFalse(exists_in_storage("active-draft", f"pdf/{pdf}"))
         self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, pdf)))
 
         # expire draft
@@ -840,6 +855,7 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         clean_up_draft_files()
         
         self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, txt)))
+        self.assertFalse(exists_in_storage("active-draft", f"txt/{txt}"))
         self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, txt)))
 
 

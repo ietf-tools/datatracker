@@ -62,8 +62,9 @@ def ajax_select2_search(request, model_name):
         page = int(request.GET.get("p", 1)) - 1
     except ValueError:
         page = 0
-
-    objs = objs.distinct()[page:page + 10]
+    PAGE_SIZE = 10
+    first_item = page * PAGE_SIZE
+    objs = objs.distinct()[first_item:first_item + PAGE_SIZE]
 
     return HttpResponse(select2_id_name_json(objs), content_type='application/json')
 

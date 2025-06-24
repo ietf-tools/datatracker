@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-from ietf.settings import *                                          # pyflakes:ignore
+from ietf.settings import *   # pyflakes:ignore
 
 ALLOWED_HOSTS = ['*']
 
@@ -64,6 +64,7 @@ INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/assets/archive/id'
 BIBXML_BASE_PATH = '/assets/ietfdata/derived/bibxml'
 IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 FTP_DIR = '/assets/ftp'
+NFS_METRICS_TMP_DIR = '/assets/tmp'
 
 NOMCOM_PUBLIC_KEYS_DIR = 'data/nomcom_keys/public_keys/'
 SLIDE_STAGING_PATH = '/test/staging/'

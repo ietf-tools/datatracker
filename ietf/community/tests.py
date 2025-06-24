@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2016-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
 import mock
 from pyquery import PyQuery
 
@@ -11,6 +10,7 @@ from django.urls import reverse as urlreverse
 import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList, SearchRule, EmailSubscription
+from ietf.community.signals import notify_of_event
 from ietf.community.utils import docs_matching_community_list_rule, community_list_rules_matching_doc
 from ietf.community.utils import reset_name_contains_index_for_rule, notify_event_to_subscribers
 from ietf.community.tasks import notify_event_to_subscribers_task
@@ -431,53 +431,58 @@ class CommunityListTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-    # Mock out the on_commit call so we can tell whether the task was actually queued
-    @mock.patch("ietf.submit.views.transaction.on_commit", side_effect=lambda x: x())
-    @mock.patch("ietf.community.models.notify_event_to_subscribers_task")
-    def test_notification_signal_receiver(self, mock_notify_task, mock_on_commit):
-        """Saving a DocEvent should notify subscribers
+    @mock.patch("ietf.community.signals.notify_of_event")
+    def test_notification_signal_receiver(self, mock_notify_of_event):
+        """Saving a newly created DocEvent should notify subscribers
         
-        This implicitly tests that notify_events is hooked up to the post_save signal.
+        This implicitly tests that notify_of_event_receiver is hooked up to the post_save signal.
         """
         # Arbitrary model that's not a DocEvent
-        person = PersonFactory()
-        mock_notify_task.reset_mock()  # clear any calls that resulted from the factories
-        # be careful overriding SERVER_MODE - we do it here because the method
-        # under test does not make this call when in "test" mode
-        with override_settings(SERVER_MODE="not-test"):
-            person.save()
-        self.assertFalse(mock_notify_task.delay.called)
-        
+        person = PersonFactory.build()  # builds but does not save...
+        mock_notify_of_event.reset_mock()  # clear any calls that resulted from the factories
+        person.save()
+        self.assertFalse(mock_notify_of_event.called)
+    
         # build a DocEvent that is not yet persisted
         doc = DocumentFactory()
-        d = DocEventFactory.build(by=person, doc=doc)
-        # mock_notify_task.reset_mock()  # clear any calls that resulted from the factories
+        event = DocEventFactory.build(by=person, doc=doc)  # builds but does not save...
+        mock_notify_of_event.reset_mock()  # clear any calls that resulted from the factories
+        event.save()
+        self.assertEqual(mock_notify_of_event.call_count, 1, "notify_task should be run on creation of DocEvent")
+        self.assertEqual(mock_notify_of_event.call_args, mock.call(event))
+
+        # save the existing DocEvent and see that no notification is sent    
+        mock_notify_of_event.reset_mock()
+        event.save()
+        self.assertFalse(mock_notify_of_event.called, "notify_task should not be run save of on existing DocEvent")
+
+    # Mock out the on_commit call so we can tell whether the task was actually queued
+    @mock.patch("ietf.submit.views.transaction.on_commit", side_effect=lambda x: x())
+    @mock.patch("ietf.community.signals.notify_event_to_subscribers_task")
+    def test_notify_of_event(self, mock_notify_task, mock_on_commit):
+        """The community notification task should be called as intended"""
+        person = PersonFactory()  # builds but does not save...
+        doc = DocumentFactory()
+        event = DocEventFactory(by=person, doc=doc)
         # be careful overriding SERVER_MODE - we do it here because the method
         # under test does not make this call when in "test" mode
         with override_settings(SERVER_MODE="not-test"):
-            d.save()
-        self.assertEqual(mock_notify_task.delay.call_count, 1, "notify_task should be run on creation of DocEvent")
-        self.assertEqual(mock_notify_task.delay.call_args, mock.call(event_id = d.pk))
-        
+            notify_of_event(event)
+        self.assertTrue(mock_notify_task.delay.called, "notify_task should run for a DocEvent on a draft")
         mock_notify_task.reset_mock()
-        with override_settings(SERVER_MODE="not-test"):
-            d.save()
-        self.assertFalse(mock_notify_task.delay.called, "notify_task should not be run save of on existing DocEvent")
-        
-        mock_notify_task.reset_mock()
-        d = DocEventFactory.build(by=person, doc=doc)
-        d.skip_community_list_notification = True
+
+        event.skip_community_list_notification = True
         # be careful overriding SERVER_MODE - we do it here because the method
         # under test does not make this call when in "test" mode
         with override_settings(SERVER_MODE="not-test"):
-            d.save()
+            notify_of_event(event)
         self.assertFalse(mock_notify_task.delay.called, "notify_task should not run when skip_community_list_notification is set")
 
-        d = DocEventFactory.build(by=person, doc=DocumentFactory(type_id="rfc"))
+        event = DocEventFactory.build(by=person, doc=DocumentFactory(type_id="rfc"))
         # be careful overriding SERVER_MODE - we do it here because the method
         # under test does not make this call when in "test" mode
         with override_settings(SERVER_MODE="not-test"):
-            d.save()
+            notify_of_event(event)
         self.assertFalse(mock_notify_task.delay.called, "notify_task should not run on a document with type 'rfc'")
 
     @mock.patch("ietf.utils.mail.send_mail_text")
