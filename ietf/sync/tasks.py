@@ -11,7 +11,7 @@ from celery import shared_task
 from django.conf import settings
 from django.utils import timezone
 
-from ietf.doc.models import DocEvent
+from ietf.doc.models import DocEvent, RelatedDocument
 from ietf.sync import iana
 from ietf.sync import rfceditor
 from ietf.sync.rfceditor import MIN_QUEUE_RESULTS, parse_queue, update_drafts_from_queue
