@@ -707,12 +707,14 @@ def update_docs_from_rfc_index(
                         subseries_doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Added {doc.name} to {subseries_doc.name}")
                         rfc_events.append(doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Added {doc.name} to {subseries_doc.name}"))
 
-        for subdoc in doc.related_that("contains"):
-            if subdoc.name not in also:
+        # Now iterate through subseries_docs containing this doc and remove any that
+        # have been dropped from the index
+        for maybe_stale_subseries_doc in doc.related_that("contains"):
+            if maybe_stale_subseries_doc.name not in also:
                 assert(not first_sync_creating_subseries)
-                subseries_doc.relateddocument_set.filter(target=subdoc).delete()
-                rfc_events.append(doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Removed {doc.name} from {subseries_doc.name}"))
-                subseries_doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Removed {doc.name} from {subseries_doc.name}")
+                maybe_stale_subseries_doc.relateddocument_set.filter(target=doc).delete()
+                rfc_events.append(doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Removed {doc.name} from {maybe_stale_subseries_doc.name}"))
+                maybe_stale_subseries_doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Removed {doc.name} from {maybe_stale_subseries_doc.name}")
 
         doc_errata = errata.get(f"RFC{rfc_number}", [])
         all_rejected = doc_errata and all(
