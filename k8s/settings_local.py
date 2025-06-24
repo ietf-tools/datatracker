@@ -165,6 +165,21 @@ if _registration_api_key is None:
     raise RuntimeError("DATATRACKER_REGISTRATION_API_KEY must be set")
 STATS_REGISTRATION_ATTENDEES_JSON_URL = f"https://registration.ietf.org/{{number}}/attendees/?apikey={_registration_api_key}"
 
+# Registration Participants API config - key must be set, but the URL can be left
+# to the default in settings.py
+_registration_participants_api_key = os.environ.get(
+    "DATATRACKER_REGISTRATION_PARTICIPANTS_API_KEY", None
+)
+if _registration_participants_api_key is None:
+    raise RuntimeError("DATATRACKER_REGISTRATION_PARTICIPANTS_API_KEY must be set")
+REGISTRATION_PARTICIPANTS_API_KEY = _registration_participants_api_key
+
+_registration_participants_api_url = os.environ.get(
+    "DATATRACKER_REGISTRATION_PARTICPANTS_API_URL", None
+)
+if _registration_participants_api_url is not None:
+    REGISTRATION_PARTICIPANTS_API_URL = _registration_participants_api_url
+
 # FIRST_CUTOFF_DAYS = 12
 # SECOND_CUTOFF_DAYS = 12
 # SUBMISSION_CUTOFF_DAYS = 26
