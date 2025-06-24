@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2014-2020, All Rights Reserved
+# Copyright The IETF Trust 2014-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -741,6 +741,23 @@ class XMLDraftTests(TestCase):
             "J. Q.",
         )
 
+    @patch("ietf.utils.xmldraft.XMLDraft.__init__", return_value=None)
+    def test_get_title(self, mock_init):
+        xmldraft = XMLDraft("fake")
+        self.assertTrue(mock_init.called)
+        # Stub XML that does not have a front/title element
+        xmldraft.xmlroot = lxml.etree.XML(
+            "<rfc><front></front></rfc>"  # no title
+        )
+        self.assertEqual(xmldraft.get_title(), "")
+
+        # Stub XML that has a front/title element
+        xmldraft.xmlroot = lxml.etree.XML(
+            "<rfc><front><title>This Is the Title</title></front></rfc>"
+        )
+        self.assertEqual(xmldraft.get_title(), "This Is the Title")
+
+        
     def test_capture_xml2rfc_output(self):
         """capture_xml2rfc_output reroutes and captures xml2rfc logs"""
         orig_write_out = xml2rfc_log.write_out

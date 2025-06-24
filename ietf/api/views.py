@@ -618,7 +618,7 @@ def related_email_list(request, email):
             return JsonResponse({"addresses": []})
         return JsonResponse(
             {
-                "addresses": list(person.email_set.exclude(address=email).values_list("address", flat=True)),
+                "addresses": list(person.email_set.values_list("address", flat=True)),
             }
         )
     return HttpResponse(status=405)
