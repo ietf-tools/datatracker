@@ -12,6 +12,7 @@ from urllib.parse import urlencode
 from xml.dom import pulldom, Node
 
 from django.conf import settings
+from django.db import transaction
 from django.db.models import Subquery, OuterRef, F, Q
 from django.utils import timezone
 from django.utils.encoding import smart_bytes, force_str
@@ -30,9 +31,9 @@ from ietf.utils.log import log
 from ietf.utils.mail import send_mail_text
 from ietf.utils.timezone import datetime_from_date, RPC_TZINFO
 
-#QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
-#INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
-#POST_APPROVED_DRAFT_URL = "https://www.rfc-editor.org/sdev/jsonexp/jsonparser.php"
+# QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
+# INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
+# POST_APPROVED_DRAFT_URL = "https://www.rfc-editor.org/sdev/jsonexp/jsonparser.php"
 
 MIN_ERRATA_RESULTS = 5000
 MIN_INDEX_RESULTS = 8000
@@ -427,7 +428,7 @@ def update_docs_from_rfc_index(
                 pass
                 # Logging below warning turns out to be unhelpful - there are many references
                 # to such things in the index:
-                # * all april-1 RFCs have an internal name that looks like a draft name, but there 
+                # * all april-1 RFCs have an internal name that looks like a draft name, but there
                 # was never such a draft. More of these will exist in the future
                 # * Several documents were created with out-of-band input to the RFC-editor, for a
                 # variety of reasons.
@@ -436,7 +437,7 @@ def update_docs_from_rfc_index(
                 # If there is no draft to point to, don't point to one, even if there was an RPC
                 # internal name in use (and in the RPC database). This will be a requirement on the
                 # reimplementation of the creation of the rfc-index.
-                # 
+                #
                 # log(f"Warning: RFC index for {rfc_number} referred to unknown draft {draft_name}")
 
         # Find or create the RFC document
@@ -466,7 +467,7 @@ def update_docs_from_rfc_index(
             if draft:
                 doc.formal_languages.set(draft.formal_languages.all())
                 for author in draft.documentauthor_set.all():
-                    # Copy the author but point at the new doc. 
+                    # Copy the author but point at the new doc.
                     # See https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
                     author.pk = None
                     author.id = None
@@ -707,26 +708,27 @@ def update_docs_from_rfc_index(
                         subseries_doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Added {doc.name} to {subseries_doc.name}")
                         rfc_events.append(doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Added {doc.name} to {subseries_doc.name}"))
 
-        # Now iterate through subseries_docs containing this doc and remove any that
-        # have been dropped from the index
-        for maybe_stale_subseries_doc in doc.related_that("contains"):
-            if maybe_stale_subseries_doc.name not in also:
-                assert not first_sync_creating_subseries
-                maybe_stale_subseries_doc.relateddocument_set.filter(
-                    target=doc
-                ).delete()
+        # Delete subseries relations that are no longer current. Use a transaction
+        # so we are sure we iterate over the same relations that we delete!
+        with transaction.atomic():
+            stale_subseries_relations = doc.relations_that("contains").exclude(
+                source__name__in=also
+            )
+            for stale_relation in stale_subseries_relations:
+                stale_subseries_doc = stale_relation.source
                 rfc_events.append(
                     doc.docevent_set.create(
                         type="sync_from_rfc_editor",
                         by=system,
-                        desc=f"Removed {doc.name} from {maybe_stale_subseries_doc.name}",
+                        desc=f"Removed {doc.name} from {stale_subseries_doc.name}",
                     )
                 )
-                maybe_stale_subseries_doc.docevent_set.create(
+                stale_subseries_doc.docevent_set.create(
                     type="sync_from_rfc_editor",
                     by=system,
-                    desc=f"Removed {doc.name} from {maybe_stale_subseries_doc.name}",
+                    desc=f"Removed {doc.name} from {stale_subseries_doc.name}",
                 )
+            stale_subseries_relations.delete()
 
         doc_errata = errata.get(f"RFC{rfc_number}", [])
         all_rejected = doc_errata and all(
@@ -768,9 +770,9 @@ def update_docs_from_rfc_index(
             )
             doc.save_with_history(rfc_events)
             yield rfc_number, rfc_changes, doc, rfc_published  # yield changes to the RFC
-    
+
     if first_sync_creating_subseries:
-        # First - create the known subseries documents that have ghosted. 
+        # First - create the known subseries documents that have ghosted.
         # The RFC editor (as of 31 Oct 2023) claims these subseries docs do not exist.
         # The datatracker, on the other hand, will say that the series doc currently contains no RFCs.
         for name in ["fyi17", "std1", "bcp12", "bcp113", "bcp66"]:
@@ -782,7 +784,6 @@ def update_docs_from_rfc_index(
             else:
                 subseries_slug = name[:3]
                 subseries_doc.docevent_set.create(type=f"{subseries_slug}_history_marker", by=system, desc=f"No history of this {subseries_slug.upper()} document is currently available in the datatracker before this point")
-
 
         RelatedDocument.objects.filter(
             Q(originaltargetaliasname__startswith="bcp") |
