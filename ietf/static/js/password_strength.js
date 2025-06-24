@@ -57,22 +57,40 @@
                         .parent()
                         .parent()
                         .find('.password_strength_offline_info');
+                    let password_improvement_hint = $(password_strength_info)
+                        .find('.password_improvement_hint');
 
                     if ($(this)
                         .val()) {
                         var result = zxcvbn($(this)
                             .val());
-
-                        if (result.score < 3) {
-                            password_strength_bar.removeClass('text-bg-success')
-                                .addClass('text-bg-warning');
-                            password_strength_info.find('.badge')
-                                .removeClass('d-none');
+                        const enforceStrength = !('disableStrengthEnforcement' in this.dataset);
+                        const strongEnough = !enforceStrength || (result.score >= 3);
+                        if (strongEnough) {
+                            // Mark input as valid
+                            this.setCustomValidity('');
                         } else {
+                            // Mark input as invalid
+                            this.setCustomValidity('This password does not meet complexity requirements');
+                        }
+                        
+                        if (this.checkValidity()) {
                             password_strength_bar.removeClass('text-bg-warning')
                                 .addClass('text-bg-success');
                             password_strength_info.find('.badge')
                                 .addClass('d-none');
+                            this.classList.remove('is-invalid')
+                            password_improvement_hint.addClass('d-none');
+                            password_improvement_hint.text('')
+                        } else {
+                            this.classList.add('is-invalid')
+                            password_improvement_hint.text(this.validationMessage)
+                            password_improvement_hint.removeClass('d-none');
+
+                            password_strength_bar.removeClass('text-bg-success')
+                                .addClass('text-bg-warning');
+                            password_strength_info.find('.badge')
+                                .removeClass('d-none');
                         }
 
                         password_strength_bar.width(((result.score + 1) / 5) * 100 + '%')
@@ -152,23 +170,31 @@
                     .data('confirm-with');
 
                 if (confirm_with && confirm_with == password_field.attr('id')) {
-                    if (confirm_value && password) {
+                    if (password) {
                         if (confirm_value === password) {
                             $(confirm_field)
                                 .parent()
                                 .find('.password_strength_info')
                                 .addClass('d-none');
+                            confirm_field.setCustomValidity('')
+                            confirm_field.classList.remove('is-invalid')
                         } else {
-                            $(confirm_field)
-                                .parent()
-                                .find('.password_strength_info')
-                                .removeClass('d-none');
+                            if (confirm_value !== '') {
+                                $(confirm_field)
+                                    .parent()
+                                    .find('.password_strength_info')
+                                    .removeClass('d-none');
+                            }
+                            confirm_field.setCustomValidity('Does not match new password')
+                            confirm_field.classList.add('is-invalid')
                         }
                     } else {
                         $(confirm_field)
                             .parent()
                             .find('.password_strength_info')
                             .addClass('d-none');
+                        confirm_field.setCustomValidity('')
+                        confirm_field.classList.remove('is-invalid')
                     }
                 }
             });
