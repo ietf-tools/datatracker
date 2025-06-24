@@ -20,7 +20,13 @@ from django.test.utils import override_settings
 import debug                            # pyflakes:ignore
 
 from ietf.api.views import EmailIngestionError
-from ietf.doc.factories import WgDraftFactory, RfcFactory, DocumentAuthorFactory, DocEventFactory
+from ietf.doc.factories import (
+    WgDraftFactory,
+    RfcFactory,
+    DocumentAuthorFactory,
+    DocEventFactory,
+    BcpFactory,
+)
 from ietf.doc.models import Document, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
 from ietf.doc.utils import add_state_change_event
 from ietf.group.factories import GroupFactory
@@ -507,6 +513,120 @@ class RFCSyncTests(TestCase):
         # make sure we can apply it again with no changes
         changed = list(rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)))
         self.assertEqual(len(changed), 0)
+
+    def test_rfc_index_subseries_replacement(self):
+        today = date_today()
+        author = PersonFactory(name="Some Bozo")
+
+        # Start with two BCPs, each containing an rfc
+        rfc1, rfc2, rfc3 = RfcFactory.create_batch(3, authors=[author])
+        bcp1 = BcpFactory(contains=[rfc1])
+        bcp2 = BcpFactory(contains=[rfc2])
+        
+        def _nameify(doc):
+            """Convert a name like 'rfc1' to 'RFC0001"""
+            return f"{doc.name[:3].upper()}{int(doc.name[3:]):04d}"
+
+        # RFC index that replaces rfc2 with rfc3 in bcp2
+        index_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<rfc-index xmlns="http://www.rfc-editor.org/rfc-index"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+           xsi:schemaLocation="http://www.rfc-editor.org/rfc-index 
+                               http://www.rfc-editor.org/rfc-index.xsd">
+    <bcp-entry>
+        <doc-id>{_nameify(bcp1)}</doc-id>
+        <is-also>
+            <doc-id>{_nameify(rfc1)}</doc-id>
+        </is-also>
+    </bcp-entry>
+    <bcp-entry>
+        <doc-id>{_nameify(bcp2)}</doc-id>
+        <is-also>
+            <doc-id>{_nameify(rfc3)}</doc-id>
+        </is-also>
+    </bcp-entry>
+    <rfc-entry>
+        <doc-id>{_nameify(rfc1)}</doc-id>
+        <title>{rfc1.title}</title>
+        <author>
+            <name>Some Bozo</name>
+        </author>
+        <date>
+            <month>{today.strftime('%B')}</month>
+            <year>{today.strftime('%Y')}</year>
+        </date>
+        <format>
+            <file-format>ASCII</file-format>
+        </format>
+        <page-count>42</page-count>
+        <keywords>
+            <kw>test</kw>
+        </keywords>
+        <abstract><p>This is some interesting text.</p></abstract>
+        <is-also>
+            <doc-id>{_nameify(bcp1)}</doc-id>
+        </is-also>
+        <current-status>PROPOSED STANDARD</current-status>
+        <publication-status>PROPOSED STANDARD</publication-status>
+        <stream>IETF</stream>
+    </rfc-entry>
+    <rfc-entry>
+        <doc-id>{_nameify(rfc2)}</doc-id>
+        <title>{rfc2.title}</title>
+        <author>
+            <name>Some Bozo</name>
+        </author>
+        <date>
+            <month>{today.strftime('%B')}</month>
+            <year>{today.strftime('%Y')}</year>
+        </date>
+        <format>
+            <file-format>ASCII</file-format>
+        </format>
+        <page-count>42</page-count>
+        <keywords>
+            <kw>test</kw>
+        </keywords>
+        <abstract><p>This is some interesting text.</p></abstract>
+        <current-status>PROPOSED STANDARD</current-status>
+        <publication-status>PROPOSED STANDARD</publication-status>
+        <stream>IETF</stream>
+    </rfc-entry>
+    <rfc-entry>
+        <doc-id>{_nameify(rfc3)}</doc-id>
+        <title>{rfc3.title}</title>
+        <author>
+            <name>Some Bozo</name>
+        </author>
+        <date>
+            <month>{today.strftime('%B')}</month>
+            <year>{today.strftime('%Y')}</year>
+        </date>
+        <format>
+            <file-format>ASCII</file-format>
+        </format>
+        <page-count>42</page-count>
+        <keywords>
+            <kw>test</kw>
+        </keywords>
+        <abstract><p>This is some interesting text.</p></abstract>
+        <is-also>
+            <doc-id>{_nameify(bcp2)}</doc-id>
+        </is-also>
+        <current-status>PROPOSED STANDARD</current-status>
+        <publication-status>PROPOSED STANDARD</publication-status>
+        <stream>IETF</stream>
+    </rfc-entry>
+</rfc-index>"""
+        data = rfceditor.parse_index(io.StringIO(index_xml))  # parse index
+        self.assertEqual(len(data), 3)  # check that we parsed 3 RFCs
+        # Process the data by consuming the generator
+        for _ in rfceditor.update_docs_from_rfc_index(data, []):
+            pass
+        # Confirm that the expected changes were made
+        self.assertCountEqual(rfc1.related_that("contains"), [bcp1])
+        self.assertCountEqual(rfc2.related_that("contains"), [])
+        self.assertCountEqual(rfc3.related_that("contains"), [bcp2])
 
     def _generate_rfc_queue_xml(self, draft, state, auth48_url=None):
         """Generate an RFC queue xml string for a draft"""
