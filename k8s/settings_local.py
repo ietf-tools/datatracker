@@ -391,3 +391,8 @@ BLOBDB_REPLICATION = {
     "EXCLUDE_BUCKETS": ["staging"],
     "VERBOSE_LOGGING": _blobdb_replication_verbose_logging,
 }
+
+# Optionally disable password strength enforcement at login (on by default)
+PASSWORD_POLICY_ENFORCE_AT_LOGIN = (
+    os.environ.get("DATATRACKER_ENFORCE_PW_POLICY", "true").lower() != "false"
+)

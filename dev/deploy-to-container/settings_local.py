@@ -79,6 +79,3 @@ APP_API_TOKENS = {
 
 # OIDC configuration
 SITE_URL = 'https://__HOSTNAME__'
-
-# Disable password validators for dev sites - comment this out to enable them.
-AUTH_PASSWORD_VALIDATORS = []

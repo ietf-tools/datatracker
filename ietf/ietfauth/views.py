@@ -763,21 +763,26 @@ class AnyEmailAuthenticationForm(AuthenticationForm):
         return super().clean()
 
     def confirm_login_allowed(self, user):
-        """Only allow login if password complies with current validators"""
+        """Check whether a successfully authenticated user is permitted to log in"""
         super().confirm_login_allowed(user)
-        try:
-            password_validation.validate_password(self.cleaned_data["password"], user)
-        except ValidationError as error:
-            raise ValidationError(
-                # dict mapping field to error / error list
-                {
-                    "password": error.error_list,
-                    "__all__": ValidationError(
-                        'Please use the "Forgot your password?" button below to '
-                        'set a new password for your account.'
-                    ),
-                }
-            )
+        # Optionally enforce password validation
+        if getattr(settings, "PASSWORD_POLICY_ENFORCE_AT_LOGIN", False):
+            try:
+                password_validation.validate_password(
+                    self.cleaned_data["password"], user
+                )
+            except ValidationError:
+                raise ValidationError(
+                    # dict mapping field to error / error list
+                    {
+                        "__all__": ValidationError(
+                            'You entered your password correctly, but it  does not '
+                            'meet our current length and complexity requirements. '
+                            'Please use the "Forgot your password?" button below to '
+                            'set a new password for your account.'
+                        ),
+                    }
+                )
 
 
 class AnyEmailLoginView(LoginView):

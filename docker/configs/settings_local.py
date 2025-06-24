@@ -98,6 +98,3 @@ for storagename in ARTIFACT_STORAGE_NAMES:
             bucket_name=f"{storagename}",
         ),
     }
-
-# Disable password validators in dev mode - comment this out to enable them
-AUTH_PASSWORD_VALIDATORS = []  # type:ignore

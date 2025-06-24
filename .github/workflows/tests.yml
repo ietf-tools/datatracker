@@ -149,9 +149,6 @@ jobs:
       run: |
         chmod +x ./dev/tests/prepare.sh
         sh ./dev/tests/prepare.sh
-        echo >> ./ietf/settings_local.py
-        echo "# Disable password validation for playwright legacy tests" >> ./ietf/settings_local.py
-        echo "AUTH_PASSWORD_VALIDATORS = []  # type:ignore" >> ./ietf/settings_local.py
         
     - name: Ensure DB is ready
       run: |
