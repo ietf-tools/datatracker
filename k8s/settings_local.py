@@ -175,7 +175,7 @@ if _registration_participants_api_key is None:
 REGISTRATION_PARTICIPANTS_API_KEY = _registration_participants_api_key
 
 _registration_participants_api_url = os.environ.get(
-    "DATATRACKER_REGISTRATION_PARTICPANTS_API_URL", None
+    "DATATRACKER_REGISTRATION_PARTICIPANTS_API_URL", None
 )
 if _registration_participants_api_url is not None:
     REGISTRATION_PARTICIPANTS_API_URL = _registration_participants_api_url
