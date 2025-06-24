@@ -36,10 +36,6 @@ spec:
         - name: celery
           image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
           imagePullPolicy: Always
-          ports:
-            - containerPort: 8000
-              name: http
-              protocol: TCP
           volumeMounts:
             - name: dt-vol
               mountPath: /a
@@ -92,7 +88,7 @@ spec:
             runAsUser: 65534 # "nobody" user by default
             runAsGroup: 65534  # "nogroup" group by default
       volumes:
-        # To be overriden with the actual shared volume
+        # To be overridden with the actual shared volume
         - name: dt-vol
         - name: dt-tmp
           emptyDir:

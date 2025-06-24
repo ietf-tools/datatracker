@@ -7,7 +7,7 @@ import botocore.exceptions
 import os
 import sys
 
-from ietf.settings import MORE_STORAGE_NAMES
+from ietf.settings import ARTIFACT_STORAGE_NAMES
 
 
 def init_blobstore():
@@ -19,7 +19,7 @@ def init_blobstore():
         aws_session_token=None,
         config=botocore.config.Config(signature_version="s3v4"),
     )
-    for bucketname in MORE_STORAGE_NAMES:
+    for bucketname in ARTIFACT_STORAGE_NAMES:
         try:
             blobstore.create_bucket(
                 Bucket=f"{os.environ.get('BLOB_STORE_BUCKET_PREFIX', '')}{bucketname}".strip()

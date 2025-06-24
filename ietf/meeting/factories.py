@@ -321,6 +321,15 @@ class AttendedFactory(factory.django.DjangoModelFactory):
 
 
 class RegistrationFactory(factory.django.DjangoModelFactory):
+    """
+    This will create an associated onsite week_pass ticket by default.
+    Methods of calling:
+
+    RegistrationFactory()                   create a ticket with defaults, onsite
+    RegistrationFactory(with_ticket=True)   same as above
+    RegistrationFactory(with_ticket={'attendance_type_id': 'remote'})   creates ticket with overrides
+    RegistrationFactory(with_ticket=False)  does not create a ticket
+    """
     class Meta:
         model = Registration
         skip_postgeneration_save = True
@@ -335,6 +344,16 @@ class RegistrationFactory(factory.django.DjangoModelFactory):
     attended = False
     checkedin = False
 
+    @factory.post_generation
+    def with_ticket(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted is False:
+            # Explicitly disable ticket creation
+            return
+        ticket_kwargs = extracted if isinstance(extracted, dict) else {}
+        RegistrationTicketFactory(registration=self, **ticket_kwargs)
+
 
 class RegistrationTicketFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -342,5 +361,5 @@ class RegistrationTicketFactory(factory.django.DjangoModelFactory):
         skip_postgeneration_save = True
 
     registration = factory.SubFactory(RegistrationFactory)
-    attendance_type_id = 'onsite'
-    ticket_type_id = 'week_pass'
+    attendance_type_id = factory.LazyAttribute(lambda _: 'onsite')
+    ticket_type_id = factory.LazyAttribute(lambda _: 'week_pass')

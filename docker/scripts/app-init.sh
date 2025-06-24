@@ -101,8 +101,10 @@ echo "Running initial checks..."
 /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check --settings=settings_local
 
 # Migrate, adjusting to what the current state of the underlying database might be:
-
 /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --fake-initial --settings=settings_local
+
+# Apply migrations to the blobdb database as well (most are skipped)
+/usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local --database=blobdb
 
 if [ -z "$EDITOR_VSCODE" ]; then
     CODE=0
