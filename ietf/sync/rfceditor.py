@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -711,10 +711,22 @@ def update_docs_from_rfc_index(
         # have been dropped from the index
         for maybe_stale_subseries_doc in doc.related_that("contains"):
             if maybe_stale_subseries_doc.name not in also:
-                assert(not first_sync_creating_subseries)
-                maybe_stale_subseries_doc.relateddocument_set.filter(target=doc).delete()
-                rfc_events.append(doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Removed {doc.name} from {maybe_stale_subseries_doc.name}"))
-                maybe_stale_subseries_doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Removed {doc.name} from {maybe_stale_subseries_doc.name}")
+                assert not first_sync_creating_subseries
+                maybe_stale_subseries_doc.relateddocument_set.filter(
+                    target=doc
+                ).delete()
+                rfc_events.append(
+                    doc.docevent_set.create(
+                        type="sync_from_rfc_editor",
+                        by=system,
+                        desc=f"Removed {doc.name} from {maybe_stale_subseries_doc.name}",
+                    )
+                )
+                maybe_stale_subseries_doc.docevent_set.create(
+                    type="sync_from_rfc_editor",
+                    by=system,
+                    desc=f"Removed {doc.name} from {maybe_stale_subseries_doc.name}",
+                )
 
         doc_errata = errata.get(f"RFC{rfc_number}", [])
         all_rejected = doc_errata and all(
