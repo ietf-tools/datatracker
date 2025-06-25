@@ -88,7 +88,7 @@ class Person(models.Model):
         else:
             prefix, first, middle, last, suffix = self.ascii_parts()
             return (first and first[0]+"." or "")+(middle or "")+" "+last+(suffix and " "+suffix or "")
-    def plain_name(self):
+    def plain_name(self) -> str:
         if not hasattr(self, '_cached_plain_name'):
             if self.plain:
                 self._cached_plain_name = self.plain
