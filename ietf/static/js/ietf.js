@@ -121,6 +121,20 @@ $(document)
             type: "GET",
             dataType: "json",
             success: function (data) {
+                const adjustPositionining = (elm) => {
+                    if(elm instanceof HTMLElement) {
+                        // reset position of dropdown
+                        const rect = elm.getBoundingClientRect()
+                        const offscreenBy = window.innerHeight - (rect.top + rect.height)
+                        if(offscreenBy < 0) {
+                            elm.style.top = `${offscreenBy}px`
+                        }
+                    } else {
+                        console.error("not an element", elm)
+                    }
+                    
+                }
+
                 for (var parentId in data) {
                     var attachTo = $(".group-menu.group-parent-" + parentId);
                     if (attachTo.length == 0) {
@@ -144,12 +158,24 @@ $(document)
                             g.acronym + " &mdash; " + g.name + "</a></li>");
                     }
                     menu.push("</ul>");
-                    for (i = 0; i < attachTo.length; i++) {
-                        attachTo.closest(".dropdown-menu");
-                    }
+
                     attachTo.append(menu.join(""));
 
                     attachTo.find(".overflow-shadows").each(function(){ overflowShadows(this)})
+                
+                    if(window.MutationObserver) {
+                        // improve positioning of submenus because Bootstrap's Popper isn't working
+                        // perhaps because these are added after page load
+                        const dropdownElementList = attachTo.get(0).querySelectorAll('.dropdown-menu')
+                        const observer = new MutationObserver(function ([ { target } ]) {
+                            adjustPositionining(target)
+                        });
+                        dropdownElementList.forEach(dropdown => {
+                            observer.observe(dropdown, {
+                                attributes: true,
+                            });
+                        })
+                    }
                 }
             }
         });
