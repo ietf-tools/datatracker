@@ -14,6 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from drf_spectacular.utils import extend_schema_view, extend_schema
 from rest_framework import generics
+from rest_framework.fields import CharField
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 
@@ -73,6 +74,20 @@ class RpcLimitOffsetPagination(LimitOffsetPagination):
     max_limit = 100
 
 
+class SingleTermSearchFilter(SearchFilter):
+    """SearchFilter backend that does not split terms
+    
+    The default SearchFilter treats comma or whitespace-separated terms as individual
+    search terms. This backend instead searches for the exact term.
+    """
+
+    def get_search_terms(self, request):
+        value = request.query_params.get(self.search_param, '')
+        field = CharField(trim_whitespace=False, allow_blank=True)
+        cleaned_value = field.run_validation(value)
+        return [cleaned_value]
+
+
 @extend_schema_view(
     get=extend_schema(
         operation_id="search_person",
@@ -89,7 +104,7 @@ class RpcPersonSearch(generics.ListAPIView):
     pagination_class = RpcLimitOffsetPagination
 
     # Searchable on all name-like fields or email addresses
-    filter_backends = [SearchFilter]
+    filter_backends = [SingleTermSearchFilter]
     search_fields = ["name", "plain", "ascii", "ascii_short", "email__address"]
 
 
