@@ -88,7 +88,8 @@ paths:
     
     /persons/search/:
         get:
-            operationId: rpc_person_search_list
+            operationId: search_person
+            description: Get a list of persons, matching by partial name or email
             parameters:
                 - name: limit
                   required: false
@@ -114,7 +115,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/PaginatedRpcPersonList'
+                                $ref: '#/components/schemas/PaginatedPersonList'
 
     /person/create_demo_person/:
         post:
@@ -487,7 +488,7 @@ components:
                             stream:
                                 type: string
 
-        PaginatedRpcPersonList:
+        PaginatedPersonList:
             type: object
             required:
                 - count
@@ -509,20 +510,7 @@ components:
                 results:
                     type: array
                     items:
-                        $ref: '#/components/schemas/RpcPerson'
-
-        RpcPerson:
-            type: object
-            properties:
-                id:
-                    type: integer
-                    readOnly: true
-                plain_name:
-                    type: string
-                    readOnly: true
-                picture:
-                    type: string
-                    readOnly: true
+                        $ref: '#/components/schemas/Person'
 
     securitySchemes:
         ApiKeyAuth:
