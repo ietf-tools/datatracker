@@ -18,7 +18,7 @@ from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 
 from ietf.api.ietf_utils import requires_api_token
-from ietf.api.serializers_rpc import RpcPersonSerializer
+from ietf.api.serializers_rpc import PersonSerializer
 from ietf.doc.models import Document, DocHistory, RelatedDocument
 from ietf.person.models import Email, Person
 
@@ -85,7 +85,7 @@ class RpcPersonSearch(generics.ListAPIView):
     # and extracting / touching up the rpc_person_search_list operation
     api_key_endpoint = "ietf.api.views_rpc"
     queryset = Person.objects.all()
-    serializer_class = RpcPersonSerializer
+    serializer_class = PersonSerializer
     pagination_class = RpcLimitOffsetPagination
 
     # Searchable on all name-like fields or email addresses

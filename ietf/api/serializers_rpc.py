@@ -4,8 +4,8 @@ from rest_framework import serializers
 from ietf.person.models import Person
 
 
-class RpcPersonSerializer(serializers.ModelSerializer):
-    picture = serializers.CharField(source="cdn_photo_url", read_only=True)
+class PersonSerializer(serializers.ModelSerializer):
+    picture = serializers.URLField(source="cdn_photo_url", read_only=True)
 
     class Meta:
         model = Person
