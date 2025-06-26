@@ -105,7 +105,7 @@ class RpcPersonSearch(generics.ListAPIView):
 
     # Searchable on all name-like fields or email addresses
     filter_backends = [SingleTermSearchFilter]
-    search_fields = ["name", "plain", "ascii", "ascii_short", "email__address"]
+    search_fields = ["name", "plain", "email__address"]
 
 
 def _document_source_format(doc):
