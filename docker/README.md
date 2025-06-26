@@ -157,11 +157,18 @@ On Windows:
 docker compose down -v --rmi all
 docker image prune
 ```
+
 ### Updating an older environment
 
 If you already have a clone, such as from a previous codesprint, and are updating that clone, before starting the datatracker from the updated image:
-* rm ietf/settings_local.py   # The startup script will put a new one, appropriate to the current release, in place
+* `rm ietf/settings_local.py`   # The startup script will put a new one, appropriate to the current release, in place
 * Execute the `Clean all` sequence above.
+
+If the dev environment fails to start, even after running the `Clean all` sequence above, you can fully purge all docker cache, containers, images and volumes by running:
+```sh
+docker system prune -a --volumes
+```
+Note that this will delete everything docker-related, including non-datatracker docker resources you might have.
 
 ### Accessing PostgreSQL Port
 
