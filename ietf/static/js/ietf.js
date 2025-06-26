@@ -13,7 +13,7 @@ import "bootstrap/js/dist/scrollspy";
 import "bootstrap/js/dist/tab";
 // import "bootstrap/js/dist/toast";
 import "bootstrap/js/dist/tooltip";
-
+import { debounce } from 'lodash-es';
 import jquery from "jquery";
 
 window.$ = window.jQuery = jquery;
@@ -112,6 +112,34 @@ function overflowShadows(el) {
     }
 }
 
+function ensureDropdownOnscreen(elm) {
+    const handlePlacement = () => {
+        if(!(elm instanceof HTMLElement)) {
+            return
+        }
+        const rect = elm.getBoundingClientRect()
+        const BUFFER_PX = 5 // additional distance from bottom of viewport
+        const existingStyleTop = parseInt(elm.style.top, 10)
+        const offscreenBy = Math.round(window.innerHeight - (rect.top + rect.height) - BUFFER_PX)
+        if(existingStyleTop === offscreenBy) {
+            console.log(`Already set top to ${offscreenBy}. Ignoring`)
+            // already set, nothing to do
+            return
+        }
+        if(offscreenBy < 0) {
+            elm.style.top = `${offscreenBy}px`
+        } 
+    }
+
+    const debouncedHandler = debounce(handlePlacement, 100)
+        
+    const observer = new MutationObserver(debouncedHandler)
+
+    observer.observe(elm, {
+        attributes: true
+    })
+}
+
 $(document)
     .ready(function () {
         // load data for the menu
@@ -121,20 +149,6 @@ $(document)
             type: "GET",
             dataType: "json",
             success: function (data) {
-                const adjustPositionining = (elm) => {
-                    if(elm instanceof HTMLElement) {
-                        // reset position of dropdown
-                        const rect = elm.getBoundingClientRect()
-                        const offscreenBy = window.innerHeight - (rect.top + rect.height)
-                        if(offscreenBy < 0) {
-                            elm.style.top = `${offscreenBy}px`
-                        }
-                    } else {
-                        console.error("not an element", elm)
-                    }
-                    
-                }
-
                 for (var parentId in data) {
                     var attachTo = $(".group-menu.group-parent-" + parentId);
                     if (attachTo.length == 0) {
@@ -161,21 +175,14 @@ $(document)
 
                     attachTo.append(menu.join(""));
 
-                    attachTo.find(".overflow-shadows").each(function(){ overflowShadows(this)})
-                
-                    if(window.MutationObserver) {
-                        // improve positioning of submenus because Bootstrap's Popper isn't working
-                        // perhaps because these are added after page load
-                        const dropdownElementList = attachTo.get(0).querySelectorAll('.dropdown-menu')
-                        const observer = new MutationObserver(function ([ { target } ]) {
-                            adjustPositionining(target)
-                        });
-                        dropdownElementList.forEach(dropdown => {
-                            observer.observe(dropdown, {
-                                attributes: true,
-                            });
-                        })
-                    }
+                    attachTo.find(".overflow-shadows").each(function(){
+                        // needs to be a function(){} so that we can access jQuery's `this`
+                        overflowShadows(this)
+                    })
+                    attachTo.find(".dropdown-menu").each(function(){
+                        // needs to be a function(){} so that we can access jQuery's `this`
+                        ensureDropdownOnscreen(this)
+                    })
                 }
             }
         });
