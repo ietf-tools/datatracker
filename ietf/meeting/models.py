@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
+# Copyright The IETF Trust 2007-2025, All Rights Reserved
 
 
 # old meeting models can be found in ../proceedings/models.py
@@ -49,15 +48,20 @@ from ietf.utils.validators import (
 )
 from ietf.utils.fields import MissingOkImageField
 
-countries = list(pytz.country_names.items())
-countries.sort(key=lambda x: x[1])
+# Set up countries / timezones, including an empty choice for fields
+EMPTY_CHOICE = ("", "-" * 9)
+COUNTRIES = (EMPTY_CHOICE,) + tuple(
+    sorted(pytz.country_names.items(), key=lambda x: x[1])
+)
 
-timezones = []
-for name in pytz.common_timezones:
-    tzfn = os.path.join(settings.TZDATA_ICS_PATH, name + ".ics")
-    if not os.path.islink(tzfn):
-        timezones.append((name, name))
-timezones.sort()
+_tzdata_ics_path = Path(settings.TZDATA_ICS_PATH)
+TIMEZONES = (EMPTY_CHOICE,) + tuple(
+    sorted(
+        (name, name)
+        for name in pytz.common_timezones
+        if name != "GMT" and not (_tzdata_ics_path / f"{name}.ics").is_symlink()
+    )
+)
 
 
 class Meeting(models.Model):
@@ -72,11 +76,11 @@ class Meeting(models.Model):
     days = models.IntegerField(default=7, null=False, validators=[MinValueValidator(1)],
         help_text="The number of days the meeting lasts")
     city = models.CharField(blank=True, max_length=255)
-    country = models.CharField(blank=True, max_length=2, choices=countries)
+    country = models.CharField(blank=True, max_length=2, choices=COUNTRIES)
     # We can't derive time-zone from country, as there are some that have
     # more than one timezone, and the pytz module doesn't provide timezone
     # lookup information for all relevant city/country combinations.
-    time_zone = models.CharField(max_length=255, choices=timezones, default='UTC')
+    time_zone = models.CharField(max_length=255, choices=TIMEZONES, default='UTC')
     idsubmit_cutoff_day_offset_00 = models.IntegerField(blank=True,
         default=settings.IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_00,
         help_text = "The number of days before the meeting start date when the submission of -00 drafts will be closed.")
@@ -530,7 +534,7 @@ class FloorPlan(models.Model):
     image   = models.ImageField(
         storage=BlobShadowFileSystemStorage(kind="floorplan"),
         upload_to=floorplan_path,
-        blank=True,
+        blank=False,
         default=None,
     )
     #
