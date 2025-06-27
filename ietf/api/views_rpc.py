@@ -31,6 +31,7 @@ from ietf.api.serializers_rpc import (
     OriginalStreamSerializer,
     ReferenceSerializer,
     EmailPersonSerializer,
+    RfcWithAuthorsSerializer,
 )
 from ietf.doc.models import Document, DocHistory
 from ietf.person.models import Email, Person
@@ -242,6 +243,19 @@ class RfcViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(rfcs, many=True)
         return Response(serializer.data)
 
+    @extend_schema(
+        operation_id="get_rfc_authors",
+        summary="Gather authors of the RFCs with the given numbers",
+        description="returns a list mapping rfc numbers to objects describing authors",
+        request=list[int],
+        responses=RfcWithAuthorsSerializer(many=True),
+    )
+    @action(detail=False, methods=["post"], serializer_class=RfcWithAuthorsSerializer)
+    def authors(self, request):
+        rfcs = self.get_queryset().filter(rfc_number__in=request.data)
+        serializer = self.get_serializer(rfcs, many=True)
+        return Response(serializer.data)
+
 
 class DraftsByNamesView(APIView):
     api_key_endpoint = "ietf.api.views_rpc"
@@ -257,34 +271,6 @@ class DraftsByNamesView(APIView):
         names = request.data
         docs = Document.objects.filter(type_id="draft", name__in=names)
         return Response(DraftSerializer(docs, many=True).data)
-
-
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rfc_authors(request):
-    """Gather authors of the RFCs with the given numbers"""
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
-    try:
-        rfc_numbers = json.loads(request.body)
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest()
-    response = []
-    for rfc in Document.objects.filter(type="rfc", rfc_number__in=rfc_numbers):
-        item = {"rfc_number": rfc.rfc_number, "authors": []}
-        for author in rfc.authors():
-            item_author = dict()
-            item_author["person_pk"] = author.pk
-            item_author["name"] = author.name
-            item_author["last_name"] = author.last_name()
-            item_author["initials"] = author.initials()
-            item_author["email_addresses"] = [
-                address.lower()
-                for address in author.email_set.values_list("address", flat=True)
-            ]
-            item["authors"].append(item_author)
-        response.append(item)
-    return JsonResponse(response, safe=False)
 
 
 @csrf_exempt

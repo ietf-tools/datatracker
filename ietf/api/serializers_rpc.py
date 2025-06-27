@@ -27,6 +27,33 @@ class EmailPersonSerializer(serializers.Serializer):
     initials = serializers.CharField(source="person.initials")
 
 
+class LowerCaseEmailField(serializers.EmailField):
+
+    def to_representation(self, value):
+        return super().to_representation(value).lower()
+
+
+class AuthorPersonSerializer(serializers.ModelSerializer):
+    person_pk = serializers.IntegerField(source="pk", read_only=True)
+    last_name = serializers.CharField()
+    initials = serializers.CharField()
+    email_addresses = serializers.ListField(
+        source="email_set.all", child=LowerCaseEmailField()
+    )
+
+    class Meta:
+        model = Person
+        fields = ["person_pk", "name", "last_name", "initials", "email_addresses"]
+
+
+class RfcWithAuthorsSerializer(serializers.ModelSerializer):
+    authors = AuthorPersonSerializer(many=True)
+
+    class Meta:
+        model = Document
+        fields = ["rfc_number", "authors"]
+
+
 class DocumentAuthorSerializer(serializers.ModelSerializer):
     """Serializer for a Person in a response"""
 
