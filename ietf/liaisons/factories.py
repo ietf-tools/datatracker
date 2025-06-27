@@ -9,7 +9,7 @@ class LiaisonStatementFactory(factory.django.DjangoModelFactory):
         skip_postgeneration_save = True
 
     title = factory.Faker('sentence')
-    from_contact = factory.Faker('email')
+    from_contact = factory.SubFactory('ietf.person.factories.EmailFactory')
     purpose_id = 'comment'
     body = factory.Faker('paragraph')
     state_id = 'posted'

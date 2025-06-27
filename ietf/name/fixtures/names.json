@@ -3341,7 +3341,7 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"ad\",\n    \"member\",\n    \"comdir\",\n    \"delegate\",\n    \"execdir\",\n    \"recman\",\n    \"secr\",\n    \"chair\"\n]",
+      "default_used_roles": "[\n    \"ad\",\n    \"member\",\n    \"comdir\",\n    \"delegate\",\n    \"execdir\",\n    \"recman\",\n    \"secr\",\n    \"trac-editor\",\n    \"trac-admin\",\n    \"chair\"\n]",
       "docman_roles": "[\n    \"chair\"\n]",
       "groupman_authroles": "[\n    \"Secretariat\"\n]",
       "groupman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
@@ -5391,21 +5391,6 @@
     },
     "model": "mailtrigger.mailtrigger",
     "pk": "review_completed_opsdir_telechat"
-  },
-  {
-    "fields": {
-      "cc": [
-        "ietf_last_call",
-        "review_doc_all_parties",
-        "review_doc_group_mail_list"
-      ],
-      "desc": "Recipients when a perfmetrdir Telechat review is completed",
-      "to": [
-        "review_team_mail_list"
-      ]
-    },
-    "model": "mailtrigger.mailtrigger",
-    "pk": "review_completed_perfmetrdir_telechat"
   },
   {
     "fields": {
@@ -11347,17 +11332,6 @@
   },
   {
     "fields": {
-      "desc": "ORCID",
-      "name": "ORCID",
-      "order": 0,
-      "type": "url",
-      "used": true
-    },
-    "model": "name.extresourcename",
-    "pk": "orcid"
-  },
-  {
-    "fields": {
       "desc": "Related Implementations",
       "name": "Related Implementations",
       "order": 0,
@@ -13588,7 +13562,7 @@
       "desc": "",
       "name": "Liaison CC Contact",
       "order": 9,
-      "used": false
+      "used": true
     },
     "model": "name.rolename",
     "pk": "liaison_cc_contact"
@@ -13598,20 +13572,10 @@
       "desc": "",
       "name": "Liaison Contact",
       "order": 8,
-      "used": false
-    },
-    "model": "name.rolename",
-    "pk": "liaison_contact"
-  },
-  {
-    "fields": {
-      "desc": "Coordinates liaison handling for the IAB",
-      "name": "Liaison Coordinator",
-      "order": 14,
       "used": true
     },
     "model": "name.rolename",
-    "pk": "liaison_coordinator"
+    "pk": "liaison_contact"
   },
   {
     "fields": {
@@ -13698,7 +13662,7 @@
       "desc": "Assigned permission TRAC_ADMIN in datatracker-managed Trac Wiki instances",
       "name": "Trac Admin",
       "order": 0,
-      "used": false
+      "used": true
     },
     "model": "name.rolename",
     "pk": "trac-admin"
@@ -13708,7 +13672,7 @@
       "desc": "Provides log-in permission to restricted Trac instances.  Used by the generate_apache_perms management command, called from ../../scripts/Cron-runner",
       "name": "Trac Editor",
       "order": 0,
-      "used": false
+      "used": true
     },
     "model": "name.rolename",
     "pk": "trac-editor"
