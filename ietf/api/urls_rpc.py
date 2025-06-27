@@ -23,7 +23,6 @@ urlpatterns = [
     url(r"^persons/$", views_rpc.RpcPersonsView.as_view()),
     url(r"^persons/search/", views_rpc.RpcPersonSearch.as_view()),
     path(r"subject/<str:subject_id>/person/", views_rpc.SubjectPersonView.as_view()),
-    path("", include(router.urls)),
 ]
 
 if settings.SERVER_MODE not in {"production", "test"}:
@@ -34,3 +33,11 @@ if settings.SERVER_MODE not in {"production", "test"}:
     urlpatterns.append(
         url(r"^person/create_demo_person/$", views_rpc_demo.create_demo_person)
     )
+
+# add routers at the end so individual routes can steal parts of their address
+# space (specifically, ^person/ routes so far)
+urlpatterns.extend(
+    [
+        path("", include(router.urls)),
+    ]
+)
