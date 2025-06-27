@@ -4,8 +4,6 @@
 
 import os
 import re
-from email.utils import parseaddr
-
 from pyquery import PyQuery
 from urllib.parse import urlparse, urlsplit, urlunsplit
 
@@ -13,13 +11,7 @@ from urllib.parse import urlparse, urlsplit, urlunsplit
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.core.validators import (
-    RegexValidator,
-    URLValidator,
-    BaseValidator,
-    validate_email,
-    ProhibitNullCharactersValidator,
-)
+from django.core.validators import RegexValidator, URLValidator, EmailValidator, BaseValidator
 from django.template.defaultfilters import filesizeformat
 from django.utils.deconstruct import deconstructible
 from django.utils.ipv6 import is_valid_ipv6_address
@@ -144,17 +136,8 @@ def validate_no_html_frame(file):
 # instantiations of sub-validiators used by the external_resource validator
 
 validate_url = URLValidator()
-validate_http_url = URLValidator(schemes=["http", "https"])
-validate_no_nulls = ProhibitNullCharactersValidator()
-
-
-def validate_mailbox_address(s):
-    """Validate an RFC 5322 'mailbox' (e.g., "Some Person" <some@example.com>)"""
-    # parseaddr() returns ("", "") on err; validate_email() will reject that for us
-    name, addr = parseaddr(s)
-    validate_no_nulls(name)  # could be stricter...
-    validate_email(addr)
-
+validate_http_url = URLValidator(schemes=['http','https'])
+validate_email = EmailValidator()
 
 def validate_ipv6_address(value):
     if not is_valid_ipv6_address(value):
