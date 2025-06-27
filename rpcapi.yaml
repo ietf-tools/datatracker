@@ -85,6 +85,37 @@ paths:
                                 type: object
                                 additionalProperties:
                                     type: string
+    
+    /persons/search/:
+        get:
+            operationId: search_person
+            description: Get a list of persons, matching by partial name or email
+            parameters:
+                - name: limit
+                  required: false
+                  in: query
+                  description: Number of results to return per page.
+                  schema:
+                      type: integer
+                - name: offset
+                  required: false
+                  in: query
+                  description: The initial index from which to return the results.
+                  schema:
+                      type: integer
+                - name: search
+                  required: false
+                  in: query
+                  description: A search term.
+                  schema:
+                      type: string
+            responses:
+                '200':
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PaginatedPersonList'
 
     /person/create_demo_person/:
         post:
@@ -456,6 +487,30 @@ components:
                                 type: integer
                             stream:
                                 type: string
+
+        PaginatedPersonList:
+            type: object
+            required:
+                - count
+                - results
+            properties:
+                count:
+                    type: integer
+                    example: 123
+                next:
+                    type: string
+                    nullable: true
+                    format: uri
+                    example: https://api.example.org/accounts/?offset=400&limit=100
+                previous:
+                    type: string
+                    nullable: true
+                    format: uri
+                    example: https://api.example.org/accounts/?offset=200&limit=100
+                results:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Person'
 
     securitySchemes:
         ApiKeyAuth:
