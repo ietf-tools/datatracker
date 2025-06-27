@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
-from typing import Literal
+import datetime
+from typing import Literal, Optional
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
@@ -86,3 +87,28 @@ class DraftSerializer(FullDraftSerializer):
             "source_format",
             "authors",
         ]
+
+
+class SubmittedToQueueSerializer(FullDraftSerializer):
+    submitted = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Document
+        fields = [
+            "id",
+            "name",
+            "stream",
+            "submitted",
+        ]
+
+    def get_submitted(self, doc) -> Optional[datetime.datetime]:
+        event = doc.sent_to_rfc_editor_event()
+        return None if event is None else event.time
+
+
+class OriginalStreamSerializer(serializers.ModelSerializer):
+    stream = serializers.CharField(read_only=True, source="orig_stream_id")
+
+    class Meta:
+        model = Document
+        fields = ["rfc_number", "stream"]

@@ -13,6 +13,11 @@ router.register(r"draft", views_rpc.DraftViewSet, basename="draft")
 router.register(r"person", views_rpc.PersonViewSet)
 router.register(r"rfc", views_rpc.RfcViewSet, basename="rfc")
 
+if settings.SERVER_MODE not in {"production", "test"}:
+    # for non production demos
+    router.register(r"demo", views_rpc_demo.DemoViewSet, basename="demo")
+
+
 urlpatterns = [
     url(r"^doc/drafts/(?P<doc_id>[0-9]+)/references/$", views_rpc.rpc_draft_refs),
     url(r"^doc/drafts_by_names/", views_rpc.DraftsByNamesView.as_view()),
@@ -22,15 +27,6 @@ urlpatterns = [
     url(r"^persons/search/", views_rpc.RpcPersonSearch.as_view()),
     path(r"subject/<str:subject_id>/person/", views_rpc.SubjectPersonView.as_view()),
 ]
-
-if settings.SERVER_MODE not in {"production", "test"}:
-    # for non production demos
-    urlpatterns.append(
-        url(r"^doc/create_demo_draft/$", views_rpc_demo.create_demo_draft)
-    )
-    urlpatterns.append(
-        url(r"^person/create_demo_person/$", views_rpc_demo.create_demo_person)
-    )
 
 # add routers at the end so individual routes can steal parts of their address
 # space (specifically, ^person/ routes so far)
