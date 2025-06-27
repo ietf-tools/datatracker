@@ -19,11 +19,9 @@ if settings.SERVER_MODE not in {"production", "test"}:
 
 
 urlpatterns = [
-    url(r"^doc/drafts/(?P<doc_id>[0-9]+)/references/$", views_rpc.rpc_draft_refs),
     url(r"^doc/drafts_by_names/", views_rpc.DraftsByNamesView.as_view()),
     url(r"^doc/rfc/authors/$", views_rpc.rfc_authors),
     url(r"^doc/draft/authors/$", views_rpc.draft_authors),
-    url(r"^person/persons_by_email/$", views_rpc.persons_by_email),
     url(r"^persons/search/", views_rpc.RpcPersonSearch.as_view()),
     path(r"subject/<str:subject_id>/person/", views_rpc.SubjectPersonView.as_view()),
 ]

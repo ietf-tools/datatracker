@@ -19,6 +19,14 @@ class PersonSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "plain_name", "picture"]
 
 
+class EmailPersonSerializer(serializers.Serializer):
+    email = serializers.EmailField(source="address")
+    person_pk = serializers.IntegerField(source="person.pk")
+    name = serializers.CharField(source="person.name")
+    last_name = serializers.CharField(source="person.last_name")
+    initials = serializers.CharField(source="person.initials")
+
+
 class DocumentAuthorSerializer(serializers.ModelSerializer):
     """Serializer for a Person in a response"""
 

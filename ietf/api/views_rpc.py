@@ -30,6 +30,7 @@ from ietf.api.serializers_rpc import (
     SubmittedToQueueSerializer,
     OriginalStreamSerializer,
     ReferenceSerializer,
+    EmailPersonSerializer,
 )
 from ietf.doc.models import Document, DocHistory
 from ietf.person.models import Email, Person
@@ -42,13 +43,6 @@ from .ietf_utils import requires_api_token
         summary="Find person by ID",
         description="Returns a single person",
     ),
-    batch=extend_schema(
-        operation_id="get_persons",
-        summary="Get a batch of persons",
-        description="Returns a list of persons matching requested ids. Omits any that are missing.",
-        request=list[int],
-        responses=PersonSerializer(many=True),
-    ),
 )
 class PersonViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Person.objects.all()
@@ -56,13 +50,36 @@ class PersonViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     api_key_endpoint = "ietf.api.views_rpc"
     lookup_url_kwarg = "person_id"
 
-    @action(detail=False, methods=["post"], serializer_class=PersonSerializer)
+    @extend_schema(
+        operation_id="get_persons",
+        summary="Get a batch of persons",
+        description="Returns a list of persons matching requested ids. Omits any that are missing.",
+        request=list[int],
+        responses=PersonSerializer(many=True),
+    )
+    @action(detail=False, methods=["post"])
     def batch(self, request):
         """Get a batch of rpc person names"""
         pks = request.data
         return Response(
             self.get_serializer(Person.objects.filter(pk__in=pks), many=True).data
         )
+
+    @extend_schema(
+        operation_id="persons_by_email",
+        summary="Get a batch of persons by email addresses",
+        description=(
+            "Returns a list of persons matching requested ids. "
+            "Omits any that are missing."
+        ),
+        request=list[str],
+        responses=EmailPersonSerializer(many=True),
+    )
+    @action(detail=False, methods=["post"], serializer_class=EmailPersonSerializer)
+    def batch_by_email(self, request):
+        emails = Email.objects.filter(address__in=request.data, person__isnull=False)
+        serializer = self.get_serializer(emails, many=True)
+        return Response(serializer.data)
 
 
 class SubjectPersonView(APIView):
@@ -224,7 +241,7 @@ class RfcViewSet(viewsets.GenericViewSet):
         )
         serializer = self.get_serializer(rfcs, many=True)
         return Response(serializer.data)
-        
+
 
 class DraftsByNamesView(APIView):
     api_key_endpoint = "ietf.api.views_rpc"
@@ -240,29 +257,6 @@ class DraftsByNamesView(APIView):
         names = request.data
         docs = Document.objects.filter(type_id="draft", name__in=names)
         return Response(DraftSerializer(docs, many=True).data)
-
-
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def persons_by_email(request):
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
-    try:
-        emails = json.loads(request.body)
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest()
-    response = []
-    for email in Email.objects.filter(address__in=emails).exclude(person__isnull=True):
-        response.append(
-            {
-                "email": email.address,
-                "person_pk": email.person.pk,
-                "name": email.person.name,
-                "last_name": email.person.last_name(),
-                "initials": email.person.initials(),
-            }
-        )
-    return JsonResponse(response, safe=False)
 
 
 @csrf_exempt
