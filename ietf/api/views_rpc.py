@@ -26,9 +26,12 @@ from rest_framework.pagination import LimitOffsetPagination
 from ietf.api.serializers_rpc import (
     PersonSerializer,
     FullDraftSerializer,
-    DraftSerializer, SubmittedToQueueSerializer, OriginalStreamSerializer,
+    DraftSerializer,
+    SubmittedToQueueSerializer,
+    OriginalStreamSerializer,
+    ReferenceSerializer,
 )
-from ietf.doc.models import Document, DocHistory, RelatedDocument
+from ietf.doc.models import Document, DocHistory
 from ietf.person.models import Email, Person
 from .ietf_utils import requires_api_token
 
@@ -170,25 +173,27 @@ class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         serializer = self.get_serializer(docs, many=True)
         return Response(serializer.data)
 
-
-
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rpc_draft_refs(request, doc_id):
-    """Return normative references"""
-    if request.method != "GET":
-        return HttpResponseNotAllowed(["GET"])
-
-    return JsonResponse(
-        dict(
-            references=[
-                dict(id=t[0], name=t[1])
-                for t in RelatedDocument.objects.filter(
-                    source_id=doc_id, target__type_id="draft", relationship_id="refnorm"
-                ).values_list("target_id", "target__name")
-            ]
-        )
+    @extend_schema(
+        operation_id="get_draft_references",
+        summary="Get normative references to I-Ds",
+        description=(
+            "Returns the id and name of each normatively "
+            "referenced Internet-Draft for the given docId"
+        ),
+        responses=ReferenceSerializer(many=True),
     )
+    @action(detail=True, serializer_class=ReferenceSerializer)
+    def references(self, request):
+        doc = self.get_object()
+        serializer = self.get_serializer(
+            [
+                reference
+                for reference in doc.related_that_doc("refnorm")
+                if reference.type_id == "draft"
+            ],
+            many=True,
+        )
+        return Response(serializer.data)
 
 
 @extend_schema_view(

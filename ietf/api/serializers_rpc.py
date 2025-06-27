@@ -6,7 +6,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from ietf.doc.models import DocumentAuthor, Document
+from ietf.doc.models import DocumentAuthor, Document, RelatedDocument
 from ietf.person.models import Person
 
 
@@ -112,3 +112,10 @@ class OriginalStreamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
         fields = ["rfc_number", "stream"]
+
+
+class ReferenceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Document
+        fields = ["id", "name"]
+        read_only_fields = ["id", "name"]
