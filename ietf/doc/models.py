@@ -20,8 +20,11 @@ from django.db import models
 from django.core import checks
 from django.core.files.base import File
 from django.core.cache import caches
-from django.core.validators import URLValidator, RegexValidator, \
-    ProhibitNullCharactersValidator
+from django.core.validators import (
+    URLValidator,
+    RegexValidator,
+    ProhibitNullCharactersValidator,
+)
 from django.urls import reverse as urlreverse
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
