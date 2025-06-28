@@ -54,6 +54,15 @@ class RfcWithAuthorsSerializer(serializers.ModelSerializer):
         fields = ["rfc_number", "authors"]
 
 
+class DraftWithAuthorsSerializer(serializers.ModelSerializer):
+    draft_name = serializers.CharField(source="name")
+    authors = AuthorPersonSerializer(many=True)
+
+    class Meta:
+        model = Document
+        fields = ["draft_name", "authors"]
+
+
 class DocumentAuthorSerializer(serializers.ModelSerializer):
     """Serializer for a Person in a response"""
 
