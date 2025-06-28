@@ -1,72 +1,108 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
-import json
+from drf_spectacular.utils import OpenApiParameter
+from rest_framework import serializers, viewsets, mixins
+from rest_framework.decorators import action
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
-from django.db.models import OuterRef, Subquery, Q
-from django.http import (
-    HttpResponseBadRequest,
-    JsonResponse,
-    HttpResponseNotAllowed,
-    HttpResponseNotFound,
-)
-from django.shortcuts import get_object_or_404
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.models import User
+from django.db.models import CharField, OuterRef, Subquery, Q
+from django.db.models.functions import Coalesce
+from django.http import Http404
 from drf_spectacular.utils import extend_schema_view, extend_schema
 from rest_framework import generics
 from rest_framework.fields import CharField
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 
-from ietf.api.ietf_utils import requires_api_token
-from ietf.api.serializers_rpc import PersonSerializer
-from ietf.doc.models import Document, DocHistory, RelatedDocument
+from ietf.api.serializers_rpc import (
+    PersonSerializer,
+    FullDraftSerializer,
+    DraftSerializer,
+    SubmittedToQueueSerializer,
+    OriginalStreamSerializer,
+    ReferenceSerializer,
+    EmailPersonSerializer,
+    RfcWithAuthorsSerializer,
+    DraftWithAuthorsSerializer,
+)
+from ietf.doc.models import Document, DocHistory
 from ietf.person.models import Email, Person
 
 
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rpc_person(request, person_id):
-    person = get_object_or_404(Person, pk=person_id)
-    return JsonResponse(
-        {
-            "id": person.id,
-            "plain_name": person.plain_name(),
-            "picture": person.cdn_photo_url() or None,
-        }
+@extend_schema_view(
+    retrieve=extend_schema(
+        operation_id="get_person_by_id",
+        summary="Find person by ID",
+        description="Returns a single person",
+    ),
+)
+class PersonViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    queryset = Person.objects.all()
+    serializer_class = PersonSerializer
+    api_key_endpoint = "ietf.api.views_rpc"
+    lookup_url_kwarg = "person_id"
+
+    @extend_schema(
+        operation_id="get_persons",
+        summary="Get a batch of persons",
+        description="Returns a list of persons matching requested ids. Omits any that are missing.",
+        request=list[int],
+        responses=PersonSerializer(many=True),
     )
+    @action(detail=False, methods=["post"])
+    def batch(self, request):
+        """Get a batch of rpc person names"""
+        pks = request.data
+        return Response(
+            self.get_serializer(Person.objects.filter(pk__in=pks), many=True).data
+        )
+
+    @extend_schema(
+        operation_id="persons_by_email",
+        summary="Get a batch of persons by email addresses",
+        description=(
+            "Returns a list of persons matching requested ids. "
+            "Omits any that are missing."
+        ),
+        request=list[str],
+        responses=EmailPersonSerializer(many=True),
+    )
+    @action(detail=False, methods=["post"], serializer_class=EmailPersonSerializer)
+    def batch_by_email(self, request):
+        emails = Email.objects.filter(address__in=request.data, person__isnull=False)
+        serializer = self.get_serializer(emails, many=True)
+        return Response(serializer.data)
 
 
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rpc_subject_person(request, subject_id):
-    try:
-        user_id = int(subject_id)
-    except ValueError:
-        return JsonResponse({"error": "Invalid subject id"}, status=400)
-    try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
-        return JsonResponse({"error": "Unknown subject"}, status=404)
-    if hasattr(
-        user, "person"
-    ):  # test this way to avoid exception on reverse OneToOneField
-        return rpc_person(request, person_id=user.person.pk)
-    return JsonResponse({"error": "Subject has no person"}, status=404)
+class SubjectPersonView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
 
-
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rpc_persons(request):
-    """Get a batch of rpc person names"""
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
-
-    pks = json.loads(request.body)
-    response = dict()
-    for p in Person.objects.filter(pk__in=pks):
-        response[str(p.pk)] = p.plain_name()
-    return JsonResponse(response)
+    @extend_schema(
+        operation_id="get_subject_person_by_id",
+        summary="Find person for OIDC subject by ID",
+        description="Returns a single person",
+        responses=PersonSerializer,
+        parameters=[
+            OpenApiParameter(
+                name="subject_id",
+                type=str,
+                description="subject ID of person to return",
+                location="path",
+            ),
+        ],
+    )
+    def get(self, request, subject_id: str):
+        try:
+            user_id = int(subject_id)
+        except ValueError:
+            raise serializers.ValidationError(
+                {"subject_id": "This field must be an integer value."}
+            )
+        person = Person.objects.filter(user__pk=user_id).first()
+        if person:
+            return Response(PersonSerializer(person).data)
+        raise Http404
 
 
 class RpcLimitOffsetPagination(LimitOffsetPagination):
@@ -76,13 +112,13 @@ class RpcLimitOffsetPagination(LimitOffsetPagination):
 
 class SingleTermSearchFilter(SearchFilter):
     """SearchFilter backend that does not split terms
-    
+
     The default SearchFilter treats comma or whitespace-separated terms as individual
     search terms. This backend instead searches for the exact term.
     """
 
     def get_search_terms(self, request):
-        value = request.query_params.get(self.search_param, '')
+        value = request.query_params.get(self.search_param, "")
         field = CharField(trim_whitespace=False, allow_blank=True)
         cleaned_value = field.run_validation(value)
         return [cleaned_value]
@@ -108,238 +144,139 @@ class RpcPersonSearch(generics.ListAPIView):
     search_fields = ["name", "plain", "email__address"]
 
 
-def _document_source_format(doc):
-    submission = doc.submission()
-    if submission is None:
-        return "unknown"
-    if ".xml" in submission.file_types:
-        if submission.xml_version == "3":
-            return "xml-v3"
-        else:
-            return "xml-v2"
-    elif ".txt" in submission.file_types:
-        return "txt"
-    return "unknown"
+@extend_schema_view(
+    retrieve=extend_schema(
+        operation_id="get_draft_by_id",
+        summary="Get a draft",
+        description="Returns the draft for the requested ID",
+    ),
+    submitted_to_rpc=extend_schema(
+        operation_id="submitted_to_rpc",
+        summary="List documents ready to enter the RFC Editor Queue",
+        description="List documents ready to enter the RFC Editor Queue",
+        responses=SubmittedToQueueSerializer(many=True),
+    ),
+)
+class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    queryset = Document.objects.filter(type_id="draft")
+    serializer_class = FullDraftSerializer
+    api_key_endpoint = "ietf.api.views_rpc"
+    lookup_url_kwarg = "doc_id"
 
+    @action(detail=False, serializer_class=SubmittedToQueueSerializer)
+    def submitted_to_rpc(self, request):
+        """Return documents in datatracker that have been submitted to the RPC but are not yet in the queue
 
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rpc_draft(request, doc_id):
-    if request.method != "GET":
-        return HttpResponseNotAllowed(["GET"])
-
-    try:
-        d = Document.objects.get(pk=doc_id, type_id="draft")
-    except Document.DoesNotExist:
-        return HttpResponseNotFound()
-    return JsonResponse(
-        {
-            "id": d.pk,
-            "name": d.name,
-            "rev": d.rev,
-            "stream": d.stream.slug,
-            "title": d.title,
-            "pages": d.pages,
-            "source_format": _document_source_format(d),
-            "authors": [
-                {
-                    "id": p.pk,
-                    "plain_name": p.person.plain_name(),
-                }
-                for p in d.documentauthor_set.all()
+        Those queries overreturn - there may be things, particularly not from the IETF stream that are already in the queue.
+        """
+        ietf_docs = Q(states__type_id="draft-iesg", states__slug__in=["ann"])
+        irtf_iab_ise_docs = Q(
+            states__type_id__in=[
+                "draft-stream-iab",
+                "draft-stream-irtf",
+                "draft-stream-ise",
             ],
-            "shepherd": d.shepherd.formatted_ascii_email() if d.shepherd else "",
-            "intended_std_level": (
-                d.intended_std_level.slug if d.intended_std_level else ""
-            ),
-        }
-    )
-
-
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rpc_draft_refs(request, doc_id):
-    """Return normative references"""
-    if request.method != "GET":
-        return HttpResponseNotAllowed(["GET"])
-
-    return JsonResponse(
-        dict(
-            references=[
-                dict(id=t[0], name=t[1])
-                for t in RelatedDocument.objects.filter(
-                    source_id=doc_id, target__type_id="draft", relationship_id="refnorm"
-                ).values_list("target_id", "target__name")
-            ]
+            states__slug__in=["rfc-edit"],
         )
+        # TODO: Need a way to talk about editorial stream docs
+        docs = (
+            self.get_queryset()
+            .filter(type_id="draft")
+            .filter(ietf_docs | irtf_iab_ise_docs)
+        )
+        serializer = self.get_serializer(docs, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        operation_id="get_draft_references",
+        summary="Get normative references to I-Ds",
+        description=(
+            "Returns the id and name of each normatively "
+            "referenced Internet-Draft for the given docId"
+        ),
+        responses=ReferenceSerializer(many=True),
     )
-
-
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def drafts_by_names(request):
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
-    try:
-        names = json.loads(request.body)
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest()
-    docs = Document.objects.filter(type_id="draft", name__in=names)
-    response = dict()
-    for doc in docs:
-        response[doc.name] = {
-            "id": doc.pk,
-            "name": doc.name,
-            "rev": doc.rev,
-            "stream": doc.stream.slug if doc.stream else "none",
-            "title": doc.title,
-            "pages": doc.pages,
-            "source_format": _document_source_format(doc),
-            "authors": [
-                {
-                    "id": p.pk,
-                    "plain_name": p.person.plain_name(),
-                }
-                for p in doc.documentauthor_set.all()
+    @action(detail=True, serializer_class=ReferenceSerializer)
+    def references(self, request, doc_id=None):
+        doc = self.get_object()
+        serializer = self.get_serializer(
+            [
+                reference
+                for reference in doc.related_that_doc("refnorm")
+                if reference.type_id == "draft"
             ],
-        }
-    return JsonResponse(response)
-
-
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def submitted_to_rpc(request):
-    """Return documents in datatracker that have been submitted to the RPC but are not yet in the queue
-
-    Those queries overreturn - there may be things, particularly not from the IETF stream that are already in the queue.
-    """
-    ietf_docs = Q(states__type_id="draft-iesg", states__slug__in=["ann"])
-    irtf_iab_ise_docs = Q(
-        states__type_id__in=[
-            "draft-stream-iab",
-            "draft-stream-irtf",
-            "draft-stream-ise",
-        ],
-        states__slug__in=["rfc-edit"],
-    )
-    # TODO: Need a way to talk about editorial stream docs
-    docs = Document.objects.filter(type_id="draft").filter(
-        ietf_docs | irtf_iab_ise_docs
-    )
-    response = {"submitted_to_rpc": []}
-    for doc in docs:
-        response["submitted_to_rpc"].append(
-            {
-                "name": doc.name,
-                "id": doc.pk,
-                "stream": doc.stream_id,
-                "submitted": f"{doc.sent_to_rfc_editor_event().time.isoformat()}",
-            }
+            many=True,
         )
-    return JsonResponse(response)
+        return Response(serializer.data)
 
-
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rfc_original_stream(request):
-    """Return the stream that an rfc was first published into for all rfcs"""
-    rfcs = Document.objects.filter(type="rfc").annotate(
-        orig_stream_id=Subquery(
-            DocHistory.objects.filter(doc=OuterRef("pk"))
-            .exclude(stream__isnull=True)
-            .order_by("time")
-            .values_list("stream_id", flat=True)[:1]
-        )
+    @extend_schema(
+        operation_id="get_draft_authors",
+        summary="Gather authors of the drafts with the given names",
+        description="returns a list mapping draft names to objects describing authors",
+        request=list[int],
+        responses=RfcWithAuthorsSerializer(many=True),
     )
-    response = {"original_stream": []}
-    for rfc in rfcs:
-        response["original_stream"].append(
-            {
-                "rfc_number": rfc.rfc_number,
-                "stream": (
-                    rfc.orig_stream_id
-                    if rfc.orig_stream_id is not None
-                    else rfc.stream_id
+    @action(detail=False, methods=["post"], serializer_class=DraftWithAuthorsSerializer)
+    def authors(self, request):
+        drafts = self.get_queryset().filter(name__in=request.data)
+        serializer = self.get_serializer(drafts, many=True)
+        return Response(serializer.data)
+
+
+@extend_schema_view(
+    rfc_original_stream=extend_schema(
+        operation_id="get_rfc_original_streams",
+        summary="Get the streams RFCs were originally published into",
+        description="returns a list of dicts associating an RFC with its originally published stream",
+        responses=OriginalStreamSerializer(many=True),
+    )
+)
+class RfcViewSet(viewsets.GenericViewSet):
+    queryset = Document.objects.filter(type_id="rfc")
+    api_key_endpoint = "ietf.api.views_rpc"
+
+    @action(detail=False, serializer_class=OriginalStreamSerializer)
+    def rfc_original_stream(self, request):
+        rfcs = self.get_queryset().annotate(
+            orig_stream_id=Coalesce(
+                Subquery(
+                    DocHistory.objects.filter(doc=OuterRef("pk"))
+                    .exclude(stream__isnull=True)
+                    .order_by("time")
+                    .values_list("stream_id", flat=True)[:1]
                 ),
-            }
+                "stream_id",
+                output_field=CharField(),
+            ),
         )
-    return JsonResponse(response)
+        serializer = self.get_serializer(rfcs, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        operation_id="get_rfc_authors",
+        summary="Gather authors of the RFCs with the given numbers",
+        description="returns a list mapping rfc numbers to objects describing authors",
+        request=list[int],
+        responses=RfcWithAuthorsSerializer(many=True),
+    )
+    @action(detail=False, methods=["post"], serializer_class=RfcWithAuthorsSerializer)
+    def authors(self, request):
+        rfcs = self.get_queryset().filter(rfc_number__in=request.data)
+        serializer = self.get_serializer(rfcs, many=True)
+        return Response(serializer.data)
 
 
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def persons_by_email(request):
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
-    try:
-        emails = json.loads(request.body)
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest()
-    response = []
-    for email in Email.objects.filter(address__in=emails).exclude(person__isnull=True):
-        response.append(
-            {
-                "email": email.address,
-                "person_pk": email.person.pk,
-                "name": email.person.name,
-                "last_name": email.person.last_name(),
-                "initials": email.person.initials(),
-            }
-        )
-    return JsonResponse(response, safe=False)
+class DraftsByNamesView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
 
-
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rfc_authors(request):
-    """Gather authors of the RFCs with the given numbers"""
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
-    try:
-        rfc_numbers = json.loads(request.body)
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest()
-    response = []
-    for rfc in Document.objects.filter(type="rfc", rfc_number__in=rfc_numbers):
-        item = {"rfc_number": rfc.rfc_number, "authors": []}
-        for author in rfc.authors():
-            item_author = dict()
-            item_author["person_pk"] = author.pk
-            item_author["name"] = author.name
-            item_author["last_name"] = author.last_name()
-            item_author["initials"] = author.initials()
-            item_author["email_addresses"] = [
-                address.lower()
-                for address in author.email_set.values_list("address", flat=True)
-            ]
-            item["authors"].append(item_author)
-        response.append(item)
-    return JsonResponse(response, safe=False)
-
-
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def draft_authors(request):
-    """Gather authors of the RFCs with the given numbers"""
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
-    try:
-        draft_names = json.loads(request.body)
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest()
-    response = []
-    for draft in Document.objects.filter(type="draft", name__in=draft_names):
-        item = {"draft_name": draft.name, "authors": []}
-        for author in draft.authors():
-            item_author = dict()
-            item_author["person_pk"] = author.pk
-            item_author["name"] = author.name
-            item_author["last_name"] = author.last_name()
-            item_author["initials"] = author.initials()
-            item_author["email_addresses"] = [
-                address.lower()
-                for address in author.email_set.values_list("address", flat=True)
-            ]
-            item["authors"].append(item_author)
-        response.append(item)
-    return JsonResponse(response, safe=False)
+    @extend_schema(
+        operation_id="get_drafts_by_names",
+        summary="Get a batch of drafts by draft names",
+        description="returns a list of drafts with matching names",
+        request=list[str],
+        responses=DraftSerializer(many=True),
+    )
+    def post(self, request):
+        names = request.data
+        docs = Document.objects.filter(type_id="draft", name__in=names)
+        return Response(DraftSerializer(docs, many=True).data)
