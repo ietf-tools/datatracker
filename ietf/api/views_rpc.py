@@ -1,7 +1,5 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
-import json
-
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import serializers, viewsets, mixins
 from rest_framework.decorators import action
@@ -10,13 +8,7 @@ from rest_framework.response import Response
 
 from django.db.models import CharField, OuterRef, Subquery, Q
 from django.db.models.functions import Coalesce
-from django.http import (
-    HttpResponseBadRequest,
-    JsonResponse,
-    HttpResponseNotAllowed,
-    Http404,
-)
-from django.views.decorators.csrf import csrf_exempt
+from django.http import Http404
 from drf_spectacular.utils import extend_schema_view, extend_schema
 from rest_framework import generics
 from rest_framework.fields import CharField
@@ -36,7 +28,6 @@ from ietf.api.serializers_rpc import (
 )
 from ietf.doc.models import Document, DocHistory
 from ietf.person.models import Email, Person
-from .ietf_utils import requires_api_token
 
 
 @extend_schema_view(
@@ -105,7 +96,9 @@ class SubjectPersonView(APIView):
         try:
             user_id = int(subject_id)
         except ValueError:
-            raise serializers.ValidationError({"subject_id": "This field must be an integer value."})
+            raise serializers.ValidationError(
+                {"subject_id": "This field must be an integer value."}
+            )
         person = Person.objects.filter(user__pk=user_id).first()
         if person:
             return Response(PersonSerializer(person).data)
@@ -119,13 +112,13 @@ class RpcLimitOffsetPagination(LimitOffsetPagination):
 
 class SingleTermSearchFilter(SearchFilter):
     """SearchFilter backend that does not split terms
-    
+
     The default SearchFilter treats comma or whitespace-separated terms as individual
     search terms. This backend instead searches for the exact term.
     """
 
     def get_search_terms(self, request):
-        value = request.query_params.get(self.search_param, '')
+        value = request.query_params.get(self.search_param, "")
         field = CharField(trim_whitespace=False, allow_blank=True)
         cleaned_value = field.run_validation(value)
         return [cleaned_value]
@@ -162,7 +155,7 @@ class RpcPersonSearch(generics.ListAPIView):
         summary="List documents ready to enter the RFC Editor Queue",
         description="List documents ready to enter the RFC Editor Queue",
         responses=SubmittedToQueueSerializer(many=True),
-    )
+    ),
 )
 class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Document.objects.filter(type_id="draft")
@@ -186,8 +179,10 @@ class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             states__slug__in=["rfc-edit"],
         )
         # TODO: Need a way to talk about editorial stream docs
-        docs = self.get_queryset().filter(type_id="draft").filter(
-            ietf_docs | irtf_iab_ise_docs
+        docs = (
+            self.get_queryset()
+            .filter(type_id="draft")
+            .filter(ietf_docs | irtf_iab_ise_docs)
         )
         serializer = self.get_serializer(docs, many=True)
         return Response(serializer.data)
@@ -279,7 +274,7 @@ class DraftsByNamesView(APIView):
         summary="Get a batch of drafts by draft names",
         description="returns a list of drafts with matching names",
         request=list[str],
-        responses=DraftSerializer(many=True)
+        responses=DraftSerializer(many=True),
     )
     def post(self, request):
         names = request.data

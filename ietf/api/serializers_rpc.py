@@ -28,7 +28,6 @@ class EmailPersonSerializer(serializers.Serializer):
 
 
 class LowerCaseEmailField(serializers.EmailField):
-
     def to_representation(self, value):
         return super().to_representation(value).lower()
 
