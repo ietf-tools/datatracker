@@ -20,7 +20,8 @@ from django.db import models
 from django.core import checks
 from django.core.files.base import File
 from django.core.cache import caches
-from django.core.validators import URLValidator, RegexValidator
+from django.core.validators import URLValidator, RegexValidator, \
+    ProhibitNullCharactersValidator
 from django.urls import reverse as urlreverse
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
@@ -107,7 +108,13 @@ class DocumentInfo(models.Model):
     time = models.DateTimeField(default=timezone.now) # should probably have auto_now=True
 
     type = ForeignKey(DocTypeName, blank=True, null=True) # Draft, Agenda, Minutes, Charter, Discuss, Guideline, Email, Review, Issue, Wiki, External ...
-    title = models.CharField(max_length=255, validators=[validate_no_control_chars, ])
+    title = models.CharField(
+        max_length=255,
+        validators=[
+            ProhibitNullCharactersValidator,
+            validate_no_control_chars,
+        ],
+    )
 
     states = models.ManyToManyField(State, blank=True) # plain state (Active/Expired/...), IESG state, stream state
     tags = models.ManyToManyField(DocTagName, blank=True) # Revised ID Needed, ExternalParty, AD Followup, ...
