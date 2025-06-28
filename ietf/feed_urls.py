@@ -1,7 +1,9 @@
+# Copyright The IETF Trust 2007-2024, All Rights Reserved
+
 from django.views.generic import RedirectView
 from django.conf import settings
 
-from ietf.doc.feeds import DocumentChangesFeed, InLastCallFeed, RfcFeed
+from ietf.doc.feeds import DocumentChangesFeed, InLastCallFeed, RfcFeed, DraftFeed
 from ietf.group.feeds import GroupChangesFeed
 from ietf.iesg.feeds import IESGAgendaFeed
 from ietf.ipr.feeds import LatestIprDisclosuresFeed
@@ -20,4 +22,5 @@ urlpatterns = [
     url(r'^wg-proceedings/$', LatestMeetingMaterialFeed()),
     url(r'^rfc/(?P<year>\d{4})/?$', RfcFeed()),
     url(r'^rfc/$', RfcFeed()),
+    url(r'^draft/?$', DraftFeed()),
 ]

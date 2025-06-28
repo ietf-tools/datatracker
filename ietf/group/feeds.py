@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2020, All Rights Reserved
+# Copyright The IETF Trust 2011-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -44,7 +44,7 @@ class GroupChangesFeed(Feed):
         elif isinstance(obj, GroupEvent):
             return obj.group.about_url()
 
-    def item_pubdate(self, obj):
+    def item_updateddate(self, obj):
         return obj.time
 
     def item_title(self, obj):
