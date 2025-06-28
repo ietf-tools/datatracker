@@ -202,7 +202,7 @@ class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         responses=ReferenceSerializer(many=True),
     )
     @action(detail=True, serializer_class=ReferenceSerializer)
-    def references(self, request):
+    def references(self, request, doc_id=None):
         doc = self.get_object()
         serializer = self.get_serializer(
             [
