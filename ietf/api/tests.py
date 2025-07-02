@@ -1590,8 +1590,9 @@ class DirectAuthApiTests(TestCase):
         self.assertEqual(data["result"], "failure")
         self.assertEqual(data["reason"], "invalid post")       
 
+    @override_settings()
     def test_notokenstore(self):
-        self.assertFalse(hasattr(settings, "APP_API_TOKENS"))
+        del settings.APP_API_TOKENS  # only affects overridden copy of settings!
         r = self.client.post(self.url,self.valid_body_with_good_password)
         self.assertEqual(r.status_code, 200)
         data = self.response_data(r)
