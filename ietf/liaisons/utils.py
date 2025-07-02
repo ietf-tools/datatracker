@@ -4,6 +4,22 @@ from ietf.group.models import Role
 from ietf.liaisons.models import LiaisonStatement
 from ietf.ietfauth.utils import has_role, passes_test_decorator
 
+# Roles allowed to create and manage outgoing liaison statements.
+OUTGOING_LIAISON_ROLES = [
+    "Area Director",
+    "IAB Chair",
+    "IAB Executive Director",
+    "IETF Chair",
+    "Liaison Manager",
+    "Liaison Coordinator",
+    "Secretariat",
+    "WG Chair",
+    "WG Secretary",
+]
+
+# Roles allowed to create and manage incoming liaison statements.
+INCOMING_LIAISON_ROLES = ["Authorized Individual", "Liaison Manager", "Liaison Coordinator", "Secretariat"]
+
 can_submit_liaison_required = passes_test_decorator(
     lambda u, *args, **kwargs: can_add_liaison(u),
     "Restricted to participants who are authorized to submit liaison statements on behalf of the various IETF entities")
@@ -30,13 +46,13 @@ def can_edit_liaison(user, liaison):
     '''Returns True if user has edit / approval authority.
     
     True if:
-    - user is Secretariat
+    - user is Secretariat or Liaison Coordinator
     - liaison is outgoing and user has approval authority
     - user is liaison manager of all SDOs involved
     '''
     if not user.is_authenticated:
         return False
-    if has_role(user, "Secretariat"):
+    if has_role(user, "Secretariat") or has_role(user, "Liaison Coordinator"):
         return True
 
     if liaison.is_outgoing() and liaison in approvable_liaison_statements(user):
@@ -59,11 +75,10 @@ def get_person_for_user(user):
         return None
 
 def can_add_outgoing_liaison(user):
-    return has_role(user, ["Area Director","WG Chair","WG Secretary","IETF Chair","IAB Chair",
-        "IAB Executive Director","Liaison Manager","Secretariat"])
+    return has_role(user, OUTGOING_LIAISON_ROLES)
 
 def can_add_incoming_liaison(user):
-    return has_role(user, ["Liaison Manager","Authorized Individual","Secretariat"])
+    return has_role(user, INCOMING_LIAISON_ROLES)
 
 def can_add_liaison(user):
     return can_add_incoming_liaison(user) or can_add_outgoing_liaison(user)
