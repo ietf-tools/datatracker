@@ -36,6 +36,7 @@ urlpatterns = [
     url(r'^v2/person/person', api_views.ApiV2PersonExportView.as_view()),
     # --- DRF API ---
     # path("core/", include(core_router.urls)),
+    path("purple/", include("ietf.api.urls_rpc")),
     path("red/", include(red_router.urls)),
     path("schema/", SpectacularAPIView.as_view()),
     #
@@ -97,7 +98,6 @@ urlpatterns = [
     url(r'^rfcdiff-latest-json/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', api_views.rfcdiff_latest_json),
     # direct authentication
     url(r'^directauth/?$', api_views.directauth),
-    url(r'^rpc/', include('ietf.api.urls_rpc')),
 ]
 
 # Additional (standard) Tastypie endpoints
