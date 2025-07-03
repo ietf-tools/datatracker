@@ -76,6 +76,13 @@ class DocumentAuthorSerializer(serializers.ModelSerializer):
 
 
 class FullDraftSerializer(serializers.ModelSerializer):
+    # Redefine these fields so they don't pick up the regex validator patterns.
+    # There seem to be some non-compliant drafts in the system! If this serializer
+    # is used for a writeable view, the validation will need to be added back.
+    name = serializers.CharField(max_length=255)
+    title = serializers.CharField(max_length=255)
+
+    # Other fields we need to add / adjust
     source_format = serializers.SerializerMethodField()
     authors = DocumentAuthorSerializer(many=True, source="documentauthor_set")
     shepherd = serializers.SerializerMethodField()
