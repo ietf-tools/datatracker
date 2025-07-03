@@ -6,12 +6,12 @@ from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from django.db.models import CharField, OuterRef, Subquery, Q
+from django.db.models import CharField as ModelCharField, OuterRef, Subquery, Q
 from django.db.models.functions import Coalesce
 from django.http import Http404
 from drf_spectacular.utils import extend_schema_view, extend_schema
 from rest_framework import generics
-from rest_framework.fields import CharField
+from rest_framework.fields import CharField as DrfCharField
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 
@@ -119,7 +119,7 @@ class SingleTermSearchFilter(SearchFilter):
 
     def get_search_terms(self, request):
         value = request.query_params.get(self.search_param, "")
-        field = CharField(trim_whitespace=False, allow_blank=True)
+        field = DrfCharField(trim_whitespace=False, allow_blank=True)
         cleaned_value = field.run_validation(value)
         return [cleaned_value]
 
@@ -246,7 +246,7 @@ class RfcViewSet(viewsets.GenericViewSet):
                     .values_list("stream_id", flat=True)[:1]
                 ),
                 "stream_id",
-                output_field=CharField(),
+                output_field=ModelCharField(),
             ),
         )
         serializer = self.get_serializer(rfcs, many=True)
