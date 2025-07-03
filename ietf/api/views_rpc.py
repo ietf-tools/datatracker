@@ -214,7 +214,7 @@ class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         summary="Gather authors of the drafts with the given names",
         description="returns a list mapping draft names to objects describing authors",
         request=list[int],
-        responses=RfcWithAuthorsSerializer(many=True),
+        responses=DraftWithAuthorsSerializer(many=True),
     )
     @action(detail=False, methods=["post"], serializer_class=DraftWithAuthorsSerializer)
     def authors(self, request):
