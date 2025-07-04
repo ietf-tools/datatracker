@@ -70,6 +70,7 @@ async function main () {
       .replace('__HOSTNAME__', hostname)
   )
   await fs.copy(path.join(basePath, 'docker/scripts/app-create-dirs.sh'), path.join(releasePath, 'app-create-dirs.sh'))
+  await fs.copy(path.join(basePath, 'docker/scripts/app-init-celery.sh'), path.join(releasePath, 'app-init-celery.sh'))
   await fs.copy(path.join(basePath, 'dev/deploy-to-container/start.sh'), path.join(releasePath, 'start.sh'))
   await fs.copy(path.join(basePath, 'test/data'), path.join(releasePath, 'test/data'))
   console.info('Updated configuration files.')
@@ -97,14 +98,6 @@ async function main () {
     dock.modem.followProgress(mqImagePullStream, (err, res) => err ? reject(err) : resolve(res))
   })
   console.info('Pulled latest MQ docker image.')
-
-  // Pull latest Celery image
-  console.info('Pulling latest Celery docker image...')
-  const celeryImagePullStream = await dock.pull('ghcr.io/ietf-tools/datatracker-celery:latest')
-  await new Promise((resolve, reject) => {
-    dock.modem.followProgress(celeryImagePullStream, (err, res) => err ? reject(err) : resolve(res))
-  })
-  console.info('Pulled latest Celery docker image.')
 
   // Terminate existing containers
   console.info('Ensuring existing containers with same name are terminated...')
@@ -221,7 +214,7 @@ async function main () {
   const celeryContainers = {}
   for (const conConf of conConfs) {
     celeryContainers[conConf.name] = await dock.createContainer({
-      Image: 'ghcr.io/ietf-tools/datatracker-celery:latest',
+      Image: 'ghcr.io/ietf-tools/datatracker-app-base:latest',
       name: `dt-${conConf.name}-${branch}`,
       Hostname: `dt-${conConf.name}-${branch}`,
       Env: [
@@ -243,7 +236,7 @@ async function main () {
           Name: 'unless-stopped'
         }
       },
-      Cmd: ['--loglevel=INFO']
+      Entrypoint: ['bash', '-c', 'chmod +x ./app-init-celery.sh && ./app-init-celery.sh']
     })
   }
   console.info('Created Celery docker containers successfully.')
