@@ -1392,6 +1392,7 @@ if "CACHES" not in locals():
                 "OPTIONS": {
                     "MAX_ENTRIES": 5000,
                 },
+                "VERSION": __version__,
             },
             "celery-results": {
                 "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
@@ -1435,6 +1436,7 @@ if "CACHES" not in locals():
                 "OPTIONS": {
                     "MAX_ENTRIES": 5000,
                 },
+                "VERSION": __version__,
             },
             "celery-results": {
                 "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
