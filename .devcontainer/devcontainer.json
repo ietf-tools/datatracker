@@ -23,7 +23,7 @@
                 "dbaeumer.vscode-eslint",
                 "eamodio.gitlens",
                 "editorconfig.editorconfig",
-                "vue.volar",
+                // "vue.volar", # causes crash in devcontainer...
                 "mrmlnc.vscode-duplicate",
                 "ms-azuretools.vscode-docker",
                 "ms-playwright.playwright",
