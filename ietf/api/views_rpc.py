@@ -213,7 +213,7 @@ class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         operation_id="get_draft_authors",
         summary="Gather authors of the drafts with the given names",
         description="returns a list mapping draft names to objects describing authors",
-        request=list[int],
+        request=list[str],
         responses=DraftWithAuthorsSerializer(many=True),
     )
     @action(detail=False, methods=["post"], serializer_class=DraftWithAuthorsSerializer)
