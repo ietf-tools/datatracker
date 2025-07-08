@@ -34,12 +34,31 @@ class RegistrationForm(forms.Form):
 
 
 class PasswordForm(forms.Form):
-    password = forms.CharField(widget=PasswordStrengthInput(attrs={'class':'password_strength'}))
+    password = forms.CharField(
+        widget=PasswordStrengthInput(
+            attrs={
+                "class": "password_strength",
+                "data-disable-strength-enforcement": "",  # usually removed in init
+            }
+        ),
+    )
     password_confirmation = forms.CharField(widget=PasswordConfirmationInput(
                                                         confirm_with='password',
                                                         attrs={'class':'password_confirmation'}),
                                             help_text="Enter the same password as above, for verification.",)
-                                            
+
+    def __init__(self, user, data=None):
+        self.user = user
+        super().__init__(data)
+        # Check whether we have validators to enforce
+        password_field = self.fields["password"]
+        for pwval in password_validation.get_default_password_validators():
+            if isinstance(pwval, password_validation.MinimumLengthValidator):
+                password_field.widget.attrs["minlength"] = pwval.min_length
+            elif isinstance(pwval, StrongPasswordValidator):
+                password_field.widget.attrs.pop(
+                    "data-disable-strength-enforcement", None
+                )
 
     def clean_password_confirmation(self):
         password = self.cleaned_data.get("password", "")
@@ -47,6 +66,11 @@ class PasswordForm(forms.Form):
         if password != password_confirmation:
             raise forms.ValidationError("The two password fields didn't match.")
         return password_confirmation
+
+    def clean(self):
+        password = self.cleaned_data["password"]
+        password_validation.validate_password(password, self.user)
+
 
 def ascii_cleaner(supposedly_ascii):
     outside_printable_ascii_pattern = r'[^\x20-\x7F]'
