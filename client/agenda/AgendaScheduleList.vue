@@ -302,7 +302,7 @@ const meetingEvents = computed(() => {
           icon: 'collection',
           href: undefined,
           click: () => showMaterials(item.id),
-          color: 'black'
+          color: 'darkgray'
         })
         links.push({
           id: `lnk-${item.id}-tar`,
@@ -1155,7 +1155,7 @@ onBeforeUnmount(() => {
       .agenda-table-cell-links-buttons {
         white-space: nowrap;
 
-        > a, > i {
+        > a, > i, > button {
           margin-left: 3px;
           color: #666;
           cursor: pointer;
@@ -1195,6 +1195,18 @@ onBeforeUnmount(() => {
 
             &:hover, &:focus {
               background-color: rgba($orange-500, .3);
+            }
+          }
+          &.text-darkgray {
+            color: $gray-900;
+            background-color: rgba($gray-700, .1);
+
+            @at-root .theme-dark & {
+              color: $gray-100;
+            }
+
+            &:hover, &:focus {
+              background-color: rgba($gray-700, .3);
             }
           }
           &.text-blue {
