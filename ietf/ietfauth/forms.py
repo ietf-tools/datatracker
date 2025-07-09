@@ -33,15 +33,28 @@ class RegistrationForm(forms.Form):
         return email
 
 
-class PasswordForm(forms.Form):
-    password = forms.CharField(
-        widget=PasswordStrengthInput(
-            attrs={
-                "class": "password_strength",
-                "data-disable-strength-enforcement": "",  # usually removed in init
-            }
-        ),
+class PasswordStrengthField(forms.CharField):
+    widget = PasswordStrengthInput(
+        attrs={
+            "class": "password_strength",
+            "data-disable-strength-enforcement": "",  # usually removed in init
+        }
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for pwval in password_validation.get_default_password_validators():
+            if isinstance(pwval, password_validation.MinimumLengthValidator):
+                self.widget.attrs["minlength"] = pwval.min_length
+            elif isinstance(pwval, StrongPasswordValidator):
+                self.widget.attrs.pop(
+                    "data-disable-strength-enforcement", None
+                )
+
+    
+
+class PasswordForm(forms.Form):
+    password = PasswordStrengthField()
     password_confirmation = forms.CharField(widget=PasswordConfirmationInput(
                                                         confirm_with='password',
                                                         attrs={'class':'password_confirmation'}),
@@ -50,26 +63,15 @@ class PasswordForm(forms.Form):
     def __init__(self, user, data=None):
         self.user = user
         super().__init__(data)
-        # Check whether we have validators to enforce
-        password_field = self.fields["password"]
-        for pwval in password_validation.get_default_password_validators():
-            if isinstance(pwval, password_validation.MinimumLengthValidator):
-                password_field.widget.attrs["minlength"] = pwval.min_length
-            elif isinstance(pwval, StrongPasswordValidator):
-                password_field.widget.attrs.pop(
-                    "data-disable-strength-enforcement", None
-                )
-
-    def clean_password_confirmation(self):
-        password = self.cleaned_data.get("password", "")
-        password_confirmation = self.cleaned_data["password_confirmation"]
-        if password != password_confirmation:
-            raise forms.ValidationError("The two password fields didn't match.")
-        return password_confirmation
 
     def clean(self):
-        password = self.cleaned_data["password"]
-        password_validation.validate_password(password, self.user)
+        password = self.cleaned_data.get("password")
+        password_confirmation = self.cleaned_data.get("password_confirmation")
+        if password != password_confirmation:
+            raise ValidationError(
+                "The password confirmation is different than the new password"
+            )
+        password_validation.validate_password(password_confirmation, self.user)
 
 
 def ascii_cleaner(supposedly_ascii):
@@ -201,14 +203,7 @@ class AllowlistForm(forms.ModelForm):
 class ChangePasswordForm(forms.Form):
     current_password = forms.CharField(widget=forms.PasswordInput)
 
-    new_password = forms.CharField(
-        widget=PasswordStrengthInput(
-            attrs={
-                "class": "password_strength",
-                "data-disable-strength-enforcement": "",  # usually removed in init
-            }
-        ),
-    )
+    new_password = PasswordStrengthField()
     new_password_confirmation = forms.CharField(
         widget=PasswordConfirmationInput(
             confirm_with="new_password", attrs={"class": "password_confirmation"}
@@ -218,15 +213,6 @@ class ChangePasswordForm(forms.Form):
     def __init__(self, user, data=None):
         self.user = user
         super().__init__(data)
-        # Check whether we have validators to enforce
-        new_password_field = self.fields["new_password"]
-        for pwval in password_validation.get_default_password_validators():
-            if isinstance(pwval, password_validation.MinimumLengthValidator):
-                new_password_field.widget.attrs["minlength"] = pwval.min_length
-            elif isinstance(pwval, StrongPasswordValidator):
-                new_password_field.widget.attrs.pop(
-                    "data-disable-strength-enforcement", None
-                )
 
     def clean_current_password(self):
         # n.b., password = None is handled by check_password and results in a failed check
@@ -236,8 +222,8 @@ class ChangePasswordForm(forms.Form):
         return password
 
     def clean(self):
-        new_password = self.cleaned_data.get("new_password", "")
-        conf_password = self.cleaned_data.get("new_password_confirmation", "")
+        new_password = self.cleaned_data.get("new_password")
+        conf_password = self.cleaned_data.get("new_password_confirmation")
         if new_password != conf_password:
             raise ValidationError(
                 "The password confirmation is different than the new password"
