@@ -234,9 +234,18 @@ class ChangePasswordForm(forms.Form):
         conf_password = self.cleaned_data.get("new_password_confirmation")
         if new_password != conf_password:
             raise ValidationError(
-                "The password confirmation is different than the new password"
+                {
+                    # attach error to specific field
+                    "new_password_confirmation": "The password confirmation is "
+                                                 "different than the new password"
+                }
             )
-        password_validation.validate_password(conf_password, self.user)
+        try:
+            password_validation.validate_password(conf_password, self.user)
+        except ValidationError as err:
+            raise ValidationError(
+                {"new_password": err}  # attach error to specific field
+            )
 
 
 class ChangeUsernameForm(forms.Form):
