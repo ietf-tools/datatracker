@@ -655,7 +655,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertFormError(
             r.context["form"],
-            None,
+            "password_confirmation",
             "The password confirmation is different than the new password",
         )
 
@@ -671,7 +671,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertFormError(
             r.context["form"],
-            None,
+            "password",
             "This password is too short. It must contain at least "
             f"{settings.PASSWORD_POLICY_MIN_LENGTH} characters."
         )
@@ -688,7 +688,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertFormError(
             r.context["form"],
-            None,
+            "password",
             "This password does not meet complexity requirements "
             "and is easily guessable."
         )
