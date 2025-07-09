@@ -669,7 +669,7 @@ def change_password(request):
     if request.method == 'POST':
         form = ChangePasswordForm(user, request.POST)
         if form.is_valid():
-            new_password = form.cleaned_data["new_password"]
+            new_password = form.cleaned_data["password"]
             
             user.set_password(new_password)
             user.save()

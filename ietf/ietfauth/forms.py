@@ -209,19 +209,13 @@ class AllowlistForm(forms.ModelForm):
         exclude = ['by', 'time' ]
 
 
-class ChangePasswordForm(forms.Form):
+class ChangePasswordForm(PasswordForm):
     current_password = forms.CharField(widget=forms.PasswordInput)
+    field_order = ["current_password", "password", "password_confirmation"]
 
-    new_password = PasswordStrengthField()
-    new_password_confirmation = forms.CharField(
-        widget=PasswordConfirmationInput(
-            confirm_with="new_password", attrs={"class": "password_confirmation"}
-        )
-    )
-
-    def __init__(self, user, data=None):
-        self.user = user
-        super().__init__(data)
+    def __init__(self, user, *args, **kwargs):
+        # user arg is optional in superclass, but required for this form
+        super().__init__(*args, user=user, **kwargs)
 
     def clean_current_password(self):
         # n.b., password = None is handled by check_password and results in a failed check
@@ -229,24 +223,6 @@ class ChangePasswordForm(forms.Form):
         if not self.user.check_password(password):
             raise ValidationError("Invalid password")
         return password
-
-    def clean(self):
-        new_password = self.cleaned_data.get("new_password")
-        conf_password = self.cleaned_data.get("new_password_confirmation")
-        if new_password != conf_password:
-            raise ValidationError(
-                {
-                    # attach error to specific field
-                    "new_password_confirmation": "The password confirmation is "
-                                                 "different than the new password"
-                }
-            )
-        try:
-            password_validation.validate_password(conf_password, self.user)
-        except ValidationError as err:
-            raise ValidationError(
-                {"new_password": err}  # attach error to specific field
-            )
 
 
 class ChangeUsernameForm(forms.Form):

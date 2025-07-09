@@ -636,8 +636,8 @@ class IetfAuthTests(TestCase):
             chpw_url,
             {
                 "current_password": "fiddlesticks",
-                "new_password": ANOTHER_VALID_PASSWORD,
-                "new_password_confirmation": ANOTHER_VALID_PASSWORD,
+                "password": ANOTHER_VALID_PASSWORD,
+                "password_confirmation": ANOTHER_VALID_PASSWORD,
             },
         )
         self.assertEqual(r.status_code, 200)
@@ -648,8 +648,8 @@ class IetfAuthTests(TestCase):
             chpw_url,
             {
                 "current_password": VALID_PASSWORD,
-                "new_password": ANOTHER_VALID_PASSWORD,
-                "new_password_confirmation": ANOTHER_VALID_PASSWORD[::-1],
+                "password": ANOTHER_VALID_PASSWORD,
+                "password_confirmation": ANOTHER_VALID_PASSWORD[::-1],
             },
         )
         self.assertEqual(r.status_code, 200)
@@ -664,8 +664,8 @@ class IetfAuthTests(TestCase):
             chpw_url,
             {
                 "current_password": VALID_PASSWORD,
-                "new_password": "sh0rtpw0rd",
-                "new_password_confirmation": "sh0rtpw0rd",
+                "password": "sh0rtpw0rd",
+                "password_confirmation": "sh0rtpw0rd",
             }
         )
         self.assertEqual(r.status_code, 200)
@@ -681,8 +681,8 @@ class IetfAuthTests(TestCase):
             chpw_url,
             {
                 "current_password": VALID_PASSWORD,
-                "new_password": "passwordpassword",
-                "new_password_confirmation": "passwordpassword",
+                "password": "passwordpassword",
+                "password_confirmation": "passwordpassword",
             }
         )
         self.assertEqual(r.status_code, 200)
@@ -698,8 +698,8 @@ class IetfAuthTests(TestCase):
             chpw_url,
             {
                 "current_password": VALID_PASSWORD,
-                "new_password": ANOTHER_VALID_PASSWORD,
-                "new_password_confirmation": ANOTHER_VALID_PASSWORD,
+                "password": ANOTHER_VALID_PASSWORD,
+                "password_confirmation": ANOTHER_VALID_PASSWORD,
             },
         )
         self.assertRedirects(r, prof_url)
