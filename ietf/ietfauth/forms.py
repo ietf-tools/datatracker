@@ -80,6 +80,7 @@ class PasswordForm(forms.Form):
             password_validation.validate_password(password_confirmation, self.user)
         except ValidationError as err:
             self.add_error("password", err)
+        return password_confirmation
 
 
 def ascii_cleaner(supposedly_ascii):
