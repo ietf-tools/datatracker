@@ -60,18 +60,26 @@ class PasswordForm(forms.Form):
                                                         attrs={'class':'password_confirmation'}),
                                             help_text="Enter the same password as above, for verification.",)
 
-    def __init__(self, user, data=None):
+    def __init__(self, *args, user=None, **kwargs):
+        # user is a kw-only argument to avoid interfering with the signature
+        # when this class is mixed with ModelForm in PersonPasswordForm
         self.user = user
-        super().__init__(data)
+        super().__init__(*args, **kwargs)
 
-    def clean(self):
+    def clean_password_confirmation(self):
+        # clean fields here rather than a clean() method so validation is
+        # still enforced in PersonPasswordForm without having to override its
+        # clean() method
         password = self.cleaned_data.get("password")
         password_confirmation = self.cleaned_data.get("password_confirmation")
         if password != password_confirmation:
             raise ValidationError(
-                "The password confirmation is different than the new password"
+                "The password confirmation is different than the new password" 
             )
-        password_validation.validate_password(password_confirmation, self.user)
+        try:
+            password_validation.validate_password(password_confirmation, self.user)
+        except ValidationError as err:
+            self.add_error("password", err)
 
 
 def ascii_cleaner(supposedly_ascii):
