@@ -415,6 +415,7 @@ class IetfAuthTests(TestCase):
         self.assertTrue(q('#volunteered'))
 
     def test_reset_password(self):
+        WEAK_PASSWORD="password1234"
         VALID_PASSWORD = "complex-and-long-valid-password"
         ANOTHER_VALID_PASSWORD = "very-complicated-and-lengthy-password"
         url = urlreverse("ietf.ietfauth.views.password_reset")
@@ -466,6 +467,18 @@ class IetfAuthTests(TestCase):
             {
                 "password": ANOTHER_VALID_PASSWORD,
                 "password_confirmation": ANOTHER_VALID_PASSWORD[::-1],
+            },
+        )
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q("form .is-invalid")) > 0)
+
+        # weak password
+        r = self.client.post(
+            confirm_url,
+            {
+                "password": WEAK_PASSWORD,
+                "password_confirmation": WEAK_PASSWORD,
             },
         )
         self.assertEqual(r.status_code, 200)
