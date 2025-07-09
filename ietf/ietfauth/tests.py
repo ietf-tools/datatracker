@@ -168,18 +168,40 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         # password mismatch
-        r = self.client.post(confirm_url, { 'password': 'secret', 'password_confirmation': 'nosecret' })
+        r = self.client.post(
+            confirm_url, {
+                "password": "secret-and-secure",
+                "password_confirmation": "not-secret-or-secure",
+            }
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(User.objects.filter(username=email).count(), 0)
+
+        # weak password
+        r = self.client.post(
+            confirm_url, {
+                "password": "password1234",
+                "password_confirmation": "password1234",
+            }
+        )
         self.assertEqual(r.status_code, 200)
         self.assertEqual(User.objects.filter(username=email).count(), 0)
 
         # confirm
-        r = self.client.post(confirm_url, { 'name': 'User Name', 'ascii': 'User Name', 'password': 'secret', 'password_confirmation': 'secret' })
+        r = self.client.post(
+            confirm_url,
+            {
+                "name": "User Name",
+                "ascii": "User Name",
+                "password": "secret-and-secure",
+                "password_confirmation": "secret-and-secure",
+            },
+        )
         self.assertEqual(r.status_code, 200)
         self.assertEqual(User.objects.filter(username=email).count(), 1)
         self.assertEqual(Person.objects.filter(user__username=email).count(), 1)
         self.assertEqual(Email.objects.filter(person__user__username=email).count(), 1)
 
-        
     # This also tests new account creation.
     def test_create_existing_account(self):
         # create account once
