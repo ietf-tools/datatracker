@@ -33,20 +33,55 @@ class RegistrationForm(forms.Form):
         return email
 
 
+class PasswordStrengthField(forms.CharField):
+    widget = PasswordStrengthInput(
+        attrs={
+            "class": "password_strength",
+            "data-disable-strength-enforcement": "",  # usually removed in init
+        }
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for pwval in password_validation.get_default_password_validators():
+            if isinstance(pwval, password_validation.MinimumLengthValidator):
+                self.widget.attrs["minlength"] = pwval.min_length
+            elif isinstance(pwval, StrongPasswordValidator):
+                self.widget.attrs.pop(
+                    "data-disable-strength-enforcement", None
+                )
+
+    
+
 class PasswordForm(forms.Form):
-    password = forms.CharField(widget=PasswordStrengthInput(attrs={'class':'password_strength'}))
+    password = PasswordStrengthField()
     password_confirmation = forms.CharField(widget=PasswordConfirmationInput(
                                                         confirm_with='password',
                                                         attrs={'class':'password_confirmation'}),
                                             help_text="Enter the same password as above, for verification.",)
-                                            
+
+    def __init__(self, *args, user=None, **kwargs):
+        # user is a kw-only argument to avoid interfering with the signature
+        # when this class is mixed with ModelForm in PersonPasswordForm
+        self.user = user
+        super().__init__(*args, **kwargs)
 
     def clean_password_confirmation(self):
-        password = self.cleaned_data.get("password", "")
-        password_confirmation = self.cleaned_data["password_confirmation"]
+        # clean fields here rather than a clean() method so validation is
+        # still enforced in PersonPasswordForm without having to override its
+        # clean() method
+        password = self.cleaned_data.get("password")
+        password_confirmation = self.cleaned_data.get("password_confirmation")
         if password != password_confirmation:
-            raise forms.ValidationError("The two password fields didn't match.")
+            raise ValidationError(
+                "The password confirmation is different than the new password" 
+            )
+        try:
+            password_validation.validate_password(password_confirmation, self.user)
+        except ValidationError as err:
+            self.add_error("password", err)
         return password_confirmation
+
 
 def ascii_cleaner(supposedly_ascii):
     outside_printable_ascii_pattern = r'[^\x20-\x7F]'
@@ -174,35 +209,13 @@ class AllowlistForm(forms.ModelForm):
         exclude = ['by', 'time' ]
 
 
-class ChangePasswordForm(forms.Form):
+class ChangePasswordForm(PasswordForm):
     current_password = forms.CharField(widget=forms.PasswordInput)
+    field_order = ["current_password", "password", "password_confirmation"]
 
-    new_password = forms.CharField(
-        widget=PasswordStrengthInput(
-            attrs={
-                "class": "password_strength",
-                "data-disable-strength-enforcement": "",  # usually removed in init
-            }
-        ),
-    )
-    new_password_confirmation = forms.CharField(
-        widget=PasswordConfirmationInput(
-            confirm_with="new_password", attrs={"class": "password_confirmation"}
-        )
-    )
-
-    def __init__(self, user, data=None):
-        self.user = user
-        super().__init__(data)
-        # Check whether we have validators to enforce
-        new_password_field = self.fields["new_password"]
-        for pwval in password_validation.get_default_password_validators():
-            if isinstance(pwval, password_validation.MinimumLengthValidator):
-                new_password_field.widget.attrs["minlength"] = pwval.min_length
-            elif isinstance(pwval, StrongPasswordValidator):
-                new_password_field.widget.attrs.pop(
-                    "data-disable-strength-enforcement", None
-                )
+    def __init__(self, user, *args, **kwargs):
+        # user arg is optional in superclass, but required for this form
+        super().__init__(*args, user=user, **kwargs)
 
     def clean_current_password(self):
         # n.b., password = None is handled by check_password and results in a failed check
@@ -210,15 +223,6 @@ class ChangePasswordForm(forms.Form):
         if not self.user.check_password(password):
             raise ValidationError("Invalid password")
         return password
-
-    def clean(self):
-        new_password = self.cleaned_data.get("new_password", "")
-        conf_password = self.cleaned_data.get("new_password_confirmation", "")
-        if new_password != conf_password:
-            raise ValidationError(
-                "The password confirmation is different than the new password"
-            )
-        password_validation.validate_password(conf_password, self.user)
 
 
 class ChangeUsernameForm(forms.Form):
