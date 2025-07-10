@@ -257,7 +257,11 @@ def edit_position(request, name, ballot_id):
 @csrf_exempt
 def api_set_position(request):
     def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
     if request.method == 'POST':
         ad = request.user.person
         name = request.POST.get('doc')
@@ -290,7 +294,11 @@ def api_set_position(request):
     addrs, frm, subject, body = build_position_email(ad, doc, pos)
     send_mail_text(request, addrs.to, frm, subject, body, cc=addrs.cc)
 
-    return HttpResponse("Done", status=200, content_type='text/plain')
+    return HttpResponse(
+        "Done",
+        status=200,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 
 def build_position_email(balloter, doc, pos):

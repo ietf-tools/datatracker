@@ -119,7 +119,11 @@ class ApiV2PersonExportView(DetailView, JsonExportMixin):
     model = Person
 
     def err(self, code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     def post(self, request):
         querydict = request.POST.copy()
@@ -157,7 +161,11 @@ class ApiV2PersonExportView(DetailView, JsonExportMixin):
 def api_new_meeting_registration(request):
     '''REST API to notify the datatracker about a new meeting registration'''
     def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
     required_fields = [ 'meeting', 'first_name', 'last_name', 'affiliation', 'country_code',
                         'email', 'reg_type', 'ticket_type', 'checkedin', 'is_nomcom_volunteer']
     fields = required_fields + []
@@ -195,7 +203,11 @@ def api_new_meeting_registration(request):
                 meeting_id=meeting.pk,
                 email=email,
                 reg_type=reg_type).delete()
-            return HttpResponse('OK', status=200, content_type='text/plain')
+            return HttpResponse(
+                'OK',
+                status=200,
+                content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+            )
         else:
             object, created = MeetingRegistration.objects.get_or_create(
                 meeting_id=meeting.pk,
@@ -237,7 +249,11 @@ def api_new_meeting_registration(request):
                             "origin": "registration"
                         }
                     )
-            return HttpResponse(response, status=202, content_type='text/plain')
+            return HttpResponse(
+                response,
+                status=202,
+                content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+            )
     else:
         return HttpResponse(status=405)
 
@@ -247,7 +263,11 @@ def api_new_meeting_registration(request):
 def api_new_meeting_registration_v2(request):
     '''REST API to notify the datatracker about a new meeting registration'''
     def _http_err(code, text):
-        return HttpResponse(text, status=code, content_type="text/plain")
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     def _api_response(result):
         return JsonResponse(data={"result": result})
@@ -287,7 +307,11 @@ def api_new_meeting_registration_v2(request):
 
     process_single_registration(reg_data, meeting)
 
-    return HttpResponse('Success', status=202, content_type='text/plain')
+    return HttpResponse(
+        'Success',
+        status=202,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 
 def version(request):
@@ -606,7 +630,11 @@ def related_email_list(request, email):
     to Datatracker, via Person object
     """
     def _http_err(code, text):
-        return HttpResponse(text, status=code, content_type="text/plain")
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     if request.method == "GET":
         try:
@@ -732,7 +760,11 @@ def ingest_email_handler(request, test_mode=False):
     """
 
     def _http_err(code, text):
-        return HttpResponse(text, status=code, content_type="text/plain")
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     def _api_response(result):
         return JsonResponse(data={"result": result})
