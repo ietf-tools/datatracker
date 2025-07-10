@@ -2760,7 +2760,10 @@ def upload_session_bluesheets(request, session_id, num):
             ota = session.official_timeslotassignment()
             sess_time = ota and ota.timeslot.time
             if not sess_time:
-                return HttpResponseGone("Cannot receive uploads for an unscheduled session.  Please check the session ID.", content_type="text/plain")
+                return HttpResponseGone(
+                    "Cannot receive uploads for an unscheduled session.  Please check the session ID.",
+                    content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+                )
 
 
             save_error = save_bluesheet(request, session, file, encoding=form.file_encoding[file.name])
@@ -2821,7 +2824,7 @@ def upload_session_minutes(request, session_id, num):
             except SessionNotScheduledError:
                 return HttpResponseGone(
                     "Cannot receive uploads for an unscheduled session. Please check the session ID.",
-                    content_type="text/plain",
+                    content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
                 )
             except SaveMaterialsError as err:
                 form.add_error(None, str(err))
@@ -2880,7 +2883,7 @@ def upload_session_narrativeminutes(request, session_id, num):
             except SessionNotScheduledError:
                 return HttpResponseGone(
                     "Cannot receive uploads for an unscheduled session. Please check the session ID.",
-                    content_type="text/plain",
+                    content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
                 )
             except SaveMaterialsError as err:
                 form.add_error(None, str(err))
@@ -2978,7 +2981,10 @@ def upload_session_agenda(request, session_id, num):
                 ota = session.official_timeslotassignment()
                 sess_time = ota and ota.timeslot.time
                 if not sess_time:
-                    return HttpResponseGone("Cannot receive uploads for an unscheduled session.  Please check the session ID.", content_type="text/plain")
+                    return HttpResponseGone(
+                        "Cannot receive uploads for an unscheduled session.  Please check the session ID.",
+                        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+                    )
                 if session.meeting.type_id=='ietf':
                     name = 'agenda-%s-%s' % (session.meeting.number, 
                                                  session.group.acronym) 
@@ -4282,11 +4288,17 @@ def api_set_meetecho_recording_name(request):
         name: the name to use for the recording at meetecho player
     """
     def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     if request.method != "POST":
         return HttpResponseNotAllowed(
-            content="Method not allowed", content_type="text/plain", permitted_methods=('POST',)
+            content="Method not allowed",
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+            permitted_methods=('POST',),
         )
 
     session_id = request.POST.get('session_id', None)
@@ -4306,7 +4318,11 @@ def api_set_meetecho_recording_name(request):
     session.meetecho_recording_name = name
     session.save()
 
-    return HttpResponse("Done", status=200, content_type='text/plain')
+    return HttpResponse(
+        "Done",
+        status=200,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 @require_api_key
 @role_required('Recording Manager')
@@ -4320,11 +4336,17 @@ def api_set_session_video_url(request):
       url: The recording url (on YouTube, or whatever)
     """
     def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     if request.method != 'POST':
         return HttpResponseNotAllowed(
-            content="Method not allowed", content_type="text/plain", permitted_methods=('POST',)
+            content="Method not allowed",
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+            permitted_methods=('POST',),
         )
 
     # Temporary: fall back to deprecated interface if we have old-style parameters.
@@ -4363,7 +4385,11 @@ def api_set_session_video_url(request):
         time = session.official_timeslotassignment().timeslot.time
         title = 'Video recording for %s on %s at %s' % (session.group.acronym, time.date(), time.time())
         create_recording(session, incoming_url, title=title, user=request.user.person)
-    return HttpResponse("Done", status=200, content_type='text/plain')
+    return HttpResponse(
+        "Done",
+        status=200,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 
 def deprecated_api_set_session_video_url(request):
@@ -4372,7 +4398,11 @@ def deprecated_api_set_session_video_url(request):
     Uses meeting/group/item to identify session.
     """
     def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
     if request.method == 'POST':
         # parameters:
         #   apikey: the poster's personal API key
@@ -4426,7 +4456,11 @@ def deprecated_api_set_session_video_url(request):
     else:
         return err(405, "Method not allowed")
 
-    return HttpResponse("Done", status=200, content_type='text/plain')
+    return HttpResponse(
+        "Done",
+        status=200,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 
 @require_api_key
@@ -4478,7 +4512,11 @@ def api_add_session_attendees(request):
     )
 
     def err(code, text):
-        return HttpResponse(text, status=code, content_type="text/plain")
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     if request.method != "POST":
         return err(405, "Method not allowed")
@@ -4531,7 +4569,11 @@ def api_add_session_attendees(request):
         if save_error:
             return err(400, save_error)
 
-    return HttpResponse("Done", status=200, content_type="text/plain")
+    return HttpResponse(
+        "Done",
+        status=200,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 
 @require_api_key
@@ -4539,7 +4581,11 @@ def api_add_session_attendees(request):
 @csrf_exempt
 def api_upload_chatlog(request):
     def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
     if request.method != 'POST':
         return err(405, "Method not allowed")
     apidata_post = request.POST.get('apidata')
@@ -4572,14 +4618,22 @@ def api_upload_chatlog(request):
     write_doc_for_session(session, 'chatlog', filename, json.dumps(apidata['chatlog']))
     e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
     doc.save_with_history([e])
-    return HttpResponse("Done", status=200, content_type='text/plain')
+    return HttpResponse(
+        "Done",
+        status=200,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 @require_api_key
 @role_required('Recording Manager')
 @csrf_exempt
 def api_upload_polls(request):
     def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
     if request.method != 'POST':
         return err(405, "Method not allowed")
     apidata_post = request.POST.get('apidata')
@@ -4612,7 +4666,11 @@ def api_upload_polls(request):
     write_doc_for_session(session, 'polls', filename, json.dumps(apidata['polls']))
     e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
     doc.save_with_history([e])
-    return HttpResponse("Done", status=200, content_type='text/plain')
+    return HttpResponse(
+        "Done",
+        status=200,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 @require_api_key
 @role_required('Recording Manager', 'Secretariat')
@@ -4627,11 +4685,17 @@ def api_upload_bluesheet(request):
           [{'name': 'Name', 'affiliation': 'Organization', }, ...]
     """
     def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     if request.method != 'POST':
         return HttpResponseNotAllowed(
-            content="Method not allowed", content_type="text/plain", permitted_methods=('POST',)
+            content="Method not allowed",
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+            permitted_methods=('POST',),
         )
 
     session_id = request.POST.get('session_id', None)
@@ -4666,7 +4730,11 @@ def api_upload_bluesheet(request):
         save_err = save_bluesheet(request, session, file)
     if save_err:
         return err(400, save_err)
-    return HttpResponse("Done", status=200, content_type='text/plain')
+    return HttpResponse(
+        "Done",
+        status=200,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 
 def important_dates(request, num=None, output_format=None):
@@ -5090,7 +5158,7 @@ def import_session_minutes(request, session_id, num):
             except SessionNotScheduledError:
                 return HttpResponseGone(
                     "Cannot import minutes for an unscheduled session. Please check the session ID.",
-                    content_type="text/plain",
+                    content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
                 )
             except SaveMaterialsError as err:
                 form.add_error(None, str(err))

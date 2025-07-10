@@ -48,7 +48,7 @@ def require_api_key(f):
     @wraps(f)
     def _wrapper(request, *args, **kwargs):
         def err(code, text):
-            return HttpResponse(text, status=code, content_type='text/plain')
+            return HttpResponse(text, status=code, content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}")
         # Check method and get hash
         if request.method == 'POST':
             hash = request.POST.get('apikey')
