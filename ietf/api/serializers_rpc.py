@@ -12,6 +12,7 @@ from ietf.person.models import Person
 
 
 class PersonSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(read_only=True)
     picture = serializers.URLField(source="cdn_photo_url", read_only=True)
     url = serializers.SerializerMethodField(
         help_text="relative URL for datatracker person page"
@@ -19,8 +20,8 @@ class PersonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Person
-        fields = ["id", "plain_name", "picture", "url"]
-        read_only_fields = ["id", "plain_name", "picture"]
+        fields = ["id", "plain_name", "email", "picture", "url"]
+        read_only_fields = ["id", "plain_name", "email", "picture", "url"]
 
     @extend_schema_field(OpenApiTypes.URI)
     def get_url(self, object: Person):
