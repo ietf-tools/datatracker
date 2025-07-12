@@ -2,21 +2,33 @@
 import datetime
 from typing import Literal, Optional
 
+from django.urls import reverse as urlreverse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from ietf.doc.models import DocumentAuthor, Document, RelatedDocument
+from ietf.doc.models import DocumentAuthor, Document
 from ietf.person.models import Person
 
 
 class PersonSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(read_only=True)
     picture = serializers.URLField(source="cdn_photo_url", read_only=True)
+    url = serializers.SerializerMethodField(
+        help_text="relative URL for datatracker person page"
+    )
 
     class Meta:
         model = Person
-        fields = ["id", "plain_name", "picture"]
-        read_only_fields = ["id", "plain_name", "picture"]
+        fields = ["id", "plain_name", "email", "picture", "url"]
+        read_only_fields = ["id", "plain_name", "email", "picture", "url"]
+
+    @extend_schema_field(OpenApiTypes.URI)
+    def get_url(self, object: Person):
+        return urlreverse(
+            "ietf.person.views.profile",
+            kwargs={"email_or_name": object.email_address() or object.name},
+        )
 
 
 class EmailPersonSerializer(serializers.Serializer):
