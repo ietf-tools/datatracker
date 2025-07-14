@@ -86,6 +86,12 @@ services:
             - .:/workspace
             - app-assets:/assets
 
+    redis:
+        image: redis:8
+        command: ['redis-server', '--save', '10', '1', '--loglevel', 'warning']
+        volumes:
+            - redis:/data
+
     replicator:
         build:
             context: .
@@ -150,3 +156,4 @@ volumes:
     app-assets:
     minio-data:
     blobdb-data:
+    redis:
