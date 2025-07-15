@@ -19,7 +19,10 @@
             <span class="fw-bolder">Groups</span>
         </li>
     {% endif %}
-    {% if flavor == 'top' %}<li class="dropdown-header">By area/parent</li>{% endif %}
+    {% if flavor == 'top' %}
+        <li><a class="dropdown-item" href="https://datatracker.ietf.org/group/iesg/about/">IESG</a></li>
+        <li class="dropdown-header">By area/parent</li>
+    {% endif %}
     {% wg_menu flavor %}
     <li class="dropend">
         <a class="dropdown-item dropdown-toggle {% if flavor != 'top' %}text-wrap{% endif %}"
