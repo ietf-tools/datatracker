@@ -255,14 +255,14 @@
     {% endif %}
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
-           href="{% url "ietf.doc.views_search.search" %}">
-            Submit Errata
+           href="http://localhost/errata-stream-1/templates/errata-template/-/forks/new" target="_blank">
+            Submit a New Errata
         </a>
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
-           href="{% url "ietf.doc.views_search.recent_drafts" %}">
-            Search for Errata
+           href="http://localhost/"  target="_blank">
+            Search for an Existing Errata
         </a>
     </li>
     {% if flavor == 'top' %}
