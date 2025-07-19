@@ -98,11 +98,30 @@
             Submit an Internet-Draft
         </a>
     </li>
-    <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
-           href="{% url 'ietf.doc.views_search.ad_workload' %}">
-            IESG dashboard
-        </a>
+    <li class="dropend"> <!-- Use .dropend for right-aligned nested dropdown -->
+      <a class="dropdown-item dropdown-toggle" href="#" id="nestedDropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+        IESG
+      </a>
+      <ul class="dropdown-menu" aria-labelledby="nestedDropdownMenuButton">
+            <li>
+                <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                href="{% url 'ietf.group.views.appeals' acronym='iesg' %}">
+                    IESG appeals
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                href="{% url 'ietf.doc.views_search.ad_workload' %}">
+                    IESG dashboard
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                href="{% url 'ietf.group.views.statements' acronym='iesg' %}">
+                    IESG statements
+                </a>
+            </li>
+        </ul>
     </li>
     {% if user and user.is_authenticated %}
         <li>
