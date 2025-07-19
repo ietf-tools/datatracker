@@ -98,7 +98,6 @@ old_destroy: Optional[Callable] = None
 old_create: Optional[Callable] = None
 
 template_coverage_collection = None
-code_coverage_collection = None
 url_coverage_collection = None
 validation_settings = {"validate_html": None, "validate_html_harder": None, "show_logging": False}
 
@@ -460,18 +459,15 @@ def save_test_results(failures, test_labels):
 
 def set_coverage_checking(flag=True):
     global template_coverage_collection
-    global code_coverage_collection
     global url_coverage_collection
     if settings.SERVER_MODE == 'test' and settings.TEST_CODE_COVERAGE_CHECKER is not None:
         if flag:
             settings.TEST_CODE_COVERAGE_CHECKER.collector.resume()
             template_coverage_collection = True
-            code_coverage_collection = True
             url_coverage_collection = True
         else:
             settings.TEST_CODE_COVERAGE_CHECKER.collector.pause()
             template_coverage_collection = False
-            code_coverage_collection = False
             url_coverage_collection = False
 
 class CoverageReporter(Reporter):
@@ -1135,9 +1131,8 @@ class IetfTestRunner(DiscoverRunner):
                 ),
             ]
         if self.check_coverage:
-            global template_coverage_collection, code_coverage_collection, url_coverage_collection
+            global template_coverage_collection, url_coverage_collection
             template_coverage_collection = True
-            code_coverage_collection = True
             url_coverage_collection = True
             tests += [
                 PyFlakesTestCase(test_runner=self, methodName='pyflakes_test'),
