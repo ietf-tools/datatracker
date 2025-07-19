@@ -55,7 +55,7 @@ from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, s
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose, generate_agenda_data
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
-from ietf.utils.test_runner import TestBlobstoreManager
+from ietf.utils.test_runner import TestBlobstoreManager, disable_coverage
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.timezone import date_today, time_now
 
@@ -1167,6 +1167,7 @@ class MeetingTests(BaseMeetingTestCase):
                 os.unlink(filename)
 
     @skipIf(skip_pdf_tests, skip_message)
+    @disable_coverage()
     def test_session_draft_pdf(self):  # pragma: no cover
         session, filenames = self.build_session_setup()
         try:

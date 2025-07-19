@@ -48,6 +48,8 @@ import pathlib
 import subprocess
 import tempfile
 import copy
+from contextlib import contextmanager
+
 import boto3
 import botocore.config
 import factory.random
@@ -471,9 +473,6 @@ def set_url_coverage(flag):
     url_coverage_collection = flag
     return orig
 
-class CoverageReporter(Reporter):
-    def report(self):
-        self.find_file_reporters(None)
 
         total = Numbers()
         result = {"coverage": 0.0, "covered": {}, "format": 5, }
@@ -499,6 +498,14 @@ class CoverageReporter(Reporter):
                     raise
         result["coverage"] = total.pc_covered/100.0
         return result
+@contextmanager
+def disable_coverage():
+    """Context manager/decorator that disables template/url coverage"""
+    orig_template = set_template_coverage(False)
+    orig_url = set_url_coverage(False)
+    yield
+    set_template_coverage(orig_template)
+    set_url_coverage(orig_url)
 
 
 class CoverageTest(unittest.TestCase):
