@@ -12,13 +12,16 @@ from mock import patch, Mock
 from django.http import HttpResponse, JsonResponse
 from ietf.meeting.factories import MeetingFactory, RegistrationFactory, RegistrationTicketFactory
 from ietf.meeting.models import Registration
-from ietf.meeting.utils import (migrate_registrations, get_preferred, process_single_registration,
-    get_registration_data, sync_registration_data, fetch_attendance_from_meetings)
+from ietf.meeting.utils import (migrate_registrations, get_preferred,
+    process_single_registration, get_registration_data, sync_registration_data,
+    fetch_attendance_from_meetings, get_activity_stats)
 from ietf.nomcom.models import Volunteer
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
 from ietf.person.factories import PersonFactory
 from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.utils.test_utils import TestCase
+from ietf.meeting.test_data import make_meeting_test_data
+from ietf.doc.factories import NewRevisionDocEventFactory, DocEventFactory
 
 
 class MigrateRegistrationsTests(TestCase):
@@ -110,6 +113,38 @@ class MigrateRegistrationsTests(TestCase):
 class JsonResponseWithJson(JsonResponse):
     def json(self):
         return json.loads(self.content)
+
+
+class ActivityStatsTests(TestCase):
+
+    def test_activity_stats(self):
+        utc = datetime.timezone.utc
+        make_meeting_test_data()
+        sdate = datetime.date(2016,4,3)
+        edate = datetime.date(2016,7,14)
+        MeetingFactory(type_id='ietf', date=sdate, number="96")
+        MeetingFactory(type_id='ietf', date=edate, number="97")
+
+        NewRevisionDocEventFactory(time=datetime.datetime(2016,4,5,12,0,0,0,tzinfo=utc))
+        NewRevisionDocEventFactory(time=datetime.datetime(2016,4,6,12,0,0,0,tzinfo=utc))
+        NewRevisionDocEventFactory(time=datetime.datetime(2016,4,7,12,0,0,0,tzinfo=utc))
+
+        NewRevisionDocEventFactory(time=datetime.datetime(2016,6,30,12,0,0,0,tzinfo=utc))
+        NewRevisionDocEventFactory(time=datetime.datetime(2016,6,30,13,0,0,0,tzinfo=utc))
+
+        DocEventFactory(doc__std_level_id="ps", doc__type_id="rfc", type="published_rfc", time=datetime.datetime(2016,4,5,12,0,0,0,tzinfo=utc))
+        DocEventFactory(doc__std_level_id="bcp", doc__type_id="rfc", type="published_rfc", time=datetime.datetime(2016,4,6,12,0,0,0,tzinfo=utc))
+        DocEventFactory(doc__std_level_id="inf", doc__type_id="rfc", type="published_rfc", time=datetime.datetime(2016,4,7,12,0,0,0,tzinfo=utc))
+        DocEventFactory(doc__std_level_id="exp", doc__type_id="rfc", type="published_rfc", time=datetime.datetime(2016,4,8,12,0,0,0,tzinfo=utc))
+
+        data = get_activity_stats(sdate, edate)
+        self.assertEqual(data['new_drafts_count'], len(data['new_docs']))
+        self.assertEqual(data['ffw_new_count'], 2)
+        self.assertEqual(data['ffw_new_percent'], '40%')
+        rfc_count = 0
+        for c in data['counts']:
+            rfc_count += data['counts'].get(c)
+        self.assertEqual(rfc_count, len(data['rfcs']))
 
 
 class GetRegistrationsTests(TestCase):
