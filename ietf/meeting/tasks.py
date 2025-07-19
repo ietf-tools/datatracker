@@ -9,30 +9,12 @@ from ietf.utils import log
 from .models import Meeting
 from .utils import generate_proceedings_content
 from .views import generate_agenda_data
-from .utils import migrate_registrations, check_migrate_registrations
 from .utils import fetch_attendance_from_meetings
 
 
 @shared_task
 def agenda_data_refresh():
     generate_agenda_data(force_refresh=True)
-
-
-@shared_task
-def migrate_registrations_task(initial=False):
-    """ Migrate ietf.stats.MeetingRegistration to ietf.meeting.Registration
-        If initial is True, migrate all meetings otherwise only future meetings.
-        This function is idempotent. It can be run regularly from cron.
-    """
-    migrate_registrations(initial=initial)
-
-
-@shared_task
-def check_migrate_registrations_task():
-    """ Compare MeetingRegistration with Registration to ensure
-        all records migrated
-    """
-    check_migrate_registrations()
 
 
 @shared_task

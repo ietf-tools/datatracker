@@ -244,7 +244,6 @@ class AttendanceFilter(admin.SimpleListFilter):
             return queryset.filter(tickets__attendance_type__slug=self.value()).distinct()
         return queryset
 
-
 class RegistrationTicketInline(admin.TabularInline):
     model = RegistrationTicket
 
