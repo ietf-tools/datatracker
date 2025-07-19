@@ -99,10 +99,10 @@
         </a>
     </li>
     <li class="dropend"> <!-- Use .dropend for right-aligned nested dropdown -->
-      <a class="dropdown-item dropdown-toggle" href="#" id="nestedDropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+      <a class="dropdown-item dropdown-toggle" href="#">
         IESG
       </a>
-      <ul class="dropdown-menu" aria-labelledby="nestedDropdownMenuButton">
+      <ul class="dropdown-menu">
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
                 href="{% url 'ietf.group.views.appeals' acronym='iesg' %}">
