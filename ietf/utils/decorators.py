@@ -15,7 +15,6 @@ from django.utils.encoding import force_bytes
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.test_runner import set_coverage_checking
 from ietf.person.models import Person, PersonalApiKey, PersonApiKeyEvent
 from ietf.utils import log
 
