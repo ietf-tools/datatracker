@@ -6,11 +6,13 @@
     {% include "base/menu_user.html" %}
 {% endif %}
 <li class="nav-item dropdown">
+    <div class="vue-embed" data-component="GroupMenu"></div>
     {% if flavor == "top" %}
         <a href="#"
            class="nav-link dropdown-toggle"
            role="button"
            data-bs-toggle="dropdown"
+           data-groups
            aria-expanded="false">
             Groups
         </a>
