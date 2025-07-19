@@ -644,7 +644,7 @@ def docs_for_ad(request, name):
         raise Http404
 
     results, meta = prepare_document_table(
-        request, Document.objects.filter(ad=ad), max_results=500, show_ad_and_shepherd=False
+        request, Document.objects.filter(ad=ad), max_results=500 # EVY show_ad_and_shepherd=False
     )
     results.sort(key=lambda d: sort_key(d))
 
@@ -665,6 +665,7 @@ def docs_for_ad(request, name):
                 r.get_state_slug("draft-iesg") == "dead"
                 or r.get_state_slug("draft") == "repl"
                 or r.get_state_slug("draft") == "rfc"
+                or (r.get_state_slug("draft") == "expired" and r.get_state_slug("draft-iesg") == "idexists")
             )
         )
     ]
