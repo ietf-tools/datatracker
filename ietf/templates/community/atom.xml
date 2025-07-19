@@ -3,7 +3,7 @@
     <title type="text">{{ title }}</title>
     <subtitle type="text">{{ subtitle }}</subtitle>
     <id>{{ id }}</id>
-    <updated>{{ updated|date:"Y-m-d\TH:i:sO" }}</updated>
+    <updated>{{ updated.isoformat }}</updated>
     <link rel="alternate" type="text/html" hreflang="en" href="https://{{ request.get_host }}/"/>
     <link rel="self" type="application/atom+xml" href="https://{{ request.get_host }}{{ request.get_full_path }}"/>
 
@@ -17,11 +17,11 @@
 
         <link href="{{ entry.doc.get_absolute_url }}"/>
 
-        <id>{{ entry.id }}</id>
+        <id>urn:datatracker-ietf-org:event:{{ entry.id }}</id>
         
-        <updated>{{ entry.time|date:"Y-m-d\TH:i:sO" }}</updated>
+        <updated>{{ entry.time.isoformat }}</updated>
         
-        <published>{{ entry.time|date:"Y-m-d\TH:i:sO" }}</published>
+        <published>{{ entry.time.isoformat }}</published>
         
         <author>
             <name>{{ entry.by }}</name>

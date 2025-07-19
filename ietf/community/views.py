@@ -305,7 +305,8 @@ def feed(request, email_or_name=None, acronym=None):
     significant = request.GET.get("significant", "") == "1"
 
     documents = docs_tracked_by_community_list(clist).values_list("pk", flat=True)
-    since = timezone.now() - datetime.timedelta(days=14)
+    updated = timezone.now()
+    since = updated - datetime.timedelta(days=14)
 
     events = (
         DocEvent.objects.filter(
@@ -341,7 +342,7 @@ def feed(request, email_or_name=None, acronym=None):
             "title": title,
             "subtitle": subtitle,
             "id": feed_id.urn,
-            "updated": timezone.now(),
+            "updated": updated,
         },
         content_type="text/xml",
     )

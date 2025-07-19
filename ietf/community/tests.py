@@ -6,6 +6,7 @@ from pyquery import PyQuery
 
 from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
+from lxml import etree
 
 import debug  # pyflakes:ignore
 
@@ -488,6 +489,22 @@ class CommunityListTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200, msg=f"id='{id}', url='{url}'")
             self.assertContains(r, draft.name)
+
+            # test atom xml
+            xml = etree.fromstring(r.content)
+            ns = {"atom": "http://www.w3.org/2005/Atom"}
+            updated = xml.xpath("/atom:feed/atom:updated", namespaces=ns)[0].text
+            entries = xml.xpath("/atom:feed/atom:entry", namespaces=ns)
+            self.assertIn("+00:00", updated)  # RFC 3339 compatible UTC TZ
+            for entry in entries:
+                updated = entry.xpath("atom:updated", namespaces=ns)[0].text
+                published = entry.xpath("atom:published", namespaces=ns)[0].text
+                entry_id = entry.xpath("atom:id", namespaces=ns)[0].text
+                self.assertIn("+00:00", updated)
+                self.assertIn("+00:00", published)
+                self.assertIn(
+                    "urn:datatracker-ietf-org:event:", entry_id
+                )  # atom:entry:id must be a valid URN
 
             # only significant
             r = self.client.get(url + "?significant=1")
