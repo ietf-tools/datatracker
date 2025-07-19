@@ -1142,7 +1142,6 @@ PPT2PDF_COMMAND = [
     "--outdir"
 ]
 
-STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/'
 REGISTRATION_PARTICIPANTS_API_URL = 'https://registration.ietf.org/api/v1/participants-dt/'
 REGISTRATION_PARTICIPANTS_API_KEY = 'changeme'
 
