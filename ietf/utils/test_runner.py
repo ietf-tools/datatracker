@@ -1217,37 +1217,6 @@ class IetfTestRunner(DiscoverRunner):
 
         return failures
 
-class IetfLiveServerTestCase(StaticLiveServerTestCase):
-    @classmethod
-    def setUpClass(cls):
-        set_coverage_checking(False)
-        super(IetfLiveServerTestCase, cls).setUpClass()
-
-    def setUp(self):
-        super(IetfLiveServerTestCase, self).setUp()
-        # LiveServerTestCase uses TransactionTestCase which seems to
-        # somehow interfere with the fixture loading process in
-        # IetfTestRunner when running multiple tests (the first test
-        # is fine, in the next ones the fixtures have been wiped) -
-        # this is no doubt solvable somehow, but until then we simply
-        # recreate them here
-        from ietf.person.models import Person
-        if not Person.objects.exists():
-            load_and_run_fixtures(verbosity=0)
-        self.replaced_settings = dict()
-        if hasattr(settings, 'IDTRACKER_BASE_URL'):
-            self.replaced_settings['IDTRACKER_BASE_URL'] = settings.IDTRACKER_BASE_URL
-            settings.IDTRACKER_BASE_URL = self.live_server_url
-
-    @classmethod
-    def tearDownClass(cls):
-        super(IetfLiveServerTestCase, cls).tearDownClass()
-        set_coverage_checking(True)
-
-    def tearDown(self):
-        for k, v in self.replaced_settings.items():
-            setattr(settings, k, v)
-        super().tearDown()
 
 class TestBlobstoreManager():
     # N.B. buckets and blobstore are intentional Class-level attributes
