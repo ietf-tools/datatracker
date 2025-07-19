@@ -1474,7 +1474,8 @@ def process_single_registration(reg_data, meeting):
             target = registration.tickets.filter(
                 attendance_type__slug=ticket['attendance_type'],
                 ticket_type__slug=ticket['ticket_type']).first()
-            target.delete()
+            if target:
+                target.delete()
         if registration.tickets.count() == 0:
             registration.delete()
         return (None, 'deleted')
