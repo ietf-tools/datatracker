@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2022, All Rights Reserved
+# Copyright The IETF Trust 2022-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 import datetime
 import io
@@ -147,7 +147,8 @@ class XMLDraft(Draft):
         return revmatch.group('filename'), revmatch.group('rev')
 
     def get_title(self):
-        return self.xmlroot.findtext('front/title').strip()
+        title_text = self.xmlroot.findtext('front/title')
+        return "" if title_text is None else title_text.strip()
 
     @staticmethod
     def parse_creation_date(date_elt):

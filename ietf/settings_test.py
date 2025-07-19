@@ -14,8 +14,7 @@ import os
 import shutil
 import tempfile
 from ietf.settings import *                                          # pyflakes:ignore
-from ietf.settings import STORAGES, TEST_CODE_COVERAGE_CHECKER, MORE_STORAGE_NAMES, BLOBSTORAGE_CONNECT_TIMEOUT, BLOBSTORAGE_READ_TIMEOUT, BLOBSTORAGE_MAX_ATTEMPTS
-import botocore.config
+from ietf.settings import TEST_CODE_COVERAGE_CHECKER, ORIG_AUTH_PASSWORD_VALIDATORS
 import debug                            # pyflakes:ignore
 debug.debug = True
 
@@ -48,6 +47,10 @@ DATABASES = {
         'PASSWORD': 'RkTkDPFnKpko',
         },
     }
+
+# test with a single DB - do not use a DB router
+BLOBDB_DATABASE = "default"
+DATABASE_ROUTERS = []  # type: ignore
 
 if TEST_CODE_COVERAGE_CHECKER and not TEST_CODE_COVERAGE_CHECKER._started: # pyflakes:ignore
     TEST_CODE_COVERAGE_CHECKER.start()                          # pyflakes:ignore
@@ -107,29 +110,8 @@ LOGGING["loggers"] = {  # pyflakes:ignore
     },
 }
 
-# Configure storages for the blob store - use env settings if present. See the --no-manage-blobstore test option.
-_blob_store_endpoint_url = os.environ.get("DATATRACKER_BLOB_STORE_ENDPOINT_URL", "http://blobstore:9000")
-_blob_store_access_key = os.environ.get("DATATRACKER_BLOB_STORE_ACCESS_KEY", "minio_root")
-_blob_store_secret_key = os.environ.get("DATATRACKER_BLOB_STORE_SECRET_KEY", "minio_pass")
-_blob_store_bucket_prefix = os.environ.get("DATATRACKER_BLOB_STORE_BUCKET_PREFIX", "test-")
-_blob_store_enable_profiling = (
-    os.environ.get("DATATRACKER_BLOB_STORE_ENABLE_PROFILING", "false").lower() == "true"
-)
-for storagename in MORE_STORAGE_NAMES:
-    STORAGES[storagename] = {
-        "BACKEND": "ietf.doc.storage_backends.CustomS3Storage",
-        "OPTIONS": dict(
-            endpoint_url=_blob_store_endpoint_url,
-            access_key=_blob_store_access_key,
-            secret_key=_blob_store_secret_key,
-            security_token=None,
-            client_config=botocore.config.Config(
-                signature_version="s3v4",
-                connect_timeout=BLOBSTORAGE_CONNECT_TIMEOUT,
-                read_timeout=BLOBSTORAGE_READ_TIMEOUT,
-                retries={"total_max_attempts": BLOBSTORAGE_MAX_ATTEMPTS},
-            ),
-            bucket_name=f"{_blob_store_bucket_prefix}{storagename}",
-            ietf_log_blob_timing=_blob_store_enable_profiling,
-        ),
-    }
+# Restore AUTH_PASSWORD_VALIDATORS if they were reset in settings_local
+try:
+    AUTH_PASSWORD_VALIDATORS = ORIG_AUTH_PASSWORD_VALIDATORS
+except NameError:
+    pass

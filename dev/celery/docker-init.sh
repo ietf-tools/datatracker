@@ -99,7 +99,7 @@ if [[ -n "${DEV_MODE}" ]]; then
             --recursive \
             --debounce-interval 5 \
             -- \
-            celery --app="${CELERY_APP:-ietf}" "${CELERY_OPTS[@]}" "$@" &
+            celery --app="${CELERY_APP:-ietf}" "${CELERY_OPTS[@]}" $@ &
   celery_pid=$!
 else
   celery --app="${CELERY_APP:-ietf}" "${CELERY_OPTS[@]}" "$@" &

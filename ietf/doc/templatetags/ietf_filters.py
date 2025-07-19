@@ -285,7 +285,7 @@ def urlize_related_source_list(related, document_html=False):
                                                                       url=url)
         ))
     return links
-        
+
 @register.filter(name='urlize_related_target_list', is_safe=True, document_html=False)
 def urlize_related_target_list(related, document_html=False):
     """Convert a list of RelatedDocuments into list of links using the target document's canonical name"""
@@ -302,7 +302,7 @@ def urlize_related_target_list(related, document_html=False):
                                                                       url=url)
         ))
     return links
-        
+
 @register.filter(name='dashify')
 def dashify(string):
     """
@@ -521,10 +521,52 @@ def plural(text, seq, arg='s'):
     else:
         return text + pluralize(len(seq), arg)
 
+
+# Translation table to escape ICS characters. The {} | {} construction builds up a dict
+# mapping characters to arbitrary-length strings or None. Values in later dicts override
+# earlier ones prior to conversion to a translation table, so excluding a char and then
+# mapping it to an escape sequence results in its being escaped, not dropped.
+rfc5545_text_escapes = str.maketrans(
+    # text       = *(TSAFE-CHAR / ":" / DQUOTE / ESCAPED-CHAR)
+    # TSAFE-CHAR = WSP / %x21 / %x23-2B / %x2D-39 / %x3C-5B /
+    #                    %x5D-7E / NON-US-ASCII
+    {chr(c): None for c in range(0x00, 0x20)}  # strip 0x00-0x20
+    | {
+        # ESCAPED-CHAR = ("\\" / "\;" / "\," / "\N" / "\n")
+        "\n": r"\n",
+        ";": r"\;",
+        ",": r"\,",
+        "\\": r"\\",  # rhs is two backslashes!
+        "\t": "\t",  # htab ok (0x09)
+        " ": " ",  # space ok (0x20)
+    }
+)
+
+
 @register.filter
 def ics_esc(text):
-    text = re.sub(r"([\n,;\\])", r"\\\1", text)
-    return text
+    """Escape a string to use in an iCalendar text context
+    
+    >>> ics_esc('simple')
+    'simple'
+    
+    For the next tests, it helps to know:
+      chr(0x09) = "\t"
+      chr(0x0a) = "\n"
+      chr(0x0d) = "\r"
+      chr(0x5c) = "\\"
+    
+    >>> ics_esc(f'strips{chr(0x0d)}out{chr(0x0d)}LFs')
+    'stripsoutLFs'
+    
+    
+    >>> ics_esc(f'escapes;and,and{chr(0x5c)}and{chr(0x0a)}')
+    'escapes\\\\;and\\\\,and\\\\\\\\and\\\\n'
+    
+    >>> ics_esc(f"keeps spaces : and{chr(0x09)}tabs")
+    'keeps spaces : and\\ttabs'
+    """
+    return text.translate(rfc5545_text_escapes)
 
 
 @register.simple_tag
@@ -557,7 +599,7 @@ def ics_date_time(dt, tzname):
         return f':{timestamp}Z'
     else:
         return f';TZID={ics_esc(tzname)}:{timestamp}'
-    
+
 @register.filter
 def next_day(value):
     return value + datetime.timedelta(days=1)
@@ -676,7 +718,7 @@ def rfcbis(s):
 @stringfilter
 def urlize(value):
     raise RuntimeError("Use linkify from textfilters instead of urlize")
-    
+
 @register.filter
 @stringfilter
 def charter_major_rev(rev):

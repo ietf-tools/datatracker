@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: replicator
+  labels:
+    deleteBeforeUpgrade: yes
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: replicator
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: replicator
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - datatracker
+              topologyKey: "kubernetes.io/hostname"
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        # -----------------------------------------------------
+        # Celery Container
+        # -----------------------------------------------------
+        - name: celery
+          image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: dt-vol
+              mountPath: /a
+            - name: dt-tmp
+              mountPath: /tmp
+            - name: dt-home
+              mountPath: /home/datatracker
+            - name: dt-xml2rfc-cache
+              mountPath: /var/cache/xml2rfc
+            - name: dt-cfg
+              mountPath: /workspace/ietf/settings_local.py
+              subPath: settings_local.py
+          env:
+            - name: "CONTAINER_ROLE"
+              value: "replicator"
+          envFrom:
+            - secretRef:
+                name: dt-secrets-env
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+      volumes:
+        # To be overridden with the actual shared volume
+        - name: dt-vol
+        - name: dt-tmp
+          emptyDir:
+            sizeLimit: "2Gi"
+        - name: dt-xml2rfc-cache
+          emptyDir:
+            sizeLimit: "2Gi"
+        - name: dt-home
+          emptyDir:
+            sizeLimit: "2Gi"
+        - name: dt-cfg
+          configMap:
+            name: files-cfgmap
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 600

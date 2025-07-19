@@ -69,6 +69,26 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.CryptPasswordHasher',
 ]
 
+
+PASSWORD_POLICY_MIN_LENGTH = 12
+PASSWORD_POLICY_ENFORCE_AT_LOGIN = False  # should turn this on for prod
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {
+            "min_length": PASSWORD_POLICY_MIN_LENGTH,
+        }
+    },
+    {
+        "NAME": "ietf.ietfauth.password_validation.StrongPasswordValidator",
+    },
+]
+# In dev environments, settings_local overrides the password validators. Save
+# a handle to the original value so settings_test can restore it so tests match
+# production.
+ORIG_AUTH_PASSWORD_VALIDATORS = AUTH_PASSWORD_VALIDATORS
+
 ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", "127.0.0.1", "localhost", ]
 
 # Server name of the tools server
@@ -193,9 +213,11 @@ STATIC_IETF_ORG_INTERNAL = STATIC_IETF_ORG
 
 ENABLE_BLOBSTORAGE = True
 
-BLOBSTORAGE_MAX_ATTEMPTS = 1
-BLOBSTORAGE_CONNECT_TIMEOUT = 2
-BLOBSTORAGE_READ_TIMEOUT = 2
+# "standard" retry mode is used, which does exponential backoff with a base factor of 2
+# and a cap of 20. 
+BLOBSTORAGE_MAX_ATTEMPTS = 5  # boto3 default is 3 (for "standard" retry mode)
+BLOBSTORAGE_CONNECT_TIMEOUT = 10  # seconds; boto3 default is 60
+BLOBSTORAGE_READ_TIMEOUT = 10  # seconds; boto3 default is 60
 
 WSGI_APPLICATION = "ietf.wsgi.application"
 
@@ -479,6 +501,7 @@ INSTALLED_APPS = [
     'widget_tweaks',
     # IETF apps
     'ietf.api',
+    'ietf.blobdb',
     'ietf.community',
     'ietf.dbtemplate',
     'ietf.doc',
@@ -762,8 +785,8 @@ STORAGES: dict[str, Any] = {
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 
-# settings_local will need to configure storages for these names
-MORE_STORAGE_NAMES: list[str] = [
+# Storages for artifacts stored as blobs
+ARTIFACT_STORAGE_NAMES: list[str] = [
     "bofreq",
     "charter",
     "conflrev",
@@ -788,6 +811,11 @@ MORE_STORAGE_NAMES: list[str] = [
     "photo",
     "review",
 ]
+for storagename in ARTIFACT_STORAGE_NAMES:
+    STORAGES[storagename] = {
+        "BACKEND": "ietf.doc.storage.StoredObjectBlobdbStorage",
+        "OPTIONS": {"bucket_name": storagename},
+    }
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
@@ -1128,6 +1156,9 @@ PPT2PDF_COMMAND = [
 ]
 
 STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/'
+REGISTRATION_PARTICIPANTS_API_URL = 'https://registration.ietf.org/api/v1/participants-dt/'
+REGISTRATION_PARTICIPANTS_API_KEY = 'changeme'
+
 PROCEEDINGS_VERSION_CHANGES = [
     0,   # version 1
     97,  # version 2: meeting 97 and later (was number was NEW_PROCEEDINGS_START)
@@ -1292,6 +1323,9 @@ CELERY_RESULT_BACKEND = 'django-cache'  # use a Django cache for results
 CELERY_CACHE_BACKEND = 'celery-results'  # which Django cache to use
 CELERY_RESULT_EXPIRES = datetime.timedelta(minutes=5)  # how long are results valid? (Default is 1 day)
 CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled for a task
+CELERY_TASK_ROUTES = {
+    "ietf.blobdb.tasks.pybob_the_blob_replicator_task": {"queue": "blobdb"}
+}
 
 # Meetecho API setup: Uncomment this and provide real credentials to enable
 # Meetecho conference creation for interim session requests

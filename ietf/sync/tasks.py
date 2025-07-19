@@ -11,6 +11,7 @@ from celery import shared_task
 from django.conf import settings
 from django.utils import timezone
 
+from ietf.doc.models import DocEvent, RelatedDocument
 from ietf.sync import iana
 from ietf.sync import rfceditor
 from ietf.sync.rfceditor import MIN_QUEUE_RESULTS, parse_queue, update_drafts_from_queue
@@ -180,3 +181,44 @@ def iana_protocols_update_task():
 
         for d in updated:
             log.log("Added history entry for %s" % d.display_name())
+
+@shared_task
+def fix_subseries_docevents_task():
+    """Repairs DocEvents related to bugs around removing docs from subseries
+
+    Removes bogus and repairs the date of non-bogus DocEvents
+    about removing RFCs from subseries
+
+    This is designed to be a one-shot task that should be removed
+    after running it. It is intended to be safe if it runs more than once.
+    """
+    log.log("Repairing DocEvents related to bugs around removing docs from subseries")
+    bogus_event_descs = [
+        "Removed rfc8499 from bcp218",
+        "Removed rfc7042 from bcp184",
+        "Removed rfc9499 from bcp238",
+        "Removed rfc5033 from std74",
+        "Removed rfc3228 from bcp55",
+        "Removed rfc8109 from std85",
+    ]
+    DocEvent.objects.filter(
+        type="sync_from_rfc_editor", desc__in=bogus_event_descs
+    ).delete()
+    needs_moment_fix = [
+        "Removed rfc8499 from bcp219",
+        "Removed rfc7042 from bcp141",
+        "Removed rfc5033 from bcp133",
+        "Removed rfc3228 from bcp57",
+    ]
+    # Assumptions (which have been manually verified):
+    # 1) each of the above RFCs is obsoleted by exactly one other RFC
+    # 2) each of the obsoleting RFCs has exactly one published_rfc docevent
+    for desc in needs_moment_fix:
+        obsoleted_rfc_name = desc.split(" ")[1]
+        obsoleting_rfc = RelatedDocument.objects.get(
+            relationship_id="obs", target__name=obsoleted_rfc_name
+        ).source
+        obsoleting_time = obsoleting_rfc.docevent_set.get(type="published_rfc").time
+        DocEvent.objects.filter(type="sync_from_rfc_editor", desc=desc).update(
+            time=obsoleting_time
+        )

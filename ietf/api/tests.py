@@ -50,6 +50,7 @@ OMITTED_APPS = (
     'ietf.secr.proceedings',
     'ietf.ipr',
     'ietf.status',
+    'ietf.blobdb',
 )
 
 class CustomApiTests(TestCase):
@@ -833,111 +834,91 @@ class CustomApiTests(TestCase):
     def test_api_new_meeting_registration_v2(self):
         meeting = MeetingFactory(type_id='ietf')
         person = PersonFactory()
-        regs = [
-            {
-                'affiliation': "Alguma Corporação",
-                'country_code': 'PT',
-                'email': person.email().address,
-                'first_name': person.first_name(),
-                'last_name': person.last_name(),
-                'meeting': str(meeting.number),
-                'reg_type': 'onsite',
-                'ticket_type': 'week_pass',
-                'checkedin': False,
-                'is_nomcom_volunteer': False,
-                'cancelled': False,
-            }
-        ]
-
+        reg_detail = {
+            'email': person.email().address,
+            'first_name': person.first_name(),
+            'last_name': person.last_name(),
+            'meeting': meeting.number,
+            'affiliation': "Alguma Corporação",
+            'country_code': 'PT',
+            'checkedin': False,
+            'is_nomcom_volunteer': False,
+            'cancelled': False,
+            'tickets': [{'attendance_type': 'onsite', 'ticket_type': 'week_pass'}],
+        }
+        reg_data = {'objects': {reg_detail['email']: reg_detail}}
         url = urlreverse('ietf.api.views.api_new_meeting_registration_v2')
         #
         # Test invalid key
-        r = self.client.post(url, data=json.dumps(regs), content_type='application/json', headers={"X-Api-Key": "invalid-token"})
+        r = self.client.post(url, data=json.dumps(reg_data), content_type='application/json', headers={"X-Api-Key": "invalid-token"})
         self.assertEqual(r.status_code, 403)
         #
         # Test invalid data
-        bad_regs = copy.deepcopy(regs)
-        del(bad_regs[0]['email'])
-        r = self.client.post(url, data=json.dumps(bad_regs), content_type='application/json', headers={"X-Api-Key": "valid-token"})
+        bad_reg_data = copy.deepcopy(reg_data)
+        del bad_reg_data['objects'][reg_detail['email']]['email']
+        r = self.client.post(url, data=json.dumps(bad_reg_data), content_type='application/json', headers={"X-Api-Key": "valid-token"})
         self.assertEqual(r.status_code, 400)
         #
         # Test valid POST
-        r = self.client.post(url, data=json.dumps(regs), content_type='application/json', headers={"X-Api-Key": "valid-token"})
+        r = self.client.post(url, data=json.dumps(reg_data), content_type='application/json', headers={"X-Api-Key": "valid-token"})
         self.assertContains(r, "Success", status_code=202)
         #
         # Check record
-        reg = regs[0]
-        objects = Registration.objects.filter(email=reg['email'], meeting__number=reg['meeting'])
+        objects = Registration.objects.filter(email=reg_detail['email'], meeting__number=reg_detail['meeting'])
         self.assertEqual(objects.count(), 1)
         obj = objects[0]
         for key in ['affiliation', 'country_code', 'first_name', 'last_name', 'checkedin']:
-            self.assertEqual(getattr(obj, key), False if key=='checkedin' else reg.get(key) , "Bad data for field '%s'" % key)
+            self.assertEqual(getattr(obj, key), False if key == 'checkedin' else reg_detail.get(key), f"Bad data for field {key}")
         self.assertEqual(obj.tickets.count(), 1)
         ticket = obj.tickets.first()
-        self.assertEqual(ticket.ticket_type.slug, regs[0]['ticket_type'])
-        self.assertEqual(ticket.attendance_type.slug, regs[0]['reg_type'])
+        self.assertEqual(ticket.ticket_type.slug, reg_detail['tickets'][0]['ticket_type'])
+        self.assertEqual(ticket.attendance_type.slug, reg_detail['tickets'][0]['attendance_type'])
         self.assertEqual(obj.person, person)
         #
         # Test update (switch to remote)
-        regs = [
-            {
-                'affiliation': "Alguma Corporação",
-                'country_code': 'PT',
-                'email': person.email().address,
-                'first_name': person.first_name(),
-                'last_name': person.last_name(),
-                'meeting': str(meeting.number),
-                'reg_type': 'remote',
-                'ticket_type': 'week_pass',
-                'checkedin': False,
-                'is_nomcom_volunteer': False,
-                'cancelled': False,
-            }
-        ]
-        r = self.client.post(url, data=json.dumps(regs), content_type='application/json', headers={"X-Api-Key": "valid-token"})
+        reg_detail = {
+            'affiliation': "Alguma Corporação",
+            'country_code': 'PT',
+            'email': person.email().address,
+            'first_name': person.first_name(),
+            'last_name': person.last_name(),
+            'meeting': meeting.number,
+            'checkedin': False,
+            'is_nomcom_volunteer': False,
+            'cancelled': False,
+            'tickets': [{'attendance_type': 'remote', 'ticket_type': 'week_pass'}],
+        }
+        reg_data = {'objects': {reg_detail['email']: reg_detail}}
+        r = self.client.post(url, data=json.dumps(reg_data), content_type='application/json', headers={"X-Api-Key": "valid-token"})
         self.assertContains(r, "Success", status_code=202)
-        objects = Registration.objects.filter(email=reg['email'], meeting__number=reg['meeting'])
+        objects = Registration.objects.filter(email=reg_detail['email'], meeting__number=reg_detail['meeting'])
         self.assertEqual(objects.count(), 1)
         obj = objects[0]
         self.assertEqual(obj.tickets.count(), 1)
         ticket = obj.tickets.first()
-        self.assertEqual(ticket.ticket_type.slug, regs[0]['ticket_type'])
-        self.assertEqual(ticket.attendance_type.slug, regs[0]['reg_type'])
+        self.assertEqual(ticket.ticket_type.slug, reg_detail['tickets'][0]['ticket_type'])
+        self.assertEqual(ticket.attendance_type.slug, reg_detail['tickets'][0]['attendance_type'])
         #
         # Test multiple
-        regs = [
-            {
-                'affiliation': "Alguma Corporação",
-                'country_code': 'PT',
-                'email': person.email().address,
-                'first_name': person.first_name(),
-                'last_name': person.last_name(),
-                'meeting': str(meeting.number),
-                'reg_type': 'onsite',
-                'ticket_type': 'one_day',
-                'checkedin': False,
-                'is_nomcom_volunteer': False,
-                'cancelled': False,
-            },
-
-            {
-                'affiliation': "Alguma Corporação",
-                'country_code': 'PT',
-                'email': person.email().address,
-                'first_name': person.first_name(),
-                'last_name': person.last_name(),
-                'meeting': str(meeting.number),
-                'reg_type': 'remote',
-                'ticket_type': 'week_pass',
-                'checkedin': False,
-                'is_nomcom_volunteer': False,
-                'cancelled': False,
-            }
-        ]
-
-        r = self.client.post(url, data=json.dumps(regs), content_type='application/json', headers={"X-Api-Key": "valid-token"})
+        reg_detail = {
+            'affiliation': "Alguma Corporação",
+            'country_code': 'PT',
+            'email': person.email().address,
+            'first_name': person.first_name(),
+            'last_name': person.last_name(),
+            'meeting': meeting.number,
+            'checkedin': False,
+            'is_nomcom_volunteer': False,
+            'cancelled': False,
+            'tickets': [
+                {'attendance_type': 'onsite', 'ticket_type': 'one_day'},
+                {'attendance_type': 'remote', 'ticket_type': 'week_pass'},
+            ],
+        }
+        reg_data = {'objects': {reg_detail['email']: reg_detail}}
+        r = self.client.post(url, data=json.dumps(reg_data), content_type='application/json', headers={"X-Api-Key": "valid-token"})
         self.assertContains(r, "Success", status_code=202)
-        objects = Registration.objects.filter(email=reg['email'], meeting__number=reg['meeting'])
+        objects = Registration.objects.filter(email=reg_detail['email'], meeting__number=reg_detail['meeting'])
         self.assertEqual(objects.count(), 1)
         obj = objects[0]
         self.assertEqual(obj.tickets.count(), 2)
@@ -948,51 +929,46 @@ class CustomApiTests(TestCase):
     def test_api_new_meeting_registration_v2_cancelled(self):
         meeting = MeetingFactory(type_id='ietf')
         person = PersonFactory()
-        regs = [
-            {
-                'affiliation': "Acme",
-                'country_code': 'US',
-                'email': person.email().address,
-                'first_name': person.first_name(),
-                'last_name': person.last_name(),
-                'meeting': str(meeting.number),
-                'reg_type': 'onsite',
-                'ticket_type': 'week_pass',
-                'checkedin': False,
-                'is_nomcom_volunteer': False,
-                'cancelled': False,
-            }
-        ]
+        reg_detail = {
+            'affiliation': "Acme",
+            'country_code': 'US',
+            'email': person.email().address,
+            'first_name': person.first_name(),
+            'last_name': person.last_name(),
+            'meeting': meeting.number,
+            'checkedin': False,
+            'is_nomcom_volunteer': False,
+            'cancelled': False,
+            'tickets': [{'attendance_type': 'onsite', 'ticket_type': 'week_pass'}],
+        }
+        reg_data = {'objects': {reg_detail['email']: reg_detail}}
         url = urlreverse('ietf.api.views.api_new_meeting_registration_v2')
         self.assertEqual(Registration.objects.count(), 0)
-        r = self.client.post(url, data=json.dumps(regs), content_type='application/json', headers={"X-Api-Key": "valid-token"})
+        r = self.client.post(url, data=json.dumps(reg_data), content_type='application/json', headers={"X-Api-Key": "valid-token"})
         self.assertContains(r, "Success", status_code=202)
         self.assertEqual(Registration.objects.count(), 1)
-        regs[0]['cancelled'] = True
-        r = self.client.post(url, data=json.dumps(regs), content_type='application/json', headers={"X-Api-Key": "valid-token"})
+        reg_detail['cancelled'] = True
+        r = self.client.post(url, data=json.dumps(reg_data), content_type='application/json', headers={"X-Api-Key": "valid-token"})
         self.assertContains(r, "Success", status_code=202)
         self.assertEqual(Registration.objects.count(), 0)
 
-    @override_settings(APP_API_TOKENS={"ietf.api.views.api_new_meeting_registration_v2": ["valid-token"]})    
+    @override_settings(APP_API_TOKENS={"ietf.api.views.api_new_meeting_registration_v2": ["valid-token"]})
     def test_api_new_meeting_registration_v2_nomcom(self):
         meeting = MeetingFactory(type_id='ietf')
         person = PersonFactory()
-        regs = [
-            {
-                'affiliation': "Acme",
-                'country_code': 'US',
-                'email': person.email().address,
-                'first_name': person.first_name(),
-                'last_name': person.last_name(),
-                'meeting': str(meeting.number),
-                'reg_type': 'onsite',
-                'ticket_type': 'week_pass',
-                'checkedin': False,
-                'is_nomcom_volunteer': False,
-                'cancelled': False,
-            }
-        ]
-
+        reg_detail = {
+            'affiliation': "Acme",
+            'country_code': 'US',
+            'email': person.email().address,
+            'first_name': person.first_name(),
+            'last_name': person.last_name(),
+            'meeting': meeting.number,
+            'checkedin': False,
+            'is_nomcom_volunteer': False,
+            'cancelled': False,
+            'tickets': [{'attendance_type': 'onsite', 'ticket_type': 'week_pass'}],
+        }
+        reg_data = {'objects': {reg_detail['email']: reg_detail}}
         url = urlreverse('ietf.api.views.api_new_meeting_registration_v2')
         now = datetime.datetime.now()
         if now.month > 10:
@@ -1003,14 +979,14 @@ class CustomApiTests(TestCase):
         nomcom = NomComFactory.create(is_accepting_volunteers=True, **nomcom_kwargs_for_year(year))
 
         # first test is_nomcom_volunteer False
-        r = self.client.post(url, data=json.dumps(regs), content_type='application/json', headers={"X-Api-Key": "valid-token"})
+        r = self.client.post(url, data=json.dumps(reg_data), content_type='application/json', headers={"X-Api-Key": "valid-token"})
         self.assertContains(r, "Success", status_code=202)
         # assert no Volunteers exists
         self.assertEqual(Volunteer.objects.count(), 0)
 
         # test is_nomcom_volunteer True
-        regs[0]['is_nomcom_volunteer'] = True
-        r = self.client.post(url, data=json.dumps(regs), content_type='application/json', headers={"X-Api-Key": "valid-token"})
+        reg_detail['is_nomcom_volunteer'] = True
+        r = self.client.post(url, data=json.dumps(reg_data), content_type='application/json', headers={"X-Api-Key": "valid-token"})
         self.assertContains(r, "Success", status_code=202)
         # assert Volunteer exists
         self.assertEqual(Volunteer.objects.count(), 1)
@@ -1185,7 +1161,7 @@ class CustomApiTests(TestCase):
         self.assertEqual(r.headers["Content-Type"], "application/json")
         result = json.loads(r.content)
         self.assertCountEqual(result.keys(), ["addresses"])
-        self.assertCountEqual(result["addresses"], joe.person.email_set.exclude(address='joe@home.com').values_list("address", flat=True))
+        self.assertCountEqual(result["addresses"], joe.person.email_set.values_list("address", flat=True))
         # non-ascii
         non_ascii_url = urlreverse("ietf.api.views.related_email_list", kwargs={'email': 'jòe@spain.com'})
         r = self.client.get(non_ascii_url, headers={"X-Api-Key": "valid-token"})
@@ -1606,7 +1582,7 @@ class DirectAuthApiTests(TestCase):
             data = self.response_data(r)
             self.assertEqual(data["result"], "failure")
             self.assertEqual(data["reason"], "invalid post")
-        
+
         bad = dict(authtoken=self.valid_token, username=self.valid_person.user.username, password=self.valid_password)
         r = self.client.post(self.url, bad)
         self.assertEqual(r.status_code, 200)
@@ -1614,8 +1590,9 @@ class DirectAuthApiTests(TestCase):
         self.assertEqual(data["result"], "failure")
         self.assertEqual(data["reason"], "invalid post")       
 
+    @override_settings()
     def test_notokenstore(self):
-        self.assertFalse(hasattr(settings, "APP_API_TOKENS"))
+        del settings.APP_API_TOKENS  # only affects overridden copy of settings!
         r = self.client.post(self.url,self.valid_body_with_good_password)
         self.assertEqual(r.status_code, 200)
         data = self.response_data(r)

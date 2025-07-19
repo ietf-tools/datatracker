@@ -462,11 +462,12 @@ class LiaisonManagementTests(TestCase):
 
 
     def test_incoming_access(self):
-        '''Ensure only Secretariat, Liaison Managers, and Authorized Individuals
+        '''Ensure only Secretariat, Liaison Managers, Liaison Coordinators, and Authorized Individuals
         have access to incoming liaisons.
         '''
         sdo = RoleFactory(name_id='liaiman',group__type_id='sdo', person__user__username='ulm-liaiman').group
         RoleFactory(name_id='auth',group=sdo,person__user__username='ulm-auth')
+        RoleFactory(name_id='liaison_coordinator', group__acronym='iab', person__user__username='liaison-coordinator')
         stmt = LiaisonStatementFactory(from_groups=[sdo,])
         LiaisonStatementEventFactory(statement=stmt,type_id='posted')
         RoleFactory(name_id='chair',person__user__username='marschairman',group__acronym='mars')
@@ -499,6 +500,15 @@ class LiaisonManagementTests(TestCase):
         r = self.client.get(addurl)
         self.assertEqual(r.status_code, 200)
 
+        # Liaison Coordinator has access
+        self.client.login(username="liaison-coordinator", password="liaison-coordinator+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('a.btn:contains("New incoming liaison")')), 1)
+        r = self.client.get(addurl)
+        self.assertEqual(r.status_code, 200)
+
         # Authorized Individual has access
         self.client.login(username="ulm-auth", password="ulm-auth+password")
         r = self.client.get(url)
@@ -521,6 +531,7 @@ class LiaisonManagementTests(TestCase):
 
         sdo = RoleFactory(name_id='liaiman',group__type_id='sdo', person__user__username='ulm-liaiman').group
         RoleFactory(name_id='auth',group=sdo,person__user__username='ulm-auth')
+        RoleFactory(name_id='liaison_coordinator', group__acronym='iab', person__user__username='liaison-coordinator')
         mars = RoleFactory(name_id='chair',person__user__username='marschairman',group__acronym='mars').group
         RoleFactory(name_id='secr',group=mars,person__user__username='mars-secr')
         RoleFactory(name_id='execdir',group=Group.objects.get(acronym='iab'),person__user__username='iab-execdir')
@@ -592,6 +603,15 @@ class LiaisonManagementTests(TestCase):
 
         # Liaison Manager has access
         self.assertTrue(self.client.login(username="ulm-liaiman", password="ulm-liaiman+password"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('a.btn:contains("New outgoing liaison")')), 1)
+        r = self.client.get(addurl)
+        self.assertEqual(r.status_code, 200)
+
+        # Liaison Coordinator has access
+        self.assertTrue(self.client.login(username="liaison-coordinator", password="liaison-coordinator+password"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -740,7 +760,7 @@ class LiaisonManagementTests(TestCase):
 
         l = LiaisonStatement.objects.all().order_by("-id")[0]
         self.assertEqual(l.from_groups.count(),2)
-        self.assertEqual(l.from_contact.address, submitter.email_address())
+        self.assertEqual(l.from_contact, submitter.email_address())
         self.assertSequenceEqual(l.to_groups.all(),[to_group])
         self.assertEqual(l.technical_contacts, "technical_contact@example.com")
         self.assertEqual(l.action_holder_contacts, "action_holder_contacts@example.com")
@@ -825,7 +845,7 @@ class LiaisonManagementTests(TestCase):
 
         l = LiaisonStatement.objects.all().order_by("-id")[0]
         self.assertSequenceEqual(l.from_groups.all(), [from_group])
-        self.assertEqual(l.from_contact.address, submitter.email_address())
+        self.assertEqual(l.from_contact, submitter.email_address())
         self.assertSequenceEqual(l.to_groups.all(), [to_group])
         self.assertEqual(l.to_contacts, "to_contacts@example.com")
         self.assertEqual(l.technical_contacts, "technical_contact@example.com")
@@ -901,7 +921,7 @@ class LiaisonManagementTests(TestCase):
         file.name = "upload.txt"
         post_data = dict(
             from_groups = ','.join([ str(x.pk) for x in liaison.from_groups.all() ]),
-            from_contact = liaison.from_contact.address,
+            from_contact = liaison.from_contact,
             to_groups = ','.join([ str(x.pk) for x in liaison.to_groups.all() ]),
             to_contacts = 'to_contacts@example.com',
             purpose = liaison.purpose.slug,
