@@ -227,6 +227,10 @@ class MeetingFilter(admin.SimpleListFilter):
         if self.value():
             return queryset.filter(meeting__id=self.value())
         return queryset
+
+class RegistrationTicketInline(admin.TabularInline):
+    model = RegistrationTicket
+
 class RegistrationAdmin(admin.ModelAdmin):
     model = Registration
     # list_filter = [('meeting', Meeting.objects.filter(type='ietf')), ]
@@ -234,6 +238,7 @@ class RegistrationAdmin(admin.ModelAdmin):
     list_display = ['meeting', 'first_name', 'last_name', 'affiliation', 'country_code', 'person', 'email', ]
     search_fields = ['meeting__number', 'first_name', 'last_name', 'affiliation', 'country_code', 'email', ]
     raw_id_fields = ['person']
+    inlines = [RegistrationTicketInline, ]
 admin.site.register(Registration, RegistrationAdmin)
 
 class RegistrationTicketAdmin(admin.ModelAdmin):
