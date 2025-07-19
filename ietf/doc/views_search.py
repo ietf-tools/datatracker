@@ -644,7 +644,7 @@ def docs_for_ad(request, name):
         raise Http404
 
     results, meta = prepare_document_table(
-        request, Document.objects.filter(ad=ad), max_results=500 # EVY show_ad_and_shepherd=False
+        request, Document.objects.filter(ad=ad), max_results=500, show_ad_and_shepherd=False
     )
     results.sort(key=lambda d: sort_key(d))
 
