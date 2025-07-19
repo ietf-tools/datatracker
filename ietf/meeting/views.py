@@ -141,6 +141,10 @@ def send_interim_change_notice(request, meeting):
     message.related_groups.add(group)
     send_mail_message(request, message)
 
+def parse_ical_line_endings(ical):
+    """Parse icalendar line endings to ensure they are RFC 5545 compliant"""
+    return re.sub(r'\r(?!\n)|(?<!\r)\n', '\r\n', ical)
+
 # -------------------------------------------------
 # View Functions
 # -------------------------------------------------
@@ -2292,10 +2296,8 @@ def agenda_ical(request, num=None, acronym=None, session_id=None):
     elif session_id:
         assignments = [ a for a in assignments if a.session_id == int(session_id) ]
 
-    # Try to use the icalendar library first
     ical_content = generate_agenda_ical(schedule, assignments)
-    # Normalize line endings to RFC 5545 standard (CRLF)
-    ical_content = re.sub(r"\r(?!\n)|(?<!\r)\n", "\r\n", ical_content)
+    ical_content = parse_ical_line_endings(ical_content)
     return HttpResponse(ical_content, content_type="text/calendar")
 
 @cache_page(15 * 60)
@@ -4240,7 +4242,7 @@ def upcoming_ical(request):
         'assignments': assignments,
         'ietfs': ietfs,
     }, request=request)
-    response = re.sub("\r(?!\n)|(?<!\r)\n", "\r\n", response)
+    response = parse_ical_line_endings(response)
 
     response = HttpResponse(response, content_type='text/calendar')
     response['Content-Disposition'] = 'attachment; filename="upcoming.ics"'
@@ -4804,7 +4806,7 @@ def important_dates(request, num=None, output_format=None):
             'meetings': meetings,
         }, request=request)
         # icalendar response file should have '\r\n' line endings per RFC5545
-        response = HttpResponse(re.sub("\r(?!\n)|(?<!\r)\n", "\r\n", ics), content_type='text/calendar')
+        response = HttpResponse(parse_ical_line_endings(ics), content_type='text/calendar')
         response['Content-Disposition'] = 'attachment; filename="important-dates.ics"'
         return response
 
@@ -5238,3 +5240,4 @@ def import_session_minutes(request, session_id, num):
             'contents_unchanged': not contents_changed,
         },
     )
+
