@@ -1,4 +1,4 @@
-FROM ghcr.io/ietf-tools/datatracker-celery:latest
+FROM ghcr.io/ietf-tools/datatracker-celery:py312
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive

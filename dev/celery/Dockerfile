@@ -1,6 +1,6 @@
 # Dockerfile for celery worker
 #
-FROM ghcr.io/ietf-tools/datatracker-app-base:latest
+FROM ghcr.io/ietf-tools/datatracker-app-base:py312
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
