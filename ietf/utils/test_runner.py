@@ -60,9 +60,7 @@ from fnmatch import fnmatch
 from typing import Callable, Optional
 from urllib.parse import urlencode
 
-from coverage.report import Reporter
-from coverage.results import Numbers
-from coverage.misc import NotPython
+import coverage
 
 import django
 from django.conf import settings
@@ -102,6 +100,42 @@ old_create: Optional[Callable] = None
 template_coverage_collection = False
 url_coverage_collection = False
 validation_settings = {"validate_html": None, "validate_html_harder": None, "show_logging": False}
+
+
+class CoverageManager:
+    checker = None
+
+    def start(self):
+        if (
+            settings.SERVER_MODE == "test"
+            and settings.TEST_CODE_COVERAGE_ENABLED
+            and self.checker is None
+        ):
+            self.checker = coverage.Coverage(
+                source=[settings.BASE_DIR],
+                cover_pylib=False,
+                omit=settings.TEST_CODE_COVERAGE_EXCLUDE_FILES,
+            )
+            self.checker.start()
+        self.enable()
+
+    def stop(self):
+        if self.checker is not None:
+            self.checker.stop()
+
+    def enable(self):
+        """Enable - tbd if this is possible"""
+
+    def disable(self):
+        """Disable - tbd if this is possible"""
+
+    def save(self):
+        if self.checker is not None:
+            self.checker.save()
+
+
+coverage_manager = CoverageManager()
+
 
 def start_vnu_server(port=8888):
     "Start a vnu validation server on the indicated port"
@@ -474,30 +508,6 @@ def set_url_coverage(flag):
     return orig
 
 
-        total = Numbers()
-        result = {"coverage": 0.0, "covered": {}, "format": 5, }
-        for fr in self.file_reporters:
-            try:
-                analysis = self.coverage._analyze(fr)
-                nums = analysis.numbers
-                missing_nums = sorted(analysis.missing)
-                with io.open(analysis.filename, encoding='utf-8') as file:
-                    lines = file.read().splitlines()
-                missing_lines = [ lines[l-1] for l in missing_nums ]
-                result["covered"][fr.relative_filename()] = (nums.n_statements, nums.pc_covered/100.0, missing_nums, missing_lines)
-                total += nums
-            except KeyboardInterrupt:                   # pragma: not covered
-                raise
-            except Exception:
-                report_it = not self.config.ignore_errors
-                if report_it:
-                    typ, msg = sys.exc_info()[:2]
-                    if typ is NotPython and not fr.should_be_python():
-                        report_it = False
-                if report_it:
-                    raise
-        result["coverage"] = total.pc_covered/100.0
-        return result
 @contextmanager
 def disable_coverage():
     """Context manager/decorator that disables template/url coverage"""
@@ -593,7 +603,7 @@ class CoverageTest(unittest.TestCase):
             self.skipTest("Coverage switched off with --skip-coverage")
 
     def code_coverage_test(self):
-        if self.runner.check_coverage and self.runner.code_coverage_checker is not None:
+        if self.runner.check_coverage and settings.TEST_CODE_COVERAGE_ENABLED:
             include = [ os.path.join(path, '*') for path in self.runner.test_paths ]
             checker = self.runner.code_coverage_checker
             checker.stop()
@@ -608,8 +618,8 @@ class CoverageTest(unittest.TestCase):
             if self.runner.run_full_test_suite and self.runner.html_report:
                 checker.html_report(directory=settings.TEST_CODE_COVERAGE_REPORT_DIR)
             # In any case, build a dictionary with per-file data for this run
-            reporter = CoverageReporter(checker, checker.config)
-            self.runner.coverage_data["code"] = reporter.report()
+            with open("jlrcoverage.txt", "w") as f:
+                self.runner.coverage_data["code"] = checker.json_report(outfile=f)
             self.report_test_result("code")
         else:
             self.skipTest("Coverage switched off with --skip-coverage")
@@ -833,12 +843,8 @@ class IetfTestRunner(DiscoverRunner):
 
             settings.MIDDLEWARE = ('ietf.utils.test_runner.record_urls_middleware',) + tuple(settings.MIDDLEWARE)
 
-            self.code_coverage_checker = settings.TEST_CODE_COVERAGE_CHECKER
-            if self.code_coverage_checker and not self.code_coverage_checker._started:
-                sys.stderr.write(" **  Warning: In %s: Expected the coverage checker to have\n"
-                                 "       been started already, but it wasn't. Doing so now.  Coverage numbers\n"
-                                 "       will be off, though.\n" % __name__)
-                self.code_coverage_checker.start()
+            # start the coverage manager (if enabled)
+            coverage_manager.start()
 
         if settings.SITE_ID != 1:
             print("     Changing SITE_ID to '1' during testing.")

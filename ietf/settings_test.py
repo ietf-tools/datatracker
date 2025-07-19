@@ -14,7 +14,7 @@ import os
 import shutil
 import tempfile
 from ietf.settings import *                                          # pyflakes:ignore
-from ietf.settings import TEST_CODE_COVERAGE_CHECKER, ORIG_AUTH_PASSWORD_VALIDATORS
+from ietf.settings import ORIG_AUTH_PASSWORD_VALIDATORS
 import debug                            # pyflakes:ignore
 debug.debug = True
 
@@ -52,9 +52,7 @@ DATABASES = {
 BLOBDB_DATABASE = "default"
 DATABASE_ROUTERS = []  # type: ignore
 
-if TEST_CODE_COVERAGE_CHECKER and not TEST_CODE_COVERAGE_CHECKER._started: # pyflakes:ignore
-    TEST_CODE_COVERAGE_CHECKER.start()                          # pyflakes:ignore
-
+TEST_CODE_COVERAGE_ENABLED = True
 
 def tempdir_with_cleanup(**kwargs):
     """Utility to create a temporary dir and arrange cleanup"""
