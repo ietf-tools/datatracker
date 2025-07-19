@@ -91,7 +91,7 @@ from ietf.meeting.utils import group_sessions
 from ietf.name.models import GroupTypeName, StreamName
 from ietf.person.models import Email, Person
 from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewerSettings, 
-                                ReviewSecretarySettings, UnavailablePeriod )
+                                ReviewSecretarySettings, UnavailablePeriod, HistoricalReviewAssignment )
 from ietf.review.policies import get_reviewer_queue_policy
 from ietf.review.utils import (can_manage_review_requests_for_team,
                                can_access_review_stats_for_team,
@@ -683,6 +683,56 @@ def history(request, acronym, group_type=None):
                       "group": group,
                       "events": events,
                       "can_add_comment": can_add_comment,
+                  }))
+
+def review_requests_history(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_reviews:
+        raise Http404
+
+    reviewer_email = request.GET.get("reviewer_email", None)
+    
+    if reviewer_email:
+        history = HistoricalReviewAssignment.objects.filter(
+            review_request__team__acronym=acronym,
+            reviewer=reviewer_email)
+    else:
+        history = HistoricalReviewAssignment.objects.filter(
+            review_request__team__acronym=acronym)
+        reviewer_email = ''
+        
+    since_choices = [
+        (None, "1 month"),
+        ("3m", "3 months"),
+        ("6m", "6 months"),
+        ("1y", "1 year"),
+        ("2y", "2 years"),
+        ("all", "All"),
+    ]
+    since = request.GET.get("since", None)
+    
+    if since not in [key for key, label in since_choices]:
+        since = None
+
+    if since != "all":
+        date_limit = {
+            None: datetime.timedelta(days=31),
+            "3m": datetime.timedelta(days=31 * 3),
+            "6m": datetime.timedelta(days=180),
+            "1y": datetime.timedelta(days=365),
+            "2y": datetime.timedelta(days=2 * 365),
+        }[since]
+
+        history = history.filter(review_request__time__gte=datetime_today(DEADLINE_TZINFO) - date_limit)
+
+    return render(request, 'group/review_requests_history.html',
+                  construct_group_menu_context(request, group, "reviews history", group_type, {
+                      "group": group,
+                      "acronym": acronym,
+                      "history": history,
+                      "since_choices": since_choices,
+                      "since": since,
+                      "reviewer_email": reviewer_email
                   }))
 
 def materials(request, acronym, group_type=None):
