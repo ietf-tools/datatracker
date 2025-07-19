@@ -1423,6 +1423,7 @@ def sync_registration_data(meeting):
     # Delete registrations that exist in the DB but not in registration data, they've been cancelled
     emails_to_delete = existing_emails - reg_emails
     if emails_to_delete:
+        log(f"sync_reg: emails marked for deletion: {emails_to_delete}")
         result = Registration.objects.filter(
             email__in=emails_to_delete,
             meeting=meeting
@@ -1432,7 +1433,6 @@ def sync_registration_data(meeting):
         else:
             deleted_count = 0
         stats['deleted'] = deleted_count
-
     # set meeting.attendees
     count = Registration.objects.onsite().filter(meeting=meeting, checkedin=True).count()
     if meeting.attendees != count:
@@ -1478,11 +1478,12 @@ def process_single_registration(reg_data, meeting):
                 target.delete()
         if registration.tickets.count() == 0:
             registration.delete()
+        log(f"sync_reg: cancelled registration {reg_data['email']}")
         return (None, 'deleted')
 
     person = Person.objects.filter(email__address=reg_data['email']).first()
     if not person:
-        log.log(f"ERROR: meeting registration email unknown {reg_data['email']}")
+        log(f"ERROR: meeting registration email unknown {reg_data['email']}")
 
     registration, created = Registration.objects.get_or_create(
         email=reg_data['email'],
@@ -1501,6 +1502,7 @@ def process_single_registration(reg_data, meeting):
     if not created:
         for field in ['first_name', 'last_name', 'affiliation', 'country_code', 'checkedin']:
             if getattr(registration, field) != reg_data[field]:
+                log(f"sync_reg: found update {reg_data['email']}, {field} different, data from reg: {reg_data}")
                 setattr(registration, field, reg_data[field])
                 fields_updated = True
 
@@ -1537,6 +1539,7 @@ def process_single_registration(reg_data, meeting):
             ).order_by('id')  # Use a consistent order for deterministic deletion
 
             # Delete the required number
+            log(f"sync_reg: deleting {tickets_to_delete} of {ticket_type[0]}:{ticket_type[1]} of {reg_data['email']}")
             for ticket in matching_tickets[:tickets_to_delete]:
                 ticket.delete()
             tickets_modified = True
@@ -1546,6 +1549,7 @@ def process_single_registration(reg_data, meeting):
             tickets_to_add = new_count - existing_count
 
             # Create the new tickets
+            log(f"sync_reg: adding {tickets_to_add} of {ticket_type[0]}:{ticket_type[1]} of {reg_data['email']}")
             for _ in range(tickets_to_add):
                 try:
                     RegistrationTicket.objects.create(
@@ -1556,7 +1560,6 @@ def process_single_registration(reg_data, meeting):
                     tickets_modified = True
                 except IntegrityError as e:
                     log(f"Error adding RegistrationTicket {e}")
-
     # handle nomcom volunteer
     if reg_data['is_nomcom_volunteer'] and person:
         try:
@@ -1575,6 +1578,7 @@ def process_single_registration(reg_data, meeting):
 
     # set action_taken
     if created:
+        log(f"sync_reg: created record. {reg_data['email']}")
         action_taken = 'created'
     elif fields_updated or tickets_modified:
         action_taken = 'updated'
