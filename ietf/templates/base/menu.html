@@ -19,6 +19,7 @@
             <span class="fw-bolder">Groups</span>
         </li>
     {% endif %}
+    <li><a class="dropdown-item" href="{% url "ietf.group.views.group_about" acronym="iesg" %}">IESG</a></li>
     {% if flavor == 'top' %}<li class="dropdown-header">By area/parent</li>{% endif %}
     {% wg_menu flavor %}
     <li class="dropend">
