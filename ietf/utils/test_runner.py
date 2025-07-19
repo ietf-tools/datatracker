@@ -97,8 +97,8 @@ test_database_name: Optional[str] = None
 old_destroy: Optional[Callable] = None
 old_create: Optional[Callable] = None
 
-template_coverage_collection = None
-url_coverage_collection = None
+template_coverage_collection = False
+url_coverage_collection = False
 validation_settings = {"validate_html": None, "validate_html_harder": None, "show_logging": False}
 
 def start_vnu_server(port=8888):
@@ -457,18 +457,19 @@ def save_test_results(failures, test_labels):
             tfile.write("%s OK\n" % (timestr, ))
     tfile.close()
 
-def set_coverage_checking(flag=True):
+
+def set_template_coverage(flag):
     global template_coverage_collection
+    orig = template_coverage_collection
+    template_coverage_collection = flag
+    return orig
+
+
+def set_url_coverage(flag):
     global url_coverage_collection
-    if settings.SERVER_MODE == 'test' and settings.TEST_CODE_COVERAGE_CHECKER is not None:
-        if flag:
-            settings.TEST_CODE_COVERAGE_CHECKER.collector.resume()
-            template_coverage_collection = True
-            url_coverage_collection = True
-        else:
-            settings.TEST_CODE_COVERAGE_CHECKER.collector.pause()
-            template_coverage_collection = False
-            url_coverage_collection = False
+    orig = url_coverage_collection
+    url_coverage_collection = flag
+    return orig
 
 class CoverageReporter(Reporter):
     def report(self):
