@@ -54,7 +54,6 @@ from ietf.meeting.utils import create_recording, delete_recording, get_next_sequ
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose, generate_agenda_data
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
-from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_runner import TestBlobstoreManager
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
@@ -1168,8 +1167,7 @@ class MeetingTests(BaseMeetingTestCase):
                 os.unlink(filename)
 
     @skipIf(skip_pdf_tests, skip_message)
-    @skip_coverage
-    def test_session_draft_pdf(self):
+    def test_session_draft_pdf(self):  # pragma: no cover
         session, filenames = self.build_session_setup()
         try:
             url = urlreverse('ietf.meeting.views.session_draft_pdf', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
