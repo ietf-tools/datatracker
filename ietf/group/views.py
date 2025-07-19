@@ -58,6 +58,7 @@ from django.urls import reverse as urlreverse
 from django.utils import timezone
 from django.utils.html import escape
 from django.views.decorators.cache import cache_page, cache_control
+from django.urls import reverse
 
 import debug                            # pyflakes:ignore
 
@@ -898,6 +899,18 @@ def meetings(request, acronym, group_type=None):
                 far_past.append(s)
         past = recent_past
 
+    # Add calendar actions
+    cal_actions = []
+
+    cal_actions.append(dict(
+        label='Download as .ics',
+        url=reverse('ietf.meeting.views.upcoming_ical')+"?show="+group.acronym)
+    )
+    cal_actions.append(dict(
+        label='Subscribe with webcal',
+        url='webcal://'+request.get_host()+reverse('ietf.meeting.views.upcoming_ical')+"?show="+group.acronym)
+    )
+
     return render(
         request,
         "group/meetings.html",
@@ -915,6 +928,7 @@ def meetings(request, acronym, group_type=None):
                 "far_past": far_past,
                 "can_edit": can_edit,
                 "can_always_edit": can_always_edit,
+                "cal_actions": cal_actions,
             },
         ),
     )
