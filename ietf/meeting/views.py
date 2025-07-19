@@ -118,6 +118,10 @@ from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSession
     UploadAgendaForm, UploadBlueSheetForm, UploadMinutesForm, UploadSlidesForm,
     UploadNarrativeMinutesForm)
 
+from icalendar import Calendar, Event, vText
+import pytz
+from ietf.doc.templatetags.ietf_filters import absurl, ics_esc
+
 request_summary_exclude_group_types = ['team']
 
     
@@ -2103,6 +2107,114 @@ def ical_session_status(assignment):
     else:
         return "CONFIRMED"
 
+def generate_agenda_ical(schedule, assignments):
+    """Generate iCalendar using the icalendar library"""
+        
+    # Create calendar
+    cal = Calendar()
+    cal.add('prodid', '-//IETF//datatracker.ietf.org ical agenda//EN')
+    cal.add('version', '2.0')
+    cal.add('method', 'PUBLISH')
+    
+    # Process each assignment/session
+    for item in assignments:
+        event = Event()
+        
+        # UID: ietf-{meeting_number}-{timeslot_pk}-{group_acronym}
+        uid = f"ietf-{schedule.meeting.number}-{item.timeslot.pk}-{item.session.group.acronym}"
+        event.add('uid', uid)
+        
+        # SUMMARY: session name or group acronym and name
+        if item.session.name:
+            summary = item.session.name
+        else:
+            group = item.session.group_at_the_time()
+            summary = f"{group.acronym.upper()} - {group.name}"
+        
+        # Add agenda note if present
+        if item.session.agenda_note:
+            summary += f" ({item.session.agenda_note})"
+            
+        event.add('summary', vText(summary))
+        
+        # LOCATION: only if location should be shown
+        if item.timeslot.show_location and item.timeslot.get_location():
+            event.add('location', vText(item.timeslot.get_location()))
+        
+        status = ical_session_status(item)
+        event.add('status', status)
+        
+        event.add('class', 'PUBLIC')
+        
+        start_time = item.timeslot.local_start_time()
+        end_time = item.timeslot.local_end_time()
+        
+        # Convert to UTC for maximum compatibility
+        event.add('dtstart', start_time.astimezone(pytz.UTC))
+        event.add('dtend', end_time.astimezone(pytz.UTC))
+        
+        # DTSTAMP: when the event was last modified (in UTC)
+        dtstamp = item.timeslot.modified.astimezone(pytz.UTC)
+        event.add('dtstamp', dtstamp)
+        
+        # URL: link to session agenda if available
+        if item.session.agenda and hasattr(item.session.agenda, 'get_versionless_href'):
+            event.add('url', item.session.agenda.get_versionless_href())
+        
+        # DESCRIPTION: build comprehensive description
+        description_parts = [ics_esc(item.timeslot.name)]
+        
+        if item.session.agenda_note:
+            description_parts.append(f"Note: {ics_esc(item.session.agenda_note)}")
+        
+        if hasattr(item.session, 'onsite_tool_url') and callable(item.session.onsite_tool_url):
+            onsite_url = item.session.onsite_tool_url()
+            if onsite_url:
+                description_parts.append(f"Onsite tool: {onsite_url}")
+        
+        if hasattr(item.session, 'video_stream_url') and callable(item.session.video_stream_url):
+            video_url = item.session.video_stream_url()
+            if video_url:
+                description_parts.append(f"Meetecho: {video_url}")
+        
+        if item.timeslot.location and hasattr(item.timeslot.location, 'webex_url') and callable(item.timeslot.location.webex_url):
+            description_parts.append(f"Webex: {item.timeslot.location.webex_url()}")
+        
+        if item.session.remote_instructions:
+            description_parts.append(f"Remote instructions: {item.session.remote_instructions}")
+        
+        if item.session.agenda and hasattr(item.session.agenda, 'get_versionless_href'):
+            agenda = item.session.agenda
+            agenda_url = agenda.get_versionless_href()
+            if agenda_url:
+                description_parts.append(f"{agenda.type} {agenda_url}")
+        
+        # Add session materials link
+        try:
+            materials_url = absurl('ietf.meeting.views.session_details', 
+                num=schedule.meeting.number, 
+                acronym=item.session.group.acronym)
+            description_parts.append(f"Session materials: {materials_url}")
+        except:
+            pass
+        
+        # Add schedule link for IETF meetings
+        if hasattr(schedule.meeting, 'get_number') and schedule.meeting.get_number() is not None:
+            try:
+                agenda_url = absurl('agenda', num=schedule.meeting.number)
+                description_parts.append(f"See in schedule: {agenda_url}#row-{item.slug()}")
+            except:
+                pass
+        
+        # Join all description parts with 2 newlines (not escaped)
+        description = "\n\n".join(description_parts)
+        event.add('description', vText(description))
+        
+        # Add event to calendar
+        cal.add_component(event)
+    
+    return cal.to_ical().decode('utf-8')
+
 def parse_agenda_filter_params(querydict):
     """Parse agenda filter parameters from a request"""
     if len(querydict) == 0:
@@ -2180,15 +2292,11 @@ def agenda_ical(request, num=None, acronym=None, session_id=None):
     elif session_id:
         assignments = [ a for a in assignments if a.session_id == int(session_id) ]
 
-    for a in assignments:
-        if a.session:
-            a.session.ical_status = ical_session_status(a)
-
-    return render(request, "meeting/agenda.ics", {
-        "schedule": schedule,
-        "assignments": assignments,
-        "updated": updated
-    }, content_type="text/calendar")
+    # Try to use the icalendar library first
+    ical_content = generate_agenda_ical(schedule, assignments)
+    # Normalize line endings to RFC 5545 standard (CRLF)
+    ical_content = re.sub(r"\r(?!\n)|(?<!\r)\n", "\r\n", ical_content)
+    return HttpResponse(ical_content, content_type="text/calendar")
 
 @cache_page(15 * 60)
 def agenda_json(request, num=None):
