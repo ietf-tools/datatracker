@@ -3,7 +3,7 @@
 
 
 from django.contrib import admin
-from django.db.models import Q, Count
+from django.db.models import Count
 
 from ietf.meeting.models import (Attended, Meeting, Room, Session, TimeSlot, Constraint, Schedule,
     SchedTimeSessAssignment, ResourceAssociation, FloorPlan, UrlResource,
