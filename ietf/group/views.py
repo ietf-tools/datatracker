@@ -2187,7 +2187,7 @@ def statements(request, acronym, group_type=None):
                 ).values_list("state__slug", flat=True)[:1]
             )
         )
-        .order_by("-published")
+        .order_by("status", "-published")
     )
     return render(
         request,
