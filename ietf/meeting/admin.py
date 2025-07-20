@@ -269,7 +269,7 @@ class RegistrationAdmin(admin.ModelAdmin):
             return 'hackathon onsite'
         elif instance.tickets.filter(attendance_type__slug='hackathon_remote').exists():
             return 'hackathon remote'
-    display_attendance.short_description = "Attendance"
+    display_attendance.short_description = "Attendance"  # type: ignore # https://github.com/python/mypy/issues/2087
 
 admin.site.register(Registration, RegistrationAdmin)
 
@@ -286,6 +286,6 @@ class RegistrationTicketAdmin(admin.ModelAdmin):
 
     def display_meeting(self, instance):
         return instance.registration.meeting.number
-    display_meeting.short_description = "Meeting"
+    display_meeting.short_description = "Meeting"  # type: ignore # https://github.com/python/mypy/issues/2087
 
 admin.site.register(RegistrationTicket, RegistrationTicketAdmin)
