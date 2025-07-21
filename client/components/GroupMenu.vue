@@ -1,55 +1,32 @@
 <template>
   <NavigationMenuRoot
-    v-if="menuData"
     :disable-hover-trigger="true"
+    v-model="menuTriggerRef"
     class="NavigationMenuRoot"
   >
     <NavigationMenuList class="NavigationMenuList">
       <NavigationMenuItem value="Groups">
-        <NavigationMenuTrigger class="dropdown-toggle NavigationMenuTrigger">
+        <NavigationMenuTrigger
+          class="dropdown-toggle NavigationMenuTrigger"
+          ref="buttonTriggerRef"
+        >
           Groups
         </NavigationMenuTrigger>
         <NavigationMenuContent class="NavigationMenuContent">
-          <NavigationMenuSub default-value="0">
-            <NavigationMenuList class="NavigationMenu-NoList">
-              <NavigationMenuItem
-                v-for="(menuItem, menuItemIndex) in menuData"
-                :key="menuItemIndex"
-                :val="menuItemIndex"
-              >
-                <NavigationMenuTrigger class="NavigationMenuLevel1">
-                  {{ menuItem.label }}
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <fieldset
-                    v-for="(childrenItems, groupType, childrenIndex) in menuItem.children"
-                    :key="childrenIndex"
-                  >
-                    <legend class="NavigationMenuLegend">
-                      {{ groupType }}
-                    </legend>
-                    <ul class="NavigationMenu-NoList">
-                      <li
-                        v-for="(childrenItem, childrenItemIndex) in childrenItems"
-                        :key="childrenItemIndex"
-                      >
-                        <NavigationMenuLink as-child>
-                          <a :href="childrenItem.url" class="NavigationMenuLevel2">
-                            {{ childrenItem.acronym }}
-                            &mdash;
-                            {{ childrenItem.name }}
-                          </a>
-                        </NavigationMenuLink>
-                      </li>
-                    </ul>
-                  </fieldset>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenuSub>
+          <MenuItem
+            v-for="(item, itemIndex) in groupsMenu"
+            :key="itemIndex"
+            :item="item"
+            :depth="0"
+          />
         </NavigationMenuContent>
       </NavigationMenuItem>
     </NavigationMenuList>
+    <Teleport to="body">
+      <div ref="viewportWrapperRef">
+        <NavigationMenuViewport />
+      </div>
+    </Teleport>
   </NavigationMenuRoot>
 </template>
 
@@ -65,61 +42,278 @@ import {
   NavigationMenuTrigger,
   NavigationMenuViewport,
 } from 'reka-ui'
-import { onMounted, ref } from 'vue'
+import { onMounted, watch, watchEffect, ref, Teleport } from 'vue'
 import { groupBy } from 'lodash-es'
+import MenuItem from '../GroupMenu/MenuItem.vue'
 
+const viewportWrapperRef = ref(null)
+const buttonTriggerRef = ref(null)
+const menuTriggerRef = ref(null)
 
-// type GroupMenuData = Record<string, {
-//   "acronym": string
-//   "name": string
-//   "type": string
-//   "url": string
-// }[]>
+watch([menuTriggerRef, viewportWrapperRef, buttonTriggerRef], ()=> {
+  // We're Vue Teleporting the <NavigationMenuViewport /> to escape the `position: fixed`
+  // navbar, because when a Bootstrap OR Reka menu renders in a `position: fixed` we
+  // can't scroll to reveal more menu options. It seems menus aren't designed to work
+  // inside a `position: fixed` navbar.
+  //
+  // The teleporting to <body> however requires some additional repositioning of the
+  // NavigationMenuContent which is rendered by Reka into the NavigationMenuViewport.
+  // Reka normally assumes that the viewport is adjacent to the trigger in the DOM but
+  // due to the Vue Teleport it is not.
+  //
+  // So this code sets some CSS variables which can be used in positioning calc()ulations
+  const extractElement = (refValue) => {
+    if(refValue instanceof HTMLElement) {
+      return refValue
+    }
+    if(refValue && typeof refValue === 'object' && '$el' in refValue && refValue.$el instanceof HTMLElement) {
+      return refValue.$el
+    }
+    return null
+  }
 
-// type MenuItem = {
-//   label: string
-//   href: string
-//   parentId: string
-//   children: GroupMenuData[string]
-// }
+  const buttonTrigger = buttonTriggerRef.value
+  const viewportWrapper = viewportWrapperRef.value
+  if(!buttonTrigger || !viewportWrapper) {
+    console.log("Couldn't find ref value (at least one of)", { buttonTrigger, viewportWrapper })
+    return
+  }
+  const buttonTriggerElement = extractElement(buttonTrigger)
+  const viewportWrapperElement = extractElement(viewportWrapper)
+  if(!buttonTriggerElement || !viewportWrapperElement) {
+    console.log("Couldn't find element (at least one of)", { buttonTriggerElement, viewportWrapperElement })
+    return
+  }
+  const rect = buttonTriggerElement.getBoundingClientRect()
+  viewportWrapperElement.style.setProperty('--trigger-button-top', `${rect.top + rect.height + window.scrollY}px`)
+  viewportWrapperElement.style.setProperty('--trigger-button-left', `${rect.left + window.scrollX}px`)
+})
 
-const menuData = ref(null)
+const groupsMenu = ref(null)
+
+const DROPDOWN_TOGGLE_SELECTOR = '.dropdown a.dropdown-toggle'
+
+// The previous Bootstrap menu would download menu JSON
+// and then attach to specific elements in the DOM that
+// had this prefix in the 'class' attribute.
+const GROUP_PARENT_PREFIX = 'group-parent-'
 
 onMounted(async () => {
-  // The previous Bootstrap menu would download menu JSON
-  // and then attach to specific elements in the DOM that
-  // had this prefix in the 'class' attribute.
-  const GROUP_MENU_PREFIX = 'group-parent-'
-  // so we'll scrape those in order to build data for a
-  // Reka menu
-  const groupsLink = document.querySelector('[data-groups]')
-  const groupsList = groupsLink.nextElementSibling
-  const groupParents = groupsList.querySelectorAll(`li[class*=${GROUP_MENU_PREFIX}]`)
-  const menu = Array.from(groupParents).map(element => {
-    const parentId = element.getAttribute('class')
-      .split(' ')
-      .filter(classItem => classItem.includes(GROUP_MENU_PREFIX))
-      .reduce((_acc, classItem) => classItem.replace(GROUP_MENU_PREFIX, ''), null)
-
-    const href = element.querySelector('a[href]').getAttribute('href')
-
-    return {
-      label: element.innerText,
-      href,
-      parentId,
+  const legacyGroupsLink = Array.from(
+    document.querySelectorAll(DROPDOWN_TOGGLE_SELECTOR)
+  ).filter(
+    elm => elm.innerText.includes('Groups')
+  ).reduce((acc, elm, index, arr) => {
+    if(arr.length !== 1) {
+      console.log("Details", arr)
+      throw Error(`Unable to scrape unique 'Groups' dropdown link`)
     }
-  })
+    return elm
+  }, null)
 
+  if (!legacyGroupsLink) {
+    throw Error('Unable to find groups link')
+  }
+
+  const groupsContainer = legacyGroupsLink.parentElement
+  const legacyGroupsMenu = legacyGroupsLink.nextElementSibling
+
+  const walk = (list) => {
+    const items = []
+    if (!(list instanceof HTMLElement) || list.nodeName.toLowerCase() !== 'ul') {
+      console.warn("Unable to scrape ", list)
+      return []
+    }
+
+    const findUniqueChild = (elm, filterFn, throwOnError) => {
+      const result = Array.from(elm.children)
+        .filter(filterFn)
+        .reduce((_acc, item, _index, arr) => {
+          if(throwOnError && arr.length !== 1) {
+            console.log("Details", elm, filterFn)
+            throw Error(`Unable to find unique item (was arr.length=${arr.length}). See console for more`)
+          }
+          return item
+        }, null)
+      if(throwOnError && !result) {
+        console.log("Details", elm, filterFn)
+        throw Error(`Unable to find unique item. See console for more`)
+      }
+      return result
+    }
+
+    Array.from(list.children)
+      .forEach(level0 => {
+        if(!(level0 instanceof HTMLElement)) {
+          console.warn("Unable to scape", level0)
+          return
+        }
+        
+        if (level0.classList.contains('dropdown-header')) {
+          items.push({
+            type: 'group',
+            header: level0.innerText,
+            children: [],
+          })
+        } else if (level0.matches(`li[class*=${GROUP_PARENT_PREFIX}]`)) {
+          // these have children later prefilled from JSON
+          const groupParentId = level0.getAttribute('class')
+            .split(' ')
+            .filter(classItem => classItem.includes(GROUP_PARENT_PREFIX))
+            .reduce((_acc, classItem) => classItem.replace(GROUP_PARENT_PREFIX, ''), null)
+          
+          const groupParentLink = findUniqueChild(
+            level0,
+            (node) => node instanceof HTMLElement && node.classList.contains('dropdown-item'),
+            true,
+          )
+          const href = groupParentLink.getAttribute('href')
+          if (!href) {
+            throw Error("Couldn't extract groupParentLink href")
+          }
+          const label = groupParentLink.innerText
+          if (
+            !label.trim() // ensure we don't get an empty string
+          ) {
+            throw Error("Couldn't extract groupParentLink label")
+          }
+
+          if (items.length === 0) {
+            console.log("Details", items)
+            throw Error("Expected preexisting items to add groupParent")
+          }
+
+          const lastItem = items[items.length - 1]
+
+          lastItem.children.push({
+            type: 'groupParent',
+            groupParentId,
+            href,
+            label,
+          })
+        } else if(level0.nodeName.toLowerCase() === 'li'){
+          const divider = findUniqueChild(
+            level0,
+            (node) => node instanceof HTMLElement && node.nodeName.toLowerCase() === 'hr',
+            false,
+          )
+
+          if (divider) {
+            items.push({
+              type: 'divider',
+            })
+            return
+          }
+
+          const link = findUniqueChild(
+            level0,
+            (node) => node instanceof HTMLElement && node.nodeName.toLowerCase() === 'a',
+            true,
+          )
+          
+          // const dropdownMenu = findUniqueChild(
+          //   level1,
+          //   node => node instanceof HTMLElement && node.classList.contains('dropdown-menu'),
+          //   false,
+          // )
+
+          let listItemChildren = []
+          // if(dropdownMenu) {
+          //   listItemChildren = []
+            // Array.from(dropdownMenu.children)
+            //   .filter(dropdownMenuChild => (
+            //     dropdownMenuChild instanceof HTMLElement &&
+            //     dropdownMenuChild.nodeName.toLowerCase() === 'li'
+            //   ))
+            //   .map(walk)
+          //}
+
+          const children = listItemChildren ?? []
+
+          const href = link.getAttribute('href')
+          if (!href) {
+            throw Error("Couldn't extract link href")
+          }
+          const label = link.innerText
+          if (
+            !label.trim() // ensure we don't get an empty string
+          ) {
+            throw Error("Couldn't extract link label")
+          }
+
+          const lastItem = items[items.length - 1]
+
+          if(lastItem.type === 'group') {
+            lastItem.children.push({
+              type: 'link',
+              label,
+              href,
+              children,
+            })
+          } else {
+            items.push({
+              type: 'link',
+              label,
+              href,
+              children,
+            })
+          }
+        }
+      })
+    
+    return items
+  }
+
+  const groupsMenuItems = Array.from(groupsContainer.children).flatMap(walk)
+      
   const updateMenu = (groupMenuData) => {
-    menuData.value = menu.map(menuItem => ({
-      ...menuItem,
-      children: groupBy(groupMenuData[menuItem.parentId], 'type')
-    }))
-    console.log({ menuDataValue: menuData.value })
+    const groupedMenuDataToGroups = (groupedMenuData) => {
+      return Object.entries(groupedMenuData)
+        .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+        .map(([key, value]) => {
+          return {
+            type: 'group',
+            header: key,
+            children: value.map(groupMenuDataItem => ({
+              type: "link",
+              label: `${groupMenuDataItem.acronym} - ${groupMenuDataItem.name}`,
+              href: groupMenuDataItem.url,
+              children: undefined,
+            })),
+          }
+        })
+    }
+
+    const hydrateGroupParent = (item) => {
+      switch(item.type) {
+        case 'group':
+          return {
+            ...item,
+            children: item.children.map(hydrateGroupParent)
+          }
+        case 'groupParent':
+          return {
+            type: 'group',
+            header: item.label,
+            href: item.href,
+            children: groupedMenuDataToGroups(groupBy(groupMenuData[item.groupParentId], 'type'))
+          }
+        default:
+          return item
+      }
+    }
+
+    const groupsMenuValue = groupsMenuItems.map(hydrateGroupParent)
+    
+    console.log({ groupsMenuValue })
+
+    groupsMenu.value = groupsMenuValue
 
     // remove original 'Groups' menu
-    groupsLink.parentNode.removeChild(groupsLink)
-    groupsList.parentNode.removeChild(groupsList)
+    legacyGroupsLink.parentNode.removeChild(legacyGroupsLink)
+    legacyGroupsMenu.parentNode.removeChild(legacyGroupsMenu)
+
+    console.log({ groupsContainer })
   }
 
   // Download JSON for menu
@@ -137,8 +331,7 @@ onMounted(async () => {
 </script>
 
 <style>
-.NavigationMenuRoot {
-}
+.NavigationMenuRoot {}
 
 .NavigationMenuList {
   list-style: none;
@@ -176,18 +369,24 @@ onMounted(async () => {
   border: solid 1px #ffffff26;
   border-radius: .375rem;
   padding: 0.5rem 0;
-  min-width: 300px;
+  z-index: 2000;
+  width: var(--reka-navigation-menu-viewport-width, 300px);
+  top: calc(var(--trigger-button-top, 0px) + var(--reka-navigation-menu-viewport-top, 0px));
+  left: calc(var(--trigger-button-left, 0px) + var(--reka-navigation-menu-viewport-left, 0px));  
 }
 
 .NavigationMenuContent[data-motion='from-start'] {
   animation-name: enterFromLeft;
 }
+
 .NavigationMenuContent[data-motion='from-end'] {
   animation-name: enterFromRight;
 }
+
 .NavigationMenuContent[data-motion='to-start'] {
   animation-name: exitToLeft;
 }
+
 .NavigationMenuContent[data-motion='to-end'] {
   animation-name: exitToRight;
 }
@@ -204,7 +403,7 @@ onMounted(async () => {
   padding: 0.25rem 1rem;
   clear: both;
   color: #dee2e6;
-  text-align:left;
+  text-align: left;
   background: transparent;
 }
 
@@ -220,7 +419,7 @@ onMounted(async () => {
   margin-left: 1rem;
   clear: both;
   color: #dee2e6;
-  text-align:left;
+  text-align: left;
   background: transparent;
 }
 
@@ -248,12 +447,15 @@ onMounted(async () => {
   height: var(--reka-navigation-menu-viewport-height);
   transition: width, height, 300ms ease;
 }
+
 .NavigationMenuViewport[data-state='open'] {
   animation: scaleIn 200ms ease;
 }
+
 .NavigationMenuViewport[data-state='closed'] {
   animation: scaleOut 200ms ease;
 }
+
 @media only screen and (min-width: 600px) {
   .NavigationMenuViewport {
     width: var(--reka-navigation-menu-viewport-width);
@@ -265,6 +467,7 @@ onMounted(async () => {
     opacity: 0;
     transform: translateX(200px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -276,6 +479,7 @@ onMounted(async () => {
     opacity: 0;
     transform: translateX(-200px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -287,6 +491,7 @@ onMounted(async () => {
     opacity: 1;
     transform: translateX(0);
   }
+
   to {
     opacity: 0;
     transform: translateX(200px);
@@ -298,6 +503,7 @@ onMounted(async () => {
     opacity: 1;
     transform: translateX(0);
   }
+
   to {
     opacity: 0;
     transform: translateX(-200px);
@@ -309,6 +515,7 @@ onMounted(async () => {
     opacity: 0;
     transform: rotateX(-30deg) scale(0.9);
   }
+
   to {
     opacity: 1;
     transform: rotateX(0deg) scale(1);
@@ -320,6 +527,7 @@ onMounted(async () => {
     opacity: 1;
     transform: rotateX(0deg) scale(1);
   }
+
   to {
     opacity: 0;
     transform: rotateX(-10deg) scale(0.95);
@@ -330,6 +538,7 @@ onMounted(async () => {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -339,6 +548,7 @@ onMounted(async () => {
   from {
     opacity: 1;
   }
+
   to {
     opacity: 0;
   }
