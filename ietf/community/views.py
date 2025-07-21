@@ -1,16 +1,13 @@
-# Copyright The IETF Trust 2012-2023, All Rights Reserved
+# Copyright The IETF Trust 2012-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 import csv
-import datetime
 import json
-import uuid
 
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404, render
 from django.contrib.auth.decorators import login_required
-from django.utils import timezone
 from django.utils.html import strip_tags
 
 import debug                            # pyflakes:ignore
@@ -19,9 +16,9 @@ from ietf.community.models import CommunityList, EmailSubscription, SearchRule
 from ietf.community.forms import SearchRuleTypeForm, SearchRuleForm, AddDocumentsForm, SubscriptionForm
 from ietf.community.utils import can_manage_community_list
 from ietf.community.utils import docs_tracked_by_community_list, docs_matching_community_list_rule
-from ietf.community.utils import states_of_significant_change, reset_name_contains_index_for_rule
+from ietf.community.utils import reset_name_contains_index_for_rule
 from ietf.group.models import Group
-from ietf.doc.models import DocEvent, Document
+from ietf.doc.models import Document
 from ietf.doc.utils_search import prepare_document_table
 from ietf.person.utils import lookup_persons
 from ietf.utils.decorators import ignore_view_kwargs
@@ -244,38 +241,8 @@ def export_to_csv(request, email_or_name=None, acronym=None):
 
 @ignore_view_kwargs("group_type")
 def feed(request, email_or_name=None, acronym=None):
-    clist = lookup_community_list(request, email_or_name, acronym)  # may raise Http404
-    significant = request.GET.get('significant', '') == '1'
-
-    documents = docs_tracked_by_community_list(clist).values_list('pk', flat=True)
-    since = timezone.now() - datetime.timedelta(days=14)
-
-    events = DocEvent.objects.filter(
-        doc__id__in=documents,
-        time__gte=since,
-    ).distinct().order_by('-time', '-id').select_related("doc")
-
-    if significant:
-        events = events.filter(type="changed_state", statedocevent__state__in=list(states_of_significant_change()))
-
-    host = request.get_host()
-    feed_url = 'https://%s%s' % (host, request.get_full_path())
-    feed_id = uuid.uuid5(uuid.NAMESPACE_URL, str(feed_url))
-    title = '%s RSS Feed' % clist.long_name()
-    if significant:
-        subtitle = 'Significant document changes'
-    else:
-        subtitle = 'Document changes'
-
-    return render(request, 'community/atom.xml', {
-        'clist': clist,
-        'entries': events[:50],
-        'title': title,
-        'subtitle': subtitle,
-        'id': feed_id.urn,
-        'updated': timezone.now(),
-    }, content_type='text/xml')
-
+    from .feeds import CommunityFeed
+    return CommunityFeed()(request, email_or_name=email_or_name, acronym=acronym)
 
 @login_required
 @ignore_view_kwargs("group_type")
