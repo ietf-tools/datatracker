@@ -658,6 +658,7 @@ DRF_STANDARDIZED_ERRORS = {
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
 RFCDIFF_BASE_URL = "https://author-tools.ietf.org/iddiff"
 IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
+IDNITS3_BASE_URL = "https://author-tools.ietf.org/idnits3/results"
 IDNITS_SERVICE_URL = "https://author-tools.ietf.org/idnits"
 
 # Content security policy configuration (django-csp)
@@ -1141,7 +1142,6 @@ PPT2PDF_COMMAND = [
     "--outdir"
 ]
 
-STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/'
 REGISTRATION_PARTICIPANTS_API_URL = 'https://registration.ietf.org/api/v1/participants-dt/'
 REGISTRATION_PARTICIPANTS_API_KEY = 'changeme'
 

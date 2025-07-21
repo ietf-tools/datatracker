@@ -676,11 +676,11 @@ def update_docs_from_rfc_index(
                 subseries_slug = a[:3]
                 if subseries_slug not in ["bcp", "std", "fyi"]:
                     log(f"Unexpected 'also' relationship of {a} encountered for {doc}")
-                    next
+                    continue
                 maybe_number = a[3:].strip()
                 if not maybe_number.isdigit():
                     log(f"Unexpected 'also' subseries element identifier {a} encountered for {doc}")
-                    next
+                    continue
                 else:
                     subseries_number = int(maybe_number)
                     conditioned_also.append(f"{subseries_slug}{subseries_number}") # Note the lack of leading zeros
