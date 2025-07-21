@@ -18,6 +18,7 @@ def get_mime_type(content):
         filetype = m.from_buffer(content)
     # Work around silliness in libmagic on OpenSUSE 15.1
     filetype = filetype.replace('text/x-Algol68;', 'text/plain;')
+    filetype = filetype.replace('application/vnd.hp-HPGL;', 'text/plain;')
     if ';' in filetype and 'charset=' in filetype:
         mimetype, charset = re.split('; *charset=', filetype)
     else:
