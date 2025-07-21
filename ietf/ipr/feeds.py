@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2023, All Rights Reserved
+# Copyright The IETF Trust 2007-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -28,7 +28,7 @@ class LatestIprDisclosuresFeed(Feed):
     def item_description(self, item):
         return force_str(item.title)
         
-    def item_pubdate(self, item):
+    def item_updateddate(self, item):
         return item.time
 
     def item_author_name(self, item):
