@@ -2,17 +2,16 @@
   <NavigationMenuRoot
     :disable-hover-trigger="true"
     v-model="menuTriggerRef"
-    class="NavigationMenuRoot"
   >
-    <NavigationMenuList class="NavigationMenuList">
+    <NavigationMenuList class="reka-root-list">
       <NavigationMenuItem value="Groups">
         <NavigationMenuTrigger
-          class="dropdown-toggle NavigationMenuTrigger"
+          class="reka-trigger"
           ref="buttonTriggerRef"
         >
           Groups
         </NavigationMenuTrigger>
-        <NavigationMenuContent class="NavigationMenuContent">
+        <NavigationMenuContent class="reka-root-content">
           <MenuItem
             v-for="(item, itemIndex) in groupsMenu"
             :key="itemIndex"
@@ -24,7 +23,7 @@
     </NavigationMenuList>
     <Teleport to="body">
       <div ref="viewportWrapperRef">
-        <NavigationMenuViewport />
+        <NavigationMenuViewport class="reka-viewport" />
       </div>
     </Teleport>
   </NavigationMenuRoot>
@@ -33,16 +32,13 @@
 <script setup lang="js">
 import {
   NavigationMenuContent,
-  NavigationMenuIndicator,
   NavigationMenuItem,
-  NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuRoot,
-  NavigationMenuSub,
   NavigationMenuTrigger,
   NavigationMenuViewport,
 } from 'reka-ui'
-import { onMounted, watch, watchEffect, ref, Teleport } from 'vue'
+import { onMounted, watch, ref, Teleport } from 'vue'
 import { groupBy } from 'lodash-es'
 import MenuItem from '../GroupMenu/MenuItem.vue'
 
@@ -269,18 +265,25 @@ onMounted(async () => {
   const updateMenu = (groupMenuData) => {
     const groupedMenuDataToGroups = (groupedMenuData) => {
       return Object.entries(groupedMenuData)
-        .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
-        .map(([key, value]) => {
-          return {
-            type: 'group',
-            header: key,
-            children: value.map(groupMenuDataItem => ({
+        .sort(([keyA], [keyB]) => keyB.localeCompare(keyA))
+        .flatMap(([key, value], index) => {
+          return [
+            ...(index > 0 ? [
+              {
+                type: 'divider',
+              }
+            ] : []) ,
+            {
+              type: 'header',
+              text: key,
+            },
+            ...value.map(groupMenuDataItem => ({
               type: "link",
               label: `${groupMenuDataItem.acronym} - ${groupMenuDataItem.name}`,
               href: groupMenuDataItem.url,
               children: undefined,
-            })),
-          }
+            }))
+          ]
         })
     }
 
@@ -303,26 +306,80 @@ onMounted(async () => {
       }
     }
 
-    const groupsMenuValue = groupsMenuItems.map(hydrateGroupParent)
-    
-    console.log({ groupsMenuValue })
+    /**
+     * Reka expects submenus in a slightly different format, with submenus being in a contiguous list,
+     * so we do some restructuring of the menu data to make it easier to render in Reka.
+     */
+    const convertMenuItemsToReka = (items) => {
+      const grouped = items.reduce((acc, item, index, arr) => {
+        if (item.type === 'group' && (index === 0 || arr[index - 1].type !== 'group')) {
+          // new contiguous group
+          
+          const slice = arr.slice(index)
+          console.log("New contiguous group?", slice)
+          const afterEndIndex = slice.findIndex((item, i) => {
+            console.log("-item ", i, item.type)
+            return item.type !== 'group'
+          })
+          
+          const contiguousGroupsChildren = slice
+              .slice(0, afterEndIndex === -1 ? slice.length : afterEndIndex)
+          
+          console.log("= ", `(${afterEndIndex})`, slice, contiguousGroupsChildren.length, contiguousGroupsChildren)
+
+          if(contiguousGroupsChildren.length === 1) {
+            acc.push(
+              {
+                type: 'header',
+                text: item.header,
+              },
+              ...convertMenuItemsToReka(item.children)
+            )
+          } else {
+            const contiguousGroup = {
+              type: 'submenuList',
+              children: contiguousGroupsChildren.map(item => {
+                if(item.type === 'group' && Array.isArray(item.children)) {
+                  return {
+                    type: 'menuItem',
+                    label: item.header,
+                    href: item.href,
+                    children: convertMenuItemsToReka(item.children)
+                  }
+                }
+                return item
+              })
+            }
+            acc.push(contiguousGroup)
+          }
+        } else if(item.type === 'group') {
+          // do nothing, it should have been added by a previous iteration
+        } else {
+          acc.push(item)
+        }
+        return acc
+      }, [])
+
+      return grouped
+    }
+
+    const hydratedGroupsMenuItems = groupsMenuItems.map(hydrateGroupParent)
+    const groupsMenuValue = convertMenuItemsToReka(hydratedGroupsMenuItems)
 
     groupsMenu.value = groupsMenuValue
+
+    console.log({ groupsMenuValue, hydratedGroupsMenuItems })
 
     // remove original 'Groups' menu
     legacyGroupsLink.parentNode.removeChild(legacyGroupsLink)
     legacyGroupsMenu.parentNode.removeChild(legacyGroupsMenu)
-
-    console.log({ groupsContainer })
   }
 
   // Download JSON for menu
   const groupMenuDataUrl = document.body.dataset.groupMenuDataUrl
   const response = await fetch(groupMenuDataUrl)
   if (response.ok) {
-    response.json().then((groupMenuData) => {
-      updateMenu(groupMenuData)
-    })
+    response.json().then(groupMenuData => updateMenu(groupMenuData))
   } else {
     console.error(`Problem downloading ${groupMenuDataUrl} ${response.status} ${response.statusText}`, response)
   }
@@ -331,37 +388,36 @@ onMounted(async () => {
 </script>
 
 <style>
-.NavigationMenuRoot {}
-
-.NavigationMenuList {
+.reka-root-list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.NavigationMenuTrigger {
+.reka-trigger {
   outline: none;
   user-select: none;
-  line-height: 1;
   border: 0;
   background-color: inherit;
-  color: var(--bs-nav-link-color);
-  padding: var(--bs-nav-link-padding-y) var(--bs-nav-link-padding-x);
+  color: rgba(255, 255, 255, 0.65);
+  padding: 0.5rem 0;
 }
 
-.NavigationMenuLink {
-  padding: 8px 12px;
-  outline: none;
-  user-select: none;
-  font-weight: 500;
-  line-height: 1;
-  border: 0;
-  display: block;
-  text-decoration: none;
-  line-height: 1;
+.reka-trigger::after {
+  vertical-align: .255em;
+  content: "";
+  border: .3em solid #0000;
+  border-top-color: currentColor;
+  border-bottom: 0;
+  margin-left: .255em;
+  display: inline-block;
 }
 
-.NavigationMenuContent {
+.reka-trigger[data-state=open] {
+  color: #fff
+}
+
+.reka-root-content {
   position: absolute;
   animation-duration: 250ms;
   animation-timing-function: ease;
@@ -370,96 +426,36 @@ onMounted(async () => {
   border-radius: .375rem;
   padding: 0.5rem 0;
   z-index: 2000;
-  width: var(--reka-navigation-menu-viewport-width, 300px);
+  width: 300px;
   top: calc(var(--trigger-button-top, 0px) + var(--reka-navigation-menu-viewport-top, 0px));
   left: calc(var(--trigger-button-left, 0px) + var(--reka-navigation-menu-viewport-left, 0px));  
 }
 
-.NavigationMenuContent[data-motion='from-start'] {
+.reka-root-content[data-motion='from-start'] {
   animation-name: enterFromLeft;
 }
 
-.NavigationMenuContent[data-motion='from-end'] {
+.reka-root-content[data-motion='from-end'] {
   animation-name: enterFromRight;
 }
 
-.NavigationMenuContent[data-motion='to-start'] {
+.reka-root-content[data-motion='to-start'] {
   animation-name: exitToLeft;
 }
 
-.NavigationMenuContent[data-motion='to-end'] {
+.reka-root-content[data-motion='to-end'] {
   animation-name: exitToRight;
 }
 
-.NavigationMenu-NoList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.reka-viewport {
 }
 
-.NavigationMenuLevel1 {
-  border: 0;
-  width: 100%;
-  padding: 0.25rem 1rem;
-  clear: both;
-  color: #dee2e6;
-  text-align: left;
-  background: transparent;
-}
-
-.NavigationMenuLevel1:hover,
-.NavigationMenuLevel1:focus {
-  background: #2b3035;
-}
-
-.NavigationMenuLevel2 {
-  border: 0;
-  width: 100%;
-  padding: 0.25rem 1rem;
-  margin-left: 1rem;
-  clear: both;
-  color: #dee2e6;
-  text-align: left;
-  background: transparent;
-}
-
-.NavigationMenuLevel2:hover,
-.NavigationMenuLevel2:focus {
-  background: #2b3035;
-}
-
-
-.NavigationMenuLegend {
-  margin-left: 1rem;
-  opacity: 0.8;
-  font-size: inherit;
-}
-
-.NavigationMenuViewport {
-  position: fixed;
-  transform-origin: top center;
-  margin-top: 10px;
-  width: 100%;
-  background-color: white;
-  border-radius: 6px;
-  overflow: hidden;
-  box-shadow: hsl(206 22% 7% / 35%) 0px 10px 38px -10px, hsl(206 22% 7% / 20%) 0px 10px 20px -15px;
-  height: var(--reka-navigation-menu-viewport-height);
-  transition: width, height, 300ms ease;
-}
-
-.NavigationMenuViewport[data-state='open'] {
+.reka-viewport[data-state='open'] {
   animation: scaleIn 200ms ease;
 }
 
-.NavigationMenuViewport[data-state='closed'] {
+.reka-viewport[data-state='closed'] {
   animation: scaleOut 200ms ease;
-}
-
-@media only screen and (min-width: 600px) {
-  .NavigationMenuViewport {
-    width: var(--reka-navigation-menu-viewport-width);
-  }
 }
 
 @keyframes enterFromRight {
