@@ -432,13 +432,14 @@ def prepare_group_documents(request, group, clist):
                 d.search_heading = "Related Internet-Drafts and RFCs"
                 docs_related.append(d)
         else:
+            if d.type_id == "draft" and d.get_state_slug('draft-iesg') != 'idexists': # values can be: ad-eval idexists approved rfcqueue dead iesg-eva
+                d.search_heading = "Outside of the WG Internet-Draft"
             if not (d.get_state_slug('draft-iesg') == "dead" or (d.stream_id and d.get_state_slug("draft-stream-%s" % d.stream_id) == "dead")):
                 docs.append(d)
 
     meta_related = meta.copy()
-
+    docs.sort(key=lambda d: d.search_heading)
     return docs, meta, docs_related, meta_related
-
 
 def get_leadership(group_type):
     people = Person.objects.filter(
