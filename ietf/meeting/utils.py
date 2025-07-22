@@ -949,13 +949,14 @@ def get_activity_stats(sdate, edate):
     data['ffw_update_count'] = ffw_update_count
     data['ffw_update_percent'] = ffw_update_percent
 
-    rfcs = events.filter(type='published_rfc')
-    data['rfcs'] = rfcs.select_related('doc').select_related('doc__group').select_related('doc__intended_std_level')
+    rfcs_events = DocEvent.objects.filter(doc__type='rfc', time__gte=sdatetime, time__lt=edatetime)
+    rfcs = rfcs_events.filter(type='published_rfc')
+    data['rfcs'] = rfcs.select_related('doc').select_related('doc__group').select_related('doc__std_level')
 
-    data['counts'] = {'std': rfcs.filter(doc__intended_std_level__in=('ps', 'ds', 'std')).count(),
-                      'bcp': rfcs.filter(doc__intended_std_level='bcp').count(),
-                      'exp': rfcs.filter(doc__intended_std_level='exp').count(),
-                      'inf': rfcs.filter(doc__intended_std_level='inf').count()}
+    data['counts'] = {'std': rfcs.filter(doc__std_level__in=('ps', 'ds', 'std')).count(),
+                      'bcp': rfcs.filter(doc__std_level='bcp').count(),
+                      'exp': rfcs.filter(doc__std_level='exp').count(),
+                      'inf': rfcs.filter(doc__std_level='inf').count()}
 
     data['new_groups'] = Group.objects.filter(
         type='wg',
