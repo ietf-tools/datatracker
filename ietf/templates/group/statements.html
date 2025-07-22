@@ -38,7 +38,7 @@
         {% for statement in statement_group.list %}
             <tr>
                 <td title="{{ statement.published|date:'Y-m-d H:i:s O' }}">{{ statement.published|date:"Y-m-d" }}</td>
-                <td><a href="{#% url 'ietf.doc.views_doc.document_main' name=statement.name %#}">{{statement.title}}</a>
+                <td><a href="{% url 'ietf.doc.views_doc.document_main' name=statement.name %}">{{statement.title}}</a>
                 </td>
             </tr>
         {% endfor %}   
