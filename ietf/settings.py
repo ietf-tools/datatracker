@@ -9,6 +9,7 @@
 import os
 import sys
 import datetime
+import pathlib
 import warnings
 from hashlib import sha384
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
@@ -27,8 +28,8 @@ warnings.filterwarnings("ignore", message="Report.file_reporters will no longer 
 warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated", module="bleach")
 warnings.filterwarnings("ignore", message="HTTPResponse.getheader\\(\\) is deprecated", module='selenium.webdriver')
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.abspath(BASE_DIR + "/.."))
+base_path = pathlib.Path(__file__).resolve().parent
+BASE_DIR = str(base_path)
 
 from ietf import __version__
 import debug
@@ -717,7 +718,7 @@ TEST_CODE_COVERAGE_EXCLUDE_LINES = [
 
 # These are filename globs.  They are used by test_parse_templates() and
 # get_template_paths(). Globs are applied via pathlib.Path().match, using
-# the path to the template from settings.BASE_DIR.
+# the path to the template from the project root.
 TEST_TEMPLATE_IGNORE = [
     ".*",  # dot-files
     "*~",  # tilde temp-files
