@@ -184,7 +184,7 @@ def retrieve_nomcom_private_key(request, year):
     if not private_key:
         return private_key
 
-    command = "%s bf -d -in /dev/stdin -k \"%s\" -a"
+    command = "%s aes-128-ecb -d -in /dev/stdin -k \"%s\" -a -iter 1000"
     code, out, error = pipe(
         command % (
             settings.OPENSSL_COMMAND,
@@ -208,7 +208,7 @@ def store_nomcom_private_key(request, year, private_key):
     if not private_key:
         request.session['NOMCOM_PRIVATE_KEY_%s' % year] = ''
     else:
-        command = "%s bf -e -in /dev/stdin -k \"%s\" -a"
+        command = "%s aes-128-ecb -e -in /dev/stdin -k \"%s\" -a -iter 1000"
         code, out, error = pipe(
             command % (
                 settings.OPENSSL_COMMAND,
