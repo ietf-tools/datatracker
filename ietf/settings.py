@@ -31,6 +31,10 @@ warnings.filterwarnings("ignore", message="HTTPResponse.getheader\\(\\) is depre
 base_path = pathlib.Path(__file__).resolve().parent
 BASE_DIR = str(base_path)
 
+project_path = base_path.parent
+PROJECT_DIR = str(project_path)  
+sys.path.append(PROJECT_DIR)
+
 from ietf import __version__
 import debug
 
