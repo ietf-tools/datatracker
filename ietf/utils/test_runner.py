@@ -54,7 +54,6 @@ import factory.random
 import urllib3
 import warnings
 
-from fnmatch import fnmatch
 from typing import Callable, Optional
 from urllib.parse import urlencode
 
@@ -415,7 +414,7 @@ def get_url_patterns(module, apps=None):
     return res
 
 _all_templates = None
-def get_template_paths(apps=None):
+def get_template_paths(apps=None) -> list[str]:
     global _all_templates
     if not _all_templates:
         # TODO: Add app templates to the full list, if we are using
@@ -424,23 +423,23 @@ def get_template_paths(apps=None):
         templatepaths = settings.TEMPLATES[0]['DIRS']
         for templatepath in templatepaths:
             for dirpath, dirs, files in os.walk(templatepath):
-                if ".svn" in dirs:
-                    dirs.remove(".svn")
-                relative_path = dirpath[len(templatepath)+1:]
-                for file in files:
-                    ignore = False
-                    for pattern in settings.TEST_TEMPLATE_IGNORE:
-                        if fnmatch(file, pattern):
-                            ignore = True
-                            break
-                    if ignore:
-                        continue
-                    if relative_path != "":
-                        file = os.path.join(relative_path, file)
-                    templates.add(file)
-        if apps:
-            templates = [ t for t in templates if t.split(os.path.sep)[0] in apps ]
-        _all_templates = templates
+                # glob against path from project BASE_DIR
+                project_path = pathlib.Path(
+                    dirpath.removeprefix(settings.BASE_DIR)
+                )
+                # label entries with name relative to templatepath
+                relative_path = pathlib.Path(
+                    dirpath.removeprefix(templatepath).lstrip("/")
+                )
+                if apps and relative_path.parts[0] not in apps:
+                    continue  # skip uninteresting apps
+                for filename in files:
+                    file_path = project_path / filename
+                    if not any(
+                        file_path.match(pat) for pat in settings.TEST_TEMPLATE_IGNORE
+                    ):
+                        templates.add(relative_path / filename)
+        _all_templates = [str(t) for t in templates]
     return _all_templates
 
 def save_test_results(failures, test_labels):
