@@ -414,35 +414,6 @@ def get_url_patterns(module, apps=None):
     return res
 
 
-def old_get_template_paths(apps=None):
-    from fnmatch import fnmatch
-    _all_templates = None
-    if not _all_templates:
-        # TODO: Add app templates to the full list, if we are using
-        # django.template.loaders.app_directories.Loader
-        templates = set()
-        templatepaths = settings.TEMPLATES[0]['DIRS']
-        for templatepath in templatepaths:
-            for dirpath, dirs, files in os.walk(templatepath):
-                if ".svn" in dirs:
-                    dirs.remove(".svn")
-                relative_path = dirpath[len(templatepath)+1:]
-                for file in files:
-                    ignore = False
-                    for pattern in settings.TEST_TEMPLATE_IGNORE:
-                        if fnmatch(file, pattern):
-                            ignore = True
-                            break
-                    if ignore:
-                        continue
-                    if relative_path != "":
-                        file = os.path.join(relative_path, file)
-                    templates.add(file)
-        if apps:
-            templates = [ t for t in templates if t.split(os.path.sep)[0] in apps ]
-        _all_templates = templates
-    return _all_templates
-
 _all_templates = None
 def get_template_paths(apps=None) -> list[str]:
     global _all_templates
@@ -471,6 +442,7 @@ def get_template_paths(apps=None) -> list[str]:
                         templates.add(relative_path / filename)
         _all_templates = [str(t) for t in templates]
     return _all_templates
+
 
 def save_test_results(failures, test_labels):
     # Record the test result in a file, in order to be able to check the
