@@ -40,12 +40,12 @@
     {% if future %}
         <h2 class="mt-5" id="futuremeets">
             Future Meetings
-            <a class="ms-2"
-               aria-label="icalendar entry for all scheduled future {{ group.acronym }} meetings"
-               title="icalendar entry for all scheduled future {{ group.acronym }} meetings"
-               href="{% url 'ietf.meeting.views.upcoming_ical' %}?show={{ group.acronym }}">
-                <i class="bi bi-calendar"></i>
-            </a>
+            {% for cal_action in cal_actions %}
+                <a class="btn btn-primary"
+                   href="{{ cal_action.url }}">
+                    {{ cal_action.label }}
+                </a>
+            {% endfor %}
         </h2>
         <table class="table table-sm table-striped tablesorter">
             <thead>

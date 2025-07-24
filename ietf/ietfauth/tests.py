@@ -168,18 +168,40 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         # password mismatch
-        r = self.client.post(confirm_url, { 'password': 'secret', 'password_confirmation': 'nosecret' })
+        r = self.client.post(
+            confirm_url, {
+                "password": "secret-and-secure",
+                "password_confirmation": "not-secret-or-secure",
+            }
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(User.objects.filter(username=email).count(), 0)
+
+        # weak password
+        r = self.client.post(
+            confirm_url, {
+                "password": "password1234",
+                "password_confirmation": "password1234",
+            }
+        )
         self.assertEqual(r.status_code, 200)
         self.assertEqual(User.objects.filter(username=email).count(), 0)
 
         # confirm
-        r = self.client.post(confirm_url, { 'name': 'User Name', 'ascii': 'User Name', 'password': 'secret', 'password_confirmation': 'secret' })
+        r = self.client.post(
+            confirm_url,
+            {
+                "name": "User Name",
+                "ascii": "User Name",
+                "password": "secret-and-secure",
+                "password_confirmation": "secret-and-secure",
+            },
+        )
         self.assertEqual(r.status_code, 200)
         self.assertEqual(User.objects.filter(username=email).count(), 1)
         self.assertEqual(Person.objects.filter(user__username=email).count(), 1)
         self.assertEqual(Email.objects.filter(person__user__username=email).count(), 1)
 
-        
     # This also tests new account creation.
     def test_create_existing_account(self):
         # create account once
@@ -393,6 +415,7 @@ class IetfAuthTests(TestCase):
         self.assertTrue(q('#volunteered'))
 
     def test_reset_password(self):
+        WEAK_PASSWORD="password1234"
         VALID_PASSWORD = "complex-and-long-valid-password"
         ANOTHER_VALID_PASSWORD = "very-complicated-and-lengthy-password"
         url = urlreverse("ietf.ietfauth.views.password_reset")
@@ -444,6 +467,18 @@ class IetfAuthTests(TestCase):
             {
                 "password": ANOTHER_VALID_PASSWORD,
                 "password_confirmation": ANOTHER_VALID_PASSWORD[::-1],
+            },
+        )
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q("form .is-invalid")) > 0)
+
+        # weak password
+        r = self.client.post(
+            confirm_url,
+            {
+                "password": WEAK_PASSWORD,
+                "password_confirmation": WEAK_PASSWORD,
             },
         )
         self.assertEqual(r.status_code, 200)
@@ -636,8 +671,8 @@ class IetfAuthTests(TestCase):
             chpw_url,
             {
                 "current_password": "fiddlesticks",
-                "new_password": ANOTHER_VALID_PASSWORD,
-                "new_password_confirmation": ANOTHER_VALID_PASSWORD,
+                "password": ANOTHER_VALID_PASSWORD,
+                "password_confirmation": ANOTHER_VALID_PASSWORD,
             },
         )
         self.assertEqual(r.status_code, 200)
@@ -648,14 +683,14 @@ class IetfAuthTests(TestCase):
             chpw_url,
             {
                 "current_password": VALID_PASSWORD,
-                "new_password": ANOTHER_VALID_PASSWORD,
-                "new_password_confirmation": ANOTHER_VALID_PASSWORD[::-1],
+                "password": ANOTHER_VALID_PASSWORD,
+                "password_confirmation": ANOTHER_VALID_PASSWORD[::-1],
             },
         )
         self.assertEqual(r.status_code, 200)
         self.assertFormError(
             r.context["form"],
-            None,
+            "password_confirmation",
             "The password confirmation is different than the new password",
         )
 
@@ -664,14 +699,14 @@ class IetfAuthTests(TestCase):
             chpw_url,
             {
                 "current_password": VALID_PASSWORD,
-                "new_password": "sh0rtpw0rd",
-                "new_password_confirmation": "sh0rtpw0rd",
+                "password": "sh0rtpw0rd",
+                "password_confirmation": "sh0rtpw0rd",
             }
         )
         self.assertEqual(r.status_code, 200)
         self.assertFormError(
             r.context["form"],
-            None,
+            "password",
             "This password is too short. It must contain at least "
             f"{settings.PASSWORD_POLICY_MIN_LENGTH} characters."
         )
@@ -681,14 +716,14 @@ class IetfAuthTests(TestCase):
             chpw_url,
             {
                 "current_password": VALID_PASSWORD,
-                "new_password": "passwordpassword",
-                "new_password_confirmation": "passwordpassword",
+                "password": "passwordpassword",
+                "password_confirmation": "passwordpassword",
             }
         )
         self.assertEqual(r.status_code, 200)
         self.assertFormError(
             r.context["form"],
-            None,
+            "password",
             "This password does not meet complexity requirements "
             "and is easily guessable."
         )
@@ -698,8 +733,8 @@ class IetfAuthTests(TestCase):
             chpw_url,
             {
                 "current_password": VALID_PASSWORD,
-                "new_password": ANOTHER_VALID_PASSWORD,
-                "new_password_confirmation": ANOTHER_VALID_PASSWORD,
+                "password": ANOTHER_VALID_PASSWORD,
+                "password_confirmation": ANOTHER_VALID_PASSWORD,
             },
         )
         self.assertRedirects(r, prof_url)

@@ -529,7 +529,7 @@ def confirm_password_reset(request, auth):
         )
     success = False
     if request.method == 'POST':
-        form = PasswordForm(request.POST)
+        form = PasswordForm(user=user, data=request.POST)
         if form.is_valid():
             password = form.cleaned_data["password"]
 
@@ -538,7 +538,7 @@ def confirm_password_reset(request, auth):
 
             success = True
     else:
-        form = PasswordForm()
+        form = PasswordForm(user=user)
 
     hlibname, hashername = settings.PASSWORD_HASHERS[0].rsplit('.',1)
     hlib = importlib.import_module(hlibname)
@@ -669,7 +669,7 @@ def change_password(request):
     if request.method == 'POST':
         form = ChangePasswordForm(user, request.POST)
         if form.is_valid():
-            new_password = form.cleaned_data["new_password"]
+            new_password = form.cleaned_data["password"]
             
             user.set_password(new_password)
             user.save()
