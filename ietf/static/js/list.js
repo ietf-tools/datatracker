@@ -247,7 +247,8 @@ $(document)
 
                 $(table)
                     .find(".sort")
-                    .on("click", function () {
+                    .on("click", function (ev) {
+                        ev.preventDefault()
                         var order = $(this)
                             .hasClass("asc") ? "desc" : "asc";
                         $.each(list_instance, (_, e) => {
