@@ -2,6 +2,9 @@
 {% load origin %}
 {% origin %}
 {% for p in parents %}
+    {% if p.acronym == "iab" %}
+        <li><a class="dropdown-item" href="{% url "ietf.group.views.group_about" acronym="iesg" %}">IESG</a></li>
+    {% endif%}
     <li class="dropend group-menu group-parent-{{ p.id }}">
         <a class="dropdown-item dropdown-toggle {% if flavor != 'top' %}text-wrap{% endif %}"
            href="{{ p.menu_url }}">
