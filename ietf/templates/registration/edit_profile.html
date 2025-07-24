@@ -40,8 +40,10 @@
                     {% if person.photo %}
                     {% include "person/photo.html" with person=person %}
                     {% endif %}
+                    {% if person.role_set.exists %}
                     <p>Email <a href="support@ietf.org">support@ietf.org</a>
-                    to udpate your picture.</p></div>
+                    to update your photo.</p></div>
+                    {% endif %}
             </div>
         <div class="row mb-3">
             <label class="col-sm-2 col-form-label fw-bold">NomCom eligible</label>
