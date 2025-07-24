@@ -729,8 +729,8 @@ TEST_TEMPLATE_IGNORE = [
     "*~",  # tilde temp-files
     "#*",  # files beginning with a hashmark
     "500.html",  # isn't loaded by regular loader, but checked by test_500_page()
-    "templates/admin/meeting/RegistrationTicket/change_list.html",
-    "templates/admin/meeting/Registration/change_list.html",
+    "ietf/templates/admin/meeting/RegistrationTicket/change_list.html",
+    "ietf/templates/admin/meeting/Registration/change_list.html",
 ]
 
 TEST_COVERAGE_MAIN_FILE = os.path.join(BASE_DIR, "../release-coverage.json")
