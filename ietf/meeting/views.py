@@ -2124,112 +2124,126 @@ def render_icalendar(schedule, assignments):
 
 def generate_agenda_ical(schedule, assignments):
     """Generate iCalendar using the icalendar library"""
-        
+
     # Create calendar
     cal = Calendar()
-    cal.add('prodid', '-//IETF//datatracker.ietf.org ical agenda//EN')
-    cal.add('version', '2.0')
-    cal.add('method', 'PUBLISH')
-    
+    cal.add("prodid", "-//IETF//datatracker.ietf.org ical agenda//EN")
+    cal.add("version", "2.0")
+    cal.add("method", "PUBLISH")
+
     # Process each assignment/session
     for item in assignments:
         event = Event()
-        
+
         # UID: ietf-{meeting_number}-{timeslot_pk}-{group_acronym}
         uid = f"ietf-{schedule.meeting.number}-{item.timeslot.pk}-{item.session.group.acronym}"
-        event.add('uid', uid)
-        
+        event.add("uid", uid)
+
         if item.session.name:
             summary = item.session.name
         else:
             group = item.session.group_at_the_time()
             summary = f"{group.acronym} - {group.name}"
-        
+
         if item.session.agenda_note:
             summary += f" ({item.session.agenda_note})"
-            
-        event.add('summary', summary)
-        
+
+        event.add("summary", summary)
+
         if item.timeslot.show_location and item.timeslot.get_location():
-            event.add('location', item.timeslot.get_location())
-        
+            event.add("location", item.timeslot.get_location())
+
         if item.session and hasattr(item.session, "current_status"):
             status = ical_session_status(item)
         else:
-            status = ''
-        event.add('status', status)
-        
-        event.add('class', 'PUBLIC')
-        
+            status = ""
+        event.add("status", status)
+
+        event.add("class", "PUBLIC")
+
         # Use UTC for best compatibility
-        event.add('dtstart', item.timeslot.utc_start_time()) 
-        event.add('dtend', item.timeslot.utc_end_time()) 
-        
+        event.add("dtstart", item.timeslot.utc_start_time())
+        event.add("dtend", item.timeslot.utc_end_time())
+
         # DTSTAMP: when the event was last modified (in UTC)
         dtstamp = item.timeslot.modified.astimezone(pytz.UTC)
-        event.add('dtstamp', dtstamp)
-        
+        event.add("dtstamp", dtstamp)
+
         agenda = item.session.agenda()
 
         # URL: link to session agenda if available
-        if agenda and hasattr(agenda, 'get_versionless_href'):
-            event.add('url', agenda.get_versionless_href())
-        
+        if agenda and hasattr(agenda, "get_versionless_href"):
+            event.add("url", agenda.get_versionless_href())
+
         # DESCRIPTION: build comprehensive description
         description_parts = [item.timeslot.name]
-        
+
         if item.session.agenda_note:
             description_parts.append(f"Note: {item.session.agenda_note}")
-        
-        if hasattr(item.session, 'onsite_tool_url') and callable(item.session.onsite_tool_url):
+
+        if hasattr(item.session, "onsite_tool_url") and callable(
+            item.session.onsite_tool_url
+        ):
             onsite_url = item.session.onsite_tool_url()
             if onsite_url:
                 description_parts.append(f"Onsite tool: {onsite_url}")
-        
-        if hasattr(item.session, 'video_stream_url') and callable(item.session.video_stream_url):
+
+        if hasattr(item.session, "video_stream_url") and callable(
+            item.session.video_stream_url
+        ):
             video_url = item.session.video_stream_url()
             if video_url:
                 description_parts.append(f"Meetecho: {video_url}")
 
-        if (item.timeslot.location 
-        and hasattr(item.timeslot.location, 'webex_url') 
-        and callable(item.timeslot.location.webex_url) 
-        and item.timeslot.location.webex_url() is not None):
+        if (
+            item.timeslot.location
+            and hasattr(item.timeslot.location, "webex_url")
+            and callable(item.timeslot.location.webex_url)
+            and item.timeslot.location.webex_url() is not None
+        ):
             description_parts.append(f"Webex: {item.timeslot.location.webex_url()}")
 
         if item.session.remote_instructions:
-            description_parts.append(f"Remote instructions: {item.session.remote_instructions}")
-        
+            description_parts.append(
+                f"Remote instructions: {item.session.remote_instructions}"
+            )
+
         # Add session materials link
         try:
-            materials_url = absurl('ietf.meeting.views.session_details', 
-                num=schedule.meeting.number, 
-                acronym=item.session.group.acronym)
+            materials_url = absurl(
+                "ietf.meeting.views.session_details",
+                num=schedule.meeting.number,
+                acronym=item.session.group.acronym,
+            )
             description_parts.append(f"Session materials: {materials_url}")
         except:
             pass
-        
+
         # Add schedule link for IETF meetings
-        if hasattr(schedule.meeting, 'get_number') and schedule.meeting.get_number() is not None:
+        if (
+            hasattr(schedule.meeting, "get_number")
+            and schedule.meeting.get_number() is not None
+        ):
             try:
-                agenda_url = absurl('agenda', num=schedule.meeting.number)
-                description_parts.append(f"See in schedule: {agenda_url}#row-{item.slug()}")
+                agenda_url = absurl("agenda", num=schedule.meeting.number)
+                description_parts.append(
+                    f"See in schedule: {agenda_url}#row-{item.slug()}"
+                )
             except:
                 pass
 
-
-        if agenda and hasattr(agenda, 'get_versionless_href'):
+        if agenda and hasattr(agenda, "get_versionless_href"):
             agenda_url = agenda.get_versionless_href()
             description_parts.append(f"{agenda.type} {agenda_url}")
 
         # Join all description parts with 2 newlines
         description = "\n\n".join(description_parts)
-        event.add('description', description)
-        
+        event.add("description", description)
+
         # Add event to calendar
         cal.add_component(event)
- 
-    return cal.to_ical().decode('utf-8')
+
+    return cal.to_ical().decode("utf-8")
 
 def parse_agenda_filter_params(querydict):
     """Parse agenda filter parameters from a request"""
