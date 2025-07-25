@@ -119,7 +119,6 @@ from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSession
     UploadNarrativeMinutesForm)
 
 from icalendar import Calendar, Event
-import pytz
 from ietf.doc.templatetags.ietf_filters import absurl
 
 request_summary_exclude_group_types = ['team']
@@ -2286,7 +2285,6 @@ def agenda_ical(request, num=None, acronym=None, session_id=None):
     else:
         meeting = get_meeting(num, type_in=None)  # get requested meeting, whatever its type
     schedule = get_schedule(meeting)
-    updated = meeting.updated()
 
     if schedule is None and acronym is None and session_id is None:
         raise Http404
