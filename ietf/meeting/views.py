@@ -1991,13 +1991,8 @@ def agenda_by_type_ics(request,num=None,type=None):
     if type:
         assignments = assignments.filter(session__type__slug=type)
 
-    # now = timezone.now()
-    # updated = meeting.updated()
-    # rendr = render(request,"meeting/agenda.ics",{"schedule":schedule,"updated":updated,"assignments":assignments},content_type="text/calendar")
     return render_icalendar(schedule, assignments)
-    # print(f"Timestamp: {timezone.now() - now} - Generating ICS for type '{type}' in meeting {num}")
-    # return rendr
-    # return render_icalendar(schedule, assignments)
+
 
 
 def session_draft_list(num, acronym):
