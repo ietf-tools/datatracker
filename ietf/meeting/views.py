@@ -2120,21 +2120,18 @@ def render_icalendar(schedule, assignments):
 def generate_agenda_ical(schedule, assignments):
     """Generate iCalendar using the icalendar library"""
 
-    # Create calendar
     cal = Calendar()
     cal.add("prodid", "-//IETF//datatracker.ietf.org ical agenda//EN")
     cal.add("version", "2.0")
     cal.add("method", "PUBLISH")
 
-    # Process each assignment/session
     for item in assignments:
         event = Event()
 
-        # UID: ietf-{meeting_number}-{timeslot_pk}-{group_acronym}
         uid = f"ietf-{schedule.meeting.number}-{item.timeslot.pk}-{item.session.group.acronym}"
         event.add("uid", uid)
 
-        # add custom field with meetings's local TZ
+        # add custom field with meeting's local TZ
         event.add("x-meeting-tz", schedule.meeting.time_zone)
 
         if item.session.name:
@@ -2159,21 +2156,18 @@ def generate_agenda_ical(schedule, assignments):
 
         event.add("class", "PUBLIC")
 
-        # Use UTC for best compatibility
         event.add("dtstart", item.timeslot.utc_start_time())
         event.add("dtend", item.timeslot.utc_end_time())
 
-        # DTSTAMP: when the event was last modified (in UTC)
+        # DTSTAMP: when the event was created or last modified (in UTC)
         dtstamp = item.timeslot.modified.astimezone(pytz.UTC)
         event.add("dtstamp", dtstamp)
 
         agenda = item.session.agenda()
 
-        # URL: link to session agenda if available
         if agenda and hasattr(agenda, "get_versionless_href"):
             event.add("url", agenda.get_versionless_href())
 
-        # DESCRIPTION: build comprehensive description
         description_parts = [item.timeslot.name]
 
         if item.session.agenda_note:
@@ -2206,7 +2200,6 @@ def generate_agenda_ical(schedule, assignments):
                 f"Remote instructions: {item.session.remote_instructions}"
             )
 
-        # Add session materials link
         try:
             materials_url = absurl(
                 "ietf.meeting.views.session_details",
@@ -2217,7 +2210,6 @@ def generate_agenda_ical(schedule, assignments):
         except:
             pass
 
-        # Add schedule link for IETF meetings
         if (
             hasattr(schedule.meeting, "get_number")
             and schedule.meeting.get_number() is not None
