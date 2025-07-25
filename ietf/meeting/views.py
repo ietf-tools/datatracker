@@ -118,9 +118,9 @@ from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSession
     UploadAgendaForm, UploadBlueSheetForm, UploadMinutesForm, UploadSlidesForm,
     UploadNarrativeMinutesForm)
 
-from icalendar import Calendar, Event, vText
+from icalendar import Calendar, Event
 import pytz
-from ietf.doc.templatetags.ietf_filters import absurl, ics_esc
+from ietf.doc.templatetags.ietf_filters import absurl
 
 request_summary_exclude_group_types = ['team']
 
@@ -1990,8 +1990,15 @@ def agenda_by_type_ics(request,num=None,type=None):
     ).order_by('session__type__slug','timeslot__time')
     if type:
         assignments = assignments.filter(session__type__slug=type)
-    updated = meeting.updated()
-    return render(request,"meeting/agenda.ics",{"schedule":schedule,"updated":updated,"assignments":assignments},content_type="text/calendar")
+
+    # now = timezone.now()
+    # updated = meeting.updated()
+    # rendr = render(request,"meeting/agenda.ics",{"schedule":schedule,"updated":updated,"assignments":assignments},content_type="text/calendar")
+    return render_icalendar(schedule, assignments)
+    # print(f"Timestamp: {timezone.now() - now} - Generating ICS for type '{type}' in meeting {num}")
+    # return rendr
+    # return render_icalendar(schedule, assignments)
+
 
 def session_draft_list(num, acronym):
     try:
@@ -2111,6 +2118,10 @@ def ical_session_status(assignment):
     else:
         return "CONFIRMED"
 
+def render_icalendar(schedule, assignments):
+    ical_content = generate_agenda_ical(schedule, assignments)
+    return HttpResponse(ical_content, content_type="text/calendar")
+
 def generate_agenda_ical(schedule, assignments):
     """Generate iCalendar using the icalendar library"""
         
@@ -2128,48 +2139,47 @@ def generate_agenda_ical(schedule, assignments):
         uid = f"ietf-{schedule.meeting.number}-{item.timeslot.pk}-{item.session.group.acronym}"
         event.add('uid', uid)
         
-        # SUMMARY: session name or group acronym and name
         if item.session.name:
             summary = item.session.name
         else:
             group = item.session.group_at_the_time()
-            summary = f"{group.acronym.upper()} - {group.name}"
+            summary = f"{group.acronym} - {group.name}"
         
-        # Add agenda note if present
         if item.session.agenda_note:
             summary += f" ({item.session.agenda_note})"
             
-        event.add('summary', vText(summary))
+        event.add('summary', summary)
         
-        # LOCATION: only if location should be shown
         if item.timeslot.show_location and item.timeslot.get_location():
-            event.add('location', vText(item.timeslot.get_location()))
+            event.add('location', item.timeslot.get_location())
         
-        status = ical_session_status(item)
+        if item.session and hasattr(item.session, "current_status"):
+            status = ical_session_status(item)
+        else:
+            status = ''
         event.add('status', status)
         
         event.add('class', 'PUBLIC')
         
-        start_time = item.timeslot.local_start_time()
-        end_time = item.timeslot.local_end_time()
-        
-        # Convert to UTC for maximum compatibility
-        event.add('dtstart', start_time.astimezone(pytz.UTC))
-        event.add('dtend', end_time.astimezone(pytz.UTC))
+        # Use UTC for best compatibility
+        event.add('dtstart', item.timeslot.utc_start_time()) 
+        event.add('dtend', item.timeslot.utc_end_time()) 
         
         # DTSTAMP: when the event was last modified (in UTC)
         dtstamp = item.timeslot.modified.astimezone(pytz.UTC)
         event.add('dtstamp', dtstamp)
         
+        agenda = item.session.agenda()
+
         # URL: link to session agenda if available
-        if item.session.agenda and hasattr(item.session.agenda, 'get_versionless_href'):
-            event.add('url', item.session.agenda.get_versionless_href())
+        if agenda and hasattr(agenda, 'get_versionless_href'):
+            event.add('url', agenda.get_versionless_href())
         
         # DESCRIPTION: build comprehensive description
-        description_parts = [ics_esc(item.timeslot.name)]
+        description_parts = [item.timeslot.name]
         
         if item.session.agenda_note:
-            description_parts.append(f"Note: {ics_esc(item.session.agenda_note)}")
+            description_parts.append(f"Note: {item.session.agenda_note}")
         
         if hasattr(item.session, 'onsite_tool_url') and callable(item.session.onsite_tool_url):
             onsite_url = item.session.onsite_tool_url()
@@ -2180,18 +2190,15 @@ def generate_agenda_ical(schedule, assignments):
             video_url = item.session.video_stream_url()
             if video_url:
                 description_parts.append(f"Meetecho: {video_url}")
-        
-        if item.timeslot.location and hasattr(item.timeslot.location, 'webex_url') and callable(item.timeslot.location.webex_url):
+
+        if (item.timeslot.location 
+        and hasattr(item.timeslot.location, 'webex_url') 
+        and callable(item.timeslot.location.webex_url) 
+        and item.timeslot.location.webex_url() is not None):
             description_parts.append(f"Webex: {item.timeslot.location.webex_url()}")
-        
+
         if item.session.remote_instructions:
             description_parts.append(f"Remote instructions: {item.session.remote_instructions}")
-        
-        if item.session.agenda and hasattr(item.session.agenda, 'get_versionless_href'):
-            agenda = item.session.agenda
-            agenda_url = agenda.get_versionless_href()
-            if agenda_url:
-                description_parts.append(f"{agenda.type} {agenda_url}")
         
         # Add session materials link
         try:
@@ -2209,14 +2216,19 @@ def generate_agenda_ical(schedule, assignments):
                 description_parts.append(f"See in schedule: {agenda_url}#row-{item.slug()}")
             except:
                 pass
-        
-        # Join all description parts with 2 newlines (not escaped)
+
+
+        if agenda and hasattr(agenda, 'get_versionless_href'):
+            agenda_url = agenda.get_versionless_href()
+            description_parts.append(f"{agenda.type} {agenda_url}")
+
+        # Join all description parts with 2 newlines
         description = "\n\n".join(description_parts)
-        event.add('description', vText(description))
+        event.add('description', description)
         
         # Add event to calendar
         cal.add_component(event)
-    
+ 
     return cal.to_ical().decode('utf-8')
 
 def parse_agenda_filter_params(querydict):
@@ -2296,9 +2308,7 @@ def agenda_ical(request, num=None, acronym=None, session_id=None):
     elif session_id:
         assignments = [ a for a in assignments if a.session_id == int(session_id) ]
 
-    ical_content = generate_agenda_ical(schedule, assignments)
-    ical_content = parse_ical_line_endings(ical_content)
-    return HttpResponse(ical_content, content_type="text/calendar")
+    return render_icalendar(schedule, assignments)
 
 @cache_page(15 * 60)
 def agenda_json(request, num=None):
