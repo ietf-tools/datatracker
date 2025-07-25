@@ -1,0 +1,90 @@
+{% extends "group/group_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load tz %}
+{% load ietf_filters person_filters textfilters %}
+{% load static %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
+{% block group_content %}
+    {% origin %}
+    {% if reviewer_email %}
+    <h2 class="my-3">Review requests history of {{ reviewer_email }}</h2>
+    {% else %}
+    <h2 class="my-3">Review requests history</h2>
+    {% endif %}
+    <form class="reviews-history-filter" action="#reviewshistory">
+      <div>
+	<label for="reviewer_email"
+	       class="query-input-label">Reviewer filter:</label>
+	<input type="text" class="query-input" id="reviewer_email"
+	       value="{{ reviewer_email }}" name="reviewer_email">
+	<button class="btn btn-primary" type="submit">Filter</button>
+      </div>
+      <div>
+	Past:
+	<div class="btn-group btn-group-sm" role="group">
+          {% for key, label in since_choices %}
+          <button class="btn btn-outline-primary {% if since == key %}active{% endif %}"
+                  {% if key %}name="since" value="{{ key }}"{% endif %}
+                  type="submit">
+            {{ label }}
+          </button>
+          {% endfor %}
+	</div>
+      </div>
+    </form>
+
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th scope="col" data-sort="date">Date (UTC)</th>
+                <th scope="col" data-sort="by">By</th>
+                <th scope="col" data-sort="doc">Document</th>
+                <th scope="col" data-sort="state">State</th>
+                <th scope="col" data-sort="review">Reviewer</th>
+                <th scope="col" data-sort="result">Result</th>
+                <th scope="col" data-sort="description">Description</th>
+            </tr>
+        </thead>
+        {% if history %}
+            <tbody>
+                {% for h in history %}
+                    <tr>
+                        <td>{{ h.history_date|utc|date:"Y-m-d H:i:s" }}</td>
+                        <td>{% person_link h.history_user.person %}</td>
+                        <td>{% if h.reviewed_rev %}
+			  <a href="{% url "ietf.doc.views_doc.document_main" name=h.review_request.doc.name rev=h.reviewed_rev %}">
+                        {{ h.review_request.doc.name }}-{{ h.reviewed_rev }}
+			  </a>
+			  {% else %}
+			  <a href="{% url "ietf.doc.views_doc.document_main" name=h.review_request.doc.name %}">{{ h.review_request.doc.name }}</a>
+			  {% endif %}
+			</td>
+                        <td data-text="{{ h.state }}">
+			  <a href="{% url "ietf.doc.views_review.review_request" name=h.review_request.doc.name request_id=h.review_request.pk %}">{{ h.state }} </a>
+			</td>
+                        <td data-text="{{ h.reviewer }}">
+			  {% person_link h.reviewer.person %}
+			  <a href="?reviewer_email={{h.reviewer.email_address}}#reviewshistory">
+			    (set&nbsp;as&nbsp;filter)
+			  </a>
+			</td>
+                        <td data-text="{{ h.result }}">
+			  {% if h.review %}<a href="{{ h.review.get_absolute_url }}">
+			    {{ h.result }}</a>
+			  {% else %}
+			  {{ h.result }}
+			  {% endif %}
+			</td>
+                        <td>{{ h.history_change_reason }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        {% endif %}
+    </table>
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
+{% endblock %}
