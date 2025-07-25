@@ -2134,6 +2134,9 @@ def generate_agenda_ical(schedule, assignments):
         uid = f"ietf-{schedule.meeting.number}-{item.timeslot.pk}-{item.session.group.acronym}"
         event.add("uid", uid)
 
+        # add custom field with meetings's local TZ
+        event.add("x-meeting-tz", schedule.meeting.time_zone)
+
         if item.session.name:
             summary = item.session.name
         else:
