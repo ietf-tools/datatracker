@@ -92,7 +92,7 @@ from ietf.meeting.utils import group_sessions
 from ietf.name.models import GroupTypeName, StreamName
 from ietf.person.models import Email, Person
 from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewerSettings, 
-                                ReviewSecretarySettings, UnavailablePeriod, HistoricalReviewAssignment )
+                                ReviewSecretarySettings, UnavailablePeriod )
 from ietf.review.policies import get_reviewer_queue_policy
 from ietf.review.utils import (can_manage_review_requests_for_team,
                                can_access_review_stats_for_team,
@@ -692,13 +692,13 @@ def review_requests_history(request, acronym, group_type=None):
         raise Http404
 
     reviewer_email = request.GET.get("reviewer_email", None)
-    
+
     if reviewer_email:
-        history = HistoricalReviewAssignment.objects.filter(
+        history = ReviewAssignment.history.model.objects.filter(
             review_request__team__acronym=acronym,
             reviewer=reviewer_email)
     else:
-        history = HistoricalReviewAssignment.objects.filter(
+        history = ReviewAssignment.history.model.objects.filter(
             review_request__team__acronym=acronym)
         reviewer_email = ''
         

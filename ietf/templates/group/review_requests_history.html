@@ -16,7 +16,8 @@
     {% endif %}
     <form class="reviews-history-filter" action="#reviewshistory">
       <div>
-	Reviewer filter:
+	<label for="reviewer_email"
+	       class="query-input-label">Reviewer filter:</label>
 	<input type="text" class="query-input" id="reviewer_email"
 	       value="{{ reviewer_email }}" name="reviewer_email">
 	<button class="btn btn-primary" type="submit">Filter</button>
@@ -42,11 +43,6 @@
                 <th scope="col" data-sort="by">By</th>
                 <th scope="col" data-sort="doc">Document</th>
                 <th scope="col" data-sort="state">State</th>
-		<!-- 
-                     <th scope="col" data-sort="assigned">Assigned</th>
-                     <th scope="col"
-                     data-sort="completed">Completed</th>
-		-->
                 <th scope="col" data-sort="review">Reviewer</th>
                 <th scope="col" data-sort="result">Result</th>
                 <th scope="col" data-sort="description">Description</th>
@@ -65,23 +61,23 @@
 			  {% else %}
 			  <a href="{% url "ietf.doc.views_doc.document_main" name=h.review_request.doc.name %}">{{ h.review_request.doc.name }}</a>
 			  {% endif %}
-                        <td><!-- {{ h.state }} for sort-->
+			</td>
+                        <td data-text="{{ h.state }}">
 			  <a href="{% url "ietf.doc.views_review.review_request" name=h.review_request.doc.name request_id=h.review_request.pk %}">{{ h.state }} </a>
-			<!--   
-                             <td>{{ h.assigned_on|date }} 
-                             <td>{{ h.completed_on|date }}
-			-->
-                        <td> <!-- {{ h.reviewer }} for sort -->
+			</td>
+                        <td data-text="{{ h.reviewer }}">
 			  {% person_link h.reviewer.person %}
 			  <a href="?reviewer_email={{h.reviewer.email_address}}#reviewshistory">
 			    (set&nbsp;as&nbsp;filter)
 			  </a>
-                        <td><!-- h.result for sort -->
+			</td>
+                        <td data-text="{{ h.result }}">
 			  {% if h.review %}<a href="{{ h.review.get_absolute_url }}">
 			    {{ h.result }}</a>
 			  {% else %}
 			  {{ h.result }}
 			  {% endif %}
+			</td>
                         <td>{{ h.history_change_reason }}</td>
                     </tr>
                 {% endfor %}
