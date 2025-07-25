@@ -233,6 +233,12 @@ class XMLDraft(Draft):
         # Use fullname attribute, if present
         fullname = author_elt.attrib.get("fullname", "").strip()
         if fullname:
+            # If any 8bit chars in the fullname, try to append the author's
+            # name in ascii.
+            if any([x >= 0x80 for x in fullname.encode('utf8')]):
+                asciifullname = author_elt.attrib.get("asciiFullname", "").strip()
+                if asciifullname:
+                    fullname = fullname + ' (' + asciifullname + ')'
             return fullname
         surname = author_elt.attrib.get("surname", "").strip()
         initials = author_elt.attrib.get("initials", "").strip()
