@@ -52,7 +52,8 @@ DATABASES = {
 BLOBDB_DATABASE = "default"
 DATABASE_ROUTERS = []  # type: ignore
 
-TEST_CODE_COVERAGE_ENABLED = True
+if TEST_CODE_COVERAGE_CHECKER: # pyflakes:ignore
+    TEST_CODE_COVERAGE_CHECKER.start()                          # pyflakes:ignore
 
 def tempdir_with_cleanup(**kwargs):
     """Utility to create a temporary dir and arrange cleanup"""

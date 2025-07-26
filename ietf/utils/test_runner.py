@@ -60,8 +60,6 @@ from fnmatch import fnmatch
 from typing import Callable, Optional
 from urllib.parse import urlencode
 
-import coverage
-
 import django
 from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
@@ -100,41 +98,6 @@ old_create: Optional[Callable] = None
 template_coverage_collection = False
 url_coverage_collection = False
 validation_settings = {"validate_html": None, "validate_html_harder": None, "show_logging": False}
-
-
-class CoverageManager:
-    checker = None
-
-    def start(self):
-        if (
-            settings.SERVER_MODE == "test"
-            and settings.TEST_CODE_COVERAGE_ENABLED
-            and self.checker is None
-        ):
-            self.checker = coverage.Coverage(
-                source=[settings.BASE_DIR],
-                cover_pylib=False,
-                omit=settings.TEST_CODE_COVERAGE_EXCLUDE_FILES,
-            )
-            self.checker.start()
-        self.enable()
-
-    def stop(self):
-        if self.checker is not None:
-            self.checker.stop()
-
-    def enable(self):
-        """Enable - tbd if this is possible"""
-
-    def disable(self):
-        """Disable - tbd if this is possible"""
-
-    def save(self):
-        if self.checker is not None:
-            self.checker.save()
-
-
-coverage_manager = CoverageManager()
 
 
 def start_vnu_server(port=8888):
@@ -603,23 +566,24 @@ class CoverageTest(unittest.TestCase):
             self.skipTest("Coverage switched off with --skip-coverage")
 
     def code_coverage_test(self):
-        if self.runner.check_coverage and settings.TEST_CODE_COVERAGE_ENABLED:
-            include = [ os.path.join(path, '*') for path in self.runner.test_paths ]
-            checker = self.runner.code_coverage_checker
-            checker.stop()
+        if (
+            self.runner.check_coverage
+            and settings.TEST_CODE_COVERAGE_CHECKER is not None
+        ):
+            coverage_manager = settings.TEST_CODE_COVERAGE_CHECKER
+            coverage_manager.stop()
             # Save to the .coverage file
-            checker.save()
+            coverage_manager.save()
             # Apply the configured and requested omit and include data
-            checker.config.from_args(ignore_errors=None, omit=settings.TEST_CODE_COVERAGE_EXCLUDE_FILES,
-                include=include, file=None)
-            for pattern in settings.TEST_CODE_COVERAGE_EXCLUDE_LINES:
-                checker.exclude(pattern)
             # Maybe output an HTML report
             if self.runner.run_full_test_suite and self.runner.html_report:
-                checker.html_report(directory=settings.TEST_CODE_COVERAGE_REPORT_DIR)
-            # In any case, build a dictionary with per-file data for this run
-            with open("jlrcoverage.txt", "w") as f:
-                self.runner.coverage_data["code"] = checker.json_report(outfile=f)
+                coverage_manager.checker.html_report(
+                    directory=settings.TEST_CODE_COVERAGE_REPORT_DIR
+                )
+            # Generate the output report data
+            self.runner.coverage_data["code"] = coverage_manager.report(
+                include=[str(pathlib.Path(p) / "*") for p in self.runner.test_paths]
+            )
             self.report_test_result("code")
         else:
             self.skipTest("Coverage switched off with --skip-coverage")
@@ -842,9 +806,6 @@ class IetfTestRunner(DiscoverRunner):
             settings.TEMPLATES[0]['OPTIONS']['loaders'] = ('ietf.utils.test_runner.TemplateCoverageLoader',) + settings.TEMPLATES[0]['OPTIONS']['loaders']
 
             settings.MIDDLEWARE = ('ietf.utils.test_runner.record_urls_middleware',) + tuple(settings.MIDDLEWARE)
-
-            # start the coverage manager (if enabled)
-            coverage_manager.start()
 
         if settings.SITE_ID != 1:
             print("     Changing SITE_ID to '1' during testing.")

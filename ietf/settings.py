@@ -735,7 +735,10 @@ TEST_TEMPLATE_IGNORE = [
 TEST_COVERAGE_MAIN_FILE = os.path.join(BASE_DIR, "../release-coverage.json")
 TEST_COVERAGE_LATEST_FILE = os.path.join(BASE_DIR, "../latest-coverage.json")
 
-TEST_CODE_COVERAGE_ENABLED = False
+TEST_CODE_COVERAGE_CHECKER = None
+if SERVER_MODE != 'production':
+    from ietf.utils.coverage import CoverageManager
+    TEST_CODE_COVERAGE_CHECKER = CoverageManager()
 
 TEST_CODE_COVERAGE_REPORT_PATH = "coverage/"
 TEST_CODE_COVERAGE_REPORT_URL = os.path.join(STATIC_URL, TEST_CODE_COVERAGE_REPORT_PATH, "index.html")
