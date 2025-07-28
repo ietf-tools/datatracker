@@ -38,7 +38,7 @@ class CoverageManager:
     def report(self, include: list[str] | None = None):
         if self.checker is None:
             return None
-        reporter = CustomJsonReporter()
+        reporter = CustomDictReporter()
         with override_coverage_config(
             self.checker,
             report_include=include,
@@ -46,7 +46,7 @@ class CoverageManager:
             return reporter.report(self.checker)
 
 
-class CustomJsonReporter:
+class CustomDictReporter:
     total = Numbers()
 
     def report(self, coverage):
