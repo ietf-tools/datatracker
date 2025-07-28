@@ -46,7 +46,7 @@ class CoverageManager:
             return reporter.report(self.checker)
 
 
-class CustomDictReporter:
+class CustomDictReporter:  # pragma: no cover
     total = Numbers()
 
     def report(self, coverage):
