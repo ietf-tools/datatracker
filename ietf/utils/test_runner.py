@@ -797,10 +797,6 @@ class IetfTestRunner(DiscoverRunner):
                     "covered": {},
                     "format": 1,
                 },
-                "migration": {
-                    "present": {},
-                    "format": 3,
-                }
             }
 
             settings.TEMPLATES[0]['OPTIONS']['loaders'] = ('ietf.utils.test_runner.TemplateCoverageLoader',) + settings.TEMPLATES[0]['OPTIONS']['loaders']
