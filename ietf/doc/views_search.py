@@ -665,6 +665,7 @@ def docs_for_ad(request, name):
                 r.get_state_slug("draft-iesg") == "dead"
                 or r.get_state_slug("draft") == "repl"
                 or r.get_state_slug("draft") == "rfc"
+                or (r.get_state_slug("draft") == "expired" and r.get_state_slug("draft-iesg") == "idexists")
             )
         )
     ]

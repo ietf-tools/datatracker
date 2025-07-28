@@ -755,4 +755,7 @@ def get_submission_or_404(submission_id, access_token=None):
 
 def async_poke_test(request):
     result = poke.delay()
-    return HttpResponse(f'Poked {result}', content_type='text/plain')
+    return HttpResponse(
+        f'Poked {result}',
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )

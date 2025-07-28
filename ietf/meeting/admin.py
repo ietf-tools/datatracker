@@ -3,11 +3,13 @@
 
 
 from django.contrib import admin
+from django.db.models import Count
 
 from ietf.meeting.models import (Attended, Meeting, Room, Session, TimeSlot, Constraint, Schedule,
     SchedTimeSessAssignment, ResourceAssociation, FloorPlan, UrlResource,
     SessionPresentation, ImportantDate, SlideSubmission, SchedulingEvent, BusinessConstraint,
-    ProceedingsMaterial, MeetingHost, Registration, RegistrationTicket)
+    ProceedingsMaterial, MeetingHost, Registration, RegistrationTicket,
+    AttendanceTypeName)
 
 
 class UrlResourceAdmin(admin.ModelAdmin):
@@ -219,27 +221,70 @@ class MeetingFilter(admin.SimpleListFilter):
     parameter_name = 'meeting_id'
 
     def lookups(self, request, model_admin):
-        # Your queryset to limit choices
-        choices = Meeting.objects.filter(type='ietf').values_list('id', 'number')
+        # only include meetings with registration records
+        meetings = Meeting.objects.filter(type='ietf').annotate(reg_count=Count('registration')).filter(reg_count__gt=0).order_by('-date')
+        choices = meetings.values_list('id', 'number')
         return choices
 
     def queryset(self, request, queryset):
         if self.value():
             return queryset.filter(meeting__id=self.value())
         return queryset
+
+class AttendanceFilter(admin.SimpleListFilter):
+    title = 'Attendance Type'
+    parameter_name = 'attendance_type'
+
+    def lookups(self, request, model_admin):
+        choices = AttendanceTypeName.objects.all().values_list('slug', 'name')
+        return choices
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(tickets__attendance_type__slug=self.value()).distinct()
+        return queryset
+
+class RegistrationTicketInline(admin.TabularInline):
+    model = RegistrationTicket
+
 class RegistrationAdmin(admin.ModelAdmin):
     model = Registration
-    # list_filter = [('meeting', Meeting.objects.filter(type='ietf')), ]
-    list_filter = [MeetingFilter, ]
-    list_display = ['meeting', 'first_name', 'last_name', 'affiliation', 'country_code', 'person', 'email', ]
-    search_fields = ['meeting__number', 'first_name', 'last_name', 'affiliation', 'country_code', 'email', ]
+    list_filter = [AttendanceFilter, MeetingFilter]
+    list_display = ['meeting', 'first_name', 'last_name', 'display_attendance', 'affiliation', 'country_code', 'email', ]
+    search_fields = ['first_name', 'last_name', 'affiliation', 'country_code', 'email', ]
     raw_id_fields = ['person']
+    inlines = [RegistrationTicketInline, ]
+    ordering = ['-meeting__date', 'last_name']
+
+    def display_attendance(self, instance):
+        '''Only display the most significant ticket in the list.
+        To see all the tickets inspect the individual instance
+        '''
+        if instance.tickets.filter(attendance_type__slug='onsite').exists():
+            return 'onsite'
+        elif instance.tickets.filter(attendance_type__slug='remote').exists():
+            return 'remote'
+        elif instance.tickets.filter(attendance_type__slug='hackathon_onsite').exists():
+            return 'hackathon onsite'
+        elif instance.tickets.filter(attendance_type__slug='hackathon_remote').exists():
+            return 'hackathon remote'
+    display_attendance.short_description = "Attendance"  # type: ignore # https://github.com/python/mypy/issues/2087
+
 admin.site.register(Registration, RegistrationAdmin)
 
 class RegistrationTicketAdmin(admin.ModelAdmin):
     model = RegistrationTicket
     list_filter = ['attendance_type', ]
-    list_display = ['registration', 'attendance_type', 'ticket_type']
+    # not available until Django 5.2, the name of a related field, using the __ notation
+    # list_display = ['registration__meeting', 'registration', 'attendance_type', 'ticket_type', 'registration__email']
+    # list_select_related = ('registration',)
+    list_display = ['registration', 'attendance_type', 'ticket_type', 'display_meeting']
     search_fields = ['registration__first_name', 'registration__last_name', 'registration__email']
     raw_id_fields = ['registration']
+    ordering = ['-registration__meeting__date', 'registration__last_name']
+
+    def display_meeting(self, instance):
+        return instance.registration.meeting.number
+    display_meeting.short_description = "Meeting"  # type: ignore # https://github.com/python/mypy/issues/2087
+
 admin.site.register(RegistrationTicket, RegistrationTicketAdmin)

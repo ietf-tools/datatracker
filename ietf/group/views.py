@@ -58,6 +58,7 @@ from django.urls import reverse as urlreverse
 from django.utils import timezone
 from django.utils.html import escape
 from django.views.decorators.cache import cache_page, cache_control
+from django.urls import reverse
 
 import debug                            # pyflakes:ignore
 
@@ -685,6 +686,56 @@ def history(request, acronym, group_type=None):
                       "can_add_comment": can_add_comment,
                   }))
 
+def review_requests_history(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_reviews:
+        raise Http404
+
+    reviewer_email = request.GET.get("reviewer_email", None)
+
+    if reviewer_email:
+        history = ReviewAssignment.history.model.objects.filter(
+            review_request__team__acronym=acronym,
+            reviewer=reviewer_email)
+    else:
+        history = ReviewAssignment.history.model.objects.filter(
+            review_request__team__acronym=acronym)
+        reviewer_email = ''
+        
+    since_choices = [
+        (None, "1 month"),
+        ("3m", "3 months"),
+        ("6m", "6 months"),
+        ("1y", "1 year"),
+        ("2y", "2 years"),
+        ("all", "All"),
+    ]
+    since = request.GET.get("since", None)
+    
+    if since not in [key for key, label in since_choices]:
+        since = None
+
+    if since != "all":
+        date_limit = {
+            None: datetime.timedelta(days=31),
+            "3m": datetime.timedelta(days=31 * 3),
+            "6m": datetime.timedelta(days=180),
+            "1y": datetime.timedelta(days=365),
+            "2y": datetime.timedelta(days=2 * 365),
+        }[since]
+
+        history = history.filter(review_request__time__gte=datetime_today(DEADLINE_TZINFO) - date_limit)
+
+    return render(request, 'group/review_requests_history.html',
+                  construct_group_menu_context(request, group, "reviews history", group_type, {
+                      "group": group,
+                      "acronym": acronym,
+                      "history": history,
+                      "since_choices": since_choices,
+                      "since": since,
+                      "reviewer_email": reviewer_email
+                  }))
+
 def materials(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
     if not group.features.has_nonsession_materials:
@@ -898,6 +949,18 @@ def meetings(request, acronym, group_type=None):
                 far_past.append(s)
         past = recent_past
 
+    # Add calendar actions
+    cal_actions = []
+
+    cal_actions.append(dict(
+        label='Download as .ics',
+        url=reverse('ietf.meeting.views.upcoming_ical')+"?show="+group.acronym)
+    )
+    cal_actions.append(dict(
+        label='Subscribe with webcal',
+        url='webcal://'+request.get_host()+reverse('ietf.meeting.views.upcoming_ical')+"?show="+group.acronym)
+    )
+
     return render(
         request,
         "group/meetings.html",
@@ -915,6 +978,7 @@ def meetings(request, acronym, group_type=None):
                 "far_past": far_past,
                 "can_edit": can_edit,
                 "can_always_edit": can_always_edit,
+                "cal_actions": cal_actions,
             },
         ),
     )
@@ -2187,7 +2251,7 @@ def statements(request, acronym, group_type=None):
                 ).values_list("state__slug", flat=True)[:1]
             )
         )
-        .order_by("-published")
+        .order_by("status", "-published")
     )
     return render(
         request,
