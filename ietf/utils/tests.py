@@ -55,7 +55,11 @@ from ietf.utils.mail import (
     decode_header_value,
     show_that_mail_was_sent,
 )
-from ietf.utils.test_runner import get_template_paths, set_coverage_checking
+from ietf.utils.test_runner import (
+    get_template_paths,
+    set_template_coverage,
+    set_url_coverage,
+)
 from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.text import parse_unicode
 from ietf.utils.timezone import timezone_not_near_midnight
@@ -312,14 +316,15 @@ def get_callbacks(urllist, namespace=None):
 
     return list(callbacks)
 
-class TemplateChecksTestCase(TestCase):
+class TemplateChecksTestCase(TestCase):  # pragma: no cover
 
     paths = []                          # type: List[str]
     templates = {}                      # type: Dict[str, Template]
 
     def setUp(self):
         super().setUp()
-        set_coverage_checking(False)
+        set_template_coverage(False)
+        set_url_coverage(False)
         self.paths = list(get_template_paths())
         self.paths.sort()
         for path in self.paths:
@@ -329,7 +334,8 @@ class TemplateChecksTestCase(TestCase):
                 pass
 
     def tearDown(self):
-        set_coverage_checking(True)
+        set_template_coverage(True)
+        set_url_coverage(True)
         super().tearDown()
 
     def test_parse_templates(self):

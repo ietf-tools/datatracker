@@ -48,6 +48,8 @@ import pathlib
 import subprocess
 import tempfile
 import copy
+from contextlib import contextmanager
+
 import boto3
 import botocore.config
 import factory.random
@@ -57,10 +59,6 @@ import warnings
 from fnmatch import fnmatch
 from typing import Callable, Optional
 from urllib.parse import urlencode
-
-from coverage.report import Reporter
-from coverage.results import Numbers
-from coverage.misc import NotPython
 
 import django
 from django.conf import settings
@@ -97,10 +95,10 @@ test_database_name: Optional[str] = None
 old_destroy: Optional[Callable] = None
 old_create: Optional[Callable] = None
 
-template_coverage_collection = None
-code_coverage_collection = None
-url_coverage_collection = None
+template_coverage_collection = False
+url_coverage_collection = False
 validation_settings = {"validate_html": None, "validate_html_harder": None, "show_logging": False}
+
 
 def start_vnu_server(port=8888):
     "Start a vnu validation server on the indicated port"
@@ -458,50 +456,29 @@ def save_test_results(failures, test_labels):
             tfile.write("%s OK\n" % (timestr, ))
     tfile.close()
 
-def set_coverage_checking(flag=True):
+
+def set_template_coverage(flag):
     global template_coverage_collection
-    global code_coverage_collection
+    orig = template_coverage_collection
+    template_coverage_collection = flag
+    return orig
+
+
+def set_url_coverage(flag):
     global url_coverage_collection
-    if settings.SERVER_MODE == 'test' and settings.TEST_CODE_COVERAGE_CHECKER is not None:
-        if flag:
-            settings.TEST_CODE_COVERAGE_CHECKER.collector.resume()
-            template_coverage_collection = True
-            code_coverage_collection = True
-            url_coverage_collection = True
-        else:
-            settings.TEST_CODE_COVERAGE_CHECKER.collector.pause()
-            template_coverage_collection = False
-            code_coverage_collection = False
-            url_coverage_collection = False
+    orig = url_coverage_collection
+    url_coverage_collection = flag
+    return orig
 
-class CoverageReporter(Reporter):
-    def report(self):
-        self.find_file_reporters(None)
 
-        total = Numbers()
-        result = {"coverage": 0.0, "covered": {}, "format": 5, }
-        for fr in self.file_reporters:
-            try:
-                analysis = self.coverage._analyze(fr)
-                nums = analysis.numbers
-                missing_nums = sorted(analysis.missing)
-                with io.open(analysis.filename, encoding='utf-8') as file:
-                    lines = file.read().splitlines()
-                missing_lines = [ lines[l-1] for l in missing_nums ]
-                result["covered"][fr.relative_filename()] = (nums.n_statements, nums.pc_covered/100.0, missing_nums, missing_lines)
-                total += nums
-            except KeyboardInterrupt:                   # pragma: not covered
-                raise
-            except Exception:
-                report_it = not self.config.ignore_errors
-                if report_it:
-                    typ, msg = sys.exc_info()[:2]
-                    if typ is NotPython and not fr.should_be_python():
-                        report_it = False
-                if report_it:
-                    raise
-        result["coverage"] = total.pc_covered/100.0
-        return result
+@contextmanager
+def disable_coverage():
+    """Context manager/decorator that disables template/url coverage"""
+    orig_template = set_template_coverage(False)
+    orig_url = set_url_coverage(False)
+    yield
+    set_template_coverage(orig_template)
+    set_url_coverage(orig_url)
 
 
 class CoverageTest(unittest.TestCase):
@@ -589,23 +566,24 @@ class CoverageTest(unittest.TestCase):
             self.skipTest("Coverage switched off with --skip-coverage")
 
     def code_coverage_test(self):
-        if self.runner.check_coverage and self.runner.code_coverage_checker is not None:
-            include = [ os.path.join(path, '*') for path in self.runner.test_paths ]
-            checker = self.runner.code_coverage_checker
-            checker.stop()
+        if (
+            self.runner.check_coverage
+            and settings.TEST_CODE_COVERAGE_CHECKER is not None
+        ):
+            coverage_manager = settings.TEST_CODE_COVERAGE_CHECKER
+            coverage_manager.stop()
             # Save to the .coverage file
-            checker.save()
+            coverage_manager.save()
             # Apply the configured and requested omit and include data
-            checker.config.from_args(ignore_errors=None, omit=settings.TEST_CODE_COVERAGE_EXCLUDE_FILES,
-                include=include, file=None)
-            for pattern in settings.TEST_CODE_COVERAGE_EXCLUDE_LINES:
-                checker.exclude(pattern)
             # Maybe output an HTML report
             if self.runner.run_full_test_suite and self.runner.html_report:
-                checker.html_report(directory=settings.TEST_CODE_COVERAGE_REPORT_DIR)
-            # In any case, build a dictionary with per-file data for this run
-            reporter = CoverageReporter(checker, checker.config)
-            self.runner.coverage_data["code"] = reporter.report()
+                coverage_manager.checker.html_report(
+                    directory=settings.TEST_CODE_COVERAGE_REPORT_DIR
+                )
+            # Generate the output report data
+            self.runner.coverage_data["code"] = coverage_manager.report(
+                include=[str(pathlib.Path(p) / "*") for p in self.runner.test_paths]
+            )
             self.report_test_result("code")
         else:
             self.skipTest("Coverage switched off with --skip-coverage")
@@ -819,22 +797,11 @@ class IetfTestRunner(DiscoverRunner):
                     "covered": {},
                     "format": 1,
                 },
-                "migration": {
-                    "present": {},
-                    "format": 3,
-                }
             }
 
             settings.TEMPLATES[0]['OPTIONS']['loaders'] = ('ietf.utils.test_runner.TemplateCoverageLoader',) + settings.TEMPLATES[0]['OPTIONS']['loaders']
 
             settings.MIDDLEWARE = ('ietf.utils.test_runner.record_urls_middleware',) + tuple(settings.MIDDLEWARE)
-
-            self.code_coverage_checker = settings.TEST_CODE_COVERAGE_CHECKER
-            if self.code_coverage_checker and not self.code_coverage_checker._started:
-                sys.stderr.write(" **  Warning: In %s: Expected the coverage checker to have\n"
-                                 "       been started already, but it wasn't. Doing so now.  Coverage numbers\n"
-                                 "       will be off, though.\n" % __name__)
-                self.code_coverage_checker.start()
 
         if settings.SITE_ID != 1:
             print("     Changing SITE_ID to '1' during testing.")
@@ -1135,9 +1102,8 @@ class IetfTestRunner(DiscoverRunner):
                 ),
             ]
         if self.check_coverage:
-            global template_coverage_collection, code_coverage_collection, url_coverage_collection
+            global template_coverage_collection, url_coverage_collection
             template_coverage_collection = True
-            code_coverage_collection = True
             url_coverage_collection = True
             tests += [
                 PyFlakesTestCase(test_runner=self, methodName='pyflakes_test'),
@@ -1221,37 +1187,6 @@ class IetfTestRunner(DiscoverRunner):
 
         return failures
 
-class IetfLiveServerTestCase(StaticLiveServerTestCase):
-    @classmethod
-    def setUpClass(cls):
-        set_coverage_checking(False)
-        super(IetfLiveServerTestCase, cls).setUpClass()
-
-    def setUp(self):
-        super(IetfLiveServerTestCase, self).setUp()
-        # LiveServerTestCase uses TransactionTestCase which seems to
-        # somehow interfere with the fixture loading process in
-        # IetfTestRunner when running multiple tests (the first test
-        # is fine, in the next ones the fixtures have been wiped) -
-        # this is no doubt solvable somehow, but until then we simply
-        # recreate them here
-        from ietf.person.models import Person
-        if not Person.objects.exists():
-            load_and_run_fixtures(verbosity=0)
-        self.replaced_settings = dict()
-        if hasattr(settings, 'IDTRACKER_BASE_URL'):
-            self.replaced_settings['IDTRACKER_BASE_URL'] = settings.IDTRACKER_BASE_URL
-            settings.IDTRACKER_BASE_URL = self.live_server_url
-
-    @classmethod
-    def tearDownClass(cls):
-        super(IetfLiveServerTestCase, cls).tearDownClass()
-        set_coverage_checking(True)
-
-    def tearDown(self):
-        for k, v in self.replaced_settings.items():
-            setattr(settings, k, v)
-        super().tearDown()
 
 class TestBlobstoreManager():
     # N.B. buckets and blobstore are intentional Class-level attributes
