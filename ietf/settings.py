@@ -711,6 +711,7 @@ TEST_CODE_COVERAGE_EXCLUDE_FILES = [
     "ietf/utils/patch.py",
     "ietf/utils/test_data.py",
     "ietf/utils/jstest.py",
+    "ietf/utils/coverage.py",
 ]
 
 # These are code line regex patterns
