@@ -2,7 +2,7 @@
 setuptools>=51.1.0    # Require this first, to prevent later errors
 #
 aiosmtpd>=1.4.6
-argon2-cffi>=21.3.0    # For the Argon2 password hasher option
+argon2-cffi>=25.1.0  # For the Argon2 password hasher option
 beautifulsoup4>=4.11.1    # Only used in tests
 bibtexparser>=1.2.0    # Only used in tests
 bleach>=6
