@@ -23,7 +23,7 @@ django-cors-headers>=4.7.0
 django-debug-toolbar>=6.0.0
 django-markup>=1.10    # Limited use - need to reconcile against direct use of markdown
 django-oidc-provider==0.8.2    # 0.8.3 changes logout flow and claim return
-django-simple-history>=3.0.0
+django-simple-history>=3.10.1
 django-storages>=1.14.4
 django-stubs>=4.2.7,<5    # The django-stubs version used determines the the mypy version indicated below
 django-tastypie>=0.14.7,<0.15.0    # Version must be locked in sync with version of Django
