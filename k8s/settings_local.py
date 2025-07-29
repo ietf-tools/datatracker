@@ -379,6 +379,8 @@ for storagename in ARTIFACT_STORAGE_NAMES:
             secret_key=_blob_store_secret_key,
             security_token=None,
             client_config=botocore.config.Config(
+                request_checksum_calculation="when_required",
+                response_checksum_validation="when_required",
                 signature_version="s3v4",
                 connect_timeout=_blob_store_connect_timeout,
                 read_timeout=_blob_store_read_timeout,
