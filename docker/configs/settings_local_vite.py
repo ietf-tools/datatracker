@@ -3,4 +3,7 @@
 
 from ietf.settings_local import *                  # pyflakes:ignore
 
-DJANGO_VITE_DEV_MODE = True
+DJANGO_VITE["default"] |= {
+    "dev_mode": True,
+    "dev_server_port": 3000,
+}

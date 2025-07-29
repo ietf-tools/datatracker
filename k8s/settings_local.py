@@ -280,7 +280,9 @@ PHOTOS_DIRNAME = "photo"
 PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
 
 # Normally only set for debug, but needed until we have a real FS
-DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, "static/dist-neue/manifest.json")
+DJANGO_VITE["default"]["manifest_path"] = os.path.join(
+    BASE_DIR, "static/dist-neue/manifest.json"
+)
 
 # Binaries that are different in the docker image
 DE_GFM_BINARY = "/usr/local/bin/de-gfm"

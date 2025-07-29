@@ -458,13 +458,16 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'ietf.urls'
 
-DJANGO_VITE_ASSETS_PATH = os.path.join(BASE_DIR, 'static/dist-neue')
+# Configure django_vite
+DJANGO_VITE = {"default": {}}
 if DEBUG:
-    DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, 'static/dist-neue/manifest.json')
+    DJANGO_VITE["default"]["manifest_path"] = os.path.join(
+        BASE_DIR, 'static/dist-neue/manifest.json'
+    )
 
 # Additional locations of static files (in addition to each app's static/ dir)
 STATICFILES_DIRS = (
-    DJANGO_VITE_ASSETS_PATH,
+    os.path.join(BASE_DIR, "static/dist-neue"),  # for django_vite
     os.path.join(BASE_DIR, 'static/dist'),
     os.path.join(BASE_DIR, 'secr/static/dist'),
 )
