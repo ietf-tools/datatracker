@@ -1,5 +1,5 @@
---- tastypie/resources.py.orig	2020-08-24 13:14:25.463166100 +0200
-+++ tastypie/resources.py	2020-08-24 13:15:55.133759224 +0200
+--- tastypie/resources.py.orig	2025-07-29 19:00:01.526948002 +0000
++++ tastypie/resources.py	2025-07-29 19:07:15.324127008 +0000
 @@ -12,7 +12,7 @@
      ObjectDoesNotExist, MultipleObjectsReturned, ValidationError, FieldDoesNotExist
  )
@@ -9,13 +9,13 @@
  from django.db.models.fields.related import ForeignKey
  from django.urls.conf import re_path
  from tastypie.utils.timezone import make_naive_utc
-@@ -2198,6 +2198,8 @@
+@@ -2216,6 +2216,8 @@
              return self.authorized_read_list(objects, bundle)
          except ValueError:
              raise BadRequest("Invalid resource lookup data provided (mismatched type).")
 +        except FieldError as e:
 +            raise BadRequest("Invalid resource lookup: %s." % e)
- 
+
      def obj_get(self, bundle, **kwargs):
          """
 --- tastypie/paginator.py.orig	2020-08-25 15:24:46.391588425 +0200
