@@ -10,7 +10,7 @@ types-bleach>=6.2.0
 boto3>=1.39.15
 boto3-stubs[s3]>=1.39.15
 botocore>=1.39.15
-celery>=5.2.6
+celery>=5.5.3
 coverage>=4.5.4,<5.0    # Coverage 5.x moves from a json database to SQLite.  Moving to 5.x will require substantial rewrites in ietf.utils.test_runner and ietf.release.views
 defusedxml>=0.7.1    # for TastyPie when using xml; not a declared dependency
 Django>4.2,<5
