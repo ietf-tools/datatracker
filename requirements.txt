@@ -21,9 +21,8 @@ django-celery-beat>=2.7.0,<2.8.0  # pin until https://github.com/celery/django-c
 django-celery-results>=2.6.0
 django-cors-headers>=4.7.0
 django-debug-toolbar>=6.0.0
-django-markup>=1.5    # Limited use - need to reconcile against direct use of markdown
+django-markup>=1.10    # Limited use - need to reconcile against direct use of markdown
 django-oidc-provider==0.8.2    # 0.8.3 changes logout flow and claim return
-django-referrer-policy>=1.0
 django-simple-history>=3.0.0
 django-storages>=1.14.4
 django-stubs>=4.2.7,<5    # The django-stubs version used determines the the mypy version indicated below

@@ -450,7 +450,6 @@ MIDDLEWARE = [
     "ietf.middleware.SMTPExceptionMiddleware",
     "ietf.middleware.Utf8ExceptionMiddleware",
     "ietf.middleware.redirect_trailing_period_middleware",
-    "django_referrer_policy.middleware.ReferrerPolicyMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "ietf.middleware.unicode_nfkc_normalization_middleware",
@@ -569,8 +568,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_METHODS = ( 'GET', 'OPTIONS', )
 CORS_URLS_REGEX = r'^(/api/.*|.*\.json|.*/json/?)$'
 
-# Setting for django_referrer_policy.middleware.ReferrerPolicyMiddleware
-REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # django.middleware.security.SecurityMiddleware 
 SECURE_BROWSER_XSS_FILTER       = True
@@ -583,6 +580,7 @@ SECURE_HSTS_SECONDS             = 3600
 #SECURE_SSL_REDIRECT             = True
 # Relax the COOP policy to allow Meetecho authentication pop-up
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "unsafe-none"
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 # Override this in your settings_local with the IP addresses relevant for you:
 INTERNAL_IPS = (
