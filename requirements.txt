@@ -1,5 +1,5 @@
 # -*- conf-mode -*-
-setuptools>=51.1.0    # Require this first, to prevent later errors
+setuptools>=80.9.0    # Require this first, to prevent later errors
 #
 aiosmtpd>=1.4.6
 argon2-cffi>=25.1.0  # For the Argon2 password hasher option
