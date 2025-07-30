@@ -432,7 +432,6 @@ def prepare_group_documents(request, group, clist):
                 d.search_heading = "Related Internet-Drafts and RFCs"
                 docs_related.append(d)
         else:
-            # TODO need to write test to cover other streams and other states
             if d.type_id == "draft" and d.stream_id == 'ietf' and d.get_state_slug('draft-iesg') != 'idexists': # values can be: ad-eval idexists approved rfcqueue dead iesg-eva
                 d.search_heading = "Internet-Draft at the IESG"
             if not (d.get_state_slug('draft-iesg') == "dead" or (d.stream_id and d.get_state_slug("draft-stream-%s" % d.stream_id) == "dead")):
