@@ -815,3 +815,131 @@ class ResetNextReviewerInTeamTests(TestCase):
             self.assertEqual(NextReviewerInTeam.objects.get(team=group).next_reviewer, reviewers[target_index].person)
             self.client.logout()
             target_index += 2
+
+class RequestsHistoryTests(TestCase):
+    def test_requests_history_overview_page(self):
+        # Make assigned assignment
+        review_req = ReviewRequestFactory(state_id='assigned')
+        assignment = ReviewAssignmentFactory(review_request=review_req,
+                                             state_id='assigned',
+                                             reviewer=EmailFactory(),
+                                             assigned_on = review_req.time)
+        group = review_req.team
+
+        for url in [urlreverse(ietf.group.views.review_requests_history,
+                               kwargs={ 'acronym': group.acronym }),
+                    urlreverse(ietf.group.views.review_requests_history,
+                               kwargs={ 'acronym': group.acronym ,
+                                        'group_type': group.type_id}),
+                    urlreverse(ietf.group.views.review_requests_history,
+                               kwargs={ 'acronym': group.acronym }) +
+                    '?since=3m',
+                    urlreverse(ietf.group.views.review_requests_history,
+                               kwargs={ 'acronym': group.acronym ,
+                                        'group_type': group.type_id }) +
+                    '?since=3m']:
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            self.assertContains(r, review_req.doc.name)
+            self.assertContains(r, 'Assigned')
+            self.assertContains(r, escape(assignment.reviewer.person.name))
+
+        url = urlreverse(ietf.group.views.review_requests_history,
+                         kwargs={ 'acronym': group.acronym })
+
+        assignment.state = ReviewAssignmentStateName.objects.get(slug="completed")
+        assignment.result = ReviewResultName.objects.get(slug="ready")
+        assignment.save()
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, review_req.doc.name)
+        self.assertContains(r, 'Assigned')
+        self.assertContains(r, 'Completed')
+
+    def test_requests_history_filter_page(self):
+        # First assignment as assigned
+        review_req = ReviewRequestFactory(state_id = 'assigned',
+                                          doc = DocumentFactory())
+        assignment = ReviewAssignmentFactory(review_request = review_req,
+                                             state_id = 'assigned',
+                                             reviewer = EmailFactory(),
+                                             assigned_on = review_req.time)
+        group = review_req.team
+
+        # Second assignment in same group as accepted
+        review_req2 = ReviewRequestFactory(state_id = 'assigned',
+                                           team = review_req.team,
+                                           doc = DocumentFactory())
+        assignment2 = ReviewAssignmentFactory(review_request = review_req2,
+                                              state_id='accepted',
+                                              reviewer = EmailFactory(),
+                                              assigned_on = review_req2.time)
+
+        # Modify the assignment to be completed, and mark it ready
+        assignment2.state = ReviewAssignmentStateName.objects.get(slug="completed")
+        assignment2.result = ReviewResultName.objects.get(slug="ready")
+        assignment2.save()
+
+        # Check that we have all information when we do not filter
+        url = urlreverse(ietf.group.views.review_requests_history,
+                         kwargs={ 'acronym': group.acronym })
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, review_req.doc.name)
+        self.assertContains(r, review_req2.doc.name)
+        self.assertContains(r, 'Assigned')
+        self.assertContains(r, 'Accepted')
+        self.assertContains(r, 'Completed')
+        self.assertContains(r, 'Ready')
+        self.assertContains(r, escape(assignment.reviewer.person.name))
+        self.assertContains(r, escape(assignment2.reviewer.person.name))
+
+        # Check first reviewer history
+        for url in [urlreverse(ietf.group.views.review_requests_history,
+                               kwargs={ 'acronym': group.acronym }) +
+                    '?reviewer_email=' + str(assignment.reviewer),
+                    urlreverse(ietf.group.views.review_requests_history,
+                               kwargs={ 'acronym': group.acronym ,
+                                        'group_type': group.type_id}) +
+                    '?reviewer_email=' + str(assignment.reviewer)]:
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            self.assertContains(r, review_req.doc.name)
+            self.assertNotContains(r, review_req2.doc.name)
+            self.assertContains(r, 'Assigned')
+            self.assertNotContains(r, 'Accepted')
+            self.assertNotContains(r, 'Completed')
+            self.assertNotContains(r, 'Ready')
+            self.assertContains(r, escape(assignment.reviewer.person.name))
+            self.assertNotContains(r, escape(assignment2.reviewer.person.name))
+
+        # Check second reviewer history
+        for url in [urlreverse(ietf.group.views.review_requests_history,
+                               kwargs={ 'acronym': group.acronym }) +
+                    '?reviewer_email=' + str(assignment2.reviewer),
+                    urlreverse(ietf.group.views.review_requests_history,
+                               kwargs={ 'acronym': group.acronym ,
+                                        'group_type': group.type_id}) +
+                    '?reviewer_email=' + str(assignment2.reviewer)]:
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            self.assertNotContains(r, review_req.doc.name)
+            self.assertContains(r, review_req2.doc.name)
+            self.assertNotContains(r, 'Assigned')
+            self.assertContains(r, 'Accepted')
+            self.assertContains(r, 'Completed')
+            self.assertContains(r, 'Ready')
+            self.assertNotContains(r, escape(assignment.reviewer.person.name))
+            self.assertContains(r, escape(assignment2.reviewer.person.name))
+
+        # Check for reviewer that does not have anything
+        url = urlreverse(ietf.group.views.review_requests_history,
+                         kwargs={ 'acronym': group.acronym }) + '?reviewer_email=nobody@nowhere.example.org'
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, review_req.doc.name)
+        self.assertNotContains(r, 'Assigned')
+        self.assertNotContains(r, 'Accepted')
+        self.assertNotContains(r, 'Completed')

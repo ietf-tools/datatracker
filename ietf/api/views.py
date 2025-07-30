@@ -114,7 +114,11 @@ class ApiV2PersonExportView(DetailView, JsonExportMixin):
     model = Person
 
     def err(self, code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     def post(self, request):
         querydict = request.POST.copy()
@@ -152,7 +156,11 @@ class ApiV2PersonExportView(DetailView, JsonExportMixin):
 def api_new_meeting_registration_v2(request):
     '''REST API to notify the datatracker about a new meeting registration'''
     def _http_err(code, text):
-        return HttpResponse(text, status=code, content_type="text/plain")
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     def _api_response(result):
         return JsonResponse(data={"result": result})
@@ -192,7 +200,11 @@ def api_new_meeting_registration_v2(request):
 
     process_single_registration(reg_data, meeting)
 
-    return HttpResponse('Success', status=202, content_type='text/plain')
+    return HttpResponse(
+        'Success',
+        status=202,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 
 def version(request):
@@ -511,7 +523,11 @@ def related_email_list(request, email):
     to Datatracker, via Person object
     """
     def _http_err(code, text):
-        return HttpResponse(text, status=code, content_type="text/plain")
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     if request.method == "GET":
         try:
@@ -637,7 +653,11 @@ def ingest_email_handler(request, test_mode=False):
     """
 
     def _http_err(code, text):
-        return HttpResponse(text, status=code, content_type="text/plain")
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     def _api_response(result):
         return JsonResponse(data={"result": result})
