@@ -55,7 +55,7 @@ oic>=1.7.0  # Used only by tests
 pillow>=11.3.0
 psycopg2>=2.9.10
 pyang>=2.6.1
-pydyf>0.8.0
+pydyf>0.11.0
 pyflakes>=2.4.0
 pyopenssl>=22.0.0    # Used by urllib3.contrib, which is used by PyQuery but not marked as a dependency
 pyquery>=1.4.3
