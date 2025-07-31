@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from ietf.settings_local import *                  # pyflakes:ignore
+from ietf.settings_local import DJANGO_VITE
 
 DJANGO_VITE["default"] |= {
     "dev_mode": True,

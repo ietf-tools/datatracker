@@ -459,7 +459,7 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'ietf.urls'
 
 # Configure django_vite
-DJANGO_VITE = {"default": {}}
+DJANGO_VITE: dict = {"default": {}}
 if DEBUG:
     DJANGO_VITE["default"]["manifest_path"] = os.path.join(
         BASE_DIR, 'static/dist-neue/manifest.json'
