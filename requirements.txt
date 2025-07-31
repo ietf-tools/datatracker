@@ -69,7 +69,7 @@ pytz==2025.2  # Pinned as changes need to be vetted for their effect on Meeting 
 types-pytz==2025.2.0.20250516  # match pytz version
 requests>=2.32.4
 types-requests>=2.32.4
-requests-mock>=1.9.3
+requests-mock>=1.12.1
 rfc2html>=2.0.3
 scout-apm>=2.24.2
 selenium>=4.0
