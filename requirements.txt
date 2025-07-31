@@ -67,8 +67,8 @@ pymemcache>=4.0.0  # for django.core.cache.backends.memcached.PyMemcacheCache
 python-mimeparse>=2.0.0  # from TastyPie
 pytz==2025.2  # Pinned as changes need to be vetted for their effect on Meeting fields
 types-pytz==2025.2.0.20250516  # match pytz version
-requests>=2.31.0
-types-requests>=2.27.1
+requests>=2.32.4
+types-requests>=2.32.4
 requests-mock>=1.9.3
 rfc2html>=2.0.3
 scout-apm>=2.24.2
