@@ -52,7 +52,7 @@ mock>=5.2.0  # should replace with unittest.mock and remove dependency
 types-mock>=5.2.0
 mypy~=1.7.0  # Version requirements determined by django-stubs.
 oic>=1.7.0  # Used only by tests
-Pillow>=9.1.0
+pillow>=11.3.0
 psycopg2>=2.9.6
 pyang>=2.5.3
 pydyf>0.8.0
