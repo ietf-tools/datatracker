@@ -140,53 +140,53 @@ function ensureDropdownOnscreen(elm) {
     })
 }
 
-$(document)
-    .ready(function () {
-        // load data for the menu
-        $.ajax({
-            url: $(document.body)
-                .data("group-menu-data-url"),
-            type: "GET",
-            dataType: "json",
-            success: function (data) {
-                for (var parentId in data) {
-                    var attachTo = $(".group-menu.group-parent-" + parentId);
-                    if (attachTo.length == 0) {
-                        console.log("Could not find parent " + parentId);
-                        continue;
-                    }
-                    attachTo.find(".dropdown-menu")
-                        .remove();
-                    var menu = ['<ul class="dropdown-menu ms-n1 mt-n1 overflow-shadows">'];
-                    var groups = data[parentId];
-                    var gtype = "";
-                    for (var i = 0; i < groups.length; ++i) {
-                        var g = groups[i];
-                        if (g.type != gtype) {
-                            if (i > 0)
-                                menu.push('<li class="dropdown-divider"></li>');
-                            menu.push('<li class="dropdown-header">' + g.type + "s</li>");
-                            gtype = g.type;
-                        }
-                        menu.push('<li><a class="dropdown-item" href="' + g.url + '">' +
-                            g.acronym + " &mdash; " + g.name + "</a></li>");
-                    }
-                    menu.push("</ul>");
+// $(document)
+//     .ready(function () {
+//         // load data for the menu
+//         $.ajax({
+//             url: $(document.body)
+//                 .data("group-menu-data-url"),
+//             type: "GET",
+//             dataType: "json",
+//             success: function (data) {
+//                 for (var parentId in data) {
+//                     var attachTo = $(".group-menu.group-parent-" + parentId);
+//                     if (attachTo.length == 0) {
+//                         console.log("Could not find parent " + parentId);
+//                         continue;
+//                     }
+//                     attachTo.find(".dropdown-menu")
+//                         .remove();
+//                     var menu = ['<ul class="dropdown-menu ms-n1 mt-n1 overflow-shadows">'];
+//                     var groups = data[parentId];
+//                     var gtype = "";
+//                     for (var i = 0; i < groups.length; ++i) {
+//                         var g = groups[i];
+//                         if (g.type != gtype) {
+//                             if (i > 0)
+//                                 menu.push('<li class="dropdown-divider"></li>');
+//                             menu.push('<li class="dropdown-header">' + g.type + "s</li>");
+//                             gtype = g.type;
+//                         }
+//                         menu.push('<li><a class="dropdown-item" href="' + g.url + '">' +
+//                             g.acronym + " &mdash; " + g.name + "</a></li>");
+//                     }
+//                     menu.push("</ul>");
 
-                    attachTo.append(menu.join(""));
+//                     attachTo.append(menu.join(""));
 
-                    attachTo.find(".overflow-shadows").each(function(){
-                        // needs to be a function(){} so that we can access jQuery's `this`
-                        overflowShadows(this)
-                    })
-                    attachTo.find(".dropdown-menu").each(function(){
-                        // needs to be a function(){} so that we can access jQuery's `this`
-                        ensureDropdownOnscreen(this)
-                    })
-                }
-            }
-        });
-    });
+//                     attachTo.find(".overflow-shadows").each(function(){
+//                         // needs to be a function(){} so that we can access jQuery's `this`
+//                         overflowShadows(this)
+//                     })
+//                     attachTo.find(".dropdown-menu").each(function(){
+//                         // needs to be a function(){} so that we can access jQuery's `this`
+//                         ensureDropdownOnscreen(this)
+//                     })
+//                 }
+//             }
+//         });
+//     });
 
 // Automatically add a navigation pane to long pages if #content element has the ietf-auto-nav class.
 // The parent of #content must have the row class or the navigation pane will render incorrectly.
