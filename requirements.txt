@@ -56,7 +56,7 @@ pillow>=11.3.0
 psycopg2>=2.9.10
 pyang>=2.6.1
 pydyf>0.11.0
-pyflakes>=2.4.0
+pyflakes>=3.4.0
 pyopenssl>=22.0.0    # Used by urllib3.contrib, which is used by PyQuery but not marked as a dependency
 pyquery>=1.4.3
 python-dateutil>=2.8.2
