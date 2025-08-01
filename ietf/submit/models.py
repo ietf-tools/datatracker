@@ -55,7 +55,7 @@ class Submission(models.Model):
     file_size = models.IntegerField(null=True, blank=True)
     document_date = models.DateField(null=True, blank=True)
     submission_date = models.DateField(default=date_today)
-    xml_version = models.CharField(null=True, max_length=4, default=None)
+    xml_version = models.CharField(null=True, blank=True, max_length=4, default=None)
 
     submitter = models.CharField(max_length=255, blank=True, help_text="Name and email of submitter, e.g. \"John Doe &lt;john@example.org&gt;\".")
 
