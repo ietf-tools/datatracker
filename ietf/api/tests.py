@@ -1547,11 +1547,11 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
         serializer = Serializer()
         try:
             serializer.to_etree("string with no nulls in it")
-        except ValueError as e:
+        except ValueError:
             self.fail("serializer.to_etree raised ValueError on an ordinary string")
         try:
             serializer.to_etree("string with a \x00 in it")
-        except ValueError as e:
+        except ValueError:
             self.fail(
                 "serializer.to_etree raised ValueError on a string "
                 "containing a null character"
