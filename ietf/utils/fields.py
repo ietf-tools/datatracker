@@ -6,8 +6,6 @@ import datetime
 import json
 import re
 
-import jsonfield
-
 import debug                            # pyflakes:ignore
 
 from typing import Optional, Type # pyflakes:ignore
@@ -328,8 +326,8 @@ class SearchableField(forms.MultipleChoiceField):
         return super().has_changed(initial, data)
 
 
-class IETFJSONField(jsonfield.fields.forms.JSONField):
-    def __init__(self, *args, empty_values=jsonfield.fields.forms.JSONField.empty_values,
+class IETFJSONField(forms.JSONField):
+    def __init__(self, *args, empty_values=forms.JSONField.empty_values,
                  accepted_empty_values=None, **kwargs):
         if accepted_empty_values is None:
             accepted_empty_values = []

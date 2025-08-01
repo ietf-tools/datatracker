@@ -1,8 +1,6 @@
 # Copyright The IETF Trust 2010-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import jsonfield
-
 from django.db import models
 
 from ietf.utils.models import ForeignKey
@@ -73,8 +71,8 @@ class SessionStatusName(NameModel):
     """Waiting for Approval, Approved, Waiting for Scheduling, Scheduled, Cancelled, Disapproved"""
 class SessionPurposeName(NameModel):
     """Regular, Tutorial, Office Hours, Coding, Social, Admin"""
-    timeslot_types = jsonfield.JSONField(
-        max_length=256, blank=False, default=[],
+    timeslot_types = models.JSONField(
+        max_length=256, blank=False, default=list,
         help_text='Allowed TimeSlotTypeNames',
         validators=[JSONForeignKeyListValidator('name.TimeSlotTypeName')],
     )

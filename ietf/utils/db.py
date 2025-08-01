@@ -6,12 +6,12 @@
 # 
 # JSONField should recognize {}, (), and [] as valid, non-empty JSON
 # values.  However, the base Field class excludes them
-import jsonfield
+from django.db import models
 
 from ietf.utils.fields import IETFJSONField as FormIETFJSONField
 
 
-class IETFJSONField(jsonfield.JSONField):
+class IETFJSONField(models.JSONField):
     form_class = FormIETFJSONField
 
     def __init__(self, *args, empty_values=FormIETFJSONField.empty_values, accepted_empty_values=None, **kwargs):
