@@ -1496,7 +1496,7 @@ class DirectAuthApiTests(TestCase):
         data = self.response_data(r)
         self.assertEqual(data["result"], "success")
 
-class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
+class TastypieApiTests(ResourceTestCaseMixin, TestCase):
     def __init__(self, *args, **kwargs):
         self.apps = {}
         for app_name in settings.INSTALLED_APPS:
@@ -1506,7 +1506,7 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
                 models_path = os.path.join(os.path.dirname(app.__file__), "models.py")
                 if os.path.exists(models_path):
                     self.apps[name] = app_name
-        super(TastypieApiTestCase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def test_api_top_level(self):
         client = Client(Accept='application/json')
