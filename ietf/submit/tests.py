@@ -5,7 +5,7 @@
 import datetime
 import email
 import io
-import mock
+from unittest import mock
 import os
 import re
 import sys

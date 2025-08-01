@@ -4,7 +4,7 @@
 
 import datetime
 import io
-import mock
+from unittest import mock
 import random
 import shutil
 

@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 """Tests of ipr management commands"""
-import mock
+from unittest import mock
 import sys
 
 from django.core.management import call_command

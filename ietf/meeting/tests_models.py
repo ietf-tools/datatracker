@@ -3,7 +3,7 @@
 """Tests of models in the Meeting application"""
 import datetime
 
-from mock import patch
+from unittest.mock import patch
 
 from django.conf import settings
 from django.test import override_settings

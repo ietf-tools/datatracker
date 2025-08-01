@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 """Tests of nomcom management commands"""
-import mock
+from unittest import mock
 import sys
 
 from collections import namedtuple

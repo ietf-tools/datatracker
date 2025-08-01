@@ -3,7 +3,7 @@
 
 import datetime
 import json
-import mock
+from unittest import mock
 
 from django.urls import reverse as urlreverse
 from django.db.models import Q

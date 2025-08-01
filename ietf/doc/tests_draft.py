@@ -5,7 +5,7 @@
 import os
 import datetime
 import io
-import mock
+from unittest import mock
 
 from collections import Counter
 from pathlib import Path

@@ -6,7 +6,7 @@ import os
 import shutil
 import io
 
-from mock import call, patch
+from unittest.mock import call, patch
 from pathlib import Path
 from pyquery import PyQuery
 

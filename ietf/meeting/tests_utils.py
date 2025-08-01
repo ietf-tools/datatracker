@@ -7,7 +7,7 @@ import debug  # pyflakes: ignore
 import json
 import jsonschema
 from json import JSONDecodeError
-from mock import patch, Mock
+from unittest.mock import patch, Mock
 
 from django.http import HttpResponse, JsonResponse
 from ietf.meeting.factories import MeetingFactory, RegistrationFactory, RegistrationTicketFactory

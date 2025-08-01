@@ -12,7 +12,7 @@ import requests.exceptions
 import requests_mock
 
 from unittest import skipIf
-from mock import call, patch, PropertyMock
+from unittest.mock import call, patch, PropertyMock
 from pyquery import PyQuery
 from lxml.etree import tostring
 from io import StringIO, BytesIO
