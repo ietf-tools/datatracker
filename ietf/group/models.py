@@ -3,7 +3,6 @@
 
 
 import email.utils
-import jsonfield
 import os
 import re
 
@@ -46,7 +45,7 @@ class GroupInfo(models.Model):
     unused_states = models.ManyToManyField('doc.State', help_text="Document states that have been disabled for the group.", blank=True)
     unused_tags = models.ManyToManyField(DocTagName, help_text="Document tags that have been disabled for the group.", blank=True)
 
-    used_roles = jsonfield.JSONField(max_length=256, blank=True, default=[], help_text="Leave an empty list to get the group_type's default used roles")
+    used_roles = models.JSONField(max_length=256, blank=True, default=[], help_text="Leave an empty list to get the group_type's default used roles")
 
     uses_milestone_dates = models.BooleanField(default=True)
 
