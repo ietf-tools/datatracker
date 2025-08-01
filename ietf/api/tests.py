@@ -5,7 +5,7 @@ import copy
 import datetime
 import json
 import html
-import mock
+from unittest import mock
 import os
 import sys
 

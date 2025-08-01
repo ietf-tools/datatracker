@@ -11,7 +11,7 @@ import pytz
 import shutil
 import types
 
-from mock import call, patch
+from unittest.mock import call, patch
 from pyquery import PyQuery
 from typing import Dict, List       # pyflakes:ignore
 

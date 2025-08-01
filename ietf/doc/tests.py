@@ -10,7 +10,7 @@ from hashlib import sha384
 from django.http import HttpRequest
 import lxml
 import bibtexparser
-import mock
+from unittest import mock
 import json
 import copy
 import random
