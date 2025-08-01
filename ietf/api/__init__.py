@@ -157,8 +157,8 @@ class Serializer(tastypie.serializers.Serializer):
             options.get(self.OPTION_ESCAPE_NULLS, False) 
             and isinstance(simple_data, str)
         ):
-            # replace nulls with literal "\0"
-            simple_data = simple_data.replace("\x00", r"\0")
+            # replace nulls with unicode "symbol for null character", \u2400
+            simple_data = simple_data.replace("\x00", "\u2400")
         return simple_data
 
     def to_etree(self, data, options=None, name=None, depth=0):
