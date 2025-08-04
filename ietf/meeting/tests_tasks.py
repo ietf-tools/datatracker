@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
 import datetime
-from mock import patch, call
+from unittest.mock import patch, call
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import date_today
 from .factories import MeetingFactory
