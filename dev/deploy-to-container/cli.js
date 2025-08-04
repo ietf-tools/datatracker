@@ -214,7 +214,7 @@ async function main () {
   const celeryContainers = {}
   for (const conConf of conConfs) {
     celeryContainers[conConf.name] = await dock.createContainer({
-      Image: 'ghcr.io/ietf-tools/datatracker-app-base:latest',
+      Image: 'ghcr.io/ietf-tools/datatracker-app-base:py312',
       name: `dt-${conConf.name}-${branch}`,
       Hostname: `dt-${conConf.name}-${branch}`,
       Env: [
