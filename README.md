@@ -142,7 +142,7 @@ Pages will gradually be updated to Vue 3 components. These components are locate
 
 Each Vue 3 app has its own sub-directory. For example, the agenda app is located under `/client/agenda`.
 
-The datatracker makes use of the Django-Vite plugin to point to either the Vite.js server or the precompiled production files. The `DJANGO_VITE_DEV_MODE` flag, found in the `ietf/settings_local.py` file determines whether the Vite.js server is used or not.
+The datatracker makes use of the Django-Vite plugin to point to either the Vite.js server or the precompiled production files. The `DJANGO_VITE["default"]["dev_mode"]` flag, found in the `ietf/settings_local.py` file determines whether the Vite.js server is used or not.
 
 In development mode, you must start the Vite.js development server, in addition to the usual Datatracker server:
 

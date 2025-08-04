@@ -1197,7 +1197,11 @@ class TestBlobstoreManager():
         aws_access_key_id="minio_root",
         aws_secret_access_key="minio_pass",
         aws_session_token=None,
-        config = botocore.config.Config(signature_version="s3v4"),
+        config = botocore.config.Config(
+            request_checksum_calculation="when_required",
+            response_checksum_validation="when_required",
+            signature_version="s3v4",
+        ),
         #config=botocore.config.Config(signature_version=botocore.UNSIGNED),
         verify=False
     )

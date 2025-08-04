@@ -450,23 +450,24 @@ MIDDLEWARE = [
     "ietf.middleware.SMTPExceptionMiddleware",
     "ietf.middleware.Utf8ExceptionMiddleware",
     "ietf.middleware.redirect_trailing_period_middleware",
-    "django_referrer_policy.middleware.ReferrerPolicyMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    #"csp.middleware.CSPMiddleware",
     "ietf.middleware.unicode_nfkc_normalization_middleware",
     "ietf.middleware.is_authenticated_header_middleware",
 ]
 
 ROOT_URLCONF = 'ietf.urls'
 
-DJANGO_VITE_ASSETS_PATH = os.path.join(BASE_DIR, 'static/dist-neue')
+# Configure django_vite
+DJANGO_VITE: dict = {"default": {}}
 if DEBUG:
-    DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, 'static/dist-neue/manifest.json')
+    DJANGO_VITE["default"]["manifest_path"] = os.path.join(
+        BASE_DIR, 'static/dist-neue/manifest.json'
+    )
 
 # Additional locations of static files (in addition to each app's static/ dir)
 STATICFILES_DIRS = (
-    DJANGO_VITE_ASSETS_PATH,
+    os.path.join(BASE_DIR, "static/dist-neue"),  # for django_vite
     os.path.join(BASE_DIR, 'static/dist'),
     os.path.join(BASE_DIR, 'secr/static/dist'),
 )
@@ -570,8 +571,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_METHODS = ( 'GET', 'OPTIONS', )
 CORS_URLS_REGEX = r'^(/api/.*|.*\.json|.*/json/?)$'
 
-# Setting for django_referrer_policy.middleware.ReferrerPolicyMiddleware
-REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # django.middleware.security.SecurityMiddleware 
 SECURE_BROWSER_XSS_FILTER       = True
@@ -584,6 +583,7 @@ SECURE_HSTS_SECONDS             = 3600
 #SECURE_SSL_REDIRECT             = True
 # Relax the COOP policy to allow Meetecho authentication pop-up
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "unsafe-none"
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 # Override this in your settings_local with the IP addresses relevant for you:
 INTERNAL_IPS = (
@@ -667,11 +667,6 @@ IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
 RFCDIFF_BASE_URL = "https://author-tools.ietf.org/iddiff"
 IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
 IDNITS_SERVICE_URL = "https://author-tools.ietf.org/idnits"
-
-# Content security policy configuration (django-csp)
-# (In current production, the Content-Security-Policy header is completely set by nginx configuration, but
-#  we try to keep this in sync to avoid confusion)
-CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", f"data: {IDTRACKER_BASE_URL} http://ietf.org/ https://www.ietf.org/ https://analytics.ietf.org/ https://static.ietf.org")
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
