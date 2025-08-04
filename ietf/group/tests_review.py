@@ -943,3 +943,42 @@ class RequestsHistoryTests(TestCase):
         self.assertNotContains(r, 'Assigned')
         self.assertNotContains(r, 'Accepted')
         self.assertNotContains(r, 'Completed')
+
+    def test_requests_history_invalid_filter_parameters(self):
+        # First assignment as assigned
+        review_req = ReviewRequestFactory(state_id="assigned", doc=DocumentFactory())
+        group = review_req.team
+        url = urlreverse(
+            "ietf.group.views.review_requests_history",
+            kwargs={"acronym": group.acronym},
+        )
+        invalid_reviewer_emails = [
+            "%00null@example.com",  # urlencoded null character
+            "null@exa%00mple.com",  # urlencoded null character
+            "\x00null@example.com",  # literal null character
+            "null@ex\x00ample.com",  # literal null character
+        ]
+        for invalid_email in invalid_reviewer_emails:
+            r = self.client.get(
+                url + f"?reviewer_email={invalid_email}"
+            )
+            self.assertEqual(
+                r.status_code, 
+                400,
+                f"should return a 400 response for reviewer_email={repr(invalid_email)}"
+            )
+
+        invalid_since_choices = [
+            "forever",  # not an option
+            "all\x00",  # literal null character
+            "a%00ll",  # urlencoded null character
+        ]
+        for invalid_since in invalid_since_choices:
+            r = self.client.get(
+                url + f"?since={invalid_since}"
+            )
+            self.assertEqual(
+                r.status_code, 
+                400,
+                f"should return a 400 response for since={repr(invalid_since)}"
+            )
