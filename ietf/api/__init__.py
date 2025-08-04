@@ -145,5 +145,26 @@ class ToOneField(tastypie.fields.ToOneField):
 
 
 class Serializer(tastypie.serializers.Serializer):
+    OPTION_ESCAPE_NULLS = "datatracker-escape-nulls"
+
     def format_datetime(self, data):
         return data.astimezone(datetime.UTC).replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
+
+    def to_simple(self, data, options):
+        options = options or {}
+        simple_data = super().to_simple(data, options)
+        if (
+            options.get(self.OPTION_ESCAPE_NULLS, False) 
+            and isinstance(simple_data, str)
+        ):
+            # replace nulls with unicode "symbol for null character", \u2400
+            simple_data = simple_data.replace("\x00", "\u2400")
+        return simple_data
+
+    def to_etree(self, data, options=None, name=None, depth=0):
+        # lxml does not escape nulls on its own, so ask to_simple() to do it.
+        # This is mostly (only?) an issue when generating errors responses for
+        # fuzzers.
+        options = options or {}
+        options[self.OPTION_ESCAPE_NULLS] = True
+        return super().to_etree(data, options, name, depth)

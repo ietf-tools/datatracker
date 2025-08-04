@@ -1017,7 +1017,10 @@ def view_feedback_nominee(request, year, nominee_id):
                                          'positions': ','.join([str(p) for p in feedback.positions.all()]),
                                          },
                                         request=request)
-            response = HttpResponse(response, content_type='text/plain')
+            response = HttpResponse(
+                response,
+                content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+            )
             response['Content-Disposition'] = f'attachment; filename="{fn}"'
             return response
         elif submit == 'reclassify':

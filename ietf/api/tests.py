@@ -5,7 +5,7 @@ import copy
 import datetime
 import json
 import html
-import mock
+from unittest import mock
 import os
 import sys
 
@@ -37,11 +37,11 @@ from ietf.nomcom.models import Volunteer
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
 from ietf.person.factories import PersonFactory, random_faker, EmailFactory, PersonalApiKeyFactory
 from ietf.person.models import Email, User
-from ietf.stats.models import MeetingRegistration
 from ietf.utils.mail import empty_outbox, outbox, get_payload_text
 from ietf.utils.models import DumpInfo
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, reload_db_objects
 
+from . import Serializer
 from .ietf_utils import is_valid_token, requires_api_token
 from .views import EmailIngestionError
 
@@ -704,131 +704,6 @@ class CustomApiTests(TestCase):
         self.assertEqual(data['name'], robot.name)
         self.assertEqual(data['ascii'], robot.ascii)
         self.assertEqual(data['user']['email'], robot.user.email)
-
-    def test_api_new_meeting_registration(self):
-        meeting = MeetingFactory(type_id='ietf')
-        reg = {
-            'apikey': 'invalid',
-            'affiliation': "Alguma Corporação",
-            'country_code': 'PT',
-            'email': 'foo@example.pt',
-            'first_name': 'Foo',
-            'last_name': 'Bar',
-            'meeting': meeting.number,
-            'reg_type': 'hackathon',
-            'ticket_type': '',
-            'checkedin': 'False',
-            'is_nomcom_volunteer': 'False',
-        }
-        url = urlreverse('ietf.api.views.api_new_meeting_registration')
-        r = self.client.post(url, reg)
-        self.assertContains(r, 'Invalid apikey', status_code=403)
-        oidcp = PersonFactory(user__is_staff=True)
-        # Make sure 'oidcp' has an acceptable role
-        RoleFactory(name_id='robot', person=oidcp, email=oidcp.email(), group__acronym='secretariat')
-        key = PersonalApiKeyFactory(person=oidcp, endpoint=url)
-        reg['apikey'] = key.hash()
-        #
-        # Test valid POST
-        # FIXME: sometimes, there seems to be something in the outbox?
-        old_len = len(outbox)
-        r = self.client.post(url, reg)
-        self.assertContains(r, "Accepted, New registration, Email sent", status_code=202)
-        #
-        # Check outgoing mail
-        self.assertEqual(len(outbox), old_len + 1)
-        body = get_payload_text(outbox[-1])
-        self.assertIn(reg['email'], outbox[-1]['To'] )
-        self.assertIn(reg['email'], body)
-        self.assertIn('account creation request', body)
-        #
-        # Check record
-        obj = MeetingRegistration.objects.get(email=reg['email'], meeting__number=reg['meeting'])
-        for key in ['affiliation', 'country_code', 'first_name', 'last_name', 'person', 'reg_type', 'ticket_type', 'checkedin']:
-            self.assertEqual(getattr(obj, key), False if key=='checkedin' else reg.get(key) , "Bad data for field '%s'" % key)
-        #
-        # Test with existing user
-        person = PersonFactory()
-        reg['email'] = person.email().address
-        reg['first_name'] = person.first_name()
-        reg['last_name'] = person.last_name()
-        #
-        r = self.client.post(url, reg)
-        self.assertContains(r, "Accepted, New registration", status_code=202)
-        #
-        # There should be no new outgoing mail
-        self.assertEqual(len(outbox), old_len + 1)
-        #
-        # Test multiple reg types
-        reg['reg_type'] = 'remote'
-        reg['ticket_type'] = 'full_week_pass'
-        r = self.client.post(url, reg)
-        self.assertContains(r, "Accepted, New registration", status_code=202)
-        objs = MeetingRegistration.objects.filter(email=reg['email'], meeting__number=reg['meeting'])
-        self.assertEqual(len(objs), 2)
-        self.assertEqual(objs.filter(reg_type='hackathon').count(), 1)
-        self.assertEqual(objs.filter(reg_type='remote', ticket_type='full_week_pass').count(), 1)
-        self.assertEqual(len(outbox), old_len + 1)
-        #
-        # Test incomplete POST
-        drop_fields = ['affiliation', 'first_name', 'reg_type']
-        for field in drop_fields:
-            del reg[field]
-        r = self.client.post(url, reg)        
-        self.assertContains(r, 'Missing parameters:', status_code=400)
-        err, fields = r.content.decode().split(':', 1)
-        missing_fields = [f.strip() for f in fields.split(',')]
-        self.assertEqual(set(missing_fields), set(drop_fields))
-
-    def test_api_new_meeting_registration_nomcom_volunteer(self):
-        '''Test that Volunteer is created if is_nomcom_volunteer=True
-           is submitted to API
-        '''
-        meeting = MeetingFactory(type_id='ietf')
-        reg = {
-            'apikey': 'invalid',
-            'affiliation': "Alguma Corporação",
-            'country_code': 'PT',
-            'meeting': meeting.number,
-            'reg_type': 'onsite',
-            'ticket_type': '',
-            'checkedin': 'False',
-            'is_nomcom_volunteer': 'False',
-        }
-        person = PersonFactory()
-        reg['email'] = person.email().address
-        reg['first_name'] = person.first_name()
-        reg['last_name'] = person.last_name()
-        now = datetime.datetime.now()
-        if now.month > 10:
-            year = now.year + 1
-        else:
-            year = now.year
-        # create appropriate group and nomcom objects
-        nomcom = NomComFactory.create(is_accepting_volunteers=True, **nomcom_kwargs_for_year(year))
-        url = urlreverse('ietf.api.views.api_new_meeting_registration')
-        oidcp = PersonFactory(user__is_staff=True)
-        # Make sure 'oidcp' has an acceptable role
-        RoleFactory(name_id='robot', person=oidcp, email=oidcp.email(), group__acronym='secretariat')
-        key = PersonalApiKeyFactory(person=oidcp, endpoint=url)
-        reg['apikey'] = key.hash()
-
-        # first test is_nomcom_volunteer False
-        r = self.client.post(url, reg)
-        self.assertContains(r, "Accepted, New registration", status_code=202)
-        # assert no Volunteers exists
-        self.assertEqual(Volunteer.objects.count(), 0)
-
-        # test is_nomcom_volunteer True
-        reg['is_nomcom_volunteer'] = 'True'
-        r = self.client.post(url, reg)
-        self.assertContains(r, "Accepted, Updated registration", status_code=202)
-        # assert Volunteer exists
-        self.assertEqual(Volunteer.objects.count(), 1)
-        volunteer = Volunteer.objects.last()
-        self.assertEqual(volunteer.person, person)
-        self.assertEqual(volunteer.nomcom, nomcom)
-        self.assertEqual(volunteer.origin, 'registration')
 
     @override_settings(APP_API_TOKENS={"ietf.api.views.api_new_meeting_registration_v2": ["valid-token"]})
     def test_api_new_meeting_registration_v2(self):
@@ -1622,7 +1497,7 @@ class DirectAuthApiTests(TestCase):
         data = self.response_data(r)
         self.assertEqual(data["result"], "success")
 
-class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
+class TastypieApiTests(ResourceTestCaseMixin, TestCase):
     def __init__(self, *args, **kwargs):
         self.apps = {}
         for app_name in settings.INSTALLED_APPS:
@@ -1632,7 +1507,7 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
                 models_path = os.path.join(os.path.dirname(app.__file__), "models.py")
                 if os.path.exists(models_path):
                     self.apps[name] = app_name
-        super(TastypieApiTestCase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def test_api_top_level(self):
         client = Client(Accept='application/json')
@@ -1666,6 +1541,21 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
                     #print("There doesn't seem to be any resource for model %s.models.%s"%(app.__name__,model.__name__,))
                     self.assertIn(model._meta.model_name, list(app_resources.keys()),
                         "There doesn't seem to be any API resource for model %s.models.%s"%(app.__name__,model.__name__,))
+
+    def test_serializer_to_etree_handles_nulls(self):
+        """Serializer to_etree() should handle a null character"""
+        serializer = Serializer()
+        try:
+            serializer.to_etree("string with no nulls in it")
+        except ValueError:
+            self.fail("serializer.to_etree raised ValueError on an ordinary string")
+        try:
+            serializer.to_etree("string with a \x00 in it")
+        except ValueError:
+            self.fail(
+                "serializer.to_etree raised ValueError on a string "
+                "containing a null character"
+            )
 
 
 class RfcdiffSupportTests(TestCase):

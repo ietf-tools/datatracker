@@ -3,7 +3,7 @@
 
 
 import datetime
-import mock
+from unittest import mock
 
 from pyquery import PyQuery
 

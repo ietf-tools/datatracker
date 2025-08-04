@@ -7,109 +7,61 @@ import debug  # pyflakes: ignore
 import json
 import jsonschema
 from json import JSONDecodeError
-from mock import patch, Mock
+from unittest.mock import patch, Mock
 
 from django.http import HttpResponse, JsonResponse
 from ietf.meeting.factories import MeetingFactory, RegistrationFactory, RegistrationTicketFactory
 from ietf.meeting.models import Registration
-from ietf.meeting.utils import (migrate_registrations, get_preferred, process_single_registration,
-    get_registration_data, sync_registration_data, fetch_attendance_from_meetings)
+from ietf.meeting.utils import (
+    process_single_registration,
+    get_registration_data, 
+    sync_registration_data, 
+    fetch_attendance_from_meetings, 
+    get_activity_stats
+)
 from ietf.nomcom.models import Volunteer
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
 from ietf.person.factories import PersonFactory
-from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.utils.test_utils import TestCase
-
-
-class MigrateRegistrationsTests(TestCase):
-    def test_new_meeting_registration(self):
-        meeting = MeetingFactory(type_id='ietf', number='109')
-        reg = MeetingRegistrationFactory(meeting=meeting, reg_type='onsite', ticket_type='week_pass')
-        self.assertEqual(Registration.objects.count(), 0)
-        migrate_registrations(initial=True)
-        self.assertEqual(Registration.objects.count(), 1)
-        new = Registration.objects.first()
-        self.assertEqual(new.first_name, reg.first_name)
-        self.assertEqual(new.last_name, reg.last_name)
-        self.assertEqual(new.email, reg.email)
-        self.assertEqual(new.person, reg.person)
-        self.assertEqual(new.meeting, meeting)
-        self.assertEqual(new.affiliation, reg.affiliation)
-        self.assertEqual(new.country_code, reg.country_code)
-        self.assertEqual(new.checkedin, reg.checkedin)
-        self.assertEqual(new.attended, reg.attended)
-
-    def test_migrate_non_initial(self):
-        # with only old meeting
-        meeting = MeetingFactory(type_id='ietf', number='109')
-        MeetingRegistrationFactory(meeting=meeting, reg_type='onsite', ticket_type='week_pass')
-        self.assertEqual(Registration.objects.count(), 0)
-        migrate_registrations()
-        self.assertEqual(Registration.objects.count(), 0)
-        # with new meeting
-        new_meeting = MeetingFactory(type_id='ietf', number='150')
-        new_meeting.date = datetime.date.today() + datetime.timedelta(days=30)
-        new_meeting.save()
-        MeetingRegistrationFactory(meeting=new_meeting, reg_type='onsite', ticket_type='week_pass')
-        migrate_registrations()
-        self.assertEqual(Registration.objects.count(), 1)
-
-    def test_updated_meeting_registration(self):
-        # setup test initial conditions
-        meeting = MeetingFactory(type_id='ietf', number='109')
-        reg = MeetingRegistrationFactory(meeting=meeting, reg_type='onsite', ticket_type='week_pass')
-        migrate_registrations(initial=True)
-        # change first_name and save
-        original = reg.first_name
-        reg.first_name = 'NewBob'
-        reg.save()
-        new = Registration.objects.first()
-        self.assertEqual(new.first_name, original)
-        migrate_registrations(initial=True)
-        new.refresh_from_db()
-        self.assertEqual(new.first_name, reg.first_name)
-
-    def test_additional_ticket(self):
-        # setup test initial conditions
-        meeting = MeetingFactory(type_id='ietf', number='109')
-        reg = MeetingRegistrationFactory(meeting=meeting, reg_type='onsite', ticket_type='week_pass')
-        migrate_registrations(initial=True)
-        new = Registration.objects.first()
-        self.assertEqual(new.tickets.count(), 1)
-        # add a second ticket
-        reg.reg_type = 'remote'
-        reg.pk = None
-        reg.save()
-        migrate_registrations(initial=True)
-        # new.refresh_from_db()
-        self.assertEqual(new.tickets.count(), 2)
-
-    def test_cancelled_registration(self):
-        # setup test initial conditions
-        meeting = MeetingFactory(type_id='ietf', number='109')
-        reg = MeetingRegistrationFactory(meeting=meeting, reg_type='onsite', ticket_type='week_pass')
-        migrate_registrations(initial=True)
-        reg.delete()
-        # do test
-        migrate_registrations(initial=True)
-        self.assertEqual(Registration.objects.count(), 0)
-
-    def test_get_preferred(self):
-        meeting = MeetingFactory(type_id='ietf', number='109')
-        onsite = MeetingRegistrationFactory(meeting=meeting, reg_type='onsite', ticket_type='week_pass')
-        remote = MeetingRegistrationFactory(meeting=meeting, reg_type='remote', ticket_type='week_pass')
-        hackathon = MeetingRegistrationFactory(meeting=meeting, reg_type='hackathon_onsite', ticket_type='week_pass')
-        result = get_preferred([remote, onsite, hackathon])
-        self.assertEqual(result, onsite)
-        result = get_preferred([hackathon, remote])
-        self.assertEqual(result, remote)
-        result = get_preferred([hackathon])
-        self.assertEqual(result, hackathon)
+from ietf.meeting.test_data import make_meeting_test_data
+from ietf.doc.factories import NewRevisionDocEventFactory, DocEventFactory
 
 
 class JsonResponseWithJson(JsonResponse):
     def json(self):
         return json.loads(self.content)
+
+
+class ActivityStatsTests(TestCase):
+
+    def test_activity_stats(self):
+        utc = datetime.timezone.utc
+        make_meeting_test_data()
+        sdate = datetime.date(2016,4,3)
+        edate = datetime.date(2016,7,14)
+        MeetingFactory(type_id='ietf', date=sdate, number="96")
+        MeetingFactory(type_id='ietf', date=edate, number="97")
+
+        NewRevisionDocEventFactory(time=datetime.datetime(2016,4,5,12,0,0,0,tzinfo=utc))
+        NewRevisionDocEventFactory(time=datetime.datetime(2016,4,6,12,0,0,0,tzinfo=utc))
+        NewRevisionDocEventFactory(time=datetime.datetime(2016,4,7,12,0,0,0,tzinfo=utc))
+
+        NewRevisionDocEventFactory(time=datetime.datetime(2016,6,30,12,0,0,0,tzinfo=utc))
+        NewRevisionDocEventFactory(time=datetime.datetime(2016,6,30,13,0,0,0,tzinfo=utc))
+
+        DocEventFactory(doc__std_level_id="ps", doc__type_id="rfc", type="published_rfc", time=datetime.datetime(2016,4,5,12,0,0,0,tzinfo=utc))
+        DocEventFactory(doc__std_level_id="bcp", doc__type_id="rfc", type="published_rfc", time=datetime.datetime(2016,4,6,12,0,0,0,tzinfo=utc))
+        DocEventFactory(doc__std_level_id="inf", doc__type_id="rfc", type="published_rfc", time=datetime.datetime(2016,4,7,12,0,0,0,tzinfo=utc))
+        DocEventFactory(doc__std_level_id="exp", doc__type_id="rfc", type="published_rfc", time=datetime.datetime(2016,4,8,12,0,0,0,tzinfo=utc))
+
+        data = get_activity_stats(sdate, edate)
+        self.assertEqual(data['new_drafts_count'], len(data['new_docs']))
+        self.assertEqual(data['ffw_new_count'], 2)
+        self.assertEqual(data['ffw_new_percent'], '40%')
+        rfc_count = 0
+        for c in data['counts']:
+            rfc_count += data['counts'].get(c)
+        self.assertEqual(rfc_count, len(data['rfcs']))
 
 
 class GetRegistrationsTests(TestCase):

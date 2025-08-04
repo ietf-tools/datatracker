@@ -11,7 +11,7 @@ import pytz
 import shutil
 import types
 
-from mock import call, patch
+from unittest.mock import call, patch
 from pyquery import PyQuery
 from typing import Dict, List       # pyflakes:ignore
 
@@ -19,7 +19,6 @@ from email.message import Message
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from fnmatch import fnmatch
 from importlib import import_module
 from textwrap import dedent
 from tempfile import mkdtemp
@@ -325,7 +324,7 @@ class TemplateChecksTestCase(TestCase):  # pragma: no cover
         super().setUp()
         set_template_coverage(False)
         set_url_coverage(False)
-        self.paths = list(get_template_paths())
+        self.paths = get_template_paths()  # already filtered ignores
         self.paths.sort()
         for path in self.paths:
             try:
@@ -341,11 +340,7 @@ class TemplateChecksTestCase(TestCase):  # pragma: no cover
     def test_parse_templates(self):
         errors = []
         for path in self.paths:
-            for pattern in settings.TEST_TEMPLATE_IGNORE:
-                if fnmatch(path, pattern):
-                    continue
-            if not path in self.templates:
-
+            if path not in self.templates:
                 try:
                     get_template(path)
                 except Exception as e:
@@ -714,6 +709,14 @@ class XMLDraftTests(TestCase):
                 asciiFullname="Not the Same at All",
             )),
             "Joanna Q. Public",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
+                fullname=chr(340)+"ich",
+                asciiFullname="Rich UTF-8",
+            )),
+            chr(340)+"ich (Rich UTF-8)",
         )
         self.assertEqual(
             XMLDraft.render_author_name(lxml.etree.Element(

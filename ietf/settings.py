@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
+# Copyright The IETF Trust 2007-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -9,6 +9,7 @@
 import os
 import sys
 import datetime
+import pathlib
 import warnings
 from hashlib import sha384
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
@@ -35,8 +36,12 @@ warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(
 warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="pytz.tzinfo")
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.abspath(BASE_DIR + "/.."))
+base_path = pathlib.Path(__file__).resolve().parent
+BASE_DIR = str(base_path)
+
+project_path = base_path.parent
+PROJECT_DIR = str(project_path)  
+sys.path.append(PROJECT_DIR)
 
 from ietf import __version__
 import debug
@@ -666,6 +671,7 @@ DRF_STANDARDIZED_ERRORS = {
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
 RFCDIFF_BASE_URL = "https://author-tools.ietf.org/iddiff"
 IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
+IDNITS3_BASE_URL = "https://author-tools.ietf.org/idnits3/results"
 IDNITS_SERVICE_URL = "https://author-tools.ietf.org/idnits"
 
 # The name of the method to use to invoke the test suite
@@ -720,12 +726,15 @@ TEST_CODE_COVERAGE_EXCLUDE_LINES = [
 ]
 
 # These are filename globs.  They are used by test_parse_templates() and
-# get_template_paths()
+# get_template_paths(). Globs are applied via pathlib.Path().match, using
+# the path to the template from the project root.
 TEST_TEMPLATE_IGNORE = [
-    ".*",                             # dot-files
-    "*~",                             # tilde temp-files
-    "#*",                             # files beginning with a hashmark
-    "500.html"                        # isn't loaded by regular loader, but checked by test_500_page()
+    ".*",  # dot-files
+    "*~",  # tilde temp-files
+    "#*",  # files beginning with a hashmark
+    "500.html",  # isn't loaded by regular loader, but checked by test_500_page()
+    "ietf/templates/admin/meeting/RegistrationTicket/change_list.html",
+    "ietf/templates/admin/meeting/Registration/change_list.html",
 ]
 
 TEST_COVERAGE_MAIN_FILE = os.path.join(BASE_DIR, "../release-coverage.json")
@@ -1145,7 +1154,6 @@ PPT2PDF_COMMAND = [
     "--outdir"
 ]
 
-STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/'
 REGISTRATION_PARTICIPANTS_API_URL = 'https://registration.ietf.org/api/v1/participants-dt/'
 REGISTRATION_PARTICIPANTS_API_KEY = 'changeme'
 
