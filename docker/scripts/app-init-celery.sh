@@ -93,7 +93,7 @@ fi
 USER_BIN_PATH="/home/dev/.local/bin"
 WATCHMEDO="$USER_BIN_PATH/watchmedo"
 # Find a celery that works
-if [[ -x "USER_BIN_PATH/celery" ]]; then
+if [[ -x "$USER_BIN_PATH/celery" ]]; then
     # This branch is used for dev
     CELERY="$USER_BIN_PATH/celery"
 else
