@@ -2164,8 +2164,12 @@ def generate_agenda_ical(schedule, assignments):
 
         agenda = item.session.agenda()
 
-        if agenda and hasattr(agenda, "get_versionless_href"):
-            event.add("url", agenda.get_versionless_href())
+        # if agenda and hasattr(agenda, "get_versionless_href"):
+        ical_url = absurl("ietf.meeting.views.agenda_ical", 
+                          num=schedule.meeting.number, 
+                          session_id=item.session.id
+                          )
+        event.add("url", ical_url)
 
         description_parts = [item.timeslot.name]
 

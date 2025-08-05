@@ -15,6 +15,7 @@ from unittest import skipIf
 from mock import call, patch, PropertyMock
 from pyquery import PyQuery
 from lxml.etree import tostring
+from icalendar import Calendar
 from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urlsplit
@@ -403,24 +404,34 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, session.group.name)
 
-        from icalendar import Calendar
         cal = Calendar.from_ical(r.content)
+        events = [component for component in cal.walk() if component.name == "VEVENT"]
 
-        for component in cal.walk():
-            if component.name == "VEVENT":
-                self.assertIn(session.remote_instructions, component.get('description'))
-                self.assertIn("Onsite tool: https://onsite.example.com", component.get('description'))
-                self.assertIn("Meetecho: https://meetecho.example.com", component.get('description'))
-                self.assertIn(f"Agenda {session.agenda().get_href()}", component.get('description'))
-                self.assertIn(
-                    urlreverse(
-                        'ietf.meeting.views.session_details',
-                        kwargs=dict(num=meeting.number, acronym=session.group.acronym)),
-                    component.get('description'))
-                break
+        self.assertEqual(len(events), 2)
+        self.assertIn(session.remote_instructions, events[0].get('description'))
+        self.assertIn("Onsite tool: https://onsite.example.com", events[0].get('description'))
+        self.assertIn("Meetecho: https://meetecho.example.com", events[0].get('description'))
+        self.assertIn(f"Agenda {session.agenda().get_href()}", events[0].get('description'))
+        session_materials_url = settings.IDTRACKER_BASE_URL + urlreverse(
+            'ietf.meeting.views.session_details',
+            kwargs=dict(num=meeting.number, acronym=session.group.acronym)
+        )
+        self.assertIn(f"Session materials: {session_materials_url}", events[0].get('description'))
+        self.assertIn(
+            urlreverse(
+                'ietf.meeting.views.session_details',
+                kwargs=dict(num=meeting.number, acronym=session.group.acronym)),
+            events[0].get('description'))
+        
+        session_cal_url = settings.IDTRACKER_BASE_URL + urlreverse(
+                'ietf.meeting.views.agenda_ical',
+                kwargs=dict(num=meeting.number, session_id=session.id))
+        self.assertEqual(
+            session_cal_url,
+            events[0].get('url')
+        )
 
         self.assertContains(r, f"LOCATION:{slot.location.name}")
-        self.assertContains(r, f"URL:{session.agenda().get_href()}")
         
         # Floor Plan
         r = self.client.get(urlreverse('floor-plan', kwargs=dict(num=meeting.number)))
