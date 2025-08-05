@@ -2,7 +2,7 @@
 from django.conf import settings
 from django.contrib import admin, messages
 from django.contrib.admin import action
-from django.contrib.admin.actions import delete_selected
+from django.contrib.admin.actions import delete_selected as default_delete_selected
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 
@@ -14,14 +14,20 @@ admin.site.unregister(User)
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     list_filter = UserAdmin.list_filter + (("person", admin.EmptyFieldListFilter),)
-    actions = (UserAdmin.actions or ()) + (
-        "delete_selected",  # needed in order for delete_personless_users to work
-        "delete_personless_users",
-    )
+    actions = (UserAdmin.actions or ()) + ("delete_selected",)
 
-    @action(description="Delete Users with no Person")
-    def delete_personless_users(self, request, queryset):
-        """Delete action restricted to Users with a null Person field"""
+    @action(
+        permissions=["delete"], description="Delete personless %(verbose_name_plural)s"
+    )
+    def delete_selected(self, request, queryset):
+        """Delete selected action restricted to Users with a null Person field
+        
+        This displaces the default delete_selected action with a safer one that will
+        only delete personless Users. It is done this way instead of by introducing
+        a new action so that we can simply hand off to the default action (imported
+        as default_delete_selected()) without having to adjust its template (and maybe
+        other things) to make it work with a different action name.
+        """
         personless_queryset = queryset.filter(person__isnull=True)
         original_count = queryset.count()
         personless_count = personless_queryset.count()
@@ -54,7 +60,9 @@ class CustomUserAdmin(UserAdmin):
             )
 
         # Django limits the number of fields in a request. The delete form itself
-        # includes a few metadata fields, so give it a little padding.
+        # includes a few metadata fields, so give it a little padding. The default
+        # limit is 1000 and everything will break if it's a small number, so not 
+        # bothering to check that it's > 10.
         max_count = settings.DATA_UPLOAD_MAX_NUMBER_FIELDS - 10
         personless_queryset = personless_queryset.order_by("pk")[:max_count]
         if personless_count > max_count:
@@ -66,4 +74,4 @@ class CustomUserAdmin(UserAdmin):
                 ),
                 level=messages.WARNING,
             )
-        return delete_selected(self, request, personless_queryset)
+        return default_delete_selected(self, request, personless_queryset)
