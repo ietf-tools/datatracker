@@ -17,7 +17,11 @@ def init_blobstore():
         aws_access_key_id=os.environ.get("BLOB_STORE_ACCESS_KEY", "minio_root"),
         aws_secret_access_key=os.environ.get("BLOB_STORE_SECRET_KEY", "minio_pass"),
         aws_session_token=None,
-        config=botocore.config.Config(signature_version="s3v4"),
+        config=botocore.config.Config(
+            request_checksum_calculation="when_required",
+            response_checksum_validation="when_required",
+            signature_version="s3v4",
+        ),
     )
     for bucketname in ARTIFACT_STORAGE_NAMES:
         try:

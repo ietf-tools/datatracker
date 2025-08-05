@@ -18,7 +18,7 @@ import debug                            # pyflakes:ignore
 from ietf.utils import tool_version
 from ietf.utils.log import log, assertion
 from ietf.utils.pipe import pipe
-from ietf.utils.test_runner import set_coverage_checking
+from ietf.utils.test_runner import disable_coverage
 
 class DraftSubmissionChecker(object):
     name = ""
@@ -247,34 +247,33 @@ class DraftYangChecker(object):
                 )
 
                 # yanglint
-                set_coverage_checking(False) # we can't count the following as it may or may not be run, depending on setup
-                if settings.SUBMIT_YANGLINT_COMMAND and os.path.exists(settings.YANGLINT_BINARY):
-                    cmd_template = settings.SUBMIT_YANGLINT_COMMAND
-                    command = [ w for w in cmd_template.split() if not '=' in w ][0]
-                    cmd = cmd_template.format(model=path, rfclib=settings.SUBMIT_YANG_RFC_MODEL_DIR, tmplib=workdir,
-                        draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR, ianalib=settings.SUBMIT_YANG_IANA_MODEL_DIR,
-                        cataloglib=settings.SUBMIT_YANG_CATALOG_MODEL_DIR, )
-                    code, out, err = pipe(cmd)
-                    out = out.decode('utf-8')
-                    err = err.decode('utf-8')
-                    if code > 0 or len(err.strip()) > 0:
-                        err_lines = err.splitlines()
-                        for line in err_lines:
-                            if line.strip():
-                                try:
-                                    if 'err : ' in line:
-                                        errors += 1
-                                    if 'warn: ' in line:
-                                        warnings += 1
-                                except ValueError:
-                                    pass
-                    #passed = passed and code == 0 # For the submission tool.  Yang checks always pass
-                    message += "{version}: {template}:\n{output}\n".format(
-                        version=tool_version[command],
-                        template=cmd_template,
-                        output=out + "No validation errors\n" if (code == 0 and len(err) == 0) else out + err,
-                    )
-                set_coverage_checking(True)
+                with disable_coverage():  # pragma: no cover
+                    if settings.SUBMIT_YANGLINT_COMMAND and os.path.exists(settings.YANGLINT_BINARY):
+                        cmd_template = settings.SUBMIT_YANGLINT_COMMAND
+                        command = [ w for w in cmd_template.split() if not '=' in w ][0]
+                        cmd = cmd_template.format(model=path, rfclib=settings.SUBMIT_YANG_RFC_MODEL_DIR, tmplib=workdir,
+                            draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR, ianalib=settings.SUBMIT_YANG_IANA_MODEL_DIR,
+                            cataloglib=settings.SUBMIT_YANG_CATALOG_MODEL_DIR, )
+                        code, out, err = pipe(cmd)
+                        out = out.decode('utf-8')
+                        err = err.decode('utf-8')
+                        if code > 0 or len(err.strip()) > 0:
+                            err_lines = err.splitlines()
+                            for line in err_lines:
+                                if line.strip():
+                                    try:
+                                        if 'err : ' in line:
+                                            errors += 1
+                                        if 'warn: ' in line:
+                                            warnings += 1
+                                    except ValueError:
+                                        pass
+                        #passed = passed and code == 0 # For the submission tool.  Yang checks always pass
+                        message += "{version}: {template}:\n{output}\n".format(
+                            version=tool_version[command],
+                            template=cmd_template,
+                            output=out + "No validation errors\n" if (code == 0 and len(err) == 0) else out + err,
+                        )
             else:
                 errors += 1
                 message += "No such file: %s\nPossible mismatch between extracted xym file name and returned module name?\n" % (path)
