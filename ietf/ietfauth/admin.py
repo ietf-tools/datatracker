@@ -21,7 +21,7 @@ class CustomUserAdmin(UserAdmin):
     )
     def delete_selected(self, request, queryset):
         """Delete selected action restricted to Users with a null Person field
-        
+
         This displaces the default delete_selected action with a safer one that will
         only delete personless Users. It is done this way instead of by introducing
         a new action so that we can simply hand off to the default action (imported
@@ -61,7 +61,7 @@ class CustomUserAdmin(UserAdmin):
 
         # Django limits the number of fields in a request. The delete form itself
         # includes a few metadata fields, so give it a little padding. The default
-        # limit is 1000 and everything will break if it's a small number, so not 
+        # limit is 1000 and everything will break if it's a small number, so not
         # bothering to check that it's > 10.
         max_count = settings.DATA_UPLOAD_MAX_NUMBER_FIELDS - 10
         personless_queryset = personless_queryset.order_by("pk")[:max_count]
