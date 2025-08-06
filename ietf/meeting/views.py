@@ -2162,14 +2162,6 @@ def generate_agenda_ical(schedule, assignments):
         dtstamp = item.timeslot.modified.astimezone(pytz.UTC)
         event.add("dtstamp", dtstamp)
 
-        agenda = item.session.agenda()
-
-        ical_url = absurl("ietf.meeting.views.agenda_ical", 
-                          num=schedule.meeting.number, 
-                          session_id=item.session.id
-                          )
-        event.add("url", ical_url)
-
         description_parts = [item.timeslot.name]
 
         if item.session.agenda_note:
@@ -2209,6 +2201,7 @@ def generate_agenda_ical(schedule, assignments):
                 acronym=item.session.group.acronym,
             )
             description_parts.append(f"Session materials: {materials_url}")
+            event.add("url", materials_url)
         except:
             pass
 
@@ -2224,6 +2217,7 @@ def generate_agenda_ical(schedule, assignments):
             except:
                 pass
 
+        agenda = item.session.agenda()
         if agenda and hasattr(agenda, "get_versionless_href"):
             agenda_url = agenda.get_versionless_href()
             description_parts.append(f"{agenda.type} {agenda_url}")

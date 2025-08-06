@@ -422,12 +422,8 @@ class MeetingTests(BaseMeetingTestCase):
                 'ietf.meeting.views.session_details',
                 kwargs=dict(num=meeting.number, acronym=session.group.acronym)),
             events[0].get('description'))
-        
-        session_cal_url = settings.IDTRACKER_BASE_URL + urlreverse(
-                'ietf.meeting.views.agenda_ical',
-                kwargs=dict(num=meeting.number, session_id=session.id))
         self.assertEqual(
-            session_cal_url,
+            session_materials_url,
             events[0].get('url')
         )
 
