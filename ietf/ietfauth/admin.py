@@ -42,6 +42,13 @@ class AgeListFilter(admin.SimpleListFilter):
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
+    list_display = (
+        "username",
+        "person",
+        "date_joined",
+        "last_login",
+        "is_staff",
+    )
     list_filter = UserAdmin.list_filter + (
         AgeListFilter,
         ("person", admin.EmptyFieldListFilter),
