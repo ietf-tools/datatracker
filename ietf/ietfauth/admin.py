@@ -1,19 +1,51 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
+import datetime
+
 from django.conf import settings
 from django.contrib import admin, messages
 from django.contrib.admin import action
 from django.contrib.admin.actions import delete_selected as default_delete_selected
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 
 # Replace default UserAdmin with our custom one
 admin.site.unregister(User)
 
 
+class AgeListFilter(admin.SimpleListFilter):
+    title = "account age"
+    parameter_name = "age"
+    
+    def lookups(self, request, model_admin):
+        return [
+            ("1day", "< 1 day"),
+            ("3days", "< 3 days"),
+            ("1week", "< 1 week"),
+            ("1month", "< 1 month"),
+            ("1year", "< 1 year"),
+        ]
+
+    def queryset(self, request, queryset):
+        deltas = {
+            "1day": datetime.timedelta(days=1),
+            "3days": datetime.timedelta(days=3),
+            "1week": datetime.timedelta(weeks=1),
+            "1month": datetime.timedelta(days=30),
+            "1year": datetime.timedelta(days=365),
+        }
+        if self.value():
+            return queryset.filter(date_joined__gt=timezone.now()-deltas[self.value()])
+        return queryset
+
+
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    list_filter = UserAdmin.list_filter + (("person", admin.EmptyFieldListFilter),)
+    list_filter = UserAdmin.list_filter + (
+        AgeListFilter,
+        ("person", admin.EmptyFieldListFilter),
+    )
     actions = (UserAdmin.actions or ()) + ("delete_selected",)
 
     @action(
