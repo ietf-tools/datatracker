@@ -20,11 +20,11 @@ class AgeListFilter(admin.SimpleListFilter):
     
     def lookups(self, request, model_admin):
         return [
-            ("1day", "< 1 day"),
-            ("3days", "< 3 days"),
-            ("1week", "< 1 week"),
-            ("1month", "< 1 month"),
-            ("1year", "< 1 year"),
+            ("1day", "> 1 day"),
+            ("3days", "> 3 days"),
+            ("1week", "> 1 week"),
+            ("1month", "> 1 month"),
+            ("1year", "> 1 year"),
         ]
 
     def queryset(self, request, queryset):
@@ -36,7 +36,7 @@ class AgeListFilter(admin.SimpleListFilter):
             "1year": datetime.timedelta(days=365),
         }
         if self.value():
-            return queryset.filter(date_joined__gt=timezone.now()-deltas[self.value()])
+            return queryset.filter(date_joined__lt=timezone.now()-deltas[self.value()])
         return queryset
 
 
