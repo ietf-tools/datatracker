@@ -49,11 +49,11 @@ class CustomUserAdmin(UserAdmin):
         "last_login",
         "is_staff",
     )
-    list_filter = UserAdmin.list_filter + (
+    list_filter = list(UserAdmin.list_filter) + [
         AgeListFilter,
         ("person", admin.EmptyFieldListFilter),
-    )
-    actions = (UserAdmin.actions or ()) + ("delete_selected",)
+    ]
+    actions = ["delete_selected"]
 
     @action(
         permissions=["delete"], description="Delete personless %(verbose_name_plural)s"
