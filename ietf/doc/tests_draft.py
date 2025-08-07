@@ -5,7 +5,7 @@
 import os
 import datetime
 import io
-from unittest import mock
+import mock
 
 from collections import Counter
 from pathlib import Path
@@ -1973,7 +1973,7 @@ class ChangeStreamStateTests(TestCase):
 
         # set new state
         old_state = draft.get_state("draft-stream-%s" % draft.stream_id )
-        new_state = State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="c-adopt") #cfa ipr notif
+        new_state = State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="c-adopt")
         self.assertNotEqual(old_state, new_state)
         empty_outbox()
         events_before = draft.docevent_set.count()
