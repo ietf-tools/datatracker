@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2016-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import mock
+from unittest import mock
 from pyquery import PyQuery
 
 from django.test.utils import override_settings

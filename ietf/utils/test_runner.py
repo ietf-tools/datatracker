@@ -432,7 +432,11 @@ def get_template_paths(apps=None) -> list[str]:
                 relative_path = pathlib.Path(
                     dirpath.removeprefix(templatepath).lstrip("/")
                 )
-                if apps and relative_path.parts[0] not in apps:
+                if (
+                    apps 
+                    and len(relative_path.parts) > 0
+                    and relative_path.parts[0] not in apps
+                ):
                     continue  # skip uninteresting apps
                 for filename in files:
                     file_path = project_path / filename
