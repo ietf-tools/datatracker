@@ -649,6 +649,37 @@ def email_stream_state_changed(request, doc, prev_state, new_state, by, comment=
                    by=by,
                    comment=comment),
               cc=cc)
+    
+def email_stream_state_changed_cfa(request, doc, cfa_duration=2):
+    (to, cc)= gather_address_lists('doc_stream_state_edited', doc=doc)
+    
+    end_date= date_today(DEADLINE_TZINFO) + datetime.timedelta(days=14)
+
+    send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
+              "%s call for adoption by WG issue %s" % ("WG", doc.name),
+              'doc/mail/stream_state_changed_cfa.txt',
+              dict(doc=doc,
+                  url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+                  end_date=end_date,
+                  cfa_duration=cfa_duration,
+                  wg_list=doc.group.list_email),
+                cc=cc)
+    
+def email_stream_state_changed_wglc(request, doc, wglc_duration=2):
+    (to, cc)= gather_address_lists('doc_stream_state_edited', doc=doc)
+    
+    end_date= date_today(DEADLINE_TZINFO) + datetime.timedelta(days=14)
+
+    send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
+              "%s call for adoption by WG issue %s" % ("WG", doc.name),
+              'doc/mail/stream_state_changed_wglc.txt',
+              dict(doc=doc,
+                  url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+                  end_date=end_date,
+                  wglc_duration=wglc_duration,
+                  wg_list=doc.group.list_email),
+                cc=cc)
+
 
 def email_stream_tags_changed(request, doc, added_tags, removed_tags, by, comment=""):
 
