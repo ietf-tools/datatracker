@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- source file: nc-base-server.rng -->
+
+<grammar xmlns="http://relaxng.org/ns/structure/1.0"
+	 ns="urn:ietf:params:xml:ns:netconf:base:1.0"
+	 xmlns:dc="http://purl.org/dc/terms"
+	 xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0"
+         datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+
+  <dc:title>RELAX NG Schema for NETCONF Server's hello message</dc:title>
+  <dc:creator>Ladislav Lhotka</dc:creator>
+  <dc:date>2011-07-01</dc:date>
+  <dc:subject>NETCONF, server, hello</dc:subject>
+  <dc:publisher>IETF</dc:publisher>
+  <dc:identifier>urn:ietf:params:xml:ns:netconf:base:1.0</dc:identifier>
+
+  <dc:description>
+    This is the RELAX NG schema for the hello message that is sent by
+    a NETCONF server, with support for advertisements of supported
+    YANG modules. See RFC 6241, sec. 8, and RFC 6020, sec. 5.6.4.
+  </dc:description>
+
+  <start>
+    <element name="hello">
+      <ref name="server-hello-content"/>
+    </element>
+  </start>
+
+  <define name="session-id-element">
+    <optional>
+      <element name="session-id">
+	<data type="unsignedInt"/>
+      </element>
+    </optional>
+  </define>
+
+  <define name="server-hello-content">
+    <interleave>
+      <ref name="session-id-element"/>
+      <element name="capabilities">
+	<oneOrMore>
+	  <element name="capability">
+	    <data type="anyURI"/>
+	  </element>
+	</oneOrMore>
+      </element>
+    </interleave>
+  </define>
+
+</grammar>

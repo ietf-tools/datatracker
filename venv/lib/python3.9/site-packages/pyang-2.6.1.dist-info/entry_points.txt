@@ -1,0 +1,4 @@
+[console_scripts]
+json2xml = pyang.scripts.json2xml:main
+pyang = pyang.scripts.pyang_tool:run
+yang2html = pyang.scripts.yang2html:run

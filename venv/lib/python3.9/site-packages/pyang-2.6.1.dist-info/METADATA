@@ -1,0 +1,21 @@
+Metadata-Version: 2.1
+Name: pyang
+Version: 2.6.1
+Summary: A YANG (RFC 6020/7950) validator and converter
+Home-page: https://github.com/mbj4668/pyang
+Author: Martin Bjorklund
+Author-email: mbj4668@gmail.com
+License: BSD
+Keywords: YANG validator
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+License-File: LICENSE
+Requires-Dist: lxml
+
+An extensible  YANG (RFC 6020/7950) validator. Provides a framework for plugins that can convert YANG modulesto other formats.

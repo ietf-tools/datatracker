@@ -1,0 +1,15 @@
+django_widget_tweaks-1.5.0.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+django_widget_tweaks-1.5.0.dist-info/LICENSE,sha256=l_rDEon7uXjd-aUCOdOcnW75KrZSTpJ24NWXq12l74E,1064
+django_widget_tweaks-1.5.0.dist-info/METADATA,sha256=1vSluNa11KYVWow9td8E8PovwUQQ7fW52RA6obYOKkM,13678
+django_widget_tweaks-1.5.0.dist-info/RECORD,,
+django_widget_tweaks-1.5.0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+django_widget_tweaks-1.5.0.dist-info/WHEEL,sha256=yQN5g4mg4AybRjkgi-9yy4iQEFibGQmlz78Pik5Or-A,92
+django_widget_tweaks-1.5.0.dist-info/top_level.txt,sha256=eG5VAgjNLsM_dtwN7cJy5uclZF70f3mlZpFsgX85dGY,14
+widget_tweaks/__init__.py,sha256=M-CTAvkqXXWjKqMAQTycgmBzGsV1Ax76HEAB5LqcD_g,200
+widget_tweaks/__pycache__/__init__.cpython-39.pyc,,
+widget_tweaks/__pycache__/models.cpython-39.pyc,,
+widget_tweaks/models.py,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+widget_tweaks/templatetags/__init__.py,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+widget_tweaks/templatetags/__pycache__/__init__.cpython-39.pyc,,
+widget_tweaks/templatetags/__pycache__/widget_tweaks.cpython-39.pyc,,
+widget_tweaks/templatetags/widget_tweaks.py,sha256=iGGY0h4yq381FXGoAD0Su3uct24LLqcj-S5Qy74ABTg,6962

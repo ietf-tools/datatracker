@@ -1,0 +1,189 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-07-26 17:15-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: lib/claims.py:92
+msgid "Basic profile"
+msgstr "Profil de base"
+
+#: lib/claims.py:93
+msgid ""
+"Access to your basic information. Includes names, gender, birthdate and "
+"other information."
+msgstr "Accès à vos informations de base. Comprend vos noms, genre, "
+"date de naissance et d'autres informations"
+
+#: lib/claims.py:116
+msgid "Email"
+msgstr "Courriel"
+
+#: lib/claims.py:117
+msgid "Access to your email address."
+msgstr "Accès à votre adresse email"
+
+#: lib/claims.py:128
+msgid "Phone number"
+msgstr "Numéro de téléphone"
+
+#: lib/claims.py:129
+msgid "Access to your phone number."
+msgstr "Accès à votre numéro de téléphone"
+
+#: lib/claims.py:140
+msgid "Address information"
+msgstr "Informations liées à votre adresse"
+
+#: lib/claims.py:141
+msgid ""
+"Access to your address. Includes country, locality, street and other "
+"information."
+msgstr "Accès à votre adresse. Comprend le pays, la ville, la rue "
+"et d'autres informations"
+
+#: models.py:29
+msgid "Name"
+msgstr "Nom"
+
+#: models.py:30
+msgid "Client Type"
+msgstr "Type de client"
+
+#: models.py:30
+msgid ""
+"<b>Confidential</b> clients are capable of maintaining the confidentiality "
+"of their credentials. <b>Public</b> clients are incapable."
+msgstr ""
+"<b>Confidentiel</b> les clients sont capable de maintenir la confidentialité " 
+" des paramètres de connexion. <b>Public</b> les clients n'en sont pas capable"
+
+#: models.py:31
+msgid "Client ID"
+msgstr "Identifiant client"
+
+#: models.py:32
+msgid "Client SECRET"
+msgstr "Code secret client"
+
+#: models.py:33
+msgid "Response Type"
+msgstr "Type de réponse"
+
+#: models.py:34
+msgid "JWT Algorithm"
+msgstr "Algorythme JWT"
+
+#: models.py:35
+msgid "Date Created"
+msgstr "Date de création"
+
+#: models.py:37
+msgid "Redirect URIs"
+msgstr "URIs utilisée pour la redirection"
+
+#: models.py:37
+msgid "Enter each URI on a new line."
+msgstr "Entrez chaque URI à la ligne"
+
+#: models.py:40 models.py:65
+msgid "Client"
+msgstr "Client"
+
+#: models.py:41
+msgid "Clients"
+msgstr "Clients"
+
+#: models.py:64
+msgid "User"
+msgstr "Utilisateur"
+
+#: models.py:66
+msgid "Expiration Date"
+msgstr "Date d'expiration"
+
+#: models.py:67
+msgid "Scopes"
+msgstr "Portées"
+
+#: models.py:92
+msgid "Code"
+msgstr "Code"
+
+#: models.py:93
+msgid "Nonce"
+msgstr "Valeur de circonstance"
+
+#: models.py:94
+msgid "Is Authentication?"
+msgstr "Est authentifié ?"
+
+#: models.py:95
+msgid "Code Challenge"
+msgstr ""
+
+#: models.py:96
+msgid "Code Challenge Method"
+msgstr ""
+
+#: models.py:99
+msgid "Authorization Code"
+msgstr "Code d'authorisation"
+
+#: models.py:100
+msgid "Authorization Codes"
+msgstr "Codes d'authorisation"
+
+#: models.py:105
+msgid "Access Token"
+msgstr "Jeton d'accès"
+
+#: models.py:106
+msgid "Refresh Token"
+msgstr "Jeton de rafraichissement"
+
+#: models.py:107
+msgid "ID Token"
+msgstr "Identifiant du jeton"
+
+#: models.py:117
+msgid "Token"
+msgstr "Jeton"
+
+#: models.py:118
+msgid "Tokens"
+msgstr "Jetons"
+
+#: models.py:123
+msgid "Date Given"
+msgstr "Date donnée"
+
+#: models.py:131
+msgid "Key"
+msgstr "Clé"
+
+#: models.py:131
+msgid "Paste your private RSA Key here."
+msgstr "Collez votre clé privée RSA ici."
+
+#: models.py:134
+msgid "RSA Key"
+msgstr "Clé RSA"
+
+#: models.py:135
+msgid "RSA Keys"
+msgstr "Clés RSA"

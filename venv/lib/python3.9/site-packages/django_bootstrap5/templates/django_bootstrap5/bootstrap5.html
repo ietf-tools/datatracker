@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+{% load django_bootstrap5 %}
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+{% bootstrap_setting "color_mode" as COLOR_MODE %}
+{% bootstrap_setting "javascript_in_head" as BOOTSTRAP_JAVASCRIPT_IN_HEAD %}
+<html lang="{{ LANGUAGE_CODE|default:'en_us' }}"{% if COLOR_MODE %} data-bs-theme="{{ COLOR_MODE }}"{% endif %}>
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- Page title -->
+    <title>{% block bootstrap5_title %}django-bootstrap5 template title{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    {% bootstrap_css %}
+    <!-- Bootstrap JavaScript if it is in head -->
+    {% if BOOTSTRAP_JAVASCRIPT_IN_HEAD %}{% bootstrap_javascript %}{% endif %}
+
+  {% block bootstrap5_extra_head %}{% endblock %}
+</head>
+
+<body>
+{% block bootstrap5_before_content %}{% endblock %}
+{% block bootstrap5_content %} CONTENT {% endblock %}
+{% block bootstrap5_after_content %}{% endblock %}
+<!-- Bootstrap JavaScript if it is in body -->
+{% if not BOOTSTRAP_JAVASCRIPT_IN_HEAD %}{% bootstrap_javascript %}{% endif %}
+
+{% block bootstrap5_extra_script %}{% endblock %}
+</body>
+
+</html>

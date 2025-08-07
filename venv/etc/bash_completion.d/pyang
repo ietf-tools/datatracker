@@ -1,0 +1,295 @@
+# pyang(1) completion           -*- shell-script -*-
+
+_have pyang &&
+_pyang()
+{
+    local cur prev words cword plugin hello pl_opts wind=1
+
+    local formats="hypertree dsdl depend sample-xml-skeleton omni yin
+        tree jstree capability yang xsd uml jtox jsonxsl xmi name"
+
+    local opts_global="
+        -h --help
+        -v --version
+        -V --verbose
+        -e --list-errors
+        --print-error-code
+        -W -E
+        --ignore-error
+        --ignore-errors
+        --canonical
+        --max-line-length
+        --max-identifier-length
+        -f --format
+        -o --output
+        -F --features
+        --deviation-module
+        -p --path
+        --plugindir
+        --strict
+        --lax-xpath-checks
+        --trim-yin
+        -L --hello
+        --keep-comments
+        --check-update-from
+        -P --check-update-from-path
+        --ietf
+        --lint
+        --lint-ensure-hyphenated-names"
+
+    local opts_capability="--capability-entity"
+
+    local opts_depend="
+        --depend-target
+        --depend-no-submodules
+        --depend-from-submodules
+        --depend-recurse
+        --depend-extension
+        --depend-include-path
+        --depend-ignore-module"
+
+    local opts_dsdl="
+        --dsdl-no-documentation
+        --dsdl-no-dublin-core
+        --dsdl-record-defs"
+
+    local opts_hypertree="
+        --hypertree-help
+        --hypertree-path"
+
+    local opts_jstree="--jstree-no-path"
+
+    local opts_omni="--omni-path"
+
+    local opts_sample_xml_skeleton="
+        --sample-xml-skeleton-doctype
+        --sample-xml-skeleton-defaults
+        --sample-xml-skeleton-annotations
+        --sample-xml-skeleton-path"
+
+    local opts_tree="
+        --tree-help
+        --tree-depth
+        --tree-line-length
+        --tree-path
+        --tree-print-groupings
+        --tree-print-yang-data
+        --tree-module-name-prefix"
+
+    local opts_uml="
+        --uml-classes-only
+        --uml-split-pages
+        --uml-output-directory
+        --uml-title
+        --uml-header
+        --uml-footer
+        --uml-long-identifiers
+        --uml-inline-groupings
+        --uml-inline-augments
+        --uml-description
+        --uml-no
+        --uml-truncate
+        --uml-max-enums
+        --uml-filter
+        --uml-filter-file"
+
+    local opts_xmi="--xmi-path --xmi-no-assoc-name"
+
+    local opts_yang="
+        --yang-canonical
+        --yang-remove-unused-imports"
+
+    local opts_yin="
+        --yin-canonical
+        --yin-pretty-strings"
+
+    COMPREPLY=()
+    _get_comp_words_by_ref cur prev cword words
+
+    while [[ $wind -lt $cword ]]; do
+        case ${words[$wind]} in
+            -f|--format)
+                plugin=${words[$wind+1]}
+                ;;
+            -L|--hello)
+                hello=yes
+                ;;
+        esac
+        ((wind++))
+    done
+
+    case $prev in
+        -o|--output)
+            case $plugin in
+                dsdl)
+                    _filedir 'dsdl'
+                    ;;
+                jsonxsl)
+                    _filedir '@(xsl|xslt)'
+                    ;;
+                jstree)
+                    _filedir 'js'
+                    ;;
+                jtox)
+                    _filedir 'jtox'
+                    ;;
+                sample-xml-skeleton|hypertree)
+                    _filedir 'xml'
+                    ;;
+                omni)
+                    _filedir 'graffle'
+                    ;;
+                uml)
+                    _filedir 'uml'
+                    ;;
+                xmi)
+                    _filedir 'xmi'
+                    ;;
+                yang)
+                    _filedir 'yang'
+                    ;;
+                yin)
+                    _filedir 'yin'
+                    ;;
+                *)
+                    _filedir
+                    ;;
+            esac
+            return 0
+            ;;
+        -W)
+            COMPREPLY=($(compgen -W '$(pyang --list-errors 2>&1 | sed -nEe \
+                "s/^(Warning|Minor Error):[[:space:]]*([A-Za-z0-9_]*).*/\2/p") \
+                error none' -- "$cur"))
+            return 0
+            ;;
+        -E)
+            COMPREPLY=($(compgen -W '$(pyang --list-errors 2>&1 | \
+                sed -nEe "s/^Warning:[[:space:]]*([A-Za-z0-9_]*).*/\1/p")' \
+                -- "$cur"))
+            return 0
+            ;;
+        -f|--format)
+            COMPREPLY=($(compgen -W '$formats' -- "$cur"))
+            return 0
+            ;;
+    esac
+
+    if [[ $cur == -* ]]; then
+        pl_opts="opts_${plugin//-/_}"
+        COMPREPLY=($(compgen -W '$opts_global ${!pl_opts}' -- "$cur"))
+        return 0
+    fi
+
+    if [[ -z $hello ]]; then
+        _filedir '@(yang|yin)'
+    else
+        _filedir 'xml'
+    fi
+} &&
+complete -F _pyang pyang
+
+_have yang2dsdl &&
+_yang2dsdl()
+{
+    local cur prev words cword mode opts wind=1
+
+    local targets="
+        data config get-reply get-config-reply edit-config
+        rpc rpc-reply notification"
+
+    COMPREPLY=()
+    _get_comp_words_by_ref cur prev cword words
+
+    case $prev in
+        -t)
+            COMPREPLY=($(compgen -W '$targets' -- "$cur"))
+            return 0
+            ;;
+        -v)
+            _filedir 'xml'
+            return 0
+            ;;
+        -d)
+            _filedir -d
+            return 0
+            ;;
+    esac
+
+    while [[ $wind -lt $cword ]]; do
+        case ${words[$wind]} in
+            -s)
+                mode=schemas	# use pre-generated schemas
+                break
+                ;;
+            -L)
+                mode=hello
+                ;;
+        esac
+        ((wind++))
+    done
+
+    if [[ $cur == -* ]]; then
+        opts=(-t -d -b -j -v)
+        [[ -z $mode ]] && opts+=(-L)
+        [[ $prev == "yang2dsdl" ]] && opts+=(-h)
+        COMPREPLY=($(compgen -W '${opts[*]}' -- "$cur"))
+        return 0
+    fi
+
+    case $mode in
+        hello)
+            _filedir 'xml'
+            ;;
+        schemas)
+            ;;
+        *)
+            _filedir '@(yang|yin)'
+            ;;
+    esac
+} &&
+complete -F _yang2dsdl yang2dsdl
+
+_have json2xml &&
+_json2xml()
+{
+    local cur prev words cword opts jtox wind=1
+
+    local targets="data config"
+
+    COMPREPLY=()
+    _get_comp_words_by_ref cur prev cword words
+
+    case $prev in
+        -t|--target)
+            COMPREPLY=($(compgen -W '$targets' -- "$cur"))
+            return 0
+            ;;
+        -o|--output)
+            _filedir 'xml'
+            return 0
+            ;;
+    esac
+
+    while [[ $wind -lt $cword ]]; do
+        if [[ ${words[$wind]} =~ .*\.jtox$ ]]; then
+            jtox=yes
+            break
+        fi
+        ((wind++))
+    done
+
+    if [[ $cur == -* ]]; then
+        opts=(-t --target -o --output)
+        [[ $prev == "json2xml" ]] && opts+=(-h --help)
+        COMPREPLY=($(compgen -W '${opts[*]}' -- "$cur"))
+        return 0
+    fi
+
+    if [[ -z $jtox ]]; then
+        _filedir 'jtox'
+    else
+        _filedir 'json'
+    fi
+} &&
+complete -F _json2xml json2xml

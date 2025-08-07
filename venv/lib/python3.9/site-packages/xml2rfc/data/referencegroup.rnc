@@ -1,0 +1,16 @@
+   namespace a = "http://relaxng.org/ns/compatibility/annotations/1.0"
+
+   # xml2rfc <referencegroup> grammar
+
+   referencegroup =
+     element referencegroup {
+       attribute xml:base { text }?,
+       attribute xml:lang { text }?,
+       attribute anchor { xsd:ID },
+       attribute derivedAnchor { text }?,
+       attribute target { text }?,
+       reference+
+     }
+   include "reference.rnc"
+
+   start |= referencegroup

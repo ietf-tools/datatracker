@@ -1,0 +1,2138 @@
+# -*- mode: conf-mode; tab-width: 4 -*-
+# This is a YAML document which provides element and attribute descriptions
+# for the xml2rfc schema.  It is read when the --doc switch of xml2rfc is
+# given, and used together with the Jinja2 template 'doc.xml' to build
+# documentation for xml2rfc.
+#
+# The keys use a limited CSS selector formalism in order to specify which
+# element, element attribute, or element attribute value the entries refer
+# to.  For each key, one or more text items can be given.  These will be
+# used in the Jinja2 template as XML fragment.  Each will be wrapped in a
+# text <t> or list (<ol> or <dl>) tag, depending on type, unless it already
+# starts with an XML tag.
+#
+# To make typing easier, literal '<', '>', '&' characters can be escaped with
+# a backward slash.  For instance, '&lt;foo&gt;' can also be written \<foo\>.
+#
+# There are some additional comments about fine points of the format inline.
+
+
+# --- Elements and attributes ----------------------------------------------
+
+
+abstract:
+
+    - Contains the Abstract of the document.  See <xref target="RFC7322"/> for
+      more information on restrictions for the Abstract.
+
+address:
+
+    -  Provides address information for the author.
+
+annotation:
+
+    -  Provides additional prose augmenting a bibliographic reference.  This
+       text is intended to be shown after the rest of the generated
+       reference text.
+
+area:
+
+    -  Provides information about the IETF area to which this document
+       relates (currently not used when generating documents).
+
+    -  The value ought to be either the full name or the abbreviation of one
+       of the IETF areas as listed on <eref target="http://www.ietf.org/iesg/area.html"/>.
+       A list of full names and abbreviations will be kept by the RFC Series
+       Editor.
+
+artset:
+
+    - This element allows for the support of multiple artwork formats,
+      in order to provide suitable artwork for different output formats.
+
+    - When multiple \<artwork\> instances are provided within one \<artset\>
+      element, the renderer will try to pick the \<artwork\> instance which is
+      most appropriate for its current output format from the given
+      alternatives.
+
+    - If more than one \<artwork\> element with the same "type" is found
+      within an \<artset\> element, the renderer could select the first one, or
+      possibly choose between the alternative instances based on the output
+      format and some quality of the alternatives that make one more suitable
+      than the others for that particular format, such as size, aspect ratio,
+      etc.
+
+artwork:
+
+      # This text fragment is quoted, as the yaml parser would otherwise do
+      # special handling for the backslash at the start of the second line:
+    -  'This element allows the inclusion of "artwork" in the document.
+       \<artwork\> provides full control of horizontal whitespace and line
+       breaks; thus, it is used for a variety of things, such as diagrams
+       ("line art") and protocol unit diagrams.  Tab characters (U+0009)
+       inside of this element are prohibited.'
+
+    -  Alternatively, the "src" attribute allows referencing an external
+       graphics file, such as a vector drawing in SVG or a bitmap graphic
+       file, using a URI.  In this case, the textual content acts as a
+       fallback for output representations that do not support graphics;
+       thus, it ought to contain either (1) a "line art" variant of the
+       graphics or (2) prose that describes the included image in sufficient
+       detail.
+
+    -  In order to include alternative artwork expressions for different
+       output formats, you should provide multiple \<artwork\> elements
+       enclosed within an \<artset\>.  The text renderer will prefer
+       instances with type="ascii-art", while the HTML and PDF renderers
+       will prefer instances with type="svg".
+
+    - In the v1 and v2 iterations of the schema, the \<artwork\> element was
+      also used for source code and formal languages; in v3, this is now done
+      with \<sourcecode\>.
+
+      # This text fragment is quoted because it ends with a colon, and would
+      # otherwise be taken as a dictionary key by the yaml parser
+    -  "There are at least five ways to include SVG in artwork in Internet-
+       Drafts:"
+
+    -
+       # This will be rendered as a list using <ul>
+       -  '<t>Inline, by including all of the SVG in the content of the element,
+          such as:</t>
+          <sourcecode>\<artwork type="svg"\>\<svg xmlns="http://www.w3.org/2000/
+          svg..."\></sourcecode>'
+
+       -  '<t>Inline, but using XInclude (see Appendix B.1), such as:
+          </t>
+          <sourcecode>\<artwork type="svg"\>\<xi:include href=...\></sourcecode>'
+
+       -  |
+          <t>
+            As a data: URI, such as:
+          </t>
+          <sourcecode>
+          \<artwork type="svg" 
+          src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww..."\>
+          </sourcecode>
+
+       -  '<t>As a URI to an external entity, such as:</t>
+          <sourcecode>\<artwork type="svg" src="http://www.example.com/..."\>
+          </sourcecode>'
+
+       -  '<t>As a local file, such as:</t>
+          <sourcecode>\<artwork type="svg" src="diagram12.svg"\></sourcecode>'
+
+    -  The use of SVG in Internet-Drafts and RFCs is covered in much more
+       detail in <xref target="RFC7996"/>.
+
+    -  'The above methods for inclusion of SVG art can also be used for
+       including text artwork, but using a data: URI is probably confusing
+       for text artwork.'
+
+    -  Formatters that do pagination should attempt to keep artwork on a
+       single page.  This is to prevent artwork that is split across pages
+       from looking like two separate pieces of artwork.
+
+    -  See Section 5 for a description of how to deal with issues of using
+       "\&" and "\<" characters in artwork.
+
+
+artwork[align]:
+
+    -  Controls whether the artwork appears left justified,
+       centered, or right justified.
+
+artwork[alt]:
+
+    -  Alternative text description of the artwork (which is more than just
+       a summary or caption).  When the art comes from the "src" attribute
+       and the format of that artwork supports alternate text, the
+       alternative text comes from the text of the artwork itself, not from
+       this attribute.  The contents of this attribute are important to
+       readers who are visually impaired, as well as those reading on
+       devices that cannot show the artwork well, or at all.
+
+artwork[name]:
+
+    -  A filename suitable for the contents (such as for extraction to a
+       local file).  This attribute can be helpful for other kinds of tools
+       (such as automated syntax checkers, which work by extracting the
+       artwork).  Note that the "name" attribute does not need to be unique
+       for \<artwork\> elements in a document.  If multiple \<artwork\> elements
+       have the same "name" attribute, a processing tool might assume that
+       the elements are all fragments of a single file, and the tool can
+       collect those fragments for later processing.  
+
+artwork[src]:
+
+    -  'The URI reference of a graphics file <xref target="RFC3986"/>, or the name of a file
+       on the local disk.  This can be a "data" URI <xref target="RFC2397"/> that contains
+       the contents of the graphics file.  Note that the inclusion of art
+       with the "src" attribute depends on the capabilities of the
+       processing tool reading the XML document.  Tools need to be able to
+       handle the file: URI, and they should be able to handle http: and
+       https: URIs as well.  The prep tool will be able to handle reading
+       the "src" attribute.'
+
+    -  If no URI scheme is given in the attribute, the attribute is
+       considered to be a local filename relative to the current directory.
+       Processing tools must be careful to not accept dangerous values for
+       the filename, particularly those that contain absolute references
+       outside the current directory.  Document creators should think hard
+       before using relative URIs due to possible later problems if files
+       move around on the disk.  Also, documents should most likely use
+       explicit URI schemes wherever possible.
+
+    -  In some cases, the prep tool may remove the "src" attribute after
+       processing its value.  See <xref target="RFC7998"/> for a description of this.
+
+artwork[type]:
+
+    -  Specifies the format of the artwork.  The value of this attribute is
+       free text with certain values designated as preferred.
+
+    -  'The preferred values for \<artwork\> types are:' 
+
+    -
+       -  ascii-art
+
+       -  binary-art
+
+       -  svg
+
+    -  Values that don't describe the format, such as "call-flow" or
+       "hex-dump" were mentioned in <xref target="RFC7991"/>, but are not
+       supported here; they are instead candidates for use with another
+       future attribute to describe the artwork content.
+
+    -  The RFC Series Editor will maintain a complete list of the preferred
+       values on the RFC Editor web site, and that list is expected to be
+       updated over time.  Thus, a consumer of v3 XML should not cause a
+       failure when it encounters an unexpected type or no type is
+       specified.  The table will also indicate which type of art can appear
+       in plain-text output (for example, type="svg" cannot).
+
+aside:
+
+    -  This element is a container for content that is semantically less
+       important or tangential to the content that surrounds it.
+
+author:
+
+    -  Provides information about a document's author.  This is used both
+       for the document itself (at the beginning of the document) and for
+       referenced documents.
+
+    -  The \<author\> elements contained within the document's \<front\> element
+       are used to fill the boilerplate and also to generate the "Author's
+       Address" section (see <xref target="RFC7322"/>).
+
+    -  'Note that an "author" can also be just an organization (by not
+       specifying any of the "name" attributes, but adding the
+       \<organization\> child element).'
+
+    -  Furthermore, the "role" attribute can be used to mark an author as
+       "editor".  This is reflected both on the front page and in the
+       "Author's Address" section, as well as in bibliographic references.
+       Note that this specification does not define a precise meaning for
+       the term "editor".
+
+author[asciiFullname]:
+
+    -  The Latin script equivalent of the author's full name.
+
+author[asciiInitials]:
+
+    -  The Latin script equivalent of the author's initials, to be used in
+       conjunction with the separately specified asciiSurname.
+
+author[asciiSurname]:
+
+    -  The Latin script equivalent of the author's surname, to be used in
+       conjunction with the separately specified asciiInitials.
+
+author[fullname]:
+
+    -  The full name (used in the automatically generated "Author's Address"
+       section).  Although this attribute is optional, if one or more of the
+       "asciiFullname", "asciiInitials", or "asciiSurname" attributes does
+       not have values, the "fullname" attribute is required.
+
+author[initials]:
+
+    -  An abbreviated variant of the given name(s), to be used in
+       conjunction with the separately specified surname.  It usually
+       appears on the front page, in footers, and in references.
+
+    -  Some processors will post-process the value -- for instance, when it
+       only contains a single letter (in which case they might add a
+       trailing dot).  Relying on this kind of post-processing can lead to
+       results varying across formatters and thus ought to be avoided.
+
+author[role]:
+
+    -  Specifies the role the author had in creating the document.
+
+author[surname]:
+
+    -  The author's surname, to be used in conjunction with the separately
+       specified initials.  It usually appears on the front page, in
+       footers, and in references.
+
+back:
+
+    -  'Contains the "back" part of the document: the references and
+       appendices.  In \<back\>, \<section\> elements indicate appendices.'
+
+bcp14:
+
+    -  Marks text that are phrases defined in <xref target="BCP14"/> such as "MUST",
+       "SHOULD NOT", and so on.  When shown in some of the output
+       representations, the text in this element might be highlighted.  The
+       use of this element is optional.
+
+    -  This element is only to be used around the actual phrase from BCP 14,
+       not the full definition of a requirement.  For example, it is correct
+       to say "The packet \<bcp14\>MUST\</bcp14\> be dropped.", but it is not
+       correct to say "\<bcp14\>The packet MUST be dropped.\</bcp14\>".
+
+blockquote:
+
+    -  Specifies that a block of text is a quotation.
+
+blockquote[cite]:
+
+    -  The source of the citation.  This must be a URI.  If the "quotedFrom"
+       attribute is given, this URI will be used by processing tools as the
+       link for the text of that attribute.
+
+blockquote[quotedFrom]:
+
+    -  Name of person or document the text in this element is quoted from.
+       A formatter should render this as visible text at the end of the
+       quotation.
+
+boilerplate:
+
+    -  Holds the boilerplate text for the document.  This element is filled
+       in by the prep tool.
+
+    -  This element contains \<section\> elements.  Every \<section\> element in
+       this element must have the "numbered" attribute set to "false".
+
+br:
+
+    - Inserts a forced break.  Use sparingly.  In most situations, it's better
+      to insert U+200B, ZERO WIDTH SPACE, in order to encourage line breaking
+      at a point where it would otherwise not occur.
+
+city:
+
+    -  Gives the city name in a postal address.
+
+cityarea:
+
+    -  Where postal addresses use city subdivisions, these are mapped to
+       the \<cityarea\> element.  Korean addresses would use this for
+       a city district, for instance.  Countries known to use this
+       element are Ascension Island, China, Iran, South Korea, and Thailand.
+
+
+code:
+
+    -  Gives the postal region code.
+
+contact:
+
+    -  "Provides information about contributors.  This element can be used
+       inline within a \<t\>, and will be rendered with name only, similarly
+       to how \<author\> is rendered in a \<reference\>, or it can be used
+       as a direct child of \<section\>, where it will be rendered the same
+       way as an author address block within the \"Authors' Addresses\"
+       section."
+
+    -  'Note that a "contact" can also be just an organization (by not
+       specifying any of the "name" attributes, but adding the
+       \<organization\> child element).'
+
+contact[asciiFullname]:
+
+    -  The Latin script equivalent of the contact's full name.
+
+contact[asciiInitials]:
+
+    -  The Latin script equivalent of the contact's initials, to be used in
+       conjunction with the separately specified asciiSurname.
+
+contact[asciiSurname]:
+
+    -  The Latin script equivalent of the contact's surname, to be used in
+       conjunction with the separately specified asciiInitials.
+
+contact[fullname]:
+
+    - The full name.  Although this attribute is optional, if one or more of
+      the "asciiFullname", "asciiInitials", or "asciiSurname" attributes does
+      not have values, the "fullname" attribute is required.
+
+contact[initials]:
+
+    -  An abbreviated variant of the given name(s), to be used in
+       conjunction with the separately specified surname.
+
+contact[surname]:
+
+    -  The contact's surname, to be used in conjunction with the separately
+       specified initials.
+
+country:
+
+    -  Specifies the country name in a postal address.  All common
+       and official country names should be recognized; in addition two-
+       and three-letter country codes according to ISO 3166 are recognized.
+
+    -  'xml2rfc
+       has a help option which will list all names and country codes
+       it recognizes as valid country names: <tt>xml2rfc --country-help</tt> .'
+
+cref:
+
+    -  Represents a comment.
+
+    -  Comments can be used in a document while it is work in progress.
+       They might appear either inline and visually highlighted, at the end
+       of the document, or not at all, depending on the formatting tool.
+
+cref[display]:
+
+    -  Suggests whether or not the comment should be displayed by formatting
+       tools.  This might be set to "false" if you want to keep a comment in
+       a document after the contents of the comment have already been dealt
+       with.
+
+cref[source]:
+
+    -  Holds the "source" of a comment, such as the name or the initials of
+       the person who made the comment.
+
+date:
+
+    -  'Provides information about the publication date.  This element is
+       used for two cases: the boilerplate of the document being produced,
+       and inside bibliographic references that use the \<front\> element.'
+
+    -
+       Boilerplate for Internet-Drafts and RFCs::
+
+       -  This element defines the date of publication for the current
+          document (Internet-Draft or RFC).  When producing Internet-Drafts,
+          the prep tool uses this date to compute the expiration date (see
+          <xref target="IDGUIDE"/>).  When one or more of "year", "month", or
+          "day" are left out, the prep tool will attempt to use the current
+          system date if the attributes that are present are consistent with
+          that date.
+
+       -  In dates in \<rfc\> elements, the month must be a number or a month
+          in English.  The prep tool will silently change text month names
+          to numbers.  Similarly, the year must be a four-digit number.
+
+       -  When the prep tool is used to create Internet-Drafts, it will warn
+          if the draft has a \<date\> element in the boilerplate for itself
+          that is more than 3 days away from today.  To avoid this problem,
+          authors might simply not include a \<date\> element in the
+          boilerplate.
+
+       Bibliographic references::
+
+       -  (New) In order to be able to specify fuzzy dates, such as "2002-2003",
+          "Second quarter 2010", etc., the date element is now permitted to
+          have text content in addition to the "year", "month", and "day"
+          attributes.  If there is only text content, it will be rendered
+          as is.  If there is both text content and date components, both
+          will be rendered, with the expanded date components in parentheses.
+
+date[day]:
+
+    -  The day of publication.
+
+date[month]:
+
+    -  The month of publication.
+
+date[year]:
+
+    -  The year of publication.
+
+dd:
+
+    -  The definition part of an entry in a definition list.
+
+displayreference:
+
+    -  'This element gives a mapping between the anchor of a reference and a
+       name that will be displayed instead.  This allows authors to display
+       more mnemonic anchor names for automatically included references.
+       The mapping in this element only applies to \<xref\> elements whose
+       format is "default".  For example, if the reference uses the anchor
+       "RFC6949", the following would cause that anchor in the body of
+       displayed documents to be "RFC-dev":'
+
+    -  <sourcecode>\<displayreference target="RFC6949" to="RFC-dev"/\></sourcecode>
+
+    -  If a reference section is sorted, this element changes the sort
+       order.
+
+displayreference[target]:
+
+    -  'This attribute must be the name of an anchor in a \<reference\> or
+       \<referencegroup\> element.'
+
+displayreference[to]:
+
+    -  'This attribute is a name that will be displayed as the anchor instead
+       of the anchor that is given in the \<reference\> element.  The string
+       given must start with one of the following characters: 0-9, a-z, or
+       A-Z.  The other characters in the string must be 0-9, a-z, A-Z, "-",
+       ".", or "_".'
+
+dl:
+
+    -  'A definition list.  Each entry has a pair of elements: a term (\<dt\>)
+       and a definition (\<dd\>).  (This is slightly different and simpler
+       than the model used in HTML, which allows for multiple terms for a
+       single definition.)'
+
+dl[indent]:
+
+    - Indicates the indentation to be used for the rendering of the second and
+      following lines of the item (the first line starts with the term, and is
+      not indented).  The indentation amount is interpreted as characters when
+      rendering plain-text documents, and en-space units when rendering in
+      formats that have richer typographic support such as HTML or PDF.  One
+      en-space is assumed to be the length of 0.5 em-space in CSS units.
+
+dl[newline]:
+
+    -  The "newline" attribute defines whether or not the term appears on
+       the same line as the definition.  newline="false" indicates that the
+       term is to the left of the definition, while newline="true"
+       indicates that the term will be on a separate line.
+
+dl[spacing]:
+
+    -  Defines whether or not there is a blank line between entries.
+       spacing="normal" indicates a single blank line, while
+       spacing="compact" indicates no blank line between entries.
+
+dt:
+
+    - The term being defined in a definition list.
+
+em:
+
+    - Indicates text that is semantically emphasized.  In HTML and PDF rendering, text
+      enclosed within this element will be displayed as italic after processing;
+      in text rendering it will be preceded and followed by an underline character.
+      This element can be combined with other character formatting elements, and
+      the formatting will be additive.
+
+email:
+
+    -  Provides an email address.
+
+    -  The value is expected to be the addr-spec defined in Section 2 of
+       <xref target="RFC6068"/>.
+
+    - (New) In <xref target="RFC7991"/>, only zero or one instance of this
+      element was permitted in an address.  In the current schema, now multiple
+      email addresses are permitted.
+
+email[ascii]:
+
+    -  The ASCII equivalent of the author's email address.  This is only
+       used if the email address has any internationalized components.
+
+eref:
+
+    -  Represents an "external" link (as specified in the "target"
+       attribute).  This is useful for embedding URIs in the body of a
+       document.
+
+    - If the \<eref\> element has non-empty text content, the content is used
+      as the displayed text that is linked.  Otherwise, the value of the
+      "target" attribute is used as the displayed text.  
+
+
+eref[brackets]:
+
+    - Determines the type of brackets that an eref will be rendered with.
+      "angle" will render with angle brackets, and "none" will render with
+      no brackets in HTML and PDF, and with parentheses by the text renderer.
+
+eref[target]:
+
+    - URI of the link target <xref target="RFC3986"/>.  This must begin with a
+      scheme name (such as "https://") and thus not be relative to the URL of
+      the current document.
+
+extaddr:
+
+    - Extra address information.  This element can be used for address parts
+      more specific than a street, for instance apartment numbers, suite numbers,
+      building parts, etc.
+
+figure:
+
+    -  Contains a figure with a caption with the figure number.  If the
+       element contains a \<name\> element, the caption will also show that
+       name.
+
+front:
+
+    -  'Represents the "front matter" metadata (such as author information),
+       the Abstract, and additional notes.'
+
+    -  'A \<front\> element may have more than one \<seriesInfo\> element.
+       Each should contain a "name" attribute with the series name and a
+       "value" attribute with the series number; other uses of 
+       \<front\>\<seriesInfo\> described in <xref target="RFC7991"/> are
+       deprecated.'
+
+iref:
+
+    -  Provides terms for the document's index.
+
+    -  Index entries can be either regular entries (when just the "item"
+       attribute is given) or nested entries (by specifying "subitem" as
+       well), grouped under a regular entry.
+
+    -  Index entries generally refer to the exact place where the \<iref\>
+       element occurred.  An exception is the occurrence as a child element
+       of \<section\>, in which case the whole section is considered to be
+       relevant for that index entry.  In some formats, index entries of
+       this type might be displayed as ranges.
+
+    -  When the prep tool is creating index content, it collects the items
+       in a case-sensitive fashion for both the item and subitem level.
+
+iref[item]:
+
+    -  The item to include.
+
+iref[primary]:
+
+    -  Setting this to "true" declares the occurrence as "primary", which
+       might cause it to be highlighted in the index.  There is no
+       restriction on the number of occurrences that can be "primary".
+
+iref[subitem]:
+
+    -  The subitem to include.
+
+keyword:
+
+    -  Specifies a keyword applicable to the document.
+
+    -  Note that each element should only contain a single keyword; for
+       multiple keywords, the element can simply be repeated.
+
+    -  Keywords are used both in the RFC Index and in the metadata of
+       generated document representations.  They are not reflected in
+       the HTML, PDF, or text rendering of the document.
+
+li:
+
+    -  A list element, used in \<ol\> and \<ul\>.
+
+link:
+
+    -  A link to an external document that is related to the RFC.
+
+    -  'The following are the supported types of external documents that can
+       be pointed to in a \<link\> element:'
+
+    -
+       -  The current International Standard Serial Number (ISSN) for the
+          RFC Series.  The value for the "rel" attribute is "item".  The
+          link should use the form "urn:issn:".
+
+       -  The Digital Object Identifier (DOI) for this document.  The value
+          for the "rel" attribute is "describedBy".  The link should use the
+          form specified in <xref target="RFC7669"/>; this is expected to change in the
+          future.
+
+       -  The Internet-Draft that was submitted to the RFC Editor to become
+          the published RFC.  The value for the "rel" attribute is
+          "prev".  (RFC7998 specified "convertedFrom", but that value
+          is not one of the recognised values for the @rel attribute of
+          \<link\> elements in HTML.  The "prev" value has the desired semantics.)
+          The link should be to an IETF-controlled web
+          site that retains copies of Internet-Drafts.
+
+       -  A representation of the document offered by the document author.
+          The value for the "rel" attribute is "alternate".  The link can be
+          to a personally run web site.
+
+    -  'In RFC production mode, the prep tool needs to check the values for
+       \<link\> before an RFC is published.  In draft production mode, the
+       prep tool might remove some \<link\> elements during the draft
+       submission process.'
+
+link[href]:
+
+    -  The URI of the external document.
+
+link[rel]:
+
+    -  The relationship of the external document to this one.  The
+       relationships are taken from the "Link Relations" registry maintained
+       by IANA <xref target="LINKRELATIONS"/>.
+
+middle:
+
+    -  Represents the main content of the document.
+
+name:
+
+    - The name of the containing (parent) element, for instance the section
+      name.  This name can include inline markup (for example, including
+      references or making some characters use a fixed-width font).
+
+note:
+
+    -  Creates an unnumbered, titled block of text that appears after the
+       Abstract.
+
+    -  It is usually used for additional information to reviewers (Working
+       Group information, mailing list, ...) or for additional publication
+       information such as "IESG Notes".
+
+note[removeInRFC]:
+
+    -  If set to "true", this note is marked in the prep tool with text
+       indicating that it should be removed before the document is published
+       as an RFC.  That text will be "This note is to be removed before
+       publishing as an RFC."
+
+ol:
+
+    - An ordered list.  The labels on the items will be either a number or
+      a letter, depending on the value of the style attribute.
+
+ol[group]:
+
+    -  When the prep tool sees an \<ol\> element with a "group" attribute that
+       has already been seen, it continues the numbering of the list from
+       where the previous list with the same group name left off.  If
+       an \<ol\> element has both a "group" attribute and a "start" attribute,
+       the group's numbering is reset to the given start value.
+
+ol[spacing]:
+
+    -  Defines whether or not there is a blank line between entries.
+       spacing="normal" indicates a single blank line, while
+       spacing="compact" indicates no blank line between entries.
+
+ol[start]:
+
+    -  The ordinal value at which to start the list.  This defaults to "1"
+       and must be an integer of value 0 or greater.
+
+ol[type]:
+
+    -  'The type of the labels on list items.  If the length of the type
+       value is 1, the meaning is the same as it is for HTML:'
+
+    - a: Lowercase letters (a, b, c, ...)
+
+    - A: Uppercase letters (A, B, C, ...)
+
+    - 1: Decimal numbers (1, 2, 3, ...)
+
+    - i: Lowercase Roman numerals (i, ii, iii, ...)
+
+    - I: Uppercase Roman numerals (I, II, III, ...)
+
+    -  For types "a" and "A", after the 26th entry, the numbering starts at
+       "aa"/"AA", then "ab"/"AB", and so on.
+
+    -  If the length of the type value is greater than 1, the value must
+       contain a percent-encoded indicator and other text.  The value is a
+       free-form text that allows counter values to be inserted using a
+       "percent-letter" format.  For instance, "[REQ%d]" generates labels of
+       the form "[REQ1]", where "%d" inserts the item number as a decimal
+       number.
+
+    -  'The following formats are supported:' 
+
+    - '%c': Lowercase letters (a, b, c, ...)
+
+    - '%C': Uppercase letters (A, B, C, ...)
+
+    - '%d': Decimal numbers (1, 2, 3, ...)
+
+    - '%i': Lowercase Roman numerals (i, ii, iii, ...)
+
+    - '%I': Uppercase Roman numerals (I, II, III, ...)
+
+    - '%p': The list counter of a list item in a parent list (see more
+            below)
+
+    - '%%': Represents a percent sign
+
+    -  Other formats are reserved for future use.  Only one percent encoding
+       other than "%%" and "%p" is allowed in a type string.
+
+    -  It is an error for the type string to be empty.  For bulleted lists,
+       use the \<ul\> element.  For lists that have neither bullets nor
+       numbers, use the \<ul\> element with the 'empty="true"' attribute.
+
+    - "'%p' may be used in nested ordered lists, where it represents the item
+      number of the parent list item.  This lets you say for instance:"
+
+    - |
+      <sourcecode>
+      \<ol\>
+        \<li\>List item one\</li\>
+        \<li\>
+          \<t\>Nested list:\</t\>
+          \<ol type='%p%d'\>
+            \<li\>Sublist item 2.1\</li\>
+            \<li\>Sublist item 2.2\</li\>
+          \</ol\>
+        \</li\>
+      \</ol\>
+      </sourcecode>
+      <t>which is rendered as:</t>
+      <ol>
+        <li>List item one</li>
+        <li>
+          <t>Nested list</t>
+          <ol type='%p%d'>
+            <li>Sublist item 2.1</li>
+            <li>Sublist item 2.2</li>
+          </ol>
+        </li>
+      </ol>
+
+    - Without the '%p' format specifier, you would have to explicitly
+      insert the counter number of the parent item, which could easily
+      result in mismatched numbering if parent list items were inserted
+      or removed during document editing.
+
+ol[indent]:
+
+    - The indentation of the list elements relative to the start of the list
+      item number.  With <tt>indent='adaptive'</tt>, the width of the
+      widest list item number will determine the indentation.  With a numeric
+      value, that value will be used to determine the amount of indentation.
+      The indentation amount is interpreted as characters
+      when rendering plain-text documents, and en-space units when rendering in
+      formats that have richer typographic support such as HTML or PDF.  One
+      en-space is assumed to be the length of 0.5 em-space in CSS units.  Only
+      non-negative integer amounts of indentation are supported.
+
+organization:
+
+    -  Specifies the affiliation <xref target="RFC7322"/> of an author.
+
+    -  This information appears both in the "Author's Address" section and
+       on the front page (see <xref target="RFC7322"/> for more information).  If the value
+       is long, an abbreviated variant can be specified in the "abbrev"
+       attribute.
+
+organization[abbrev]:
+
+    -  Abbreviated variant of the organization name.
+
+organization[asciiAbbrev]:
+
+    -  The ASCII equivalent of the abbreviated variant of the organization's name.
+
+organization[showOnFrontPage]:
+
+    -  Turns off listing of organization with author name on the first document page.
+
+phone:
+
+    - Represents a phone number.
+
+    - The value is expected to be the scheme-specific part of a "tel" URI
+      (and so does not include the prefix "tel:"), using the
+      "global-number-digits" syntax.  See Section 3 of <xref target="RFC3966"/> for
+      details.
+
+pobox:
+
+    - Represents a post office box number.
+
+postal:
+
+    -  'Contains optional child elements providing postal information.  These
+       elements will be displayed in an order that is specific to
+       formatters.  A postal address can contain only a set of \<street\>,
+       \<city\>, \<region\>, \<code\>, and \<country\> elements, or only an ordered
+       set of \<postalLine\> elements, but not both.'
+
+postalLine:
+
+    -  'Represents one line of a postal address.  When more than one
+       \<postalLine\> is given, the prep tool emits them in the order given.'
+
+refcontent:
+
+    -  Text that should appear between the title and the date of a
+       reference.  The purpose of this element is to obviate the need for
+       abuse of \<seriesInfo\> in order to add such text.
+
+    -  'For example:' 
+
+    -  '\<reference anchor="April1"\>
+         \<front\>
+           \<title\>On Being A Fool\</title\>
+           \<author initials="K." surname="Phunny" fullname="Knot Phunny"/\>
+           \<date year="2000" month="April"/\>
+         \</front\>
+         \<refcontent\>Self-published pamphlet\</refcontent\>
+       \</reference\>'
+
+    -  'would render as:' 
+
+    -  '   [April1]     Phunny, K., "On Being A Fool", Self-published
+                       pamphlet, April 2000.'
+
+reference:
+
+    -  Represents a bibliographic reference.
+
+reference[anchor]:
+
+    -  Document-wide unique identifier for this \<reference\>.  Usually, this
+       will be used both to "label" the reference in the "References"
+       section and as an identifier in links to this reference entry; but
+       see \<<xref target="element-displayreference">displayreference</xref>\>
+       for how to change this.
+
+reference[quote-title]:
+
+    -  Specifies whether or not the title in the reference should be quoted.
+       This can be used to prevent quoting, such as on errata.
+
+reference[target]:
+
+    -  Holds the URI for the reference.
+
+referencegroup:
+
+    -  Represents a list of bibliographic references that will be
+       represented as a single reference.  This is most often used to
+       reference STDs and BCPs, where a single reference (such as "BCP 9")
+       may encompass more than one RFC.
+
+referencegroup[anchor]:
+
+    - Document-wide unique identifier for this \<referencegroup\>.  Usually,
+      this will be used both to "label" the reference group in the "References"
+      section and as an identifier in links to this reference entry; but
+      see \<<xref target="element-displayreference">displayreference</xref>\> for
+      how to change this.
+
+referencegroup[target]:
+
+    - (New) Holds an URI for the reference group, analogous to the "target" attribute
+      of \<reference\>.  Useful for a STD which consists of multiple RFCs with
+      their own URLs, but also has its own unique URL.
+
+references:
+
+    -  Contains a set of bibliographic references.
+
+    -  In the early days of the RFC Series, there was only one "References"
+       section per RFC.  This convention was later changed to group
+       references into two sets, "Normative" and "Informative", as described
+       in <xref target="RFC7322"/>.  This vocabulary supports the split with the \<name\>
+       child element.  In general, the title should be either "Normative
+       References" or "Informative References".
+
+    -  "The recommended way to include references to RFCs and Internet-Drafts is to
+       use the standard XML XInclude mechanism.  Here is an example:"
+
+    - |
+      <sourcecode><![CDATA[
+      <references>
+      <name>Normative References</name>
+      <!--RTP-->
+      <xi:include href=
+      "https://bib.ietf.org/public/rfc/bibxml/reference.RFC.3550.xml"/>
+      <!--SIP-->
+      <xi:include href=
+      "https://bib.ietf.org/public/rfc/bibxml/reference.RFC.3261.xml"/>
+      </references>
+      ]]></sourcecode>
+
+references[anchor]:
+
+    -  An optional user-supplied identifier for this set of references.
+
+region:
+
+    -  Provides the region name in a postal address.
+
+relref:
+
+    - Deprecated.  Use \<xref\> with "section".
+
+rfc:
+
+    -  This is the root element of the xml2rfc vocabulary.
+
+rfc[category]:
+
+    - Document category
+
+    - For RFCs, the "category" attribute (Section 2.33.1) determines the
+      "maturity level" (see Section 4 of <xref target="RFC2026"/>).  The allowed values
+      are "std" for "Standards Track", "bcp" for "BCP", "info" for
+      "Informational", "exp" for "Experimental", and "historic" for
+      "Historic".
+
+    - For Internet-Drafts, the "category" attribute is not needed; when
+      supplied, it will appear as "Intended Status".  Supplying this information
+      can be useful to reviewers.
+
+rfc[consensus]:
+
+    -  Affects the generated boilerplate.  Note that the values of "no" and
+       "yes" are deprecated and are replaced by "false" and
+       "true".
+
+    -  See <xref target="RFC7841"/> for more information.
+
+rfc[docName]:
+
+    - Indicates the draft name (including revision number) for a draft, or
+      the draft from which an RFC derived, for an RFC.  Used to insert the
+      \<link rel="prev" href="..."\> element that points to the precursor
+      of the RFC, in accordance with the intentions of 
+      <xref target="RFC7998" section="5.6.3"/>.
+
+rfc[indexInclude]:
+
+    -  Specifies whether or not a formatter is requested to include an index
+       in generated files.  If the source file has no \<iref\> elements, an
+       index is never generated.  This option is useful for generating
+       documents where the source document has \<iref\> elements but the
+       author no longer wants an index.
+
+rfc[ipr]:
+
+    -  Represents the Intellectual Property status of the document.
+
+    -  "If the attribute is set to the empty string: \<tt\>ipr=''\</tt\>,
+       it is assumed that this is not a regular IETF/IRTF/IAB/ISE document, and
+       the document header content is reduced.  This is considered
+       a feature by a few other standards organisations that have
+       used xml2rfc to format their standards documents."
+
+rfc[iprExtract]:
+
+    -  Identifies a single section within the document for which extraction
+       "as is" is explicitly allowed (only relevant for historic values of
+       the "ipr).
+
+rfc[number]:
+
+    -  Used to determine whether to produce an RFC or an Internet-Draft.
+
+rfc[obsoletes]:
+
+    -  A comma-separated list of RFC numbers or Internet-Draft names.
+
+    -  The prep tool will parse the attribute value so that incorrect
+       references can be detected.
+
+rfc[prepTime]:
+
+    -  The date that the XML was processed by a prep tool.  This is included
+       in the XML file just before it is saved to disk.  The value is
+       formatted using the "date-time" format defined in Section 5.6 of
+       <xref target="RFC3339"/>.  The "time-offset" should be "Z".
+
+rfc[seriesNo]:
+
+    -  Deprecated; instead, use the "value" in \<seriesInfo\>.
+
+rfc[sortRefs]:
+
+    -  Specifies whether or not the prep tool will sort the references in
+       each reference section.
+
+rfc[submissionType]:
+
+    -  The document stream, as described in <xref target="RFC7841"/>.  (The RFC Series
+       Editor may change the list of allowed values in the future.)
+
+rfc[symRefs]:
+
+    -  Specifies whether or not a formatter is requested to use symbolic
+       references (such as "<xref target="RFC2119"/>").  If the value for this is "false",
+       the references come out as numbers (such as "[3]").
+
+rfc[tocDepth]:
+
+    -  Specifies the number of levels of headings that a formatter is
+       requested to include in the table of contents.
+
+rfc[tocInclude]:
+
+    -  Specifies whether or not a formatter is requested to include a table
+       of contents in generated files.
+
+rfc[updates]:
+
+    -  A comma-separated list of RFC numbers or Internet-Draft names.
+
+    -  The prep tool will parse the attribute value so that incorrect
+       references can be detected.
+
+rfc[version]:
+
+    -  Specifies the version of xml2rfc syntax used in this document.  The
+       only expected value (for now) is "3".
+
+section:
+
+    -  Represents a section (when inside a \<middle\> element) or an appendix
+       (when inside a \<back\> element).
+
+    -  'Subsections are created by nesting \<section\> elements inside
+       \<section\> elements.  Sections are allowed to be empty.'
+
+section[numbered]:
+
+    - If set to "false", the formatter is requested to not display a section
+      number.  The prep tool will verify that such a section is not followed by
+      a numbered section in this part of the document.  Descendant sections of
+      unnumbered sections are unnumbered by definition.  (New) Both top-level \<section\>s
+      and other \<section\>s may have <tt>numbered='false'</tt>.
+
+section[removeInRFC]:
+
+    -  If set to "true", this section is marked in the prep tool with text
+       indicating that it should be removed before the document is published
+       as an RFC.  That text will be "This section is to be removed before
+       publishing as an RFC."
+
+section[toc]:
+
+    -  'Indicates to a formatter whether or not the section is to be included
+       in a table of contents, if such a table of contents is produced.
+       This only takes effect if the level of the section would have
+       appeared in the table of contents based on the "tocDepth" attribute
+       of the \<rfc\> element, and of course only if the table of contents is
+       being created based on the "tocInclude" attribute of the \<rfc\>
+       element.  If this is set to "exclude", any section below this one
+       will be excluded as well.  The "default" value indicates inclusion of
+       the section if it would be included by the tocDepth attribute of the
+       \<rfc\> element.'
+
+seriesInfo:
+
+    - Specifies the document series in which this document appears, and
+      also specifies an identifier within that series.
+
+    - 'A processing tool determines whether it is working on an RFC or an
+      Internet-Draft by inspecting the "name" attribute of a \<seriesInfo\>
+      element inside the \<front\> element inside the \<rfc\> element, looking for
+      "RFC" or "Internet-Draft".  (Specifying neither value in any of the
+      \<seriesInfo\> elements can be useful for producing other types of documents
+      but is out of scope for this specification.)'
+
+    - It is invalid to have multiple \<seriesInfo\> elements inside the same
+      \<front\> element containing the same "name" value.  Some combinations
+      of \<seriesInfo\> "name" attribute values make no sense, such as having
+      both \<seriesInfo name="rfc"/\> and \<seriesInfo name="Internet-Draft"/\>
+      in the same \<front\> element.
+
+seriesInfo[asciiName]:
+
+    - The ASCII equivalent of the name field.
+
+seriesInfo[name]:
+
+    - The name of the series.  Some values in use by the IETF community are "RFC",
+      "Internet-Draft", and "DOI", but other names such as "ISO", "W3C" for
+      exist for other standardisation organisations.
+
+seriesInfo[value]:
+
+    - The identifier within the series specified by the "name" attribute.
+
+    - For BCPs, FYIs, RFCs, and STDs, this is the number within the series.
+
+    - For Internet-Drafts, it is the full draft name (ending with the
+      two-digit version number).
+
+    - For DOIs, the value is given, such as "10.17487/rfc1149", as described in <xref target="RFC7669"/>.
+
+    - The name in the value should be the document name without any file
+      extension.
+
+seriesInfo[asciiValue]:
+
+    - The ASCII equivalent of the value field.
+
+seriesInfo[stream]:
+
+    - Deprecated.  Use the \<<xref target="element-stream">stream</xref>\> element instead.
+
+sortingcode:
+
+    -  A sorting code is related to postal codes in that it is used in
+       addresses to allow sorting, for example to route mail to a certain
+       postal centre or to distinguish streets with the same name in two
+       different areas of the same settlement.
+
+sourcecode:
+
+    -  This element allows the inclusion of source code into the document.
+
+    -  'When rendered, source code is always shown in a monospace font.  When
+       \<sourcecode\> is a child of \<figure\> or \<section\>, it provides full
+       control of horizontal whitespace and line breaks.  When formatted, it
+       is indented relative to the left margin of the enclosing element.  It
+       is thus useful for source code and formal languages (such as ABNF
+       <xref target="RFC5234"/> or the RNC notation used in this document).  (When
+       \<sourcecode\> is a child of other elements, it flows with the text
+       that surrounds it.)  Tab characters (U+0009) inside of this element
+       are prohibited.'
+
+    -  For artwork such as character-based art, diagrams of message layouts,
+       and so on, use the \<artwork\> element instead.
+
+    -  Output formatters that do pagination will attempt to keep source
+       code on a single page.  This is to prevent source code that is split
+       across pages from looking like two separate pieces of code.
+
+sourcecode[markers]:
+
+    - Indicates whether "\<CODE BEGINS\>" and "\<CODE ENDS\>" markers, as
+      introduced by <xref target="RFC6087"/>, should be generated when
+      rendering the \<sourcecode\> element.  The alternative is to include
+      these explicitly inside the element, but that would necessitate
+      extra code to strip these, when extracting code from the XML
+      source.
+
+sourcecode[name]:
+
+    -  'A filename suitable for the contents (such as for extraction to a
+       local file).  This attribute can be helpful for other kinds of tools
+       (such as automated syntax checkers, which work by extracting the
+       source code).  Note that the "name" attribute does not need to be
+       unique for \<sourcecode\> elements in a document.  If multiple
+       \<sourcecode\> elements have the same "name" attribute, a formatter
+       might assume that the elements are all fragments of a single file,
+       and such a formatter can collect those fragments for later
+       processing.'
+
+sourcecode[src]:
+
+    -  The URI reference of a source file <xref target="RFC3986"/>.
+
+    -  'It is an error to have both a "src" attribute and content in the
+       \<sourcecode\> element.'
+
+sourcecode[type]:
+
+    -  Specifies the type of the source code.  The value of this attribute
+       is free text with certain values designated as preferred.
+
+    -  Most of the preferred values for \<sourcecode\> types are language
+       names, in a wide sense, such as "abnf", "asn.1", "bash", "c++", etc.
+
+    - The RFC Series Editor maintains a list of the preferred values on the
+      RFC Editor web site
+      at <eref target="https://www.rfc-editor.org/materials/sourcecode-types.txt"/>,
+      and that list is updated over time.  Thus, a consumer of v3 XML
+      should not cause a failure when it encounters an unexpected type or no
+      type is specified.
+
+stream:
+
+    - Indicates which stream an RFC belongs to.
+
+street:
+
+    -  Provides a street address.
+
+strong:
+
+    - Indicates text that is semantically strong.  In HTML and PDF rendering,
+      text enclosed within this element will be displayed as bold after
+      processing; in text rendering it will be preceeded and followed by an
+      asterisk.  This element can be combined with other character formatting
+      elements, and the formatting will be additive.
+
+sub:
+
+    - Causes the text to be displayed as subscript, approximately half a
+      letter-height lower than normal text, in HTML and PDF rendering.  This
+      element can be combined with other character formatting elements, and the
+      formatting will be additive.
+
+sup:
+
+    - Causes the text to be displayed as superscript, approximately half a
+      letter-height higher than normal text, in HTML and PDF rendering.  This
+      element can be combined with other character formatting elements, and the
+      formatting will be additive.
+
+t:
+
+    -  Contains a paragraph of text.
+
+t[anchor]:
+
+    -  Document-wide unique identifier for this paragraph.
+
+t[hangText]:
+
+    - Deprecated.  Instead, use \<dd\> inside of a definition list (\<dl\>).
+
+t[indent]:
+
+    - Indicates any extra amount of indentation to be used when rendering the
+      paragraph of text.  The indentation amount is interpreted as characters
+      when rendering plain-text documents, and en-space units when rendering in
+      formats that have richer typographic support such as HTML or PDF.  One
+      en-space is assumed to be the length of 0.5 em-space in CSS units.  Only
+      non-negative integer amounts of indentation are supported.
+
+t[keepWithNext]:
+
+    -  'Acts as a hint to the output formatters that do pagination to do a
+       best-effort attempt to keep the paragraph with the next element,
+       whatever that happens to be.  For example, for HTML output <tt>@media print</tt>
+       CSS might translate this to page-break-after: avoid.  For PDF, the paginator could
+       attempt to keep the paragraph with the next element.  Note: this
+       attribute is strictly a hint and not always actionable.'
+
+t[keepWithPrevious]:
+
+    -  'Acts as a hint to the output formatters that do pagination to do a
+       best-effort attempt to keep the paragraph with the previous element,
+       whatever that happens to be.  For example, for HTML output <tt>@media print</tt>
+       CSS might translate this to page-break-before: avoid.  For PDF,
+       the paginator could attempt to keep the paragraph with the previous
+       element.  Note: this attribute is strictly a hint and not always
+       actionable.'
+
+table:
+
+    - Contains a table with a caption with the table number.  If the
+      element contains a \<name\> element, the caption will also show that
+      name.
+
+    - "Inside the \<table\> element there is, optionally, a \<thead\> element to
+      contain the rows that will be the table's heading and, optionally, a
+      \<tfoot\> element to contain the rows of the table's footer.  If the
+      XML is converted to a representation that has page breaks (such as
+      PDFs or printed HTML), the header and footer are meant to appear on
+      each page."
+
+table[align]:
+
+    -  Controls whether the table appears left justified, centered, 
+       or right justified.  The caption will be centered under
+       the table, and the combined table and caption will be aligned
+       according to the "align" attribute.
+
+tbody:
+
+    -  A container for a set of body rows for a table.
+
+td:
+
+    -  A cell in a table row.
+
+td[align]:
+
+    -  Controls whether the content of the cell appears left justified,
+       centered, or right justified.  Note that "center" or
+       "right" will probably only work well in cells with plain text; any
+       other elements might make the contents render badly.
+
+td[colspan]:
+
+    -  The number of columns that the cell is to span.  For example, setting
+       "colspan='3'" indicates that the cell occupies the same horizontal
+       space as three cells of a row without any "colspan" attributes.
+
+td[rowspan]:
+
+    -  The number of rows that the cell is to span.  For example, setting
+       "rowspan='3'" indicates that the cell occupies the same vertical
+       space as three rows.
+
+tfoot:
+
+    -  A container for a set of footer rows for a table.
+
+th:
+
+    -  A cell in a table row.  When rendered, this will normally come out in
+       boldface; other than that, there is no difference between this and
+       the \<td\> element.
+
+th[align]:
+
+    -  Controls whether the content of the cell appears left justified, 
+       centered, or right justified.  Note that "center" or
+       "right" will probably only work well in cells with plain text; any
+       other elements might make the contents render badly.
+
+th[colspan]:
+
+    -  The number of columns that the cell is to span.  For example, setting
+       "colspan='3'" indicates that the cell occupies the same horizontal
+       space as three cells of a row without any "colspan" attributes.
+
+th[rowspan]:
+
+    -  The number of rows that the cell is to span.  For example, setting
+       "rowspan='3'" indicates that the cell occupies the same vertical
+       space as three rows.
+
+thead:
+
+    -  A container for a set of header rows for a table.
+
+title:
+
+    -  Represents the document title.
+
+    -  When this element appears in the \<front\> element of the current
+       document, the title might also appear in page headers or footers.  If
+       it is long (~40 characters), the "abbrev" attribute can be used to
+       specify an abbreviated variant.
+
+title[abbrev]:
+
+    -  Specifies an abbreviated variant of the document title.
+
+toc:
+
+    - This element contains the Table of Content.  The content of the \<toc\>
+      element is generated by the preptool based on the "tocInclude" and
+      "tocDepth" attributes of the \<rfc\> element.  As a document author,
+      you should not use \<toc\> directly.
+
+tr:
+
+    -  A row of a table.
+
+tt:
+
+    -  Causes the text to be displayed in a constant-width font.  This
+       element can be combined with other character formatting elements, and
+       the formatting will be additive.
+
+u:
+
+    -  "In xml2rfc vocabulary version 3, the elements \<author\>,
+       \<organisation\>, \<street\>, \<city\>, \<region\>, \<code\>, \<country\>,
+       \<postalLine\>, \<email\>, \<seriesInfo\>, and \<title\> may contain non-
+       ascii characters for the purpose of rendering author names,
+       addresses, and reference titles correctly.  They also have an
+       additional \"ascii\" attribute for the purpose of proper rendering in
+       ascii-only media."
+
+
+    -  'In order to insert Unicode characters in any other context, xml2rfc
+       vocabulary v3 requires that the Unicode string be enclosed within an
+       \<u\> element.  The element will be expanded inline based on the value
+       of a "format" attribute.  This provides a generalised means of
+       generating the 6 methods of Unicode renderings listed in <xref target="RFC7997"/>,
+       Section 3.4, and also several others found in for instance the RFC
+       Format Tools example rendering of RFC 7700, at <eref 
+       target="https://rfc-format.github.io/draft-iab-rfc-css-bis/sample2-v2.html"/>.'
+
+u[format]:
+
+    -  The "format" attribute accepts either a simplified format
+       specification, or a full format string with placeholders for the
+       various possible Unicode expansions.
+
+
+    -  "The simplified format consists of dash-separated keywords, where each
+       keyword represents a possible expansion of the Unicode character or
+       string; use for example \"\<u \"lit-num-name\"\>foo\</u\>\" to expand the
+       text to its literal value, code point values, and code point names."
+
+
+    -  'A combination of up to 3 of the following keywords may be used,
+       separated by dashes: "num", "lit", "name", "ascii", "char".  The
+       keywords are expanded as follows and combined, with the second and
+       third enclosed in parentheses if present:'
+
+
+    -
+       "num": The numeric value(s) of the element text, in U+1234
+               notation
+
+       "name":  The Unicode name(s) of the element text
+
+       "lit":  The literal element text, enclosed in quotes
+
+       "char":  The literal element text, without quotes
+
+       "ascii":  "The value of the 'ascii' attribute on the \<u\> element"
+
+
+    -  In order to ensure that no specification mistakes can result for
+       rendering methods that cannot render all Unicode code points, "num"
+       MUST always be part of the specified format.
+
+    -  |
+        <section anchor="element-unicode-format-examples" numbered="true" toc="default">
+              <name>Examples</name>
+              <t>
+                 Examples:
+              </t>
+              <dl newline="false" indent="3" spacing="normal">
+                 <dt/>
+                 <dd>
+                 <dl newline="true" spacing="normal">
+                    <dt>format="num-lit":</dt>
+                    <dd>
+                       Temperature changes in the Temperature Control Protocol are
+                       indicated by the character <u format="num-lit">Δ</u>.</dd>
+                    <dt>format="num-name":</dt>
+                    <dd>
+                       Temperature changes in the Temperature Control Protocol are
+                       indicated by the character <u format="num-name">Δ</u>.</dd>
+                    <dt>format="num-lit-name":</dt>
+                    <dd>
+                       Temperature changes in the Temperature Control Protocol are
+                       indicated by the character <u format="num-lit-name">Δ</u>.</dd>
+                    <dt>format="num-name-lit":</dt>
+                    <dd>
+                       Temperature changes in the Temperature Control Protocol are
+                       indicated by the character <u format="num-name-lit">Δ</u>.</dd>
+                    <dt>format="name-lit-num":</dt>
+                    <dd>
+                       Temperature changes in the Temperature Control Protocol are
+                       indicated by the character <u format="name-lit-num">Δ</u>.</dd>
+                    <dt>format="lit-name-num":</dt>
+                    <dd>
+                       Temperature changes in the Temperature Control Protocol are
+                       indicated by the character <u format="lit-name-num">Δ</u>.</dd>
+                 </dl>
+                 </dd>
+              </dl>
+        </section>
+        <section anchor="element-unicode-multi" numbered="true" toc="default">
+           <name>Expansion of &lt;u&gt; multi-codepoint strings</name>
+           <t>
+              If the &lt;u&gt; element encloses a sequence of Unicode codepoints, rather than
+              a single one, the rendering
+              reflects this.  The element
+           </t>
+           <artwork name="" type="" align="left" alt=""><![CDATA[   <u format="num-lit">ᏚᎢᎵᎬᎢᎬᏒ</u>]]></artwork>
+           <t>
+              will be expanded to "<u format="num-lit">ᏚᎢᎵᎬᎢᎬᏒ</u>".
+           </t>
+           <t>
+              Unicode characters in document text which are not enclosed in &lt;u&gt;
+              will be replaced with a question mark (?) and a warning will be issued.
+           </t>
+        </section>
+        <section anchor="element-unicode-full-format" numbered="true" toc="default">
+           <name>Non-simplified &lt;u&gt; format specifications</name>
+           <t>
+              In order to provide for cases where the simplified format above is insufficient,
+              without relinquishing the requirement that the number of a code point always must
+              be rendered, the "format" attribute can also accept a full format string.  This
+              format uses placeholders which consist of any of the key words above enclosed in
+              curly braces; outside of this, any ascii text is permissible.  For example,
+           </t>
+           <artwork name="" type="" align="left" alt=""><![CDATA[   The <u format="{lit} character ({num})">Δ</u>.]]></artwork>
+           <t>
+              will be rendered as
+           </t>
+           <artwork name="" type="" align="left" alt=""><![CDATA[   The "Δ" character (U+0394).]]></artwork>
+           <t>
+              As for the simplified format, "num" MUST always be part of the
+              specified format in order to ensure that no specification
+              mistakes can result for rendering methods that cannot render all
+              Unicode code points, 
+           </t>
+        </section>
+        <section anchor="element-unicode-split-expansions" numbered="true" toc="default">
+          <name>Split expansion of &lt;u&gt; elements</name>
+          <t>
+               There are cases which cannot be handled with either the simplified or full &lt;u&gt;
+               format specifications.  One is exemplified in Table 1 of the CSS sample document
+               at <eref target="https://rfc-format.github.io/draft-iab-rfc-css-bis/sample2-v2.html#s-3"/>.
+               Rendering this with &lt;u&gt; elements requires that the non-ascii content be rendered
+               in one place (a table cell in one column) while the expansion is rendered in another
+               cell in a different column.  Provision for this has been made by modifying the expansion
+               of &lt;u&gt; when it is referenced by an &lt;xref&gt;.  This table, with &lt;u&gt; elements
+               referenced by &lt;xref&gt; instances:
+          </t>
+          <artwork name="" type="" align="left" alt=""><![CDATA[
+           <table>
+             <name>A Sample of Legal Nicknames</name>
+             <thead>
+               <tr>
+                  <th>#</th>
+                  <th>Nickname</th>
+                  <th>Output for comparison</th>
+               </tr>
+             </thead>
+             <tbody>
+               <tr>
+                  <td>1</td>
+                  <td>&lt;Foo&gt;</td>
+                  <td>&lt;foo&gt;</td>
+               </tr>
+               <tr>
+                  <td>2</td>
+                  <td>&lt;foo&gt;</td>
+                  <td>&lt;foo&gt;</td> </tr>
+               <tr>
+                  <td>3</td>
+                  <td>&lt;Foo Bar&gt;</td>
+                  <td>&lt;foo bar&gt;</td>
+               </tr>
+               <tr>
+                  <td>4</td>
+                  <td>&lt;foo bar&gt;</td>
+                  <td>&lt;foo bar&gt;</td>
+               </tr>
+               <tr>
+                 <td>5</td>
+                 <td>
+                    &lt;
+                    <u format="name-num" anchor="greek-upper-sigma">Σ</u>
+                    &gt;
+                 </td>
+                 <td> <xref target="greek-upper-sigma" /> </td>
+               </tr>
+               <tr>
+                  <td>6</td>
+                  <td>
+                     &lt;
+                     <u format="name-num" anchor="greek-lower-sigma">σ</u>
+                     &gt;
+                  </td>
+                  <td> <xref target="greek-lower-sigma" /> </td>
+               </tr>
+               <tr>
+                  <td>7</td>
+                  <td>
+                     &lt;
+                     <u format="name-num" anchor="greek-final-sigma">ς</u>
+                     &gt;
+                  </td>
+                  <td> <xref target="greek-final-sigma" /> </td>
+               </tr>
+               <tr>
+                  <td>8</td>
+                  <td>
+                     &lt;
+                     <u format="name-num" anchor="black-chess-king">♚</u>
+                     &gt;
+                  </td>
+                  <td>
+                     <xref target="black-chess-king" format="default"/>
+                  </td>
+               </tr>
+               <tr>
+                  <td>9</td>
+                  <td>
+                     &lt;Richard
+                     <u format="{char}> ({num})" anchor="richard-iv">Ⅳ</u>
+                     &gt;
+                  </td>
+                  <td>&lt;richard iv&gt;</td>
+               </tr>
+             </tbody>
+           </table>
+               ]]>
+          </artwork>
+          <t>
+             comes out as shown below:             
+          </t>
+          <table>
+            <name>A Sample of Legal Nicknames</name>
+            <thead>
+              <tr> <th>#</th> <th>Nickname</th> <th>Output for comparison</th> </tr>
+            </thead>
+            <tbody>
+              <tr> <td>1</td> <td>&lt;Foo&gt;</td> <td>&lt;foo&gt;</td> </tr>
+              <tr> <td>2</td> <td>&lt;foo&gt;</td> <td>&lt;foo&gt;</td> </tr>
+              <tr> <td>3</td> <td>&lt;Foo Bar&gt;</td> <td>&lt;foo bar&gt;</td> </tr>
+              <tr> <td>4</td> <td>&lt;foo bar&gt;</td> <td>&lt;foo bar&gt;</td> </tr>
+              <tr> <td>5</td> <td>&lt;<u format="name-num" anchor="greek-upper-sigma">Σ</u>&gt;</td>
+                                                  <td> <xref target="greek-upper-sigma" /> </td> </tr>
+              <tr> <td>6</td> <td>&lt;<u format="name-num" anchor="greek-lower-sigma">σ</u>&gt;</td>
+                                                  <td> <xref target="greek-lower-sigma" /> </td> </tr>
+              <tr> <td>7</td> <td>&lt;<u format="name-num" anchor="greek-final-sigma">ς</u>&gt;</td>
+                                                  <td> <xref target="greek-final-sigma" /> </td> </tr>
+              <tr> <td>8</td> <td>&lt;<u format="name-num" anchor="black-chess-king">♚</u>&gt;</td>
+                                                  <td> <xref target="black-chess-king" format="default"/></td> </tr>
+              <tr> <td>9</td> <td>&lt;Richard <u format="{char}> ({num})" anchor="richard-iv">Ⅳ</u></td>
+                                                  <td>&lt;richard iv&gt;</td> </tr>
+            </tbody>
+          </table>
+        </section>
+
+u[ascii]:
+
+    - The ASCII equivalent of the content, to be used if the "ascii" keyword
+      is used in the "format" specification.
+
+ul:
+
+    -  An unordered list.  The labels on the items will be symbols picked by
+       the formatter.
+
+ul[bare]:
+
+    -  Can only be used with empty="true" (see below).  Determines if the blank bullet
+       has an horizontal extension or not.  With bare="false", the empty
+       list bullet will still occupy the same space as for empty="false".
+       With empty="true", there will be no bullet at all, i.e., the
+       list items will have no indentation.
+
+    -  'Example: an unordered list with bare="true" and empty="true":'
+
+    -  <ul bare="true" empty="true"><li>One</li><li>Two</li></ul>
+
+ul[empty]:
+
+    -  Defines whether or not the list item bullets are empty. empty="true" indicates
+       that a blank (empty) bullet will be shown.
+
+    -  'Example: an unordered list with bare="false" and empty="false":'
+
+    -  <ul bare="false" empty="false"><li>One</li><li>Two</li></ul>
+
+    -  'Example: an unordered list with bare="false" and empty="true":'
+
+    -  <ul bare="false" empty="true"><li>One</li><li>Two</li></ul>
+
+ul[indent]:
+
+    - The indentation of the list elements relative to the start of the bullet
+      or bullet text.
+
+ul[spacing]:
+
+    -  Defines whether or not there is a blank line between entries.
+       spacing="normal" indicates a single blank line, while
+       spacing="compact" indicates no blank line between entries.
+
+uri:
+
+    -  Contains a web address associated with the author.
+
+    -  'The contents should be a valid URI; this most likely will be an
+       "http:" or "https:" URI.'
+
+
+workgroup:
+
+    -  This element is used to specify the Working Group (IETF) or Research
+       Group (IRTF) from which the document originates, if any.  The
+       recommended format is the official name of the Working Group (with
+       some capitalization).
+
+    -  In Internet-Drafts, this is used in the upper left corner of the
+       boilerplate, replacing the "Network Working Group" string.
+       Formatting software can append the words "Working Group" or "Research
+       Group", depending on the "submissionType" property of the \<rfc\>
+       element (Section 2.48.12).
+
+
+xref:
+
+    -  A reference to an anchor in this document.  Formatters that have
+       links (such as HTML and PDF) are likely to render \<xref\> elements as
+       internal hyperlinks.  This element is useful for referring to
+       references in the "References" section, to specific sections of the
+       document, to specific figures, and so on.
+
+    - If the "section" attribute is present, this represents a link to a
+      specific part of a document that appears in a \<reference\> element.
+      Formatters that have links (such as HTML and PDF) render \<xref\> elements
+      with "section" attributes
+      as external hyperlinks to the specified part of the reference, creating
+      the link target by combining the base URI from the \<reference\> element
+      with the "relative" attribute from this element.  The "target" attribute
+      is required, and it must be the anchor of a \<reference\> element.
+
+    - If the reference is not an RFC or Internet-Draft that is
+      in the v3 format, the element needs to have a "relative" attribute;
+      in this case, the value of the "section" attribute is used to render
+      the text of the external link.
+
+    - If the "section" attribute is present, the rendering will for most
+      combinations of the "format" and "sectionFormat" have two links; one
+      external link to the specific part of the referenced document, and
+      one internal link to the \<reference\> entry.
+
+    - The attribute "format" affect the internal link rendering only, and
+      the "sectionFormat" affects the rendering of the external link and
+      its textual relationship to the internal link only.
+
+xref[sectionFormat]:
+
+    -  This attribute is used to signal formatters what the desired format
+       of the external reference should be.  Formatters for document types
+       that have linking capability should wrap each part of the displayed
+       text in hyperlinks.  If there is content in the \<xref\> element,
+       that content will be used when rendering the internal link part of
+       the \<xref\> rendering, but will not affect the external link.
+
+xref[sectionFormat="of"]:
+
+    -  The \<xref\> element will be displayed as an external link followed
+       by an internal link, separated by the work 'of'.  The external link
+       will have as its display text the word "Section" followed by a space
+       and the contents of the "section" attribute.  This will be followed
+       by a space, the word "of", another space, and an internal link to
+       the relevant \<reference\> entry, formatted based on the "format"
+       attribute.
+
+xref[sectionFormat="comma"]:
+
+    -  The \<xref\> element will be displayed as an internal link followed
+       by an external link, separated by a comma.  The external link
+       will have as its display text the word "Section" followed by a space
+       and the contents of the "section" attribute.  The internal link will
+       point to the relevant \<reference\> entry, and will be rendered according
+       to the "format" attribute.
+
+xref[sectionFormat="parens"]:
+
+    -  The \<xref\> element will be displayed as an internal link followed
+       by an external link within parentheses.  The external link
+       will have as its display text the word "Section" followed by a space
+       and the contents of the "section" attribute.  The internal link will
+       point to the relevant \<reference\> entry, and will be rendered according
+       to the "format" attribute.
+
+xref[sectionFormat="bare"]:
+
+    -  The \<xref\> element will be displayed as an external link, possibly
+       followed by the same link within parentheses.  The first external link
+       will have as its display text only contents of the "section" attribute;
+       the second link will be present within parentheses only if the \<xref\> element 
+       has any text content, and will then have the text content as
+       its display text.
+
+    -  This value for the "sectionFormat" attribute is useful when it is
+       desired to express for instance "Sections
+       <xref target="RFC7997" format="default" sectionFormat="bare" section="3.2"/> and 
+       <xref target="RFC7997" format="default" sectionFormat="bare" section="3.3"/> of
+       <xref target="RFC7997" format="default"/>".
+
+xref[format]:
+
+    -  This attribute signals to formatters what the desired format of the
+       internal link to the relevant \<reference\> should be.
+
+xref[format="counter"]:
+
+       -  The "derivedContent" attribute will contain just a counter.  This
+          is used for targets that are \<section\>, \<figure\>, \<table\>, or
+          items in an ordered list.  Using "format='counter'" where the
+          target is any other type of element is an error.
+
+xref[format="default"]:
+
+       -  If the element has no content, the "derivedContent" attribute will
+          contain a text fragment that describes the referenced part
+          completely, such as "XML" for a target that is a \<reference\>, or
+          "Section 2" or "Table 4" for a target to a non-reference. 
+
+xref[format="none"]:
+
+       -  There will be no autogenerated text for the xref.  When this value
+          is used, it expected that the \<xref\> element will have explicit
+          text content.
+
+xref[format="title"]:
+
+       -  'If the target is a \<reference\> element, the "derivedContent"
+          attribute will contain the name of the reference, extracted from
+          the \<title\> child of the \<front\> child of the reference.  Or, if
+          the target element has a \<name\> child element, the
+          "derivedContent" attribute will contain the text content of that
+          \<name\> element concatenated with the text content of each
+          descendant node of \<name\> (that is, stripping out all of the XML
+          markup, leaving only the text).  Or, if the target element does
+          not contain a \<name\> child element, the "derivedContent" attribute
+          will contain the name of the "anchor" attribute of that element
+          with no other adornment.'
+
+xref[target]:
+
+    -  Identifies the document component being referenced.  The value needs
+       to match the value of the "anchor" attribute of an element in the
+       document; otherwise, it is an error.
+
+xref[section]:
+
+    -  Specifies a section of the target reference.  If the reference is not
+       an RFC or Internet-Draft in the v3 format, and no "relative" attribute
+       has been provided, it is an error.
+
+xref[relative]:
+
+    - Specifies a relative reference from the URI in the target reference.
+      This value must include whatever leading character is needed to
+      create the relative reference; typically, this is "#" for HTML
+      documents.
+
+
+# --- Command-line switches ------------------------------------------------
+
+--config-file:
+
+    - This argument can be repeated, to read multiple explicitly specified
+      config files.  They will be read after any config files found in
+      'standard' locations have been read.  Run <tt>xml2rfc --values</tt> to see
+      the default search path for config files.
+
+--docfile:
+
+    -   'The <tt>--docfile</tt> and <tt>--manpage</tt> switches takes input from 5 places:'
+
+    -
+      - The <tt>v3.rng</tt> file distributed as part of the xml2rfc package,
+        which is also used to validate and process v3 XML input.
+
+      - A <tt>rfc7991.rng</tt> file distributed as part of the xml2rfc package,
+        which holds the schema defined in <xref target="RFC7991"/>.  This is
+        used in determining elements and attributes that are new in the
+        current <tt>v3.rng</tt> schema, compared to the RFC7991 schema.
+
+      - Lists of deprecated elements and attributes, which are part of the
+        xml2rfc source.
+
+      - A YAML file <tt>doc.yaml</tt> that contains XML snippets with
+        descriptions of elements, attributes, attribute values, and switches,
+        from the same directory as <tt>doc.xml</tt>.
+
+      - An XML template file <tt>doc.xml</tt>, by default taken from the
+        <tt>templates</tt> directory of the xml2rfc package (but this can
+        be changed with the <tt>--templates-dir</tt> switch).  The 4 preceding
+        sources provide content that is used to expand the template file when
+        generating the <tt>--&wj;docfile</tt> and <tt>--&wj;manpage</tt> output.
+
+--manpage:
+
+    - Generates on-the-fly paged text documentation for the v3 schema elements
+      and attributes from the v3 RelaxNG schema file which is part of the
+      xml2rfc distribution, and YAML and XML files that provide the text content
+      and formatting.  See the <tt>--docfile</tt> switch for more details.
+
+--pagination:
+
+    - By default, drafts are paginated, but not RFCs.  Use this switch if you
+      want to force pagination of all text output.
+
+--silence:
+
+    - "Specifies a string prefix or a regular expression to match against warning
+      messages.  Any warning message that matches is silenced.  Example:"
+
+    - <sourcecode>xml2rfc --silence='The document date' draft-foo-bar.xml</sourcecode>
+
+    - This will not show any message about the document date being too far from
+      the current date.  The option can be repeated with different prefix strings
+      or regular expressions in order to silence multiple warning messages.
+
+    - "Alternatively, instead of indicating this on the command line, an 
+      xml2rfc-specific PI (processing instruction) is available for use in XML input files.
+      This will have the same effect as the example above, except when
+      processing prepped drafts; running the preptool on a file will strip
+      XML PIs before writing the prepped file:"
+
+    - <sourcecode>\<?v3xml2rfc silence="The document date" ?\></sourcecode>
+
+--skip-config-files:
+
+    - Use this to ignore values in config files, even if there are config
+      files in the search path.  Somewhat ironically, this option can itself
+      be set in a config file, and cause all other config file settings to
+      be ignored.
+
+--table-borders:
+
+    - "Examples (these will only have visible differences in text mode):"
+
+    - '"full":':
+      - <?v3xml2rfc table_borders="full" ?>
+        <table>
+        <thead><tr><th>A</th><th>B</th><th>C</th></tr></thead>
+        <tbody>
+        <tr><td>a   </td><td>b    </td><td>c    </td></tr>
+        <tr><td>aa  </td><td>ba   </td><td>ca   </td></tr>
+        <tr><td>ab  </td><td>bb   </td><td>cb   </td></tr>
+        <tr><th>AA  </th><th>BB   </th><th>CC   </th></tr>
+        <tr><td>aaa </td><td>bba  </td><td>cca  </td></tr>
+        <tr><td>aab </td><td>bbb  </td><td>ccb  </td></tr>
+        </tbody>
+        </table>
+
+    - '"light":':
+      - <?v3xml2rfc table_borders="light" ?>
+        <table>
+        <thead><tr><th>A</th><th>B</th><th>C</th></tr></thead>
+        <tbody>
+        <tr><td>a   </td><td>b    </td><td>c    </td></tr>
+        <tr><td>aa  </td><td>ba   </td><td>ca   </td></tr>
+        <tr><td>ab  </td><td>bb   </td><td>cb   </td></tr>
+        <tr><th>AA  </th><th>BB   </th><th>CC   </th></tr>
+        <tr><td>aaa </td><td>bba  </td><td>cca  </td></tr>
+        <tr><td>aab </td><td>bbb  </td><td>ccb  </td></tr>
+        </tbody>
+        </table>
+
+    - '"minimal":':
+      - <?v3xml2rfc table_borders="minimal" ?>
+        <table>
+        <thead><tr><th>A</th><th>B</th><th>C</th></tr></thead>
+        <tbody>
+        <tr><td>a   </td><td>b    </td><td>c    </td></tr>
+        <tr><td>aa  </td><td>ba   </td><td>ca   </td></tr>
+        <tr><td>ab  </td><td>bb   </td><td>cb   </td></tr>
+        <tr><th>AA  </th><th>BB   </th><th>CC   </th></tr>
+        <tr><td>aaa </td><td>bba  </td><td>cca  </td></tr>
+        <tr><td>aab </td><td>bbb  </td><td>ccb  </td></tr>
+        </tbody>
+        </table>
+
+--template-dir:
+
+    - This is used to find the templates used by the <tt>--&wj;docfile</tt> and <tt>--&wj;manpage</tt>
+      commands and for legacy .html template and .dtd files.
+
+    - "A consequence of being able to specify a different template directory
+      than the default is that it's possible to use the <tt>--&wj;docfile</tt> command to
+      generate additional documentation XML files based on the current V3
+      grammar file.  The default template and snippets file does not include
+      documentation for deprecated elements and attributes, for instance; but
+      if it is desired to generate such documentation from the distributed
+      V3 RelaxNg schema, it should be straightforward.  The templating system
+      used is Jinja2; the snippets file is YAML with extra support for some
+      escape sequences: '\\ \<' and '\\ \>'."
+
+--v2:
+
+    - Invokes the legacy (schema v2) validator and output formatters, instead
+      of the default schema v3 output formatters.  This can only be used with
+      pure v2 input files.
+
+--v3:
+
+    - This is the default.  With both v2 schema and v3 schema XML input files,
+      use the v3 output formatters.  Input with deprecated v2 elements will be
+      converted to v3 on the fly.  This means some loss of functionality and
+      exact control of the output, due to the intermediary conversion step.
+
+--values:
+
+    - "This shows (in order):"
+
+    -
+      - Command line arguments
+      - Config file settings, per config file
+      - Default values
+      - Config file search path
+
+--version:
+
+    - With the <tt>--verbose</tt> switch, the versions of the external python
+      modules used will also be shown.
+        
+
+# --- Named sections -------------------------------------------------------
+
+Abstract:
+
+    - This document provides information about the XML schema implemented in
+      this release of xml2rfc, and the individual elements of that schema.  The
+      document is generated from the RNG schema file that is part of the xml2rfc
+      distribution, so schema information in this document should always be in
+      sync with the schema in actual use.  The textual descriptions depend on
+      manual updates in order to reflect the implementation.
+
+Introduction:
+
+    - Most elements listed in this documentation will have a "Content schema"
+      entry.  This shows the permitted content for the element, expressed in
+      <xref target="RNC">RelaxNG Compact Notation</xref>.  For relatively
+      trivial cases such as the ones in this document, the notation is quite
+      straightforward, and resembles simple regular expressions, but with
+      element names as atoms, instead of individual characters as atoms.  A
+      trailing '*' indicates zero or more instances; '+' indicates one or more,
+      '?' indicates zero or one.  '|' separates choices within a parenthesized
+      group, and ',' separates entries in a sequence.
+
+    - Some attributes which are valid according to the schema are not listed
+      in this documentation, mostly because they primarily are used
+      by the preptool, and are not useful to document authors.
+
+    - Elements and attributes that have been introduced after the publication
+      of the original schema version 3 specification, <xref target="RFC7991"/>,
+      have been marked with '(New)' in this document.
+
+    - For an introduction to
+      the v3 schema, with suggestions on how to transition from v2,
+      see <xref target="INTRO-TO-V3"/>.
+
+    - The RFCXML vocabulary reference is available at
+      <eref target="https://authors.ietf.org/en/rfcxml-vocabulary"/>.
+
+Options:
+
+    - The following command-line options are available.  Long options may be
+      shortened to the shortest substring that still makes the option string
+      unique, when given on the command line.  In config files, the full
+      long option string must be used.
+
+Configuration:
+
+    - Most options have built-in defaults, and the command-line switches above
+      can be used to override those.  Additionally, <tt>xml2rfc</tt> will
+      look for config files in some standard file locations.  The option
+      <tt>--&wj;values</tt> will show the places <tt>xml2rfc</tt> will look for
+      config files on your system (among other information).  Any settings
+      in config files will override
+      the program defaults, but will in turn be overridden by command-line
+      options.
+
+    - "The config files are expected to contain lines with option value assignments.
+      Lines with '#' as the first character are considered comments.  Here is an
+      example:"
+
+    - |
+      <sourcecode>
+      # ----
+      legacy-date-format = true
+      add-xinclude = true
+      external-js = false
+      # ----
+      </sourcecode>
+
+    - The complete long option names must be used in configuration files; 
+      abbreviations will not be recognised (in contrast with how abbreviations
+      are handled during command-line option processing).
+
+      
+     

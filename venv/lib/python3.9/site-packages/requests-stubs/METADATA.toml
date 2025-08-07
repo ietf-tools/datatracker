@@ -1,0 +1,6 @@
+version = "2.31.*"
+upstream_repository = "https://github.com/psf/requests"
+requires = ["types-urllib3"]
+
+[tool.stubtest]
+extras = ["socks"]

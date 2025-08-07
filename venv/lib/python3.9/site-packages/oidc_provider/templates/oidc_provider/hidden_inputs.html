@@ -1,0 +1,8 @@
+<input name="client_id" type="hidden" value="{{ params.client_id }}" />
+<input name="redirect_uri" type="hidden" value="{{ params.redirect_uri }}" />
+<input name="response_type" type="hidden" value="{{ params.response_type }}" />
+<input name="scope" type="hidden" value="{{ params.scope | join:' ' }}" />
+<input name="state" type="hidden" value="{{ params.state }}" />
+{% if params.nonce %}<input name="nonce" type="hidden" value="{{ params.nonce }}" />{% endif %}
+{% if params.code_challenge %}<input name="code_challenge" type="hidden" value="{{ params.code_challenge }}" />{% endif %}
+{% if params.code_challenge_method %}<input name="code_challenge_method" type="hidden" value="{{ params.code_challenge_method }}" />{% endif %}

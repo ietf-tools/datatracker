@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Library of RELAX NG pattern definitions for use in edit-config -->
+
+<grammar xmlns="http://relaxng.org/ns/structure/1.0"
+	 xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0"
+	 xmlns:yg="urn:ietf:params:xml:ns:yang:1"
+         datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+
+  <define name="operation-attribute">
+    <optional>
+      <attribute name="nc:operation">
+	<choice>
+	  <value>merge</value>
+	  <value>replace</value>
+	  <value>create</value>
+	  <value>delete</value>
+	  <value>remove</value>
+	</choice>
+      </attribute>
+    </optional>
+  </define>
+
+  <define name="yang-leaf-list-attributes">
+    <choice>
+      <optional>
+	<attribute name="yg:insert">
+	  <choice>
+	    <value>first</value>
+	    <value>last</value>
+	  </choice>
+	</attribute>
+      </optional>
+      <interleave>
+	<attribute name="yg:insert">
+	  <choice>
+	    <value>before</value>
+	    <value>after</value>
+	  </choice>
+	</attribute>
+	<attribute name="yg:value">
+	  <data type="string"/>
+	</attribute>
+      </interleave>
+    </choice>
+  </define>
+
+  <define name="yang-list-attributes">
+    <choice>
+      <optional>
+	<attribute name="yg:insert">
+	  <choice>
+	    <value>first</value>
+	    <value>last</value>
+	  </choice>
+	</attribute>
+      </optional>
+      <interleave>
+	<attribute name="yg:insert">
+	  <choice>
+	    <value>before</value>
+	    <value>after</value>
+	  </choice>
+	</attribute>
+	<attribute name="yg:key">
+	  <data type="string">
+	    <param name="pattern">(\s*\[\s*([_A-Za-z][_\-A-Za-z0-9.]*:)?[_A-Za-z][_\-A-Za-z0-9.]*\s*=\s*('.*'|".*")\s*\])+\s*</param>
+	  </data>
+	</attribute>
+      </interleave>
+    </choice>
+  </define>
+
+</grammar>

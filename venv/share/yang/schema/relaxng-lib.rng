@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Library of RELAX NG pattern definitions -->
+
+<grammar xmlns="http://relaxng.org/ns/structure/1.0"
+	 xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0"
+	 xmlns:en="urn:ietf:params:xml:ns:netconf:notification:1.0"
+         datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+
+  <define name="__anyxml__">
+    <zeroOrMore>
+      <choice>
+	<element>
+	  <anyName/>
+	  <ref name="__anything__"/>
+	</element>
+	<text/>
+      </choice>
+    </zeroOrMore>
+  </define>
+
+  <define name="__anything__">
+    <zeroOrMore>
+      <choice>
+	<attribute>
+          <anyName/>
+	</attribute>
+	<element>
+          <anyName/>
+          <ref name="__anything__"/>
+	</element>
+	<text/>
+      </choice>
+    </zeroOrMore>
+  </define>
+
+  <define name="__instance-identifier__">
+    <data type="string">
+      <param name="pattern">(/[a-zA-Z_][a-zA-Z0-9_\-.]*:[a-zA-Z_][a-zA-Z0-9_\-.]*(\[\s*(([a-zA-Z_][a-zA-Z0-9_\-.]*:[a-zA-Z_][a-zA-Z0-9_\-.]*|\.)\s*=\s*("[^"]*"|'[^']*')|[0-9]+)\s*\])*)+</param>
+    </data>
+  </define>
+
+  <define name="message-id-attribute">
+    <attribute name="message-id">
+      <data type="string">
+	<param name="maxLength">4095</param>
+      </data>
+    </attribute>
+  </define>
+
+  <define name="ok-element">
+    <element name="nc:ok">
+      <empty/>
+    </element>
+  </define>
+
+  <define name="edit-config-parameters">
+    <element name="target">
+      <choice>
+	<element name="running">
+	  <empty/>
+	</element>
+	<element name="candidate">
+	  <empty/>
+	</element>
+      </choice>
+    </element>
+    <optional>
+      <element name="default-operation">
+	<choice>
+	  <value>merge</value>
+	  <value>replace</value>
+	  <value>none</value>
+	</choice>
+      </element>
+    </optional>
+    <optional>
+      <element name="test-option">
+	<choice>
+	  <value>test-then-set</value>
+	  <value>set</value>
+	  <value>test-only</value>
+	</choice>
+      </element>
+    </optional>
+    <optional>
+      <element name="error-option">
+	<choice>
+	  <value>stop-on-error</value>
+	  <value>continue-on-error</value>
+	  <value>rollback-on-error</value>
+	</choice>
+      </element>
+    </optional>
+  </define>
+
+  <define name="eventTime-element">
+    <element name="en:eventTime">
+      <data type="dateTime"/>
+    </element>
+  </define>
+</grammar>

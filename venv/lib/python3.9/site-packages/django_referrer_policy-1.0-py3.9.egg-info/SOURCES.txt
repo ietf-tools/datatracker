@@ -1,0 +1,15 @@
+README.rst
+setup.cfg
+setup.py
+django_referrer_policy/__init__.py
+django_referrer_policy/middleware.py
+django_referrer_policy/runtests.py
+django_referrer_policy.egg-info/PKG-INFO
+django_referrer_policy.egg-info/SOURCES.txt
+django_referrer_policy.egg-info/dependency_links.txt
+django_referrer_policy.egg-info/not-zip-safe
+django_referrer_policy.egg-info/requires.txt
+django_referrer_policy.egg-info/top_level.txt
+django_referrer_policy/tests/__init__.py
+django_referrer_policy/tests/test_middleware.py
+django_referrer_policy/tests/urls.py

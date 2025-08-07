@@ -1,0 +1,14 @@
+CHANGELOG.md
+LICENSE
+MANIFEST.in
+README.md
+rfc2html.py
+setup.cfg
+setup.py
+tests.py
+tox.ini
+rfc2html.egg-info/PKG-INFO
+rfc2html.egg-info/SOURCES.txt
+rfc2html.egg-info/dependency_links.txt
+rfc2html.egg-info/requires.txt
+rfc2html.egg-info/top_level.txt

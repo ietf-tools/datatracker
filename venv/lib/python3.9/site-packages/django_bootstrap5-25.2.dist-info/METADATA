@@ -1,0 +1,127 @@
+Metadata-Version: 2.4
+Name: django-bootstrap5
+Version: 25.2
+Summary: Bootstrap 5 for Django
+Keywords: django,bootstrap,bootstrap5
+Author: Dylan Verheul
+Author-email: Dylan Verheul <dylan@dyve.net>
+License-Expression: BSD-3-Clause
+License-File: AUTHORS
+License-File: LICENSE
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Web Environment
+Classifier: Framework :: Django
+Classifier: Framework :: Django :: 4.2
+Classifier: Framework :: Django :: 5.1
+Classifier: Framework :: Django :: 5.2
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Utilities
+Requires-Dist: django>=4.2
+Requires-Dist: jinja2>=3.0,<4 ; extra == 'jinja'
+Requires-Python: >=3.9
+Project-URL: Changelog, https://github.com/zostera/django-bootstrap5/blob/main/CHANGELOG.md
+Project-URL: Documentation, https://django-bootstrap5.readthedocs.io/
+Project-URL: Homepage, https://github.com/zostera/django-bootstrap5
+Project-URL: Issues, https://github.com/zostera/django-bootstrap5/issues
+Project-URL: Source, https://github.com/zostera/django-bootstrap5
+Provides-Extra: jinja
+Description-Content-Type: text/markdown
+
+# django-bootstrap5
+
+[![Tests](https://github.com/zostera/django-bootstrap5/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/zostera/django-bootstrap5/actions?workflow=test)
+[![Coverage Status](https://coveralls.io/repos/github/zostera/django-bootstrap5/badge.svg?branch=main)](https://coveralls.io/github/zostera/django-bootstrap5?branch=main)
+[![Latest PyPI version](https://img.shields.io/pypi/v/django-bootstrap5.svg)](https://pypi.python.org/pypi/django-bootstrap5)
+
+Bootstrap 5 for Django.
+
+## Goal
+
+The goal of this project is to seamlessly blend Django and Bootstrap 5.
+
+## Status
+
+Ready for production. Issues and pull requests welcome, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Requirements
+
+This package requires a combination of Python and Django that is currently supported.
+
+See "Supported Versions" on https://www.djangoproject.com/download/.
+
+This package uses [uv](https://github.com/astral-sh/uv) and [just](https://github.com/casey/just) for local development.
+
+## Documentation
+
+The full documentation is at https://django-bootstrap5.readthedocs.io/
+
+## Installation
+
+1. Install using pip:
+
+    ```console
+    pip install django-bootstrap5
+    ```
+
+2. Add to `INSTALLED_APPS` in your `settings.py`:
+
+   ```python
+   INSTALLED_APPS = (
+       # ...
+       "django_bootstrap5",
+       # ...
+   )
+   ```
+
+3. In your templates, load the `django_bootstrap5` library and use the `bootstrap_*` tags. See example below.
+
+## Example template
+
+```jinja2
+{% load django_bootstrap5 %}
+
+<form action="/url/to/submit/" method="post" class="form">
+    {% csrf_token %}
+
+    {% bootstrap_form form %}
+
+    {% bootstrap_button button_type="submit" content="OK" %}
+    {% bootstrap_button button_type="reset" content="Cancel" %}
+</form>
+```
+
+## Example app
+
+An example app is provided in the folder `example`. You can run the example app with this command:
+
+```console
+just example
+```
+
+## Bugs and suggestions
+
+If you have found a bug or if you have a request for additional functionality, please use the issue tracker on GitHub.
+
+https://github.com/zostera/django-bootstrap5/issues
+
+## License
+
+You can use this under BSD-3-Clause. See [LICENSE](LICENSE) file for details.
+
+## Author
+
+Developed and maintained by [Zostera](https://zostera.nl).
+
+Original author: [Dylan Verheul](https://github.com/dyve).
+
+Thanks to everybody that has contributed pull requests, ideas, issues, comments and kind words.
+
+Please see [AUTHORS](AUTHORS) for a list of contributors.

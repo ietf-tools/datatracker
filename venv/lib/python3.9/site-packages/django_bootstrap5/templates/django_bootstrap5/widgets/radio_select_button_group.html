@@ -1,0 +1,16 @@
+<div{% if widget.attrs.id %} id="{{ widget.attrs.id }}"{% endif %} class="btn-group" role="group">
+  {% for group, options, index in widget.optgroups %}
+    {% for option in options %}
+      <input type="{{ option.type }}"
+             class="{{ widget.attrs.class|add:' btn-check' }}"
+             autocomplete="off"
+             name="{{ option.name }}"
+             id="{{ option.attrs.id }}"
+             {% if option.value != None %} value="{{ option.value|stringformat:'s' }}"
+              {% if option.attrs.checked %} checked="checked"{% endif %}{% endif %}
+             {% if widget.attrs.disabled or option.attrs.disabled %} disabled{% endif %}
+             {% if widget.required %} required{% endif %}>
+      <label class="btn btn-outline-primary" for="{{ option.attrs.id }}">{{ option.label }}</label>
+    {% endfor %}
+  {% endfor %}
+</div>

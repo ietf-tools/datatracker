@@ -1,0 +1,2 @@
+[console_scripts]
+oic-client-management = oic.utils.client_management:run

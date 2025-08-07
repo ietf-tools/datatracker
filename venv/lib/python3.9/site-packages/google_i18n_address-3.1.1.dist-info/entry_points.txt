@@ -1,0 +1,2 @@
+[console_scripts]
+update-validation-files = i18naddress.scripts:download_json_files

@@ -1,0 +1,20 @@
+{% load django_bootstrap5 %}
+{% bootstrap_server_side_validation_class widget as server_side_validation_class %}
+<div{% include "django/forms/widgets/attrs.html" %}>
+    {% for group, options, index in widget.optgroups %}
+        {% if group %}
+            <div>{{ group }}</div>{% endif %}
+        {% for option in options %}
+            <div class="form-check">
+                <input class="{% bootstrap_classes 'form-check-input' server_side_validation_class %}"
+                       type="{{ option.type }}"
+                       name="{{ option.name }}"
+                       id="{{ option.attrs.id }}"
+                        {% if option.value != None %} value="{{ option.value|stringformat:'s' }}"
+                            {% if option.attrs.checked %} checked="checked"{% endif %}{% endif %}
+                        {% if widget.attrs.disabled or option.attrs.disabled %} disabled{% endif %}>
+                <label class="form-check-label" for="{{ option.attrs.id }}">{{ option.label }}</label>
+            </div>
+        {% endfor %}
+    {% endfor %}
+</div>

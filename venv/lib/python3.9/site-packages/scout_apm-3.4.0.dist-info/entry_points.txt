@@ -1,0 +1,2 @@
+[console_scripts]
+core-agent-manager = scout_apm.core.cli.core_agent_manager:main

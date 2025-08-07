@@ -1,0 +1,367 @@
+<?xml version='1.0' encoding='utf-8'?>  <!-- -*- indent-with-tabs: 0 -*- -->
+<!DOCTYPE rfc [
+  <!ENTITY nbsp    "&#160;">
+  <!ENTITY zwsp   "&#8203;">
+  <!ENTITY nbhy   "&#8209;">
+  <!ENTITY wj     "&#8288;">
+]>
+<rfc submissionType='independent' ipr="none " docName="xml2rfc-docs-{{version}}"
+           category="info"
+           xmlns:xi="http://www.w3.org/2001/XInclude" version="3"
+           sortRefs="true" indexInclude="false" tocDepth="{{toc_depth}}" >
+
+{# <!-- *** Macros *** --> #}
+{# <!-- render_items() --> #}
+{% macro render_items(items) %}
+ {% for item in items %}
+   {{ render_item(item) }}
+ {% endfor %}
+{% endmacro %}
+{% macro render_item(item) %}
+   {% if item is string %}
+     {% if item.startswith('<') %}
+       {{item}}
+     {% else %}
+     <t>
+       {{item}}
+     </t>
+     {% endif %}
+   {% elif item is mapping %}
+   <dl newline="true">
+     {% for key, value in item|dictsort(case_sensitive=True) %}
+       <dt>{{ key }}</dt>
+       <dd>
+         {% if value is string %}
+            {{value}}
+         {% elif value is sequence %}
+           {% for item in value %}
+             {% if item.startswith('<') %}
+               {{item}}
+             {% else %}
+               <t>{{item}}</t>
+             {% endif %}
+           {% endfor %}
+         {% else %}
+           <t>*** Nested YAML mappings are not supported by the builtin doc.xml ***</t>
+         {% endif %}
+       </dd>
+     {% endfor %}
+   </dl>
+   {% elif item is sequence %}
+   <ul spacing="compact">
+     {% for i in item %}
+       <li>{{ i }}</li>
+     {% endfor %}
+   </ul>
+   {% endif %}
+{% endmacro %}
+{# <!-- linkify_rnc() --> #}
+{% macro linkify_rnc(rnc) -%}
+ {% for item in rnc.replace(',', ' , ').split() -%}
+   {%- if item in v3_element_tags -%}
+     &#x0020;<xref target="element-{{item}}" format="none">{{item}}</xref>
+   {%- elif item in ['?', '*', '+', '?,', '*,', '+,', ','] -%}
+     {{item}}
+   {%- else -%}
+     &#x0020;{{item}}
+   {%- endif -%}
+ {%- endfor %}
+{%- endmacro %}
+
+   <front>
+      <title abbrev="Xml2rfc Vocabulary V3 Schema">Xml2rfc Vocabulary Version 3 Schema<br/>xml2rfc release {{version}}</title>
+      <author fullname="xml2rfc(1)">
+      </author>
+      <date/>
+      <workgroup>xml2rfc(1)</workgroup>
+      <abstract>
+         {{ render_items(descriptions["Abstract"]) }}
+      </abstract>
+   </front>
+   <middle>
+
+      <!-- Introduction -->
+      <section>
+         <name>Introduction</name>
+         {{ render_items(descriptions["Introduction"]) }}
+         <t>
+            This documentation applies to xml2rfc version {{version}}.
+         </t>
+      </section>
+
+      <!-- Elements -->
+      <section><name>Schema Version 3 Elements</name>
+      {% for element in elements %}
+        {% if not element.deprecated %}
+        <section anchor="element-{{element.tag}}">
+            <name>&lt;{{element.tag}}&gt; {% if element.new %} (New){% endif %}</name>
+            {% if element.description %}
+              {{ render_items(element.description) }}
+            {% else %}
+              <t>*** Missing description: &lt;{{element.tag}}&gt; ***</t>
+            {% endif %}
+            {% if element.parents %}
+            <t>This element can be a child element of&nbsp;
+               {%- for p in element.parents %}
+                 {% if p in v3_element_tags %}
+                   {% if loop.last and not loop.first %} and {% endif %}&lt;<xref target="element-{{p}}" format="none">{{p}}</xref>&gt;{% if not loop.last and not loop.length == 2 %}, {% endif %}
+                 {% endif %}
+             {% endfor %}.
+            </t>
+            {% endif %}            
+            {% if element.rnc %}
+            <dl>
+               <dt>Content schema:</dt>
+               <dd>{{ linkify_rnc(element.rnc) }}</dd>
+            </dl>
+            {% endif %}
+            {% for attrib in element.attributes %}
+            <section anchor="attrib-{{element.tag}}-{{attrib.name}}">
+              <name>
+                 "{{attrib.name}}" Attribute
+                 {%- if attrib.required %} (Required){% endif -%}
+                 {%- if attrib.new and not element.new %} (New){% endif %}
+              </name>
+              {% if attrib.rnc or attrib.default %}
+              <dl spacing="compact">
+              {% if attrib.rnc %}    <dt>Possible values:</dt><dd>{{ attrib.rnc }}</dd>{% endif %}
+              {% if attrib.default %}<dt>Default value:</dt>  <dd>"{{ attrib.default }}"</dd>{% endif %}
+              </dl>
+              {% endif %}
+              <!-- Attribute description -->
+              {% if attrib.description %}
+                {{ render_items(attrib.description) }}
+              {% else %}
+                {% if attrib.name == "anchor" %}
+                  <t>Document-wide unique identifier for this &lt;{{element.tag}}&gt; element.</t>
+                {% elif attrib.name == "ascii" %}
+                  <t>
+                     The ASCII equivalent of the &lt;{{element.tag}}&gt; content.
+                     {% if element.tag in bare_latin_tags %}
+                     This element may have non-ASCII Latin script content without specifying
+                     an ASCII equivalent, but for other non-ASCII content an ASCII equivalent
+                     is required.
+                     {% endif %}
+                  </t>
+                {% elif attrib.name == "title" %}
+                  <t>Deprecated.  Use the &lt;name&gt; element instead.</t>
+                {% elif not attrib.deprecated %}
+                  <t>*** Missing description: "{{attrib.name}}" Attribute ***</t>
+                {% endif %}
+              {% endif %}
+              {% if attrib.choice_descriptions %}
+              <dl newline="true">
+              {% for choice in attrib.choices %}
+                {% if choice.description %}
+                <dt>"{{ choice.value }}"</dt>
+                <dd>
+                   {% for item in choice.description %}
+                   <t>{{ item }}</t>
+                   {% endfor %}
+                </dd>
+                {% endif %}
+              {% endfor %}
+              </dl>
+              {% endif %}
+            </section>
+            {% endfor %}
+         </section>
+        {% endif %}
+      {% endfor %}
+      </section>
+
+      <!-- Deprecations -->
+      <section>
+         <name>Deprecated Elements and Attributes</name>
+         <section>
+           <name>Elements from v2 that have been Deprecated</name>
+           <t>
+
+              The following elements from v2 have been deprecated:
+
+           </t>
+           <ul spacing="compact">
+           {% for element in elements %}
+             {% if element.deprecated %}
+             <li>&lt;{{element.tag}}&gt;</li>
+             {% endif %}
+           {% endfor %}
+           </ul>
+        </section>
+        <section>
+           <name>Attributes from v2 that have been Deprecated</name>
+           <t>
+
+              The following attributes from v2 have been deprecated.  Only
+              attributes of elements that have not themselves been deprecated
+              are listed:
+
+           </t>
+           <dl newline="true">
+           {% for element in elements %}
+             {% if element.deprecated_attributes and not element.deprecated %}
+               <dt>&lt;{{element.tag}}&gt;:</dt>
+               <dd>
+                  <ul spacing="compact">
+               {% for attrib in element.attributes %}
+                 {% if attrib.deprecated %}
+                   <li>"{{attrib.name}}"</li>
+                 {% endif %}
+               {% endfor %}
+                 </ul>
+               </dd>
+             {% endif %}
+           {% endfor %}
+           </dl>
+
+        </section>
+      </section>
+   </middle>
+   <back>
+
+      <!-- References -->
+      <references>
+         <name>References</name>
+         <reference anchor="RNC" target="https://www.oasis-open.org/committees/relax-ng/compact-20021121.html">
+            <front>
+               <title>RELAX NG Compact Syntax</title>
+               <author fullname="James Clark">
+                  <address><email>jjc@jclark.com</email></address>
+               </author>
+            </front>
+         </reference>
+
+         <reference anchor="INTRO-TO-V3" target="https://tools.ietf.org/src/xml2rfc/trunk/cli/doc/xml2rfc3.html">
+            <front>
+               <title>Introduction to xml2rfc Version 3</title>
+               <author initials="H." surname="Levkowetz" fullname="Henrik Levkowetz"/>
+               <date year="2019" month="Feb" day="20"/>
+            </front>
+         </reference>
+
+         <reference anchor="IDGUIDE" target="https://www.ietf.org/id-info/guidelines.html">
+            <front>
+               <title>Guidelines to Authors of Internet-Drafts</title>
+               <author initials="R." surname="Housley" fullname="R. Housley"/>
+               <date year="2010" month="December"/>
+            </front>
+         </reference>
+
+         <reference anchor="LINKRELATIONS" target="https://www.iana.org/assignments/link-relations/link-relations.xhtml">
+            <front>
+               <title>Link Relations</title>
+               <author>
+                  <organization>IANA</organization>
+               </author>
+               <date/>
+            </front>
+         </reference>
+
+         <referencegroup anchor="BCP14" target="https://www.rfc-editor.org/bcp/bcp14.txt">
+            <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.2119.xml"/>
+            <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8174.xml"/>
+         </referencegroup>
+         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.2026.xml"/>
+         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.2397.xml"/>
+         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.3339.xml"/>
+         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.3966.xml"/>
+         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.3986.xml"/>
+         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.5234.xml"/>
+         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.6068.xml"/>
+         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.6087.xml"/>
+         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.7322.xml"/>
+         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.7669.xml"/>
+         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.7841.xml"/>
+         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.7991.xml"/>
+         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.7996.xml"/>
+         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.7997.xml"/>
+         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.7998.xml"/>
+
+      </references>
+
+      <!-- Schema -->
+      <section>
+         <name>RELAX NG Schema</name>
+         <sourcecode type="relax-ng-compact" markers="true" name="v3.rnc">
+{{schema}}
+         </sourcecode>
+      </section>
+
+      <!-- Options -->
+      <section>
+         <name><tt>xml2rfc</tt> Command-line Options</name>
+         {{ render_items(descriptions["Options"]) }}
+         {% for group in options._action_groups %}
+         {% if group.options %}
+         <section>
+            <name>{{group.title|capfirst}}</name>
+            {% if group.description %}
+            <t>
+               {{group.description|e}}
+               The group has {{group.options}} options.
+            </t>
+            {% endif %}
+            <dl newline="true">
+            {% for option in group._actions %}
+              {% if not option.suppress %}
+                {% if option.container == group %}
+                  {% if option.option_strings %}
+                    {% if not option.has_positive %}
+                    <dt anchor="option{{option.option_strings[-1]}}">
+                       {% for o in option.option_strings|reverse %}{% if not loop.first %}, {% endif %}<tt>{{ o }}</tt>{% endfor %}
+                       {% if option.metavar %} = {{option.metavar}}{% endif %}
+                    </dt>
+                    <dd>
+                       {% if option.default is string and not option.default.startswith("==") %}
+                       <t><br/>Default value: {{option.default}}</t>
+                       {% endif %}
+
+                       <t>
+                          {{ option.help|e|capfirst }}.
+                       </t>
+                       {{ render_items(descriptions[option.option_strings[-1]]) }}
+                       {% if option.has_negation %}
+                       <t>
+                          This option can be negated with {{ option.option_strings[-1]|replace('--', '--no-') }}.
+                       </t>
+                       {% endif %}
+                    </dd>
+                    {% endif %}
+                  {% else %}
+                  <dt><tt>{{ option.dest }}</tt></dt><dd>{{ option.help }}</dd>
+                  {% endif %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+            </dl>
+         </section>
+         {% endif %}
+         {% endfor %}
+      </section>
+
+      <!-- Configuration -->
+      <section>
+         <name><tt>xml2rfc</tt> Configuration Files</name>
+         {{ render_items(descriptions["Configuration"]) }}
+      </section>
+
+      <!-- Template variables -->
+      <section>
+         <name><tt>xml2rfc</tt> Documentation Template Variables</name>
+         <t>
+
+            The following variables are available for use in an xml2rfc
+            manpage Jinja2 template, as of xml2rfc version {{version}}:
+
+         </t>
+         <dl newline="true">
+            {% for key,value in context|dictsort %}
+               {% if key != "context" %}
+               <dt>{{'{{'}} {{key}} {{'}}'}}:</dt>
+               <dd>{{ descriptions["-context-"][key] }}</dd>
+               {% endif %}
+            {% endfor %}
+         </dl>
+      </section>
+   </back>
+</rfc>

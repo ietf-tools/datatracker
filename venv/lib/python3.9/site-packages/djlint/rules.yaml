@@ -1,0 +1,270 @@
+- rule:
+    name: T001
+    message: Variables should be wrapped in a whitespace.
+    flags: re.DOTALL
+    exclude:
+      - handlebars
+      - golang
+    patterns:
+      # double curly
+      - '{{[-+]?(?:[^\s\-\+](?:(?!}}|{{).)*?|(?:(?!}}|{{).)*?[^\s\-\+])[-+]?}}'
+      # curly percent
+      - '{%(?:[-+]?[^\s\-\+](?:(?!%}|{%).)*?|(?:(?!%}|{%).)*?[^\s\-\+])[-+]?%}'
+- rule:
+    name: T002
+    message: Double quotes should be used in tags.
+    flags: re.DOTALL
+    patterns:
+      - "{%[ \t]*?(?:trans(?:late)?|with|extends|include|now)[\\s]+?(?:(?:(?!%}|').)+?=)?'(?:(?!%}|').)*?'(?:(?!%}).)*?%}"
+- rule:
+    name: T003
+    message: "Endblock should have name. Ex: {% endblock body %}."
+    flags: re.DOTALL
+    patterns:
+      - '{%\s*?endblock\s*?%}'
+- rule:
+    name: D004
+    message: (Django) Static urls should follow {% static path/to/file %} pattern.
+    flags: re.DOTALL
+    # this should be using the static path from django settings
+    patterns:
+      - <(?:link|img|script|source)\s[^\>]*?(?:href|src|srcset)=[\"\']/?static/?
+- rule:
+    name: J004
+    message: (Jinja) Static urls should follow {{ url_for('static'..) }} pattern.
+    flags: re.DOTALL
+    # this should be using the static path from django settings
+    patterns:
+      - <(?:link|img|script|source)\s[^\>]*?(?:href|src|srcset)=[\"\']/?static/?
+- rule:
+    name: H005
+    message: Html tag should have lang attribute.
+    flags: re.DOTALL|re.I
+    patterns:
+      - <html\s*(?:(?!lang).)*>
+- rule:
+    name: H006
+    message: Img tag should have height and width attributes.
+    flags: re.DOTALL|re.I
+    patterns:
+      - <img\b(?:(?!(?:height)=)[^>])*/?>
+      - <img\b(?:(?!(?:width)=)[^>])*/?>
+- rule:
+    name: H007
+    message: <!DOCTYPE ... > should be present before the html tag.
+    flags: re.DOTALL|re.I
+    patterns:
+      - ^<html
+- rule:
+    name: H008
+    message: Attributes should be double quoted.
+    flags: re.DOTALL|re.I
+    patterns:
+      - <(?:\w+)\b(\"[^\"]*\"|'[^']*'|{[^}]*}|[^'\">{}])*(?:class|id|src|width|height|alt|style|lang|title|srcset|media)=\'[^\']*'
+- rule:
+    name: H009
+    message: Tag names should be lowercase.
+    flags: re.DOTALL
+    patterns:
+      - (?<=<)/?(?:HTML|BODY|DIV|P|SPAN|TABLE|TR|TD|TH|THEAD|TBODY|CODE|UL|OL|LI|H1|H2|H3|H4|H5|H6|A|DD|DT|BLOCKQUOTE|SELECT|FORM|FIELDSET|OPTGROUP|LEGEND|LABEL|HEADER|CACHE|MAIN|ASIDE|FOOTER|SECTION|NAME|FIGURE|FIGCAPTION|VIDEO|G|SVG|BUTTON|PATH|PICTURE|SCRIPT|STYLE|DETAILS|SUMMARY)\b
+- rule:
+    name: H010
+    message: Attribute names should be lowercase.
+    flags: re.DOTALL
+    patterns:
+      - <\w+[^\>]+?(?:CLASS|ID|SRC|WIDTH|HEIGHT|ALT|STYLE|LANG|TITLE|MEDIA|SRCSET)=
+- rule:
+    name: H011
+    message: Attribute values should be quoted.
+    flags: re.DOTALL|re.I|re.M|re.X
+    patterns:
+      - |
+        <(?:(?!meta)\w+)\b(\"[^\"]*\"|'[^']*'|{[^}]*}|[^'\">{}])*(?:class|id|src|width|height|alt|style|lang|title|href|action|method|checked|required|srcset)=[a-zA-Z_-]+
+      - <(?:meta)\s+?[^>]*?(?:class|id|src|alt|style|lang|title|href|action|method|name)=[a-zA-Z_-]+
+- rule:
+    name: H012
+    message: There should be no spaces around attribute =.
+    flags: re.DOTALL
+    patterns:
+      - <\w+?(\"[^\"]*\"|'[^']*'|{[^}]*}|[^'\">{}])*\s+=
+      - <\w+?(\"[^\"]*\"|'[^']*'|{[^}]*}|[^'\">{}])*=\s
+- rule:
+    name: H013
+    message: Img tag should have an alt attribute.
+    flags: re.DOTALL|re.I
+    patterns:
+      - <img\b(?:(?!(?:alt)=)[^>])*/?>
+- rule:
+    name: H014
+    message: Found extra blank lines.
+    flags: re.DOTALL
+    patterns:
+      - "[^\n]{,10}\n{3,}"
+- rule:
+    name: H015
+    message: Follow h tags with a line break.
+    flags: re.DOTALL
+    patterns:
+      - </h\d?>(?:(?!(.+\r?\n){1,}).)*<[a-zA-Z]+\d?
+- rule:
+    name: H016
+    message: Missing title tag in html.
+    flags: re.DOTALL|re.I
+    patterns:
+      # Title allow a list of global attributes.
+      # https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes#list_of_global_attributes
+      - <html[^>]*?>(?:(?!<title(\s+(class|data-[\-\._0-9a-zA-Z:]+|dir|id|lang|translate)=\"[^"]*\")*>).)*</html>
+- rule:
+    name: H017
+    message: Void tags should be self closing.
+    flags: re.DOTALL|re.I
+    default: false
+    patterns:
+      - <(img|input|area|base|br|col[^(?:group)]|embed|hr|link|param|source|track|wbr|command|keygen|menuitem|path)(\b(\"[^\"]*\"|'[^']*'|{{[^}]*}}|{%[^%]*%}|{#[^#]*#}|[^'\">{}])*)(?<!/)>
+      - <(img|input|area|base|br|col|embed|hr|link|param|source|track|wbr|command|keygen|menuitem|path)>
+- rule:
+    name: D018
+    message: (Django) Internal links should use the {% url ... %} pattern.
+    flags: re.DOTALL|re.I
+    patterns:
+      - <(?:a|div|span|input)\b[^>]*?\s(?:href|data-url|data-src|action)=[\"|'](?!(?:https?://)|javascript:|on\w+:|mailto:|tel:|data:|sms:)[\w|/]+
+      - <form(?:(?!>|\saction=(?:\"[^\"]*\"|'[^']*')).)*?\saction=[\"|'](?!(?:https?://)|javascript:|on\w+:|mailto:|tel:)[\w|/|\s]+
+- rule:
+    name: J018
+    message: (Jinja) Internal links should use the {{ url_for() ... }} pattern.
+    flags: re.DOTALL|re.I
+    patterns:
+      - <(?:a|div|span|input)\b[^>]*?\s(?:href|data-url|data-src|action)=[\"|'](?!(?:https?://)|javascript:|on\w+:|mailto:|tel:|data:|sms:)[\w|/]+
+      - <form(?:(?!>|\saction=(?:\"[^\"]*\"|'[^']*')).)*?\saction=[\"|'](?!(?:https?://)|javascript:|on\w+:|mailto:|tel:)[\w|/|\s]+
+- rule:
+    name: H019
+    message: Replace 'javascript:abc()' with on_ event and real url.
+    flags: re.DOTALL|re.I
+    patterns:
+      - <(?:a|div|span|input)\s+?[^>]*?(?:href|data-url)=[\"|']javascript:[\w|/]+
+      - <form\s+?[^>]*?(?:action)=[\"|']javascript:[\w|/]+
+- rule:
+    name: H020
+    message: Empty tag pair found. Consider removing.
+    flags: re.DOTALL|re.I
+    patterns:
+      - <((?!td|li|th|dt|dd)\w+)\s*?>\s*?<\/\1>
+- rule:
+    name: H021
+    message: Inline styles should be avoided.
+    flags: re.I|re.DOTALL
+    patterns:
+      - <\w+\s(?:[^>]*\s)?style=(?=((?!>|{{|{%).)*>)
+- rule:
+    name: H022
+    message: Use HTTPS for external links.
+    flags: re.I
+    patterns:
+      - <\w+\s[^>]*?(?:href|data-url|action|src|url|srcset)=[\"|']http://[^>]*?>
+- rule:
+    name: H023
+    message: Do not use entity references.
+    flags: re.I
+    patterns:
+      - "&(?!(lt|gt|amp|quot|nbsp|ensp|emsp|thinsp))[#0-9a-z]{,30};"
+- rule:
+    name: H024
+    message: Omit type on scripts and styles.
+    flags: re.I
+    patterns:
+      - <(?:script|style)[^>]*?type=[\"|'](?:(?:text/css)|(?:text/javascript))[^>]*?>
+- rule:
+    name: H025
+    message: Tag seems to be an orphan.
+    python_module: djlint.rules.H025
+- rule:
+    name: H026
+    message: Empty id and class tags can be removed.
+    flags: re.I
+    patterns:
+      - <\w+\b[^(?:{(?:%|{|#))>]*?\s(class|id)\b=(\"\"|'')
+      - <\w+\b[^(?:{(?:%|{|#))>-]*?\s(class|id)\b[^=\"-]
+- rule:
+    name: T027
+    message: Unclosed string found in template syntax.
+    flags: re.I
+    patterns:
+      # for tags with 3/5/7... quotes
+      # for single quotes
+      - "{%((?:(?!'|%}).)*?(')(?:(?!\\2|%}).)*?\\2(?:(?!\\2|%}).)*?)*\\2(?:(?!\\2|%}).)*?%}"
+      # for double quotes
+      - '{%((?:(?!"|%}).)*?(")(?:(?!\2|%}).)*?\2(?:(?!\2|%}).)*?)*\2(?:(?!\2|%}).)*?%}'
+
+      # for single quotes
+      - "{{((?:(?!'|}}).)*?(')(?:(?!\\2|}}).)*?\\2(?:(?!\\2|}}).)*?)*\\2(?:(?!\\2|}}).)*?}}"
+      # for double quotes
+      - '{{((?:(?!"|}}).)*?(")(?:(?!\2|}}).)*?\2(?:(?!\2|}}).)*?)*\2(?:(?!\2|}}).)*?}}'
+
+      # for tags with a single quote
+      - "{%((?:(?!'|\"|%}).)*?('|\")(?:(?!\\2|%}).)*?)%}"
+      - "{{((?:(?!'|\"|}}).)*?('|\")(?:(?!\\2|}}).)*?)}}"
+
+- rule:
+    name: T028
+    message: Consider using spaceless tags inside attribute values. {%- if/for -%}
+    exclude:
+      - django
+    patterns:
+      - <(?:/?(?:\w+)\b(?:\"[^\"]*\"|'[^']*'|{[^}]*}|[^'\">{}/])*(?<!\bclass)=([\"'])(?:(?!\1).)*?({%)[^-])\s*?(?:if|for|else|end)
+      - <(?:/?(?:\w+)\b(?:\"[^\"]*\"|'[^']*'|{[^}]*}|[^'\">{}/])*(?<!\bclass)=([\"'])(?:(?!\1).)*?{%(?:(?!%}).)*(?:if|else|for|end)(?:(?!%}).)*[^-](%}))
+- rule:
+    name: H029
+    message: Consider using lowercase form method values.
+    patterns:
+      - <[fF][oO][rR][mM]\b(?:\"[^\"]*\"|'[^']*'|{[^}]*}|[^'\">{}/])*([mM][eE][tT][hH][oO][dD])=(([\"'])[a-zA-Z]*?[A-Z][a-zA-Z]*?\3)
+- rule:
+    name: H030
+    message: Consider adding a meta description.
+    flags: re.DOTALL|re.I
+    patterns:
+      - <html[^>]*?>(?:(?!<meta[^>]*?name=([\"|'])description\b).)*</html>
+- rule:
+    name: H031
+    message: Consider adding meta keywords.
+    flags: re.DOTALL|re.I
+    patterns:
+      - <html[^>]*?>(?:(?!<meta[^>]*?name=([\"|'])keywords\b).)*</html>
+- rule:
+    name: T032
+    message: Extra whitespace found in template tags.
+    patterns:
+      - "{%(([\"|'](?:(?!'|\"|%}).)*?[\"|'])|[^(?:%}|'|\"|\n)])*?[ \t]{2,}"
+      - "{{(([\"|'](?:(?!'|\"|}}).)*?[\"|'])|[^(?:}}|'|\"|\n)])*?[ \t]{2,}"
+- rule:
+    name: H033
+    message: Extra whitespace found in form action.
+    patterns:
+      - <form[^>]*\saction=['|"]\s
+      - <form[^>]*\saction=(['|"])({{(?:(?!}}).)*}}|{%(?:(?!%}).)*%}|([^"'{]))*\s+?\1
+- rule:
+    name: T034
+    message: Did you intend to use {% ... %} instead of {% ... }%?
+    flags: re.DOTALL
+    patterns:
+      - "{%(?:(?!%}).)*}%"
+- rule:
+    name: H035
+    message: Meta tags should be self closing.
+    flags: re.DOTALL|re.I
+    default: false
+    patterns:
+      - <(meta)(\b(\"[^\"]*\"|'[^']*'|{{[^}]*}}|{%[^%]*%}|{#[^#]*#}|[^'\">{}])*)(?<!/)>
+      - <(meta)>
+- rule:
+    name: H036
+    message: Avoid use of <br> tags.
+    flags: re.I
+    default: false
+    patterns:
+      - <br\s*?\/?>
+- rule:
+    name: H037
+    message: Duplicate attribute found.
+    flags: re.I
+    patterns:
+      - <\w[^>]*?\s\K([a-z-:][a-z-]*?)(?==(?:\"[^\"]*\"|'[^']*'|{{(?:(?!}}).)*}}|{%(?:(?!%}).)*%}|{#(?:(?!#}).)*#}|[^'\">{}])*[^-:a-z]\1=[^>]*?>)

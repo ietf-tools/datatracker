@@ -1,0 +1,36 @@
+{% load django_bootstrap5 %}
+{% with url=bootstrap_pagination_url|default:"" %}
+    <ul class="{{ pagination_css_classes }}">
+        <li class="page-item{% if current_page == 1 %} disabled{% endif %}">
+            <a class="page-link"
+               href="{% if current_page == 1 %}#{% else %}{% bootstrap_url_replace_param url parameter_name 1 %}{% endif %}">
+                &laquo;
+            </a>
+        </li>
+        {% if pages_back %}
+            <li class="page-item">
+                <a class="page-link"
+                   href="{% bootstrap_url_replace_param url parameter_name pages_back %}">&hellip;</a>
+            </li>
+        {% endif %}
+        {% for page in pages_shown %}
+            <li class="page-item{% if current_page == page %} active{% endif %}">
+                <a class="page-link"
+                   href="{% if current_page == page %}#{% else %}{% bootstrap_url_replace_param url parameter_name page %}{% endif %}">
+                    {{ page }}
+                </a>
+            </li>
+        {% endfor %}
+        {% if pages_forward %}
+            <li class="page-item">
+                <a class="page-link" href="{% bootstrap_url_replace_param url parameter_name pages_forward %}">&hellip;</a>
+            </li>
+        {% endif %}
+        <li class="page-item{% if current_page == num_pages %} disabled{% endif %}">
+            <a class="page-link"
+               href="{% if current_page == num_pages %}#{% else %}{% bootstrap_url_replace_param url parameter_name num_pages %}{% endif %}">
+                &raquo;
+            </a>
+        </li>
+    </ul>
+{% endwith %}

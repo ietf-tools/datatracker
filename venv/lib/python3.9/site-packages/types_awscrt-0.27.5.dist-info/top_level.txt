@@ -1,0 +1,4 @@
+awscrt-stubs
+build
+dist
+scripts
