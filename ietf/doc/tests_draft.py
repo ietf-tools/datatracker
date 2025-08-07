@@ -1973,7 +1973,7 @@ class ChangeStreamStateTests(TestCase):
 
         # set new state
         old_state = draft.get_state("draft-stream-%s" % draft.stream_id )
-        new_state = State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="parked")
+        new_state = State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="c-adopt") #cfa ipr notif
         self.assertNotEqual(old_state, new_state)
         empty_outbox()
         events_before = draft.docevent_set.count()
@@ -1996,7 +1996,7 @@ class ChangeStreamStateTests(TestCase):
             due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1),
             f'Due date {reminder[0].due} should be {due} +/- 1 day'
         )
-        self.assertEqual(len(outbox), 1)
+        self.assertEqual(len(outbox), 2)
         self.assertTrue("state changed" in outbox[0]["Subject"].lower())
         self.assertTrue("mars-chairs@ietf.org" in outbox[0].as_string())
         self.assertTrue("marsdelegate@ietf.org" in outbox[0].as_string())
