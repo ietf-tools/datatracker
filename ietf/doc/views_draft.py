@@ -1746,13 +1746,6 @@ def change_stream_state(request, name, state_type):
             events = []
 
             comment = form.cleaned_data["comment"].strip()
-
-            # calls cfa wglc 
-            if new_state.slug == "c-adopt":
-                email_stream_state_changed_cfa(request, doc)
-            
-            if new_state.slug == "wg-lc":
-                email_stream_state_changed_wglc(request, doc)
             
             # state
             new_state = form.cleaned_data["new_state"]
@@ -1768,6 +1761,13 @@ def change_stream_state(request, name, state_type):
                 update_reminder(doc, "stream-s", e, due_date)
 
                 email_stream_state_changed(request, doc, prev_state, new_state, by, comment)
+
+             # ipr notifs on cfa wglc 
+            if new_state.slug == "c-adopt":
+                email_stream_state_changed_cfa(request, doc)
+            
+            if new_state.slug == "wg-lc":
+                email_stream_state_changed_wglc(request, doc)
 
             # tags
             existing_tags = set(doc.tags.all())

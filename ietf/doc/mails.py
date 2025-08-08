@@ -104,7 +104,7 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
               cc=cc)
     
-def email_stream_state_changed_cfa(request, doc, cfa_duration=2):
+def email_stream_state_changed_cfa(request, doc, cfa_duration=7):
     (to, cc)= gather_address_lists('doc_stream_state_edited', doc=doc)
     
     end_date= date_today(DEADLINE_TZINFO) + datetime.timedelta(days=14)
@@ -119,7 +119,7 @@ def email_stream_state_changed_cfa(request, doc, cfa_duration=2):
                   wg_list=doc.group.list_email),
                 cc=cc)
     
-def email_stream_state_changed_wglc(request, doc, wglc_duration=2):
+def email_stream_state_changed_wglc(request, doc, wglc_duration=7):
     (to, cc)= gather_address_lists('doc_stream_state_edited', doc=doc)
     
     end_date= date_today(DEADLINE_TZINFO) + datetime.timedelta(days=14)
