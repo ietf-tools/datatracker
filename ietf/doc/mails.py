@@ -104,10 +104,10 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
               cc=cc)
     
-def email_stream_state_changed_cfa(request, doc, cfa_duration=7):
+def email_stream_state_changed_cfa(request, doc, cfa_duration=2):
     (to, cc)= gather_address_lists('doc_stream_state_edited', doc=doc)
     
-    end_date= date_today(DEADLINE_TZINFO) + datetime.timedelta(days=14)
+    end_date= date_today(DEADLINE_TZINFO) + datetime.timedelta(days=7 * cfa_duration)
 
     send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
               "%s call for adoption by WG issue %s" % ("WG", doc.name),
@@ -119,10 +119,10 @@ def email_stream_state_changed_cfa(request, doc, cfa_duration=7):
                   wg_list=doc.group.list_email),
                 cc=cc)
     
-def email_stream_state_changed_wglc(request, doc, wglc_duration=7):
+def email_stream_state_changed_wglc(request, doc, wglc_duration=2):
     (to, cc)= gather_address_lists('doc_stream_state_edited', doc=doc)
     
-    end_date= date_today(DEADLINE_TZINFO) + datetime.timedelta(days=14)
+    end_date= date_today(DEADLINE_TZINFO) + datetime.timedelta(days=7 * wglc_duration)
 
     send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
               "%s call for adoption by WG issue %s" % ("WG", doc.name),
