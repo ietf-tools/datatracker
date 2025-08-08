@@ -3,7 +3,6 @@
 
 
 import email
-import jsonfield
 
 from django.db import models
 from django.utils import timezone
@@ -46,7 +45,7 @@ class Submission(models.Model):
     words = models.IntegerField(null=True, blank=True)
     formal_languages = models.ManyToManyField(FormalLanguageName, blank=True, help_text="Formal languages used in document")
 
-    authors = jsonfield.JSONField(default=list, help_text="List of authors with name, email, affiliation and country.")
+    authors = models.JSONField(default=list, help_text="List of authors with name, email, affiliation and country.")
     note = models.TextField(blank=True)
     replaces = models.CharField(max_length=1000, blank=True)
 
@@ -135,7 +134,7 @@ class SubmissionCheck(models.Model):
     message = models.TextField(null=True, blank=True)
     errors = models.IntegerField(null=True, blank=True, default=None)
     warnings = models.IntegerField(null=True, blank=True, default=None)
-    items = jsonfield.JSONField(null=True, blank=True, default='{}')
+    items = models.JSONField(null=True, blank=True, default=dict)
     symbol = models.CharField(max_length=64, default='')
     #
     def __str__(self):
