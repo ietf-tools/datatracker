@@ -105,7 +105,7 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
               cc=cc)
     
 def email_stream_state_changed_cfa(request, doc, cfa_duration=2):
-    (to, cc)= gather_address_lists('doc_stream_state_edited', doc=doc)
+    (to, cc)= gather_address_lists('doc_stream_state_edited_ipr', doc=doc)
     
     end_date= date_today(DEADLINE_TZINFO) + datetime.timedelta(days=7 * cfa_duration)
 
@@ -120,7 +120,7 @@ def email_stream_state_changed_cfa(request, doc, cfa_duration=2):
                 cc=cc)
     
 def email_stream_state_changed_wglc(request, doc, wglc_duration=2):
-    (to, cc)= gather_address_lists('doc_stream_state_edited', doc=doc)
+    (to, cc)= gather_address_lists('doc_stream_state_edited_ipr', doc=doc)
     
     end_date= date_today(DEADLINE_TZINFO) + datetime.timedelta(days=7 * wglc_duration)
 
