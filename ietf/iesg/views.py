@@ -824,6 +824,9 @@ def working_groups(request):
 
     rfc_counter = Counter(Document.objects.filter(type="rfc").values_list("group__acronym",flat=True))
     recent_rfc_counter = Counter(Document.objects.filter(type="rfc",docevent__type="published_rfc",docevent__time__gte=timezone.now()-datetime.timedelta(weeks=104)).values_list("group__acronym",flat=True))
+    for wg in set(groups)-set(docs_for_wg.keys()):
+        docs_for_wg[wg] += 0
+        pages_for_wg[wg] += 0
     wg_summary=[]
     for wg in docs_for_wg:
         wg_summary.append(
