@@ -3,18 +3,12 @@
 
 
 import re
-import requests
-from collections import defaultdict, namedtuple
-
-from django.conf import settings
-from django.db.models import Q
+from collections import defaultdict
 
 import debug                            # pyflakes:ignore
 
-from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, CountryAlias, MeetingRegistration
+from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, CountryAlias
 from ietf.name.models import CountryName
-from ietf.person.models import Email
-from ietf.utils.log import log
 
 import logging
 logger = logging.getLogger('django')
@@ -221,120 +215,3 @@ def compute_hirsch_index(citation_counts):
         i += 1
 
     return i
-
-
-def get_meeting_registration_data(meeting):
-    """"Retrieve registration attendee data and summary statistics.  Returns number
-    of Registration records created.
-
-    MeetingRegistration records are created in realtime as people register for a
-    meeting. This function serves as an audit / reconciliation. Most records are
-    expected to already exist. The function has been optimized with this in mind.
-    """
-    num_created = 0
-    num_processed = 0
-    try:
-        response = requests.get(
-            settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number),
-            timeout=settings.DEFAULT_REQUESTS_TIMEOUT,
-        )
-    except requests.Timeout as exc:
-        log(f'GET request timed out for [{settings.STATS_REGISTRATION_ATTENDEES_JSON_URL}]: {exc}')
-        raise RuntimeError("Timeout retrieving data from registrations API") from exc
-    if response.status_code == 200:
-        decoded = []
-        try:
-            decoded = response.json()
-        except ValueError:
-            if response.content.strip() == 'Invalid meeting':
-                logger.info('Invalid meeting: {}'.format(meeting.number))
-                return (0,0,0)
-            else:
-                raise RuntimeError("Could not decode response from registrations API: '%s...'" % (response.content[:64], ))
-
-        records = MeetingRegistration.objects.filter(meeting_id=meeting.pk).select_related('person')
-        meeting_registrations = {(r.email, r.reg_type):r for r in records}
-        for registration in decoded:
-            person = None
-            # capture the stripped registration values for later use
-            first_name      = registration['FirstName'].strip()
-            last_name       = registration['LastName'].strip()
-            affiliation     = registration['Company'].strip()
-            country_code    = registration['Country'].strip()
-            address         = registration['Email'].strip()
-            reg_type        = registration['RegType'].strip()
-            ticket_type     = registration['TicketType'].strip()
-            checkedin       = bool(registration['CheckedIn'].strip().lower() == 'true')
-
-            if (address, reg_type) in meeting_registrations:
-                object = meeting_registrations.pop((address, reg_type))
-                created = False
-            else:
-                object, created = MeetingRegistration.objects.get_or_create(
-                    meeting_id=meeting.pk,
-                    email=address,
-                    reg_type=reg_type)
-            
-            if (object.first_name != first_name[:200] or
-                object.last_name != last_name[:200] or
-                object.affiliation != affiliation or
-                object.country_code != country_code or
-                object.ticket_type != ticket_type or
-                object.checkedin != checkedin):
-                    object.first_name=first_name[:200]
-                    object.last_name=last_name[:200]
-                    object.affiliation=affiliation
-                    object.country_code=country_code
-                    object.ticket_type=ticket_type
-                    object.checkedin=checkedin
-                    object.save()
-
-            # Add a Person object to MeetingRegistration object
-            # if valid email is available
-            if object and not object.person and address:
-                # If the person already exists do not try to create a new one
-                emails = Email.objects.filter(address=address)
-                # there can only be on Email object with a unique email address (primary key)
-                if emails.exists():
-                    person = emails.first().person
-                # Create a new Person object
-                else:
-                    logger.error("No Person record for registration. email={}".format(address))
-                # update the person object to an actual value
-                object.person = person
-                object.save()
-            
-            if created:
-                num_created += 1
-            num_processed += 1
-
-        # any registrations left in meeting_registrations no longer exist in reg
-        # so must have been deleted
-        for r in meeting_registrations:
-            try:
-                MeetingRegistration.objects.get(meeting=meeting,email=r[0],reg_type=r[1]).delete()
-                logger.info('Removing deleted registration. email={}, reg_type={}'.format(r[0], r[1]))
-            except MeetingRegistration.DoesNotExist:
-                pass
-    else:
-        raise RuntimeError("Bad response from registrations API: %s, '%s'" % (response.status_code, response.content))
-    num_total = MeetingRegistration.objects.filter(
-        meeting_id=meeting.pk,
-        reg_type__in=['onsite', 'remote']
-    ).filter(
-        Q(attended=True) | Q(checkedin=True)
-    ).count()
-    if meeting.attendees is None or num_total > meeting.attendees:
-        meeting.attendees = num_total
-        meeting.save()
-    return num_created, num_processed, num_total
-
-
-FetchStats = namedtuple("FetchStats", "added processed total")
-
-
-def fetch_attendance_from_meetings(meetings):
-    stats = [
-        FetchStats(*get_meeting_registration_data(meeting)) for meeting in meetings
-    ]
-    return stats

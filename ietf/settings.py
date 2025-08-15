@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
+# Copyright The IETF Trust 2007-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -9,6 +9,7 @@
 import os
 import sys
 import datetime
+import pathlib
 import warnings
 from hashlib import sha384
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
@@ -27,8 +28,12 @@ warnings.filterwarnings("ignore", message="Report.file_reporters will no longer 
 warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated", module="bleach")
 warnings.filterwarnings("ignore", message="HTTPResponse.getheader\\(\\) is deprecated", module='selenium.webdriver')
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.abspath(BASE_DIR + "/.."))
+base_path = pathlib.Path(__file__).resolve().parent
+BASE_DIR = str(base_path)
+
+project_path = base_path.parent
+PROJECT_DIR = str(project_path)  
+sys.path.append(PROJECT_DIR)
 
 from ietf import __version__
 import debug
@@ -60,6 +65,26 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.SHA1PasswordHasher',
     'django.contrib.auth.hashers.CryptPasswordHasher',
 ]
+
+
+PASSWORD_POLICY_MIN_LENGTH = 12
+PASSWORD_POLICY_ENFORCE_AT_LOGIN = False  # should turn this on for prod
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {
+            "min_length": PASSWORD_POLICY_MIN_LENGTH,
+        }
+    },
+    {
+        "NAME": "ietf.ietfauth.password_validation.StrongPasswordValidator",
+    },
+]
+# In dev environments, settings_local overrides the password validators. Save
+# a handle to the original value so settings_test can restore it so tests match
+# production.
+ORIG_AUTH_PASSWORD_VALIDATORS = AUTH_PASSWORD_VALIDATORS
 
 ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", "127.0.0.1", "localhost", ]
 
@@ -638,6 +663,7 @@ DRF_STANDARDIZED_ERRORS = {
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
 RFCDIFF_BASE_URL = "https://author-tools.ietf.org/iddiff"
 IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
+IDNITS3_BASE_URL = "https://author-tools.ietf.org/idnits3/results"
 IDNITS_SERVICE_URL = "https://author-tools.ietf.org/idnits"
 
 # Content security policy configuration (django-csp)
@@ -696,12 +722,15 @@ TEST_CODE_COVERAGE_EXCLUDE_LINES = [
 ]
 
 # These are filename globs.  They are used by test_parse_templates() and
-# get_template_paths()
+# get_template_paths(). Globs are applied via pathlib.Path().match, using
+# the path to the template from the project root.
 TEST_TEMPLATE_IGNORE = [
-    ".*",                             # dot-files
-    "*~",                             # tilde temp-files
-    "#*",                             # files beginning with a hashmark
-    "500.html"                        # isn't loaded by regular loader, but checked by test_500_page()
+    ".*",  # dot-files
+    "*~",  # tilde temp-files
+    "#*",  # files beginning with a hashmark
+    "500.html",  # isn't loaded by regular loader, but checked by test_500_page()
+    "ietf/templates/admin/meeting/RegistrationTicket/change_list.html",
+    "ietf/templates/admin/meeting/Registration/change_list.html",
 ]
 
 TEST_COVERAGE_MAIN_FILE = os.path.join(BASE_DIR, "../release-coverage.json")
@@ -1121,7 +1150,6 @@ PPT2PDF_COMMAND = [
     "--outdir"
 ]
 
-STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/'
 REGISTRATION_PARTICIPANTS_API_URL = 'https://registration.ietf.org/api/v1/participants-dt/'
 REGISTRATION_PARTICIPANTS_API_KEY = 'changeme'
 

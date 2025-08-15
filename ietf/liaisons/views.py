@@ -57,7 +57,7 @@ def _can_take_care(liaison, user):
         return False
 
     if user.is_authenticated:
-        if has_role(user, "Secretariat"):
+        if has_role(user, "Secretariat") or has_role(user, "Liaison Coordinator"):
             return True
         else:
             return _find_person_in_emails(liaison, get_person_for_user(user))
@@ -196,7 +196,13 @@ def post_only(group,person):
     - Authorized Individuals have full access for the group they are associated with
     - Liaison Managers can post only
     '''
-    if group.type_id == 'sdo' and ( not(has_role(person.user,"Secretariat") or group.role_set.filter(name='auth',person=person)) ):
+    if group.type_id == "sdo" and (
+        not (
+            has_role(person.user, "Secretariat")
+            or has_role(person.user, "Liaison Coordinator")
+            or group.role_set.filter(name="auth", person=person)
+        )
+    ):
         return True
     else:
         return False

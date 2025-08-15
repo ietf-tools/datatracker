@@ -52,17 +52,17 @@ spec:
                   key: CELERY_PASSWORD
           livenessProbe:
             exec:
-              command: ["rabbitmq-diagnostics", "-q", "ping"]
+              command: ["rabbitmq-diagnostics", "-q", "ping", "-t", "30"]
             periodSeconds: 30
-            timeoutSeconds: 5
+            timeoutSeconds: 35  # slightly longer than ping "-t" option
           startupProbe:
             initialDelaySeconds: 15
             periodSeconds: 5
-            timeoutSeconds: 5
+            timeoutSeconds: 35  # slightly longer than ping "-t" option
             successThreshold: 1
             failureThreshold: 60
             exec:
-              command: ["rabbitmq-diagnostics", "-q", "ping"]
+              command: ["rabbitmq-diagnostics", "-q", "ping", "-t", "30"]
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

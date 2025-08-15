@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2014-2020, All Rights Reserved
+# Copyright The IETF Trust 2014-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -11,7 +11,7 @@ import pytz
 import shutil
 import types
 
-from mock import call, patch
+from unittest.mock import call, patch
 from pyquery import PyQuery
 from typing import Dict, List       # pyflakes:ignore
 
@@ -19,7 +19,6 @@ from email.message import Message
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from fnmatch import fnmatch
 from importlib import import_module
 from textwrap import dedent
 from tempfile import mkdtemp
@@ -320,7 +319,7 @@ class TemplateChecksTestCase(TestCase):
     def setUp(self):
         super().setUp()
         set_coverage_checking(False)
-        self.paths = list(get_template_paths())
+        self.paths = get_template_paths()  # already filtered ignores
         self.paths.sort()
         for path in self.paths:
             try:
@@ -335,11 +334,7 @@ class TemplateChecksTestCase(TestCase):
     def test_parse_templates(self):
         errors = []
         for path in self.paths:
-            for pattern in settings.TEST_TEMPLATE_IGNORE:
-                if fnmatch(path, pattern):
-                    continue
-            if not path in self.templates:
-
+            if path not in self.templates:
                 try:
                     get_template(path)
                 except Exception as e:
@@ -712,6 +707,14 @@ class XMLDraftTests(TestCase):
         self.assertEqual(
             XMLDraft.render_author_name(lxml.etree.Element(
                 "author",
+                fullname=chr(340)+"ich",
+                asciiFullname="Rich UTF-8",
+            )),
+            chr(340)+"ich (Rich UTF-8)",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
                 fullname="Joanna Q. Public",
                 initials="J. Q.",
                 surname="Public-Private",
@@ -741,6 +744,23 @@ class XMLDraftTests(TestCase):
             "J. Q.",
         )
 
+    @patch("ietf.utils.xmldraft.XMLDraft.__init__", return_value=None)
+    def test_get_title(self, mock_init):
+        xmldraft = XMLDraft("fake")
+        self.assertTrue(mock_init.called)
+        # Stub XML that does not have a front/title element
+        xmldraft.xmlroot = lxml.etree.XML(
+            "<rfc><front></front></rfc>"  # no title
+        )
+        self.assertEqual(xmldraft.get_title(), "")
+
+        # Stub XML that has a front/title element
+        xmldraft.xmlroot = lxml.etree.XML(
+            "<rfc><front><title>This Is the Title</title></front></rfc>"
+        )
+        self.assertEqual(xmldraft.get_title(), "This Is the Title")
+
+        
     def test_capture_xml2rfc_output(self):
         """capture_xml2rfc_output reroutes and captures xml2rfc logs"""
         orig_write_out = xml2rfc_log.write_out

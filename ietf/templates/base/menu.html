@@ -98,35 +98,55 @@
             Submit an Internet-Draft
         </a>
     </li>
+    {% if user and user.is_authenticated %}
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
-           href="{% url 'ietf.doc.views_search.ad_workload' %}">
-            IESG dashboard
+            href="{% url "ietf.community.views.view_list" user.username %}">
+            My tracked docs
         </a>
     </li>
-    {% if user and user.is_authenticated %}
-        <li>
-            <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
-               href="{% url "ietf.community.views.view_list" user.username %}">
-                My tracked docs
-            </a>
-        </li>
-        {% if user|has_role:"Area Director,Secretariat" %}
-            {% if flavor == 'top' %}<li><hr class="dropdown-divider"></li>{% endif %}
-            <li>
-                <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
-                   href="{% url 'ietf.doc.views_status_change.rfc_status_changes' %}">
-                    RFC status changes
-                </a>
-            </li>
-        {% endif %}
+    {% if user|has_role:"Area Director,Secretariat" %}
         {% if flavor == 'top' %}<li><hr class="dropdown-divider"></li>{% endif %}
         <li>
             <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
-               href="{% url 'ietf.doc.views_ballot.irsg_ballot_status' %}">
-                IRSG ballot status
+                href="{% url 'ietf.doc.views_status_change.rfc_status_changes' %}">
+                RFC status changes
             </a>
         </li>
+    {% endif %}
+    {% if flavor == 'top' %}<li><hr class="dropdown-divider"></li>{% endif %}
+    <li class="dropend">
+      <a class="dropdown-item dropdown-toggle" href="#">
+        IESG
+      </a>
+      <ul class="dropdown-menu">
+            <li>
+                <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                href="{% url 'ietf.group.views.appeals' acronym='iesg' %}">
+                    IESG appeals
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                href="{% url 'ietf.doc.views_search.ad_workload' %}">
+                    IESG dashboard
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                href="{% url 'ietf.group.views.statements' acronym='iesg' %}">
+                    IESG statements
+                </a>
+            </li>
+        </ul>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+    <li>
+        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+            href="{% url 'ietf.doc.views_ballot.irsg_ballot_status' %}">
+            IRSG ballot status
+        </a>
+    </li>
         {% if user|has_role:"WG Chair,RG Chair" %}
             {% if flavor == 'top' %}<li><hr class="dropdown-divider"></li>{% endif %}
             <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>Manage</li>

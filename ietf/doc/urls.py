@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2023, All Rights Reserved
+# Copyright The IETF Trust 2009-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 # Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -145,6 +145,7 @@ urlpatterns = [
     url(r'^%(name)s/edit/adopt/$' % settings.URL_REGEXPS, views_draft.adopt_draft),
     url(r'^%(name)s/edit/release/$' % settings.URL_REGEXPS, views_draft.release_draft),
     url(r'^%(name)s/edit/state/(?P<state_type>draft-stream-[a-z]+)/$' % settings.URL_REGEXPS, views_draft.change_stream_state),
+    url(r'^%(name)s/edit/state/statement/$' % settings.URL_REGEXPS, views_statement.change_statement_state),
 
     url(r'^%(name)s/edit/clearballot/(?P<ballot_type_slug>[\w-]+)/$' % settings.URL_REGEXPS, views_ballot.clear_ballot),
     url(r'^%(name)s/edit/deferballot/$' % settings.URL_REGEXPS, views_ballot.defer_ballot),

@@ -236,6 +236,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         import ietf.group.views
         entries.append(("Review requests", urlreverse(ietf.group.views.review_requests, kwargs=kwargs)))
         entries.append(("Reviewers", urlreverse(ietf.group.views.reviewer_overview, kwargs=kwargs)))
+        entries.append(("Reviews History", urlreverse(ietf.group.views.review_requests_history, kwargs=kwargs)))
 
     if group.features.has_meetings:
         entries.append(("Meetings", urlreverse("ietf.group.views.meetings", kwargs=kwargs)))

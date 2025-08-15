@@ -5,7 +5,7 @@
 import datetime
 import email
 import io
-import mock
+from unittest import mock
 import os
 import re
 import sys
@@ -2981,7 +2981,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.xml'
         with xml_path.open('w') as f:
             f.write(xml_data)
-        store_str("staging", "draft-somebody-test-00.xml", xml_data)
+        store_str("staging", "draft-somebody-test-00.xml", xml_data, allow_overwrite=True)
         with mock.patch(
                 'ietf.submit.utils.apply_checkers',
                 side_effect = lambda _, __: submission.checks.create(
@@ -3047,25 +3047,25 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         # Should behave on missing or partial <date> elements
         TestBlobstoreManager().emptyTestBlobstores()
         xml_path.write_text(re.sub(r"<date.+>", "", xml_contents))  # strip <date...> entirely
-        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date.+>", "", xml_contents))
+        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date.+>", "", xml_contents), allow_overwrite=True)
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["document_date"], None)
 
         TestBlobstoreManager().emptyTestBlobstores()
         xml_path.write_text(re.sub(r"<date year=.+ month", "<date month", xml_contents))  # remove year
-        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date year=.+ month", "<date month", xml_contents))
+        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date year=.+ month", "<date month", xml_contents), allow_overwrite=True)
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["document_date"], date_today())
 
         TestBlobstoreManager().emptyTestBlobstores()
         xml_path.write_text(re.sub(r"(<date.+) month=.+day=(.+>)", r"\1 day=\2", xml_contents))  # remove month
-        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"(<date.+) month=.+day=(.+>)", r"\1 day=\2", xml_contents))
+        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"(<date.+) month=.+day=(.+>)", r"\1 day=\2", xml_contents), allow_overwrite=True)
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["document_date"], date_today())
 
         TestBlobstoreManager().emptyTestBlobstores()
         xml_path.write_text(re.sub(r"<date(.+) day=.+>", r"<date\1>", xml_contents))  # remove day
-        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date(.+) day=.+>", r"<date\1>", xml_contents))
+        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date(.+) day=.+>", r"<date\1>", xml_contents), allow_overwrite=True)
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["document_date"], date_today())
 
@@ -3080,7 +3080,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         )
         xml_path.write_text(xml.read())
         xml.seek(0)
-        store_str("staging", "draft-somebody-test-00.xml", xml.read())
+        store_str("staging", "draft-somebody-test-00.xml", xml.read(), allow_overwrite=True)
         with self.assertRaisesMessage(SubmissionError, "disagrees with submission filename"):
             process_submission_xml("draft-somebody-test", "00")
 
@@ -3095,7 +3095,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         )
         xml_path.write_text(xml.read())
         xml.seek(0)
-        store_str("staging", "draft-somebody-test-00.xml", xml.read())
+        store_str("staging", "draft-somebody-test-00.xml", xml.read(), allow_overwrite=True)
         with self.assertRaisesMessage(SubmissionError, "disagrees with submission revision"):
             process_submission_xml("draft-somebody-test", "00")
 
@@ -3110,7 +3110,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         )
         xml_path.write_text(xml.read())
         xml.seek(0)
-        store_str("staging", "draft-somebody-test-00.xml", xml.read())
+        store_str("staging", "draft-somebody-test-00.xml", xml.read(), allow_overwrite=True)
         with self.assertRaisesMessage(SubmissionError, "Could not extract a valid title"):
             process_submission_xml("draft-somebody-test", "00")
 
@@ -3153,7 +3153,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         with txt_path.open('w') as fd:
             fd.write(txt.read())
         txt.seek(0)
-        store_str("staging", "draft-somebody-test-00.txt", txt.read())
+        store_str("staging", "draft-somebody-test-00.txt", txt.read(), allow_overwrite=True)
         txt.close()
         with self.assertRaisesMessage(SubmissionError, 'disagrees with submission filename'):
             process_submission_text("draft-somebody-test", "00")
@@ -3170,7 +3170,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         with txt_path.open('w') as fd:
             fd.write(txt.read())
         txt.seek(0)
-        store_str("staging", "draft-somebody-test-00.txt", txt.read())
+        store_str("staging", "draft-somebody-test-00.txt", txt.read(), allow_overwrite=True)
         txt.close()
         with self.assertRaisesMessage(SubmissionError, 'disagrees with submission revision'):
             process_submission_text("draft-somebody-test", "00")

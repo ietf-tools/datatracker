@@ -224,7 +224,7 @@ def agenda_txt(request, date=None):
             "date": data["date"],
             "sections": sorted(data["sections"].items(), key=lambda x:[int(p) for p in x[0].split('.')]),
             "domain": Site.objects.get_current().domain,
-            }, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
+            }, content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}")
 
 @role_required('Area Director', 'Secretariat')
 def agenda_moderator_package(request, date=None):
@@ -280,14 +280,23 @@ def agenda_moderator_package(request, date=None):
 @role_required('Area Director', 'Secretariat')
 def agenda_package(request, date=None):
     data = agenda_data(date)
-    return render(request, "iesg/agenda_package.txt", {
+    return render(
+        request,
+        "iesg/agenda_package.txt",
+        {
             "date": data["date"],
             "sections": sorted(data["sections"].items()),
             "roll_call": data["sections"]["1.1"]["text"],
             "minutes": data["sections"]["1.3"]["text"],
-            "management_items": [(num, section) for num, section in data["sections"].items() if "6" < num < "7"],
+            "management_items": [
+                (num, section)
+                for num, section in data["sections"].items()
+                if "6" < num < "7"
+            ],
             "domain": Site.objects.get_current().domain,
-            }, content_type='text/plain')
+        },
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 
 def agenda_documents_txt(request):
@@ -318,7 +327,10 @@ def agenda_documents_txt(request):
             d.rev,
             )
         rows.append("\t".join(row))
-    return HttpResponse("\n".join(rows), content_type='text/plain')
+    return HttpResponse(
+        "\n".join(rows),
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 class RescheduleForm(forms.Form):
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
@@ -613,7 +625,10 @@ def telechat_agenda_content_manage(request):
 @role_required("Secretariat", "IAB Chair", "Area Director")
 def telechat_agenda_content_view(request, section):
     content = get_object_or_404(TelechatAgendaContent, section__slug=section, section__used=True)
-    return HttpResponse(content=content.text, content_type="text/plain")
+    return HttpResponse(
+        content=content.text,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 def working_groups(request):
     docs = (
