@@ -5,7 +5,6 @@
 import email.utils
 import os
 import re
-from copy import copy
 
 from django.conf import settings
 from django.core.validators import RegexValidator
