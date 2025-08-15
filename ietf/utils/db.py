@@ -14,9 +14,9 @@ from ietf.utils.fields import IETFJSONField as FormIETFJSONField, EmptyAwareJSON
 
 
 class EmptyAwareJSONField(models.JSONField):
-    form_class = FormIETFJSONField
+    form_class = FormEmptyAwareJSONField
 
-    def __init__(self, *args, empty_values=FormIETFJSONField.empty_values, accepted_empty_values=None, **kwargs):
+    def __init__(self, *args, empty_values=FormEmptyAwareJSONField.empty_values, accepted_empty_values=None, **kwargs):
         if accepted_empty_values is None:
             accepted_empty_values = []
         self.empty_values = [x
@@ -30,7 +30,7 @@ class EmptyAwareJSONField(models.JSONField):
         return super().formfield(**{**kwargs})
 
 
-class IETFJSONField(jsonfield.JSONField):
+class IETFJSONField(jsonfield.JSONField):  # pragma: no cover
     # Deprecated - use EmptyAwareJSONField instead (different base class requires a
     # new field name)
     # Remove this class when migrations are squashed and it is no longer referenced

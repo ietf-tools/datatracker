@@ -326,7 +326,7 @@ class SearchableField(forms.MultipleChoiceField):
         return super().has_changed(initial, data)
 
 
-class IETFJSONField(forms.JSONField):
+class IETFJSONField(forms.JSONField):  # pragma: no cover
     # Deprecated - use EmptyAwareJSONField instead
     def __init__(self, *args, empty_values=forms.JSONField.empty_values,
                  accepted_empty_values=None, **kwargs):
