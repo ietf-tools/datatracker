@@ -46,6 +46,8 @@ class Submission(models.Model):
     formal_languages = models.ManyToManyField(FormalLanguageName, blank=True, help_text="Formal languages used in document")
 
     authors = models.JSONField(default=list, help_text="List of authors with name, email, affiliation and country.")
+    # Schema note: authors is a list of authors. Each author is a JSON object with 
+    # "name", "email", "affiliation", and "country" keys. All values are strings.
     note = models.TextField(blank=True)
     replaces = models.CharField(max_length=1000, blank=True)
 
