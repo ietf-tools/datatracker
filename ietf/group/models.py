@@ -20,7 +20,7 @@ from ietf.name.models import (GroupStateName, GroupTypeName, DocTagName, GroupMi
                               AgendaTypeName, AgendaFilterTypeName, ExtResourceName, SessionPurposeName,
                               AppealArtifactTypeName )
 from ietf.person.models import Email, Person
-from ietf.utils.db import IETFJSONField
+from ietf.utils.db import EmptyAwareJSONField
 from ietf.utils.mail import formataddr, send_mail_text
 from ietf.utils import log
 from ietf.utils.models import ForeignKey, OneToOneField
@@ -297,16 +297,16 @@ class GroupFeatures(models.Model):
     agenda_type             = models.ForeignKey(AgendaTypeName, null=True, default="ietf", on_delete=CASCADE)
     about_page              = models.CharField(max_length=64, blank=False, default="ietf.group.views.group_about" )
     default_tab             = models.CharField(max_length=64, blank=False, default="ietf.group.views.group_about" )
-    material_types          = IETFJSONField(max_length=64, accepted_empty_values=[[], {}], blank=False, default=default_material_types)
-    default_used_roles      = IETFJSONField(max_length=256, accepted_empty_values=[[], {}], blank=False, default=list)
-    admin_roles             = IETFJSONField(max_length=64, accepted_empty_values=[[], {}], blank=False, default=default_admin_roles)  # Trac Admin
-    docman_roles            = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=default_docman_roles)
-    groupman_roles          = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=default_groupman_roles)
-    groupman_authroles      = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=default_groupman_authroles)
-    matman_roles            = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=default_matman_roles)
-    role_order              = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=default_role_order,
+    material_types          = EmptyAwareJSONField(max_length=64, accepted_empty_values=[[], {}], blank=False, default=default_material_types)
+    default_used_roles      = EmptyAwareJSONField(max_length=256, accepted_empty_values=[[], {}], blank=False, default=list)
+    admin_roles             = EmptyAwareJSONField(max_length=64, accepted_empty_values=[[], {}], blank=False, default=default_admin_roles)  # Trac Admin
+    docman_roles            = EmptyAwareJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=default_docman_roles)
+    groupman_roles          = EmptyAwareJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=default_groupman_roles)
+    groupman_authroles      = EmptyAwareJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=default_groupman_authroles)
+    matman_roles            = EmptyAwareJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=default_matman_roles)
+    role_order              = EmptyAwareJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=default_role_order,
                                             help_text="The order in which roles are shown, for instance on photo pages.  Enter valid JSON.")
-    session_purposes        = IETFJSONField(max_length=256, accepted_empty_values=[[], {}], blank=False, default=list,
+    session_purposes        = EmptyAwareJSONField(max_length=256, accepted_empty_values=[[], {}], blank=False, default=list,
                                                   help_text="Allowed session purposes for this group type",
                                                   validators=[JSONForeignKeyListValidator(SessionPurposeName)])
 
