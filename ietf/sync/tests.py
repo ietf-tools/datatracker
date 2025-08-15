@@ -6,7 +6,7 @@ import os
 import io
 import json
 import datetime
-import mock
+from unittest import mock
 import quopri
 import requests
 

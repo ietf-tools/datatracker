@@ -5,7 +5,7 @@ import copy
 import datetime
 import json
 import html
-import mock
+from unittest import mock
 import os
 import sys
 
@@ -41,6 +41,7 @@ from ietf.utils.mail import empty_outbox, outbox, get_payload_text
 from ietf.utils.models import DumpInfo
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, reload_db_objects
 
+from . import Serializer
 from .ietf_utils import is_valid_token, requires_api_token
 from .views import EmailIngestionError
 
@@ -1496,7 +1497,7 @@ class DirectAuthApiTests(TestCase):
         data = self.response_data(r)
         self.assertEqual(data["result"], "success")
 
-class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
+class TastypieApiTests(ResourceTestCaseMixin, TestCase):
     def __init__(self, *args, **kwargs):
         self.apps = {}
         for app_name in settings.INSTALLED_APPS:
@@ -1506,7 +1507,7 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
                 models_path = os.path.join(os.path.dirname(app.__file__), "models.py")
                 if os.path.exists(models_path):
                     self.apps[name] = app_name
-        super(TastypieApiTestCase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def test_api_top_level(self):
         client = Client(Accept='application/json')
@@ -1540,6 +1541,21 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
                     #print("There doesn't seem to be any resource for model %s.models.%s"%(app.__name__,model.__name__,))
                     self.assertIn(model._meta.model_name, list(app_resources.keys()),
                         "There doesn't seem to be any API resource for model %s.models.%s"%(app.__name__,model.__name__,))
+
+    def test_serializer_to_etree_handles_nulls(self):
+        """Serializer to_etree() should handle a null character"""
+        serializer = Serializer()
+        try:
+            serializer.to_etree("string with no nulls in it")
+        except ValueError:
+            self.fail("serializer.to_etree raised ValueError on an ordinary string")
+        try:
+            serializer.to_etree("string with a \x00 in it")
+        except ValueError:
+            self.fail(
+                "serializer.to_etree raised ValueError on a string "
+                "containing a null character"
+            )
 
 
 class RfcdiffSupportTests(TestCase):

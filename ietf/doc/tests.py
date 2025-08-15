@@ -10,7 +10,7 @@ from hashlib import sha384
 from django.http import HttpRequest
 import lxml
 import bibtexparser
-import mock
+from unittest import mock
 import json
 import copy
 import random
@@ -66,7 +66,7 @@ from ietf.meeting.factories import ( MeetingFactory, SessionFactory, SessionPres
 from ietf.name.models import SessionStatusName, BallotPositionName, DocTypeName, RoleName
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory, EmailFactory
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.mail import get_payload_text, outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text
@@ -2172,20 +2172,19 @@ class DocTestCase(TestCase):
 
 class AddCommentTestCase(TestCase):
     def test_add_comment(self):
-        draft = WgDraftFactory(name='draft-ietf-mars-test',group__acronym='mars')
-        url = urlreverse('ietf.doc.views_doc.add_comment', kwargs=dict(name=draft.name))
+        draft = WgDraftFactory(name="draft-ietf-mars-test", group__acronym="mars")
+        url = urlreverse("ietf.doc.views_doc.add_comment", kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(unicontent(r))
-        self.assertEqual(len(q('form textarea[name=comment]')), 1)
+        self.assertEqual(len(q("form textarea[name=comment]")), 1)
 
-        # request resurrect
         events_before = draft.docevent_set.count()
         mailbox_before = len(outbox)
-        
+
         r = self.client.post(url, dict(comment="This is a test."))
         self.assertEqual(r.status_code, 302)
 
@@ -2193,9 +2192,9 @@ class AddCommentTestCase(TestCase):
         self.assertEqual("This is a test.", draft.latest_event().desc)
         self.assertEqual("added_comment", draft.latest_event().type)
         self.assertEqual(len(outbox), mailbox_before + 1)
-        self.assertIn("Comment added", outbox[-1]['Subject'])
-        self.assertIn(draft.name, outbox[-1]['Subject'])
-        self.assertIn('draft-ietf-mars-test@', outbox[-1]['To'])
+        self.assertIn("Comment added", outbox[-1]["Subject"])
+        self.assertIn(draft.name, outbox[-1]["Subject"])
+        self.assertIn("draft-ietf-mars-test@", outbox[-1]["To"])
 
         # Make sure we can also do it as IANA
         self.client.login(username="iana", password="iana+password")
@@ -2204,7 +2203,22 @@ class AddCommentTestCase(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(unicontent(r))
-        self.assertEqual(len(q('form textarea[name=comment]')), 1)
+        self.assertEqual(len(q("form textarea[name=comment]")), 1)
+
+        empty_outbox()
+        rfc = WgRfcFactory()
+        self.client.login(username="rfc", password="rfc+password")
+        url = urlreverse("ietf.doc.views_doc.add_comment", kwargs=dict(name=rfc.name))
+        r = self.client.post(
+            url, dict(comment="This is an RFC Editor comment on an RFC.")
+        )
+        self.assertEqual(r.status_code, 302)
+
+        self.assertEqual(
+            "This is an RFC Editor comment on an RFC.", rfc.latest_event().desc
+        )
+        self.assertEqual(len(outbox), 1)
+        self.assertIn("This is an RFC Editor comment on an RFC.", get_payload_text(outbox[0]))
 
 
 class TemplateTagTest(TestCase):

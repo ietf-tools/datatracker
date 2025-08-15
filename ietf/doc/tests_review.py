@@ -8,7 +8,7 @@ import io
 import os
 import shutil
 
-from mock import patch, Mock
+from unittest.mock import patch, Mock
 from requests import Response
 
 from django.apps import apps
