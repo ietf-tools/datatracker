@@ -66,7 +66,7 @@ jobs:
       base_image_version: ${{ steps.baseimgversion.outputs.base_image_version }}
 
     steps:   
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 1
         fetch-tags: false
@@ -164,7 +164,7 @@ jobs:
       TARGET_BASE: ${{needs.prepare.outputs.base_image_version}}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 1
         fetch-tags: false
@@ -405,7 +405,7 @@ jobs:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
       
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
         
     - name: Download a Release Artifact
       uses: actions/download-artifact@v4.3.0
