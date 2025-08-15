@@ -157,11 +157,6 @@
                 <th scope="col" data-sort="pages">Pages</th>
                 <th scope="col" data-sort="rfcs">RFCs</th>
                 <th scope="col" data-sort="rfcpubrate">RFCs in last 2 years</th>
-                <th scope="col" data-sort="related">Related I-Ds</th>
-                <th scope="col" data-sort="milestones">Open Milestones</th>
-                <th scope="col" data-sort="pastmilestones">Open Milestones in Past</th>
-                <th scope="col" data-sort="lastmeeting">Last Meeting</th>
-                <th scope="col" data-sort=""></th>
             </tr>
         </thead>
         <tbody>
@@ -174,10 +169,6 @@
                 <td>{{wg.page_count}}</td>
                 <td>{{wg.rfc_count}}</td>
                 <td>{{wg.recent_rfc_count}}</td>
-                <td>{{wg.related_doc_count}}</td>
-                <td>{{wg.open_milestone_count}}</td>
-                <td>{{wg.open_past_milestone_count}}</td>
-                <td>{{wg.last_meeting_date}}</td>  
             </tr>
             {% endfor %}
         </tbody>

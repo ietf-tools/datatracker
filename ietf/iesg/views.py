@@ -835,10 +835,6 @@ def working_groups(request):
                 "page_count": pages_for_wg[wg],
                 "rfc_count": rfc_counter[wg.acronym],
                 "recent_rfc_count": recent_rfc_counter[wg.acronym],
-                "related_doc_count": "-",
-                "open_milestone_count": "-",
-                "open_past_milestone_count": "-",
-                "last_meeting_date": "-" 
             }
         )
     wg_summary.sort(key=lambda r: (r["wg"],r["area"]))
