@@ -27,7 +27,8 @@ from ietf.doc.models import ( Document, RelatedDocument, State,
     StateType, DocEvent, ConsensusDocEvent, TelechatDocEvent, WriteupDocEvent, StateDocEvent,
     IanaExpertDocEvent, IESG_SUBSTATE_TAGS)
 from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_requested,
-    email_resurrection_completed, email_state_changed, email_stream_changed,
+    email_resurrection_completed, email_state_changed, email_stream_changed, 
+    email_stream_state_changed_cfa, email_stream_state_changed_wglc,
     email_stream_state_changed, email_stream_tags_changed, extra_automation_headers,
     generate_publication_request, email_adopted, email_intended_status_changed,
     email_iesg_processing_document, email_ad_approved_doc,
@@ -1745,7 +1746,7 @@ def change_stream_state(request, name, state_type):
             events = []
 
             comment = form.cleaned_data["comment"].strip()
-
+            
             # state
             new_state = form.cleaned_data["new_state"]
             if new_state != prev_state:
@@ -1760,6 +1761,13 @@ def change_stream_state(request, name, state_type):
                 update_reminder(doc, "stream-s", e, due_date)
 
                 email_stream_state_changed(request, doc, prev_state, new_state, by, comment)
+
+                # ipr notifs on cfa wglc 
+                if new_state.slug == "c-adopt":
+                    email_stream_state_changed_cfa(request, doc)
+                
+                if new_state.slug == "wg-lc":
+                    email_stream_state_changed_wglc(request, doc)
 
             # tags
             existing_tags = set(doc.tags.all())

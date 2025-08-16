@@ -5098,6 +5098,20 @@
   {
     "fields": {
       "cc": [],
+      "desc": "Recipients when the stream state of a document is set to CFA or WGLC",
+      "to": [
+        "doc_authors",
+        "doc_group_chairs",
+        "doc_shepherd",
+        "group_mail_list"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "doc_stream_state_edited_ipr"
+  },
+  {
+    "fields": {
+      "cc": [],
       "desc": "Recipients when a document's telechat date or other telechat specific details are changed",
       "to": [
         "conflict_review_steering_group",
