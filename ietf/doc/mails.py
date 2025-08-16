@@ -109,7 +109,7 @@ def email_stream_state_changed_cfa(request, doc, cfa_duration=2):
     
     end_date= date_today(DEADLINE_TZINFO) + datetime.timedelta(days=7 * cfa_duration)
 
-    send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
+    send_mail(request, to,  "wg-chairs@ietf.org",
               "%s call for adoption by WG issue %s" % ("WG", doc.name),
               'doc/mail/stream_state_changed_cfa.txt',
               dict(doc=doc,
@@ -124,7 +124,7 @@ def email_stream_state_changed_wglc(request, doc, wglc_duration=2):
     
     end_date= date_today(DEADLINE_TZINFO) + datetime.timedelta(days=7 * wglc_duration)
 
-    send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
+    send_mail(request, to,  "wg-chairs@ietf.org",
               "%s call for adoption by WG issue %s" % ("WG", doc.name),
               'doc/mail/stream_state_changed_wglc.txt',
               dict(doc=doc,

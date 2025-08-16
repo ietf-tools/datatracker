@@ -1973,7 +1973,7 @@ class ChangeStreamStateTests(TestCase):
 
         # set new state
         old_state = draft.get_state("draft-stream-%s" % draft.stream_id )
-        new_state = State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="parked") 
+        new_state = State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="c-adopt") # ipr cfa notif 
         self.assertNotEqual(old_state, new_state)
         empty_outbox()
         events_before = draft.docevent_set.count()
@@ -1996,11 +1996,14 @@ class ChangeStreamStateTests(TestCase):
             due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1),
             f'Due date {reminder[0].due} should be {due} +/- 1 day'
         )
-        self.assertEqual(len(outbox), 1)
+        self.assertEqual(len(outbox), 2)
         self.assertTrue("state changed" in outbox[0]["Subject"].lower())
         self.assertTrue("mars-chairs@ietf.org" in outbox[0].as_string())
         self.assertTrue("marsdelegate@ietf.org" in outbox[0].as_string())
-
+        self.assertTrue("call for adoption" in outbox[1]["Subject"].lower())
+        self.assertTrue("mars-chairs@ietf.org" in outbox[1].as_string())
+        self.assertTrue("wg-chairs@ietf.org" in outbox[1].as_string())
+        
     def test_pubreq_validation(self):
         role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name='WG Cháir Man')
         RoleFactory(name_id='delegate',group=role.group,person__user__email='marsdelegate@ietf.org')
