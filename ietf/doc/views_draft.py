@@ -1569,7 +1569,11 @@ def adopt_draft(request, name):
 
                 update_reminder(doc, "stream-s", e, due_date)
 
+                # The following call name is very misleading.
                 email_adopted(request, doc, prev_state, new_state, by, comment)
+
+                if new_state.slug == "c-adopt":
+                    email_wg_call_for_adoption_issued(request, doc)
 
             # comment
             if comment:
@@ -1762,7 +1766,6 @@ def change_stream_state(request, name, state_type):
 
                 email_stream_state_changed(request, doc, prev_state, new_state, by, comment)
 
-                # ipr notifs on cfa wglc 
                 if new_state.slug == "c-adopt":
                     email_wg_call_for_adoption_issued(request, doc)
                 
