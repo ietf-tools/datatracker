@@ -28,7 +28,7 @@ from ietf.doc.models import ( Document, RelatedDocument, State,
     IanaExpertDocEvent, IESG_SUBSTATE_TAGS)
 from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_requested,
     email_resurrection_completed, email_state_changed, email_stream_changed, 
-    email_stream_state_changed_cfa, email_stream_state_changed_wglc,
+    email_wg_call_for_adoption_issued, email_wg_last_call_issued,
     email_stream_state_changed, email_stream_tags_changed, extra_automation_headers,
     generate_publication_request, email_adopted, email_intended_status_changed,
     email_iesg_processing_document, email_ad_approved_doc,
@@ -1764,10 +1764,10 @@ def change_stream_state(request, name, state_type):
 
                 # ipr notifs on cfa wglc 
                 if new_state.slug == "c-adopt":
-                    email_stream_state_changed_cfa(request, doc)
+                    email_wg_call_for_adoption_issued(request, doc)
                 
                 if new_state.slug == "wg-lc":
-                    email_stream_state_changed_wglc(request, doc)
+                    email_wg_last_call_issued(request, doc)
 
             # tags
             existing_tags = set(doc.tags.all())
