@@ -1,5 +1,5 @@
 {% load ietf_filters %}{% load mail_filters %}{% autoescape off %}{% filter wordwrap:78 %}
-Subject: Call for adoption: {{ doc }} (Ends {{ end_date }})
+Subject: {{ subject }}
 
 This message starts a {{ cfa_duration }}-week Call for Adoption for this document. 
 

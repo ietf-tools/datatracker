@@ -1,5 +1,5 @@
 {% load ietf_filters %}{% load mail_filters %}{% autoescape off %}{% filter wordwrap:78 %}
-Subject: WG Last Call: {{ doc }} (Ends {{ end_date }})
+Subject: {{ subject }}
 
 This message starts a {{ wglc_duration }}-week WG Last Call for this document. 
 

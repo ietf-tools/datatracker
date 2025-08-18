@@ -110,14 +110,17 @@ def email_wg_call_for_adoption_issued(request, doc, cfa_duration=2):
 
     end_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=7 * cfa_duration)
 
+    subject = f"Call for adoption: {doc.name}-{doc.rev}  (Ends {end_date})"
+
     send_mail(
         request,
         to,
         frm,
-        "%s call for adoption by WG issue %s" % ("WG", doc.name),
-        "doc/mail/stream_state_changed_cfa.txt",
+        subject,
+        "doc/mail/wg_call_for_adoption_issued.txt",
         dict(
             doc=doc,
+            subject=subject,
             url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
             end_date=end_date,
             cfa_duration=cfa_duration,
@@ -133,15 +136,17 @@ def email_wg_last_call_issued(request, doc, wglc_duration=2):
 
 
     end_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=7 * wglc_duration)
+    subject =  f"WG Last Call: {doc.name}-{doc.rev} (Ends {end_date})"
 
     send_mail(
         request,
         to,
         frm,
-        "%s call for adoption by WG issue %s" % ("WG", doc.name),
-        "doc/mail/stream_state_changed_wglc.txt",
+        subject,
+        "doc/mail/wg_last_call_issued.txt",
         dict(
             doc=doc,
+            subject=subject,
             url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
             end_date=end_date,
             wglc_duration=wglc_duration,
