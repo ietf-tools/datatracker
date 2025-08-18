@@ -106,13 +106,14 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
     
 def email_wg_call_for_adoption_issued(request, doc, cfa_duration=2):
     (to, cc) = gather_address_lists("doc_wg_call_for_adoption_issued", doc=doc)
+    frm = request.user.person.formatted_email()
 
     end_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=7 * cfa_duration)
 
     send_mail(
         request,
         to,
-        "wg-chairs@ietf.org",
+        frm,
         "%s call for adoption by WG issue %s" % ("WG", doc.name),
         "doc/mail/stream_state_changed_cfa.txt",
         dict(
@@ -128,13 +129,15 @@ def email_wg_call_for_adoption_issued(request, doc, cfa_duration=2):
 
 def email_wg_last_call_issued(request, doc, wglc_duration=2):
     (to, cc) = gather_address_lists("doc_wg_last_call_issued", doc=doc)
+    frm = request.user.person.formatted_email()
+
 
     end_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=7 * wglc_duration)
 
     send_mail(
         request,
         to,
-        "wg-chairs@ietf.org",
+        frm,
         "%s call for adoption by WG issue %s" % ("WG", doc.name),
         "doc/mail/stream_state_changed_wglc.txt",
         dict(
