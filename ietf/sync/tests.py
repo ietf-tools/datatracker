@@ -206,7 +206,7 @@ ICANN
                         doc_name, review_time, by, comment = iana.parse_review_email(msg.encode('utf-8'))
     
                         self.assertEqual(doc_name, draft.name)
-                        self.assertEqual(review_time, datetime.datetime(2012, 5, 10, 12, 0, rtime, tzinfo=datetime.timezone.utc))
+                        self.assertEqual(review_time, datetime.datetime(2012, 5, 10, 12, 0, rtime, tzinfo=datetime.UTC))
                         self.assertEqual(by, Person.objects.get(user__username="iana"))
                         self.assertIn("there are no IANA Actions", comment.replace("\n", ""))
     
@@ -240,7 +240,7 @@ ICANN
 
         args = (
             "doc-name",
-            datetime.datetime.now(tz=datetime.timezone.utc),
+            datetime.datetime.now(tz=datetime.UTC),
             PersonFactory(),
             "yadda yadda yadda",
         )
@@ -1121,7 +1121,7 @@ class TaskTests(TestCase):
         )
         self.assertEqual(
             published_later_than, 
-            {datetime.datetime(2012,11,26,tzinfo=datetime.timezone.utc)}
+            {datetime.datetime(2012,11,26,tzinfo=datetime.UTC)}
         )
 
         # try with an exception

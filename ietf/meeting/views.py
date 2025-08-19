@@ -153,7 +153,7 @@ def materials(request, num=None):
     begin_date = meeting.get_submission_start_date()
     cut_off_date = meeting.get_submission_cut_off_date()
     cor_cut_off_date = meeting.get_submission_correction_date()
-    today_utc = date_today(datetime.timezone.utc)
+    today_utc = date_today(datetime.UTC)
     old = timezone.now() - datetime.timedelta(days=1)
     if settings.SERVER_MODE != 'production' and '_testoverride' in request.GET:
         pass
@@ -1921,7 +1921,7 @@ def agenda_csv(schedule, filtered_assignments, utc=False):
 
     write_row(headings)
 
-    tz = datetime.timezone.utc if utc else schedule.meeting.tz()
+    tz = datetime.UTC if utc else schedule.meeting.tz()
     for item in filtered_assignments:
         row = []
         row.append(item.timeslot.time.astimezone(tz).strftime("%Y-%m-%d"))
@@ -2814,7 +2814,7 @@ def session_attendance(request, session_id, num):
             raise Http404("Bluesheets not found")
 
     cor_cut_off_date = session.meeting.get_submission_correction_date()
-    today_utc = date_today(datetime.timezone.utc)
+    today_utc = date_today(datetime.UTC)
     was_there = False
     can_add = False
     if request.user.is_authenticated:

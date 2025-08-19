@@ -3,6 +3,8 @@
 
 import os
 
+from django.conf import settings
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.urls import reverse as urlreverse
 from unittest import skipIf
 
@@ -21,7 +23,11 @@ except ImportError as e:
 
 
 from ietf.utils.pipe import pipe
-from ietf.utils.test_runner import IetfLiveServerTestCase
+from ietf.utils.test_runner import (
+    set_template_coverage,
+    set_url_coverage,
+    load_and_run_fixtures,
+)
 
 executable_name = 'geckodriver'
 code, out, err = pipe('{} --version'.format(executable_name))
@@ -49,17 +55,44 @@ def ifSeleniumEnabled(func):
     return skipIf(skip_selenium, skip_message)(func)
 
 
-class IetfSeleniumTestCase(IetfLiveServerTestCase):
+class IetfSeleniumTestCase(StaticLiveServerTestCase):  # pragma: no cover
     login_view = 'ietf.ietfauth.views.login'
 
+    @classmethod
+    def setUpClass(cls):
+        set_template_coverage(False)
+        set_url_coverage(False)
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        set_template_coverage(True)
+        set_url_coverage(True)
+
     def setUp(self):
-        super(IetfSeleniumTestCase, self).setUp()
+        super().setUp()
+        # LiveServerTestCase uses TransactionTestCase which seems to
+        # somehow interfere with the fixture loading process in
+        # IetfTestRunner when running multiple tests (the first test
+        # is fine, in the next ones the fixtures have been wiped) -
+        # this is no doubt solvable somehow, but until then we simply
+        # recreate them here
+        from ietf.person.models import Person
+        if not Person.objects.exists():
+            load_and_run_fixtures(verbosity=0)
+        self.replaced_settings = dict()
+        if hasattr(settings, 'IDTRACKER_BASE_URL'):
+            self.replaced_settings['IDTRACKER_BASE_URL'] = settings.IDTRACKER_BASE_URL
+            settings.IDTRACKER_BASE_URL = self.live_server_url
         self.driver = start_web_driver()
         self.driver.set_window_size(1024,768)
     
     def tearDown(self):
-        super(IetfSeleniumTestCase, self).tearDown()
         self.driver.close()
+        for k, v in self.replaced_settings.items():
+            setattr(settings, k, v)
+        super().tearDown()
 
     def absreverse(self,*args,**kwargs):
         return '%s%s'%(self.live_server_url, urlreverse(*args, **kwargs))

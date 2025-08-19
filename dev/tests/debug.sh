@@ -9,7 +9,7 @@
 # Simply type "exit" + ENTER to exit and shutdown this test environment.
 
 echo "Fetching latest images..."
-docker pull ghcr.io/ietf-tools/datatracker-app-base:latest
+docker pull ghcr.io/ietf-tools/datatracker-app-base:py312
 docker pull ghcr.io/ietf-tools/datatracker-db:latest
 echo "Starting containers..."
 docker compose -f docker-compose.debug.yml -p dtdebug --compatibility up -d

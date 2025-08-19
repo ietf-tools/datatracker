@@ -678,11 +678,11 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
             datetime.datetime.combine(
                 ietf_monday - datetime.timedelta(days=1),
                 datetime.time(0, 0, 0),
-                tzinfo=datetime.timezone.utc,
+                tzinfo=datetime.UTC,
             )
         ))
         self.assertFalse(in_draft_expire_freeze(
-            datetime.datetime.combine(ietf_monday, datetime.time(0, 0, 0), tzinfo=datetime.timezone.utc)
+            datetime.datetime.combine(ietf_monday, datetime.time(0, 0, 0), tzinfo=datetime.UTC)
         ))
         
     def test_warn_expirable_drafts(self):

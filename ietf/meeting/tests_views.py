@@ -55,9 +55,8 @@ from ietf.meeting.utils import create_recording, delete_recording, get_next_sequ
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose, generate_agenda_data
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
-from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
-from ietf.utils.test_runner import TestBlobstoreManager
+from ietf.utils.test_runner import TestBlobstoreManager, disable_coverage
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.timezone import date_today, time_now
 
@@ -321,11 +320,11 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.group.parent.acronym.upper())
         self.assertContains(r, slot.location.name)
         self.assertContains(r, "{}-{}".format(
-            slot.time.astimezone(datetime.timezone.utc).strftime("%H%M"),
-            (slot.time + slot.duration).astimezone(datetime.timezone.utc).strftime("%H%M"),
+            slot.time.astimezone(datetime.UTC).strftime("%H%M"),
+            (slot.time + slot.duration).astimezone(datetime.UTC).strftime("%H%M"),
         ))
         self.assertContains(r, "shown in UTC")
-        updated = meeting.updated().astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
+        updated = meeting.updated().astimezone(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S %Z")
         self.assertContains(r, f"Updated {updated}")
 
         # text, invalid updated (none)
@@ -369,8 +368,8 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.group.parent.acronym.upper())
         self.assertContains(r, slot.location.name)
         self.assertContains(r, registration_text)
-        start_time = slot.time.astimezone(datetime.timezone.utc)
-        end_time = slot.end_time().astimezone(datetime.timezone.utc)
+        start_time = slot.time.astimezone(datetime.UTC)
+        end_time = slot.end_time().astimezone(datetime.UTC)
         self.assertContains(r, '"{}","{}","{}"'.format(
             start_time.strftime("%Y-%m-%d"),
             start_time.strftime("%H%M"),
@@ -1037,7 +1036,7 @@ class MeetingTests(BaseMeetingTestCase):
 
         updated = meeting.updated()
         self.assertIsNotNone(updated)
-        expected_updated = updated.astimezone(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        expected_updated = updated.astimezone(datetime.UTC).strftime("%Y%m%dT%H%M%SZ")
         self.assertContains(r, f"DTSTAMP:{expected_updated}")
         dtstamps_count = r.content.decode("utf-8").count(f"DTSTAMP:{expected_updated}")
         self.assertEqual(dtstamps_count, meeting.importantdate_set.count())
@@ -1181,8 +1180,8 @@ class MeetingTests(BaseMeetingTestCase):
                 os.unlink(filename)
 
     @skipIf(skip_pdf_tests, skip_message)
-    @skip_coverage
-    def test_session_draft_pdf(self):
+    @disable_coverage()
+    def test_session_draft_pdf(self):  # pragma: no cover
         session, filenames = self.build_session_setup()
         try:
             url = urlreverse('ietf.meeting.views.session_draft_pdf', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
@@ -2117,8 +2116,8 @@ class EditMeetingScheduleTests(TestCase):
         # strftime() does not seem to support hours without leading 0, so do this manually
         time_label_string = f'{ts_start.hour:d}:{ts_start.minute:02d} - {ts_end.hour:d}:{ts_end.minute:02d}'
         self.assertIn(time_label_string, time_label.text())
-        self.assertEqual(time_label.attr('data-start'), ts_start.astimezone(datetime.timezone.utc).isoformat())
-        self.assertEqual(time_label.attr('data-end'), ts_end.astimezone(datetime.timezone.utc).isoformat())
+        self.assertEqual(time_label.attr('data-start'), ts_start.astimezone(datetime.UTC).isoformat())
+        self.assertEqual(time_label.attr('data-end'), ts_end.astimezone(datetime.UTC).isoformat())
 
         ts_swap = time_label.find('.swap-timeslot-col')
         origin_label = ts_swap.attr('data-origin-label')
@@ -2129,8 +2128,8 @@ class EditMeetingScheduleTests(TestCase):
 
         timeslot_elt = pq(f'#timeslot{timeslot.pk}')
         self.assertEqual(len(timeslot_elt), 1)
-        self.assertEqual(timeslot_elt.attr('data-start'), ts_start.astimezone(datetime.timezone.utc).isoformat())
-        self.assertEqual(timeslot_elt.attr('data-end'), ts_end.astimezone(datetime.timezone.utc).isoformat())
+        self.assertEqual(timeslot_elt.attr('data-start'), ts_start.astimezone(datetime.UTC).isoformat())
+        self.assertEqual(timeslot_elt.attr('data-end'), ts_end.astimezone(datetime.UTC).isoformat())
 
         timeslot_label = pq(f'#timeslot{timeslot.pk} .time-label')
         self.assertEqual(len(timeslot_label), 1)
@@ -5233,7 +5232,7 @@ class InterimTests(TestCase):
 
         updated = meeting.updated()
         self.assertIsNotNone(updated)
-        expected_updated = updated.astimezone(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        expected_updated = updated.astimezone(datetime.UTC).strftime("%Y%m%dT%H%M%SZ")
         self.assertContains(r, f"DTSTAMP:{expected_updated}")
 
         # With default cached_updated, 1970-01-01
