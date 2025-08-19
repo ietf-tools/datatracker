@@ -1,10 +1,14 @@
 # Copyright The IETF Trust 2014-2025, All Rights Reserved
-# -*- coding: utf-8 -*-
+"""aiosmtpd-related utilities
 
+These are for testing / dev use. If you're using this for production code, think very
+hard about the choices you're making...
+"""
+from aiosmtpd import handlers
 from aiosmtpd.controller import Controller
 from aiosmtpd.smtp import SMTP
 from email.utils import parseaddr
-from typing import Optional
+from typing import Optional, TextIO
 
 
 class SMTPTestHandler:
@@ -54,3 +58,16 @@ class SMTPTestServerDriver:
 
     def stop(self):
         self.controller.stop()
+
+
+class DevDebuggingHandler(handlers.Debugging):
+    """Debugging handler for use in dev ONLY"""
+    def __init__(self, stream: Optional[TextIO] = None):
+        # Allow longer lines than the 1001 that RFC 5321 requires. As of 2025-04-16 the
+        # datatracker emits some non-compliant messages.
+        # See https://aiosmtpd.aio-libs.org/en/latest/smtp.html
+        # Doing this in a handler class is a huge hack. Tests all pass with this set
+        # to 4000, but make the limit longer for dev just in case.
+        SMTP.line_length_limit = 10000
+        super().__init__(stream)
+        
