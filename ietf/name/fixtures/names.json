@@ -5119,6 +5119,34 @@
   {
     "fields": {
       "cc": [],
+      "desc": "Recipients when a working group call for adoption is issued",
+      "to": [
+        "doc_authors",
+        "doc_group_chairs",
+        "doc_group_mail_list",
+        "doc_shepherd"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "doc_wg_call_for_adoption_issued"
+  },
+  {
+    "fields": {
+      "cc": [],
+      "desc": "Recipients when a working group last call is issued",
+      "to": [
+        "doc_authors",
+        "doc_group_chairs",
+        "doc_group_mail_list",
+        "doc_shepherd"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "doc_wg_last_call_issued"
+  },
+  {
+    "fields": {
+      "cc": [],
       "desc": "Recipients when a comment is added to a group's history",
       "to": [
         "group_chairs",

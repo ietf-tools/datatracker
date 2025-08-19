@@ -28,6 +28,7 @@ from ietf.doc.models import ( Document, RelatedDocument, State,
     IanaExpertDocEvent, IESG_SUBSTATE_TAGS)
 from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_requested,
     email_resurrection_completed, email_state_changed, email_stream_changed,
+    email_wg_call_for_adoption_issued, email_wg_last_call_issued,
     email_stream_state_changed, email_stream_tags_changed, extra_automation_headers,
     generate_publication_request, email_adopted, email_intended_status_changed,
     email_iesg_processing_document, email_ad_approved_doc,
@@ -1568,7 +1569,14 @@ def adopt_draft(request, name):
 
                 update_reminder(doc, "stream-s", e, due_date)
 
+                # The following call name is very misleading - the view allows 
+                # setting states that are _not_ the adopted state.
                 email_adopted(request, doc, prev_state, new_state, by, comment)
+
+                # Currently only the IETF stream uses the c-adopt state - guard against other
+                # streams starting to use it asthe IPR rules for those streams will be different.
+                if doc.stream_id == "ietf" and new_state.slug == "c-adopt":
+                    email_wg_call_for_adoption_issued(request, doc, cfa_duration_weeks=form.cleaned_data["weeks"])
 
             # comment
             if comment:
@@ -1754,12 +1762,19 @@ def change_stream_state(request, name, state_type):
                 events.append(e)
 
                 due_date = None
-                if form.cleaned_data["weeks"] != None:
+                if form.cleaned_data["weeks"] is not None:
                     due_date = datetime_today(DEADLINE_TZINFO) + datetime.timedelta(weeks=form.cleaned_data["weeks"])
 
                 update_reminder(doc, "stream-s", e, due_date)
 
                 email_stream_state_changed(request, doc, prev_state, new_state, by, comment)
+
+                if doc.stream_id == "ietf":
+                    if new_state.slug == "c-adopt":
+                        email_wg_call_for_adoption_issued(request, doc, cfa_duration_weeks=form.cleaned_data["weeks"])
+                    
+                    if new_state.slug == "wg-lc":
+                        email_wg_last_call_issued(request, doc, wglc_duration_weeks=form.cleaned_data["weeks"])
 
             # tags
             existing_tags = set(doc.tags.all())
