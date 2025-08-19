@@ -82,7 +82,7 @@ debug.debug = True
 import ietf
 import ietf.utils.mail
 from ietf.utils.management.commands import pyflakes
-from ietf.utils.test_smtpserver import SMTPTestServerDriver
+from ietf.utils.aiosmtpd import SMTPTestServerDriver
 from ietf.utils.test_utils import TestCase
 
 from mypy_boto3_s3.service_resource import Bucket
