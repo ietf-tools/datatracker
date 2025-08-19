@@ -69,7 +69,7 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 	nodejs \
 	pgloader \
 	pigz \
-	postgresql-client-14 \
+	postgresql-client-17 \
 	pv \
 	python3-ipython \
 	ripgrep \

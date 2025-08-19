@@ -4,6 +4,7 @@
 
 import datetime
 import re
+import sys
 
 from urllib.parse import urlencode
 
@@ -24,6 +25,9 @@ from tastypie.fields import ApiField
 _api_list = []
 
 OMITTED_APPS_APIS = ["ietf.status"]
+
+# Pre-py3.11, fromisoformat() does not handle Z or +HH tz offsets
+HAVE_BROKEN_FROMISOFORMAT = sys.version_info < (3, 11, 0, "", 0)
 
 def populate_api_list():
     _module_dict = globals()
@@ -57,6 +61,35 @@ class ModelResource(tastypie.resources.ModelResource):
 
         # Use a list plus a ``.join()`` because it's faster than concatenation.
         return "%s:%s:%s:%s" % (self._meta.api_name, self._meta.resource_name, ':'.join(args), smooshed)
+
+    def _z_aware_fromisoformat(self, value):
+        """datetime.datetie.fromisoformat replacement that works with python < 3.11"""
+        if HAVE_BROKEN_FROMISOFORMAT:
+            if value.upper().endswith("Z"):
+                value = value[:-1] + "+00:00"  # Z -> UTC
+            elif re.match(r"[+-][0-9][0-9]$", value[-3:]):
+                value = value + ":00"  # -04 -> -04:00
+        return value
+
+    def filter_value_to_python(
+        self, value, field_name, filters, filter_expr, filter_type
+    ):
+        py_value = super().filter_value_to_python(
+            value, field_name, filters, filter_expr, filter_type
+        )
+        if isinstance(
+            self.fields[field_name], tastypie.fields.DateTimeField
+        ) and isinstance(py_value, str):
+            # Ensure datetime values are TZ-aware, using UTC by default
+            try:
+                dt = self._z_aware_fromisoformat(py_value)
+            except ValueError:
+                pass  # let tastypie deal with the original value
+            else:
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=datetime.timezone.utc)
+                py_value = dt.isoformat()
+        return py_value
 
 
 TIMEDELTA_REGEX = re.compile(r'^(?P<days>\d+d)?\s?(?P<hours>\d+h)?\s?(?P<minutes>\d+m)?\s?(?P<seconds>\d+s?)$')
