@@ -108,7 +108,7 @@ echo "Running initial checks..."
 
 if [ -z "$EDITOR_VSCODE" ]; then
     CODE=0
-    python -m smtpd -n -c DebuggingServer localhost:2025 &
+    python -m aiosmtpd -n -c aiosmtpd.handlers.Debugging -l localhost:2025 &
     if [ -z "$*" ]; then
         echo "-----------------------------------------------------------------"
         echo "Ready!"
