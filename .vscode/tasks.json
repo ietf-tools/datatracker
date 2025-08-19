@@ -108,7 +108,7 @@
                 "aiosmtpd",
                 "-n",
                 "-c",
-                "aiosmtpd.handlers.Debugging",
+                "ietf.utils.aiosmtpd.DevDebuggingHandler",
                 "-l",
                 "localhost:2025"
             ],
