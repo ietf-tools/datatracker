@@ -1,7 +1,7 @@
 {% load ietf_filters %}{% load mail_filters %}{% autoescape off %}{% filter wordwrap:78 %}
 Subject: {{ subject }}
 
-This message starts a {{ cfa_duration }}-week Call for Adoption for this document. 
+This message starts a {{ cfa_duration_weeks }}-week Call for Adoption for this document. 
 
 Abstract: 
 {{ doc.abstract }}

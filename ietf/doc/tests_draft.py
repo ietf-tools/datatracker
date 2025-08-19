@@ -2031,17 +2031,39 @@ class ChangeStreamStateTests(TestCase):
         self.assertEqual(len(outbox), 2)
         self.assertIn("mars-wg@ietf.org", outbox[1]["To"])
         self.assertIn("Call for adoption", outbox[1]["Subject"])
-        self.assertIn("disclosure obligations", get_payload_text(outbox[1]))
-        self.client.logout()
+        body = get_payload_text(outbox[1])
+        self.assertIn("disclosure obligations", body)
+        self.assertIn("starts a 10-week", body)
+        # Test not entering a duration on the form
+        draft = IndividualDraftFactory()
+        url = urlreverse(
+            "ietf.doc.views_draft.adopt_draft", kwargs=dict(name=draft.name)
+        )
+        empty_outbox()
+        call_issued = State.objects.get(type="draft-stream-ietf", slug="c-adopt")
+        r = self.client.post(
+            url,
+            dict(
+                comment="some comment",
+                group=role.group.pk,
+                newstate=call_issued.pk,
+            ),
+        )
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(len(outbox), 2)
+        self.assertIn("mars-wg@ietf.org", outbox[1]["To"])
+        self.assertIn("Call for adoption", outbox[1]["Subject"])
+        body = get_payload_text(outbox[1])
+        self.assertIn("disclosure obligations", body)
+        self.assertIn("starts a 2-week", body)
 
-        # Second test the less usual workflow of issuing a call for adoption 
+        # Test the less usual workflow of issuing a call for adoption 
         # of a document that's already in the ietf stream
         draft = WgDraftFactory(group=role.group)
         url = urlreverse(
             "ietf.doc.views_draft.change_stream_state",
             kwargs=dict(name=draft.name, state_type="draft-stream-ietf"),
         )
-        login_testing_unauthorized(self, "marschairman", url)
         old_state = draft.get_state("draft-stream-%s" % draft.stream_id)
         new_state = State.objects.get(
             used=True, type="draft-stream-%s" % draft.stream_id, slug="c-adopt"
@@ -2066,7 +2088,40 @@ class ChangeStreamStateTests(TestCase):
         self.assertEqual(len(outbox), 2)
         self.assertIn("mars-wg@ietf.org", outbox[1]["To"])
         self.assertIn("Call for adoption", outbox[1]["Subject"])
-        self.assertIn("disclosure obligations", get_payload_text(outbox[1]))
+        body = get_payload_text(outbox[1])
+        self.assertIn("disclosure obligations", body)
+        self.assertIn("starts a 10-week", body)
+        draft = WgDraftFactory(group=role.group)
+        url = urlreverse(
+            "ietf.doc.views_draft.change_stream_state",
+            kwargs=dict(name=draft.name, state_type="draft-stream-ietf"),
+        )
+        old_state = draft.get_state("draft-stream-%s" % draft.stream_id)
+        new_state = State.objects.get(
+            used=True, type="draft-stream-%s" % draft.stream_id, slug="c-adopt"
+        )
+        self.assertNotEqual(old_state, new_state)
+        empty_outbox()
+        r = self.client.post(
+            url,
+            dict(
+                new_state=new_state.pk,
+                comment="some comment",
+                tags=[
+                    t.pk
+                    for t in draft.tags.filter(
+                        slug__in=get_tags_for_stream_id(draft.stream_id)
+                    )
+                ],
+            ),
+        )
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(len(outbox), 2)
+        self.assertIn("mars-wg@ietf.org", outbox[1]["To"])
+        self.assertIn("Call for adoption", outbox[1]["Subject"])
+        body = get_payload_text(outbox[1])
+        self.assertIn("disclosure obligations", body)
+        self.assertIn("starts a 2-week", body)
 
     def test_wg_last_call_issued(self):
         role = RoleFactory(
@@ -2106,7 +2161,40 @@ class ChangeStreamStateTests(TestCase):
         self.assertEqual(len(outbox), 2)
         self.assertIn("mars-wg@ietf.org", outbox[1]["To"])
         self.assertIn("WG Last Call", outbox[1]["Subject"])
-        self.assertIn("disclosure obligations", get_payload_text(outbox[1]))
+        body = get_payload_text(outbox[1])
+        self.assertIn("disclosure obligations", body)
+        self.assertIn("starts a 10-week", body)
+        draft = WgDraftFactory(group=role.group)
+        url = urlreverse(
+            "ietf.doc.views_draft.change_stream_state",
+            kwargs=dict(name=draft.name, state_type="draft-stream-ietf"),
+        )
+        old_state = draft.get_state("draft-stream-%s" % draft.stream_id)
+        new_state = State.objects.get(
+            used=True, type="draft-stream-%s" % draft.stream_id, slug="wg-lc"
+        )
+        self.assertNotEqual(old_state, new_state)
+        empty_outbox()
+        r = self.client.post(
+            url,
+            dict(
+                new_state=new_state.pk,
+                comment="some comment",
+                tags=[
+                    t.pk
+                    for t in draft.tags.filter(
+                        slug__in=get_tags_for_stream_id(draft.stream_id)
+                    )
+                ],
+            ),
+        )
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(len(outbox), 2)
+        self.assertIn("mars-wg@ietf.org", outbox[1]["To"])
+        self.assertIn("WG Last Call", outbox[1]["Subject"])
+        body = get_payload_text(outbox[1])
+        self.assertIn("disclosure obligations", body)
+        self.assertIn("starts a 2-week", body)
 
     def test_pubreq_validation(self):
         role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name='WG Cháir Man')

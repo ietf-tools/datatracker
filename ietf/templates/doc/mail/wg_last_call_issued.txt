@@ -1,7 +1,7 @@
 {% load ietf_filters %}{% load mail_filters %}{% autoescape off %}{% filter wordwrap:78 %}
 Subject: {{ subject }}
 
-This message starts a {{ wglc_duration }}-week WG Last Call for this document. 
+This message starts a {{ wglc_duration_weeks }}-week WG Last Call for this document. 
 
 Abstract: 
 {{ doc.abstract }}

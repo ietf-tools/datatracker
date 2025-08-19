@@ -1569,11 +1569,11 @@ def adopt_draft(request, name):
 
                 update_reminder(doc, "stream-s", e, due_date)
 
-                # The following call name is very misleading.
+                # The following call name is very misleading - the view allows setting states that are _not_ the adopted state.
                 email_adopted(request, doc, prev_state, new_state, by, comment)
 
                 if new_state.slug == "c-adopt":
-                    email_wg_call_for_adoption_issued(request, doc)
+                    email_wg_call_for_adoption_issued(request, doc, cfa_duration_weeks=form.cleaned_data["weeks"])
 
             # comment
             if comment:
@@ -1759,7 +1759,7 @@ def change_stream_state(request, name, state_type):
                 events.append(e)
 
                 due_date = None
-                if form.cleaned_data["weeks"] != None:
+                if form.cleaned_data["weeks"] is not None:
                     due_date = datetime_today(DEADLINE_TZINFO) + datetime.timedelta(weeks=form.cleaned_data["weeks"])
 
                 update_reminder(doc, "stream-s", e, due_date)
@@ -1767,10 +1767,10 @@ def change_stream_state(request, name, state_type):
                 email_stream_state_changed(request, doc, prev_state, new_state, by, comment)
 
                 if new_state.slug == "c-adopt":
-                    email_wg_call_for_adoption_issued(request, doc)
+                    email_wg_call_for_adoption_issued(request, doc, cfa_duration_weeks=form.cleaned_data["weeks"])
                 
                 if new_state.slug == "wg-lc":
-                    email_wg_last_call_issued(request, doc)
+                    email_wg_last_call_issued(request, doc, wglc_duration_weeks=form.cleaned_data["weeks"])
 
             # tags
             existing_tags = set(doc.tags.all())
