@@ -1569,10 +1569,13 @@ def adopt_draft(request, name):
 
                 update_reminder(doc, "stream-s", e, due_date)
 
-                # The following call name is very misleading - the view allows setting states that are _not_ the adopted state.
+                # The following call name is very misleading - the view allows 
+                # setting states that are _not_ the adopted state.
                 email_adopted(request, doc, prev_state, new_state, by, comment)
 
-                if new_state.slug == "c-adopt":
+                # Currently only the IETF stream uses the c-adopt state - guard against other
+                # streams starting to use it asthe IPR rules for those streams will be different.
+                if doc.stream_id == "ietf" and new_state.slug == "c-adopt":
                     email_wg_call_for_adoption_issued(request, doc, cfa_duration_weeks=form.cleaned_data["weeks"])
 
             # comment
@@ -1766,11 +1769,12 @@ def change_stream_state(request, name, state_type):
 
                 email_stream_state_changed(request, doc, prev_state, new_state, by, comment)
 
-                if new_state.slug == "c-adopt":
-                    email_wg_call_for_adoption_issued(request, doc, cfa_duration_weeks=form.cleaned_data["weeks"])
-                
-                if new_state.slug == "wg-lc":
-                    email_wg_last_call_issued(request, doc, wglc_duration_weeks=form.cleaned_data["weeks"])
+                if doc.stream_id == "ietf":
+                    if new_state.slug == "c-adopt":
+                        email_wg_call_for_adoption_issued(request, doc, cfa_duration_weeks=form.cleaned_data["weeks"])
+                    
+                    if new_state.slug == "wg-lc":
+                        email_wg_last_call_issued(request, doc, wglc_duration_weeks=form.cleaned_data["weeks"])
 
             # tags
             existing_tags = set(doc.tags.all())
