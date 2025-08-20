@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 from django.template import Context, Origin, Template
 from django.test import override_settings
-from django.utils.safestring import SafeString
 
 from ietf.utils.templatetags.textfilters import linkify
 from ietf.utils.test_utils import TestCase
