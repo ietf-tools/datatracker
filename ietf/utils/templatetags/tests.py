@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 from django.template import Context, Origin, Template
 from django.test import override_settings
+from django.utils.safestring import SafeString
 
+from ietf.utils.templatetags.textfilters import linkify
 from ietf.utils.test_utils import TestCase
 import debug  # pyflakes: ignore
 
@@ -39,3 +41,68 @@ class OriginTests(TestCase):
                 output = template.render(Context())
                 self.assertNotIn(component, output,
                                  'Full path components should not be revealed in html')
+
+
+class TextfiltersTests(TestCase):
+    def test_linkify(self):
+        # Cases with autoescape = True (the default)
+        self.assertEqual(
+            linkify("plain string"),
+            "plain string",
+        )
+        self.assertEqual(
+            linkify("https://www.ietf.org"),
+            '<a href="https://www.ietf.org">https://www.ietf.org</a>',
+        )
+        self.assertEqual(
+            linkify('<a href="https://www.ietf.org">IETF</a>'),
+            (
+                '&lt;a href=&quot;<a href="https://www.ietf.org">https://www.ietf.org</a>&quot;&gt;IETF&lt;/a&gt;'
+            ),
+        )
+        self.assertEqual(
+            linkify("somebody@example.com"),
+            '<a href="mailto:somebody@example.com">somebody@example.com</a>',
+        )
+        self.assertEqual(
+            linkify("Some Body <somebody@example.com>"),
+            (
+                'Some Body &lt;<a href="mailto:somebody@example.com">'
+                'somebody@example.com</a>&gt;'
+            ),
+        )
+        self.assertEqual(
+            linkify("<script>alert('h4x0r3d');</script>"),
+            "&lt;script&gt;alert(&#x27;h4x0r3d&#x27;);&lt;/script&gt;",
+        )
+
+        # Cases with autoescape = False (these are dangerous and assume the caller
+        # has sanitized already)
+        self.assertEqual(
+            linkify("plain string", autoescape=False),
+            "plain string",
+        )
+        self.assertEqual(
+            linkify("https://www.ietf.org", autoescape=False),
+            '<a href="https://www.ietf.org">https://www.ietf.org</a>',
+        )
+        self.assertEqual(
+            linkify('<a href="https://www.ietf.org">IETF</a>', autoescape=False),
+            '<a href="https://www.ietf.org">IETF</a>',
+        )
+        self.assertEqual(
+            linkify("somebody@example.com", autoescape=False),
+            '<a href="mailto:somebody@example.com">somebody@example.com</a>',
+        )
+        # bleach.Linkifier translates the < -> &lt; and > -> &gt; on this one
+        self.assertEqual(
+            linkify("Some Body <somebody@example.com>", autoescape=False),
+            (
+                'Some Body &lt;<a href="mailto:somebody@example.com">'
+                'somebody@example.com</a>&gt;'
+            ),
+        )
+        self.assertEqual(
+            linkify("<script>alert('friendly script');</script>", autoescape=False),
+            "<script>alert('friendly script');</script>",
+        )
