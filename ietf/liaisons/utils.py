@@ -8,7 +8,6 @@ from ietf.ietfauth.utils import has_role, passes_test_decorator
 OUTGOING_LIAISON_ROLES = [
     "Area Director",
     "IAB Chair",
-    "IAB Executive Director",
     "IETF Chair",
     "Liaison Manager",
     "Liaison Coordinator",
