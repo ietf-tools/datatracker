@@ -17,10 +17,8 @@ def forward(apps, schema_editor):
     try:
         management.call_command(
             "populate_history",
-            models=[
-                "mailtrigger.MailTrigger",
-                "mailtrigger.Recipient",
-            ],
+            "mailtrigger.MailTrigger",
+            "mailtrigger.Recipient",
             stdout=captured_stdout,
             stderr=captured_stderr,
         )
