@@ -7,6 +7,8 @@ from django.template import Template, Context
 
 from email.utils import parseaddr
 
+from simple_history.models import HistoricalRecords
+
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.utils.mail import formataddr, get_email_addresses_from_text
 from ietf.group.models import Group, Role
@@ -38,6 +40,7 @@ class MailTrigger(models.Model):
     desc = models.TextField(blank=True)
     to   = models.ManyToManyField('mailtrigger.Recipient', blank=True, related_name='used_in_to')
     cc   = models.ManyToManyField('mailtrigger.Recipient', blank=True, related_name='used_in_cc')
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ["slug"]
@@ -49,6 +52,7 @@ class Recipient(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     desc = models.TextField(blank=True)
     template = models.TextField(null=True, blank=True)
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ["slug"]
