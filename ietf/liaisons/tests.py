@@ -123,7 +123,6 @@ class UnitTests(TestCase):
         cc = get_cc(Group.objects.get(acronym='iab'))
         self.assertTrue(EMAIL_ALIASES['IAB'] in cc)
         self.assertTrue(EMAIL_ALIASES['IABCHAIR'] in cc)
-        self.assertTrue(EMAIL_ALIASES['IABEXECUTIVEDIRECTOR'] in cc)
         # test an Area
         area = Group.objects.filter(type='area').first()
         cc = get_cc(area)
@@ -166,7 +165,6 @@ class UnitTests(TestCase):
         # test iab
         contacts = get_contacts_for_group(Group.objects.get(acronym='iab'))
         self.assertTrue(EMAIL_ALIASES['IABCHAIR'] in contacts)
-        self.assertTrue(EMAIL_ALIASES['IABEXECUTIVEDIRECTOR'] in contacts)
         # test iesg
         contacts = get_contacts_for_group(Group.objects.get(acronym='iesg'))
         self.assertTrue(EMAIL_ALIASES['IESG'] in contacts)
@@ -534,7 +532,6 @@ class LiaisonManagementTests(TestCase):
         RoleFactory(name_id='liaison_coordinator', group__acronym='iab', person__user__username='liaison-coordinator')
         mars = RoleFactory(name_id='chair',person__user__username='marschairman',group__acronym='mars').group
         RoleFactory(name_id='secr',group=mars,person__user__username='mars-secr')
-        RoleFactory(name_id='execdir',group=Group.objects.get(acronym='iab'),person__user__username='iab-execdir')
 
         url = urlreverse('ietf.liaisons.views.liaison_list')
         addurl = urlreverse('ietf.liaisons.views.liaison_add', kwargs={'type':'outgoing'})
@@ -585,15 +582,6 @@ class LiaisonManagementTests(TestCase):
 
         # IAB Chair has access
         self.assertTrue(self.client.login(username="iab-chair", password="iab-chair+password"))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q("a.btn:contains('New outgoing liaison')")), 1)
-        r = self.client.get(addurl)
-        self.assertEqual(r.status_code, 200)
-
-        # IAB Executive Director
-        self.assertTrue(self.client.login(username="iab-execdir", password="iab-execdir+password"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)

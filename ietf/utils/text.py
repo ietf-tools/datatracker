@@ -60,6 +60,12 @@ _bleach_linker = bleach.Linker(
 
 
 def linkify(text):
+    """Convert URL-ish substrings into HTML links
+    
+    This does no sanitization whatsoever. Caller must sanitize the input or output as
+    contextually appropriate. Do not call `mark_safe()` on the output if the input is
+    user-provided unless it has been sanitized or escaped.
+    """
     return _bleach_linker.linkify(text)
 
 
