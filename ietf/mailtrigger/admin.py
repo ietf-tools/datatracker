@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2015-2019, All Rights Reserved
+# Copyright The IETF Trust 2015-2025, All Rights Reserved
 from django.contrib import admin
 
 from ietf.mailtrigger.models import MailTrigger, Recipient
