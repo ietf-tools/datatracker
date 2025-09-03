@@ -30,11 +30,12 @@ from ietf.name.models import LiaisonStatementTagName
 from ietf.utils.response import permission_denied
 
 EMAIL_ALIASES = {
-    'IETFCHAIR':'The IETF Chair <chair@ietf.org>',
-    'IESG':'The IESG <iesg@ietf.org>',
-    'IAB':'The IAB <iab@iab.org>',
-    'IABCHAIR':'The IAB Chair <iab-chair@iab.org>',
-    'IABEXECUTIVEDIRECTOR':'The IAB Executive Director <execd@iab.org>'}
+    "IETFCHAIR": "The IETF Chair <chair@ietf.org>",
+    "IESG": "The IESG <iesg@ietf.org>",
+    "IAB": "The IAB <iab@iab.org>",
+    "IABCHAIR": "The IAB Chair <iab-chair@iab.org>",
+}
+
 
 # -------------------------------------------------
 # Helper Functions
@@ -84,8 +85,6 @@ def _find_person_in_emails(liaison, person):
             return True
         elif addr in ('iab@iab.org', 'iab-chair@iab.org') and has_role(person.user, "IAB Chair"):
             return True
-        elif addr in ('execd@iab.org', ) and has_role(person.user, "IAB Executive Director"):
-            return True
 
     return False
 
@@ -110,7 +109,6 @@ def get_cc(group):
     elif group.acronym in ('iab'):
         emails.append(EMAIL_ALIASES['IAB'])
         emails.append(EMAIL_ALIASES['IABCHAIR'])
-        emails.append(EMAIL_ALIASES['IABEXECUTIVEDIRECTOR'])
     elif group.type_id == 'area':
         emails.append(EMAIL_ALIASES['IETFCHAIR'])
         ad_roles = group.role_set.filter(name='ad')
@@ -151,7 +149,6 @@ def get_contacts_for_group(group):
         contacts.append(EMAIL_ALIASES['IETFCHAIR'])
     elif group.acronym == 'iab':
         contacts.append(EMAIL_ALIASES['IABCHAIR'])
-        contacts.append(EMAIL_ALIASES['IABEXECUTIVEDIRECTOR'])
     elif group.acronym == 'iesg':
         contacts.append(EMAIL_ALIASES['IESG'])
 
@@ -171,7 +168,7 @@ def needs_approval(group,person):
     user = person.user
     if group.acronym in ('ietf','iesg') and has_role(user, 'IETF Chair'):
         return False
-    if group.acronym == 'iab' and (has_role(user,'IAB Chair') or has_role(user,'IAB Executive Director')):
+    if group.acronym == 'iab' and has_role(user,'IAB Chair'):
         return False
     if group.type_id == 'area' and group.role_set.filter(name='ad',person=person):
         return False
