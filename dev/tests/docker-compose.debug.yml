@@ -5,7 +5,7 @@ version: '3.8'
 
 services:
     app:
-        image: ghcr.io/ietf-tools/datatracker-app-base:py312
+        image: ghcr.io/ietf-tools/datatracker-app-base:latest
         command: -f /dev/null
         working_dir: /__w/datatracker/datatracker
         entrypoint: tail

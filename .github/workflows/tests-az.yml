@@ -62,7 +62,7 @@ jobs:
           echo "Starting Containers..."
           sudo docker network create dtnet
           sudo docker run -d --name db --network=dtnet ghcr.io/ietf-tools/datatracker-db:latest &
-          sudo docker run -d --name app --network=dtnet ghcr.io/ietf-tools/datatracker-app-base:py312 sleep infinity &
+          sudo docker run -d --name app --network=dtnet ghcr.io/ietf-tools/datatracker-app-base:latest sleep infinity &
           wait
 
           echo "Cloning datatracker repo..."
