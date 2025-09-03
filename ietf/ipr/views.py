@@ -152,13 +152,13 @@ def ipr_rfc_number(disclosureDate, thirdPartyDisclosureFlag):
 
     # RFC publication date comes from the RFC Editor announcement
     ipr_rfc_pub_datetime = {
-        1310 : datetime.datetime(1992,  3, 13,  0,  0, tzinfo=datetime.timezone.utc),
-        1802 : datetime.datetime(1994,  3, 23,  0,  0, tzinfo=datetime.timezone.utc),
-        2026 : datetime.datetime(1996, 10, 29,  0,  0, tzinfo=datetime.timezone.utc),
-        3668 : datetime.datetime(2004,  2, 18,  0,  0, tzinfo=datetime.timezone.utc),
-        3979 : datetime.datetime(2005,  3,  2,  2, 23, tzinfo=datetime.timezone.utc),
-        4879 : datetime.datetime(2007,  4, 10, 18, 21, tzinfo=datetime.timezone.utc),
-        8179 : datetime.datetime(2017,  5, 31, 23,  1, tzinfo=datetime.timezone.utc),
+        1310 : datetime.datetime(1992,  3, 13,  0,  0, tzinfo=datetime.UTC),
+        1802 : datetime.datetime(1994,  3, 23,  0,  0, tzinfo=datetime.UTC),
+        2026 : datetime.datetime(1996, 10, 29,  0,  0, tzinfo=datetime.UTC),
+        3668 : datetime.datetime(2004,  2, 18,  0,  0, tzinfo=datetime.UTC),
+        3979 : datetime.datetime(2005,  3,  2,  2, 23, tzinfo=datetime.UTC),
+        4879 : datetime.datetime(2007,  4, 10, 18, 21, tzinfo=datetime.UTC),
+        8179 : datetime.datetime(2017,  5, 31, 23,  1, tzinfo=datetime.UTC),
     }
 
     if disclosureDate < ipr_rfc_pub_datetime[1310]:

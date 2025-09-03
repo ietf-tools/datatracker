@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 class MeetechoAPI:
-    timezone = datetime.timezone.utc
+    timezone = datetime.UTC
 
     def __init__(
         self, api_base: str, client_id: str, client_secret: str, request_timeout=3.01
@@ -504,7 +504,7 @@ class SlidesManager(Manager):
         if self.slides_notify_time < datetime.timedelta(0):
             return True  # < 0 means "always" for a scheduled session
         else:
-            now = datetime.datetime.now(tz=datetime.timezone.utc)
+            now = datetime.datetime.now(tz=datetime.UTC)
             return (timeslot.time - self.slides_notify_time) < now < (timeslot.end_time() + self.slides_notify_time)
 
     def add(self, session: "Session", slides: "Document", order: int):
