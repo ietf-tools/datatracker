@@ -567,7 +567,7 @@ async function main () {
           {
             title: 'Pulling latest Datatracker base docker image...',
             task: async (subctx, subtask) => {
-              const appImagePullStream = await dock.pull('ghcr.io/ietf-tools/datatracker-app-base:py312')
+              const appImagePullStream = await dock.pull('ghcr.io/ietf-tools/datatracker-app-base:latest')
               await new Promise((resolve, reject) => {
                 dock.modem.followProgress(appImagePullStream, (err, res) => err ? reject(err) : resolve(res))
               })
@@ -648,7 +648,7 @@ async function main () {
             title: 'Creating source Datatracker docker container...',
             task: async (subctx, subtask) => {
               containers.appSource = await dock.createContainer({
-                Image: 'ghcr.io/ietf-tools/datatracker-app-base:py312',
+                Image: 'ghcr.io/ietf-tools/datatracker-app-base:latest',
                 name: 'dt-diff-app-source',
                 Tty: true,
                 Hostname: 'appsource',
@@ -664,7 +664,7 @@ async function main () {
             title: 'Creating target Datatracker docker container...',
             task: async (subctx, subtask) => {
               containers.appTarget = await dock.createContainer({
-                Image: 'ghcr.io/ietf-tools/datatracker-app-base:py312',
+                Image: 'ghcr.io/ietf-tools/datatracker-app-base:latest',
                 name: 'dt-diff-app-target',
                 Tty: true,
                 Hostname: 'apptarget',
