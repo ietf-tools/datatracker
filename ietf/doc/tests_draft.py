@@ -710,6 +710,7 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         self.assertTrue('draft-ietf-mars-test@' in outbox[-1]['To']) # Gets the authors
         self.assertTrue('mars-chairs@ietf.org' in outbox[-1]['Cc'])
         self.assertTrue('aread@' in outbox[-1]['Cc'])
+        self.assertIn('UTC' , get_payload_text(outbox[-1]))
         
         # hack into expirable state to expire in 10 hours
         draft.expires = timezone.now() + datetime.timedelta(hours=10)
