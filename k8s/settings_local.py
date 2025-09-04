@@ -280,7 +280,9 @@ PHOTOS_DIRNAME = "photo"
 PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
 
 # Normally only set for debug, but needed until we have a real FS
-DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, "static/dist-neue/manifest.json")
+DJANGO_VITE["default"]["manifest_path"] = os.path.join(
+    BASE_DIR, "static/dist-neue/manifest.json"
+)
 
 # Binaries that are different in the docker image
 DE_GFM_BINARY = "/usr/local/bin/de-gfm"
@@ -379,6 +381,8 @@ for storagename in ARTIFACT_STORAGE_NAMES:
             secret_key=_blob_store_secret_key,
             security_token=None,
             client_config=botocore.config.Config(
+                request_checksum_calculation="when_required",
+                response_checksum_validation="when_required",
                 signature_version="s3v4",
                 connect_timeout=_blob_store_connect_timeout,
                 read_timeout=_blob_store_read_timeout,

@@ -66,9 +66,9 @@ def utc_from_string(s):
     if date is None:
         return None
     elif is_aware(date):
-        return date.astimezone(datetime.timezone.utc)
+        return date.astimezone(datetime.UTC)
     else:
-        return date.replace(tzinfo=datetime.timezone.utc)
+        return date.replace(tzinfo=datetime.UTC)
 
 # ----------------------------------------------------------------
 # Email Functions

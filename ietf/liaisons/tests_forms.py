@@ -95,11 +95,6 @@ class HelperTests(TestCase):
         # test relies on the data created in ietf.utils.test_data.make_immutable_test_data()
         # todo add liaison coordinator when modeled
         RoleFactory(
-            name_id="execdir",
-            group=Group.objects.get(acronym="iab"),
-            person__user__username="iab-execdir",
-        )
-        RoleFactory(
             name_id="auth",
             group__type_id="sdo",
             group__acronym="sdo",
@@ -121,7 +116,6 @@ class HelperTests(TestCase):
             "secretary",
             "ietf-chair",
             "iab-chair",
-            "iab-execdir",
             "sdo-authperson",
         ):
             returned_queryset = internal_groups_for_person(
@@ -151,11 +145,6 @@ class HelperTests(TestCase):
         )
 
     def test_external_groups_for_person(self):
-        RoleFactory(
-            name_id="execdir",
-            group=Group.objects.get(acronym="iab"),
-            person__user__username="iab-execdir",
-        )
         RoleFactory(name_id="liaison_coordinator", group__acronym="iab", person__user__username="liaison-coordinator")
         the_sdo = GroupFactory(type_id="sdo", acronym="the-sdo")
         liaison_manager = RoleFactory(name_id="liaiman", group=the_sdo).person
@@ -166,7 +155,6 @@ class HelperTests(TestCase):
             "secretary",
             "ietf-chair",
             "iab-chair",
-            "iab-execdir",
             "liaison-coordinator",
             "ad",
             "sopschairman",

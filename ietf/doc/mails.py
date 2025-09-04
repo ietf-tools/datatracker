@@ -103,6 +103,61 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
               dict(text=text,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
               cc=cc)
+    
+def email_wg_call_for_adoption_issued(request, doc, cfa_duration_weeks=None):
+    if cfa_duration_weeks is None:
+        cfa_duration_weeks=2
+    (to, cc) = gather_address_lists("doc_wg_call_for_adoption_issued", doc=doc)
+    frm = request.user.person.formatted_email()
+
+    end_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=7 * cfa_duration_weeks)
+
+    subject = f"Call for adoption: {doc.name}-{doc.rev}  (Ends {end_date})"
+
+    send_mail(
+        request,
+        to,
+        frm,
+        subject,
+        "doc/mail/wg_call_for_adoption_issued.txt",
+        dict(
+            doc=doc,
+            subject=subject,
+            url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+            end_date=end_date,
+            cfa_duration_weeks=cfa_duration_weeks,
+            wg_list=doc.group.list_email,
+        ),
+        cc=cc,
+    )
+
+
+def email_wg_last_call_issued(request, doc, wglc_duration_weeks=None):
+    if wglc_duration_weeks is None:
+        wglc_duration_weeks = 2
+    (to, cc) = gather_address_lists("doc_wg_last_call_issued", doc=doc)
+    frm = request.user.person.formatted_email()
+
+
+    end_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=7 * wglc_duration_weeks)
+    subject =  f"WG Last Call: {doc.name}-{doc.rev} (Ends {end_date})"
+
+    send_mail(
+        request,
+        to,
+        frm,
+        subject,
+        "doc/mail/wg_last_call_issued.txt",
+        dict(
+            doc=doc,
+            subject=subject,
+            url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+            end_date=end_date,
+            wglc_duration_weeks=wglc_duration_weeks,
+            wg_list=doc.group.list_email,
+        ),
+        cc=cc,
+    )
 
 def email_pulled_from_rfc_queue(request, doc, comment, prev_state, next_state):
     extra=extra_automation_headers(doc)
