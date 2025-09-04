@@ -181,7 +181,7 @@ class Serializer(tastypie.serializers.Serializer):
     OPTION_ESCAPE_NULLS = "datatracker-escape-nulls"
 
     def format_datetime(self, data):
-        return data.astimezone(datetime.timezone.utc).replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
+        return data.astimezone(datetime.UTC).replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
 
     def to_simple(self, data, options):
         options = options or {}

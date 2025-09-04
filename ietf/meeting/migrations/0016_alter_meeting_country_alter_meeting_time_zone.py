@@ -4,6 +4,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+
     dependencies = [
         ("meeting", "0015_alter_meeting_time_zone"),
     ]

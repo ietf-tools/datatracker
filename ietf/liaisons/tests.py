@@ -723,7 +723,7 @@ class LiaisonManagementTests(TestCase):
         from_groups = [ str(g.pk) for g in Group.objects.filter(type="sdo") ]
         to_group = Group.objects.get(acronym="mars")
         submitter = Person.objects.get(user__username="marschairman")
-        today = date_today(datetime.timezone.utc)
+        today = date_today(datetime.UTC)
         related_liaison = liaison
         r = self.client.post(url,
                              dict(from_groups=from_groups,
@@ -808,7 +808,7 @@ class LiaisonManagementTests(TestCase):
         from_group = Group.objects.get(acronym="mars")
         to_group = Group.objects.filter(type="sdo")[0]
         submitter = Person.objects.get(user__username="marschairman")
-        today = date_today(datetime.timezone.utc)
+        today = date_today(datetime.UTC)
         related_liaison = liaison
         r = self.client.post(url,
                              dict(from_groups=str(from_group.pk),
@@ -878,7 +878,7 @@ class LiaisonManagementTests(TestCase):
         from_group = Group.objects.get(acronym="mars")
         to_group = Group.objects.filter(type="sdo")[0]
         submitter = Person.objects.get(user__username="marschairman")
-        today = date_today(datetime.timezone.utc)
+        today = date_today(datetime.UTC)
         r = self.client.post(url,
                              dict(from_groups=str(from_group.pk),
                                   from_contact=submitter.email_address(),
@@ -1062,7 +1062,7 @@ class LiaisonManagementTests(TestCase):
         LiaisonStatementEventFactory(type_id='posted', statement__body="Has recently in its body",statement__from_groups=[GroupFactory(type_id='sdo',acronym='ulm'),])
         # Statement 2
         s2 = LiaisonStatementEventFactory(type_id='posted', statement__body="That word does not occur here", statement__title="Nor does it occur here")
-        s2.time=datetime.datetime(2010, 1, 1, tzinfo=datetime.timezone.utc)
+        s2.time=datetime.datetime(2010, 1, 1, tzinfo=datetime.UTC)
         s2.save()
 
         # test list only, no search filters
