@@ -462,12 +462,12 @@ class CustomApiTests(TestCase):
         self.assertTrue(session.attended_set.filter(person=recman).exists())
         self.assertEqual(
             session.attended_set.get(person=recman).time,
-            datetime.datetime(2023, 9, 3, 12, 34, 56, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2023, 9, 3, 12, 34, 56, tzinfo=datetime.UTC),
         )
         self.assertTrue(session.attended_set.filter(person=otherperson).exists())
         self.assertEqual(
             session.attended_set.get(person=otherperson).time,
-            datetime.datetime(2023, 9, 3, 3, 0, 19, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2023, 9, 3, 3, 0, 19, tzinfo=datetime.UTC),
         )
 
     def test_api_upload_polls_and_chatlog(self):
@@ -871,7 +871,7 @@ class CustomApiTests(TestCase):
         self.assertEqual(volunteer.origin, 'registration')
 
     def test_api_version(self):
-        DumpInfo.objects.create(date=timezone.datetime(2022,8,31,7,10,1,tzinfo=datetime.timezone.utc), host='testapi.example.com',tz='UTC')
+        DumpInfo.objects.create(date=timezone.datetime(2022,8,31,7,10,1,tzinfo=datetime.UTC), host='testapi.example.com',tz='UTC')
         url = urlreverse('ietf.api.views.version')
         r = self.client.get(url)
         data = r.json()

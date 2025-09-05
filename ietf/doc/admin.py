@@ -22,8 +22,8 @@ class StateTypeAdmin(admin.ModelAdmin):
 admin.site.register(StateType, StateTypeAdmin)
 
 class StateAdmin(admin.ModelAdmin):
-    list_display = ["slug", "type", 'name', 'order', 'desc']
-    list_filter = ["type", ]
+    list_display = ["slug", "type", 'name', 'order', 'desc', "used"]
+    list_filter = ["type", "used"]
     search_fields = ["slug", "type__label", "type__slug", "name", "desc"]
     filter_horizontal = ["next_states"]
 admin.site.register(State, StateAdmin)

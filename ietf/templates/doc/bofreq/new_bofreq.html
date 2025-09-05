@@ -6,15 +6,39 @@
     {% origin %}
     <h1>Start a new BOF Request</h1>
     <p>
-        The IAB will also attempt to provide BoF Shepherds as described in their document on the subject only on request from the IESG. If you feel that your BoF would benefit from an IAB BoF Shepherd, please discuss this with your Area Director.
+        BoF proponents are strongly encouraged to review the following sources before submitting requests:
+    </p>
+    <ul>
+        <li>Process: <a href="https://www.rfc-editor.org/rfc/rfc2418.html#section-2.4">RFC 2418 Section 2.4</a></li>
+        <li>Considerations for having a successful BoF: <a href="https://www.rfc-editor.org/rfc/rfc5434.html">RFC 5434</a></li>
+    </ul>
+    {# The following block needs to be commented out after the BoF deadline and re-opened before next BoF request opening #}
+    <hr>
+    <p class="lead">
+        Announcement for IETF 124: The IESG and the IAB have organized <em>Ask Me Anything</em> (AMA) virtual sessions 
+        for the community to help proponents who are interested in putting up BoF proposals for IETF 124
+        (see also the <a href="https://mailarchive.ietf.org/arch/msg/ietf-announce/mtAYV3Mu5RfJPR-przzr-Nzxhwc/">IETF-announce</a> email):
+    </p>
+    <ul class="lead">
+        <li>28th of August 13:00-14:00 UTC 
+            <a href="https://datatracker.ietf.org/meeting/interim-2025-iesg-22/sessions/iesg.ics" title="iCalendar entry" aria-label="iCalendar entry"><i class="bi bi-calendar"></i></a></li>
+        <li>28th of August 19:00-20:00 UTC 
+            <a href="https://datatracker.ietf.org/meeting/interim-2025-iesg-23/sessions/iesg.ics" title="iCalendar entry" aria-label="iCalendar entry"><i class="bi bi-calendar"></i></a></li>
+    </ul>
+    <hr>
+    {# End of the temporary block #}
+    <p>
+        The IAB will also attempt to provide BoF Shepherds as described in their document on the subject only on request from the IESG. 
+        If you feel that your BoF would benefit from an IAB BoF Shepherd, please discuss this with your Area Director.
     </p>
     <p>
-        Choose a short descriptive title for your request. Take time to choose a good initial title - it will be used to make the filename for your request's content. The title can be changed later, but the filename will not change.
+        Choose a short descriptive title for your request. Take time to choose a good initial title - it will be used to make the filename for your request's content.
+        The title can be changed later, but the filename will not change.
     </p>
     <p>
         For example, a request with a title of "A new important bit" will be saved as <code>bofreq-{{ user.person.last_name|xslugify|slice:"64" }}-a-new-important-bit-00.md</code>.
     </p>
-    <p>All the items in the template MUST be filed in.</p>
+    <p>All the items in the template <strong>MUST</strong> be filed in.</p>
     <form class="upload-content form-horizontal"
           method="post"
           enctype="multipart/form-data">

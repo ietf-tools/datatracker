@@ -105,7 +105,6 @@ def internal_groups_for_person(person: Optional[Person]):
             "Secretariat",
             "IETF Chair",
             "IAB Chair",
-            "IAB Executive Director",
             "Liaison Manager",
             "Liaison Coordinator",
             "Authorized Individual",
@@ -115,7 +114,7 @@ def internal_groups_for_person(person: Optional[Person]):
     # Interesting roles, as Group queries
     queries = [
         Q(role__person=person, role__name="chair", acronym="ietf"),
-        Q(role__person=person, role__name__in=("chair", "execdir"), acronym="iab"),
+        Q(role__person=person, role__name="chair", acronym="iab"),
         Q(role__person=person, role__name="ad", type="area", state="active"),
         Q(
             role__person=person,

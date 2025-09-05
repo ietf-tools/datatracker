@@ -1,0 +1,22 @@
+{% load ietf_filters %}{% load mail_filters %}{% autoescape off %}{% filter wordwrap:78 %}
+Subject: {{ subject }}
+
+This message starts a {{ wglc_duration_weeks }}-week WG Last Call for this document. 
+
+Abstract: 
+{{ doc.abstract }}
+
+File can be retrieved from:
+{{ url }}
+
+Please review and indicate your support or objection to proceed with the publication of this document by replying to this email keeping {{ wg_list }} in copy. Objections should be motivated and suggestions to resolve them are highly appreciated.
+
+Authors, and WG participants in general, are reminded again of the Intellectual Property Rights (IPR) disclosure obligations described in BCP 79 [1]. Appropriate IPR disclosures required for full conformance with the provisions of BCP 78 [1] and BCP 79 [2] must be filed, if you are aware of any. Sanctions available for application to violators of IETF IPR Policy can be found at [3].
+
+Thank you.
+
+[1] https://datatracker.ietf.org/doc/bcp78/
+[2] https://datatracker.ietf.org/doc/bcp79/
+[3] https://datatracker.ietf.org/doc/rfc6701/
+{% endfilter %}
+{% endautoescape %}

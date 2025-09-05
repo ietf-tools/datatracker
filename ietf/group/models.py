@@ -3,7 +3,6 @@
 
 
 import email.utils
-import jsonfield
 import os
 import re
 
@@ -21,7 +20,7 @@ from ietf.name.models import (GroupStateName, GroupTypeName, DocTagName, GroupMi
                               AgendaTypeName, AgendaFilterTypeName, ExtResourceName, SessionPurposeName,
                               AppealArtifactTypeName )
 from ietf.person.models import Email, Person
-from ietf.utils.db import IETFJSONField
+from ietf.utils.db import EmptyAwareJSONField
 from ietf.utils.mail import formataddr, send_mail_text
 from ietf.utils import log
 from ietf.utils.models import ForeignKey, OneToOneField
@@ -46,7 +45,7 @@ class GroupInfo(models.Model):
     unused_states = models.ManyToManyField('doc.State', help_text="Document states that have been disabled for the group.", blank=True)
     unused_tags = models.ManyToManyField(DocTagName, help_text="Document tags that have been disabled for the group.", blank=True)
 
-    used_roles = jsonfield.JSONField(max_length=256, blank=True, default=[], help_text="Leave an empty list to get the group_type's default used roles")
+    used_roles = models.JSONField(max_length=256, blank=True, default=list, help_text="Leave an empty list to get the group_type's default used roles")
 
     uses_milestone_dates = models.BooleanField(default=True)
 
@@ -235,6 +234,36 @@ validate_comma_separated_roles = RegexValidator(
 )
 
 
+# JSONFields need callable defaults that work with migrations to avoid sharing
+# data structures between instances. These helpers provide that. 
+def default_material_types():
+    return ["slides"]
+
+
+def default_admin_roles():
+    return ["chair"]
+
+
+def default_docman_roles():
+    return ["ad", "chair", "delegate", "secr"]
+
+
+def default_groupman_roles():
+    return ["ad", "chair"]
+
+
+def default_groupman_authroles():
+    return ["Secretariat"]
+
+
+def default_matman_roles():
+    return ["ad", "chair", "delegate", "secr"]
+
+
+def default_role_order():
+    return ["chair", "secr", "member"]
+
+
 class GroupFeatures(models.Model):
     type = OneToOneField(GroupTypeName, primary_key=True, null=False, related_name='features')
     #history = HistoricalRecords()
@@ -268,16 +297,16 @@ class GroupFeatures(models.Model):
     agenda_type             = models.ForeignKey(AgendaTypeName, null=True, default="ietf", on_delete=CASCADE)
     about_page              = models.CharField(max_length=64, blank=False, default="ietf.group.views.group_about" )
     default_tab             = models.CharField(max_length=64, blank=False, default="ietf.group.views.group_about" )
-    material_types          = IETFJSONField(max_length=64, accepted_empty_values=[[], {}], blank=False, default=["slides"])
-    default_used_roles      = IETFJSONField(max_length=256, accepted_empty_values=[[], {}], blank=False, default=[])
-    admin_roles             = IETFJSONField(max_length=64, accepted_empty_values=[[], {}], blank=False, default=["chair"]) # Trac Admin
-    docman_roles            = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=["ad","chair","delegate","secr"])
-    groupman_roles          = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=["ad","chair",])
-    groupman_authroles      = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=["Secretariat",])
-    matman_roles            = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=["ad","chair","delegate","secr"])
-    role_order              = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=["chair","secr","member"],
-                                                help_text="The order in which roles are shown, for instance on photo pages.  Enter valid JSON.")
-    session_purposes        = IETFJSONField(max_length=256, accepted_empty_values=[[], {}], blank=False, default=[],
+    material_types          = EmptyAwareJSONField(max_length=64, accepted_empty_values=[[], {}], blank=False, default=default_material_types)
+    default_used_roles      = EmptyAwareJSONField(max_length=256, accepted_empty_values=[[], {}], blank=False, default=list)
+    admin_roles             = EmptyAwareJSONField(max_length=64, accepted_empty_values=[[], {}], blank=False, default=default_admin_roles)  # Trac Admin
+    docman_roles            = EmptyAwareJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=default_docman_roles)
+    groupman_roles          = EmptyAwareJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=default_groupman_roles)
+    groupman_authroles      = EmptyAwareJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=default_groupman_authroles)
+    matman_roles            = EmptyAwareJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=default_matman_roles)
+    role_order              = EmptyAwareJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=default_role_order,
+                                            help_text="The order in which roles are shown, for instance on photo pages.  Enter valid JSON.")
+    session_purposes        = EmptyAwareJSONField(max_length=256, accepted_empty_values=[[], {}], blank=False, default=list,
                                                   help_text="Allowed session purposes for this group type",
                                                   validators=[JSONForeignKeyListValidator(SessionPurposeName)])
 

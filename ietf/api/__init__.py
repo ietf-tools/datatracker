@@ -62,14 +62,14 @@ class ModelResource(tastypie.resources.ModelResource):
         # Use a list plus a ``.join()`` because it's faster than concatenation.
         return "%s:%s:%s:%s" % (self._meta.api_name, self._meta.resource_name, ':'.join(args), smooshed)
 
-    def _z_aware_fromisoformat(self, value):
-        """datetime.datetie.fromisoformat replacement that works with python < 3.11"""
+    def _z_aware_fromisoformat(self, value: str) -> datetime.datetime:
+        """datetime.datetime.fromisoformat replacement that works with python < 3.11"""
         if HAVE_BROKEN_FROMISOFORMAT:
             if value.upper().endswith("Z"):
                 value = value[:-1] + "+00:00"  # Z -> UTC
             elif re.match(r"[+-][0-9][0-9]$", value[-3:]):
                 value = value + ":00"  # -04 -> -04:00
-        return value
+        return datetime.datetime.fromisoformat(value)
 
     def filter_value_to_python(
         self, value, field_name, filters, filter_expr, filter_type
@@ -181,7 +181,7 @@ class Serializer(tastypie.serializers.Serializer):
     OPTION_ESCAPE_NULLS = "datatracker-escape-nulls"
 
     def format_datetime(self, data):
-        return data.astimezone(datetime.timezone.utc).replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
+        return data.astimezone(datetime.UTC).replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
 
     def to_simple(self, data, options):
         options = options or {}

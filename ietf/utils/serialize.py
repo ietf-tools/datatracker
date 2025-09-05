@@ -16,7 +16,7 @@ def object_as_shallow_dict(obj):
         if isinstance(f, models.ManyToManyField):
             v = list(v.values_list("pk", flat=True))
         elif isinstance(f, models.DateTimeField):
-            v = v.astimezone(datetime.timezone.utc).isoformat()
+            v = v.astimezone(datetime.UTC).isoformat()
         elif isinstance(f, models.DateField):
             v = v.strftime('%Y-%m-%d')
 

@@ -104,7 +104,7 @@ def agenda_json(request, date=None):
 
     res = {
         "telechat-date": str(data["date"]),
-        "as-of": str(datetime.datetime.utcnow()),
+        "as-of": str(datetime.datetime.now(datetime.UTC)),
         "page-counts": telechat_page_count(date=get_agenda_date(date))._asdict(),
         "sections": {},
         }
