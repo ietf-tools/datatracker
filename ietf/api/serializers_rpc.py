@@ -78,7 +78,7 @@ class DocumentAuthorSerializer(serializers.ModelSerializer):
     """Serializer for a Person in a response"""
 
     plain_name = serializers.SerializerMethodField()
-
+    
     class Meta:
         model = DocumentAuthor
         fields = ["person", "plain_name"]
@@ -181,3 +181,57 @@ class ReferenceSerializer(serializers.ModelSerializer):
         model = Document
         fields = ["id", "name"]
         read_only_fields = ["id", "name"]
+
+
+class CreateDocumentAuthorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DocumentAuthor
+        fields = ["person", "email", "affiliation", "country"]
+
+
+class CreateRfcSerializer(serializers.ModelSerializer):
+    # fields based on ietf.sync.rfceditor.update_docs_from_rfc_index()
+    authors = CreateDocumentAuthorSerializer(many=True)  # todo what about non-Person authors?
+
+    class Meta:
+        model = Document
+        fields = [
+            "rfc_number",
+            "title",
+            "authors",
+            "stream",
+            "group",
+            "abstract",
+            "pages",
+            "words",
+            "formal_languages",
+            "std_level",
+            "ad",
+            "external_url",
+            "uploaded_filename",
+            "note",
+        ]
+
+    def create(self, validated_data):
+        authors_data = validated_data.pop("authors")
+        rfc = Document.objects.create(
+            type_id="rfc",
+            name=f"rfc{validated_data['rfc_number']}",
+            **validated_data,
+        )
+        for order, author_data in enumerate(authors_data):
+            rfc.documentauthor_set.create(
+                order=order,
+                **author_data,
+            )
+
+
+class RfcPubNotificationSerializer(serializers.Serializer):
+    published = serializers.DateTimeField(default_timezone=datetime.timezone.utc)
+    draft_name = serializers.CharField(allow_blank=True)
+    draft_rev = serializers.CharField(allow_blank=True)
+    rfc = CreateRfcSerializer()
+
+
+class NotificationAckSerializer(serializers.Serializer):
+    message = serializers.CharField(default="ack")
