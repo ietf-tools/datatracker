@@ -123,7 +123,6 @@ class UnitTests(TestCase):
         cc = get_cc(Group.objects.get(acronym='iab'))
         self.assertTrue(EMAIL_ALIASES['IAB'] in cc)
         self.assertTrue(EMAIL_ALIASES['IABCHAIR'] in cc)
-        self.assertTrue(EMAIL_ALIASES['IABEXECUTIVEDIRECTOR'] in cc)
         # test an Area
         area = Group.objects.filter(type='area').first()
         cc = get_cc(area)
@@ -166,7 +165,6 @@ class UnitTests(TestCase):
         # test iab
         contacts = get_contacts_for_group(Group.objects.get(acronym='iab'))
         self.assertTrue(EMAIL_ALIASES['IABCHAIR'] in contacts)
-        self.assertTrue(EMAIL_ALIASES['IABEXECUTIVEDIRECTOR'] in contacts)
         # test iesg
         contacts = get_contacts_for_group(Group.objects.get(acronym='iesg'))
         self.assertTrue(EMAIL_ALIASES['IESG'] in contacts)
@@ -534,7 +532,6 @@ class LiaisonManagementTests(TestCase):
         RoleFactory(name_id='liaison_coordinator', group__acronym='iab', person__user__username='liaison-coordinator')
         mars = RoleFactory(name_id='chair',person__user__username='marschairman',group__acronym='mars').group
         RoleFactory(name_id='secr',group=mars,person__user__username='mars-secr')
-        RoleFactory(name_id='execdir',group=Group.objects.get(acronym='iab'),person__user__username='iab-execdir')
 
         url = urlreverse('ietf.liaisons.views.liaison_list')
         addurl = urlreverse('ietf.liaisons.views.liaison_add', kwargs={'type':'outgoing'})
@@ -585,15 +582,6 @@ class LiaisonManagementTests(TestCase):
 
         # IAB Chair has access
         self.assertTrue(self.client.login(username="iab-chair", password="iab-chair+password"))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q("a.btn:contains('New outgoing liaison')")), 1)
-        r = self.client.get(addurl)
-        self.assertEqual(r.status_code, 200)
-
-        # IAB Executive Director
-        self.assertTrue(self.client.login(username="iab-execdir", password="iab-execdir+password"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -735,7 +723,7 @@ class LiaisonManagementTests(TestCase):
         from_groups = [ str(g.pk) for g in Group.objects.filter(type="sdo") ]
         to_group = Group.objects.get(acronym="mars")
         submitter = Person.objects.get(user__username="marschairman")
-        today = date_today(datetime.timezone.utc)
+        today = date_today(datetime.UTC)
         related_liaison = liaison
         r = self.client.post(url,
                              dict(from_groups=from_groups,
@@ -820,7 +808,7 @@ class LiaisonManagementTests(TestCase):
         from_group = Group.objects.get(acronym="mars")
         to_group = Group.objects.filter(type="sdo")[0]
         submitter = Person.objects.get(user__username="marschairman")
-        today = date_today(datetime.timezone.utc)
+        today = date_today(datetime.UTC)
         related_liaison = liaison
         r = self.client.post(url,
                              dict(from_groups=str(from_group.pk),
@@ -890,7 +878,7 @@ class LiaisonManagementTests(TestCase):
         from_group = Group.objects.get(acronym="mars")
         to_group = Group.objects.filter(type="sdo")[0]
         submitter = Person.objects.get(user__username="marschairman")
-        today = date_today(datetime.timezone.utc)
+        today = date_today(datetime.UTC)
         r = self.client.post(url,
                              dict(from_groups=str(from_group.pk),
                                   from_contact=submitter.email_address(),
@@ -1074,7 +1062,7 @@ class LiaisonManagementTests(TestCase):
         LiaisonStatementEventFactory(type_id='posted', statement__body="Has recently in its body",statement__from_groups=[GroupFactory(type_id='sdo',acronym='ulm'),])
         # Statement 2
         s2 = LiaisonStatementEventFactory(type_id='posted', statement__body="That word does not occur here", statement__title="Nor does it occur here")
-        s2.time=datetime.datetime(2010, 1, 1, tzinfo=datetime.timezone.utc)
+        s2.time=datetime.datetime(2010, 1, 1, tzinfo=datetime.UTC)
         s2.save()
 
         # test list only, no search filters

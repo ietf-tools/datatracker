@@ -37,3 +37,10 @@ def role_person_link(role, **kwargs):
     plain_name = role.person.plain_name()
     email = role.email.address
     return {'name': name, 'plain_name': plain_name, 'email': email, 'title': title, 'class': cls}
+
+@register.filter
+def name_with_conditional_acronym(group):
+    if group.type_id in ("sdo", "isoc", "individ", "nomcom", "ietf", "irtf", ):
+        return group.name
+    else:
+        return f"{group.name} ({group.acronym})"

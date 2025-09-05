@@ -1,0 +1,21 @@
+{% load ietf_filters %}{% load mail_filters %}{% autoescape off %}{% filter wordwrap:78 %}
+Subject: {{ subject }}
+
+This message starts a {{ cfa_duration_weeks }}-week Call for Adoption for this document. 
+
+Abstract: 
+{{ doc.abstract }}
+
+File can be retrieved from:
+{{ url }}
+
+Please reply to this message keeping {{ wg_list }} in copy by indicating whether you support or not the adoption of this draft as a WG document. Comments to motivate your preference are highly appreciated. 
+
+Authors, and WG participants in general, are reminded of the Intellectual Property Rights (IPR) disclosure obligations described in BCP 79 [2]. Appropriate IPR disclosures required for full conformance with the provisions of BCP 78 [1] and BCP 79 [2] must be filed, if you are aware of any. Sanctions available for application to violators of IETF IPR Policy can be found at [3].
+
+Thank you.
+[1] https://datatracker.ietf.org/doc/bcp78/
+[2] https://datatracker.ietf.org/doc/bcp79/
+[3] https://datatracker.ietf.org/doc/rfc6701/
+{% endfilter %}
+{% endautoescape %}

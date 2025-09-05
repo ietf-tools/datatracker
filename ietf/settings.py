@@ -14,19 +14,27 @@ import warnings
 from hashlib import sha384
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
+# DeprecationWarnings are suppressed by default, enable them
 warnings.simplefilter("always", DeprecationWarning)
-warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API")
-warnings.filterwarnings("ignore", "Log out via GET requests is deprecated")  # happens in oidc_provider
-warnings.filterwarnings("ignore", module="tastypie", message="The django.utils.datetime_safe module is deprecated.")
-warnings.filterwarnings("ignore", module="oidc_provider", message="The django.utils.timezone.utc alias is deprecated.")
+
+# Warnings that must be resolved for Django 5.x
+warnings.filterwarnings("ignore", "Log out via GET requests is deprecated")  # caused by oidc_provider
+warnings.filterwarnings("ignore", message="The django.utils.timezone.utc alias is deprecated.", module="oidc_provider")
+warnings.filterwarnings("ignore", message="The django.utils.datetime_safe module is deprecated.", module="tastypie")
 warnings.filterwarnings("ignore", message="The USE_DEPRECATED_PYTZ setting,")  # https://github.com/ietf-tools/datatracker/issues/5635
 warnings.filterwarnings("ignore", message="The USE_L10N setting is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5648
 warnings.filterwarnings("ignore", message="django.contrib.auth.hashers.CryptPasswordHasher is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5663
-warnings.filterwarnings("ignore", message="'urllib3\\[secure\\]' extra is deprecated")
-warnings.filterwarnings("ignore", message="The logout\\(\\) view is superseded by")
+
+# Other DeprecationWarnings
+warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API", module="pyang.plugin")
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
-warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated", module="bleach")
-warnings.filterwarnings("ignore", message="HTTPResponse.getheader\\(\\) is deprecated", module='selenium.webdriver')
+warnings.filterwarnings("ignore", message="currentThread\\(\\) is deprecated", module="coverage.pytracer")
+warnings.filterwarnings("ignore", message="co_lnotab is deprecated", module="coverage.parser")
+warnings.filterwarnings("ignore", message="datetime.datetime.utcnow\\(\\) is deprecated", module="botocore.auth")
+warnings.filterwarnings("ignore", message="datetime.datetime.utcnow\\(\\) is deprecated", module="oic.utils.time_util")
+warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="oic.utils.time_util")
+warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="pytz.tzinfo")
+
 
 base_path = pathlib.Path(__file__).resolve().parent
 BASE_DIR = str(base_path)
@@ -447,23 +455,24 @@ MIDDLEWARE = [
     "ietf.middleware.SMTPExceptionMiddleware",
     "ietf.middleware.Utf8ExceptionMiddleware",
     "ietf.middleware.redirect_trailing_period_middleware",
-    "django_referrer_policy.middleware.ReferrerPolicyMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    #"csp.middleware.CSPMiddleware",
     "ietf.middleware.unicode_nfkc_normalization_middleware",
     "ietf.middleware.is_authenticated_header_middleware",
 ]
 
 ROOT_URLCONF = 'ietf.urls'
 
-DJANGO_VITE_ASSETS_PATH = os.path.join(BASE_DIR, 'static/dist-neue')
+# Configure django_vite
+DJANGO_VITE: dict = {"default": {}}
 if DEBUG:
-    DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, 'static/dist-neue/manifest.json')
+    DJANGO_VITE["default"]["manifest_path"] = os.path.join(
+        BASE_DIR, 'static/dist-neue/manifest.json'
+    )
 
 # Additional locations of static files (in addition to each app's static/ dir)
 STATICFILES_DIRS = (
-    DJANGO_VITE_ASSETS_PATH,
+    os.path.join(BASE_DIR, "static/dist-neue"),  # for django_vite
     os.path.join(BASE_DIR, 'static/dist'),
     os.path.join(BASE_DIR, 'secr/static/dist'),
 )
@@ -567,8 +576,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_METHODS = ( 'GET', 'OPTIONS', )
 CORS_URLS_REGEX = r'^(/api/.*|.*\.json|.*/json/?)$'
 
-# Setting for django_referrer_policy.middleware.ReferrerPolicyMiddleware
-REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # django.middleware.security.SecurityMiddleware 
 SECURE_BROWSER_XSS_FILTER       = True
@@ -581,6 +588,7 @@ SECURE_HSTS_SECONDS             = 3600
 #SECURE_SSL_REDIRECT             = True
 # Relax the COOP policy to allow Meetecho authentication pop-up
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "unsafe-none"
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 # Override this in your settings_local with the IP addresses relevant for you:
 INTERNAL_IPS = (
@@ -666,11 +674,6 @@ IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
 IDNITS3_BASE_URL = "https://author-tools.ietf.org/idnits3/results"
 IDNITS_SERVICE_URL = "https://author-tools.ietf.org/idnits"
 
-# Content security policy configuration (django-csp)
-# (In current production, the Content-Security-Policy header is completely set by nginx configuration, but
-#  we try to keep this in sync to avoid confusion)
-CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", f"data: {IDTRACKER_BASE_URL} http://ietf.org/ https://www.ietf.org/ https://analytics.ietf.org/ https://static.ietf.org")
-
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
 
@@ -709,6 +712,7 @@ TEST_CODE_COVERAGE_EXCLUDE_FILES = [
     "ietf/utils/patch.py",
     "ietf/utils/test_data.py",
     "ietf/utils/jstest.py",
+    "ietf/utils/coverage.py",
 ]
 
 # These are code line regex patterns
@@ -738,8 +742,8 @@ TEST_COVERAGE_LATEST_FILE = os.path.join(BASE_DIR, "../latest-coverage.json")
 
 TEST_CODE_COVERAGE_CHECKER = None
 if SERVER_MODE != 'production':
-    import coverage
-    TEST_CODE_COVERAGE_CHECKER = coverage.Coverage(source=[ BASE_DIR ], cover_pylib=False, omit=TEST_CODE_COVERAGE_EXCLUDE_FILES)
+    from ietf.utils.coverage import CoverageManager
+    TEST_CODE_COVERAGE_CHECKER = CoverageManager()
 
 TEST_CODE_COVERAGE_REPORT_PATH = "coverage/"
 TEST_CODE_COVERAGE_REPORT_URL = os.path.join(STATIC_URL, TEST_CODE_COVERAGE_REPORT_PATH, "index.html")

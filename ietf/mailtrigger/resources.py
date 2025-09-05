@@ -7,7 +7,7 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.mailtrigger.models import Recipient, MailTrigger
+from ietf.mailtrigger.models import MailTrigger, Recipient
 
 
 class RecipientResource(ModelResource):
@@ -37,3 +37,43 @@ class MailTriggerResource(ModelResource):
         }
 api.mailtrigger.register(MailTriggerResource())
 
+from ietf.utils.resources import UserResource
+class HistoricalMailTriggerResource(ModelResource):
+    history_user     = ToOneField(UserResource, 'history_user', null=True)
+    class Meta:
+        queryset = MailTrigger.history.model.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'historicalmailtrigger'
+        ordering = ['history_id', ]
+        filtering = { 
+            "slug": ALL,
+            "desc": ALL,
+            "history_id": ALL,
+            "history_date": ALL,
+            "history_change_reason": ALL,
+            "history_type": ALL,
+            "history_user": ALL_WITH_RELATIONS,
+        }
+api.mailtrigger.register(HistoricalMailTriggerResource())
+
+from ietf.utils.resources import UserResource
+class HistoricalRecipientResource(ModelResource):
+    history_user     = ToOneField(UserResource, 'history_user', null=True)
+    class Meta:
+        queryset = Recipient.history.model.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'historicalrecipient'
+        ordering = ['history_id', ]
+        filtering = { 
+            "slug": ALL,
+            "desc": ALL,
+            "template": ALL,
+            "history_id": ALL,
+            "history_date": ALL,
+            "history_change_reason": ALL,
+            "history_type": ALL,
+            "history_user": ALL_WITH_RELATIONS,
+        }
+api.mailtrigger.register(HistoricalRecipientResource())

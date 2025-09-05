@@ -1,9 +1,10 @@
-# Copyright The IETF Trust 2015-2019, All Rights Reserved
+# Copyright The IETF Trust 2015-2025, All Rights Reserved
 from django.contrib import admin
+from simple_history.admin import SimpleHistoryAdmin
 
 from ietf.mailtrigger.models import MailTrigger, Recipient
 
-class RecipientAdmin(admin.ModelAdmin):
+class RecipientAdmin(SimpleHistoryAdmin):
     list_display = [ 'slug', 'desc', 'template', 'has_code', ]
     def has_code(self, obj):
         return hasattr(obj,'gather_%s'%obj.slug) 
@@ -11,7 +12,7 @@ class RecipientAdmin(admin.ModelAdmin):
 admin.site.register(Recipient, RecipientAdmin)
 
 
-class MailTriggerAdmin(admin.ModelAdmin):
+class MailTriggerAdmin(SimpleHistoryAdmin):
     list_display = [ 'slug', 'desc',  ]
     filter_horizontal = [ 'to', 'cc',  ]
 admin.site.register(MailTrigger, MailTriggerAdmin)
