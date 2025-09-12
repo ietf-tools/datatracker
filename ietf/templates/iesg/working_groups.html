@@ -14,12 +14,9 @@
             <tr>
                 <th scope="col" data-sort="areaname">Area Name</th>
                 <th scope="col" data-sort="wgcount">WGs</th>
-                <!--<th scope="col" data-sort="nodocs">WGs without docs</th>
-                <th scope="col" data-sort="withdocs">WGs with docs</th>-->
                 <th scope="col" data-sort="idcount">I-Ds</th>
                 <th scope="col" data-sort="idpages">Pages</th>
                 {# (divider) #}
-               <!--<th scope="col" data-sort="wgpercent">% WGs with docs</th>-->
                 <th scope="col" data-sort="idpercent">% I-Ds</th>
                 <th scope="col" data-sort="pagespercent">% Pages</th>
             </tr>
@@ -29,11 +26,8 @@
               <tr>
                 <td>{{area.area}}</td>
                 <td>{{area.groups_in_area}}</td>
-                <!--<td>{{area.groups_without_docs}}</td>
-                <td>{{area.groups_with_docs}}</td>-->
                 <td>{{area.doc_count}}</td>
                 <td>{{area.page_count}}</td>
-                <!--<td>{{area.group_percent|floatformat:1}}</td>-->
                 <td>{{area.doc_percent|floatformat:1}}</td>
                 <td>{{area.page_percent|floatformat:1}}</td>
               </tr>
@@ -43,11 +37,8 @@
             <tr>
                 <td>Totals</td>
                 <td>{{totals.group_count}}</td>
-                <!--<td>{{totals.groups_without_docs_count}}</td>
-                <td>{{totals.groups_with_docs_count}}</td>-->
                 <td>{{totals.doc_count}}</td>
                 <td>{{totals.page_count}}</td>
-                <!--<td></td>-->
                 <td></td>
                 <td></td>
             </tr>
@@ -62,11 +53,9 @@
                 <th scope="col" data-sort="areadirname">AD</th>
                 <th scope="col" data-sort="areaname">Area Name</th>
                 <th scope="col" data-sort="areagroups">WGs for AD</th>
-                <!--<th scope="col" data-sort="wgcount">WGs with docs</th>-->
                 <th scope="col" data-sort="idcount">I-Ds</th>
                 <th scope="col" data-sort="idpages">Pages</th>
                 {# (divider) #}
-                <!--<th scope="col" data-sort="wgpercent">% WGs with docs</th>-->
                 <th scope="col" data-sort="idpercent">% I-Ds</th>
                 <th scope="col" data-sort="pagespercent">% Pages</th>
             </tr>
@@ -77,10 +66,8 @@
                     <td>{{ad.ad}}</td>
                     <td>{{ad.area}}</td>
                     <td>{{ad.ad_group_count}}</td>
-                    <!--<td>{{ad.doc_group_count}}</td>-->
                     <td>{{ad.doc_count}}</td>
                     <td>{{ad.page_count}}</td>
-                    <!--<td>{{ad.group_percent|floatformat:1}}</td>-->
                     <td>{{ad.doc_percent|floatformat:1}}</td>
                     <td>{{ad.page_percent|floatformat:1}}</td>
                 </tr>
@@ -91,10 +78,8 @@
                 <td>Totals</td>
                 <td></td>
                 <td>{{noad_totals.ad_group_count}}</td>
-                <!--<td>{{noad_totals.doc_group_count}}</td>-->
                 <td>{{noad_totals.doc_count}}</td>
                 <td>{{noad_totals.page_count}}</td>
-                <!--<td></td>-->
                 <td></td>
                 <td></td>
             </tr>
@@ -108,11 +93,9 @@
                 <th scope="col" data-sort="areadirname">AD</th>
                 <th scope="col" data-sort="areaname">Area Name</th>
                 <th scope="col" data-sort="areagroups">WGs for AD</th>
-                <!--<th scope="col" data-sort="wgcount">WGs with docs</th>-->
                 <th scope="col" data-sort="idcount">I-Ds</th>
                 <th scope="col" data-sort="idpages">Pages</th>
                 {# (divider) #}
-                <!--<th scope="col" data-sort="wgpercent">% WGs with docs</th>-->
                 <th scope="col" data-sort="idpercent">% I-Ds</th>
                 <th scope="col" data-sort="pagespercent">% Pages</th>
             </tr>
@@ -123,10 +106,8 @@
                     <td>{{ad.ad}}</td>
                     <td>{{ad.area}}</td>
                     <td>{{ad.ad_group_count}}</td>
-                    <!--<td>{{ad.doc_group_count}}</td>-->
                     <td>{{ad.doc_count}}</td>
                     <td>{{ad.page_count}}</td>
-                    <!--<td>{{ad.group_percent|floatformat:1}}</td>-->
                     <td>{{ad.doc_percent|floatformat:1}}</td>
                     <td>{{ad.page_percent|floatformat:1}}</td>
                 </tr>
@@ -137,10 +118,8 @@
                 <td>Totals</td>
                 <td></td>
                 <td>{{ad_totals.ad_group_count}}</td>
-                <!--<td>{{ad_totals.doc_group_count}}</td>-->
                 <td>{{ad_totals.doc_count}}</td>
                 <td>{{ad_totals.page_count}}</td>
-                <!--<td></td>-->
                 <td></td>
                 <td></td>
             </tr>
