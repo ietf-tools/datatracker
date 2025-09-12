@@ -142,6 +142,20 @@ def run_once_adjust_liaison_groups():
                 ]
             ).count()
             == 16,
+            not Group.objects.filter(
+                acronym__in=[
+                    "3gpp-tsg-ran-wg3",
+                    "3gpp-tsg-ct-wg1",
+                    "3gpp-tsg-ct-wg3",
+                    "3gpp-tsg-ct-wg4",
+                    "3gpp-tsg-ran",
+                    "3gpp-tsg-ran-wg2",
+                    "3gpp-tsg-sa-wg2",
+                    "3gpp-tsg-sa-wg3",
+                    "3gpp-tsg-sa-wg4",
+                    "3gpp-tsg-t-wg2",
+                ]
+            ).exists(),
             Group.objects.filter(acronym="o3gpptsgran3").exists(),
             not LiaisonStatement.objects.filter(
                 to_groups__acronym__in=["3gpp-tsgct", "3gpp-tsgsa"]
@@ -164,6 +178,7 @@ def run_once_adjust_liaison_groups():
             ("3gpp-tsgsa-sa2", "3gpp-tsg-sa-wg2", "3GPP TSG SA WG2"),
             ("3gpp-tsgsa-sa3", "3gpp-tsg-sa-wg3", "3GPP TSG SA WG3"),
             ("3gpp-tsgsa-sa4", "3gpp-tsg-sa-wg4", "3GPP TSG SA WG4"),
+            ("3gpp-tsgt-wg2", "3gpp-tsg-t-wg2", "3GPP TSG T WG2"),
         ):
             group = Group.objects.get(acronym=old_acronym)
             save_group_in_history(group)
@@ -171,9 +186,9 @@ def run_once_adjust_liaison_groups():
             group.acronym = new_acronym
             group.name = new_name
             if old_acronym.startswith("3gpp-tsgct-"):
-                group.parent=Group.objects.get(acronym="3gpp-tsg-ct")
+                group.parent = Group.objects.get(acronym="3gpp-tsg-ct")
             elif old_acronym.startswith("3gpp-tsgsa-"):
-                group.parent=Group.objects.get(acronym="3gpp-tsg-sa")
+                group.parent = Group.objects.get(acronym="3gpp-tsg-sa")
             group.save()
             group.groupevent_set.create(
                 time=group.time,
@@ -182,15 +197,34 @@ def run_once_adjust_liaison_groups():
                 desc=f"acronym changed from {old_acronym} to {new_acronym}, name set to {new_name}",
             )
 
+        for acronym, new_name in (("3gpp-tsg-ct", "3GPP TSG CT"),):
+            group = Group.objects.get(acronym=acronym)
+            save_group_in_history(group)
+            group.time = timezone.now()
+            group.name = new_name
+            group.save()
+            group.groupevent_set.create(
+                time=group.time,
+                by_id=1,  # (System)
+                type="info_changed",
+                desc=f"name set to {new_name}",
+            )
+
         ls = LiaisonStatement.objects.get(pk=1448)
         ls.from_groups.remove(Group.objects.get(acronym="3gpp-tsgsa"))
         ls.from_groups.add(Group.objects.get(acronym="3gpp-tsg-sa"))
 
         # Rewriting history to effectively merge the histories of the duplicate groups
-        GroupHistory.objects.filter(parent__acronym="3gpp-tsgsa").update(parent=Group.objects.get(acronym="3gpp-tsg-sa"))
-        GroupHistory.objects.filter(parent__acronym="3gpp-tsgct").update(parent=Group.objects.get(acronym="3gpp-tsg-ct"))
+        GroupHistory.objects.filter(parent__acronym="3gpp-tsgsa").update(
+            parent=Group.objects.get(acronym="3gpp-tsg-sa")
+        )
+        GroupHistory.objects.filter(parent__acronym="3gpp-tsgct").update(
+            parent=Group.objects.get(acronym="3gpp-tsg-ct")
+        )
 
-        deleted = Group.objects.filter(acronym__in=["3gpp-tsgsa","3gpp-tsgct"]).delete()
+        deleted = Group.objects.filter(
+            acronym__in=["3gpp-tsgsa", "3gpp-tsgct"]
+        ).delete()
         log.log(f"Deleted Groups: {deleted}")
     else:
         log.log("* Refusing to continue as preconditions have changed")
