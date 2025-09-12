@@ -8,6 +8,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from ietf.doc.models import DocumentAuthor, Document
+from ietf.doc.utils import default_consensus
 from ietf.person.models import Person
 
 
@@ -153,6 +154,7 @@ class DraftSerializer(FullDraftSerializer):
 
 class SubmittedToQueueSerializer(FullDraftSerializer):
     submitted = serializers.SerializerMethodField()
+    consensus = serializers.SerializerMethodField()
 
     class Meta:
         model = Document
@@ -161,11 +163,15 @@ class SubmittedToQueueSerializer(FullDraftSerializer):
             "name",
             "stream",
             "submitted",
+            "consensus",
         ]
 
     def get_submitted(self, doc) -> Optional[datetime.datetime]:
         event = doc.sent_to_rfc_editor_event()
         return None if event is None else event.time
+    
+    def get_consensus(self, doc) -> Optional[bool]:
+        return default_consensus(doc)
 
 
 class OriginalStreamSerializer(serializers.ModelSerializer):
