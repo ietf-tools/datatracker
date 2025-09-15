@@ -1,4 +1,4 @@
-FROM python:3.12-bookworm
+FROM python:3.12-trixie
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -7,7 +7,7 @@ ENV NODE_MAJOR=16
 # Update system packages
 RUN apt-get update \
     && apt-get -qy upgrade \
-    && apt-get -y install --no-install-recommends apt-utils dialog 2>&1
+    && apt-get -y install --no-install-recommends dialog 2>&1
 
 # Add Node.js Source
 RUN apt-get install -y --no-install-recommends ca-certificates curl gnupg \
@@ -23,9 +23,9 @@ RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /
 RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
     $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-# Add PostgreSQL Source 
-RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
-RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+# Add PostgreSQL Source
+RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] http://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
 
 # Install the packages we need
 RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends \
@@ -50,7 +50,6 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 	libgtk2.0-0 \
 	libgtk-3-0 \
 	libnotify-dev \
-	libgconf-2-4 \
 	libgbm-dev \
 	libnss3 \
 	libxss1 \
@@ -59,7 +58,7 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 	libmagic-dev \
 	libmariadb-dev \
 	libmemcached-tools \
-	libyang2-tools \
+	libyang3-tools \
 	locales \
 	make \
 	mariadb-client \
