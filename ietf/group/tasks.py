@@ -119,7 +119,7 @@ def generate_wg_summary_files_task():
 
 @shared_task
 @disable_coverage()
-def run_once_adjust_liaison_groups(): # pragma : no cover
+def run_once_adjust_liaison_groups():  # pragma: no cover
     log.log("Starting run_once_adjust_liaison_groups")
     if all(
         [
