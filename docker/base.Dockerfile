@@ -1,4 +1,4 @@
-FROM python:3.12-bookworm
+FROM python:3.12-trixie
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -7,7 +7,7 @@ ENV NODE_MAJOR=16
 # Update system packages
 RUN apt-get update \
     && apt-get -qy upgrade \
-    && apt-get -y install --no-install-recommends apt-utils dialog 2>&1
+    && apt-get -y install --no-install-recommends dialog 2>&1
 
 # Add Node.js Source
 RUN apt-get install -y --no-install-recommends ca-certificates curl gnupg \
@@ -51,7 +51,6 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 	libgtk2.0-0 \
 	libgtk-3-0 \
 	libnotify-dev \
-	libgconf-2-4 \
 	libgbm-dev \
 	libnss3 \
 	libxss1 \
@@ -60,7 +59,7 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 	libmagic-dev \
 	libmariadb-dev \
 	libmemcached-tools \
-	libyang2-tools \
+	libyang3-tools \
 	locales \
 	make \
 	mariadb-client \
