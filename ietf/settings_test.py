@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2023, All Rights Reserved
+# Copyright The IETF Trust 2010-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -21,22 +21,6 @@ debug.debug = True
 # Use a different hostname, to catch hardcoded values
 IDTRACKER_BASE_URL = "https://postgrestest.ietf.org"
 
-# Workaround to avoid spending minutes stepping through the migrations in
-# every test run.  The result of this is to use the 'syncdb' way of creating
-# the test database instead of doing it through the migrations.  Taken from
-# https://gist.github.com/NotSqrt/5f3c76cd15e40ef62d09
-
-class DisableMigrations(object):
- 
-    def __contains__(self, item):
-        return True
- 
-    def __getitem__(self, item):
-        return None
-
-MIGRATION_MODULES = DisableMigrations()
-
-
 DATABASES = {
     'default': {
         'HOST': 'db',
@@ -45,8 +29,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'USER': 'django',
         'PASSWORD': 'RkTkDPFnKpko',
-        },
-    }
+        'TEST': {'MIGRATE': False},  # type:ignore
+    },
+}
 
 # test with a single DB - do not use a DB router
 BLOBDB_DATABASE = "default"
