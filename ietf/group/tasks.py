@@ -14,6 +14,7 @@ from django.utils import timezone
 from ietf.doc.storage_utils import store_file
 from ietf.liaisons.models import LiaisonStatement
 from ietf.utils import log
+from ietf.utils.test_runner import disable_coverage
 
 from .models import Group, GroupHistory
 from .utils import fill_in_charter_info, fill_in_wg_drafts, fill_in_wg_roles, save_group_in_history
@@ -117,6 +118,7 @@ def generate_wg_summary_files_task():
         store_file("indexes", "1wg-summary-by-acronym.txt", f, allow_overwrite=True)
 
 @shared_task
+@disable_coverage()
 def run_once_adjust_liaison_groups():
     log.log("Starting run_once_adjust_liaison_groups")
     if all(
