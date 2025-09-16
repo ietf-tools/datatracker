@@ -4,9 +4,6 @@ from ietf.settings import *  # pyflakes:ignore
 
 ALLOWED_HOSTS = ["*"]
 
-# Use a different hostname, to catch hardcoded values
-IDTRACKER_BASE_URL = "https://postgrestest.ietf.org"
-
 DATABASES = {
     "default": {
         "HOST": "db",
@@ -15,16 +12,12 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql",
         "USER": "django",
         "PASSWORD": "RkTkDPFnKpko",
-        "TEST": {"MIGRATE": False},  # type:ignore
     },
 }
 
-# test with a single DB - do not use a DB router
+# Use a single DB and do not use a DB router
 BLOBDB_DATABASE = "default"
 DATABASE_ROUTERS = []  # type: ignore
-
-if TEST_CODE_COVERAGE_CHECKER:  # pyflakes:ignore
-    TEST_CODE_COVERAGE_CHECKER.start()  # pyflakes:ignore
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 IDSUBMIT_REPOSITORY_PATH = "/assets/ietfdata/doc/draft/repository"
