@@ -491,6 +491,8 @@ def notify_rfceditor_of_group_name_change(sender, instance=None, **kwargs):
             current = Group.objects.get(pk=instance.pk)
         except Group.DoesNotExist:
             return
+        if current.type_id == "sdo":
+            return
         addr = settings.RFC_EDITOR_GROUP_NOTIFICATION_EMAIL
         if addr and instance.name != current.name:
             msg = """
