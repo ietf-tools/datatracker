@@ -939,17 +939,34 @@ class LiaisonManagementTests(TestCase):
         )
 
     def test_liaison_edit_attachment(self):
-
-        attachment = LiaisonStatementAttachmentFactory(document__name='liaiatt-1')
-        url = urlreverse('ietf.liaisons.views.liaison_edit_attachment', kwargs=dict(object_id=attachment.statement_id,doc_id=attachment.document_id))
+        attachment = LiaisonStatementAttachmentFactory(document__name="liaiatt-1")
+        url = urlreverse(
+            "ietf.liaisons.views.liaison_edit_attachment",
+            kwargs=dict(
+                object_id=attachment.statement_id, doc_id=attachment.document_id
+            ),
+        )
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        post_data = dict(title='New Title')
-        r = self.client.post(url,post_data)
+        post_data = dict(title="New Title")
+        r = self.client.post(url, post_data)
         attachment = LiaisonStatementAttachment.objects.get(pk=attachment.pk)
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(attachment.document.title,'New Title')
+        self.assertEqual(attachment.document.title, "New Title")
+
+        # ensure attempts to edit attachments not attached to this liaison statement fail
+        other_attachment = LiaisonStatementAttachmentFactory(document__name="liaiatt-2")
+        url = urlreverse(
+            "ietf.liaisons.views.liaison_edit_attachment",
+            kwargs=dict(
+                object_id=attachment.statement_id, doc_id=other_attachment.document_id
+            ),
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+        r = self.client.post(url, dict(title="New Title"))
+        self.assertEqual(r.status_code, 404)
 
     def test_liaison_delete_attachment(self):
         attachment = LiaisonStatementAttachmentFactory(document__name='liaiatt-1')
