@@ -234,7 +234,15 @@ class IESGTests(TestCase):
         )
         self.assertEqual(wg_summary, [])
 
-        # Areas with WGs following the "normal" pattern
+        # Construct Areas with WGs similar in shape to a real moment of the IETF
+
+        # Note that this test construciton uses the first letter of the wg acronyms
+        # for convenience to switch on whether groups have documents with assigned ADs.
+        # (Search for ` if wg_acronym[0] > "g"`)
+        # There's no other significance to the names of the area directors or the
+        # acronyms of the areas and groups other than being distinct. Taking the
+        # values from sets of similar things hopefully helps with debugging the tests.
+
         areas = {}
         for area_acronym in ["red", "orange", "yellow", "green", "blue", "violet"]:
             areas[area_acronym] = GroupFactory(type_id="area", acronym=area_acronym)
