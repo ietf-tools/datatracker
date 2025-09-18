@@ -158,7 +158,6 @@ class PrefetchSubseriesContents(Prefetch):
                 Prefetch(
                     "target",
                     queryset=augment_rfc_queryset(Document.objects.all()),
-                    to_attr="document",
                 )
             ),
             to_attr=to_attr,

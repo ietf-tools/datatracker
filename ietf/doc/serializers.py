@@ -115,10 +115,10 @@ class RfcStatusSerializer(serializers.Serializer):
         return super().to_representation(instance=RfcStatus.from_document(instance))
 
 
-class RelatedDraftSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Document
-        fields = ["id", "name", "title"]
+class RelatedDraftSerializer(serializers.Serializer):
+    id = serializers.IntegerField(source="source.id")
+    name = serializers.CharField(source="source.name")
+    title = serializers.CharField(source="source.title")
 
 
 class RelatedRfcSerializer(serializers.Serializer):
@@ -197,7 +197,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             related_doc = object.drafts[0]
         except IndexError:
             return None
-        return RelatedDraftSerializer(related_doc.source).data
+        return RelatedDraftSerializer(related_doc).data
 
 
 class RfcSerializer(RfcMetadataSerializer):
@@ -211,7 +211,7 @@ class RfcSerializer(RfcMetadataSerializer):
 
 
 class SubseriesContentListSerializer(serializers.ListSerializer):
-    """ListSerializer that gets its object from item.document"""
+    """ListSerializer that gets its object from item.target"""
     
     def to_representation(self, data):
         """
@@ -222,36 +222,15 @@ class SubseriesContentListSerializer(serializers.ListSerializer):
         iterable = (
             data.all() if isinstance(data, BaseManager) else data
         )
-        # Serialize item.document instead of item itself
-        return [self.child.to_representation(item.document) for item in iterable]
+        # Serialize item.target instead of item itself
+        return [self.child.to_representation(item.target) for item in iterable]
 
 
 class SubseriesContentSerializer(RfcMetadataSerializer):
+    """Serialize RFC contained in a subseries doc"""
     class Meta(RfcMetadataSerializer.Meta):
         list_serializer_class = SubseriesContentListSerializer
-        fields = [
-            "number",
-            "title",
-            "published",
-            "status",
-            "pages",
-            "authors",
-            "group",
-            "area",
-            "stream",
-            "identifiers",
-            "obsoletes",
-            "obsoleted_by",
-            "updates",
-            "updated_by",
-            "is_also",
-            "see_also",
-            "draft",
-            "abstract",
-            "formats",
-            "keywords",
-            "errata",
-        ]
+
 
 class SubseriesDocSerializer(serializers.ModelSerializer):
     """Serialize a subseries document (e.g., a BCP or STD)"""
