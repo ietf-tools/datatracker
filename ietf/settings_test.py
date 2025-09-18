@@ -37,6 +37,9 @@ DATABASES = {
 BLOBDB_DATABASE = "default"
 DATABASE_ROUTERS = []  # type: ignore
 
+# Disable replication during tests
+BLOBDB_REPLICATION = {"ENABLED": False}
+
 if TEST_CODE_COVERAGE_CHECKER:  # pyflakes:ignore
     TEST_CODE_COVERAGE_CHECKER.start()  # pyflakes:ignore
 
