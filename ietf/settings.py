@@ -34,6 +34,7 @@ warnings.filterwarnings("ignore", message="datetime.datetime.utcnow\\(\\) is dep
 warnings.filterwarnings("ignore", message="datetime.datetime.utcnow\\(\\) is deprecated", module="oic.utils.time_util")
 warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="oic.utils.time_util")
 warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="pytz.tzinfo")
+warnings.filterwarnings("ignore", message="'instantiateVariableFont' is deprecated", module="weasyprint")
 
 
 base_path = pathlib.Path(__file__).resolve().parent
