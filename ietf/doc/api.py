@@ -13,7 +13,7 @@ from rest_framework.viewsets import GenericViewSet
 from ietf.group.models import Group
 from ietf.name.models import StreamName
 from ietf.utils.timezone import RPC_TZINFO
-from .models import Document, DocEvent, RelatedDocument
+from .models import Document, DocEvent, RelatedDocument, DocumentAuthor
 from .serializers import (
     RfcMetadataSerializer,
     RfcStatus,
@@ -61,34 +61,37 @@ class PrefetchRelatedDocument(Prefetch):
     those for which the current RFC is the `source`. If `reverse` is True, includes those
     for which it is the `target` instead. Defaults to only "rfc" documents.
     """
+    @staticmethod
+    def _get_queryset(relationship_id, reverse, doc_type_id):
+        """Get queryset to use for the prefetch"""
+        return RelatedDocument.objects.filter(
+            **{
+                "relationship_id": relationship_id,
+                f"{'source' if reverse else 'target'}__type_id": doc_type_id,
+            }
+        ).select_related("source" if reverse else "target")
 
     def __init__(self, to_attr, relationship_id, reverse=False, doc_type_id="rfc"):
         super().__init__(
             lookup="targets_related" if reverse else "relateddocument_set",
-            queryset=RelatedDocument.objects.filter(
-                **{
-                    "relationship_id": relationship_id,
-                    f"{'source' if reverse else 'target'}__type_id": doc_type_id,
-                }
-            ).select_related("source" if reverse else "target"),
+            queryset=self._get_queryset(relationship_id, reverse, doc_type_id),
             to_attr=to_attr,
         )
 
 
 def augment_rfc_queryset(queryset: QuerySet[Document]):
     return (
-        queryset.annotate(
-            published_datetime=Subquery(
-                DocEvent.objects.filter(
-                    doc_id=OuterRef("pk"),
-                    type="published_rfc",
-                )
-                .order_by("-time")
-                .values("time")[:1]
-            ),
-        )
-        .annotate(published=TruncDate("published_datetime", tzinfo=RPC_TZINFO))
+        queryset
+        .select_related("std_level", "stream")
         .prefetch_related(
+            Prefetch(
+                "group",
+                Group.objects.select_related("parent"),
+            ),
+            Prefetch(
+                "documentauthor_set",
+                DocumentAuthor.objects.select_related("email", "person"),
+            ),
             PrefetchRelatedDocument(
                 to_attr="drafts",
                 relationship_id="became_rfc",
@@ -104,6 +107,17 @@ def augment_rfc_queryset(queryset: QuerySet[Document]):
                 to_attr="updated_by", relationship_id="updates", reverse=True
             ),
         )
+        .annotate(
+            published_datetime=Subquery(
+                DocEvent.objects.filter(
+                    doc_id=OuterRef("pk"),
+                    type="published_rfc",
+                )
+                .order_by("-time")
+                .values("time")[:1]
+            ),
+        )
+        .annotate(published=TruncDate("published_datetime", tzinfo=RPC_TZINFO))
         .annotate(
             # TODO implement these fake fields for real
             is_also=Value([], output_field=JSONField()),
@@ -134,20 +148,6 @@ class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
 
 
 class PrefetchSubseriesContents(Prefetch):
-    # Queryset used for the prefetch
-    _queryset = augment_rfc_queryset(
-        Document.objects.annotate(
-            published_datetime=Subquery(
-                DocEvent.objects.filter(
-                    doc_id=OuterRef("pk"),
-                    type="published_rfc",
-                )
-                .order_by("-time")
-                .values("time")[:1]
-            ),
-        )
-    )
-
     def __init__(self, to_attr):
         super().__init__(
             lookup="relateddocument_set",
@@ -157,7 +157,7 @@ class PrefetchSubseriesContents(Prefetch):
             ).prefetch_related(
                 Prefetch(
                     "target",
-                    queryset=self._queryset,
+                    queryset=augment_rfc_queryset(Document.objects.all()),
                     to_attr="document",
                 )
             ),
@@ -172,3 +172,19 @@ class SubseriesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     queryset = Document.objects.subseries_docs().prefetch_related(
         PrefetchSubseriesContents(to_attr="contents")
     )
+
+    def list(self, request, *args, **kwargs):
+        from django.db import connection, reset_queries
+        reset_queries()
+        result = super().list(request, *args, **kwargs)
+        print("\n\n".join(q["sql"] for q in connection.queries))
+        print(f"\n\nTotal: {len(connection.queries)} queries")
+        return result
+
+    def retrieve(self, request, *args, **kwargs):
+        from django.db import connection, reset_queries
+        reset_queries()
+        result = super().retrieve(request, *args, **kwargs)
+        print("\n\n".join(q["sql"] for q in connection.queries))
+        print(f"\n\nTotal: {len(connection.queries)} queries")
+        return result

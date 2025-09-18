@@ -145,7 +145,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     area = GroupSerializer(source="group.area", required=False)
     stream = StreamNameSerializer()
     identifiers = fields.SerializerMethodField()
-    draft = RelatedDraftSerializer(source="came_from_draft", read_only=True)  # todo prefetch this
+    draft = RelatedDraftSerializer(source="drafts.first", read_only=True)
     obsoletes = RelatedRfcSerializer(many=True, read_only=True)
     obsoleted_by = ReverseRelatedRfcSerializer(many=True, read_only=True)
     updates = RelatedRfcSerializer(many=True, read_only=True)
@@ -221,7 +221,29 @@ class SubseriesContentListSerializer(serializers.ListSerializer):
 class SubseriesContentSerializer(RfcMetadataSerializer):
     class Meta(RfcMetadataSerializer.Meta):
         list_serializer_class = SubseriesContentListSerializer
-    
+        fields = [
+            "number",
+            "title",
+            "published",
+            "status",
+            "pages",
+            "authors",
+            "group",
+            "area",
+            "stream",
+            "identifiers",
+            "obsoletes",
+            "obsoleted_by",
+            "updates",
+            "updated_by",
+            "is_also",
+            "see_also",
+            "draft",
+            "abstract",
+            "formats",
+            "keywords",
+            "errata",
+        ]
 
 class SubseriesDocSerializer(serializers.ModelSerializer):
     """Serialize a subseries document (e.g., a BCP or STD)"""
