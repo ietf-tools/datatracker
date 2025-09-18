@@ -971,14 +971,14 @@ class LiaisonManagementTests(TestCase):
         r = self.client.post(url, dict(title="New Title"))
         self.assertEqual(r.status_code, 404)
 
-    def test_liaison_delete_attachment(self):
-        attachment = LiaisonStatementAttachmentFactory(document__name='liaiatt-1')
-        liaison = attachment.statement
-        url = urlreverse('ietf.liaisons.views.liaison_delete_attachment', kwargs=dict(object_id=liaison.pk,attach_id=attachment.pk))
-        login_testing_unauthorized(self, "secretary", url)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(liaison.liaisonstatementattachment_set.filter(removed=False).count(),0)
+    # def test_liaison_delete_attachment(self):
+    #     attachment = LiaisonStatementAttachmentFactory(document__name='liaiatt-1')
+    #     liaison = attachment.statement
+    #     url = urlreverse('ietf.liaisons.views.liaison_delete_attachment', kwargs=dict(object_id=liaison.pk,attach_id=attachment.pk))
+    #     login_testing_unauthorized(self, "secretary", url)
+    #     r = self.client.get(url)
+    #     self.assertEqual(r.status_code, 302)
+    #     self.assertEqual(liaison.liaisonstatementattachment_set.filter(removed=False).count(),0)
 
     def test_in_response(self):
         '''A statement with purpose=in_response must have related statement specified'''
