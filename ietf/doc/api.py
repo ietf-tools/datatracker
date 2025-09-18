@@ -25,7 +25,7 @@ from .serializers import (
 
 class RfcLimitOffsetPagination(LimitOffsetPagination):
     default_limit = 10
-    max_limit = 50000
+    max_limit = 500
 
 
 class RfcFilter(filters.FilterSet):
