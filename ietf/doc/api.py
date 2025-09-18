@@ -172,19 +172,3 @@ class SubseriesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     queryset = Document.objects.subseries_docs().prefetch_related(
         PrefetchSubseriesContents(to_attr="contents")
     )
-
-    def list(self, request, *args, **kwargs):
-        from django.db import connection, reset_queries
-        reset_queries()
-        result = super().list(request, *args, **kwargs)
-        print("\n\n".join(q["sql"] for q in connection.queries))
-        print(f"\n\nTotal: {len(connection.queries)} queries")
-        return result
-
-    def retrieve(self, request, *args, **kwargs):
-        from django.db import connection, reset_queries
-        reset_queries()
-        result = super().retrieve(request, *args, **kwargs)
-        print("\n\n".join(q["sql"] for q in connection.queries))
-        print(f"\n\nTotal: {len(connection.queries)} queries")
-        return result
