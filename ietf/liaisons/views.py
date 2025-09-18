@@ -7,7 +7,7 @@ from email.utils import parseaddr
 
 from django.contrib import messages
 from django.urls import reverse as urlreverse
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.core.exceptions import ValidationError, ObjectDoesNotExist, PermissionDenied
 from django.core.validators import validate_email
 from django.db.models import Q, Prefetch
 from django.http import Http404, HttpResponse
@@ -404,22 +404,28 @@ def liaison_detail(request, object_id):
 
 
     if request.method == 'POST':
-        if request.POST.get('approved'):
-            liaison.change_state(state_id='approved',person=person)
-            liaison.change_state(state_id='posted',person=person)
-            send_liaison_by_email(request, liaison)
-            messages.success(request,'Liaison Statement Approved and Posted')
-        elif request.POST.get('dead'):
-            liaison.change_state(state_id='dead',person=person)
-            messages.success(request,'Liaison Statement Killed')
-        elif request.POST.get('resurrect'):
-            liaison.change_state(state_id='pending',person=person)
-            messages.success(request,'Liaison Statement Resurrected')
-        elif request.POST.get('do_action_taken') and can_take_care:
+        if request.POST.get('do_action_taken') and can_take_care:
             liaison.tags.remove('required')
             liaison.tags.add('taken')
             can_take_care = False
             messages.success(request,'Action handled')
+        else:
+            if can_edit:
+                if request.POST.get('approved'):
+                    liaison.change_state(state_id='approved',person=person)
+                    liaison.change_state(state_id='posted',person=person)
+                    send_liaison_by_email(request, liaison)
+                    messages.success(request,'Liaison Statement Approved and Posted')
+                elif request.POST.get('dead'):
+                    liaison.change_state(state_id='dead',person=person)
+                    messages.success(request,'Liaison Statement Killed')
+                elif request.POST.get('resurrect'):
+                    liaison.change_state(state_id='pending',person=person)
+                    messages.success(request,'Liaison Statement Resurrected')
+                else:
+                    pass
+            else:
+                raise PermissionDenied()
 
     relations_by = [i.target for i in liaison.source_of_set.filter(target__state__slug='posted')]
     relations_to = [i.source for i in liaison.target_of_set.filter(source__state__slug='posted')]

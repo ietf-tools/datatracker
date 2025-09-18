@@ -363,6 +363,9 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(len(q('form button[name=approved]')), 0)
 
         # check the detail page / authorized
+        r = self.client.post(url, dict(dead="1"))
+        self.assertEqual(r.status_code, 403)
+        mailbox_before = len(outbox)
         self.client.login(username="ulm-liaiman", password="ulm-liaiman+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
