@@ -7,15 +7,14 @@ from email.utils import parseaddr
 
 from django.contrib import messages
 from django.urls import reverse as urlreverse
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.validators import validate_email
 from django.db.models import Q, Prefetch
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.group.models import Group, Role
 from ietf.liaisons.models import (LiaisonStatement,LiaisonStatementEvent,
@@ -444,7 +443,11 @@ def liaison_edit(request, object_id):
 def liaison_edit_attachment(request, object_id, doc_id):
     '''Edit the Liaison Statement attachment title'''
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
-    doc = get_object_or_404(Document, pk=doc_id)
+    try:
+       doc = liaison.attachments.get(pk=doc_id)
+    except ObjectDoesNotExist:
+        raise Http404
+
     if not can_edit_liaison(request.user, liaison):
         permission_denied(request, "You are not authorized for this action.")
 
