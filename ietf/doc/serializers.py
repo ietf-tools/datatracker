@@ -145,7 +145,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     area = GroupSerializer(source="group.area", required=False)
     stream = StreamNameSerializer()
     identifiers = fields.SerializerMethodField()
-    draft = RelatedDraftSerializer(source="drafts.first", read_only=True)
+    draft = serializers.SerializerMethodField()
     obsoletes = RelatedRfcSerializer(many=True, read_only=True)
     obsoleted_by = ReverseRelatedRfcSerializer(many=True, read_only=True)
     updates = RelatedRfcSerializer(many=True, read_only=True)
@@ -190,6 +190,14 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
                 DocIdentifier(type="doi", value=f"10.17487/RFC{doc.rfc_number:04d}")
             )
         return DocIdentifierSerializer(instance=identifiers, many=True).data
+
+    @extend_schema_field(RelatedDraftSerializer)
+    def get_draft(self, object):
+        try:
+            related_doc = object.drafts[0]
+        except IndexError:
+            return None
+        return RelatedDraftSerializer(related_doc.source).data
 
 
 class RfcSerializer(RfcMetadataSerializer):
