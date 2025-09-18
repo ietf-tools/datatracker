@@ -11,9 +11,10 @@ from rest_framework.permissions import BasePermission
 from rest_framework.viewsets import GenericViewSet
 
 from ietf.group.models import Group
-from ietf.name.models import StreamName
+from ietf.name.models import StreamName, DocTypeName
 from ietf.utils.timezone import RPC_TZINFO
-from .models import Document, DocEvent, RelatedDocument, DocumentAuthor
+from .models import Document, DocEvent, RelatedDocument, DocumentAuthor, \
+    SUBSERIES_DOC_TYPE_IDS
 from .serializers import (
     RfcMetadataSerializer,
     RfcStatus,
@@ -24,7 +25,7 @@ from .serializers import (
 
 class RfcLimitOffsetPagination(LimitOffsetPagination):
     default_limit = 10
-    max_limit = 500
+    max_limit = 50000
 
 
 class RfcFilter(filters.FilterSet):
@@ -164,6 +165,12 @@ class PrefetchSubseriesContents(Prefetch):
         )
 
 
+class SubseriesFilter(filters.FilterSet):
+    type = filters.ModelMultipleChoiceFilter(
+        queryset=DocTypeName.objects.filter(pk__in=SUBSERIES_DOC_TYPE_IDS)
+    )
+
+
 class SubseriesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     permission_classes: list[BasePermission] = []
     lookup_field = "name"
@@ -171,3 +178,5 @@ class SubseriesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     queryset = Document.objects.subseries_docs().prefetch_related(
         PrefetchSubseriesContents(to_attr="contents")
     )
+    filter_backends = [filters.DjangoFilterBackend]
+    filterset_class = SubseriesFilter
