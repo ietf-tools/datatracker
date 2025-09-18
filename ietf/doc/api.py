@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 """Doc API implementations"""
-from django.db.models import OuterRef, Subquery, Prefetch, Value, JSONField
+
+from django.db.models import OuterRef, Subquery, Prefetch, Value, JSONField, QuerySet
 from django.db.models.functions import TruncDate
 from django_filters import rest_framework as filters
 from rest_framework import filters as drf_filters
@@ -13,7 +14,12 @@ from ietf.group.models import Group
 from ietf.name.models import StreamName
 from ietf.utils.timezone import RPC_TZINFO
 from .models import Document, DocEvent, RelatedDocument
-from .serializers import RfcMetadataSerializer, RfcStatus, RfcSerializer
+from .serializers import (
+    RfcMetadataSerializer,
+    RfcStatus,
+    RfcSerializer,
+    SubseriesDocSerializer,
+)
 
 
 class RfcLimitOffsetPagination(LimitOffsetPagination):
@@ -64,17 +70,14 @@ class PrefetchRelatedDocument(Prefetch):
                     "relationship_id": relationship_id,
                     f"{'source' if reverse else 'target'}__type_id": doc_type_id,
                 }
-            ),
+            ).select_related("source" if reverse else "target"),
             to_attr=to_attr,
         )
 
 
-class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
-    permission_classes: list[BasePermission] = []
-    lookup_field = "rfc_number"
-    queryset = (
-        Document.objects.filter(type_id="rfc", rfc_number__isnull=False)
-        .annotate(
+def augment_rfc_queryset(queryset: QuerySet[Document]):
+    return (
+        queryset.annotate(
             published_datetime=Subquery(
                 DocEvent.objects.filter(
                     doc_id=OuterRef("pk"),
@@ -85,7 +88,6 @@ class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
             ),
         )
         .annotate(published=TruncDate("published_datetime", tzinfo=RPC_TZINFO))
-        .order_by("-rfc_number")
         .prefetch_related(
             PrefetchRelatedDocument(
                 to_attr="drafts",
@@ -110,7 +112,16 @@ class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
             keywords=Value(["keyword"], output_field=JSONField()),
             errata=Value([], output_field=JSONField()),
         )
-    )  # default ordering - RfcFilter may override
+    )
+
+
+class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
+    permission_classes: list[BasePermission] = []
+    lookup_field = "rfc_number"
+    queryset = augment_rfc_queryset(
+        Document.objects.filter(type_id="rfc", rfc_number__isnull=False)
+    ).order_by("-rfc_number")
+
     pagination_class = RfcLimitOffsetPagination
     filter_backends = [filters.DjangoFilterBackend, drf_filters.SearchFilter]
     filterset_class = RfcFilter
@@ -120,3 +131,44 @@ class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
         if self.action == "retrieve":
             return RfcSerializer
         return RfcMetadataSerializer
+
+
+class PrefetchSubseriesContents(Prefetch):
+    # Queryset used for the prefetch
+    _queryset = augment_rfc_queryset(
+        Document.objects.annotate(
+            published_datetime=Subquery(
+                DocEvent.objects.filter(
+                    doc_id=OuterRef("pk"),
+                    type="published_rfc",
+                )
+                .order_by("-time")
+                .values("time")[:1]
+            ),
+        )
+    )
+
+    def __init__(self, to_attr):
+        super().__init__(
+            lookup="relateddocument_set",
+            queryset=RelatedDocument.objects.filter(
+                relationship_id="contains",
+                target__type_id="rfc",
+            ).prefetch_related(
+                Prefetch(
+                    "target",
+                    queryset=self._queryset,
+                    to_attr="document",
+                )
+            ),
+            to_attr=to_attr,
+        )
+
+
+class SubseriesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
+    permission_classes: list[BasePermission] = []
+    lookup_field = "name"
+    serializer_class = SubseriesDocSerializer
+    queryset = Document.objects.subseries_docs().prefetch_related(
+        PrefetchSubseriesContents(to_attr="contents")
+    )

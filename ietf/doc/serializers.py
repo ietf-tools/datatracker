@@ -3,12 +3,13 @@
 from dataclasses import dataclass
 from typing import Literal, ClassVar
 
+from django.db.models.manager import BaseManager
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers, fields
 
 from ietf.group.serializers import GroupSerializer
 from ietf.name.serializers import StreamNameSerializer
-from .models import Document, DocumentAuthor
+from .models import Document, DocumentAuthor, RelatedDocument
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
@@ -199,3 +200,37 @@ class RfcSerializer(RfcMetadataSerializer):
     class Meta:
         model = RfcMetadataSerializer.Meta.model
         fields = RfcMetadataSerializer.Meta.fields + ["text"]
+
+
+class SubseriesContentListSerializer(serializers.ListSerializer):
+    """ListSerializer that gets its object from item.document"""
+    
+    def to_representation(self, data):
+        """
+        List of object instances -> List of dicts of primitive datatypes.
+        """
+        # Dealing with nested relationships, data can be a Manager,
+        # so, first get a queryset from the Manager if needed
+        iterable = (
+            data.all() if isinstance(data, BaseManager) else data
+        )
+        # Serialize item.document instead of item itself
+        return [self.child.to_representation(item.document) for item in iterable]
+
+
+class SubseriesContentSerializer(RfcMetadataSerializer):
+    class Meta(RfcMetadataSerializer.Meta):
+        list_serializer_class = SubseriesContentListSerializer
+    
+
+class SubseriesDocSerializer(serializers.ModelSerializer):
+    """Serialize a subseries document (e.g., a BCP or STD)"""
+    contents = SubseriesContentSerializer(many=True)
+
+    class Meta:
+        model = Document
+        fields = [
+            "name",
+            "type",
+            "contents",
+        ]
