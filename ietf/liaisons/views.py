@@ -18,8 +18,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import Document
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.group.models import Group, Role
-from ietf.liaisons.models import (LiaisonStatement,LiaisonStatementEvent,
-    LiaisonStatementAttachment)
+from ietf.liaisons.models import LiaisonStatement,LiaisonStatementEvent
 from ietf.liaisons.utils import (get_person_for_user, can_add_outgoing_liaison,
     can_add_incoming_liaison, can_edit_liaison,can_submit_liaison_required,
     can_add_liaison)
@@ -378,23 +377,29 @@ def liaison_history(request, object_id):
 
 def liaison_delete_attachment(request, object_id, attach_id):
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
-    attach = get_object_or_404(LiaisonStatementAttachment, pk=attach_id)
+
     if not can_edit_liaison(request.user, liaison):
         permission_denied(request, "You are not authorized for this action.")
+    else:
+        permission_denied(request, "This operation is temporarily unavailable. Ask the secretariat to mark the attachment as removed using the admin.")
 
-    # FIXME: this view should use POST instead of GET when deleting
-    attach.removed = True
-    attach.save()
+    # The following will be replaced with a different approach in the next generation of the liaison tool
+    # attach = get_object_or_404(LiaisonStatementAttachment, pk=attach_id)
 
-    # create event
-    LiaisonStatementEvent.objects.create(
-        type_id='modified',
-        by=get_person_for_user(request.user),
-        statement=liaison,
-        desc='Attachment Removed: {}'.format(attach.document.title)
-    )
-    messages.success(request, 'Attachment Deleted')
-    return redirect('ietf.liaisons.views.liaison_detail', object_id=liaison.pk)
+    # # FIXME: this view should use POST instead of GET when deleting
+    # attach.removed = True
+    # debug.say("Got here")
+    # attach.save()
+
+    # # create event
+    # LiaisonStatementEvent.objects.create(
+    #     type_id='modified',
+    #     by=get_person_for_user(request.user),
+    #     statement=liaison,
+    #     desc='Attachment Removed: {}'.format(attach.document.title)
+    # )
+    # messages.success(request, 'Attachment Deleted')
+    # return redirect('ietf.liaisons.views.liaison_detail', object_id=liaison.pk)
 
 def liaison_detail(request, object_id):
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
