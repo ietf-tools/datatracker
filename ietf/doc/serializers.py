@@ -10,7 +10,7 @@ from rest_framework import serializers, fields
 
 from ietf.group.serializers import GroupSerializer
 from ietf.name.serializers import StreamNameSerializer
-from .models import Document, DocumentAuthor, RelatedDocument
+from .models import Document, DocumentAuthor
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
@@ -43,9 +43,7 @@ class DocIdentifierSerializer(serializers.Serializer):
     value = serializers.CharField()
 
 
-# This should become "type RfcStatusSlugT ..." when we drop pre-py3.12 support
-# It should be "RfcStatusSlugT: TypeAlias ..." when we drop py3.9 support
-RfcStatusSlugT = Literal[
+type RfcStatusSlugT = Literal[
     "standard",
     "bcp",
     "informational",
