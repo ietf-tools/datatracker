@@ -2638,10 +2638,23 @@
       "order": 0,
       "slug": "historic",
       "type": "statement",
-      "used": true
+      "used": false
     },
     "model": "doc.state",
     "pk": 182
+  },
+  {
+    "fields": {
+      "desc": "The statement is no longer active",
+      "name": "Inactive",
+      "next_states": [],
+      "order": 0,
+      "slug": "inactive",
+      "type": "statement",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 183
   },
   {
     "fields": {
@@ -5520,13 +5533,47 @@
         "liaison_response_contacts",
         "liaison_technical_contacts"
       ],
-      "desc": "Recipient for a message when a new liaison statement is posted",
+      "desc": "Recipients for a message when a new liaison statement is posted",
       "to": [
         "liaison_to_contacts"
       ]
     },
     "model": "mailtrigger.mailtrigger",
     "pk": "liaison_statement_posted"
+  },
+  {
+    "fields": {
+      "cc": [
+        "liaison_cc",
+        "liaison_coordinators",
+        "liaison_response_contacts",
+        "liaison_technical_contacts"
+      ],
+      "desc": "Recipients for a message when a new incoming liaison statement is posted",
+      "to": [
+        "liaison_from_contact",
+        "liaison_to_contacts"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "liaison_statement_posted_incoming"
+  },
+  {
+    "fields": {
+      "cc": [
+        "liaison_cc",
+        "liaison_coordinators",
+        "liaison_from_contact",
+        "liaison_response_contacts",
+        "liaison_technical_contacts"
+      ],
+      "desc": "Recipients for a message when a new outgoing liaison statement is posted",
+      "to": [
+        "liaison_to_contacts"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "liaison_statement_posted_outgoing"
   },
   {
     "fields": {
@@ -7067,6 +7114,14 @@
     },
     "model": "mailtrigger.recipient",
     "pk": "liaison_coordinators"
+  },
+  {
+    "fields": {
+      "desc": "Email address of the formal sender of the statement",
+      "template": "{{liaison.from_contact}}"
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "liaison_from_contact"
   },
   {
     "fields": {

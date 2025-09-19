@@ -112,61 +112,61 @@ class LiaisonTests(TestCase):
 
 
 class UnitTests(TestCase):
-    def test_get_cc(self):
-        from ietf.liaisons.views import get_cc,EMAIL_ALIASES
+    def test_get_contacts_for_liaison_messages_for_group_primary(self):
+        from ietf.mailtrigger.utils import get_contacts_for_liaison_messages_for_group_primary,EMAIL_ALIASES
 
         # test IETF
-        cc = get_cc(Group.objects.get(acronym='ietf'))
+        cc = get_contacts_for_liaison_messages_for_group_primary(Group.objects.get(acronym='ietf'))
         self.assertTrue(EMAIL_ALIASES['IESG'] in cc)
         self.assertTrue(EMAIL_ALIASES['IETFCHAIR'] in cc)
         # test IAB
-        cc = get_cc(Group.objects.get(acronym='iab'))
+        cc = get_contacts_for_liaison_messages_for_group_primary(Group.objects.get(acronym='iab'))
         self.assertTrue(EMAIL_ALIASES['IAB'] in cc)
         self.assertTrue(EMAIL_ALIASES['IABCHAIR'] in cc)
         # test an Area
         area = Group.objects.filter(type='area').first()
-        cc = get_cc(area)
+        cc = get_contacts_for_liaison_messages_for_group_primary(area)
         self.assertTrue(EMAIL_ALIASES['IETFCHAIR'] in cc)
         self.assertTrue(contacts_from_roles([area.ad_role()]) in cc)
         # test a Working Group
         wg = Group.objects.filter(type='wg').first()
-        cc = get_cc(wg)
+        cc = get_contacts_for_liaison_messages_for_group_primary(wg)
         self.assertTrue(contacts_from_roles([wg.parent.ad_role()]) in cc)
         self.assertTrue(contacts_from_roles([wg.get_chair()]) in cc)
         # test an SDO
         sdo = RoleFactory(name_id='liaiman',group__type_id='sdo',).group
-        cc = get_cc(sdo)
+        cc = get_contacts_for_liaison_messages_for_group_primary(sdo)
         self.assertTrue(contacts_from_roles([sdo.role_set.filter(name='liaiman').first()]) in cc)
         # test a cc_contact role
         cc_contact_role = RoleFactory(name_id='liaison_cc_contact', group=sdo)
-        cc = get_cc(sdo)
+        cc = get_contacts_for_liaison_messages_for_group_primary(sdo)
         self.assertIn(contact_email_from_role(cc_contact_role), cc)
 
-    def test_get_contacts_for_group(self):
-        from ietf.liaisons.views import get_contacts_for_group, EMAIL_ALIASES
+    def test_get_contacts_for_liaison_messages_for_group_secondary(self):
+        from ietf.mailtrigger.utils import get_contacts_for_liaison_messages_for_group_secondary,EMAIL_ALIASES
 
-        # test explicit
+        # test explicit group contacts
         sdo = GroupFactory(type_id='sdo')
         contact_email = RoleFactory(name_id='liaison_contact', group=sdo).email.address
-        contacts = get_contacts_for_group(sdo)
+        contacts = get_contacts_for_liaison_messages_for_group_secondary(sdo)
         self.assertIsNotNone(contact_email)
         self.assertIn(contact_email, contacts)
         # test area
         area = Group.objects.filter(type='area').first()
-        contacts = get_contacts_for_group(area)
+        contacts = get_contacts_for_liaison_messages_for_group_secondary(area)
         self.assertTrue(area.ad_role().email.address in contacts)
         # test wg
         wg = Group.objects.filter(type='wg').first()
-        contacts = get_contacts_for_group(wg)
+        contacts = get_contacts_for_liaison_messages_for_group_secondary(wg)
         self.assertTrue(wg.get_chair().email.address in contacts)
         # test ietf
-        contacts = get_contacts_for_group(Group.objects.get(acronym='ietf'))
+        contacts = get_contacts_for_liaison_messages_for_group_secondary(Group.objects.get(acronym='ietf'))
         self.assertTrue(EMAIL_ALIASES['IETFCHAIR'] in contacts)
         # test iab
-        contacts = get_contacts_for_group(Group.objects.get(acronym='iab'))
+        contacts = get_contacts_for_liaison_messages_for_group_secondary(Group.objects.get(acronym='iab'))
         self.assertTrue(EMAIL_ALIASES['IABCHAIR'] in contacts)
         # test iesg
-        contacts = get_contacts_for_group(Group.objects.get(acronym='iesg'))
+        contacts = get_contacts_for_liaison_messages_for_group_secondary(Group.objects.get(acronym='iesg'))
         self.assertTrue(EMAIL_ALIASES['IESG'] in contacts)
 
     def test_needs_approval(self):
@@ -786,7 +786,10 @@ class LiaisonManagementTests(TestCase):
         self.assertTrue("Liaison Statement" in outbox[-1]["Subject"])
     
         self.assertTrue('to_contacts@' in outbox[-1]['To'])
+        self.assertTrue(submitter.email_address(), outbox[-1]['To'])
         self.assertTrue('cc@' in outbox[-1]['Cc'])
+
+
 
     def test_add_outgoing_liaison(self):
         RoleFactory(name_id='liaiman',group__type_id='sdo', person__user__username='ulm-liaiman')
@@ -810,7 +813,7 @@ class LiaisonManagementTests(TestCase):
         test_file.name = "unnamed"
         from_group = Group.objects.get(acronym="mars")
         to_group = Group.objects.filter(type="sdo")[0]
-        submitter = Person.objects.get(user__username="marschairman")
+        submitter = Person.objects.get(user__username="marschairman") 
         today = date_today(datetime.UTC)
         related_liaison = liaison
         r = self.client.post(url,
@@ -867,6 +870,8 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Liaison Statement" in outbox[-1]["Subject"])
         self.assertTrue('aread@' in outbox[-1]['To'])
+        self.assertTrue(submitter.email_address(), outbox[-1]['Cc'])
+        
 
     def test_add_outgoing_liaison_unapproved_post_only(self):
         RoleFactory(name_id='liaiman',group__type_id='sdo', person__user__username='ulm-liaiman')
