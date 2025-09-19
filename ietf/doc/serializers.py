@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 """django-rest-framework serializers"""
+
 from dataclasses import dataclass
 from typing import Literal, ClassVar
 
@@ -16,11 +17,19 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
     """Serializer for a DocumentAuthor in a response"""
 
     name = fields.CharField(source="person.plain_name")
+    titlepage_name = fields.CharField(default="")
     email = fields.EmailField(source="email.address", required=False)
 
     class Meta:
         model = DocumentAuthor
-        fields = ["person", "name", "email", "affiliation", "country"]
+        fields = [
+            "person",
+            "name",
+            "titlepage_name",
+            "email",
+            "affiliation",
+            "country",
+        ]
 
 
 @dataclass
@@ -140,6 +149,7 @@ class ContainingSubseriesSerializer(serializers.Serializer):
 
 class RfcMetadataSerializer(serializers.ModelSerializer):
     """Serialize metadata of an RFC"""
+
     RFC_FORMATS = ("xml", "txt", "html", "htmlized", "pdf", "ps")
 
     number = serializers.IntegerField(source="rfc_number")
@@ -217,28 +227,28 @@ class RfcSerializer(RfcMetadataSerializer):
 
 class SubseriesContentListSerializer(serializers.ListSerializer):
     """ListSerializer that gets its object from item.target"""
-    
+
     def to_representation(self, data):
         """
         List of object instances -> List of dicts of primitive datatypes.
         """
         # Dealing with nested relationships, data can be a Manager,
         # so, first get a queryset from the Manager if needed
-        iterable = (
-            data.all() if isinstance(data, BaseManager) else data
-        )
+        iterable = data.all() if isinstance(data, BaseManager) else data
         # Serialize item.target instead of item itself
         return [self.child.to_representation(item.target) for item in iterable]
 
 
 class SubseriesContentSerializer(RfcMetadataSerializer):
     """Serialize RFC contained in a subseries doc"""
+
     class Meta(RfcMetadataSerializer.Meta):
         list_serializer_class = SubseriesContentListSerializer
 
 
 class SubseriesDocSerializer(serializers.ModelSerializer):
     """Serialize a subseries document (e.g., a BCP or STD)"""
+
     contents = SubseriesContentSerializer(many=True)
 
     class Meta:
