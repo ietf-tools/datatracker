@@ -10,6 +10,7 @@ from django.utils import timezone
 
 import datetime, os, shutil, glob, re
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from typing import List, Optional      # pyflakes:ignore
 
@@ -89,10 +90,13 @@ def send_expire_warning_for_draft(doc):
         (doc.get_state_slug("draft") != "active")):
         return # don't warn about dead or inactive documents
 
-    expiration = doc.expires.astimezone(DEADLINE_TZINFO).date()
+    expiration = doc.expires.astimezone(
+        DEADLINE_TZINFO
+    ).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
     now_plus_12hours = timezone.now() + datetime.timedelta(hours=12)
-    soon = now_plus_12hours.date()
-    if expiration <= soon:
+    if expiration <= now_plus_12hours:
         # The document will expire very soon, which will send email to the
         # same people, so do not send the warning at this point in time
         return
