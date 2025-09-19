@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import re
 import datetime
+from secrets import compare_digest
 
 from typing import Optional, cast         # pyflakes:ignore
 from urllib.parse import urljoin
@@ -255,19 +256,48 @@ def search_submission(request):
     )
 
 
-def can_edit_submission(user, submission, access_token):
-    key_matched = access_token and submission.access_token() == access_token
-    if not key_matched: key_matched = submission.access_key == access_token # backwards-compat
-    return key_matched or has_role(user, "Secretariat")
+def access_token_is_valid(submission: Submission, access_token: str):
+    """Check whether access_token is valid for submission, in constant time"""
+    token_matched = compare_digest(submission.access_token(), access_token)
+    # also compare key directly for backwards compatibility
+    key_matched = compare_digest(submission.access_key, access_token)
+    return token_matched or key_matched
+
+
+def auth_token_is_valid(submission: Submission, auth_token: str):
+    """Check whether auth_token is valid for submission, in constant time"""
+    auth_key = submission.auth_key
+    if not auth_key:
+        # Make the same calls as the other branch to keep constant time, then
+        # return False because there is no auth key
+        compare_digest(generate_access_token("fake"), auth_token)
+        compare_digest("fake", auth_token)
+        return False
+    else:
+        token_matched = compare_digest(generate_access_token(auth_key), auth_token)
+        # also compare key directly for backwards compatibility
+        key_matched = compare_digest(auth_key, auth_token)
+        return token_matched or key_matched
+
+
+def can_edit_submission(user, submission: Submission, access_token: str | None):
+    if  has_role(user, "Secretariat"):
+        return True
+    elif not access_token:
+        return False
+    return access_token_is_valid(submission, access_token)
+
 
 def submission_status(request, submission_id, access_token=None):
     # type: (HttpRequest, str, Optional[str]) -> HttpResponse
     submission = get_object_or_404(Submission, pk=submission_id)
 
-    key_matched = access_token and submission.access_token() == access_token
-    if not key_matched: key_matched = submission.access_key == access_token # backwards-compat
-    if access_token and not key_matched:
-        raise Http404
+    if access_token:
+        key_matched = access_token_is_valid(submission, access_token)
+        if not key_matched:
+            raise Http404
+    else:
+        key_matched = False
 
     if submission.state.slug == "cancel":
         errors = {}
@@ -621,8 +651,7 @@ def edit_submission(request, submission_id, access_token=None):
 def confirm_submission(request, submission_id, auth_token):
     submission = get_object_or_404(Submission, pk=submission_id)
 
-    key_matched = submission.auth_key and auth_token == generate_access_token(submission.auth_key)
-    if not key_matched: key_matched = auth_token == submission.auth_key # backwards-compat
+    key_matched = submission.auth_key and auth_token_is_valid(submission, auth_token)
 
     if request.method == 'POST' and submission.state_id in ("auth", "aut-appr") and key_matched:
         # Set a temporary state 'confirmed' to avoid entering this code
