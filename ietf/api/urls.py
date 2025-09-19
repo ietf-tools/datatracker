@@ -24,6 +24,7 @@ from .routers import PrefixedSimpleRouter
 # todo more general name for this API?
 red_router = PrefixedSimpleRouter(name_prefix="ietf.api.red_api")  # red api router
 red_router.register("doc", doc_api.RfcViewSet)
+red_router.register("subseries", doc_api.SubseriesViewSet, basename="subseries")
 
 api.autodiscover()
 

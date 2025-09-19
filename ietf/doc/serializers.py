@@ -3,12 +3,13 @@
 from dataclasses import dataclass
 from typing import Literal, ClassVar
 
+from django.db.models.manager import BaseManager
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers, fields
 
 from ietf.group.serializers import GroupSerializer
 from ietf.name.serializers import StreamNameSerializer
-from .models import Document, DocumentAuthor
+from .models import Document, DocumentAuthor, RelatedDocument
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
@@ -114,10 +115,10 @@ class RfcStatusSerializer(serializers.Serializer):
         return super().to_representation(instance=RfcStatus.from_document(instance))
 
 
-class RelatedDraftSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Document
-        fields = ["id", "name", "title"]
+class RelatedDraftSerializer(serializers.Serializer):
+    id = serializers.IntegerField(source="source.id")
+    name = serializers.CharField(source="source.name")
+    title = serializers.CharField(source="source.title")
 
 
 class RelatedRfcSerializer(serializers.Serializer):
@@ -144,7 +145,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     area = GroupSerializer(source="group.area", required=False)
     stream = StreamNameSerializer()
     identifiers = fields.SerializerMethodField()
-    draft = RelatedDraftSerializer(source="came_from_draft", read_only=True)  # todo prefetch this
+    draft = serializers.SerializerMethodField()
     obsoletes = RelatedRfcSerializer(many=True, read_only=True)
     obsoleted_by = ReverseRelatedRfcSerializer(many=True, read_only=True)
     updates = RelatedRfcSerializer(many=True, read_only=True)
@@ -190,6 +191,14 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             )
         return DocIdentifierSerializer(instance=identifiers, many=True).data
 
+    @extend_schema_field(RelatedDraftSerializer)
+    def get_draft(self, object):
+        try:
+            related_doc = object.drafts[0]
+        except IndexError:
+            return None
+        return RelatedDraftSerializer(related_doc).data
+
 
 class RfcSerializer(RfcMetadataSerializer):
     """Serialize an RFC, including its metadata and text content if available"""
@@ -199,3 +208,38 @@ class RfcSerializer(RfcMetadataSerializer):
     class Meta:
         model = RfcMetadataSerializer.Meta.model
         fields = RfcMetadataSerializer.Meta.fields + ["text"]
+
+
+class SubseriesContentListSerializer(serializers.ListSerializer):
+    """ListSerializer that gets its object from item.target"""
+    
+    def to_representation(self, data):
+        """
+        List of object instances -> List of dicts of primitive datatypes.
+        """
+        # Dealing with nested relationships, data can be a Manager,
+        # so, first get a queryset from the Manager if needed
+        iterable = (
+            data.all() if isinstance(data, BaseManager) else data
+        )
+        # Serialize item.target instead of item itself
+        return [self.child.to_representation(item.target) for item in iterable]
+
+
+class SubseriesContentSerializer(RfcMetadataSerializer):
+    """Serialize RFC contained in a subseries doc"""
+    class Meta(RfcMetadataSerializer.Meta):
+        list_serializer_class = SubseriesContentListSerializer
+
+
+class SubseriesDocSerializer(serializers.ModelSerializer):
+    """Serialize a subseries document (e.g., a BCP or STD)"""
+    contents = SubseriesContentSerializer(many=True)
+
+    class Meta:
+        model = Document
+        fields = [
+            "name",
+            "type",
+            "contents",
+        ]
