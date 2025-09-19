@@ -133,6 +133,11 @@ class ReverseRelatedRfcSerializer(serializers.Serializer):
     title = serializers.CharField(source="source.title")
 
 
+class ContainingSubseriesSerializer(serializers.Serializer):
+    name = serializers.CharField(source="source.name")
+    type = serializers.CharField(source="source.type_id")
+
+
 class RfcMetadataSerializer(serializers.ModelSerializer):
     """Serialize metadata of an RFC"""
     RFC_FORMATS = ("xml", "txt", "html", "htmlized", "pdf", "ps")
@@ -150,7 +155,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     obsoleted_by = ReverseRelatedRfcSerializer(many=True, read_only=True)
     updates = RelatedRfcSerializer(many=True, read_only=True)
     updated_by = ReverseRelatedRfcSerializer(many=True, read_only=True)
-    is_also = serializers.ListField(child=serializers.CharField(), read_only=True)
+    subseries = ContainingSubseriesSerializer(many=True, read_only=True)
     see_also = serializers.ListField(child=serializers.CharField(), read_only=True)
     formats = fields.MultipleChoiceField(choices=RFC_FORMATS)
     keywords = serializers.ListField(child=serializers.CharField(), read_only=True)
@@ -173,7 +178,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             "obsoleted_by",
             "updates",
             "updated_by",
-            "is_also",
+            "subseries",
             "see_also",
             "draft",
             "abstract",
