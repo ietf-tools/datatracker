@@ -16,8 +16,6 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
-from django.core.validators import validate_email
 from django.http import HttpResponse, Http404, JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
@@ -43,13 +41,11 @@ from ietf.api.serializer import JsonExportMixin
 from ietf.doc.utils import DraftAliasGenerator, fuzzy_find_documents
 from ietf.group.utils import GroupAliasGenerator, role_holder_emails
 from ietf.ietfauth.utils import role_required
-from ietf.ietfauth.views import send_account_creation_email
 from ietf.ipr.utils import ingest_response_email as ipr_ingest_response_email
-from ietf.meeting.models import Meeting, Registration
-from ietf.nomcom.models import Volunteer, NomCom
+from ietf.meeting.models import Meeting
+from ietf.meeting.utils import import_registration_json_validator, process_single_registration
 from ietf.nomcom.utils import ingest_feedback_email as nomcom_ingest_feedback_email
 from ietf.person.models import Person, Email
-from ietf.stats.models import MeetingRegistration
 from ietf.sync.iana import ingest_review_email as iana_ingest_review_email
 from ietf.utils import log
 from ietf.utils.decorators import require_api_key
@@ -118,7 +114,11 @@ class ApiV2PersonExportView(DetailView, JsonExportMixin):
     model = Person
 
     def err(self, code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     def post(self, request):
         querydict = request.POST.copy()
@@ -150,128 +150,17 @@ class ApiV2PersonExportView(DetailView, JsonExportMixin):
 #     else:
 #         return HttpResponse(status=405)
 
-@require_api_key
-@role_required('Robot')
-@csrf_exempt
-def api_new_meeting_registration(request):
-    '''REST API to notify the datatracker about a new meeting registration'''
-    def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
-    required_fields = [ 'meeting', 'first_name', 'last_name', 'affiliation', 'country_code',
-                        'email', 'reg_type', 'ticket_type', 'checkedin', 'is_nomcom_volunteer']
-    fields = required_fields + []
-    if request.method == 'POST':
-        # parameters:
-        #   apikey:
-        #   meeting
-        #   name
-        #   email
-        #   reg_type (In Person, Remote, Hackathon Only)
-        #   ticket_type (full_week, one_day, student)
-        #   
-        data = {'attended': False, }
-        missing_fields = []
-        for item in fields:
-            value = request.POST.get(item, None)
-            if value is None and item in required_fields:
-                missing_fields.append(item)
-            data[item] = value
-        if missing_fields:
-            return err(400, "Missing parameters: %s" % ', '.join(missing_fields))
-        number = data['meeting']
-        try:
-            meeting = Meeting.objects.get(number=number)
-        except Meeting.DoesNotExist:
-            return err(400, "Invalid meeting value: '%s'" % (number, ))
-        reg_type = data['reg_type']
-        email = data['email']
-        try:
-            validate_email(email)
-        except ValidationError:
-            return err(400, "Invalid email value: '%s'" % (email, ))
-        if request.POST.get('cancelled', 'false') == 'true':
-            MeetingRegistration.objects.filter(
-                meeting_id=meeting.pk,
-                email=email,
-                reg_type=reg_type).delete()
-            return HttpResponse('OK', status=200, content_type='text/plain')
-        else:
-            object, created = MeetingRegistration.objects.get_or_create(
-                meeting_id=meeting.pk,
-                email=email,
-                reg_type=reg_type)
-            try:
-                # Update attributes
-                for key in set(data.keys())-set(['attended', 'apikey', 'meeting', 'email']):
-                    if key == 'checkedin':
-                        new = bool(data.get(key).lower() == 'true')
-                    else:
-                        new = data.get(key)
-                    setattr(object, key, new)
-                person = Person.objects.filter(email__address=email)
-                if person.exists():
-                    object.person = person.first()
-                object.save()
-            except ValueError as e:
-                return err(400, "Unexpected POST data: %s" % e)
-            response = "Accepted, New registration" if created else "Accepted, Updated registration"
-            if User.objects.filter(username__iexact=email).exists() or Email.objects.filter(address=email).exists():
-                pass
-            else:
-                send_account_creation_email(request, email)
-                response += ", Email sent"
-
-            # handle nomcom volunteer
-            if request.POST.get('is_nomcom_volunteer', 'false').lower() == 'true' and object.person:
-                try:
-                    nomcom = NomCom.objects.get(is_accepting_volunteers=True)
-                except (NomCom.DoesNotExist, NomCom.MultipleObjectsReturned):
-                    nomcom = None
-                if nomcom:
-                    Volunteer.objects.get_or_create(
-                        nomcom=nomcom,
-                        person=object.person,
-                        defaults={
-                            "affiliation": data["affiliation"],
-                            "origin": "registration"
-                        }
-                    )
-            return HttpResponse(response, status=202, content_type='text/plain')
-    else:
-        return HttpResponse(status=405)
-
-
-_new_registration_json_validator = jsonschema.Draft202012Validator(
-    schema={
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "meeting": {"type": "string"},
-                "first_name": {"type": "string"},
-                "last_name": {"type": "string"},
-                "affiliation": {"type": "string"},
-                "country_code": {"type": "string"},
-                "email": {"type": "string"},
-                "reg_type": {"type": "string"},
-                "ticket_type": {"type": "string"},
-                "checkedin": {"type": "boolean"},
-                "is_nomcom_volunteer": {"type": "boolean"},
-                "cancelled": {"type": "boolean"},
-            },
-            "required": ["meeting", "first_name", "last_name", "affiliation", "country_code", "email", "reg_type", "ticket_type", "checkedin", "is_nomcom_volunteer", "cancelled"],
-            "additionalProperties": "false"
-        }
-    }
-)
-
 
 @requires_api_token
 @csrf_exempt
 def api_new_meeting_registration_v2(request):
     '''REST API to notify the datatracker about a new meeting registration'''
     def _http_err(code, text):
-        return HttpResponse(text, status=code, content_type="text/plain")
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     def _api_response(result):
         return JsonResponse(data={"result": result})
@@ -285,7 +174,7 @@ def api_new_meeting_registration_v2(request):
     # Validate
     try:
         payload = json.loads(request.body)
-        _new_registration_json_validator.validate(payload)
+        import_registration_json_validator.validate(payload)
     except json.decoder.JSONDecodeError as err:
         return _http_err(400, f"JSON parse error at line {err.lineno} col {err.colno}: {err.msg}")
     except jsonschema.exceptions.ValidationError as err:
@@ -293,93 +182,29 @@ def api_new_meeting_registration_v2(request):
     except Exception:
         return _http_err(400, "Invalid request format")
 
-    # Validate consistency
-    # - if receive multiple records they should be for same meeting, same person (email)
-    if len(payload) > 1:
-        if len(set([r['meeting'] for r in payload])) != 1:
-            return _http_err(400, "Different meeting values")
-        if len(set([r['email'] for r in payload])) != 1:
-            return _http_err(400, "Different email values")
-
-    # Validate meeting
-    number = payload[0]['meeting']
+    # Get the meeting ID from the first registration, the API only deals with one meeting at a time
+    first_email = next(iter(payload['objects']))
+    meeting_number = payload['objects'][first_email]['meeting']
     try:
-        meeting = Meeting.objects.get(number=number)
+        meeting = Meeting.objects.get(number=meeting_number)
     except Meeting.DoesNotExist:
-        return _http_err(400, "Invalid meeting value: '%s'" % (number, ))
+        return _http_err(400, f"Invalid meeting value: {meeting_number}")
 
-    # Validate email
-    email = payload[0]['email']
+    # confirm email exists
     try:
-        validate_email(email)
-    except ValidationError:
-        return _http_err(400, "Invalid email value: '%s'" % (email, ))
+        Email.objects.get(address=first_email)
+    except Email.DoesNotExist:
+        return _http_err(400, f"Unknown email: {first_email}")
 
-    # get person
-    person = Person.objects.filter(email__address=email).first()
-    if not person:
-        log.log(f"api_new_meeting_registration_v2 no Person found for {email}")
+    reg_data = payload['objects'][first_email]
 
-    registration = payload[0]
-    # handle cancelled
-    if registration['cancelled']:
-        if len(payload) > 1:
-            return _http_err(400, "Error. Received cancelled registration notification with more than one record. ({})".format(email))
-        try:
-            obj = Registration.objects.get(meeting=meeting, email=email)
-        except Registration.DoesNotExist:
-            return _http_err(400, "Error. Received cancelled registration notification for non-existing registration. ({})".format(email))
-        if obj.tickets.count() == 1:
-            obj.delete()
-        else:
-            obj.tickets.filter(
-                attendance_type__slug=registration.reg_type,
-                ticket_type__slug=registration.ticket_type).delete()
-        return HttpResponse('Success', status=202, content_type='text/plain')
+    process_single_registration(reg_data, meeting)
 
-    # create or update MeetingRegistration
-    update_fields = ['first_name', 'last_name', 'affiliation', 'country_code', 'checkedin', 'is_nomcom_volunteer']
-    try:
-        reg = Registration.objects.get(meeting=meeting, email=email)
-        for key, value in registration.items():
-            if key in update_fields:
-                setattr(reg, key, value)
-        reg.save()
-    except Registration.DoesNotExist:
-        reg = Registration.objects.create(
-            meeting_id=meeting.pk,
-            person=person,
-            email=email,
-            first_name=registration['first_name'],
-            last_name=registration['last_name'],
-            affiliation=registration['affiliation'],
-            country_code=registration['country_code'],
-            checkedin=registration['checkedin'])
-
-    # handle registration tickets
-    reg.tickets.all().delete()
-    for registration in payload:
-        reg.tickets.create(
-            attendance_type_id=registration['reg_type'],
-            ticket_type_id=registration['ticket_type'],
-        )
-        # handle nomcom volunteer
-        if registration['is_nomcom_volunteer'] and person:
-            try:
-                nomcom = NomCom.objects.get(is_accepting_volunteers=True)
-            except (NomCom.DoesNotExist, NomCom.MultipleObjectsReturned):
-                nomcom = None
-            if nomcom:
-                Volunteer.objects.get_or_create(
-                    nomcom=nomcom,
-                    person=person,
-                    defaults={
-                        "affiliation": registration["affiliation"],
-                        "origin": "registration"
-                    }
-                )
-
-    return HttpResponse('Success', status=202, content_type='text/plain')
+    return HttpResponse(
+        'Success',
+        status=202,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 
 def version(request):
@@ -698,7 +523,11 @@ def related_email_list(request, email):
     to Datatracker, via Person object
     """
     def _http_err(code, text):
-        return HttpResponse(text, status=code, content_type="text/plain")
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     if request.method == "GET":
         try:
@@ -710,7 +539,7 @@ def related_email_list(request, email):
             return JsonResponse({"addresses": []})
         return JsonResponse(
             {
-                "addresses": list(person.email_set.exclude(address=email).values_list("address", flat=True)),
+                "addresses": list(person.email_set.values_list("address", flat=True)),
             }
         )
     return HttpResponse(status=405)
@@ -824,7 +653,11 @@ def ingest_email_handler(request, test_mode=False):
     """
 
     def _http_err(code, text):
-        return HttpResponse(text, status=code, content_type="text/plain")
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     def _api_response(result):
         return JsonResponse(data={"result": result})

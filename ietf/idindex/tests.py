@@ -3,7 +3,7 @@
 
 
 import datetime
-import mock
+from unittest import mock
 
 from pathlib import Path
 from tempfile import TemporaryDirectory

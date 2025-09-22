@@ -1687,7 +1687,7 @@ def add_comment(request, name):
                 group__acronym=doc.group.acronym,
                 person__user=request.user)))
     else:
-        can_add_comment = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair"))
+        can_add_comment = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "RFC Editor"))
     if not can_add_comment:
         # The user is a chair or secretary, but not for this WG or RG
         permission_denied(request, "You need to be a chair or secretary of this group to add a comment.")

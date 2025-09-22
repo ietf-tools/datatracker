@@ -4,7 +4,7 @@
 
 import datetime
 import json
-import mock
+from unittest import mock
 
 from io import StringIO, BytesIO
 from PIL import Image

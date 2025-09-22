@@ -32,12 +32,19 @@
                 <a class="btn btn-primary" href="{% url 'ietf.ietfauth.views.change_password' %}">Change password</a>
             </div>
         </div>
-        {% if person.photo %}
+        {% if person.photo or person.role_set.exists %}
             <div class="row mb-3">
                 <label class="col-sm-2 col-form-label fw-bold">
                     Photo
                 </label>
-                <div class="col-sm-10">{% include "person/photo.html" with person=person %}</div>
+                <div class="col-sm-10">
+                    {% if person.photo %}
+                    {% include "person/photo.html" with person=person %}
+                    {% endif %}
+                    {% if person.role_set.exists %}
+                    <p>Email <a href="support@ietf.org">support@ietf.org</a>
+                    to update your photo.</p></div>
+                    {% endif %}
             </div>
         {% endif %}
         <div class="row mb-3">

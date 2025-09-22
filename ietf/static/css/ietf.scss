@@ -229,7 +229,7 @@ th,
 .group-menu .dropdown-menu {
     height: auto;
     width: auto;
-    max-height: 35em;
+    max-height: 95vh;
     overflow-x: hidden;
     overflow-y: auto;
 }
@@ -510,23 +510,23 @@ td.position-empty {
     tr.position-notready-row,
     tr.position-discuss-row,
     tr.position-block-row {
-        background-color: shade-color($color-discuss, 85%);
+        background-color: shade-color($color-discuss, 65%);
     }
 
     tr.position-yes-row {
-        background-color: shade-color($color-yes, 75%);
+        background-color: shade-color($color-yes, 65%);
     }
 
     tr.position-noobj-row {
-        background-color: shade-color($color-noobj, 75%);
+        background-color: shade-color($color-noobj, 65%);
     }
 
     tr.position-abstain-row {
-        background-color: shade-color($color-abstain, 85%);
+        background-color: shade-color($color-abstain, 65%);
     }
 
     tr.position-recuse-row {
-        background-color: shade-color($color-recuse, 85%);
+        background-color: shade-color($color-recuse, 65%);
     }
 }
 

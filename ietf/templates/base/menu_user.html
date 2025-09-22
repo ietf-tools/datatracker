@@ -115,6 +115,37 @@
             </a>
         </li>
     {% endif %}
+    <li class="dropend">
+      <a class="dropdown-item dropdown-toggle" href="#">
+        List subscriptions
+      </a>
+      <ul class="dropdown-menu">
+            <li>
+                <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                href="https://mailman3.ietf.org/mailman3/lists/">
+                    IETF Lists
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                href="https://mailman3.irtf.org/mailman3/lists/">
+                IRTF Lists
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                href="https://mailman3.iab.org/mailman3/lists/">
+                    IAB Lists
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                href="https://mailman3.rfc-editor.org/mailman3/lists/">
+                    RFC-Editor Lists
+                </a>
+            </li>
+        </ul>
+    </li>
     {% if user|has_role:"Reviewer" %}
         <li>
             <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"

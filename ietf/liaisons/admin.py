@@ -24,7 +24,7 @@ class LiaisonStatementAdmin(admin.ModelAdmin):
     list_display = ['id', 'title', 'submitted', 'from_groups_short_display', 'purpose', 'related_to']
     list_display_links = ['id', 'title']
     ordering = ('title', )
-    raw_id_fields = ('from_contact', 'attachments', 'from_groups', 'to_groups')
+    raw_id_fields = ('attachments', 'from_groups', 'to_groups')
     #filter_horizontal = ('from_groups', 'to_groups')
     inlines = [ RelatedLiaisonStatementInline, LiaisonStatementAttachmentInline ]
 

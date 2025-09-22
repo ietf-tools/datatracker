@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2023, All Rights Reserved
+# Copyright The IETF Trust 2010-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -1221,7 +1221,7 @@ class Document(StorableMixin, DocumentInfo):
             elif rev_events.exists():
                 time = rev_events.first().time
             else:
-                time = datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
+                time = datetime.datetime.fromtimestamp(0, datetime.UTC)
             dh = DocHistory(name=self.name, rev=rev, doc=self, time=time, type=self.type, title=self.title,
                              stream=self.stream, group=self.group)
 
@@ -1679,3 +1679,6 @@ class StoredObject(models.Model):
         indexes = [
             models.Index(fields=["doc_name", "doc_rev"]),
         ]
+
+    def __str__(self):
+        return f"{self.store}:{self.name}"

@@ -981,7 +981,7 @@ def view_feedback_topic(request, year, topic_id):
     reviewer = request.user.person
 
     last_seen = TopicFeedbackLastSeen.objects.filter(reviewer=reviewer,topic=topic).first()
-    last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1, month=1, day=1, tzinfo=datetime.timezone.utc)
+    last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1, month=1, day=1, tzinfo=datetime.UTC)
     if last_seen:
         last_seen.save()
     else:
@@ -1017,7 +1017,10 @@ def view_feedback_nominee(request, year, nominee_id):
                                          'positions': ','.join([str(p) for p in feedback.positions.all()]),
                                          },
                                         request=request)
-            response = HttpResponse(response, content_type='text/plain')
+            response = HttpResponse(
+                response,
+                content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+            )
             response['Content-Disposition'] = f'attachment; filename="{fn}"'
             return response
         elif submit == 'reclassify':
@@ -1041,7 +1044,7 @@ def view_feedback_nominee(request, year, nominee_id):
                                   })
 
     last_seen = FeedbackLastSeen.objects.filter(reviewer=reviewer,nominee=nominee).first()
-    last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1, month=1, day=1, tzinfo=datetime.timezone.utc)
+    last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1, month=1, day=1, tzinfo=datetime.UTC)
     if last_seen:
         last_seen.save()
     else:

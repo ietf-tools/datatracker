@@ -35,6 +35,18 @@ echo "Running Datatracker checks..."
 
 # Migrate, adjusting to what the current state of the underlying database might be:
 
+# On production, the blobdb tables are in a separate database. Manipulate migration
+# history to ensure that they're created for the sandbox environment that runs it
+# all from a single database.
+echo "Ensuring blobdb relations exist..."
+/usr/local/bin/python ./ietf/manage.py migrate --settings=settings_local --fake blobdb zero
+if ! /usr/local/bin/python ./ietf/manage.py migrate --settings=settings_local blobdb; then
+  # If we are restarting a sandbox, the migration may already have run and re-running
+  # it will fail. Assume that happened and fake it.
+  /usr/local/bin/python ./ietf/manage.py migrate --settings=settings_local --fake blobdb
+fi
+
+# Now run the migrations for real
 echo "Running Datatracker migrations..."
 /usr/local/bin/python ./ietf/manage.py migrate --settings=settings_local
 

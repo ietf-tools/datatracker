@@ -3,16 +3,19 @@
 
 
 import re
+
 from unidecode import unidecode
 
 from django import forms
+from django.contrib.auth.models import User
+from django.contrib.auth import password_validation
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.contrib.auth.models import User
 
 from ietf.person.models import Person, Email
 from ietf.mailinglists.models import Allowlisted
 from ietf.utils.text import isascii
+from .password_validation import StrongPasswordValidator
 
 from .validators import prevent_at_symbol, prevent_system_name, prevent_anonymous_name, is_allowed_address
 from .widgets import PasswordStrengthInput, PasswordConfirmationInput
@@ -30,20 +33,55 @@ class RegistrationForm(forms.Form):
         return email
 
 
+class PasswordStrengthField(forms.CharField):
+    widget = PasswordStrengthInput(
+        attrs={
+            "class": "password_strength",
+            "data-disable-strength-enforcement": "",  # usually removed in init
+        }
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for pwval in password_validation.get_default_password_validators():
+            if isinstance(pwval, password_validation.MinimumLengthValidator):
+                self.widget.attrs["minlength"] = pwval.min_length
+            elif isinstance(pwval, StrongPasswordValidator):
+                self.widget.attrs.pop(
+                    "data-disable-strength-enforcement", None
+                )
+
+    
+
 class PasswordForm(forms.Form):
-    password = forms.CharField(widget=PasswordStrengthInput(attrs={'class':'password_strength'}))
+    password = PasswordStrengthField()
     password_confirmation = forms.CharField(widget=PasswordConfirmationInput(
                                                         confirm_with='password',
                                                         attrs={'class':'password_confirmation'}),
                                             help_text="Enter the same password as above, for verification.",)
-                                            
+
+    def __init__(self, *args, user=None, **kwargs):
+        # user is a kw-only argument to avoid interfering with the signature
+        # when this class is mixed with ModelForm in PersonPasswordForm
+        self.user = user
+        super().__init__(*args, **kwargs)
 
     def clean_password_confirmation(self):
-        password = self.cleaned_data.get("password", "")
-        password_confirmation = self.cleaned_data["password_confirmation"]
+        # clean fields here rather than a clean() method so validation is
+        # still enforced in PersonPasswordForm without having to override its
+        # clean() method
+        password = self.cleaned_data.get("password")
+        password_confirmation = self.cleaned_data.get("password_confirmation")
         if password != password_confirmation:
-            raise forms.ValidationError("The two password fields didn't match.")
+            raise ValidationError(
+                "The password confirmation is different than the new password" 
+            )
+        try:
+            password_validation.validate_password(password_confirmation, self.user)
+        except ValidationError as err:
+            self.add_error("password", err)
         return password_confirmation
+
 
 def ascii_cleaner(supposedly_ascii):
     outside_printable_ascii_pattern = r'[^\x20-\x7F]'
@@ -170,33 +208,21 @@ class AllowlistForm(forms.ModelForm):
         model = Allowlisted
         exclude = ['by', 'time' ]
 
-    
-from django import forms
 
-
-class ChangePasswordForm(forms.Form):
+class ChangePasswordForm(PasswordForm):
     current_password = forms.CharField(widget=forms.PasswordInput)
+    field_order = ["current_password", "password", "password_confirmation"]
 
-    new_password = forms.CharField(widget=PasswordStrengthInput(attrs={'class':'password_strength'}))
-    new_password_confirmation = forms.CharField(widget=PasswordConfirmationInput(
-                                                    confirm_with='new_password',
-                                                    attrs={'class':'password_confirmation'}))
-
-    def __init__(self, user, data=None):
-        self.user = user
-        super(ChangePasswordForm, self).__init__(data)
+    def __init__(self, user, *args, **kwargs):
+        # user arg is optional in superclass, but required for this form
+        super().__init__(*args, user=user, **kwargs)
 
     def clean_current_password(self):
-        password = self.cleaned_data.get('current_password', None)
+        # n.b., password = None is handled by check_password and results in a failed check
+        password = self.cleaned_data.get("current_password", None)
         if not self.user.check_password(password):
-            raise ValidationError('Invalid password')
+            raise ValidationError("Invalid password")
         return password
-            
-    def clean(self):
-        new_password = self.cleaned_data.get('new_password', None)
-        conf_password = self.cleaned_data.get('new_password_confirmation', None)
-        if not new_password == conf_password:
-            raise ValidationError("The password confirmation is different than the new password")
 
 
 class ChangeUsernameForm(forms.Form):

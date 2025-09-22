@@ -90,19 +90,29 @@ if [[ "${CELERY_ROLE}" == "worker" ]]; then
     run_as_celery_uid /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check
 fi
 
+USER_BIN_PATH="/home/dev/.local/bin"
+WATCHMEDO="$USER_BIN_PATH/watchmedo"
+# Find a celery that works
+if [[ -x "$USER_BIN_PATH/celery" ]]; then
+    # This branch is used for dev
+    CELERY="$USER_BIN_PATH/celery"
+else
+    # This branch is used for sandbox instances
+    CELERY="/usr/local/bin/celery"
+fi
 trap 'trap "" TERM; cleanup' TERM
 # start celery in the background so we can trap the TERM signal
-if [[ -n "${DEV_MODE}" ]]; then
-  watchmedo auto-restart \
+if [[ -n "${DEV_MODE}" && -x "${WATCHMEDO}" ]]; then
+  $WATCHMEDO auto-restart \
             --patterns '*.py' \
             --directory 'ietf' \
             --recursive \
             --debounce-interval 5 \
             -- \
-            celery --app="${CELERY_APP:-ietf}" "${CELERY_OPTS[@]}" "$@" &
+            $CELERY --app="${CELERY_APP:-ietf}" "${CELERY_OPTS[@]}" $@ &
   celery_pid=$!
 else
-  celery --app="${CELERY_APP:-ietf}" "${CELERY_OPTS[@]}" "$@" &
+  $CELERY --app="${CELERY_APP:-ietf}" "${CELERY_OPTS[@]}" "$@" &
   celery_pid=$!
 fi
 

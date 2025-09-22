@@ -1,4 +1,4 @@
-FROM ghcr.io/ietf-tools/datatracker-celery:latest
+FROM ghcr.io/ietf-tools/datatracker-app-base:latest
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -34,7 +34,7 @@ RUN bash /tmp/library-scripts/docker-setup-python.sh "none" "/usr/local" "${PIPX
 RUN rm -rf /tmp/library-scripts
 
 # Copy the startup file
-COPY dev/celery/docker-init.sh /docker-init.sh
+COPY docker/scripts/app-init-celery.sh /docker-init.sh
 RUN sed -i 's/\r$//' /docker-init.sh && \
     chmod +x /docker-init.sh
 

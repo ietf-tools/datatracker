@@ -40,14 +40,14 @@
                 <th scope="col" data-sort="title">Title</th>
             </tr>
         </thead>
-        {% if rfcs %}
+        {% if rfcs|length > 0 %}
             <tbody>
                 {% for rfc in rfcs %}
                     <tr>
                         <td class="text-nowrap">
                             <a href="{{ rfc.doc.get_absolute_url }}">{{ rfc.doc.name|prettystdname }}</a>
                         </td>
-                        <td class="text-nowrap">{{ rfc.doc.intended_std_level.name }}</td>
+                        <td class="text-nowrap">{{ rfc.doc.std_level.name }}</td>
                         <td>
                             <a href="{{ rfc.doc.group.about_url }}">{{ rfc.doc.group.acronym }}</a>
                         </td>

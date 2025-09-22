@@ -1,13 +1,20 @@
-{% load ietf_filters %}{% autoescape off %}Title: {{ liaison.title|clean_whitespace }}
+{% load ietf_filters group_filters %}{% autoescape off %}Title: {{ liaison.title|clean_whitespace }}
 Submission Date: {{ liaison.submitted|date:"Y-m-d" }}
 URL of the IETF Web page: {{ liaison.get_absolute_url }}
+
+To: {% for g in liaison.to_groups.all %}{{g|name_with_conditional_acronym}}{% if not forloop.last %}, {% endif %}{% endfor %}
+From: {% for g in liaison.from_groups.all %}{{g|name_with_conditional_acronym}}{% if not forloop.last %}, {% endif %}{% endfor %}
+Purpose: {{ liaison.purpose.name }}
 {% if liaison.deadline %}Please reply by {{ liaison.deadline }}{% endif %}
-From: {% if liaison.from_contact %}{{ liaison.from_contact.formatted_email }}{% endif %}
+
+Email Addresses
+---------------
+From: {% if liaison.from_contact %}{{ liaison.from_contact }}{% endif %}
 To: {{ liaison.to_contacts }}
 Cc: {{ liaison.cc_contacts }}
 Response Contacts: {{ liaison.response_contacts }}
 Technical Contacts: {{ liaison.technical_contacts }}
-Purpose: {{ liaison.purpose.name }}
+
 {% for related in liaison.source_of_set.all %}
 Referenced liaison: {% if related.target.title %}{{ related.target.title }}{% else %}Liaison #{{ related.target.pk }}{% endif %} ({{ related.target.get_absolute_url }})
 {% endfor %}

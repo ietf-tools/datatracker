@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2023, All Rights Reserved #}
+{# Copyright The IETF Trust 2023-2025, All Rights Reserved #}
 {% load origin %}
 {% load static %}
 {% load ietf_filters %}
@@ -49,7 +49,12 @@
                 <th scope="row">
                     <a href="{% url 'ietf.doc.views_help.state_help' type='statement' %}">State</a>
                 </th>
-                <td class="edit"></td>
+                <td class="edit">{% if can_manage %}
+                    <a class="btn btn-primary btn-sm"
+                       href="{% url 'ietf.doc.views_statement.change_statement_state' name=doc.name %}">
+                        Edit
+                    </a>
+                {% endif %}</td>
                 <td id="statement-state">
                     {% if doc.get_state %}
                         <span title="{{ doc.get_state.desc }}" class="badge rounded-pill {% if doc.get_state.name|slugify == 'active' %}text-bg-success{% else %}text-bg-warning{% endif %}">{{ doc.get_state.name }}</span>

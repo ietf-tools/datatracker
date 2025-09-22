@@ -61,6 +61,7 @@ from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission, Attended
 from ietf.meeting.models import ImportantDate, SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
+from ietf.meeting.models import Registration
 from ietf.meeting.forms import ( CustomDurationField, SwapDaysForm, SwapTimeslotsForm, ImportMinutesForm,
                                  TimeSlotCreateForm, TimeSlotEditForm, SessionCancelForm, SessionEditForm )
 from ietf.meeting.helpers import get_person_by_email, get_schedule_by_name
@@ -98,7 +99,6 @@ from ietf.meeting.utils import get_activity_stats, post_process, create_recordin
 from ietf.meeting.utils import participants_for_meeting, generate_bluesheet, bluesheet_data, save_bluesheet
 from ietf.message.utils import infer_message
 from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
-from ietf.stats.models import MeetingRegistration
 from ietf.utils import markdown
 from ietf.utils.decorators import require_api_key
 from ietf.utils.hedgedoc import Note, NoteError
@@ -117,6 +117,9 @@ from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSession
     InterimCancelForm, InterimSessionInlineFormSet, RequestMinutesForm,
     UploadAgendaForm, UploadBlueSheetForm, UploadMinutesForm, UploadSlidesForm,
     UploadNarrativeMinutesForm)
+
+from icalendar import Calendar, Event
+from ietf.doc.templatetags.ietf_filters import absurl
 
 request_summary_exclude_group_types = ['team']
 
@@ -137,6 +140,10 @@ def send_interim_change_notice(request, meeting):
     message.related_groups.add(group)
     send_mail_message(request, message)
 
+def parse_ical_line_endings(ical):
+    """Parse icalendar line endings to ensure they are RFC 5545 compliant"""
+    return re.sub(r'\r(?!\n)|(?<!\r)\n', '\r\n', ical)
+
 # -------------------------------------------------
 # View Functions
 # -------------------------------------------------
@@ -146,7 +153,7 @@ def materials(request, num=None):
     begin_date = meeting.get_submission_start_date()
     cut_off_date = meeting.get_submission_cut_off_date()
     cor_cut_off_date = meeting.get_submission_correction_date()
-    today_utc = date_today(datetime.timezone.utc)
+    today_utc = date_today(datetime.UTC)
     old = timezone.now() - datetime.timedelta(days=1)
     if settings.SERVER_MODE != 'production' and '_testoverride' in request.GET:
         pass
@@ -1914,7 +1921,7 @@ def agenda_csv(schedule, filtered_assignments, utc=False):
 
     write_row(headings)
 
-    tz = datetime.timezone.utc if utc else schedule.meeting.tz()
+    tz = datetime.UTC if utc else schedule.meeting.tz()
     for item in filtered_assignments:
         row = []
         row.append(item.timeslot.time.astimezone(tz).strftime("%Y-%m-%d"))
@@ -1982,8 +1989,10 @@ def agenda_by_type_ics(request,num=None,type=None):
     ).order_by('session__type__slug','timeslot__time')
     if type:
         assignments = assignments.filter(session__type__slug=type)
-    updated = meeting.updated()
-    return render(request,"meeting/agenda.ics",{"schedule":schedule,"updated":updated,"assignments":assignments},content_type="text/calendar")
+
+    return render_icalendar(schedule, assignments)
+
+
 
 def session_draft_list(num, acronym):
     try:
@@ -2103,6 +2112,125 @@ def ical_session_status(assignment):
     else:
         return "CONFIRMED"
 
+def render_icalendar(schedule, assignments):
+    ical_content = generate_agenda_ical(schedule, assignments)
+    return HttpResponse(ical_content, content_type="text/calendar")
+
+def generate_agenda_ical(schedule, assignments):
+    """Generate iCalendar using the icalendar library"""
+
+    cal = Calendar()
+    cal.add("prodid", "-//IETF//datatracker.ietf.org ical agenda//EN")
+    cal.add("version", "2.0")
+    cal.add("method", "PUBLISH")
+
+    for item in assignments:
+        event = Event()
+
+        uid = f"ietf-{schedule.meeting.number}-{item.timeslot.pk}-{item.session.group.acronym}"
+        event.add("uid", uid)
+
+        # add custom field with meeting's local TZ
+        event.add("x-meeting-tz", schedule.meeting.time_zone)
+
+        if item.session.name:
+            summary = item.session.name
+        else:
+            group = item.session.group_at_the_time()
+            summary = f"{group.acronym} - {group.name}"
+
+        if item.session.agenda_note:
+            summary += f" ({item.session.agenda_note})"
+
+        event.add("summary", summary)
+
+        if item.timeslot.show_location and item.timeslot.get_location():
+            event.add("location", item.timeslot.get_location())
+
+        if item.session and hasattr(item.session, "current_status"):
+            status = ical_session_status(item)
+        else:
+            status = ""
+        event.add("status", status)
+
+        event.add("class", "PUBLIC")
+
+        event.add("dtstart", item.timeslot.utc_start_time())
+        event.add("dtend", item.timeslot.utc_end_time())
+
+        # DTSTAMP: when the event was created or last modified (in UTC)
+        dtstamp = item.timeslot.modified.astimezone(pytz.UTC)
+        event.add("dtstamp", dtstamp)
+
+        description_parts = [item.timeslot.name]
+
+        if item.session.agenda_note:
+            description_parts.append(f"Note: {item.session.agenda_note}")
+
+        if hasattr(item.session, "onsite_tool_url") and callable(
+            item.session.onsite_tool_url
+        ):
+            onsite_url = item.session.onsite_tool_url()
+            if onsite_url:
+                description_parts.append(f"Onsite tool: {onsite_url}")
+
+        if hasattr(item.session, "video_stream_url") and callable(
+            item.session.video_stream_url
+        ):
+            video_url = item.session.video_stream_url()
+            if video_url:
+                description_parts.append(f"Meetecho: {video_url}")
+
+        if (
+            item.timeslot.location
+            and hasattr(item.timeslot.location, "webex_url")
+            and callable(item.timeslot.location.webex_url)
+            and item.timeslot.location.webex_url() is not None
+        ):
+            description_parts.append(f"Webex: {item.timeslot.location.webex_url()}")
+
+        if item.session.remote_instructions:
+            description_parts.append(
+                f"Remote instructions: {item.session.remote_instructions}"
+            )
+
+        try:
+            materials_url = absurl(
+                "ietf.meeting.views.session_details",
+                num=schedule.meeting.number,
+                acronym=item.session.group.acronym,
+            )
+            description_parts.append(f"Session materials: {materials_url}")
+            event.add("url", materials_url)
+        except:
+            pass
+
+        if (
+            hasattr(schedule.meeting, "get_number")
+            and schedule.meeting.get_number() is not None
+        ):
+            try:
+                agenda_url = absurl("agenda", num=schedule.meeting.number)
+                description_parts.append(
+                    f"See in schedule: {agenda_url}#row-{item.slug()}"
+                )
+            except:
+                pass
+
+        agenda = item.session.agenda()
+        if agenda and hasattr(agenda, "get_versionless_href"):
+            agenda_url = agenda.get_versionless_href()
+            description_parts.append(f"{agenda.type} {agenda_url}")
+
+        # Join all description parts with 2 newlines
+        description = "\n\n".join(description_parts)
+        event.add("description", description)
+
+        # Add event to calendar
+        cal.add_component(event)
+
+    return cal.to_ical().decode("utf-8")
+
 def parse_agenda_filter_params(querydict):
     """Parse agenda filter parameters from a request"""
     if len(querydict) == 0:
@@ -2154,7 +2282,6 @@ def agenda_ical(request, num=None, acronym=None, session_id=None):
     else:
         meeting = get_meeting(num, type_in=None)  # get requested meeting, whatever its type
     schedule = get_schedule(meeting)
-    updated = meeting.updated()
 
     if schedule is None and acronym is None and session_id is None:
         raise Http404
@@ -2180,15 +2307,7 @@ def agenda_ical(request, num=None, acronym=None, session_id=None):
     elif session_id:
         assignments = [ a for a in assignments if a.session_id == int(session_id) ]
 
-    for a in assignments:
-        if a.session:
-            a.session.ical_status = ical_session_status(a)
-
-    return render(request, "meeting/agenda.ics", {
-        "schedule": schedule,
-        "assignments": assignments,
-        "updated": updated
-    }, content_type="text/calendar")
+    return render_icalendar(schedule, assignments)
 
 @cache_page(15 * 60)
 def agenda_json(request, num=None):
@@ -2695,7 +2814,7 @@ def session_attendance(request, session_id, num):
             raise Http404("Bluesheets not found")
 
     cor_cut_off_date = session.meeting.get_submission_correction_date()
-    today_utc = date_today(datetime.timezone.utc)
+    today_utc = date_today(datetime.UTC)
     was_there = False
     can_add = False
     if request.user.is_authenticated:
@@ -2710,7 +2829,7 @@ def session_attendance(request, session_id, num):
             was_there = Attended.objects.filter(session=session, person=person).exists()
             can_add = (
                 today_utc <= cor_cut_off_date
-                and MeetingRegistration.objects.filter(
+                and Registration.objects.filter(
                     meeting=session.meeting, person=person
                 ).exists()
                 and not was_there
@@ -2760,7 +2879,10 @@ def upload_session_bluesheets(request, session_id, num):
             ota = session.official_timeslotassignment()
             sess_time = ota and ota.timeslot.time
             if not sess_time:
-                return HttpResponseGone("Cannot receive uploads for an unscheduled session.  Please check the session ID.", content_type="text/plain")
+                return HttpResponseGone(
+                    "Cannot receive uploads for an unscheduled session.  Please check the session ID.",
+                    content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+                )
 
 
             save_error = save_bluesheet(request, session, file, encoding=form.file_encoding[file.name])
@@ -2821,7 +2943,7 @@ def upload_session_minutes(request, session_id, num):
             except SessionNotScheduledError:
                 return HttpResponseGone(
                     "Cannot receive uploads for an unscheduled session. Please check the session ID.",
-                    content_type="text/plain",
+                    content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
                 )
             except SaveMaterialsError as err:
                 form.add_error(None, str(err))
@@ -2880,7 +3002,7 @@ def upload_session_narrativeminutes(request, session_id, num):
             except SessionNotScheduledError:
                 return HttpResponseGone(
                     "Cannot receive uploads for an unscheduled session. Please check the session ID.",
-                    content_type="text/plain",
+                    content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
                 )
             except SaveMaterialsError as err:
                 form.add_error(None, str(err))
@@ -2978,7 +3100,10 @@ def upload_session_agenda(request, session_id, num):
                 ota = session.official_timeslotassignment()
                 sess_time = ota and ota.timeslot.time
                 if not sess_time:
-                    return HttpResponseGone("Cannot receive uploads for an unscheduled session.  Please check the session ID.", content_type="text/plain")
+                    return HttpResponseGone(
+                        "Cannot receive uploads for an unscheduled session.  Please check the session ID.",
+                        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+                    )
                 if session.meeting.type_id=='ietf':
                     name = 'agenda-%s-%s' % (session.meeting.number, 
                                                  session.group.acronym) 
@@ -4132,7 +4257,7 @@ def upcoming_ical(request):
         'assignments': assignments,
         'ietfs': ietfs,
     }, request=request)
-    response = re.sub("\r(?!\n)|(?<!\r)\n", "\r\n", response)
+    response = parse_ical_line_endings(response)
 
     response = HttpResponse(response, content_type='text/calendar')
     response['Content-Disposition'] = 'attachment; filename="upcoming.ics"'
@@ -4210,17 +4335,17 @@ def proceedings_attendees(request, num=None):
         return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}/attendee.html')
 
     template = None
-    meeting_registrations = None
+    registrations = None
 
     if int(meeting.number) >= 118:
         checked_in, attended = participants_for_meeting(meeting)
-        regs = list(MeetingRegistration.objects.filter(meeting__number=num, reg_type='onsite', checkedin=True))
+        regs = list(Registration.objects.onsite().filter(meeting__number=num, checkedin=True))
 
-        for mr in MeetingRegistration.objects.filter(meeting__number=num, reg_type='remote').select_related('person'):
-            if mr.person.pk in attended and mr.person.pk not in checked_in:
-                regs.append(mr)
+        for reg in Registration.objects.remote().filter(meeting__number=num).select_related('person'):
+            if reg.person.pk in attended and reg.person.pk not in checked_in:
+                regs.append(reg)
 
-        meeting_registrations = sorted(regs, key=lambda x: (x.last_name, x.first_name))
+        registrations = sorted(regs, key=lambda x: (x.last_name, x.first_name))
     else:
         overview_template = "/meeting/proceedings/%s/attendees.html" % meeting.number
         try:
@@ -4230,7 +4355,7 @@ def proceedings_attendees(request, num=None):
 
     return render(request, "meeting/proceedings_attendees.html", {
         'meeting': meeting,
-        'meeting_registrations': meeting_registrations,
+        'registrations': registrations,
         'template': template,
     })
 
@@ -4282,11 +4407,17 @@ def api_set_meetecho_recording_name(request):
         name: the name to use for the recording at meetecho player
     """
     def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     if request.method != "POST":
         return HttpResponseNotAllowed(
-            content="Method not allowed", content_type="text/plain", permitted_methods=('POST',)
+            content="Method not allowed",
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+            permitted_methods=('POST',),
         )
 
     session_id = request.POST.get('session_id', None)
@@ -4306,7 +4437,11 @@ def api_set_meetecho_recording_name(request):
     session.meetecho_recording_name = name
     session.save()
 
-    return HttpResponse("Done", status=200, content_type='text/plain')
+    return HttpResponse(
+        "Done",
+        status=200,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 @require_api_key
 @role_required('Recording Manager')
@@ -4320,11 +4455,17 @@ def api_set_session_video_url(request):
       url: The recording url (on YouTube, or whatever)
     """
     def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     if request.method != 'POST':
         return HttpResponseNotAllowed(
-            content="Method not allowed", content_type="text/plain", permitted_methods=('POST',)
+            content="Method not allowed",
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+            permitted_methods=('POST',),
         )
 
     # Temporary: fall back to deprecated interface if we have old-style parameters.
@@ -4363,7 +4504,11 @@ def api_set_session_video_url(request):
         time = session.official_timeslotassignment().timeslot.time
         title = 'Video recording for %s on %s at %s' % (session.group.acronym, time.date(), time.time())
         create_recording(session, incoming_url, title=title, user=request.user.person)
-    return HttpResponse("Done", status=200, content_type='text/plain')
+    return HttpResponse(
+        "Done",
+        status=200,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 
 def deprecated_api_set_session_video_url(request):
@@ -4372,7 +4517,11 @@ def deprecated_api_set_session_video_url(request):
     Uses meeting/group/item to identify session.
     """
     def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
     if request.method == 'POST':
         # parameters:
         #   apikey: the poster's personal API key
@@ -4426,7 +4575,11 @@ def deprecated_api_set_session_video_url(request):
     else:
         return err(405, "Method not allowed")
 
-    return HttpResponse("Done", status=200, content_type='text/plain')
+    return HttpResponse(
+        "Done",
+        status=200,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 
 @require_api_key
@@ -4478,7 +4631,11 @@ def api_add_session_attendees(request):
     )
 
     def err(code, text):
-        return HttpResponse(text, status=code, content_type="text/plain")
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     if request.method != "POST":
         return err(405, "Method not allowed")
@@ -4531,7 +4688,11 @@ def api_add_session_attendees(request):
         if save_error:
             return err(400, save_error)
 
-    return HttpResponse("Done", status=200, content_type="text/plain")
+    return HttpResponse(
+        "Done",
+        status=200,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 
 @require_api_key
@@ -4539,7 +4700,11 @@ def api_add_session_attendees(request):
 @csrf_exempt
 def api_upload_chatlog(request):
     def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
     if request.method != 'POST':
         return err(405, "Method not allowed")
     apidata_post = request.POST.get('apidata')
@@ -4572,14 +4737,22 @@ def api_upload_chatlog(request):
     write_doc_for_session(session, 'chatlog', filename, json.dumps(apidata['chatlog']))
     e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
     doc.save_with_history([e])
-    return HttpResponse("Done", status=200, content_type='text/plain')
+    return HttpResponse(
+        "Done",
+        status=200,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 @require_api_key
 @role_required('Recording Manager')
 @csrf_exempt
 def api_upload_polls(request):
     def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
     if request.method != 'POST':
         return err(405, "Method not allowed")
     apidata_post = request.POST.get('apidata')
@@ -4612,7 +4785,11 @@ def api_upload_polls(request):
     write_doc_for_session(session, 'polls', filename, json.dumps(apidata['polls']))
     e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
     doc.save_with_history([e])
-    return HttpResponse("Done", status=200, content_type='text/plain')
+    return HttpResponse(
+        "Done",
+        status=200,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 @require_api_key
 @role_required('Recording Manager', 'Secretariat')
@@ -4627,11 +4804,17 @@ def api_upload_bluesheet(request):
           [{'name': 'Name', 'affiliation': 'Organization', }, ...]
     """
     def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     if request.method != 'POST':
         return HttpResponseNotAllowed(
-            content="Method not allowed", content_type="text/plain", permitted_methods=('POST',)
+            content="Method not allowed",
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+            permitted_methods=('POST',),
         )
 
     session_id = request.POST.get('session_id', None)
@@ -4666,7 +4849,11 @@ def api_upload_bluesheet(request):
         save_err = save_bluesheet(request, session, file)
     if save_err:
         return err(400, save_err)
-    return HttpResponse("Done", status=200, content_type='text/plain')
+    return HttpResponse(
+        "Done",
+        status=200,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 
 def important_dates(request, num=None, output_format=None):
@@ -4696,7 +4883,7 @@ def important_dates(request, num=None, output_format=None):
             'meetings': meetings,
         }, request=request)
         # icalendar response file should have '\r\n' line endings per RFC5545
-        response = HttpResponse(re.sub("\r(?!\n)|(?<!\r)\n", "\r\n", ics), content_type='text/calendar')
+        response = HttpResponse(parse_ical_line_endings(ics), content_type='text/calendar')
         response['Content-Disposition'] = 'attachment; filename="important-dates.ics"'
         return response
 
@@ -5090,7 +5277,7 @@ def import_session_minutes(request, session_id, num):
             except SessionNotScheduledError:
                 return HttpResponseGone(
                     "Cannot import minutes for an unscheduled session. Please check the session ID.",
-                    content_type="text/plain",
+                    content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
                 )
             except SaveMaterialsError as err:
                 form.add_error(None, str(err))
@@ -5130,3 +5317,4 @@ def import_session_minutes(request, session_id, num):
             'contents_unchanged': not contents_changed,
         },
     )
+

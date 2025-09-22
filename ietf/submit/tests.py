@@ -5,7 +5,7 @@
 import datetime
 import email
 import io
-import mock
+from unittest import mock
 import os
 import re
 import sys
@@ -51,8 +51,9 @@ from ietf.submit.utils import (expirable_submissions, expire_submission, find_su
                                process_submission_xml, process_uploaded_submission, 
                                process_and_validate_submission, apply_yang_checker_to_draft, 
                                run_all_yang_model_checks)
+from ietf.submit.views import access_token_is_valid, auth_token_is_valid
 from ietf.utils import tool_version
-from ietf.utils.accesstoken import generate_access_token
+from ietf.utils.accesstoken import generate_access_token, generate_random_key
 from ietf.utils.mail import outbox, get_payload_text
 from ietf.utils.test_runner import TestBlobstoreManager
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
@@ -2981,7 +2982,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.xml'
         with xml_path.open('w') as f:
             f.write(xml_data)
-        store_str("staging", "draft-somebody-test-00.xml", xml_data)
+        store_str("staging", "draft-somebody-test-00.xml", xml_data, allow_overwrite=True)
         with mock.patch(
                 'ietf.submit.utils.apply_checkers',
                 side_effect = lambda _, __: submission.checks.create(
@@ -3047,25 +3048,25 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         # Should behave on missing or partial <date> elements
         TestBlobstoreManager().emptyTestBlobstores()
         xml_path.write_text(re.sub(r"<date.+>", "", xml_contents))  # strip <date...> entirely
-        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date.+>", "", xml_contents))
+        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date.+>", "", xml_contents), allow_overwrite=True)
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["document_date"], None)
 
         TestBlobstoreManager().emptyTestBlobstores()
         xml_path.write_text(re.sub(r"<date year=.+ month", "<date month", xml_contents))  # remove year
-        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date year=.+ month", "<date month", xml_contents))
+        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date year=.+ month", "<date month", xml_contents), allow_overwrite=True)
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["document_date"], date_today())
 
         TestBlobstoreManager().emptyTestBlobstores()
         xml_path.write_text(re.sub(r"(<date.+) month=.+day=(.+>)", r"\1 day=\2", xml_contents))  # remove month
-        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"(<date.+) month=.+day=(.+>)", r"\1 day=\2", xml_contents))
+        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"(<date.+) month=.+day=(.+>)", r"\1 day=\2", xml_contents), allow_overwrite=True)
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["document_date"], date_today())
 
         TestBlobstoreManager().emptyTestBlobstores()
         xml_path.write_text(re.sub(r"<date(.+) day=.+>", r"<date\1>", xml_contents))  # remove day
-        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date(.+) day=.+>", r"<date\1>", xml_contents))
+        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date(.+) day=.+>", r"<date\1>", xml_contents), allow_overwrite=True)
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["document_date"], date_today())
 
@@ -3080,7 +3081,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         )
         xml_path.write_text(xml.read())
         xml.seek(0)
-        store_str("staging", "draft-somebody-test-00.xml", xml.read())
+        store_str("staging", "draft-somebody-test-00.xml", xml.read(), allow_overwrite=True)
         with self.assertRaisesMessage(SubmissionError, "disagrees with submission filename"):
             process_submission_xml("draft-somebody-test", "00")
 
@@ -3095,7 +3096,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         )
         xml_path.write_text(xml.read())
         xml.seek(0)
-        store_str("staging", "draft-somebody-test-00.xml", xml.read())
+        store_str("staging", "draft-somebody-test-00.xml", xml.read(), allow_overwrite=True)
         with self.assertRaisesMessage(SubmissionError, "disagrees with submission revision"):
             process_submission_xml("draft-somebody-test", "00")
 
@@ -3110,7 +3111,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         )
         xml_path.write_text(xml.read())
         xml.seek(0)
-        store_str("staging", "draft-somebody-test-00.xml", xml.read())
+        store_str("staging", "draft-somebody-test-00.xml", xml.read(), allow_overwrite=True)
         with self.assertRaisesMessage(SubmissionError, "Could not extract a valid title"):
             process_submission_xml("draft-somebody-test", "00")
 
@@ -3153,7 +3154,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         with txt_path.open('w') as fd:
             fd.write(txt.read())
         txt.seek(0)
-        store_str("staging", "draft-somebody-test-00.txt", txt.read())
+        store_str("staging", "draft-somebody-test-00.txt", txt.read(), allow_overwrite=True)
         txt.close()
         with self.assertRaisesMessage(SubmissionError, 'disagrees with submission filename'):
             process_submission_text("draft-somebody-test", "00")
@@ -3170,7 +3171,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         with txt_path.open('w') as fd:
             fd.write(txt.read())
         txt.seek(0)
-        store_str("staging", "draft-somebody-test-00.txt", txt.read())
+        store_str("staging", "draft-somebody-test-00.txt", txt.read(), allow_overwrite=True)
         txt.close()
         with self.assertRaisesMessage(SubmissionError, 'disagrees with submission revision'):
             process_submission_text("draft-somebody-test", "00")
@@ -3500,3 +3501,31 @@ class SubmissionErrorTests(TestCase):
             mock_sanitize_message.call_args_list,
             [mock.call("hi"), mock.call("there")],
         )
+
+
+class HelperTests(TestCase):
+    def test_access_token_is_valid(self):
+        submission: Submission = SubmissionFactory()  # type: ignore
+        valid_token = submission.access_token()
+        access_key = submission.access_key  # accept this for backwards compat
+        invalid_token = "not the valid token"
+        self.assertTrue(access_token_is_valid(submission, valid_token))
+        self.assertTrue(access_token_is_valid(submission, access_key))
+        self.assertFalse(access_token_is_valid(submission, invalid_token))
+
+    def test_auth_token_is_valid(self):
+        auth_key = generate_random_key()
+        submission: Submission = SubmissionFactory(auth_key = auth_key)  # type: ignore
+        valid_token = generate_access_token(submission.auth_key)
+        auth_key = submission.auth_key  # accept this for backwards compat
+        invalid_token = "not the valid token"
+        self.assertTrue(auth_token_is_valid(submission, valid_token))
+        self.assertTrue(auth_token_is_valid(submission, auth_key))
+        self.assertFalse(auth_token_is_valid(submission, invalid_token))
+
+        submission.auth_key = ""
+        submission.save()
+        self.assertFalse(auth_token_is_valid(submission, valid_token))
+        self.assertFalse(auth_token_is_valid(submission, auth_key))
+        self.assertFalse(auth_token_is_valid(submission, invalid_token))
+        self.assertFalse(auth_token_is_valid(submission, ""))

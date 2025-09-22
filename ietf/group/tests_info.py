@@ -6,7 +6,7 @@ import calendar
 import datetime
 import io
 import bleach
-import mock
+from unittest import mock
 
 from unittest.mock import call, patch
 from pathlib import Path

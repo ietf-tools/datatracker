@@ -43,7 +43,7 @@ jobs:
     - name: Docker Build & Push
       uses: docker/build-push-action@v6
       env:
-        DOCKER_BUILD_NO_SUMMARY: true
+        DOCKER_BUILD_SUMMARY: false
       with:
         context: .
         file: docker/base.Dockerfile
@@ -51,6 +51,7 @@ jobs:
         push: true
         tags: |
           ghcr.io/ietf-tools/datatracker-app-base:${{ env.IMGVERSION }}
+          ghcr.io/ietf-tools/datatracker-app-base:py312
           ${{ github.ref == 'refs/heads/main' && 'ghcr.io/ietf-tools/datatracker-app-base:latest' || '' }}
 
     - name: Update version references
@@ -59,7 +60,7 @@ jobs:
         echo "${{ env.IMGVERSION }}" > dev/build/TARGET_BASE
 
     - name: Commit CHANGELOG.md
-      uses: stefanzweifel/git-auto-commit-action@v5
+      uses: stefanzweifel/git-auto-commit-action@v6
       with:
         branch: ${{ github.ref_name }}
         commit_message: 'ci: update base image target version to ${{ env.IMGVERSION }}'

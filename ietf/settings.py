@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
+# Copyright The IETF Trust 2007-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -9,26 +9,40 @@
 import os
 import sys
 import datetime
+import pathlib
 import warnings
 from hashlib import sha384
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
+# DeprecationWarnings are suppressed by default, enable them
 warnings.simplefilter("always", DeprecationWarning)
-warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API")
-warnings.filterwarnings("ignore", "Log out via GET requests is deprecated")  # happens in oidc_provider
-warnings.filterwarnings("ignore", module="tastypie", message="The django.utils.datetime_safe module is deprecated.")
-warnings.filterwarnings("ignore", module="oidc_provider", message="The django.utils.timezone.utc alias is deprecated.")
+
+# Warnings that must be resolved for Django 5.x
+warnings.filterwarnings("ignore", "Log out via GET requests is deprecated")  # caused by oidc_provider
+warnings.filterwarnings("ignore", message="The django.utils.timezone.utc alias is deprecated.", module="oidc_provider")
+warnings.filterwarnings("ignore", message="The django.utils.datetime_safe module is deprecated.", module="tastypie")
 warnings.filterwarnings("ignore", message="The USE_DEPRECATED_PYTZ setting,")  # https://github.com/ietf-tools/datatracker/issues/5635
 warnings.filterwarnings("ignore", message="The USE_L10N setting is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5648
 warnings.filterwarnings("ignore", message="django.contrib.auth.hashers.CryptPasswordHasher is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5663
-warnings.filterwarnings("ignore", message="'urllib3\\[secure\\]' extra is deprecated")
-warnings.filterwarnings("ignore", message="The logout\\(\\) view is superseded by")
-warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
-warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated", module="bleach")
-warnings.filterwarnings("ignore", message="HTTPResponse.getheader\\(\\) is deprecated", module='selenium.webdriver')
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.abspath(BASE_DIR + "/.."))
+# Other DeprecationWarnings
+warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API", module="pyang.plugin")
+warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
+warnings.filterwarnings("ignore", message="currentThread\\(\\) is deprecated", module="coverage.pytracer")
+warnings.filterwarnings("ignore", message="co_lnotab is deprecated", module="coverage.parser")
+warnings.filterwarnings("ignore", message="datetime.datetime.utcnow\\(\\) is deprecated", module="botocore.auth")
+warnings.filterwarnings("ignore", message="datetime.datetime.utcnow\\(\\) is deprecated", module="oic.utils.time_util")
+warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="oic.utils.time_util")
+warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="pytz.tzinfo")
+warnings.filterwarnings("ignore", message="'instantiateVariableFont' is deprecated", module="weasyprint")
+
+
+base_path = pathlib.Path(__file__).resolve().parent
+BASE_DIR = str(base_path)
+
+project_path = base_path.parent
+PROJECT_DIR = str(project_path)  
+sys.path.append(PROJECT_DIR)
 
 from ietf import __version__
 import debug
@@ -60,6 +74,26 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.SHA1PasswordHasher',
     'django.contrib.auth.hashers.CryptPasswordHasher',
 ]
+
+
+PASSWORD_POLICY_MIN_LENGTH = 12
+PASSWORD_POLICY_ENFORCE_AT_LOGIN = False  # should turn this on for prod
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {
+            "min_length": PASSWORD_POLICY_MIN_LENGTH,
+        }
+    },
+    {
+        "NAME": "ietf.ietfauth.password_validation.StrongPasswordValidator",
+    },
+]
+# In dev environments, settings_local overrides the password validators. Save
+# a handle to the original value so settings_test can restore it so tests match
+# production.
+ORIG_AUTH_PASSWORD_VALIDATORS = AUTH_PASSWORD_VALIDATORS
 
 ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", "127.0.0.1", "localhost", ]
 
@@ -185,9 +219,11 @@ STATIC_IETF_ORG_INTERNAL = STATIC_IETF_ORG
 
 ENABLE_BLOBSTORAGE = True
 
-BLOBSTORAGE_MAX_ATTEMPTS = 1
-BLOBSTORAGE_CONNECT_TIMEOUT = 2
-BLOBSTORAGE_READ_TIMEOUT = 2
+# "standard" retry mode is used, which does exponential backoff with a base factor of 2
+# and a cap of 20. 
+BLOBSTORAGE_MAX_ATTEMPTS = 5  # boto3 default is 3 (for "standard" retry mode)
+BLOBSTORAGE_CONNECT_TIMEOUT = 10  # seconds; boto3 default is 60
+BLOBSTORAGE_READ_TIMEOUT = 10  # seconds; boto3 default is 60
 
 WSGI_APPLICATION = "ietf.wsgi.application"
 
@@ -420,23 +456,24 @@ MIDDLEWARE = [
     "ietf.middleware.SMTPExceptionMiddleware",
     "ietf.middleware.Utf8ExceptionMiddleware",
     "ietf.middleware.redirect_trailing_period_middleware",
-    "django_referrer_policy.middleware.ReferrerPolicyMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    #"csp.middleware.CSPMiddleware",
     "ietf.middleware.unicode_nfkc_normalization_middleware",
     "ietf.middleware.is_authenticated_header_middleware",
 ]
 
 ROOT_URLCONF = 'ietf.urls'
 
-DJANGO_VITE_ASSETS_PATH = os.path.join(BASE_DIR, 'static/dist-neue')
+# Configure django_vite
+DJANGO_VITE: dict = {"default": {}}
 if DEBUG:
-    DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, 'static/dist-neue/manifest.json')
+    DJANGO_VITE["default"]["manifest_path"] = os.path.join(
+        BASE_DIR, 'static/dist-neue/manifest.json'
+    )
 
 # Additional locations of static files (in addition to each app's static/ dir)
 STATICFILES_DIRS = (
-    DJANGO_VITE_ASSETS_PATH,
+    os.path.join(BASE_DIR, "static/dist-neue"),  # for django_vite
     os.path.join(BASE_DIR, 'static/dist'),
     os.path.join(BASE_DIR, 'secr/static/dist'),
 )
@@ -471,6 +508,7 @@ INSTALLED_APPS = [
     'widget_tweaks',
     # IETF apps
     'ietf.api',
+    'ietf.blobdb',
     'ietf.community',
     'ietf.dbtemplate',
     'ietf.doc',
@@ -539,8 +577,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_METHODS = ( 'GET', 'OPTIONS', )
 CORS_URLS_REGEX = r'^(/api/.*|.*\.json|.*/json/?)$'
 
-# Setting for django_referrer_policy.middleware.ReferrerPolicyMiddleware
-REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # django.middleware.security.SecurityMiddleware 
 SECURE_BROWSER_XSS_FILTER       = True
@@ -553,6 +589,7 @@ SECURE_HSTS_SECONDS             = 3600
 #SECURE_SSL_REDIRECT             = True
 # Relax the COOP policy to allow Meetecho authentication pop-up
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "unsafe-none"
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 # Override this in your settings_local with the IP addresses relevant for you:
 INTERNAL_IPS = (
@@ -635,12 +672,8 @@ DRF_STANDARDIZED_ERRORS = {
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
 RFCDIFF_BASE_URL = "https://author-tools.ietf.org/iddiff"
 IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
+IDNITS3_BASE_URL = "https://author-tools.ietf.org/idnits3/results"
 IDNITS_SERVICE_URL = "https://author-tools.ietf.org/idnits"
-
-# Content security policy configuration (django-csp)
-# (In current production, the Content-Security-Policy header is completely set by nginx configuration, but
-#  we try to keep this in sync to avoid confusion)
-CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", f"data: {IDTRACKER_BASE_URL} http://ietf.org/ https://www.ietf.org/ https://analytics.ietf.org/ https://static.ietf.org")
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
@@ -680,6 +713,7 @@ TEST_CODE_COVERAGE_EXCLUDE_FILES = [
     "ietf/utils/patch.py",
     "ietf/utils/test_data.py",
     "ietf/utils/jstest.py",
+    "ietf/utils/coverage.py",
 ]
 
 # These are code line regex patterns
@@ -693,12 +727,15 @@ TEST_CODE_COVERAGE_EXCLUDE_LINES = [
 ]
 
 # These are filename globs.  They are used by test_parse_templates() and
-# get_template_paths()
+# get_template_paths(). Globs are applied via pathlib.Path().match, using
+# the path to the template from the project root.
 TEST_TEMPLATE_IGNORE = [
-    ".*",                             # dot-files
-    "*~",                             # tilde temp-files
-    "#*",                             # files beginning with a hashmark
-    "500.html"                        # isn't loaded by regular loader, but checked by test_500_page()
+    ".*",  # dot-files
+    "*~",  # tilde temp-files
+    "#*",  # files beginning with a hashmark
+    "500.html",  # isn't loaded by regular loader, but checked by test_500_page()
+    "ietf/templates/admin/meeting/RegistrationTicket/change_list.html",
+    "ietf/templates/admin/meeting/Registration/change_list.html",
 ]
 
 TEST_COVERAGE_MAIN_FILE = os.path.join(BASE_DIR, "../release-coverage.json")
@@ -706,8 +743,8 @@ TEST_COVERAGE_LATEST_FILE = os.path.join(BASE_DIR, "../latest-coverage.json")
 
 TEST_CODE_COVERAGE_CHECKER = None
 if SERVER_MODE != 'production':
-    import coverage
-    TEST_CODE_COVERAGE_CHECKER = coverage.Coverage(source=[ BASE_DIR ], cover_pylib=False, omit=TEST_CODE_COVERAGE_EXCLUDE_FILES)
+    from ietf.utils.coverage import CoverageManager
+    TEST_CODE_COVERAGE_CHECKER = CoverageManager()
 
 TEST_CODE_COVERAGE_REPORT_PATH = "coverage/"
 TEST_CODE_COVERAGE_REPORT_URL = os.path.join(STATIC_URL, TEST_CODE_COVERAGE_REPORT_PATH, "index.html")
@@ -748,8 +785,8 @@ STORAGES: dict[str, Any] = {
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 
-# settings_local will need to configure storages for these names
-MORE_STORAGE_NAMES: list[str] = [
+# Storages for artifacts stored as blobs
+ARTIFACT_STORAGE_NAMES: list[str] = [
     "bofreq",
     "charter",
     "conflrev",
@@ -774,6 +811,11 @@ MORE_STORAGE_NAMES: list[str] = [
     "photo",
     "review",
 ]
+for storagename in ARTIFACT_STORAGE_NAMES:
+    STORAGES[storagename] = {
+        "BACKEND": "ietf.doc.storage.StoredObjectBlobdbStorage",
+        "OPTIONS": {"bucket_name": storagename},
+    }
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
@@ -1113,7 +1155,9 @@ PPT2PDF_COMMAND = [
     "--outdir"
 ]
 
-STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/'
+REGISTRATION_PARTICIPANTS_API_URL = 'https://registration.ietf.org/api/v1/participants-dt/'
+REGISTRATION_PARTICIPANTS_API_KEY = 'changeme'
+
 PROCEEDINGS_VERSION_CHANGES = [
     0,   # version 1
     97,  # version 2: meeting 97 and later (was number was NEW_PROCEEDINGS_START)
@@ -1278,6 +1322,9 @@ CELERY_RESULT_BACKEND = 'django-cache'  # use a Django cache for results
 CELERY_CACHE_BACKEND = 'celery-results'  # which Django cache to use
 CELERY_RESULT_EXPIRES = datetime.timedelta(minutes=5)  # how long are results valid? (Default is 1 day)
 CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled for a task
+CELERY_TASK_ROUTES = {
+    "ietf.blobdb.tasks.pybob_the_blob_replicator_task": {"queue": "blobdb"}
+}
 
 # Meetecho API setup: Uncomment this and provide real credentials to enable
 # Meetecho conference creation for interim session requests

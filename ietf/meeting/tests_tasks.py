@@ -1,10 +1,12 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
 import datetime
-from mock import patch, call
+from unittest.mock import patch, call
 from ietf.utils.test_utils import TestCase
+from ietf.utils.timezone import date_today
 from .factories import MeetingFactory
 from .tasks import proceedings_content_refresh_task, agenda_data_refresh
+from .tasks import fetch_meeting_attendance_task
 
 
 class TaskTests(TestCase):
@@ -21,7 +23,7 @@ class TaskTests(TestCase):
         meeting127 = MeetingFactory(type_id="ietf", number="127")  # 24 * 5 + 7
         
         # Times to be returned
-        now_utc = datetime.datetime.now(tz=datetime.timezone.utc)
+        now_utc = datetime.datetime.now(tz=datetime.UTC)
         hour_00_utc = now_utc.replace(hour=0)
         hour_01_utc = now_utc.replace(hour=1)
         hour_07_utc = now_utc.replace(hour=7)
@@ -49,3 +51,31 @@ class TaskTests(TestCase):
         with patch("ietf.meeting.tasks.timezone.now", return_value=hour_01_utc):
             proceedings_content_refresh_task(all=True)
         self.assertEqual(mock_generate.call_count, 2)
+
+    @patch("ietf.meeting.tasks.fetch_attendance_from_meetings")
+    def test_fetch_meeting_attendance_task(self, mock_fetch_attendance):
+        today = date_today()
+        meetings = [
+            MeetingFactory(type_id="ietf", date=today - datetime.timedelta(days=1)),
+            MeetingFactory(type_id="ietf", date=today - datetime.timedelta(days=2)),
+            MeetingFactory(type_id="ietf", date=today - datetime.timedelta(days=3)),
+        ]
+        data = {
+            'created': 1,
+            'updated': 2,
+            'deleted': 0,
+            'processed': 3,
+        }
+
+        mock_fetch_attendance.return_value = [data, data]
+
+        fetch_meeting_attendance_task()
+        self.assertEqual(mock_fetch_attendance.call_count, 1)
+        self.assertCountEqual(mock_fetch_attendance.call_args[0][0], meetings[0:2])
+
+        # test handling of RuntimeError
+        mock_fetch_attendance.reset_mock()
+        mock_fetch_attendance.side_effect = RuntimeError
+        fetch_meeting_attendance_task()
+        self.assertTrue(mock_fetch_attendance.called)
+        # Good enough that we got here without raising an exception
