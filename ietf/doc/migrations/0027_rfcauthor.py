@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("person", "0004_alter_person_photo_alter_person_photo_thumb"),
-        ("doc", "0025_storedobject_storedobject_unique_name_per_store"),
+        ("doc", "0026_change_wg_state_descriptions"),
     ]
 
     operations = [
