@@ -7,19 +7,17 @@ from email.utils import parseaddr
 
 from django.contrib import messages
 from django.urls import reverse as urlreverse
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist, PermissionDenied
 from django.core.validators import validate_email
 from django.db.models import Q, Prefetch
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.group.models import Group, Role
-from ietf.liaisons.models import (LiaisonStatement,LiaisonStatementEvent,
-    LiaisonStatementAttachment)
+from ietf.liaisons.models import LiaisonStatement,LiaisonStatementEvent
 from ietf.liaisons.utils import (get_person_for_user, can_add_outgoing_liaison,
     can_add_incoming_liaison, can_edit_liaison,can_submit_liaison_required,
     can_add_liaison)
@@ -378,23 +376,29 @@ def liaison_history(request, object_id):
 
 def liaison_delete_attachment(request, object_id, attach_id):
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
-    attach = get_object_or_404(LiaisonStatementAttachment, pk=attach_id)
+
     if not can_edit_liaison(request.user, liaison):
         permission_denied(request, "You are not authorized for this action.")
+    else:
+        permission_denied(request, "This operation is temporarily unavailable. Ask the secretariat to mark the attachment as removed using the admin.")
 
-    # FIXME: this view should use POST instead of GET when deleting
-    attach.removed = True
-    attach.save()
+    # The following will be replaced with a different approach in the next generation of the liaison tool
+    # attach = get_object_or_404(LiaisonStatementAttachment, pk=attach_id)
 
-    # create event
-    LiaisonStatementEvent.objects.create(
-        type_id='modified',
-        by=get_person_for_user(request.user),
-        statement=liaison,
-        desc='Attachment Removed: {}'.format(attach.document.title)
-    )
-    messages.success(request, 'Attachment Deleted')
-    return redirect('ietf.liaisons.views.liaison_detail', object_id=liaison.pk)
+    # # FIXME: this view should use POST instead of GET when deleting
+    # attach.removed = True
+    # debug.say("Got here")
+    # attach.save()
+
+    # # create event
+    # LiaisonStatementEvent.objects.create(
+    #     type_id='modified',
+    #     by=get_person_for_user(request.user),
+    #     statement=liaison,
+    #     desc='Attachment Removed: {}'.format(attach.document.title)
+    # )
+    # messages.success(request, 'Attachment Deleted')
+    # return redirect('ietf.liaisons.views.liaison_detail', object_id=liaison.pk)
 
 def liaison_detail(request, object_id):
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
@@ -405,22 +409,28 @@ def liaison_detail(request, object_id):
 
 
     if request.method == 'POST':
-        if request.POST.get('approved'):
-            liaison.change_state(state_id='approved',person=person)
-            liaison.change_state(state_id='posted',person=person)
-            send_liaison_by_email(request, liaison)
-            messages.success(request,'Liaison Statement Approved and Posted')
-        elif request.POST.get('dead'):
-            liaison.change_state(state_id='dead',person=person)
-            messages.success(request,'Liaison Statement Killed')
-        elif request.POST.get('resurrect'):
-            liaison.change_state(state_id='pending',person=person)
-            messages.success(request,'Liaison Statement Resurrected')
-        elif request.POST.get('do_action_taken') and can_take_care:
+        if request.POST.get('do_action_taken') and can_take_care:
             liaison.tags.remove('required')
             liaison.tags.add('taken')
             can_take_care = False
             messages.success(request,'Action handled')
+        else:
+            if can_edit:
+                if request.POST.get('approved'):
+                    liaison.change_state(state_id='approved',person=person)
+                    liaison.change_state(state_id='posted',person=person)
+                    send_liaison_by_email(request, liaison)
+                    messages.success(request,'Liaison Statement Approved and Posted')
+                elif request.POST.get('dead'):
+                    liaison.change_state(state_id='dead',person=person)
+                    messages.success(request,'Liaison Statement Killed')
+                elif request.POST.get('resurrect'):
+                    liaison.change_state(state_id='pending',person=person)
+                    messages.success(request,'Liaison Statement Resurrected')
+                else:
+                    pass
+            else:
+                raise PermissionDenied()
 
     relations_by = [i.target for i in liaison.source_of_set.filter(target__state__slug='posted')]
     relations_to = [i.source for i in liaison.target_of_set.filter(source__state__slug='posted')]
@@ -444,7 +454,11 @@ def liaison_edit(request, object_id):
 def liaison_edit_attachment(request, object_id, doc_id):
     '''Edit the Liaison Statement attachment title'''
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
-    doc = get_object_or_404(Document, pk=doc_id)
+    try:
+       doc = liaison.attachments.get(pk=doc_id)
+    except ObjectDoesNotExist:
+        raise Http404
+
     if not can_edit_liaison(request.user, liaison):
         permission_denied(request, "You are not authorized for this action.")
 

@@ -33,7 +33,10 @@
         are only shown to logged-in Area Directors.
     </div>
     {% endif %}
-    <p><a href="{% url 'ietf.doc.views_search.docs_for_iesg' %}">Documents in IESG Processing</a></p>
+    <p>
+        <a class="btn btn-primary" href="{% url 'ietf.doc.views_search.docs_for_iesg' %}">Documents in IESG Processing</a>
+        <a class="btn btn-primary" href="{% url 'ietf.iesg.views.working_groups' %}">IESG view of Working Groups</a>
+    </p>
     {% for dt in metadata %}
         <h2 class="mt-5" id="{{ dt.type.0 }}">{{ dt.type.1 }} State Counts</h2>
         <table class="table table-sm table-striped table-bordered tablesorter navskip">
