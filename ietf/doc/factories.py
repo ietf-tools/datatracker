@@ -387,7 +387,9 @@ class RfcAuthorFactory(factory.django.DjangoModelFactory):
         model = RfcAuthor
 
     document = factory.SubFactory(DocumentFactory)
-    titlepage_name = factory.Faker('name')
+    titlepage_name = factory.LazyAttribute(
+        lambda obj: " ".join([obj.person.initials(), obj.person.last_name()])
+    )
     person = factory.SubFactory('ietf.person.factories.PersonFactory')
     email = factory.LazyAttribute(lambda obj: obj.person.email())
     affiliation = factory.Faker('company')
