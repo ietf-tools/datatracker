@@ -38,7 +38,9 @@ class Migration(migrations.Migration):
                 (
                     "document",
                     ietf.utils.models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="doc.document"
+                        limit_choices_to={"type_id": "rfc"},
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="doc.document",
                     ),
                 ),
                 (

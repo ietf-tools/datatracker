@@ -895,7 +895,11 @@ class RfcAuthor(models.Model):
     ignored.
     """
 
-    document = ForeignKey("Document", on_delete=models.CASCADE)
+    document = ForeignKey(
+        "Document",
+        on_delete=models.CASCADE,
+        limit_choices_to={"type_id": "rfc"},  # only affects ModelForms (e.g., admin)
+    )
     titlepage_name = models.CharField(max_length=128, blank=False)
     is_editor = models.BooleanField(default=False)
     person = ForeignKey(Person, null=True, blank=True, on_delete=models.PROTECT)
