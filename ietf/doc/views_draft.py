@@ -1917,23 +1917,24 @@ class IssueWorkingGroupLastCallForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
-        body = cleaned_data["body"]
-        subject = cleaned_data["subject"]
-        end_date = cleaned_data["end_date"]
-        if end_date.isoformat() not in body:
-            self.add_error(
-                "body",
-                forms.ValidationError(
-                    f"Last call end date ({end_date.isoformat()}) not found in body"
-                ),
-            )
-        if end_date.isoformat() not in subject:
-            self.add_error(
-                "subject",
-                forms.ValidationError(
-                    f"Last call end date ({end_date.isoformat()}) not found in subject"
-                ),
-            )
+        end_date = cleaned_data.get("end_date")
+        if end_date is not None:
+            body = cleaned_data.get("body")
+            subject = cleaned_data.get("subject")
+            if end_date.isoformat() not in body:
+                self.add_error(
+                    "body",
+                    forms.ValidationError(
+                        f"Last call end date ({end_date.isoformat()}) not found in body"
+                    ),
+                )
+            if end_date.isoformat() not in subject:
+                self.add_error(
+                    "subject",
+                    forms.ValidationError(
+                        f"Last call end date ({end_date.isoformat()}) not found in subject"
+                    ),
+                )
         return cleaned_data
 
 

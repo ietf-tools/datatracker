@@ -26,7 +26,7 @@ from ietf.doc.models import ( Document, DocReminder, DocEvent,
     WriteupDocEvent, DocRelationshipName, IanaExpertDocEvent )
 from ietf.doc.storage_utils import exists_in_storage, store_str
 from ietf.doc.utils import get_tags_for_stream_id, create_ballot_if_not_open
-from ietf.doc.views_draft import AdoptDraftForm
+from ietf.doc.views_draft import AdoptDraftForm, IssueWorkingGroupLastCallForm
 from ietf.name.models import DocTagName, RoleName
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group, Role
@@ -2197,6 +2197,27 @@ class ChangeStreamStateTests(TestCase):
         body = get_payload_text(outbox[1])
         self.assertIn("disclosure obligations", body)
         self.assertIn("starts a 2-week", body)
+
+    def test_issue_wg_lc_form(self):
+        end_date=date_today(DEADLINE_TZINFO) + datetime.timedelta(days=1)
+        post=dict(
+            end_date=end_date,
+            to="foo@example.net, bar@example.com",
+            # Intentionally not passing cc
+            subject=f"garbage {end_date.isoformat()}",
+            body=f"garbage {end_date.isoformat()}",
+        )
+        form = IssueWorkingGroupLastCallForm(post)
+        self.assertTrue(form.is_valid())
+        post["end_date"] = date_today(DEADLINE_TZINFO)
+        form = IssueWorkingGroupLastCallForm(post)
+        self.assertFalse(form.is_valid())
+        self.assertIn("End date must be later than today", form.errors["end_date"], "Form accepted a too-early date")
+        post["end_date"] = end_date + datetime.timedelta(days=2)
+        form = IssueWorkingGroupLastCallForm(post)
+        self.assertFalse(form.is_valid())
+        self.assertIn(f"Last call end date ({post['end_date'].isoformat()}) not found in subject", form.errors["subject"], "form allowed subject without end_date")
+        self.assertIn(f"Last call end date ({post['end_date'].isoformat()}) not found in body", form.errors["body"], "form allowed body without end_date")
 
     def test_issue_wg_lc(self):
         rg_doc = RgDraftFactory()
