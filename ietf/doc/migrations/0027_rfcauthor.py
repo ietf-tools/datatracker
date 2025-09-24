@@ -7,7 +7,7 @@ import ietf.utils.models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("person", "0004_alter_person_photo_alter_person_photo_thumb"),
+        ("person", "0005_alter_historicalperson_pronouns_selectable_and_more"),
         ("doc", "0026_change_wg_state_descriptions"),
     ]
 
@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("titlepage_name", models.CharField(max_length=128, blank=False)),
+                ("titlepage_name", models.CharField(max_length=128)),
                 ("is_editor", models.BooleanField(default=False)),
                 (
                     "affiliation",
@@ -54,6 +54,7 @@ class Migration(migrations.Migration):
                 (
                     "person",
                     ietf.utils.models.ForeignKey(
+                        blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         to="person.person",
