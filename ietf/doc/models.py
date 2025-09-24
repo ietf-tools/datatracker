@@ -433,10 +433,14 @@ class DocumentInfo(models.Model):
 
 
     def author_list(self):
-        if self.type_id == "rfc":
-            raise NotImplementedError
+        """List of author emails"""
+        author_qs = (
+            self.rfcauthor_set
+            if self.type_id == "rfc" and self.rfcauthor_set.exists()
+            else self.documentauthor_set
+        ).select_related("email").order_by("order")
         best_addresses = []
-        for author in self.documentauthor_set.all():
+        for author in author_qs:
             if author.email:
                 if author.email.active or not author.email.person:
                     best_addresses.append(author.email.address)
