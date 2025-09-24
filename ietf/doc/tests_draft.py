@@ -2210,10 +2210,8 @@ class ChangeStreamStateTests(TestCase):
         self.client.logout()
         doc = WgDraftFactory()
         chair = RoleFactory(name_id="chair", group=doc.group).person
-        url = urlreverse(
-            "ietf.doc.views_draft.issue_wg_lc", kwargs=dict(name=doc.name)
-        )
-        login_testing_unauthorized(self, chair.user.username, url)   
+        url = urlreverse("ietf.doc.views_draft.issue_wg_lc", kwargs=dict(name=doc.name))
+        login_testing_unauthorized(self, chair.user.username, url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -2227,11 +2225,11 @@ class ChangeStreamStateTests(TestCase):
         postdict["body"] = q("textarea#id_body").text()
         empty_outbox()
         r = self.client.post(
-            url, 
+            url,
             postdict,
         )
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(doc.get_state_slug("draft-stream-ietf"),"wg-lc")
+        self.assertEqual(doc.get_state_slug("draft-stream-ietf"), "wg-lc")
         self.assertEqual(len(outbox), 2)
         self.assertIn(f"{doc.group.acronym}@ietf.org", outbox[1]["To"])
         self.assertIn("WG Last Call", outbox[1]["Subject"])

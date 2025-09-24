@@ -1962,7 +1962,9 @@ def issue_wg_lc(request, name):
             e = add_state_change_event(doc, by, prev_state, wglc_state)
             events.append(e)
             end_date = form.cleaned_data["end_date"]
-            update_reminder(doc, "stream-s", e, datetime_from_date(end_date, DEADLINE_TZINFO))
+            update_reminder(
+                doc, "stream-s", e, datetime_from_date(end_date, DEADLINE_TZINFO)
+            )
             email_stream_state_changed(request, doc, prev_state, wglc_state, by)
             email_wg_last_call_issued(request, doc, end_date)
             doc.save_with_history(events)

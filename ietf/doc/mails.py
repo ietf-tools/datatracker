@@ -135,7 +135,7 @@ def email_wg_call_for_adoption_issued(request, doc, cfa_duration_weeks=None):
 def email_wg_last_call_issued(request, doc, end_date):
     (to, cc) = gather_address_lists("doc_wg_last_call_issued", doc=doc)
     frm = request.user.person.formatted_email()
-    subject =  f"WG Last Call: {doc.name}-{doc.rev} (Ends {end_date})"
+    subject = f"WG Last Call: {doc.name}-{doc.rev} (Ends {end_date})"
 
     send_mail(
         request,
@@ -152,6 +152,7 @@ def email_wg_last_call_issued(request, doc, end_date):
         ),
         cc=cc,
     )
+
 
 def email_pulled_from_rfc_queue(request, doc, comment, prev_state, next_state):
     extra=extra_automation_headers(doc)
