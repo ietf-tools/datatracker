@@ -7,7 +7,6 @@ import datetime
 import logging
 import os
 
-import django.db
 import rfc2html
 
 from io import BufferedReader
@@ -414,8 +413,9 @@ class DocumentInfo(models.Model):
             for author in self.rfcauthor_set.all():
                 if author.person:
                     names.append(author.person.name)
-                elif author.titlepage_name != "":
-                    names.append(author.titlepage_name)
+                else:
+                    # titlepage_name cannot be blank
+                    names.append(author.titlepage_name) 
         else:
             names = [author.person.name for author in self.documentauthor_set.all()]
         return names
@@ -892,7 +892,7 @@ class RfcAuthor(models.Model):
     """
 
     document = ForeignKey("Document", on_delete=models.CASCADE)
-    titlepage_name = models.CharField(max_length=128)
+    titlepage_name = models.CharField(max_length=128, blank=False)
     is_editor = models.BooleanField(default=False)
     person = ForeignKey(Person, null=True, on_delete=models.PROTECT)
     email = ForeignKey(Email, help_text="Email address used by author for submission", blank=True, null=True, on_delete=models.PROTECT)

@@ -6,7 +6,6 @@ import ietf.utils.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("person", "0004_alter_person_photo_alter_person_photo_thumb"),
         ("doc", "0026_change_wg_state_descriptions"),
@@ -25,7 +24,7 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("titlepage_name", models.CharField(max_length=128)),
+                ("titlepage_name", models.CharField(max_length=128, blank=False)),
                 ("is_editor", models.BooleanField(default=False)),
                 (
                     "affiliation",
