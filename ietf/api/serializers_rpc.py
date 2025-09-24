@@ -99,6 +99,7 @@ class FullDraftSerializer(serializers.ModelSerializer):
     source_format = serializers.SerializerMethodField()
     authors = DocumentAuthorSerializer(many=True, source="documentauthor_set")
     shepherd = serializers.SerializerMethodField()
+    consensus = serializers.SerializerMethodField()
 
     class Meta:
         model = Document
@@ -113,7 +114,11 @@ class FullDraftSerializer(serializers.ModelSerializer):
             "authors",
             "shepherd",
             "intended_std_level",
+            "consensus",
         ]
+
+    def get_consensus(self, doc: Document) -> Optional[bool]:
+        return default_consensus(doc)
 
     def get_source_format(
         self, doc: Document
