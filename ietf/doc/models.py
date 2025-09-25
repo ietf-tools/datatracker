@@ -409,17 +409,20 @@ class DocumentInfo(models.Model):
 
     def author_names(self):
         names = []
-        if self.type_id=="rfc" and self.rfcauthor_set.exists():
+        if self.type_id == "rfc" and self.rfcauthor_set.exists():
             for author in self.rfcauthor_set.all():
                 if author.person:
                     names.append(author.person.name)
                 else:
                     # titlepage_name cannot be blank
-                    names.append(author.titlepage_name) 
+                    names.append(author.titlepage_name)
         else:
-            names = [author.person.name for author in self.documentauthor_set.all()]
+            names = [
+                author.person.name
+                for author in self.documentauthor_set.select_related("person")
+            ]
         return names
-    
+
     def author_persons_or_names(self):
         Author = namedtuple("Author", "person titlepage_name")
         persons_or_names = []
