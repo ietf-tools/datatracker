@@ -393,7 +393,6 @@ class RfcAuthorFactory(factory.django.DjangoModelFactory):
     person = factory.SubFactory('ietf.person.factories.PersonFactory')
     email = factory.LazyAttribute(lambda obj: obj.person.email())
     affiliation = factory.Faker('company')
-    country = factory.Faker('country')
     order = factory.LazyAttribute(lambda o: o.document.rfcauthor_set.count() + 1)
 
 class WgDocumentAuthorFactory(DocumentAuthorFactory):
