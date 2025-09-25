@@ -81,6 +81,7 @@ def get_document_emails(ipr):
 
         addrs = gather_address_lists('ipr_posted_on_doc',doc=doc).as_strings(compact=False)
 
+        # TODO: consider how rfcauthor impacts this
         author_names = ', '.join(a.person.name for a in doc.documentauthor_set.select_related("person"))
     
         context = dict(

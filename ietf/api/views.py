@@ -97,7 +97,7 @@ class PersonalInformationExportView(DetailView, JsonExportMixin):
 
     def get(self, request):
         person = get_object_or_404(self.model, user=request.user)
-        expand = ['searchrule', 'documentauthor', 'ad_document_set', 'ad_dochistory_set', 'docevent',
+        expand = ['searchrule', 'documentauthor', 'rfcauthor', 'ad_document_set', 'ad_dochistory_set', 'docevent',
             'ballotpositiondocevent', 'deletedevent', 'email_set', 'groupevent', 'role', 'rolehistory', 'iprdisclosurebase',
             'iprevent', 'liaisonstatementevent', 'allowlisted', 'schedule', 'constraint', 'schedulingevent', 'message',
             'sendqueue', 'nominee', 'topicfeedbacklastseen', 'alias', 'email', 'apikeys', 'personevent',

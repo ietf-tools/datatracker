@@ -203,7 +203,7 @@ class Person(models.Model):
 
     def rfcs(self):
         from ietf.doc.models import Document
-        rfcs = list(Document.objects.filter(documentauthor__person=self, type='rfc'))
+        rfcs = list(Document.objects.filter(type="rfc").filter(models.Q(documentauthor__person=self)|models.Q(rfcauthor__person=self)).distinct())
         rfcs.sort(key=lambda d: d.name )
         return rfcs
 

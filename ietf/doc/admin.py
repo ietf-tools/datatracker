@@ -13,7 +13,7 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
     ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
-    BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject )
+    BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject, RfcAuthor )
 
 from ietf.utils.validators import validate_external_resource_value
 
@@ -236,3 +236,9 @@ class StoredObjectAdmin(admin.ModelAdmin):
     
 
 admin.site.register(StoredObject, StoredObjectAdmin)
+
+class RfcAuthorAdmin(admin.ModelAdmin):
+    list_display = ['id', 'document', 'titlepage_name', 'person', 'email', 'affiliation', 'country', 'order']
+    search_fields = ['document__name', 'titlepage_name', 'person__name', 'email__address', 'affiliation', 'country']
+    raw_id_fields = ["document", "person", "email"]
+admin.site.register(RfcAuthor, RfcAuthorAdmin)
