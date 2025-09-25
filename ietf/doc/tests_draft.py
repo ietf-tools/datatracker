@@ -20,7 +20,7 @@ from django.utils.html import escape
 import debug                            # pyflakes:ignore
 
 from ietf.doc.expire import expirable_drafts, get_expired_drafts, send_expire_notice_for_draft, expire_draft
-from ietf.doc.factories import EditorialDraftFactory, IndividualDraftFactory, StateDocEventFactory, WgDraftFactory, RgDraftFactory, DocEventFactory
+from ietf.doc.factories import EditorialDraftFactory, IndividualDraftFactory, StateDocEventFactory, WgDraftFactory, RgDraftFactory, DocEventFactory, WgRfcFactory
 from ietf.doc.models import ( Document, DocReminder, DocEvent,
     ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
     WriteupDocEvent, DocRelationshipName, IanaExpertDocEvent )
@@ -2007,7 +2007,24 @@ class ChangeStreamStateTests(TestCase):
             q = PyQuery(response.content)
             option = q(f"select#id_new_state option[value='{state.pk}']")
             return len(option) != 0
-
+        
+        def _view_presents_issue_wglc_button(response):
+            q = PyQuery(response.content)
+            button = q("#id_wglc_button")
+            return len(button) != 0
+        
+        came_from_draft = WgDraftFactory(states=[("draft","rfc")])
+        rfc = WgRfcFactory(group=came_from_draft.group)
+        came_from_draft.relateddocument_set.create(relationship_id="became_rfc",target=rfc)
+        rfc_chair = RoleFactory(name_id="chair", group=rfc.group).person
+        url = urlreverse(
+            "ietf.doc.views_draft.change_stream_state",
+            kwargs=dict(name=rfc.came_from_draft().name, state_type="draft-stream-ietf"),
+        )      
+        login_testing_unauthorized(self, rfc_chair.user.username, url)
+        r = self.client.get(url)
+        self.assertFalse(_view_presents_issue_wglc_button(r))
+        self.client.logout()
         doc = WgDraftFactory()
         chair = RoleFactory(name_id="chair", group=doc.group).person
         url = urlreverse(
@@ -2016,9 +2033,7 @@ class ChangeStreamStateTests(TestCase):
         )
         login_testing_unauthorized(self, chair.user.username, url)
         r = self.client.get(url)
-        self.assertContains(
-            response=r, text="Issue Working Group Last Call", status_code=200
-        )
+        self.assertTrue(_view_presents_issue_wglc_button(r))
         wglc_state = State.objects.get(type="draft-stream-ietf", slug="wg-lc")
         self.assertFalse(_form_presents_state_option(r, wglc_state))
         r = self.client.post(
@@ -2044,9 +2059,7 @@ class ChangeStreamStateTests(TestCase):
         )
         self.assertEqual(doc.docevent_set.count(), 2)
         r = self.client.get(url)
-        self.assertContains(
-            response=r, text="Issue Another Working Group Last Call", status_code=200
-        )
+        self.assertFalse(_view_presents_issue_wglc_button(r))
         self.assertTrue(_form_presents_state_option(r, wglc_state))
         r = self.client.post(
             url,
@@ -2064,6 +2077,10 @@ class ChangeStreamStateTests(TestCase):
         )
         self.assertEqual(r.status_code, 302)
         self.assertEqual(doc.docevent_set.count(), 3)
+        doc.set_state(State.objects.get(type_id="draft-stream-ietf",slug="chair-w"))
+        r = self.client.get(url)
+        self.assertTrue(_view_presents_issue_wglc_button(r))
+        self.assertContains(response=r,text="Issue Another Working Group Last Call", status_code=200)
         other_doc = WgDraftFactory()
         self.client.logout()
         url = urlreverse(
@@ -2232,15 +2249,24 @@ class ChangeStreamStateTests(TestCase):
         )
 
     def test_issue_wg_lc(self):
+        def _assert_rejected(testcase, doc, person):
+            url = urlreverse(
+                "ietf.doc.views_draft.issue_wg_lc", kwargs=dict(name=doc.name)
+            )
+            login_testing_unauthorized(testcase, person.user.username, url)
+            r = testcase.client.get(url)
+            testcase.assertEqual(r.status_code, 404)
+            testcase.client.logout()
+
+        already_rfc = WgDraftFactory(states=[("draft", "rfc")])
+        rfc_chair = RoleFactory(name_id="chair", group=already_rfc.group).person
+        _assert_rejected(self, already_rfc, rfc_chair)
         rg_doc = RgDraftFactory()
         rg_chair = RoleFactory(name_id="chair", group=rg_doc.group).person
-        url = urlreverse(
-            "ietf.doc.views_draft.issue_wg_lc", kwargs=dict(name=rg_doc.name)
-        )
-        login_testing_unauthorized(self, rg_chair.user.username, url)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 404)
-        self.client.logout()
+        _assert_rejected(self, rg_doc, rg_chair)
+        inwglc_doc = WgDraftFactory(states=[("draft-stream-ietf", "wg-lc")])
+        inwglc_chair = RoleFactory(name_id="chair", group=inwglc_doc.group).person
+        _assert_rejected(self, inwglc_doc, inwglc_chair)
         doc = WgDraftFactory()
         chair = RoleFactory(name_id="chair", group=doc.group).person
         url = urlreverse("ietf.doc.views_draft.issue_wg_lc", kwargs=dict(name=doc.name))
@@ -2268,7 +2294,6 @@ class ChangeStreamStateTests(TestCase):
         self.assertIn("WG Last Call", outbox[1]["Subject"])
         body = get_payload_text(outbox[1])
         self.assertIn("disclosure obligations", body)
-
 
     def test_pubreq_validation(self):
         role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name='WG Cháir Man')

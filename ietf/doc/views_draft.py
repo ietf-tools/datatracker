@@ -1848,6 +1848,8 @@ def change_stream_state(request, name, state_type):
                                "state_type": state_type,
                                "next_states": next_states,
                                "iesg_state_id": doc.get_state_slug("draft-iesg"),
+                               "ietf_stream_state_id": doc.get_state_slug("draft-stream-ietf"),
+                               "draft_state_id": doc.get_state_slug("draft"),
                                "has_had_wg_lc": doc.docevent_set.filter(statedocevent__state__slug="wg-lc").exists(),
                               })
 
@@ -1945,6 +1947,10 @@ def issue_wg_lc(request, name):
     if doc.stream_id != "ietf":
         raise Http404
     if doc.group is None or doc.group.type_id != "wg":
+        raise Http404
+    if doc.get_state_slug("draft-stream-ietf") == "wg-lc":
+        raise Http404
+    if doc.get_state_slug("draft") == "rfc":
         raise Http404
 
     if not is_authorized_in_doc_stream(request.user, doc):

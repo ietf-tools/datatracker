@@ -12,10 +12,12 @@
     </h1>
     {% if doc.stream_id == "ietf" %}
     <div>
+        {% if ietf_stream_state_id != "wg-lc" and draft_state_id != "rfc" %}
+          <a type="button" class="btn btn-primary next-state" href="{% url 'ietf.doc.views_draft.issue_wg_lc' name=doc.name %}" id="id_wglc_button">Issue{% if has_had_wg_lc %} Another{% endif %} Working Group Last Call</a>
+        {% endif %}
         {% if iesg_state_id == "idexists" %}
           <a type="button" class="btn btn-primary next-state" href="{% url 'ietf.doc.views_draft.to_iesg' name=doc.name %}">Submit to IESG for Publication</a>
         {% endif %}
-          <a type="button" class="btn btn-primary next-state" href="{% url 'ietf.doc.views_draft.issue_wg_lc' name=doc.name %}">Issue{% if has_had_wg_lc %} Another{% endif %} Working Group Last Call</a>
     </div>
     {% endif %}
     {% if next_states %}
