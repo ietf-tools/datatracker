@@ -413,7 +413,7 @@ class GroupPagesTests(TestCase):
             self.assertContains(r, draft3.name)
             for ah in draft3.action_holders.all():
                 self.assertContains(r, escape(ah.name))
-            self.assertContains(r, "Internet-Draft at the IESG") # draft3 is pub-req hence should have such a divider
+            self.assertContains(r, "Active with the IESG Internet-Draft") # draft3 is pub-req hence should have such a divider
             self.assertContains(r, 'for 173 days', count=1)  # the old_dah should be tagged
             self.assertContains(r, draft4.name)
             self.assertNotContains(r, draft5.name)
