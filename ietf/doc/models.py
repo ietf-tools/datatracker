@@ -885,7 +885,7 @@ class RfcAuthor(models.Model):
     """Captures the authors of an RFC as represented on the RFC title page.
 
     This deviates from DocumentAuthor in that it does not get moved into the DocHistory
-    hierarchy as documents are saved. It will attempt to preserve email and affiliation
+    hierarchy as documents are saved. It will attempt to preserve email, country, and affiliation
     from the DocumentAuthor objects associated with the draft leading to this RFC (which
     may be wrong if the author moves or changes affiliation while the document is in the
     queue).
@@ -908,6 +908,7 @@ class RfcAuthor(models.Model):
     person = ForeignKey(Person, null=True, blank=True, on_delete=models.PROTECT)
     email = ForeignKey(Email, help_text="Email address used by author for submission", blank=True, null=True, on_delete=models.PROTECT)
     affiliation = models.CharField(max_length=100, blank=True, help_text="Organization/company used by author for submission")
+    country = models.CharField(max_length=255, blank=True, help_text="Country used by author for submission")
     order = models.IntegerField(default=1)
 
     def __str__(self):

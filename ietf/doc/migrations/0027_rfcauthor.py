@@ -34,6 +34,14 @@ class Migration(migrations.Migration):
                         max_length=100,
                     ),
                 ),
+                (
+                    "country",
+                    models.CharField(
+                        blank=True,
+                        help_text="Country used by author for submission",
+                        max_length=255,
+                    ),
+                ),
                 ("order", models.IntegerField(default=1)),
                 (
                     "document",
