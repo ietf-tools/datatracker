@@ -93,6 +93,8 @@ urlpatterns = [
     url(r'^ballots/irsg/$', views_ballot.irsg_ballot_status),
     url(r'^ballots/rsab/$', views_ballot.rsab_ballot_status),
 
+    url(r'^build-position-email/$', views_ballot.ajax_build_position_email),
+
     url(r'^(?P<type_id>(bcp|std|fyi))/?$', views_search.index_subseries),
 
     url(r'^%(name)s(?:/%(rev)s)?/$' % settings.URL_REGEXPS, views_doc.document_main),

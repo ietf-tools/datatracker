@@ -33,11 +33,18 @@
             {% if field.name == "discuss" %}</div>{% endif %}
         {% endfor %}
         <div class="mt-3">
+            <div>Usual actions:</div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#emailPreview">
+                Preview email
+            </button>
             <button type="submit"
                     class="btn btn-primary"
                     name="send_mail"
                     value="Save and send email">Save &amp; send email</button>
-            <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+        <div class="mt-3">
+            <div>Unusual actions:</div>
+            <button type="submit" class="btn btn-warning">Save without sending email</button>
             {% if doc.type_id == "draft" or doc.type_id == "conflrev" %}
                 {% if doc.stream.slug != "irtf" %}
                     {% if ballot_deferred %}
@@ -59,6 +66,27 @@
             </a>
         </div>
     </form>
+    <!-- Button trigger modal -->
+  
+
+    <!-- Modal -->
+    <div class="modal fade" id="emailPreview" tabindex="-1" aria-labelledby="emailPreviewLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h1 class="modal-title fs-5" id="emailPreviewLabel">This email has not yet been sent</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <pre class="modal-body">
+            Loading
+        </pre>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+        </div>
+    </div>
+    </div>
+    <!-- End of experiment -->
 {% endblock %}
 {% block js %}
     <script>
@@ -77,5 +105,23 @@
         });
 
         discussToggle($("input[name=position]:checked").val());
+    </script>
+
+    <script>
+        const emailPreview = document.getElementById('emailPreview')
+        if (emailPreview) {
+            emailPreview.addEventListener('show.bs.modal', async (event) => {
+                const formData = new FormData()
+                formData.append("somenot","emptyform") 
+                response = await fetch('/doc/build-position-email/', {
+                    method: 'POST',
+                    body: formData
+                })
+                // Update the modal's content.
+                const modalBody = emailPreview.querySelector('.modal-body')
+                responseJson = await response.json()
+                modalBody.textContent = responseJson.text
+            })
+        }
     </script>
 {% endblock %}

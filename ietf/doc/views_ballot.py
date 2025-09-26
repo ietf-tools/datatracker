@@ -8,7 +8,7 @@ import datetime, json
 
 from django import forms
 from django.conf import settings
-from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseNotAllowed, HttpResponseRedirect, Http404, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.defaultfilters import striptags
 from django.template.loader import render_to_string
@@ -299,6 +299,22 @@ def api_set_position(request):
         status=200,
         content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
     )
+
+@role_required("Area Director", "Secretariat")
+@csrf_exempt
+def ajax_build_position_email(request):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    if not request.POST:
+        return HttpResponse(
+            json.dumps({"success": False, "error": "No data submitted"}),
+            content_type="application/json",
+        )
+    response = {
+        "success": True,
+        "text": "rendered email goes here"
+    } 
+    return HttpResponse(json.dumps(response), content_type="application/json")
 
 
 def build_position_email(balloter, doc, pos):

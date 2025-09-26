@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
+import json
 import os
 import datetime
 import io
@@ -2391,3 +2392,18 @@ class EditorialDraftMetadataTests(TestCase):
         top_level_metadata_headings = q("tbody>tr>th:first-child").text()
         self.assertNotIn("IESG", top_level_metadata_headings)
         self.assertNotIn("IANA", top_level_metadata_headings)
+
+class BallotEmailAjaxTests(TestCase):
+    def test_ajax_build_position_email(self):
+        url = urlreverse("ietf.doc.views_ballot.ajax_build_position_email")
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 405)
+        r = self.client.post(url, {})
+        response = json.loads(r.content)
+        self.assertFalse(response["success"])
+        r = self.client.post(url, {"dict is":"not empty"})
+        response = json.loads(r.content)
+        self.assertTrue(response["success"])
+        self.assertIn("email goes here",response["text"])
+
