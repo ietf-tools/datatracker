@@ -124,6 +124,7 @@ urlpatterns = [
     url(r'^%(name)s/edit/info/$' % settings.URL_REGEXPS, views_draft.edit_info),
     url(r'^%(name)s/edit/requestresurrect/$' % settings.URL_REGEXPS, views_draft.request_resurrect),
     url(r'^%(name)s/edit/submit-to-iesg/$' % settings.URL_REGEXPS, views_draft.to_iesg),
+    url(r'^%(name)s/edit/issue-wg-lc/$' % settings.URL_REGEXPS, views_draft.issue_wg_lc),
     url(r'^%(name)s/edit/resurrect/$' % settings.URL_REGEXPS, views_draft.resurrect),
     url(r'^%(name)s/edit/addcomment/$' % settings.URL_REGEXPS, views_doc.add_comment),
 
