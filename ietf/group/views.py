@@ -51,7 +51,13 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, F, OuterRef, Prefetch, Q, Subquery, TextField, Value
 from django.db.models.functions import Coalesce
-from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
+from django.http import (
+    HttpResponse,
+    HttpResponseRedirect,
+    Http404,
+    JsonResponse,
+    HttpResponseBadRequest,
+)
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
@@ -96,11 +102,9 @@ from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewerSetting
 from ietf.review.policies import get_reviewer_queue_policy
 from ietf.review.utils import (can_manage_review_requests_for_team,
                                can_access_review_stats_for_team,
-
                                extract_revision_ordered_review_requests_for_documents_and_replaced,
                                assign_review_request_to_reviewer,
                                close_review_request,
-
                                suggested_review_requests_for_team,
                                unavailable_periods_to_list,
                                current_unavailable_periods_for_reviewers,
@@ -687,13 +691,30 @@ def history(request, acronym, group_type=None):
                       "can_add_comment": can_add_comment,
                   }))
 
+
+class RequestsHistoryParamsForm(forms.Form):
+    SINCE_CHOICES = (
+        (None, "1 month"),
+        ("3m", "3 months"),
+        ("6m", "6 months"),
+        ("1y", "1 year"),
+        ("2y", "2 years"),
+        ("all", "All"),
+    )
+
+    reviewer_email = forms.EmailField(required=False)
+    since = forms.ChoiceField(choices=SINCE_CHOICES, required=False)
+
 def review_requests_history(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
     if not group.features.has_reviews:
         raise Http404
 
-    reviewer_email = request.GET.get("reviewer_email", None)
+    params = RequestsHistoryParamsForm(request.GET)
+    if not params.is_valid():
+        return HttpResponseBadRequest("Invalid parameters")
 
+    reviewer_email = params.cleaned_data["reviewer_email"] or None
     if reviewer_email:
         history = ReviewAssignment.history.model.objects.filter(
             review_request__team__acronym=acronym,
@@ -703,19 +724,7 @@ def review_requests_history(request, acronym, group_type=None):
             review_request__team__acronym=acronym)
         reviewer_email = ''
         
-    since_choices = [
-        (None, "1 month"),
-        ("3m", "3 months"),
-        ("6m", "6 months"),
-        ("1y", "1 year"),
-        ("2y", "2 years"),
-        ("all", "All"),
-    ]
-    since = request.GET.get("since", None)
-    
-    if since not in [key for key, label in since_choices]:
-        since = None
-
+    since = params.cleaned_data["since"] or None
     if since != "all":
         date_limit = {
             None: datetime.timedelta(days=31),
@@ -732,7 +741,7 @@ def review_requests_history(request, acronym, group_type=None):
                       "group": group,
                       "acronym": acronym,
                       "history": history,
-                      "since_choices": since_choices,
+                      "since_choices": params.SINCE_CHOICES,
                       "since": since,
                       "reviewer_email": reviewer_email
                   }))
@@ -933,7 +942,7 @@ def meetings(request, acronym, group_type=None):
             cutoff_date = revsub_dates_by_meeting[s.meeting.pk]
         else:
             cutoff_date = s.meeting.date + datetime.timedelta(days=s.meeting.submission_correction_day_offset)
-        s.cached_is_cutoff = date_today(datetime.timezone.utc) > cutoff_date
+        s.cached_is_cutoff = date_today(datetime.UTC) > cutoff_date
 
     future, in_progress, recent, past = group_sessions(sessions)
 

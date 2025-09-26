@@ -5,7 +5,7 @@ import copy
 import datetime
 import json
 import html
-import mock
+from unittest import mock
 import os
 import sys
 
@@ -41,6 +41,7 @@ from ietf.utils.mail import empty_outbox, outbox, get_payload_text
 from ietf.utils.models import DumpInfo
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, reload_db_objects
 
+from . import Serializer
 from .ietf_utils import is_valid_token, requires_api_token
 from .views import EmailIngestionError
 
@@ -461,12 +462,12 @@ class CustomApiTests(TestCase):
         self.assertTrue(session.attended_set.filter(person=recman).exists())
         self.assertEqual(
             session.attended_set.get(person=recman).time,
-            datetime.datetime(2023, 9, 3, 12, 34, 56, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2023, 9, 3, 12, 34, 56, tzinfo=datetime.UTC),
         )
         self.assertTrue(session.attended_set.filter(person=otherperson).exists())
         self.assertEqual(
             session.attended_set.get(person=otherperson).time,
-            datetime.datetime(2023, 9, 3, 3, 0, 19, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2023, 9, 3, 3, 0, 19, tzinfo=datetime.UTC),
         )
 
     def test_api_upload_polls_and_chatlog(self):
@@ -870,7 +871,7 @@ class CustomApiTests(TestCase):
         self.assertEqual(volunteer.origin, 'registration')
 
     def test_api_version(self):
-        DumpInfo.objects.create(date=timezone.datetime(2022,8,31,7,10,1,tzinfo=datetime.timezone.utc), host='testapi.example.com',tz='UTC')
+        DumpInfo.objects.create(date=timezone.datetime(2022,8,31,7,10,1,tzinfo=datetime.UTC), host='testapi.example.com',tz='UTC')
         url = urlreverse('ietf.api.views.version')
         r = self.client.get(url)
         data = r.json()
@@ -1496,7 +1497,7 @@ class DirectAuthApiTests(TestCase):
         data = self.response_data(r)
         self.assertEqual(data["result"], "success")
 
-class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
+class TastypieApiTests(ResourceTestCaseMixin, TestCase):
     def __init__(self, *args, **kwargs):
         self.apps = {}
         for app_name in settings.INSTALLED_APPS:
@@ -1506,7 +1507,7 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
                 models_path = os.path.join(os.path.dirname(app.__file__), "models.py")
                 if os.path.exists(models_path):
                     self.apps[name] = app_name
-        super(TastypieApiTestCase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def test_api_top_level(self):
         client = Client(Accept='application/json')
@@ -1540,6 +1541,21 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
                     #print("There doesn't seem to be any resource for model %s.models.%s"%(app.__name__,model.__name__,))
                     self.assertIn(model._meta.model_name, list(app_resources.keys()),
                         "There doesn't seem to be any API resource for model %s.models.%s"%(app.__name__,model.__name__,))
+
+    def test_serializer_to_etree_handles_nulls(self):
+        """Serializer to_etree() should handle a null character"""
+        serializer = Serializer()
+        try:
+            serializer.to_etree("string with no nulls in it")
+        except ValueError:
+            self.fail("serializer.to_etree raised ValueError on an ordinary string")
+        try:
+            serializer.to_etree("string with a \x00 in it")
+        except ValueError:
+            self.fail(
+                "serializer.to_etree raised ValueError on a string "
+                "containing a null character"
+            )
 
 
 class RfcdiffSupportTests(TestCase):

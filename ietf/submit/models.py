@@ -3,7 +3,6 @@
 
 
 import email
-import jsonfield
 
 from django.db import models
 from django.utils import timezone
@@ -46,7 +45,9 @@ class Submission(models.Model):
     words = models.IntegerField(null=True, blank=True)
     formal_languages = models.ManyToManyField(FormalLanguageName, blank=True, help_text="Formal languages used in document")
 
-    authors = jsonfield.JSONField(default=list, help_text="List of authors with name, email, affiliation and country.")
+    authors = models.JSONField(default=list, help_text="List of authors with name, email, affiliation and country.")
+    # Schema note: authors is a list of authors. Each author is a JSON object with 
+    # "name", "email", "affiliation", and "country" keys. All values are strings.
     note = models.TextField(blank=True)
     replaces = models.CharField(max_length=1000, blank=True)
 
@@ -55,7 +56,7 @@ class Submission(models.Model):
     file_size = models.IntegerField(null=True, blank=True)
     document_date = models.DateField(null=True, blank=True)
     submission_date = models.DateField(default=date_today)
-    xml_version = models.CharField(null=True, max_length=4, default=None)
+    xml_version = models.CharField(null=True, blank=True, max_length=4, default=None)
 
     submitter = models.CharField(max_length=255, blank=True, help_text="Name and email of submitter, e.g. \"John Doe &lt;john@example.org&gt;\".")
 
@@ -135,7 +136,7 @@ class SubmissionCheck(models.Model):
     message = models.TextField(null=True, blank=True)
     errors = models.IntegerField(null=True, blank=True, default=None)
     warnings = models.IntegerField(null=True, blank=True, default=None)
-    items = jsonfield.JSONField(null=True, blank=True, default='{}')
+    items = models.JSONField(null=True, blank=True, default=dict)
     symbol = models.CharField(max_length=64, default='')
     #
     def __str__(self):

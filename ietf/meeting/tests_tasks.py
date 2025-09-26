@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
 import datetime
-from mock import patch, call
+from unittest.mock import patch, call
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import date_today
 from .factories import MeetingFactory
@@ -23,7 +23,7 @@ class TaskTests(TestCase):
         meeting127 = MeetingFactory(type_id="ietf", number="127")  # 24 * 5 + 7
         
         # Times to be returned
-        now_utc = datetime.datetime.now(tz=datetime.timezone.utc)
+        now_utc = datetime.datetime.now(tz=datetime.UTC)
         hour_00_utc = now_utc.replace(hour=0)
         hour_01_utc = now_utc.replace(hour=1)
         hour_07_utc = now_utc.replace(hour=7)

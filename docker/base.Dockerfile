@@ -1,4 +1,4 @@
-FROM python:3.9-bookworm
+FROM python:3.12-bookworm
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -69,7 +69,7 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 	nodejs \
 	pgloader \
 	pigz \
-	postgresql-client-14 \
+	postgresql-client-17 \
 	pv \
 	python3-ipython \
 	ripgrep \
