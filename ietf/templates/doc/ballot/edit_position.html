@@ -65,10 +65,7 @@
                 Back
             </a>
         </div>
-    </form>
-    <!-- Button trigger modal -->
-  
-
+    </form>  
     <!-- Modal -->
     <div class="modal fade" id="emailPreview" tabindex="-1" aria-labelledby="emailPreviewLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
@@ -86,7 +83,6 @@
         </div>
     </div>
     </div>
-    <!-- End of experiment -->
 {% endblock %}
 {% block js %}
     <script>
@@ -108,14 +104,22 @@
     </script>
 
     <script>
-        const emailPreview = document.getElementById('emailPreview')
+        const emailPreview = document.getElementById("emailPreview")
         if (emailPreview) {
-            emailPreview.addEventListener('show.bs.modal', async (event) => {
-                const formData = new FormData()
-                formData.append("somenot","emptyform") 
-                response = await fetch('/doc/build-position-email/', {
-                    method: 'POST',
-                    body: formData
+            emailPreview.addEventListener("show.bs.modal", async (event) => {
+                const discuss = document.getElementById("id_discuss").value
+                const comment = document.getElementById("id_comment").value
+                const postData = {
+                    discuss: discuss,
+                    comment: comment,
+                }
+                console.log(postData)
+                response = await fetch("/doc/build-position-email/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({"post_data": postData})
                 })
                 // Update the modal's content.
                 const modalBody = emailPreview.querySelector('.modal-body')

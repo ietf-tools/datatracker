@@ -2402,8 +2402,8 @@ class BallotEmailAjaxTests(TestCase):
         r = self.client.post(url, {})
         response = json.loads(r.content)
         self.assertFalse(response["success"])
-        r = self.client.post(url, {"dict is":"not empty"})
+        r = self.client.post(url, {"dictis":"not empty"})
         response = json.loads(r.content)
         self.assertTrue(response["success"])
-        self.assertIn("email goes here",response["text"])
+        self.assertIn("Discuss:",response["text"])
 

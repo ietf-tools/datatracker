@@ -300,19 +300,36 @@ def api_set_position(request):
         content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
     )
 
+
 @role_required("Area Director", "Secretariat")
 @csrf_exempt
 def ajax_build_position_email(request):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
-    if not request.POST:
-        return HttpResponse(
-            json.dumps({"success": False, "error": "No data submitted"}),
-            content_type="application/json",
-        )
+    debug.show("request.body")
+    # if not request.POST:
+    #     return HttpResponse(
+    #         json.dumps({"success": False, "error": "No data submitted"}),
+    #         content_type="application/json",
+    #     )
+    # debug.show("request.POST")
+    # debug.show("form")
+    # if not form.is_valid():
+    #     return HttpResponse(
+    #         json.dumps({
+    #             "success": False,
+    #             "errors": form.errors,
+    #         })
+    #     )
+    # cleaned_data = form.cleaned_data
+    # discuss = cleaned_data.get("discuss")
+    # comment = cleaned_data.get("comment")
+    post_data = json.loads(request.body)["post_data"]
+    discuss = post_data.get("discuss")
+    comment = post_data.get("comment")
     response = {
         "success": True,
-        "text": "rendered email goes here"
+        "text": f"Discuss:\n {discuss}\nComments:\n {comment}"
     } 
     return HttpResponse(json.dumps(response), content_type="application/json")
 
