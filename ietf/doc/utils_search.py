@@ -224,7 +224,7 @@ def prepare_document_table(request, docs, query=None, max_results=200, show_ad_a
 
         if d.type_id == "draft":
             res.append(num(["Active", "Expired", "Replaced", "Withdrawn", "RFC"].index(d.search_heading.split()[0])))
-            if d.search_heading.startswith("Active with"):
+            if "with the IESG" in d.search_heading:
                 res.append("1")
             else:
                 res.append("0")
