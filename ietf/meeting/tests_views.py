@@ -7554,7 +7554,7 @@ class SessionTests(TestCase):
         )
         def _sreq_edit_link(sess):
             return urlreverse(
-                'ietf.secr.sreq.views.edit',
+                'ietf.meeting.views_session_request.edit_request',
                 kwargs={
                     'num': meeting.number,
                     'acronym': sess.group.acronym,

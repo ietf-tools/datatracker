@@ -20,12 +20,10 @@
 
             <h2>Meetings and Proceedings</h2>
             <ul>
-                <li> <a href="{% url 'ietf.secr.sreq.views.main' %} "><b>Session Requests</b></a></li>
                 <li> <a href="{% url 'ietf.secr.meetings.views.main' %}"><b>Meeting Manager</b></a></li>
             </ul>
         {% else %}
             <ul>
-                <li> <a href="{% url 'ietf.secr.sreq.views.main' %}"><b>Session Requests</b></a></li>
                 <li> <a href="{% url 'ietf.secr.announcement.views.main' %}"><b>Announcements</b></a></li>
             </ul>
         {% endif %}
