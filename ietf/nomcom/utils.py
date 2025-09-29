@@ -27,7 +27,7 @@ from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.doc.models import DocEvent, NewRevisionDocEvent
+from ietf.doc.models import DocEvent, NewRevisionDocEvent, State
 from ietf.group.models import Group, Role
 from ietf.person.models import Email, Person
 from ietf.mailtrigger.utils import gather_address_lists
@@ -35,7 +35,7 @@ from ietf.meeting.models import Meeting
 from ietf.meeting.utils import participants_for_meeting
 from ietf.utils.pipe import pipe
 from ietf.utils.mail import send_mail_text, send_mail, get_payload_text
-from ietf.utils.log import log
+from ietf.utils.log import assertion, log
 from ietf.person.name import unidecode_name
 from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
 
@@ -608,9 +608,37 @@ def get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable):
          )
     ).distinct()
 
-    rfc_pks = set(DocEvent.objects.filter(type='published_rfc', time__gte=five_years_ago, time__lte=date_as_dt).values_list('doc__pk', flat=True))
-    iesgappr_pks = set(DocEvent.objects.filter(type='iesg_approved', time__gte=five_years_ago, time__lte=date_as_dt).values_list('doc__pk',flat=True))
-    qualifying_pks = rfc_pks.union(iesgappr_pks.difference(rfc_pks))
+    # The author path is defined by "path 3" in section 4 of RFC 8989. It qualifies
+    # a person who has been a front-page listed author or editor of at least two IETF-
+    # stream RFCs within the last five years. An I-D in the RFC Editor queue that was
+    # approved by the IESG is treated as an RFC, using the date of entry to the RFC
+    # Editor queue as the date for qualification.
+    #
+    # First, get the RFCs using publication date
+    rfc_pks = set(
+        DocEvent.objects.filter(
+            type='published_rfc',
+            doc__type_id="rfc",
+            time__gte=five_years_ago,
+            time__lte=date_as_dt,
+        ).values_list('doc__pk', flat=True)
+    )
+    # Second, get the IESG-approved I-Ds in the RFC Editor queue, excluding any that
+    # became RFCs already
+    became_rfc_state = State.objects.filter(type_id="draft", slug="rfc").first()
+    assertion("became_rfc_state is not None")
+    iesgappr_pks = set(
+        DocEvent.objects.filter(
+            type='iesg_approved',
+            doc__type_id="draft",
+            time__gte=five_years_ago,
+            time__lte=date_as_dt,
+            doc__states__type_id="draft-rfceditor",
+        ).exclude(
+            doc__states=became_rfc_state
+        ).values_list('doc__pk', flat=True)
+    )
+    qualifying_pks = rfc_pks.union(iesgappr_pks)
     author_qs = base_qs.filter(
             documentauthor__document__pk__in=qualifying_pks # BIG TODO: make sure rfcauthor gets counted here - overqualify if necessary
         ).annotate(
