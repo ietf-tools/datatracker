@@ -18,7 +18,7 @@ from email.iterators import typed_subpart_iterator
 from email.utils import parseaddr
 from textwrap import dedent
 
-from django.db.models import Q, Count
+from django.db.models import Q, Count, F
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.exceptions import ObjectDoesNotExist
@@ -27,7 +27,7 @@ from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.doc.models import DocEvent, NewRevisionDocEvent, State
+from ietf.doc.models import DocEvent, NewRevisionDocEvent, State, Document
 from ietf.group.models import Group, Role
 from ietf.person.models import Email, Person
 from ietf.mailtrigger.utils import gather_address_lists
@@ -615,35 +615,48 @@ def get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable):
     # Editor queue as the date for qualification.
     #
     # First, get the RFCs using publication date
-    rfc_pks = set(
-        DocEvent.objects.filter(
-            type='published_rfc',
-            doc__type_id="rfc",
-            time__gte=five_years_ago,
-            time__lte=date_as_dt,
-        ).values_list('doc__pk', flat=True)
+    qualifying_rfc_pub_events = DocEvent.objects.filter(
+        type='published_rfc',
+        time__gte=five_years_ago,
+        time__lte=date_as_dt,
     )
+    qualifying_rfcs = Document.objects.filter(
+        type_id="rfc",
+        docevent__in=qualifying_rfc_pub_events
+    ).annotate(
+        rfcauthor_count=Count("rfcauthor")
+    )
+    rfcs_with_rfcauthors = qualifying_rfcs.filter(rfcauthor_count__gt=0).distinct()
+    rfcs_without_rfcauthors = qualifying_rfcs.filter(rfcauthor_count=0).distinct()
+
+    # rfc_pks = set(qualifying_rfcs.values_list('doc__pk', flat=True))
     # Second, get the IESG-approved I-Ds in the RFC Editor queue, excluding any that
     # became RFCs already
     became_rfc_state = State.objects.filter(type_id="draft", slug="rfc").first()
     assertion("became_rfc_state is not None")
-    iesgappr_pks = set(
-        DocEvent.objects.filter(
-            type='iesg_approved',
-            doc__type_id="draft",
-            time__gte=five_years_ago,
-            time__lte=date_as_dt,
-            doc__states__type_id="draft-rfceditor",
-        ).exclude(
-            doc__states=became_rfc_state
-        ).values_list('doc__pk', flat=True)
+    qualifying_approval_events = DocEvent.objects.filter(
+        type='iesg_approved',
+        time__gte=five_years_ago,
+        time__lte=date_as_dt,
     )
-    qualifying_pks = rfc_pks.union(iesgappr_pks)
+    qualifying_drafts = Document.objects.filter(
+        type_id="draft",
+        states__type_id="draft-rfceditor",  # ie, in the RFC Editor queue
+        docevent__in=qualifying_approval_events,
+    ).exclude(
+        states=became_rfc_state
+    ).distinct()
+
     author_qs = base_qs.filter(
-            documentauthor__document__pk__in=qualifying_pks # BIG TODO: make sure rfcauthor gets counted here - overqualify if necessary
-        ).annotate(
-            document_author_count = Count('documentauthor')
-        ).filter(document_author_count__gte=2)
+        Q(documentauthor__document__in=qualifying_drafts)
+        | Q(rfcauthor__document__in=rfcs_with_rfcauthors)
+        | Q(documentauthor__document__in=rfcs_without_rfcauthors)
+    ).annotate(
+        document_author_count=Count('documentauthor'),
+        rfc_author_count=Count("rfcauthor")
+    ).annotate(
+        authorship_count=F("document_author_count") + F("rfc_author_count")
+    ).filter(authorship_count__gte=2)
     return three_of_five_qs, officer_qs, author_qs
 
 def list_eligible_8989(date, base_qs=None):
