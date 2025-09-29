@@ -629,7 +629,6 @@ def get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable):
     rfcs_with_rfcauthors = qualifying_rfcs.filter(rfcauthor_count__gt=0).distinct()
     rfcs_without_rfcauthors = qualifying_rfcs.filter(rfcauthor_count=0).distinct()
 
-    # rfc_pks = set(qualifying_rfcs.values_list('doc__pk', flat=True))
     # Second, get the IESG-approved I-Ds in the RFC Editor queue, excluding any that
     # became RFCs already
     became_rfc_state = State.objects.filter(type_id="draft", slug="rfc").first()
