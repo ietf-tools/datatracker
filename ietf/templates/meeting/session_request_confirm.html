@@ -12,7 +12,7 @@
 
     <hr>
 
-    <div class="view-container">
+    <div class="custom-stripe">
 
         {% include "meeting/session_request_view_table.html" %}
 
@@ -34,30 +34,5 @@
 {% endblock %}
 
 {% block js %}
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Find the first .row inside .content
-            const firstRow = document.querySelector('.view-container .row');
-
-            if (firstRow) {
-                // Get the parent element to find all sibling rows
-                const parent = firstRow.parentElement;
-                
-                // Get all .row elements that are immediate children of the same parent
-                const allRows = Array.from(parent.children).filter(child => child.classList.contains('row'));
-                
-                // Apply striping - add bg_light to every other row (starting with index 1)
-                allRows.forEach((row, index) => {
-                    // Remove any existing bg_light class first
-                    row.classList.remove('bg-light');
-                    
-                    // Add bg_light to odd-indexed rows (0-based, so 1, 3, 5, etc.)
-                    if (index % 2 === 1) {
-                        row.classList.add('bg-light');
-                    }
-                });
-            }
-        });
-    </script>
+    <script src="{% static 'ietf/js/session_utils.js' %}"></script>
 {% endblock %}

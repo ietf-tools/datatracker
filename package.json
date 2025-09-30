@@ -149,6 +149,7 @@
         "ietf/static/js/select2.js",
         "ietf/static/js/session_details_form.js",
         "ietf/static/js/session_form.js",
+        "ietf/static/js/session_utils.js",
         "ietf/static/js/sessions.js",
         "ietf/static/js/sortable.js",
         "ietf/static/js/stats.js",
