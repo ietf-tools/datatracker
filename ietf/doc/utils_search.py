@@ -108,7 +108,10 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
                 d.search_heading = "Withdrawn Internet-Draft"
                 d.expirable = False
             else:
-                d.search_heading = "%s Internet-Draft" % d.get_state()
+                if d.type_id == "draft" and d.stream_id == 'ietf' and d.get_state_slug('draft-iesg') != 'idexists': # values can be: ad-eval idexists approved rfcqueue dead iesg-eva
+                    d.search_heading = "%s with the IESG Internet-Draft" % d.get_state()
+                else:
+                    d.search_heading = "%s Internet-Draft" % d.get_state()
                 if state_slug == "active":
                     d.expirable = d.pk in expirable_pks
                 else:
@@ -221,6 +224,10 @@ def prepare_document_table(request, docs, query=None, max_results=200, show_ad_a
 
         if d.type_id == "draft":
             res.append(num(["Active", "Expired", "Replaced", "Withdrawn", "RFC"].index(d.search_heading.split()[0])))
+            if "with the IESG" in d.search_heading:
+                res.append("1")
+            else:
+                res.append("0")
         else:
             res.append(d.type_id);
             res.append("-");
