@@ -1,4 +1,4 @@
-// Copyright The IETF Trust 2015-2021, All Rights Reserved
+// Copyright The IETF Trust 2015-2025, All Rights Reserved
 /* global alert */
 var ietf_sessions; // public interface
 

@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2025, All Rights Reserved
+
 from django.urls import re_path, include
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView

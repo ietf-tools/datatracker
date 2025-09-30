@@ -1,3 +1,4 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
 {% load tz ietf_filters %}{% for d in meeting.important_dates %}BEGIN:VEVENT
 UID:ietf-{{ meeting.number }}-{{ d.name_id }}-{{ d.date.isoformat }}
 SUMMARY:IETF {{ meeting.number }}: {{ d.name.name }}

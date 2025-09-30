@@ -1,3 +1,4 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
 {% load ams_filters %}
 ---------------------------------------------------------
 Working Group Name: {{ group.name }}
