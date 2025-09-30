@@ -27,8 +27,14 @@ import debug                            # pyflakes:ignore
 from ietf.api.views import EmailIngestionError
 from ietf.dbtemplate.factories import DBTemplateFactory
 from ietf.dbtemplate.models import DBTemplate
-from ietf.doc.factories import DocEventFactory, WgDocumentAuthorFactory, \
-    NewRevisionDocEventFactory, DocumentAuthorFactory, RfcAuthorFactory
+from ietf.doc.factories import (
+    DocEventFactory,
+    WgDocumentAuthorFactory,
+    NewRevisionDocEventFactory,
+    DocumentAuthorFactory,
+    RfcAuthorFactory,
+    WgDraftFactory, WgRfcFactory,
+)
 from ietf.group.factories import GroupFactory, GroupHistoryFactory, RoleFactory, RoleHistoryFactory
 from ietf.group.models import Group, Role
 from ietf.meeting.factories import MeetingFactory, AttendedFactory, RegistrationFactory
@@ -45,10 +51,20 @@ from ietf.nomcom.factories import NomComFactory, FeedbackFactory, TopicFactory, 
                                   nomcom_kwargs_for_year, provide_private_key_to_test_client, \
                                   key
 from ietf.nomcom.tasks import send_nomcom_reminders_task
-from ietf.nomcom.utils import get_nomcom_by_year, make_nomineeposition, \
-                              get_hash_nominee_position, is_eligible, list_eligible, \
-                              get_eligibility_date, suggest_affiliation, ingest_feedback_email, \
-                              decorate_volunteers_with_qualifications, send_reminders, _is_time_to_send_reminder
+from ietf.nomcom.utils import (
+    get_nomcom_by_year,
+    make_nomineeposition,
+    get_hash_nominee_position,
+    is_eligible,
+    list_eligible,
+    get_eligibility_date,
+    suggest_affiliation,
+    ingest_feedback_email,
+    decorate_volunteers_with_qualifications,
+    send_reminders,
+    _is_time_to_send_reminder,
+    get_qualified_author_queryset,
+)
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import Email, Person
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
@@ -2439,6 +2455,115 @@ class EligibilityUnitTests(TestCase):
 
         NomComFactory(group__acronym=f'nomcom{this_year}', first_call_for_volunteers=datetime.date(this_year,5,6))
         self.assertEqual(get_eligibility_date(),datetime.date(this_year,5,6))
+
+    def test_get_qualified_author_queryset(self):
+        """get_qualified_author_queryset implements the eligiblity rules correctly
+        
+        Note on methodology: rather than moving events around a fixed 5-year
+        eligibility period, this takes advantage of the method-under-test's accepting
+        start and end datetimes for the eligibility interval. Events are fixed in time
+        and the start and end are adjusted to include various combinations.
+        
+        This is not an exhaustive test of corner cases.
+        """
+        people = PersonFactory.create_batch(2)
+        base_qs = Person.objects.filter(pk__in=[person.pk for person in people])
+        now = datetime.datetime.now(tz=datetime.UTC)
+        one_year = datetime.timedelta(days=365)
+
+        approved_draft = WgDraftFactory(
+            authors=people,
+            states=[("draft", "active"), ("draft-rfceditor", "auth48")]
+        )
+        DocEventFactory(
+            type="iesg_approved",
+            doc=approved_draft,
+            time=now - 4 * one_year,
+        )
+        
+        approved_draft_not_in_queue = WgDraftFactory(
+            authors=people,
+            states=[("draft", "active")]
+        )
+        DocEventFactory(
+            type="iesg_approved",
+            doc=approved_draft_not_in_queue,
+            time=now - 4 * one_year,
+        )
+        
+        # The draft-rfceditor state on this draft is not representative of real data
+        # but is helpful for testing succinctly. It ensures that the logic is using
+        # the ("draft", "rfc") state to exclude this draft from eligibility calcs.
+        published_draft = WgDraftFactory(
+            authors=people, states=[
+                ("draft", "rfc"), ("draft-rfceditor", "auth48")]
+        )
+        DocEventFactory(
+            type="iesg_approved",
+            doc=published_draft,
+            time=now - 3 * one_year,
+        )
+        rfc = WgRfcFactory(
+            authors=people,
+            group=published_draft.group,
+        )
+        DocEventFactory(
+            type="published_rfc",
+            doc=rfc,
+            time=now - 2 * one_year,
+        )
+
+        # Compute over a period with no qualifying events in it
+        self.assertCountEqual(
+            get_qualified_author_queryset(
+                base_qs, now - 6 * one_year, now - 5 * one_year
+            ),
+            [],
+        )
+
+        # Period with two IESG-approved drafts, but one of these is not in the
+        # RFC editor queue for some reason (has no draft-rfceditor state)
+        self.assertCountEqual(
+            get_qualified_author_queryset(
+                base_qs, now - 4.5 * one_year, now - 3.5 * one_year
+            ),
+            [],
+        )
+        
+        # Period including the IESG-approved drafts and the iesg_approved date for
+        # a draft published as an RFC outside the eligibility period
+        self.assertCountEqual(
+            get_qualified_author_queryset(
+                base_qs, now - 4.5 * one_year, now - 2.5 * one_year
+            ),
+            [],
+        )
+        
+        # Now extend the eligibility to include the RFC's publication. This gives
+        # two eligible documents: the iesg-approved draft in the rfc editor queue and
+        # the published RFC.
+        self.assertCountEqual(
+            get_qualified_author_queryset(
+                base_qs, now - 4.5 * one_year, now - 1.5 * one_year
+            ),
+            people,
+        )
+
+        # Now add an RfcAuthor for only one of the two authors to the RFC. This should
+        # remove the other author from the eligibility list because the DocumentAuthor
+        # records are no longer used.
+        RfcAuthorFactory(
+            document=rfc,
+            person=people[0],
+            titlepage_name="P. Zero",
+            email=people[0].email_set.first(),
+        )
+        self.assertCountEqual(
+            get_qualified_author_queryset(
+                base_qs, now - 4.5 * one_year, now - 1.5 * one_year
+            ),
+            [people[0]],
+        )
 
 
 class rfc8713EligibilityTests(TestCase):
