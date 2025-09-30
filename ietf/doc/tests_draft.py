@@ -20,13 +20,13 @@ from django.utils.html import escape
 import debug                            # pyflakes:ignore
 
 from ietf.doc.expire import expirable_drafts, get_expired_drafts, send_expire_notice_for_draft, expire_draft
-from ietf.doc.factories import EditorialDraftFactory, IndividualDraftFactory, WgDraftFactory, RgDraftFactory, DocEventFactory
+from ietf.doc.factories import EditorialDraftFactory, IndividualDraftFactory, StateDocEventFactory, WgDraftFactory, RgDraftFactory, DocEventFactory, WgRfcFactory
 from ietf.doc.models import ( Document, DocReminder, DocEvent,
     ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
     WriteupDocEvent, DocRelationshipName, IanaExpertDocEvent )
 from ietf.doc.storage_utils import exists_in_storage, store_str
 from ietf.doc.utils import get_tags_for_stream_id, create_ballot_if_not_open
-from ietf.doc.views_draft import AdoptDraftForm
+from ietf.doc.views_draft import AdoptDraftForm, IssueWorkingGroupLastCallForm
 from ietf.name.models import DocTagName, RoleName
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group, Role
@@ -2002,6 +2002,98 @@ class ChangeStreamStateTests(TestCase):
         self.assertTrue("mars-chairs@ietf.org" in outbox[0].as_string())
         self.assertTrue("marsdelegate@ietf.org" in outbox[0].as_string())
 
+    def test_set_stream_state_to_wglc(self):
+        def _form_presents_state_option(response, state):
+            q = PyQuery(response.content)
+            option = q(f"select#id_new_state option[value='{state.pk}']")
+            return len(option) != 0
+        
+        def _view_presents_issue_wglc_button(response):
+            q = PyQuery(response.content)
+            button = q("#id_wglc_button")
+            return len(button) != 0
+        
+        came_from_draft = WgDraftFactory(states=[("draft","rfc")])
+        rfc = WgRfcFactory(group=came_from_draft.group)
+        came_from_draft.relateddocument_set.create(relationship_id="became_rfc",target=rfc)
+        rfc_chair = RoleFactory(name_id="chair", group=rfc.group).person
+        url = urlreverse(
+            "ietf.doc.views_draft.change_stream_state",
+            kwargs=dict(name=rfc.came_from_draft().name, state_type="draft-stream-ietf"),
+        )      
+        login_testing_unauthorized(self, rfc_chair.user.username, url)
+        r = self.client.get(url)
+        self.assertFalse(_view_presents_issue_wglc_button(r))
+        self.client.logout()
+        doc = WgDraftFactory()
+        chair = RoleFactory(name_id="chair", group=doc.group).person
+        url = urlreverse(
+            "ietf.doc.views_draft.change_stream_state",
+            kwargs=dict(name=doc.name, state_type="draft-stream-ietf"),
+        )
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertTrue(_view_presents_issue_wglc_button(r))
+        wglc_state = State.objects.get(type="draft-stream-ietf", slug="wg-lc")
+        self.assertFalse(_form_presents_state_option(r, wglc_state))
+        r = self.client.post(
+            url,
+            dict(
+                new_state=wglc_state.pk,
+                comment="some comment",
+                weeks="10",
+                tags=[
+                    t.pk
+                    for t in doc.tags.filter(
+                        slug__in=get_tags_for_stream_id(doc.stream_id)
+                    )
+                ],
+            ),
+        )
+        self.assertEqual(r.status_code, 200)
+        doc.set_state(wglc_state)
+        StateDocEventFactory(
+            doc=doc,
+            state_type_id="draft-stream-ietf",
+            state=("draft-stream-ietf", "wg-lc"),
+        )
+        self.assertEqual(doc.docevent_set.count(), 2)
+        r = self.client.get(url)
+        self.assertFalse(_view_presents_issue_wglc_button(r))
+        self.assertTrue(_form_presents_state_option(r, wglc_state))
+        r = self.client.post(
+            url,
+            dict(
+                new_state=wglc_state.pk,
+                comment="some comment",
+                weeks="10",
+                tags=[
+                    t.pk
+                    for t in doc.tags.filter(
+                        slug__in=get_tags_for_stream_id(doc.stream_id)
+                    )
+                ],
+            ),
+        )
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(doc.docevent_set.count(), 3)
+        doc.set_state(State.objects.get(type_id="draft-stream-ietf",slug="chair-w"))
+        r = self.client.get(url)
+        self.assertTrue(_view_presents_issue_wglc_button(r))
+        self.assertContains(response=r,text="Issue Another Working Group Last Call", status_code=200)
+        other_doc = WgDraftFactory()
+        self.client.logout()
+        url = urlreverse(
+            "ietf.doc.views_draft.change_stream_state",
+            kwargs=dict(name=other_doc.name, state_type="draft-stream-ietf"),
+        )
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertContains(
+            response=r, text="Issue Working Group Last Call", status_code=200
+        )
+        self.assertTrue(_form_presents_state_option(r, wglc_state))
+
     def test_wg_call_for_adoption_issued(self):
         role = RoleFactory(
             name_id="chair",
@@ -2123,78 +2215,85 @@ class ChangeStreamStateTests(TestCase):
         self.assertIn("disclosure obligations", body)
         self.assertIn("starts a 2-week", body)
 
-    def test_wg_last_call_issued(self):
-        role = RoleFactory(
-            name_id="chair",
-            group__acronym="mars",
-            group__list_email="mars-wg@ietf.org",
-            person__user__username="marschairman",
-            person__name="WG Cháir Man",
+    def test_issue_wg_lc_form(self):
+        end_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=1)
+        post = dict(
+            end_date=end_date,
+            to="foo@example.net, bar@example.com",
+            # Intentionally not passing cc
+            subject=f"garbage {end_date.isoformat()}",
+            body=f"garbage {end_date.isoformat()}",
         )
-        draft = WgDraftFactory(group=role.group)
-        url = urlreverse(
-            "ietf.doc.views_draft.change_stream_state",
-            kwargs=dict(name=draft.name, state_type="draft-stream-ietf"),
+        form = IssueWorkingGroupLastCallForm(post)
+        self.assertTrue(form.is_valid())
+        post["end_date"] = date_today(DEADLINE_TZINFO)
+        form = IssueWorkingGroupLastCallForm(post)
+        self.assertFalse(form.is_valid())
+        self.assertIn(
+            "End date must be later than today",
+            form.errors["end_date"],
+            "Form accepted a too-early date",
         )
-        login_testing_unauthorized(self, "marschairman", url)
-        old_state = draft.get_state("draft-stream-%s" % draft.stream_id)
-        new_state = State.objects.get(
-            used=True, type="draft-stream-%s" % draft.stream_id, slug="wg-lc"
+        post["end_date"] = end_date + datetime.timedelta(days=2)
+        form = IssueWorkingGroupLastCallForm(post)
+        self.assertFalse(form.is_valid())
+        self.assertIn(
+            f"Last call end date ({post['end_date'].isoformat()}) not found in subject",
+            form.errors["subject"],
+            "form allowed subject without end_date",
         )
-        self.assertNotEqual(old_state, new_state)
+        self.assertIn(
+            f"Last call end date ({post['end_date'].isoformat()}) not found in body",
+            form.errors["body"],
+            "form allowed body without end_date",
+        )
+
+    def test_issue_wg_lc(self):
+        def _assert_rejected(testcase, doc, person):
+            url = urlreverse(
+                "ietf.doc.views_draft.issue_wg_lc", kwargs=dict(name=doc.name)
+            )
+            login_testing_unauthorized(testcase, person.user.username, url)
+            r = testcase.client.get(url)
+            testcase.assertEqual(r.status_code, 404)
+            testcase.client.logout()
+
+        already_rfc = WgDraftFactory(states=[("draft", "rfc")])
+        rfc_chair = RoleFactory(name_id="chair", group=already_rfc.group).person
+        _assert_rejected(self, already_rfc, rfc_chair)
+        rg_doc = RgDraftFactory()
+        rg_chair = RoleFactory(name_id="chair", group=rg_doc.group).person
+        _assert_rejected(self, rg_doc, rg_chair)
+        inwglc_doc = WgDraftFactory(states=[("draft-stream-ietf", "wg-lc")])
+        inwglc_chair = RoleFactory(name_id="chair", group=inwglc_doc.group).person
+        _assert_rejected(self, inwglc_doc, inwglc_chair)
+        doc = WgDraftFactory()
+        chair = RoleFactory(name_id="chair", group=doc.group).person
+        url = urlreverse("ietf.doc.views_draft.issue_wg_lc", kwargs=dict(name=doc.name))
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        postdict = dict()
+        postdict["end_date"] = q("input#id_end_date").attr("value")
+        postdict["to"] = q("input#id_to").attr("value")
+        cc = q("input#id_cc").attr("value")
+        if cc is not None:
+            postdict["cc"] = cc
+        postdict["subject"] = q("input#id_subject").attr("value")
+        postdict["body"] = q("textarea#id_body").text()
         empty_outbox()
         r = self.client.post(
             url,
-            dict(
-                new_state=new_state.pk,
-                comment="some comment",
-                weeks="10",
-                tags=[
-                    t.pk
-                    for t in draft.tags.filter(
-                        slug__in=get_tags_for_stream_id(draft.stream_id)
-                    )
-                ],
-            ),
+            postdict,
         )
         self.assertEqual(r.status_code, 302)
+        self.assertEqual(doc.get_state_slug("draft-stream-ietf"), "wg-lc")
         self.assertEqual(len(outbox), 2)
-        self.assertIn("mars-wg@ietf.org", outbox[1]["To"])
+        self.assertIn(f"{doc.group.acronym}@ietf.org", outbox[1]["To"])
         self.assertIn("WG Last Call", outbox[1]["Subject"])
         body = get_payload_text(outbox[1])
         self.assertIn("disclosure obligations", body)
-        self.assertIn("starts a 10-week", body)
-        draft = WgDraftFactory(group=role.group)
-        url = urlreverse(
-            "ietf.doc.views_draft.change_stream_state",
-            kwargs=dict(name=draft.name, state_type="draft-stream-ietf"),
-        )
-        old_state = draft.get_state("draft-stream-%s" % draft.stream_id)
-        new_state = State.objects.get(
-            used=True, type="draft-stream-%s" % draft.stream_id, slug="wg-lc"
-        )
-        self.assertNotEqual(old_state, new_state)
-        empty_outbox()
-        r = self.client.post(
-            url,
-            dict(
-                new_state=new_state.pk,
-                comment="some comment",
-                tags=[
-                    t.pk
-                    for t in draft.tags.filter(
-                        slug__in=get_tags_for_stream_id(draft.stream_id)
-                    )
-                ],
-            ),
-        )
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(len(outbox), 2)
-        self.assertIn("mars-wg@ietf.org", outbox[1]["To"])
-        self.assertIn("WG Last Call", outbox[1]["Subject"])
-        body = get_payload_text(outbox[1])
-        self.assertIn("disclosure obligations", body)
-        self.assertIn("starts a 2-week", body)
 
     def test_pubreq_validation(self):
         role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name='WG Cháir Man')
