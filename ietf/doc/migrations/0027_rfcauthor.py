@@ -6,9 +6,8 @@ import ietf.utils.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ("person", "0004_alter_person_photo_alter_person_photo_thumb"),
+        ("person", "0005_alter_historicalperson_pronouns_selectable_and_more"),
         ("doc", "0026_change_wg_state_descriptions"),
     ]
 
@@ -47,7 +46,9 @@ class Migration(migrations.Migration):
                 (
                     "document",
                     ietf.utils.models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="doc.document"
+                        limit_choices_to={"type_id": "rfc"},
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="doc.document",
                     ),
                 ),
                 (
@@ -63,6 +64,7 @@ class Migration(migrations.Migration):
                 (
                     "person",
                     ietf.utils.models.ForeignKey(
+                        blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         to="person.person",
