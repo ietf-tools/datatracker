@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2025, All Rights Reserved
+
 from django import template
 from ietf.person.models import Person
 

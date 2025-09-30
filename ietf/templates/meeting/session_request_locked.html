@@ -1,0 +1,21 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
+{% extends "base.html" %}
+{% load static ietf_filters django_bootstrap5 %}
+{% block title %}Session Request{% endblock %}
+    
+{% block content %}
+    <h1 class="">Session Request - IETF {{ meeting.number }}</h1>
+
+    <a href="{% url 'ietf.meeting.views.meeting_requests' %}" class="btn btn-primary">View list of timeslot requests</a>
+
+    <hr>
+
+    <div class="">
+        <p>{{ message }}</p>
+
+        <div>
+            <button class="btn btn-primary" type="button" onclick="history.back()">Back</button>
+        </div>
+    </div> 
+
+{% endblock %}
