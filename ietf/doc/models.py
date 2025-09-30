@@ -7,7 +7,6 @@ import datetime
 import logging
 import os
 
-import django.db
 import rfc2html
 
 from io import BufferedReader
@@ -410,16 +409,20 @@ class DocumentInfo(models.Model):
 
     def author_names(self):
         names = []
-        if self.type_id=="rfc" and self.rfcauthor_set.exists():
+        if self.type_id == "rfc" and self.rfcauthor_set.exists():
             for author in self.rfcauthor_set.all():
                 if author.person:
                     names.append(author.person.name)
-                elif author.titlepage_name != "":
+                else:
+                    # titlepage_name cannot be blank
                     names.append(author.titlepage_name)
         else:
-            names = [author.person.name for author in self.documentauthor_set.all()]
+            names = [
+                author.person.name
+                for author in self.documentauthor_set.select_related("person")
+            ]
         return names
-    
+
     def author_persons_or_names(self):
         Author = namedtuple("Author", "person titlepage_name")
         persons_or_names = []
@@ -433,10 +436,14 @@ class DocumentInfo(models.Model):
 
 
     def author_list(self):
-        if self.type_id == "rfc":
-            raise NotImplementedError
+        """List of author emails"""
+        author_qs = (
+            self.rfcauthor_set
+            if self.type_id == "rfc" and self.rfcauthor_set.exists()
+            else self.documentauthor_set
+        ).select_related("email").order_by("order")
         best_addresses = []
-        for author in self.documentauthor_set.all():
+        for author in author_qs:
             if author.email:
                 if author.email.active or not author.email.person:
                     best_addresses.append(author.email.address)
@@ -891,10 +898,14 @@ class RfcAuthor(models.Model):
     ignored.
     """
 
-    document = ForeignKey("Document", on_delete=models.CASCADE)
-    titlepage_name = models.CharField(max_length=128)
+    document = ForeignKey(
+        "Document",
+        on_delete=models.CASCADE,
+        limit_choices_to={"type_id": "rfc"},  # only affects ModelForms (e.g., admin)
+    )
+    titlepage_name = models.CharField(max_length=128, blank=False)
     is_editor = models.BooleanField(default=False)
-    person = ForeignKey(Person, null=True, on_delete=models.PROTECT)
+    person = ForeignKey(Person, null=True, blank=True, on_delete=models.PROTECT)
     email = ForeignKey(Email, help_text="Email address used by author for submission", blank=True, null=True, on_delete=models.PROTECT)
     affiliation = models.CharField(max_length=100, blank=True, help_text="Organization/company used by author for submission")
     country = models.CharField(max_length=255, blank=True, help_text="Country used by author for submission")

@@ -28,7 +28,7 @@ from ietf.api.views import EmailIngestionError
 from ietf.dbtemplate.factories import DBTemplateFactory
 from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.factories import DocEventFactory, WgDocumentAuthorFactory, \
-                               NewRevisionDocEventFactory, DocumentAuthorFactory
+    NewRevisionDocEventFactory, DocumentAuthorFactory, RfcAuthorFactory
 from ietf.group.factories import GroupFactory, GroupHistoryFactory, RoleFactory, RoleHistoryFactory
 from ietf.group.models import Group, Role
 from ietf.meeting.factories import MeetingFactory, AttendedFactory, RegistrationFactory
@@ -2878,15 +2878,38 @@ class VolunteerTests(TestCase):
 
     def test_suggest_affiliation(self):
         person = PersonFactory()
-        self.assertEqual(suggest_affiliation(person), '')
-        da = DocumentAuthorFactory(person=person,affiliation='auth_affil')
+        self.assertEqual(suggest_affiliation(person), "")
+        rfc_da = DocumentAuthorFactory(
+            person=person,
+            document__type_id="rfc",
+            affiliation="",
+        )
+        rfc = rfc_da.document
+        DocEventFactory(doc=rfc, type="published_rfc")
+        self.assertEqual(suggest_affiliation(person), "")
+
+        rfc_da.affiliation = "rfc_da_affil"
+        rfc_da.save()
+        self.assertEqual(suggest_affiliation(person), "rfc_da_affil")
+
+        rfc_ra = RfcAuthorFactory(person=person, document=rfc, affiliation="")
+        self.assertEqual(suggest_affiliation(person), "")
+
+        rfc_ra.affiliation = "rfc_ra_affil"
+        rfc_ra.save()
+        self.assertEqual(suggest_affiliation(person), "rfc_ra_affil")
+
+        da = DocumentAuthorFactory(person=person, affiliation="auth_affil")
         NewRevisionDocEventFactory(doc=da.document)
-        self.assertEqual(suggest_affiliation(person), 'auth_affil')
+        self.assertEqual(suggest_affiliation(person), "auth_affil")
+
         nc = NomComFactory()
-        nc.volunteer_set.create(person=person,affiliation='volunteer_affil')
-        self.assertEqual(suggest_affiliation(person), 'volunteer_affil')
-        RegistrationFactory(person=person, affiliation='meeting_affil')
-        self.assertEqual(suggest_affiliation(person), 'meeting_affil')
+        nc.volunteer_set.create(person=person, affiliation="volunteer_affil")
+        self.assertEqual(suggest_affiliation(person), "volunteer_affil")
+
+        RegistrationFactory(person=person, affiliation="meeting_affil")
+        self.assertEqual(suggest_affiliation(person), "meeting_affil")
+
 
 class VolunteerDecoratorUnitTests(TestCase):
     def test_decorate_volunteers_with_qualifications(self):

@@ -731,19 +731,42 @@ def three_of_five_eligible_9389(previous_five, queryset=None):
             counts[id] += 1
     return queryset.filter(pk__in=[id for id, count in counts.items() if count >= 3])
 
-def suggest_affiliation(person):
+def suggest_affiliation(person) -> str:
+    """Heuristically suggest a current affiliation for a Person"""
     recent_meeting = person.registration_set.order_by('-meeting__date').first()
-    affiliation = recent_meeting.affiliation if recent_meeting else ''
-    if not affiliation:
-        recent_volunteer = person.volunteer_set.order_by('-nomcom__group__acronym').first()
-        if recent_volunteer:
-            affiliation = recent_volunteer.affiliation 
-    if not affiliation:
-        recent_draft_revision =  NewRevisionDocEvent.objects.filter(doc__type_id='draft',doc__documentauthor__person=person).order_by('-time').first()
-        if recent_draft_revision:
-            affiliation = recent_draft_revision.doc.documentauthor_set.filter(person=person).first().affiliation
-    # TODO: When RfcAuthor affiliation comes from something other than copyforward from DocumentAuthor, add a clause that looks there too. Maybe just add it now as a no-op.
-    return affiliation
+    if recent_meeting and recent_meeting.affiliation:
+        return recent_meeting.affiliation
+
+    recent_volunteer = person.volunteer_set.order_by('-nomcom__group__acronym').first()
+    if recent_volunteer and recent_volunteer.affiliation:
+        return recent_volunteer.affiliation 
+
+    recent_draft_revision =  NewRevisionDocEvent.objects.filter(
+        doc__type_id="draft",
+        doc__documentauthor__person=person,
+    ).order_by("-time").first()
+    if recent_draft_revision:
+        draft_author = recent_draft_revision.doc.documentauthor_set.filter(
+            person=person
+        ).first()
+        if draft_author and draft_author.affiliation:
+            return draft_author.affiliation
+    
+    recent_rfc_publication = DocEvent.objects.filter(
+        Q(doc__documentauthor__person=person) | Q(doc__rfcauthor__person=person),
+        doc__type_id="rfc",
+        type="published_rfc",
+    ).order_by("-time").first()
+    if recent_rfc_publication:
+        rfc = recent_rfc_publication.doc
+        if rfc.rfcauthor_set.exists():
+            rfc_author = rfc.rfcauthor_set.filter(person=person).first()
+        else:
+            rfc_author = rfc.documentauthor_set.filter(person=person).first()
+        if rfc_author and rfc_author.affiliation:
+            return rfc_author.affiliation
+    return ""
+
 
 def extract_volunteers(year):
     nomcom = get_nomcom_by_year(year)
