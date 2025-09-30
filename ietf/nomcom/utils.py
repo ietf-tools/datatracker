@@ -18,7 +18,7 @@ from email.iterators import typed_subpart_iterator
 from email.utils import parseaddr
 from textwrap import dedent
 
-from django.db.models import Q, Count, F
+from django.db.models import Q, Count, F, QuerySet
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.exceptions import ObjectDoesNotExist
@@ -576,6 +576,67 @@ def get_8989_eligibility_querysets(date, base_qs):
 def get_9389_eligibility_querysets(date, base_qs):
     return get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable=three_of_five_eligible_9389)
 
+
+def get_qualified_author_queryset(
+    base_qs: QuerySet[Person],
+    eligibility_period_start: datetime.datetime,
+    eligibility_period_end: datetime.datetime,
+):
+    """Filter a Person queryset, keeping those qualified by RFC 8989's author path
+    
+    The author path is defined by "path 3" in section 4 of RFC 8989. It qualifies
+    a person who has been a front-page listed author or editor of at least two IETF-
+    stream RFCs within the last five years. An I-D in the RFC Editor queue that was
+    approved by the IESG is treated as an RFC, using the date of entry to the RFC
+    Editor queue as the date for qualification.
+    
+    Arguments eligibility_period_start and eligibility_period_end are datetimes that
+    mark the start and end of the eligibility period. These should be five years apart.
+    """
+    # First, get the RFCs using publication date
+    qualifying_rfc_pub_events = DocEvent.objects.filter(
+        type='published_rfc',
+        time__gte=eligibility_period_start,
+        time__lte=eligibility_period_end,
+    )
+    qualifying_rfcs = Document.objects.filter(
+        type_id="rfc",
+        docevent__in=qualifying_rfc_pub_events
+    ).annotate(
+        rfcauthor_count=Count("rfcauthor")
+    )
+    rfcs_with_rfcauthors = qualifying_rfcs.filter(rfcauthor_count__gt=0).distinct()
+    rfcs_without_rfcauthors = qualifying_rfcs.filter(rfcauthor_count=0).distinct()
+
+    # Second, get the IESG-approved I-Ds in the RFC Editor queue, excluding any that
+    # became RFCs already
+    became_rfc_state = State.objects.filter(type_id="draft", slug="rfc").first()
+    assertion("became_rfc_state is not None")
+    qualifying_approval_events = DocEvent.objects.filter(
+        type='iesg_approved',
+        time__gte=eligibility_period_start,
+        time__lte=eligibility_period_end,
+    )
+    qualifying_drafts = Document.objects.filter(
+        type_id="draft",
+        states__type_id="draft-rfceditor",  # ie, in the RFC Editor queue
+        docevent__in=qualifying_approval_events,
+    ).exclude(
+        states=became_rfc_state
+    ).distinct()
+
+    return base_qs.filter(
+        Q(documentauthor__document__in=qualifying_drafts)
+        | Q(rfcauthor__document__in=rfcs_with_rfcauthors)
+        | Q(documentauthor__document__in=rfcs_without_rfcauthors)
+    ).annotate(
+        document_author_count=Count('documentauthor'),
+        rfc_author_count=Count("rfcauthor")
+    ).annotate(
+        authorship_count=F("document_author_count") + F("rfc_author_count")
+    ).filter(authorship_count__gte=2)
+
+
 def get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable):
     if not base_qs:
         base_qs = Person.objects.all()
@@ -608,54 +669,7 @@ def get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable):
          )
     ).distinct()
 
-    # The author path is defined by "path 3" in section 4 of RFC 8989. It qualifies
-    # a person who has been a front-page listed author or editor of at least two IETF-
-    # stream RFCs within the last five years. An I-D in the RFC Editor queue that was
-    # approved by the IESG is treated as an RFC, using the date of entry to the RFC
-    # Editor queue as the date for qualification.
-    #
-    # First, get the RFCs using publication date
-    qualifying_rfc_pub_events = DocEvent.objects.filter(
-        type='published_rfc',
-        time__gte=five_years_ago,
-        time__lte=date_as_dt,
-    )
-    qualifying_rfcs = Document.objects.filter(
-        type_id="rfc",
-        docevent__in=qualifying_rfc_pub_events
-    ).annotate(
-        rfcauthor_count=Count("rfcauthor")
-    )
-    rfcs_with_rfcauthors = qualifying_rfcs.filter(rfcauthor_count__gt=0).distinct()
-    rfcs_without_rfcauthors = qualifying_rfcs.filter(rfcauthor_count=0).distinct()
-
-    # Second, get the IESG-approved I-Ds in the RFC Editor queue, excluding any that
-    # became RFCs already
-    became_rfc_state = State.objects.filter(type_id="draft", slug="rfc").first()
-    assertion("became_rfc_state is not None")
-    qualifying_approval_events = DocEvent.objects.filter(
-        type='iesg_approved',
-        time__gte=five_years_ago,
-        time__lte=date_as_dt,
-    )
-    qualifying_drafts = Document.objects.filter(
-        type_id="draft",
-        states__type_id="draft-rfceditor",  # ie, in the RFC Editor queue
-        docevent__in=qualifying_approval_events,
-    ).exclude(
-        states=became_rfc_state
-    ).distinct()
-
-    author_qs = base_qs.filter(
-        Q(documentauthor__document__in=qualifying_drafts)
-        | Q(rfcauthor__document__in=rfcs_with_rfcauthors)
-        | Q(documentauthor__document__in=rfcs_without_rfcauthors)
-    ).annotate(
-        document_author_count=Count('documentauthor'),
-        rfc_author_count=Count("rfcauthor")
-    ).annotate(
-        authorship_count=F("document_author_count") + F("rfc_author_count")
-    ).filter(authorship_count__gte=2)
+    author_qs = get_qualified_author_queryset(base_qs, five_years_ago, date_as_dt)
     return three_of_five_qs, officer_qs, author_qs
 
 def list_eligible_8989(date, base_qs=None):
