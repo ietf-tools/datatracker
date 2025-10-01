@@ -77,11 +77,11 @@ def get_mailtrigger(slug, create_from_slug_if_not_exists, desc_if_not_exists):
 def get_contacts_for_liaison_messages_for_group_primary(group):
     from ietf.liaisons.views import contact_email_from_role
 
-    '''Returns list of emails to use as CC for group
+    '''Returns list of emails to use in liaison message for group
     '''
     emails = []
 
-    # role based CCs
+    # role based emails
     if group.acronym in ('ietf','iesg'):
         emails.append(EMAIL_ALIASES['IESG'])
         emails.append(EMAIL_ALIASES['IETFCHAIR'])
