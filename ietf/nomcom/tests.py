@@ -1,5 +1,4 @@
-# Copyright The IETF Trust 2012-2023, All Rights Reserved
-# -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2012-2025, All Rights Reserved
 
 
 import datetime
@@ -2849,33 +2848,41 @@ class rfc8989EligibilityTests(TestCase):
             ineligible = set()
 
             p = PersonFactory()
-            ineligible.add(p)
+            ineligible.add(p)  # no RFCs or iesg-approved drafts
+            p = PersonFactory()
+            doc = WgRfcFactory(authors=[p])
+            DocEventFactory(type='published_rfc', doc=doc, time=middle_date)
+            ineligible.add(p)  # only one RFC
 
             p = PersonFactory()
-            da = WgDocumentAuthorFactory(person=p)
-            DocEventFactory(type='published_rfc',doc=da.document,time=middle_date)
-            ineligible.add(p)
-
-            p = PersonFactory()
-            da = WgDocumentAuthorFactory(person=p)
+            da = WgDocumentAuthorFactory(
+                person=p,
+                document__states=[("draft", "active"), ("draft-rfceditor", "ref")],
+            )
             DocEventFactory(type='iesg_approved',doc=da.document,time=last_date)
-            da = WgDocumentAuthorFactory(person=p)
-            DocEventFactory(type='published_rfc',doc=da.document,time=first_date)
-            eligible.add(p)
+            doc = WgRfcFactory(authors=[p])
+            DocEventFactory(type='published_rfc', doc=doc, time=first_date)
+            eligible.add(p)  # one RFC and one iesg-approved draft
 
             p = PersonFactory()
-            da = WgDocumentAuthorFactory(person=p)
+            da = WgDocumentAuthorFactory(
+                person=p,
+                document__states=[("draft", "active"), ("draft-rfceditor", "ref")],
+            )
             DocEventFactory(type='iesg_approved',doc=da.document,time=middle_date)
-            da = WgDocumentAuthorFactory(person=p)
-            DocEventFactory(type='published_rfc',doc=da.document,time=day_before_first_date)
-            ineligible.add(p)
+            doc = WgRfcFactory(authors=[p])
+            DocEventFactory(type='published_rfc', doc=doc, time=day_before_first_date)
+            ineligible.add(p)  # RFC is out of the eligibility window
 
             p = PersonFactory()
-            da = WgDocumentAuthorFactory(person=p)
+            da = WgDocumentAuthorFactory(
+                person=p,
+                document__states=[("draft", "active"), ("draft-rfceditor", "ref")],
+            )
             DocEventFactory(type='iesg_approved',doc=da.document,time=day_after_last_date)
-            da = WgDocumentAuthorFactory(person=p)
-            DocEventFactory(type='published_rfc',doc=da.document,time=middle_date)
-            ineligible.add(p)
+            doc = WgRfcFactory(authors=[p])
+            DocEventFactory(type='published_rfc', doc=doc, time=middle_date)
+            ineligible.add(p)  # iesg approval is outside the eligibility window
 
             for person in eligible:
                 self.assertTrue(is_eligible(person,nomcom))
