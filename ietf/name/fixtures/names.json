@@ -5533,22 +5533,6 @@
         "liaison_response_contacts",
         "liaison_technical_contacts"
       ],
-      "desc": "Recipients for a message when a new liaison statement is posted",
-      "to": [
-        "liaison_to_contacts"
-      ]
-    },
-    "model": "mailtrigger.mailtrigger",
-    "pk": "liaison_statement_posted"
-  },
-  {
-    "fields": {
-      "cc": [
-        "liaison_cc",
-        "liaison_coordinators",
-        "liaison_response_contacts",
-        "liaison_technical_contacts"
-      ],
       "desc": "Recipients for a message when a new incoming liaison statement is posted",
       "to": [
         "liaison_from_contact",

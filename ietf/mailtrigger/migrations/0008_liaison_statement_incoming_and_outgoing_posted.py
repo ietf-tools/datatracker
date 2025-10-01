@@ -39,20 +39,33 @@ def forward(apps, schema_editor):
 
     Mailtrigger.objects.filter(slug__in=("liaison_statement_posted")).delete() 
 
- 
+
 def reverse(apps, schema_editor):
     Mailtrigger = apps.get_model("mailtrigger", "MailTrigger")
+    Recipient = apps.get_model("mailtrigger", "Recipient")
     
     Mailtrigger.objects.filter(
         slug__in=("liaison_statement_posted_outgoing", "liaison_statement_posted_incoming")
     ).delete()   
 
-    Mailtrigger.objects.get(
+    liaison_statement_posted = Mailtrigger.objects.create(
         slug="liaison_statement_posted", 
         desc="Recipients for a message when a new liaison statement is posted", 
     )
 
-    
+    recipients_cc = list(
+        Recipient.objects.filter(
+            slug__in=(
+                "liaison_cc",
+                "liaison_coordinators",
+                "liaison_response_contacts",
+                "liaison_technical_contacts",
+            )
+        )
+    )
+    recipient_from = Recipient.objects.get(pk="liaison_from_contact")
+    liaison_statement_posted.to.add(recipients_cc, recipient_from)
+
 
 class Migration(migrations.Migration):
     dependencies = [
