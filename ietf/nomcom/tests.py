@@ -3077,10 +3077,10 @@ class VolunteerDecoratorUnitTests(TestCase):
 
         author_person = PersonFactory()
         for i in range(2):
-            da = WgDocumentAuthorFactory(person=author_person)
+            doc = WgRfcFactory(authors=[author_person])
             DocEventFactory(
                 type='published_rfc',
-                doc=da.document,
+                doc=doc,
                 time=datetime.datetime(
                     elig_date.year - 3,
                     elig_date.month,
