@@ -2463,7 +2463,8 @@ class EligibilityUnitTests(TestCase):
         start and end datetimes for the eligibility interval. Events are fixed in time
         and the start and end are adjusted to include various combinations.
         
-        This is not an exhaustive test of corner cases.
+        This is not an exhaustive test of corner cases. Overlaps considerably with
+        rfc8989EligibilityTests.test_elig_by_author().
         """
         people = PersonFactory.create_batch(2)
         base_qs = Person.objects.filter(pk__in=[person.pk for person in people])
