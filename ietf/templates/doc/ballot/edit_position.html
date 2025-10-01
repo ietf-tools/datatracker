@@ -20,15 +20,17 @@
             Ballot deferred by {{ ballot_deferred.by }} on {{ ballot_deferred.time|date:"Y-m-d" }}.
         </p>
     {% endif %}
+    <div class="d-none" id="id_docname" data-value="{{doc.name}}"></div>
+    <div class="d-none" id="id_balloter" data-value="{{balloter.pk}}"></div>
     <form method="post" id="ballot-form" class="my-3">
         {% csrf_token %}
         {% for field in form %}
             {% if field.name == "discuss" %}<div id="div_id_discuss">{% endif %}
             {% bootstrap_field field %}
             {% if field.name == "discuss" and old_pos and old_pos.discuss_time %}
-                <div class="form-text mt-n3 mb-3">Last edited {{ old_pos.discuss_time }}</div>
+                <div class="form-text mt-n3 mb-3">Last saved {{ old_pos.discuss_time }}</div>
             {% elif field.name == "comment" and old_pos and old_pos.comment_time %}
-                <div class="form-text mt-n3 mb-3">Last edited {{ old_pos.comment_time }}</div>
+                <div class="form-text mt-n3 mb-3">Last saved {{ old_pos.comment_time }}</div>
             {% endif %}
             {% if field.name == "discuss" %}</div>{% endif %}
         {% endfor %}
@@ -105,11 +107,16 @@
             emailPreview.addEventListener("show.bs.modal", async (event) => {
                 const discuss = document.getElementById("id_discuss").value
                 const comment = document.getElementById("id_comment").value
+                const position = document.getElementById("id_position").querySelector('input[name="position"]:checked').value
+                const docname = document.getElementById("id_docname").dataset.value
+                const balloter = document.getElementById("id_balloter").dataset.value
                 const postData = {
                     discuss: discuss,
                     comment: comment,
+                    position: position,
+                    docname: docname,
+                    balloter: balloter,
                 }
-                console.log(postData)
                 response = await fetch("/doc/build-position-email/", {
                     method: "POST",
                     headers: {

@@ -4,7 +4,8 @@
 # Directors and Secretariat
 
 
-import datetime, json
+import datetime
+import json
 
 from django import forms
 from django.conf import settings
@@ -41,7 +42,7 @@ from ietf.name.models import BallotPositionName, DocTypeName
 from ietf.person.models import Person
 from ietf.utils.fields import ModelMultipleChoiceField
 from ietf.utils.http import validate_return_to_path
-from ietf.utils.mail import send_mail_text, send_mail_preformatted
+from ietf.utils.mail import decode_header_value, send_mail_text, send_mail_preformatted
 from ietf.utils.decorators import require_api_key
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
@@ -306,32 +307,96 @@ def api_set_position(request):
 def ajax_build_position_email(request):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
-    debug.show("request.body")
-    # if not request.POST:
-    #     return HttpResponse(
-    #         json.dumps({"success": False, "error": "No data submitted"}),
-    #         content_type="application/json",
-    #     )
-    # debug.show("request.POST")
-    # debug.show("form")
-    # if not form.is_valid():
-    #     return HttpResponse(
-    #         json.dumps({
-    #             "success": False,
-    #             "errors": form.errors,
-    #         })
-    #     )
-    # cleaned_data = form.cleaned_data
-    # discuss = cleaned_data.get("discuss")
-    # comment = cleaned_data.get("comment")
-    post_data = json.loads(request.body)["post_data"]
-    discuss = post_data.get("discuss")
-    comment = post_data.get("comment")
-    response = {
-        "success": True,
-        "text": f"Discuss:\n {discuss}\nComments:\n {comment}"
-    } 
+    errors = list()
+    try:
+        json_body = json.loads(request.body)
+    except json.decoder.JSONDecodeError:
+        errors.append("Post body is not valid json")
+    if len(errors) == 0:
+        post_data = json_body.get("post_data")
+        if post_data is None:
+            errors.append("post_data not provided")
+        else:
+            for key in ["discuss", "comment", "position", "balloter", "docname"]:
+                if key not in post_data:
+                    errors.append(f"{key} not found in post_data")
+    if len(errors) == 0:
+        person = Person.objects.filter(pk=post_data.get("balloter")).first()
+        if person is None:
+            errors.append("No person found matching balloter")
+        doc = Document.objects.filter(name=post_data.get("docname")).first()
+        if doc is None:
+            errors.append("No document found matching docname")
+    if len(errors) > 0:
+        response = {
+            "success": False,
+            "errors": errors,
+        }
+    else:
+        wanted = dict()  # consider named tuple instead
+        wanted["discuss"] = post_data.get("discuss")
+        wanted["comment"] = post_data.get("comment")
+        wanted["position_name"] = post_data.get("position")
+        wanted["balloter"] = person           
+        wanted["doc"] = doc
+
+        addrs, frm, subject, body = build_position_email_from_dict(wanted)
+
+        response_text = "\n".join(
+            [
+                f"From: {decode_header_value(frm)}",
+                f"To: {', '.join([decode_header_value(addr) for addr in addrs.to])}",
+                f"Cc: {', '.join([decode_header_value(addr) for addr in addrs.cc])}",
+                f"Subject: {subject}",
+                "",
+                body,
+            ]
+        )
+
+        response = {
+            "success": True,
+            "text": response_text,
+        }
     return HttpResponse(json.dumps(response), content_type="application/json")
+
+def build_position_email_from_dict(pos_dict):
+    doc = pos_dict["doc"]
+    subj = []
+    d = ""
+    blocking_name = "DISCUSS"
+    pos_name = BallotPositionName.objects.filter(slug=pos_dict["position_name"]).first()
+    if pos_name.blocking and pos_dict.get("discuss"):
+        d = pos_dict.get("discuss")
+        blocking_name = pos_name.name.upper()
+        subj.append(blocking_name)
+    c = ""
+    if pos_dict.get("comment"):
+        c = pos_dict.get("comment")
+        subj.append("COMMENT")
+    balloter = pos_dict.get("balloter")
+    balloter_name_genitive = balloter.plain_name() + "'" if balloter.plain_name().endswith('s') else balloter.plain_name() + "'s"
+    subject = "%s %s on %s" % (balloter_name_genitive, pos_name.name if pos_name else "No Position", doc.name + "-" + doc.rev)
+    if subj:
+        subject += ": (with %s)" % " and ".join(subj)
+
+    body = render_to_string("doc/ballot/ballot_comment_mail.txt",
+                            dict(discuss=d,
+                                 comment=c,
+                                 balloter=balloter.plain_name(),
+                                 doc=doc,
+                                 pos=pos_name,
+                                 blocking_name=blocking_name,
+                                 settings=settings))
+    frm = balloter.role_email("ad").formatted_email()
+
+    if doc.stream_id == "irtf":
+        addrs = gather_address_lists('irsg_ballot_saved',doc=doc)
+    elif doc.stream_id == "editorial":
+        addrs = gather_address_lists('rsab_ballot_saved',doc=doc)
+    else:
+        addrs = gather_address_lists('iesg_ballot_saved',doc=doc)
+
+    return addrs, frm, subject, body
 
 
 def build_position_email(balloter, doc, pos):
