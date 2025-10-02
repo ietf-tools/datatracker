@@ -1,13 +1,12 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
-
-
+import time
 from io import StringIO, BytesIO
 from PIL import Image
 
 from django.contrib import messages
 from django.db.models import Q
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect
 from django.utils import timezone
 
@@ -18,6 +17,7 @@ from ietf.person.models import Email, Person
 from ietf.person.fields import select2_id_name_json
 from ietf.person.forms import MergeForm
 from ietf.person.utils import handle_users, merge_persons, lookup_persons
+from ietf.utils.log import log
 
 
 def ajax_select2_search(request, model_name):
@@ -144,3 +144,14 @@ def merge(request):
         'target': target,
         'warn_messages': warn_messages,
     })
+
+
+def very_sleepy_view(request, frag=None):
+    """Testing view - remove me!"""
+    person_a = Person.objects.filter(name__icontains=frag).first()
+    log(f"Found {person_a.name}")
+    time.sleep(30)
+    person_b = Person.objects.filter(name__icontains=frag).last()
+    log(f"Found {person_b.name}")
+    return JsonResponse({"person_a": person_a.name, "person_b": person_b.name})
+
