@@ -813,7 +813,7 @@ class LiaisonManagementTests(TestCase):
         test_file.name = "unnamed"
         from_group = Group.objects.get(acronym="mars")
         to_group = Group.objects.filter(type="sdo")[0]
-        submitter = Person.objects.get(user__username="marschairman") 
+        submitter = Person.objects.get(user__username="marschairman")
         today = date_today(datetime.UTC)
         related_liaison = liaison
         r = self.client.post(url,
