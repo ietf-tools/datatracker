@@ -20,24 +20,48 @@
             Ballot deferred by {{ ballot_deferred.by }} on {{ ballot_deferred.time|date:"Y-m-d" }}.
         </p>
     {% endif %}
+    <div class="d-none" id="id_docname" data-value="{{doc.name}}"></div>
+    <div class="d-none" id="id_balloter" data-value="{{balloter.pk}}"></div>
+    {% if form.errors or cc_select_form.errors or additional_cc_form.errors %}
+        <div class="alert alert-danger my-3">
+                There were errors in the submitted form -- see below. Please correct these and resubmit.
+        </div>
+        {% if form.errors %}
+            <div>Position entry</div>
+            {% bootstrap_form_errors form %}
+        {% endif %}
+        {% if cc_select_form.errors %}
+            <div>CC selection</div>
+            {% bootstrap_form_errors cc_select_form %}
+        {% endif %}
+        {% if additional_cc_form.errors %}
+            <div>Additional Cc Addresses</div>
+            {% bootstrap_form_errors additional_cc_form %}
+        {% endif %}
+    {% endif %}
     <form method="post" id="ballot-form" class="my-3">
         {% csrf_token %}
         {% for field in form %}
             {% if field.name == "discuss" %}<div id="div_id_discuss">{% endif %}
             {% bootstrap_field field %}
             {% if field.name == "discuss" and old_pos and old_pos.discuss_time %}
-                <div class="form-text mt-n3 mb-3">Last edited {{ old_pos.discuss_time }}</div>
+                <div class="form-text mt-n3 mb-3">Last saved {{ old_pos.discuss_time }}</div>
             {% elif field.name == "comment" and old_pos and old_pos.comment_time %}
-                <div class="form-text mt-n3 mb-3">Last edited {{ old_pos.comment_time }}</div>
+                <div class="form-text mt-n3 mb-3">Last saved {{ old_pos.comment_time }}</div>
             {% endif %}
             {% if field.name == "discuss" %}</div>{% endif %}
         {% endfor %}
+        {% bootstrap_form cc_select_form %}
+        {% bootstrap_form additional_cc_form %}
         <div class="mt-3">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#emailPreview">
+                Preview email
+            </button>
             <button type="submit"
                     class="btn btn-primary"
                     name="send_mail"
                     value="Save and send email">Save &amp; send email</button>
-            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="submit" class="btn btn-warning">Save without sending email</button>
             {% if doc.type_id == "draft" or doc.type_id == "conflrev" %}
                 {% if doc.stream.slug != "irtf" %}
                     {% if ballot_deferred %}
@@ -58,7 +82,24 @@
                 Back
             </a>
         </div>
-    </form>
+    </form>  
+    <!-- Modal -->
+    <div class="modal fade" id="emailPreview" tabindex="-1" aria-labelledby="emailPreviewLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h1 class="modal-title fs-5" id="emailPreviewLabel">This email has not yet been sent</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <pre class="modal-body">
+            Loading
+        </pre>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+        </div>
+    </div>
+    </div>
 {% endblock %}
 {% block js %}
     <script>
@@ -77,5 +118,45 @@
         });
 
         discussToggle($("input[name=position]:checked").val());
+    </script>
+
+    <script>
+        function getCheckedCcValues() {
+            const checkedInputs = document.querySelectorAll('#id_cc_choices input:checked')
+            const values = Array.from(checkedInputs).map(input => input.value)
+            return values
+        }
+        const emailPreview = document.getElementById("emailPreview")
+        if (emailPreview) {
+            emailPreview.addEventListener("show.bs.modal", async (event) => {
+                const discuss = document.getElementById("id_discuss").value
+                const comment = document.getElementById("id_comment").value
+                const position = document.getElementById("id_position").querySelector('input[name="position"]:checked').value
+                const docname = document.getElementById("id_docname").dataset.value
+                const balloter = document.getElementById("id_balloter").dataset.value
+                const cc_choices = getCheckedCcValues()
+                const additional_cc = document.getElementById("id_additional_cc").value
+                const postData = {
+                    discuss: discuss,
+                    comment: comment,
+                    position: position,
+                    docname: docname,
+                    balloter: balloter,
+                    cc_choices: cc_choices,
+                    additional_cc: additional_cc
+                }
+                response = await fetch("/doc/build-position-email/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({"post_data": postData})
+                })
+                // Update the modal's content.
+                const modalBody = emailPreview.querySelector('.modal-body')
+                responseJson = await response.json()
+                modalBody.textContent = responseJson.text
+            })
+        }
     </script>
 {% endblock %}
