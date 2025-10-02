@@ -14,7 +14,10 @@ from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 def send_liaison_by_email(request, liaison):
     subject = 'New Liaison Statement, "%s"' % (liaison.title)
     from_email = settings.LIAISON_UNIVERSAL_FROM
-    (to_email, cc) = gather_address_lists('liaison_statement_posted',liaison=liaison)
+    if liaison.is_outgoing():
+        (to_email, cc) = gather_address_lists('liaison_statement_posted_outgoing',liaison=liaison)
+    else:
+        (to_email, cc) = gather_address_lists('liaison_statement_posted_incoming',liaison=liaison)
     bcc = ['statements@ietf.org']
     body = render_to_string('liaisons/liaison_mail.txt', dict(liaison=liaison))
 
