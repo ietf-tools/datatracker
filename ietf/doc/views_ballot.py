@@ -439,41 +439,14 @@ def build_position_email_from_dict(pos_dict):
 
 
 def build_position_email(balloter, doc, pos):
-    subj = []
-    d = ""
-    blocking_name = "DISCUSS"
-    if pos.pos.blocking and pos.discuss:
-        d = pos.discuss
-        blocking_name = pos.pos.name.upper()
-        subj.append(blocking_name)
-    c = ""
-    if pos.comment:
-        c = pos.comment
-        subj.append("COMMENT")
 
-    balloter_name_genitive = balloter.plain_name() + "'" if balloter.plain_name().endswith('s') else balloter.plain_name() + "'s"
-    subject = "%s %s on %s" % (balloter_name_genitive, pos.pos.name if pos.pos else "No Position", doc.name + "-" + doc.rev)
-    if subj:
-        subject += ": (with %s)" % " and ".join(subj)
-
-    body = render_to_string("doc/ballot/ballot_comment_mail.txt",
-                            dict(discuss=d,
-                                 comment=c,
-                                 balloter=balloter.plain_name(),
-                                 doc=doc,
-                                 pos=pos.pos,
-                                 blocking_name=blocking_name,
-                                 settings=settings))
-    frm = balloter.role_email("ad").formatted_email()
-
-    if doc.stream_id == "irtf":
-        addrs = gather_address_lists('irsg_ballot_saved',doc=doc)
-    elif doc.stream_id == "editorial":
-        addrs = gather_address_lists('rsab_ballot_saved',doc=doc)
-    else:
-        addrs = gather_address_lists('iesg_ballot_saved',doc=doc)
-
-    return addrs, frm, subject, body
+    pos_dict=dict()
+    pos_dict["doc"]=doc
+    pos_dict["position_name"]=pos.pos.slug
+    pos_dict["discuss"]=pos.discuss
+    pos_dict["comment"]=pos.comment
+    pos_dict["balloter"]=balloter
+    return build_position_email_from_dict(pos_dict)
 
 @role_required('Area Director','Secretariat')
 def clear_ballot(request, name, ballot_type_slug):
