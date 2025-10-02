@@ -22,6 +22,23 @@
     {% endif %}
     <div class="d-none" id="id_docname" data-value="{{doc.name}}"></div>
     <div class="d-none" id="id_balloter" data-value="{{balloter.pk}}"></div>
+    {% if form.errors or cc_select_form.errors or additional_cc_form.errors %}
+        <div class="alert alert-danger my-3">
+                There were errors in the submitted form -- see below. Please correct these and resubmit.
+        </div>
+        {% if form.errors %}
+            <div>Position entry</div>
+            {% bootstrap_form_errors form %}
+        {% endif %}
+        {% if cc_select_form.errors %}
+            <div>CC selection</div>
+            {% bootstrap_form_errors cc_select_form %}
+        {% endif %}
+        {% if additional_cc_form.errors %}
+            <div>Additional Cc Addresses</div>
+            {% bootstrap_form_errors additional_cc_form %}
+        {% endif %}
+    {% endif %}
     <form method="post" id="ballot-form" class="my-3">
         {% csrf_token %}
         {% for field in form %}
@@ -34,6 +51,8 @@
             {% endif %}
             {% if field.name == "discuss" %}</div>{% endif %}
         {% endfor %}
+        {% bootstrap_form cc_select_form %}
+        {% bootstrap_form additional_cc_form %}
         <div class="mt-3">
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#emailPreview">
                 Preview email
@@ -102,6 +121,11 @@
     </script>
 
     <script>
+        function getCheckedCcValues() {
+            const checkedInputs = document.querySelectorAll('#id_cc_choices input:checked')
+            const values = Array.from(checkedInputs).map(input => input.value)
+            return values
+        }
         const emailPreview = document.getElementById("emailPreview")
         if (emailPreview) {
             emailPreview.addEventListener("show.bs.modal", async (event) => {
@@ -110,12 +134,16 @@
                 const position = document.getElementById("id_position").querySelector('input[name="position"]:checked').value
                 const docname = document.getElementById("id_docname").dataset.value
                 const balloter = document.getElementById("id_balloter").dataset.value
+                const cc_choices = getCheckedCcValues()
+                const additional_cc = document.getElementById("id_additional_cc").value
                 const postData = {
                     discuss: discuss,
                     comment: comment,
                     position: position,
                     docname: docname,
                     balloter: balloter,
+                    cc_choices: cc_choices,
+                    additional_cc: additional_cc
                 }
                 response = await fetch("/doc/build-position-email/", {
                     method: "POST",

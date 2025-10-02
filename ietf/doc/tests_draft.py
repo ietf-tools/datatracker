@@ -2418,7 +2418,7 @@ class BallotEmailAjaxTests(TestCase):
         self.assertEqual(response["errors"], ["post_data not provided"])
         response = _post_json(self, url, {"post_data": {}})
         self.assertFalse(response["success"])
-        self.assertEqual(len(response["errors"]), 5)
+        self.assertEqual(len(response["errors"]), 7)
         response = _post_json(
             self,
             url,
@@ -2427,16 +2427,18 @@ class BallotEmailAjaxTests(TestCase):
                     "discuss": "aaaaaa",
                     "comment": "bbbbbb",
                     "position": "discuss",
-                    "balloter": Person.objects.aggregate(maxpk=Max("pk")+1)["maxpk"],
+                    "balloter": Person.objects.aggregate(maxpk=Max("pk") + 1)["maxpk"],
                     "docname": "this-draft-does-not-exist",
+                    "cc_choices": ["doc_group_mail_list"],
+                    "additional_cc": "foo@example.com",
                 }
             },
         )
         self.assertFalse(response["success"])
-        self.assertEqual(response["errors"], [
-            "No person found matching balloter",
-            "No document found matching docname"
-        ])
+        self.assertEqual(
+            response["errors"],
+            ["No person found matching balloter", "No document found matching docname"],
+        )
         response = _post_json(
             self,
             url,
@@ -2447,10 +2449,20 @@ class BallotEmailAjaxTests(TestCase):
                     "position": "discuss",
                     "balloter": ad.pk,
                     "docname": doc.name,
+                    "cc_choices": ["doc_group_mail_list"],
+                    "additional_cc": "foo@example.com",
                 }
             },
         )
         self.assertTrue(response["success"])
-        for snippet in ["aaaaaa", "bbbbbb", "DISCUSS", ad.plain_name(), doc.name]:
+        for snippet in [
+            "aaaaaa",
+            "bbbbbb",
+            "DISCUSS",
+            ad.plain_name(),
+            doc.name,
+            doc.group.list_email,
+            "foo@example.com",
+        ]:
             self.assertIn(snippet, response["text"])
 

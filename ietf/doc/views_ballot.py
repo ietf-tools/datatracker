@@ -35,12 +35,13 @@ from ietf.doc.lastcall import request_last_call
 from ietf.doc.templatetags.ietf_filters import can_ballot
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_stream
+from ietf.mailtrigger.models import Recipient
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.mailtrigger.forms import CcSelectForm
 from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName, DocTypeName
 from ietf.person.models import Person
-from ietf.utils.fields import ModelMultipleChoiceField
+from ietf.utils.fields import ModelMultipleChoiceField, MultiEmailField
 from ietf.utils.http import validate_return_to_path
 from ietf.utils.mail import decode_header_value, send_mail_text, send_mail_preformatted
 from ietf.utils.decorators import require_api_key
@@ -180,6 +181,9 @@ def save_position(form, doc, ballot, balloter, login=None, send_email=False):
 
     return pos
 
+class AdditionalCCForm(forms.Form):
+    additional_cc = MultiEmailField(required=False)
+
 @role_required("Area Director", "Secretariat", "IRSG Member", "RSAB Member")
 def edit_position(request, name, ballot_id):
     """Vote and edit discuss and comment on document"""
@@ -200,6 +204,13 @@ def edit_position(request, name, ballot_id):
             raise Http404
         balloter = get_object_or_404(Person, pk=balloter_id)
 
+    if doc.stream_id == 'irtf':
+        mailtrigger_slug='irsg_ballot_saved'
+    elif doc.stream_id == 'editorial':
+        mailtrigger_slug='rsab_ballot_saved'
+    else:
+        mailtrigger_slug='iesg_ballot_saved'
+
     if request.method == 'POST':
         old_pos = None
         if not has_role(request.user, "Secretariat") and not can_ballot(request.user, doc):
@@ -207,7 +218,9 @@ def edit_position(request, name, ballot_id):
             permission_denied(request, "Must be an active member (not a pre-AD for example) of the balloting body to take a position")
         
         form = EditPositionForm(request.POST, ballot_type=ballot.ballot_type)
-        if form.is_valid():
+        cc_select_form = CcSelectForm(data=request.POST,mailtrigger_slug=mailtrigger_slug,mailtrigger_context={'doc':doc})
+        additional_cc_form = AdditionalCCForm(request.POST)
+        if form.is_valid() and cc_select_form.is_valid() and additional_cc_form.is_valid():
             send_mail = True if request.POST.get("send_mail") else False
             save_position(form, doc, ballot, balloter, login, send_mail)
 
@@ -236,6 +249,9 @@ def edit_position(request, name, ballot_id):
             initial['comment'] = old_pos.comment
             
         form = EditPositionForm(initial=initial, ballot_type=ballot.ballot_type)
+        cc_select_form = CcSelectForm(mailtrigger_slug=mailtrigger_slug,mailtrigger_context={'doc':doc})
+        additional_cc_form = AdditionalCCForm()
+
 
     blocking_positions = dict((p.pk, p.name) for p in form.fields["position"].queryset.all() if p.blocking)
 
@@ -244,6 +260,8 @@ def edit_position(request, name, ballot_id):
     return render(request, 'doc/ballot/edit_position.html',
                               dict(doc=doc,
                                    form=form,
+                                   cc_select_form=cc_select_form,
+                                   additional_cc_form=additional_cc_form,
                                    balloter=balloter,
                                    return_to_url=return_to_url,
                                    old_pos=old_pos,
@@ -317,7 +335,15 @@ def ajax_build_position_email(request):
         if post_data is None:
             errors.append("post_data not provided")
         else:
-            for key in ["discuss", "comment", "position", "balloter", "docname"]:
+            for key in [
+                "discuss",
+                "comment",
+                "position",
+                "balloter",
+                "docname",
+                "cc_choices",
+                "additional_cc",
+            ]:
                 if key not in post_data:
                     errors.append(f"{key} not found in post_data")
     if len(errors) == 0:
@@ -337,16 +363,26 @@ def ajax_build_position_email(request):
         wanted["discuss"] = post_data.get("discuss")
         wanted["comment"] = post_data.get("comment")
         wanted["position_name"] = post_data.get("position")
-        wanted["balloter"] = person           
+        wanted["balloter"] = person
         wanted["doc"] = doc
-
         addrs, frm, subject, body = build_position_email_from_dict(wanted)
+
+        recipient_slugs = post_data.get("cc_choices")
+        # Consider refactoring gather_address_lists so this isn't duplicated from there
+        cc_addrs = set()
+        for r in Recipient.objects.filter(slug__in=recipient_slugs):
+            cc_addrs.update(r.gather(doc=doc))
+        additional_cc = post_data.get("additional_cc")
+        for addr in additional_cc.split(","):
+            cc_addrs.add(addr.strip())
+        cc_addrs.discard("")
+        cc_addrs = sorted(list(cc_addrs))
 
         response_text = "\n".join(
             [
                 f"From: {decode_header_value(frm)}",
                 f"To: {', '.join([decode_header_value(addr) for addr in addrs.to])}",
-                f"Cc: {', '.join([decode_header_value(addr) for addr in addrs.cc])}",
+                f"Cc: {', '.join([decode_header_value(addr) for addr in cc_addrs])}",
                 f"Subject: {subject}",
                 "",
                 body,
