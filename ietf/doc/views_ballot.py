@@ -217,44 +217,47 @@ def edit_position(request, name, ballot_id):
             # prevent pre-ADs from taking a position
             permission_denied(request, "Must be an active member (not a pre-AD for example) of the balloting body to take a position")
         
+        if request.POST.get("Defer") and doc.stream.slug != "irtf":
+            return redirect('ietf.doc.views_ballot.defer_ballot', name=doc)
+        elif request.POST.get("Undefer") and doc.stream.slug != "irtf":
+            return redirect('ietf.doc.views_ballot.undefer_ballot', name=doc)
+        
         form = EditPositionForm(request.POST, ballot_type=ballot.ballot_type)
         cc_select_form = CcSelectForm(data=request.POST,mailtrigger_slug=mailtrigger_slug,mailtrigger_context={'doc':doc})
         additional_cc_form = AdditionalCCForm(request.POST)
         if form.is_valid() and cc_select_form.is_valid() and additional_cc_form.is_valid():
             send_mail = True if request.POST.get("send_mail") else False
-            save_position(form, doc, ballot, balloter, login, send_mail)
-
+            pos = save_position(form, doc, ballot, balloter, login, send_mail)
             if send_mail:
-                query = {}
-                if request.GET.get('balloter'):
-                    query['balloter'] = request.GET.get('balloter')
-                if request.GET.get('ballot_edit_return_point'):
-                    query['ballot_edit_return_point'] = request.GET.get('ballot_edit_return_point')
-                qstr = ""
-                if len(query) > 0:
-                    qstr = "?" + urllib_urlencode(query, safe='/')
-                return HttpResponseRedirect(urlreverse('ietf.doc.views_ballot.send_ballot_comment', kwargs=dict(name=doc.name, ballot_id=ballot_id)) + qstr)
-            elif request.POST.get("Defer") and doc.stream.slug != "irtf":
-                return redirect('ietf.doc.views_ballot.defer_ballot', name=doc)
-            elif request.POST.get("Undefer") and doc.stream.slug != "irtf":
-                return redirect('ietf.doc.views_ballot.undefer_ballot', name=doc)
-            else:
-                return HttpResponseRedirect(return_to_url)
+                addrs, frm, subject, body = build_position_email(balloter, doc, pos)
+                if doc.stream_id == 'irtf':
+                    mailtrigger_slug='irsg_ballot_saved'
+                elif doc.stream_id == 'editorial':
+                    mailtrigger_slug='rsab_ballot_saved'
+                else:
+                    mailtrigger_slug='iesg_ballot_saved'
+                cc = []
+                cc.extend(cc_select_form.get_selected_addresses())
+                extra_cc = additional_cc_form.cleaned_data["additional_cc"]
+                if extra_cc:
+                    cc.extend(extra_cc)
+                cc_set = set(cc)
+                cc_set.discard("")
+                cc = sorted(list(cc_set))
+                send_mail_text(request, addrs.to, frm, subject, body, cc=", ".join(cc))
+            return redirect(return_to_url)
     else:
         initial = {}
         old_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", balloter=balloter, ballot=ballot)
         if old_pos:
             initial['position'] = old_pos.pos.slug
             initial['discuss'] = old_pos.discuss
-            initial['comment'] = old_pos.comment
-            
+            initial['comment'] = old_pos.comment      
         form = EditPositionForm(initial=initial, ballot_type=ballot.ballot_type)
         cc_select_form = CcSelectForm(mailtrigger_slug=mailtrigger_slug,mailtrigger_context={'doc':doc})
         additional_cc_form = AdditionalCCForm()
 
-
     blocking_positions = dict((p.pk, p.name) for p in form.fields["position"].queryset.all() if p.blocking)
-
     ballot_deferred = doc.active_defer_event()
 
     return render(request, 'doc/ballot/edit_position.html',
@@ -471,80 +474,6 @@ def build_position_email(balloter, doc, pos):
         addrs = gather_address_lists('iesg_ballot_saved',doc=doc)
 
     return addrs, frm, subject, body
-
-@role_required('Area Director','Secretariat','IRSG Member', 'RSAB Member')
-def send_ballot_comment(request, name, ballot_id):
-    """Email document ballot position discuss/comment for Area Director."""
-    doc = get_object_or_404(Document, name=name)
-    ballot = get_object_or_404(BallotDocEvent, type="created_ballot", pk=ballot_id, doc=doc)
-
-    if not has_role(request.user, 'Secretariat'):
-        if any([
-            doc.stream_id == 'ietf' and not has_role(request.user, 'Area Director'),
-            doc.stream_id == 'irtf' and not has_role(request.user, 'IRSG Member'),
-            doc.stream_id == 'editorial' and not has_role(request.user, 'RSAB Member'),
-        ]):
-            raise Http404
-
-    balloter = request.user.person
-
-    try:
-        return_to_url = parse_ballot_edit_return_point(request.GET.get('ballot_edit_return_point'), doc.name, ballot_id)
-    except ValueError:
-        return HttpResponseBadRequest('ballot_edit_return_point is invalid')
-    
-    if 'HTTP_REFERER' in request.META:
-        back_url = request.META['HTTP_REFERER']
-    else:
-        back_url = urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
-
-    # if we're in the Secretariat, we can select a balloter (such as an AD) to act as stand-in for
-    if has_role(request.user, "Secretariat"):
-        balloter_id = request.GET.get('balloter')
-        if not balloter_id:
-            raise Http404
-        balloter = get_object_or_404(Person, pk=balloter_id)
-
-    pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", balloter=balloter, ballot=ballot)
-    if not pos:
-        raise Http404
-
-    addrs, frm, subject, body = build_position_email(balloter, doc, pos)
-
-    if doc.stream_id == 'irtf':
-        mailtrigger_slug='irsg_ballot_saved'
-    elif doc.stream_id == 'editorial':
-        mailtrigger_slug='rsab_ballot_saved'
-    else:
-        mailtrigger_slug='iesg_ballot_saved'
-        
-    if request.method == 'POST':
-        cc = []
-        cc_select_form = CcSelectForm(data=request.POST,mailtrigger_slug=mailtrigger_slug,mailtrigger_context={'doc':doc})
-        if cc_select_form.is_valid():
-            cc.extend(cc_select_form.get_selected_addresses())
-        extra_cc = [x.strip() for x in request.POST.get("extra_cc","").split(',') if x.strip()]
-        if extra_cc:
-            cc.extend(extra_cc)
-
-        send_mail_text(request, addrs.to, frm, subject, body, cc=", ".join(cc))
-            
-        return HttpResponseRedirect(return_to_url)
-
-    else: 
-
-        cc_select_form = CcSelectForm(mailtrigger_slug=mailtrigger_slug,mailtrigger_context={'doc':doc})
-  
-        return render(request, 'doc/ballot/send_ballot_comment.html',
-                      dict(doc=doc,
-                          subject=subject,
-                          body=body,
-                          frm=frm,
-                          to=addrs.as_strings().to,
-                          balloter=balloter,
-                          back_url=back_url,
-                          cc_select_form = cc_select_form,
-                      ))
 
 @role_required('Area Director','Secretariat')
 def clear_ballot(request, name, ballot_type_slug):
