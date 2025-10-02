@@ -16,7 +16,6 @@ from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.html import escape
-from urllib.parse import urlencode as urllib_urlencode
 
 import debug                            # pyflakes:ignore
 

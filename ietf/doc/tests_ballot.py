@@ -25,7 +25,6 @@ from ietf.doc.views_doc import document_ballot_content
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory, ReviewTeamFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
-from ietf.name.models import BallotPositionName
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory, PersonalApiKeyFactory
