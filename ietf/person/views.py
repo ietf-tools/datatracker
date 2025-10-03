@@ -6,7 +6,7 @@ from io import StringIO, BytesIO
 from PIL import Image
 
 from django.contrib import messages
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models import Q
 from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect
@@ -232,3 +232,19 @@ def pg_sleep_write2(request):
     person.delete()
     log("Deleted person")
     return JsonResponse({"original_name": original_name, "final_name": person.name})
+
+
+def transaction_sleepy_write(request):
+    with transaction.atomic():
+        person_a = PersonFactory()
+        log(f"Created {person_a.name} (pk={person_a.pk})")
+        time.sleep(30)
+        person_b = PersonFactory()
+        log(f"Created {person_b.name} (pk={person_b.pk})")
+        person_a = Person.objects.get(pk=person_a.pk)
+        log("Refreshed person_a")
+        person_a.delete()
+        log("Deleted person_a")
+        person_b.delete()
+        log("Deleted person_b")
+    return JsonResponse({"person_a": person_a.name, "person_b": person_b.name})
