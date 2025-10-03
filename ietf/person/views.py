@@ -155,3 +155,17 @@ def very_sleepy_view(request, frag=None):
     log(f"Found {person_b.name}")
     return JsonResponse({"person_a": person_a.name, "person_b": person_b.name})
 
+
+def pg_sleep_view(request, frag=None):
+    """Testing view - remove me!"""
+    results = Person.objects.raw(
+        "SELECT id, name, pg_sleep(30), ascii FROM person_person WHERE name ILIKE %s LIMIT 1",
+        ["%" + frag + "%"],
+    )
+    return JsonResponse(
+        [
+            {"name": person.name, "ascii": person.ascii}
+            for person in results
+        ],
+        safe=False,
+    )

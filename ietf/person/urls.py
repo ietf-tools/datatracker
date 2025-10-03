@@ -8,4 +8,5 @@ urlpatterns = [
     url(r'^(?P<email_or_name>[^/]+)$', views.profile),
     url(r'^(?P<email_or_name>[^/]+)/photo/?$', views.photo),
     url(r'^(?P<frag>[a-z]+)/sleepy/$', views.very_sleepy_view),
+    url(r'^(?P<frag>[a-z]+)/pgsleep/$', views.pg_sleep_view),
 ]
