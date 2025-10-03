@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 import time
 from io import StringIO, BytesIO
+
 from PIL import Image
 
 from django.contrib import messages
+from django.db import connection
 from django.db.models import Q
 from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect
@@ -13,6 +15,7 @@ from django.utils import timezone
 import debug                            # pyflakes:ignore
 
 from ietf.ietfauth.utils import role_required
+from ietf.person.factories import PersonFactory
 from ietf.person.models import Email, Person
 from ietf.person.fields import select2_id_name_json
 from ietf.person.forms import MergeForm
@@ -169,3 +172,42 @@ def pg_sleep_view(request, frag=None):
         ],
         safe=False,
     )
+
+
+def sleepy_write(request):
+    person_a = PersonFactory()
+    log(f"Created {person_a.name} (pk={person_a.pk})")
+    time.sleep(30)
+    person_b = PersonFactory()
+    log(f"Created {person_b.name} (pk={person_b.pk})")
+    person_a = Person.objects.get(pk=person_a.pk)
+    log("Refreshed person_a")
+    person_a.delete()
+    log("Deleted person_a")
+    person_b.delete()
+    log("Deleted person_b")
+    return JsonResponse({"person_a": person_a.name, "person_b": person_b.name})
+
+
+def pg_sleep_write(request):
+    person = PersonFactory()
+    original_name = person.name
+    log(f"Created {person.name} (pk={person.pk})")
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            UPDATE person_person 
+            SET name = new_name
+            FROM (
+                SELECT 'yawn' as new_name, pg_sleep(30) as _
+             )
+            WHERE id = %s
+            """,
+            [person.pk],
+        )
+        log("Updated row")
+    person = Person.objects.get(pk=person.pk)
+    log(f"Refreshed person, name is now '{person.name}'")
+    person.delete()
+    log("Deleted person")
+    return JsonResponse({"original_name": original_name, "final_name": person.name})

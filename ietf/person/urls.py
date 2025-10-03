@@ -7,6 +7,8 @@ urlpatterns = [
     url(r'^(?P<personid>[0-9]+)/email.json$', ajax.person_email_json),
     url(r'^(?P<email_or_name>[^/]+)$', views.profile),
     url(r'^(?P<email_or_name>[^/]+)/photo/?$', views.photo),
+    url(r'^sleepy/write/$', views.sleepy_write),
+    url(r'^sleepy/pgwrite/$', views.pg_sleep_write),
     url(r'^(?P<frag>[a-z]+)/sleepy/$', views.very_sleepy_view),
     url(r'^(?P<frag>[a-z]+)/pgsleep/$', views.pg_sleep_view),
 ]
