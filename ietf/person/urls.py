@@ -9,6 +9,7 @@ urlpatterns = [
     url(r'^(?P<email_or_name>[^/]+)/photo/?$', views.photo),
     url(r'^sleepy/write/$', views.sleepy_write),
     url(r'^sleepy/pgwrite/$', views.pg_sleep_write),
+    url(r'^sleepy/pgwrite2/$', views.pg_sleep_write2),
     url(r'^(?P<frag>[a-z]+)/sleepy/$', views.very_sleepy_view),
     url(r'^(?P<frag>[a-z]+)/pgsleep/$', views.pg_sleep_view),
 ]

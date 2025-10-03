@@ -211,3 +211,24 @@ def pg_sleep_write(request):
     person.delete()
     log("Deleted person")
     return JsonResponse({"original_name": original_name, "final_name": person.name})
+
+
+def pg_sleep_write2(request):
+    person = PersonFactory()
+    original_name = person.name
+    log(f"Created {person.name} (pk={person.pk})")
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            UPDATE person_person 
+            SET name = 'yawn', ascii_short = pg_sleep(30)
+            WHERE id = %s
+            """,
+            [person.pk],
+        )
+        log("Updated row")
+    person = Person.objects.get(pk=person.pk)
+    log(f"Refreshed person, name is now '{person.name}'")
+    person.delete()
+    log("Deleted person")
+    return JsonResponse({"original_name": original_name, "final_name": person.name})
