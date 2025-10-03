@@ -11,20 +11,22 @@
     {% endcomment %}
     .timeslot-edit { overflow: auto; height: max(30rem, calc(100vh - 25rem));}
     .tstable { width: 100%; border-collapse: separate; } {# "separate" to ensure sticky cells keep their borders #}
-.tstable thead  { position: sticky; top: 0; z-index: 3; background-color: white;}
-.tstable th:first-child, .tstable td:first-child {
-    background-color: white; {# needs to match the lighter of the striped-table colors! #}
-position: sticky;
-left: 0;
-    z-index: 2; {# render above other cells / borders but below thead (z-index 3, above) #}
-}
-.tstable tbody > tr:nth-of-type(odd) > th:first-child {
-    background-color: rgb(249, 249, 249); {# needs to match the darker of the striped-table colors! #}
-}
-.tstable th { white-space: nowrap;}
-.tstable td { white-space: nowrap;}
-.capacity { font-size:80%; font-weight: normal;}
-a.new-timeslot-link { color: lightgray; font-size: large;}
+    .tstable tr th:first-child { min-width: 25rem; max-width: 25rem; overflow: hidden; } 
+    .tstable thead  { position: sticky; top: 0; z-index: 3; background-color: white;}
+    .tstable thead th span.day { position: sticky; left: 25.5rem; }
+    .tstable th:first-child, .tstable td:first-child {
+        background-color: white; {# needs to match the lighter of the striped-table colors! #}
+        position: sticky;
+        left: 0;
+        z-index: 2; {# render above other cells / borders but below thead (z-index 3, above) #}
+    }
+    .tstable tbody > tr:nth-of-type(odd) > th:first-child {
+        background-color: rgb(249, 249, 249); {# needs to match the darker of the striped-table colors! #}
+    }
+    .tstable th { white-space: nowrap;}
+    .tstable td { white-space: nowrap;}
+    .capacity { font-size:80%; font-weight: normal;}
+    a.new-timeslot-link { color: lightgray; font-size: large;}
 {% endblock %}
 {% block content %}
     {% origin %}
@@ -84,12 +86,14 @@ a.new-timeslot-link { color: lightgray; font-size: large;}
                                 <th scope="col"></th>
                                 {% for day in time_slices %}
                                     <th scope="col" class="day-label" colspan="{{ date_slices|colWidth:day }}">
-                                        {{ day|date:'D' }} ({{ day }})
-                                        <i class="bi bi-trash delete-button"
-                                              title="Delete all on this day"
-                                              data-delete-scope="day"
-                                              data-date-id="{{ day.isoformat }}">
-                                        </i>
+                                        <span class="day">
+                                            {{ day|date:'D' }} ({{ day }})
+                                            <i class="bi bi-trash delete-button"
+                                               title="Delete all on this day"
+                                               data-delete-scope="day"
+                                               data-date-id="{{ day.isoformat }}">
+                                            </i>
+                                        </span>
                                     </th>
                                 {% endfor %}
                             {% endif %}
