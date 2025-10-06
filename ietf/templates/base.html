@@ -96,12 +96,6 @@
                     </div>
                 {% endif %}
                 <div class="col mx-lg-3 ietf-auto-nav" id="content">
-                    <noscript>
-                        <div class="alert alert-danger alert-ignore my-3">
-                            <b>Javascript disabled?</b> Like other modern websites, the IETF Datatracker relies on Javascript.
-                            Please enable Javascript for full functionality.
-                        </div>
-                    </noscript>
                     {% for message in messages %}
                         <div class="alert {% if message.level_tag %} alert-{% if message.level_tag == 'error' %}danger{% else %}{{ message.level_tag }}{% endif %} {% endif %} alert-dismissable fade show">
                             <button type="button"
