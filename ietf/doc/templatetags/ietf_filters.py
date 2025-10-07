@@ -129,8 +129,8 @@ def bracketpos(pos,posslug):
         return "[   ]"
 
 @register.filter(name='sort')
-def sortlist(li)
-    return li.sort()
+def sortlist(value):
+    return value.sort()
 
 register.filter('fill', fill)
 
