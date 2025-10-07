@@ -32,7 +32,7 @@ from ietf.ipr.models import (IprDisclosureStateName, IprDisclosureBase,
     NonDocSpecificIprDisclosure, IprDocRel,
     RelatedIpr,IprEvent)
 from ietf.ipr.utils import (get_genitive, get_ipr_summary,
-    iprs_from_docs, related_docs)
+    iprs_from_docs, json_dump_disclosure, related_docs)
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message
 from ietf.message.utils import infer_message
@@ -901,3 +901,8 @@ def update(request, id):
     child = ipr.get_child()
     type = class_to_type[child.__class__.__name__]
     return new(request, type, updates=id)
+
+@role_required("Secretariat")
+def json_snapshot(request, id):
+    obj = get_object_or_404(IprDisclosureBase,id=id).get_child()
+    return HttpResponse(json_dump_disclosure(obj),content_type="application/json")

@@ -21,6 +21,7 @@ urlpatterns = [
     url(r'^(?P<id>\d+)/notify/(?P<type>update|posted)/$', views.notify),
     url(r'^(?P<id>\d+)/post/$', views.post),
     url(r'^(?P<id>\d+)/state/$', views.state),
+    url(r'^(?P<id>\d+)/json-snapshot/$', views.json_snapshot),
     url(r'^update/$', RedirectView.as_view(url=reverse_lazy('ietf.ipr.views.showlist'), permanent=True)),
     url(r'^update/(?P<id>\d+)/$', views.update),
     url(r'^new-(?P<_type>(specific|generic|general|third-party))/$', views.new),
