@@ -1,3 +1,4 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
 {% load ams_filters %}
 
 {{ login|smart_login }} {{ group.acronym }} working group, indicated that the {{ group.acronym }} working group does not plan to hold a session at IETF {{ meeting.number }}.

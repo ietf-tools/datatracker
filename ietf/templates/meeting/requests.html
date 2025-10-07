@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2025, All Rights Reserved #}
 {% load origin %}
 {% load ietf_filters static person_filters textfilters %}
 {% block pagehead %}
@@ -151,7 +151,7 @@
                 {% endifchanged %}
                     <tr>
                         <td>
-                            <a href="{% url "ietf.secr.sreq.views.edit" num=meeting.number acronym=session.group.acronym %}">
+                            <a href="{% url 'ietf.meeting.views_session_request.edit_request' num=meeting.number acronym=session.group.acronym %}">
                                 {{ session.group.acronym }}
                             </a>
                             {% if session.purpose_id != "regular" and session.purpose_id != "none" %}

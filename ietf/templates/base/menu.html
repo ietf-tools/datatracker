@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2025, All Rights Reserved #}
 {% load origin %}
 {% origin %}
 {% load ietf_filters managed_groups wg_menu active_groups_menu group_filters cache meetings_filters %}
@@ -304,7 +304,7 @@
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
-           href="{% url 'ietf.secr.sreq.views.main' %}">
+           href="{% url 'ietf.meeting.views_session_request.list_view' %}">
             Request a session
         </a>
     </li>

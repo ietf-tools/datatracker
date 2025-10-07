@@ -1,0 +1,28 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
+{% extends "base.html" %}
+{% load static %}
+{% load ietf_filters %}
+{% load django_bootstrap5 %}
+{% block title %}Session Request Status{% endblock %}
+{% block content %}
+    <h1>Session Request Status</h1>
+
+    <div class="card">
+      <div class="card-header">
+        Session Request Status
+      </div>
+      <div class="card-body">
+        <p class="card-text">Enter the message that you would like displayed to the WG Chair when this tool is locked.</p>
+        <form method="post">{% csrf_token %}
+            {% bootstrap_form form %}
+            {% if is_locked %}
+                <button class="btn btn-primary" type="submit" name="submit" value="Unlock">Unlock</button>
+            {% else %}
+                <button class="btn btn-primary" type="submit" name="submit" value="Lock">Lock</button>
+            {% endif %}
+            <button class="btn btn-primary ms-auto" type="submit" name="submit" value="Back">Back</button>
+        </form>
+      </div>
+    </div>
+
+{% endblock %}
