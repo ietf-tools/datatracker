@@ -130,7 +130,7 @@ def bracketpos(pos,posslug):
 
 @register.filter(name='sort')
 def sortlist(value):
-    return value.sort()
+    return sorted(value)
 
 register.filter('fill', fill)
 
