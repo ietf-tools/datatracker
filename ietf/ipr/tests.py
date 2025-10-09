@@ -3,6 +3,7 @@
 
 
 import datetime
+import json
 from unittest import mock
 import re
 
@@ -14,6 +15,8 @@ from django.conf import settings
 from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
+
+from django.db.models import Max
 
 import debug                            # pyflakes:ignore
 
@@ -45,6 +48,7 @@ from ietf.ipr.utils import get_genitive, get_ipr_summary, ingest_response_email
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.factories import MessageFactory
 from ietf.message.models import Message
+from ietf.person.factories import PersonFactory
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.text import text_to_dict
@@ -1113,3 +1117,56 @@ class HolderIprDisclosureFormTests(TestCase):
             val = self.data.pop(pf)
             self.assertTrue(HolderIprDisclosureForm(data=self.data).is_valid())
             self.data[pf] = val
+
+class JsonSnapshotTests(TestCase):
+    def test_json_snapshot(self):
+        h = HolderIprDisclosureFactory()
+        url = urlreverse("ietf.ipr.views.json_snapshot", kwargs=dict(id=h.id))
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        dump = json.loads(r.content)
+        self.assertCountEqual(
+            [o["model"] for o in dump],
+            ["ipr.holderiprdisclosure", "ipr.iprdisclosurebase", "person.person"],
+        )
+        h.docs.add(WgRfcFactory())
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        dump = json.loads(r.content)
+        self.assertCountEqual(
+            [o["model"] for o in dump],
+            [
+                "ipr.holderiprdisclosure",
+                "ipr.iprdisclosurebase",
+                "ipr.iprdocrel",
+                "person.person",
+            ],
+        )
+        IprEventFactory(
+            disclosure=h,
+            message=MessageFactory(by=PersonFactory()),
+            in_reply_to=MessageFactory(),
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        dump = json.loads(r.content)
+        self.assertCountEqual(
+            [o["model"] for o in dump],
+            [
+                "ipr.holderiprdisclosure",
+                "ipr.iprdisclosurebase",
+                "ipr.iprdocrel",
+                "ipr.iprevent",
+                "message.message",
+                "message.message",
+                "person.person",
+                "person.person",
+                "person.person",
+                "person.person",
+            ],
+        )
+        no_such_ipr_id = IprDisclosureBase.objects.aggregate(Max("id"))["id__max"] + 1
+        url = urlreverse("ietf.ipr.views.json_snapshot", kwargs=dict(id=no_such_ipr_id))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
