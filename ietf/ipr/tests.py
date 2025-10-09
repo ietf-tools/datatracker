@@ -41,7 +41,7 @@ from ietf.ipr.factories import (
 from ietf.ipr.forms import DraftForm, HolderIprDisclosureForm
 from ietf.ipr.mail import (process_response_email, get_reply_to, get_update_submitter_emails,
                            get_pseudo_submitter, get_holders, get_update_cc_addrs, UndeliverableIprResponseError)
-from ietf.ipr.models import (IprDisclosureBase, GenericIprDisclosure, HolderIprDisclosure,
+from ietf.ipr.models import (IprDisclosureBase, GenericIprDisclosure, HolderIprDisclosure, RemovedIprDisclosure,
                              ThirdPartyIprDisclosure, IprEvent)
 from ietf.ipr.templatetags.ipr_filters import no_revisions_message
 from ietf.ipr.utils import get_genitive, get_ipr_summary, ingest_response_email
@@ -129,6 +129,26 @@ class IprTests(TestCase):
             self.assertContains(r, "removed as objectively false")
             ipr.delete()
 
+    def test_show_delete(self):
+        ipr = HolderIprDisclosureFactory()
+        removed = RemovedIprDisclosure.objects.create(
+            removed_id=ipr.pk, reason="Removed for reasons"
+        )
+        url = urlreverse("ietf.ipr.views.show", kwargs=dict(id=removed.removed_id))
+        r = self.client.get(url)
+        self.assertContains(r, "Removed for reasons")
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("#deletion_warning")), 0)
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertContains(r, "Removed for reasons")
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("#deletion_warning")), 1)
+        ipr.delete()
+        r = self.client.get(url)
+        self.assertContains(r, "Removed for reasons")
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("#deletion_warning")), 0)
 
     def test_show_posted(self):
         ipr = HolderIprDisclosureFactory()
