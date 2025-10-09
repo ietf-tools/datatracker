@@ -272,5 +272,5 @@ class LegacyMigrationIprEvent(IprEvent):
     pass
 
 class RemovedIprDisclosure(models.Model):
-    removed_id = models.PositiveBigIntegerField()
+    removed_id = models.PositiveBigIntegerField(unique=True)
     reason = models.TextField()
