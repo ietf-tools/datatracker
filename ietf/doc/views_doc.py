@@ -515,12 +515,15 @@ def document_main(request, name, rev=None, document_html=False):
         actions = []
 
         if can_adopt_draft(request.user, doc) and not doc.get_state_slug() in ["rfc"] and not snapshot:
+            target = urlreverse("ietf.doc.views_draft.adopt_draft", kwargs=dict(name=doc.name))
             if doc.group and doc.group.acronym != 'none': # individual submission
                 # already adopted in one group
                 button_text = "Switch adoption"
             else:
                 button_text = "Manage adoption"
-            actions.append((button_text, urlreverse('ietf.doc.views_draft.adopt_draft', kwargs=dict(name=doc.name))))
+                if has_role(request.user, ["Secretariat", "Area Director", "WG Chair"]):
+                    target = urlreverse("ietf.doc.views_draft.ask_about_ietf_adoption_call", kwargs=dict(name=doc.name))
+            actions.append((button_text, target))
 
         if can_unadopt_draft(request.user, doc) and not doc.get_state_slug() in ["rfc"] and not snapshot:
             if doc.get_state_slug('draft-iesg') == 'idexists':
