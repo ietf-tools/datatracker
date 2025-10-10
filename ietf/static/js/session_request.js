@@ -1,4 +1,4 @@
-// Copyright The IETF Trust 2015-2021, All Rights Reserved
+// Copyright The IETF Trust 2015-2025, All Rights Reserved
 /* global alert */
 var ietf_sessions; // public interface
 
@@ -38,7 +38,7 @@ var ietf_sessions; // public interface
     const only_one_session = (val === 1);
     if (document.form_post.session_time_relation) {
       document.form_post.session_time_relation.disabled = only_one_session;
-      document.form_post.session_time_relation.closest('tr').hidden = only_one_session;
+      document.form_post.session_time_relation.closest('div.row').hidden = only_one_session;
     }
     if (document.form_post.joint_for_session) {
       document.form_post.joint_for_session.disabled = only_one_session;
@@ -129,6 +129,11 @@ var ietf_sessions; // public interface
     }
   }
 
+  function wg_constraint_delete_clicked(event) {
+    const constraint_name = event.currentTarget.dataset.constraint_name;
+    delete_last_wg_constraint(constraint_name);
+  }
+
   /* Initialization */
   function on_load() {
     // Attach event handler to session count select
@@ -146,6 +151,9 @@ var ietf_sessions; // public interface
       selectors[index].addEventListener('change', wg_constraint_selector_changed, false)
     }
 
+    // Attach event handler to constraint delete buttons
+    document.querySelectorAll('.wg_constraint_delete')
+      .forEach(btn => btn.addEventListener('click', wg_constraint_delete_clicked));
   }
 
   // initialize after page loads

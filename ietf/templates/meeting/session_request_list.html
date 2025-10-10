@@ -1,0 +1,65 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
+{% extends "base.html" %}
+{% load static %}
+{% load ietf_filters %}
+{% load django_bootstrap5 %}
+{% block title %}Session Requests{% endblock %}
+{% block content %}
+    <h1>Session Requests IETF {{ meeting.number }}</h1>
+
+    <div class="d-flex mb-3">
+      <a href="https://www.ietf.org/chairs/session-request-tool-instructions/" class="btn btn-primary me-3" target="_blank">Instructions</a>
+
+      <a href="{% url 'ietf.meeting.views.meeting_requests' %}" class="btn btn-primary me-3">View list of timeslot requests</a>
+      {% if user|has_role:"Secretariat" %}
+        {% if is_locked %}
+          <a href="{% url 'ietf.meeting.views_session_request.status' %}" class="btn btn-danger ms-auto">Unlock Tool</a>
+        {% else %}
+          <a href="{% url 'ietf.meeting.views_session_request.status' %}" class="btn btn-primary ms-auto">Lock Tool</a>
+        {% endif %}
+      {% endif %}
+    </div>
+    
+    <div class="card mb-3">
+      <div class="card-header">
+        Request New Session
+      </div>
+      <div class="card-body">
+        <p class="card-text">The list below includes those working groups that you currently chair which do not already have a session scheduled. You can click on an acronym to complete a request for a new session at the upcoming IETF meeting.  Click "Group will not meet" to send a notification that the group does not plan to meet.</p>
+        <ul>
+            {% for group in unscheduled_groups %}
+                <li>
+                    <a href="{% url 'ietf.meeting.views_session_request.new_request' acronym=group.acronym %}">{{ group.acronym }}</a>
+                    {% if group.not_meeting %}
+                        <span class="required"> (Currently, this group does not plan to hold a session at IETF {{ meeting.number }})</span>
+                    {% endif %}
+                </li>
+            {% empty %}
+                <li><i>NONE</i></li>
+            {% endfor %}
+        </ul>
+      </div>
+    </div> <!-- card -->
+
+
+    <div class="card">
+      <div class="card-header">
+        Edit / Cancel Previously Requested Sessions
+      </div>
+      <div class="card-body">
+        <p class="card-text">The list below includes those working groups for which you or your co-chair has requested sessions at the upcoming IETF meeting. You can click on an acronym to initiate changes to a session, or cancel a session.</p>
+        <ul>
+            {% for group in scheduled_groups %}
+                <li><a href="{% url 'ietf.meeting.views_session_request.view_request' acronym=group.acronym %}">{{ group.acronym }} - {{ group.status_message }}</a></li>
+            {% empty %}
+                <li><i>NONE</i></li>
+            {% endfor %}
+        </ul>
+      </div>
+    </div> <!-- card -->
+
+{% endblock %}
+
+{% block footer-extras %}
+    {% include "includes/sessions_footer.html" %}
+{% endblock %}
