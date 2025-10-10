@@ -48,11 +48,12 @@ from django.utils.text import slugify
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import RedirectView
+from rest_framework.status import HTTP_404_NOT_FOUND, HTTP_400_BAD_REQUEST
 
 import debug                            # pyflakes:ignore
 
 from ietf.doc.fields import SearchableDocumentsField
-from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent
+from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, StoredObject
 from ietf.doc.storage_utils import remove_from_storage, retrieve_bytes, store_file
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
@@ -120,6 +121,7 @@ from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSession
 
 from icalendar import Calendar, Event
 from ietf.doc.templatetags.ietf_filters import absurl
+from ..api.ietf_utils import requires_api_token
 
 request_summary_exclude_group_types = ['team']
 
@@ -332,6 +334,141 @@ def materials_document(request, document, num=None, ext=None):
         return response
     else:
         return HttpResponseRedirect(redirect_to=doc.get_href(meeting=meeting))
+
+
+@requires_api_token
+def api_resolve_materials_name(request, document, num=None, ext=None):
+    """Resolve materials name into document to a blob spec
+    
+    Returns the bucket/name of a blob in the blob store that corresponds to the named
+    document. Handles resolution of revision if it is not specified and determines the
+    best extension if one is not provided. Response is JSON.
+    
+    As of 2025-10-10 we do not have blobs for all materials documents or for every
+    format of every document. This API still returns the bucket/name as if the blob
+    exists. Another API will allow the caller to obtain the file contents using that
+    name if it cannot be retrieved from the blob store.
+    """
+    def _error_response(status: int, detail: str):
+        return JsonResponse(
+            {
+                "status": status,
+                "title": "Error",
+                "detail": detail,
+            },
+            status=status,
+        )
+    
+    def _response(bucket: str, name: str):
+        return JsonResponse(
+            {
+                "bucket": bucket,
+                "name": name,
+            }
+        )
+
+    try:
+        meeting = get_meeting(num, type_in=["ietf", "interim"])
+    except Http404 as err404:
+        return _error_response(
+            HTTP_404_NOT_FOUND, str(err404)
+        )
+
+    num = meeting.number
+    try:
+        doc, rev = _get_materials_doc(meeting=meeting, name=document)
+    except Document.DoesNotExist:
+        return _error_response(
+            HTTP_404_NOT_FOUND, f"No such document for meeting {num}"
+        )
+
+    # Get the Document's base name. It may or may not have an extension.
+    if rev is None:
+        basename = Path(doc.get_base_name())
+    else:
+        basename = Path(f"{doc.name}-{rev:02d}")
+
+    # If we have an extension, either from the URL or the Document's base name, look up
+    # the blob or file or return 404.
+    if ext or basename.suffix != "":
+        if ext:
+            basename = basename.with_suffix(ext)
+        
+        # See if we have a stored object under that name
+        blob = StoredObject.objects.exclude_deleted().filter(
+            store=doc.type_id, name=basename
+        ).first()
+        if blob is not None:
+            return _response(
+                bucket=blob.store,
+                name=blob.name,
+            )
+        # No stored object, fall back to the file system.
+        filename = Path(doc.get_file_path()) / basename
+        if filename.exists():
+            return _response(
+                bucket=doc.type_id,
+                name=str(basename),
+            )
+        else:
+            return _error_response(
+                HTTP_404_NOT_FOUND,
+                f"No file {basename} available for {document} for meeting {num}",
+            )
+    
+    # No extension has been specified so far, so look one up.
+    matching_stored_objects = StoredObject.objects.exclude_deleted().filter(
+        store=doc.type_id,
+        name__startswith=f"{basename.stem}."  # anchor to end with trailing "."
+    ).order_by("name")  # orders by suffix
+    blob_ext_choices = {
+        Path(stored_obj.name).suffix: stored_obj
+        for stored_obj in matching_stored_objects
+    }
+    
+    # Short-circuit to return pdf if present
+    if ".pdf" in blob_ext_choices:
+        pdf_blob = blob_ext_choices[".pdf"]
+        return _response(
+            bucket=pdf_blob.store,
+            name=pdf_blob.name,
+        )
+
+    # Now look for files
+    filename = Path(doc.get_file_path()) / basename
+    file_ext_choices = {
+        # Construct a map from suffix to full filename
+        fn.suffix: str(fn)
+        for fn in sorted(filename.parent.glob(filename.stem + ".*"))
+    }
+    
+    # Short-circuit to return pdf if we have the file 
+    if ".pdf" in file_ext_choices:
+        pdf_filename = file_ext_choices[".pdf"]
+        return _response(
+            bucket=doc.type_id,
+            name=pdf_filename,
+        )
+    
+    all_exts = set(blob_ext_choices.keys()).union(file_ext_choices.keys())
+    if len(all_exts) > 0:
+        preferred_ext = sorted(all_exts)[0]
+        if preferred_ext in blob_ext_choices:
+            pdf_blob = blob_ext_choices[preferred_ext]
+            return _response(
+                bucket=pdf_blob.store,
+                name=pdf_blob.name,
+            )
+        else:
+            pdf_filename = file_ext_choices[".pdf"]
+            return _response(
+                bucket=doc.type_id,
+                name=pdf_filename,
+            )
+
+    return _error_response(
+        HTTP_404_NOT_FOUND, f"No suitable file for {document} for meeting {num}"
+    )
 
 
 @login_required
