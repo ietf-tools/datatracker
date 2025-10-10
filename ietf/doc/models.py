@@ -913,6 +913,7 @@ class DocumentActionHolder(models.Model):
             roles.append('Action Holder')
         return ', '.join(roles) 
 
+# N.B., at least a couple dozen documents exist that do not satisfy this validator
 validate_docname = RegexValidator(
     r'^[-a-z0-9]+$',
     "Provide a valid document name consisting of lowercase letters, numbers and hyphens.",
