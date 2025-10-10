@@ -1,0 +1,206 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
+{% extends "base.html" %}
+{% load static ietf_filters django_bootstrap5 %}
+{% block title %}{% if is_create %}New {% else %}Edit {% endif %}Session Request{% endblock %}
+{% block morecss %}{{ block.super }}
+  .hidden {display: none !important;}
+  div.form-group {display: inline;}
+{% endblock %}
+{% block content %}
+    <h1>{% if is_create %}New {% else %}Edit {% endif %}Session Request</h1>
+
+    {% if is_create %}
+    <div class="buttonlist mb-3">
+        <a class="btn btn-primary me-3"
+           onclick="if (window.confirm('A message will be sent to agenda@ietf.com as well as to the area director(s).\n\nContinue?')) { window.location='{% url "ietf.meeting.views_session_request.no_session" acronym=group.acronym %}'};"
+           href="{% url 'ietf.meeting.views_session_request.no_session' acronym=group.acronym %}">Send a notification that the group does not plan to hold a session at IETF {{ meeting.number }}</a>
+        <a class="btn btn-primary"
+           href="{% url 'ietf.meeting.views_session_request.new_request' acronym=group.acronym %}?previous">Retrieve all information from previous meeting</a>
+    </div>
+    {% endif %}
+
+    <hr>
+
+    <form id="session-request-form" action="." method="post" name="form_post">
+        {% csrf_token %}
+        {{ form.session_forms.management_form }}
+        {% if form.non_field_errors %}
+            <div class="my-3 alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="row mb-3">
+            <label class="col-md-2 fw-bold col-form-label" for="id_group_name">Working Group Name</label>
+            <div class="col-md-10">
+                <input type="text" class="form-control" value="{{ group.name }} ({{ group.acronym }})" id="id_group_name" disabled>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <label class="col-md-2 fw-bold col-form-label" for="id_area_name">Area Name</label>
+            <div class="col-md-10">
+                <input type="text" class="form-control" value="{% if group.parent %}{{ group.parent.name }} ({{ group.parent.acronym }}){% endif %}" id="id_area_name" disabled>
+            </div>
+        </div>
+
+        {% bootstrap_field form.num_session layout="horizontal" %}
+
+        {% if group.features.acts_like_wg %}
+
+            <div class="row mb-3" id="session_row_0">
+                <div class="col-md-2 fw-bold col-form-label">Session 1</div>
+                <div class="col-md-10">
+                    {% include 'meeting/session_details_form.html' with form=form.session_forms.0 hide_onsite_tool_prompt=True only %}
+                </div>
+            </div>
+
+            <div class="row mb-3" id="session_row_1">
+                <div class="col-md-2 fw-bold col-form-label">Session 2</div>
+                <div class="col-md-10">
+                    {% include 'meeting/session_details_form.html' with form=form.session_forms.1 hide_onsite_tool_prompt=True only %}
+                </div>
+            </div>
+
+            {% if not is_virtual %}
+                {% bootstrap_field form.session_time_relation layout="horizontal" %}
+            {% endif %}
+
+            <div class="row mb-3" id="third_session_row">
+                <div class="col-md-2 fw-bold col-form-label">Additional Session Request</div>
+                <div class="col-md-10">
+                    <div class="form-check">
+                        {{ form.third_session }}
+                        <label class="form-check-label" for="id_third_session">Check this box to request an additional session</label>
+                        <div id="id_third_session_helptext" class="form-text">Additional slot may be available after agenda scheduling has closed and with the approval of an Area Director.</div>
+                    </div>
+                    
+                </div>
+            </div>
+
+            <div class="row mb-3" id="session_row_2">
+                <div class="col-md-2 fw-bold col-form-label">Third session request</div>
+                <div class="col-md-10">
+                    {% include 'meeting/session_details_form.html' with form=form.session_forms.2 hide_onsite_tool_prompt=True only %}
+                </div>
+            </div>
+
+        {% else %}{# else not group.features.acts_like_wg #}
+            {% for session_form in form.session_forms %}
+            <div class="row mb-3" id="session_row_{{ forloop.counter0 }}">
+                <div class="col-md-2 fw-bold col-form-label">Session {{ forloop.counter }}</div>
+                <div class="col-md-10">
+                    {% include 'meeting/session_details_form.html' with form=session_form only %}
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        {% bootstrap_field form.attendees layout="horizontal" %}
+
+        {% bootstrap_field form.bethere layout="horizontal" %}
+
+        <div class="row mb-3">
+            <div class="col-md-2 fw-bold col-form-label">Conflicts to avoid</div>
+            <div class="col-md-10">
+                <div class="row mb-3">
+                    <div class="col-md-2">Other WGs that included <strong>{{ group.acronym }}</strong> in their conflict lists</div>
+                    <div class="col-md-8">{{ session_conflicts.inbound|default:"None" }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-2">WG Sessions<br>You may select multiple WGs within each category</div>
+                    <div class="col-md">
+                        {% for cname, cfield, cselector  in form.wg_constraint_fields %}
+                        <div class="row mb-2">
+                            <div class="col-md-2"><label for="id_wg_selector_{{ cname.slug }}">{{ cname|title }}</label></div>
+                            <div class="col">
+                                <div class="row g-3 mb-1">
+                                    <div class="col">
+                                        {{ cselector }}
+                                    </div>
+                                    <div class="col">
+                                        <button type="button" class="btn btn-primary wg_constraint_delete" id="wg_delete_{{ cname.slug }}" data-constraint_name="{{ cname.slug }}">Delete the last entry</button>
+                                    </div>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col">
+                                        {{ cfield.errors }}{{ cfield }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}{# shown if there are no constraint fields #}
+                            <div class="col-md-1"></div>
+                            <div class="col-md">No constraints are enabled for this meeting.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                {% if form.inactive_wg_constraint_count %}
+                <div class="row mb-3">
+                    <div class="col-md-2">Disabled for this meeting</div>
+                    <div class="col">
+                        {% for cname, value, field in form.inactive_wg_constraints %}
+                        <div class="row mb2">
+                            <div class="col-md-2">{{ cname|title }}</div>
+                            <div class="col">
+                                <div class="row">
+                                    <div class="col">
+                                        <input type="text" value="{{ value }}" maxlength="255" class="wg_constraint form-control" aria-label="constraint target" disabled>
+                                    </div>
+                                    <div class="col form-check">
+                                        <input type="checkbox" name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-check-input">
+                                        <label class="form-check-label" for="{{ field.id_for_label }}">Delete this conflict</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="row mb-3">
+                    <div class="col-md-2">BOF Sessions</div>
+                    <div class="col">If the sessions can not be found in the fields above, please enter free form requests in the Special Requests field below.</div>
+                </div>
+            </div>
+        </div>
+
+        {% if not is_virtual %}
+
+            {% bootstrap_field form.resources layout="horizontal" %}
+
+            {% bootstrap_field form.timeranges layout="horizontal" %}
+
+            {% bootstrap_field form.adjacent_with_wg layout="horizontal" %}
+
+            <div class="row mb-3">
+                <div class="col-md-2 fw-bold col-form-label">Joint session with: (To request one session for multiple WGs together)</div>
+                <div class="col-md-10">To request a joint session with another group, please contact the secretariat.</div>
+            </div>
+
+        {% endif %}
+
+        {% bootstrap_field form.comments layout="horizontal" %}
+
+        {% if form.notifications_optional %}
+        <div class="row mb-3">
+            <label class="col-md-2 fw-bold col-form-label" for="id_send_notifications">Notifications</label>
+            <div class="col">
+                <div class="form-check">
+                    <input type="checkbox" name="send_notifications" class="form-check-input" id="id_send_notifications">
+                    <label class="form-check-label" for="id_send_notifications">Send notification emails?</label>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <button type="submit" class="btn btn-primary" name="submit" value="Save"{% if is_locked %} disabled{% endif %}>Save</button>
+        <a class="btn btn-secondary float-end"
+               href="{% url 'ietf.meeting.views_session_request.list_view' %}">Cancel</a>
+    </form>
+
+{% endblock %}
+{% block js %}
+    <script src="{% static 'ietf/js/session_request.js' %}"></script>
+    {{ form.media }}
+{% endblock %}

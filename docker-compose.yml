@@ -36,7 +36,7 @@ services:
     db:
         image: ghcr.io/ietf-tools/datatracker-db:latest
         #  build:
-        #      context: ..
+        #      context: .
         #      dockerfile: docker/db.Dockerfile
         restart: unless-stopped
         volumes:

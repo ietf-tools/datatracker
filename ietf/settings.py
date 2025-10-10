@@ -537,7 +537,6 @@ INSTALLED_APPS = [
     'ietf.secr.announcement',
     'ietf.secr.meetings',
     'ietf.secr.rolodex',
-    'ietf.secr.sreq',
     'ietf.secr.telechat',
 ]
 
