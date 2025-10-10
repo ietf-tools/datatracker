@@ -1692,12 +1692,12 @@ class ChangeStreamStateForm(forms.Form):
         if self.stream.slug == 'ietf':
             help_text_items = []
             if self.can_set_sub_pub:
-                help_text_items.append("Only select 'Submitted to IESG for Publication' to correct errors. Use the button above or the document's main page to request publication.")
+                help_text_items.append("Only select 'Submitted to IESG for Publication' to correct errors. This is not how to submit a document to the IESG.")
             else:
                 f.queryset = f.queryset.exclude(slug='sub-pub')
                 help_text_items.append("You may not set the 'Submitted to IESG for Publication' using this form - Use the button above or the document's main page to request publication.")
             if self.can_set_wg_lc:
-                help_text_items.append("Only select 'In WG Last Call' to correct errors. Use the button above or the document's main page to request a WG LC.")
+                help_text_items.append("Only select 'In WG Last Call' to correct errors. This is not how to issue a working group last call.")
             else:
                 f.queryset = f.queryset.exclude(slug='wg-lc')
                 help_text_items.append("You may not set the 'In WG Last Call' state using this form - Use the button above or the document's main page to request a WG LC.")
@@ -1739,6 +1739,19 @@ def next_states_for_stream_state(doc, state_type, current_state):
         next_states = [n for n in next_states if n.pk not in unused_states]
 
     return next_states
+
+@login_required
+def offer_wg_action_helpers(request, name):
+    doc = get_object_or_404(Document, type="draft", name=name)
+    if doc.stream is None or doc.stream_id != "ietf" or doc.became_rfc() is not None:
+        raise Http404
+
+    if not is_authorized_in_doc_stream(request.user, doc):
+        permission_denied(request, "You don't have permission to access this page.")
+    
+    return render(request, "doc/draft/wg_action_helpers.html",
+                              {"doc": doc,
+                              })
 
 @login_required
 def change_stream_state(request, name, state_type):
@@ -1847,10 +1860,6 @@ def change_stream_state(request, name, state_type):
                                "milestones": milestones,
                                "state_type": state_type,
                                "next_states": next_states,
-                               "iesg_state_id": doc.get_state_slug("draft-iesg"),
-                               "ietf_stream_state_id": doc.get_state_slug("draft-stream-ietf"),
-                               "draft_state_id": doc.get_state_slug("draft"),
-                               "has_had_wg_lc": doc.docevent_set.filter(statedocevent__state__slug="wg-lc").exists(),
                               })
 
 # This should be in ietf.doc.utils, but placing it there brings a circular import issue with ietf.doc.mail

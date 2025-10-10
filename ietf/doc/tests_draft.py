@@ -85,7 +85,60 @@ class ChangeStateTests(TestCase):
         self.assertTrue("Approved: " in outbox[-1]['Subject'])
         self.assertTrue(draft.name in outbox[-1]['Subject'])
         self.assertTrue('iesg@' in outbox[-1]['To'])
-        
+    
+    def test_offer_wg_action_helpers(self):
+        def _view_presents_issue_wglc_button(response):
+            q = PyQuery(response.content)
+            button = q("#id_wglc_button")
+            return len(button) != 0
+
+        came_from_draft = WgDraftFactory(states=[("draft","rfc")])
+        rfc = WgRfcFactory(group=came_from_draft.group)
+        came_from_draft.relateddocument_set.create(relationship_id="became_rfc",target=rfc)
+        rfc_chair = RoleFactory(name_id="chair", group=rfc.group).person
+        url = urlreverse("ietf.doc.views_draft.offer_wg_action_helpers", kwargs=dict(name=came_from_draft.name))
+        login_testing_unauthorized(self, rfc_chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+        self.client.logout()
+        rg_draft = RgDraftFactory()
+        rg_chair = RoleFactory(group=rg_draft.group, name_id="chair").person
+        url = urlreverse("ietf.doc.views_draft.offer_wg_action_helpers", kwargs=dict(name=rg_draft.name))
+        login_testing_unauthorized(self, rg_chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,404)
+        self.client.logout()
+        draft = WgDraftFactory()
+        chair = RoleFactory(group=draft.group, name_id="chair").person
+        url = urlreverse("ietf.doc.views_draft.offer_wg_action_helpers", kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        self.assertTrue(_view_presents_issue_wglc_button(r))
+        draft.set_state(State.objects.get(type_id="draft-stream-ietf", slug="wg-lc"))
+        StateDocEventFactory(
+            doc=draft,
+            state_type_id="draft-stream-ietf",
+            state=("draft-stream-ietf", "wg-lc"),
+        )
+        self.assertEqual(draft.docevent_set.count(), 2)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        self.assertFalse(_view_presents_issue_wglc_button(r))
+        draft.set_state(State.objects.get(type_id="draft-stream-ietf",slug="chair-w"))
+        r = self.client.get(url)
+        self.assertTrue(_view_presents_issue_wglc_button(r))
+        self.assertContains(response=r,text="Issue Another Working Group Last Call", status_code=200)
+        other_draft = WgDraftFactory()
+        self.client.logout()
+        url = urlreverse("ietf.doc.views_draft.offer_wg_action_helpers", kwargs=dict(name=other_draft.name))
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertTrue(_view_presents_issue_wglc_button(r))
+        self.assertContains(
+            response=r, text="Issue Working Group Last Call", status_code=200
+        )
+
     def test_change_state(self):
         ad = Person.objects.get(user__username="ad")
         draft = WgDraftFactory(
@@ -2006,25 +2059,8 @@ class ChangeStreamStateTests(TestCase):
         def _form_presents_state_option(response, state):
             q = PyQuery(response.content)
             option = q(f"select#id_new_state option[value='{state.pk}']")
-            return len(option) != 0
+            return len(option) != 0 
         
-        def _view_presents_issue_wglc_button(response):
-            q = PyQuery(response.content)
-            button = q("#id_wglc_button")
-            return len(button) != 0
-        
-        came_from_draft = WgDraftFactory(states=[("draft","rfc")])
-        rfc = WgRfcFactory(group=came_from_draft.group)
-        came_from_draft.relateddocument_set.create(relationship_id="became_rfc",target=rfc)
-        rfc_chair = RoleFactory(name_id="chair", group=rfc.group).person
-        url = urlreverse(
-            "ietf.doc.views_draft.change_stream_state",
-            kwargs=dict(name=rfc.came_from_draft().name, state_type="draft-stream-ietf"),
-        )      
-        login_testing_unauthorized(self, rfc_chair.user.username, url)
-        r = self.client.get(url)
-        self.assertFalse(_view_presents_issue_wglc_button(r))
-        self.client.logout()
         doc = WgDraftFactory()
         chair = RoleFactory(name_id="chair", group=doc.group).person
         url = urlreverse(
@@ -2033,7 +2069,6 @@ class ChangeStreamStateTests(TestCase):
         )
         login_testing_unauthorized(self, chair.user.username, url)
         r = self.client.get(url)
-        self.assertTrue(_view_presents_issue_wglc_button(r))
         wglc_state = State.objects.get(type="draft-stream-ietf", slug="wg-lc")
         self.assertFalse(_form_presents_state_option(r, wglc_state))
         r = self.client.post(
@@ -2059,28 +2094,7 @@ class ChangeStreamStateTests(TestCase):
         )
         self.assertEqual(doc.docevent_set.count(), 2)
         r = self.client.get(url)
-        self.assertFalse(_view_presents_issue_wglc_button(r))
         self.assertTrue(_form_presents_state_option(r, wglc_state))
-        r = self.client.post(
-            url,
-            dict(
-                new_state=wglc_state.pk,
-                comment="some comment",
-                weeks="10",
-                tags=[
-                    t.pk
-                    for t in doc.tags.filter(
-                        slug__in=get_tags_for_stream_id(doc.stream_id)
-                    )
-                ],
-            ),
-        )
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(doc.docevent_set.count(), 3)
-        doc.set_state(State.objects.get(type_id="draft-stream-ietf",slug="chair-w"))
-        r = self.client.get(url)
-        self.assertTrue(_view_presents_issue_wglc_button(r))
-        self.assertContains(response=r,text="Issue Another Working Group Last Call", status_code=200)
         other_doc = WgDraftFactory()
         self.client.logout()
         url = urlreverse(
@@ -2089,9 +2103,6 @@ class ChangeStreamStateTests(TestCase):
         )
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
-        self.assertContains(
-            response=r, text="Issue Working Group Last Call", status_code=200
-        )
         self.assertTrue(_form_presents_state_option(r, wglc_state))
 
     def test_wg_call_for_adoption_issued(self):

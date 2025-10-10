@@ -146,6 +146,7 @@ urlpatterns = [
     url(r'^%(name)s/edit/adopt/$' % settings.URL_REGEXPS, views_draft.adopt_draft),
     url(r'^%(name)s/edit/release/$' % settings.URL_REGEXPS, views_draft.release_draft),
     url(r'^%(name)s/edit/state/(?P<state_type>draft-stream-[a-z]+)/$' % settings.URL_REGEXPS, views_draft.change_stream_state),
+    url(r'^%(name)s/edit/wg-action-helpers/$' % settings.URL_REGEXPS, views_draft.offer_wg_action_helpers),
     url(r'^%(name)s/edit/state/statement/$' % settings.URL_REGEXPS, views_statement.change_statement_state),
 
     url(r'^%(name)s/edit/clearballot/(?P<ballot_type_slug>[\w-]+)/$' % settings.URL_REGEXPS, views_ballot.clear_ballot),

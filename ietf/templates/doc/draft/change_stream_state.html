@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015-2025, All Rights Reserved #}
-{% load origin %}
-{% load django_bootstrap5 %}
+{% load django_bootstrap5 ietf_filters origin %}
 {% block title %}Change {{ state_type.label }} for {{ doc }}{% endblock %}
 {% block content %}
     {% origin %}
@@ -10,21 +9,11 @@
         <br>
         <small class="text-body-secondary">{{ doc }}</small>
     </h1>
-    {% if doc.stream_id == "ietf" %}
-    <div>
-        {% if ietf_stream_state_id != "wg-lc" and draft_state_id != "rfc" %}
-          <a class="btn btn-primary next-state" href="{% url 'ietf.doc.views_draft.issue_wg_lc' name=doc.name %}" id="id_wglc_button">Issue{% if has_had_wg_lc %} Another{% endif %} Working Group Last Call</a>
-        {% endif %}
-        {% if iesg_state_id == "idexists" %}
-          <a class="btn btn-primary next-state" href="{% url 'ietf.doc.views_draft.to_iesg' name=doc.name %}">Submit to IESG for Publication</a>
-        {% endif %}
-    </div>
-    {% endif %}
     {% if next_states %}
         <a class="my-3 btn btn-info"
            href="{% url 'ietf.doc.views_help.state_help' type=state_type.slug %}">Help on states</a>
         <p>
-            <b>Move document to {{ next_states|pluralize:"to one of" }} the recommended next state{{ next_states|pluralize }}:</b>
+            <b>Move document to {{ next_states|pluralize:"one of" }} the recommended next state{{ next_states|pluralize }}:</b>
         </p>
         {% for state in next_states %}
             {% if state.slug != 'sub-pub' and state.slug != "wg-lc" %}
@@ -36,7 +25,13 @@
         {% csrf_token %}
         {% bootstrap_form form %}
         <button type="submit" class="btn btn-primary">Submit</button>
-        <a class="btn btn-secondary float-end" href="{{ doc.get_absolute_url }}">Back</a>
+        <a class="btn btn-secondary float-end"
+          {% if doc|can_issue_ietf_wg_lc or doc|can_submit_to_iesg %}
+            href="{% url 'ietf.doc.views_draft.offer_wg_action_helpers' name=doc.name %}"
+          {% else %} 
+            href="{{ doc.get_absolute_url }}"
+          {% endif %}
+        >Back</a>
     </form>
 {% endblock %}
 {% block js %}

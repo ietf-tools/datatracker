@@ -1017,3 +1017,20 @@ def is_in_stream(doc):
     elif stream == "editorial":
         return True
     return False
+
+@register.filter
+def can_issue_ietf_call_for_adoption(doc):
+    return False # TODO
+
+@register.filter
+def can_issue_ietf_wg_lc(doc):
+    return doc.stream_id == "ietf" and doc.get_state_slug("draft-stream-ietf") != "wg-lc" and doc.get_state_slug("draft") != "rfc"
+
+@register.filter
+def can_submit_to_iesg(doc):
+    return doc.stream_id == "ietf" and doc.get_state_slug("draft-iesg") == "idexists"
+
+@register.filter
+def has_had_ietf_wg_lc(doc):
+    return doc.stream_id == "ietf" and doc.docevent_set.filter(statedocevent__state__slug="wg-lc").exists()
+
