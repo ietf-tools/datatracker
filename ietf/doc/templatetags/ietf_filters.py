@@ -1020,7 +1020,23 @@ def is_in_stream(doc):
 
 @register.filter
 def can_issue_ietf_call_for_adoption(doc):
-    return False # TODO
+    return all(
+        [
+            doc.stream_id == "ietf",
+            doc.get_state_slug("draft-stream-ietf")
+            not in [
+                "wg-doc",
+                "parked",
+                "dead",
+                "wg-lc",
+                "waiting-for-implementation",
+                "chair-w",
+                "writeupw",
+                "sub-pub",
+            ],
+            doc.became_rfc() is None,
+        ]
+    )
 
 @register.filter
 def can_issue_ietf_wg_lc(doc):
