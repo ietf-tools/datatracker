@@ -25,7 +25,6 @@ from ietf.doc.views_doc import document_ballot_content
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory, ReviewTeamFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
-from ietf.name.models import BallotPositionName
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory, PersonalApiKeyFactory
@@ -37,9 +36,18 @@ from ietf.utils.timezone import date_today, datetime_today
 
 
 class EditPositionTests(TestCase):
+
+    # N.B. This test needs to be rewritten to exercise all types of ballots (iesg, irsg, rsab)
+    # and test against the output of the mailtriggers instead of looking for hardcoded values
+    # in the To and CC results. See #7864
     def test_edit_position(self):
         ad = Person.objects.get(user__username="ad")
-        draft = IndividualDraftFactory(ad=ad,stream_id='ietf')
+        draft = WgDraftFactory(
+            ad=ad,
+            stream_id="ietf",
+            notify="somebody@example.com",
+            group__acronym="mars",
+        )
         ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
         url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=draft.name,
                                                           ballot_id=ballot.pk))
@@ -55,11 +63,20 @@ class EditPositionTests(TestCase):
         self.assertEqual(len(q('form textarea[name=comment]')), 1)
 
         # vote
+        empty_outbox()
         events_before = draft.docevent_set.count()
-        
-        r = self.client.post(url, dict(position="discuss",
-                                       discuss=" This is a discussion test. \n ",
-                                       comment=" This is a test. \n "))
+
+        r = self.client.post(
+            url,
+            dict(
+                position="discuss",
+                discuss=" This is a discussion test. \n ",
+                comment=" This is a test. \n ",
+                additional_cc="test298347@example.com",
+                cc_choices=["doc_notify", "doc_group_chairs"],
+                send_mail=1,
+            ),
+        )
         self.assertEqual(r.status_code, 302)
 
         pos = draft.latest_event(BallotPositionDocEvent, balloter=ad)
@@ -70,6 +87,22 @@ class EditPositionTests(TestCase):
         self.assertTrue(pos.comment_time != None)
         self.assertTrue("New position" in pos.desc)
         self.assertEqual(draft.docevent_set.count(), events_before + 3)
+        self.assertEqual(len(outbox),1)
+        m = outbox[0]
+        self.assertTrue("COMMENT" in m['Subject'])
+        self.assertTrue("DISCUSS" in m['Subject'])
+        self.assertTrue(draft.name in m['Subject'])
+        self.assertTrue("This is a discussion test." in str(m))
+        self.assertTrue("This is a test" in str(m))
+        self.assertTrue("iesg@" in m['To'])
+        # cc_choice doc_group_chairs
+        self.assertTrue("mars-chairs@" in m['Cc'])
+        # cc_choice doc_notify
+        self.assertTrue("somebody@example.com" in m['Cc'])
+        # cc_choice doc_group_email_list was not selected
+        self.assertFalse(draft.group.list_email in m['Cc'])
+        # extra-cc    
+        self.assertTrue("test298347@example.com" in m['Cc'])        
 
         # recast vote
         events_before = draft.docevent_set.count()
@@ -230,64 +263,6 @@ class EditPositionTests(TestCase):
         r = self.client.post(url, dict(position="discuss", discuss="Test discuss text"))
         self.assertEqual(r.status_code, 403)
         
-    # N.B. This test needs to be rewritten to exercise all types of ballots (iesg, irsg, rsab)
-    # and test against the output of the mailtriggers instead of looking for hardcoded values
-    # in the To and CC results. See #7864
-    def test_send_ballot_comment(self):
-        ad = Person.objects.get(user__username="ad")
-        draft = WgDraftFactory(ad=ad,group__acronym='mars')
-        draft.notify = "somebody@example.com"
-        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
-
-        ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
-
-        BallotPositionDocEvent.objects.create(
-            doc=draft, rev=draft.rev, type="changed_ballot_position",
-            by=ad, balloter=ad, ballot=ballot, pos=BallotPositionName.objects.get(slug="discuss"),
-            discuss="This draft seems to be lacking a clearer title?",
-            discuss_time=timezone.now(),
-            comment="Test!",
-            comment_time=timezone.now())
-        
-        url = urlreverse('ietf.doc.views_ballot.send_ballot_comment', kwargs=dict(name=draft.name,
-                                                                ballot_id=ballot.pk))
-        login_testing_unauthorized(self, "ad", url)
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue(len(q('form input[name="extra_cc"]')) > 0)
-
-        # send
-        mailbox_before = len(outbox)
-
-        r = self.client.post(url, dict(extra_cc="test298347@example.com", cc_choices=['doc_notify','doc_group_chairs']))
-        self.assertEqual(r.status_code, 302)
-
-        self.assertEqual(len(outbox), mailbox_before + 1)
-        m = outbox[-1]
-        self.assertTrue("COMMENT" in m['Subject'])
-        self.assertTrue("DISCUSS" in m['Subject'])
-        self.assertTrue(draft.name in m['Subject'])
-        self.assertTrue("clearer title" in str(m))
-        self.assertTrue("Test!" in str(m))
-        self.assertTrue("iesg@" in m['To'])
-        # cc_choice doc_group_chairs
-        self.assertTrue("mars-chairs@" in m['Cc'])
-        # cc_choice doc_notify
-        self.assertTrue("somebody@example.com" in m['Cc'])
-        # cc_choice doc_group_email_list was not selected
-        self.assertFalse(draft.group.list_email in m['Cc'])
-        # extra-cc    
-        self.assertTrue("test298347@example.com" in m['Cc'])
-
-        r = self.client.post(url, dict(cc=""))
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(len(outbox), mailbox_before + 2)
-        m = outbox[-1]
-        self.assertTrue("iesg@" in m['To'])
-        self.assertFalse(m['Cc'] and draft.group.list_email in m['Cc'])
 
 
 class BallotWriteupsTests(TestCase):
