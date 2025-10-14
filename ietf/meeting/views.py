@@ -251,21 +251,32 @@ def current_materials(request):
         raise Http404('No such meeting')
 
 
-def _get_materials_doc(meeting, name):
+def _get_materials_doc(name, meeting=None):
     """Get meeting materials document named by name
 
-    Raises Document.DoesNotExist if a match cannot be found.
+    Raises Document.DoesNotExist if a match cannot be found. If meeting is None,
+    matches a name that is associated with _any_ meeting.
     """
+
+    def _matches_meeting(doc, meeting=None):
+        if meeting is None:
+            return doc.get_related_meeting() is not None
+        return doc.get_related_meeting() == meeting
+
     # try an exact match first
     doc = Document.objects.filter(name=name).first()
-    if doc is not None and doc.get_related_meeting() == meeting:
+    if doc is not None and _matches_meeting(doc, meeting):
         return doc, None
+
     # try parsing a rev number
     if "-" in name:
         docname, rev = name.rsplit("-", 1)
         if len(rev) == 2 and rev.isdigit():
             doc = Document.objects.get(name=docname)  # may raise Document.DoesNotExist
-            if doc.get_related_meeting() == meeting and rev in doc.revisions_by_newrevisionevent():
+            if (
+                _matches_meeting(doc, meeting)
+                and rev in doc.revisions_by_newrevisionevent()
+            ):
                 return doc, rev
     # give up
     raise Document.DoesNotExist
@@ -283,7 +294,7 @@ def materials_document(request, document, num=None, ext=None):
     meeting = get_meeting(num, type_in=["ietf", "interim"])
     num = meeting.number
     try:
-        doc, rev = _get_materials_doc(meeting=meeting, name=document)
+        doc, rev = _get_materials_doc(name=document, meeting=meeting)
     except Document.DoesNotExist:
         raise Http404("No such document for meeting %s" % num)
 
@@ -380,7 +391,7 @@ def api_resolve_materials_name(request, document, num=None, ext=None):
 
     num = meeting.number
     try:
-        doc, rev = _get_materials_doc(meeting=meeting, name=document)
+        doc, rev = _get_materials_doc(name=document, meeting=meeting)
     except Document.DoesNotExist:
         return _error_response(
             HTTP_404_NOT_FOUND, f"No such document for meeting {num}"
