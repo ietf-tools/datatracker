@@ -1022,7 +1022,7 @@ def is_in_stream(doc):
 def can_issue_ietf_call_for_adoption(doc):
     return all(
         [
-            doc.stream_id in ["ietf", None],
+            doc.stream_id == "ietf",
             doc.get_state_slug("draft-stream-ietf")
             not in [
                 "wg-doc",
@@ -1041,13 +1041,32 @@ def can_issue_ietf_call_for_adoption(doc):
 
 @register.filter
 def can_issue_ietf_wg_lc(doc):
-    return doc.stream_id == "ietf" and doc.get_state_slug("draft-stream-ietf") != "wg-lc" and doc.get_state_slug("draft") != "rfc"
+    return all(
+        [
+            doc.stream_id == "ietf",
+            doc.get_state_slug("draft-stream-ietf")
+            not in ["wg-cand", "c-adopt", "wg-lc"],
+            doc.get_state_slug("draft") != "rfc",
+            doc.became_rfc() is None,
+        ]
+    )
+
 
 @register.filter
 def can_submit_to_iesg(doc):
-    return doc.stream_id == "ietf" and doc.get_state_slug("draft-iesg") == "idexists"
+    return all(
+        [
+            doc.stream_id == "ietf",
+            doc.get_state_slug("draft-iesg") == "idexists",
+            doc.get_state_slug("draft-stream-ietf") not in ["wg-cand", "c-adopt"],
+        ]
+    )
+
 
 @register.filter
 def has_had_ietf_wg_lc(doc):
-    return doc.stream_id == "ietf" and doc.docevent_set.filter(statedocevent__state__slug="wg-lc").exists()
+    return (
+        doc.stream_id == "ietf"
+        and doc.docevent_set.filter(statedocevent__state__slug="wg-lc").exists()
+    )
 

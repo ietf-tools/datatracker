@@ -86,59 +86,6 @@ class ChangeStateTests(TestCase):
         self.assertTrue("Approved: " in outbox[-1]['Subject'])
         self.assertTrue(draft.name in outbox[-1]['Subject'])
         self.assertTrue('iesg@' in outbox[-1]['To'])
-    
-    def test_offer_wg_action_helpers(self):
-        def _view_presents_issue_wglc_button(response):
-            q = PyQuery(response.content)
-            button = q("#id_wglc_button")
-            return len(button) != 0
-
-        came_from_draft = WgDraftFactory(states=[("draft","rfc")])
-        rfc = WgRfcFactory(group=came_from_draft.group)
-        came_from_draft.relateddocument_set.create(relationship_id="became_rfc",target=rfc)
-        rfc_chair = RoleFactory(name_id="chair", group=rfc.group).person
-        url = urlreverse("ietf.doc.views_draft.offer_wg_action_helpers", kwargs=dict(name=came_from_draft.name))
-        login_testing_unauthorized(self, rfc_chair.user.username, url)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 404)
-        self.client.logout()
-        rg_draft = RgDraftFactory()
-        rg_chair = RoleFactory(group=rg_draft.group, name_id="chair").person
-        url = urlreverse("ietf.doc.views_draft.offer_wg_action_helpers", kwargs=dict(name=rg_draft.name))
-        login_testing_unauthorized(self, rg_chair.user.username, url)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code,404)
-        self.client.logout()
-        draft = WgDraftFactory()
-        chair = RoleFactory(group=draft.group, name_id="chair").person
-        url = urlreverse("ietf.doc.views_draft.offer_wg_action_helpers", kwargs=dict(name=draft.name))
-        login_testing_unauthorized(self, chair.user.username, url)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
-        self.assertTrue(_view_presents_issue_wglc_button(r))
-        draft.set_state(State.objects.get(type_id="draft-stream-ietf", slug="wg-lc"))
-        StateDocEventFactory(
-            doc=draft,
-            state_type_id="draft-stream-ietf",
-            state=("draft-stream-ietf", "wg-lc"),
-        )
-        self.assertEqual(draft.docevent_set.count(), 2)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
-        self.assertFalse(_view_presents_issue_wglc_button(r))
-        draft.set_state(State.objects.get(type_id="draft-stream-ietf",slug="chair-w"))
-        r = self.client.get(url)
-        self.assertTrue(_view_presents_issue_wglc_button(r))
-        self.assertContains(response=r,text="Issue Another Working Group Last Call", status_code=200)
-        other_draft = WgDraftFactory()
-        self.client.logout()
-        url = urlreverse("ietf.doc.views_draft.offer_wg_action_helpers", kwargs=dict(name=other_draft.name))
-        login_testing_unauthorized(self, "secretary", url)
-        r = self.client.get(url)
-        self.assertTrue(_view_presents_issue_wglc_button(r))
-        self.assertContains(
-            response=r, text="Issue Working Group Last Call", status_code=200
-        )
 
     def test_change_state(self):
         ad = Person.objects.get(user__username="ad")
@@ -2665,4 +2612,110 @@ class IetfGroupActionHelperTests(TestCase):
         self.assertCountEqual(
             doc.docevent_set.values_list("type", flat=True),
             ["changed_state", "changed_group", "changed_stream", "new_revision"],
+        )
+
+    def test_offer_wg_action_helpers(self):
+        def _assert_view_presents_buttons(testcase, response, expected):
+            q = PyQuery(response.content)
+            for id, expect in expected:
+                button = q(f"#{id}")
+                testcase.assertEqual(
+                    len(button) != 0,
+                    expect
+                )
+
+        # View rejects access
+        came_from_draft = WgDraftFactory(states=[("draft","rfc")])
+        rfc = WgRfcFactory(group=came_from_draft.group)
+        came_from_draft.relateddocument_set.create(relationship_id="became_rfc",target=rfc)
+        rfc_chair = RoleFactory(name_id="chair", group=rfc.group).person
+        url = urlreverse("ietf.doc.views_draft.offer_wg_action_helpers", kwargs=dict(name=came_from_draft.name))
+        login_testing_unauthorized(self, rfc_chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+        self.client.logout()
+        rg_draft = RgDraftFactory()
+        rg_chair = RoleFactory(group=rg_draft.group, name_id="chair").person
+        url = urlreverse("ietf.doc.views_draft.offer_wg_action_helpers", kwargs=dict(name=rg_draft.name))
+        login_testing_unauthorized(self, rg_chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,404)
+        self.client.logout()
+
+        # View offers access
+        draft = WgDraftFactory()
+        chair = RoleFactory(group=draft.group, name_id="chair").person
+        url = urlreverse("ietf.doc.views_draft.offer_wg_action_helpers", kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        _assert_view_presents_buttons(
+            self,
+            r,
+            [
+                ("id_wgadopt_button", False),
+                ("id_wglc_button", True),
+                ("id_pubreq_button", True),
+            ],
+        )
+        draft.set_state(State.objects.get(type_id="draft-stream-ietf", slug="wg-cand"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        _assert_view_presents_buttons(
+            self,
+            r,
+            [
+                ("id_wgadopt_button", True),
+                ("id_wglc_button", False),
+                ("id_pubreq_button", False),
+            ],
+        ) 
+        draft.set_state(State.objects.get(type_id="draft-stream-ietf", slug="wg-lc"))
+        StateDocEventFactory(
+            doc=draft,
+            state_type_id="draft-stream-ietf",
+            state=("draft-stream-ietf", "wg-lc"),
+        )
+        self.assertEqual(draft.docevent_set.count(), 2)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        _assert_view_presents_buttons(
+            self,
+            r,
+            [
+                ("id_wgadopt_button", False),
+                ("id_wglc_button", False),
+                ("id_pubreq_button", True),
+            ],
+        )
+        draft.set_state(State.objects.get(type_id="draft-stream-ietf",slug="chair-w"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        _assert_view_presents_buttons(
+            self,
+            r,
+            [
+                ("id_wgadopt_button", False),
+                ("id_wglc_button", True),
+                ("id_pubreq_button", True),
+            ],
+        )
+        self.assertContains(response=r,text="Issue Another Working Group Last Call", status_code=200)
+        other_draft = WgDraftFactory()
+        self.client.logout()
+        url = urlreverse("ietf.doc.views_draft.offer_wg_action_helpers", kwargs=dict(name=other_draft.name))
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        _assert_view_presents_buttons(
+            self,
+            r,
+            [
+                ("id_wgadopt_button", False),
+                ("id_wglc_button", True),
+                ("id_pubreq_button", True),
+            ],
+        )
+        self.assertContains(
+            response=r, text="Issue Working Group Last Call", status_code=200
         )
