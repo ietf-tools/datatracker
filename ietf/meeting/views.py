@@ -477,6 +477,15 @@ def api_resolve_materials_name(request, document, num=None, ext=None):
 
 @requires_api_token
 def api_retrieve_materials_blob(request, bucket, name):
+    ALLOWED_BUCKETS = {
+        "agenda",
+        "chatlog",
+        "minutes",
+        "narrativeminutes",
+        "polls",
+        "procmaterials",
+        "slides",
+    }
     DEFAULT_CONTENT_TYPES = {
         ".html": "text/html;charset=utf-8",
         ".md": "text/markdown;charset=utf-8",
@@ -487,10 +496,7 @@ def api_retrieve_materials_blob(request, bucket, name):
     def _default_content_type(blob_name: str):
         return DEFAULT_CONTENT_TYPES.get(Path(name).suffix, "application/octet-stream") 
 
-    if (
-        not settings.ENABLE_BLOBSTORAGE 
-        or bucket not in settings.ARTIFACT_STORAGE_NAMES
-    ):
+    if not settings.ENABLE_BLOBSTORAGE or bucket not in ALLOWED_BUCKETS:
         return HttpResponseNotFound(f"Bucket {bucket} not found.")
     storage = storages[bucket]  # if not configured, a server error will result
     assert isinstance(storage, BlobdbStorage)
