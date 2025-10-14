@@ -27,10 +27,12 @@ from itertools import chain
 
 from django import forms
 from django.core.cache import caches
+from django.core.files.storage import storages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import (HttpResponse, HttpResponseRedirect, HttpResponseForbidden,
                          HttpResponseNotFound, Http404, HttpResponseBadRequest,
-                         JsonResponse, HttpResponseGone, HttpResponseNotAllowed)
+                         JsonResponse, HttpResponseGone, HttpResponseNotAllowed,
+                         FileResponse)
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -54,7 +56,8 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, StoredObject
-from ietf.doc.storage_utils import remove_from_storage, retrieve_bytes, store_file
+from ietf.doc.storage_utils import remove_from_storage, retrieve_bytes, store_file, \
+    exists_in_storage, BlobExistsError
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
 from ietf.person.models import Person, User
@@ -122,6 +125,7 @@ from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSession
 from icalendar import Calendar, Event
 from ietf.doc.templatetags.ietf_filters import absurl
 from ..api.ietf_utils import requires_api_token
+from ..blobdb.storage import BlobdbStorage, BlobFile
 
 request_summary_exclude_group_types = ['team']
 
@@ -247,21 +251,32 @@ def current_materials(request):
         raise Http404('No such meeting')
 
 
-def _get_materials_doc(meeting, name):
+def _get_materials_doc(name, meeting=None):
     """Get meeting materials document named by name
 
-    Raises Document.DoesNotExist if a match cannot be found.
+    Raises Document.DoesNotExist if a match cannot be found. If meeting is None,
+    matches a name that is associated with _any_ meeting.
     """
+
+    def _matches_meeting(doc, meeting=None):
+        if meeting is None:
+            return doc.get_related_meeting() is not None
+        return doc.get_related_meeting() == meeting
+
     # try an exact match first
     doc = Document.objects.filter(name=name).first()
-    if doc is not None and doc.get_related_meeting() == meeting:
+    if doc is not None and _matches_meeting(doc, meeting):
         return doc, None
+
     # try parsing a rev number
     if "-" in name:
         docname, rev = name.rsplit("-", 1)
         if len(rev) == 2 and rev.isdigit():
             doc = Document.objects.get(name=docname)  # may raise Document.DoesNotExist
-            if doc.get_related_meeting() == meeting and rev in doc.revisions_by_newrevisionevent():
+            if (
+                _matches_meeting(doc, meeting)
+                and rev in doc.revisions_by_newrevisionevent()
+            ):
                 return doc, rev
     # give up
     raise Document.DoesNotExist
@@ -279,7 +294,7 @@ def materials_document(request, document, num=None, ext=None):
     meeting = get_meeting(num, type_in=["ietf", "interim"])
     num = meeting.number
     try:
-        doc, rev = _get_materials_doc(meeting=meeting, name=document)
+        doc, rev = _get_materials_doc(name=document, meeting=meeting)
     except Document.DoesNotExist:
         raise Http404("No such document for meeting %s" % num)
 
@@ -376,7 +391,7 @@ def api_resolve_materials_name(request, document, num=None, ext=None):
 
     num = meeting.number
     try:
-        doc, rev = _get_materials_doc(meeting=meeting, name=document)
+        doc, rev = _get_materials_doc(name=document, meeting=meeting)
     except Document.DoesNotExist:
         return _error_response(
             HTTP_404_NOT_FOUND, f"No such document for meeting {num}"
@@ -386,7 +401,7 @@ def api_resolve_materials_name(request, document, num=None, ext=None):
     if rev is None:
         basename = Path(doc.get_base_name())
     else:
-        basename = Path(f"{doc.name}-{rev:02d}")
+        basename = Path(f"{doc.name}-{int(rev):02d}")
 
     # If we have an extension, either from the URL or the Document's base name, look up
     # the blob or file or return 404.
@@ -470,6 +485,68 @@ def api_resolve_materials_name(request, document, num=None, ext=None):
         HTTP_404_NOT_FOUND, f"No suitable file for {document} for meeting {num}"
     )
 
+
+@requires_api_token
+def api_retrieve_materials_blob(request, bucket, name):
+    ALLOWED_BUCKETS = {
+        "agenda",
+        "chatlog",
+        "minutes",
+        "narrativeminutes",
+        "polls",
+        "procmaterials",
+        "slides",
+    }
+    DEFAULT_CONTENT_TYPES = {
+        ".html": "text/html;charset=utf-8",
+        ".md": "text/markdown;charset=utf-8",
+        ".pdf": "application/pdf",
+        ".txt": "text/plain;charset=utf-8",
+    }
+    
+    def _default_content_type(blob_name: str):
+        return DEFAULT_CONTENT_TYPES.get(Path(name).suffix, "application/octet-stream") 
+
+    if not settings.ENABLE_BLOBSTORAGE or bucket not in ALLOWED_BUCKETS:
+        return HttpResponseNotFound(f"Bucket {bucket} not found.")
+    storage = storages[bucket]  # if not configured, a server error will result
+    assert isinstance(storage, BlobdbStorage)
+    try:
+        blob = storage.open(name, "rb")
+        assert isinstance(blob, BlobFile)
+        return FileResponse(
+            blob,
+            filename=name,
+            content_type=blob.content_type or _default_content_type(name),
+        )
+    except FileNotFoundError:
+        # See if we have a meeting-related  document that matches the request
+        try: 
+            doc, rev = _get_materials_doc(Path(name).stem)
+        except Document.DoesNotExist:
+            pass
+        else:
+            if doc.type_id == bucket and doc.get_base_name() == name:
+                filename = Path(doc.get_file_path()) / name
+                with filename.open("rb") as f:
+                    try:
+                        store_file(
+                            kind=bucket,
+                            name=name,
+                            file=f,
+                            allow_overwrite=False,
+                            doc_name=doc.name,
+                            doc_rev=doc.rev,
+                        )
+                    except BlobExistsError:
+                        pass  # likely results from a race
+                return FileResponse(
+                    filename.open("rb"),
+                    filename=name,
+                    content_type=_default_content_type(name),
+                )
+    return HttpResponseNotFound(f"Object {bucket}:{name} not found.")
+    
 
 @login_required
 def materials_editable_groups(request, num=None):
