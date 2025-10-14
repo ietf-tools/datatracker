@@ -2164,7 +2164,7 @@ class WgForm(forms.Form):
             )
 
 
-@role_required("Secretariat", "Area Director", "WG Chair")
+@role_required("Secretariat", "WG Chair")
 def ask_about_ietf_adoption_call(request, name):
     doc = get_object_or_404(Document, name=name)
     if doc.stream is not None or doc.group.acronym != "none":

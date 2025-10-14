@@ -1022,7 +1022,7 @@ def is_in_stream(doc):
 def can_issue_ietf_call_for_adoption(doc):
     return all(
         [
-            doc.stream_id == "ietf",
+            doc.stream_id in ["ietf", None],
             doc.get_state_slug("draft-stream-ietf")
             not in [
                 "wg-doc",
@@ -1034,6 +1034,7 @@ def can_issue_ietf_call_for_adoption(doc):
                 "writeupw",
                 "sub-pub",
             ],
+            doc.get_state_slug("draft") != "rfc",
             doc.became_rfc() is None,
         ]
     )
