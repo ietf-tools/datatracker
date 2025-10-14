@@ -27,10 +27,12 @@ from itertools import chain
 
 from django import forms
 from django.core.cache import caches
+from django.core.files.storage import storages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import (HttpResponse, HttpResponseRedirect, HttpResponseForbidden,
                          HttpResponseNotFound, Http404, HttpResponseBadRequest,
-                         JsonResponse, HttpResponseGone, HttpResponseNotAllowed)
+                         JsonResponse, HttpResponseGone, HttpResponseNotAllowed,
+                         FileResponse)
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -54,7 +56,8 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, StoredObject
-from ietf.doc.storage_utils import remove_from_storage, retrieve_bytes, store_file
+from ietf.doc.storage_utils import remove_from_storage, retrieve_bytes, store_file, \
+    exists_in_storage
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
 from ietf.person.models import Person, User
@@ -122,6 +125,7 @@ from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSession
 from icalendar import Calendar, Event
 from ietf.doc.templatetags.ietf_filters import absurl
 from ..api.ietf_utils import requires_api_token
+from ..blobdb.storage import BlobdbStorage, BlobFile
 
 request_summary_exclude_group_types = ['team']
 
@@ -470,6 +474,38 @@ def api_resolve_materials_name(request, document, num=None, ext=None):
         HTTP_404_NOT_FOUND, f"No suitable file for {document} for meeting {num}"
     )
 
+
+@requires_api_token
+def api_retrieve_materials_blob(request, bucket, name):
+    DEFAULT_CONTENT_TYPES = {
+        ".html": "text/html;charset=utf-8",
+        ".md": "text/markdown;charset=utf-8",
+        ".pdf": "application/pdf",
+        ".txt": "text/plain;charset=utf-8",
+    }
+    
+    def _default_content_type(blob_name: str):
+        return DEFAULT_CONTENT_TYPES.get(Path(name).suffix, "application/octet-stream") 
+
+    if (
+        not settings.ENABLE_BLOBSTORAGE 
+        or bucket not in settings.ARTIFACT_STORAGE_NAMES
+    ):
+        return HttpResponseNotFound(f"Bucket {bucket} not found.")
+    storage = storages[bucket]  # if not configured, a server error will result
+    assert isinstance(storage, BlobdbStorage)
+    try:
+        blob = storage.open(name, "rb")
+        assert isinstance(blob, BlobFile)
+        return FileResponse(
+            blob,
+            filename=name,
+            content_type=blob.content_type or _default_content_type(name),
+        )
+    except FileNotFoundError:
+        pass
+    return HttpResponseNotFound(f"Object {bucket}:{name} not found.")
+    
 
 @login_required
 def materials_editable_groups(request, num=None):
