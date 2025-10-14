@@ -57,7 +57,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, StoredObject
 from ietf.doc.storage_utils import remove_from_storage, retrieve_bytes, store_file, \
-    exists_in_storage
+    exists_in_storage, BlobExistsError
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
 from ietf.person.models import Person, User
@@ -401,7 +401,7 @@ def api_resolve_materials_name(request, document, num=None, ext=None):
     if rev is None:
         basename = Path(doc.get_base_name())
     else:
-        basename = Path(f"{doc.name}-{rev:02d}")
+        basename = Path(f"{doc.name}-{int(rev):02d}")
 
     # If we have an extension, either from the URL or the Document's base name, look up
     # the blob or file or return 404.
@@ -520,7 +520,31 @@ def api_retrieve_materials_blob(request, bucket, name):
             content_type=blob.content_type or _default_content_type(name),
         )
     except FileNotFoundError:
-        pass
+        # See if we have a meeting-related  document that matches the request
+        try: 
+            doc, rev = _get_materials_doc(Path(name).stem)
+        except Document.DoesNotExist:
+            pass
+        else:
+            if doc.type_id == bucket and doc.get_base_name() == name:
+                filename = Path(doc.get_file_path()) / name
+                with filename.open("rb") as f:
+                    try:
+                        store_file(
+                            kind=bucket,
+                            name=name,
+                            file=f,
+                            allow_overwrite=False,
+                            doc_name=doc.name,
+                            doc_rev=doc.rev,
+                        )
+                    except BlobExistsError:
+                        pass  # likely results from a race
+                return FileResponse(
+                    filename.open("rb"),
+                    filename=name,
+                    content_type=_default_content_type(name),
+                )
     return HttpResponseNotFound(f"Object {bucket}:{name} not found.")
     
 
