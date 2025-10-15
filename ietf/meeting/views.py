@@ -9,6 +9,8 @@ import itertools
 import json
 import math
 import os
+from contextlib import suppress
+
 import pytz
 import re
 import tarfile
@@ -56,8 +58,13 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, StoredObject
-from ietf.doc.storage_utils import remove_from_storage, retrieve_bytes, store_file, \
-    exists_in_storage, AlreadyExistsError
+from ietf.doc.storage_utils import (
+    remove_from_storage,
+    retrieve_bytes,
+    store_file,
+    AlreadyExistsError,
+    store_str,
+)
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
 from ietf.person.models import Person, User
@@ -528,42 +535,79 @@ def api_retrieve_materials_blob(request, bucket, name):
     assert isinstance(storage, BlobdbStorage)
     try:
         blob = storage.open(name, "rb")
+    except FileNotFoundError:
+        pass
+    else:
+        # found the blob - return it
         assert isinstance(blob, BlobFile)
         return FileResponse(
             blob,
             filename=name,
             content_type=blob.content_type or _default_content_type(name),
         )
-    except FileNotFoundError:
-        # See if we have a meeting-related  document that matches the request
-        try: 
-            doc, rev = _get_materials_doc(Path(name).stem)
-        except Document.DoesNotExist:
+    
+    # Did not find the blob. See if the filename is .md.html and, if so, see if we
+    # have the markdown.
+    name_as_path = Path(name)
+    if name_as_path.suffixes == [".md", ".html"]:
+        try:
+            md_file = storage.open(name_as_path.stem, "r")
+        except FileNotFoundError:
             pass
         else:
-            if doc.type_id == bucket and doc.get_base_name() == name:
-                filename = Path(doc.get_file_path()) / name
-                with filename.open("rb") as f:
-                    try:
-                        store_file(
-                            kind=bucket,
-                            name=name,
-                            file=f,
-                            mtime=datetime.datetime.fromtimestamp(
-                                filename.stat().st_mtime,
-                                tz=datetime.UTC,
-                            ),
-                            allow_overwrite=False,
-                            doc_name=doc.name,
-                            doc_rev=doc.rev,
-                        )
-                    except AlreadyExistsError:
-                        pass  # likely results from a race
-                return FileResponse(
-                    filename.open("rb"),
-                    filename=name,
-                    content_type=_default_content_type(name),
+            md_src = md_file.read()
+            md_file.close()
+            # render the markdown
+            html = render_to_string(
+                "minimal.html",
+                {
+                    "content": markdown.markdown(md_src),
+                    "title": name_as_path.stem,
+                },
+            )
+            # Don't overwrite, but don't fail if the blob exists
+            with suppress(AlreadyExistsError):
+                store_str(
+                    kind=bucket,
+                    name=name,
+                    content=html,
+                    allow_overwrite=False,
+                    # todo doc_name,
+                    # todo doc_rev,
+                    content_type="text/html;charset=utf-8",
                 )
+            return HttpResponse(html)
+
+    # Did not find the blob. See if we have a meeting-related document that 
+    # matches the requested bucket and name.
+    try: 
+        doc, rev = _get_materials_doc(Path(name).stem)
+    except Document.DoesNotExist:
+        pass
+    else:
+        if doc.type_id == bucket and doc.get_base_name() == name:
+            filename = Path(doc.get_file_path()) / name
+            with filename.open("rb") as f:
+                # Don't overwrite, but don't fail if the blob exists
+                with suppress(AlreadyExistsError):
+                    store_file(
+                        kind=bucket,
+                        name=name,
+                        file=f,
+                        mtime=datetime.datetime.fromtimestamp(
+                            filename.stat().st_mtime,
+                            tz=datetime.UTC,
+                        ),
+                        allow_overwrite=False,
+                        doc_name=doc.name,
+                        doc_rev=doc.rev,
+                    )
+            return FileResponse(
+                filename.open("rb"),
+                filename=name,
+                content_type=_default_content_type(name),
+            )
+
     return HttpResponseNotFound(f"Object {bucket}:{name} not found.")
     
 
