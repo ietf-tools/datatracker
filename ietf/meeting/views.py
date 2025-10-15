@@ -504,6 +504,7 @@ def api_retrieve_materials_blob(request, bucket, name):
     """
     ALLOWED_BUCKETS = {
         "agenda",
+        "bluesheets",
         "chatlog",
         "minutes",
         "narrativeminutes",
