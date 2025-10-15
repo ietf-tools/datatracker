@@ -552,11 +552,11 @@ def api_retrieve_materials_blob(request, bucket, name):
     name_as_path = Path(name)
     if name_as_path.suffixes == [".md", ".html"]:
         try:
-            md_file = storage.open(name_as_path.stem, "r")
+            md_file = storage.open(name_as_path.stem, "rb")
         except FileNotFoundError:
             pass
         else:
-            md_src = md_file.read()
+            md_src = md_file.read().decode("utf-8")
             md_file.close()
             # render the markdown
             html = render_to_string(
