@@ -16,7 +16,7 @@ class StorageUtilsError(Exception):
     pass
 
 
-class BlobExistsError(StorageUtilsError):
+class AlreadyExistsError(StorageUtilsError):
     pass
 
 
@@ -78,7 +78,7 @@ def store_file(
             # debug.show('f"Asked to store {name} in {kind}: is_new={is_new}, allow_overwrite={allow_overwrite}"')
             if not allow_overwrite and not is_new:
                 debug.show('f"Failed to save {kind}:{name} - name already exists in store"')
-                raise BlobExistsError(f"Failed to save {kind}:{name} - name already exists in store")
+                raise AlreadyExistsError(f"Failed to save {kind}:{name} - name already exists in store")
             new_name = _get_storage(kind).save(
                 name,
                 StoredObjectFile(
