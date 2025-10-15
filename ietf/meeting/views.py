@@ -63,7 +63,7 @@ from ietf.doc.storage_utils import (
     retrieve_bytes,
     store_file,
     AlreadyExistsError,
-    store_str,
+    store_str, store_bytes,
 )
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
@@ -551,8 +551,9 @@ def api_retrieve_materials_blob(request, bucket, name):
     # have the markdown.
     name_as_path = Path(name)
     if name_as_path.suffixes == [".md", ".html"]:
+        md_filename = name_as_path.stem
         try:
-            md_file = storage.open(name_as_path.stem, "rb")
+            md_file = storage.open(md_filename, "rb")
         except FileNotFoundError:
             pass
         else:
@@ -579,9 +580,56 @@ def api_retrieve_materials_blob(request, bucket, name):
                     content_type="text/html;charset=utf-8",
                 )
             return HttpResponse(html)
+        # Didn't find .md as a blob, so check the filesystem. We do this here
+        # because we never write .md.html to the filesystem.
+        try:
+            # .stem.stem drops both extensions
+            doc, rev = _get_materials_doc(Path(md_filename).stem)
+        except Document.DoesNotExist:
+            pass
+        else:
+            if doc.type_id == bucket and doc.get_base_name() == md_filename:
+                filename = Path(doc.get_file_path()) / md_filename
+                md_bytes = filename.read_bytes()
+                # Don't overwrite, but don't fail if the blob exists
+                with suppress(AlreadyExistsError):
+                    store_bytes(
+                        kind=bucket,
+                        name=md_filename,
+                        content=md_bytes,
+                        mtime=datetime.datetime.fromtimestamp(
+                            filename.stat().st_mtime,
+                            tz=datetime.UTC,
+                        ),
+                        allow_overwrite=False,
+                        doc_name=doc.name,
+                        doc_rev=doc.rev,
+                    )
+                # render the markdown
+                md_src = md_bytes.decode()
+                html = render_to_string(
+                    "minimal.html",
+                    {
+                        "content": markdown.markdown(md_src),
+                        "title": md_filename,
+                        "static_ietf_org": settings.STATIC_IETF_ORG,
+                    },
+                )
+                # Don't overwrite, but don't fail if the blob exists
+                with suppress(AlreadyExistsError):
+                    store_str(
+                        kind=bucket,
+                        name=name,
+                        content=html,
+                        allow_overwrite=False,
+                        doc_name=doc.name,
+                        doc_rev=doc.rev,
+                        content_type="text/html;charset=utf-8",
+                    )
+                return HttpResponse(html)
 
-    # Did not find the blob. See if we have a meeting-related document that 
-    # matches the requested bucket and name.
+    # See if we have a meeting-related document that matches the requested bucket and
+    # name.
     try: 
         doc, rev = _get_materials_doc(Path(name).stem)
     except Document.DoesNotExist:
