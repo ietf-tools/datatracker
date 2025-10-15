@@ -344,6 +344,7 @@ def materials_document(request, document, num=None, ext=None):
                         {
                             "content": markdown.markdown(bytes.decode(encoding=chset)),
                             "title": filename.name,
+                            "static_ietf_org": settings.STATIC_IETF_ORG,
                         },
                     )
                     content_type = content_type.replace("plain", "html", 1)
@@ -563,6 +564,7 @@ def api_retrieve_materials_blob(request, bucket, name):
                 {
                     "content": markdown.markdown(md_src),
                     "title": name_as_path.stem,
+                    "static_ietf_org": settings.STATIC_IETF_ORG,
                 },
             )
             # Don't overwrite, but don't fail if the blob exists
