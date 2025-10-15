@@ -142,7 +142,7 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
         )
         if not created and (
             record.sha384 != content.custom_metadata["sha384"]
-            or record.len != int(content.custom_medata["len"])
+            or record.len != int(content.custom_metadata["len"])
             or record.deleted is not None
         ):
             record.sha384 = content.custom_metadata["sha384"]
