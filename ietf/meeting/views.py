@@ -488,6 +488,20 @@ def api_resolve_materials_name(request, document, num=None, ext=None):
 
 @requires_api_token
 def api_retrieve_materials_blob(request, bucket, name):
+    """Retrieve contents of a meeting materials blob
+    
+    This is intended as a fallback if the web worker cannot retrieve a blob from
+    the blobstore itself. The most likely cause is retrieving an old materials document
+    that has not been backfilled.
+    
+    If a blob is requested that does not exist, this checks for it on the filesystem
+    and if found, adds it to the blobstore, creates a StoredObject record, and returns
+    the contents as it would have done if the blob was already present.
+    
+    As a special case, if a requested file with extension `.md.html` does not exist
+    but a file with the same name but extension `.md` does, `.md` file will be rendered
+    from markdown to html and returned / stored.
+    """
     ALLOWED_BUCKETS = {
         "agenda",
         "chatlog",
