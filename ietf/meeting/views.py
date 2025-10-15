@@ -57,7 +57,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, StoredObject
 from ietf.doc.storage_utils import remove_from_storage, retrieve_bytes, store_file, \
-    exists_in_storage, BlobExistsError
+    exists_in_storage, AlreadyExistsError
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
 from ietf.person.models import Person, User
@@ -557,7 +557,7 @@ def api_retrieve_materials_blob(request, bucket, name):
                             doc_name=doc.name,
                             doc_rev=doc.rev,
                         )
-                    except BlobExistsError:
+                    except AlreadyExistsError:
                         pass  # likely results from a race
                 return FileResponse(
                     filename.open("rb"),
