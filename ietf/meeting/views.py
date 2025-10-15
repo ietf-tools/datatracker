@@ -549,6 +549,10 @@ def api_retrieve_materials_blob(request, bucket, name):
                             kind=bucket,
                             name=name,
                             file=f,
+                            mtime=datetime.datetime.fromtimestamp(
+                                filename.stat().st_mtime,
+                                tz=datetime.UTC,
+                            ),
                             allow_overwrite=False,
                             doc_name=doc.name,
                             doc_rev=doc.rev,
