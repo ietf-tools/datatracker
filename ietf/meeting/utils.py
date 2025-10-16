@@ -1051,7 +1051,7 @@ def generate_proceedings_content(meeting, force_refresh=False):
         [
             "proceedings",
             str(meeting.number),
-            last_materials_update.isoformat(),
+            last_materials_update.isoformat() if last_materials_update else "-",
             ",".join(draft_names),
             f"final={meeting.proceedings_final}",
         ]
