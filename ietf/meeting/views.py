@@ -57,7 +57,8 @@ from rest_framework.status import HTTP_404_NOT_FOUND, HTTP_400_BAD_REQUEST
 import debug                            # pyflakes:ignore
 
 from ietf.doc.fields import SearchableDocumentsField
-from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, StoredObject
+from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, \
+    StoredObject, DocHistory
 from ietf.doc.storage_utils import (
     remove_from_storage,
     retrieve_bytes,
@@ -258,7 +259,7 @@ def current_materials(request):
         raise Http404('No such meeting')
 
 
-def _get_materials_doc(name, meeting=None):
+def _get_materials_doc(name, meeting=None) -> tuple[Document | DocHistory, str | None]:
     """Get meeting materials document named by name
 
     Raises Document.DoesNotExist if a match cannot be found. If meeting is None,
@@ -279,7 +280,11 @@ def _get_materials_doc(name, meeting=None):
     if "-" in name:
         docname, rev = name.rsplit("-", 1)
         if len(rev) == 2 and rev.isdigit():
-            doc = Document.objects.get(name=docname)  # may raise Document.DoesNotExist
+            try:
+                doc = DocHistory.objects.get(name=docname, rev=rev)
+            except DocHistory.DoesNotExist:
+                # may raise Document.DoesNotExist
+                doc = Document.objects.get(name=docname, rev=rev)
             if (
                 _matches_meeting(doc, meeting)
                 and rev in doc.revisions_by_newrevisionevent()
