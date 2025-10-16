@@ -1027,10 +1027,41 @@ def generate_proceedings_content(meeting, force_refresh=False):
     :force_refresh: true to force regeneration and cache refresh
     """
     cache = caches["default"]
-    cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
-    # Include proceedings_final in the bare_key so we'll always reflect that accurately, even at the cost of
-    # a recomputation in the view
-    bare_key = f"proceedings.{meeting.number}.{cache_version}.final={meeting.proceedings_final}"
+    key_components = [
+        "proceedings",
+        str(meeting.number),
+    ]
+    if meeting.proceedings_final:
+        # Freeze the cache key once proceedings are finalized. Further changes will
+        # not be picked up until the cache expires or is refreshed by the
+        # proceedings_content_refresh_task()
+        key_components.append("final")
+    else:
+        # Build a cache key that changes when materials are modified. For all but drafts,
+        # use the last modification time of the document. Exclude drafts from this because
+        # revisions long after the meeting ends will otherwise show up as changes and
+        # incorrectly invalidate the cache. Instead, include an ordered list of the
+        # drafts linked to the meeting so adding or removing drafts will trigger a
+        # recalculation. The list is long but that doesn't matter because we hash it into
+        # a fixed-length key.
+        meeting_docs = Document.objects.filter(session__meeting__number=meeting.number)
+        last_materials_update = (
+            meeting_docs.exclude(type_id="draft")
+            .filter(session__meeting__number=meeting.number)
+            .aggregate(Max("time"))["time__max"]
+        )
+        draft_names = (
+            meeting_docs
+            .filter(type_id="draft")
+            .order_by("name")
+            .values_list("name", flat=True)
+        )
+        key_components += [
+            last_materials_update.isoformat() if last_materials_update else "-",
+            ",".join(draft_names),
+        ]
+
+    bare_key = ".".join(key_components)
     cache_key = sha384(bare_key.encode("utf8")).hexdigest()
     if not force_refresh:
         cached_content = cache.get(cache_key, None)
