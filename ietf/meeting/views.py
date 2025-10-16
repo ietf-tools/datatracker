@@ -483,7 +483,7 @@ def api_resolve_materials_name(request, document, num=None, ext=None):
                 name=pdf_blob.name,
             )
         else:
-            pdf_filename = file_ext_choices[".pdf"]
+            pdf_filename = file_ext_choices[preferred_ext]
             return _response(
                 bucket=doc.type_id,
                 name=pdf_filename,
