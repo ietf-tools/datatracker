@@ -278,8 +278,6 @@ jobs:
         tags: |
           ghcr.io/ietf-tools/datatracker:${{ env.PKG_VERSION }}
           ${{ env.FEATURE_LATEST_TAG && format('ghcr.io/ietf-tools/datatracker:{0}-latest', env.FEATURE_LATEST_TAG) || null }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
 
     - name: Update CHANGELOG
       id: changelog
