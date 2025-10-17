@@ -70,7 +70,8 @@ from ietf.group.utils import can_manage_session_materials, can_manage_some_group
 from ietf.person.models import Person, User
 from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission, Attended
+from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, \
+    SessionPresentation, TimeSlot, SlideSubmission, Attended, ResolvedMaterial
 from ietf.meeting.models import ImportantDate, SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
 from ietf.meeting.models import Registration
 from ietf.meeting.forms import ( CustomDurationField, SwapDaysForm, SwapTimeslotsForm, ImportMinutesForm,
@@ -371,16 +372,17 @@ def materials_document(request, document, num=None, ext=None):
 @requires_api_token
 def api_resolve_materials_name(request, document, num=None, ext=None):
     """Resolve materials name into document to a blob spec
-    
+
     Returns the bucket/name of a blob in the blob store that corresponds to the named
     document. Handles resolution of revision if it is not specified and determines the
     best extension if one is not provided. Response is JSON.
-    
+
     As of 2025-10-10 we do not have blobs for all materials documents or for every
     format of every document. This API still returns the bucket/name as if the blob
     exists. Another API will allow the caller to obtain the file contents using that
     name if it cannot be retrieved from the blob store.
     """
+
     def _error_response(status: int, detail: str):
         return JsonResponse(
             {
@@ -390,7 +392,7 @@ def api_resolve_materials_name(request, document, num=None, ext=None):
             },
             status=status,
         )
-    
+
     def _response(bucket: str, name: str):
         return JsonResponse(
             {
@@ -421,6 +423,49 @@ def api_resolve_materials_name(request, document, num=None, ext=None):
     return _error_response(
         HTTP_404_NOT_FOUND, f"No suitable file for {document} for meeting {num}"
     )
+
+
+@requires_api_token("ietf.meeting.views.api_resolve_materials_name")
+def api_resolve_materials_name_cached(request, document, num=None, ext=None):
+    """Resolve materials name into document to a blob spec
+
+    Returns the bucket/name of a blob in the blob store that corresponds to the named
+    document. Handles resolution of revision if it is not specified and determines the
+    best extension if one is not provided. Response is JSON.
+
+    As of 2025-10-10 we do not have blobs for all materials documents or for every
+    format of every document. This API still returns the bucket/name as if the blob
+    exists. Another API will allow the caller to obtain the file contents using that
+    name if it cannot be retrieved from the blob store.
+    """
+
+    def _error_response(status: int, detail: str):
+        return JsonResponse(
+            {
+                "status": status,
+                "title": "Error",
+                "detail": detail,
+            },
+            status=status,
+        )
+
+    def _response(bucket: str, name: str):
+        return JsonResponse(
+            {
+                "bucket": bucket,
+                "name": name,
+            }
+        )
+
+    try:
+        resolved = ResolvedMaterial.objects.get(
+            meeting_number=num, name=document
+        )
+    except ResolvedMaterial.DoesNotExist:
+        return _error_response(
+            HTTP_404_NOT_FOUND, f"No suitable file for {document} for meeting {num}"
+        )
+    return _response(bucket=resolved.bucket, name=resolved.blob)
 
 
 @requires_api_token
