@@ -23,7 +23,6 @@
                 "dbaeumer.vscode-eslint",
                 "eamodio.gitlens",
                 "editorconfig.editorconfig",
-                // Newer volar >=3.0.0 causes crashes in devcontainers
                 "vue.volar@2.2.10",
                 "mrmlnc.vscode-duplicate",
                 "ms-azuretools.vscode-docker",
@@ -35,7 +34,8 @@
                 "redhat.vscode-yaml",
                 "spmeesseman.vscode-taskexplorer",
                 "visualstudioexptteam.vscodeintellicode",
-                "ms-python.pylint"
+                "ms-python.pylint",
+                "charliermarsh.ruff"
             ],
             "settings": {
                 "terminal.integrated.defaultProfile.linux": "zsh",
