@@ -845,9 +845,7 @@ def write_doc_for_session(session, type_id, filename, contents):
 
 
 def resolve_materials_for_one_meeting(meeting: Meeting):
-    # todo think about whether this is safe enough against running trains
-    # Someone may update materials while we're gathering and we'll delete it in the
-    # transaction below. Is that a big enough risk to care?
+    start_time = timezone.now()
     meeting_documents = (
         Document.objects.exclude(type_id="draft").filter(
             Q(session__meeting=meeting) | Q(proceedingsmaterial__meeting=meeting)
@@ -866,10 +864,19 @@ def resolve_materials_for_one_meeting(meeting: Meeting):
         )
         # todo add lookups with revision in them
         # todo check for existence of files / blobs
-    with transaction.atomic():
-        ResolvedMaterial.objects.filter(meeting_number=meeting.number).delete()
-        ResolvedMaterial.objects.bulk_create(resolved)
-
+    ResolvedMaterial.objects.bulk_create(
+        resolved,
+        update_conflicts=True,
+        unique_fields=["name", "meeting_number"],
+        update_fields=["bucket", "blob"],
+    )
+    # Warn if any files were updated during the above process
+    last_update = meeting_documents.aggregate(Max("time"))["time__max"]
+    if last_update > start_time:
+        log(
+            f"Warning: materials for meeting {meeting.number} "
+            "changed during ResolvedMaterial update"
+        )
 
 def create_recording(session, url, title=None, user=None):
     '''
