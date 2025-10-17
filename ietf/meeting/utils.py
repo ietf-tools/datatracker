@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import datetime
 import itertools
+from dataclasses import dataclass
+
 import jsonschema
 import os
 import requests
@@ -41,7 +43,14 @@ from ietf.meeting.models import (
     RegistrationTicket,
     ResolvedMaterial,
 )
-from ietf.doc.models import Document, State, NewRevisionDocEvent, StateDocEvent
+from ietf.doc.models import (
+    Document,
+    State,
+    NewRevisionDocEvent,
+    StateDocEvent,
+    DocHistory,
+    StoredObject,
+)
 from ietf.doc.models import DocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
@@ -841,6 +850,104 @@ def write_doc_for_session(session, type_id, filename, contents):
     with open(path / filename, "wb") as file:
         file.write(contents.encode('utf-8'))
     store_str(type_id, filename.name, contents)
+    return None
+
+@dataclass
+class BlobSpec:
+    bucket: str
+    name: str
+
+
+def resolve_one_material(
+    doc: Document | DocHistory, rev: str | None, ext: str | None
+) -> BlobSpec | None:
+    # Get the Document's base name. It may or may not have an extension.
+    if rev is None:
+        basename = Path(doc.get_base_name())
+    else:
+        basename = Path(f"{doc.name}-{int(rev):02d}")
+
+    # If we have an extension, either from the URL or the Document's base name, look up
+    # the blob or file or return 404.
+    if ext or basename.suffix != "":
+        if ext:
+            basename = basename.with_suffix(ext)
+
+        # See if we have a stored object under that name
+        blob = (
+            StoredObject.objects.exclude_deleted()
+            .filter(store=doc.type_id, name=basename)
+            .first()
+        )
+        if blob is not None:
+            return BlobSpec(
+                bucket=blob.store,
+                name=blob.name,
+            )
+        # No stored object, fall back to the file system.
+        filename = Path(doc.get_file_path()) / basename
+        if filename.exists():
+            return BlobSpec(
+                bucket=doc.type_id,
+                name=str(basename),
+            )
+        else:
+            return None
+
+    # No extension has been specified so far, so look one up.
+    matching_stored_objects = (
+        StoredObject.objects.exclude_deleted()
+        .filter(
+            store=doc.type_id,
+            name__startswith=f"{basename.stem}.",  # anchor to end with trailing "."
+        )
+        .order_by("name")
+    )  # orders by suffix
+    blob_ext_choices = {
+        Path(stored_obj.name).suffix: stored_obj
+        for stored_obj in matching_stored_objects
+    }
+
+    # Short-circuit to return pdf if present
+    if ".pdf" in blob_ext_choices:
+        pdf_blob = blob_ext_choices[".pdf"]
+        return BlobSpec(
+            bucket=pdf_blob.store,
+            name=pdf_blob.name,
+        )
+
+    # Now look for files
+    filename = Path(doc.get_file_path()) / basename
+    file_ext_choices = {
+        # Construct a map from suffix to full filename
+        fn.suffix: fn.name
+        for fn in sorted(filename.parent.glob(filename.stem + ".*"))
+    }
+
+    # Short-circuit to return pdf if we have the file
+    if ".pdf" in file_ext_choices:
+        pdf_filename = file_ext_choices[".pdf"]
+        return BlobSpec(
+            bucket=doc.type_id,
+            name=pdf_filename,
+        )
+
+    all_exts = set(blob_ext_choices.keys()).union(file_ext_choices.keys())
+    if len(all_exts) > 0:
+        preferred_ext = sorted(all_exts)[0]
+        if preferred_ext in blob_ext_choices:
+            pdf_blob = blob_ext_choices[preferred_ext]
+            return BlobSpec(
+                bucket=pdf_blob.store,
+                name=pdf_blob.name,
+            )
+        else:
+            pdf_filename = file_ext_choices[preferred_ext]
+            return BlobSpec(
+                bucket=doc.type_id,
+                name=pdf_filename,
+            )
+
     return None
 
 
