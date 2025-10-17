@@ -942,8 +942,6 @@ class SessionPresentation(models.Model):
     def __str__(self):
         return u"%s -> %s-%s" % (self.session, self.document.name, self.rev)
 
-constraint_cache_uses = 0
-constraint_cache_initials = 0
 
 class SessionQuerySet(models.QuerySet):
     def with_current_status(self):
