@@ -17,7 +17,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.cache import caches
 from django.core.files.base import ContentFile
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import OuterRef, Subquery, TextField, Q, Value, Max
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
@@ -28,9 +28,19 @@ import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.storage_utils import store_bytes, store_str
-from ietf.meeting.models import (Session, SchedulingEvent, TimeSlot,
-    Constraint, SchedTimeSessAssignment, SessionPresentation, Attended,
-    Registration, Meeting, RegistrationTicket)
+from ietf.meeting.models import (
+    Session,
+    SchedulingEvent,
+    TimeSlot,
+    Constraint,
+    SchedTimeSessAssignment,
+    SessionPresentation,
+    Attended,
+    Registration,
+    Meeting,
+    RegistrationTicket,
+    ResolvedMaterial,
+)
 from ietf.doc.models import Document, State, NewRevisionDocEvent, StateDocEvent
 from ietf.doc.models import DocEvent
 from ietf.group.models import Group
@@ -832,6 +842,34 @@ def write_doc_for_session(session, type_id, filename, contents):
         file.write(contents.encode('utf-8'))
     store_str(type_id, filename.name, contents)
     return None
+
+
+def resolve_materials_for_one_meeting(meeting: Meeting):
+    # todo think about whether this is safe enough against running trains
+    # Someone may update materials while we're gathering and we'll delete it in the
+    # transaction below. Is that a big enough risk to care?
+    meeting_documents = (
+        Document.objects.exclude(type_id="draft").filter(
+            Q(session__meeting=meeting) | Q(proceedingsmaterial__meeting=meeting)
+        )
+    ).distinct()
+    
+    resolved = []
+    for doc in meeting_documents:
+        resolved.append(
+            ResolvedMaterial(
+                name=doc.name,
+                meeting_number=meeting.number,
+                bucket=doc.type_id,
+                blob=doc.get_base_name(),
+            )
+        )
+        # todo add lookups with revision in them
+        # todo check for existence of files / blobs
+    with transaction.atomic():
+        ResolvedMaterial.objects.filter(meeting_number=meeting.number).delete()
+        ResolvedMaterial.objects.bulk_create(resolved)
+
 
 def create_recording(session, url, title=None, user=None):
     '''
