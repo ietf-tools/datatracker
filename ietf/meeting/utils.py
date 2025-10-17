@@ -961,16 +961,45 @@ def resolve_materials_for_one_meeting(meeting: Meeting):
     
     resolved = []
     for doc in meeting_documents:
-        resolved.append(
-            ResolvedMaterial(
-                name=doc.name,
-                meeting_number=meeting.number,
-                bucket=doc.type_id,
-                blob=doc.get_base_name(),
+        # request by doc name with no rev
+        blob = resolve_one_material(doc, rev=None, ext=None)
+        if blob is not None:
+            resolved.append(
+                ResolvedMaterial(
+                    name=doc.name,
+                    meeting_number=meeting.number,
+                    bucket=blob.bucket,
+                    blob=blob.name,
+                )
             )
-        )
-        # todo add lookups with revision in them
-        # todo check for existence of files / blobs
+        # request by doc name + rev
+        blob = resolve_one_material(doc, rev=doc.rev, ext=None)
+        if blob is not None:
+            ResolvedMaterial(
+                name=f"{doc.name}-{doc.rev:02}",
+                meeting_number=meeting.number,
+                bucket=blob.bucket,
+                blob=blob.name,
+            )
+        # for other revisions, only need request by doc name + rev
+        other_revisions = doc.revisions_by_newrevisionevent()
+        other_revisions.remove(doc.rev)
+        for rev in other_revisions:
+            old_doc = DocHistory.objects.filter(
+                doc=doc, rev=rev
+            ).order_by("-time").first()
+            if old_doc is None:
+                continue
+            blob = resolve_one_material(old_doc, rev=rev, ext=None)
+            if blob is not None:
+                resolved.append(
+                    ResolvedMaterial(
+                        name=f"{doc.name}-{rev:02}",
+                        meeting_number=meeting.number,
+                        bucket=blob.bucket,
+                        blob=blob.name,
+                    )
+                )
     ResolvedMaterial.objects.bulk_create(
         resolved,
         update_conflicts=True,
