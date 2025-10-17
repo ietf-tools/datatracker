@@ -281,10 +281,14 @@ def _get_materials_doc(name, meeting=None) -> tuple[Document | DocHistory, str |
         docname, rev = name.rsplit("-", 1)
         if len(rev) == 2 and rev.isdigit():
             try:
-                doc = DocHistory.objects.get(name=docname, rev=rev)
-            except DocHistory.DoesNotExist:
                 # may raise Document.DoesNotExist
                 doc = Document.objects.get(name=docname, rev=rev)
+            except Document.DoesNotExist:
+                doc = DocHistory.objects.filter(
+                    name=docname, rev=rev,
+                ).order_by("-time").first()
+                if doc is None:
+                    raise
             if (
                 _matches_meeting(doc, meeting)
                 and rev in doc.revisions_by_newrevisionevent()
