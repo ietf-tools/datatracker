@@ -466,7 +466,7 @@ def api_resolve_materials_name(request, document, num=None, ext=None):
     filename = Path(doc.get_file_path()) / basename
     file_ext_choices = {
         # Construct a map from suffix to full filename
-        fn.suffix: str(fn)
+        fn.suffix: fn.name
         for fn in sorted(filename.parent.glob(filename.stem + ".*"))
     }
     
