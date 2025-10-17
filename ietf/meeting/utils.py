@@ -1011,7 +1011,7 @@ def resolve_materials_for_one_meeting(meeting: Meeting):
     )
     # Warn if any files were updated during the above process
     last_update = meeting_documents.aggregate(Max("time"))["time__max"]
-    if last_update > start_time:
+    if last_update and last_update > start_time:
         log(
             f"Warning: materials for meeting {meeting.number} "
             "changed during ResolvedMaterial update"
