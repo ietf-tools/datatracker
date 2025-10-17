@@ -9,7 +9,7 @@ from ietf.meeting.models import (Attended, Meeting, Room, Session, TimeSlot, Con
     SchedTimeSessAssignment, ResourceAssociation, FloorPlan, UrlResource,
     SessionPresentation, ImportantDate, SlideSubmission, SchedulingEvent, BusinessConstraint,
     ProceedingsMaterial, MeetingHost, Registration, RegistrationTicket,
-    AttendanceTypeName)
+    AttendanceTypeName, ResolvedMaterial)
 
 
 class UrlResourceAdmin(admin.ModelAdmin):
@@ -288,3 +288,13 @@ class RegistrationTicketAdmin(admin.ModelAdmin):
     display_meeting.short_description = "Meeting"  # type: ignore # https://github.com/python/mypy/issues/2087
 
 admin.site.register(RegistrationTicket, RegistrationTicketAdmin)
+
+
+class ResolvedMaterialAdmin(admin.ModelAdmin):
+    model = ResolvedMaterial
+    list_display = ["name", "meeting_number", "bucket", "blob"]
+    list_filter = ["meeting_number", "bucket"]
+    search_fields = ["name", "blob"]
+    ordering = ["name"]
+
+admin.site.register(ResolvedMaterial, ResolvedMaterialAdmin)

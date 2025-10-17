@@ -2,12 +2,14 @@
 #
 # Celery task definitions
 #
+import datetime
+
 from celery import shared_task
 from django.utils import timezone
 
 from ietf.utils import log
 from .models import Meeting
-from .utils import generate_proceedings_content
+from .utils import generate_proceedings_content, resolve_materials_for_one_meeting
 from .views import generate_agenda_data
 from .utils import fetch_attendance_from_meetings
 
@@ -61,3 +63,24 @@ def fetch_meeting_attendance_task():
                     meeting_stats['processed']
                 )
             )
+
+
+@shared_task
+def resolve_meeting_materials_task(*, meetings=None, meetings_since=None):
+    if meetings_since is not None:
+        meetings_since = datetime.datetime.fromisoformat(meetings_since)
+    if meetings is None:
+        if meetings_since is None:
+            log.log("No meetings requested, doing nothing.")
+            return
+        meetings = Meeting.objects.filter(date__gte=meetings_since)
+        log.log(f"Resolving materials for meetings since {meetings_since}")
+    else:
+        if meetings_since is not None:
+            log.log("Ignoring meetings_since because specific meetings were requested.")
+        meetings = Meeting.objects.filter(number__in=meetings)
+    for meeting in meetings:
+        log.log(f"Resolving materials for {meeting.type_id} meeting {meeting.number}...")
+        mark = timezone.now()
+        resolve_materials_for_one_meeting(meeting)
+        log.log(f"Resolved in {(timezone.now() - mark).total_seconds():0.3f} seconds.")

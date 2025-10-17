@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import datetime
 import itertools
+from dataclasses import dataclass
+
 import jsonschema
 import os
 import requests
@@ -17,7 +19,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.cache import caches
 from django.core.files.base import ContentFile
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import OuterRef, Subquery, TextField, Q, Value, Max
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
@@ -28,10 +30,27 @@ import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.storage_utils import store_bytes, store_str
-from ietf.meeting.models import (Session, SchedulingEvent, TimeSlot,
-    Constraint, SchedTimeSessAssignment, SessionPresentation, Attended,
-    Registration, Meeting, RegistrationTicket)
-from ietf.doc.models import Document, State, NewRevisionDocEvent, StateDocEvent
+from ietf.meeting.models import (
+    Session,
+    SchedulingEvent,
+    TimeSlot,
+    Constraint,
+    SchedTimeSessAssignment,
+    SessionPresentation,
+    Attended,
+    Registration,
+    Meeting,
+    RegistrationTicket,
+    ResolvedMaterial,
+)
+from ietf.doc.models import (
+    Document,
+    State,
+    NewRevisionDocEvent,
+    StateDocEvent,
+    DocHistory,
+    StoredObject,
+)
 from ietf.doc.models import DocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
@@ -832,6 +851,171 @@ def write_doc_for_session(session, type_id, filename, contents):
         file.write(contents.encode('utf-8'))
     store_str(type_id, filename.name, contents)
     return None
+
+
+@dataclass
+class BlobSpec:
+    bucket: str
+    name: str
+
+
+def resolve_one_material(
+    doc: Document | DocHistory, rev: str | None, ext: str | None
+) -> BlobSpec | None:
+    # Get the Document's base name. It may or may not have an extension.
+    if rev is None:
+        basename = Path(doc.get_base_name())
+    else:
+        basename = Path(f"{doc.name}-{int(rev):02d}")
+
+    # If we have an extension, either from the URL or the Document's base name, look up
+    # the blob or file or return 404.
+    if ext or basename.suffix != "":
+        if ext:
+            basename = basename.with_suffix(ext)
+
+        # See if we have a stored object under that name
+        preferred_blob = (
+            StoredObject.objects.exclude_deleted()
+            .filter(store=doc.type_id, name=basename)
+            .first()
+        )
+        if preferred_blob is not None:
+            return BlobSpec(
+                bucket=preferred_blob.store,
+                name=preferred_blob.name,
+            )
+        # No stored object, fall back to the file system.
+        filename = Path(doc.get_file_path()) / basename
+        if filename.exists():
+            return BlobSpec(
+                bucket=doc.type_id,
+                name=str(basename),
+            )
+        else:
+            return None
+
+    # No extension has been specified so far, so look one up.
+    matching_stored_objects = (
+        StoredObject.objects.exclude_deleted()
+        .filter(
+            store=doc.type_id,
+            name__startswith=f"{basename.stem}.",  # anchor to end with trailing "."
+        )
+        .order_by("name")
+    )  # orders by suffix
+    blob_ext_choices = {
+        Path(stored_obj.name).suffix: stored_obj
+        for stored_obj in matching_stored_objects
+    }
+
+    # Short-circuit to return pdf if present
+    if ".pdf" in blob_ext_choices:
+        pdf_blob = blob_ext_choices[".pdf"]
+        return BlobSpec(
+            bucket=pdf_blob.store,
+            name=pdf_blob.name,
+        )
+
+    # Now look for files
+    filename = Path(doc.get_file_path()) / basename
+    file_ext_choices = {
+        # Construct a map from suffix to full filename
+        fn.suffix: fn.name
+        for fn in sorted(filename.parent.glob(filename.stem + ".*"))
+    }
+
+    # Short-circuit to return pdf if we have the file
+    if ".pdf" in file_ext_choices:
+        pdf_filename = file_ext_choices[".pdf"]
+        return BlobSpec(
+            bucket=doc.type_id,
+            name=pdf_filename,
+        )
+
+    all_exts = set(blob_ext_choices.keys()).union(file_ext_choices.keys())
+    if len(all_exts) > 0:
+        preferred_ext = sorted(all_exts)[0]
+        if preferred_ext in blob_ext_choices:
+            preferred_blob = blob_ext_choices[preferred_ext]
+            return BlobSpec(
+                bucket=preferred_blob.store,
+                name=preferred_blob.name,
+            )
+        else:
+            preferred_filename = file_ext_choices[preferred_ext]
+            return BlobSpec(
+                bucket=doc.type_id,
+                name=preferred_filename,
+            )
+
+    return None
+
+
+def resolve_materials_for_one_meeting(meeting: Meeting):
+    start_time = timezone.now()
+    meeting_documents = (
+        Document.objects.exclude(type_id="draft").filter(
+            Q(session__meeting=meeting) | Q(proceedingsmaterial__meeting=meeting)
+        )
+    ).distinct()
+    
+    resolved = []
+    for doc in meeting_documents:
+        # request by doc name with no rev
+        blob = resolve_one_material(doc, rev=None, ext=None)
+        if blob is not None:
+            resolved.append(
+                ResolvedMaterial(
+                    name=doc.name,
+                    meeting_number=meeting.number,
+                    bucket=blob.bucket,
+                    blob=blob.name,
+                )
+            )
+        # request by doc name + rev
+        blob = resolve_one_material(doc, rev=doc.rev, ext=None)
+        if blob is not None:
+            resolved.append(
+                ResolvedMaterial(
+                    name=f"{doc.name}-{doc.rev:02}",
+                    meeting_number=meeting.number,
+                    bucket=blob.bucket,
+                    blob=blob.name,
+                )
+            )
+        # for other revisions, only need request by doc name + rev
+        other_revisions = doc.revisions_by_newrevisionevent()
+        other_revisions.remove(doc.rev)
+        for rev in other_revisions:
+            old_doc = DocHistory.objects.filter(
+                doc=doc, rev=rev
+            ).order_by("-time").first()
+            if old_doc is None:
+                continue
+            blob = resolve_one_material(old_doc, rev=rev, ext=None)
+            if blob is not None:
+                resolved.append(
+                    ResolvedMaterial(
+                        name=f"{doc.name}-{rev:02}",
+                        meeting_number=meeting.number,
+                        bucket=blob.bucket,
+                        blob=blob.name,
+                    )
+                )
+    ResolvedMaterial.objects.bulk_create(
+        resolved,
+        update_conflicts=True,
+        unique_fields=["name", "meeting_number"],
+        update_fields=["bucket", "blob"],
+    )
+    # Warn if any files were updated during the above process
+    last_update = meeting_documents.aggregate(Max("time"))["time__max"]
+    if last_update and last_update > start_time:
+        log(
+            f"Warning: materials for meeting {meeting.number} "
+            "changed during ResolvedMaterial update"
+        )
 
 def create_recording(session, url, title=None, user=None):
     '''
