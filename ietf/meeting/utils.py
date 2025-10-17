@@ -852,6 +852,7 @@ def write_doc_for_session(session, type_id, filename, contents):
     store_str(type_id, filename.name, contents)
     return None
 
+
 @dataclass
 class BlobSpec:
     bucket: str
@@ -874,15 +875,15 @@ def resolve_one_material(
             basename = basename.with_suffix(ext)
 
         # See if we have a stored object under that name
-        blob = (
+        preferred_blob = (
             StoredObject.objects.exclude_deleted()
             .filter(store=doc.type_id, name=basename)
             .first()
         )
-        if blob is not None:
+        if preferred_blob is not None:
             return BlobSpec(
-                bucket=blob.store,
-                name=blob.name,
+                bucket=preferred_blob.store,
+                name=preferred_blob.name,
             )
         # No stored object, fall back to the file system.
         filename = Path(doc.get_file_path()) / basename
@@ -936,16 +937,16 @@ def resolve_one_material(
     if len(all_exts) > 0:
         preferred_ext = sorted(all_exts)[0]
         if preferred_ext in blob_ext_choices:
-            pdf_blob = blob_ext_choices[preferred_ext]
+            preferred_blob = blob_ext_choices[preferred_ext]
             return BlobSpec(
-                bucket=pdf_blob.store,
-                name=pdf_blob.name,
+                bucket=preferred_blob.store,
+                name=preferred_blob.name,
             )
         else:
-            pdf_filename = file_ext_choices[preferred_ext]
+            preferred_filename = file_ext_choices[preferred_ext]
             return BlobSpec(
                 bucket=doc.type_id,
-                name=pdf_filename,
+                name=preferred_filename,
             )
 
     return None
@@ -975,11 +976,13 @@ def resolve_materials_for_one_meeting(meeting: Meeting):
         # request by doc name + rev
         blob = resolve_one_material(doc, rev=doc.rev, ext=None)
         if blob is not None:
-            ResolvedMaterial(
-                name=f"{doc.name}-{doc.rev:02}",
-                meeting_number=meeting.number,
-                bucket=blob.bucket,
-                blob=blob.name,
+            resolved.append(
+                ResolvedMaterial(
+                    name=f"{doc.name}-{doc.rev:02}",
+                    meeting_number=meeting.number,
+                    bucket=blob.bucket,
+                    blob=blob.name,
+                )
             )
         # for other revisions, only need request by doc name + rev
         other_revisions = doc.revisions_by_newrevisionevent()
