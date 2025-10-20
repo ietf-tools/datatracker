@@ -286,3 +286,5 @@ class RegistrationTicketAdmin(admin.ModelAdmin):
     def display_meeting(self, instance):
         return instance.registration.meeting.number
     display_meeting.short_description = "Meeting"  # type: ignore # https://github.com/python/mypy/issues/2087
+
+admin.site.register(RegistrationTicket, RegistrationTicketAdmin)
