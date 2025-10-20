@@ -19,7 +19,7 @@ from ietf.meeting.models import (Meeting, ResourceAssociation, Constraint, Room,
                                  SchedulingEvent,
                                  BusinessConstraint, ProceedingsMaterial, MeetingHost,
                                  Attended,
-                                 Registration, RegistrationTicket, ResolvedMaterial)
+                                 Registration, RegistrationTicket)
 
 from ietf.name.resources import MeetingTypeNameResource
 class MeetingResource(ModelResource):
@@ -476,20 +476,3 @@ class RegistrationTicketResource(ModelResource):
             "registration": ALL_WITH_RELATIONS,
         }
 api.meeting.register(RegistrationTicketResource())
-
-
-class ResolvedMaterialResource(ModelResource):
-    class Meta:
-        queryset = ResolvedMaterial.objects.all()
-        serializer = api.Serializer()
-        cache = SimpleCache()
-        #resource_name = 'resolvedmaterial'
-        ordering = ['id', ]
-        filtering = { 
-            "id": ALL,
-            "name": ALL,
-            "meeting_number": ALL,
-            "bucket": ALL,
-            "blob": ALL,
-        }
-api.meeting.register(ResolvedMaterialResource())

@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("meeting", "0016_alter_meeting_country_alter_meeting_time_zone"),
+        ("blobdb", "0001_initial"),
     ]
 
     operations = [
