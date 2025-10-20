@@ -111,5 +111,12 @@ def resolve_meeting_materials_task(
             f"meeting {meeting.number} ({meeting.date})..."
         )
         mark = timezone.now()
-        resolve_materials_for_one_meeting(meeting)
-        log.log(f"Resolved in {(timezone.now() - mark).total_seconds():0.3f} seconds.")
+        try:
+            resolve_materials_for_one_meeting(meeting)
+        except Exception as err:
+            log.log(
+                "Exception raised while resolving materials for "
+                f"meeting {meeting.number}: {err}"
+            )
+        else:
+            log.log(f"Resolved in {(timezone.now() - mark).total_seconds():0.3f} seconds.")
