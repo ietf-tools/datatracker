@@ -41,8 +41,8 @@ from ietf.meeting.models import (
     Registration,
     Meeting,
     RegistrationTicket,
-    ResolvedMaterial,
 )
+from ietf.blobdb.models import ResolvedMaterial
 from ietf.doc.models import (
     Document,
     State,

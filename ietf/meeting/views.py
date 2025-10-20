@@ -71,7 +71,8 @@ from ietf.person.models import Person, User
 from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, \
-    SessionPresentation, TimeSlot, SlideSubmission, Attended, ResolvedMaterial
+    SessionPresentation, TimeSlot, SlideSubmission, Attended
+from ..blobdb.models import ResolvedMaterial
 from ietf.meeting.models import ImportantDate, SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
 from ietf.meeting.models import Registration
 from ietf.meeting.forms import ( CustomDurationField, SwapDaysForm, SwapTimeslotsForm, ImportMinutesForm,
