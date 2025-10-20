@@ -66,21 +66,72 @@ def fetch_meeting_attendance_task():
 
 
 @shared_task
-def resolve_meeting_materials_task(*, meetings=None, meetings_since=None):
-    if meetings_since is not None:
-        meetings_since = datetime.datetime.fromisoformat(meetings_since)
+def resolve_meeting_materials_task(
+    *, meetings: list[str]=None, meetings_since: str=None, meetings_until: str=None
+):
+    """Run materials resolver on meetings
+    
+    Can request a set of meetings by number by passing a list in the meetings arg, or
+    by range by passing an iso-format timestamps in meetings_since / meetings_until.
+    To select all meetings, set meetings_since="zero" and omit other parameters. 
+    """
+    # IETF-1 = 1986-01-16
+    EARLIEST_MEETING_DATE = datetime.datetime(1986, 1, 1)
+    if meetings_since == "zero":
+        meetings_since = EARLIEST_MEETING_DATE
+    elif meetings_since is not None:
+        try:
+            meetings_since = datetime.datetime.fromisoformat(meetings_since)
+        except ValueError:
+            log.log(
+                "Failed to parse meetings_since='{meetings_since}' with fromisoformat"
+            )
+            raise
+
+    if meetings_until is not None:
+        try:
+            meetings_until = datetime.datetime.fromisoformat(meetings_until)
+        except ValueError:
+            log.log(
+                "Failed to parse meetings_until='{meetings_until}' with fromisoformat"
+            )
+            raise
+        if meetings_since is None:
+            # if we only got meetings_until, start from the first meeting
+            meetings_since = EARLIEST_MEETING_DATE
+
     if meetings is None:
         if meetings_since is None:
             log.log("No meetings requested, doing nothing.")
             return
         meetings = Meeting.objects.filter(date__gte=meetings_since)
-        log.log(f"Resolving materials for meetings since {meetings_since}")
+        if meetings_until is not None:
+            meetings = meetings.filter(date__lte=meetings_until)
+            log.log(
+                "Resolving materials for meetings "
+                f"between {meetings_since} and {meetings_until}"
+            )
+        else:
+            log.log(f"Resolving materials for meetings since {meetings_since}")
     else:
         if meetings_since is not None:
-            log.log("Ignoring meetings_since because specific meetings were requested.")
+            log.log(
+                "Ignoring meetings_since and meetings_until "
+                "because specific meetings were requested."
+            )
         meetings = Meeting.objects.filter(number__in=meetings)
-    for meeting in meetings:
-        log.log(f"Resolving materials for {meeting.type_id} meeting {meeting.number}...")
+    for meeting in meetings.order_by("date"):
+        log.log(
+            f"Resolving materials for {meeting.type_id} "
+            f"meeting {meeting.number} ({meeting.date})..."
+        )
         mark = timezone.now()
-        resolve_materials_for_one_meeting(meeting)
-        log.log(f"Resolved in {(timezone.now() - mark).total_seconds():0.3f} seconds.")
+        try:
+            resolve_materials_for_one_meeting(meeting)
+        except Exception as err:
+            log.log(
+                "Exception raised while resolving materials for "
+                f"meeting {meeting.number}: {err}"
+            )
+        else:
+            log.log(f"Resolved in {(timezone.now() - mark).total_seconds():0.3f} seconds.")

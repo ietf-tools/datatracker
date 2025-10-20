@@ -956,7 +956,9 @@ def resolve_one_material(
 def resolve_materials_for_one_meeting(meeting: Meeting):
     start_time = timezone.now()
     meeting_documents = (
-        Document.objects.exclude(type_id="draft").filter(
+        Document.objects.filter(
+            type_id__in=settings.MATERIALS_TYPES_SERVED_BY_WORKER
+        ).filter(
             Q(session__meeting=meeting) | Q(proceedingsmaterial__meeting=meeting)
         )
     ).distinct()

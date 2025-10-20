@@ -485,16 +485,6 @@ def api_retrieve_materials_blob(request, bucket, name):
     but a file with the same name but extension `.md` does, `.md` file will be rendered
     from markdown to html and returned / stored.
     """
-    ALLOWED_BUCKETS = {
-        "agenda",
-        "bluesheets",
-        "chatlog",
-        "minutes",
-        "narrativeminutes",
-        "polls",
-        "procmaterials",
-        "slides",
-    }
     DEFAULT_CONTENT_TYPES = {
         ".html": "text/html;charset=utf-8",
         ".md": "text/markdown;charset=utf-8",
@@ -505,7 +495,10 @@ def api_retrieve_materials_blob(request, bucket, name):
     def _default_content_type(blob_name: str):
         return DEFAULT_CONTENT_TYPES.get(Path(name).suffix, "application/octet-stream") 
 
-    if not settings.ENABLE_BLOBSTORAGE or bucket not in ALLOWED_BUCKETS:
+    if not (
+        settings.ENABLE_BLOBSTORAGE
+        and bucket in settings.MATERIALS_TYPES_SERVED_BY_WORKER
+    ):
         return HttpResponseNotFound(f"Bucket {bucket} not found.")
     storage = storages[bucket]  # if not configured, a server error will result
     assert isinstance(storage, BlobdbStorage)
