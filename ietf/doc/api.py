@@ -184,6 +184,7 @@ class SubseriesFilter(filters.FilterSet):
         queryset=DocTypeName.objects.filter(pk__in=SUBSERIES_DOC_TYPE_IDS)
     )
 
+
 @extend_schema(tags=["purple", "red"])
 class SubseriesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     permission_classes: list[BasePermission] = []
