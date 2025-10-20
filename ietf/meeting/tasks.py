@@ -80,10 +80,22 @@ def resolve_meeting_materials_task(
     if meetings_since == "zero":
         meetings_since = EARLIEST_MEETING_DATE
     elif meetings_since is not None:
-        meetings_since = datetime.datetime.fromisoformat(meetings_since)
+        try:
+            meetings_since = datetime.datetime.fromisoformat(meetings_since)
+        except ValueError:
+            log.log(
+                "Failed to parse meetings_since='{meetings_since}' with fromisoformat"
+            )
+            raise
 
     if meetings_until is not None:
-        meetings_until = datetime.datetime.fromisoformat(meetings_until)
+        try:
+            meetings_until = datetime.datetime.fromisoformat(meetings_until)
+        except ValueError:
+            log.log(
+                "Failed to parse meetings_until='{meetings_until}' with fromisoformat"
+            )
+            raise
         if meetings_since is None:
             # if we only got meetings_until, start from the first meeting
             meetings_since = EARLIEST_MEETING_DATE
@@ -103,7 +115,10 @@ def resolve_meeting_materials_task(
             log.log(f"Resolving materials for meetings since {meetings_since}")
     else:
         if meetings_since is not None:
-            log.log("Ignoring meetings_since because specific meetings were requested.")
+            log.log(
+                "Ignoring meetings_since and meetings_until "
+                "because specific meetings were requested."
+            )
         meetings = Meeting.objects.filter(number__in=meetings)
     for meeting in meetings.order_by("date"):
         log.log(
