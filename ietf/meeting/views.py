@@ -95,6 +95,7 @@ from ietf.meeting.utils import (
     finalize,
     generate_proceedings_content,
     organize_proceedings_sessions,
+    resolve_uploaded_material,
     sort_accept_tuple,
     resolve_one_material,
 )
@@ -3250,6 +3251,7 @@ def upload_session_minutes(request, session_id, num):
                 form.add_error(None, str(err))
             else:
                 # no exception -- success!
+                resolve_uploaded_material(meeting=session.meeting, doc=session.minutes())
                 messages.success(request, f'Successfully uploaded minutes as revision {session.minutes().rev}.')
                 return redirect('ietf.meeting.views.session_details', num=num, acronym=session.group.acronym)
     else:
@@ -3309,6 +3311,7 @@ def upload_session_narrativeminutes(request, session_id, num):
                 form.add_error(None, str(err))
             else:
                 # no exception -- success!
+                resolve_uploaded_material(meeting=session.meeting, doc=session.narrative_minutes())
                 messages.success(request, f'Successfully uploaded narrative minutes as revision {session.narrative_minutes().rev}.')
                 return redirect('ietf.meeting.views.session_details', num=num, acronym=session.group.acronym)
     else:
@@ -3455,6 +3458,7 @@ def upload_session_agenda(request, session_id, num):
                 form.add_error(None, save_error)
             else:
                 doc.save_with_history([e])
+                resolve_uploaded_material(meeting=session.meeting, doc=doc)
                 messages.success(request, f'Successfully uploaded agenda as revision {doc.rev}.')
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
@@ -3638,6 +3642,7 @@ def upload_session_slides(request, session_id, num, name=None):
             else:
                 doc.save_with_history([e])
                 post_process(doc)
+                resolve_uploaded_material(meeting=session.meeting, doc=doc)
 
             # Send MeetEcho updates even if we had a problem saving - that will keep it in sync with the
             # SessionPresentation, which was already saved regardless of problems saving the file.
@@ -5038,6 +5043,7 @@ def api_upload_chatlog(request):
     write_doc_for_session(session, 'chatlog', filename, json.dumps(apidata['chatlog']))
     e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
     doc.save_with_history([e])
+    resolve_uploaded_material(meeting=session.meeting, doc=doc)
     return HttpResponse(
         "Done",
         status=200,
@@ -5086,6 +5092,7 @@ def api_upload_polls(request):
     write_doc_for_session(session, 'polls', filename, json.dumps(apidata['polls']))
     e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
     doc.save_with_history([e])
+    resolve_uploaded_material(meeting=session.meeting, doc=doc)
     return HttpResponse(
         "Done",
         status=200,
@@ -5468,6 +5475,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 doc.store_bytes(target_filename, retrieve_bytes("staging", submission.filename))
                 remove_from_storage("staging", submission.filename)
                 post_process(doc)
+                resolve_uploaded_material(meeting=submission.session.meeting, doc=doc)
                 DocEvent.objects.create(type="approved_slides", doc=doc, rev=doc.rev, by=request.user.person, desc="Slides approved")
 
                 # update meetecho slide info if configured

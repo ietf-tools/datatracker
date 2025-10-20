@@ -19,7 +19,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.cache import caches
 from django.core.files.base import ContentFile
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 from django.db.models import OuterRef, Subquery, TextField, Q, Value, Max
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
@@ -240,6 +240,7 @@ def save_bluesheet(request, session, file, encoding='utf-8'):
     save_error = handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=encoding)
     if not save_error:
         doc.save_with_history([e])
+        resolve_uploaded_material(meeting=session.meeting, doc=doc)
     return save_error
 
 
@@ -1016,6 +1017,36 @@ def resolve_materials_for_one_meeting(meeting: Meeting):
             f"Warning: materials for meeting {meeting.number} "
             "changed during ResolvedMaterial update"
         )
+
+def resolve_uploaded_material(meeting: Meeting, doc: Document):
+    resolved = []
+    blob = resolve_one_material(doc, rev=None, ext=None)
+    if blob is not None:
+        resolved.append(
+            ResolvedMaterial(
+                name=doc.name,
+                meeting_number=meeting.number,
+                bucket=blob.bucket,
+                blob=blob.name,
+            )
+        )
+    # request by doc name + rev
+    blob = resolve_one_material(doc, rev=doc.rev, ext=None)
+    if blob is not None:
+        resolved.append(
+            ResolvedMaterial(
+                name=f"{doc.name}-{doc.rev:02}",
+                meeting_number=meeting.number,
+                bucket=blob.bucket,
+                blob=blob.name,
+            )
+        )
+    ResolvedMaterial.objects.bulk_create(
+        resolved,
+        update_conflicts=True,
+        unique_fields=["name", "meeting_number"],
+        update_fields=["bucket", "blob"],
+    )
 
 def create_recording(session, url, title=None, user=None):
     '''
