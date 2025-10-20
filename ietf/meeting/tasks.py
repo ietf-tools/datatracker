@@ -79,8 +79,11 @@ def resolve_meeting_materials_task(*, meetings=None, meetings_since=None):
         if meetings_since is not None:
             log.log("Ignoring meetings_since because specific meetings were requested.")
         meetings = Meeting.objects.filter(number__in=meetings)
-    for meeting in meetings:
-        log.log(f"Resolving materials for {meeting.type_id} meeting {meeting.number}...")
+    for meeting in meetings.order_by("date"):
+        log.log(
+            f"Resolving materials for {meeting.type_id} "
+            f"meeting {meeting.number} ({meeting.date})..."
+        )
         mark = timezone.now()
         resolve_materials_for_one_meeting(meeting)
         log.log(f"Resolved in {(timezone.now() - mark).total_seconds():0.3f} seconds.")
