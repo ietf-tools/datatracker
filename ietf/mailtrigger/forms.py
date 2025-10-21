@@ -11,6 +11,7 @@ from ietf.mailtrigger.models import MailTrigger
 class CcSelectForm(forms.Form):
     expansions = dict()                 # type: Dict[str, List[str]]
     cc_choices = forms.MultipleChoiceField(
+                   required=False,
                    label='Cc',
                    choices=[],
                    widget=forms.CheckboxSelectMultiple(),

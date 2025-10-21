@@ -53,13 +53,13 @@ urlpatterns = [
     url(r'^ad/?$', views_search.ad_workload),
     url(r'^ad/(?P<name>[^/]+)/?$', views_search.docs_for_ad),
     url(r'^ad2/(?P<name>[\w.-]+)/$', RedirectView.as_view(url='/doc/ad/%(name)s/', permanent=True)),
-    url(r'^for_iesg/?$', views_search.docs_for_iesg),
+    url(r'^for_iesg/?$', RedirectView.as_view(pattern_name='ietf.doc.views_search.docs_for_iesg', permanent=False)),
     url(r'^rfc-status-changes/?$', views_status_change.rfc_status_changes),
     url(r'^start-rfc-status-change/(?:%(name)s/)?$' % settings.URL_REGEXPS, views_status_change.start_rfc_status_change),
     url(r'^bof-requests/?$', views_bofreq.bof_requests),
     url(r'^bof-requests/new/$', views_bofreq.new_bof_request),
     url(r'^statement/new/$', views_statement.new_statement),
-    url(r'^iesg/?$', views_search.drafts_in_iesg_process),
+    url(r'^iesg/?$', views_search.docs_for_iesg),
     url(r'^email-aliases/?$', views_doc.email_aliases),
     url(r'^downref/?$', views_downref.downref_registry),
     url(r'^downref/add/?$', views_downref.downref_registry_add),
@@ -93,6 +93,8 @@ urlpatterns = [
     url(r'^ballots/irsg/$', views_ballot.irsg_ballot_status),
     url(r'^ballots/rsab/$', views_ballot.rsab_ballot_status),
 
+    url(r'^build-position-email/$', views_ballot.ajax_build_position_email),
+
     url(r'^(?P<type_id>(bcp|std|fyi))/?$', views_search.index_subseries),
 
     url(r'^%(name)s(?:/%(rev)s)?/$' % settings.URL_REGEXPS, views_doc.document_main),
@@ -111,7 +113,6 @@ urlpatterns = [
     url(r'^%(name)s/ballot/rsab/$' % settings.URL_REGEXPS, views_doc.document_rsab_ballot),
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/$' % settings.URL_REGEXPS, views_doc.document_ballot),
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/position/$' % settings.URL_REGEXPS, views_ballot.edit_position),
-    url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/emailposition/$' % settings.URL_REGEXPS, views_ballot.send_ballot_comment),
     url(r'^%(name)s/(?:%(rev)s/)?doc.json$' % settings.URL_REGEXPS, views_doc.document_json),
     url(r'^%(name)s/ballotpopup/(?P<ballot_id>[0-9]+)/$' % settings.URL_REGEXPS, views_doc.ballot_popup),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/reviewrequest/', include("ietf.doc.urls_review")),

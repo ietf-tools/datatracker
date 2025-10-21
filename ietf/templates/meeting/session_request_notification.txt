@@ -1,0 +1,6 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
+{% autoescape off %}{% load ams_filters %}
+
+{% filter wordwrap:78 %}{{ header }} meeting session request has just been submitted by {{ requester }}.{% endfilter %}
+
+{% include "meeting/session_request_info.txt" %}{% endautoescape %}

@@ -115,6 +115,7 @@ spec:
       initContainers:
         - name: migration
           image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
+          imagePullPolicy: Always
           env:
             - name: "CONTAINER_ROLE"
               value: "migrations"

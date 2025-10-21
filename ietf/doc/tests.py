@@ -449,17 +449,6 @@ class SearchTests(TestCase):
         self.assertContains(r, draft.title)
         self.assertContains(r, escape(draft.action_holders.first().name))
 
-    def test_in_iesg_process(self):
-        doc_in_process = IndividualDraftFactory()
-        doc_in_process.action_holders.set([PersonFactory()])
-        doc_in_process.set_state(State.objects.get(type='draft-iesg', slug='lc'))
-        doc_not_in_process = IndividualDraftFactory()
-        r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_iesg_process'))
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, doc_in_process.title)
-        self.assertContains(r, escape(doc_in_process.action_holders.first().name))
-        self.assertNotContains(r, doc_not_in_process.title)
-        
     def test_indexes(self):
         draft = IndividualDraftFactory()
         rfc = WgRfcFactory()

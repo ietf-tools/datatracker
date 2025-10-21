@@ -250,25 +250,39 @@ class Meeting(models.Model):
         # MeetingRegistration.attended started conflating badge-pickup and session attendance before IETF 114.
         # We've separated session attendance off to ietf.meeting.Attended, but need to report attendance at older
         # meetings correctly.
-
+        #
+        # Looking up by registration and attendance records separately and joining in
+        # python is far faster than combining the Q objects in the query (~100x).
+        # Further optimization may be possible, but the queries are tricky...
         attended_per_meeting_registration = (
             Q(registration__meeting=self) & (
                 Q(registration__attended=True) |
                 Q(registration__checkedin=True)
             )
         )
+        attendees_by_reg = set(
+            Person.objects.filter(attended_per_meeting_registration).values_list(
+                "pk", flat=True
+            )
+        )
+
         attended_per_meeting_attended = (
             Q(attended__session__meeting=self)
             # Note that we are not filtering to plenary, wg, or rg sessions
             # as we do for nomcom eligibility - if picking up a badge (see above)
             # is good enough, just attending e.g. a training session is also good enough
         )
-        attended = Person.objects.filter(
-            attended_per_meeting_registration | attended_per_meeting_attended
-        ).distinct()
-
-        onsite = set(attended.filter(registration__meeting=self, registration__tickets__attendance_type__slug='onsite'))
-        remote = set(attended.filter(registration__meeting=self, registration__tickets__attendance_type__slug='remote'))
+        attendees_by_att = set(
+            Person.objects.filter(attended_per_meeting_attended).values_list(
+                "pk", flat=True
+            )
+        )
+        
+        attendees = Person.objects.filter(
+            pk__in=attendees_by_att | attendees_by_reg
+        )
+        onsite = set(attendees.filter(registration__meeting=self, registration__tickets__attendance_type__slug='onsite'))
+        remote = set(attendees.filter(registration__meeting=self, registration__tickets__attendance_type__slug='remote'))
         remote.difference_update(onsite)
 
         return Attendance(
@@ -942,8 +956,6 @@ class SessionPresentation(models.Model):
     def __str__(self):
         return u"%s -> %s-%s" % (self.session, self.document.name, self.rev)
 
-constraint_cache_uses = 0
-constraint_cache_initials = 0
 
 class SessionQuerySet(models.QuerySet):
     def with_current_status(self):
