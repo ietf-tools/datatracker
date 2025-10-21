@@ -275,7 +275,7 @@ def _get_materials_doc(name, meeting=None) -> tuple[Document | DocHistory, str |
         return doc.get_related_meeting() == meeting
 
     # try an exact match first
-    doc = Document.objects.filter(name=name).first()
+    doc: Document | DocHistory | None = Document.objects.filter(name=name).first()
     if doc is not None and _matches_meeting(doc, meeting):
         return doc, None
 

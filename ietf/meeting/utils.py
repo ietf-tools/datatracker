@@ -863,6 +863,10 @@ class BlobSpec:
 def resolve_one_material(
     doc: Document | DocHistory, rev: str | None, ext: str | None
 ) -> BlobSpec | None:
+    if doc.type_id is None:
+        log(f"Cannot resolve a doc with no type: {doc.name}")
+        return None
+
     # Get the Document's base name. It may or may not have an extension.
     if rev is None:
         basename = Path(doc.get_base_name())
