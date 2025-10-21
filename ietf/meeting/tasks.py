@@ -67,7 +67,10 @@ def fetch_meeting_attendance_task():
 
 @shared_task
 def resolve_meeting_materials_task(
-    *, meetings: list[str]=None, meetings_since: str=None, meetings_until: str=None
+    *,  # only allow kw arguments
+    meetings: list[str] | None=None,
+    meetings_since: str | None=None,
+    meetings_until: str | None=None
 ):
     """Run materials resolver on meetings
     
@@ -77,11 +80,14 @@ def resolve_meeting_materials_task(
     """
     # IETF-1 = 1986-01-16
     EARLIEST_MEETING_DATE = datetime.datetime(1986, 1, 1)
+    meetings_since_dt: datetime.datetime | None = None
+    meetings_until_dt: datetime.datetime | None = None
+
     if meetings_since == "zero":
-        meetings_since = EARLIEST_MEETING_DATE
+        meetings_since_dt = EARLIEST_MEETING_DATE
     elif meetings_since is not None:
         try:
-            meetings_since = datetime.datetime.fromisoformat(meetings_since)
+            meetings_since_dt = datetime.datetime.fromisoformat(meetings_since)
         except ValueError:
             log.log(
                 "Failed to parse meetings_since='{meetings_since}' with fromisoformat"
@@ -90,37 +96,37 @@ def resolve_meeting_materials_task(
 
     if meetings_until is not None:
         try:
-            meetings_until = datetime.datetime.fromisoformat(meetings_until)
+            meetings_until_dt = datetime.datetime.fromisoformat(meetings_until)
         except ValueError:
             log.log(
                 "Failed to parse meetings_until='{meetings_until}' with fromisoformat"
             )
             raise
-        if meetings_since is None:
+        if meetings_since_dt is None:
             # if we only got meetings_until, start from the first meeting
-            meetings_since = EARLIEST_MEETING_DATE
+            meetings_since_dt = EARLIEST_MEETING_DATE
 
     if meetings is None:
-        if meetings_since is None:
+        if meetings_since_dt is None:
             log.log("No meetings requested, doing nothing.")
             return
-        meetings = Meeting.objects.filter(date__gte=meetings_since)
-        if meetings_until is not None:
-            meetings = meetings.filter(date__lte=meetings_until)
+        meetings_qs = Meeting.objects.filter(date__gte=meetings_since_dt)
+        if meetings_until_dt is not None:
+            meetings_qs = meetings_qs.filter(date__lte=meetings_until_dt)
             log.log(
                 "Resolving materials for meetings "
-                f"between {meetings_since} and {meetings_until}"
+                f"between {meetings_since_dt} and {meetings_until_dt}"
             )
         else:
-            log.log(f"Resolving materials for meetings since {meetings_since}")
+            log.log(f"Resolving materials for meetings since {meetings_since_dt}")
     else:
-        if meetings_since is not None:
+        if meetings_since_dt is not None:
             log.log(
                 "Ignoring meetings_since and meetings_until "
                 "because specific meetings were requested."
             )
-        meetings = Meeting.objects.filter(number__in=meetings)
-    for meeting in meetings.order_by("date"):
+        meetings_qs = Meeting.objects.filter(number__in=meetings)
+    for meeting in meetings_qs.order_by("date"):
         log.log(
             f"Resolving materials for {meeting.type_id} "
             f"meeting {meeting.number} ({meeting.date})..."
