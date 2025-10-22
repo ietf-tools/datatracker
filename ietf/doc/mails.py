@@ -46,10 +46,10 @@ def email_ad_approved_doc(request, doc, text):
         bcc = "iesg-secretary@ietf.org"
         frm = request.user.person.formatted_email()
         send_mail(request, to, frm,
-                          "Approved: %s" % doc.filename_with_rev(),
+                          "Approved: %s.txt" % doc.filename_with_rev(),
                           "doc/mail/ad_approval_email.txt",
                           dict(text=text,
-                                   docname=doc.filename_with_rev()),
+                                   docname=doc.filename_with_rev() + ".txt"),
                           bcc=bcc)
 
 def email_ad_approved_conflict_review(request, review, ok_to_publish):

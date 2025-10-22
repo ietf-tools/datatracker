@@ -354,7 +354,7 @@ class InterimSessionModelForm(forms.ModelForm):
         if self.instance.agenda():
             doc = self.instance.agenda()
             doc.rev = str(int(doc.rev) + 1).zfill(2)
-            doc.uploaded_filename = doc.filename_with_rev()
+            doc.uploaded_filename = doc.filename_with_rev() + ".txt"
             e = NewRevisionDocEvent.objects.create(
                 type='new_revision',
                 by=self.user.person,
@@ -381,7 +381,7 @@ class InterimSessionModelForm(forms.ModelForm):
                 rev=doc.rev,
                 desc='New revision available')
         # write file
-        path = os.path.join(self.instance.meeting.get_materials_path(), 'agenda', doc.filename_with_rev())
+        path = os.path.join(self.instance.meeting.get_materials_path(), 'agenda', doc.filename_with_rev() + ".txt")
         directory = os.path.dirname(path)
         if not os.path.exists(directory):
             os.makedirs(directory)
