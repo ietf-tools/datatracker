@@ -57,7 +57,7 @@ from rest_framework.status import HTTP_404_NOT_FOUND
 import debug                            # pyflakes:ignore
 
 from ietf.doc.fields import SearchableDocumentsField
-from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocHistory
+from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent
 from ietf.doc.storage_utils import (
     remove_from_storage,
     retrieve_bytes,
@@ -262,7 +262,7 @@ def current_materials(request):
         raise Http404('No such meeting')
 
 
-def _get_materials_doc(name, meeting=None) -> tuple[Document | DocHistory, str | None]:
+def _get_materials_doc(name, meeting=None):
     """Get meeting materials document named by name
 
     Raises Document.DoesNotExist if a match cannot be found. If meeting is None,
@@ -275,7 +275,7 @@ def _get_materials_doc(name, meeting=None) -> tuple[Document | DocHistory, str |
         return doc.get_related_meeting() == meeting
 
     # try an exact match first
-    doc: Document | DocHistory | None = Document.objects.filter(name=name).first()
+    doc: Document | None = Document.objects.filter(name=name).first()
     if doc is not None and _matches_meeting(doc, meeting):
         return doc, None
 
@@ -283,15 +283,7 @@ def _get_materials_doc(name, meeting=None) -> tuple[Document | DocHistory, str |
     if "-" in name:
         docname, rev = name.rsplit("-", 1)
         if len(rev) == 2 and rev.isdigit():
-            try:
-                # may raise Document.DoesNotExist
-                doc = Document.objects.get(name=docname, rev=rev)
-            except Document.DoesNotExist:
-                doc = DocHistory.objects.filter(
-                    name=docname, rev=rev,
-                ).order_by("-time").first()
-                if doc is None:
-                    raise
+            doc = Document.objects.get(name=docname)  # may raise Document.DoesNotExist
             if (
                 _matches_meeting(doc, meeting)
                 and rev in doc.revisions_by_newrevisionevent()
