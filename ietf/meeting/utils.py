@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import itertools
+from contextlib import suppress
 from dataclasses import dataclass
 
 import jsonschema
@@ -29,7 +30,8 @@ from django.utils.encoding import smart_str
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.doc.storage_utils import store_bytes, store_str
+from ietf.doc.storage_utils import store_bytes, store_str, AlreadyExistsError, \
+    store_file
 from ietf.meeting.models import (
     Session,
     SchedulingEvent,
@@ -55,6 +57,7 @@ from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import SessionStatusName, ConstraintName, DocTypeName
 from ietf.person.models import Person
+from ietf.utils import markdown
 from ietf.utils.html import clean_html
 from ietf.utils.log import log
 from ietf.utils.timezone import date_today
@@ -1047,6 +1050,80 @@ def resolve_uploaded_material(meeting: Meeting, doc: Document):
         unique_fields=["name", "meeting_number"],
         update_fields=["bucket", "blob"],
     )
+
+
+def store_blob_for_one_material_file(doc: Document, rev: str, filepath: Path):
+    if not settings.ENABLE_BLOBSTORAGE:
+        raise RuntimeError("Cannot store blobs: ENABLE_BLOBSTORAGE is False")
+
+    bucket = doc.type_id
+    if bucket not in settings.MATERIALS_TYPES_SERVED_BY_WORKER:
+        raise ValueError(f"Bucket {bucket} not found for doc {doc.name}.")
+    blob_stem = f"{doc.name}-{rev}"
+    suffix = filepath.suffix  # includes leading "."
+
+    # Store the file
+    file_bytes = filepath.read_bytes()
+    with suppress(AlreadyExistsError):
+        store_bytes(
+            kind=bucket,
+            name= blob_stem + suffix,
+            content=file_bytes,
+            mtime=datetime.datetime.fromtimestamp(
+                filepath.stat().st_mtime,
+                tz=datetime.UTC,
+            ),
+            allow_overwrite=False,
+            doc_name=doc.name,
+            doc_rev=rev,
+        )
+
+    # Special case: pre-render markdown into HTML as .md.html
+    if suffix == ".md":
+        # render the markdown
+        html = render_to_string(
+            "minimal.html",
+            {
+                "content": markdown.markdown(file_bytes.decode()),
+                "title": blob_stem,
+                "static_ietf_org": settings.STATIC_IETF_ORG,
+            },
+        )
+        # Don't overwrite, but don't fail if the blob exists
+        with suppress(AlreadyExistsError):
+            store_str(
+                kind=bucket,
+                name=blob_stem + ".md.html",
+                content=html,
+                allow_overwrite=False,
+                doc_name=doc.name,
+                doc_rev=rev,
+                content_type="text/html;charset=utf-8",
+            )
+
+
+def store_blobs_for_one_material_doc(doc: Document):
+    """Ensure that all files related to a materials Document are in the blob store"""
+    if doc.type_id not in settings.MATERIALS_TYPES_SERVED_BY_WORKER:
+        log(f"This method does not handle docs of type {doc.name}")
+        return
+
+    # Store files for current Document / rev
+    file_path = Path(doc.get_file_path())
+    base_name_stem = Path(doc.get_base_name()).stem
+    # Add any we find without the rev
+    for file_to_store in file_path.glob(base_name_stem + ".*"):
+        store_blob_for_one_material_file(doc, doc.rev, file_to_store)
+
+    # Get other revisions
+    for rev in doc.revisions_by_newrevisionevent():
+        if rev == doc.rev:
+            continue  # already handled this
+
+        # Add some that have the rev
+        for file_to_store in file_path.glob(doc.name + f"-{rev}.*"):
+            store_blob_for_one_material_file(doc, rev, file_to_store)
+
 
 def create_recording(session, url, title=None, user=None):
     '''
