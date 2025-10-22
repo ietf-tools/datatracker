@@ -48,7 +48,6 @@ from ietf.doc.models import (
     State,
     NewRevisionDocEvent,
     StateDocEvent,
-    DocHistory,
     StoredObject,
 )
 from ietf.doc.models import DocEvent

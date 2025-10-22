@@ -274,7 +274,7 @@ def _get_materials_doc(name, meeting=None):
         return doc.get_related_meeting() == meeting
 
     # try an exact match first
-    doc: Document | None = Document.objects.filter(name=name).first()
+    doc = Document.objects.filter(name=name).first()
     if doc is not None and _matches_meeting(doc, meeting):
         return doc, None
 
