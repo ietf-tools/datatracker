@@ -48,7 +48,6 @@ from ietf.doc.models import (
     State,
     NewRevisionDocEvent,
     StateDocEvent,
-    DocHistory,
     StoredObject,
 )
 from ietf.doc.models import DocEvent
@@ -861,7 +860,7 @@ class BlobSpec:
 
 
 def resolve_one_material(
-    doc: Document | DocHistory, rev: str | None, ext: str | None
+    doc: Document, rev: str | None, ext: str | None
 ) -> BlobSpec | None:
     if doc.type_id is None:
         log(f"Cannot resolve a doc with no type: {doc.name}")
@@ -995,12 +994,7 @@ def resolve_materials_for_one_meeting(meeting: Meeting):
         other_revisions = doc.revisions_by_newrevisionevent()
         other_revisions.remove(doc.rev)
         for rev in other_revisions:
-            old_doc = DocHistory.objects.filter(
-                doc=doc, rev=rev
-            ).order_by("-time").first()
-            if old_doc is None:
-                continue
-            blob = resolve_one_material(old_doc, rev=rev, ext=None)
+            blob = resolve_one_material(doc, rev=rev, ext=None)
             if blob is not None:
                 resolved.append(
                     ResolvedMaterial(

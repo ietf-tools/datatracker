@@ -50,7 +50,6 @@ urlpatterns = [
     # Let IESG members set positions programmatically
     url(r'^iesg/position', views_ballot.api_set_position),
     # Find the blob to store for a given materials document path
-    url(r'^meeting/(?:(?P<num>(?:interim-)?[a-z0-9-]+)/)?materials/%(document)s(?P<ext>\.[A-Za-z0-9]+)?/resolve/$' % settings.URL_REGEXPS, meeting_views.api_resolve_materials_name),
     url(r'^meeting/(?:(?P<num>(?:interim-)?[a-z0-9-]+)/)?materials/%(document)s(?P<ext>\.[A-Za-z0-9]+)?/resolve-cached/$' % settings.URL_REGEXPS, meeting_views.api_resolve_materials_name_cached),
     url(r'^meeting/blob/(?P<bucket>[a-z0-9-]+)/(?P<name>[a-z][a-z0-9.-]+)$', meeting_views.api_retrieve_materials_blob),
     # Let Meetecho set session video URLs
