@@ -98,7 +98,6 @@ from ietf.meeting.utils import (
     organize_proceedings_sessions,
     resolve_uploaded_material,
     sort_accept_tuple,
-    resolve_one_material,
 )
 from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.meeting.utils import session_time_for_sorting
@@ -361,62 +360,6 @@ def materials_document(request, document, num=None, ext=None):
         return response
     else:
         return HttpResponseRedirect(redirect_to=doc.get_href(meeting=meeting))
-
-
-@requires_api_token
-def api_resolve_materials_name(request, document, num=None, ext=None):
-    """Resolve materials name into document to a blob spec
-
-    Returns the bucket/name of a blob in the blob store that corresponds to the named
-    document. Handles resolution of revision if it is not specified and determines the
-    best extension if one is not provided. Response is JSON.
-
-    As of 2025-10-10 we do not have blobs for all materials documents or for every
-    format of every document. This API still returns the bucket/name as if the blob
-    exists. Another API will allow the caller to obtain the file contents using that
-    name if it cannot be retrieved from the blob store.
-    """
-
-    def _error_response(status: int, detail: str):
-        return JsonResponse(
-            {
-                "status": status,
-                "title": "Error",
-                "detail": detail,
-            },
-            status=status,
-        )
-
-    def _response(bucket: str, name: str):
-        return JsonResponse(
-            {
-                "bucket": bucket,
-                "name": name,
-            }
-        )
-
-    try:
-        meeting = get_meeting(num, type_in=["ietf", "interim"])
-    except Http404 as err404:
-        return _error_response(
-            HTTP_404_NOT_FOUND, str(err404)
-        )
-
-    num = meeting.number
-    try:
-        doc, rev = _get_materials_doc(name=document, meeting=meeting)
-    except Document.DoesNotExist:
-        return _error_response(
-            HTTP_404_NOT_FOUND, f"No such document for meeting {num}"
-        )
-
-    resolved = resolve_one_material(doc, rev, ext)
-    if resolved is not None:
-        return _response(bucket=resolved.bucket, name=resolved.name)
-
-    return _error_response(
-        HTTP_404_NOT_FOUND, f"No suitable file for {document} for meeting {num}"
-    )
 
 
 @requires_api_token("ietf.meeting.views.api_resolve_materials_name")
