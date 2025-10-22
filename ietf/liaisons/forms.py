@@ -495,14 +495,18 @@ class IncomingLiaisonForm(LiaisonModelForm):
             self.fields['from_groups'].initial = qs
 
         # Note that the IAB chair currently doesn't get to work with incoming liaison statements
-        if not (
-            has_role(self.user, "Secretariat")
-            or has_role(self.user, "Liaison Coordinator")
-        ):
-            self.fields["from_contact"].initial = (
-                self.person.role_set.filter(group=qs[0]).first().email.formatted_email()
-            )
-            self.fields["from_contact"].widget.attrs["disabled"] = True
+
+        # Removing this block at the request of the IAB - as a workaround until the new liaison tool is
+        # create, anyone with access to the form can set any from_contact value
+        #
+        # if not (
+        #     has_role(self.user, "Secretariat")
+        #     or has_role(self.user, "Liaison Coordinator")
+        # ):
+        #     self.fields["from_contact"].initial = (
+        #         self.person.role_set.filter(group=qs[0]).first().email.formatted_email()
+        #     )
+        #     self.fields["from_contact"].widget.attrs["disabled"] = True
 
     def set_to_fields(self):
         '''Set to_groups and to_contacts options and initial value based on user
