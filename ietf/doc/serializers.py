@@ -44,13 +44,7 @@ class DocIdentifierSerializer(serializers.Serializer):
 
 
 type RfcStatusSlugT = Literal[
-    "standard",
-    "bcp",
-    "informational",
-    "experimental",
-    "historic",
-    "unknown",
-    "not-issued",
+    "std", "ps", "ds", "bcp", "inf", "exp", "hist", "unkn", "not-issued",
 ]
 
 
