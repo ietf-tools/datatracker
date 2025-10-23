@@ -62,19 +62,21 @@ class RfcStatus:
 
     # Names that aren't just the slug itself. ClassVar annotation prevents dataclass from treating this as a field.
     fancy_names: ClassVar[dict[RfcStatusSlugT, str]] = {
-        "standard": "standards track",
+        "std": "internet standard",
         "bcp": "best current practice",
+        "ps": "proposed standard",
+        "ds": "draft standard",
     }
 
     # ClassVar annotation prevents dataclass from treating this as a field
     stdlevelname_slug_map: ClassVar[dict[str, RfcStatusSlugT]] = {
         "bcp": "bcp",
-        "ds": "standard",  # ds is obsolete
+        "ds": "ds",
         "exp": "experimental",
         "hist": "historic",
         "inf": "informational",
-        "std": "standard",
-        "ps": "standard",
+        "std": "std",
+        "ps": "ps",
         "unkn": "unknown",
     }
 
