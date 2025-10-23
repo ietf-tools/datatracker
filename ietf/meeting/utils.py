@@ -1026,7 +1026,7 @@ def generate_proceedings_content(meeting, force_refresh=False):
     :meeting: meeting whose proceedings should be rendered
     :force_refresh: true to force regeneration and cache refresh
     """
-    cache = caches["default"]
+    cache = caches["proceedings"]
     key_components = [
         "proceedings",
         str(meeting.number),
