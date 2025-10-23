@@ -9,6 +9,7 @@ import itertools
 import json
 import math
 import os
+
 import pytz
 import re
 import tarfile
@@ -27,10 +28,12 @@ from itertools import chain
 
 from django import forms
 from django.core.cache import caches
+from django.core.files.storage import storages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import (HttpResponse, HttpResponseRedirect, HttpResponseForbidden,
                          HttpResponseNotFound, Http404, HttpResponseBadRequest,
-                         JsonResponse, HttpResponseGone, HttpResponseNotAllowed)
+                         JsonResponse, HttpResponseGone, HttpResponseNotAllowed,
+                         FileResponse)
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -48,18 +51,25 @@ from django.utils.text import slugify
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import RedirectView
+from rest_framework.status import HTTP_404_NOT_FOUND
 
 import debug                            # pyflakes:ignore
 
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent
-from ietf.doc.storage_utils import remove_from_storage, retrieve_bytes, store_file
+from ietf.doc.storage_utils import (
+    remove_from_storage,
+    retrieve_bytes,
+    store_file,
+)
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
 from ietf.person.models import Person, User
 from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission, Attended
+from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, \
+    SessionPresentation, TimeSlot, SlideSubmission, Attended
+from ..blobdb.models import ResolvedMaterial
 from ietf.meeting.models import ImportantDate, SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
 from ietf.meeting.models import Registration
 from ietf.meeting.forms import ( CustomDurationField, SwapDaysForm, SwapTimeslotsForm, ImportMinutesForm,
@@ -83,7 +93,8 @@ from ietf.meeting.utils import (
     finalize,
     generate_proceedings_content,
     organize_proceedings_sessions,
-    sort_accept_tuple,
+    resolve_uploaded_material,
+    sort_accept_tuple, store_blobs_for_one_material_doc,
 )
 from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.meeting.utils import session_time_for_sorting
@@ -120,6 +131,8 @@ from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSession
 
 from icalendar import Calendar, Event
 from ietf.doc.templatetags.ietf_filters import absurl
+from ..api.ietf_utils import requires_api_token
+from ..blobdb.storage import BlobdbStorage, BlobFile
 
 request_summary_exclude_group_types = ['team']
 
@@ -245,21 +258,32 @@ def current_materials(request):
         raise Http404('No such meeting')
 
 
-def _get_materials_doc(meeting, name):
+def _get_materials_doc(name, meeting=None):
     """Get meeting materials document named by name
 
-    Raises Document.DoesNotExist if a match cannot be found.
+    Raises Document.DoesNotExist if a match cannot be found. If meeting is None,
+    matches a name that is associated with _any_ meeting.
     """
+
+    def _matches_meeting(doc, meeting=None):
+        if meeting is None:
+            return doc.get_related_meeting() is not None
+        return doc.get_related_meeting() == meeting
+
     # try an exact match first
     doc = Document.objects.filter(name=name).first()
-    if doc is not None and doc.get_related_meeting() == meeting:
+    if doc is not None and _matches_meeting(doc, meeting):
         return doc, None
+
     # try parsing a rev number
     if "-" in name:
         docname, rev = name.rsplit("-", 1)
         if len(rev) == 2 and rev.isdigit():
             doc = Document.objects.get(name=docname)  # may raise Document.DoesNotExist
-            if doc.get_related_meeting() == meeting and rev in doc.revisions_by_newrevisionevent():
+            if (
+                _matches_meeting(doc, meeting)
+                and rev in doc.revisions_by_newrevisionevent()
+            ):
                 return doc, rev
     # give up
     raise Document.DoesNotExist
@@ -277,7 +301,7 @@ def materials_document(request, document, num=None, ext=None):
     meeting = get_meeting(num, type_in=["ietf", "interim"])
     num = meeting.number
     try:
-        doc, rev = _get_materials_doc(meeting=meeting, name=document)
+        doc, rev = _get_materials_doc(name=document, meeting=meeting)
     except Document.DoesNotExist:
         raise Http404("No such document for meeting %s" % num)
 
@@ -320,6 +344,7 @@ def materials_document(request, document, num=None, ext=None):
                         {
                             "content": markdown.markdown(bytes.decode(encoding=chset)),
                             "title": filename.name,
+                            "static_ietf_org": settings.STATIC_IETF_ORG,
                         },
                     )
                     content_type = content_type.replace("plain", "html", 1)
@@ -333,6 +358,133 @@ def materials_document(request, document, num=None, ext=None):
     else:
         return HttpResponseRedirect(redirect_to=doc.get_href(meeting=meeting))
 
+
+@requires_api_token("ietf.meeting.views.api_resolve_materials_name")
+def api_resolve_materials_name_cached(request, document, num=None, ext=None):
+    """Resolve materials name into document to a blob spec
+
+    Returns the bucket/name of a blob in the blob store that corresponds to the named
+    document. Handles resolution of revision if it is not specified and determines the
+    best extension if one is not provided. Response is JSON.
+
+    As of 2025-10-10 we do not have blobs for all materials documents or for every
+    format of every document. This API still returns the bucket/name as if the blob
+    exists. Another API will allow the caller to obtain the file contents using that
+    name if it cannot be retrieved from the blob store.
+    """
+
+    def _error_response(status: int, detail: str):
+        return JsonResponse(
+            {
+                "status": status,
+                "title": "Error",
+                "detail": detail,
+            },
+            status=status,
+        )
+
+    def _response(bucket: str, name: str):
+        return JsonResponse(
+            {
+                "bucket": bucket,
+                "name": name,
+            }
+        )
+
+    try:
+        resolved = ResolvedMaterial.objects.get(
+            meeting_number=num, name=document
+        )
+    except ResolvedMaterial.DoesNotExist:
+        return _error_response(
+            HTTP_404_NOT_FOUND, f"No suitable file for {document} for meeting {num}"
+        )
+    return _response(bucket=resolved.bucket, name=resolved.blob)
+
+
+@requires_api_token
+def api_retrieve_materials_blob(request, bucket, name):
+    """Retrieve contents of a meeting materials blob
+    
+    This is intended as a fallback if the web worker cannot retrieve a blob from
+    the blobstore itself. The most likely cause is retrieving an old materials document
+    that has not been backfilled.
+    
+    If a blob is requested that does not exist, this checks for it on the filesystem
+    and if found, adds it to the blobstore, creates a StoredObject record, and returns
+    the contents as it would have done if the blob was already present.
+    
+    As a special case, if a requested file with extension `.md.html` does not exist
+    but a file with the same name but extension `.md` does, `.md` file will be rendered
+    from markdown to html and returned / stored.
+    """
+    DEFAULT_CONTENT_TYPES = {
+        ".html": "text/html;charset=utf-8",
+        ".md": "text/markdown;charset=utf-8",
+        ".pdf": "application/pdf",
+        ".txt": "text/plain;charset=utf-8",
+    }
+    
+    def _default_content_type(blob_name: str):
+        return DEFAULT_CONTENT_TYPES.get(Path(name).suffix, "application/octet-stream") 
+
+    if not (
+        settings.ENABLE_BLOBSTORAGE
+        and bucket in settings.MATERIALS_TYPES_SERVED_BY_WORKER
+    ):
+        return HttpResponseNotFound(f"Bucket {bucket} not found.")
+    storage = storages[bucket]  # if not configured, a server error will result
+    assert isinstance(storage, BlobdbStorage)
+    try:
+        blob = storage.open(name, "rb")
+    except FileNotFoundError:
+        pass
+    else:
+        # found the blob - return it
+        assert isinstance(blob, BlobFile)
+        return FileResponse(
+            blob,
+            filename=name,
+            content_type=blob.content_type or _default_content_type(name),
+        )
+    
+    # Did not find the blob. Create it if we can 
+    name_as_path = Path(name)
+    if name_as_path.suffixes == [".md", ".html"]:
+        # special case: .md.html means we want to create the .md and the .md.html
+        # will come along as a bonus
+        name_to_store = name_as_path.stem  # removes the .html
+    else:
+        name_to_store = name
+    
+    # See if we have a meeting-related document that matches the requested bucket and
+    # name.
+    try: 
+        doc, rev = _get_materials_doc(Path(name_to_store).stem)
+        if doc.type_id != bucket:
+            raise Document.DoesNotExist
+    except Document.DoesNotExist:
+        return HttpResponseNotFound(
+            f"Document corresponding to {bucket}:{name} not found."
+        )
+    else:
+        # create all missing blobs for the doc while we're at it
+        store_blobs_for_one_material_doc(doc)
+    
+    # If we can make the blob at all, it now exists, so return it or a 404
+    try:
+        blob = storage.open(name, "rb")
+    except FileNotFoundError:
+        return HttpResponseNotFound(f"Object {bucket}:{name} not found.")
+    else:
+        # found the blob - return it
+        assert isinstance(blob, BlobFile)
+        return FileResponse(
+            blob,
+            filename=name,
+            content_type=blob.content_type or _default_content_type(name),
+        )
+    
 
 @login_required
 def materials_editable_groups(request, num=None):
@@ -2949,6 +3101,7 @@ def upload_session_minutes(request, session_id, num):
                 form.add_error(None, str(err))
             else:
                 # no exception -- success!
+                resolve_uploaded_material(meeting=session.meeting, doc=session.minutes())
                 messages.success(request, f'Successfully uploaded minutes as revision {session.minutes().rev}.')
                 return redirect('ietf.meeting.views.session_details', num=num, acronym=session.group.acronym)
     else:
@@ -3008,6 +3161,7 @@ def upload_session_narrativeminutes(request, session_id, num):
                 form.add_error(None, str(err))
             else:
                 # no exception -- success!
+                resolve_uploaded_material(meeting=session.meeting, doc=session.narrative_minutes())
                 messages.success(request, f'Successfully uploaded narrative minutes as revision {session.narrative_minutes().rev}.')
                 return redirect('ietf.meeting.views.session_details', num=num, acronym=session.group.acronym)
     else:
@@ -3154,6 +3308,7 @@ def upload_session_agenda(request, session_id, num):
                 form.add_error(None, save_error)
             else:
                 doc.save_with_history([e])
+                resolve_uploaded_material(meeting=session.meeting, doc=doc)
                 messages.success(request, f'Successfully uploaded agenda as revision {doc.rev}.')
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
@@ -3337,6 +3492,7 @@ def upload_session_slides(request, session_id, num, name=None):
             else:
                 doc.save_with_history([e])
                 post_process(doc)
+                resolve_uploaded_material(meeting=session.meeting, doc=doc)
 
             # Send MeetEcho updates even if we had a problem saving - that will keep it in sync with the
             # SessionPresentation, which was already saved regardless of problems saving the file.
@@ -4737,6 +4893,7 @@ def api_upload_chatlog(request):
     write_doc_for_session(session, 'chatlog', filename, json.dumps(apidata['chatlog']))
     e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
     doc.save_with_history([e])
+    resolve_uploaded_material(meeting=session.meeting, doc=doc)
     return HttpResponse(
         "Done",
         status=200,
@@ -4785,6 +4942,7 @@ def api_upload_polls(request):
     write_doc_for_session(session, 'polls', filename, json.dumps(apidata['polls']))
     e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
     doc.save_with_history([e])
+    resolve_uploaded_material(meeting=session.meeting, doc=doc)
     return HttpResponse(
         "Done",
         status=200,
@@ -5167,6 +5325,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 doc.store_bytes(target_filename, retrieve_bytes("staging", submission.filename))
                 remove_from_storage("staging", submission.filename)
                 post_process(doc)
+                resolve_uploaded_material(meeting=submission.session.meeting, doc=doc)
                 DocEvent.objects.create(type="approved_slides", doc=doc, rev=doc.rev, by=request.user.person, desc="Slides approved")
 
                 # update meetecho slide info if configured

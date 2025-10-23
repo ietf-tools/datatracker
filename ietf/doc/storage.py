@@ -32,7 +32,7 @@ class StoredObjectFile(MetadataFile):
     @classmethod
     def from_storedobject(cls, file, name, store):
         """Alternate constructor for objects that already exist in the StoredObject table"""
-        stored_object = StoredObject.objects.filter(store=store, name=name, deleted__isnull=True).first()
+        stored_object = StoredObject.objects.exclude_deleted().filter(store=store, name=name).first()
         if stored_object is None:
             raise FileNotFoundError(f"StoredObject for {store}:{name} does not exist or was deleted")
         file = cls(file, name, store, doc_name=stored_object.doc_name, doc_rev=stored_object.doc_rev)
@@ -140,7 +140,11 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
                 ),
             ),
         )
-        if not created:
+        if not created and (
+            record.sha384 != content.custom_metadata["sha384"]
+            or record.len != int(content.custom_metadata["len"])
+            or record.deleted is not None
+        ):
             record.sha384 = content.custom_metadata["sha384"]
             record.len = int(content.custom_metadata["len"])
             record.modified = now
@@ -160,7 +164,7 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
         else:
             now = timezone.now()
             # Note that existing_record is a queryset that will have one matching object
-            existing_record.filter(deleted__isnull=True).update(deleted=now)
+            existing_record.exclude_deleted().update(deleted=now)
         return existing_record.first()
 
     def _save(self, name, content):

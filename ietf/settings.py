@@ -786,35 +786,49 @@ STORAGES: dict[str, Any] = {
 
 # Storages for artifacts stored as blobs
 ARTIFACT_STORAGE_NAMES: list[str] = [
+    "active-draft",
+    "agenda",
+    "bibxml-ids",
+    "bluesheets",
     "bofreq",
     "charter",
-    "conflrev",
-    "active-draft",
-    "draft",
-    "slides",
-    "minutes",
-    "agenda",
-    "bluesheets",
-    "procmaterials",
-    "narrativeminutes",
-    "statement",
-    "statchg",
-    "liai-att",
     "chatlog",
-    "polls",
-    "staging",
-    "bibxml-ids",
-    "indexes",
+    "conflrev",
+    "draft",
     "floorplan",
+    "indexes",
+    "liai-att",
     "meetinghostlogo",
+    "minutes",
+    "narrativeminutes",
     "photo",
+    "polls",
+    "procmaterials",
     "review",
+    "slides",
+    "staging",
+    "statchg",
+    "statement",
 ]
 for storagename in ARTIFACT_STORAGE_NAMES:
     STORAGES[storagename] = {
         "BACKEND": "ietf.doc.storage.StoredObjectBlobdbStorage",
         "OPTIONS": {"bucket_name": storagename},
     }
+
+# Buckets / doc types of meeting materials the CF worker is allowed to serve. This
+# differs from the list in Session.meeting_related() by the omission of "recording"
+MATERIALS_TYPES_SERVED_BY_WORKER = [
+    "agenda",
+    "bluesheets",
+    "chatlog",
+    "minutes",
+    "narrativeminutes",
+    "polls",
+    "procmaterials",
+    "slides",
+]
+
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
