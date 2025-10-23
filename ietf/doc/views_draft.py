@@ -34,6 +34,7 @@ from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_reques
     email_iesg_processing_document, email_ad_approved_doc,
     email_iana_expert_review_state_changed )
 from ietf.doc.storage_utils import retrieve_bytes, store_bytes
+from ietf.doc.templatetags.ietf_filters import can_issue_ietf_call_for_adoption
 from ietf.doc.utils import ( add_state_change_event, can_adopt_draft, can_unadopt_draft,
     get_tags_for_stream_id, nice_consensus, update_action_holders,
     update_reminder, update_telechat, make_notify_changed_event, get_initial_notify,
@@ -54,9 +55,9 @@ from ietf.person.models import Person, Email
 from ietf.utils.mail import send_mail, send_mail_message, on_behalf_of
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils import log
-from ietf.utils.fields import ModelMultipleChoiceField
+from ietf.utils.fields import DatepickerDateField, ModelMultipleChoiceField, MultiEmailField
 from ietf.utils.response import permission_denied
-from ietf.utils.timezone import datetime_today, DEADLINE_TZINFO
+from ietf.utils.timezone import date_today, datetime_from_date, datetime_today, DEADLINE_TZINFO
 
 
 class ChangeStateForm(forms.Form):
@@ -1564,7 +1565,7 @@ def adopt_draft(request, name):
                 events.append(e)
 
                 due_date = None
-                if form.cleaned_data["weeks"] != None:
+                if form.cleaned_data["weeks"] is not None:
                     due_date = datetime_today(DEADLINE_TZINFO) + datetime.timedelta(weeks=form.cleaned_data["weeks"])
 
                 update_reminder(doc, "stream-s", e, due_date)
@@ -1572,11 +1573,6 @@ def adopt_draft(request, name):
                 # The following call name is very misleading - the view allows 
                 # setting states that are _not_ the adopted state.
                 email_adopted(request, doc, prev_state, new_state, by, comment)
-
-                # Currently only the IETF stream uses the c-adopt state - guard against other
-                # streams starting to use it asthe IPR rules for those streams will be different.
-                if doc.stream_id == "ietf" and new_state.slug == "c-adopt":
-                    email_wg_call_for_adoption_issued(request, doc, cfa_duration_weeks=form.cleaned_data["weeks"])
 
             # comment
             if comment:
@@ -1679,6 +1675,8 @@ class ChangeStreamStateForm(forms.Form):
         doc = kwargs.pop("doc")
         state_type = kwargs.pop("state_type")
         self.can_set_sub_pub = kwargs.pop("can_set_sub_pub")
+        self.can_set_wg_lc = kwargs.pop("can_set_wg_lc")
+        self.can_set_call_for_adoption = kwargs.pop("can_set_call_for_adoption")
         self.stream = kwargs.pop("stream")
         super(ChangeStreamStateForm, self).__init__(*args, **kwargs)
 
@@ -1689,11 +1687,23 @@ class ChangeStreamStateForm(forms.Form):
             f.queryset = f.queryset.exclude(pk__in=unused_states)
         f.label = state_type.label
         if self.stream.slug == 'ietf':
+            help_text_items = []
             if self.can_set_sub_pub:
-                f.help_text = "Only select 'Submitted to IESG for Publication' to correct errors. Use the document's main page to request publication."
+                help_text_items.append("Only select 'Submitted to IESG for Publication' to correct errors. This is not how to submit a document to the IESG.")
             else:
                 f.queryset = f.queryset.exclude(slug='sub-pub')
-                f.help_text = "You may not set the 'Submitted to IESG for Publication' using this form - Use the document's main page to request publication."
+                help_text_items.append("You may not set the 'Submitted to IESG for Publication' using this form - Use the button above or the document's main page to request publication.")
+            if self.can_set_wg_lc:
+                help_text_items.append("Only select 'In WG Last Call' to correct errors. This is not how to issue a working group last call.")
+            else:
+                f.queryset = f.queryset.exclude(slug='wg-lc')
+                help_text_items.append("You may not set the 'In WG Last Call' state using this form - Use the document's action helper view to issues a WG LC.")
+            if self.can_set_call_for_adoption:
+                help_text_items.append("Only select 'Call For Adoption By WG Issued' to correct errors. This is not how to issue a call for adoption.")
+            else:
+                f.queryset = f.queryset.exclude(slug='c-adopt')
+                help_text_items.append("You may not set the 'In WG Last Call' state using this form - Use the document's action helper view to issue a call for adoption.")                
+            f.help_text = " ".join(help_text_items)
 
         f = self.fields['tags']
         f.queryset = f.queryset.filter(slug__in=get_tags_for_stream_id(doc.stream_id))
@@ -1704,7 +1714,11 @@ class ChangeStreamStateForm(forms.Form):
     def clean_new_state(self):
         new_state = self.cleaned_data.get('new_state')
         if new_state.slug=='sub-pub' and not self.can_set_sub_pub:
-            raise forms.ValidationError('You may not set the %s state using this form. Use the "Submit to IESG for publication" button on the document\'s main page instead. If that button does not appear, the document may already have IESG state. Ask your Area Director or the Secretariat for help.'%new_state.name)
+            raise forms.ValidationError('You may not set the %s state using this form. Use the "Submit to IESG for Publication" button on the document\'s main page instead. If that button does not appear, the document may already have IESG state. Ask your Area Director or the Secretariat for help.'%new_state.name)
+        if new_state.slug=='wg-lc' and not self.can_set_wg_lc:
+            raise forms.ValidationError('You may not set the %s state using this form. Use the "Issue Working Group Last Call" button on the document\'s action helper view instead. If that button does not appear, the document may not be in an appropriate current state. Ask your Area Director or the Secretariat for help.'%new_state.name)
+        if new_state.slug=='c-adopt' and not self.can_set_call_for_adoption:
+            raise forms.ValidationError('You may not set the %s state using this form. Use the "Issue Call for Adoption" button on the document\'s action helper view instead. If that button does not appear, the document may not be in an appropriate current state. Ask your Area Director or the Secretariat for help.'%new_state.name)        
         return new_state
          
 
@@ -1731,6 +1745,19 @@ def next_states_for_stream_state(doc, state_type, current_state):
     return next_states
 
 @login_required
+def offer_wg_action_helpers(request, name):
+    doc = get_object_or_404(Document, type="draft", name=name)
+    if doc.stream is None or doc.stream_id != "ietf" or doc.became_rfc() is not None:
+        raise Http404
+
+    if not is_authorized_in_doc_stream(request.user, doc):
+        permission_denied(request, "You don't have permission to access this page.")
+    
+    return render(request, "doc/draft/wg_action_helpers.html",
+                              {"doc": doc,
+                              })
+
+@login_required
 def change_stream_state(request, name, state_type):
     doc = get_object_or_404(Document, type="draft", name=name)
     if not doc.stream:
@@ -1744,10 +1771,21 @@ def change_stream_state(request, name, state_type):
     prev_state = doc.get_state(state_type.slug)
     next_states = next_states_for_stream_state(doc, state_type, prev_state)
 
+    # These tell the form to allow directly setting the state to fix up errors.
     can_set_sub_pub = has_role(request.user,('Secretariat','Area Director')) or (prev_state and prev_state.slug=='sub-pub')
+    can_set_wg_lc = has_role(request.user,('Secretariat','Area Director')) or (prev_state and prev_state.slug=='wg-lc')
+    can_set_call_for_adoption = has_role(request.user,('Secretariat','Area Director')) or (prev_state and prev_state.slug=='c-adopt')
 
     if request.method == 'POST':
-        form = ChangeStreamStateForm(request.POST, doc=doc, state_type=state_type,can_set_sub_pub=can_set_sub_pub,stream=doc.stream)
+        form = ChangeStreamStateForm(
+            request.POST,
+            doc=doc,
+            state_type=state_type,
+            can_set_sub_pub=can_set_sub_pub,
+            can_set_wg_lc=can_set_wg_lc,
+            can_set_call_for_adoption=can_set_call_for_adoption,
+            stream=doc.stream,
+        )
         if form.is_valid():
             by = request.user.person
             events = []
@@ -1768,14 +1806,7 @@ def change_stream_state(request, name, state_type):
                 update_reminder(doc, "stream-s", e, due_date)
 
                 email_stream_state_changed(request, doc, prev_state, new_state, by, comment)
-
-                if doc.stream_id == "ietf":
-                    if new_state.slug == "c-adopt":
-                        email_wg_call_for_adoption_issued(request, doc, cfa_duration_weeks=form.cleaned_data["weeks"])
                     
-                    if new_state.slug == "wg-lc":
-                        email_wg_last_call_issued(request, doc, wglc_duration_weeks=form.cleaned_data["weeks"])
-
             # tags
             existing_tags = set(doc.tags.all())
             new_tags = set(form.cleaned_data["tags"])
@@ -1811,8 +1842,17 @@ def change_stream_state(request, name, state_type):
             else:
                 form.add_error(None, "No change in state or tags found, and no comment provided -- nothing to do.")
     else:
-        form = ChangeStreamStateForm(initial=dict(new_state=prev_state.pk if prev_state else None, tags= doc.tags.all()),
-                                     doc=doc, state_type=state_type, can_set_sub_pub = can_set_sub_pub,stream = doc.stream)
+        form = ChangeStreamStateForm(
+            initial=dict(
+                new_state=prev_state.pk if prev_state else None, tags=doc.tags.all()
+            ),
+            doc=doc,
+            state_type=state_type,
+            can_set_sub_pub=can_set_sub_pub,
+            can_set_wg_lc=can_set_wg_lc,
+            can_set_call_for_adoption=can_set_call_for_adoption,
+            stream=doc.stream,
+        )
 
     milestones = doc.groupmilestone_set.all()
 
@@ -1857,3 +1897,311 @@ def set_intended_status_level(request, doc, new_level, old_level, comment):
         msg = "\n".join(e.desc for e in events)
 
         email_intended_status_changed(request, doc, msg)
+
+class IssueWorkingGroupLastCallForm(forms.Form):
+    end_date = DatepickerDateField(
+        required=True,
+        date_format="yyyy-mm-dd",
+        picker_settings={
+            "autoclose": "1",
+        },
+        help_text="The date the Last Call closes. If you change this, you must MANUALLY change the date in the subject and body below.",
+    )
+
+    to = MultiEmailField(
+        required=True,
+        help_text="Comma separated list of address to use in the To: header",
+    )
+    cc = MultiEmailField(
+        required=False, help_text="Comma separated list of addresses to copy"
+    )
+    subject = forms.CharField(
+        required=True,
+        help_text="Subject for Last Call message. If you change the date here, be sure to make a matching change in the body.",
+    )
+    body = forms.CharField(
+        widget=forms.Textarea, required=True, help_text="Body for Last Call message"
+    )
+
+    def clean_end_date(self):
+        end_date = self.cleaned_data["end_date"]
+        if end_date <= date_today(DEADLINE_TZINFO):
+            raise forms.ValidationError("End date must be later than today")
+        return end_date
+
+    def clean(self):
+        cleaned_data = super().clean()
+        end_date = cleaned_data.get("end_date")
+        if end_date is not None:
+            body = cleaned_data.get("body")
+            subject = cleaned_data.get("subject")
+            if end_date.isoformat() not in body:
+                self.add_error(
+                    "body",
+                    forms.ValidationError(
+                        f"Last call end date ({end_date.isoformat()}) not found in body"
+                    ),
+                )
+            if end_date.isoformat() not in subject:
+                self.add_error(
+                    "subject",
+                    forms.ValidationError(
+                        f"Last call end date ({end_date.isoformat()}) not found in subject"
+                    ),
+                )
+        return cleaned_data
+
+
+@login_required
+def issue_wg_lc(request, name):
+    doc = get_object_or_404(Document, name=name)
+
+    if doc.stream_id != "ietf":
+        raise Http404
+    if doc.group is None or doc.group.type_id != "wg":
+        raise Http404
+    if doc.get_state_slug("draft-stream-ietf") == "wg-lc":
+        raise Http404
+    if doc.get_state_slug("draft") == "rfc":
+        raise Http404
+
+    if not is_authorized_in_doc_stream(request.user, doc):
+        permission_denied(request, "You don't have permission to access this page.")
+
+    if request.method == "POST":
+        form = IssueWorkingGroupLastCallForm(request.POST)
+        if form.is_valid():
+            # Intentionally not changing tags or adding a comment
+            # those things can be done with other workflows
+            by = request.user.person
+            prev_state = doc.get_state("draft-stream-ietf")
+            events = []
+            wglc_state = State.objects.get(type="draft-stream-ietf", slug="wg-lc")
+            doc.set_state(wglc_state)
+            e = add_state_change_event(doc, by, prev_state, wglc_state)
+            events.append(e)
+            end_date = form.cleaned_data["end_date"]
+            update_reminder(
+                doc, "stream-s", e, datetime_from_date(end_date, DEADLINE_TZINFO)
+            )
+            email_stream_state_changed(request, doc, prev_state, wglc_state, by)
+            email_wg_last_call_issued(request, doc, end_date)
+            doc.save_with_history(events)
+            return redirect("ietf.doc.views_doc.document_main", name=doc.name)
+    else:
+        end_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=14)
+        subject = f"WG Last Call: {doc.name}-{doc.rev} (Ends {end_date})"
+        body = render_to_string(
+            "doc/mail/wg_last_call_issued.txt",
+            dict(
+                doc=doc,
+                end_date=end_date,
+                url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+                wg_list=doc.group.list_email,
+            ),
+        )
+        (to, cc) = gather_address_lists("doc_wg_last_call_issued", doc=doc)
+
+        form = IssueWorkingGroupLastCallForm(
+            initial=dict(
+                end_date=end_date,
+                to=", ".join(to),
+                cc=", ".join(cc),
+                subject=subject,
+                body=body,
+            )
+        )
+
+    return render(
+        request,
+        "doc/draft/issue_working_group_last_call.html",
+        dict(
+            doc=doc,
+            form=form,
+        ),
+    )
+
+class IssueCallForAdoptionForm(forms.Form):
+    end_date = DatepickerDateField(
+        required=True,
+        date_format="yyyy-mm-dd",
+        picker_settings={
+            "autoclose": "1",
+        },
+        help_text="The date the Call for Adoption closes. If you change this, you must MANUALLY change the date in the subject and body below.",
+    )
+
+    to = MultiEmailField(
+        required=True,
+        help_text="Comma separated list of address to use in the To: header",
+    )
+    cc = MultiEmailField(
+        required=False, help_text="Comma separated list of addresses to copy"
+    )
+    subject = forms.CharField(
+        required=True,
+        help_text="Subject for Call for Adoption message. If you change the date here, be sure to make a matching change in the body.",
+    )
+    body = forms.CharField(
+        widget=forms.Textarea, required=True, help_text="Body for Call for Adoption message"
+    )
+
+    def clean_end_date(self):
+        end_date = self.cleaned_data["end_date"]
+        if end_date <= date_today(DEADLINE_TZINFO):
+            raise forms.ValidationError("End date must be later than today")
+        return end_date
+
+    def clean(self):
+        cleaned_data = super().clean()
+        end_date = cleaned_data.get("end_date")
+        if end_date is not None:
+            body = cleaned_data.get("body")
+            subject = cleaned_data.get("subject")
+            if end_date.isoformat() not in body:
+                self.add_error(
+                    "body",
+                    forms.ValidationError(
+                        f"Call for adoption end date ({end_date.isoformat()}) not found in body"
+                    ),
+                )
+            if end_date.isoformat() not in subject:
+                self.add_error(
+                    "subject",
+                    forms.ValidationError(
+                        f"Call for adoption end date ({end_date.isoformat()}) not found in subject"
+                    ),
+                )
+        return cleaned_data
+
+@login_required
+def issue_wg_call_for_adoption(request, name):
+    doc = get_object_or_404(Document, name=name)
+
+    if doc.stream_id != "ietf":
+        raise Http404
+    if doc.group is None or doc.group.type_id != "wg":
+        raise Http404
+    if not can_issue_ietf_call_for_adoption(doc):
+        raise Http404
+
+    if not is_authorized_in_doc_stream(request.user, doc):
+        permission_denied(request, "You don't have permission to access this page.")
+
+    if request.method == "POST":
+        form = IssueCallForAdoptionForm(request.POST)
+        if form.is_valid():
+            # Intentionally not changing tags or adding a comment
+            # those things can be done with other workflows
+            by = request.user.person
+            prev_state = doc.get_state("draft-stream-ietf")
+            events = []
+            c_adopt_state = State.objects.get(type="draft-stream-ietf", slug="c-adopt")
+            doc.set_state(c_adopt_state)
+            e = add_state_change_event(doc, by, prev_state, c_adopt_state)
+            events.append(e)
+            end_date = form.cleaned_data["end_date"]
+            update_reminder(
+                doc, "stream-s", e, datetime_from_date(end_date, DEADLINE_TZINFO)
+            )
+            email_stream_state_changed(request, doc, prev_state, c_adopt_state, by)
+            email_wg_call_for_adoption_issued(request, doc, end_date)
+            doc.save_with_history(events)
+            return redirect("ietf.doc.views_doc.document_main", name=doc.name)
+    else:
+        end_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=14)
+        subject = f"Call for adoption: {doc.name}-{doc.rev}  (Ends {end_date})"
+        body = render_to_string(
+            "doc/mail/wg_call_for_adoption_issued.txt",
+            dict(
+                doc=doc,
+                end_date=end_date,
+                url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+                wg_list=doc.group.list_email,
+            ),
+        )
+        (to, cc) = gather_address_lists("doc_wg_call_for_adoption_issued", doc=doc)
+
+        form = IssueCallForAdoptionForm(
+            initial=dict(
+                end_date=end_date,
+                to=", ".join(to),
+                cc=", ".join(cc),
+                subject=subject,
+                body=body,
+            )
+        )
+
+    return render(
+        request,
+        "doc/draft/issue_working_group_call_for_adoption.html",
+        dict(
+            doc=doc,
+            form=form,
+        ),
+    )
+
+class GroupModelChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return f"{obj.acronym} - {obj.name}"
+
+
+class WgForm(forms.Form):
+    group = GroupModelChoiceField(
+        queryset=Group.objects.filter(type_id="wg", state="active")
+        .order_by("acronym")
+        .distinct(),
+        required=True,
+        empty_label="Select IETF Working Group",
+    )
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user")
+        super(WgForm, self).__init__(*args, **kwargs)
+        if not has_role(user, ["Secretariat", "Area Director"]):
+            self.fields["group"].queryset = self.fields["group"].queryset.filter(
+                role__name_id="chair", role__person=user.person
+            )
+
+
+@role_required("Secretariat", "WG Chair")
+def ask_about_ietf_adoption_call(request, name):
+    doc = get_object_or_404(Document, name=name)
+    if doc.stream is not None or doc.group.acronym != "none":
+        raise Http404
+    if request.method == "POST":
+        form = WgForm(request.POST, user=request.user)
+        if form.is_valid():
+            by = request.user.person
+            events = []
+            group = form.cleaned_data["group"]
+            stream = StreamName.objects.get(slug="ietf")
+            doc.stream = stream
+            e = DocEvent(type="changed_stream", doc=doc, rev=doc.rev, by=by)
+            e.desc = f"Changed stream to <b>{stream.name}</b>"  # Propogates embedding html in DocEvent.desc for consistency
+            e.save()
+            events.append(e)
+            e = DocEvent(type="changed_group", doc=doc, rev=doc.rev, by=by)
+            e.desc = f"Changed group to <b>{group.name} ({group.acronym.upper()})</b>"  # Even if it makes the cats cry
+            e.save()
+            events.append(e)
+            doc.group = group
+            state = State.objects.get(
+                type_id="draft-stream-ietf", slug="wg-cand"
+            )  # Stepping through this state
+            prev_state = doc.get_state("draft-stream-ietf")
+            doc.set_state(state)
+            e = add_state_change_event(doc, by, prev_state, state)
+            events.append(e)
+            doc.save_with_history(events)
+            return redirect(issue_wg_call_for_adoption, name=doc.name)
+    else:
+        form = WgForm(initial={"group": None}, user=request.user)
+    return render(
+        request,
+        "doc/draft/ask_about_ietf_adoption.html",
+        dict(
+            doc=doc,
+            form=form,
+        ),
+    )
