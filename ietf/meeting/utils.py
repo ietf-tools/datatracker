@@ -875,16 +875,23 @@ def resolve_one_material(
     else:
         basename = Path(f"{doc.name}-{int(rev):02d}")
 
+    # If the document's file exists, the blob is _always_ named with this stem,
+    # even if it's different from the original.
+    blob_stem = Path(f"{doc.name}-{rev or doc.rev}")
+
     # If we have an extension, either from the URL or the Document's base name, look up
-    # the blob or file or return 404.
-    if ext or basename.suffix != "":
+    # the blob or file or return 404. N.b. the suffix check needs adjustment to handle
+    # a bare "." extension when we reach py3.14.
+    if ext or basename.suffix != "": 
         if ext:
-            basename = basename.with_suffix(ext)
+            blob_name = str(blob_stem.with_suffix(ext))
+        else:
+            blob_name = str(blob_stem.with_suffix(basename.suffix))
 
         # See if we have a stored object under that name
         preferred_blob = (
             StoredObject.objects.exclude_deleted()
-            .filter(store=doc.type_id, name=basename)
+            .filter(store=doc.type_id, name=blob_name)
             .first()
         )
         if preferred_blob is not None:
@@ -893,11 +900,11 @@ def resolve_one_material(
                 name=preferred_blob.name,
             )
         # No stored object, fall back to the file system.
-        filename = Path(doc.get_file_path()) / basename
-        if filename.exists():
+        filename = Path(doc.get_file_path()) / basename  # use basename for file
+        if filename.is_file():
             return BlobSpec(
                 bucket=doc.type_id,
-                name=str(basename),
+                name=str(blob_stem.with_suffix(filename.suffix)),
             )
         else:
             return None
@@ -907,7 +914,7 @@ def resolve_one_material(
         StoredObject.objects.exclude_deleted()
         .filter(
             store=doc.type_id,
-            name__startswith=f"{basename.stem}.",  # anchor to end with trailing "."
+            name__startswith=f"{blob_stem}.",  # anchor to end with trailing "."
         )
         .order_by("name")
     )  # orders by suffix
@@ -921,7 +928,7 @@ def resolve_one_material(
         pdf_blob = blob_ext_choices[".pdf"]
         return BlobSpec(
             bucket=pdf_blob.store,
-            name=pdf_blob.name,
+            name=str(blob_stem.with_suffix(".pdf")),
         )
 
     # Now look for files
@@ -937,7 +944,7 @@ def resolve_one_material(
         pdf_filename = file_ext_choices[".pdf"]
         return BlobSpec(
             bucket=doc.type_id,
-            name=pdf_filename,
+            name=str(blob_stem.with_suffix(".pdf")),
         )
 
     all_exts = set(blob_ext_choices.keys()).union(file_ext_choices.keys())
@@ -950,10 +957,9 @@ def resolve_one_material(
                 name=preferred_blob.name,
             )
         else:
-            preferred_filename = file_ext_choices[preferred_ext]
             return BlobSpec(
                 bucket=doc.type_id,
-                name=preferred_filename,
+                name=str(blob_stem.with_suffix(preferred_ext)),
             )
 
     return None
@@ -1124,7 +1130,8 @@ def store_blobs_for_one_material_doc(doc: Document):
     # Store files for current Document / rev
     file_path = Path(doc.get_file_path())
     base_name = Path(doc.get_base_name())
-    base_name_stem = base_name.stem
+    # .stem would remove directories, so use .with_suffix("")
+    base_name_stem = str(base_name.with_suffix(""))
     if base_name_stem.endswith(".") and base_name.suffix == "":
         # In Python 3.14, a trailing "." is a valid suffix, but in prior versions
         # it is left as part of the stem. The suffix check ensures that either way,
@@ -1132,7 +1139,7 @@ def store_blobs_for_one_material_doc(doc: Document):
         base_name_stem = base_name_stem[:-1]
     # Add any we find without the rev
     for file_to_store in file_path.glob(base_name_stem + ".*"):
-        if not (file_to_store.is_file() or file_to_store.is_symlink()):
+        if not (file_to_store.is_file()):
             continue
         try:
             store_blob_for_one_material_file(doc, doc.rev, file_to_store)
@@ -1149,7 +1156,7 @@ def store_blobs_for_one_material_doc(doc: Document):
 
         # Add some that have the rev
         for file_to_store in file_path.glob(doc.name + f"-{rev}.*"):
-            if not (file_to_store.is_file() or file_to_store.is_symlink()):
+            if not file_to_store.is_file():
                 continue
             try:
                 store_blob_for_one_material_file(doc, rev, file_to_store)
