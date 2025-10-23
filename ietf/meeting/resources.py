@@ -11,11 +11,15 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.meeting.models import ( Meeting, ResourceAssociation, Constraint, Room, Schedule, Session,
-                                TimeSlot, SchedTimeSessAssignment, SessionPresentation, FloorPlan,
-                                UrlResource, ImportantDate, SlideSubmission, SchedulingEvent,
-                                BusinessConstraint, ProceedingsMaterial, MeetingHost, Attended,
-                                Registration, RegistrationTicket)
+from ietf.meeting.models import (Meeting, ResourceAssociation, Constraint, Room,
+                                 Schedule, Session,
+                                 TimeSlot, SchedTimeSessAssignment, SessionPresentation,
+                                 FloorPlan,
+                                 UrlResource, ImportantDate, SlideSubmission,
+                                 SchedulingEvent,
+                                 BusinessConstraint, ProceedingsMaterial, MeetingHost,
+                                 Attended,
+                                 Registration, RegistrationTicket)
 
 from ietf.name.resources import MeetingTypeNameResource
 class MeetingResource(ModelResource):
