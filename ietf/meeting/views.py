@@ -97,7 +97,7 @@ from ietf.meeting.utils import (
     generate_proceedings_content,
     organize_proceedings_sessions,
     resolve_uploaded_material,
-    sort_accept_tuple,
+    sort_accept_tuple, store_blobs_for_one_material_doc,
 )
 from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.meeting.utils import session_time_for_sorting
@@ -451,118 +451,42 @@ def api_retrieve_materials_blob(request, bucket, name):
             content_type=blob.content_type or _default_content_type(name),
         )
     
-    # Did not find the blob. See if the filename is .md.html and, if so, see if we
-    # have the markdown.
+    # Did not find the blob. Create it if we can 
     name_as_path = Path(name)
     if name_as_path.suffixes == [".md", ".html"]:
-        md_filename = name_as_path.stem
-        try:
-            md_file = storage.open(md_filename, "rb")
-        except FileNotFoundError:
-            pass
-        else:
-            md_src = md_file.read().decode("utf-8")
-            md_file.close()
-            # render the markdown
-            html = render_to_string(
-                "minimal.html",
-                {
-                    "content": markdown.markdown(md_src),
-                    "title": name_as_path.stem,
-                    "static_ietf_org": settings.STATIC_IETF_ORG,
-                },
-            )
-            # Don't overwrite, but don't fail if the blob exists
-            with suppress(AlreadyExistsError):
-                store_str(
-                    kind=bucket,
-                    name=name,
-                    content=html,
-                    allow_overwrite=False,
-                    # todo doc_name,
-                    # todo doc_rev,
-                    content_type="text/html;charset=utf-8",
-                )
-            return HttpResponse(html)
-        # Didn't find .md as a blob, so check the filesystem. We do this here
-        # because we never write .md.html to the filesystem.
-        try:
-            # .stem.stem drops both extensions
-            doc, rev = _get_materials_doc(Path(md_filename).stem)
-        except Document.DoesNotExist:
-            pass
-        else:
-            if doc.type_id == bucket and doc.get_base_name() == md_filename:
-                filename = Path(doc.get_file_path()) / md_filename
-                md_bytes = filename.read_bytes()
-                # Don't overwrite, but don't fail if the blob exists
-                with suppress(AlreadyExistsError):
-                    store_bytes(
-                        kind=bucket,
-                        name=md_filename,
-                        content=md_bytes,
-                        mtime=datetime.datetime.fromtimestamp(
-                            filename.stat().st_mtime,
-                            tz=datetime.UTC,
-                        ),
-                        allow_overwrite=False,
-                        doc_name=doc.name,
-                        doc_rev=doc.rev,
-                    )
-                # render the markdown
-                md_src = md_bytes.decode()
-                html = render_to_string(
-                    "minimal.html",
-                    {
-                        "content": markdown.markdown(md_src),
-                        "title": md_filename,
-                        "static_ietf_org": settings.STATIC_IETF_ORG,
-                    },
-                )
-                # Don't overwrite, but don't fail if the blob exists
-                with suppress(AlreadyExistsError):
-                    store_str(
-                        kind=bucket,
-                        name=name,
-                        content=html,
-                        allow_overwrite=False,
-                        doc_name=doc.name,
-                        doc_rev=doc.rev,
-                        content_type="text/html;charset=utf-8",
-                    )
-                return HttpResponse(html)
-
+        # special case: .md.html means we want to create the .md and the .md.html
+        # will come along as a bonus
+        name_to_store = name_as_path.stem  # removes the .html
+    else:
+        name_to_store = name
+    
     # See if we have a meeting-related document that matches the requested bucket and
     # name.
     try: 
-        doc, rev = _get_materials_doc(Path(name).stem)
+        doc, rev = _get_materials_doc(Path(name_to_store).stem)
+        if doc.type_id != bucket:
+            raise Document.DoesNotExist
     except Document.DoesNotExist:
-        pass
+        return HttpResponseNotFound(
+            f"Document corresponding to {bucket}:{name} not found."
+        )
     else:
-        if doc.type_id == bucket and doc.get_base_name() == name:
-            filename = Path(doc.get_file_path()) / name
-            with filename.open("rb") as f:
-                # Don't overwrite, but don't fail if the blob exists
-                with suppress(AlreadyExistsError):
-                    store_file(
-                        kind=bucket,
-                        name=name,
-                        file=f,
-                        mtime=datetime.datetime.fromtimestamp(
-                            filename.stat().st_mtime,
-                            tz=datetime.UTC,
-                        ),
-                        allow_overwrite=False,
-                        doc_name=doc.name,
-                        doc_rev=doc.rev,
-                    )
-            return FileResponse(
-                filename.open("rb"),
-                filename=name,
-                content_type=_default_content_type(name),
-            )
-
-    return HttpResponseNotFound(f"Object {bucket}:{name} not found.")
+        # create all missing blobs for the doc while we're at it
+        store_blobs_for_one_material_doc(doc)
+    
+    # If we can make the blob at all, it now exists, so return it or a 404
+    try:
+        blob = storage.open(name, "rb")
+    except FileNotFoundError:
+        return HttpResponseNotFound(f"Object {bucket}:{name} not found.")
+    else:
+        # found the blob - return it
+        assert isinstance(blob, BlobFile)
+        return FileResponse(
+            blob,
+            filename=name,
+            content_type=blob.content_type or _default_content_type(name),
+        )
     
 
 @login_required
