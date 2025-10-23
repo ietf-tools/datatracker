@@ -1063,7 +1063,11 @@ def store_blob_for_one_material_file(doc: Document, rev: str, filepath: Path):
     suffix = filepath.suffix  # includes leading "."
 
     # Store the file
-    file_bytes = filepath.read_bytes()
+    try:
+        file_bytes = filepath.read_bytes()
+    except Exception as err:
+        log(f"Failed to read {filepath}: {err}")
+        raise
     with suppress(AlreadyExistsError):
         store_bytes(
             kind=bucket,
@@ -1080,26 +1084,35 @@ def store_blob_for_one_material_file(doc: Document, rev: str, filepath: Path):
 
     # Special case: pre-render markdown into HTML as .md.html
     if suffix == ".md":
+        try:
+            markdown_source = file_bytes.decode("utf-8")
+        except UnicodeDecodeError as err:
+            log(f"Unable to decode {filepath} as UTF-8, treating as latin-1: {err}")
+            markdown_source = file_bytes.decode("latin-1")
         # render the markdown
-        html = render_to_string(
-            "minimal.html",
-            {
-                "content": markdown.markdown(file_bytes.decode()),
-                "title": blob_stem,
-                "static_ietf_org": settings.STATIC_IETF_ORG,
-            },
-        )
-        # Don't overwrite, but don't fail if the blob exists
-        with suppress(AlreadyExistsError):
-            store_str(
-                kind=bucket,
-                name=blob_stem + ".md.html",
-                content=html,
-                allow_overwrite=False,
-                doc_name=doc.name,
-                doc_rev=rev,
-                content_type="text/html;charset=utf-8",
+        try:
+            html = render_to_string(
+                "minimal.html",
+                {
+                    "content": markdown.markdown(markdown_source),
+                    "title": blob_stem,
+                    "static_ietf_org": settings.STATIC_IETF_ORG,
+                },
             )
+        except Exception as err:
+            log(f"Failed to render markdown for {filepath}: {err}")
+        else:
+            # Don't overwrite, but don't fail if the blob exists
+            with suppress(AlreadyExistsError):
+                store_str(
+                    kind=bucket,
+                    name=blob_stem + ".md.html",
+                    content=html,
+                    allow_overwrite=False,
+                    doc_name=doc.name,
+                    doc_rev=rev,
+                    content_type="text/html;charset=utf-8",
+                )
 
 
 def store_blobs_for_one_material_doc(doc: Document):
@@ -1110,10 +1123,24 @@ def store_blobs_for_one_material_doc(doc: Document):
 
     # Store files for current Document / rev
     file_path = Path(doc.get_file_path())
-    base_name_stem = Path(doc.get_base_name()).stem
+    base_name = Path(doc.get_base_name())
+    base_name_stem = base_name.stem
+    if base_name_stem.endswith(".") and base_name.suffix == "":
+        # In Python 3.14, a trailing "." is a valid suffix, but in prior versions
+        # it is left as part of the stem. The suffix check ensures that either way,
+        # only a single "." will be removed.
+        base_name_stem = base_name_stem[:-1]
     # Add any we find without the rev
     for file_to_store in file_path.glob(base_name_stem + ".*"):
-        store_blob_for_one_material_file(doc, doc.rev, file_to_store)
+        if not (file_to_store.is_file() or file_to_store.is_symlink()):
+            continue
+        try:
+            store_blob_for_one_material_file(doc, doc.rev, file_to_store)
+        except Exception as err:
+            log(
+                f"Failed to store blob for {doc} rev {doc.rev} "
+                f"from {file_to_store}: {err}"
+            )
 
     # Get other revisions
     for rev in doc.revisions_by_newrevisionevent():
@@ -1122,7 +1149,28 @@ def store_blobs_for_one_material_doc(doc: Document):
 
         # Add some that have the rev
         for file_to_store in file_path.glob(doc.name + f"-{rev}.*"):
-            store_blob_for_one_material_file(doc, rev, file_to_store)
+            if not (file_to_store.is_file() or file_to_store.is_symlink()):
+                continue
+            try:
+                store_blob_for_one_material_file(doc, rev, file_to_store)
+            except Exception as err:
+                log(
+                    f"Failed to store blob for {doc} rev {rev} "
+                    f"from {file_to_store}: {err}"
+                )
+
+
+def store_blobs_for_one_meeting(meeting: Meeting):
+    meeting_documents = (
+        Document.objects.filter(
+            type_id__in=settings.MATERIALS_TYPES_SERVED_BY_WORKER
+        ).filter(
+            Q(session__meeting=meeting) | Q(proceedingsmaterial__meeting=meeting)
+        )
+    ).distinct()
+
+    for doc in meeting_documents:
+        store_blobs_for_one_material_doc(doc)
 
 
 def create_recording(session, url, title=None, user=None):
