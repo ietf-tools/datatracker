@@ -961,10 +961,10 @@ class Document(StorableMixin, DocumentInfo):
         return self.proceedingsmaterial_set.first()
 
     def file_tag(self):
-        return "<%s.txt>" % self.filename_with_rev()
+        return "<%s>" % self.filename_with_rev()
 
     def filename_with_rev(self):
-        return f"{self.name}-{self.rev}"
+        return "%s-%s.txt" % (self.name, self.rev)
     
     def latest_event(self, *args, **filter_args):
         """Get latest event of optional Python type and with filter

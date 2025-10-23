@@ -5389,7 +5389,7 @@ class InterimTests(TestCase):
         # ensure agenda document was created
         self.assertEqual(session.materials.count(),1)
         doc = session.materials.first()
-        path = os.path.join(doc.get_file_path(),doc.filename_with_rev() + ".txt")
+        path = os.path.join(doc.get_file_path(),doc.filename_with_rev())
         self.assertTrue(os.path.exists(path))
         with Path(path).open() as f:
             self.assertEqual(f.read(), agenda)
