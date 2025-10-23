@@ -10,6 +10,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import BasePermission
 from rest_framework.viewsets import GenericViewSet
 
+from drf_spectacular.utils import extend_schema
 from ietf.group.models import Group
 from ietf.name.models import StreamName, DocTypeName
 from ietf.utils.timezone import RPC_TZINFO
@@ -184,6 +185,7 @@ class SubseriesFilter(filters.FilterSet):
     )
 
 
+@extend_schema(tags=["purple", "red"])
 class SubseriesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     permission_classes: list[BasePermission] = []
     lookup_field = "name"
