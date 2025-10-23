@@ -1374,6 +1374,17 @@ if "CACHES" not in locals():
                 "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
                 "VERSION": __version__,
                 "KEY_PREFIX": "ietf:dt",
+                # Key function is default except with sha384-encoded key
+                "KEY_FUNCTION": lambda key, key_prefix, version: (
+                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+                ),
+            },
+            "proceedings": {
+                "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+                # No release-specific VERSION setting.
+                "KEY_PREFIX": "ietf:dt:proceedings",
+                # Key function is default except with sha384-encoded key
                 "KEY_FUNCTION": lambda key, key_prefix, version: (
                     f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
                 ),
@@ -1420,6 +1431,17 @@ if "CACHES" not in locals():
                 #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
                 "VERSION": __version__,
                 "KEY_PREFIX": "ietf:dt",
+            },
+            "proceedings": {
+                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+                # "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+                # "LOCATION": "127.0.0.1:11211",
+                # No release-specific VERSION setting.
+                "KEY_PREFIX": "ietf:dt:proceedings",
+                # Key function is default except with sha384-encoded key
+                "KEY_FUNCTION": lambda key, key_prefix, version: (
+                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+                ),
             },
             "sessions": {
                 "BACKEND": "django.core.cache.backends.locmem.LocMemCache",

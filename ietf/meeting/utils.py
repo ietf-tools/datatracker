@@ -5,7 +5,6 @@ import itertools
 import jsonschema
 import os
 import requests
-from hashlib import sha384
 
 import pytz
 import subprocess
@@ -1026,7 +1025,7 @@ def generate_proceedings_content(meeting, force_refresh=False):
     :meeting: meeting whose proceedings should be rendered
     :force_refresh: true to force regeneration and cache refresh
     """
-    cache = caches["default"]
+    cache = caches["proceedings"]
     key_components = [
         "proceedings",
         str(meeting.number),
@@ -1061,8 +1060,9 @@ def generate_proceedings_content(meeting, force_refresh=False):
             ",".join(draft_names),
         ]
 
-    bare_key = ".".join(key_components)
-    cache_key = sha384(bare_key.encode("utf8")).hexdigest()
+    # Key is potentially long, but the "proceedings" cache hashes it to a fixed
+    # length. If that changes, hash it separately here first.
+    cache_key = ".".join(key_components)
     if not force_refresh:
         cached_content = cache.get(cache_key, None)
         if cached_content is not None:
