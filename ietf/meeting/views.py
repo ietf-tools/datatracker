@@ -9,7 +9,6 @@ import itertools
 import json
 import math
 import os
-from contextlib import suppress
 
 import pytz
 import re
@@ -62,8 +61,6 @@ from ietf.doc.storage_utils import (
     remove_from_storage,
     retrieve_bytes,
     store_file,
-    AlreadyExistsError,
-    store_str, store_bytes,
 )
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group

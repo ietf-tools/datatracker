@@ -30,8 +30,7 @@ from django.utils.encoding import smart_str
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.doc.storage_utils import store_bytes, store_str, AlreadyExistsError, \
-    store_file
+from ietf.doc.storage_utils import store_bytes, store_str, AlreadyExistsError
 from ietf.meeting.models import (
     Session,
     SchedulingEvent,
@@ -941,7 +940,6 @@ def resolve_one_material(
 
     # Short-circuit to return pdf if we have the file
     if ".pdf" in file_ext_choices:
-        pdf_filename = file_ext_choices[".pdf"]
         return BlobSpec(
             bucket=doc.type_id,
             name=str(blob_stem.with_suffix(".pdf")),
