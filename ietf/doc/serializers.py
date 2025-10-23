@@ -44,13 +44,7 @@ class DocIdentifierSerializer(serializers.Serializer):
 
 
 type RfcStatusSlugT = Literal[
-    "standard",
-    "bcp",
-    "informational",
-    "experimental",
-    "historic",
-    "unknown",
-    "not-issued",
+    "std", "ps", "ds", "bcp", "inf", "exp", "hist", "unkn", "not-issued",
 ]
 
 
@@ -62,20 +56,26 @@ class RfcStatus:
 
     # Names that aren't just the slug itself. ClassVar annotation prevents dataclass from treating this as a field.
     fancy_names: ClassVar[dict[RfcStatusSlugT, str]] = {
-        "standard": "standards track",
+        "std": "internet standard",
+        "ps": "proposed standard",
+        "ds": "draft standard",
         "bcp": "best current practice",
+        "inf": "informational",
+        "exp": "experimental",
+        "hist": "historic",
+        "unkn": "unknown",
     }
 
     # ClassVar annotation prevents dataclass from treating this as a field
     stdlevelname_slug_map: ClassVar[dict[str, RfcStatusSlugT]] = {
         "bcp": "bcp",
-        "ds": "standard",  # ds is obsolete
-        "exp": "experimental",
-        "hist": "historic",
-        "inf": "informational",
-        "std": "standard",
-        "ps": "standard",
-        "unkn": "unknown",
+        "ds": "ds",
+        "exp": "exp",
+        "hist": "hist",
+        "inf": "inf",
+        "std": "std",
+        "ps": "ps",
+        "unkn": "unkn",
     }
 
     # ClassVar annotation prevents dataclass from treating this as a field
