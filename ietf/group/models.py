@@ -111,6 +111,9 @@ class GroupManager(models.Manager):
     def closed_wgs(self):
         return self.wgs().exclude(state__in=Group.ACTIVE_STATE_IDS)
 
+    def areas(self):
+        return self.get_queryset().filter(type="area")
+
     def with_meetings(self):
         return self.get_queryset().filter(type__features__has_meetings=True)
 
