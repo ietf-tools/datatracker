@@ -185,7 +185,6 @@ class SubseriesFilter(filters.FilterSet):
     )
 
 
-@extend_schema(tags=["purple", "red"])
 class SubseriesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     permission_classes: list[BasePermission] = []
     lookup_field = "name"
