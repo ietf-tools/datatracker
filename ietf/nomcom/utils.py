@@ -590,6 +590,12 @@ def get_qualified_author_queryset(
     approved by the IESG is treated as an RFC, using the date of entry to the RFC
     Editor queue as the date for qualification.
     
+    This method does not strictly enforce "in the RFC Editor queue" for IESG-approved
+    drafts when computing eligibility. In the overwhelming majority of cases, an IESG-
+    approved draft immediately enters the queue and goes on to be published, so this
+    simplification makes the calculation much easier and virtually never affects
+    eligibility.  
+    
     Arguments eligibility_period_start and eligibility_period_end are datetimes that
     mark the start and end of the eligibility period. These should be five years apart.
     """
@@ -608,8 +614,7 @@ def get_qualified_author_queryset(
     rfcs_with_rfcauthors = qualifying_rfcs.filter(rfcauthor_count__gt=0).distinct()
     rfcs_without_rfcauthors = qualifying_rfcs.filter(rfcauthor_count=0).distinct()
 
-    # Second, get the IESG-approved I-Ds in the RFC Editor queue, excluding any that
-    # became RFCs already
+    # Second, get the IESG-approved I-Ds  excluding any that became RFCs already
     became_rfc_state = State.objects.filter(type_id="draft", slug="rfc").first()
     assertion("became_rfc_state is not None")
     qualifying_approval_events = DocEvent.objects.filter(
@@ -619,7 +624,6 @@ def get_qualified_author_queryset(
     )
     qualifying_drafts = Document.objects.filter(
         type_id="draft",
-        states__type_id="draft-rfceditor",  # ie, in the RFC Editor queue
         docevent__in=qualifying_approval_events,
     ).exclude(
         states=became_rfc_state
