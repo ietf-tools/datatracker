@@ -4473,6 +4473,7 @@
       ],
       "session_purposes": [
         "coding",
+        "open_meeting",
         "presentation",
         "social",
         "tutorial"
