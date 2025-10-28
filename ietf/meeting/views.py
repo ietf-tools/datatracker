@@ -329,7 +329,7 @@ def materials_document(request, document, num=None, ext=None):
     old_proceedings_format = meeting.number.isdigit() and int(meeting.number) <= 96
     if settings.MEETING_MATERIALS_SERVE_LOCALLY or old_proceedings_format:
         bytes = filename.read_bytes()
-        mtype, chset = get_mime_type(bytes)
+        mtype, chset = get_mime_type(bytes)  # chset does not consider entire file!
         content_type = "%s; charset=%s" % (mtype, chset)
 
         if filename.suffix == ".md" and mtype == "text/plain":
@@ -339,15 +339,24 @@ def materials_document(request, document, num=None, ext=None):
                     content_type = content_type.replace("plain", "markdown", 1)
                     break
                 elif atype[0] == "text/html":
+                    # Render markdown, allowing that charset may be inaccurate.
+                    try:
+                        md_src = bytes.decode(
+                            "utf-8" if chset in ["ascii", "us-ascii"] else chset
+                        )
+                    except UnicodeDecodeError:
+                        # latin-1, aka iso8859-1, accepts all 8-bit code points
+                        md_src = bytes.decode("latin-1")
+                    content = markdown.markdown(md_src)  # a string
                     bytes = render_to_string(
                         "minimal.html",
                         {
-                            "content": markdown.markdown(bytes.decode(encoding=chset)),
+                            "content": content,
                             "title": filename.name,
                             "static_ietf_org": settings.STATIC_IETF_ORG,
                         },
-                    )
-                    content_type = content_type.replace("plain", "html", 1)
+                    ).encode("utf-8")
+                    content_type = "text/html; charset=utf-8"
                     break
                 elif atype[0] == "text/plain":
                     break
