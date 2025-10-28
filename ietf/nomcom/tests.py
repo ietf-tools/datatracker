@@ -2457,96 +2457,68 @@ class EligibilityUnitTests(TestCase):
 
     def test_get_qualified_author_queryset(self):
         """get_qualified_author_queryset implements the eligiblity rules correctly
-        
-        Note on methodology: rather than moving events around a fixed 5-year
-        eligibility period, this takes advantage of the method-under-test's accepting
-        start and end datetimes for the eligibility interval. Events are fixed in time
-        and the start and end are adjusted to include various combinations.
-        
+
         This is not an exhaustive test of corner cases. Overlaps considerably with
         rfc8989EligibilityTests.test_elig_by_author().
         """
         people = PersonFactory.create_batch(2)
+        extra_person = PersonFactory()
         base_qs = Person.objects.filter(pk__in=[person.pk for person in people])
         now = datetime.datetime.now(tz=datetime.UTC)
         one_year = datetime.timedelta(days=365)
 
-        approved_draft = WgDraftFactory(
-            authors=people,
-            states=[("draft", "active"), ("draft-rfceditor", "auth48")]
+        # Authors with no qualifying drafts
+        self.assertCountEqual(
+            get_qualified_author_queryset(base_qs, now - 5 * one_year, now), []
         )
+
+        # Authors with one qualifying draft
+        approved_draft = WgDraftFactory(authors=people, states=[("draft", "active")])
         DocEventFactory(
             type="iesg_approved",
             doc=approved_draft,
             time=now - 4 * one_year,
         )
-        
-        approved_draft_not_in_queue = WgDraftFactory(
-            authors=people,
-            states=[("draft", "active")]
+        self.assertCountEqual(
+            get_qualified_author_queryset(base_qs, now - 5 * one_year, now), []
         )
-        DocEventFactory(
-            type="iesg_approved",
-            doc=approved_draft_not_in_queue,
-            time=now - 4 * one_year,
-        )
-        
-        # The draft-rfceditor state on this draft is not representative of real data
-        # but is helpful for testing succinctly. It ensures that the logic is using
-        # the ("draft", "rfc") state to exclude this draft from eligibility calcs.
-        published_draft = WgDraftFactory(
-            authors=people, states=[
-                ("draft", "rfc"), ("draft-rfceditor", "auth48")]
-        )
+
+        # Create a draft that was published into an RFC. Give it an extra author who
+        # should not be eligible.
+        published_draft = WgDraftFactory(authors=people, states=[("draft", "rfc")])
         DocEventFactory(
             type="iesg_approved",
             doc=published_draft,
-            time=now - 3 * one_year,
+            time=now - 5.5 * one_year,  # < 6 years ago
         )
         rfc = WgRfcFactory(
-            authors=people,
+            authors=people + [extra_person],
             group=published_draft.group,
         )
         DocEventFactory(
             type="published_rfc",
             doc=rfc,
-            time=now - 2 * one_year,
+            time=now - 0.5 * one_year,  # < 1 year ago
         )
-
-        # Compute over a period with no qualifying events in it
+        # Period 6 years ago to 1 year ago - authors are eligible due to the
+        # iesg-approved draft in this window
         self.assertCountEqual(
-            get_qualified_author_queryset(
-                base_qs, now - 6 * one_year, now - 5 * one_year
-            ),
-            [],
-        )
-
-        # Period with two IESG-approved drafts, but one of these is not in the
-        # RFC editor queue for some reason (has no draft-rfceditor state)
-        self.assertCountEqual(
-            get_qualified_author_queryset(
-                base_qs, now - 4.5 * one_year, now - 3.5 * one_year
-            ),
-            [],
-        )
-        
-        # Period including the IESG-approved drafts and the iesg_approved date for
-        # a draft published as an RFC outside the eligibility period
-        self.assertCountEqual(
-            get_qualified_author_queryset(
-                base_qs, now - 4.5 * one_year, now - 2.5 * one_year
-            ),
-            [],
-        )
-        
-        # Now extend the eligibility to include the RFC's publication. This gives
-        # two eligible documents: the iesg-approved draft in the rfc editor queue and
-        # the published RFC.
-        self.assertCountEqual(
-            get_qualified_author_queryset(
-                base_qs, now - 4.5 * one_year, now - 1.5 * one_year
-            ),
+            get_qualified_author_queryset(base_qs, now - 6 * one_year, now - one_year),
             people,
+        )
+
+        # Period 5 years ago to now - authors are eligible due to the RFC publication
+        self.assertCountEqual(
+            get_qualified_author_queryset(base_qs, now - 5 * one_year, now),
+            people,
+        )
+        
+        # Use the extra_person to check that a single doc can't count both as an
+        # RFC _and_ an approved draft. Use an eligibility interval that includes both
+        # the approval and the RFC publication
+        self.assertCountEqual(
+            get_qualified_author_queryset(base_qs, now - 6 * one_year, now),
+            people,  # does not include extra_person!
         )
 
         # Now add an RfcAuthor for only one of the two authors to the RFC. This should
@@ -2559,9 +2531,7 @@ class EligibilityUnitTests(TestCase):
             email=people[0].email_set.first(),
         )
         self.assertCountEqual(
-            get_qualified_author_queryset(
-                base_qs, now - 4.5 * one_year, now - 1.5 * one_year
-            ),
+            get_qualified_author_queryset(base_qs, now - 5 * one_year, now),
             [people[0]],
         )
 
