@@ -614,9 +614,7 @@ def get_qualified_author_queryset(
     rfcs_with_rfcauthors = qualifying_rfcs.filter(rfcauthor_count__gt=0).distinct()
     rfcs_without_rfcauthors = qualifying_rfcs.filter(rfcauthor_count=0).distinct()
 
-    # Second, get the IESG-approved I-Ds  excluding any that became RFCs already
-    became_rfc_state = State.objects.filter(type_id="draft", slug="rfc").first()
-    assertion("became_rfc_state is not None")
+    # Second, get the IESG-approved I-Ds excluding any we're already counting as rfcs
     qualifying_approval_events = DocEvent.objects.filter(
         type='iesg_approved',
         time__gte=eligibility_period_start,
@@ -626,7 +624,8 @@ def get_qualified_author_queryset(
         type_id="draft",
         docevent__in=qualifying_approval_events,
     ).exclude(
-        states=became_rfc_state
+        relateddocument__relationship_id="became_rfc",
+        relateddocument__target__in=qualifying_rfcs,
     ).distinct()
 
     return base_qs.filter(
