@@ -329,7 +329,7 @@ def materials_document(request, document, num=None, ext=None):
     old_proceedings_format = meeting.number.isdigit() and int(meeting.number) <= 96
     if settings.MEETING_MATERIALS_SERVE_LOCALLY or old_proceedings_format:
         bytes = filename.read_bytes()
-        mtype, chset = get_mime_type(bytes)
+        mtype, chset = get_mime_type(bytes)  # chset does not consider entire file!
         content_type = "%s; charset=%s" % (mtype, chset)
 
         if filename.suffix == ".md" and mtype == "text/plain":
@@ -339,15 +339,24 @@ def materials_document(request, document, num=None, ext=None):
                     content_type = content_type.replace("plain", "markdown", 1)
                     break
                 elif atype[0] == "text/html":
+                    # Render markdown, allowing that charset may be inaccurate.
+                    try:
+                        md_src = bytes.decode(
+                            "utf-8" if chset in ["ascii", "us-ascii"] else chset
+                        )
+                    except UnicodeDecodeError:
+                        # latin-1, aka iso8859-1, accepts all 8-bit code points
+                        md_src = bytes.decode("latin-1")
+                    content = markdown.markdown(md_src)  # a string
                     bytes = render_to_string(
                         "minimal.html",
                         {
-                            "content": markdown.markdown(bytes.decode(encoding=chset)),
+                            "content": content,
                             "title": filename.name,
                             "static_ietf_org": settings.STATIC_IETF_ORG,
                         },
-                    )
-                    content_type = content_type.replace("plain", "html", 1)
+                    ).encode("utf-8")
+                    content_type = "text/html; charset=utf-8"
                     break
                 elif atype[0] == "text/plain":
                     break
@@ -442,6 +451,7 @@ def api_retrieve_materials_blob(request, bucket, name):
     else:
         # found the blob - return it
         assert isinstance(blob, BlobFile)
+        log(f"Materials blob: directly returning {bucket}:{name}")
         return FileResponse(
             blob,
             filename=name,
@@ -464,17 +474,20 @@ def api_retrieve_materials_blob(request, bucket, name):
         if doc.type_id != bucket:
             raise Document.DoesNotExist
     except Document.DoesNotExist:
+        log(f"Materials blob: no doc for {bucket}:{name}")
         return HttpResponseNotFound(
             f"Document corresponding to {bucket}:{name} not found."
         )
     else:
         # create all missing blobs for the doc while we're at it
+        log(f"Materials blob: storing blobs for {doc.name}-{doc.rev}")
         store_blobs_for_one_material_doc(doc)
     
     # If we can make the blob at all, it now exists, so return it or a 404
     try:
         blob = storage.open(name, "rb")
     except FileNotFoundError:
+        log(f"Materials blob: no blob for {bucket}:{name}")
         return HttpResponseNotFound(f"Object {bucket}:{name} not found.")
     else:
         # found the blob - return it
