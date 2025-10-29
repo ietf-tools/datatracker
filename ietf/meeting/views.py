@@ -451,6 +451,7 @@ def api_retrieve_materials_blob(request, bucket, name):
     else:
         # found the blob - return it
         assert isinstance(blob, BlobFile)
+        log(f"Materials blob: directly returning {bucket}:{name}")
         return FileResponse(
             blob,
             filename=name,
@@ -473,17 +474,20 @@ def api_retrieve_materials_blob(request, bucket, name):
         if doc.type_id != bucket:
             raise Document.DoesNotExist
     except Document.DoesNotExist:
+        log(f"Materials blob: no doc for {bucket}:{name}")
         return HttpResponseNotFound(
             f"Document corresponding to {bucket}:{name} not found."
         )
     else:
         # create all missing blobs for the doc while we're at it
+        log(f"Materials blob: storing blobs for {doc.name}-{doc.rev}")
         store_blobs_for_one_material_doc(doc)
     
     # If we can make the blob at all, it now exists, so return it or a 404
     try:
         blob = storage.open(name, "rb")
     except FileNotFoundError:
+        log(f"Materials blob: no blob for {bucket}:{name}")
         return HttpResponseNotFound(f"Object {bucket}:{name} not found.")
     else:
         # found the blob - return it
