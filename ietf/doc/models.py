@@ -20,7 +20,11 @@ from django.db import models
 from django.core import checks
 from django.core.files.base import File
 from django.core.cache import caches
-from django.core.validators import URLValidator, RegexValidator
+from django.core.validators import (
+    URLValidator,
+    RegexValidator,
+    ProhibitNullCharactersValidator,
+)
 from django.urls import reverse as urlreverse
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
@@ -107,7 +111,13 @@ class DocumentInfo(models.Model):
     time = models.DateTimeField(default=timezone.now) # should probably have auto_now=True
 
     type = ForeignKey(DocTypeName, blank=True, null=True) # Draft, Agenda, Minutes, Charter, Discuss, Guideline, Email, Review, Issue, Wiki, External ...
-    title = models.CharField(max_length=255, validators=[validate_no_control_chars, ])
+    title = models.CharField(
+        max_length=255,
+        validators=[
+            ProhibitNullCharactersValidator,
+            validate_no_control_chars,
+        ],
+    )
 
     states = models.ManyToManyField(State, blank=True) # plain state (Active/Expired/...), IESG state, stream state
     tags = models.ManyToManyField(DocTagName, blank=True) # Revised ID Needed, ExternalParty, AD Followup, ...
@@ -714,14 +724,22 @@ class DocumentInfo(models.Model):
     
     def part_of(self):
         return self.related_that("contains")
-
+    
     def referenced_by_rfcs_as_rfc_or_draft(self):
         """Get refs to this doc, or a draft/rfc it came from, from an RFC"""
         refs_to = self.referenced_by_rfcs()
         if self.type_id == "rfc" and self.came_from_draft():
             refs_to |= self.came_from_draft().referenced_by_rfcs()
         return refs_to
-    
+
+    def sent_to_rfc_editor_event(self):
+        if self.stream_id == "ietf":
+            return self.docevent_set.filter(type="iesg_approved").order_by("-time").first()
+        elif self.stream_id in ["iab", "irtf", "ise"]:
+            return self.docevent_set.filter(type="requested_publication").order_by("-time").first()
+        #elif self.stream_id == "editorial": #TODO
+        else:
+            return None
     class Meta:
         abstract = True
 
@@ -920,7 +938,18 @@ validate_docname = RegexValidator(
     'invalid'
 )
 
+
+SUBSERIES_DOC_TYPE_IDS = ("bcp", "fyi", "std")
+
+
+class DocumentQuerySet(models.QuerySet):
+    def subseries_docs(self):
+        return self.filter(type_id__in=SUBSERIES_DOC_TYPE_IDS)
+
+
 class Document(StorableMixin, DocumentInfo):
+    objects = DocumentQuerySet.as_manager()
+
     name = models.CharField(max_length=255, validators=[validate_docname,], unique=True)           # immutable
     
     action_holders = models.ManyToManyField(Person, through=DocumentActionHolder, blank=True)
