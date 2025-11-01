@@ -4442,66 +4442,61 @@ def render_important_dates_ical(meetings, request):
     for meeting in meetings:
         for important_date in meeting.important_dates:
             event = Event()
-            event.add("uid", f"ietf-{meeting.number}-{important_date.name_id}-{important_date.date.isoformat()}")
+            event.add("uid", f"ietf-{meeting.number}-{important_date.name_id}-"
+                     f"{important_date.date.isoformat()}")
             event.add("summary", f"IETF {meeting.number}: {important_date.name.name}")
             event.add("class", "PUBLIC")
 
             if not important_date.midnight_cutoff:
                 event.add("dtstart", important_date.date)
             else:
-                event.add("dtstart", datetime.datetime.combine(important_date.date, datetime.time(23, 59, 0, tzinfo=pytz.UTC)))
+                event.add("dtstart", datetime.datetime.combine(
+                    important_date.date, 
+                    datetime.time(23, 59, 0, tzinfo=pytz.UTC))
+                )
 
             event.add("transp", "TRANSPARENT")
             event.add("dtstamp", meeting.cached_updated)
             description_lines = [important_date.name.desc]
             if important_date.name.slug in ('openreg', 'earlybird'):
-                description_lines.append("Register here: https://www.ietf.org/how/meetings/register/")
+                description_lines.append(
+                    "Register here: https://www.ietf.org/how/meetings/register/")
             if important_date.name.slug == 'opensched':
-                description_lines.append("To request a Working Group session, use the IETF Meeting Session Request Tool:")
-                description_lines.append(f"{request.scheme}://{request.get_host()}{reverse('ietf.meeting.views_session_request.list_view')}")
-                description_lines.append("If you are working on a BOF request, it is highly recommended to tell the IESG")
+                description_lines.append("To request a Working Group session, use the "
+                                         "IETF Meeting Session Request Tool:")
+                description_lines.append(f"{request.scheme}://{request.get_host()}"
+                    f"{reverse('ietf.meeting.views_session_request.list_view')}")
+                description_lines.append("If you are working on a BOF request, it is "
+                                         "highly recommended to tell the IESG")
                 description_lines.append("now by sending an email to iesg@ietf.org")
                 description_lines.append("to get advance help with the request.")
             if important_date.name.slug == 'cutoffwgreq':
-                description_lines.append("To request a Working Group session, use the IETF Meeting Session Request Tool:")
-                description_lines.append(f"{request.scheme}://{request.get_host()}{reverse('ietf.meeting.views_session_request.list_view')}")
+                description_lines.append("To request a Working Group session, use the "
+                                         "IETF Meeting Session Request Tool:")
+                description_lines.append(f"{request.scheme}://{request.get_host()}"
+                    f"{reverse('ietf.meeting.views_session_request.list_view')}")
             if important_date.name.slug == 'cutoffbofreq':
-                description_lines.append("To request a BOF, please see instructions on Requesting a BOF:")
+                description_lines.append("To request a BOF, please see instructions on "
+                                         "Requesting a BOF:")
                 description_lines.append("https://www.ietf.org/how/bofs/bof-procedures/")
             if important_date.name.slug == 'idcutoff':
                 description_lines.append("Upload using the I-D Submission Tool:")
-                description_lines.append(f"{request.scheme}://{request.get_host()}{reverse('ietf.submit.views.upload_submission')}")
-            if important_date.name.slug in ('draftwgagenda', 'revwgagenda', 'procsub', 'revslug'):
-                description_lines.append("Upload using the Meeting Materials Management Tool:")
-                description_lines.append(f"{request.scheme}://{request.get_host()}{reverse('ietf.meeting.views.materials', kwargs={'num': meeting.number})}")
+                description_lines.append(f"{request.scheme}://{request.get_host()}"
+                    f"{reverse('ietf.submit.views.upload_submission')}")
+            if important_date.name.slug in (
+                    'draftwgagenda', 
+                    'revwgagenda', 
+                    'procsub', 
+                    'revslug'
+                ):
+                description_lines.append("Upload using the Meeting Materials "
+                                         "Management Tool:")
+                description_lines.append(f"{request.scheme}://{request.get_host()}"
+                    f"{reverse('ietf.meeting.views.materials', 
+                               kwargs={'num': meeting.number})}")
 
             event.add("description", "\n".join(description_lines))
             cal.add_component(event)
-
-        # {% for d in meeting.important_dates %}BEGIN:VEVENT
-        # UID:ietf-{{ meeting.number }}-{{ d.name_id }}-{{ d.date.isoformat }}
-        # SUMMARY:IETF {{ meeting.number }}: {{ d.name.name }}
-        # CLASS:PUBLIC
-        # DTSTART{% if not d.midnight_cutoff %};VALUE=DATE{% endif %}:{{ d.date|date:"Ymd" }}{% if d.midnight_cutoff %}235900Z{% endif %}
-        # DTSTAMP{% ics_date_time meeting.cached_updated|utc 'utc' %}
-        # TRANSP:TRANSPARENT
-        # DESCRIPTION:{{ d.name.desc }}{% if first and d.name.slug == 'openreg' or first and d.name.slug == 'earlybird' %}\n
-        # Register here: https://www.ietf.org/how/meetings/register/{% endif %}{% if d.name.slug == 'opensched' %}\n
-        # To request a Working Group session, use the IETF Meeting Session Request Tool:\n
-        # {{ request.scheme }}://{{ request.get_host}}{% url 'ietf.meeting.views_session_request.list_view' %}\n
-        # If you are working on a BOF request, it is highly recommended to tell the IESG\n
-        # now by sending an email to iesg@ietf.org to get advance help with the request.{% endif %}{% if d.name.slug == 'cutoffwgreq' %}\n
-        # To request a Working Group session, use the IETF Meeting Session Request Tool:\n
-        # {{ request.scheme }}://{{ request.get_host }}{% url 'ietf.meeting.views_session_request.list_view' %}{% endif %}{% if d.name.slug == 'cutoffbofreq' %}\n
-        # To request a BOF, please see instructions on Requesting a BOF:\n
-        # https://www.ietf.org/how/bofs/bof-procedures/{% endif %}{% if d.name.slug == 'idcutoff' %}\n
-        # Upload using the I-D Submission Tool:\n
-        # {{ request.scheme }}://{{ request.get_host }}{% url 'ietf.submit.views.upload_submission' %}{% endif %}{% if d.name.slug == 'draftwgagenda' or d.name.slug == 'revwgagenda' or d.name.slug == 'procsub' or d.name.slug == 'revslug' %}\n
-        # Upload using the Meeting Materials Management Tool:\n
-        # {{ request.scheme }}://{{ request.get_host }}{% url 'ietf.meeting.views.materials' num=meeting.number %}{% endif %}
-        # END:VEVENT
-        # {% endfor %}
-
 
     return cal.to_ical().decode("utf-8")
 
