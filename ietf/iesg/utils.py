@@ -12,7 +12,7 @@ from ietf.doc.utils_search import fill_in_telechat_date
 from ietf.group.models import Group
 from ietf.iesg.agenda import get_doc_section
 from ietf.person.utils import get_active_ads
-
+from ietf.utils.unicodenormalize import normalize_for_sorting
 
 TelechatPageCount = namedtuple(
     "TelechatPageCount",
@@ -192,6 +192,7 @@ def get_wg_dashboard_info():
                 else 0,
             }
         )
+    area_summary.sort(key=lambda r: r["area"])
     area_totals = {
         "group_count": groups_total,
         "doc_count": docs_total,
@@ -238,7 +239,7 @@ def get_wg_dashboard_info():
                     else 0,
                 }
             )
-    noad_summary.sort(key=lambda r: (r["ad"], r["area"]))
+    noad_summary.sort(key=lambda r: (normalize_for_sorting(r["ad"]), r["area"]))
 
     ad_summary = []
     ad_totals = {
@@ -278,7 +279,7 @@ def get_wg_dashboard_info():
                     else 0,
                 }
             )
-    ad_summary.sort(key=lambda r: (r["ad"], r["area"]))
+    ad_summary.sort(key=lambda r: (normalize_for_sorting(r["ad"]), r["area"]))
 
     rfc_counter = Counter(
         Document.objects.filter(type="rfc").values_list("group__acronym", flat=True)
