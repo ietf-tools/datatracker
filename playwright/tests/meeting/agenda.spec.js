@@ -1219,7 +1219,12 @@ test.describe('future - desktop', () => {
             await expect(eventButtons.locator(`#btn-lnk-${event.id}-calendar > i.bi`)).toBeVisible()
           }
         } else {
-          await expect(eventButtons).toHaveCount(0)
+          if (event.links.calendar) {
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-calendar`)).toHaveAttribute('href', event.links.calendar)
+            await expect(eventButtons.locator(`#btn-lnk-${event.id}-calendar > i.bi`)).toBeVisible()
+          } else {
+            await expect(eventButtons).toHaveCount(0)
+          }
         }
       }
     }
