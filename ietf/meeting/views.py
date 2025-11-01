@@ -5291,7 +5291,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
             if request.POST.get('approve'):
                 # Ensure that we have a file to approve.  The system gets cranky otherwise.
                 if submission.filename is None or submission.filename == '' or not os.path.isfile(submission.staged_filepath()):
-                    return HttpResponseNotFound("The slides you attempted to approve could not be found.  Please disapprove and delete them instead.")
+                    return HttpResponseNotFound("The slides you attempted to approve could not be found.  Please decline and delete them instead.")
                 title = form.cleaned_data['title']
                 if existing_doc:
                    doc = Document.objects.get(name=name)
