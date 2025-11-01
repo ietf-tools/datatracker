@@ -237,9 +237,10 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         entries.append(("Review requests", urlreverse(ietf.group.views.review_requests, kwargs=kwargs)))
         entries.append(("Reviewers", urlreverse(ietf.group.views.reviewer_overview, kwargs=kwargs)))
         entries.append(("Reviews History", urlreverse(ietf.group.views.review_requests_history, kwargs=kwargs)))
-
     if group.features.has_meetings:
         entries.append(("Meetings", urlreverse("ietf.group.views.meetings", kwargs=kwargs)))
+    if group.acronym in ["iesg"]:
+        entries.append(("Working Groups", urlreverse("ietf.iesg.views.working_groups")))
     if group.acronym in ["iab", "iesg"]:
         entries.append(("Statements", urlreverse("ietf.group.views.statements", kwargs=kwargs)))
         entries.append(("Appeals", urlreverse("ietf.group.views.appeals", kwargs=kwargs)))
@@ -249,7 +250,6 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     if group.list_archive.startswith("http:") or group.list_archive.startswith("https:") or group.list_archive.startswith("ftp:"):
         if is_valid_url(group.list_archive):
             entries.append((mark_safe("List archive &raquo;"), group.list_archive))
-
 
     # actions
     actions = []
