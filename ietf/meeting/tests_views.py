@@ -7066,7 +7066,7 @@ class MaterialsTests(TestCase):
             self.assertFalse(exists_in_storage("staging", submission.filename))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertRegex(r.content.decode(), r"These\s+slides\s+have\s+already\s+been\s+rejected")
+        self.assertRegex(r.content.decode(), r"These\s+slides\s+have\s+already\s+been\s+declined")
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
     @patch("ietf.meeting.views.SlidesManager")
