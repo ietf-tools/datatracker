@@ -1,5 +1,5 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load static %}
 {% load django_bootstrap5 %}
 {% block title %}Merge Persons{% endblock %}
@@ -37,16 +37,27 @@
         {% if method == 'post' %}
             <a class="btn btn-primary"
                href="{% url 'ietf.person.views.merge' %}?source={{ target.pk }}&amp;target={{ source.pk }}"
-               role="button">
+               role="button"
+               title="Swap source and target">
                 Swap
             </a>
         {% endif %}
-        <button type="submit" class="btn btn-warning">
-            {% if method == 'post' %}
+        {% if method == 'post' %}
+            <button type="submit" class="btn btn-warning" title="Merge Person records">
                 Merge
-            {% else %}
-                Submit
-            {% endif %}
-        </button>
+            </button>
+        {% else %}
+            <button type="submit" class="btn btn-warning" title="Get Person information">
+                Get Info
+            </button>
+        {% endif %}
+        {% if method == 'post' %}
+            <a class="btn btn-primary"
+               href="{% url 'ietf.person.views.send_merge_request' %}?source={{ source.pk }}&amp;target={{ target.pk }}"
+               role="button"
+               title="Send email to both addresses to confirm they are the same person">
+                Send Email
+            </a>
+        {% endif %}
     </form>
 {% endblock %}

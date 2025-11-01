@@ -1,10 +1,11 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 from io import StringIO, BytesIO
 from PIL import Image
 
+from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q
 from django.http import HttpResponse, Http404
@@ -16,8 +17,9 @@ import debug                            # pyflakes:ignore
 from ietf.ietfauth.utils import role_required
 from ietf.person.models import Email, Person
 from ietf.person.fields import select2_id_name_json
-from ietf.person.forms import MergeForm
+from ietf.person.forms import MergeForm, MergeRequestForm
 from ietf.person.utils import handle_users, merge_persons, lookup_persons
+from ietf.utils.mail import send_mail_text
 
 
 def ajax_select2_search(request, model_name):
@@ -143,4 +145,72 @@ def merge(request):
         'source': source,
         'target': target,
         'warn_messages': warn_messages,
+    })
+
+
+@role_required("Secretariat")
+def send_merge_request(request):
+    if request.method == 'GET':
+        source_id = request.GET.get('source')
+        target_id = request.GET.get('target')
+        source = Person.objects.get(id=source_id)
+        target = Person.objects.get(id=target_id)
+        to = []
+        if source.email():
+            to.append(source.email().address)
+        if target.email():
+            to.append(target.email().address)
+        if source.user:
+            source_account = source.user.username
+        else:
+            source_account = source.email()
+        if target.user:
+            target_account = target.user.username
+        else:
+            target_account = target.email()
+        sender = request.user.person.name
+        subject = 'Possible duplicate IETF Datatracker accounts'
+        body = f'''Hello {source.name},
+
+It appears you may have duplicate IETF Datatracker accounts associated with email addresses:
+{source_account} and {target_account}
+If these are both yours we would like to merge them into one account.
+Could you please confirm whether both accounts are yours?
+'''
+        signature = f'''
+
+{sender}
+IETF Support
+'''
+        if source.user and target.user:
+            body = body + 'And if so, which login do you prefer to keep?'
+        body = body + signature
+        initial = {
+            'to': ', '.join(to),
+            'frm': settings.DEFAULT_FROM_EMAIL,
+            'reply_to': 'support@ietf.org',
+            'subject': subject,
+            'body': body,
+            'by': request.user.person.pk,
+        }
+        form = MergeRequestForm(initial=initial)
+
+    if request.method == 'POST':
+        form = MergeRequestForm(request.POST)
+        if form.is_valid():
+            extra = {"Reply-To": form.cleaned_data.get("reply_to")}
+            send_mail_text(
+                request,
+                form.cleaned_data.get("to"),
+                form.cleaned_data.get("frm"),
+                form.cleaned_data.get("subject"),
+                form.cleaned_data.get("body"),
+                extra=extra,
+            )
+
+            messages.success(request, "The merge confirmation email was sent.")
+            return redirect("ietf.person.views.merge")
+
+    return render(request, "person/send_merge_request.html", {
+        "form": form,
     })
