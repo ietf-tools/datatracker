@@ -15,6 +15,10 @@ def active_roles(queryset):
     return queryset.filter(group__state_id__in=['active', 'bof']).exclude(group__acronym='secretariat')
     
 @register.filter
+def inactive_roles(queryset):
+    return queryset.filter(group__state_id__in=['conclude'])
+
+@register.filter
 def active_nomcoms(user):
     if not (user and hasattr(user, "is_authenticated") and user.is_authenticated):
         return []

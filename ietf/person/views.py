@@ -4,15 +4,20 @@
 
 from io import StringIO, BytesIO
 from PIL import Image
+from datetime import timedelta
 
 from django.contrib import messages
 from django.db.models import Q
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, redirect
 from django.utils import timezone
+from django.utils.timezone import now
+from requests import request
+
 
 import debug                            # pyflakes:ignore
 
+from ietf import person
 from ietf.ietfauth.utils import role_required
 from ietf.person.models import Email, Person
 from ietf.person.fields import select2_id_name_json
@@ -72,6 +77,15 @@ def ajax_select2_search(request, model_name):
 def profile(request, email_or_name):
     persons = lookup_persons(email_or_name)
     return render(request, 'person/profile.html', {'persons': persons, 'today': timezone.now()})
+
+
+def profile_details(request, email_or_name):
+    persons = lookup_persons(email_or_name)
+    cutoff_date = now() - timedelta(days=5 * 365)
+    return render(request, 'person/profile_details.html', {
+        'persons': persons, 
+        'today': timezone.now(), 
+        'cutoff': cutoff_date})
 
 
 def photo(request, email_or_name):
