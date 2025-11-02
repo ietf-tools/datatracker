@@ -402,6 +402,14 @@
             Liaison statements
         </a>
     </li>
+    {% if user|has_role:"Secretariat,IAB,Liaison Manager,Liaison Coordinator" %}
+    <li>
+        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+           href="{% url 'ietf.liaisons.views.list_other_sdo' %}">
+            List of other SDO groups
+        </a>
+    </li>
+    {% endif %}
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
            href="{% url 'ietf.iesg.views.agenda' %}">

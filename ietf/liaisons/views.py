@@ -4,6 +4,7 @@
 
 import json
 from email.utils import parseaddr
+from typing import Tuple
 
 from django.contrib import messages
 from django.urls import reverse as urlreverse
@@ -525,3 +526,17 @@ def liaison_resend(request, object_id):
     messages.success(request,'Liaison Statement resent')
     return redirect('ietf.liaisons.views.liaison_list')
 
+
+@role_required("Secretariat", "IAB", "Liaison Coordinator", "Liaison Manager")
+def list_other_sdo(request):
+    def _sdo_order_key(obj:Group)-> Tuple[str,str]:
+        state_order = {
+            "active" : "a",
+            "conclude": "b",
+        }
+        return (state_order.get(obj.state.slug,f"c{obj.state.slug}"), obj.acronym)
+
+    sdos = sorted(list(Group.objects.filter(type="sdo")),key = _sdo_order_key)
+    for sdo in sdos:
+        sdo.liaison_managers =[r.person for r in sdo.role_set.filter(name="liaiman")]
+    return render(request,"liaisons/list_other_sdo.html",dict(sdos=sdos))
