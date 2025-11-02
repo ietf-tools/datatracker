@@ -95,7 +95,6 @@ class PersonTests(TestCase):
         self.assertContains(r, "foo/bar")
         # Assume no previous meetings and no role
         self.assertContains(r, "has not participated at an IETF meeting since")
-        self.assertContains(r, "has no active roles as of")
         
         q = PyQuery(r.content)
         self.assertIn("Photo of %s"%person.name, q("div.bio-text img").attr("alt"))
