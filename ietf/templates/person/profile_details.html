@@ -19,35 +19,6 @@
     {% endif %}
     {% for person in persons %}
         {% if not forloop.first %}<hr>{% endif %}
-       <h2 class="mt-5" id="meetings-{{ forloop.counter }}">
-            IETF Meeting Participations <small class="text-body-secondary">({{ person.registration_set.all|length }})</small>
-        </h2>
-        {% if person.registration_set.all %}
-            <table class="table table-sm table-striped tablesorter">
-                <thead>
-                    <tr>
-                        <th scope="col" data-sort="meeting" data-default-sort="desc">Meeting</th>
-                        <th scope="col" data-sort="date">Date</th>
-                        <th scope="col" data-sort="city">City, Country</th>
-                        <th scope="col" data-sort="type">Attendance Type</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for reg in person.registration_set.all %}
-                    {% if reg.meeting.date|date:"Y-m-d" >= cutoff|date:"Y-m-d" and reg.meeting.type.name == "IETF" %}
-                        <tr>
-                            <td>{{ reg.meeting.number }}</td>
-                            <td>{{ reg.meeting.date|date:"Y-m-d" }}</td>
-                            <td>{{ reg.meeting.city }}, {{ reg.meeting.country }}</td>
-                            <td>{{ reg.attendance_type }}</td>
-                        </tr>
-                    {% endif %}
-                {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>{{ person.first_name }} has not participated at an IETF meeting since {{ cutoff|date:"Y-m-d" }}.</p>
-        {% endif %}    
          <h1>
             {{ person.name }}
             {% if person.ascii != person.name %}
@@ -229,6 +200,35 @@
             <div id="chart-{{ forloop.counter }}">
             </div>
         {% endif %}
+       <h2 class="mt-5" id="meetings-{{ forloop.counter }}">
+            IETF Meeting Participations <small class="text-body-secondary">({{ person.registration_set.all|length }})</small>
+        </h2>
+        {% if person.registration_set.all %}
+            <table class="table table-sm table-striped tablesorter">
+                <thead>
+                    <tr>
+                        <th scope="col" data-sort="meeting">Meeting</th>
+                        <th scope="col" data-sort="date" data-default-sort="desc">Date</th>
+                        <th scope="col" data-sort="city">City, Country</th>
+                        <th scope="col" data-sort="type">Attendance Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for reg in person.registration_set.all %}
+                    {% if reg.meeting.date|date:"Y-m-d" >= cutoff|date:"Y-m-d" and reg.meeting.type.name == "IETF" %}
+                        <tr>
+                            <td>{{ reg.meeting.number }}</td>
+                            <td>{{ reg.meeting.date|date:"Y-m-d" }}</td>
+                            <td>{{ reg.meeting.city }}, {{ reg.meeting.country }}</td>
+                            <td>{{ reg.attendance_type }}</td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>{{ person.first_name }} has not participated at an IETF meeting since {{ cutoff|date:"Y-m-d" }}.</p>
+        {% endif %}    
     {% endfor %}
 {% endblock %}
 {% block js %}
