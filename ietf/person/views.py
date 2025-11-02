@@ -12,12 +12,11 @@ from django.http import HttpResponse, Http404
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.utils.timezone import now
-from requests import request
 
 
 import debug                            # pyflakes:ignore
 
-from ietf import person
+
 from ietf.ietfauth.utils import role_required
 from ietf.person.models import Email, Person
 from ietf.person.fields import select2_id_name_json
