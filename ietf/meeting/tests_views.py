@@ -4765,13 +4765,53 @@ class EditScheduleListTests(TestCase):
         self.assertTrue(r.status_code, 200)
 
     def test_diff_schedules(self):
-        meeting = make_meeting_test_data()
+        # Create meeting and some time slots
+        meeting = MeetingFactory(type_id="ietf", populate_schedule=False)
+        rooms = RoomFactory.create_batch(2, meeting=meeting)
+        # first index is room, second is time
+        timeslots = [
+            [
+                TimeSlotFactory(location=room, meeting=meeting)
+            ]
+            for room in rooms
+        ]
+        sessions = SessionFactory.create_batch(4, meeting=meeting)
+        
+        from_schedule = ScheduleFactory(meeting=meeting)
+        to_schedule = ScheduleFactory(meeting=meeting)
 
+        # sessions[0]: not scheduled in from_schedule, scheduled in to_schedule
+        SchedTimeSessAssignment.objects.create(
+            schedule=to_schedule,
+            session=sessions[0],
+            timeslot=timeslots[0][0],
+        )
+        # sessions[1]: scheduled in from_schedule, not scheduled in to_schedule
+        SchedTimeSessAssignment.objects.create(
+            schedule=from_schedule,
+            session=sessions[1],
+            timeslot=timeslots[0][0],
+        )
+        # sessions[2]: moves rooms, not time
+        SchedTimeSessAssignment.objects.create(
+            schedule=from_schedule,
+            session=sessions[2],
+            timeslot=timeslots[0][1],
+        )
+        SchedTimeSessAssignment.objects.create(
+            schedule=to_schedule,
+            session=sessions[1],
+            timeslot=timeslots[1][1],
+        )
+        # sessions[3]: moves time, not room
+        # sessions[4]: moves room and time
+        
         url = urlreverse('ietf.meeting.views.diff_schedules',kwargs={'num':meeting.number})
         login_testing_unauthorized(self,"secretary", url)
         r = self.client.get(url)
         self.assertTrue(r.status_code, 200)
 
+        self.fail()
         from_schedule = Schedule.objects.get(meeting=meeting, name="test-unofficial-schedule")
 
         session1 = Session.objects.filter(meeting=meeting, group__acronym='mars').first()
