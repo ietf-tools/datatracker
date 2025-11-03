@@ -398,16 +398,6 @@ const meetingEvents = computed(() => {
             color: 'teal'
           })
         }
-        // -> Calendar item
-        if (item.links.calendar) {
-          links.push({
-            id: `lnk-${item.id}-calendar`,
-            label: 'Calendar (.ics) entry for this session',
-            icon: 'calendar-check',
-            href: item.links.calendar,
-            color: 'pink'
-          })
-        }
       } else {
         // -> Post event
         if (meetingNumberInt >= 60) {
@@ -483,6 +473,16 @@ const meetingEvents = computed(() => {
           }
         }
       }
+    }
+    // Add Calendar item for all events that has a calendar link
+    if (item.adjustedEnd > current && item.links.calendar) {
+      links.push({
+        id: `lnk-${item.id}-calendar`,
+        label: 'Calendar (.ics) entry for this session',
+        icon: 'calendar-check',
+        href: item.links.calendar,
+        color: 'pink'
+      })
     }
 
     // Event icon
