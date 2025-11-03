@@ -1675,6 +1675,11 @@ def list_schedules(request, num):
 class DiffSchedulesForm(forms.Form):
     from_schedule = forms.ChoiceField()
     to_schedule = forms.ChoiceField()
+    show_room_changes = forms.BooleanField(
+        initial=False,
+        required=False,
+        help_text="Include changes to room without a date or time change",
+    )
 
     def __init__(self, meeting, user, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1707,6 +1712,14 @@ def diff_schedules(request, num):
             raw_diffs = diff_meeting_schedules(from_schedule, to_schedule)
 
             diffs = prefetch_schedule_diff_objects(raw_diffs)
+            if not form.cleaned_data["show_room_changes"]:
+                # filter out room-only changes
+                diffs = [
+                    d
+                    for d in diffs
+                    if (d["change"] != "move") or (d["from"].time != d["to"].time)
+                ]
+
             for d in diffs:
                 s = d['session']
                 s.session_label = s.short_name
