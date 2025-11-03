@@ -11,7 +11,7 @@
         {% if submission.status.slug == 'approved' %}
             approved
         {% else %}
-            rejected
+            declined
         {% endif %}
     </h1>
     <p>
@@ -19,7 +19,7 @@
         {% if submission.status.slug == 'approved' %}
             approved.
         {% else %}
-            rejected.
+            declined.
         {% endif %}
         No further action is needed.
     </p>
