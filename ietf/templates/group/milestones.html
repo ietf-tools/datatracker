@@ -39,7 +39,7 @@
                             <span class="badge rounded-pill {% if milestone.resolved|slugify == 'done' %}text-bg-success{% else %}text-bg-warning{% endif %}">{{ milestone.resolved|title }}</span>
                         {% else %}
                             {% if group.uses_milestone_dates %}
-                                 <span class="d-none">{{ milestone.due }}</span>{{ milestone.due|date:"M Y" }}
+                                 <span class="d-none" aria-hidden="true">{{ milestone.due }}</span>{{ milestone.due|date:"M Y" }}
                             {% else %}
                                 {% if forloop.first %}Last{% endif %}
                                 {% if forloop.last %}Next{% endif %}
