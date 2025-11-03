@@ -7,6 +7,7 @@ import datetime
 import logging
 import os
 
+import django.db
 import rfc2html
 
 from io import BufferedReader
