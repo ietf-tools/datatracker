@@ -4468,8 +4468,8 @@ def render_important_dates_ical(meetings, request):
                     f"{reverse('ietf.meeting.views_session_request.list_view')}")
                 description_lines.append("If you are working on a BOF request, it is "
                                          "highly recommended to tell the IESG")
-                description_lines.append("now by sending an email to iesg@ietf.org")
-                description_lines.append("to get advance help with the request.")
+                description_lines.append("now by sending an email to iesg@ietf.org "
+                                         "to get advance help with the request.")
             if important_date.name.slug == 'cutoffwgreq':
                 description_lines.append("To request a Working Group session, use the "
                                          "IETF Meeting Session Request Tool:")
