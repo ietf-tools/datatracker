@@ -695,7 +695,7 @@ def last_ballot_doc_revision(doc, person):
     if ballot == None or person == None:
         return None    
     balloters = get_active_balloters(ballot.ballot_type)
-    if not person in balloters:
+    if person not in balloters:
         return None
     position_queryset = BallotPositionDocEvent.objects.filter(type="changed_ballot_position", balloter=person, ballot=ballot)
     if not position_queryset.exists():
