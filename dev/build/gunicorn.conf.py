@@ -1,5 +1,15 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 
+import ietf
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.instrumentation.django import DjangoInstrumentor
+from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+
 # Configure security scheme headers for forwarded requests. Cloudflare sets X-Forwarded-Proto 
 # for us. Don't trust any of the other similar headers. Only trust the header if it's coming
 # from localhost, as all legitimate traffic will reach gunicorn via co-located nginx.
@@ -119,3 +129,21 @@ def post_request(worker, req, environ, resp):
     in_flight = in_flight_by_pid.get(worker.pid, [])
     if request_description in in_flight:
         in_flight.remove(request_description)
+
+def post_fork(server, worker):
+    server.log.info("Worker spawned (pid: %s)", worker.pid)
+
+    resource = Resource.create(attributes={
+        "service.name": "datatracker",
+        "service.version": ietf.__version__
+    })
+
+    trace.set_tracer_provider(TracerProvider(resource=resource))
+    otlp_exporter = OTLPSpanExporter(endpoint='https://heimdall-otlp.ietf.org/v1/traces')
+
+    trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(otlp_exporter))
+
+    # Instrumentations
+    DjangoInstrumentor().instrument()
+    Psycopg2Instrumentor().instrument()
+    RequestsInstrumentor().instrument()
