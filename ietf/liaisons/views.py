@@ -4,7 +4,6 @@
 
 import json
 from email.utils import parseaddr
-from typing import Tuple
 
 from django.contrib import messages
 from django.urls import reverse as urlreverse
@@ -529,7 +528,7 @@ def liaison_resend(request, object_id):
 
 @role_required("Secretariat", "IAB", "Liaison Coordinator", "Liaison Manager")
 def list_other_sdo(request):
-    def _sdo_order_key(obj:Group)-> Tuple[str,str]:
+    def _sdo_order_key(obj:Group)-> tuple[str,str]:
         state_order = {
             "active" : "a",
             "conclude": "b",
