@@ -8,6 +8,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.instrumentation.django import DjangoInstrumentor
 from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
+from opentelemetry.instrumentation.pymemcache import PymemcacheInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
 # Configure security scheme headers for forwarded requests. Cloudflare sets X-Forwarded-Proto 
@@ -146,4 +147,5 @@ def post_fork(server, worker):
     # Instrumentations
     DjangoInstrumentor().instrument()
     Psycopg2Instrumentor().instrument()
+    PymemcacheInstrumentor().instrument()
     RequestsInstrumentor().instrument()

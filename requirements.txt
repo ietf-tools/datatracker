@@ -55,6 +55,7 @@ oic>=1.7.0  # Used only by tests
 opentelemetry-sdk>=1.38.0
 opentelemetry-instrumentation-django>=0.59b0
 opentelemetry-instrumentation-psycopg2>=0.59b0
+opentelemetry-instrumentation-pymemcache>=0.59b0
 opentelemetry-instrumentation-requests>=0.59b0
 opentelemetry-exporter-otlp-proto-http>=1.38.0
 pillow>=11.3.0
