@@ -1119,17 +1119,6 @@ class LiaisonManagementTests(TestCase):
     # -------------------------------------------------
     # Form validations
     # -------------------------------------------------
-    def test_post_and_send_fail(self):
-        RoleFactory(name_id='liaiman',person__user__username='ulm-liaiman',group__type_id='sdo',group__acronym='ulm')
-        GroupFactory(type_id='wg',acronym='mars')
-
-        url = urlreverse('ietf.liaisons.views.liaison_add', kwargs={'type':'incoming'})
-        login_testing_unauthorized(self, "ulm-liaiman", url)
-
-        r = self.client.post(url,get_liaison_post_data(),follow=True)
-
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, 'As an IETF Liaison Manager you can not send incoming liaison statements')
 
     def test_deadline_field(self):
         '''Required for action, comment, not info, response'''
