@@ -23,7 +23,7 @@ from ietf.ietfauth.utils import has_role
 from ietf.liaisons.fields import SearchableLiaisonStatementsField
 from ietf.liaisons.models import (LiaisonStatement,
                                   LiaisonStatementEvent, LiaisonStatementAttachment, LiaisonStatementPurposeName)
-from ietf.liaisons.utils import get_person_for_user, is_authorized_individual, OUTGOING_LIAISON_ROLES, \
+from ietf.liaisons.utils import get_person_for_user, OUTGOING_LIAISON_ROLES, \
     INCOMING_LIAISON_ROLES
 from ietf.liaisons.widgets import ButtonWidget, ShowAttachmentsWidget
 from ietf.name.models import DocRelationshipName
@@ -466,23 +466,9 @@ class LiaisonModelForm(forms.ModelForm):
         assert NotImplemented
 
 class IncomingLiaisonForm(LiaisonModelForm):
-    def clean(self):
-        if 'send' in list(self.data.keys()) and self.get_post_only():
-            raise forms.ValidationError('As an IETF Liaison Manager you can not send incoming liaison statements, you only can post them')
-        return super(IncomingLiaisonForm, self).clean()
 
     def is_approved(self):
         '''Incoming Liaison Statements do not required approval'''
-        return True
-
-    def get_post_only(self):
-        from_groups = self.cleaned_data.get("from_groups")
-        if (
-            has_role(self.user, "Secretariat")
-            or has_role(self.user, "Liaison Coordinator")
-            or is_authorized_individual(self.user, from_groups)
-        ):
-            return False
         return True
 
     def set_from_fields(self):

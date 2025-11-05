@@ -49,7 +49,11 @@ from ietf.meeting.helpers import send_interim_meeting_cancellation_notice, send_
 from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates, update_important_dates
 from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission, SchedulingEvent, Room, Constraint, ConstraintName
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
-from ietf.meeting.utils import condition_slide_order, generate_proceedings_content
+from ietf.meeting.utils import (
+    condition_slide_order,
+    generate_proceedings_content,
+    diff_meeting_schedules,
+)
 from ietf.meeting.utils import add_event_info_to_session_qs, participants_for_meeting
 from ietf.meeting.utils import create_recording, delete_recording, get_next_sequence, bluesheet_data
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
@@ -4765,73 +4769,151 @@ class EditScheduleListTests(TestCase):
         self.assertTrue(r.status_code, 200)
 
     def test_diff_schedules(self):
-        meeting = make_meeting_test_data()
+        # Create meeting and some time slots
+        meeting = MeetingFactory(type_id="ietf", populate_schedule=False)
+        rooms = RoomFactory.create_batch(2, meeting=meeting)
+        # first index is room, second is time
+        timeslots = [
+            [
+                TimeSlotFactory(
+                    location=room,
+                    meeting=meeting,
+                    time=datetime.datetime.combine(
+                        meeting.date, datetime.time(9, 0, tzinfo=datetime.UTC)
+                    )
+                ),
+                TimeSlotFactory(
+                    location=room,
+                    meeting=meeting,
+                    time=datetime.datetime.combine(
+                        meeting.date, datetime.time(10, 0, tzinfo=datetime.UTC)
+                    )
+                ),
+                TimeSlotFactory(
+                    location=room,
+                    meeting=meeting,
+                    time=datetime.datetime.combine(
+                        meeting.date, datetime.time(11, 0, tzinfo=datetime.UTC)
+                    )
+                ),
+            ]
+            for room in rooms
+        ]
+        sessions = SessionFactory.create_batch(
+            5, meeting=meeting, add_to_schedule=False
+        )
 
-        url = urlreverse('ietf.meeting.views.diff_schedules',kwargs={'num':meeting.number})
-        login_testing_unauthorized(self,"secretary", url)
+        from_schedule = ScheduleFactory(meeting=meeting)
+        to_schedule = ScheduleFactory(meeting=meeting)
+
+        # sessions[0]: not scheduled in from_schedule, scheduled in to_schedule
+        SchedTimeSessAssignment.objects.create(
+            schedule=to_schedule,
+            session=sessions[0],
+            timeslot=timeslots[0][0],
+        )
+        # sessions[1]: scheduled in from_schedule, not scheduled in to_schedule
+        SchedTimeSessAssignment.objects.create(
+            schedule=from_schedule,
+            session=sessions[1],
+            timeslot=timeslots[0][0],
+        )
+        # sessions[2]: moves rooms, not time
+        SchedTimeSessAssignment.objects.create(
+            schedule=from_schedule,
+            session=sessions[2],
+            timeslot=timeslots[0][1],
+        )
+        SchedTimeSessAssignment.objects.create(
+            schedule=to_schedule,
+            session=sessions[2],
+            timeslot=timeslots[1][1],
+        )
+        # sessions[3]: moves time, not room
+        SchedTimeSessAssignment.objects.create(
+            schedule=from_schedule,
+            session=sessions[3],
+            timeslot=timeslots[1][1],
+        )
+        SchedTimeSessAssignment.objects.create(
+            schedule=to_schedule,
+            session=sessions[3],
+            timeslot=timeslots[1][2],
+        )
+        # sessions[4]: moves room and time
+        SchedTimeSessAssignment.objects.create(
+            schedule=from_schedule,
+            session=sessions[4],
+            timeslot=timeslots[1][0],
+        )
+        SchedTimeSessAssignment.objects.create(
+            schedule=to_schedule,
+            session=sessions[4],
+            timeslot=timeslots[0][2],
+        )
+
+        # Check the raw diffs
+        raw_diffs = diff_meeting_schedules(from_schedule, to_schedule)
+        self.assertCountEqual(
+            raw_diffs,
+            [
+                {
+                    "change": "schedule",
+                    "session": sessions[0].pk,
+                    "to": timeslots[0][0].pk,
+                },
+                {
+                    "change": "unschedule",
+                    "session": sessions[1].pk,
+                    "from": timeslots[0][0].pk,
+                },
+                {
+                    "change": "move",
+                    "session": sessions[2].pk,
+                    "from": timeslots[0][1].pk,
+                    "to": timeslots[1][1].pk,
+                },
+                {
+                    "change": "move",
+                    "session": sessions[3].pk,
+                    "from": timeslots[1][1].pk,
+                    "to": timeslots[1][2].pk,
+                },
+                {
+                    "change": "move",
+                    "session": sessions[4].pk,
+                    "from": timeslots[1][0].pk,
+                    "to": timeslots[0][2].pk,
+                },
+            ]
+        )
+
+        # Check the view
+        url = urlreverse("ietf.meeting.views.diff_schedules",
+                         kwargs={"num": meeting.number})
+        login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertTrue(r.status_code, 200)
 
-        from_schedule = Schedule.objects.get(meeting=meeting, name="test-unofficial-schedule")
-
-        session1 = Session.objects.filter(meeting=meeting, group__acronym='mars').first()
-        session2 = Session.objects.filter(meeting=meeting, group__acronym='ames').first()
-        session3 = SessionFactory(meeting=meeting, group=Group.objects.get(acronym='mars'),
-                                  attendees=10, requested_duration=datetime.timedelta(minutes=70),
-                                  add_to_schedule=False)
-        SchedulingEvent.objects.create(session=session3, status_id='schedw', by=Person.objects.first())
-
-        slot2 = TimeSlot.objects.filter(meeting=meeting, type='regular').order_by('-time').first()
-        slot3 = TimeSlot.objects.create(
-            meeting=meeting, type_id='regular', location=slot2.location,
-            duration=datetime.timedelta(minutes=60),
-            time=slot2.time + datetime.timedelta(minutes=60),
-        )
-
-        # copy
-        new_url = urlreverse("ietf.meeting.views.new_meeting_schedule", kwargs=dict(num=meeting.number, owner=from_schedule.owner_email(), name=from_schedule.name))
-        r = self.client.post(new_url, {
-            'name': "newtest",
-            'public': "on",
-        })
-        self.assertNoFormPostErrors(r)
-
-        to_schedule = Schedule.objects.get(meeting=meeting, name='newtest')
-
-        # make some changes
-
-        edit_url = urlreverse("ietf.meeting.views.edit_meeting_schedule", kwargs=dict(num=meeting.number, owner=to_schedule.owner_email(), name=to_schedule.name))
-
-        # schedule session
-        r = self.client.post(edit_url, {
-            'action': 'assign',
-            'timeslot': slot3.pk,
-            'session': session3.pk,
-        })
-        self.assertEqual(json.loads(r.content)['success'], True)
-        # unschedule session
-        r = self.client.post(edit_url, {
-            'action': 'unassign',
-            'session': session1.pk,
-        })
-        self.assertEqual(json.loads(r.content)['success'], True)
-        # move session
-        r = self.client.post(edit_url, {
-            'action': 'assign',
-            'timeslot': slot2.pk,
-            'session': session2.pk,
-        })
-        self.assertEqual(json.loads(r.content)['success'], True)
-
-        # now get differences
+        # with show room changes disabled - does not show sessions[2] because it did 
+        # not change time
         r = self.client.get(url, {
-            'from_schedule': from_schedule.name,
-            'to_schedule': to_schedule.name,
+            "from_schedule": from_schedule.name,
+            "to_schedule": to_schedule.name,
         })
         self.assertTrue(r.status_code, 200)
-
         q = PyQuery(r.content)
-        self.assertEqual(len(q(".schedule-diffs tr")), 3+1)
+        self.assertEqual(len(q(".schedule-diffs tr")), 4 + 1)
+
+        # with show room changes enabled - shows all changes
+        r = self.client.get(url, {
+            "from_schedule": from_schedule.name,
+            "to_schedule": to_schedule.name,
+            "show_room_changes": "on",
+        })
+        self.assertTrue(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q(".schedule-diffs tr")), 5 + 1)
 
     def test_delete_schedule(self):
         url = urlreverse('ietf.meeting.views.delete_schedule',
@@ -7066,7 +7148,7 @@ class MaterialsTests(TestCase):
             self.assertFalse(exists_in_storage("staging", submission.filename))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertRegex(r.content.decode(), r"These\s+slides\s+have\s+already\s+been\s+rejected")
+        self.assertRegex(r.content.decode(), r"These\s+slides\s+have\s+already\s+been\s+declined")
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
     @patch("ietf.meeting.views.SlidesManager")
