@@ -144,7 +144,7 @@ def post_fork(server, worker):
     })
 
     trace.set_tracer_provider(TracerProvider(resource=resource))
-    otlp_exporter = OTLPSpanExporter(endpoint='https://heimdall-otlp.ietf.org/v1/traces')
+    otlp_exporter = OTLPSpanExporter(endpoint="https://heimdall-otlp.ietf.org/v1/traces")
 
     trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(otlp_exporter))
 
