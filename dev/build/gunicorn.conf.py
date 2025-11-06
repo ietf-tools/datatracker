@@ -140,7 +140,7 @@ def post_fork(server, worker):
         "service.version": ietf.__version__,
         "service.instance.id": worker.pid,
         "service.namespace": "datatracker",
-        "deployment.environment.name": os.environ.get('DATATRACKER_SERVICE_ENV', 'dev')
+        "deployment.environment.name": os.environ.get("DATATRACKER_SERVICE_ENV", "dev")
     })
 
     trace.set_tracer_provider(TracerProvider(resource=resource))
