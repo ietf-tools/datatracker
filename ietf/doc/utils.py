@@ -692,7 +692,7 @@ def last_ballot_doc_revision(doc, person):
     """ Return the document revision for the most recent ballot position
         by the provided user. """
     ballot = doc.active_ballot()
-    if ballot == None or person == None:
+    if ballot is None or person is None:
         return None    
     balloters = get_active_balloters(ballot.ballot_type)
     if person not in balloters:
