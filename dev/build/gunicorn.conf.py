@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 
+import os
 import ietf
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
@@ -136,7 +137,10 @@ def post_fork(server, worker):
 
     resource = Resource.create(attributes={
         "service.name": "datatracker",
-        "service.version": ietf.__version__
+        "service.version": ietf.__version__,
+        "service.instance.id": worker.pid,
+        "service.namespace": "datatracker",
+        "deployment.environment.name": os.environ.get('DATATRACKER_SERVICE_ENV', 'dev')
     })
 
     trace.set_tracer_provider(TracerProvider(resource=resource))
