@@ -110,6 +110,17 @@ class LiaisonTests(TestCase):
         self.assertEqual(self.client.get('/liaison/help/from_ietf/').status_code, 200)
         self.assertEqual(self.client.get('/liaison/help/to_ietf/').status_code, 200)
 
+    def test_list_other_sdo(self):
+        GroupFactory(type_id="sdo", state_id="conclude", acronym="third")
+        GroupFactory(type_id="sdo", state_id="active", acronym="second")
+        GroupFactory(type_id="sdo", state_id="active", acronym="first")
+        url = urlreverse("ietf.liaisons.views.list_other_sdo")
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("h1")), 2)
+        first_td_elements_text = [e.text for e in q("tr").find("td:first-child")]
+        self.assertEqual(first_td_elements_text, ["first", "second", "third"])
 
 class UnitTests(TestCase):
     def test_get_contacts_for_liaison_messages_for_group_primary(self):
