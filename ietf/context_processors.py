@@ -56,4 +56,4 @@ def timezone_now(request):
 def traceparent_id(request):
     context_extras = {}
     inject(context_extras)
-    return context_extras
+    return { "otel": context_extras }
