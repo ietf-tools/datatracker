@@ -4445,6 +4445,73 @@ def upcoming_ical(request):
     response['Content-Disposition'] = 'attachment; filename="upcoming.ics"'
     return response
     
+def render_important_dates_ical(meetings, request):
+    """Generate important dates using the icalendar library"""
+    cal = Calendar()
+    cal.add("prodid", "-//IETF//datatracker.ietf.org ical importantdates//EN")
+    cal.add("version", "2.0")
+    cal.add("method", "PUBLISH")
+
+    for meeting in meetings:
+        for important_date in meeting.important_dates:
+            event = Event()
+            event.add("uid", f"ietf-{meeting.number}-{important_date.name_id}-"
+                     f"{important_date.date.isoformat()}")
+            event.add("summary", f"IETF {meeting.number}: {important_date.name.name}")
+            event.add("class", "PUBLIC")
+
+            if not important_date.midnight_cutoff:
+                event.add("dtstart", important_date.date)
+            else:
+                event.add("dtstart", datetime.datetime.combine(
+                    important_date.date, 
+                    datetime.time(23, 59, 0, tzinfo=pytz.UTC))
+                )
+
+            event.add("transp", "TRANSPARENT")
+            event.add("dtstamp", meeting.cached_updated)
+            description_lines = [important_date.name.desc]
+            if important_date.name.slug in ('openreg', 'earlybird'):
+                description_lines.append(
+                    "Register here: https://www.ietf.org/how/meetings/register/")
+            if important_date.name.slug == 'opensched':
+                description_lines.append("To request a Working Group session, use the "
+                                         "IETF Meeting Session Request Tool:")
+                description_lines.append(f"{request.scheme}://{request.get_host()}"
+                    f"{reverse('ietf.meeting.views_session_request.list_view')}")
+                description_lines.append("If you are working on a BOF request, it is "
+                                         "highly recommended to tell the IESG")
+                description_lines.append("now by sending an email to iesg@ietf.org "
+                                         "to get advance help with the request.")
+            if important_date.name.slug == 'cutoffwgreq':
+                description_lines.append("To request a Working Group session, use the "
+                                         "IETF Meeting Session Request Tool:")
+                description_lines.append(f"{request.scheme}://{request.get_host()}"
+                    f"{reverse('ietf.meeting.views_session_request.list_view')}")
+            if important_date.name.slug == 'cutoffbofreq':
+                description_lines.append("To request a BOF, please see instructions on "
+                                         "Requesting a BOF:")
+                description_lines.append("https://www.ietf.org/how/bofs/bof-procedures/")
+            if important_date.name.slug == 'idcutoff':
+                description_lines.append("Upload using the I-D Submission Tool:")
+                description_lines.append(f"{request.scheme}://{request.get_host()}"
+                    f"{reverse('ietf.submit.views.upload_submission')}")
+            if important_date.name.slug in (
+                    'draftwgagenda', 
+                    'revwgagenda', 
+                    'procsub', 
+                    'revslug'
+                ):
+                description_lines.append("Upload using the Meeting Materials "
+                                         "Management Tool:")
+                description_lines.append(f"{request.scheme}://{request.get_host()}"
+                    f"{reverse('ietf.meeting.views.materials', 
+                               kwargs={'num': meeting.number})}")
+
+            event.add("description", "\n".join(description_lines))
+            cal.add_component(event)
+
+    return cal.to_ical().decode("utf-8")
 
 def upcoming_json(request):
     '''Return Upcoming meetings in json format'''
@@ -5063,11 +5130,8 @@ def important_dates(request, num=None, output_format=None):
     if output_format == 'ics':
         preprocess_meeting_important_dates(meetings)
 
-        ics = render_to_string('meeting/important_dates.ics', {
-            'meetings': meetings,
-        }, request=request)
-        # icalendar response file should have '\r\n' line endings per RFC5545
-        response = HttpResponse(parse_ical_line_endings(ics), content_type='text/calendar')
+        response = HttpResponse(render_important_dates_ical(meetings, request), 
+                                content_type='text/calendar')
         response['Content-Disposition'] = 'attachment; filename="important-dates.ics"'
         return response
 
