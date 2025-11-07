@@ -92,7 +92,7 @@ from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
 from ietf.utils.timezone import date_today
-
+from ietf.utils.unicodenormalize import normalize_for_sorting
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -1506,7 +1506,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
     position_groups = []
     for n in BallotPositionName.objects.filter(slug__in=[p.pos_id for p in positions]).order_by('order'):
         g = (n, [p for p in positions if p.pos_id == n.slug])
-        g[1].sort(key=lambda p: (p.is_old_pos, p.balloter.plain_name()))
+        g[1].sort(key=lambda p: (p.is_old_pos, normalize_for_sorting(p.balloter.plain_name())))
         if n.blocking:
             position_groups.insert(0, g)
         else:

@@ -68,6 +68,7 @@ from ietf.person.models import Person
 from ietf.meeting.utils import get_activity_stats
 from ietf.doc.utils_search import fill_in_document_table_attributes, fill_in_telechat_date
 from ietf.utils.timezone import date_today, datetime_from_date
+from ietf.utils.unicodenormalize import normalize_for_sorting
 
 def review_decisions(request, year=None):
     events = DocEvent.objects.filter(type__in=("iesg_disapproved", "iesg_approved"))
@@ -547,7 +548,7 @@ def milestones_needing_review(request):
             )
 
     return render(request, 'iesg/milestones_needing_review.html',
-                  dict(ads=sorted(ad_list, key=lambda ad: ad.plain_name()),))
+                  dict(ads=sorted(ad_list, key=lambda ad: normalize_for_sorting(ad.plain_name())),))
 
 def photos(request):
     roles = sorted(Role.objects.filter(group__type='area', group__state='active', name_id='ad'),key=lambda x: "" if x.group.acronym=="gen" else x.group.acronym)
