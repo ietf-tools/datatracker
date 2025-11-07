@@ -73,6 +73,11 @@
         $(document).ready(function() {
             if ($("#checkbox").is(':checked'))
             $("#other-formats").collapse('show')
+
+            $("form").one('submit', function() {
+                $("button").attr('disabled', 'disabled');
+                return true;
+            })
         });
     </script>
 {% endblock %}
