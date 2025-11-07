@@ -79,6 +79,7 @@ from ietf.utils.history import find_history_active_at
 from ietf.doc.views_ballot import parse_ballot_edit_return_point
 from ietf.doc.forms import InvestigateForm, TelechatForm, NotifyForm, ActionHoldersForm, DocAuthorForm, DocAuthorChangeBasisForm
 from ietf.doc.mails import email_comment, email_remind_action_holders
+from ietf.doc.utils import last_ballot_doc_revision
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session, SessionPresentation
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions, add_event_info_to_session_qs
@@ -1225,6 +1226,10 @@ def document_history(request, name):
             request.user, ("Area Director", "Secretariat", "IRTF Chair")
         )
 
+    # if the current user has balloted on this document, give them a revision hint
+    ballot_doc_rev = None
+    if request.user.is_authenticated:
+        ballot_doc_rev = last_ballot_doc_revision(doc, request.user.person)
 
     return render(
         request,
@@ -1235,6 +1240,7 @@ def document_history(request, name):
             "diff_revisions": diff_revisions,
             "events": events,
             "can_add_comment": can_add_comment,
+            "ballot_doc_rev": ballot_doc_rev,
         },
     )
 
