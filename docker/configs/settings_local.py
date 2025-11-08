@@ -89,6 +89,8 @@ for storagename in ARTIFACT_STORAGE_NAMES:
             secret_key="minio_pass",
             security_token=None,
             client_config=botocore.config.Config(
+                request_checksum_calculation="when_required",
+                response_checksum_validation="when_required",
                 signature_version="s3v4",
                 connect_timeout=BLOBSTORAGE_CONNECT_TIMEOUT,
                 read_timeout=BLOBSTORAGE_READ_TIMEOUT,

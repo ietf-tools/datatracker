@@ -937,7 +937,18 @@ validate_docname = RegexValidator(
     'invalid'
 )
 
+
+SUBSERIES_DOC_TYPE_IDS = ("bcp", "fyi", "std")
+
+
+class DocumentQuerySet(models.QuerySet):
+    def subseries_docs(self):
+        return self.filter(type_id__in=SUBSERIES_DOC_TYPE_IDS)
+
+
 class Document(StorableMixin, DocumentInfo):
+    objects = DocumentQuerySet.as_manager()
+
     name = models.CharField(max_length=255, validators=[validate_docname,], unique=True)           # immutable
     
     action_holders = models.ManyToManyField(Person, through=DocumentActionHolder, blank=True)
@@ -1175,7 +1186,7 @@ class Document(StorableMixin, DocumentInfo):
             elif rev_events.exists():
                 time = rev_events.first().time
             else:
-                time = datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
+                time = datetime.datetime.fromtimestamp(0, datetime.UTC)
             dh = DocHistory(name=self.name, rev=rev, doc=self, time=time, type=self.type, title=self.title,
                              stream=self.stream, group=self.group)
 

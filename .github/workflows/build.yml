@@ -448,13 +448,13 @@ jobs:
       - name: Refresh Staging DB
         uses: the-actions-org/workflow-dispatch@v4
         with:
-          workflow: update-staging-db.yml
+          workflow: deploy-db.yml
           repo: ietf-tools/infra-k8s
           ref: main
           token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
-          inputs: '{ "sourceDb":"datatracker" }'
+          inputs: '{ "environment":"${{ secrets.GHA_K8S_CLUSTER }}", "app":"datatracker", "manifest":"postgres", "forceRecreate":true, "waitClusterReady":true }'
           wait-for-completion: true
-          wait-for-completion-timeout: 10m
+          wait-for-completion-timeout: 30m
           wait-for-completion-interval: 20s
           display-workflow-run-url: false
 

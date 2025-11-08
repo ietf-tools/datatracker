@@ -15,6 +15,7 @@ from unittest import skipIf
 from unittest.mock import call, patch, PropertyMock
 from pyquery import PyQuery
 from lxml.etree import tostring
+from icalendar import Calendar
 from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urlsplit
@@ -54,9 +55,8 @@ from ietf.meeting.utils import create_recording, delete_recording, get_next_sequ
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose, generate_agenda_data
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
-from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
-from ietf.utils.test_runner import TestBlobstoreManager
+from ietf.utils.test_runner import TestBlobstoreManager, disable_coverage
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.timezone import date_today, time_now
 
@@ -320,11 +320,11 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.group.parent.acronym.upper())
         self.assertContains(r, slot.location.name)
         self.assertContains(r, "{}-{}".format(
-            slot.time.astimezone(datetime.timezone.utc).strftime("%H%M"),
-            (slot.time + slot.duration).astimezone(datetime.timezone.utc).strftime("%H%M"),
+            slot.time.astimezone(datetime.UTC).strftime("%H%M"),
+            (slot.time + slot.duration).astimezone(datetime.UTC).strftime("%H%M"),
         ))
         self.assertContains(r, "shown in UTC")
-        updated = meeting.updated().astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
+        updated = meeting.updated().astimezone(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S %Z")
         self.assertContains(r, f"Updated {updated}")
 
         # text, invalid updated (none)
@@ -368,8 +368,8 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.group.parent.acronym.upper())
         self.assertContains(r, slot.location.name)
         self.assertContains(r, registration_text)
-        start_time = slot.time.astimezone(datetime.timezone.utc)
-        end_time = slot.end_time().astimezone(datetime.timezone.utc)
+        start_time = slot.time.astimezone(datetime.UTC)
+        end_time = slot.end_time().astimezone(datetime.UTC)
         self.assertContains(r, '"{}","{}","{}"'.format(
             start_time.strftime("%Y-%m-%d"),
             start_time.strftime("%H%M"),
@@ -384,9 +384,6 @@ class MeetingTests(BaseMeetingTestCase):
         r = self.client.get(ical_url)
 
         assert_ical_response_is_valid(self, r)
-        self.assertContains(r, "BEGIN:VTIMEZONE")
-        self.assertContains(r, "END:VTIMEZONE")
-        self.assertContains(r, meeting.time_zone, msg_prefix="time_zone should appear in its original case")
         self.assertNotEqual(
             meeting.time_zone,
             meeting.time_zone.lower(),
@@ -405,21 +402,32 @@ class MeetingTests(BaseMeetingTestCase):
         assert_ical_response_is_valid(self, r)
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, session.group.name)
-        self.assertContains(r, session.remote_instructions)
-        self.assertContains(r, slot.location.name)
-        self.assertContains(r, 'https://onsite.example.com')
-        self.assertContains(r, 'https://meetecho.example.com')
-        self.assertContains(r, "BEGIN:VTIMEZONE")
-        self.assertContains(r, "END:VTIMEZONE")        
 
-        self.assertContains(r, session.agenda().get_href())
-        self.assertContains(
-            r,
+        cal = Calendar.from_ical(r.content)
+        events = [component for component in cal.walk() if component.name == "VEVENT"]
+
+        self.assertEqual(len(events), 2)
+        self.assertIn(session.remote_instructions, events[0].get('description'))
+        self.assertIn("Onsite tool: https://onsite.example.com", events[0].get('description'))
+        self.assertIn("Meetecho: https://meetecho.example.com", events[0].get('description'))
+        self.assertIn(f"Agenda {session.agenda().get_href()}", events[0].get('description'))
+        session_materials_url = settings.IDTRACKER_BASE_URL + urlreverse(
+            'ietf.meeting.views.session_details',
+            kwargs=dict(num=meeting.number, acronym=session.group.acronym)
+        )
+        self.assertIn(f"Session materials: {session_materials_url}", events[0].get('description'))
+        self.assertIn(
             urlreverse(
                 'ietf.meeting.views.session_details',
                 kwargs=dict(num=meeting.number, acronym=session.group.acronym)),
-            msg_prefix='ical should contain link to meeting materials page for session')
+            events[0].get('description'))
+        self.assertEqual(
+            session_materials_url,
+            events[0].get('url')
+        )
 
+        self.assertContains(r, f"LOCATION:{slot.location.name}")
+        
         # Floor Plan
         r = self.client.get(urlreverse('floor-plan', kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
@@ -1028,7 +1036,7 @@ class MeetingTests(BaseMeetingTestCase):
 
         updated = meeting.updated()
         self.assertIsNotNone(updated)
-        expected_updated = updated.astimezone(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        expected_updated = updated.astimezone(datetime.UTC).strftime("%Y%m%dT%H%M%SZ")
         self.assertContains(r, f"DTSTAMP:{expected_updated}")
         dtstamps_count = r.content.decode("utf-8").count(f"DTSTAMP:{expected_updated}")
         self.assertEqual(dtstamps_count, meeting.importantdate_set.count())
@@ -1049,32 +1057,36 @@ class MeetingTests(BaseMeetingTestCase):
         s1 = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         a1 = s1.official_timeslotassignment()
         t1 = a1.timeslot
+
         # Create an extra session
         t2 = TimeSlotFactory.create(
             meeting=meeting,
-            time=meeting.tz().localize(
+            time=pytz.utc.localize(
                 datetime.datetime.combine(meeting.date, datetime.time(11, 30))
             )
         )
+     
         s2 = SessionFactory.create(meeting=meeting, group=s1.group, add_to_schedule=False)
         SchedTimeSessAssignment.objects.create(timeslot=t2, session=s2, schedule=meeting.schedule)
-        #
+        
         url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number, 'acronym':s1.group.acronym, })
         r = self.client.get(url)
         assert_ical_response_is_valid(self,
                                       r,
                                       expected_event_summaries=['mars - Martian Special Interest Group'],
                                       expected_event_count=2)
-        self.assertContains(r, t1.local_start_time().strftime('%Y%m%dT%H%M%S'))
-        self.assertContains(r, t2.local_start_time().strftime('%Y%m%dT%H%M%S'))
-        #
+        self.assertContains(r, f"DTSTART:{t1.time.strftime('%Y%m%dT%H%M%SZ')}")
+        self.assertContains(r, f"DTEND:{(t1.time + t1.duration).strftime('%Y%m%dT%H%M%SZ')}")
+        self.assertContains(r, f"DTSTART:{t2.time.strftime('%Y%m%dT%H%M%SZ')}")
+        self.assertContains(r, f"DTEND:{(t2.time + t2.duration).strftime('%Y%m%dT%H%M%SZ')}")
+
         url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number, 'session_id':s1.id, })
         r = self.client.get(url)
         assert_ical_response_is_valid(self, r,
                                       expected_event_summaries=['mars - Martian Special Interest Group'],
                                       expected_event_count=1)
-        self.assertContains(r, t1.local_start_time().strftime('%Y%m%dT%H%M%S'))
-        self.assertNotContains(r, t2.local_start_time().strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, f"DTSTART:{t1.time.strftime('%Y%m%dT%H%M%SZ')}")
+        self.assertNotContains(r, f"DTSTART:{t2.time.strftime('%Y%m%dT%H%M%SZ')}")
 
     def test_parse_agenda_filter_params(self):
         def _r(show=(), hide=(), showtypes=(), hidetypes=()):
@@ -1168,8 +1180,8 @@ class MeetingTests(BaseMeetingTestCase):
                 os.unlink(filename)
 
     @skipIf(skip_pdf_tests, skip_message)
-    @skip_coverage
-    def test_session_draft_pdf(self):
+    @disable_coverage()
+    def test_session_draft_pdf(self):  # pragma: no cover
         session, filenames = self.build_session_setup()
         try:
             url = urlreverse('ietf.meeting.views.session_draft_pdf', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
@@ -2104,8 +2116,8 @@ class EditMeetingScheduleTests(TestCase):
         # strftime() does not seem to support hours without leading 0, so do this manually
         time_label_string = f'{ts_start.hour:d}:{ts_start.minute:02d} - {ts_end.hour:d}:{ts_end.minute:02d}'
         self.assertIn(time_label_string, time_label.text())
-        self.assertEqual(time_label.attr('data-start'), ts_start.astimezone(datetime.timezone.utc).isoformat())
-        self.assertEqual(time_label.attr('data-end'), ts_end.astimezone(datetime.timezone.utc).isoformat())
+        self.assertEqual(time_label.attr('data-start'), ts_start.astimezone(datetime.UTC).isoformat())
+        self.assertEqual(time_label.attr('data-end'), ts_end.astimezone(datetime.UTC).isoformat())
 
         ts_swap = time_label.find('.swap-timeslot-col')
         origin_label = ts_swap.attr('data-origin-label')
@@ -2116,8 +2128,8 @@ class EditMeetingScheduleTests(TestCase):
 
         timeslot_elt = pq(f'#timeslot{timeslot.pk}')
         self.assertEqual(len(timeslot_elt), 1)
-        self.assertEqual(timeslot_elt.attr('data-start'), ts_start.astimezone(datetime.timezone.utc).isoformat())
-        self.assertEqual(timeslot_elt.attr('data-end'), ts_end.astimezone(datetime.timezone.utc).isoformat())
+        self.assertEqual(timeslot_elt.attr('data-start'), ts_start.astimezone(datetime.UTC).isoformat())
+        self.assertEqual(timeslot_elt.attr('data-end'), ts_end.astimezone(datetime.UTC).isoformat())
 
         timeslot_label = pq(f'#timeslot{timeslot.pk} .time-label')
         self.assertEqual(len(timeslot_label), 1)
@@ -5220,7 +5232,7 @@ class InterimTests(TestCase):
 
         updated = meeting.updated()
         self.assertIsNotNone(updated)
-        expected_updated = updated.astimezone(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        expected_updated = updated.astimezone(datetime.UTC).strftime("%Y%m%dT%H%M%SZ")
         self.assertContains(r, f"DTSTAMP:{expected_updated}")
 
         # With default cached_updated, 1970-01-01

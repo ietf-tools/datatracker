@@ -6,7 +6,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("doc", "0025_storedobject_storedobject_unique_name_per_store"),
+        ("doc", "0026_change_wg_state_descriptions"),
     ]
 
     operations = [

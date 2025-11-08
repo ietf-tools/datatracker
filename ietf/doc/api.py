@@ -1,6 +1,7 @@
-# Copyright The IETF Trust 2024, All Rights Reserved
+# Copyright The IETF Trust 2024-2025, All Rights Reserved
 """Doc API implementations"""
-from django.db.models import OuterRef, Subquery, Prefetch, Value, JSONField
+
+from django.db.models import OuterRef, Subquery, Prefetch, Value, JSONField, QuerySet
 from django.db.models.functions import TruncDate
 from django_filters import rest_framework as filters
 from rest_framework import filters as drf_filters
@@ -9,11 +10,23 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import BasePermission
 from rest_framework.viewsets import GenericViewSet
 
+from drf_spectacular.utils import extend_schema
 from ietf.group.models import Group
-from ietf.name.models import StreamName
+from ietf.name.models import StreamName, DocTypeName
 from ietf.utils.timezone import RPC_TZINFO
-from .models import Document, DocEvent, RelatedDocument
-from .serializers import RfcMetadataSerializer, RfcStatus, RfcSerializer
+from .models import (
+    Document,
+    DocEvent,
+    RelatedDocument,
+    DocumentAuthor,
+    SUBSERIES_DOC_TYPE_IDS,
+)
+from .serializers import (
+    RfcMetadataSerializer,
+    RfcStatus,
+    RfcSerializer,
+    SubseriesDocSerializer,
+)
 
 
 class RfcLimitOffsetPagination(LimitOffsetPagination):
@@ -56,24 +69,60 @@ class PrefetchRelatedDocument(Prefetch):
     for which it is the `target` instead. Defaults to only "rfc" documents.
     """
 
-    def __init__(self, to_attr, relationship_id, reverse=False, doc_type_id="rfc"):
+    @staticmethod
+    def _get_queryset(relationship_id, reverse, doc_type_ids):
+        """Get queryset to use for the prefetch"""
+        if isinstance(doc_type_ids, str):
+            doc_type_ids = (doc_type_ids,)
+
+        return RelatedDocument.objects.filter(
+            **{
+                "relationship_id": relationship_id,
+                f"{'source' if reverse else 'target'}__type_id__in": doc_type_ids,
+            }
+        ).select_related("source" if reverse else "target")
+
+    def __init__(self, to_attr, relationship_id, reverse=False, doc_type_ids="rfc"):
         super().__init__(
             lookup="targets_related" if reverse else "relateddocument_set",
-            queryset=RelatedDocument.objects.filter(
-                **{
-                    "relationship_id": relationship_id,
-                    f"{'source' if reverse else 'target'}__type_id": doc_type_id,
-                }
-            ),
+            queryset=self._get_queryset(relationship_id, reverse, doc_type_ids),
             to_attr=to_attr,
         )
 
 
-class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
-    permission_classes: list[BasePermission] = []
-    lookup_field = "rfc_number"
-    queryset = (
-        Document.objects.filter(type_id="rfc", rfc_number__isnull=False)
+def augment_rfc_queryset(queryset: QuerySet[Document]):
+    return (
+        queryset.select_related("std_level", "stream")
+        .prefetch_related(
+            Prefetch(
+                "group",
+                Group.objects.select_related("parent"),
+            ),
+            Prefetch(
+                "documentauthor_set",
+                DocumentAuthor.objects.select_related("email", "person"),
+            ),
+            PrefetchRelatedDocument(
+                to_attr="drafts",
+                relationship_id="became_rfc",
+                doc_type_ids="draft",
+                reverse=True,
+            ),
+            PrefetchRelatedDocument(to_attr="obsoletes", relationship_id="obs"),
+            PrefetchRelatedDocument(
+                to_attr="obsoleted_by", relationship_id="obs", reverse=True
+            ),
+            PrefetchRelatedDocument(to_attr="updates", relationship_id="updates"),
+            PrefetchRelatedDocument(
+                to_attr="updated_by", relationship_id="updates", reverse=True
+            ),
+            PrefetchRelatedDocument(
+                to_attr="subseries",
+                relationship_id="contains",
+                reverse=True,
+                doc_type_ids=SUBSERIES_DOC_TYPE_IDS,
+            ),
+        )
         .annotate(
             published_datetime=Subquery(
                 DocEvent.objects.filter(
@@ -85,32 +134,23 @@ class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
             ),
         )
         .annotate(published=TruncDate("published_datetime", tzinfo=RPC_TZINFO))
-        .order_by("-rfc_number")
-        .prefetch_related(
-            PrefetchRelatedDocument(
-                to_attr="drafts",
-                relationship_id="became_rfc",
-                doc_type_id="draft",
-                reverse=True,
-            ),
-            PrefetchRelatedDocument(to_attr="obsoletes", relationship_id="obs"),
-            PrefetchRelatedDocument(
-                to_attr="obsoleted_by", relationship_id="obs", reverse=True
-            ),
-            PrefetchRelatedDocument(to_attr="updates", relationship_id="updates"),
-            PrefetchRelatedDocument(
-                to_attr="updated_by", relationship_id="updates", reverse=True
-            ),
-        )
         .annotate(
             # TODO implement these fake fields for real
-            is_also=Value([], output_field=JSONField()),
             see_also=Value([], output_field=JSONField()),
             formats=Value(["txt", "xml"], output_field=JSONField()),
             keywords=Value(["keyword"], output_field=JSONField()),
             errata=Value([], output_field=JSONField()),
         )
-    )  # default ordering - RfcFilter may override
+    )
+
+
+class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
+    permission_classes: list[BasePermission] = []
+    lookup_field = "rfc_number"
+    queryset = augment_rfc_queryset(
+        Document.objects.filter(type_id="rfc", rfc_number__isnull=False)
+    ).order_by("-rfc_number")
+
     pagination_class = RfcLimitOffsetPagination
     filter_backends = [filters.DjangoFilterBackend, drf_filters.SearchFilter]
     filterset_class = RfcFilter
@@ -120,3 +160,37 @@ class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
         if self.action == "retrieve":
             return RfcSerializer
         return RfcMetadataSerializer
+
+
+class PrefetchSubseriesContents(Prefetch):
+    def __init__(self, to_attr):
+        super().__init__(
+            lookup="relateddocument_set",
+            queryset=RelatedDocument.objects.filter(
+                relationship_id="contains",
+                target__type_id="rfc",
+            ).prefetch_related(
+                Prefetch(
+                    "target",
+                    queryset=augment_rfc_queryset(Document.objects.all()),
+                )
+            ),
+            to_attr=to_attr,
+        )
+
+
+class SubseriesFilter(filters.FilterSet):
+    type = filters.ModelMultipleChoiceFilter(
+        queryset=DocTypeName.objects.filter(pk__in=SUBSERIES_DOC_TYPE_IDS)
+    )
+
+
+class SubseriesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
+    permission_classes: list[BasePermission] = []
+    lookup_field = "name"
+    serializer_class = SubseriesDocSerializer
+    queryset = Document.objects.subseries_docs().prefetch_related(
+        PrefetchSubseriesContents(to_attr="contents")
+    )
+    filter_backends = [filters.DjangoFilterBackend]
+    filterset_class = SubseriesFilter
