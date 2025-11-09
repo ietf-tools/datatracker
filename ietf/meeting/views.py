@@ -5531,6 +5531,7 @@ def import_session_minutes(request, session_id, num):
             except SaveMaterialsError as err:
                 form.add_error(None, str(err))
             else:
+                resolve_uploaded_material(meeting=session.meeting, doc=session.minutes())
                 messages.success(request, f'Successfully imported minutes as revision {session.minutes().rev}.')
                 return redirect('ietf.meeting.views.session_details', num=num, acronym=session.group.acronym)
     else:
