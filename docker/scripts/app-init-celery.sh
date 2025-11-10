@@ -101,6 +101,9 @@ else
     CELERY="/usr/local/bin/celery"
 fi
 trap 'trap "" TERM; cleanup' TERM
+
+tail -f /dev/null
+
 # start celery in the background so we can trap the TERM signal
 if [[ -n "${DEV_MODE}" && -x "${WATCHMEDO}" ]]; then
   $WATCHMEDO auto-restart \

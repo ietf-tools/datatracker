@@ -10,7 +10,7 @@ pidof nginx >/dev/null && echo "nginx is already running [ OK ]" || sudo nginx
 # Run memcached
 
 echo "Starting memcached..."
-pidof memcached >/dev/null && echo "memcached is already running [ OK ]" || /usr/bin/memcached -u dev -d
+pidof memcached >/dev/null && echo "memcached is already running [ OK ]" || /usr/bin/memcached -u root -d
 
 echo "-----------------------------------------------------------------"
 echo "Ready!"

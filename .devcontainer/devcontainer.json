@@ -13,6 +13,10 @@
     },
 
     "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {},
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "16"
+        }
     },
 
     "customizations": {
@@ -25,20 +29,17 @@
                 "editorconfig.editorconfig",
                 "vue.volar@2.2.10",
                 "mrmlnc.vscode-duplicate",
-                "ms-azuretools.vscode-docker",
                 "ms-playwright.playwright",
                 "ms-python.python",
                 "ms-python.vscode-pylance",
                 "mutantdino.resourcemonitor",
                 "oderwat.indent-rainbow",
                 "redhat.vscode-yaml",
-                "spmeesseman.vscode-taskexplorer",
                 "visualstudioexptteam.vscodeintellicode",
                 "ms-python.pylint",
                 "charliermarsh.ruff"
             ],
             "settings": {
-                "terminal.integrated.defaultProfile.linux": "zsh",
                 "python.pythonPath": "/usr/local/bin/python",
                 "python.languageServer": "Default",
                 "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
@@ -86,5 +87,5 @@
     // "postCreateCommand": "sh /docker-init.sh",
     
     // Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-    "remoteUser": "dev"
+    // "remoteUser": "dev"
 }
