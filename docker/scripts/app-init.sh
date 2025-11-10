@@ -2,6 +2,11 @@
 
 WORKSPACEDIR="/workspace"
 
+# Handle Linux host mounting the workspace dir as root
+if [ ! -O "${WORKSPACEDIR}/ietf" ]; then
+    sudo chown -R dev:dev $WORKSPACEDIR
+fi
+
 # Start rsyslog service
 sudo service rsyslog start &>/dev/null
 
@@ -10,6 +15,14 @@ git config --global --add safe.directory /workspace
 
 # Turn off git info in prompt (causes slowdowns)
 git config devcontainers-theme.hide-status 1
+
+# Fix ownership of volumes
+echo "Fixing volumes ownership..."
+sudo chown -R dev:dev "$WORKSPACEDIR/.parcel-cache"
+sudo chown -R dev:dev "$WORKSPACEDIR/__pycache__"
+sudo chown -R dev:dev "$WORKSPACEDIR/.vite"
+sudo chown -R dev:dev "$WORKSPACEDIR/.yarn/unplugged"
+sudo chown dev:dev "/assets"
 
 # Run nginx
 echo "Starting nginx..."
@@ -80,7 +93,7 @@ fi
 # Run memcached
 
 echo "Starting memcached..."
-/usr/bin/memcached -u root -d
+/usr/bin/memcached -u dev -d
 
 # Initial checks
 

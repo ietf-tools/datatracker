@@ -2,7 +2,7 @@ services:
     app:
         build:
             context: .
-            dockerfile: docker/app.Dockerfile
+            dockerfile: docker/dev.Dockerfile
                 
         init: true
         

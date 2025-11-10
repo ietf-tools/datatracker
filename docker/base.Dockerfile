@@ -62,12 +62,10 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 	libyang2-tools \
 	locales \
 	make \
-	mariadb-client \
 	memcached \
 	nano \
 	netcat-traditional \
 	nodejs \
-	pgloader \
 	pigz \
 	postgresql-client-17 \
 	pv \
