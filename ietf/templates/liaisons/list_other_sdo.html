@@ -23,7 +23,7 @@
         <tbody>
           {% for group in sdos_in_state.list%}
           <tr>
-            <td>{{ group.acronym }}</td>
+            <td><a href="{% url 'ietf.group.views.group_about' acronym=group.acronym %}">{{ group.acronym }}</a></td>
             <td>{{ group.name }}</td>
             <td>
               {% for person in group.liaison_managers %}
