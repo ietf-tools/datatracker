@@ -411,6 +411,7 @@ TEMPLATES = [
         ],
         'OPTIONS': {
             'context_processors': [
+                'ietf.context_processors.traceparent_id',
                 'django.contrib.auth.context_processors.auth',
                 'django.template.context_processors.debug',     # makes 'sql_queries' available in templates
                 'django.template.context_processors.i18n',
@@ -443,6 +444,7 @@ if DEBUG:
 
 
 MIDDLEWARE = [
+    "ietf.middleware.add_otel_traceparent_header",
     "django.middleware.csrf.CsrfViewMiddleware",
     "corsheaders.middleware.CorsMiddleware", # see docs on CORS_REPLACE_HTTPS_REFERER before using it
     "django.middleware.common.CommonMiddleware",

@@ -110,6 +110,17 @@ class LiaisonTests(TestCase):
         self.assertEqual(self.client.get('/liaison/help/from_ietf/').status_code, 200)
         self.assertEqual(self.client.get('/liaison/help/to_ietf/').status_code, 200)
 
+    def test_list_other_sdo(self):
+        GroupFactory(type_id="sdo", state_id="conclude", acronym="third")
+        GroupFactory(type_id="sdo", state_id="active", acronym="second")
+        GroupFactory(type_id="sdo", state_id="active", acronym="first")
+        url = urlreverse("ietf.liaisons.views.list_other_sdo")
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("h1")), 2)
+        first_td_elements_text = [e.text for e in q("tr").find("td:first-child a")]
+        self.assertEqual(first_td_elements_text, ["first", "second", "third"])
 
 class UnitTests(TestCase):
     def test_get_contacts_for_liaison_messages_for_group_primary(self):
@@ -203,7 +214,6 @@ class AjaxTests(TestCase):
         self.assertEqual(r.status_code, 200)
         data = r.json()
         self.assertEqual(data["error"], False)
-        self.assertEqual(data["post_only"], False)
         self.assertTrue('cc' in data)
         self.assertTrue('needs_approval' in data)
         self.assertTrue('to_contacts' in data)
@@ -871,38 +881,6 @@ class LiaisonManagementTests(TestCase):
         self.assertTrue("Liaison Statement" in outbox[-1]["Subject"])
         self.assertTrue('aread@' in outbox[-1]['To'])
         self.assertTrue(submitter.email_address(), outbox[-1]['Cc'])
-        
-
-    def test_add_outgoing_liaison_unapproved_post_only(self):
-        RoleFactory(name_id='liaiman',group__type_id='sdo', person__user__username='ulm-liaiman')
-        mars = RoleFactory(name_id='chair',person__user__username='marschairman',group__acronym='mars').group
-        RoleFactory(name_id='ad',group=mars)
-
-        url = urlreverse('ietf.liaisons.views.liaison_add', kwargs={'type':'outgoing'})
-        login_testing_unauthorized(self, "secretary", url)
-
-        # add new
-        mailbox_before = len(outbox)
-        from_group = Group.objects.get(acronym="mars")
-        to_group = Group.objects.filter(type="sdo")[0]
-        submitter = Person.objects.get(user__username="marschairman")
-        today = date_today(datetime.UTC)
-        r = self.client.post(url,
-                             dict(from_groups=str(from_group.pk),
-                                  from_contact=submitter.email_address(),
-                                  to_groups=str(to_group.pk),
-                                  to_contacts='to_contacts@example.com',
-                                  approved="",
-                                  purpose="info",
-                                  title="title",
-                                  submitted_date=today.strftime("%Y-%m-%d"),
-                                  body="body",
-                                  post_only="1",
-                                  ))
-        self.assertEqual(r.status_code, 302)
-        l = LiaisonStatement.objects.all().order_by("-id")[0]
-        self.assertEqual(l.state.slug,'pending')
-        self.assertEqual(len(outbox), mailbox_before + 1)
 
     def test_liaison_add_attachment(self):
         liaison = LiaisonStatementFactory(deadline=date_today(DEADLINE_TZINFO)+datetime.timedelta(days=1))
@@ -1152,17 +1130,6 @@ class LiaisonManagementTests(TestCase):
     # -------------------------------------------------
     # Form validations
     # -------------------------------------------------
-    def test_post_and_send_fail(self):
-        RoleFactory(name_id='liaiman',person__user__username='ulm-liaiman',group__type_id='sdo',group__acronym='ulm')
-        GroupFactory(type_id='wg',acronym='mars')
-
-        url = urlreverse('ietf.liaisons.views.liaison_add', kwargs={'type':'incoming'})
-        login_testing_unauthorized(self, "ulm-liaiman", url)
-
-        r = self.client.post(url,get_liaison_post_data(),follow=True)
-
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, 'As an IETF Liaison Manager you can not send incoming liaison statements')
 
     def test_deadline_field(self):
         '''Required for action, comment, not info, response'''
