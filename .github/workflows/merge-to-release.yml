@@ -57,7 +57,6 @@ jobs:
           gh pr merge "$PR_NUMBER_UP" \
             --merge \
             --admin \
-            --delete-branch \
             --commit-title "$COMMIT_TITLE"
 
           echo "Successfully merged PR #${PR_NUMBER_UP} into main."
@@ -110,7 +109,6 @@ jobs:
           gh pr merge "$PR_NUMBER_DOWN" \
             --merge \
             --admin \
-            --delete-branch \
             --commit-title "$COMMIT_TITLE"
 
           echo "Successfully merged PR #${PR_NUMBER_DOWN}."
