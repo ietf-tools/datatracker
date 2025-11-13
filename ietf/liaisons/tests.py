@@ -119,7 +119,7 @@ class LiaisonTests(TestCase):
         r = self.client.get(url)
         q = PyQuery(r.content)
         self.assertEqual(len(q("h1")), 2)
-        first_td_elements_text = [e.text for e in q("tr").find("td:first-child")]
+        first_td_elements_text = [e.text for e in q("tr").find("td:first-child a")]
         self.assertEqual(first_td_elements_text, ["first", "second", "third"])
 
 class UnitTests(TestCase):
