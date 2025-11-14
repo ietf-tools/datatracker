@@ -24,7 +24,7 @@ from ietf.api.serializers_rpc import (
     ReferenceSerializer,
     EmailPersonSerializer,
     RfcWithAuthorsSerializer,
-    DraftWithAuthorsSerializer,
+    DraftWithAuthorsSerializer, RfcPubNotificationSerializer, NotificationAckSerializer,
 )
 from ietf.doc.models import Document, DocHistory
 from ietf.person.models import Email, Person
@@ -280,3 +280,22 @@ class DraftsByNamesView(APIView):
         names = request.data
         docs = Document.objects.filter(type_id="draft", name__in=names)
         return Response(DraftSerializer(docs, many=True).data)
+
+
+class RfcPubNotificationView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
+    
+    @extend_schema(
+        operation_id="notify_rfc_published",
+        summary="Notify datatracker of RFC publication",
+        request=RfcPubNotificationSerializer,
+        responses=NotificationAckSerializer,
+    )
+    def post(self, request):
+        # todo implement this for real
+        serializer = RfcPubNotificationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        print(">>> Notified of RFC publication!!")
+        from pprint import pp
+        pp(serializer.validated_data)
+        return Response(NotificationAckSerializer().data)
