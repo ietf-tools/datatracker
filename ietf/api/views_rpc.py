@@ -3,6 +3,7 @@
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import serializers, viewsets, mixins
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -16,6 +17,7 @@ from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 
 from ietf.api.serializers_rpc import (
+    AuthorSerializer,
     PersonSerializer,
     FullDraftSerializer,
     DraftSerializer,
@@ -26,7 +28,7 @@ from ietf.api.serializers_rpc import (
     RfcWithAuthorsSerializer,
     DraftWithAuthorsSerializer,
 )
-from ietf.doc.models import Document, DocHistory
+from ietf.doc.models import Document, DocHistory, RfcAuthor
 from ietf.person.models import Email, Person
 
 
@@ -280,3 +282,45 @@ class DraftsByNamesView(APIView):
         names = request.data
         docs = Document.objects.filter(type_id="draft", name__in=names)
         return Response(DraftSerializer(docs, many=True).data)
+
+
+class RfcAuthorViewSet(viewsets.ModelViewSet):
+    """ViewSet for RfcAuthor model
+    
+    Router needs to provide rfc_number as a kwarg
+    """
+    api_key_endpoint = "ietf.api.views_rpc"
+
+    queryset = RfcAuthor.objects.all()
+    serializer_class = AuthorSerializer
+    lookup_url_kwarg = "author_id"
+    rfc_number_param = "rfc_number"
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                document__type_id="rfc",
+                document__rfc_number=self.kwargs[self.rfc_number_param],
+            )
+        )
+
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+    
+    def perform_create(self, serializer):
+        rfc = Document.objects.filter(
+            type_id="rfc",
+            rfc_number=self.kwargs[self.rfc_number_param]
+        ).first()
+        if rfc is None:
+            raise NotFound("RFC not found")
+        # Find the current highest order for this document
+        from django.db.models import Max
+        max_order = (
+            RfcAuthor.objects.filter(document=rfc)
+            .aggregate(max_order=Max("order", default=0))
+            .get("max_order")
+        )
+        serializer.save(document=rfc, order=max_order + 1)

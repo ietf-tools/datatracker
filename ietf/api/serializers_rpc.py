@@ -7,7 +7,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from ietf.doc.models import DocumentAuthor, Document
+from ietf.doc.models import DocumentAuthor, Document, RfcAuthor
 from ietf.doc.utils import default_consensus
 from ietf.person.models import Person
 
@@ -86,7 +86,7 @@ class DocumentAuthorSerializer(serializers.ModelSerializer):
 
     def get_plain_name(self, document_author: DocumentAuthor) -> str:
         return document_author.person.plain_name()
-
+    
 
 class FullDraftSerializer(serializers.ModelSerializer):
     # Redefine these fields so they don't pick up the regex validator patterns.
@@ -192,3 +192,21 @@ class ReferenceSerializer(serializers.ModelSerializer):
         model = Document
         fields = ["id", "name"]
         read_only_fields = ["id", "name"]
+
+
+class AuthorSerializer(serializers.ModelSerializer):
+    """Serialize an RfcAuthor record
+    
+    todo fix naming confusion with ietf.doc.serializers.RfcAuthorSerializer
+    """
+    class Meta:
+        model = RfcAuthor
+        fields = [
+            "id",
+            "titlepage_name",
+            "is_editor",
+            "person",
+            "email",
+            "affiliation",
+            "country",
+        ]
