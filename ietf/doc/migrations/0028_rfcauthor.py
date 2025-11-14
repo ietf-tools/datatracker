@@ -8,7 +8,7 @@ import ietf.utils.models
 class Migration(migrations.Migration):
     dependencies = [
         ("person", "0005_alter_historicalperson_pronouns_selectable_and_more"),
-        ("doc", "0026_change_wg_state_descriptions"),
+        ("doc", "0027_alter_dochistory_title_alter_document_title"),
     ]
 
     operations = [
