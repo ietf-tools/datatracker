@@ -306,9 +306,6 @@ class RfcAuthorViewSet(viewsets.ModelViewSet):
             )
         )
 
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
-    
     def perform_create(self, serializer):
         rfc = Document.objects.filter(
             type_id="rfc",
