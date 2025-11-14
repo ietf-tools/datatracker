@@ -8,10 +8,17 @@ from django.urls import include, path
 from ietf.api import views_rpc, views_rpc_demo
 from ietf.utils.urls import url
 
-router = routers.DefaultRouter()
+router = routers.DefaultRouter(use_regex_path=False)
+router.include_format_suffixes = False
 router.register(r"draft", views_rpc.DraftViewSet, basename="draft")
 router.register(r"person", views_rpc.PersonViewSet)
 router.register(r"rfc", views_rpc.RfcViewSet, basename="rfc")
+
+router.register(
+    r"rfc/<int:rfc_number>/authors",
+    views_rpc.RfcAuthorViewSet,
+    basename="rfc-authors",
+)
 
 if settings.SERVER_MODE not in {"production", "test"}:
     # for non production demos
