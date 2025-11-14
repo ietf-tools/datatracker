@@ -5302,7 +5302,9 @@ class InterimTests(TestCase):
         assert_ical_response_is_valid(self, r,
                                       expected_event_summaries=expected_event_summaries,
                                       expected_event_count=len(expected_event_summaries))
-        self.assertContains(r, 'Remote instructions: https://someurl.example.com')
+        # Unfold long lines that might have been folded by iCal
+        content_unfolded = r.content.decode('utf-8').replace('\r\n ', '')
+        self.assertIn('Remote instructions: https://someurl.example.com', content_unfolded)
 
         Session.objects.filter(meeting__type_id='interim').update(remote_instructions='')
         r = self.client.get(url)
@@ -5310,7 +5312,8 @@ class InterimTests(TestCase):
         assert_ical_response_is_valid(self, r,
                                       expected_event_summaries=expected_event_summaries,
                                       expected_event_count=len(expected_event_summaries))
-        self.assertNotContains(r, 'Remote instructions:')
+        content_unfolded = r.content.decode('utf-8').replace('\r\n ', '')
+        self.assertNotIn('Remote instructions:', content_unfolded)
 
         updated = meeting.updated()
         self.assertIsNotNone(updated)
