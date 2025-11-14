@@ -989,6 +989,7 @@ class DocumentActionHolder(models.Model):
             roles.append('Action Holder')
         return ', '.join(roles) 
 
+# N.B., at least a couple dozen documents exist that do not satisfy this validator
 validate_docname = RegexValidator(
     r'^[-a-z0-9]+$',
     "Provide a valid document name consisting of lowercase letters, numbers and hyphens.",
@@ -1664,8 +1665,16 @@ class BofreqResponsibleDocEvent(DocEvent):
     """ Capture the responsible leadership (IAB and IESG members) for a BOF Request """
     responsible = models.ManyToManyField('person.Person', blank=True)
 
+
+class StoredObjectQuerySet(models.QuerySet):
+    def exclude_deleted(self):
+        return self.filter(deleted__isnull=True)
+
+
 class StoredObject(models.Model):
     """Hold metadata about objects placed in object storage"""
+
+    objects = StoredObjectQuerySet.as_manager() 
 
     store = models.CharField(max_length=256)
     name = models.CharField(max_length=1024, null=False, blank=False) # N.B. the 1024 limit on name comes from S3

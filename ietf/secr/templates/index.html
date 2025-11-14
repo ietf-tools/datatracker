@@ -1,11 +1,11 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
+{# Copyright The IETF Trust 2007-2025, All Rights Reserved #}
 {% extends "base.html" %}
 {% load static %}
 {% load ietf_filters %}
 {% block title %}Secretariat Dashboard{% endblock %}
 {% block content %}
     <h1>Secretariat Dashboard</h1>
-    <div class="">
+    <div class="secr-menu">
         {% if user|has_role:"Secretariat" %}
             <h2>IESG</h2>
             <ul>
@@ -20,12 +20,10 @@
 
             <h2>Meetings and Proceedings</h2>
             <ul>
-                <li> <a href="{% url 'ietf.secr.sreq.views.main' %} "><b>Session Requests</b></a></li>
                 <li> <a href="{% url 'ietf.secr.meetings.views.main' %}"><b>Meeting Manager</b></a></li>
             </ul>
         {% else %}
             <ul>
-                <li> <a href="{% url 'ietf.secr.sreq.views.main' %}"><b>Session Requests</b></a></li>
                 <li> <a href="{% url 'ietf.secr.announcement.views.main' %}"><b>Announcements</b></a></li>
             </ul>
         {% endif %}

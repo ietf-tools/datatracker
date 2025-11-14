@@ -27,14 +27,6 @@ from ietf.liaisons.fields import select2_id_liaison_json
 from ietf.name.models import LiaisonStatementTagName
 from ietf.utils.response import permission_denied
 
-EMAIL_ALIASES = {
-    "IETFCHAIR": "The IETF Chair <chair@ietf.org>",
-    "IESG": "The IESG <iesg@ietf.org>",
-    "IAB": "The IAB <iab@iab.org>",
-    "IABCHAIR": "The IAB Chair <iab-chair@iab.org>",
-}
-
-
 # -------------------------------------------------
 # Helper Functions
 # -------------------------------------------------
@@ -94,64 +86,6 @@ def contacts_from_roles(roles):
     emails = [ contact_email_from_role(r) for r in roles ]
     return ','.join(emails)
 
-def get_cc(group):
-    '''Returns list of emails to use as CC for group.  Simplified refactor of IETFHierarchy
-    get_cc() and get_from_cc()
-    '''
-    emails = []
-
-    # role based CCs
-    if group.acronym in ('ietf','iesg'):
-        emails.append(EMAIL_ALIASES['IESG'])
-        emails.append(EMAIL_ALIASES['IETFCHAIR'])
-    elif group.acronym in ('iab'):
-        emails.append(EMAIL_ALIASES['IAB'])
-        emails.append(EMAIL_ALIASES['IABCHAIR'])
-    elif group.type_id == 'area':
-        emails.append(EMAIL_ALIASES['IETFCHAIR'])
-        ad_roles = group.role_set.filter(name='ad')
-        emails.extend([ contact_email_from_role(r) for r in ad_roles ])
-    elif group.type_id == 'wg':
-        ad_roles = group.parent.role_set.filter(name='ad')
-        emails.extend([ contact_email_from_role(r) for r in ad_roles ])
-        chair_roles = group.role_set.filter(name='chair')
-        emails.extend([ contact_email_from_role(r) for r in chair_roles ])
-        if group.list_email:
-            emails.append('{} Discussion List <{}>'.format(group.name,group.list_email))
-    elif group.type_id == 'sdo':
-        liaiman_roles = group.role_set.filter(name='liaiman')
-        emails.extend([ contact_email_from_role(r) for r in liaiman_roles ])
-
-    # explicit CCs
-    liaison_cc_roles = group.role_set.filter(name='liaison_cc_contact')
-    emails.extend([ contact_email_from_role(r) for r in liaison_cc_roles ])
-
-    return emails
-
-def get_contacts_for_group(group):
-    '''Returns default contacts for groups as a comma separated string'''
-    # use explicit default contacts if defined
-    explicit_contacts = contacts_from_roles(group.role_set.filter(name='liaison_contact'))
-    if explicit_contacts:
-        return explicit_contacts
-
-    # otherwise construct based on group type
-    contacts = []
-    if group.type_id == 'area':
-        roles = group.role_set.filter(name='ad')
-        contacts.append(contacts_from_roles(roles))
-    elif group.type_id == 'wg':
-        roles = group.role_set.filter(name='chair')
-        contacts.append(contacts_from_roles(roles))
-    elif group.acronym == 'ietf':
-        contacts.append(EMAIL_ALIASES['IETFCHAIR'])
-    elif group.acronym == 'iab':
-        contacts.append(EMAIL_ALIASES['IABCHAIR'])
-    elif group.acronym == 'iesg':
-        contacts.append(EMAIL_ALIASES['IESG'])
-
-    return ','.join(contacts)
-
 def get_details_tabs(stmt, selected):
     return [
         t + (t[0].lower() == selected.lower(),)
@@ -184,29 +118,14 @@ def normalize_sort(request):
 
     return sort, order_by
 
-def post_only(group,person):
-    '''Returns true if the user is restricted to post_only (vs. post_and_send) for this
-    group.  This is for incoming liaison statements.
-    - Secretariat have full access.
-    - Authorized Individuals have full access for the group they are associated with
-    - Liaison Managers can post only
-    '''
-    if group.type_id == "sdo" and (
-        not (
-            has_role(person.user, "Secretariat")
-            or has_role(person.user, "Liaison Coordinator")
-            or group.role_set.filter(name="auth", person=person)
-        )
-    ):
-        return True
-    else:
-        return False
 
 # -------------------------------------------------
 # Ajax Functions
 # -------------------------------------------------
 @can_submit_liaison_required
 def ajax_get_liaison_info(request):
+    from ietf.mailtrigger.utils import get_contacts_for_liaison_messages_for_group_primary,get_contacts_for_liaison_messages_for_group_secondary
+
     '''Returns dictionary of info to update entry form given the groups
     that have been selected
     '''
@@ -223,20 +142,18 @@ def ajax_get_liaison_info(request):
 
     cc = []
     does_need_approval = []
-    can_post_only = []
     to_contacts = []
     response_contacts = []
-    result = {'response_contacts':[],'to_contacts': [], 'cc': [], 'needs_approval': False, 'post_only': False, 'full_list': []}
+    result = {'response_contacts':[],'to_contacts': [], 'cc': [], 'needs_approval': False, 'full_list': []}
 
     for group in from_groups:
-        cc.extend(get_cc(group))
+        cc.extend(get_contacts_for_liaison_messages_for_group_primary(group))
         does_need_approval.append(needs_approval(group,person))
-        can_post_only.append(post_only(group,person))
-        response_contacts.append(get_contacts_for_group(group))
+        response_contacts.append(get_contacts_for_liaison_messages_for_group_secondary(group))
 
     for group in to_groups:
-        cc.extend(get_cc(group))
-        to_contacts.append(get_contacts_for_group(group))
+        cc.extend(get_contacts_for_liaison_messages_for_group_primary(group))
+        to_contacts.append(get_contacts_for_liaison_messages_for_group_secondary(group))
 
     # if there are from_groups and any need approval
     if does_need_approval:
@@ -247,12 +164,15 @@ def ajax_get_liaison_info(request):
     else:
         does_need_approval = True
 
-    result.update({'error': False,
-                   'cc': list(set(cc)),
-                   'response_contacts':list(set(response_contacts)),
-                   'to_contacts': list(set(to_contacts)),
-                   'needs_approval': does_need_approval,
-                   'post_only': any(can_post_only)})
+    result.update(
+        {
+            "error": False,
+            "cc": list(set(cc)),
+            "response_contacts": list(set(response_contacts)),
+            "to_contacts": list(set(to_contacts)),
+            "needs_approval": does_need_approval,
+        }
+    )
 
     json_result = json.dumps(result)
     return HttpResponse(json_result, content_type='application/json')
@@ -589,3 +509,17 @@ def liaison_resend(request, object_id):
     messages.success(request,'Liaison Statement resent')
     return redirect('ietf.liaisons.views.liaison_list')
 
+
+@role_required("Secretariat", "IAB", "Liaison Coordinator", "Liaison Manager")
+def list_other_sdo(request):
+    def _sdo_order_key(obj:Group)-> tuple[str,str]:
+        state_order = {
+            "active" : "a",
+            "conclude": "b",
+        }
+        return (state_order.get(obj.state.slug,f"c{obj.state.slug}"), obj.acronym)
+
+    sdos = sorted(list(Group.objects.filter(type="sdo")),key = _sdo_order_key)
+    for sdo in sdos:
+        sdo.liaison_managers =[r.person for r in sdo.role_set.filter(name="liaiman")]
+    return render(request,"liaisons/list_other_sdo.html",dict(sdos=sdos))

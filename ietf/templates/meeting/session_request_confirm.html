@@ -1,0 +1,38 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
+{% extends "base.html" %}
+{% load static ietf_filters django_bootstrap5 %}
+{% block title %}Confirm Session Request{% endblock %}
+    
+{% block content %}
+    <h1 class="">Confirm Session Request - IETF {{ meeting.number }}</h1>
+
+    <div class="d-flex mb-3">
+      <a href="https://www.ietf.org/chairs/session-request-tool-instructions/" class="me-3 btn btn-primary" target="_blank">Instructions</a>
+    </div>
+
+    <hr>
+
+    <div class="custom-stripe">
+
+        {% include "meeting/session_request_view_table.html" %}
+
+        <form action="{% url 'ietf.meeting.views_session_request.confirm' acronym=group.acronym %}" method="post">
+            {% csrf_token %}
+            {{ form }}
+            {{ form.session_forms.management_form }}
+            {% for sf in form.session_forms %}
+                {% include 'meeting/session_details_form.html' with form=sf hidden=True only %}
+            {% endfor %}
+
+            <button class="btn btn-primary" type="submit" name="submit" value="Submit">Submit</button>
+            <button class="btn btn-secondary float-end" type="submit" name="submit" value="Cancel">Cancel</button>
+
+        </form>
+
+    </div> <!-- view-container -->
+
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'ietf/js/custom_striped.js' %}"></script>
+{% endblock %}

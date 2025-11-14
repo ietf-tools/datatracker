@@ -443,7 +443,6 @@ def prepare_group_documents(request, group, clist):
 
     return docs, meta, docs_related, meta_related
 
-
 def get_leadership(group_type):
     people = Person.objects.filter(
         role__name__slug="chair",

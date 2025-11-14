@@ -74,7 +74,7 @@ from ietf.utils.fields import ModelMultipleChoiceField
 from ietf.utils.log import log
 from ietf.doc.utils_search import prepare_document_table, doc_type, doc_state, doc_type_name, AD_WORKLOAD
 from ietf.ietfauth.utils import has_role
-
+from ietf.utils.unicodenormalize import normalize_for_sorting
 
 class SearchForm(forms.Form):
     name = forms.CharField(required=False)
@@ -485,6 +485,7 @@ def ad_workload(request):
     ).distinct():
         if p in get_active_ads():
             ads.append(p)
+    ads.sort(key=lambda p: normalize_for_sorting(p.plain_name()))
 
     bucket_template = {
         dt: {state: [[] for _ in range(days)] for state in STATE_SLUGS[dt].values()}

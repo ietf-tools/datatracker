@@ -335,32 +335,17 @@ class BaseManipulationTests:
 
         r = self.client.post(
             url,
-            dict(position="yes", comment="oib239sb", send_mail="Save and send email"),
+            dict(
+                position="yes",
+                comment="oib239sb",
+                send_mail="Save and send email",
+                cc_choices=["doc_authors", "doc_group_chairs", "doc_group_mail_list"],
+            ),
         )
         self.assertEqual(r.status_code, 302)
         e = draft.latest_event(BallotPositionDocEvent)
         self.assertEqual(e.pos.slug, "yes")
         self.assertEqual(e.comment, "oib239sb")
-
-        url = (
-            urlreverse(
-                "ietf.doc.views_ballot.send_ballot_comment",
-                kwargs=dict(name=draft.name, ballot_id=ballot.pk),
-            )
-            + self.balloter
-        )
-
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-
-        r = self.client.post(
-            url,
-            dict(
-                cc_choices=["doc_authors", "doc_group_chairs", "doc_group_mail_list"],
-                body="Stuff",
-            ),
-        )
-        self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), 1)
         self.assertNotIn("discuss-criteria", get_payload_text(outbox[0]))
 
@@ -534,29 +519,17 @@ class RSABMemberTests(TestCase):
 
         r = self.client.post(
             url,
-            dict(position="yes", comment="oib239sb", send_mail="Save and send email"),
+            dict(
+                position="yes",
+                comment="oib239sb",
+                send_mail="Save and send email",
+                cc_choices=["doc_authors", "doc_group_chairs", "doc_group_mail_list"],
+            ),
         )
         self.assertEqual(r.status_code, 302)
         e = draft.latest_event(BallotPositionDocEvent)
         self.assertEqual(e.pos.slug, "yes")
         self.assertEqual(e.comment, "oib239sb")
-
-        url = urlreverse(
-            "ietf.doc.views_ballot.send_ballot_comment",
-            kwargs=dict(name=draft.name, ballot_id=ballot.pk),
-        )
-
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-
-        r = self.client.post(
-            url,
-            dict(
-                cc_choices=["doc_authors", "doc_group_chairs", "doc_group_mail_list"],
-                body="Stuff",
-            ),
-        )
-        self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), 1)
 
 

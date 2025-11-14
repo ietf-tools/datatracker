@@ -1,0 +1,4 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
+{% autoescape off %}{% load ams_filters %}
+
+A request to cancel a meeting session has just been submitted by {{ requester }}.{% endautoescape %}

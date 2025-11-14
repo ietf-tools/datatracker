@@ -1,3 +1,4 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
 {% load origin tz %}
 {% origin %}
 {% for s in sessions %}
@@ -25,7 +26,7 @@
             {% if show_request and s.meeting.type_id == 'ietf' %}
                 {% if can_edit %}
                     <a class="btn btn-primary btn-sm"
-                       href="{% url 'ietf.secr.sreq.views.view' num=s.meeting.number acronym=s.group.acronym %}">
+                       href="{% url 'ietf.meeting.views_session_request.view_request' num=s.meeting.number acronym=s.group.acronym %}">
                         Edit Session Request
                     </a>
                 {% endif %}

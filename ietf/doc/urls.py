@@ -93,6 +93,8 @@ urlpatterns = [
     url(r'^ballots/irsg/$', views_ballot.irsg_ballot_status),
     url(r'^ballots/rsab/$', views_ballot.rsab_ballot_status),
 
+    url(r'^build-position-email/$', views_ballot.ajax_build_position_email),
+
     url(r'^(?P<type_id>(bcp|std|fyi))/?$', views_search.index_subseries),
 
     url(r'^%(name)s(?:/%(rev)s)?/$' % settings.URL_REGEXPS, views_doc.document_main),
@@ -111,7 +113,6 @@ urlpatterns = [
     url(r'^%(name)s/ballot/rsab/$' % settings.URL_REGEXPS, views_doc.document_rsab_ballot),
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/$' % settings.URL_REGEXPS, views_doc.document_ballot),
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/position/$' % settings.URL_REGEXPS, views_ballot.edit_position),
-    url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/emailposition/$' % settings.URL_REGEXPS, views_ballot.send_ballot_comment),
     url(r'^%(name)s/(?:%(rev)s/)?doc.json$' % settings.URL_REGEXPS, views_doc.document_json),
     url(r'^%(name)s/ballotpopup/(?P<ballot_id>[0-9]+)/$' % settings.URL_REGEXPS, views_doc.ballot_popup),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/reviewrequest/', include("ietf.doc.urls_review")),

@@ -1,0 +1,59 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
+{% extends "base.html" %}
+{% load static ietf_filters django_bootstrap5 %}
+{% block title %}Session Request{% endblock %}
+    
+{% block content %}
+    <h1 class="">Session Request - IETF {{ meeting.number }}</h1>
+
+    <div class="d-flex mb-3">
+      <a href="https://www.ietf.org/chairs/session-request-tool-instructions/" class="me-3 btn btn-primary" target="_blank">Instructions</a>
+    </div>
+
+    <hr>
+
+    <div class="custom-stripe">
+
+        {% include "meeting/session_request_view_table.html" %}
+
+        <hr>
+
+        <h2>Activities Log</h2>
+        <div class="">
+            <table class=" table table-sm full-width">
+                <thead>
+                    <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Time</th>
+                        <th scope="col">Action</th>
+                        <th scope="col">Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in activities %}
+                        <tr class="{% cycle 'row1' 'row2' %}">
+                            <td>{{ entry.act_date }}</td>
+                            <td>{{ entry.act_time }}</td>
+                            <td>{{ entry.activity }}</td>
+                            <td>{{ entry.act_by }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
+      <button type="button" name="edit" class="btn btn-primary me-2" onclick="window.location='{% url 'ietf.meeting.views_session_request.edit_request' acronym=group.acronym num=meeting.number %}'"{% if not can_edit %} disabled{% endif %}>Edit</button>
+      {% if show_approve_button %}
+        <a href="{% url 'ietf.meeting.views_session_request.approve_request' acronym=group.acronym %}" class="btn btn-primary me-2">Approve Third Session</a>
+      {% endif %}
+      <button type="button" class="btn btn-primary me-2" onclick="if (window.confirm('Do you really want to cancel this session?')) { window.location='{% url 'ietf.meeting.views_session_request.cancel_request' acronym=group.acronym %}' };" {% if not can_cancel %} disabled{% endif %}>Cancel this Request</button>
+      <a href="{% url 'ietf.meeting.views_session_request.list_view' %}" class="btn btn-secondary float-end">Back</a>
+  
+    </div> <!-- view-container -->
+
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'ietf/js/custom_striped.js' %}"></script>
+{% endblock %}

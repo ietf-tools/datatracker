@@ -1,3 +1,4 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
 {% extends "group/group_base.html" %}
 {% load origin static %}
 {% block title %}
@@ -9,7 +10,7 @@
     <a class="btn btn-primary"
        href="{% url 'ietf.meeting.views.meeting_requests' %}">Session requests</a>
     {% if can_edit or can_always_edit %}
-        <a class="btn btn-primary" href="{% url 'ietf.secr.sreq.views.main' %}">Request a session</a>
+        <a class="btn btn-primary" href="{% url 'ietf.meeting.views_session_request.list_view' %}">Request a session</a>
         <a class="btn btn-primary"
            href="{% url 'ietf.meeting.views.interim_request' %}?group={{ group.id }}">
             Request an interim meeting
