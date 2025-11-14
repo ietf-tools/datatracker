@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2023, All Rights Reserved
+# Copyright The IETF Trust 2007-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -270,3 +270,7 @@ class LegacyMigrationIprEvent(IprEvent):
     """A subclass of IprEvent specifically for capturing contents of legacy_url_0,
     the text of a disclosure submitted by email"""
     pass
+
+class RemovedIprDisclosure(models.Model):
+    removed_id = models.PositiveBigIntegerField(unique=True)
+    reason = models.TextField()

@@ -36,7 +36,7 @@ services:
     db:
         image: ghcr.io/ietf-tools/datatracker-db:latest
         #  build:
-        #      context: ..
+        #      context: .
         #      dockerfile: docker/db.Dockerfile
         restart: unless-stopped
         volumes:
@@ -116,7 +116,7 @@ services:
             - "minio-data:/data"
 
     blobdb:
-        image: postgres:16
+        image: postgres:17
         restart: unless-stopped
         environment:
             POSTGRES_DB: blob

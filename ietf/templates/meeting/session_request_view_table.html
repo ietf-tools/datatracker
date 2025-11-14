@@ -1,0 +1,146 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
+{% load ams_filters %}
+
+<div class="row mb-3">
+    <div class="col-md-2 fw-bold">
+        Working Group Name
+    </div>
+    <div class="col">
+        {{ group.name }} ({{ group.acronym }})
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-2 fw-bold">
+        Area Name
+    </div>
+    <div class="col">
+        {{ group.parent }}
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-2 fw-bold">
+        Number of Sessions Requested
+    </div>
+    <div class="col">
+        {% if session.third_session %}3{% else %}{{ session.num_session }}{% endif %}
+    </div>
+</div>
+
+{% if form %}
+    {% include 'meeting/session_request_view_formset.html' with formset=form.session_forms group=group session=session only %}
+{% else %}
+    {% include 'meeting/session_request_view_session_set.html' with session_set=sessions group=group session=session only %}
+{% endif %}
+
+
+<div class="row mb-3">
+    <div class="col-md-2 fw-bold">
+        Number of Attendees
+    </div>
+    <div class="col">
+        {{ session.attendees }}
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-2 fw-bold">
+        Conflicts to Avoid
+    </div>
+    <div class="col">
+        {% if session_conflicts.outbound %}
+            {% for conflict in session_conflicts.outbound %}
+                <div class="row mb-1">
+                    <div class="col-sm-2 fw-bold">
+                        {{ conflict.name|title }}
+                    </div>
+                    <div class="col">
+                        {{ conflict.groups }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}<i>None</i>{% endif %}
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-2 fw-bold">
+        Other WGs that included {{ group }} in their conflict list
+    </div>
+    <div class="col">
+        {% if session_conflicts.inbound %}{{ session_conflicts.inbound }}{% else %}<i>None so far</i>{% endif %}
+    </div>
+</div>
+
+{% if not is_virtual %}
+<div class="row mb-3">
+    <div class="col-md-2 fw-bold">
+        Resources requested
+    </div>
+    <div class="col">
+        {% if session.resources %}<ul>{% for resource in session.resources %}<li>{{ resource.desc }}</li>{% endfor %}</ul>{% else %}<i>None so far</i>{% endif %}
+    </div>
+</div>
+{% endif %}
+
+<div class="row mb-3">
+    <div class="col-md-2 fw-bold">
+        Participants who must be present
+    </div>
+    <div class="col">
+        {% if session.bethere %}<ul>{% for person in session.bethere %}<li>{{ person }}</li>{% endfor %}</ul>{% else %}<i>None</i>{% endif %}
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-2 fw-bold">
+        Can not meet on
+    </div>
+    <div class="col">
+        {% if session.timeranges_display %}{{ session.timeranges_display|join:', ' }}{% else %}No constraints{% endif %}
+    </div>
+</div>
+
+{% if not is_virtual %}
+<div class="row mb-3">
+    <div class="col-md-2 fw-bold">
+        Adjacent with WG
+    </div>
+    <div class="col">
+        {{ session.adjacent_with_wg|default:'No preference' }}
+    </div>
+</div>
+<div class="row mb-3">
+    <div class="col-md-2 fw-bold">
+        Joint session
+    </div>
+    <div class="col">
+        {% if session.joint_with_groups %}
+            {{ session.joint_for_session_display }} with: {{ session.joint_with_groups }}
+        {% else %}
+            Not a joint session
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<div class="row mb-3">
+    <div class="col-md-2 fw-bold">
+        Special Requests
+    </div>
+    <div class="col">
+        {{ session.comments }}    
+    </div>
+</div>
+
+{% if form and form.notifications_optional %}
+    <div class="row mb-3">
+        <div class="col-md-2 fw-bold">
+            {{ form.send_notifications.label}}
+        </div>
+        <div class="col">
+            {% if form.cleaned_data.send_notifications %}Yes{% else %}No{% endif %}    
+        </div>
+    </div>
+{% endif %}

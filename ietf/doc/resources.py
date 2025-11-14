@@ -18,7 +18,7 @@ from ietf.doc.models import (BallotType, DeletedEvent, StateType, State, Documen
     RelatedDocHistory, BallotPositionDocEvent, AddedMessageEvent, SubmissionDocEvent,
     ReviewRequestDocEvent, ReviewAssignmentDocEvent, EditedAuthorsDocEvent, DocumentURL,
     IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder, 
-    BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject)
+    BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject, RfcAuthor)
 
 from ietf.name.resources import BallotPositionNameResource, DocTypeNameResource
 class BallotTypeResource(ModelResource):
@@ -865,3 +865,28 @@ class StoredObjectResource(ModelResource):
             "deleted": ALL,
         }
 api.doc.register(StoredObjectResource())
+
+
+from ietf.person.resources import EmailResource, PersonResource
+class RfcAuthorResource(ModelResource):
+    document         = ToOneField(DocumentResource, 'document')
+    person           = ToOneField(PersonResource, 'person', null=True)
+    email            = ToOneField(EmailResource, 'email', null=True)
+    class Meta:
+        queryset = RfcAuthor.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'rfcauthor'
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "titlepage_name": ALL,
+            "is_editor": ALL,
+            "affiliation": ALL,
+            "country": ALL,
+            "order": ALL,
+            "document": ALL_WITH_RELATIONS,
+            "person": ALL_WITH_RELATIONS,
+            "email": ALL_WITH_RELATIONS,
+        }
+api.doc.register(RfcAuthorResource())

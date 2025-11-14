@@ -79,6 +79,7 @@ from ietf.utils.history import find_history_active_at
 from ietf.doc.views_ballot import parse_ballot_edit_return_point
 from ietf.doc.forms import InvestigateForm, TelechatForm, NotifyForm, ActionHoldersForm, DocAuthorForm, DocAuthorChangeBasisForm
 from ietf.doc.mails import email_comment, email_remind_action_holders
+from ietf.doc.utils import last_ballot_doc_revision
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session, SessionPresentation
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions, add_event_info_to_session_qs
@@ -91,7 +92,7 @@ from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
 from ietf.utils.timezone import date_today
-
+from ietf.utils.unicodenormalize import normalize_for_sorting
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -1225,6 +1226,10 @@ def document_history(request, name):
             request.user, ("Area Director", "Secretariat", "IRTF Chair")
         )
 
+    # if the current user has balloted on this document, give them a revision hint
+    ballot_doc_rev = None
+    if request.user.is_authenticated:
+        ballot_doc_rev = last_ballot_doc_revision(doc, request.user.person)
 
     return render(
         request,
@@ -1235,6 +1240,7 @@ def document_history(request, name):
             "diff_revisions": diff_revisions,
             "events": events,
             "can_add_comment": can_add_comment,
+            "ballot_doc_rev": ballot_doc_rev,
         },
     )
 
@@ -1500,7 +1506,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
     position_groups = []
     for n in BallotPositionName.objects.filter(slug__in=[p.pos_id for p in positions]).order_by('order'):
         g = (n, [p for p in positions if p.pos_id == n.slug])
-        g[1].sort(key=lambda p: (p.is_old_pos, p.balloter.plain_name()))
+        g[1].sort(key=lambda p: (p.is_old_pos, normalize_for_sorting(p.balloter.plain_name())))
         if n.blocking:
             position_groups.insert(0, g)
         else:
@@ -1643,11 +1649,18 @@ def document_json(request, name, rev=None):
     data["state"] = extract_name(doc.get_state())
     data["intended_std_level"] = extract_name(doc.intended_std_level)
     data["std_level"] = extract_name(doc.std_level)
+    author_qs = (
+        doc.rfcauthor_set
+        if doc.type_id == "rfc" and doc.rfcauthor_set.exists()
+        else doc.documentauthor_set
+    ).select_related("person", "email").order_by("order")
     data["authors"] = [
-        dict(name=author.person.name,
-             email=author.email.address if author.email else None,
-             affiliation=author.affiliation)
-        for author in doc.documentauthor_set.all().select_related("person", "email").order_by("order")
+        {
+            "name": author.titlepage_name if hasattr(author, "titlepage_name") else author.person.name,
+            "email": author.email.address if author.email else None,
+            "affiliation": author.affiliation,
+        }
+        for author in author_qs
     ]
     data["shepherd"] = doc.shepherd.formatted_email() if doc.shepherd else None
     data["ad"] = doc.ad.role_email("ad").formatted_email() if doc.ad else None

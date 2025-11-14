@@ -28,11 +28,11 @@ from ietf.ipr.forms import (HolderIprDisclosureForm, GenericDisclosureForm,
     AddCommentForm, AddEmailForm, NotifyForm, StateForm, NonDocSpecificIprDisclosureForm,
     GenericIprDisclosureForm)
 from ietf.ipr.models import (IprDisclosureStateName, IprDisclosureBase,
-    HolderIprDisclosure, GenericIprDisclosure, ThirdPartyIprDisclosure,
+    HolderIprDisclosure, GenericIprDisclosure, RemovedIprDisclosure, ThirdPartyIprDisclosure,
     NonDocSpecificIprDisclosure, IprDocRel,
     RelatedIpr,IprEvent)
 from ietf.ipr.utils import (get_genitive, get_ipr_summary,
-    iprs_from_docs, related_docs)
+    iprs_from_docs, json_dump_disclosure, related_docs)
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message
 from ietf.message.utils import infer_message
@@ -81,7 +81,8 @@ def get_document_emails(ipr):
 
         addrs = gather_address_lists('ipr_posted_on_doc',doc=doc).as_strings(compact=False)
 
-        author_names = ', '.join(a.person.name for a in doc.documentauthor_set.select_related("person"))
+        # Get a list of author names for the salutation in the body of the email
+        author_names = ', '.join(doc.author_names())
     
         context = dict(
             settings=settings,
@@ -817,7 +818,14 @@ def get_details_tabs(ipr, selected):
 
 def show(request, id):
     """View of individual declaration"""
-    ipr = get_object_or_404(IprDisclosureBase, id=id).get_child()
+    ipr = IprDisclosureBase.objects.filter(id=id)
+    removed = RemovedIprDisclosure.objects.filter(removed_id=id)
+    if removed.exists():
+        return render(request, "ipr/deleted.html", {"removed": removed.get(), "ipr": ipr})
+    if not ipr.exists():
+        raise Http404
+    else:
+        ipr = ipr.get().get_child()
     if not has_role(request.user, 'Secretariat'):
         if ipr.state.slug in ['removed', 'removed_objfalse']:
             return render(request, "ipr/removed.html", {
@@ -901,3 +909,8 @@ def update(request, id):
     child = ipr.get_child()
     type = class_to_type[child.__class__.__name__]
     return new(request, type, updates=id)
+
+@role_required("Secretariat")
+def json_snapshot(request, id):
+    obj = get_object_or_404(IprDisclosureBase,id=id).get_child()
+    return HttpResponse(json_dump_disclosure(obj),content_type="application/json")

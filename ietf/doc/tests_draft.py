@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
+import json
 import os
 import datetime
 import io
@@ -11,7 +12,7 @@ from collections import Counter
 from pathlib import Path
 from pyquery import PyQuery
 
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django.utils import timezone
@@ -2391,3 +2392,77 @@ class EditorialDraftMetadataTests(TestCase):
         top_level_metadata_headings = q("tbody>tr>th:first-child").text()
         self.assertNotIn("IESG", top_level_metadata_headings)
         self.assertNotIn("IANA", top_level_metadata_headings)
+
+class BallotEmailAjaxTests(TestCase):
+    def test_ajax_build_position_email(self):
+        def _post_json(self, url, json_to_post):
+            r = self.client.post(
+                url, json.dumps(json_to_post), content_type="application/json"
+            )
+            self.assertEqual(r.status_code, 200)
+            return json.loads(r.content)
+
+        doc = WgDraftFactory()
+        ad = RoleFactory(
+            name_id="ad", group=doc.group, person__name="Some Areadirector"
+        ).person
+        url = urlreverse("ietf.doc.views_ballot.ajax_build_position_email")
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 405)
+        response = _post_json(self, url, {})
+        self.assertFalse(response["success"])
+        self.assertEqual(response["errors"], ["post_data not provided"])
+        response = _post_json(self, url, {"dictis": "not empty"})
+        self.assertFalse(response["success"])
+        self.assertEqual(response["errors"], ["post_data not provided"])
+        response = _post_json(self, url, {"post_data": {}})
+        self.assertFalse(response["success"])
+        self.assertEqual(len(response["errors"]), 7)
+        response = _post_json(
+            self,
+            url,
+            {
+                "post_data": {
+                    "discuss": "aaaaaa",
+                    "comment": "bbbbbb",
+                    "position": "discuss",
+                    "balloter": Person.objects.aggregate(maxpk=Max("pk") + 1)["maxpk"],
+                    "docname": "this-draft-does-not-exist",
+                    "cc_choices": ["doc_group_mail_list"],
+                    "additional_cc": "foo@example.com",
+                }
+            },
+        )
+        self.assertFalse(response["success"])
+        self.assertEqual(
+            response["errors"],
+            ["No person found matching balloter", "No document found matching docname"],
+        )
+        response = _post_json(
+            self,
+            url,
+            {
+                "post_data": {
+                    "discuss": "aaaaaa",
+                    "comment": "bbbbbb",
+                    "position": "discuss",
+                    "balloter": ad.pk,
+                    "docname": doc.name,
+                    "cc_choices": ["doc_group_mail_list"],
+                    "additional_cc": "foo@example.com",
+                }
+            },
+        )
+        self.assertTrue(response["success"])
+        for snippet in [
+            "aaaaaa",
+            "bbbbbb",
+            "DISCUSS",
+            ad.plain_name(),
+            doc.name,
+            doc.group.list_email,
+            "foo@example.com",
+        ]:
+            self.assertIn(snippet, response["text"])
+

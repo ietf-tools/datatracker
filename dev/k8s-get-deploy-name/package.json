@@ -1,0 +1,8 @@
+{
+  "name": "k8s-get-deploy-name",
+  "type": "module",
+  "dependencies": {
+    "slugify": "1.6.6",
+    "yargs": "17.7.2"
+  }
+}

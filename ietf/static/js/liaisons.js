@@ -197,16 +197,6 @@ var liaisonForm = {
         }
     },
 
-    checkPostOnly: function (post_only) {
-        if (post_only) {
-            $("button[name=send]")
-                .hide();
-        } else {
-            $("button[name=send]")
-                .show();
-        }
-    },
-
     updateInfo: function (first_time, sender) {
         // don't overwrite fields when editing existing liaison
         if (liaisonForm.is_edit_form) {
@@ -239,7 +229,6 @@ var liaisonForm = {
                         liaisonForm.toggleApproval(response.needs_approval);
                         liaisonForm.response_contacts.val(response.response_contacts);
                     }
-                    liaisonForm.checkPostOnly(response.post_only);
                 }
             }
         });

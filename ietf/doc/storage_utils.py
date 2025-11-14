@@ -12,6 +12,14 @@ from django.core.files.storage import storages, Storage
 from ietf.utils.log import log
 
 
+class StorageUtilsError(Exception):
+    pass
+
+
+class AlreadyExistsError(StorageUtilsError):
+    pass
+
+
 def _get_storage(kind: str) -> Storage:
     if kind in settings.ARTIFACT_STORAGE_NAMES:
         return storages[kind]
@@ -70,7 +78,7 @@ def store_file(
             # debug.show('f"Asked to store {name} in {kind}: is_new={is_new}, allow_overwrite={allow_overwrite}"')
             if not allow_overwrite and not is_new:
                 debug.show('f"Failed to save {kind}:{name} - name already exists in store"')
-                raise RuntimeError(f"Failed to save {kind}:{name} - name already exists in store")
+                raise AlreadyExistsError(f"Failed to save {kind}:{name} - name already exists in store")
             new_name = _get_storage(kind).save(
                 name,
                 StoredObjectFile(
@@ -85,7 +93,7 @@ def store_file(
             if new_name != name:
                 complaint = f"Error encountered saving '{name}' - results stored in '{new_name}' instead."
                 debug.show("complaint")
-                raise RuntimeError(complaint)
+                raise StorageUtilsError(complaint)
         except Exception as err:
             log(f"Blobstore Error: Failed to store file {kind}:{name}: {repr(err)}")
             if settings.SERVER_MODE == "development":

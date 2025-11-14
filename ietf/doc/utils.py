@@ -36,11 +36,12 @@ from ietf.community.utils import docs_tracked_by_community_list
 from ietf.doc.models import Document, DocHistory, State, DocumentAuthor, DocHistoryAuthor
 from ietf.doc.models import RelatedDocument, RelatedDocHistory, BallotType, DocReminder
 from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBallotDocEvent, NewRevisionDocEvent, StateDocEvent
-from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthorsDocEvent
+from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthorsDocEvent, BallotPositionDocEvent
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role, Group, GroupFeatures
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author, is_bofreq_editor
 from ietf.person.models import Email, Person
+from ietf.person.utils import get_active_balloters
 from ietf.review.models import ReviewWish
 from ietf.utils import draft, log
 from ietf.utils.mail import parseaddr, send_mail
@@ -559,6 +560,7 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
             reason='IESG state changed',
         )
 
+# TODO : do we need an analog for rfcauthors here? Likely we do.
 
 def update_documentauthors(doc, new_docauthors, by=None, basis=None):
     """Update the list of authors for a document
@@ -686,6 +688,22 @@ def nice_consensus(consensus):
         False: "No"
         }
     return mapping[consensus]
+
+def last_ballot_doc_revision(doc, person):
+    """ Return the document revision for the most recent ballot position
+        by the provided user. """
+    ballot = doc.active_ballot()
+    if ballot is None or person is None:
+        return None    
+    balloters = get_active_balloters(ballot.ballot_type)
+    if person not in balloters:
+        return None
+    position_queryset = BallotPositionDocEvent.objects.filter(type="changed_ballot_position", balloter=person, ballot=ballot).order_by("-time")
+    if not position_queryset.exists():
+        return None
+    ballot_time = position_queryset.first().time
+    doc_rev = NewRevisionDocEvent.objects.filter(doc=doc, time__lte=ballot_time).order_by('-time').first().rev
+    return doc_rev
 
 def has_same_ballot(doc, date1, date2=None):
     """ Test if the most recent ballot created before the end of date1

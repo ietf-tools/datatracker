@@ -74,7 +74,7 @@ from ietf.utils.fields import ModelMultipleChoiceField
 from ietf.utils.log import log
 from ietf.doc.utils_search import prepare_document_table, doc_type, doc_state, doc_type_name, AD_WORKLOAD
 from ietf.ietfauth.utils import has_role
-
+from ietf.utils.unicodenormalize import normalize_for_sorting
 
 class SearchForm(forms.Form):
     name = forms.CharField(required=False)
@@ -219,7 +219,7 @@ def retrieve_search_results(form, all_types=False):
             queries.extend([Q(targets_related__source__name__icontains=look_for, targets_related__relationship_id="became_rfc")])
 
         combined_query = reduce(operator.or_, queries)
-        docs = docs.filter(combined_query).distinct()
+        docs = docs.filter(combined_query)
 
     # rfc/active/old check buttons
     allowed_draft_states = []
@@ -229,20 +229,23 @@ def retrieve_search_results(form, all_types=False):
         allowed_draft_states.extend(['repl', 'expired', 'auth-rm', 'ietf-rm'])
 
     docs = docs.filter(Q(states__slug__in=allowed_draft_states) |
-                       ~Q(type__slug='draft')).distinct()
+                       ~Q(type__slug='draft'))
 
     # radio choices
     by = query["by"]
     if by == "author":
         docs = docs.filter(
             Q(documentauthor__person__alias__name__icontains=query["author"]) |
-            Q(documentauthor__person__email__address__icontains=query["author"])
+            Q(documentauthor__person__email__address__icontains=query["author"]) |
+            Q(rfcauthor__person__alias__name__icontains=query["author"]) |
+            Q(rfcauthor__person__email__address__icontains=query["author"]) |
+            Q(rfcauthor__titlepage_name__icontains=query["author"])
         )
     elif by == "group":
         docs = docs.filter(group__acronym__iexact=query["group"])
     elif by == "area":
         docs = docs.filter(Q(group__type="wg", group__parent=query["area"]) |
-                           Q(group=query["area"])).distinct()
+                           Q(group=query["area"]))
     elif by == "ad":
         docs = docs.filter(ad=query["ad"])
     elif by == "state":
@@ -254,6 +257,8 @@ def retrieve_search_results(form, all_types=False):
         docs = docs.filter(states=query["irtfstate"])
     elif by == "stream":
         docs = docs.filter(stream=query["stream"])
+
+    docs=docs.distinct()
 
     return docs
 
@@ -480,6 +485,7 @@ def ad_workload(request):
     ).distinct():
         if p in get_active_ads():
             ads.append(p)
+    ads.sort(key=lambda p: normalize_for_sorting(p.plain_name()))
 
     bucket_template = {
         dt: {state: [[] for _ in range(days)] for state in STATE_SLUGS[dt].values()}
