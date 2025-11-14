@@ -260,7 +260,7 @@ class RfcViewSet(viewsets.GenericViewSet):
         responses=RfcWithAuthorsSerializer(many=True),
     )
     @action(detail=False, methods=["post"], serializer_class=RfcWithAuthorsSerializer)
-    def authors(self, request):
+    def bulk_authors(self, request):
         rfcs = self.get_queryset().filter(rfc_number__in=request.data)
         serializer = self.get_serializer(rfcs, many=True)
         return Response(serializer.data)
