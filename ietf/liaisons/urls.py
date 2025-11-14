@@ -37,4 +37,5 @@ urlpatterns += [
     url(r'^add/$', views.redirect_add),
     url(r'^for_approval/$', views.redirect_for_approval),
     url(r'^for_approval/(?P<object_id>\d+)/$', views.redirect_for_approval),
+    url(r"^list_other_sdo/$", views.list_other_sdo),
 ]

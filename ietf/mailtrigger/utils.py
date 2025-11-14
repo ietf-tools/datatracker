@@ -9,6 +9,14 @@ from ietf.submit.models import Submission
 from ietf.utils.mail import excludeaddrs
 
 
+EMAIL_ALIASES = {
+    "IETFCHAIR": "The IETF Chair <chair@ietf.org>",
+    "IESG": "The IESG <iesg@ietf.org>",
+    "IAB": "The IAB <iab@iab.org>",
+    "IABCHAIR": "The IAB Chair <iab-chair@iab.org>",
+}
+
+
 class AddrLists(namedtuple("AddrLists", ["to", "cc"])):
     __slots__ = ()
 
@@ -64,6 +72,69 @@ def get_mailtrigger(slug, create_from_slug_if_not_exists, desc_if_not_exists):
         else:
             raise
     return mailtrigger
+
+
+def get_contacts_for_liaison_messages_for_group_primary(group):
+    from ietf.liaisons.views import contact_email_from_role
+
+    '''Returns list of emails to use in liaison message for group
+    '''
+    emails = []
+
+    # role based emails
+    if group.acronym in ('ietf','iesg'):
+        emails.append(EMAIL_ALIASES['IESG'])
+        emails.append(EMAIL_ALIASES['IETFCHAIR'])
+    elif group.acronym in ('iab'):
+        emails.append(EMAIL_ALIASES['IAB'])
+        emails.append(EMAIL_ALIASES['IABCHAIR'])
+    elif group.type_id == 'area':
+        emails.append(EMAIL_ALIASES['IETFCHAIR'])
+        ad_roles = group.role_set.filter(name='ad')
+        emails.extend([ contact_email_from_role(r) for r in ad_roles ])
+    elif group.type_id == 'wg':
+        ad_roles = group.parent.role_set.filter(name='ad')
+        emails.extend([ contact_email_from_role(r) for r in ad_roles ])
+        chair_roles = group.role_set.filter(name='chair')
+        emails.extend([ contact_email_from_role(r) for r in chair_roles ])
+        if group.list_email:
+            emails.append('{} Discussion List <{}>'.format(group.name,group.list_email))
+    elif group.type_id == 'sdo':
+        liaiman_roles = group.role_set.filter(name='liaiman')
+        emails.extend([ contact_email_from_role(r) for r in liaiman_roles ])
+
+    # explicit CCs
+    liaison_cc_roles = group.role_set.filter(name='liaison_cc_contact')
+    emails.extend([ contact_email_from_role(r) for r in liaison_cc_roles ])
+
+    return emails
+
+
+def get_contacts_for_liaison_messages_for_group_secondary(group):
+    from ietf.liaisons.views import contacts_from_roles
+
+    '''Returns default contacts for groups as a comma separated string'''
+    # use explicit default contacts if defined
+    explicit_contacts = contacts_from_roles(group.role_set.filter(name='liaison_contact'))
+    if explicit_contacts:
+        return explicit_contacts
+
+    # otherwise construct based on group type
+    contacts = []
+    if group.type_id == 'area':
+        roles = group.role_set.filter(name='ad')
+        contacts.append(contacts_from_roles(roles))
+    elif group.type_id == 'wg':
+        roles = group.role_set.filter(name='chair')
+        contacts.append(contacts_from_roles(roles))
+    elif group.acronym == 'ietf':
+        contacts.append(EMAIL_ALIASES['IETFCHAIR'])
+    elif group.acronym == 'iab':
+        contacts.append(EMAIL_ALIASES['IABCHAIR'])
+    elif group.acronym == 'iesg':
+        contacts.append(EMAIL_ALIASES['IESG'])
+
+    return ','.join(contacts)
 
 
 def gather_relevant_expansions(**kwargs):

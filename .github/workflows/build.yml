@@ -16,13 +16,13 @@ on:
           - Skip
           - Staging Only
           - Staging + Prod
-      sandbox:
-        description: 'Deploy to Sandbox'
+      dev:
+        description: 'Deploy to Dev'
         default: true
         required: true
         type: boolean
-      sandboxNoDbRefresh:
-        description: 'Sandbox Disable Daily DB Refresh'
+      devNoDbRefresh:
+        description: 'Dev Disable Daily DB Refresh'
         default: false
         required: true
         type: boolean
@@ -170,7 +170,7 @@ jobs:
         fetch-tags: false
 
     - name: Setup Node.js environment
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: 18.x
 
@@ -278,8 +278,6 @@ jobs:
         tags: |
           ghcr.io/ietf-tools/datatracker:${{ env.PKG_VERSION }}
           ${{ env.FEATURE_LATEST_TAG && format('ghcr.io/ietf-tools/datatracker:{0}-latest', env.FEATURE_LATEST_TAG) || null }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
 
     - name: Update CHANGELOG
       id: changelog
@@ -392,44 +390,45 @@ jobs:
                   value: "Failed"
         
   # -----------------------------------------------------------------
-  # SANDBOX
+  # DEV
   # -----------------------------------------------------------------
-  sandbox:
-    name: Deploy to Sandbox
-    if: ${{ !failure() && !cancelled() && github.event.inputs.sandbox == 'true' }}
+  dev:
+    name: Deploy to Dev
+    if: ${{ !failure() && !cancelled() && github.event.inputs.dev == 'true' }}
     needs: [prepare, release]
-    runs-on: [self-hosted, dev-server]
+    runs-on: ubuntu-latest
     environment:
-      name: sandbox
+      name: dev
     env:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
       
     steps:
-    - uses: actions/checkout@v4
-        
-    - name: Download a Release Artifact
-      uses: actions/download-artifact@v4.3.0
-      with:
-        name: release-${{ env.PKG_VERSION }}
-        
-    - name: Deploy to containers
-      env:
-        DEBIAN_FRONTEND: noninteractive
-      run: |
-        echo "Reset production flags in settings.py..."
-        sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = True/' -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'development'/" ietf/settings.py
-        echo "Install Deploy to Container CLI dependencies..."
-        cd dev/deploy-to-container
-        npm ci
-        cd ../..
-        echo "Start Deploy..."
-        node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain dev.ietf.org --appversion ${{ env.PKG_VERSION }} --commit ${{ github.sha }} --ghrunid ${{ github.run_id }} --nodbrefresh ${{ github.event.inputs.sandboxNoDbRefresh }}
-        
-    - name: Cleanup old docker resources
-      env:
-        DEBIAN_FRONTEND: noninteractive
-      run: |
-        docker image prune -a -f
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          
+      - name: Get Deploy Name
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          echo "Install Get Deploy Name CLI dependencies..."
+          cd dev/k8s-get-deploy-name
+          npm ci
+          echo "Get Deploy Name..."
+          echo "DEPLOY_NAMESPACE=$(node cli.js --branch ${{ github.ref_name }})" >> "$GITHUB_ENV"
+
+      - name: Deploy to dev
+        uses: the-actions-org/workflow-dispatch@v4
+        with:
+          workflow: deploy-dev.yml
+          repo: ietf-tools/infra-k8s
+          ref: main
+          token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
+          inputs: '{ "app":"datatracker", "appVersion":"${{ env.PKG_VERSION }}", "remoteRef":"${{ github.sha }}", "namespace":"${{ env.DEPLOY_NAMESPACE }}", "disableDailyDbRefresh":${{ inputs.devNoDbRefresh }} }'
+          wait-for-completion: true
+          wait-for-completion-timeout: 30m
+          wait-for-completion-interval: 30s
+          display-workflow-run-url: false
 
   # -----------------------------------------------------------------
   # STAGING

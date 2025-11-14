@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 import datetime
 import itertools
+from contextlib import suppress
+from dataclasses import dataclass
+
 import jsonschema
 import os
 import requests
-from hashlib import sha384
 
 import pytz
 import subprocess
@@ -27,16 +29,33 @@ from django.utils.encoding import smart_str
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.doc.storage_utils import store_bytes, store_str
-from ietf.meeting.models import (Session, SchedulingEvent, TimeSlot,
-    Constraint, SchedTimeSessAssignment, SessionPresentation, Attended,
-    Registration, Meeting, RegistrationTicket)
-from ietf.doc.models import Document, State, NewRevisionDocEvent, StateDocEvent
+from ietf.doc.storage_utils import store_bytes, store_str, AlreadyExistsError
+from ietf.meeting.models import (
+    Session,
+    SchedulingEvent,
+    TimeSlot,
+    Constraint,
+    SchedTimeSessAssignment,
+    SessionPresentation,
+    Attended,
+    Registration,
+    Meeting,
+    RegistrationTicket,
+)
+from ietf.blobdb.models import ResolvedMaterial
+from ietf.doc.models import (
+    Document,
+    State,
+    NewRevisionDocEvent,
+    StateDocEvent,
+    StoredObject,
+)
 from ietf.doc.models import DocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import SessionStatusName, ConstraintName, DocTypeName
 from ietf.person.models import Person
+from ietf.utils import markdown
 from ietf.utils.html import clean_html
 from ietf.utils.log import log
 from ietf.utils.timezone import date_today
@@ -221,6 +240,7 @@ def save_bluesheet(request, session, file, encoding='utf-8'):
     save_error = handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=encoding)
     if not save_error:
         doc.save_with_history([e])
+        resolve_uploaded_material(meeting=session.meeting, doc=doc)
     return save_error
 
 
@@ -833,6 +853,330 @@ def write_doc_for_session(session, type_id, filename, contents):
     store_str(type_id, filename.name, contents)
     return None
 
+
+@dataclass
+class BlobSpec:
+    bucket: str
+    name: str
+
+
+def resolve_one_material(
+    doc: Document, rev: str | None, ext: str | None
+) -> BlobSpec | None:
+    if doc.type_id is None:
+        log(f"Cannot resolve a doc with no type: {doc.name}")
+        return None
+
+    # Get the Document's base name. It may or may not have an extension.
+    if rev is None:
+        basename = Path(doc.get_base_name())
+    else:
+        basename = Path(f"{doc.name}-{int(rev):02d}")
+
+    # If the document's file exists, the blob is _always_ named with this stem,
+    # even if it's different from the original.
+    blob_stem = Path(f"{doc.name}-{rev or doc.rev}")
+
+    # If we have an extension, either from the URL or the Document's base name, look up
+    # the blob or file or return 404. N.b. the suffix check needs adjustment to handle
+    # a bare "." extension when we reach py3.14.
+    if ext or basename.suffix != "": 
+        if ext:
+            blob_name = str(blob_stem.with_suffix(ext))
+        else:
+            blob_name = str(blob_stem.with_suffix(basename.suffix))
+
+        # See if we have a stored object under that name
+        preferred_blob = (
+            StoredObject.objects.exclude_deleted()
+            .filter(store=doc.type_id, name=blob_name)
+            .first()
+        )
+        if preferred_blob is not None:
+            return BlobSpec(
+                bucket=preferred_blob.store,
+                name=preferred_blob.name,
+            )
+        # No stored object, fall back to the file system.
+        filename = Path(doc.get_file_path()) / basename  # use basename for file
+        if filename.is_file():
+            return BlobSpec(
+                bucket=doc.type_id,
+                name=str(blob_stem.with_suffix(filename.suffix)),
+            )
+        else:
+            return None
+
+    # No extension has been specified so far, so look one up.
+    matching_stored_objects = (
+        StoredObject.objects.exclude_deleted()
+        .filter(
+            store=doc.type_id,
+            name__startswith=f"{blob_stem}.",  # anchor to end with trailing "."
+        )
+        .order_by("name")
+    )  # orders by suffix
+    blob_ext_choices = {
+        Path(stored_obj.name).suffix: stored_obj
+        for stored_obj in matching_stored_objects
+    }
+
+    # Short-circuit to return pdf if present
+    if ".pdf" in blob_ext_choices:
+        pdf_blob = blob_ext_choices[".pdf"]
+        return BlobSpec(
+            bucket=pdf_blob.store,
+            name=str(blob_stem.with_suffix(".pdf")),
+        )
+
+    # Now look for files
+    filename = Path(doc.get_file_path()) / basename
+    file_ext_choices = {
+        # Construct a map from suffix to full filename
+        fn.suffix: fn.name
+        for fn in sorted(filename.parent.glob(filename.stem + ".*"))
+    }
+
+    # Short-circuit to return pdf if we have the file
+    if ".pdf" in file_ext_choices:
+        return BlobSpec(
+            bucket=doc.type_id,
+            name=str(blob_stem.with_suffix(".pdf")),
+        )
+
+    all_exts = set(blob_ext_choices.keys()).union(file_ext_choices.keys())
+    if len(all_exts) > 0:
+        preferred_ext = sorted(all_exts)[0]
+        if preferred_ext in blob_ext_choices:
+            preferred_blob = blob_ext_choices[preferred_ext]
+            return BlobSpec(
+                bucket=preferred_blob.store,
+                name=preferred_blob.name,
+            )
+        else:
+            return BlobSpec(
+                bucket=doc.type_id,
+                name=str(blob_stem.with_suffix(preferred_ext)),
+            )
+
+    return None
+
+
+def resolve_materials_for_one_meeting(meeting: Meeting):
+    start_time = timezone.now()
+    meeting_documents = (
+        Document.objects.filter(
+            type_id__in=settings.MATERIALS_TYPES_SERVED_BY_WORKER
+        ).filter(
+            Q(session__meeting=meeting) | Q(proceedingsmaterial__meeting=meeting)
+        )
+    ).distinct()
+    
+    resolved = []
+    for doc in meeting_documents:
+        # request by doc name with no rev
+        blob = resolve_one_material(doc, rev=None, ext=None)
+        if blob is not None:
+            resolved.append(
+                ResolvedMaterial(
+                    name=doc.name,
+                    meeting_number=meeting.number,
+                    bucket=blob.bucket,
+                    blob=blob.name,
+                )
+            )
+        # request by doc name + rev
+        blob = resolve_one_material(doc, rev=doc.rev, ext=None)
+        if blob is not None:
+            resolved.append(
+                ResolvedMaterial(
+                    name=f"{doc.name}-{doc.rev:02}",
+                    meeting_number=meeting.number,
+                    bucket=blob.bucket,
+                    blob=blob.name,
+                )
+            )
+        # for other revisions, only need request by doc name + rev
+        other_revisions = doc.revisions_by_newrevisionevent()
+        other_revisions.remove(doc.rev)
+        for rev in other_revisions:
+            blob = resolve_one_material(doc, rev=rev, ext=None)
+            if blob is not None:
+                resolved.append(
+                    ResolvedMaterial(
+                        name=f"{doc.name}-{rev:02}",
+                        meeting_number=meeting.number,
+                        bucket=blob.bucket,
+                        blob=blob.name,
+                    )
+                )
+    ResolvedMaterial.objects.bulk_create(
+        resolved,
+        update_conflicts=True,
+        unique_fields=["name", "meeting_number"],
+        update_fields=["bucket", "blob"],
+    )
+    # Warn if any files were updated during the above process
+    last_update = meeting_documents.aggregate(Max("time"))["time__max"]
+    if last_update and last_update > start_time:
+        log(
+            f"Warning: materials for meeting {meeting.number} "
+            "changed during ResolvedMaterial update"
+        )
+
+def resolve_uploaded_material(meeting: Meeting, doc: Document):
+    resolved = []
+    blob = resolve_one_material(doc, rev=None, ext=None)
+    if blob is not None:
+        resolved.append(
+            ResolvedMaterial(
+                name=doc.name,
+                meeting_number=meeting.number,
+                bucket=blob.bucket,
+                blob=blob.name,
+            )
+        )
+    # request by doc name + rev
+    blob = resolve_one_material(doc, rev=doc.rev, ext=None)
+    if blob is not None:
+        resolved.append(
+            ResolvedMaterial(
+                name=f"{doc.name}-{doc.rev:02}",
+                meeting_number=meeting.number,
+                bucket=blob.bucket,
+                blob=blob.name,
+            )
+        )
+    ResolvedMaterial.objects.bulk_create(
+        resolved,
+        update_conflicts=True,
+        unique_fields=["name", "meeting_number"],
+        update_fields=["bucket", "blob"],
+    )
+
+
+def store_blob_for_one_material_file(doc: Document, rev: str, filepath: Path):
+    if not settings.ENABLE_BLOBSTORAGE:
+        raise RuntimeError("Cannot store blobs: ENABLE_BLOBSTORAGE is False")
+
+    bucket = doc.type_id
+    if bucket not in settings.MATERIALS_TYPES_SERVED_BY_WORKER:
+        raise ValueError(f"Bucket {bucket} not found for doc {doc.name}.")
+    blob_stem = f"{doc.name}-{rev}"
+    suffix = filepath.suffix  # includes leading "."
+
+    # Store the file
+    try:
+        file_bytes = filepath.read_bytes()
+    except Exception as err:
+        log(f"Failed to read {filepath}: {err}")
+        raise
+    with suppress(AlreadyExistsError):
+        store_bytes(
+            kind=bucket,
+            name= blob_stem + suffix,
+            content=file_bytes,
+            mtime=datetime.datetime.fromtimestamp(
+                filepath.stat().st_mtime,
+                tz=datetime.UTC,
+            ),
+            allow_overwrite=False,
+            doc_name=doc.name,
+            doc_rev=rev,
+        )
+
+    # Special case: pre-render markdown into HTML as .md.html
+    if suffix == ".md":
+        try:
+            markdown_source = file_bytes.decode("utf-8")
+        except UnicodeDecodeError as err:
+            log(f"Unable to decode {filepath} as UTF-8, treating as latin-1: {err}")
+            markdown_source = file_bytes.decode("latin-1")
+        # render the markdown
+        try:
+            html = render_to_string(
+                "minimal.html",
+                {
+                    "content": markdown.markdown(markdown_source),
+                    "title": blob_stem,
+                    "static_ietf_org": settings.STATIC_IETF_ORG,
+                },
+            )
+        except Exception as err:
+            log(f"Failed to render markdown for {filepath}: {err}")
+        else:
+            # Don't overwrite, but don't fail if the blob exists
+            with suppress(AlreadyExistsError):
+                store_str(
+                    kind=bucket,
+                    name=blob_stem + ".md.html",
+                    content=html,
+                    allow_overwrite=False,
+                    doc_name=doc.name,
+                    doc_rev=rev,
+                    content_type="text/html;charset=utf-8",
+                )
+
+
+def store_blobs_for_one_material_doc(doc: Document):
+    """Ensure that all files related to a materials Document are in the blob store"""
+    if doc.type_id not in settings.MATERIALS_TYPES_SERVED_BY_WORKER:
+        log(f"This method does not handle docs of type {doc.name}")
+        return
+
+    # Store files for current Document / rev
+    file_path = Path(doc.get_file_path())
+    base_name = Path(doc.get_base_name())
+    # .stem would remove directories, so use .with_suffix("")
+    base_name_stem = str(base_name.with_suffix(""))
+    if base_name_stem.endswith(".") and base_name.suffix == "":
+        # In Python 3.14, a trailing "." is a valid suffix, but in prior versions
+        # it is left as part of the stem. The suffix check ensures that either way,
+        # only a single "." will be removed.
+        base_name_stem = base_name_stem[:-1]
+    # Add any we find without the rev
+    for file_to_store in file_path.glob(base_name_stem + ".*"):
+        if not (file_to_store.is_file()):
+            continue
+        try:
+            store_blob_for_one_material_file(doc, doc.rev, file_to_store)
+        except Exception as err:
+            log(
+                f"Failed to store blob for {doc} rev {doc.rev} "
+                f"from {file_to_store}: {err}"
+            )
+
+    # Get other revisions
+    for rev in doc.revisions_by_newrevisionevent():
+        if rev == doc.rev:
+            continue  # already handled this
+
+        # Add some that have the rev
+        for file_to_store in file_path.glob(doc.name + f"-{rev}.*"):
+            if not file_to_store.is_file():
+                continue
+            try:
+                store_blob_for_one_material_file(doc, rev, file_to_store)
+            except Exception as err:
+                log(
+                    f"Failed to store blob for {doc} rev {rev} "
+                    f"from {file_to_store}: {err}"
+                )
+
+
+def store_blobs_for_one_meeting(meeting: Meeting):
+    meeting_documents = (
+        Document.objects.filter(
+            type_id__in=settings.MATERIALS_TYPES_SERVED_BY_WORKER
+        ).filter(
+            Q(session__meeting=meeting) | Q(proceedingsmaterial__meeting=meeting)
+        )
+    ).distinct()
+
+    for doc in meeting_documents:
+        store_blobs_for_one_material_doc(doc)
+
+
 def create_recording(session, url, title=None, user=None):
     '''
     Creates the Document type=recording, setting external_url and creating
@@ -1026,12 +1370,44 @@ def generate_proceedings_content(meeting, force_refresh=False):
     :meeting: meeting whose proceedings should be rendered
     :force_refresh: true to force regeneration and cache refresh
     """
-    cache = caches["default"]
-    cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
-    # Include proceedings_final in the bare_key so we'll always reflect that accurately, even at the cost of
-    # a recomputation in the view
-    bare_key = f"proceedings.{meeting.number}.{cache_version}.final={meeting.proceedings_final}"
-    cache_key = sha384(bare_key.encode("utf8")).hexdigest()
+    cache = caches["proceedings"]
+    key_components = [
+        "proceedings",
+        str(meeting.number),
+    ]
+    if meeting.proceedings_final:
+        # Freeze the cache key once proceedings are finalized. Further changes will
+        # not be picked up until the cache expires or is refreshed by the
+        # proceedings_content_refresh_task()
+        key_components.append("final")
+    else:
+        # Build a cache key that changes when materials are modified. For all but drafts,
+        # use the last modification time of the document. Exclude drafts from this because
+        # revisions long after the meeting ends will otherwise show up as changes and
+        # incorrectly invalidate the cache. Instead, include an ordered list of the
+        # drafts linked to the meeting so adding or removing drafts will trigger a
+        # recalculation. The list is long but that doesn't matter because we hash it into
+        # a fixed-length key.
+        meeting_docs = Document.objects.filter(session__meeting__number=meeting.number)
+        last_materials_update = (
+            meeting_docs.exclude(type_id="draft")
+            .filter(session__meeting__number=meeting.number)
+            .aggregate(Max("time"))["time__max"]
+        )
+        draft_names = (
+            meeting_docs
+            .filter(type_id="draft")
+            .order_by("name")
+            .values_list("name", flat=True)
+        )
+        key_components += [
+            last_materials_update.isoformat() if last_materials_update else "-",
+            ",".join(draft_names),
+        ]
+
+    # Key is potentially long, but the "proceedings" cache hashes it to a fixed
+    # length. If that changes, hash it separately here first.
+    cache_key = ".".join(key_components)
     if not force_refresh:
         cached_content = cache.get(cache_key, None)
         if cached_content is not None:
