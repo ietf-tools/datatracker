@@ -86,7 +86,7 @@ class DocumentAuthorSerializer(serializers.ModelSerializer):
 
     def get_plain_name(self, document_author: DocumentAuthor) -> str:
         return document_author.person.plain_name()
-    
+
 
 class FullDraftSerializer(serializers.ModelSerializer):
     # Redefine these fields so they don't pick up the regex validator patterns.
