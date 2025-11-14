@@ -186,7 +186,7 @@ jobs:
 
     - name: Download a Coverage Results
       if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
-      uses: actions/download-artifact@v4.3.0
+      uses: actions/download-artifact@v6.0.0
       with:
         name: coverage
 
@@ -291,7 +291,7 @@ jobs:
 
     - name: Download Coverage Results
       if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
-      uses: actions/download-artifact@v4.3.0
+      uses: actions/download-artifact@v6.0.0
       with:
         name: coverage
 
