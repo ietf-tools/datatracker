@@ -9,6 +9,7 @@ from ietf.api import views_rpc, views_rpc_demo
 from ietf.utils.urls import url
 
 router = routers.DefaultRouter()
+router.include_format_suffixes = False
 router.register(r"draft", views_rpc.DraftViewSet, basename="draft")
 router.register(r"person", views_rpc.PersonViewSet)
 router.register(r"rfc", views_rpc.RfcViewSet, basename="rfc")
