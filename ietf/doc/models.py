@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
+from collections import namedtuple
 import datetime
 import logging
 import os
@@ -417,9 +418,43 @@ class DocumentInfo(models.Model):
         else:
             return state.name
 
+    def author_names(self):
+        names = []
+        if self.type_id == "rfc" and self.rfcauthor_set.exists():
+            for author in self.rfcauthor_set.all():
+                if author.person:
+                    names.append(author.person.name)
+                else:
+                    # titlepage_name cannot be blank
+                    names.append(author.titlepage_name)
+        else:
+            names = [
+                author.person.name
+                for author in self.documentauthor_set.select_related("person")
+            ]
+        return names
+
+    def author_persons_or_names(self):
+        Author = namedtuple("Author", "person titlepage_name")
+        persons_or_names = []
+        if self.type_id=="rfc" and self.rfcauthor_set.exists():
+            for author in self.rfcauthor_set.all():
+                persons_or_names.append(Author(person=author.person, titlepage_name=author.titlepage_name))
+        else:
+            for author in self.documentauthor_set.all():
+                persons_or_names.append(Author(person=author.person, titlepage_name=""))
+        return persons_or_names
+
+
     def author_list(self):
+        """List of author emails"""
+        author_qs = (
+            self.rfcauthor_set
+            if self.type_id == "rfc" and self.rfcauthor_set.exists()
+            else self.documentauthor_set
+        ).select_related("email").order_by("order")
         best_addresses = []
-        for author in self.documentauthor_set.all():
+        for author in author_qs:
             if author.email:
                 if author.email.active or not author.email.person:
                     best_addresses.append(author.email.address)
@@ -428,6 +463,8 @@ class DocumentInfo(models.Model):
         return ", ".join(best_addresses)
 
     def authors(self):
+        if self.type_id == "rfc":
+            raise NotImplementedError
         return [ a.person for a in self.documentauthor_set.all() ]
 
     # This, and several other ballot related functions here, assume that there is only one active ballot for a document at any point in time.
@@ -862,6 +899,45 @@ class RelatedDocument(models.Model):
               return "Approved Downref"
 
         return False
+
+class RfcAuthor(models.Model):
+    """Captures the authors of an RFC as represented on the RFC title page.
+
+    This deviates from DocumentAuthor in that it does not get moved into the DocHistory
+    hierarchy as documents are saved. It will attempt to preserve email, country, and affiliation
+    from the DocumentAuthor objects associated with the draft leading to this RFC (which
+    may be wrong if the author moves or changes affiliation while the document is in the
+    queue).
+
+    It does not, at this time, attempt to capture the authors from anything _but_ the title
+    page. The datatracker may know more about such authors based on information from the draft
+    leading to the RFC, and future work may take that into account.
+
+    Once doc.rfcauthor_set.exists() for a doc of type `rfc`, doc.documentauthor_set should be 
+    ignored.
+    """
+
+    document = ForeignKey(
+        "Document",
+        on_delete=models.CASCADE,
+        limit_choices_to={"type_id": "rfc"},  # only affects ModelForms (e.g., admin)
+    )
+    titlepage_name = models.CharField(max_length=128, blank=False)
+    is_editor = models.BooleanField(default=False)
+    person = ForeignKey(Person, null=True, blank=True, on_delete=models.PROTECT)
+    email = ForeignKey(Email, help_text="Email address used by author for submission", blank=True, null=True, on_delete=models.PROTECT)
+    affiliation = models.CharField(max_length=100, blank=True, help_text="Organization/company used by author for submission")
+    country = models.CharField(max_length=255, blank=True, help_text="Country used by author for submission")
+    order = models.IntegerField(default=1)
+
+    def __str__(self):
+        return u"%s %s (%s)" % (self.document.name, self.person, self.order)
+
+    class Meta:
+        ordering=["document", "order"]
+        indexes=[
+            models.Index(fields=["document", "order"])
+        ]
 
 class DocumentAuthorInfo(models.Model):
     person = ForeignKey(Person)

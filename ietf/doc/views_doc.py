@@ -1649,11 +1649,18 @@ def document_json(request, name, rev=None):
     data["state"] = extract_name(doc.get_state())
     data["intended_std_level"] = extract_name(doc.intended_std_level)
     data["std_level"] = extract_name(doc.std_level)
+    author_qs = (
+        doc.rfcauthor_set
+        if doc.type_id == "rfc" and doc.rfcauthor_set.exists()
+        else doc.documentauthor_set
+    ).select_related("person", "email").order_by("order")
     data["authors"] = [
-        dict(name=author.person.name,
-             email=author.email.address if author.email else None,
-             affiliation=author.affiliation)
-        for author in doc.documentauthor_set.all().select_related("person", "email").order_by("order")
+        {
+            "name": author.titlepage_name if hasattr(author, "titlepage_name") else author.person.name,
+            "email": author.email.address if author.email else None,
+            "affiliation": author.affiliation,
+        }
+        for author in author_qs
     ]
     data["shepherd"] = doc.shepherd.formatted_email() if doc.shepherd else None
     data["ad"] = doc.ad.role_email("ad").formatted_email() if doc.ad else None

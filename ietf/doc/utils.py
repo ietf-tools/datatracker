@@ -560,6 +560,7 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
             reason='IESG state changed',
         )
 
+# TODO : do we need an analog for rfcauthors here? Likely we do.
 
 def update_documentauthors(doc, new_docauthors, by=None, basis=None):
     """Update the list of authors for a document
