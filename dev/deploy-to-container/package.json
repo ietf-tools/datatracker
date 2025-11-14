@@ -2,12 +2,12 @@
   "name": "deploy-to-container",
   "type": "module",
   "dependencies": {
-    "dockerode": "^4.0.6",
-    "fs-extra": "^11.3.0",
-    "nanoid": "5.1.5",
+    "dockerode": "^4.0.9",
+    "fs-extra": "^11.3.2",
+    "nanoid": "5.1.6",
     "nanoid-dictionary": "5.0.0",
     "slugify": "1.6.6",
-    "tar": "^7.4.3",
+    "tar": "^7.5.2",
     "yargs": "^17.7.2"
   },
   "engines": {
