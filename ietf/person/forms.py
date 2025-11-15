@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2018-2020, All Rights Reserved
+# Copyright The IETF Trust 2018-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -21,3 +21,19 @@ class MergeForm(forms.Form):
             return Person.objects.get(pk=pk)
         except Person.DoesNotExist:
             raise forms.ValidationError("ID does not exist")
+
+
+class MergeRequestForm(forms.Form):
+    to = forms.CharField()
+    frm = forms.CharField()
+    reply_to = forms.CharField()
+    subject = forms.CharField()
+    body = forms.CharField(widget=forms.Textarea)
+
+    def clean_to(self):
+        addresses = self.cleaned_data['to']
+        return addresses.split(',')
+
+    def clean_reply_to(self):
+        addresses = self.cleaned_data['reply_to']
+        return addresses.split(',')
