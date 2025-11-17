@@ -4457,11 +4457,8 @@ def render_upcoming_ical(assignments, meetings, request):
             description_lines.append(f"Note: {item.session.agenda_note}")
         
         for material in item.session.materials.all():
-            description_lines.append(f"{material.type}")
-            if material.type.name != "Agenda":
-                description_lines.append(f"{material.title}")
-
-            description_lines.append(f"{material.get_href()}")
+            title_part = f" ({material.title})" if material.type.name != "Agenda" else ""
+            description_lines.append(f"{material.type}{title_part}: {material.get_href()}")
 
         if item.session.remote_instructions:
             description_lines.append(f"Remote instructions: {item.session.remote_instructions}")
