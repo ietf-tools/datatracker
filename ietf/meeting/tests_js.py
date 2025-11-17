@@ -1260,7 +1260,7 @@ class InterimTests(IetfSeleniumTestCase):
         # to inherit Django's settings.TIME_ZONE but I don't know whether that's guaranteed to be consistent.
         # To avoid test fragility, ask Moment what it considers local and expect that.
         local_tz = self.driver.execute_script('return moment.tz.guess();')
-        local_tz_opt = tz_select_input.find_element(By.CSS_SELECTOR, 'option[value=%s]' % local_tz)
+        local_tz_opt = tz_select_input.find_element(By.CSS_SELECTOR, 'option[value="%s"]' % local_tz)
         local_tz_bottom_opt = tz_select_bottom_input.find_element(By.CSS_SELECTOR, 'option[value="%s"]' % local_tz)
 
         # Should start off in local time zone
