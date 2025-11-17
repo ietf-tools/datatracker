@@ -463,8 +463,15 @@ class DocumentInfo(models.Model):
         return ", ".join(best_addresses)
 
     def authors(self):
-        if self.type_id == "rfc":
-            raise NotImplementedError
+        if self.type_id == "rfc" and self.rfcauthor_set.exists():
+            # todo deal with non-Person RfcAuthors if they exist
+            rfc_authors = [a.person for a in self.rfcauthor_set.all()]
+            if None in rfc_authors:
+                log.log(
+                    f"FIXME: authors() cannot handle non-Person authors in {self}"
+                )
+                rfc_authors.remove(None)
+            return rfc_authors
         return [ a.person for a in self.documentauthor_set.all() ]
 
     # This, and several other ballot related functions here, assume that there is only one active ballot for a document at any point in time.
