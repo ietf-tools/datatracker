@@ -37,6 +37,14 @@ from ietf.person.models import Email, Person
         operation_id="get_person_by_id",
         summary="Find person by ID",
         description="Returns a single person",
+        parameters=[
+            OpenApiParameter(
+                name="person_id",
+                type=int,
+                location="path",
+                description="Person ID identifying this person.",
+            ),
+        ],
     ),
 )
 class PersonViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
