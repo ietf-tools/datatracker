@@ -151,6 +151,14 @@ class RpcPersonSearch(generics.ListAPIView):
         operation_id="get_draft_by_id",
         summary="Get a draft",
         description="Returns the draft for the requested ID",
+        parameters=[
+            OpenApiParameter(
+                name="doc_id",
+                type=int,
+                location="path",
+                description="Doc ID identifying this draft.",
+            ),
+        ],
     ),
     submitted_to_rpc=extend_schema(
         operation_id="submitted_to_rpc",
@@ -196,6 +204,14 @@ class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             "Returns the id and name of each normatively "
             "referenced Internet-Draft for the given docId"
         ),
+        parameters=[
+            OpenApiParameter(
+                name="doc_id",
+                type=int,
+                location="path",
+                description="Doc ID identifying this draft.",
+            ),
+        ],
         responses=ReferenceSerializer(many=True),
     )
     @action(detail=True, serializer_class=ReferenceSerializer)
