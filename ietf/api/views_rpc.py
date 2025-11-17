@@ -219,7 +219,7 @@ class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         responses=DraftWithAuthorsSerializer(many=True),
     )
     @action(detail=False, methods=["post"], serializer_class=DraftWithAuthorsSerializer)
-    def authors(self, request):
+    def bulk_authors(self, request):
         drafts = self.get_queryset().filter(name__in=request.data)
         serializer = self.get_serializer(drafts, many=True)
         return Response(serializer.data)
