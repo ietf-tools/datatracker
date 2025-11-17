@@ -24,7 +24,7 @@ jobs:
       # 1. Create Pull Request (release -> main)
       - name: 1. Create PR (release -> main)
         id: cpr_up
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: 'ci: merge release to main'
@@ -50,7 +50,6 @@ jobs:
           PR_NUMBER_UP: ${{ steps.pr_info_up.outputs.PR_NUM_UP }}
         run: |
           echo "Attempting to merge PR #${PR_NUMBER_UP} into protected 'main'."
-          # Construct commit title: "ci: merge release to main (#nnnn)"
           COMMIT_TITLE="ci: merge release to main (#${PR_NUMBER_UP})"
 
           # Use --admin to bypass branch protection
@@ -73,7 +72,7 @@ jobs:
       # 4. Create Pull Request (main -> release)
       - name: 4. Create PR (main -> release)
         id: cpr_down
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: 'ci: merge main to release'
