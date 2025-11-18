@@ -100,16 +100,19 @@ def photo(request, email_or_name):
 @role_required("Secretariat")
 def merge(request):
     form = MergeForm()
-    method = 'get'
+    return render(request, 'person/merge.html', {'form': form})
+
+
+@role_required("Secretariat")
+def merge_submit(request):
     change_details = ''
     warn_messages = []
     source = None
     target = None
 
     if request.method == "GET":
-        form = MergeForm()
         if request.GET:
-            form = MergeForm(request.GET)
+            form = MergeForm(request.GET, readonly=True)
             if form.is_valid():
                 source = form.cleaned_data.get('source')
                 target = form.cleaned_data.get('target')
@@ -118,12 +121,9 @@ def merge(request):
                     if source.user.last_login and target.user.last_login and source.user.last_login > target.user.last_login:
                         warn_messages.append('WARNING: The most recently used login is being deleted!')
                 change_details = handle_users(source, target, check_only=True)
-                method = 'post'
-            else:
-                method = 'get'
 
     if request.method == "POST":
-        form = MergeForm(request.POST)
+        form = MergeForm(request.POST, readonly=True)
         if form.is_valid():
             source = form.cleaned_data.get('source')
             source_id = source.id
@@ -138,9 +138,8 @@ def merge(request):
                 messages.error(request, output)
             return redirect('ietf.secr.rolodex.views.view', id=target.pk)
 
-    return render(request, 'person/merge.html', {
+    return render(request, 'person/merge_submit.html', {
         'form': form,
-        'method': method,
         'change_details': change_details,
         'source': source,
         'target': target,

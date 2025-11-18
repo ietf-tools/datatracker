@@ -208,13 +208,13 @@ class PersonTests(TestCase):
     def test_merge_with_params(self):
         p1 = get_person_no_user()
         p2 = PersonFactory()
-        url = urlreverse("ietf.person.views.merge") + "?source={}&target={}".format(p1.pk, p2.pk)
+        url = urlreverse("ietf.person.views.merge_submit") + "?source={}&target={}".format(p1.pk, p2.pk)
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertContains(r, 'retaining login', status_code=200)
 
     def test_merge_with_params_bad_id(self):
-        url = urlreverse("ietf.person.views.merge") + "?source=1000&target=2000"
+        url = urlreverse("ietf.person.views.merge_submit") + "?source=1000&target=2000"
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertContains(r, 'ID does not exist', status_code=200)
@@ -222,7 +222,7 @@ class PersonTests(TestCase):
     def test_merge_post(self):
         p1 = get_person_no_user()
         p2 = PersonFactory()
-        url = urlreverse("ietf.person.views.merge")
+        url = urlreverse("ietf.person.views.merge_submit")
         expected_url = urlreverse("ietf.secr.rolodex.views.view", kwargs={'id': p2.pk})
         login_testing_unauthorized(self, "secretary", url)
         data = {'source': p1.pk, 'target': p2.pk}

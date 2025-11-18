@@ -10,6 +10,15 @@ class MergeForm(forms.Form):
     source = forms.IntegerField(label='Source Person ID')
     target = forms.IntegerField(label='Target Person ID')
 
+    def __init__(self, *args, **kwargs):
+        self.readonly = False
+        if 'readonly' in kwargs:
+            self.readonly = kwargs.pop('readonly')
+        super().__init__(*args, **kwargs)
+        if self.readonly:
+            self.fields['source'].widget.attrs['readonly'] = True
+            self.fields['target'].widget.attrs['readonly'] = True
+
     def clean_source(self):
         return self.get_person(self.cleaned_data['source'])
 
