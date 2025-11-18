@@ -7,9 +7,13 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from ietf.doc.models import DocumentAuthor, Document, RfcAuthor
-from ietf.doc.utils import default_consensus
+from ietf.doc.expire import move_draft_files_to_archive
+from ietf.doc.models import DocumentAuthor, Document, RfcAuthor, RelatedDocument, State, \
+    DocEvent
+from ietf.doc.utils import default_consensus, prettify_std_name, update_action_holders
+from ietf.name.models import StreamName, StdLevelName
 from ietf.person.models import Person
+from ietf.utils import log
 
 
 class PersonSerializer(serializers.ModelSerializer):
@@ -196,7 +200,7 @@ class ReferenceSerializer(serializers.ModelSerializer):
 
 class AuthorSerializer(serializers.ModelSerializer):
     """Serialize an RfcAuthor record
-    
+
     todo fix naming confusion with ietf.doc.serializers.RfcAuthorSerializer
     """
     class Meta:
@@ -210,3 +214,296 @@ class AuthorSerializer(serializers.ModelSerializer):
             "affiliation",
             "country",
         ]
+
+
+class RfcPubSerializer(serializers.ModelSerializer):
+    # publication-related fields
+    published = serializers.DateTimeField(default_timezone=datetime.timezone.utc)
+    draft_name = serializers.RegexField(
+        required=False, regex=r"^draft-[a-zA-Z0-9-]+$"
+    )
+    draft_rev = serializers.RegexField(
+        required=False, regex=r"^[0-9][0-9]$"
+    )
+
+    # fields on the RFC Document that need tweaking from ModelSerializer defaults
+    rfc_number = serializers.IntegerField(min_value=1, required=True)
+    stream = serializers.PrimaryKeyRelatedField(
+        queryset=StreamName.objects.filter(used=True)
+    )
+    # group = serializers.SlugRelatedField(
+    #     slug_field="acronym",
+    #     required=False,
+    #     queryset=Group.objects.all(),
+    # )
+    # formal_languages = serializers.PrimaryKeyRelatedField(
+    #     many=True,
+    #     required=False,
+    #     queryset=FormalLanguageName.objects.filter(used=True),
+    # )
+    std_level = serializers.PrimaryKeyRelatedField(
+        queryset=StdLevelName.objects.filter(used=True),
+    )
+    ad = serializers.PrimaryKeyRelatedField(
+        queryset=Person.objects.all(),
+        required=False,
+    )
+    authors = AuthorSerializer(many=True)
+
+    class Meta:
+        model = Document
+        fields = [
+            "published",
+            "draft_name",
+            "draft_rev",
+            "rfc_number",
+            "title",
+            "authors",
+            "stream",
+            "abstract",
+            "pages",
+            "words",
+            # "group",
+            # "formal_languages",
+            "std_level",
+            "ad",
+            "external_url",
+        ]
+
+    def validate(self, data):
+        if "draft_name" in data or "draft_rev" in data:
+            if "draft_name" not in data:
+                raise serializers.ValidationError(
+                    {"draft_name": "Missing draft_name"},
+                    code="invalid-draft-spec",
+                ) 
+            if "draft_rev" not in data:
+                raise serializers.ValidationError(
+                    {"draft_rev": "Missing draft_rev"},
+                    code="invalid-draft-spec",
+                )
+        return data
+
+    def create(self, validated_data):
+        """Publish an RFC"""
+        published = validated_data.pop("published")
+        draft_name = validated_data.pop("draft_name", None)
+        draft_rev = validated_data.pop("draft_rev", None)
+        
+        # Retrieve draft
+        draft = None
+        if draft_name is not None:
+            # validation enforces that draft_name and draft_rev are both present
+            draft = Document.objects.filter(
+                type_id="draft", name=draft_name, rev=draft_rev,
+            ).first()
+            if draft is None:
+                raise serializers.ValidationError(
+                    {
+                        "draft_name": "No such draft",
+                        "draft_rev": "No such draft",
+                    },
+                    code="invalid-draft"
+                )
+            # todo check that draft is in the right state
+
+        rfc = self._create_rfc(validated_data)
+        DocEvent.objects.create(
+            doc=rfc,
+            rev=rfc.rev,
+            type="published_rfc",
+            time=published,
+            by=Person.objects.get(name="(System)"),
+            desc="RFC published",
+        )
+        rfc.set_state(State.objects.get(used=True, type_id="rfc", slug="published"))
+
+        if draft is not None:
+            draft_changes = []
+            draft_events = []
+            if draft.get_state_slug() != "rfc":
+                draft.set_state(
+                    State.objects.get(used=True, type="draft", slug="rfc")
+                )
+                move_draft_files_to_archive(draft, draft.rev)
+                draft_changes.append(f"changed state to {draft.get_state()}")
+
+            r, created_relateddoc = RelatedDocument.objects.get_or_create(
+                source=draft, target=rfc, relationship_id="became_rfc",
+            )
+            if created_relateddoc:
+                change = "created {rel_name} relationship between {pretty_draft_name} and {pretty_rfc_name}".format(
+                    rel_name=r.relationship.name.lower(),
+                    pretty_draft_name=prettify_std_name(draft_name),
+                    pretty_rfc_name=prettify_std_name(rfc.name),
+                )
+                draft_changes.append(change)
+
+            # Always set the "draft-iesg" state. This state should be set for all drafts, so
+            # log a warning if it is not set. What should happen here is that ietf stream
+            # RFCs come in as "rfcqueue" and are set to "pub" when they appear in the RFC index.
+            # Other stream documents should normally be "idexists" and be left that way. The
+            # code here *actually* leaves "draft-iesg" state alone if it is "idexists" or "pub",
+            # and changes any other state to "pub". If unset, it changes it to "idexists".
+            # This reflects historical behavior and should probably be updated, but a migration
+            # of existing drafts (and validation of the change) is needed before we change the
+            # handling.
+            prev_iesg_state = draft.get_state("draft-iesg")
+            if prev_iesg_state is None:
+                log.log(f'Warning while processing {rfc.name}: {draft.name} has no "draft-iesg" state')
+                new_iesg_state = State.objects.get(type_id="draft-iesg", slug="idexists")
+            elif prev_iesg_state.slug not in ("pub", "idexists"):
+                if prev_iesg_state.slug != "rfcqueue":
+                    log.log(
+                        'Warning while processing {}: {} is in "draft-iesg" state {} (expected "rfcqueue")'.format(
+                            rfc.name, draft.name, prev_iesg_state.slug
+                        )
+                    )
+                new_iesg_state = State.objects.get(type_id="draft-iesg", slug="pub")
+            else:
+                new_iesg_state = prev_iesg_state
+    
+            if new_iesg_state != prev_iesg_state:
+                draft.set_state(new_iesg_state)
+                draft_changes.append(f"changed {new_iesg_state.type.label} to {new_iesg_state}")
+                e = update_action_holders(draft, prev_iesg_state, new_iesg_state)
+                if e:
+                    draft_events.append(e)
+
+            # If the draft and RFC streams agree, move draft to "pub" stream state. If not, complain.
+            if draft.stream != rfc.stream:
+                log.log("Warning while processing {}: draft {} stream is {} but RFC stream is {}".format(
+                    rfc.name, draft.name, draft.stream, rfc.stream
+                ))
+            elif draft.stream.slug in ["iab", "irtf", "ise"]:
+                stream_slug = f"draft-stream-{draft.stream.slug}"
+                prev_state = draft.get_state(stream_slug)
+                if prev_state is not None and prev_state.slug != "pub":
+                    new_state = State.objects.select_related("type").get(used=True, type__slug=stream_slug, slug="pub")
+                    draft.set_state(new_state)
+                    draft_changes.append(
+                        f"changed {new_state.type.label} to {new_state}"
+                    )
+                    e = update_action_holders(draft, prev_state, new_state)
+                    if e:
+                        draft_events.append(e)
+            if draft_changes:
+                draft_events.append(
+                    DocEvent.objects.create(
+                        doc=draft,
+                        rev=draft.rev,
+                        by=Person.objects.get(name="(System)"),
+                        type="sync_from_rfc_editor",
+                        desc=f"Updated while publishing {rfc.name} ({', '.join(draft_changes)})",
+                    )
+                )
+                draft.save_with_history(draft_events)
+
+        # todo set group properly
+        # doc.group = Group.objects.get(
+        #     type="individ"
+        # )  # fallback for newly created doc
+
+
+        # todo add obsoletes / updates
+        # todo add subseries relationships / clean up
+        # todo adjust errata tags
+        # todo formal languages from draft
+        return rfc
+
+    def _create_rfc(self, validated_data):
+        authors_data = validated_data.pop("authors")
+        formal_languages = validated_data.pop("formal_languages", [])
+        rfc = Document.objects.create(
+            type_id="rfc",
+            name=f"rfc{validated_data['rfc_number']}",
+            **validated_data,
+        )
+        rfc.formal_languages.set(formal_languages)  # list of PKs is ok
+        for order, author_data in enumerate(authors_data):
+            rfc.rfcauthor_set.create(
+                order=order,
+                **author_data,
+            )
+        return rfc
+
+class RfcFileSerializer(serializers.Serializer):
+    filename = serializers.CharField(allow_blank=False)
+    content = serializers.FileField(
+        allow_empty_file=False,
+        use_url=False,
+    )
+
+
+class RfcPubNotificationSerializer(serializers.Serializer):
+    published = serializers.DateTimeField(default_timezone=datetime.timezone.utc)
+    draft_name = serializers.RegexField(
+        required=False, regex=r"^draft-[a-zA-Z0-9-]+$"
+    )
+    draft_rev = serializers.RegexField(
+        required=False, regex=r"^[0-9][0-9]$"
+    )
+    rfc = RfcPubSerializer()
+
+    def validate(self, data):
+        if "draft_name" in data or "draft_rev" in data:
+            if "draft_name" not in data:
+                raise serializers.ValidationError(
+                    {"draft_name": "Missing draft_name"},
+                    code="invalid-draft-spec",
+                ) 
+            if "draft_rev" not in data:
+                raise serializers.ValidationError(
+                    {"draft_rev": "Missing draft_rev"},
+                    code="invalid-draft-spec",
+                )
+        return data
+
+    def create(self, validated_data):
+        # Retrieve draft
+        draft = None
+        if "draft_name" in validated_data:
+            # serializer enforces that draft_name and draft_rev are both present
+            draft = Document.objects.filter(
+                type_id="draft",
+                name=validated_data["draft_name"],
+                rev=validated_data["draft_rev"],
+            ).first()
+            if draft is None:
+                raise serializers.ValidationError(
+                    {
+                        "draft_name": "No such draft",
+                        "draft_rev": "No such draft",
+                    },
+                    code="invalid-draft"
+                )
+        rfc = self._create_rfc(self.validated_data.pop("rfc"))
+        # todo add "Created RFC" to events
+        # todo set doc state
+        # todo adjust draft state
+        # todo add became_rfc relationship
+        # todo move draft files to archive
+        # todo set stream state to pub
+        # todo set published date
+        # todo add obsoletes / updates
+        # todo add subseries relationships / clean up
+        # todo adjust errata tags
+
+    def _create_rfc(self, validated_data):
+        authors_data = validated_data.pop("authors")
+        rfc = Document.objects.create(
+            type_id="rfc",
+            name=f"rfc{validated_data['rfc_number']}",
+            **validated_data,
+        )
+        for order, author_data in enumerate(authors_data):
+            rfc.rfcauthor_set.create(
+                order=order,
+                **author_data,
+            )
+
+
+
+
+class NotificationAckSerializer(serializers.Serializer):
+    message = serializers.CharField(default="ack")

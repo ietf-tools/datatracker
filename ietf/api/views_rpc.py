@@ -27,6 +27,7 @@ from ietf.api.serializers_rpc import (
     EmailPersonSerializer,
     RfcWithAuthorsSerializer,
     DraftWithAuthorsSerializer,
+    NotificationAckSerializer, RfcPubSerializer,
 )
 from ietf.doc.models import Document, DocHistory, RfcAuthor
 from ietf.person.models import Email, Person
@@ -345,3 +346,26 @@ class RfcAuthorViewSet(viewsets.ModelViewSet):
             .get("max_order")
         )
         serializer.save(document=rfc, order=max_order + 1)
+
+
+class RfcPubNotificationView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
+
+    @extend_schema(
+        operation_id="notify_rfc_published",
+        summary="Notify datatracker of RFC publication",
+        request=RfcPubSerializer,
+        responses=NotificationAckSerializer,
+    )
+    def post(self, request):
+        print(request.POST)  # todo remove debug
+        serializer = RfcPubSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        # Create RFC
+        serializer.save()
+        
+        print(">>> Notified of RFC publication!!")
+        from pprint import pp
+        pp(serializer.validated_data)
+        return Response(NotificationAckSerializer().data)
