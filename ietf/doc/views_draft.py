@@ -2077,9 +2077,11 @@ class IssueCallForAdoptionForm(forms.Form):
 @login_required
 def issue_wg_call_for_adoption(request, name, acronym):
     doc = get_object_or_404(Document, name=name)
+    group = Group.objects.filter(acronym=acronym, type_id="wg").first()
     if any(
         [
             doc.type_id != "draft",
+            group is None,
             not is_doc_ietf_adoptable(doc),
             doc.group.acronym == "none" and acronym is None,
             doc.group.acronym == "none" and not can_adopt_draft(request.user, doc),
@@ -2087,12 +2089,7 @@ def issue_wg_call_for_adoption(request, name, acronym):
             and not is_authorized_in_doc_stream(request.user, doc),
         ]
     ):
-        raise permission_denied(request, "You can't issue a wg call for adoption for this document.")
-
-    if doc.group.acronym == "none":
-        group = get_object_or_404(Group, acronym=acronym)
-    else:
-        group = doc.group
+        raise permission_denied(request, f"You can't issue a {acronym} wg call for adoption for this document.")
 
     if request.method == "POST":
         form = IssueCallForAdoptionForm(request.POST)

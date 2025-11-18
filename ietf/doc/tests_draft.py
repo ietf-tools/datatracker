@@ -2287,10 +2287,11 @@ class ChangeStreamStateTests(TestCase):
         )
 
     def test_issue_wg_call_for_adoption(self):
-        def _assert_rejected(testcase, doc, person):
+        def _assert_rejected(testcase, doc, person, group=None):
+            target_acronym = group.acronym if group is not None else doc.group.acronym
             url = urlreverse(
                 "ietf.doc.views_draft.issue_wg_call_for_adoption",
-                kwargs=dict(name=doc.name, acronym=doc.group.acronym),
+                kwargs=dict(name=doc.name, acronym=target_acronym),
             )
             login_testing_unauthorized(testcase, person.user.username, url)
             r = testcase.client.get(url)
@@ -2341,6 +2342,9 @@ class ChangeStreamStateTests(TestCase):
         inwglc_doc = WgDraftFactory(states=[("draft-stream-ietf", "wg-lc")])
         inwglc_chair = RoleFactory(name_id="chair", group=inwglc_doc.group).person
         _assert_rejected(self, inwglc_doc, inwglc_chair)
+        ind_doc = IndividualDraftFactory()
+        _assert_rejected(self, ind_doc, rg_chair, rg_doc.group)
+
         # Successful call issued for doc already in WG
         doc = WgDraftFactory(states=[("draft-stream-ietf","wg-cand")])
         chair_role = RoleFactory(name_id="chair",group=doc.group)
