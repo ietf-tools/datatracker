@@ -1018,9 +1018,10 @@ def is_in_stream(doc):
         return True
     return False
 
+
 @register.filter
-def can_issue_ietf_call_for_adoption(doc):
-    return all(
+def is_doc_ietf_adoptable(doc):
+    return doc.stream_id is None or all(
         [
             doc.stream_id == "ietf",
             doc.get_state_slug("draft-stream-ietf")
@@ -1038,6 +1039,7 @@ def can_issue_ietf_call_for_adoption(doc):
             doc.became_rfc() is None,
         ]
     )
+
 
 @register.filter
 def can_issue_ietf_wg_lc(doc):

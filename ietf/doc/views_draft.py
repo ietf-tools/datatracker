@@ -34,7 +34,7 @@ from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_reques
     email_iesg_processing_document, email_ad_approved_doc,
     email_iana_expert_review_state_changed )
 from ietf.doc.storage_utils import retrieve_bytes, store_bytes
-from ietf.doc.templatetags.ietf_filters import can_issue_ietf_call_for_adoption
+from ietf.doc.templatetags.ietf_filters import is_doc_ietf_adoptable
 from ietf.doc.utils import ( add_state_change_event, can_adopt_draft, can_unadopt_draft,
     get_tags_for_stream_id, nice_consensus, update_action_holders,
     update_reminder, update_telechat, make_notify_changed_event, get_initial_notify,
@@ -2075,18 +2075,24 @@ class IssueCallForAdoptionForm(forms.Form):
         return cleaned_data
 
 @login_required
-def issue_wg_call_for_adoption(request, name):
+def issue_wg_call_for_adoption(request, name, acronym):
     doc = get_object_or_404(Document, name=name)
+    if any(
+        [
+            doc.type_id != "draft",
+            not is_doc_ietf_adoptable(doc),
+            doc.group.acronym == "none" and acronym is None,
+            doc.group.acronym == "none" and not can_adopt_draft(request.user, doc),
+            doc.group.acronym != "none"
+            and not is_authorized_in_doc_stream(request.user, doc),
+        ]
+    ):
+        raise permission_denied(request, "You can't issue a wg call for adoption for this document.")
 
-    if doc.stream_id != "ietf":
-        raise Http404
-    if doc.group is None or doc.group.type_id != "wg":
-        raise Http404
-    if not can_issue_ietf_call_for_adoption(doc):
-        raise Http404
-
-    if not is_authorized_in_doc_stream(request.user, doc):
-        permission_denied(request, "You don't have permission to access this page.")
+    if doc.group.acronym == "none":
+        group = get_object_or_404(Group, acronym=acronym)
+    else:
+        group = doc.group
 
     if request.method == "POST":
         form = IssueCallForAdoptionForm(request.POST)
@@ -2094,8 +2100,22 @@ def issue_wg_call_for_adoption(request, name):
             # Intentionally not changing tags or adding a comment
             # those things can be done with other workflows
             by = request.user.person
-            prev_state = doc.get_state("draft-stream-ietf")
+
             events = []
+            if doc.stream_id != "ietf":
+                stream = StreamName.objects.get(slug="ietf")
+                doc.stream = stream
+                e = DocEvent(type="changed_stream", doc=doc, rev=doc.rev, by=by)
+                e.desc = f"Changed stream to <b>{stream.name}</b>"  # Propogates embedding html in DocEvent.desc for consistency
+                e.save()
+                events.append(e)
+            if doc.group != group:
+                doc.group = group
+                e = DocEvent(type="changed_group", doc=doc, rev=doc.rev, by=by)
+                e.desc = f"Changed group to <b>{group.name} ({group.acronym.upper()})</b>"  # Even if it makes the cats cry
+                e.save()
+                events.append(e)
+            prev_state = doc.get_state("draft-stream-ietf")
             c_adopt_state = State.objects.get(type="draft-stream-ietf", slug="c-adopt")
             doc.set_state(c_adopt_state)
             e = add_state_change_event(doc, by, prev_state, c_adopt_state)
@@ -2104,9 +2124,9 @@ def issue_wg_call_for_adoption(request, name):
             update_reminder(
                 doc, "stream-s", e, datetime_from_date(end_date, DEADLINE_TZINFO)
             )
+            doc.save_with_history(events)
             email_stream_state_changed(request, doc, prev_state, c_adopt_state, by)
             email_wg_call_for_adoption_issued(request, doc, end_date)
-            doc.save_with_history(events)
             return redirect("ietf.doc.views_doc.document_main", name=doc.name)
     else:
         end_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=14)
@@ -2115,6 +2135,7 @@ def issue_wg_call_for_adoption(request, name):
             "doc/mail/wg_call_for_adoption_issued.txt",
             dict(
                 doc=doc,
+                group=group,
                 end_date=end_date,
                 url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
                 wg_list=doc.group.list_email,
@@ -2172,29 +2193,8 @@ def ask_about_ietf_adoption_call(request, name):
     if request.method == "POST":
         form = WgForm(request.POST, user=request.user)
         if form.is_valid():
-            by = request.user.person
-            events = []
             group = form.cleaned_data["group"]
-            stream = StreamName.objects.get(slug="ietf")
-            doc.stream = stream
-            e = DocEvent(type="changed_stream", doc=doc, rev=doc.rev, by=by)
-            e.desc = f"Changed stream to <b>{stream.name}</b>"  # Propogates embedding html in DocEvent.desc for consistency
-            e.save()
-            events.append(e)
-            e = DocEvent(type="changed_group", doc=doc, rev=doc.rev, by=by)
-            e.desc = f"Changed group to <b>{group.name} ({group.acronym.upper()})</b>"  # Even if it makes the cats cry
-            e.save()
-            events.append(e)
-            doc.group = group
-            state = State.objects.get(
-                type_id="draft-stream-ietf", slug="wg-cand"
-            )  # Stepping through this state
-            prev_state = doc.get_state("draft-stream-ietf")
-            doc.set_state(state)
-            e = add_state_change_event(doc, by, prev_state, state)
-            events.append(e)
-            doc.save_with_history(events)
-            return redirect(issue_wg_call_for_adoption, name=doc.name)
+            return redirect(issue_wg_call_for_adoption, name=doc.name, acronym=group.acronym)
     else:
         form = WgForm(initial={"group": None}, user=request.user)
     return render(

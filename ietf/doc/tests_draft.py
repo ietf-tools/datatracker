@@ -2289,12 +2289,46 @@ class ChangeStreamStateTests(TestCase):
     def test_issue_wg_call_for_adoption(self):
         def _assert_rejected(testcase, doc, person):
             url = urlreverse(
-                "ietf.doc.views_draft.issue_wg_call_for_adoption", kwargs=dict(name=doc.name)
+                "ietf.doc.views_draft.issue_wg_call_for_adoption",
+                kwargs=dict(name=doc.name, acronym=doc.group.acronym),
             )
             login_testing_unauthorized(testcase, person.user.username, url)
             r = testcase.client.get(url)
-            testcase.assertEqual(r.status_code, 404)
+            testcase.assertEqual(r.status_code, 403)
             testcase.client.logout()
+
+        def _verify_call_issued(testcase, doc, chair_role):
+            url = urlreverse(
+                "ietf.doc.views_draft.issue_wg_call_for_adoption",
+                kwargs=dict(name=doc.name, acronym=chair_role.group.acronym),
+            )
+            login_testing_unauthorized(testcase, chair_role.person.user.username, url)
+            r = testcase.client.get(url)
+            testcase.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            postdict = dict()
+            postdict["end_date"] = q("input#id_end_date").attr("value")
+            postdict["to"] = q("input#id_to").attr("value")
+            cc = q("input#id_cc").attr("value")
+            if cc is not None:
+                postdict["cc"] = cc
+            postdict["subject"] = q("input#id_subject").attr("value")
+            postdict["body"] = q("textarea#id_body").text()
+            empty_outbox()
+            r = testcase.client.post(
+                url,
+                postdict,
+            )
+            testcase.assertEqual(r.status_code, 302)
+            doc.refresh_from_db()
+            self.assertEqual(doc.get_state_slug("draft-stream-ietf"), "c-adopt")
+            self.assertEqual(len(outbox), 2)
+            self.assertIn(f"{doc.group.acronym}@ietf.org", outbox[1]["To"])
+            self.assertIn("Call for adoption", outbox[1]["Subject"])
+            body = get_payload_text(outbox[1])
+            self.assertIn("disclosure obligations", body)
+            self.client.logout()
+            return doc
 
         already_rfc = WgDraftFactory(states=[("draft", "rfc")])
         rfc = WgRfcFactory(group=already_rfc.group)
@@ -2307,33 +2341,22 @@ class ChangeStreamStateTests(TestCase):
         inwglc_doc = WgDraftFactory(states=[("draft-stream-ietf", "wg-lc")])
         inwglc_chair = RoleFactory(name_id="chair", group=inwglc_doc.group).person
         _assert_rejected(self, inwglc_doc, inwglc_chair)
+        # Successful call issued for doc already in WG
         doc = WgDraftFactory(states=[("draft-stream-ietf","wg-cand")])
-        chair = RoleFactory(name_id="chair",group=doc.group).person
-        url = urlreverse("ietf.doc.views_draft.issue_wg_call_for_adoption", kwargs=dict(name=doc.name))
-        login_testing_unauthorized(self, chair.user.username, url)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        postdict = dict()
-        postdict["end_date"] = q("input#id_end_date").attr("value")
-        postdict["to"] = q("input#id_to").attr("value")
-        cc = q("input#id_cc").attr("value")
-        if cc is not None:
-            postdict["cc"] = cc
-        postdict["subject"] = q("input#id_subject").attr("value")
-        postdict["body"] = q("textarea#id_body").text()
-        empty_outbox()
-        r = self.client.post(
-            url,
-            postdict,
-        )
-        self.assertEqual(r.status_code, 302)
+        chair_role = RoleFactory(name_id="chair",group=doc.group)
+        _ = _verify_call_issued(self, doc, chair_role)
+
+        # Successful call issued for doc not yet in WG
+        doc = IndividualDraftFactory()
+        chair_role = RoleFactory(name_id="chair",group__type_id="wg")
+        doc = _verify_call_issued(self, doc, chair_role)
+        self.assertEqual(doc.group, chair_role.group)
+        self.assertEqual(doc.stream_id, "ietf")
         self.assertEqual(doc.get_state_slug("draft-stream-ietf"), "c-adopt")
-        self.assertEqual(len(outbox), 2)
-        self.assertIn(f"{doc.group.acronym}@ietf.org", outbox[1]["To"])
-        self.assertIn("Call for adoption", outbox[1]["Subject"])
-        body = get_payload_text(outbox[1])
-        self.assertIn("disclosure obligations", body)
+        self.assertCountEqual(
+            doc.docevent_set.values_list("type", flat=True),
+            ["changed_state", "changed_group", "changed_stream", "new_revision"]
+        )
 
     def test_pubreq_validation(self):
         role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name='WG Cháir Man')
@@ -2606,14 +2629,6 @@ class IetfGroupActionHelperTests(TestCase):
         self.assertEqual(r.status_code, 200)
         r = self.client.post(url, {"group": group.pk})
         self.assertEqual(r.status_code, 302)
-        doc.refresh_from_db()
-        self.assertEqual(doc.group, group)
-        self.assertEqual(doc.stream_id, "ietf")
-        self.assertEqual(doc.get_state_slug("draft-stream-ietf"), "wg-cand")
-        self.assertCountEqual(
-            doc.docevent_set.values_list("type", flat=True),
-            ["changed_state", "changed_group", "changed_stream", "new_revision"],
-        )
 
     def test_offer_wg_action_helpers(self):
         def _assert_view_presents_buttons(testcase, response, expected):
