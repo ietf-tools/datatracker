@@ -33,7 +33,6 @@
                 "oderwat.indent-rainbow",
                 "redhat.vscode-yaml",
                 "spmeesseman.vscode-taskexplorer",
-                "visualstudioexptteam.vscodeintellicode",
                 "ms-python.pylint",
                 "charliermarsh.ruff"
             ],
