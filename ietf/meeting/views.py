@@ -4430,16 +4430,7 @@ def upcoming_ical(request):
     else:
         ietfs = []
 
-    meeting_vtz = {meeting.vtimezone() for meeting in meetings}
-    meeting_vtz.discard(None)
-
-    # icalendar response file should have '\r\n' line endings per RFC5545
-    response = render_to_string('meeting/upcoming.ics', {
-        'vtimezones': ''.join(sorted(meeting_vtz)),
-        'assignments': assignments,
-        'ietfs': ietfs,
-    }, request=request)
-    response = parse_ical_line_endings(response)
+    response = render_upcoming_ical(assignments, ietfs, request)
 
     response = HttpResponse(response, content_type='text/calendar')
     response['Content-Disposition'] = 'attachment; filename="upcoming.ics"'
@@ -4510,6 +4501,64 @@ def render_important_dates_ical(meetings, request):
 
             event.add("description", "\n".join(description_lines))
             cal.add_component(event)
+
+    return cal.to_ical().decode("utf-8")
+
+def render_upcoming_ical(assignments, meetings, request):
+    """Generate upcoming using the icalendar library"""
+
+    cal = Calendar()
+    cal.add("prodid", "-//IETF//datatracker.ietf.org ical upcoming//EN")
+    cal.add("version", "2.0")
+    cal.add("method", "PUBLISH")
+
+    for item in assignments:
+        event = Event()
+
+        event.add("uid", f"ietf-{item.session.meeting.number}-{item.timeslot.pk}")
+        event.add("summary", f"{item.session.group.acronym.lower()} - {item.session.name if item.session.name else item.session.group.name}")
+
+        if item.schedule.meeting.city:
+            event.add("location", f"{item.schedule.meeting.city},{item.schedule.meeting.country}")
+
+        event.add("status", item.session.ical_status)
+        event.add("class", "PUBLIC")
+
+        event.add("dtstart", item.timeslot.utc_start_time())
+        event.add("dtend", item.timeslot.utc_end_time())
+        event.add("dtstamp", item.timeslot.modified)
+        if item.session.agenda():
+            event.add("url", item.session.agenda().get_href())
+
+        description_lines = []
+        if item.timeslot.name:
+            description_lines.append(f"{item.timeslot.name}")
+        if item.session.agenda_note:
+            description_lines.append(f"Note: {item.session.agenda_note}")
+        
+        for material in item.session.materials.all():
+            title_part = f" ({material.title})" if material.type.name != "Agenda" else ""
+            description_lines.append(f"{material.type}{title_part}: {material.get_href()}")
+
+        if item.session.remote_instructions:
+            description_lines.append(f"Remote instructions: {item.session.remote_instructions}")
+
+        event.add("description", "\n".join(description_lines))
+        cal.add_component(event)
+
+    for meeting in meetings:
+        event = Event()
+        event.add("uid", f"ietf-{meeting.number}")
+        event.add("summary", f"IETF {meeting.number}")
+        if meeting.city:
+            event.add("location", f"{meeting.city},{meeting.country}")
+        event.add("class", "PUBLIC")
+        event.add("dtstart", meeting.date)
+        event.add("dtend", meeting.end_date() + datetime.timedelta(days=1))
+        event.add("dtstamp", meeting.cached_updated)
+        event.add("url", f"{request.scheme}://{request.get_host()}{reverse('agenda', kwargs={'num': meeting.number})}")
+
+        cal.add_component(event)
 
     return cal.to_ical().decode("utf-8")
 
