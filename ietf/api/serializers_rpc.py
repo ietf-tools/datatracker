@@ -247,6 +247,16 @@ class RfcPubSerializer(serializers.ModelSerializer):
         queryset=Person.objects.all(),
         required=False,
     )
+    obsoletes = serializers.PrimaryKeyRelatedField(
+        many=True,
+        required=False,
+        queryset=Document.objects.filter(type_id="rfc"),
+    )
+    updates = serializers.PrimaryKeyRelatedField(
+        many=True,
+        required=False,
+        queryset=Document.objects.filter(type_id="rfc"),
+    )
     authors = AuthorSerializer(many=True)
 
     class Meta:
@@ -266,6 +276,8 @@ class RfcPubSerializer(serializers.ModelSerializer):
             "std_level",
             "ad",
             "external_url",
+            "obsoletes",
+            "updates",
         ]
 
     def validate(self, data):
@@ -287,7 +299,9 @@ class RfcPubSerializer(serializers.ModelSerializer):
         published = validated_data.pop("published")
         draft_name = validated_data.pop("draft_name", None)
         draft_rev = validated_data.pop("draft_rev", None)
-        
+        obsoletes = validated_data.pop("obsoletes", [])
+        updates = validated_data.pop("updates", [])
+
         # Retrieve draft
         draft = None
         if draft_name is not None:
@@ -321,6 +335,17 @@ class RfcPubSerializer(serializers.ModelSerializer):
         )
         rfc.set_state(State.objects.get(used=True, type_id="rfc", slug="published"))
 
+        # create updates / obsoletes relations
+        for obsoleted_rfc_pk in obsoletes:
+            RelatedDocument.objects.create(
+                source=rfc, target=obsoleted_rfc_pk, relationship_id="obs"
+            )
+        for updated_rfc_pk in updates:
+            RelatedDocument.objects.create(
+                source=rfc, target=updated_rfc_pk, relationship_id="updates"
+            )
+    
+        # create relation with draft and update draft state
         if draft is not None:
             draft_changes = []
             draft_events = []
@@ -402,7 +427,6 @@ class RfcPubSerializer(serializers.ModelSerializer):
                 )
                 draft.save_with_history(draft_events)
 
-        # todo add obsoletes / updates
         # todo add subseries relationships / clean up
         return rfc
 
