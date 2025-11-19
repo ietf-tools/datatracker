@@ -472,7 +472,6 @@ class RfcPubSerializer(serializers.ModelSerializer):
                     )
                     draft.save_with_history(draft_events)
 
-        # todo add subseries relationships / clean up
         return rfc
 
     def _create_rfc(self, validated_data):
@@ -497,76 +496,6 @@ class RfcFileSerializer(serializers.Serializer):
         allow_empty_file=False,
         use_url=False,
     )
-
-
-class RfcPubNotificationSerializer(serializers.Serializer):
-    published = serializers.DateTimeField(default_timezone=datetime.timezone.utc)
-    draft_name = serializers.RegexField(
-        required=False, regex=r"^draft-[a-zA-Z0-9-]+$"
-    )
-    draft_rev = serializers.RegexField(
-        required=False, regex=r"^[0-9][0-9]$"
-    )
-    rfc = RfcPubSerializer()
-
-    def validate(self, data):
-        if "draft_name" in data or "draft_rev" in data:
-            if "draft_name" not in data:
-                raise serializers.ValidationError(
-                    {"draft_name": "Missing draft_name"},
-                    code="invalid-draft-spec",
-                ) 
-            if "draft_rev" not in data:
-                raise serializers.ValidationError(
-                    {"draft_rev": "Missing draft_rev"},
-                    code="invalid-draft-spec",
-                )
-        return data
-
-    def create(self, validated_data):
-        # Retrieve draft
-        draft = None
-        if "draft_name" in validated_data:
-            # serializer enforces that draft_name and draft_rev are both present
-            draft = Document.objects.filter(
-                type_id="draft",
-                name=validated_data["draft_name"],
-                rev=validated_data["draft_rev"],
-            ).first()
-            if draft is None:
-                raise serializers.ValidationError(
-                    {
-                        "draft_name": "No such draft",
-                        "draft_rev": "No such draft",
-                    },
-                    code="invalid-draft"
-                )
-        rfc = self._create_rfc(self.validated_data.pop("rfc"))
-        # todo add "Created RFC" to events
-        # todo set doc state
-        # todo adjust draft state
-        # todo add became_rfc relationship
-        # todo move draft files to archive
-        # todo set stream state to pub
-        # todo set published date
-        # todo add obsoletes / updates
-        # todo add subseries relationships / clean up
-        # todo adjust errata tags
-
-    def _create_rfc(self, validated_data):
-        authors_data = validated_data.pop("authors")
-        rfc = Document.objects.create(
-            type_id="rfc",
-            name=f"rfc{validated_data['rfc_number']}",
-            **validated_data,
-        )
-        for order, author_data in enumerate(authors_data):
-            rfc.rfcauthor_set.create(
-                order=order,
-                **author_data,
-            )
-
-
 
 
 class NotificationAckSerializer(serializers.Serializer):
