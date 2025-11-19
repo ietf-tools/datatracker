@@ -347,39 +347,40 @@ class RfcPubSerializer(serializers.ModelSerializer):
 
         # create updates / obsoletes relations
         for obsoleted_rfc_pk in obsoletes:
-            RelatedDocument.objects.create(
+            RelatedDocument.objects.get_or_create(
                 source=rfc, target=obsoleted_rfc_pk, relationship_id="obs"
             )
         for updated_rfc_pk in updates:
-            RelatedDocument.objects.create(
+            RelatedDocument.objects.get_or_create(
                 source=rfc, target=updated_rfc_pk, relationship_id="updates"
             )
     
         # create subseries relations
         for subseries_doc_name in subseries:
             ss_slug = subseries_doc_name[:3]
-            subseries_doc, created = Document.objects.get_or_create(
+            subseries_doc, ss_doc_created = Document.objects.get_or_create(
                 type_id=ss_slug, name=subseries_doc_name
             )
-            if created:
+            if ss_doc_created:
                 subseries_doc.docevent_set.create(
                     type=f"{ss_slug}_doc_created",
                     by=system_person,
                     desc=f"Created {subseries_doc_name} via publication of {rfc.name}",
                 )
-            subseries_doc.relateddocument_set.create(
+            _, ss_rel_created = subseries_doc.relateddocument_set.get_or_create(
                 relationship_id="contains", target=rfc
             )
-            subseries_doc.docevent_set.create(
-                type="sync_from_rfc_editor",
-                by=system_person,
-                desc=f"Added {rfc.name} to {subseries_doc.name}",
-            )
-            rfc.docevent_set.create(
-                type="sync_from_rfc_editor",
-                by=system_person,
-                desc=f"Added {rfc.name} to {subseries_doc.name}",
-            )
+            if ss_rel_created:
+                subseries_doc.docevent_set.create(
+                    type="sync_from_rfc_editor",
+                    by=system_person,
+                    desc=f"Added {rfc.name} to {subseries_doc.name}",
+                )
+                rfc.docevent_set.create(
+                    type="sync_from_rfc_editor",
+                    by=system_person,
+                    desc=f"Added {rfc.name} to {subseries_doc.name}",
+                )
 
 
         # create relation with draft and update draft state
