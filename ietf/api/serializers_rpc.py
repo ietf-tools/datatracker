@@ -2,6 +2,7 @@
 import datetime
 from typing import Literal, Optional
 
+from django.db import transaction
 from django.urls import reverse as urlreverse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
@@ -328,142 +329,144 @@ class RfcPubSerializer(serializers.ModelSerializer):
                 )
             # todo check that draft is in the right state
 
-        system_person = Person.objects.get(name="(System)")
-        rfc = self._create_rfc(
-            {
-                "group": draft.group if draft else "none",
-                "formal_languages": draft.formal_languages.all() if draft else [],
-            } | validated_data
-        )
-        DocEvent.objects.create(
-            doc=rfc,
-            rev=rfc.rev,
-            type="published_rfc",
-            time=published,
-            by=system_person,
-            desc="RFC published",
-        )
-        rfc.set_state(State.objects.get(used=True, type_id="rfc", slug="published"))
-
-        # create updates / obsoletes relations
-        for obsoleted_rfc_pk in obsoletes:
-            RelatedDocument.objects.get_or_create(
-                source=rfc, target=obsoleted_rfc_pk, relationship_id="obs"
+        # Transaction to clean up if something fails
+        with transaction.atomic():
+            system_person = Person.objects.get(name="(System)")
+            rfc = self._create_rfc(
+                {
+                    "group": draft.group if draft else "none",
+                    "formal_languages": draft.formal_languages.all() if draft else [],
+                } | validated_data
             )
-        for updated_rfc_pk in updates:
-            RelatedDocument.objects.get_or_create(
-                source=rfc, target=updated_rfc_pk, relationship_id="updates"
+            DocEvent.objects.create(
+                doc=rfc,
+                rev=rfc.rev,
+                type="published_rfc",
+                time=published,
+                by=system_person,
+                desc="RFC published",
             )
+            rfc.set_state(State.objects.get(used=True, type_id="rfc", slug="published"))
     
-        # create subseries relations
-        for subseries_doc_name in subseries:
-            ss_slug = subseries_doc_name[:3]
-            subseries_doc, ss_doc_created = Document.objects.get_or_create(
-                type_id=ss_slug, name=subseries_doc_name
-            )
-            if ss_doc_created:
-                subseries_doc.docevent_set.create(
-                    type=f"{ss_slug}_doc_created",
-                    by=system_person,
-                    desc=f"Created {subseries_doc_name} via publication of {rfc.name}",
+            # create updates / obsoletes relations
+            for obsoleted_rfc_pk in obsoletes:
+                RelatedDocument.objects.get_or_create(
+                    source=rfc, target=obsoleted_rfc_pk, relationship_id="obs"
                 )
-            _, ss_rel_created = subseries_doc.relateddocument_set.get_or_create(
-                relationship_id="contains", target=rfc
-            )
-            if ss_rel_created:
-                subseries_doc.docevent_set.create(
-                    type="sync_from_rfc_editor",
-                    by=system_person,
-                    desc=f"Added {rfc.name} to {subseries_doc.name}",
+            for updated_rfc_pk in updates:
+                RelatedDocument.objects.get_or_create(
+                    source=rfc, target=updated_rfc_pk, relationship_id="updates"
                 )
-                rfc.docevent_set.create(
-                    type="sync_from_rfc_editor",
-                    by=system_person,
-                    desc=f"Added {rfc.name} to {subseries_doc.name}",
+        
+            # create subseries relations
+            for subseries_doc_name in subseries:
+                ss_slug = subseries_doc_name[:3]
+                subseries_doc, ss_doc_created = Document.objects.get_or_create(
+                    type_id=ss_slug, name=subseries_doc_name
                 )
-
-
-        # create relation with draft and update draft state
-        if draft is not None:
-            draft_changes = []
-            draft_events = []
-            if draft.get_state_slug() != "rfc":
-                draft.set_state(
-                    State.objects.get(used=True, type="draft", slug="rfc")
+                if ss_doc_created:
+                    subseries_doc.docevent_set.create(
+                        type=f"{ss_slug}_doc_created",
+                        by=system_person,
+                        desc=f"Created {subseries_doc_name} via publication of {rfc.name}",
+                    )
+                _, ss_rel_created = subseries_doc.relateddocument_set.get_or_create(
+                    relationship_id="contains", target=rfc
                 )
-                move_draft_files_to_archive(draft, draft.rev)
-                draft_changes.append(f"changed state to {draft.get_state()}")
-
-            r, created_relateddoc = RelatedDocument.objects.get_or_create(
-                source=draft, target=rfc, relationship_id="became_rfc",
-            )
-            if created_relateddoc:
-                change = "created {rel_name} relationship between {pretty_draft_name} and {pretty_rfc_name}".format(
-                    rel_name=r.relationship.name.lower(),
-                    pretty_draft_name=prettify_std_name(draft_name),
-                    pretty_rfc_name=prettify_std_name(rfc.name),
+                if ss_rel_created:
+                    subseries_doc.docevent_set.create(
+                        type="sync_from_rfc_editor",
+                        by=system_person,
+                        desc=f"Added {rfc.name} to {subseries_doc.name}",
+                    )
+                    rfc.docevent_set.create(
+                        type="sync_from_rfc_editor",
+                        by=system_person,
+                        desc=f"Added {rfc.name} to {subseries_doc.name}",
+                    )
+    
+    
+            # create relation with draft and update draft state
+            if draft is not None:
+                draft_changes = []
+                draft_events = []
+                if draft.get_state_slug() != "rfc":
+                    draft.set_state(
+                        State.objects.get(used=True, type="draft", slug="rfc")
+                    )
+                    move_draft_files_to_archive(draft, draft.rev)
+                    draft_changes.append(f"changed state to {draft.get_state()}")
+    
+                r, created_relateddoc = RelatedDocument.objects.get_or_create(
+                    source=draft, target=rfc, relationship_id="became_rfc",
                 )
-                draft_changes.append(change)
-
-            # Always set the "draft-iesg" state. This state should be set for all drafts, so
-            # log a warning if it is not set. What should happen here is that ietf stream
-            # RFCs come in as "rfcqueue" and are set to "pub" when they appear in the RFC index.
-            # Other stream documents should normally be "idexists" and be left that way. The
-            # code here *actually* leaves "draft-iesg" state alone if it is "idexists" or "pub",
-            # and changes any other state to "pub". If unset, it changes it to "idexists".
-            # This reflects historical behavior and should probably be updated, but a migration
-            # of existing drafts (and validation of the change) is needed before we change the
-            # handling.
-            prev_iesg_state = draft.get_state("draft-iesg")
-            if prev_iesg_state is None:
-                log.log(f'Warning while processing {rfc.name}: {draft.name} has no "draft-iesg" state')
-                new_iesg_state = State.objects.get(type_id="draft-iesg", slug="idexists")
-            elif prev_iesg_state.slug not in ("pub", "idexists"):
-                if prev_iesg_state.slug != "rfcqueue":
-                    log.log(
-                        'Warning while processing {}: {} is in "draft-iesg" state {} (expected "rfcqueue")'.format(
-                            rfc.name, draft.name, prev_iesg_state.slug
+                if created_relateddoc:
+                    change = "created {rel_name} relationship between {pretty_draft_name} and {pretty_rfc_name}".format(
+                        rel_name=r.relationship.name.lower(),
+                        pretty_draft_name=prettify_std_name(draft_name),
+                        pretty_rfc_name=prettify_std_name(rfc.name),
+                    )
+                    draft_changes.append(change)
+    
+                # Always set the "draft-iesg" state. This state should be set for all drafts, so
+                # log a warning if it is not set. What should happen here is that ietf stream
+                # RFCs come in as "rfcqueue" and are set to "pub" when they appear in the RFC index.
+                # Other stream documents should normally be "idexists" and be left that way. The
+                # code here *actually* leaves "draft-iesg" state alone if it is "idexists" or "pub",
+                # and changes any other state to "pub". If unset, it changes it to "idexists".
+                # This reflects historical behavior and should probably be updated, but a migration
+                # of existing drafts (and validation of the change) is needed before we change the
+                # handling.
+                prev_iesg_state = draft.get_state("draft-iesg")
+                if prev_iesg_state is None:
+                    log.log(f'Warning while processing {rfc.name}: {draft.name} has no "draft-iesg" state')
+                    new_iesg_state = State.objects.get(type_id="draft-iesg", slug="idexists")
+                elif prev_iesg_state.slug not in ("pub", "idexists"):
+                    if prev_iesg_state.slug != "rfcqueue":
+                        log.log(
+                            'Warning while processing {}: {} is in "draft-iesg" state {} (expected "rfcqueue")'.format(
+                                rfc.name, draft.name, prev_iesg_state.slug
+                            )
                         )
-                    )
-                new_iesg_state = State.objects.get(type_id="draft-iesg", slug="pub")
-            else:
-                new_iesg_state = prev_iesg_state
-    
-            if new_iesg_state != prev_iesg_state:
-                draft.set_state(new_iesg_state)
-                draft_changes.append(f"changed {new_iesg_state.type.label} to {new_iesg_state}")
-                e = update_action_holders(draft, prev_iesg_state, new_iesg_state)
-                if e:
-                    draft_events.append(e)
-
-            # If the draft and RFC streams agree, move draft to "pub" stream state. If not, complain.
-            if draft.stream != rfc.stream:
-                log.log("Warning while processing {}: draft {} stream is {} but RFC stream is {}".format(
-                    rfc.name, draft.name, draft.stream, rfc.stream
-                ))
-            elif draft.stream.slug in ["iab", "irtf", "ise"]:
-                stream_slug = f"draft-stream-{draft.stream.slug}"
-                prev_state = draft.get_state(stream_slug)
-                if prev_state is not None and prev_state.slug != "pub":
-                    new_state = State.objects.select_related("type").get(used=True, type__slug=stream_slug, slug="pub")
-                    draft.set_state(new_state)
-                    draft_changes.append(
-                        f"changed {new_state.type.label} to {new_state}"
-                    )
-                    e = update_action_holders(draft, prev_state, new_state)
+                    new_iesg_state = State.objects.get(type_id="draft-iesg", slug="pub")
+                else:
+                    new_iesg_state = prev_iesg_state
+        
+                if new_iesg_state != prev_iesg_state:
+                    draft.set_state(new_iesg_state)
+                    draft_changes.append(f"changed {new_iesg_state.type.label} to {new_iesg_state}")
+                    e = update_action_holders(draft, prev_iesg_state, new_iesg_state)
                     if e:
                         draft_events.append(e)
-            if draft_changes:
-                draft_events.append(
-                    DocEvent.objects.create(
-                        doc=draft,
-                        rev=draft.rev,
-                        by=system_person,
-                        type="sync_from_rfc_editor",
-                        desc=f"Updated while publishing {rfc.name} ({', '.join(draft_changes)})",
+    
+                # If the draft and RFC streams agree, move draft to "pub" stream state. If not, complain.
+                if draft.stream != rfc.stream:
+                    log.log("Warning while processing {}: draft {} stream is {} but RFC stream is {}".format(
+                        rfc.name, draft.name, draft.stream, rfc.stream
+                    ))
+                elif draft.stream.slug in ["iab", "irtf", "ise"]:
+                    stream_slug = f"draft-stream-{draft.stream.slug}"
+                    prev_state = draft.get_state(stream_slug)
+                    if prev_state is not None and prev_state.slug != "pub":
+                        new_state = State.objects.select_related("type").get(used=True, type__slug=stream_slug, slug="pub")
+                        draft.set_state(new_state)
+                        draft_changes.append(
+                            f"changed {new_state.type.label} to {new_state}"
+                        )
+                        e = update_action_holders(draft, prev_state, new_state)
+                        if e:
+                            draft_events.append(e)
+                if draft_changes:
+                    draft_events.append(
+                        DocEvent.objects.create(
+                            doc=draft,
+                            rev=draft.rev,
+                            by=system_person,
+                            type="sync_from_rfc_editor",
+                            desc=f"Updated while publishing {rfc.name} ({', '.join(draft_changes)})",
+                        )
                     )
-                )
-                draft.save_with_history(draft_events)
+                    draft.save_with_history(draft_events)
 
         # todo add subseries relationships / clean up
         return rfc
