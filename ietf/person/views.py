@@ -10,6 +10,7 @@ from django.contrib import messages
 from django.db.models import Q
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, redirect
+from django.template.loader import render_to_string
 from django.utils import timezone
 
 import debug                            # pyflakes:ignore
@@ -167,23 +168,14 @@ def send_merge_request(request):
                 target_account = target.user.username
             else:
                 target_account = target.email()
-            sender = request.user.person.name
-            subject = 'Possible duplicate IETF Datatracker accounts'
-            body = f'''Hello {source.name},
-
-    It appears you may have duplicate IETF Datatracker accounts associated with email addresses:
-    {source_account} and {target_account}
-    If these are both yours we would like to merge them into one account.
-    Could you please confirm whether both accounts are yours?
-    '''
-            signature = f'''
-
-    {sender}
-    IETF Support
-    '''
-            if source.user and target.user:
-                body = body + 'And if so, which login do you prefer to keep?'
-            body = body + signature
+            sender_name = request.user.person.name
+            subject = 'Action requested: Merging possible duplicate IETF Datatracker accounts'
+            context = {
+                'source_account': source_account,
+                'target_account': target_account,
+                'sender_name': sender_name,
+            }
+            body = render_to_string('person/merge_request_email.txt', context)
             initial = {
                 'to': ', '.join(to),
                 'frm': settings.DEFAULT_FROM_EMAIL,

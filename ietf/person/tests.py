@@ -461,7 +461,7 @@ class PersonUtilsTests(TestCase):
         login_testing_unauthorized(self, 'secretary', url)
         r = self.client.get(url)
         initial = r.context['form'].initial
-        subject = 'Possible duplicate IETF Datatracker accounts'
+        subject = 'Action requested: Merging possible duplicate IETF Datatracker accounts'
         self.assertEqual(initial['to'], ', '.join([source.user.username, target.user.username]))
         self.assertEqual(initial['subject'], subject)
         self.assertEqual(initial['reply_to'], 'support@ietf.org')
