@@ -11,7 +11,7 @@ from ietf.doc.expire import move_draft_files_to_archive
 from ietf.doc.models import DocumentAuthor, Document, RfcAuthor, RelatedDocument, State, \
     DocEvent
 from ietf.doc.utils import default_consensus, prettify_std_name, update_action_holders
-from ietf.name.models import StreamName, StdLevelName
+from ietf.name.models import StreamName, StdLevelName, FormalLanguageName
 from ietf.person.models import Person
 from ietf.utils import log
 
@@ -231,16 +231,15 @@ class RfcPubSerializer(serializers.ModelSerializer):
     stream = serializers.PrimaryKeyRelatedField(
         queryset=StreamName.objects.filter(used=True)
     )
-    # group = serializers.SlugRelatedField(
-    #     slug_field="acronym",
-    #     required=False,
-    #     queryset=Group.objects.all(),
-    # )
-    # formal_languages = serializers.PrimaryKeyRelatedField(
-    #     many=True,
-    #     required=False,
-    #     queryset=FormalLanguageName.objects.filter(used=True),
-    # )
+    formal_languages = serializers.PrimaryKeyRelatedField(
+        many=True,
+        required=False,
+        queryset=FormalLanguageName.objects.filter(used=True),
+        help_text=(
+            "formal languages used in RFC (defaults to those from draft, send empty"
+            "list to override)"
+        )
+    )
     std_level = serializers.PrimaryKeyRelatedField(
         queryset=StdLevelName.objects.filter(used=True),
     )
@@ -263,8 +262,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
             "abstract",
             "pages",
             "words",
-            # "group",
-            # "formal_languages",
+            "formal_languages",
             "std_level",
             "ad",
             "external_url",
@@ -308,10 +306,10 @@ class RfcPubSerializer(serializers.ModelSerializer):
             # todo check that draft is in the right state
 
         rfc = self._create_rfc(
-            validated_data | {
+            {
                 "group": draft.group if draft else "none",
                 "formal_languages": draft.formal_languages.all() if draft else [],
-            }
+            } | validated_data
         )
         DocEvent.objects.create(
             doc=rfc,
