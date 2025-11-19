@@ -1,5 +1,6 @@
-{% load ietf_filters %}{% load mail_filters %}{% autoescape off %}{% filter wordwrap:78 %}This message starts a {{doc.group.acronym}} WG Call for Adoption of:
+{% load ietf_filters %}{% load mail_filters %}{% autoescape off %}{% filter wordwrap:78 %}This message starts a {{group.acronym}} WG Call for Adoption of:
 {{ doc.name }}-{{ doc.rev }}
+
 
 This Working Group Call for Adoption ends on {{ end_date }}
 
@@ -9,7 +10,7 @@ Abstract:
 File can be retrieved from:
 {{ url }}
 
-Please reply to this message keeping {{ wg_list }} in copy by indicating whether you support or not the adoption of this draft as a {{doc.group.acronym}} WG document. Comments to motivate your preference are highly appreciated. 
+Please reply to this message keeping {{ wg_list }} in copy by indicating whether you support or not the adoption of this draft as a {{group.acronym}} WG document. Comments to motivate your preference are highly appreciated. 
 
 Authors, and WG participants in general, are reminded of the Intellectual Property Rights (IPR) disclosure obligations described in BCP 79 [2]. Appropriate IPR disclosures required for full conformance with the provisions of BCP 78 [1] and BCP 79 [2] must be filed, if you are aware of any. Sanctions available for application to violators of IETF IPR Policy can be found at [3].
 

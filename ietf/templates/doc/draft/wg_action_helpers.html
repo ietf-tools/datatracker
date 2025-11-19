@@ -10,8 +10,8 @@
         <small class="text-body-secondary">{{ doc }}</small>
     </h1>
     <div>
-        {% if doc|can_issue_ietf_call_for_adoption %}
-          <a class="btn btn-primary" href="{% url 'ietf.doc.views_draft.issue_wg_call_for_adoption' name=doc.name%}" id="id_wgadopt_button">Issue WG Call for Adoption</a>
+        {% if doc|is_doc_ietf_adoptable %}
+          <a class="btn btn-primary" href="{% url 'ietf.doc.views_draft.issue_wg_call_for_adoption' name=doc.name acronym=doc.group.acronym %}" id="id_wgadopt_button">Issue WG Call for Adoption</a>
         {% endif %}
         {% if doc|can_issue_ietf_wg_lc %}
           <a class="btn btn-primary" href="{% url 'ietf.doc.views_draft.issue_wg_lc' name=doc.name %}" id="id_wglc_button">Issue{% if doc|has_had_ietf_wg_lc %} Another{% endif %} Working Group Last Call</a>

@@ -63,7 +63,7 @@
                     <td class="edit">
                         {% if doc.stream and can_edit_stream_info and doc.stream.slug != "legacy" and not snapshot %}
                             <a class="btn btn-primary btn-sm"
-                               {% if doc|can_issue_ietf_call_for_adoption or doc|can_issue_ietf_wg_lc or doc|can_submit_to_iesg %}
+                               {% if doc|is_doc_ietf_adoptable or doc|can_issue_ietf_wg_lc or doc|can_submit_to_iesg %}
                                  href="{% url 'ietf.doc.views_draft.offer_wg_action_helpers' name=doc.name %}"
                                {% else %}
                                  href="{% url 'ietf.doc.views_draft.change_stream_state' name=doc.name state_type=stream_state_type_slug %}"

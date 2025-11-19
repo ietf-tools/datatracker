@@ -146,8 +146,7 @@ urlpatterns = [
     url(r'^%(name)s/edit/requestpublication/$' % settings.URL_REGEXPS, views_draft.request_publication),
     url(r'^%(name)s/edit/ask-about-ietf-adoption/$' % settings.URL_REGEXPS, views_draft.ask_about_ietf_adoption_call),
     url(r'^%(name)s/edit/adopt/$' % settings.URL_REGEXPS, views_draft.adopt_draft),
-    url(r'^%(name)s/edit/issue-wg-call-for-adoption/$' % settings.URL_REGEXPS, views_draft.issue_wg_call_for_adoption),
-
+    url(r'^%(name)s/edit/issue-wg-call-for-adoption/%(acronym)s/$' % settings.URL_REGEXPS, views_draft.issue_wg_call_for_adoption),
 
     url(r'^%(name)s/edit/release/$' % settings.URL_REGEXPS, views_draft.release_draft),
     url(r'^%(name)s/edit/state/(?P<state_type>draft-stream-[a-z]+)/$' % settings.URL_REGEXPS, views_draft.change_stream_state),
