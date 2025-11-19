@@ -358,14 +358,8 @@ class RfcPubNotificationView(APIView):
         responses=NotificationAckSerializer,
     )
     def post(self, request):
-        print(request.POST)  # todo remove debug
         serializer = RfcPubSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
         # Create RFC
         serializer.save()
-        
-        print(">>> Notified of RFC publication!!")
-        from pprint import pp
-        pp(serializer.validated_data)
         return Response(NotificationAckSerializer().data)
