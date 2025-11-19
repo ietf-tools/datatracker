@@ -317,17 +317,21 @@ class RfcPubSerializer(serializers.ModelSerializer):
         if draft_name is not None:
             # validation enforces that draft_name and draft_rev are both present
             draft = Document.objects.filter(
-                type_id="draft", name=draft_name, rev=draft_rev,
+                type_id="draft",
+                name=draft_name,
+                rev=draft_rev,
+            ).exclude(
+                states__type_id="draft",
+                states__slug="rfc",
             ).first()
             if draft is None:
                 raise serializers.ValidationError(
                     {
-                        "draft_name": "No such draft",
-                        "draft_rev": "No such draft",
+                        "draft_name": "No such draft or draft already published as RFC",
+                        "draft_rev": "No such draft or draft already published as RFC",
                     },
                     code="invalid-draft"
                 )
-            # todo check that draft is in the right state
 
         # Transaction to clean up if something fails
         with transaction.atomic():
