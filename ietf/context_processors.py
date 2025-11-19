@@ -5,6 +5,7 @@ import django
 from django.conf import settings
 from django.utils import timezone
 from ietf import __version__, __patch__, __release_branch__, __release_hash__
+from opentelemetry.propagate import inject
 
 def server_mode(request):
     return {'server_mode': settings.SERVER_MODE}
@@ -51,3 +52,8 @@ def timezone_now(request):
     return {
         'timezone_now': timezone.now(),
     }
+
+def traceparent_id(request):
+    context_extras = {}
+    inject(context_extras)
+    return { "otel": context_extras }

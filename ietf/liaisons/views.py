@@ -118,23 +118,6 @@ def normalize_sort(request):
 
     return sort, order_by
 
-def post_only(group,person):
-    '''Returns true if the user is restricted to post_only (vs. post_and_send) for this
-    group.  This is for incoming liaison statements.
-    - Secretariat have full access.
-    - Authorized Individuals have full access for the group they are associated with
-    - Liaison Managers can post only
-    '''
-    if group.type_id == "sdo" and (
-        not (
-            has_role(person.user, "Secretariat")
-            or has_role(person.user, "Liaison Coordinator")
-            or group.role_set.filter(name="auth", person=person)
-        )
-    ):
-        return True
-    else:
-        return False
 
 # -------------------------------------------------
 # Ajax Functions
@@ -159,15 +142,13 @@ def ajax_get_liaison_info(request):
 
     cc = []
     does_need_approval = []
-    can_post_only = []
     to_contacts = []
     response_contacts = []
-    result = {'response_contacts':[],'to_contacts': [], 'cc': [], 'needs_approval': False, 'post_only': False, 'full_list': []}
+    result = {'response_contacts':[],'to_contacts': [], 'cc': [], 'needs_approval': False, 'full_list': []}
 
     for group in from_groups:
         cc.extend(get_contacts_for_liaison_messages_for_group_primary(group))
         does_need_approval.append(needs_approval(group,person))
-        can_post_only.append(post_only(group,person))
         response_contacts.append(get_contacts_for_liaison_messages_for_group_secondary(group))
 
     for group in to_groups:
@@ -183,12 +164,15 @@ def ajax_get_liaison_info(request):
     else:
         does_need_approval = True
 
-    result.update({'error': False,
-                   'cc': list(set(cc)),
-                   'response_contacts':list(set(response_contacts)),
-                   'to_contacts': list(set(to_contacts)),
-                   'needs_approval': does_need_approval,
-                   'post_only': any(can_post_only)})
+    result.update(
+        {
+            "error": False,
+            "cc": list(set(cc)),
+            "response_contacts": list(set(response_contacts)),
+            "to_contacts": list(set(to_contacts)),
+            "needs_approval": does_need_approval,
+        }
+    )
 
     json_result = json.dumps(result)
     return HttpResponse(json_result, content_type='application/json')
@@ -525,3 +509,17 @@ def liaison_resend(request, object_id):
     messages.success(request,'Liaison Statement resent')
     return redirect('ietf.liaisons.views.liaison_list')
 
+
+@role_required("Secretariat", "IAB", "Liaison Coordinator", "Liaison Manager")
+def list_other_sdo(request):
+    def _sdo_order_key(obj:Group)-> tuple[str,str]:
+        state_order = {
+            "active" : "a",
+            "conclude": "b",
+        }
+        return (state_order.get(obj.state.slug,f"c{obj.state.slug}"), obj.acronym)
+
+    sdos = sorted(list(Group.objects.filter(type="sdo")),key = _sdo_order_key)
+    for sdo in sdos:
+        sdo.liaison_managers =[r.person for r in sdo.role_set.filter(name="liaiman")]
+    return render(request,"liaisons/list_other_sdo.html",dict(sdos=sdos))

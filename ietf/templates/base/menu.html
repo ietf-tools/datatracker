@@ -31,19 +31,19 @@
     {% if flavor == 'top' %}<li><hr class="dropdown-divider"></li>{% endif %}
     <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>New work</li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url "ietf.group.views.chartering_groups" %}">
             Chartering groups
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url "ietf.group.views.bofs" group_type="wg" %}">
             BOFs
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url "ietf.doc.views_bofreq.bof_requests" %}">
             BOF Requests
         </a>
@@ -51,13 +51,13 @@
     {% if flavor == 'top' %}<li><hr class="dropdown-divider"></li>{% endif %}
     <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>Other groups</li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url "ietf.group.views.concluded_groups" %}">
             Concluded groups
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url 'ietf.mailinglists.views.nonwg' %}">
             Non-WG lists
         </a>
@@ -81,26 +81,26 @@
         </li>
     {% endif %}
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url "ietf.doc.views_search.search" %}">
             Search
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url "ietf.doc.views_search.recent_drafts" %}">
             Recent I-Ds
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url "ietf.submit.views.upload_submission" %}">
             Submit an Internet-Draft
         </a>
     </li>
     {% if user and user.is_authenticated %}
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
             href="{% url "ietf.community.views.view_list" user.username %}">
             My tracked docs
         </a>
@@ -108,7 +108,7 @@
     {% if user|has_role:"Area Director,Secretariat" %}
         {% if flavor == 'top' %}<li><hr class="dropdown-divider"></li>{% endif %}
         <li>
-            <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+            <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
                 href="{% url 'ietf.doc.views_status_change.rfc_status_changes' %}">
                 RFC status changes
             </a>
@@ -121,19 +121,19 @@
       </a>
       <ul class="dropdown-menu">
             <li>
-                <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
                 href="{% url 'ietf.group.views.appeals' acronym='iesg' %}">
                     IESG appeals
                 </a>
             </li>
             <li>
-                <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
                 href="{% url 'ietf.doc.views_search.ad_workload' %}">
                     IESG dashboard
                 </a>
             </li>
             <li>
-                <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
                 href="{% url 'ietf.group.views.statements' acronym='iesg' %}">
                     IESG statements
                 </a>
@@ -142,7 +142,7 @@
         </li>
         <li><hr class="dropdown-divider"></li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
             href="{% url 'ietf.doc.views_ballot.irsg_ballot_status' %}">
             IRSG ballot status
         </a>
@@ -151,14 +151,14 @@
             {% if flavor == 'top' %}<li><hr class="dropdown-divider"></li>{% endif %}
             <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>Manage</li>
             <li>
-                <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
                    href="{% url "ietf.submit.views.approvals" %}">
                     Approve an I-D
                 </a>
             </li>
             {% for g in user|docman_groups %}
                 <li>
-                    <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                    <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
                        href="{% url "ietf.group.views.group_documents" g.acronym %}">
                         {{ g.acronym }} {{ g.type_id }} docs
                     </a>
@@ -175,7 +175,7 @@
             </li>
             {% for g in user|managed_review_groups %}
                 <li>
-                    <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                    <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
                        href="{% url "ietf.group.views.review_requests" g.acronym %}">
                         {{ g.acronym }} reviews
                     </a>
@@ -192,7 +192,7 @@
             </li>
             {% for nomcom in nomcoms %}
                 <li>
-                    <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                    <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
                        href="{% url "ietf.nomcom.views.private_index" nomcom.year %}">
                         {{ nomcom|capfirst }}
                     </a>
@@ -208,25 +208,25 @@
         RFC streams
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url "ietf.group.views.stream_documents" acronym="iab" %}">
             IAB
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url "ietf.group.views.stream_documents" acronym="irtf" %}">
             IRTF
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url "ietf.group.views.stream_documents" acronym="ise" %}">
             ISE
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url "ietf.group.views.stream_documents" acronym="editorial" %}">
             Editorial
         </a>
@@ -239,15 +239,15 @@
         Subseries
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url "ietf.doc.views_search.index_subseries" type_id="std" %}">
             STD
         </a>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url "ietf.doc.views_search.index_subseries" type_id="bcp" %}">
             BCP
         </a>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url "ietf.doc.views_search.index_subseries" type_id="fyi" %}">
             FYI
         </a>
@@ -273,37 +273,37 @@
         </li>
     {% endif %}
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url 'agenda' %}">
             Agenda
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url 'ietf.meeting.views.materials' %}">
             Materials
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url 'floor-plan' %}">
             Floor plan
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="https://www.ietf.org/how/meetings/register/">
             Registration
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url 'ietf.meeting.views.important_dates' %}">
             Important dates
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url 'ietf.meeting.views_session_request.list_view' %}">
             Request a session
         </a>
@@ -317,7 +317,7 @@
         </li>
     {% endif %}
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url 'ietf.meeting.views.meeting_requests' %}">
             Session requests
         </a>
@@ -344,7 +344,7 @@
         </li>
     {% endif %}
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url 'ietf.meeting.views.upcoming' %}">
             Upcoming meetings
         </a>
@@ -359,13 +359,13 @@
         </li>
     {% endif %}
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url 'ietf.meeting.views.past' %}">
             Past meetings
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="https://www.ietf.org/how/meetings/past/">
             Meeting proceedings
         </a>
@@ -391,56 +391,64 @@
         </li>
     {% endif %}
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url 'ietf.ipr.views.showlist' %}">
             IPR disclosures
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url 'ietf.liaisons.views.liaison_list' %}">
             Liaison statements
         </a>
     </li>
+    {% if user|has_role:"Secretariat,IAB,Liaison Manager,Liaison Coordinator" %}
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
+           href="{% url 'ietf.liaisons.views.list_other_sdo' %}">
+            List of other SDO groups
+        </a>
+    </li>
+    {% endif %}
+    <li>
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url 'ietf.iesg.views.agenda' %}">
             IESG agenda
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url 'ietf.nomcom.views.index' %}">
             NomComs
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url 'ietf.doc.views_downref.downref_registry' %}">
             Downref registry
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url "ietf.stats.views.stats_index" %}">
             Statistics
         </a>
         <ul class="dropdown-menu {% if flavor == 'top' %}mt-n1{% else %}ms-n1{% endif %}">
             <li>
-                <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
                    href="{% url 'ietf.stats.views.document_stats' %}">
                     I-Ds/RFCs
                 </a>
             </li>
             <li>
-                <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
                    href="{% url 'ietf.stats.views.meeting_stats' %}">
                     Meetings
                 </a>
             </li>
             {% if user and user.is_authenticated %}
                 <li>
-                    <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+                    <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
                        href="{% url 'ietf.stats.views.review_stats' %}">
                         Reviews
                     </a>
@@ -449,19 +457,19 @@
         </ul>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url 'ietf.api.views.api_help' %}">
             API Help
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="{% url 'ietf.release.views.release' %}">
             Release notes
         </a>
     </li>
     <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            target="_blank" href="https://status.ietf.org">
             System status
         </a>

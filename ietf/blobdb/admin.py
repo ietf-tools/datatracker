@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.db.models.functions import Length
 from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
-from .models import Blob
+from .models import Blob, ResolvedMaterial
 
 
 @admin.register(Blob)
@@ -29,3 +29,12 @@ class BlobAdmin(admin.ModelAdmin):
     def object_size(self, instance):
         """Get the size of the object"""
         return instance.object_size  # annotation added in get_queryset()
+
+
+@admin.register(ResolvedMaterial)
+class ResolvedMaterialAdmin(admin.ModelAdmin):
+    model = ResolvedMaterial
+    list_display = ["name", "meeting_number", "bucket", "blob"]
+    list_filter = ["meeting_number", "bucket"]
+    search_fields = ["name", "blob"]
+    ordering = ["name"]

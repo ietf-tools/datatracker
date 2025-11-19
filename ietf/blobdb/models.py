@@ -96,3 +96,23 @@ class Blob(models.Model):
             ),
             using=using,
         )
+
+
+class ResolvedMaterial(models.Model):
+    # A Document name can be 255 characters; allow this name to be a bit longer
+    name = models.CharField(max_length=300, help_text="Name to resolve")
+    meeting_number = models.CharField(
+        max_length=64, help_text="Meeting material is related to"
+    )
+    bucket = models.CharField(max_length=255, help_text="Resolved bucket name")
+    blob = models.CharField(max_length=300, help_text="Resolved blob name")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name", "meeting_number"], name="unique_name_per_meeting"
+            )
+        ]
+    
+    def __str__(self):
+        return f"{self.name}@{self.meeting_number} -> {self.bucket}:{self.blob}"

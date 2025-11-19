@@ -20,7 +20,7 @@
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th class="col-2" scope="col"{% if group.uses_milestone_dates %} data-sort="num"{% endif %}>
+                <th class="col-2" scope="col"{% if group.uses_milestone_dates %} data-sort="num"{% endif %} data-default-sort="asc">
                     {% if group.uses_milestone_dates %}
                         Date
                     {% else %}
@@ -39,7 +39,7 @@
                             <span class="badge rounded-pill {% if milestone.resolved|slugify == 'done' %}text-bg-success{% else %}text-bg-warning{% endif %}">{{ milestone.resolved|title }}</span>
                         {% else %}
                             {% if group.uses_milestone_dates %}
-                                {{ milestone.due|date:"M Y" }}
+                                 <span class="d-none" aria-hidden="true">{{ milestone.due }}</span>{{ milestone.due|date:"M Y" }}
                             {% else %}
                                 {% if forloop.first %}Last{% endif %}
                                 {% if forloop.last %}Next{% endif %}

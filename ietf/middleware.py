@@ -8,6 +8,7 @@ from django.shortcuts import render
 from django.http import HttpResponsePermanentRedirect
 from ietf.utils.log import log, exc_parts
 from ietf.utils.mail import log_smtp_exception
+from opentelemetry.propagate import inject
 import re
 import smtplib
 import unicodedata
@@ -96,6 +97,15 @@ def is_authenticated_header_middleware(get_response):
     def add_header(request):
         response = get_response(request)
         response["X-Datatracker-Is-Authenticated"] = "yes" if request.user.is_authenticated else "no"
+        return response
+
+    return add_header
+
+def add_otel_traceparent_header(get_response):
+    """Middleware to add the OpenTelemetry traceparent id header to the response"""
+    def add_header(request):
+        response = get_response(request)
+        inject(response)
         return response
 
     return add_header

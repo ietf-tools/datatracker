@@ -13,13 +13,15 @@ from django.utils import timezone
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.name.models import DocTagName
 from ietf.person.factories import PersonFactory
+from ietf.doc.factories import BallotPositionDocEventFactory
 from ietf.utils.test_utils import TestCase, name_of_file_containing, reload_db_objects
 from ietf.person.models import Person
 from ietf.doc.factories import DocumentFactory, WgRfcFactory, WgDraftFactory
 from ietf.doc.models import State, DocumentActionHolder, DocumentAuthor
 from ietf.doc.utils import (update_action_holders, add_state_change_event, update_documentauthors,
                             fuzzy_find_documents, rebuild_reference_relations, build_file_urls,
-                            ensure_draft_bibxml_path_exists, update_or_create_draft_bibxml_file)
+                            ensure_draft_bibxml_path_exists, update_or_create_draft_bibxml_file,
+                            last_ballot_doc_revision)
 from ietf.utils.draft import Draft, PlaintextDraft
 from ietf.utils.xmldraft import XMLDraft
 
@@ -533,3 +535,27 @@ class DraftBibxmlTests(TestCase):
         self.assertEqual(mock.call_count, 1)
         self.assertEqual(mock.call_args, call(doc, "26"))
         self.assertEqual(ref_path.read_text(), "This\nis\nmy\nbibxml")
+
+
+class LastBallotDocRevisionTests(TestCase):
+    def test_last_ballot_doc_revision(self):
+        now = timezone.now()
+        ad = Person.objects.get(user__username="ad")
+        bpde_with_null_send_email = BallotPositionDocEventFactory(
+            time=now - datetime.timedelta(minutes=30),
+            send_email=None,
+        )
+        ballot = bpde_with_null_send_email.ballot
+        BallotPositionDocEventFactory(
+            ballot=ballot,
+            balloter=ad,
+            pos_id='noobj',
+            comment='Commentary',
+            comment_time=timezone.now(),
+            send_email=None,
+        )
+        doc = bpde_with_null_send_email.doc
+        rev = bpde_with_null_send_email.rev
+        nobody = PersonFactory()
+        self.assertIsNone(last_ballot_doc_revision(doc, nobody))
+        self.assertEqual(rev, last_ballot_doc_revision(doc, ad))
