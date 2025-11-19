@@ -257,6 +257,13 @@ class RfcPubSerializer(serializers.ModelSerializer):
         required=False,
         queryset=Document.objects.filter(type_id="rfc"),
     )
+    subseries = serializers.ListField(
+        child=serializers.RegexField(
+            required=False,
+            # pattern: no leading 0, finite length (arbitrarily set to 5 digits)
+            regex=r"^(bcp|std|fyi)[1-9][0-9]{0,4}$", 
+        )
+    )
     authors = AuthorSerializer(many=True)
 
     class Meta:
@@ -278,6 +285,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
             "external_url",
             "obsoletes",
             "updates",
+            "subseries",
         ]
 
     def validate(self, data):
@@ -301,6 +309,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
         draft_rev = validated_data.pop("draft_rev", None)
         obsoletes = validated_data.pop("obsoletes", [])
         updates = validated_data.pop("updates", [])
+        subseries = validated_data.pop("subseries", [])
 
         # Retrieve draft
         draft = None
@@ -319,6 +328,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
                 )
             # todo check that draft is in the right state
 
+        system_person = Person.objects.get(name="(System)")
         rfc = self._create_rfc(
             {
                 "group": draft.group if draft else "none",
@@ -330,7 +340,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
             rev=rfc.rev,
             type="published_rfc",
             time=published,
-            by=Person.objects.get(name="(System)"),
+            by=system_person,
             desc="RFC published",
         )
         rfc.set_state(State.objects.get(used=True, type_id="rfc", slug="published"))
@@ -345,6 +355,33 @@ class RfcPubSerializer(serializers.ModelSerializer):
                 source=rfc, target=updated_rfc_pk, relationship_id="updates"
             )
     
+        # create subseries relations
+        for subseries_doc_name in subseries:
+            ss_slug = subseries_doc_name[:3]
+            subseries_doc, created = Document.objects.get_or_create(
+                type_id=ss_slug, name=subseries_doc_name
+            )
+            if created:
+                subseries_doc.docevent_set.create(
+                    type=f"{ss_slug}_doc_created",
+                    by=system_person,
+                    desc=f"Created {subseries_doc_name} via publication of {rfc.name}",
+                )
+            subseries_doc.relateddocument_set.create(
+                relationship_id="contains", target=rfc
+            )
+            subseries_doc.docevent_set.create(
+                type="sync_from_rfc_editor",
+                by=system_person,
+                desc=f"Added {rfc.name} to {subseries_doc.name}",
+            )
+            rfc.docevent_set.create(
+                type="sync_from_rfc_editor",
+                by=system_person,
+                desc=f"Added {rfc.name} to {subseries_doc.name}",
+            )
+
+
         # create relation with draft and update draft state
         if draft is not None:
             draft_changes = []
@@ -420,7 +457,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
                     DocEvent.objects.create(
                         doc=draft,
                         rev=draft.rev,
-                        by=Person.objects.get(name="(System)"),
+                        by=system_person,
                         type="sync_from_rfc_editor",
                         desc=f"Updated while publishing {rfc.name} ({', '.join(draft_changes)})",
                     )
