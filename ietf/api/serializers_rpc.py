@@ -307,7 +307,12 @@ class RfcPubSerializer(serializers.ModelSerializer):
                 )
             # todo check that draft is in the right state
 
-        rfc = self._create_rfc(validated_data)
+        rfc = self._create_rfc(
+            validated_data | {
+                "group": draft.group if draft else "none",
+                "formal_languages": draft.formal_languages.all() if draft else [],
+            }
+        )
         DocEvent.objects.create(
             doc=rfc,
             rev=rfc.rev,
@@ -399,16 +404,8 @@ class RfcPubSerializer(serializers.ModelSerializer):
                 )
                 draft.save_with_history(draft_events)
 
-        # todo set group properly
-        # doc.group = Group.objects.get(
-        #     type="individ"
-        # )  # fallback for newly created doc
-
-
         # todo add obsoletes / updates
         # todo add subseries relationships / clean up
-        # todo adjust errata tags
-        # todo formal languages from draft
         return rfc
 
     def _create_rfc(self, validated_data):
