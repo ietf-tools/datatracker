@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 from drf_spectacular.utils import OpenApiParameter
-from rest_framework import serializers, viewsets, mixins
+from rest_framework import mixins, parsers, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
@@ -27,7 +27,7 @@ from ietf.api.serializers_rpc import (
     EmailPersonSerializer,
     RfcWithAuthorsSerializer,
     DraftWithAuthorsSerializer,
-    NotificationAckSerializer, RfcPubSerializer,
+    NotificationAckSerializer, RfcPubSerializer, RfcFileSerializer,
 )
 from ietf.doc.models import Document, DocHistory, RfcAuthor
 from ietf.person.models import Email, Person
@@ -362,4 +362,28 @@ class RfcPubNotificationView(APIView):
         serializer.is_valid(raise_exception=True)
         # Create RFC
         serializer.save()
+        return Response(NotificationAckSerializer().data)
+
+
+class RfcPubFilesView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
+    parser_classes = [parsers.MultiPartParser]
+
+    @extend_schema(
+        operation_id="upload_rfc_files",
+        summary="Upload files for a published RFC",
+        request=RfcFileSerializer,
+        responses=NotificationAckSerializer,
+    )
+    def post(self, request):
+        print(request.POST)  # todo remove debug
+        serializer = RfcFileSerializer(
+            # many=True,
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+
+        print(">>> Got some files")
+        from pprint import pp
+        pp(serializer.validated_data)
         return Response(NotificationAckSerializer().data)

@@ -7,6 +7,7 @@ from django.urls import reverse as urlreverse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
 from ietf.doc.expire import move_draft_files_to_archive
 from ietf.doc.models import DocumentAuthor, Document, RfcAuthor, RelatedDocument, State, \
@@ -490,12 +491,38 @@ class RfcPubSerializer(serializers.ModelSerializer):
             )
         return rfc
 
+
 class RfcFileSerializer(serializers.Serializer):
-    filename = serializers.CharField(allow_blank=False)
-    content = serializers.FileField(
-        allow_empty_file=False,
-        use_url=False,
+    # The structure of this serializer is constrained by what openapi-generator-cli's
+    # python generator can correctly serialize as multipart/form-data. It does not
+    # handle nested serializers well (or perhaps at all). ListFields with child
+    # ChoiceField or RegexField do not serialize correctly. DictFields don't seem
+    # to work.
+    #
+    # It does seem to correctly send filenames along with FileFields, even as a child
+    # in a ListField, so we use that to convey the file format of each item. There
+    # are other options we could consider (e.g., a structured CharField) but this
+    # works.
+    contents = serializers.ListField(
+        child=serializers.FileField(
+            allow_empty_file=False,
+            use_url=False,
+        ),
+        help_text=(
+            "List of content files. Filename extensions are used to identify "
+            "file types, but filenames are otherwise ignored."
+        ),
     )
+    
+    def validate(self, data):
+        if len(data["filetypes"]) != len(data["contents"]):
+            raise serializers.ValidationError(
+                {
+                    "contents": "Number of contents does not match number of filetypes"
+                },
+                code="contents-count-mismatch",
+            )
+        return data
 
 
 class NotificationAckSerializer(serializers.Serializer):
