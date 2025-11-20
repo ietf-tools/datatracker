@@ -3,7 +3,9 @@
 
 
 from django import forms
+
 from ietf.person.models import Person
+from ietf.utils.fields import MultiEmailField, NameAddrEmailField
 
 
 class MergeForm(forms.Form):
@@ -33,16 +35,8 @@ class MergeForm(forms.Form):
 
 
 class MergeRequestForm(forms.Form):
-    to = forms.CharField()
-    frm = forms.CharField()
-    reply_to = forms.CharField()
+    to = MultiEmailField()
+    frm = NameAddrEmailField()
+    reply_to = MultiEmailField()
     subject = forms.CharField()
     body = forms.CharField(widget=forms.Textarea)
-
-    def clean_to(self):
-        addresses = self.cleaned_data['to']
-        return addresses.split(',')
-
-    def clean_reply_to(self):
-        addresses = self.cleaned_data['reply_to']
-        return addresses.split(',')
