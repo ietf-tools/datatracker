@@ -13,6 +13,7 @@ from ietf.doc.expire import move_draft_files_to_archive
 from ietf.doc.models import DocumentAuthor, Document, RfcAuthor, RelatedDocument, State, \
     DocEvent
 from ietf.doc.utils import default_consensus, prettify_std_name, update_action_holders
+from ietf.group.models import Group
 from ietf.name.models import StreamName, StdLevelName, FormalLanguageName
 from ietf.person.models import Person
 from ietf.utils import log
@@ -230,6 +231,9 @@ class RfcPubSerializer(serializers.ModelSerializer):
 
     # fields on the RFC Document that need tweaking from ModelSerializer defaults
     rfc_number = serializers.IntegerField(min_value=1, required=True)
+    group = serializers.SlugRelatedField(
+        slug_field="acronym", queryset=Group.objects.all(), required=False
+    )
     stream = serializers.PrimaryKeyRelatedField(
         queryset=StreamName.objects.filter(used=True)
     )
@@ -247,6 +251,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
     )
     ad = serializers.PrimaryKeyRelatedField(
         queryset=Person.objects.all(),
+        allow_null=True,
         required=False,
     )
     obsoletes = serializers.PrimaryKeyRelatedField(
@@ -277,6 +282,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
             "rfc_number",
             "title",
             "authors",
+            "group",
             "stream",
             "abstract",
             "pages",
@@ -339,8 +345,12 @@ class RfcPubSerializer(serializers.ModelSerializer):
             system_person = Person.objects.get(name="(System)")
             rfc = self._create_rfc(
                 {
-                    "group": draft.group if draft else "none",
+                    "ad": draft.ad if draft else None,
                     "formal_languages": draft.formal_languages.all() if draft else [],
+                    "group": (
+                        draft.group if draft else Group.objects.get(acronym="none")
+                    ),
+                    "shepherd": draft.shepherd if draft else None,
                 } | validated_data
             )
             DocEvent.objects.create(
@@ -478,6 +488,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
     def _create_rfc(self, validated_data):
         authors_data = validated_data.pop("authors")
         formal_languages = validated_data.pop("formal_languages", [])
+        # todo ad field
         rfc = Document.objects.create(
             type_id="rfc",
             name=f"rfc{validated_data['rfc_number']}",
