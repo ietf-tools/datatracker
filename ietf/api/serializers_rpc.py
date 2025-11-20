@@ -8,7 +8,6 @@ from django.urls import reverse as urlreverse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 
 from ietf.doc.expire import move_draft_files_to_archive
 from ietf.doc.models import DocumentAuthor, Document, RfcAuthor, RelatedDocument, State, \

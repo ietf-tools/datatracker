@@ -1,9 +1,14 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
+import shutil
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
+from django.conf import settings
+from django.core.files.uploadedfile import UploadedFile
 from drf_spectacular.utils import OpenApiParameter
-from rest_framework import mixins, parsers, serializers, viewsets
+from rest_framework import mixins, parsers, serializers, viewsets, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, APIException
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -31,6 +36,12 @@ from ietf.api.serializers_rpc import (
 )
 from ietf.doc.models import Document, DocHistory, RfcAuthor
 from ietf.person.models import Email, Person
+
+
+class Conflict(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = "Conflict."
+    default_code = "conflict"
 
 
 @extend_schema_view(
@@ -376,14 +387,49 @@ class RfcPubFilesView(APIView):
         responses=NotificationAckSerializer,
     )
     def post(self, request):
-        print(request.POST)  # todo remove debug
         serializer = RfcFileSerializer(
             # many=True,
             data=request.data,
         )
         serializer.is_valid(raise_exception=True)
+        rfc = serializer.validated_data["rfc"]
+        uploaded_files: list[UploadedFile] = serializer.validated_data["contents"]
+        replace = serializer.validated_data["replace"]
+        dest_stem = f"rfc{rfc.rfc_number}"
+        dest_path = Path(settings.RFC_PATH)
 
-        print(">>> Got some files")
-        from pprint import pp
-        pp(serializer.validated_data)
+        # List of files that might exist for an RFC
+        possible_rfc_files = [
+            (dest_path / dest_stem).with_suffix(ext)
+            for ext in serializer.allowed_extensions
+        ]
+        if not replace:
+            # this is the default: refuse to overwrite anything if not replacing
+            for possible_existing_file in possible_rfc_files:
+                if possible_existing_file.exists():
+                    raise Conflict(
+                        "File(s) already exist for this RFC",
+                        code="files-exist",
+                    )
+
+        with TemporaryDirectory() as tempdir:
+            # save files with desired names in a temporary directory
+            files_to_move: list[Path] = []
+            tmpfile_stem = Path(tempdir) / dest_stem
+            for upfile in uploaded_files:
+                uploaded_filename = Path(upfile.name)
+                uploaded_ext = "".join(uploaded_filename.suffixes)
+                dest_filename = tmpfile_stem.with_suffix(uploaded_ext)
+                with dest_filename.open("wb") as dest:
+                    for chunk in upfile.chunks():
+                        dest.write(chunk)
+                files_to_move.append(dest_filename)
+            # copy files to final location, removing any existing ones first if the
+            # remove flag was set
+            if replace:
+                for possible_existing_file in possible_rfc_files:
+                    possible_existing_file.unlink(missing_ok=True)
+            for ftm in files_to_move:
+                shutil.move(ftm, dest_path)
+
         return Response(NotificationAckSerializer().data)
