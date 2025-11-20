@@ -350,7 +350,6 @@ class RfcPubSerializer(serializers.ModelSerializer):
                     "group": (
                         draft.group if draft else Group.objects.get(acronym="none")
                     ),
-                    "shepherd": draft.shepherd if draft else None,
                 } | validated_data
             )
             DocEvent.objects.create(
