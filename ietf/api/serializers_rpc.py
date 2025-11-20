@@ -541,6 +541,7 @@ class RfcFileSerializer(serializers.Serializer):
                     f"More than one file uploaded with extension '{ext}'",
                     code="duplicate-filename-ext",
                 )
+        return data
 
 
 class NotificationAckSerializer(serializers.Serializer):
