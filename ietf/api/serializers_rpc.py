@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 import datetime
+from pathlib import Path
 from typing import Literal, Optional
 
 from django.db import transaction
@@ -503,6 +504,13 @@ class RfcFileSerializer(serializers.Serializer):
     # in a ListField, so we use that to convey the file format of each item. There
     # are other options we could consider (e.g., a structured CharField) but this
     # works.
+    allowed_extensions = (".xml", ".txt", ".html", ".txt.pdf")
+
+    rfc = serializers.SlugRelatedField(
+        slug_field="rfc_number",
+        queryset=Document.objects.filter(type_id="rfc"),
+        help_text="RFC number to which the contents belong",
+    )
     contents = serializers.ListField(
         child=serializers.FileField(
             allow_empty_file=False,
@@ -513,16 +521,26 @@ class RfcFileSerializer(serializers.Serializer):
             "file types, but filenames are otherwise ignored."
         ),
     )
-    
-    def validate(self, data):
-        if len(data["filetypes"]) != len(data["contents"]):
-            raise serializers.ValidationError(
-                {
-                    "contents": "Number of contents does not match number of filetypes"
-                },
-                code="contents-count-mismatch",
-            )
-        return data
+
+    def validate_contents(self, data):
+        found_extensions = []
+        for uploaded_file in data:
+            if not hasattr(uploaded_file, "name"):
+                raise serializers.ValidationError(
+                    "filename not specified for uploaded file",
+                    code="missing-filename",
+                )
+            ext = "".join(Path(uploaded_file.name).suffixes)
+            if ext not in self.allowed_extensions:
+                raise serializers.ValidationError(
+                    f"File uploaded with invalid extension '{ext}'",
+                    code="invalid-filename-ext",
+                )
+            if ext in found_extensions:
+                raise serializers.ValidationError(
+                    f"More than one file uploaded with extension '{ext}'",
+                    code="duplicate-filename-ext",
+                )
 
 
 class NotificationAckSerializer(serializers.Serializer):
