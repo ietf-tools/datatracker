@@ -521,6 +521,17 @@ class RfcFileSerializer(serializers.Serializer):
             "file types, but filenames are otherwise ignored."
         ),
     )
+    replace = serializers.BooleanField(
+        required=False,
+        default=False,
+        help_text=(
+            "Replace existing files for this RFC. Defaults to false. When false, "
+            "if _any_ files already exist for the specified RFC the upload will be "
+            "rejected regardless of which files are being uploaded. When true,"
+            "existing files will be removed and new ones will be put in place. BE"
+            "VERY CAREFUL WITH THIS OPTION IN PRODUCTION."
+        ),
+    )
 
     def validate_contents(self, data):
         found_extensions = []
