@@ -28,7 +28,6 @@ from ietf.doc.models import ( Document, RelatedDocument, State,
     IanaExpertDocEvent, IESG_SUBSTATE_TAGS)
 from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_requested,
     email_resurrection_completed, email_state_changed, email_stream_changed,
-    email_wg_call_for_adoption_issued, email_wg_last_call_issued,
     email_stream_state_changed, email_stream_tags_changed, extra_automation_headers,
     generate_publication_request, email_adopted, email_intended_status_changed,
     email_iesg_processing_document, email_ad_approved_doc,
@@ -52,7 +51,7 @@ from ietf.message.models import Message
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
 from ietf.person.fields import SearchableEmailField
 from ietf.person.models import Person, Email
-from ietf.utils.mail import send_mail, send_mail_message, on_behalf_of
+from ietf.utils.mail import send_mail, send_mail_message, on_behalf_of, send_mail_text
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils import log
 from ietf.utils.fields import DatepickerDateField, ModelMultipleChoiceField, MultiEmailField
@@ -1984,9 +1983,16 @@ def issue_wg_lc(request, name):
             update_reminder(
                 doc, "stream-s", e, datetime_from_date(end_date, DEADLINE_TZINFO)
             )
-            email_stream_state_changed(request, doc, prev_state, wglc_state, by)
-            email_wg_last_call_issued(request, doc, end_date)
             doc.save_with_history(events)
+            email_stream_state_changed(request, doc, prev_state, wglc_state, by)
+            send_mail_text(
+                request, 
+                to = form.cleaned_data["to"], 
+                frm = request.user.person.formatted_email(),
+                subject = form.cleaned_data["subject"], 
+                txt = form.cleaned_data["body"],
+                cc = form.cleaned_data["cc"],
+            )
             return redirect("ietf.doc.views_doc.document_main", name=doc.name)
     else:
         end_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=14)
@@ -2124,7 +2130,14 @@ def issue_wg_call_for_adoption(request, name, acronym):
             )
             doc.save_with_history(events)
             email_stream_state_changed(request, doc, prev_state, c_adopt_state, by)
-            email_wg_call_for_adoption_issued(request, form)
+            send_mail_text(
+                request, 
+                to = form.cleaned_data["to"], 
+                frm = request.user.person.formatted_email(),
+                subject = form.cleaned_data["subject"], 
+                txt = form.cleaned_data["body"],
+                cc = form.cleaned_data["cc"],
+            )
             return redirect("ietf.doc.views_doc.document_main", name=doc.name)
     else:
         end_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=14)
