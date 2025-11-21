@@ -319,9 +319,15 @@ class RfcPubSerializer(serializers.ModelSerializer):
         updates = validated_data.pop("updates", [])
         subseries = validated_data.pop("subseries", [])
 
-        # Retrieve draft
-        draft = None
-        if draft_name is not None:
+        system_person = Person.objects.get(name="(System)")
+
+        # If specified, retrieve draft and extract RFC default values from it
+        if draft_name is None:
+            draft = None
+            defaults_from_draft = {
+                "group": Group.objects.get(acronym="none", type_id="individ"),
+            }
+        else:
             # validation enforces that draft_name and draft_rev are both present
             draft = Document.objects.filter(
                 type_id="draft",
@@ -339,20 +345,17 @@ class RfcPubSerializer(serializers.ModelSerializer):
                     },
                     code="invalid-draft"
                 )
+            defaults_from_draft = {
+                "ad": draft.ad,
+                "formal_languages": draft.formal_languages.all(),
+                "group": draft.group,
+                "note": draft.note,
+            }
 
         # Transaction to clean up if something fails
         with transaction.atomic():
-            system_person = Person.objects.get(name="(System)")
-            rfc = self._create_rfc(
-                {
-                    "ad": draft.ad if draft else None,
-                    "formal_languages": draft.formal_languages.all() if draft else [],
-                    "group": (
-                        draft.group if draft else Group.objects.get(acronym="none")
-                    ),
-                    "note": draft.note if draft else "",
-                } | validated_data
-            )
+            # create rfc, letting validated request data override draft defaults
+            rfc = self._create_rfc(defaults_from_draft | validated_data)
             DocEvent.objects.create(
                 doc=rfc,
                 rev=rfc.rev,
