@@ -290,7 +290,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
             "formal_languages",
             "std_level",
             "ad",
-            "external_url",
+            "note",
             "obsoletes",
             "updates",
             "subseries",
@@ -350,6 +350,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
                     "group": (
                         draft.group if draft else Group.objects.get(acronym="none")
                     ),
+                    "note": draft.note if draft else "",
                 } | validated_data
             )
             DocEvent.objects.create(
