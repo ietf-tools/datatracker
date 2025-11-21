@@ -2124,7 +2124,7 @@ def issue_wg_call_for_adoption(request, name, acronym):
             )
             doc.save_with_history(events)
             email_stream_state_changed(request, doc, prev_state, c_adopt_state, by)
-            email_wg_call_for_adoption_issued(request, doc, end_date)
+            email_wg_call_for_adoption_issued(request, form)
             return redirect("ietf.doc.views_doc.document_main", name=doc.name)
     else:
         end_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=14)
@@ -2140,7 +2140,9 @@ def issue_wg_call_for_adoption(request, name, acronym):
             ),
         )
         (to, cc) = gather_address_lists("doc_wg_call_for_adoption_issued", doc=doc)
-
+        if doc.group.acronym == "none":
+            to.insert(0, f"{group.acronym}-chairs@ietf.org")
+            to.insert(0, group.list_email)
         form = IssueCallForAdoptionForm(
             initial=dict(
                 end_date=end_date,

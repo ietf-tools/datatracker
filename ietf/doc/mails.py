@@ -104,27 +104,13 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
               cc=cc)
     
-def email_wg_call_for_adoption_issued(request, doc, end_date):
-    (to, cc) = gather_address_lists("doc_wg_call_for_adoption_issued", doc=doc)
+def email_wg_call_for_adoption_issued(request, form):
+    to = form.cleaned_data["to"]
+    cc = form.cleaned_data["cc"]
     frm = request.user.person.formatted_email()
-    subject = f"Call for adoption: {doc.name}-{doc.rev}  (Ends {end_date})"
-
-    send_mail(
-        request,
-        to,
-        frm,
-        subject,
-        "doc/mail/wg_call_for_adoption_issued.txt",
-        dict(
-            doc=doc,
-            subject=subject,
-            url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
-            end_date=end_date,
-            wg_list=doc.group.list_email,
-        ),
-        cc=cc,
-    )
-
+    subject = form.cleaned_data["subject"]
+    txt = form.cleaned_data["body"]
+    send_mail_text(request, to, frm, subject, txt, cc)
 
 def email_wg_last_call_issued(request, doc, end_date):
     (to, cc) = gather_address_lists("doc_wg_last_call_issued", doc=doc)
