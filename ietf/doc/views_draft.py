@@ -1958,7 +1958,7 @@ def issue_wg_lc(request, name):
 
     if doc.stream_id != "ietf":
         raise Http404
-    if doc.group is None or doc.group.type_id != "wg":
+    if doc.type_id != "draft" or doc.group.type_id != "wg":
         raise Http404
     if doc.get_state_slug("draft-stream-ietf") == "wg-lc":
         raise Http404
