@@ -2234,12 +2234,14 @@ class ChangeStreamStateTests(TestCase):
         q = PyQuery(r.content)
         postdict = dict()
         postdict["end_date"] = q("input#id_end_date").attr("value")
-        postdict["to"] = q("input#id_to").attr("value")
+        postdict["to"] = q("input#id_to").attr("value") + ", extrato@example.org"
         cc = q("input#id_cc").attr("value")
         if cc is not None:
-            postdict["cc"] = cc
-        postdict["subject"] = q("input#id_subject").attr("value")
-        postdict["body"] = q("textarea#id_body").text()
+            postdict["cc"] = cc + ", extracc@example.org"
+        else:
+            postdict["cc"] = "extracc@example.org"
+        postdict["subject"] = q("input#id_subject").attr("value") + " Extra Subject Words"
+        postdict["body"] = q("textarea#id_body").text() + "FGgqbQ$UNeXs"
         empty_outbox()
         r = self.client.post(
             url,
@@ -2249,9 +2251,13 @@ class ChangeStreamStateTests(TestCase):
         self.assertEqual(doc.get_state_slug("draft-stream-ietf"), "wg-lc")
         self.assertEqual(len(outbox), 2)
         self.assertIn(f"{doc.group.acronym}@ietf.org", outbox[1]["To"])
+        self.assertIn("extrato@example.org", outbox[1]["To"])
+        self.assertIn("extracc@example.org", outbox[1]["Cc"])
+        self.assertIn("Extra Subject Words", outbox[1]["Subject"])
         self.assertIn("WG Last Call", outbox[1]["Subject"])
         body = get_payload_text(outbox[1])
         self.assertIn("disclosure obligations", body)
+        self.assertIn("FGgqbQ$UNeXs", body)
 
     def test_issue_wg_call_for_adoption_form(self):
         end_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=1)
@@ -2309,12 +2315,15 @@ class ChangeStreamStateTests(TestCase):
             q = PyQuery(r.content)
             postdict = dict()
             postdict["end_date"] = q("input#id_end_date").attr("value")
-            postdict["to"] = q("input#id_to").attr("value")
+            postdict["to"] = q("input#id_to").attr("value") + ", extrato@example.com"
+            self.assertIn(chair_role.group.list_email, postdict["to"])
             cc = q("input#id_cc").attr("value")
             if cc is not None:
-                postdict["cc"] = cc
-            postdict["subject"] = q("input#id_subject").attr("value")
-            postdict["body"] = q("textarea#id_body").text()
+                postdict["cc"] = cc + ", extracc@example.com"
+            else:
+                postdict["cc"] = "extracc@example.com"
+            postdict["subject"] = q("input#id_subject").attr("value") + " Extra Subject Words"
+            postdict["body"] = q("textarea#id_body").text() + "FGgqbQ$UNeXs"
             empty_outbox()
             r = testcase.client.post(
                 url,
@@ -2322,12 +2331,17 @@ class ChangeStreamStateTests(TestCase):
             )
             testcase.assertEqual(r.status_code, 302)
             doc.refresh_from_db()
+            self.assertEqual(doc.group, chair_role.group)
             self.assertEqual(doc.get_state_slug("draft-stream-ietf"), "c-adopt")
             self.assertEqual(len(outbox), 2)
             self.assertIn(f"{doc.group.acronym}@ietf.org", outbox[1]["To"])
+            self.assertIn("extrato@example.com", outbox[1]["To"])
+            self.assertIn("extracc@example.com", outbox[1]["Cc"])
             self.assertIn("Call for adoption", outbox[1]["Subject"])
+            self.assertIn("Extra Subject Words", outbox[1]["Subject"])
             body = get_payload_text(outbox[1])
             self.assertIn("disclosure obligations", body)
+            self.assertIn("FGgqbQ$UNeXs", body)
             self.client.logout()
             return doc
 
