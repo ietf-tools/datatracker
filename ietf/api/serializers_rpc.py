@@ -254,14 +254,16 @@ class RfcPubSerializer(serializers.ModelSerializer):
         allow_null=True,
         required=False,
     )
-    obsoletes = serializers.PrimaryKeyRelatedField(
+    obsoletes = serializers.SlugRelatedField(
         many=True,
         required=False,
+        slug_field="rfc_number",
         queryset=Document.objects.filter(type_id="rfc"),
     )
-    updates = serializers.PrimaryKeyRelatedField(
+    updates = serializers.SlugRelatedField(
         many=True,
         required=False,
+        slug_field="rfc_number",
         queryset=Document.objects.filter(type_id="rfc"),
     )
     subseries = serializers.ListField(
