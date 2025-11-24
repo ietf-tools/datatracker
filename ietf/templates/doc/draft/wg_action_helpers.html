@@ -19,7 +19,7 @@
         {% if doc|can_submit_to_iesg %}
           <a class="btn btn-primary" href="{% url 'ietf.doc.views_draft.to_iesg' name=doc.name %}" id="id_pubreq_button">Submit to IESG for Publication</a>
         {% endif %}
-        <a class="btn btn-primary" href="{% url 'ietf.doc.views_draft.change_stream_state' name=doc.name state_type='draft-stream-ietf' %}">Set a different state</a>
+        <a class="btn btn-primary" href="{% url 'ietf.doc.views_draft.change_stream_state' name=doc.name state_type='draft-stream-ietf' %}">Set any WG state directly</a>
         <a class="btn btn-secondary float-end" href="{{ doc.get_absolute_url }}">Back</a>
     </div>
 {% endblock %}
