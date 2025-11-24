@@ -464,7 +464,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
                     log.log("Warning while processing {}: draft {} stream is {} but RFC stream is {}".format(
                         rfc.name, draft.name, draft.stream, rfc.stream
                     ))
-                elif draft.stream.slug in ["iab", "irtf", "ise"]:
+                elif draft.stream.slug in ["iab", "irtf", "ise", "editorial"]:
                     stream_slug = f"draft-stream-{draft.stream.slug}"
                     prev_state = draft.get_state(stream_slug)
                     if prev_state is not None and prev_state.slug != "pub":
