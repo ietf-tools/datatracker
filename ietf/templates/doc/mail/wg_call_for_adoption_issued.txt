@@ -7,10 +7,7 @@ This Working Group Call for Adoption ends on {{ end_date }}
 Abstract: 
 {{ doc.abstract }}
 
-File can be retrieved from:
-{{ url }}
-
-Please reply to this message keeping {{ wg_list }} in copy by indicating whether you support or not the adoption of this draft as a {{group.acronym}} WG document. Comments to motivate your preference are highly appreciated. 
+Please reply to this message keeping {{ wg_list }} in copy by indicating whether you support or not the adoption of this draft as a {{group.acronym}} WG document. Comments to explain your preference are highly appreciated. 
 
 Authors, and WG participants in general, are reminded of the Intellectual Property Rights (IPR) disclosure obligations described in BCP 79 [2]. Appropriate IPR disclosures required for full conformance with the provisions of BCP 78 [1] and BCP 79 [2] must be filed, if you are aware of any. Sanctions available for application to violators of IETF IPR Policy can be found at [3].
 
@@ -18,5 +15,17 @@ Thank you.
 [1] https://datatracker.ietf.org/doc/bcp78/
 [2] https://datatracker.ietf.org/doc/bcp79/
 [3] https://datatracker.ietf.org/doc/rfc6701/
+
+The IETF datatracker status page for this Internet-Draft is:
+{{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.doc.views_doc.document_main' name=doc.name %}
+{% if doc.submission.xml_version == "3" %}
+There is also an HTML version available at:
+{{ settings.IETF_ID_ARCHIVE_URL }}{{ doc.name }}-{{ doc.rev }}.html{% else %}
+There is also an HTMLized version available at:
+{{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.doc.views_doc.document_html' name=doc.name rev=doc.rev %}{% endif %}
+{% if doc.rev != "00" %}
+A diff from the previous version is available at:
+{{settings.RFCDIFF_BASE_URL}}?url2={{ doc.name }}-{{ doc.rev }}
+{% endif %}
 {% endfilter %}
 {% endautoescape %}

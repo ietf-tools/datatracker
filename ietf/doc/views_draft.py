@@ -1904,7 +1904,7 @@ class IssueWorkingGroupLastCallForm(forms.Form):
         picker_settings={
             "autoclose": "1",
         },
-        help_text="The date the Last Call closes. If you change this, you must MANUALLY change the date in the subject and body below.",
+        help_text="The date the Last Call closes. If you change this, review the subject and body carefully to ensure the change is captured correctly.",
     )
 
     to = MultiEmailField(
@@ -2002,8 +2002,8 @@ def issue_wg_lc(request, name):
             dict(
                 doc=doc,
                 end_date=end_date,
-                url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
                 wg_list=doc.group.list_email,
+                settings=settings,
             ),
         )
         (to, cc) = gather_address_lists("doc_wg_last_call_issued", doc=doc)
@@ -2034,7 +2034,7 @@ class IssueCallForAdoptionForm(forms.Form):
         picker_settings={
             "autoclose": "1",
         },
-        help_text="The date the Call for Adoption closes. If you change this, you must MANUALLY change the date in the subject and body below.",
+        help_text="The date the Call for Adoption closes. If you change this, review the subject and body carefully to ensure the change is captured correctly.",
     )
 
     to = MultiEmailField(
@@ -2148,8 +2148,8 @@ def issue_wg_call_for_adoption(request, name, acronym):
                 doc=doc,
                 group=group,
                 end_date=end_date,
-                url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
                 wg_list=doc.group.list_email,
+                settings=settings,
             ),
         )
         (to, cc) = gather_address_lists("doc_wg_call_for_adoption_issued", doc=doc)
