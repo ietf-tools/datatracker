@@ -335,17 +335,21 @@ class RfcPubSerializer(serializers.ModelSerializer):
                 type_id="draft",
                 name=draft_name,
                 rev=draft_rev,
-            ).exclude(
-                states__type_id="draft",
-                states__slug="rfc",
             ).first()
             if draft is None:
                 raise serializers.ValidationError(
                     {
-                        "draft_name": "No such draft or draft already published as RFC",
-                        "draft_rev": "No such draft or draft already published as RFC",
+                        "draft_name": "No such draft",
+                        "draft_rev": "No such draft",
                     },
                     code="invalid-draft"
+                )
+            elif draft.get_state_slug() == "rfc":
+                raise serializers.ValidationError(
+                    {
+                        "draft_name": "Draft already published as RFC",
+                    },
+                    code="already-published-draft",
                 )
             defaults_from_draft = {
                 "ad": draft.ad,
