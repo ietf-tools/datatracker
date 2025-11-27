@@ -16,6 +16,11 @@ from .models import Document, DocumentAuthor, RfcAuthor
 class RfcAuthorSerializer(serializers.ModelSerializer):
     """Serializer for a DocumentAuthor in a response"""
     email = serializers.EmailField(source="email.address", required=False)
+    datatracker_person_path = serializers.URLField(
+        source="person.get_absolute_url",
+        required=False,
+        help_text="URL for person link (relative to datatracker base URL)",
+    )
 
     class Meta:
         model = RfcAuthor
@@ -26,6 +31,7 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
             "email",
             "affiliation",
             "country",
+            "datatracker_person_path",
         ]
 
     def to_representation(self, instance):
@@ -35,7 +41,7 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
         serializer for either type.
         """
         if isinstance(instance, DocumentAuthor):
-            # create a non-persisted RfcAuthor as a shim
+            # create a non-persisted RfcAuthor as a shim - do not save it!
             document_author = instance
             instance = RfcAuthor(
                 titlepage_name=document_author.person.plain_name(),
