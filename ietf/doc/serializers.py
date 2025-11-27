@@ -10,26 +10,43 @@ from rest_framework import serializers, fields
 
 from ietf.group.serializers import GroupSerializer
 from ietf.name.serializers import StreamNameSerializer
-from .models import Document, DocumentAuthor
+from .models import Document, DocumentAuthor, RfcAuthor
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
     """Serializer for a DocumentAuthor in a response"""
-
-    name = fields.CharField(source="person.plain_name")
-    titlepage_name = fields.CharField(default="")
-    email = fields.EmailField(source="email.address", required=False)
+    email = serializers.EmailField(source="email.address", required=False)
 
     class Meta:
-        model = DocumentAuthor
+        model = RfcAuthor
         fields = [
-            "person",
-            "name",
             "titlepage_name",
+            "is_editor",
+            "person",
             "email",
             "affiliation",
             "country",
         ]
+
+    def to_representation(self, instance):
+        """instance -> primitive data types
+        
+        Translates a DocumentAuthor into an equivalent RfcAuthor we can use the same
+        serializer for either type.
+        """
+        if isinstance(instance, DocumentAuthor):
+            # create a non-persisted RfcAuthor as a shim
+            document_author = instance
+            instance = RfcAuthor(
+                titlepage_name=document_author.person.plain_name(),
+                is_editor=False,
+                person=document_author.person,
+                email=document_author.email,
+                affiliation=document_author.affiliation,
+                country=document_author.country,
+                order=document_author.order,
+            )
+        return super().to_representation(instance)
 
 
 @dataclass
@@ -153,7 +170,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     number = serializers.IntegerField(source="rfc_number")
     published = serializers.DateField()
     status = RfcStatusSerializer(source="*")
-    authors = RfcAuthorSerializer(many=True, source="documentauthor_set")
+    authors = serializers.SerializerMethodField()
     group = GroupSerializer()
     area = GroupSerializer(source="group.area", required=False)
     stream = StreamNameSerializer()
@@ -194,6 +211,19 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             "keywords",
             "errata",
         ]
+
+    @extend_schema_field(RfcAuthorSerializer(many=True))
+    def get_authors(self, doc: Document):
+        # If doc has any RfcAuthors, use those, otherwise fall back to DocumentAuthors
+        if doc.rfcauthor_set.exists():
+            author_queryset = doc.rfcauthor_set.all()
+        else:
+            author_queryset = doc.documentauthor_set.all()
+        # RfcAuthorSerializer can deal with DocumentAuthor instances
+        return RfcAuthorSerializer(
+            instance=author_queryset,
+            many=True,
+        ).data
 
     @extend_schema_field(DocIdentifierSerializer(many=True))
     def get_identifiers(self, doc: Document):
