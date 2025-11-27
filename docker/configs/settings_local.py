@@ -100,3 +100,7 @@ for storagename in ARTIFACT_STORAGE_NAMES:
             bucket_name=f"{storagename}",
         ),
     }
+
+APP_API_TOKENS = {
+    "ietf.api.views_rpc" : ["devtoken"],
+}

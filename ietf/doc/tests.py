@@ -39,11 +39,15 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType,
     EditedAuthorsDocEvent, StateType)
-from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactory,
-    ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
-    IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
-    BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
-    StatusChangeFactory, DocExtResourceFactory, RgDraftFactory, BcpFactory)
+from ietf.doc.factories import (DocumentFactory, DocEventFactory, CharterFactory,
+                                ConflictReviewFactory, WgDraftFactory,
+                                IndividualDraftFactory, WgRfcFactory,
+                                IndividualRfcFactory, StateDocEventFactory,
+                                BallotPositionDocEventFactory,
+                                BallotDocEventFactory, DocumentAuthorFactory,
+                                NewRevisionDocEventFactory,
+                                StatusChangeFactory, DocExtResourceFactory,
+                                RgDraftFactory, BcpFactory, RfcAuthorFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import (
@@ -1863,13 +1867,63 @@ class DocTestCase(TestCase):
 
     def test_document_json(self):
         doc = IndividualDraftFactory()
-
+        author = DocumentAuthorFactory(document=doc)
+        
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_json", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
         data = r.json()
-        self.assertEqual(doc.name, data['name'])
-        self.assertEqual(doc.pages,data['pages'])
+        self.assertEqual(data["name"], doc.name)
+        self.assertEqual(data["pages"], doc.pages)
+        self.assertEqual(
+            data["authors"],
+            [
+                {
+                    "name": author.person.name,
+                    "email": author.email.address,
+                    "affiliation": author.affiliation,
+                }
+            ]
+        )
 
+    def test_document_json_rfc(self):
+        doc = IndividualRfcFactory()
+        old_style_author = DocumentAuthorFactory(document=doc)
+        url = urlreverse("ietf.doc.views_doc.document_json", kwargs=dict(name=doc.name))
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertEqual(data["name"], doc.name)
+        self.assertEqual(data["pages"], doc.pages)
+        self.assertEqual(
+            data["authors"],
+            [
+                {
+                    "name": old_style_author.person.name,
+                    "email": old_style_author.email.address,
+                    "affiliation": old_style_author.affiliation,
+                }
+            ]
+        )
+    
+        new_style_author = RfcAuthorFactory(document=doc)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertEqual(data["name"], doc.name)
+        self.assertEqual(data["pages"], doc.pages)
+        self.assertEqual(
+            data["authors"],
+            [
+                {
+                    "name": new_style_author.titlepage_name,
+                    "email": new_style_author.email.address,
+                    "affiliation": new_style_author.affiliation,
+                }
+            ]
+        )
+
+    
     def test_writeup(self):
         doc = IndividualDraftFactory(states = [('draft','active'),('draft-iesg','iesg-eva')],)
 

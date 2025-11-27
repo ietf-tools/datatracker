@@ -1,5 +1,4 @@
-# Copyright The IETF Trust 2012-2023, All Rights Reserved
-# -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2012-2025, All Rights Reserved
 
 
 import datetime
@@ -27,8 +26,14 @@ import debug                            # pyflakes:ignore
 from ietf.api.views import EmailIngestionError
 from ietf.dbtemplate.factories import DBTemplateFactory
 from ietf.dbtemplate.models import DBTemplate
-from ietf.doc.factories import DocEventFactory, WgDocumentAuthorFactory, \
-                               NewRevisionDocEventFactory, DocumentAuthorFactory
+from ietf.doc.factories import (
+    DocEventFactory,
+    WgDocumentAuthorFactory,
+    NewRevisionDocEventFactory,
+    DocumentAuthorFactory,
+    RfcAuthorFactory,
+    WgDraftFactory, WgRfcFactory,
+)
 from ietf.group.factories import GroupFactory, GroupHistoryFactory, RoleFactory, RoleHistoryFactory
 from ietf.group.models import Group, Role
 from ietf.meeting.factories import MeetingFactory, AttendedFactory, RegistrationFactory
@@ -45,10 +50,20 @@ from ietf.nomcom.factories import NomComFactory, FeedbackFactory, TopicFactory, 
                                   nomcom_kwargs_for_year, provide_private_key_to_test_client, \
                                   key
 from ietf.nomcom.tasks import send_nomcom_reminders_task
-from ietf.nomcom.utils import get_nomcom_by_year, make_nomineeposition, \
-                              get_hash_nominee_position, is_eligible, list_eligible, \
-                              get_eligibility_date, suggest_affiliation, ingest_feedback_email, \
-                              decorate_volunteers_with_qualifications, send_reminders, _is_time_to_send_reminder
+from ietf.nomcom.utils import (
+    get_nomcom_by_year,
+    make_nomineeposition,
+    get_hash_nominee_position,
+    is_eligible,
+    list_eligible,
+    get_eligibility_date,
+    suggest_affiliation,
+    ingest_feedback_email,
+    decorate_volunteers_with_qualifications,
+    send_reminders,
+    _is_time_to_send_reminder,
+    get_qualified_author_queryset,
+)
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import Email, Person
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
@@ -2440,6 +2455,86 @@ class EligibilityUnitTests(TestCase):
         NomComFactory(group__acronym=f'nomcom{this_year}', first_call_for_volunteers=datetime.date(this_year,5,6))
         self.assertEqual(get_eligibility_date(),datetime.date(this_year,5,6))
 
+    def test_get_qualified_author_queryset(self):
+        """get_qualified_author_queryset implements the eligiblity rules correctly
+
+        This is not an exhaustive test of corner cases. Overlaps considerably with
+        rfc8989EligibilityTests.test_elig_by_author().
+        """
+        people = PersonFactory.create_batch(2)
+        extra_person = PersonFactory()
+        base_qs = Person.objects.filter(pk__in=[person.pk for person in people])
+        now = datetime.datetime.now(tz=datetime.UTC)
+        one_year = datetime.timedelta(days=365)
+
+        # Authors with no qualifying drafts
+        self.assertCountEqual(
+            get_qualified_author_queryset(base_qs, now - 5 * one_year, now), []
+        )
+
+        # Authors with one qualifying draft
+        approved_draft = WgDraftFactory(authors=people, states=[("draft", "active")])
+        DocEventFactory(
+            type="iesg_approved",
+            doc=approved_draft,
+            time=now - 4 * one_year,
+        )
+        self.assertCountEqual(
+            get_qualified_author_queryset(base_qs, now - 5 * one_year, now), []
+        )
+
+        # Create a draft that was published into an RFC. Give it an extra author who
+        # should not be eligible.
+        published_draft = WgDraftFactory(authors=people, states=[("draft", "rfc")])
+        DocEventFactory(
+            type="iesg_approved",
+            doc=published_draft,
+            time=now - 5.5 * one_year,  # < 6 years ago
+        )
+        rfc = WgRfcFactory(
+            authors=people + [extra_person],
+            group=published_draft.group,
+        )
+        DocEventFactory(
+            type="published_rfc",
+            doc=rfc,
+            time=now - 0.5 * one_year,  # < 1 year ago
+        )
+        # Period 6 years ago to 1 year ago - authors are eligible due to the
+        # iesg-approved draft in this window
+        self.assertCountEqual(
+            get_qualified_author_queryset(base_qs, now - 6 * one_year, now - one_year),
+            people,
+        )
+
+        # Period 5 years ago to now - authors are eligible due to the RFC publication
+        self.assertCountEqual(
+            get_qualified_author_queryset(base_qs, now - 5 * one_year, now),
+            people,
+        )
+        
+        # Use the extra_person to check that a single doc can't count both as an
+        # RFC _and_ an approved draft. Use an eligibility interval that includes both
+        # the approval and the RFC publication
+        self.assertCountEqual(
+            get_qualified_author_queryset(base_qs, now - 6 * one_year, now),
+            people,  # does not include extra_person!
+        )
+
+        # Now add an RfcAuthor for only one of the two authors to the RFC. This should
+        # remove the other author from the eligibility list because the DocumentAuthor
+        # records are no longer used.
+        RfcAuthorFactory(
+            document=rfc,
+            person=people[0],
+            titlepage_name="P. Zero",
+            email=people[0].email_set.first(),
+        )
+        self.assertCountEqual(
+            get_qualified_author_queryset(base_qs, now - 5 * one_year, now),
+            [people[0]],
+        )
+
 
 class rfc8713EligibilityTests(TestCase):
 
@@ -2724,33 +2819,41 @@ class rfc8989EligibilityTests(TestCase):
             ineligible = set()
 
             p = PersonFactory()
-            ineligible.add(p)
+            ineligible.add(p)  # no RFCs or iesg-approved drafts
+            p = PersonFactory()
+            doc = WgRfcFactory(authors=[p])
+            DocEventFactory(type='published_rfc', doc=doc, time=middle_date)
+            ineligible.add(p)  # only one RFC
 
             p = PersonFactory()
-            da = WgDocumentAuthorFactory(person=p)
-            DocEventFactory(type='published_rfc',doc=da.document,time=middle_date)
-            ineligible.add(p)
-
-            p = PersonFactory()
-            da = WgDocumentAuthorFactory(person=p)
+            da = WgDocumentAuthorFactory(
+                person=p,
+                document__states=[("draft", "active"), ("draft-rfceditor", "ref")],
+            )
             DocEventFactory(type='iesg_approved',doc=da.document,time=last_date)
-            da = WgDocumentAuthorFactory(person=p)
-            DocEventFactory(type='published_rfc',doc=da.document,time=first_date)
-            eligible.add(p)
+            doc = WgRfcFactory(authors=[p])
+            DocEventFactory(type='published_rfc', doc=doc, time=first_date)
+            eligible.add(p)  # one RFC and one iesg-approved draft
 
             p = PersonFactory()
-            da = WgDocumentAuthorFactory(person=p)
+            da = WgDocumentAuthorFactory(
+                person=p,
+                document__states=[("draft", "active"), ("draft-rfceditor", "ref")],
+            )
             DocEventFactory(type='iesg_approved',doc=da.document,time=middle_date)
-            da = WgDocumentAuthorFactory(person=p)
-            DocEventFactory(type='published_rfc',doc=da.document,time=day_before_first_date)
-            ineligible.add(p)
+            doc = WgRfcFactory(authors=[p])
+            DocEventFactory(type='published_rfc', doc=doc, time=day_before_first_date)
+            ineligible.add(p)  # RFC is out of the eligibility window
 
             p = PersonFactory()
-            da = WgDocumentAuthorFactory(person=p)
+            da = WgDocumentAuthorFactory(
+                person=p,
+                document__states=[("draft", "active"), ("draft-rfceditor", "ref")],
+            )
             DocEventFactory(type='iesg_approved',doc=da.document,time=day_after_last_date)
-            da = WgDocumentAuthorFactory(person=p)
-            DocEventFactory(type='published_rfc',doc=da.document,time=middle_date)
-            ineligible.add(p)
+            doc = WgRfcFactory(authors=[p])
+            DocEventFactory(type='published_rfc', doc=doc, time=middle_date)
+            ineligible.add(p)  # iesg approval is outside the eligibility window
 
             for person in eligible:
                 self.assertTrue(is_eligible(person,nomcom))
@@ -2878,15 +2981,38 @@ class VolunteerTests(TestCase):
 
     def test_suggest_affiliation(self):
         person = PersonFactory()
-        self.assertEqual(suggest_affiliation(person), '')
-        da = DocumentAuthorFactory(person=person,affiliation='auth_affil')
+        self.assertEqual(suggest_affiliation(person), "")
+        rfc_da = DocumentAuthorFactory(
+            person=person,
+            document__type_id="rfc",
+            affiliation="",
+        )
+        rfc = rfc_da.document
+        DocEventFactory(doc=rfc, type="published_rfc")
+        self.assertEqual(suggest_affiliation(person), "")
+
+        rfc_da.affiliation = "rfc_da_affil"
+        rfc_da.save()
+        self.assertEqual(suggest_affiliation(person), "rfc_da_affil")
+
+        rfc_ra = RfcAuthorFactory(person=person, document=rfc, affiliation="")
+        self.assertEqual(suggest_affiliation(person), "")
+
+        rfc_ra.affiliation = "rfc_ra_affil"
+        rfc_ra.save()
+        self.assertEqual(suggest_affiliation(person), "rfc_ra_affil")
+
+        da = DocumentAuthorFactory(person=person, affiliation="auth_affil")
         NewRevisionDocEventFactory(doc=da.document)
-        self.assertEqual(suggest_affiliation(person), 'auth_affil')
+        self.assertEqual(suggest_affiliation(person), "auth_affil")
+
         nc = NomComFactory()
-        nc.volunteer_set.create(person=person,affiliation='volunteer_affil')
-        self.assertEqual(suggest_affiliation(person), 'volunteer_affil')
-        RegistrationFactory(person=person, affiliation='meeting_affil')
-        self.assertEqual(suggest_affiliation(person), 'meeting_affil')
+        nc.volunteer_set.create(person=person, affiliation="volunteer_affil")
+        self.assertEqual(suggest_affiliation(person), "volunteer_affil")
+
+        RegistrationFactory(person=person, affiliation="meeting_affil")
+        self.assertEqual(suggest_affiliation(person), "meeting_affil")
+
 
 class VolunteerDecoratorUnitTests(TestCase):
     def test_decorate_volunteers_with_qualifications(self):
@@ -2922,10 +3048,10 @@ class VolunteerDecoratorUnitTests(TestCase):
 
         author_person = PersonFactory()
         for i in range(2):
-            da = WgDocumentAuthorFactory(person=author_person)
+            doc = WgRfcFactory(authors=[author_person])
             DocEventFactory(
                 type='published_rfc',
-                doc=da.document,
+                doc=doc,
                 time=datetime.datetime(
                     elig_date.year - 3,
                     elig_date.month,
