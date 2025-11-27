@@ -6,7 +6,7 @@ from typing import Literal, ClassVar
 
 from django.db.models.manager import BaseManager
 from drf_spectacular.utils import extend_schema_field
-from rest_framework import serializers, fields
+from rest_framework import serializers
 
 from ietf.group.serializers import GroupSerializer
 from ietf.name.serializers import StreamNameSerializer
@@ -174,7 +174,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     group = GroupSerializer()
     area = GroupSerializer(source="group.area", required=False)
     stream = StreamNameSerializer()
-    identifiers = fields.SerializerMethodField()
+    identifiers = serializers.SerializerMethodField()
     draft = serializers.SerializerMethodField()
     obsoletes = RelatedRfcSerializer(many=True, read_only=True)
     obsoleted_by = ReverseRelatedRfcSerializer(many=True, read_only=True)
@@ -182,7 +182,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     updated_by = ReverseRelatedRfcSerializer(many=True, read_only=True)
     subseries = ContainingSubseriesSerializer(many=True, read_only=True)
     see_also = serializers.ListField(child=serializers.CharField(), read_only=True)
-    formats = fields.MultipleChoiceField(choices=RFC_FORMATS)
+    formats = serializers.MultipleChoiceField(choices=RFC_FORMATS)
     keywords = serializers.ListField(child=serializers.CharField(), read_only=True)
     errata = serializers.ListField(child=serializers.CharField(), read_only=True)
 
