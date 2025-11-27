@@ -2,33 +2,17 @@
 
 :root {
   color-scheme: light dark;
-  --background-color: #fff;
-  --text-color: #222;
-  --title-color: #191919;
-  --link-color: #2a6496;
-  --highlight-color: #f9f9f9;
-  --line-color: #eee;
-  --pilcrow-weak: #ddd;
-  --pilcrow-strong: #bbb;
+  --background-color: var(--bs-body-bg);
+  --text-color: var(--bs-body-color);
+  --title-color: var(--bs-heading-color);
+  --link-color: var(--bs-link-color);
+  --highlight-color: var(--bs-highlight-color);
+  --line-color: var(--bs-border-color);
+  --pilcrow-weak: var(--bs-focus-ring-color);
+  --pilcrow-strong: var(--bs-secondary-color);
   --small-font-size: 14.5px;
-  --font-mono: 'Oxygen Mono', monospace;
-  --font-title: "Sofia Sans Semi Condensed", sans-serif;
-  scrollbar-color: #bbb #eee;
-}
-
-/* Dark mode. */
-@media (prefers-color-scheme: dark) {
-:root {
-  --background-color: #121212;
-  --text-color: #f0f0f0;
-  --title-color: #fff;
-  --link-color: #4da4f0;
-  --highlight-color: #282828;
-  --line-color: #444;
-  --pilcrow-weak: #444;
-  --pilcrow-strong: #666;
-  scrollbar-color: #777 #333;
-}
+  --font-mono: 'Oxygen Mono', var(--bs-font-monospace), monospace;
+  --font-title: "Sofia Sans Semi Condensed", var(--bs-font-sans-serif), sans-serif;
 }
 
 .rfchtml {
@@ -38,7 +22,7 @@
   padding: 0 5px;
   color: var(--text-color);
   background-color: var(--background-color);
-  font: 16px/22px "Lora", serif;
+  font: 16px/22px "Lora", var(--bs-body-font-family), serif;
   scroll-behavior: smooth;
 //}
 
@@ -468,7 +452,7 @@ sub, sup {
 
 /* The prepared/rendered info at the very bottom of the page */
 .docInfo {
-  color: #999;
+  color: var(--bs-secondary-text-emphasis);
   font-size: 0.9em;
   font-style: italic;
   margin-top: 2em;
@@ -560,7 +544,7 @@ address.vcard {
 hr.addr {
   border-top: 1px dashed;
   margin: 0;
-  color: #ddd;
+  color: var(--line-color);
   max-width: calc(100% - 16px);
 }
 @media (min-width: 500px) {
@@ -583,7 +567,7 @@ hr.addr {
   font-style: italic;
 }
 .cref {
-  background-color: rgba(249, 232, 105, 0.3);
+  background-color: var(--bs-warning-bg-subtle);
   padding: 2px 4px;
 }
 .crefSource {

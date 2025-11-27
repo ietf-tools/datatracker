@@ -105,7 +105,7 @@
                href="{% url 'ietf.doc.views_doc.document_main' name=doc.name %}">
                 {% if doc.type_id == "rfc" %}
                     RFC {{ doc.rfc_number }}
-                {% else %} 
+                {% else %}
                     {{ doc.name }}-{{ doc.rev }}
                 {% endif %}
                 <br class="d-sm-none">
@@ -195,14 +195,14 @@
                                 {% document_type_badge doc snapshot submission resurrected_by %}
                             </p>
                         </div>
-                        {% if request.COOKIES.htmlconf and request.COOKIES.htmlconf != 'html' and html %}
+                        {% if request.COOKIES.htmlconf and request.COOKIES.htmlconf == 'txt' and html %}
                         <div class="alert alert-info small">
                             You are viewing the legacy <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/rfc2html">rfc2html</a></code>
                             rendering of this document. Change the
                             preferences for a modern <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/xml2rfc">xml2rfc</a></code>-based
                             HTMLization.
                         </div>
-                        {% elif request.COOKIES.htmlconf == 'html' and not html %}
+                        {% elif request.COOKIES.htmlconf != 'txt' and not html %}
                         <div class="alert alert-info small">
                             You are viewing the legacy <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/rfc2html">rfc2html</a></code>
                             rendering, because no <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/xml2rfc">xml2rfc</a></code>-generated
