@@ -6,7 +6,7 @@
   --text-color: var(--bs-body-color);
   --title-color: var(--bs-heading-color);
   --link-color: var(--bs-link-color);
-  --highlight-color: var(--bs-highlight-color);
+  --highlight-color: var(--bs-secondary-bg);
   --line-color: var(--bs-border-color);
   --pilcrow-weak: var(--bs-focus-ring-color);
   --pilcrow-strong: var(--bs-secondary-color);
@@ -433,6 +433,7 @@ sub, sup {
     float: left;
     text-align: right;
     margin-right: 1ch;
+    font-weight: inherit; /* override */
   }
   & dd {
     margin: 0;
