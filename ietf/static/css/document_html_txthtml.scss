@@ -261,46 +261,69 @@ li {
   @include margin-line; // margin: var(--line) 0;
   padding: 0 0 0 2ch;
 }
-dl {
-  margin: 0;
+dl:not(.references) {
+  @include margin-paragraph;
+  &, & dt {
+    clear: left;
+  }
+  dt {
+    float: left;
+    font-weight: bold;
+    margin: 0 2ch 0 0;
+    break-after: avoid;
+  }
+  dd {
+    @include margin-paragraph;
+    margin-left: 3ch !important; /* override attribute added by xml2rfc */
+    padding: 0;
+    break-before: avoid;
+  }
+  &.dlNewline > dd {
+    clear: left;
+  }
+  &.olPercent > dt {
+    min-width: 4ch;
+  }
+  &.olPercent > dd {
+    margin-left: 6ch !important; /* as above */
+  }
+  & > dd > dl {
+    margin-top: var(--line);
+    margin-bottom: 0;
+  }
 }
-section > dl, section > div > dl {
-  @include margin-block; // margin: var(--block);
+dl.references {
+  --indent: 10ch;
+  --gutter: 1ch;
+  --max-label: 32ch;
+
+  display: flex;
+  flex-flow: row wrap;
+  width: calc(100% - var(--indent));
+  padding-left: var(--indent);
+
+  dt {
+    flex: 0 0 max-content;
+    margin-left: calc(-1 * var(--indent));
+    min-width: var(--indent);
+    max-width: var(--max-label);
+    padding: 0;
+  }
+  dd {
+    flex: 0 0 100%;
+    margin: 0 0 var(--line) 0;
+    &:last-child, &:has(+.break:last-child) { margin: 0; }
+    div.refInstance { margin: 0 0 var(--line) 0; }
+    padding: 0 0 0 var(--gutter);
+  }
+  dd.break:not(:last-child) {
+    display: flex block;
+    flex: 0 0 calc(100% + 0.02px); /* overflow to force wrap */
+    margin: 0;
+    height: 0;
+  }
 }
-dl, dt {
-  clear: left;
-}
-dt {
-  float: left;
-  font-weight: bold;
-  margin: 0 2ch 0 0;
-  break-after: avoid;
-}
-dd {
-  @include margin-paragraph; // margin: var(--paragraph);
-  margin-left: 3ch !important; /* override attribute added by xml2rfc */
-  padding: 0;
-  break-before: avoid;
-}
-dl.dlNewline > dd {
-  clear: left;
-}
-dl.olPercent > dt {
-  min-width: 4ch;
-}
-dl.olPercent > dd {
-  margin-left: 6ch !important; /* as above */
-}
-dl > dd > dl {
-  margin-top: var(--line);
-  margin-bottom: 0;
-}
-dl.references dt {
-  margin-right: 1ch;
-}
-dl.references dd {
-  margin-left: 11ch !important; /* grr */
-}
+
 :is(dd, span).break {
   display: none;
 }
