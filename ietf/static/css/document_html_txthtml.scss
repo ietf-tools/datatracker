@@ -299,7 +299,7 @@ dl.references {
 
   display: flex;
   flex-flow: row wrap;
-  width: calc(100% - var(--indent) - 3ch);
+  width: calc(100% - 3ch);
   padding-left: var(--indent);
   @include margin-block;
 
