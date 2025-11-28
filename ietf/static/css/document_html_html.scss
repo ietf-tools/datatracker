@@ -171,7 +171,8 @@ ul.empty, .ulEmpty {
 /* definition lists */
 dl {
   clear: left;
-  --indent: attr(indent ch, 3ch);
+  --indent: 3ch;
+  /* --indent: attr(indent ch, 3ch); -- Thanks Firefox */
   &.olPercent {
     --indent: 5ch;
     & > dt {
