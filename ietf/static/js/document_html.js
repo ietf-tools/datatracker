@@ -87,17 +87,17 @@ document.addEventListener("DOMContentLoaded", function (event) {
     document.activeElement.blur();
 
     // keep RFC links within the datatracker
-    const rfclink = /^https?:\/\/[^\/\.]*.(?:rfc-editor|ietf).org\/.*\/rfc(\d+)$/;
-    const docbase = document.location.origin + "/doc/html/rfc";
+    const rfclink = /^https?:\/\/[^\/\.]*.(?:rfc-editor|ietf).org\/.*\/((?:rfc|std|bcp)\d+)$/;
+    const docbase = document.location.origin + "/doc/html/";
     [...document.querySelectorAll(".references dd a:not([href='']:last-of-type)"),
      ...document.querySelectorAll("#identifiers a.eref")]
         .forEach(ref => {
-            const rfcnum = ref.href.match(rfclink);
-            if (!rfcnum) { return; }
+            const docnum = ref.href.match(rfclink);
+            if (!doccnum) { return; }
             if (ref.textContent === ref.href) {
-                ref.textContent = docbase + rfcnum[1];
+                ref.textContent = docbase + docnum[1];
             }
-            ref.href = docbase + rfcnum[1];
+            ref.href = docbase + docnum[1];
         });
 
     if (localStorage.getItem("reflinks") != "refsection") {
