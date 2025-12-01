@@ -115,6 +115,8 @@ def parse_queue(response):
                     stream = "irtf"
                 elif name.startswith("INDEPENDENT"):
                     stream = "ise"
+                elif name.startswith("Editorial Stream"):
+                    stream = "editorial"
                 else:
                     stream = None
                     warnings.append("unrecognized section " + name)
