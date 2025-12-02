@@ -22,7 +22,6 @@ from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 
 from ietf.api.serializers_rpc import (
-    AuthorSerializer,
     PersonSerializer,
     FullDraftSerializer,
     DraftSerializer,
@@ -35,6 +34,7 @@ from ietf.api.serializers_rpc import (
     NotificationAckSerializer, RfcPubSerializer, RfcFileSerializer,
 )
 from ietf.doc.models import Document, DocHistory, RfcAuthor
+from ietf.doc.serializers import RfcAuthorSerializer
 from ietf.person.models import Email, Person
 
 
@@ -328,7 +328,7 @@ class RfcAuthorViewSet(viewsets.ModelViewSet):
     api_key_endpoint = "ietf.api.views_rpc"
 
     queryset = RfcAuthor.objects.all()
-    serializer_class = AuthorSerializer
+    serializer_class = RfcAuthorSerializer
     lookup_url_kwarg = "author_id"
     rfc_number_param = "rfc_number"
 

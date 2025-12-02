@@ -10,8 +10,8 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from ietf.doc.expire import move_draft_files_to_archive
-from ietf.doc.models import DocumentAuthor, Document, RfcAuthor, RelatedDocument, State, \
-    DocEvent
+from ietf.doc.models import DocumentAuthor, Document, RelatedDocument, State, DocEvent
+from ietf.doc.serializers import RfcAuthorSerializer
 from ietf.doc.utils import default_consensus, prettify_std_name, update_action_holders
 from ietf.group.models import Group
 from ietf.name.models import StreamName, StdLevelName, FormalLanguageName
@@ -201,24 +201,6 @@ class ReferenceSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "name"]
 
 
-class AuthorSerializer(serializers.ModelSerializer):
-    """Serialize an RfcAuthor record
-
-    todo fix naming confusion with ietf.doc.serializers.RfcAuthorSerializer
-    """
-    class Meta:
-        model = RfcAuthor
-        fields = [
-            "id",
-            "titlepage_name",
-            "is_editor",
-            "person",
-            "email",
-            "affiliation",
-            "country",
-        ]
-
-
 class RfcPubSerializer(serializers.ModelSerializer):
     # publication-related fields
     published = serializers.DateTimeField(default_timezone=datetime.timezone.utc)
@@ -273,7 +255,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
             regex=r"^(bcp|std|fyi)[1-9][0-9]{0,4}$", 
         )
     )
-    authors = AuthorSerializer(many=True)
+    authors = RfcAuthorSerializer(many=True)
 
     class Meta:
         model = Document
