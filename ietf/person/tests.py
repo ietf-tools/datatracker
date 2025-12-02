@@ -83,6 +83,29 @@ class PersonTests(TestCase):
         EmailFactory(person=person, primary=False, active=False)
         self.assertTrue(primary.address in person.formatted_email())
 
+    def test_person_profile_details(self):
+        person = PersonFactory(with_bio=True,pronouns_freetext="foo/bar")
+        
+        self.assertTrue(person.photo is not None)
+        self.assertTrue(person.photo.name is not None)
+
+        url = urlreverse("ietf.person.views.profile_details", kwargs={ "email_or_name": person.plain_name()})
+        r = self.client.get(url)
+        self.assertContains(r, person.photo_name(), status_code=200)
+        self.assertContains(r, "foo/bar")
+        # Assume no previous meetings and no role
+        self.assertContains(r, "has not participated at an IETF meeting since")
+        
+        q = PyQuery(r.content)
+        self.assertIn("Photo of %s"%person.name, q("div.bio-text img").attr("alt"))
+
+        bio_text  = q("div.bio-text").text()
+        self.assertIsNotNone(bio_text)
+
+        photo_url = q("div.bio-text img").attr("src")
+        r = self.client.get(photo_url)
+        self.assertEqual(r.status_code, 200)
+
     def test_person_profile(self):
         person = PersonFactory(with_bio=True,pronouns_freetext="foo/bar")
         
