@@ -9,9 +9,9 @@
                  samesite=settings.SESSION_COOKIE_SAMESITE,
              )
  
---- django/http/response.py.orig	2020-08-13 11:16:04.060627793 +0200
-+++ django/http/response.py	2020-08-13 11:54:03.482476973 +0200
-@@ -282,20 +282,28 @@
+--- django/http/response.py.orig	2025-12-02 22:12:05.197283001 +0000
++++ django/http/response.py	2025-12-02 22:26:01.396576013 +0000
+@@ -286,20 +286,28 @@
          value = signing.get_cookie_signer(salt=key + salt).sign(value)
          return self.set_cookie(key, value, **kwargs)
 
