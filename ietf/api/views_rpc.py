@@ -34,7 +34,7 @@ from ietf.api.serializers_rpc import (
     NotificationAckSerializer, RfcPubSerializer, RfcFileSerializer,
     EditableRfcSerializer,
 )
-from ietf.doc.models import Document, DocHistory, RfcAuthor
+from ietf.doc.models import Document, DocHistory, RfcAuthor, EditedRfcAuthorsDocEvent
 from ietf.doc.serializers import RfcAuthorSerializer
 from ietf.person.models import Email, Person
 
@@ -323,7 +323,7 @@ class DraftsByNamesView(APIView):
         return Response(DraftSerializer(docs, many=True).data)
 
 
-class RfcAuthorViewSet(viewsets.ModelViewSet):
+class RfcAuthorViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for RfcAuthor model
     
     Router needs to provide rfc_number as a kwarg
@@ -344,22 +344,6 @@ class RfcAuthorViewSet(viewsets.ModelViewSet):
                 document__rfc_number=self.kwargs[self.rfc_number_param],
             )
         )
-
-    def perform_create(self, serializer):
-        rfc = Document.objects.filter(
-            type_id="rfc",
-            rfc_number=self.kwargs[self.rfc_number_param]
-        ).first()
-        if rfc is None:
-            raise NotFound("RFC not found")
-        # Find the current highest order for this document
-        from django.db.models import Max
-        max_order = (
-            RfcAuthor.objects.filter(document=rfc)
-            .aggregate(max_order=Max("order", default=0))
-            .get("max_order")
-        )
-        serializer.save(document=rfc, order=max_order + 1)
 
 
 class RfcPubNotificationView(APIView):
