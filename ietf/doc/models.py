@@ -1693,6 +1693,11 @@ class EditedAuthorsDocEvent(DocEvent):
     """
     basis = models.CharField(help_text="What is the source or reasoning for the changes to the author list",max_length=255)
 
+
+class EditedRfcAuthorsDocEvent(DocEvent):
+    """Change to the RfcAuthor list for a document"""
+
+
 class BofreqEditorDocEvent(DocEvent):
     """ Capture the proponents of a BOF Request."""
     editors = models.ManyToManyField('person.Person', blank=True)
