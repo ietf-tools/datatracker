@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 import datetime
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal, Optional, Iterable
 
 from django.db import transaction
 from django.urls import reverse as urlreverse
@@ -226,21 +226,20 @@ class EditableRfcSerializer(serializers.ModelSerializer):
         authors_data = validated_data.pop("rfcauthor_set", None)
         if authors_data is not None:
             # Construct unsaved instances from validated author data
-            new_authors = []
-            for count, author_data in enumerate(authors_data):
-                new_authors.append(
-                    RfcAuthor(
-                        document=instance,
-                        order=count + 1,
-                        **author_data,
-                    )
-                )
-                # Commit author changes
-                with transaction.atomic():
-                    instance.rfcauthor_set.all().delete()
-                    for author in new_authors:
-                        author.save()
+            new_authors = [RfcAuthor(**ad) for ad in authors_data]
+            # Update the RFC with the new author set
+            update_rfcauthors(instance, new_authors)
         return instance
+
+
+def update_rfcauthors(rfc: Document, new_rfcauthors: Iterable[RfcAuthor]):
+    with transaction.atomic():
+        rfc.rfcauthor_set.all().delete()
+        for order, rfcauthor in enumerate(new_rfcauthors):
+            rfcauthor.document = rfc
+            rfcauthor.order = order + 1
+            rfcauthor.save()
+
 
 class RfcPubSerializer(serializers.ModelSerializer):
     # publication-related fields
