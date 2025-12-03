@@ -575,6 +575,7 @@ def _change_field_and_describe(
     author: DocumentAuthor | RfcAuthor,
     field: str,
     newval,
+    field_display_name: str | None = None,
 ):
     # make the change
     oldval = getattr(author, field)
@@ -587,13 +588,20 @@ def _change_field_and_describe(
     if oldval == newval:
         return None
     else:
+        if field_display_name is None:
+            field_display_name = field
+
         if was_empty and not now_empty:
-            return 'set {field} to "{new}"'.format(field=field, new=newval)
+            return 'set {field} to "{new}"'.format(
+                field=field_display_name, new=newval
+            )
         elif now_empty and not was_empty:
-            return 'cleared {field} (was "{old}")'.format(field=field, old=oldval)
+            return 'cleared {field} (was "{old}")'.format(
+                field=field_display_name, old=oldval
+            )
         else:
             return 'changed {field} from "{old}" to "{new}"'.format(
-                field=field, old=oldval, new=newval
+                field=field_display_name, old=oldval, new=newval
             )
 
 
@@ -708,7 +716,11 @@ def update_rfcauthors(
             for field in ["titlepage_name", "is_editor", "affiliation", "country"]:
                 author_changes.append(
                     _change_field_and_describe(
-                        matching_author, field, getattr(new_author, field)
+                        matching_author,
+                        field,
+                        getattr(new_author, field),
+                        # List titlepage_name as "name" in logs
+                        "name" if field == "titlepage_name" else field,
                     )
                 )
             # Update order
