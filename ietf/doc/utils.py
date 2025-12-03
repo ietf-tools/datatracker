@@ -655,10 +655,10 @@ def update_documentauthors(doc, new_docauthors, by=None, basis=None):
 
 def update_rfcauthors(
     rfc: Document, new_rfcauthors: Iterable[RfcAuthor], by: Person | None = None
-):
+) -> Iterable[EditedRfcAuthorsDocEvent]:
     def _find_matching_author(
         author_to_match: RfcAuthor, existing_authors: Iterable[RfcAuthor]
-    ):
+    ) -> RfcAuthor | None:
         if author_to_match.person_id is not None:
             for candidate in existing_authors:
                 if candidate.person_id == author_to_match.person_id:
@@ -712,6 +712,100 @@ def update_rfcauthors(
     # Any authors left in original_authors are no longer in the list, so remove them
     for removed_author in original_authors:
         removed_author.delete()
+        changes.append(f'Removed "{removed_author.titlepage_name}" as author')
+    # Create DocEvents, but leave it up to caller to save
+    if by is None:
+        by = Person.objects.get(name="(System)")
+    return [
+        EditedRfcAuthorsDocEvent(
+            type="edited_authors",
+            by=by,
+            doc=rfc,
+            desc=change,
+        )
+        for change in changes
+    ]
+
+
+def update_rfcauthors_from_documentauthors(
+    rfc: Document, new_rfcauthors: Iterable[RfcAuthor], by: Person | None = None
+) -> Iterable[EditedRfcAuthorsDocEvent]:
+    def _find_matching_author(
+        author_to_match: RfcAuthor, existing_authors: Iterable[RfcAuthor]
+    ) -> RfcAuthor | None:
+        if author_to_match.person_id is not None:
+            for candidate in existing_authors:
+                if candidate.person_id == author_to_match.person_id:
+                    return candidate
+            return None  # no match
+        # author does not have a person, match on titlepage name
+        for candidate in existing_authors:
+            if candidate.titlepage_name == author_to_match.titlepage_name:
+                return candidate
+        return None  # no match
+
+    def _rfcauthor_from_documentauthor(docauthor: DocumentAuthor) -> RfcAuthor:
+        return RfcAuthor(
+            document_id=docauthor.document_id,
+            titlepage_name=docauthor.person.plain_name(),  # closest thing we have
+            is_editor=False,
+            person_id=docauthor.person_id,
+            affiliation=docauthor.affiliation,
+            country=docauthor.country,
+            order=docauthor.order,
+        )
+
+    # Only allow this method to be called if rfc has no RfcAuthors yet
+    if rfc.rfcauthor_set.exists():
+        raise ValueError(
+            f"{rfc.name} already has RfcAuthors, call update_rfcauthors() intstead"
+        )
+
+    original_authors = [
+        _rfcauthor_from_documentauthor(da) for da in rfc.documentauthor_set.all()
+    ]
+    authors_to_commit = []
+    changes = []
+    for order, new_author in enumerate(new_rfcauthors):
+        matching_author = _find_matching_author(new_author, original_authors)
+        if matching_author is not None:
+            # Update existing matching author using new_author data
+            authors_to_commit.append(matching_author)
+            original_authors.remove(matching_author)  # avoid reuse
+            # Describe changes to this author
+            author_changes = []
+            # Update fields other than order
+            for field in ["titlepage_name", "is_editor", "affiliation", "country"]:
+                author_changes.append(
+                    _change_field_and_describe(
+                        matching_author, field, getattr(new_author, field)
+                    )
+                )
+            # Update order
+            author_changes.append(
+                _change_field_and_describe(matching_author, "order", order + 1)
+            )
+            matching_author.save()
+            author_change_summary = ", ".join(
+                [ch for ch in author_changes if ch is not None]
+            )
+            if len(author_change_summary) > 0:
+                changes.append(
+                    'Changed author "{name}": {summary}'.format(
+                        name=matching_author.titlepage_name,
+                        summary=author_change_summary,
+                    )
+                )
+        else:
+            # No author matched, so update the new_author and use that
+            new_author.document = rfc
+            new_author.order = order + 1
+            new_author.save()
+            changes.append(f'Added "{new_author.titlepage_name}" as author')
+    for removed_author in original_authors:
+        # No need to actually delete leftover original_authors, as they were never
+        # saved. Also, do not delete the original DocumentAuthors - they'll just be
+        # ignored.
         changes.append(f'Removed "{removed_author.titlepage_name}" as author')
     # Create DocEvents, but leave it up to caller to save
     if by is None:

@@ -23,7 +23,7 @@ from ietf.doc.utils import (
     default_consensus,
     prettify_std_name,
     update_action_holders,
-    update_rfcauthors,
+    update_rfcauthors, update_rfcauthors_from_documentauthors,
 )
 from ietf.group.models import Group
 from ietf.name.models import StreamName, StdLevelName, FormalLanguageName
@@ -228,12 +228,18 @@ class EditableRfcSerializer(serializers.ModelSerializer):
         fields = ["id", "authors"]
 
     def update(self, instance, validated_data):
+        assert isinstance(instance, Document)
         authors_data = validated_data.pop("rfcauthor_set", None)
         if authors_data is not None:
             # Construct unsaved instances from validated author data
             new_authors = [RfcAuthor(**ad) for ad in authors_data]
             # Update the RFC with the new author set
-            change_events = update_rfcauthors(instance, new_authors)
+            if instance.rfcauthor_set.exists():
+                change_events = update_rfcauthors(instance, new_authors)
+            else:
+                change_events = update_rfcauthors_from_documentauthors(
+                    instance, new_authors
+                )
             for event in change_events:
                 event.save()
         return instance
