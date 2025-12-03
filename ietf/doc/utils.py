@@ -40,7 +40,7 @@ from ietf.doc.models import (
     Document,
     DocumentAuthor,
     RfcAuthor,
-    State,
+    State, EditedRfcAuthorsDocEvent,
 )
 from ietf.doc.models import RelatedDocument, RelatedDocHistory, BallotType, DocReminder
 from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBallotDocEvent, NewRevisionDocEvent, StateDocEvent
@@ -653,10 +653,11 @@ def update_documentauthors(doc, new_docauthors, by=None, basis=None):
     ] 
 
 
-def update_rfcauthors(rfc: Document, new_rfcauthors: Iterable[RfcAuthor]):
+def update_rfcauthors(
+    rfc: Document, new_rfcauthors: Iterable[RfcAuthor], by: Person | None = None
+):
     def _find_matching_author(
-        author_to_match: RfcAuthor,
-        existing_authors: Iterable[RfcAuthor]
+        author_to_match: RfcAuthor, existing_authors: Iterable[RfcAuthor]
     ):
         if author_to_match.person_id is not None:
             for candidate in existing_authors:
@@ -668,7 +669,7 @@ def update_rfcauthors(rfc: Document, new_rfcauthors: Iterable[RfcAuthor]):
             if candidate.titlepage_name == author_to_match.titlepage_name:
                 return candidate
         return None  # no match
-    
+
     original_authors = list(rfc.rfcauthor_set.all())
     authors_to_commit = []
     changes = []
@@ -692,17 +693,38 @@ def update_rfcauthors(rfc: Document, new_rfcauthors: Iterable[RfcAuthor]):
                 _change_field_and_describe(matching_author, "order", order + 1)
             )
             matching_author.save()
-            # todo add change summary
+            author_change_summary = ", ".join(
+                [ch for ch in author_changes if ch is not None]
+            )
+            if len(author_change_summary) > 0:
+                changes.append(
+                    'Changed author "{name}": {summary}'.format(
+                        name=matching_author.titlepage_name,
+                        summary=author_change_summary,
+                    )
+                )
         else:
             # No author matched, so update the new_author and use that
             new_author.document = rfc
             new_author.order = order + 1
             new_author.save()
-            # todo add change summary
+            changes.append(f'Added "{new_author.titlepage_name}" as author')
     # Any authors left in original_authors are no longer in the list, so remove them
     for removed_author in original_authors:
         removed_author.delete()
-        # todo add change summary
+        changes.append(f'Removed "{removed_author.titlepage_name}" as author')
+    # Create DocEvents, but leave it up to caller to save
+    if by is None:
+        by = Person.objects.get(name="(System)")
+    return [
+        EditedRfcAuthorsDocEvent(
+            type="edited_authors",
+            by=by,
+            doc=rfc,
+            desc=change,
+        )
+        for change in changes
+    ]
 
 
 def update_reminder(doc, reminder_type_slug, event, due_date):
