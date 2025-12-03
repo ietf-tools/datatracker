@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 import datetime
 from pathlib import Path
-from typing import Literal, Optional, Iterable
+from typing import Literal, Optional
 
 from django.db import transaction
 from django.urls import reverse as urlreverse
@@ -19,7 +19,12 @@ from ietf.doc.models import (
     RfcAuthor,
 )
 from ietf.doc.serializers import RfcAuthorSerializer
-from ietf.doc.utils import default_consensus, prettify_std_name, update_action_holders
+from ietf.doc.utils import (
+    default_consensus,
+    prettify_std_name,
+    update_action_holders,
+    update_rfcauthors,
+)
 from ietf.group.models import Group
 from ietf.name.models import StreamName, StdLevelName, FormalLanguageName
 from ietf.person.models import Person
@@ -230,15 +235,6 @@ class EditableRfcSerializer(serializers.ModelSerializer):
             # Update the RFC with the new author set
             update_rfcauthors(instance, new_authors)
         return instance
-
-
-def update_rfcauthors(rfc: Document, new_rfcauthors: Iterable[RfcAuthor]):
-    with transaction.atomic():
-        rfc.rfcauthor_set.all().delete()
-        for order, rfcauthor in enumerate(new_rfcauthors):
-            rfcauthor.document = rfc
-            rfcauthor.order = order + 1
-            rfcauthor.save()
 
 
 class RfcPubSerializer(serializers.ModelSerializer):

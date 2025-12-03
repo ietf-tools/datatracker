@@ -13,12 +13,13 @@ from collections import defaultdict, namedtuple, Counter
 from dataclasses import dataclass
 from hashlib import sha384
 from pathlib import Path
-from typing import Iterator, Optional, Union
+from typing import Iterator, Optional, Union, Iterable
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib import messages
 from django.core.cache import caches
+from django.db import transaction
 from django.db.models import OuterRef
 from django.forms import ValidationError
 from django.http import Http404
@@ -33,7 +34,14 @@ import debug                            # pyflakes:ignore
 from ietf.community.models import CommunityList
 from ietf.community.utils import docs_tracked_by_community_list
 
-from ietf.doc.models import Document, DocHistory, State, DocumentAuthor, DocHistoryAuthor
+from ietf.doc.models import (
+    DocHistory,
+    DocHistoryAuthor,
+    Document,
+    DocumentAuthor,
+    RfcAuthor,
+    State,
+)
 from ietf.doc.models import RelatedDocument, RelatedDocHistory, BallotType, DocReminder
 from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBallotDocEvent, NewRevisionDocEvent, StateDocEvent
 from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthorsDocEvent, BallotPositionDocEvent
@@ -562,6 +570,33 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
 
 # TODO : do we need an analog for rfcauthors here? Likely we do.
 
+
+def _change_field_and_describe(
+    author: DocumentAuthor | RfcAuthor,
+    field: str,
+    newval,
+):
+    # make the change
+    oldval = getattr(author, field)
+    setattr(author, field, newval)
+
+    was_empty = oldval is None or len(str(oldval)) == 0
+    now_empty = newval is None or len(str(newval)) == 0
+
+    # describe the change
+    if oldval == newval:
+        return None
+    else:
+        if was_empty and not now_empty:
+            return 'set {field} to "{new}"'.format(field=field, new=newval)
+        elif now_empty and not was_empty:
+            return 'cleared {field} (was "{old}")'.format(field=field, old=oldval)
+        else:
+            return 'changed {field} from "{old}" to "{new}"'.format(
+                field=field, old=oldval, new=newval
+            )
+
+
 def update_documentauthors(doc, new_docauthors, by=None, basis=None):
     """Update the list of authors for a document
 
@@ -574,27 +609,6 @@ def update_documentauthors(doc, new_docauthors, by=None, basis=None):
     used. These objects will not be saved, their attributes will be used to create new
     DocumentAuthor instances. (The document and order fields will be ignored.)
     """
-    def _change_field_and_describe(auth, field, newval):
-        # make the change
-        oldval = getattr(auth, field)
-        setattr(auth, field, newval)
-        
-        was_empty = oldval is None or len(str(oldval)) == 0
-        now_empty = newval is None or len(str(newval)) == 0
-        
-        # describe the change
-        if oldval == newval:
-            return None
-        else:
-            if was_empty and not now_empty:
-                return 'set {field} to "{new}"'.format(field=field, new=newval)
-            elif now_empty and not was_empty:
-                return 'cleared {field} (was "{old}")'.format(field=field, old=oldval)
-            else:
-                return 'changed {field} from "{old}" to "{new}"'.format(
-                    field=field, old=oldval, new=newval
-                )
-
     persons = []
     changes = []  # list of change descriptions
 
@@ -637,6 +651,59 @@ def update_documentauthors(doc, new_docauthors, by=None, basis=None):
             type='edited_authors', by=by, doc=doc, rev=doc.rev, desc=change, basis=basis
         ) for change in changes
     ] 
+
+
+def update_rfcauthors(rfc: Document, new_rfcauthors: Iterable[RfcAuthor]):
+    def _find_matching_author(
+        author_to_match: RfcAuthor,
+        existing_authors: Iterable[RfcAuthor]
+    ):
+        if author_to_match.person_id is not None:
+            for candidate in existing_authors:
+                if candidate.person_id == author_to_match.person_id:
+                    return candidate
+            return None  # no match
+        # author does not have a person, match on titlepage name
+        for candidate in existing_authors:
+            if candidate.titlepage_name == author_to_match.titlepage_name:
+                return candidate
+        return None  # no match
+    
+    original_authors = list(rfc.rfcauthor_set.all())
+    authors_to_commit = []
+    changes = []
+    for order, new_author in enumerate(new_rfcauthors):
+        matching_author = _find_matching_author(new_author, original_authors)
+        if matching_author is not None:
+            # Update existing matching author using new_author data
+            authors_to_commit.append(matching_author)
+            original_authors.remove(matching_author)  # avoid reuse
+            # Describe changes to this author
+            author_changes = []
+            # Update fields other than order
+            for field in ["titlepage_name", "is_editor", "affiliation", "country"]:
+                author_changes.append(
+                    _change_field_and_describe(
+                        matching_author, field, getattr(new_author, field)
+                    )
+                )
+            # Update order
+            author_changes.append(
+                _change_field_and_describe(matching_author, "order", order + 1)
+            )
+            matching_author.save()
+            # todo add change summary
+        else:
+            # No author matched, so update the new_author and use that
+            new_author.document = rfc
+            new_author.order = order + 1
+            new_author.save()
+            # todo add change summary
+    # Any authors left in original_authors are no longer in the list, so remove them
+    for removed_author in original_authors:
+        removed_author.delete()
+        # todo add change summary
+
 
 def update_reminder(doc, reminder_type_slug, event, due_date):
     reminder_type = DocReminderTypeName.objects.get(slug=reminder_type_slug)
