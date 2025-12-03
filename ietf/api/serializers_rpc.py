@@ -234,9 +234,10 @@ class EditableRfcSerializer(serializers.ModelSerializer):
             # Construct unsaved instances from validated author data
             new_authors = [RfcAuthor(**ad) for ad in authors_data]
             # Update the RFC with the new author set
-            change_events = update_rfcauthors(instance, new_authors)
-            for event in change_events:
-                event.save()
+            with transaction.atomic():
+                change_events = update_rfcauthors(instance, new_authors)
+                for event in change_events:
+                    event.save()
         return instance
 
 
