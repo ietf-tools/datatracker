@@ -470,7 +470,7 @@ class DocumentInfo(models.Model):
                 log.log(
                     f"FIXME: authors() cannot handle non-Person authors in {self}"
                 )
-                rfc_authors.remove(None)
+                rfc_authors = [author for author in rfc_authors if author is not None]
             return rfc_authors
         return [ a.person for a in self.documentauthor_set.all() ]
 
