@@ -32,6 +32,7 @@ from ietf.api.serializers_rpc import (
     RfcWithAuthorsSerializer,
     DraftWithAuthorsSerializer,
     NotificationAckSerializer, RfcPubSerializer, RfcFileSerializer,
+    EditableRfcSerializer,
 )
 from ietf.doc.models import Document, DocHistory, RfcAuthor
 from ietf.doc.serializers import RfcAuthorSerializer
@@ -269,9 +270,11 @@ class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         responses=OriginalStreamSerializer(many=True),
     )
 )
-class RfcViewSet(viewsets.GenericViewSet):
+class RfcViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     queryset = Document.objects.filter(type_id="rfc")
     api_key_endpoint = "ietf.api.views_rpc"
+    lookup_field = "rfc_number"
+    serializer_class = EditableRfcSerializer
 
     @action(detail=False, serializer_class=OriginalStreamSerializer)
     def rfc_original_stream(self, request):

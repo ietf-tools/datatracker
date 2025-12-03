@@ -10,7 +10,14 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from ietf.doc.expire import move_draft_files_to_archive
-from ietf.doc.models import DocumentAuthor, Document, RelatedDocument, State, DocEvent
+from ietf.doc.models import (
+    DocumentAuthor,
+    Document,
+    RelatedDocument,
+    State,
+    DocEvent,
+    RfcAuthor,
+)
 from ietf.doc.serializers import RfcAuthorSerializer
 from ietf.doc.utils import default_consensus, prettify_std_name, update_action_holders
 from ietf.group.models import Group
@@ -200,6 +207,40 @@ class ReferenceSerializer(serializers.ModelSerializer):
         fields = ["id", "name"]
         read_only_fields = ["id", "name"]
 
+
+class EditableRfcSerializer(serializers.ModelSerializer):
+    # Would be nice to reconcile this with ietf.doc.serializers.RfcSerializer.
+    # The purposes of that serializer (representing data for Red) and this one
+    # (accepting updates from Purple) are different enough that separate formats
+    # may be needed, but if not it'd be nice to have a single RfcSerializer that
+    # can serve both.
+    #
+    # For now, only handles authors
+    authors = RfcAuthorSerializer(many=True, min_length=1, source="rfcauthor_set")
+
+    class Meta:
+        model = Document
+        fields = ["id", "authors"]
+
+    def update(self, instance, validated_data):
+        authors_data = validated_data.pop("rfcauthor_set", None)
+        if authors_data is not None:
+            # Construct unsaved instances from validated author data
+            new_authors = []
+            for count, author_data in enumerate(authors_data):
+                new_authors.append(
+                    RfcAuthor(
+                        document=instance,
+                        order=count + 1,
+                        **author_data,
+                    )
+                )
+                # Commit author changes
+                with transaction.atomic():
+                    instance.rfcauthor_set.all().delete()
+                    for author in new_authors:
+                        author.save()
+        return instance
 
 class RfcPubSerializer(serializers.ModelSerializer):
     # publication-related fields
