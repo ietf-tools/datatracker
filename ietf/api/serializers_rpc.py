@@ -23,7 +23,7 @@ from ietf.doc.utils import (
     default_consensus,
     prettify_std_name,
     update_action_holders,
-    update_rfcauthors, update_rfcauthors_from_documentauthors,
+    update_rfcauthors,
 )
 from ietf.group.models import Group
 from ietf.name.models import StreamName, StdLevelName, FormalLanguageName
