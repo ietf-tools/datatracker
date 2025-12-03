@@ -1026,6 +1026,9 @@ def is_doc_ietf_adoptable(doc):
             doc.stream_id == "ietf",
             doc.get_state_slug("draft-stream-ietf")
             not in [
+                "c-adopt",
+                "adopt-wg",
+                "info",
                 "wg-doc",
                 "parked",
                 "dead",
