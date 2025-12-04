@@ -2015,22 +2015,6 @@ class ChangeStreamStateTests(TestCase):
         login_testing_unauthorized(self, chair.user.username, url)
         r = self.client.get(url)
         wglc_state = State.objects.get(type="draft-stream-ietf", slug="wg-lc")
-        self.assertFalse(_form_presents_state_option(r, wglc_state))
-        r = self.client.post(
-            url,
-            dict(
-                new_state=wglc_state.pk,
-                comment="some comment",
-                weeks="10",
-                tags=[
-                    t.pk
-                    for t in doc.tags.filter(
-                        slug__in=get_tags_for_stream_id(doc.stream_id)
-                    )
-                ],
-            ),
-        )
-        self.assertEqual(r.status_code, 200)
         doc.set_state(wglc_state)
         StateDocEventFactory(
             doc=doc,
@@ -2122,28 +2106,6 @@ class ChangeStreamStateTests(TestCase):
                 ],
             ),
         )
-        # A chair doesn't get c-adopt as an alternative
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue(len(q("#id_new_state_error")),1)
-
-        self.client.logout()
-        self.client.login(username="secretary", password="secretary+password")
-        r = self.client.post(
-            url,
-            dict(
-                new_state=new_state.pk,
-                comment="some comment",
-                weeks="10",
-                tags=[
-                    t.pk
-                    for t in draft.tags.filter(
-                        slug__in=get_tags_for_stream_id(draft.stream_id)
-                    )
-                ],
-            ),
-        )
-        # A member of the secretariat can set this state directly still
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), 1)
         draft = WgDraftFactory(group=role.group)

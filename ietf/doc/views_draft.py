@@ -1674,8 +1674,6 @@ class ChangeStreamStateForm(forms.Form):
         doc = kwargs.pop("doc")
         state_type = kwargs.pop("state_type")
         self.can_set_sub_pub = kwargs.pop("can_set_sub_pub")
-        self.can_set_wg_lc = kwargs.pop("can_set_wg_lc")
-        self.can_set_call_for_adoption = kwargs.pop("can_set_call_for_adoption")
         self.stream = kwargs.pop("stream")
         super(ChangeStreamStateForm, self).__init__(*args, **kwargs)
 
@@ -1692,16 +1690,7 @@ class ChangeStreamStateForm(forms.Form):
             else:
                 f.queryset = f.queryset.exclude(slug='sub-pub')
                 help_text_items.append("You may not set the 'Submitted to IESG for Publication' using this form - Use the button above or the document's main page to request publication.")
-            if self.can_set_wg_lc:
-                help_text_items.append("Only select 'In WG Last Call' to correct errors. This is not how to issue a working group last call.")
-            else:
-                f.queryset = f.queryset.exclude(slug='wg-lc')
-                help_text_items.append("You may not set the 'In WG Last Call' state using this form - Use the document's action helper view to issues a WG LC.")
-            if self.can_set_call_for_adoption:
-                help_text_items.append("Only select 'Call For Adoption By WG Issued' to correct errors. This is not how to issue a call for adoption.")
-            else:
-                f.queryset = f.queryset.exclude(slug='c-adopt')
-                help_text_items.append("You may not set the 'In WG Last Call' state using this form - Use the document's action helper view to issue a call for adoption.")                
+            help_text_items.append("Only use this form in unusual circumstances when issuing call for adoption or working group last call.")
             f.help_text = " ".join(help_text_items)
 
         f = self.fields['tags']
@@ -1714,10 +1703,6 @@ class ChangeStreamStateForm(forms.Form):
         new_state = self.cleaned_data.get('new_state')
         if new_state.slug=='sub-pub' and not self.can_set_sub_pub:
             raise forms.ValidationError('You may not set the %s state using this form. Use the "Submit to IESG for Publication" button on the document\'s main page instead. If that button does not appear, the document may already have IESG state. Ask your Area Director or the Secretariat for help.'%new_state.name)
-        if new_state.slug=='wg-lc' and not self.can_set_wg_lc:
-            raise forms.ValidationError('You may not set the %s state using this form. Use the "Issue Working Group Last Call" button on the document\'s action helper view instead. If that button does not appear, the document may not be in an appropriate current state. Ask your Area Director or the Secretariat for help.'%new_state.name)
-        if new_state.slug=='c-adopt' and not self.can_set_call_for_adoption:
-            raise forms.ValidationError('You may not set the %s state using this form. Use the "Issue Call for Adoption" button on the document\'s action helper view instead. If that button does not appear, the document may not be in an appropriate current state. Ask your Area Director or the Secretariat for help.'%new_state.name)        
         return new_state
          
 
@@ -1772,8 +1757,6 @@ def change_stream_state(request, name, state_type):
 
     # These tell the form to allow directly setting the state to fix up errors.
     can_set_sub_pub = has_role(request.user,('Secretariat','Area Director')) or (prev_state and prev_state.slug=='sub-pub')
-    can_set_wg_lc = has_role(request.user,('Secretariat','Area Director')) or (prev_state and prev_state.slug=='wg-lc')
-    can_set_call_for_adoption = has_role(request.user,('Secretariat','Area Director')) or (prev_state and prev_state.slug=='c-adopt')
 
     if request.method == 'POST':
         form = ChangeStreamStateForm(
@@ -1781,8 +1764,6 @@ def change_stream_state(request, name, state_type):
             doc=doc,
             state_type=state_type,
             can_set_sub_pub=can_set_sub_pub,
-            can_set_wg_lc=can_set_wg_lc,
-            can_set_call_for_adoption=can_set_call_for_adoption,
             stream=doc.stream,
         )
         if form.is_valid():
@@ -1848,8 +1829,6 @@ def change_stream_state(request, name, state_type):
             doc=doc,
             state_type=state_type,
             can_set_sub_pub=can_set_sub_pub,
-            can_set_wg_lc=can_set_wg_lc,
-            can_set_call_for_adoption=can_set_call_for_adoption,
             stream=doc.stream,
         )
 
