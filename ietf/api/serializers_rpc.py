@@ -10,9 +10,21 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from ietf.doc.expire import move_draft_files_to_archive
-from ietf.doc.models import DocumentAuthor, Document, RfcAuthor, RelatedDocument, State, \
-    DocEvent
-from ietf.doc.utils import default_consensus, prettify_std_name, update_action_holders
+from ietf.doc.models import (
+    DocumentAuthor,
+    Document,
+    RelatedDocument,
+    State,
+    DocEvent,
+    RfcAuthor,
+)
+from ietf.doc.serializers import RfcAuthorSerializer
+from ietf.doc.utils import (
+    default_consensus,
+    prettify_std_name,
+    update_action_holders,
+    update_rfcauthors,
+)
 from ietf.group.models import Group
 from ietf.name.models import StreamName, StdLevelName, FormalLanguageName
 from ietf.person.models import Person
@@ -201,22 +213,32 @@ class ReferenceSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "name"]
 
 
-class AuthorSerializer(serializers.ModelSerializer):
-    """Serialize an RfcAuthor record
+class EditableRfcSerializer(serializers.ModelSerializer):
+    # Would be nice to reconcile this with ietf.doc.serializers.RfcSerializer.
+    # The purposes of that serializer (representing data for Red) and this one
+    # (accepting updates from Purple) are different enough that separate formats
+    # may be needed, but if not it'd be nice to have a single RfcSerializer that
+    # can serve both.
+    #
+    # For now, only handles authors
+    authors = RfcAuthorSerializer(many=True, min_length=1, source="rfcauthor_set")
 
-    todo fix naming confusion with ietf.doc.serializers.RfcAuthorSerializer
-    """
     class Meta:
-        model = RfcAuthor
-        fields = [
-            "id",
-            "titlepage_name",
-            "is_editor",
-            "person",
-            "email",
-            "affiliation",
-            "country",
-        ]
+        model = Document
+        fields = ["id", "authors"]
+
+    def update(self, instance, validated_data):
+        assert isinstance(instance, Document)
+        authors_data = validated_data.pop("rfcauthor_set", None)
+        if authors_data is not None:
+            # Construct unsaved instances from validated author data
+            new_authors = [RfcAuthor(**ad) for ad in authors_data]
+            # Update the RFC with the new author set
+            with transaction.atomic():
+                change_events = update_rfcauthors(instance, new_authors)
+                for event in change_events:
+                    event.save()
+        return instance
 
 
 class RfcPubSerializer(serializers.ModelSerializer):
@@ -273,7 +295,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
             regex=r"^(bcp|std|fyi)[1-9][0-9]{0,4}$", 
         )
     )
-    authors = AuthorSerializer(many=True)
+    authors = RfcAuthorSerializer(many=True)
 
     class Meta:
         model = Document

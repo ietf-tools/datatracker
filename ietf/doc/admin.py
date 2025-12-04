@@ -13,7 +13,8 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
     ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
-    BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject, RfcAuthor )
+    BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject, RfcAuthor,
+    EditedRfcAuthorsDocEvent)
 
 from ietf.utils.validators import validate_external_resource_value
 
@@ -173,6 +174,7 @@ admin.site.register(LastCallDocEvent, DocEventAdmin)
 admin.site.register(TelechatDocEvent, DocEventAdmin)
 admin.site.register(InitialReviewDocEvent, DocEventAdmin)
 admin.site.register(EditedAuthorsDocEvent, DocEventAdmin)
+admin.site.register(EditedRfcAuthorsDocEvent, DocEventAdmin)
 admin.site.register(IanaExpertDocEvent, DocEventAdmin)
 
 class BallotPositionDocEventAdmin(DocEventAdmin):

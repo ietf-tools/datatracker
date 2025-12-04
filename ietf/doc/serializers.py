@@ -15,7 +15,6 @@ from .models import Document, DocumentAuthor, RfcAuthor
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
     """Serializer for a DocumentAuthor in a response"""
-    email = serializers.EmailField(source="email.address", required=False)
     datatracker_person_path = serializers.URLField(
         source="person.get_absolute_url",
         required=False,
@@ -28,7 +27,7 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
             "titlepage_name",
             "is_editor",
             "person",
-            "email",
+            "email",  # relies on email.pk being email.address
             "affiliation",
             "country",
             "datatracker_person_path",
@@ -53,6 +52,26 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
                 order=document_author.order,
             )
         return super().to_representation(instance)
+
+    def validate(self, data):
+        email = data.get("email")
+        if email is not None:
+            person = data.get("person")
+            if person is None:
+                raise serializers.ValidationError(
+                    {
+                        "email": "cannot have an email without a person",
+                    },
+                    code="email-without-person",
+                )
+            if email.person_id != person.pk:
+                raise serializers.ValidationError(
+                    {
+                        "email": "email must belong to person",
+                    },
+                    code="email-person-mismatch",
+                )
+        return data
 
 
 @dataclass
