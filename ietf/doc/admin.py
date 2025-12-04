@@ -8,13 +8,13 @@ from django import forms
 from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document, RelatedDocHistory,
-                     DocHistoryAuthor, DocHistory, DocReminder, DocEvent, NewRevisionDocEvent,
-                     StateDocEvent, ConsensusDocEvent, BallotType, BallotDocEvent, WriteupDocEvent, LastCallDocEvent,
-                     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
-                     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
-                     ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
-                     BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject, RfcAuthor,
-                     EditedRfcAuthorsDocEvent)
+    DocHistoryAuthor, DocHistory, DocReminder, DocEvent, NewRevisionDocEvent,
+    StateDocEvent, ConsensusDocEvent, BallotType, BallotDocEvent, WriteupDocEvent, LastCallDocEvent,
+    TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
+    AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
+    ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
+    BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject, RfcAuthor,
+    EditedRfcAuthorsDocEvent)
 
 from ietf.utils.validators import validate_external_resource_value
 

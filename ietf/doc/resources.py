@@ -12,14 +12,14 @@ from tastypie.cache import SimpleCache
 from ietf import api
 
 from ietf.doc.models import (BallotType, DeletedEvent, StateType, State, Document,
-                             DocumentAuthor, DocEvent, StateDocEvent, DocHistory, ConsensusDocEvent,
-                             TelechatDocEvent, DocReminder, LastCallDocEvent, NewRevisionDocEvent, WriteupDocEvent,
-                             InitialReviewDocEvent, DocHistoryAuthor, BallotDocEvent, RelatedDocument,
-                             RelatedDocHistory, BallotPositionDocEvent, AddedMessageEvent, SubmissionDocEvent,
-                             ReviewRequestDocEvent, ReviewAssignmentDocEvent, EditedAuthorsDocEvent, DocumentURL,
-                             IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
-                             BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject, RfcAuthor,
-                             EditedRfcAuthorsDocEvent)
+    DocumentAuthor, DocEvent, StateDocEvent, DocHistory, ConsensusDocEvent,
+    TelechatDocEvent, DocReminder, LastCallDocEvent, NewRevisionDocEvent, WriteupDocEvent,
+    InitialReviewDocEvent, DocHistoryAuthor, BallotDocEvent, RelatedDocument,
+    RelatedDocHistory, BallotPositionDocEvent, AddedMessageEvent, SubmissionDocEvent,
+    ReviewRequestDocEvent, ReviewAssignmentDocEvent, EditedAuthorsDocEvent, DocumentURL,
+    IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
+    BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject, RfcAuthor,
+    EditedRfcAuthorsDocEvent)
 
 from ietf.name.resources import BallotPositionNameResource, DocTypeNameResource
 class BallotTypeResource(ModelResource):
