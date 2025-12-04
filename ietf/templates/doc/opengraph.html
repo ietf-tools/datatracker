@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2016-2020, All Rights Reserved #}
+{# Copyright The IETF Trust 2016-2025, All Rights Reserved #}
 {% load origin %}
 {% load static %}
 {% load ietf_filters %}
@@ -36,7 +36,7 @@
 {% else %}{# TODO: We need a card image for individual I-Ds. #}
 <meta property="article:section" content="Individual Internet-Draft">
 {% endif %}
-{% if doc.pk %}{% for author in doc.documentauthor_set.all %}<meta property="article:author" content="{{ author.person.name}}">
+{% if doc.pk %}{% for author_name in doc.author_names %}<meta property="article:author" content="{{ author_name }}">
 {% endfor %}{% endif %}
 {% if published %}<meta property="article:published_time" content="{{ published.time|date:'Y-m-d' }}">{% endif %}
 {% if expires %}<meta property="article:expiration_time" content="{{ expires.time|date:'Y-m-d' }}">{% endif %}
