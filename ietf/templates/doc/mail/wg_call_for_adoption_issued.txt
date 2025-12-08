@@ -7,7 +7,7 @@ This Working Group Call for Adoption ends on {{ end_date }}
 Abstract: 
 {{ doc.abstract }}
 
-Please reply to this message keeping {{ wg_list }} in copy by indicating whether you support or not the adoption of this draft as a {{group.acronym}} WG document. Comments to explain your preference are highly appreciated. 
+Please reply to this message and indicate whether or not you support adoption of this Internet-Draft by the {{group.acronym}} WG. Comments to explain your preference are greatly appreciated. Please reply to all recipients of this message and include this message in your response.
 
 Authors, and WG participants in general, are reminded of the Intellectual Property Rights (IPR) disclosure obligations described in BCP 79 [2]. Appropriate IPR disclosures required for full conformance with the provisions of BCP 78 [1] and BCP 79 [2] must be filed, if you are aware of any. Sanctions available for application to violators of IETF IPR Policy can be found at [3].
 
