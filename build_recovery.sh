@@ -15,7 +15,7 @@
 # process the diff ignoring expected differences and reporting on any surprises
 
 echo "Restoring older production dump..."
-pg_restore -c -h db -U django -d datatracker 2025-12-08T0640.dump 2>&1 | grep -v 'role "datatracker" does not exist' | grep -v "OWNER TO datatracker" | grep -v "^$"
+pg_restore -c -h db -U django -d datatracker 2025-12-08T1640.dump 2>&1 | grep -v 'role "datatracker" does not exist' | grep -v "OWNER TO datatracker" | grep -v "^$"
 echo "Dumping plaintext 'before.sql'..."
 pg_dump -c -h db -U django -d datatracker -f before.sql
 echo

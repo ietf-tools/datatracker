@@ -18,19 +18,11 @@ def main(source_file):
             right_side = []
         elif line.startswith("< COPY"):
             if set(left_side)!=set(right_side):
-                if table_in_progress in [
-                    "datatracker.person_historicalemail",
-                    "datatracker.review_historicalreviewassignment",
-                    "datatracker.review_historicalreviewrequest",
-                ]:
-                    assert(len(left_side)==0)
-                    print(f"Encountered expected new rows in {table_in_progress}")
-                else:
-                    print(f"Unexpected difference at {table_in_progress}")
-                    print("Left side")
-                    print("".join(left_side))
-                    print("Right side")
-                    print("".join(right_side))
+                print(f"Unexpected difference at {table_in_progress}")
+                print("Left side")
+                print("".join(left_side))
+                print("Right side")
+                print("".join(right_side))
             table_in_progress = line.split()[2]
             left_side = []
             right_side = []
