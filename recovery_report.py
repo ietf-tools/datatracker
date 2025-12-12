@@ -1,5 +1,7 @@
 import sys
 
+from hashlib import sha384
+
 def main(source_file):
     source_lines = open(source_file, "r").readlines()
     table_in_progress = None
@@ -35,6 +37,10 @@ def main(source_file):
                 raise Exception(f"Unexpeced line encountered: {line}")
     # In case the last line was a data line
     assert(set(left_side)==set(right_side))
+    digest = sha384()
+    with open("recovery.sql","rb") as f:
+        digest.update(f.read())
+    assert digest.hexdigest() == "6944d0dc7d0b8b2bb582072f6dd9ca806700ac79ee3a3b3b00c07a6a08e73515312bcff0d9dbbdafd1f332721d96276a"
     print("Recovery is as expected")
 
 

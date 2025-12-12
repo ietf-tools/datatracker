@@ -15,22 +15,22 @@
 # process the diff ignoring expected differences and reporting on any surprises
 
 echo "Restoring older production dump..."
-pg_restore -c -h db -U django -d datatracker 2025-12-08T1640.dump 2>&1 | grep -v 'role "datatracker" does not exist' | grep -v "OWNER TO datatracker" | grep -v "^$"
+pg_restore -c -h db -U django -d datatracker 2025-12-08T0640.dump 2>&1 | grep -v 'role "datatracker" does not exist' | grep -v "OWNER TO datatracker" | grep -v 'role "postgres" does not exist' | grep -v "OWNER to postgres" | grep -v "pg_restore: warning: errors ignored on restore: 439" | grep -v "^$"
 echo "Dumping plaintext 'before.sql'..."
 pg_dump -c -h db -U django -d datatracker -f before.sql
-echo
+echo "Deleting target Email object..."
 echo "from ietf.person.models import Email; Email.objects.filter(address='shares@ndzh.com.').delete()" | ./ietf/manage.py shell
-echo
+echo "Dumping plaintext 'after.sql'..."
 pg_dump -c -h db -U django -d datatracker -f after.sql
 echo "Building recovery.sql..."
 cat after.sql | grep -v "^COPY " > after_nocopy.sql
 diff before.sql after_nocopy.sql > diff_recovery.txt
 python extract_recovery.py diff_recovery.txt recovery.sql
 echo "Applying recovery.sql..."
-psql -h db -U django -d datatracker -f recovery.sql
+psql -h db -U django -d datatracker -f recovery.sql | egrep -v "^(COPY|DELETE) [0-9]+$"
 echo "Dumping plaintext 'recovered.sql'..."
 pg_dump -c -h db -U django -d datatracker -f recovered.sql
 echo "Building recovery report..."
 cat recovered.sql | grep -v "^COPY " > recovered_nocopy.sql
 diff before.sql recovered_nocopy.sql > diff_recovered.txt
-# python recovery_report.py diff_recovered.txt
+python recovery_report.py diff_recovered.txt
