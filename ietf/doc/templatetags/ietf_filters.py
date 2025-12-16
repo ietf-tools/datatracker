@@ -1017,3 +1017,61 @@ def is_in_stream(doc):
     elif stream == "editorial":
         return True
     return False
+
+
+@register.filter
+def is_doc_ietf_adoptable(doc):
+    return doc.stream_id is None or all(
+        [
+            doc.stream_id == "ietf",
+            doc.get_state_slug("draft-stream-ietf")
+            not in [
+                "c-adopt",
+                "adopt-wg",
+                "info",
+                "wg-doc",
+                "parked",
+                "dead",
+                "wg-lc",
+                "waiting-for-implementation",
+                "chair-w",
+                "writeupw",
+                "sub-pub",
+            ],
+            doc.get_state_slug("draft") != "rfc",
+            doc.became_rfc() is None,
+        ]
+    )
+
+
+@register.filter
+def can_issue_ietf_wg_lc(doc):
+    return all(
+        [
+            doc.stream_id == "ietf",
+            doc.get_state_slug("draft-stream-ietf")
+            not in ["wg-cand", "c-adopt", "wg-lc"],
+            doc.get_state_slug("draft") != "rfc",
+            doc.became_rfc() is None,
+        ]
+    )
+
+
+@register.filter
+def can_submit_to_iesg(doc):
+    return all(
+        [
+            doc.stream_id == "ietf",
+            doc.get_state_slug("draft-iesg") == "idexists",
+            doc.get_state_slug("draft-stream-ietf") not in ["wg-cand", "c-adopt"],
+        ]
+    )
+
+
+@register.filter
+def has_had_ietf_wg_lc(doc):
+    return (
+        doc.stream_id == "ietf"
+        and doc.docevent_set.filter(statedocevent__state__slug="wg-lc").exists()
+    )
+
