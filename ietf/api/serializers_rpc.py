@@ -545,7 +545,14 @@ class RfcFileSerializer(serializers.Serializer):
     # in a ListField, so we use that to convey the file format of each item. There
     # are other options we could consider (e.g., a structured CharField) but this
     # works.
-    allowed_extensions = (".xml", ".txt", ".html", ".txt.pdf")
+    allowed_extensions = (
+        ".html",
+        ".json",
+        ".notprepped.xml",
+        ".pdf",
+        ".txt",
+        ".xml",
+    )
 
     rfc = serializers.SlugRelatedField(
         slug_field="rfc_number",
