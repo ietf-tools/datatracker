@@ -135,6 +135,9 @@ def post_request(worker, req, environ, resp):
 def post_fork(server, worker):
     server.log.info("Worker spawned (pid: %s)", worker.pid)
 
+    # Setting DATATRACKER_OPENTELEMETRY_ENABLE=all in the environment will enable all
+    # opentelemetry instrumentations. Individual instrumentations can be selected by
+    # using a space-separated list. See the code below for available instrumentations.
     telemetry_env = os.environ.get("DATATRACKER_OPENTELEMETRY_ENABLE", "").strip()
     if telemetry_env != "":
         enabled_telemetry = [tok.strip().lower() for tok in telemetry_env.split()]
