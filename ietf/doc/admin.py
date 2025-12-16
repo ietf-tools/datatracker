@@ -33,8 +33,6 @@ class DocAuthorInline(SaferTabularInline):
     model = DocumentAuthor
     raw_id_fields = ['person', 'email']
     extra = 1
-    can_delete = False
-    show_change_link = True
 
 class DocActionHolderInline(SaferTabularInline):
     model = DocumentActionHolder
