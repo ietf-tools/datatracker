@@ -15,6 +15,7 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
     ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
     BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject )
 
+from ietf.utils.admin import SaferTabularInline
 from ietf.utils.validators import validate_external_resource_value
 
 class StateTypeAdmin(admin.ModelAdmin):
@@ -28,17 +29,19 @@ class StateAdmin(admin.ModelAdmin):
     filter_horizontal = ["next_states"]
 admin.site.register(State, StateAdmin)
 
-class DocAuthorInline(admin.TabularInline):
+class DocAuthorInline(SaferTabularInline):
     model = DocumentAuthor
     raw_id_fields = ['person', 'email']
     extra = 1
+    can_delete = False
+    show_change_link = True
 
-class DocActionHolderInline(admin.TabularInline):
+class DocActionHolderInline(SaferTabularInline):
     model = DocumentActionHolder
     raw_id_fields = ['person']
     extra = 1
 
-class RelatedDocumentInline(admin.TabularInline):
+class RelatedDocumentInline(SaferTabularInline):
     model = RelatedDocument
     fk_name= 'source'
     def this(self, instance):
@@ -48,7 +51,7 @@ class RelatedDocumentInline(admin.TabularInline):
     raw_id_fields = ['target']
     extra = 1
 
-class AdditionalUrlInLine(admin.TabularInline):
+class AdditionalUrlInLine(SaferTabularInline):
     model = DocumentURL
     fields = ['tag','desc','url',]
     extra = 1

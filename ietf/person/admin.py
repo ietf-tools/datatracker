@@ -7,6 +7,7 @@ from django import forms
 from ietf.person.models import Email, Alias, Person, PersonalApiKey, PersonEvent, PersonApiKeyEvent, PersonExtResource
 from ietf.person.name import name_parts
 
+from ietf.utils.admin import SaferStackedInline, SaferTabularInline
 from ietf.utils.validators import validate_external_resource_value
 
 
@@ -16,7 +17,7 @@ class EmailAdmin(simple_history.admin.SimpleHistoryAdmin):
     search_fields = ["address", "person__name", ]
 admin.site.register(Email, EmailAdmin)
     
-class EmailInline(admin.TabularInline):
+class EmailInline(SaferTabularInline):
     model = Email
 
 class AliasAdmin(admin.ModelAdmin):
@@ -25,7 +26,7 @@ class AliasAdmin(admin.ModelAdmin):
     raw_id_fields = ["person"]
 admin.site.register(Alias, AliasAdmin)
 
-class AliasInline(admin.StackedInline):
+class AliasInline(SaferStackedInline):
     model = Alias
 
 class PersonAdmin(simple_history.admin.SimpleHistoryAdmin):
