@@ -51,8 +51,9 @@ from ietf.submit.utils import (expirable_submissions, expire_submission, find_su
                                process_submission_xml, process_uploaded_submission, 
                                process_and_validate_submission, apply_yang_checker_to_draft, 
                                run_all_yang_model_checks)
+from ietf.submit.views import access_token_is_valid, auth_token_is_valid
 from ietf.utils import tool_version
-from ietf.utils.accesstoken import generate_access_token
+from ietf.utils.accesstoken import generate_access_token, generate_random_key
 from ietf.utils.mail import outbox, get_payload_text
 from ietf.utils.test_runner import TestBlobstoreManager
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
@@ -3500,3 +3501,31 @@ class SubmissionErrorTests(TestCase):
             mock_sanitize_message.call_args_list,
             [mock.call("hi"), mock.call("there")],
         )
+
+
+class HelperTests(TestCase):
+    def test_access_token_is_valid(self):
+        submission: Submission = SubmissionFactory()  # type: ignore
+        valid_token = submission.access_token()
+        access_key = submission.access_key  # accept this for backwards compat
+        invalid_token = "not the valid token"
+        self.assertTrue(access_token_is_valid(submission, valid_token))
+        self.assertTrue(access_token_is_valid(submission, access_key))
+        self.assertFalse(access_token_is_valid(submission, invalid_token))
+
+    def test_auth_token_is_valid(self):
+        auth_key = generate_random_key()
+        submission: Submission = SubmissionFactory(auth_key = auth_key)  # type: ignore
+        valid_token = generate_access_token(submission.auth_key)
+        auth_key = submission.auth_key  # accept this for backwards compat
+        invalid_token = "not the valid token"
+        self.assertTrue(auth_token_is_valid(submission, valid_token))
+        self.assertTrue(auth_token_is_valid(submission, auth_key))
+        self.assertFalse(auth_token_is_valid(submission, invalid_token))
+
+        submission.auth_key = ""
+        submission.save()
+        self.assertFalse(auth_token_is_valid(submission, valid_token))
+        self.assertFalse(auth_token_is_valid(submission, auth_key))
+        self.assertFalse(auth_token_is_valid(submission, invalid_token))
+        self.assertFalse(auth_token_is_valid(submission, ""))

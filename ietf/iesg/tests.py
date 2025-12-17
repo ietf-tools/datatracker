@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
+from collections import Counter
 import datetime
 import io
 import tarfile
@@ -24,7 +25,9 @@ from ietf.group.factories import RoleFactory, GroupFactory, DatedGroupMilestoneF
 from ietf.group.models import Group, GroupMilestone, Role
 from ietf.iesg.agenda import get_agenda_date, agenda_data, fill_in_agenda_administrivia, agenda_sections
 from ietf.iesg.models import TelechatDate, TelechatAgendaContent
+from ietf.iesg.utils import get_wg_dashboard_info
 from ietf.name.models import StreamName, TelechatAgendaSectionName
+from ietf.person.factories import PersonFactory
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.iesg.factories import IESGMgmtItemFactory, TelechatAgendaContentFactory
@@ -179,6 +182,1587 @@ class IESGTests(TestCase):
         
     def test_ietf_activity(self):
         url = urlreverse("ietf.iesg.views.ietf_activity")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+    def test_working_groups(self):
+        # Clean away the wasted built-for-every-test noise
+        Group.objects.filter(type__in=["wg", "area"]).delete()
+
+        (
+            area_summary,
+            area_totals,
+            ad_summary,
+            noad_summary,
+            ad_totals,
+            noad_totals,
+            totals,
+            wg_summary,
+        ) = get_wg_dashboard_info()
+        self.assertEqual(area_summary, [])
+        self.assertEqual(
+            area_totals, {"group_count": 0, "doc_count": 0, "page_count": 0}
+        )
+        self.assertEqual(ad_summary, [])
+        self.assertEqual(noad_summary, [])
+        self.assertEqual(
+            ad_totals,
+            {
+                "ad_group_count": 0,
+                "doc_group_count": 0,
+                "doc_count": 0,
+                "page_count": 0,
+            },
+        )
+        self.assertEqual(
+            noad_totals,
+            {
+                "ad_group_count": 0,
+                "doc_group_count": 0,
+                "doc_count": 0,
+                "page_count": 0,
+            },
+        )
+        self.assertEqual(
+            totals,
+            {
+                "group_count": 0,
+                "doc_count": 0,
+                "page_count": 0,
+                "groups_with_docs_count": 0,
+            },
+        )
+        self.assertEqual(wg_summary, [])
+
+        # Construct Areas with WGs similar in shape to a real moment of the IETF
+
+        # Note that this test construciton uses the first letter of the wg acronyms
+        # for convenience to switch on whether groups have documents with assigned ADs.
+        # (Search for ` if wg_acronym[0] > "g"`)
+        # There's no other significance to the names of the area directors or the
+        # acronyms of the areas and groups other than being distinct. Taking the
+        # values from sets of similar things hopefully helps with debugging the tests.
+
+        areas = {}
+        for area_acronym in ["red", "orange", "yellow", "green", "blue", "violet"]:
+            areas[area_acronym] = GroupFactory(type_id="area", acronym=area_acronym)
+        for ad, area, wgs in [
+            ("Alpha", "red", ["bassoon"]),
+            ("Bravo", "orange", ["celesta"]),
+            ("Charlie", "orange", ["clarinet", "cymbals"]),
+            ("Delta", "yellow", ["flute"]),
+            ("Echo", "yellow", ["glockenspiel"]),
+            ("Foxtrot", "green", ["gong", "guitar"]),
+            ("Golf", "green", ["harp"]),
+            ("Hotel", "blue", ["harpsichord"]),
+            ("Indigo", "blue", ["oboe", "organ"]),
+            ("Juliet", "violet", ["piano"]),
+            ("Kilo", "violet", ["piccolo"]),
+            ("Lima", "violet", ["saxophone", "tambourine"]),
+        ]:
+            p = Person.objects.filter(name=ad).first() or PersonFactory(name=ad)
+            RoleFactory(group=areas[area], person=p, name_id="ad")
+            for wg in wgs:
+                g = GroupFactory(acronym=wg, type_id="wg", parent=areas[area])
+                RoleFactory(group=g, person=p, name_id="ad")
+
+        # Some ADs have out of area groups
+        g = GroupFactory(acronym="timpani", parent=areas["orange"])
+        RoleFactory(group=g, person=Person.objects.get(name="Juliet"), name_id="ad")
+
+        (
+            area_summary,
+            area_totals,
+            ad_summary,
+            noad_summary,
+            ad_totals,
+            noad_totals,
+            totals,
+            wg_summary,
+        ) = get_wg_dashboard_info()
+
+        # checks for the expected result with area sorted by name
+        self.assertEqual(
+            area_summary,
+            [
+                {
+                    "area": "blue",
+                    "groups_in_area": 3,
+                    "groups_with_docs": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "area": "green",
+                    "groups_in_area": 3,
+                    "groups_with_docs": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "area": "orange",
+                    "groups_in_area": 4,
+                    "groups_with_docs": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "area": "red",
+                    "groups_in_area": 1,
+                    "groups_with_docs": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "area": "violet",
+                    "groups_in_area": 4,
+                    "groups_with_docs": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "area": "yellow",
+                    "groups_in_area": 2,
+                    "groups_with_docs": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+            ],
+        )
+        self.assertEqual(
+            area_totals, {"group_count": 0, "doc_count": 0, "page_count": 0}
+        )
+        self.assertEqual(
+            ad_summary,
+            [
+                {
+                    "ad": "Alpha",
+                    "area": "red",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Bravo",
+                    "area": "orange",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Charlie",
+                    "area": "orange",
+                    "ad_group_count": 2,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Delta",
+                    "area": "yellow",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Echo",
+                    "area": "yellow",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Foxtrot",
+                    "area": "green",
+                    "ad_group_count": 2,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Golf",
+                    "area": "green",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Hotel",
+                    "area": "blue",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Indigo",
+                    "area": "blue",
+                    "ad_group_count": 2,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Juliet",
+                    "area": "orange",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Juliet",
+                    "area": "violet",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Kilo",
+                    "area": "violet",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Lima",
+                    "area": "violet",
+                    "ad_group_count": 2,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+            ],
+        )
+        self.assertEqual(
+            noad_summary,
+            [
+                {
+                    "ad": "Alpha",
+                    "area": "red",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Bravo",
+                    "area": "orange",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Charlie",
+                    "area": "orange",
+                    "ad_group_count": 2,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Delta",
+                    "area": "yellow",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Echo",
+                    "area": "yellow",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Foxtrot",
+                    "area": "green",
+                    "ad_group_count": 2,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Golf",
+                    "area": "green",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Hotel",
+                    "area": "blue",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Indigo",
+                    "area": "blue",
+                    "ad_group_count": 2,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Juliet",
+                    "area": "orange",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Juliet",
+                    "area": "violet",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Kilo",
+                    "area": "violet",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+                {
+                    "ad": "Lima",
+                    "area": "violet",
+                    "ad_group_count": 2,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0,
+                    "doc_percent": 0,
+                    "page_percent": 0,
+                },
+            ],
+        )
+        self.assertEqual(
+            ad_totals,
+            {
+                "ad_group_count": 17,
+                "doc_group_count": 0,
+                "doc_count": 0,
+                "page_count": 0,
+            },
+        )
+        self.assertEqual(
+            noad_totals,
+            {
+                "ad_group_count": 17,
+                "doc_group_count": 0,
+                "doc_count": 0,
+                "page_count": 0,
+            },
+        )
+        self.assertEqual(
+            totals,
+            {
+                "group_count": 17,
+                "doc_count": 0,
+                "page_count": 0,
+                "groups_with_docs_count": 0,
+            },
+        )
+        self.assertEqual(
+            wg_summary,
+            [
+                {
+                    "wg": "bassoon",
+                    "area": "red",
+                    "ad": "Alpha",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "celesta",
+                    "area": "orange",
+                    "ad": "Bravo",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "clarinet",
+                    "area": "orange",
+                    "ad": "Charlie",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "cymbals",
+                    "area": "orange",
+                    "ad": "Charlie",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "flute",
+                    "area": "yellow",
+                    "ad": "Delta",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "glockenspiel",
+                    "area": "yellow",
+                    "ad": "Echo",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "gong",
+                    "area": "green",
+                    "ad": "Foxtrot",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "guitar",
+                    "area": "green",
+                    "ad": "Foxtrot",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "harp",
+                    "area": "green",
+                    "ad": "Golf",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "harpsichord",
+                    "area": "blue",
+                    "ad": "Hotel",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "oboe",
+                    "area": "blue",
+                    "ad": "Indigo",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "organ",
+                    "area": "blue",
+                    "ad": "Indigo",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "piano",
+                    "area": "violet",
+                    "ad": "Juliet",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "piccolo",
+                    "area": "violet",
+                    "ad": "Kilo",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "saxophone",
+                    "area": "violet",
+                    "ad": "Lima",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "tambourine",
+                    "area": "violet",
+                    "ad": "Lima",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "timpani",
+                    "area": "orange",
+                    "ad": "Juliet",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+            ],
+        )
+
+        # As seen above, all doc and page counts are currently 0
+
+        # We'll give a group a document but not assign it to its AD
+        WgDraftFactory(
+            group=Group.objects.get(acronym="saxophone"), pages=len("saxophone")
+        )
+        (
+            area_summary,
+            area_totals,
+            ad_summary,
+            noad_summary,
+            ad_totals,
+            noad_totals,
+            totals,
+            wg_summary,
+        ) = get_wg_dashboard_info()
+        count_violet_dicts = 0
+        for d in area_summary:
+            if d["area"] == "violet":
+                count_violet_dicts += 1
+                self.assertEqual(d["groups_with_docs"], 1)
+                self.assertEqual(d["doc_count"], 1)
+                self.assertEqual(d["page_count"], 9)
+                self.assertEqual(d["group_percent"], 100.0)
+                self.assertEqual(d["doc_percent"], 100.0)
+                self.assertEqual(d["page_percent"], 100.0)
+            else:
+                self.assertEqual(d["groups_with_docs"], 0)
+                self.assertEqual(d["doc_count"], 0)
+                self.assertEqual(d["page_count"], 0)
+                self.assertEqual(d["group_percent"], 0)
+                self.assertEqual(d["doc_percent"], 0)
+                self.assertEqual(d["page_percent"], 0)
+        self.assertEqual(count_violet_dicts, 1)
+
+        self.assertEqual(
+            area_totals, {"group_count": 1, "doc_count": 1, "page_count": 9}
+        )
+
+        # No AD has this document, even though it's in Lima's group
+        count_lima_dicts = 0
+        for d in ad_summary:
+            if d["ad"] == "Lima":
+                count_lima_dicts += 1
+            self.assertEqual(d["doc_group_count"], 0)
+            self.assertEqual(d["doc_count"], 0)
+            self.assertEqual(d["page_count"], 0)
+            self.assertEqual(d["group_percent"], 0)
+            self.assertEqual(d["doc_percent"], 0)
+            self.assertEqual(d["page_percent"], 0)
+        self.assertEqual(count_lima_dicts, 1)
+
+        # It's in Lima's group, so normally it will eventually land on Lima
+        count_lima_dicts = 0
+        for d in noad_summary:
+            if d["ad"] == "Lima":
+                count_lima_dicts += 1
+                self.assertEqual(d["doc_group_count"], 1)
+                self.assertEqual(d["doc_count"], 1)
+                self.assertEqual(d["page_count"], 9)
+                self.assertEqual(d["group_percent"], 100.0)
+                self.assertEqual(d["doc_percent"], 100.0)
+                self.assertEqual(d["page_percent"], 100.0)
+            else:
+                self.assertEqual(d["doc_group_count"], 0)
+                self.assertEqual(d["doc_count"], 0)
+                self.assertEqual(d["page_count"], 0)
+                self.assertEqual(d["group_percent"], 0)
+                self.assertEqual(d["doc_percent"], 0)
+                self.assertEqual(d["page_percent"], 0)
+        self.assertEqual(count_lima_dicts, 1)
+
+        self.assertEqual(
+            ad_totals,
+            {
+                "ad_group_count": 17,
+                "doc_group_count": 0,
+                "doc_count": 0,
+                "page_count": 0,
+            },
+        )
+        self.assertEqual(
+            noad_totals,
+            {
+                "ad_group_count": 17,
+                "doc_group_count": 1,
+                "doc_count": 1,
+                "page_count": 9,
+            },
+        )
+        self.assertEqual(
+            totals,
+            {
+                "group_count": 17,
+                "doc_count": 1,
+                "page_count": 9,
+                "groups_with_docs_count": 1,
+            },
+        )
+
+        count_sax_dicts = 0
+        for d in wg_summary:
+            if d["wg"] == "saxophone":
+                count_sax_dicts += 1
+                self.assertEqual(d["doc_count"], 1)
+                self.assertEqual(d["page_count"], 9)
+            else:
+                self.assertEqual(d["doc_count"], 0)
+                self.assertEqual(d["page_count"], 0)
+        self.assertEqual(count_sax_dicts, 1)
+
+        # Assign that doc to Lima
+        self.assertEqual(Document.objects.count(), 1)
+        Document.objects.all().update(ad=Person.objects.get(name="Lima"))
+        (
+            area_summary,
+            area_totals,
+            ad_summary,
+            noad_summary,
+            ad_totals,
+            noad_totals,
+            totals,
+            wg_summary,
+        ) = get_wg_dashboard_info()
+        count_violet_dicts = 0
+        for d in area_summary:
+            if d["area"] == "violet":
+                count_violet_dicts += 1
+                self.assertEqual(d["groups_with_docs"], 1)
+                self.assertEqual(d["doc_count"], 1)
+                self.assertEqual(d["page_count"], 9)
+                self.assertEqual(d["group_percent"], 100.0)
+                self.assertEqual(d["doc_percent"], 100.0)
+                self.assertEqual(d["page_percent"], 100.0)
+            else:
+                self.assertEqual(d["groups_with_docs"], 0)
+                self.assertEqual(d["doc_count"], 0)
+                self.assertEqual(d["page_count"], 0)
+                self.assertEqual(d["group_percent"], 0)
+                self.assertEqual(d["doc_percent"], 0)
+                self.assertEqual(d["page_percent"], 0)
+        self.assertEqual(count_violet_dicts, 1)
+
+        self.assertEqual(
+            area_totals, {"group_count": 1, "doc_count": 1, "page_count": 9}
+        )
+
+        # This time it will show up as a doc assigned to Lima
+        count_lima_dicts = 0
+        for d in ad_summary:
+            if d["ad"] == "Lima":
+                count_lima_dicts += 1
+                self.assertEqual(d["doc_group_count"], 1)
+                self.assertEqual(d["doc_count"], 1)
+                self.assertEqual(d["page_count"], 9)
+                self.assertEqual(d["group_percent"], 100.0)
+                self.assertEqual(d["doc_percent"], 100.0)
+                self.assertEqual(d["page_percent"], 100.0)
+            else:
+                self.assertEqual(d["doc_group_count"], 0)
+                self.assertEqual(d["doc_count"], 0)
+                self.assertEqual(d["page_count"], 0)
+                self.assertEqual(d["group_percent"], 0)
+                self.assertEqual(d["doc_percent"], 0)
+                self.assertEqual(d["page_percent"], 0)
+        self.assertEqual(count_lima_dicts, 1)
+
+        # and there will be no noad documents
+        count_lima_dicts = 0
+        for d in noad_summary:
+            if d["ad"] == "Lima":
+                count_lima_dicts += 1
+            self.assertEqual(d["doc_group_count"], 0)
+            self.assertEqual(d["doc_count"], 0)
+            self.assertEqual(d["page_count"], 0)
+            self.assertEqual(d["group_percent"], 0)
+            self.assertEqual(d["doc_percent"], 0)
+            self.assertEqual(d["page_percent"], 0)
+        self.assertEqual(count_lima_dicts, 1)
+
+        self.assertEqual(
+            ad_totals,
+            {
+                "ad_group_count": 17,
+                "doc_group_count": 1,
+                "doc_count": 1,
+                "page_count": 9,
+            },
+        )
+        self.assertEqual(
+            noad_totals,
+            {
+                "ad_group_count": 17,
+                "doc_group_count": 0,
+                "doc_count": 0,
+                "page_count": 0,
+            },
+        )
+        self.assertEqual(
+            totals,
+            {
+                "group_count": 17,
+                "doc_count": 1,
+                "page_count": 9,
+                "groups_with_docs_count": 1,
+            },
+        )
+
+        count_sax_dicts = 0
+        for d in wg_summary:
+            if d["wg"] == "saxophone":
+                count_sax_dicts += 1
+                self.assertEqual(d["doc_count"], 1)
+                self.assertEqual(d["page_count"], 9)
+            else:
+                self.assertEqual(d["doc_count"], 0)
+                self.assertEqual(d["page_count"], 0)
+        self.assertEqual(count_sax_dicts, 1)
+
+        # Now give Lima a document in a group that's not in their area:
+        WgDraftFactory(
+            group=Group.objects.get(acronym="gong"),
+            pages=len("gong"),
+            ad=Person.objects.get(name="Lima"),
+        )
+        (
+            area_summary,
+            area_totals,
+            ad_summary,
+            noad_summary,
+            ad_totals,
+            noad_totals,
+            totals,
+            wg_summary,
+        ) = get_wg_dashboard_info()
+        seen_dicts = Counter([d["area"] for d in area_summary])
+        for d in areas:
+            self.assertEqual(seen_dicts[area], 1 if area in ["violet", "green"] else 0)
+        for d in area_summary:
+            if d["area"] in ["violet", "green"]:
+                self.assertEqual(d["doc_count"], 1)
+                self.assertEqual(d["page_count"], 9 if d["area"] == "violet" else 4)
+                self.assertEqual(d["group_percent"], 50)
+                self.assertEqual(d["doc_percent"], 50)
+                self.assertEqual(
+                    d["page_percent"],
+                    100 * 9 / 13 if d["area"] == "violet" else 100 * 4 / 13,
+                )
+            else:
+                self.assertEqual(d["doc_count"], 0)
+                self.assertEqual(d["page_count"], 0)
+                self.assertEqual(d["group_percent"], 0)
+                self.assertEqual(d["doc_percent"], 0)
+                self.assertEqual(d["page_percent"], 0)
+
+        self.assertEqual(
+            area_totals, {"group_count": 2, "doc_count": 2, "page_count": 13}
+        )
+
+        for d in ad_summary:
+            if d["ad"] == "Lima":
+                self.assertEqual(d["doc_group_count"], 1)
+                self.assertEqual(d["doc_count"], 1)
+                self.assertEqual(d["page_count"], 9 if d["area"] == "violet" else 4)
+                self.assertEqual(d["group_percent"], 50)
+                self.assertEqual(d["doc_percent"], 50)
+                self.assertEqual(
+                    d["page_percent"],
+                    100 * 9 / 13 if d["area"] == "violet" else 100 * 4 / 13,
+                )
+            else:
+                self.assertEqual(d["doc_group_count"], 0)
+                self.assertEqual(
+                    d["doc_count"], 0
+                )  # Note in particular this is 0 for Foxtrot
+                self.assertEqual(d["page_count"], 0)
+                self.assertEqual(d["group_percent"], 0)
+                self.assertEqual(d["doc_percent"], 0)
+                self.assertEqual(d["page_percent"], 0)
+
+        for d in wg_summary:
+            if d["wg"] == "gong":
+                # Lima's doc in gong above counts at the dict for gong even though the ad reported there is Foxtrot.
+                self.assertEqual(
+                    d,
+                    {
+                        "wg": "gong",
+                        "area": "green",
+                        "ad": "Foxtrot",
+                        "doc_count": 1,
+                        "page_count": 4,
+                        "rfc_count": 0,
+                        "recent_rfc_count": 0,
+                    },
+                )
+            elif d["ad"] == "Lima":
+                self.assertEqual(
+                    d["area"], "violet"
+                )  # The out of area assignment is not reflected in the wg_summary at all.
+
+        # Now pile on a lot of documents
+        for wg_acronym in [
+            "bassoon",
+            "celesta",
+            "clarinet",
+            "cymbals",
+            "flute",
+            "glockenspiel",
+            "gong",
+            "guitar",
+            "harp",
+            "harpsichord",
+            "oboe",
+            "organ",
+            "piano",
+            "piccolo",
+            "saxophone",
+            "tambourine",
+            "timpani",
+        ]:
+            if wg_acronym in ["bassoon", "celesta"]:
+                continue  # Those WGs have no docs
+            # The rest have a doc that's not assigned to any ad
+            WgDraftFactory(
+                group=Group.objects.get(acronym=wg_acronym), pages=len(wg_acronym)
+            )
+            if wg_acronym[0] > "g":
+                # Some have a doc assigned to the responsible ad
+                WgDraftFactory(
+                    group=Group.objects.get(acronym=wg_acronym),
+                    pages=len(wg_acronym),
+                    ad=Role.objects.get(name_id="ad", group__acronym=wg_acronym).person,
+                )
+        # The other AD for an area might be covering a doc
+        WgDraftFactory(
+            group=Group.objects.get(acronym="saxophone"),
+            pages=len("saxophone"),
+            ad=Person.objects.get(name="Juliet"),
+        )
+        # An Ad not associated with the group or the area is responsible for a doc
+        WgDraftFactory(
+            group=Group.objects.get(acronym="bassoon"),
+            pages=len("bassoon"),
+            ad=Person.objects.get(name="Juliet"),
+        )
+
+        (
+            area_summary,
+            area_totals,
+            ad_summary,
+            noad_summary,
+            ad_totals,
+            noad_totals,
+            totals,
+            wg_summary,
+        ) = get_wg_dashboard_info()
+
+        self.assertEqual(
+            area_summary,
+            [
+                {
+                    "area": "blue",
+                    "groups_in_area": 3,
+                    "groups_with_docs": 3,
+                    "doc_count": 6,
+                    "page_count": 40,
+                    "group_percent": 18.75,
+                    "doc_percent": 21.428571428571427,
+                    "page_percent": 20.51282051282051,
+                },
+                {
+                    "area": "green",
+                    "groups_in_area": 3,
+                    "groups_with_docs": 3,
+                    "doc_count": 5,
+                    "page_count": 22,
+                    "group_percent": 18.75,
+                    "doc_percent": 17.857142857142858,
+                    "page_percent": 11.282051282051283,
+                },
+                {
+                    "area": "orange",
+                    "groups_in_area": 4,
+                    "groups_with_docs": 3,
+                    "doc_count": 4,
+                    "page_count": 29,
+                    "group_percent": 18.75,
+                    "doc_percent": 14.285714285714285,
+                    "page_percent": 14.871794871794872,
+                },
+                {
+                    "area": "red",
+                    "groups_in_area": 1,
+                    "groups_with_docs": 1,
+                    "doc_count": 1,
+                    "page_count": 7,
+                    "group_percent": 6.25,
+                    "doc_percent": 3.571428571428571,
+                    "page_percent": 3.5897435897435894,
+                },
+                {
+                    "area": "violet",
+                    "groups_in_area": 4,
+                    "groups_with_docs": 4,
+                    "doc_count": 10,
+                    "page_count": 80,
+                    "group_percent": 25.0,
+                    "doc_percent": 35.714285714285715,
+                    "page_percent": 41.02564102564102,
+                },
+                {
+                    "area": "yellow",
+                    "groups_in_area": 2,
+                    "groups_with_docs": 2,
+                    "doc_count": 2,
+                    "page_count": 17,
+                    "group_percent": 12.5,
+                    "doc_percent": 7.142857142857142,
+                    "page_percent": 8.717948717948717,
+                },
+            ],
+        )
+        self.assertEqual(
+            area_totals, {"group_count": 16, "doc_count": 28, "page_count": 195}
+        )
+        self.assertEqual(
+            ad_summary,
+            [
+                {
+                    "ad": "Alpha",
+                    "area": "red",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0.0,
+                    "doc_percent": 0.0,
+                    "page_percent": 0.0,
+                },
+                {
+                    "ad": "Bravo",
+                    "area": "orange",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0.0,
+                    "doc_percent": 0.0,
+                    "page_percent": 0.0,
+                },
+                {
+                    "ad": "Charlie",
+                    "area": "orange",
+                    "ad_group_count": 2,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0.0,
+                    "doc_percent": 0.0,
+                    "page_percent": 0.0,
+                },
+                {
+                    "ad": "Delta",
+                    "area": "yellow",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0.0,
+                    "doc_percent": 0.0,
+                    "page_percent": 0.0,
+                },
+                {
+                    "ad": "Echo",
+                    "area": "yellow",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0.0,
+                    "doc_percent": 0.0,
+                    "page_percent": 0.0,
+                },
+                {
+                    "ad": "Foxtrot",
+                    "area": "green",
+                    "ad_group_count": 2,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0.0,
+                    "doc_percent": 0.0,
+                    "page_percent": 0.0,
+                },
+                {
+                    "ad": "Golf",
+                    "area": "green",
+                    "ad_group_count": 1,
+                    "doc_group_count": 1,
+                    "doc_count": 1,
+                    "page_count": 4,
+                    "group_percent": 8.333333333333332,
+                    "doc_percent": 7.6923076923076925,
+                    "page_percent": 4.395604395604396,
+                },
+                {
+                    "ad": "Hotel",
+                    "area": "blue",
+                    "ad_group_count": 1,
+                    "doc_group_count": 1,
+                    "doc_count": 1,
+                    "page_count": 11,
+                    "group_percent": 8.333333333333332,
+                    "doc_percent": 7.6923076923076925,
+                    "page_percent": 12.087912087912088,
+                },
+                {
+                    "ad": "Indigo",
+                    "area": "blue",
+                    "ad_group_count": 2,
+                    "doc_group_count": 2,
+                    "doc_count": 2,
+                    "page_count": 9,
+                    "group_percent": 16.666666666666664,
+                    "doc_percent": 15.384615384615385,
+                    "page_percent": 9.89010989010989,
+                },
+                {
+                    "ad": "Juliet",
+                    "area": "orange",
+                    "ad_group_count": 1,
+                    "doc_group_count": 1,
+                    "doc_count": 1,
+                    "page_count": 7,
+                    "group_percent": 8.333333333333332,
+                    "doc_percent": 7.6923076923076925,
+                    "page_percent": 7.6923076923076925,
+                },
+                {
+                    "ad": "Juliet",
+                    "area": "red",
+                    "ad_group_count": 0,
+                    "doc_group_count": 1,
+                    "doc_count": 1,
+                    "page_count": 7,
+                    "group_percent": 8.333333333333332,
+                    "doc_percent": 7.6923076923076925,
+                    "page_percent": 7.6923076923076925,
+                },
+                {
+                    "ad": "Juliet",
+                    "area": "violet",
+                    "ad_group_count": 1,
+                    "doc_group_count": 2,
+                    "doc_count": 2,
+                    "page_count": 14,
+                    "group_percent": 16.666666666666664,
+                    "doc_percent": 15.384615384615385,
+                    "page_percent": 15.384615384615385,
+                },
+                {
+                    "ad": "Kilo",
+                    "area": "violet",
+                    "ad_group_count": 1,
+                    "doc_group_count": 1,
+                    "doc_count": 1,
+                    "page_count": 7,
+                    "group_percent": 8.333333333333332,
+                    "doc_percent": 7.6923076923076925,
+                    "page_percent": 7.6923076923076925,
+                },
+                {
+                    "ad": "Lima",
+                    "area": "green",
+                    "ad_group_count": 0,
+                    "doc_group_count": 1,
+                    "doc_count": 1,
+                    "page_count": 4,
+                    "group_percent": 8.333333333333332,
+                    "doc_percent": 7.6923076923076925,
+                    "page_percent": 4.395604395604396,
+                },
+                {
+                    "ad": "Lima",
+                    "area": "violet",
+                    "ad_group_count": 2,
+                    "doc_group_count": 2,
+                    "doc_count": 3,
+                    "page_count": 28,
+                    "group_percent": 16.666666666666664,
+                    "doc_percent": 23.076923076923077,
+                    "page_percent": 30.76923076923077,
+                },
+            ],
+        )
+        self.assertEqual(
+            noad_summary,
+            [
+                {
+                    "ad": "Alpha",
+                    "area": "red",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0.0,
+                    "doc_percent": 0.0,
+                    "page_percent": 0.0,
+                },
+                {
+                    "ad": "Bravo",
+                    "area": "orange",
+                    "ad_group_count": 1,
+                    "doc_group_count": 0,
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "group_percent": 0.0,
+                    "doc_percent": 0.0,
+                    "page_percent": 0.0,
+                },
+                {
+                    "ad": "Charlie",
+                    "area": "orange",
+                    "ad_group_count": 2,
+                    "doc_group_count": 2,
+                    "doc_count": 2,
+                    "page_count": 15,
+                    "group_percent": 13.333333333333334,
+                    "doc_percent": 13.333333333333334,
+                    "page_percent": 14.423076923076922,
+                },
+                {
+                    "ad": "Delta",
+                    "area": "yellow",
+                    "ad_group_count": 1,
+                    "doc_group_count": 1,
+                    "doc_count": 1,
+                    "page_count": 5,
+                    "group_percent": 6.666666666666667,
+                    "doc_percent": 6.666666666666667,
+                    "page_percent": 4.807692307692308,
+                },
+                {
+                    "ad": "Echo",
+                    "area": "yellow",
+                    "ad_group_count": 1,
+                    "doc_group_count": 1,
+                    "doc_count": 1,
+                    "page_count": 12,
+                    "group_percent": 6.666666666666667,
+                    "doc_percent": 6.666666666666667,
+                    "page_percent": 11.538461538461538,
+                },
+                {
+                    "ad": "Foxtrot",
+                    "area": "green",
+                    "ad_group_count": 2,
+                    "doc_group_count": 2,
+                    "doc_count": 2,
+                    "page_count": 10,
+                    "group_percent": 13.333333333333334,
+                    "doc_percent": 13.333333333333334,
+                    "page_percent": 9.615384615384617,
+                },
+                {
+                    "ad": "Golf",
+                    "area": "green",
+                    "ad_group_count": 1,
+                    "doc_group_count": 1,
+                    "doc_count": 1,
+                    "page_count": 4,
+                    "group_percent": 6.666666666666667,
+                    "doc_percent": 6.666666666666667,
+                    "page_percent": 3.8461538461538463,
+                },
+                {
+                    "ad": "Hotel",
+                    "area": "blue",
+                    "ad_group_count": 1,
+                    "doc_group_count": 1,
+                    "doc_count": 1,
+                    "page_count": 11,
+                    "group_percent": 6.666666666666667,
+                    "doc_percent": 6.666666666666667,
+                    "page_percent": 10.576923076923077,
+                },
+                {
+                    "ad": "Indigo",
+                    "area": "blue",
+                    "ad_group_count": 2,
+                    "doc_group_count": 2,
+                    "doc_count": 2,
+                    "page_count": 9,
+                    "group_percent": 13.333333333333334,
+                    "doc_percent": 13.333333333333334,
+                    "page_percent": 8.653846153846153,
+                },
+                {
+                    "ad": "Juliet",
+                    "area": "orange",
+                    "ad_group_count": 1,
+                    "doc_group_count": 1,
+                    "doc_count": 1,
+                    "page_count": 7,
+                    "group_percent": 6.666666666666667,
+                    "doc_percent": 6.666666666666667,
+                    "page_percent": 6.730769230769231,
+                },
+                {
+                    "ad": "Juliet",
+                    "area": "violet",
+                    "ad_group_count": 1,
+                    "doc_group_count": 1,
+                    "doc_count": 1,
+                    "page_count": 5,
+                    "group_percent": 6.666666666666667,
+                    "doc_percent": 6.666666666666667,
+                    "page_percent": 4.807692307692308,
+                },
+                {
+                    "ad": "Kilo",
+                    "area": "violet",
+                    "ad_group_count": 1,
+                    "doc_group_count": 1,
+                    "doc_count": 1,
+                    "page_count": 7,
+                    "group_percent": 6.666666666666667,
+                    "doc_percent": 6.666666666666667,
+                    "page_percent": 6.730769230769231,
+                },
+                {
+                    "ad": "Lima",
+                    "area": "violet",
+                    "ad_group_count": 2,
+                    "doc_group_count": 2,
+                    "doc_count": 2,
+                    "page_count": 19,
+                    "group_percent": 13.333333333333334,
+                    "doc_percent": 13.333333333333334,
+                    "page_percent": 18.269230769230766,
+                },
+            ],
+        )
+        self.assertEqual(
+            ad_totals,
+            {
+                "ad_group_count": 17,
+                "doc_group_count": 12,
+                "doc_count": 13,
+                "page_count": 91,
+            },
+        )
+        self.assertEqual(
+            noad_totals,
+            {
+                "ad_group_count": 17,
+                "doc_group_count": 15,
+                "doc_count": 15,
+                "page_count": 104,
+            },
+        )
+        self.assertEqual(
+            totals,
+            {
+                "group_count": 17,
+                "doc_count": 28,
+                "page_count": 195,
+                "groups_with_docs_count": 16,
+            },
+        )
+        self.assertEqual(
+            wg_summary,
+            [
+                {
+                    "wg": "bassoon",
+                    "area": "red",
+                    "ad": "Alpha",
+                    "doc_count": 1,
+                    "page_count": 7,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "celesta",
+                    "area": "orange",
+                    "ad": "Bravo",
+                    "doc_count": 0,
+                    "page_count": 0,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "clarinet",
+                    "area": "orange",
+                    "ad": "Charlie",
+                    "doc_count": 1,
+                    "page_count": 8,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "cymbals",
+                    "area": "orange",
+                    "ad": "Charlie",
+                    "doc_count": 1,
+                    "page_count": 7,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "flute",
+                    "area": "yellow",
+                    "ad": "Delta",
+                    "doc_count": 1,
+                    "page_count": 5,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "glockenspiel",
+                    "area": "yellow",
+                    "ad": "Echo",
+                    "doc_count": 1,
+                    "page_count": 12,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "gong",
+                    "area": "green",
+                    "ad": "Foxtrot",
+                    "doc_count": 2,
+                    "page_count": 8,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "guitar",
+                    "area": "green",
+                    "ad": "Foxtrot",
+                    "doc_count": 1,
+                    "page_count": 6,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "harp",
+                    "area": "green",
+                    "ad": "Golf",
+                    "doc_count": 2,
+                    "page_count": 8,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "harpsichord",
+                    "area": "blue",
+                    "ad": "Hotel",
+                    "doc_count": 2,
+                    "page_count": 22,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "oboe",
+                    "area": "blue",
+                    "ad": "Indigo",
+                    "doc_count": 2,
+                    "page_count": 8,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "organ",
+                    "area": "blue",
+                    "ad": "Indigo",
+                    "doc_count": 2,
+                    "page_count": 10,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "piano",
+                    "area": "violet",
+                    "ad": "Juliet",
+                    "doc_count": 2,
+                    "page_count": 10,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "piccolo",
+                    "area": "violet",
+                    "ad": "Kilo",
+                    "doc_count": 2,
+                    "page_count": 14,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "saxophone",
+                    "area": "violet",
+                    "ad": "Lima",
+                    "doc_count": 4,
+                    "page_count": 36,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "tambourine",
+                    "area": "violet",
+                    "ad": "Lima",
+                    "doc_count": 2,
+                    "page_count": 20,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+                {
+                    "wg": "timpani",
+                    "area": "orange",
+                    "ad": "Juliet",
+                    "doc_count": 2,
+                    "page_count": 14,
+                    "rfc_count": 0,
+                    "recent_rfc_count": 0,
+                },
+            ],
+        )
+
+        # Make sure the view doesn't _crash_ - the template is a dead-simple rendering of the dicts, but this test doesn't prove that
+        url = urlreverse("ietf.iesg.views.working_groups")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 

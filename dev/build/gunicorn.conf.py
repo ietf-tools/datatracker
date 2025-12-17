@@ -1,4 +1,16 @@
-# Copyright The IETF Trust 2024, All Rights Reserved
+# Copyright The IETF Trust 2024-2025, All Rights Reserved
+
+import os
+import ietf
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.instrumentation.django import DjangoInstrumentor
+from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
+from opentelemetry.instrumentation.pymemcache import PymemcacheInstrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
 # Configure security scheme headers for forwarded requests. Cloudflare sets X-Forwarded-Proto 
 # for us. Don't trust any of the other similar headers. Only trust the header if it's coming
@@ -119,3 +131,34 @@ def post_request(worker, req, environ, resp):
     in_flight = in_flight_by_pid.get(worker.pid, [])
     if request_description in in_flight:
         in_flight.remove(request_description)
+
+def post_fork(server, worker):
+    server.log.info("Worker spawned (pid: %s)", worker.pid)
+
+    # Setting DATATRACKER_OPENTELEMETRY_ENABLE=all in the environment will enable all
+    # opentelemetry instrumentations. Individual instrumentations can be selected by
+    # using a space-separated list. See the code below for available instrumentations.
+    telemetry_env = os.environ.get("DATATRACKER_OPENTELEMETRY_ENABLE", "").strip()
+    if telemetry_env != "":
+        enabled_telemetry = [tok.strip().lower() for tok in telemetry_env.split()]
+        resource = Resource.create(attributes={
+            "service.name": "datatracker",
+            "service.version": ietf.__version__,
+            "service.instance.id": worker.pid,
+            "service.namespace": "datatracker",
+            "deployment.environment.name": os.environ.get("DATATRACKER_SERVICE_ENV", "dev")
+        })
+        trace.set_tracer_provider(TracerProvider(resource=resource))
+        otlp_exporter = OTLPSpanExporter(endpoint="https://heimdall-otlp.ietf.org/v1/traces")
+    
+        trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(otlp_exporter))
+    
+        # Instrumentations
+        if "all" in enabled_telemetry or "django" in enabled_telemetry: 
+            DjangoInstrumentor().instrument()
+        if "all" in enabled_telemetry or "psycopg2" in enabled_telemetry: 
+            Psycopg2Instrumentor().instrument()
+        if "all" in enabled_telemetry or "pymemcache" in enabled_telemetry: 
+            PymemcacheInstrumentor().instrument()
+        if "all" in enabled_telemetry or "requests" in enabled_telemetry: 
+            RequestsInstrumentor().instrument()

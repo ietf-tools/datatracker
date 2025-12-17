@@ -79,6 +79,7 @@ from ietf.utils.history import find_history_active_at
 from ietf.doc.views_ballot import parse_ballot_edit_return_point
 from ietf.doc.forms import InvestigateForm, TelechatForm, NotifyForm, ActionHoldersForm, DocAuthorForm, DocAuthorChangeBasisForm
 from ietf.doc.mails import email_comment, email_remind_action_holders
+from ietf.doc.utils import last_ballot_doc_revision
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session, SessionPresentation
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions, add_event_info_to_session_qs
@@ -91,7 +92,7 @@ from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
 from ietf.utils.timezone import date_today
-
+from ietf.utils.unicodenormalize import normalize_for_sorting
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -514,13 +515,17 @@ def document_main(request, name, rev=None, document_html=False):
         # remaining actions
         actions = []
 
-        if can_adopt_draft(request.user, doc) and not doc.get_state_slug() in ["rfc"] and not snapshot:
+        if can_adopt_draft(request.user, doc) and doc.get_state_slug() not in ["rfc"] and not snapshot:
+            target = urlreverse("ietf.doc.views_draft.adopt_draft", kwargs=dict(name=doc.name))
             if doc.group and doc.group.acronym != 'none': # individual submission
                 # already adopted in one group
                 button_text = "Switch adoption"
             else:
                 button_text = "Manage adoption"
-            actions.append((button_text, urlreverse('ietf.doc.views_draft.adopt_draft', kwargs=dict(name=doc.name))))
+                # can_adopt_draft currently returns False for Area Directors
+                if has_role(request.user, ["Secretariat", "WG Chair"]):
+                    target = urlreverse("ietf.doc.views_draft.ask_about_ietf_adoption_call", kwargs=dict(name=doc.name))
+            actions.append((button_text, target))
 
         if can_unadopt_draft(request.user, doc) and not doc.get_state_slug() in ["rfc"] and not snapshot:
             if doc.get_state_slug('draft-iesg') == 'idexists':
@@ -1225,6 +1230,10 @@ def document_history(request, name):
             request.user, ("Area Director", "Secretariat", "IRTF Chair")
         )
 
+    # if the current user has balloted on this document, give them a revision hint
+    ballot_doc_rev = None
+    if request.user.is_authenticated:
+        ballot_doc_rev = last_ballot_doc_revision(doc, request.user.person)
 
     return render(
         request,
@@ -1235,6 +1244,7 @@ def document_history(request, name):
             "diff_revisions": diff_revisions,
             "events": events,
             "can_add_comment": can_add_comment,
+            "ballot_doc_rev": ballot_doc_rev,
         },
     )
 
@@ -1500,7 +1510,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
     position_groups = []
     for n in BallotPositionName.objects.filter(slug__in=[p.pos_id for p in positions]).order_by('order'):
         g = (n, [p for p in positions if p.pos_id == n.slug])
-        g[1].sort(key=lambda p: (p.is_old_pos, p.balloter.plain_name()))
+        g[1].sort(key=lambda p: (p.is_old_pos, normalize_for_sorting(p.balloter.plain_name())))
         if n.blocking:
             position_groups.insert(0, g)
         else:

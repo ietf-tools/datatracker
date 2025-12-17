@@ -61,13 +61,14 @@ from ietf.doc.utils import update_telechat, augment_events_with_revision
 from ietf.group.models import GroupMilestone, Role
 from ietf.iesg.agenda import agenda_data, agenda_sections, fill_in_agenda_docs, get_agenda_date
 from ietf.iesg.models import TelechatDate, TelechatAgendaContent
-from ietf.iesg.utils import telechat_page_count
+from ietf.iesg.utils import get_wg_dashboard_info, telechat_page_count
 from ietf.ietfauth.utils import has_role, role_required, user_is_person
 from ietf.name.models import TelechatAgendaSectionName
 from ietf.person.models import Person
 from ietf.meeting.utils import get_activity_stats
 from ietf.doc.utils_search import fill_in_document_table_attributes, fill_in_telechat_date
 from ietf.utils.timezone import date_today, datetime_from_date
+from ietf.utils.unicodenormalize import normalize_for_sorting
 
 def review_decisions(request, year=None):
     events = DocEvent.objects.filter(type__in=("iesg_disapproved", "iesg_approved"))
@@ -547,7 +548,7 @@ def milestones_needing_review(request):
             )
 
     return render(request, 'iesg/milestones_needing_review.html',
-                  dict(ads=sorted(ad_list, key=lambda ad: ad.plain_name()),))
+                  dict(ads=sorted(ad_list, key=lambda ad: normalize_for_sorting(ad.plain_name())),))
 
 def photos(request):
     roles = sorted(Role.objects.filter(group__type='area', group__state='active', name_id='ad'),key=lambda x: "" if x.group.acronym=="gen" else x.group.acronym)
@@ -625,4 +626,14 @@ def telechat_agenda_content_view(request, section):
     return HttpResponse(
         content=content.text,
         content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
+
+def working_groups(request):
+ 
+    area_summary, area_totals, ad_summary, noad_summary, ad_totals, noad_totals, totals, wg_summary = get_wg_dashboard_info()
+
+    return render(
+        request,
+        "iesg/working_groups.html",
+        dict(area_summary=area_summary, area_totals=area_totals, ad_summary=ad_summary, noad_summary=noad_summary, ad_totals=ad_totals, noad_totals=noad_totals, totals=totals, wg_summary=wg_summary),
     )

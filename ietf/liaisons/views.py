@@ -7,19 +7,17 @@ from email.utils import parseaddr
 
 from django.contrib import messages
 from django.urls import reverse as urlreverse
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist, PermissionDenied
 from django.core.validators import validate_email
 from django.db.models import Q, Prefetch
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.group.models import Group, Role
-from ietf.liaisons.models import (LiaisonStatement,LiaisonStatementEvent,
-    LiaisonStatementAttachment)
+from ietf.liaisons.models import LiaisonStatement,LiaisonStatementEvent
 from ietf.liaisons.utils import (get_person_for_user, can_add_outgoing_liaison,
     can_add_incoming_liaison, can_edit_liaison,can_submit_liaison_required,
     can_add_liaison)
@@ -28,14 +26,6 @@ from ietf.liaisons.mails import notify_pending_by_email, send_liaison_by_email
 from ietf.liaisons.fields import select2_id_liaison_json
 from ietf.name.models import LiaisonStatementTagName
 from ietf.utils.response import permission_denied
-
-EMAIL_ALIASES = {
-    "IETFCHAIR": "The IETF Chair <chair@ietf.org>",
-    "IESG": "The IESG <iesg@ietf.org>",
-    "IAB": "The IAB <iab@iab.org>",
-    "IABCHAIR": "The IAB Chair <iab-chair@iab.org>",
-}
-
 
 # -------------------------------------------------
 # Helper Functions
@@ -96,64 +86,6 @@ def contacts_from_roles(roles):
     emails = [ contact_email_from_role(r) for r in roles ]
     return ','.join(emails)
 
-def get_cc(group):
-    '''Returns list of emails to use as CC for group.  Simplified refactor of IETFHierarchy
-    get_cc() and get_from_cc()
-    '''
-    emails = []
-
-    # role based CCs
-    if group.acronym in ('ietf','iesg'):
-        emails.append(EMAIL_ALIASES['IESG'])
-        emails.append(EMAIL_ALIASES['IETFCHAIR'])
-    elif group.acronym in ('iab'):
-        emails.append(EMAIL_ALIASES['IAB'])
-        emails.append(EMAIL_ALIASES['IABCHAIR'])
-    elif group.type_id == 'area':
-        emails.append(EMAIL_ALIASES['IETFCHAIR'])
-        ad_roles = group.role_set.filter(name='ad')
-        emails.extend([ contact_email_from_role(r) for r in ad_roles ])
-    elif group.type_id == 'wg':
-        ad_roles = group.parent.role_set.filter(name='ad')
-        emails.extend([ contact_email_from_role(r) for r in ad_roles ])
-        chair_roles = group.role_set.filter(name='chair')
-        emails.extend([ contact_email_from_role(r) for r in chair_roles ])
-        if group.list_email:
-            emails.append('{} Discussion List <{}>'.format(group.name,group.list_email))
-    elif group.type_id == 'sdo':
-        liaiman_roles = group.role_set.filter(name='liaiman')
-        emails.extend([ contact_email_from_role(r) for r in liaiman_roles ])
-
-    # explicit CCs
-    liaison_cc_roles = group.role_set.filter(name='liaison_cc_contact')
-    emails.extend([ contact_email_from_role(r) for r in liaison_cc_roles ])
-
-    return emails
-
-def get_contacts_for_group(group):
-    '''Returns default contacts for groups as a comma separated string'''
-    # use explicit default contacts if defined
-    explicit_contacts = contacts_from_roles(group.role_set.filter(name='liaison_contact'))
-    if explicit_contacts:
-        return explicit_contacts
-
-    # otherwise construct based on group type
-    contacts = []
-    if group.type_id == 'area':
-        roles = group.role_set.filter(name='ad')
-        contacts.append(contacts_from_roles(roles))
-    elif group.type_id == 'wg':
-        roles = group.role_set.filter(name='chair')
-        contacts.append(contacts_from_roles(roles))
-    elif group.acronym == 'ietf':
-        contacts.append(EMAIL_ALIASES['IETFCHAIR'])
-    elif group.acronym == 'iab':
-        contacts.append(EMAIL_ALIASES['IABCHAIR'])
-    elif group.acronym == 'iesg':
-        contacts.append(EMAIL_ALIASES['IESG'])
-
-    return ','.join(contacts)
-
 def get_details_tabs(stmt, selected):
     return [
         t + (t[0].lower() == selected.lower(),)
@@ -186,29 +118,14 @@ def normalize_sort(request):
 
     return sort, order_by
 
-def post_only(group,person):
-    '''Returns true if the user is restricted to post_only (vs. post_and_send) for this
-    group.  This is for incoming liaison statements.
-    - Secretariat have full access.
-    - Authorized Individuals have full access for the group they are associated with
-    - Liaison Managers can post only
-    '''
-    if group.type_id == "sdo" and (
-        not (
-            has_role(person.user, "Secretariat")
-            or has_role(person.user, "Liaison Coordinator")
-            or group.role_set.filter(name="auth", person=person)
-        )
-    ):
-        return True
-    else:
-        return False
 
 # -------------------------------------------------
 # Ajax Functions
 # -------------------------------------------------
 @can_submit_liaison_required
 def ajax_get_liaison_info(request):
+    from ietf.mailtrigger.utils import get_contacts_for_liaison_messages_for_group_primary,get_contacts_for_liaison_messages_for_group_secondary
+
     '''Returns dictionary of info to update entry form given the groups
     that have been selected
     '''
@@ -225,20 +142,18 @@ def ajax_get_liaison_info(request):
 
     cc = []
     does_need_approval = []
-    can_post_only = []
     to_contacts = []
     response_contacts = []
-    result = {'response_contacts':[],'to_contacts': [], 'cc': [], 'needs_approval': False, 'post_only': False, 'full_list': []}
+    result = {'response_contacts':[],'to_contacts': [], 'cc': [], 'needs_approval': False, 'full_list': []}
 
     for group in from_groups:
-        cc.extend(get_cc(group))
+        cc.extend(get_contacts_for_liaison_messages_for_group_primary(group))
         does_need_approval.append(needs_approval(group,person))
-        can_post_only.append(post_only(group,person))
-        response_contacts.append(get_contacts_for_group(group))
+        response_contacts.append(get_contacts_for_liaison_messages_for_group_secondary(group))
 
     for group in to_groups:
-        cc.extend(get_cc(group))
-        to_contacts.append(get_contacts_for_group(group))
+        cc.extend(get_contacts_for_liaison_messages_for_group_primary(group))
+        to_contacts.append(get_contacts_for_liaison_messages_for_group_secondary(group))
 
     # if there are from_groups and any need approval
     if does_need_approval:
@@ -249,12 +164,15 @@ def ajax_get_liaison_info(request):
     else:
         does_need_approval = True
 
-    result.update({'error': False,
-                   'cc': list(set(cc)),
-                   'response_contacts':list(set(response_contacts)),
-                   'to_contacts': list(set(to_contacts)),
-                   'needs_approval': does_need_approval,
-                   'post_only': any(can_post_only)})
+    result.update(
+        {
+            "error": False,
+            "cc": list(set(cc)),
+            "response_contacts": list(set(response_contacts)),
+            "to_contacts": list(set(to_contacts)),
+            "needs_approval": does_need_approval,
+        }
+    )
 
     json_result = json.dumps(result)
     return HttpResponse(json_result, content_type='application/json')
@@ -378,23 +296,29 @@ def liaison_history(request, object_id):
 
 def liaison_delete_attachment(request, object_id, attach_id):
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
-    attach = get_object_or_404(LiaisonStatementAttachment, pk=attach_id)
+
     if not can_edit_liaison(request.user, liaison):
         permission_denied(request, "You are not authorized for this action.")
+    else:
+        permission_denied(request, "This operation is temporarily unavailable. Ask the secretariat to mark the attachment as removed using the admin.")
 
-    # FIXME: this view should use POST instead of GET when deleting
-    attach.removed = True
-    attach.save()
+    # The following will be replaced with a different approach in the next generation of the liaison tool
+    # attach = get_object_or_404(LiaisonStatementAttachment, pk=attach_id)
 
-    # create event
-    LiaisonStatementEvent.objects.create(
-        type_id='modified',
-        by=get_person_for_user(request.user),
-        statement=liaison,
-        desc='Attachment Removed: {}'.format(attach.document.title)
-    )
-    messages.success(request, 'Attachment Deleted')
-    return redirect('ietf.liaisons.views.liaison_detail', object_id=liaison.pk)
+    # # FIXME: this view should use POST instead of GET when deleting
+    # attach.removed = True
+    # debug.say("Got here")
+    # attach.save()
+
+    # # create event
+    # LiaisonStatementEvent.objects.create(
+    #     type_id='modified',
+    #     by=get_person_for_user(request.user),
+    #     statement=liaison,
+    #     desc='Attachment Removed: {}'.format(attach.document.title)
+    # )
+    # messages.success(request, 'Attachment Deleted')
+    # return redirect('ietf.liaisons.views.liaison_detail', object_id=liaison.pk)
 
 def liaison_detail(request, object_id):
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
@@ -405,22 +329,28 @@ def liaison_detail(request, object_id):
 
 
     if request.method == 'POST':
-        if request.POST.get('approved'):
-            liaison.change_state(state_id='approved',person=person)
-            liaison.change_state(state_id='posted',person=person)
-            send_liaison_by_email(request, liaison)
-            messages.success(request,'Liaison Statement Approved and Posted')
-        elif request.POST.get('dead'):
-            liaison.change_state(state_id='dead',person=person)
-            messages.success(request,'Liaison Statement Killed')
-        elif request.POST.get('resurrect'):
-            liaison.change_state(state_id='pending',person=person)
-            messages.success(request,'Liaison Statement Resurrected')
-        elif request.POST.get('do_action_taken') and can_take_care:
+        if request.POST.get('do_action_taken') and can_take_care:
             liaison.tags.remove('required')
             liaison.tags.add('taken')
             can_take_care = False
             messages.success(request,'Action handled')
+        else:
+            if can_edit:
+                if request.POST.get('approved'):
+                    liaison.change_state(state_id='approved',person=person)
+                    liaison.change_state(state_id='posted',person=person)
+                    send_liaison_by_email(request, liaison)
+                    messages.success(request,'Liaison Statement Approved and Posted')
+                elif request.POST.get('dead'):
+                    liaison.change_state(state_id='dead',person=person)
+                    messages.success(request,'Liaison Statement Killed')
+                elif request.POST.get('resurrect'):
+                    liaison.change_state(state_id='pending',person=person)
+                    messages.success(request,'Liaison Statement Resurrected')
+                else:
+                    pass
+            else:
+                raise PermissionDenied()
 
     relations_by = [i.target for i in liaison.source_of_set.filter(target__state__slug='posted')]
     relations_to = [i.source for i in liaison.target_of_set.filter(source__state__slug='posted')]
@@ -444,7 +374,11 @@ def liaison_edit(request, object_id):
 def liaison_edit_attachment(request, object_id, doc_id):
     '''Edit the Liaison Statement attachment title'''
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
-    doc = get_object_or_404(Document, pk=doc_id)
+    try:
+       doc = liaison.attachments.get(pk=doc_id)
+    except ObjectDoesNotExist:
+        raise Http404
+
     if not can_edit_liaison(request.user, liaison):
         permission_denied(request, "You are not authorized for this action.")
 
@@ -575,3 +509,17 @@ def liaison_resend(request, object_id):
     messages.success(request,'Liaison Statement resent')
     return redirect('ietf.liaisons.views.liaison_list')
 
+
+@role_required("Secretariat", "IAB", "Liaison Coordinator", "Liaison Manager")
+def list_other_sdo(request):
+    def _sdo_order_key(obj:Group)-> tuple[str,str]:
+        state_order = {
+            "active" : "a",
+            "conclude": "b",
+        }
+        return (state_order.get(obj.state.slug,f"c{obj.state.slug}"), obj.acronym)
+
+    sdos = sorted(list(Group.objects.filter(type="sdo")),key = _sdo_order_key)
+    for sdo in sdos:
+        sdo.liaison_managers =[r.person for r in sdo.role_set.filter(name="liaiman")]
+    return render(request,"liaisons/list_other_sdo.html",dict(sdos=sdos))

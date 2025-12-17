@@ -1,13 +1,23 @@
-# Copyright The IETF Trust 2010-2020, All Rights Reserved
+# Copyright The IETF Trust 2010-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 from django import forms
 from django.contrib import admin
 from ietf.name.models import DocRelationshipName
-from ietf.ipr.models import (IprDisclosureBase, IprDocRel, IprEvent,
-    RelatedIpr, HolderIprDisclosure, ThirdPartyIprDisclosure, GenericIprDisclosure, 
-    NonDocSpecificIprDisclosure, LegacyMigrationIprEvent)
+from ietf.ipr.models import (
+    IprDisclosureBase,
+    IprDocRel,
+    IprEvent,
+    RelatedIpr,
+    HolderIprDisclosure,
+    RemovedIprDisclosure,
+    ThirdPartyIprDisclosure,
+    GenericIprDisclosure,
+    NonDocSpecificIprDisclosure,
+    LegacyMigrationIprEvent,
+)
+from ietf.utils.admin import SaferTabularInline
 
 # ------------------------------------------------------
 # ModelAdmins
@@ -20,13 +30,13 @@ class IprDocRelAdminForm(forms.ModelForm):
           'sections':forms.TextInput,
         }
 
-class IprDocRelInline(admin.TabularInline):
+class IprDocRelInline(SaferTabularInline):
     model = IprDocRel
     form = IprDocRelAdminForm
     raw_id_fields = ['document']
     extra = 1
 
-class RelatedIprInline(admin.TabularInline):
+class RelatedIprInline(SaferTabularInline):
     model = RelatedIpr
     raw_id_fields = ['target']
     fk_name = 'source'
@@ -110,3 +120,9 @@ class LegacyMigrationIprEventAdmin(admin.ModelAdmin):
     list_filter = ['time', 'type', 'response_due']
     raw_id_fields = ['by', 'disclosure', 'message', 'in_reply_to']
 admin.site.register(LegacyMigrationIprEvent, LegacyMigrationIprEventAdmin)
+
+class RemovedIprDisclosureAdmin(admin.ModelAdmin):
+    pass
+
+
+admin.site.register(RemovedIprDisclosure, RemovedIprDisclosureAdmin)

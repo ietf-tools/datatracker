@@ -51,6 +51,19 @@ def admin_link(field, label=None, ordering="", display=name, suffix=""):
     _link.admin_order_field = ordering
     return _link
 
+
+class SaferStackedInline(admin.StackedInline):
+    """StackedInline without delete by default"""
+    can_delete = False  # no delete button
+    show_change_link = True  # show a link to the resource (where it can be deleted)
+
+
+class SaferTabularInline(admin.TabularInline):
+    """TabularInline without delete by default"""
+    can_delete = False  # no delete button
+    show_change_link = True  # show a link to the resource (where it can be deleted)
+
+
 from .models import DumpInfo
 class DumpInfoAdmin(admin.ModelAdmin):
     list_display = ['date', 'host', 'tz']

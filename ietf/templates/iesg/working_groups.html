@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
+{% load origin static %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static 'ietf/css/list.css' %}">
+{% endblock %}
+{% block title %}IESG view of working groups{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1 class="mt-4">IESG view of working groups</h1>
+    <h2 class="mt-3'">Area Size and Load</h2>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th scope="col" data-sort="areaname">Area Name</th>
+                <th scope="col" data-sort="wgcount">WGs</th>
+                <th scope="col" data-sort="idcount">I-Ds</th>
+                <th scope="col" data-sort="idpages">Pages</th>
+                {# (divider) #}
+                <th scope="col" data-sort="idpercent">% I-Ds</th>
+                <th scope="col" data-sort="pagespercent">% Pages</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for area in area_summary %}
+              <tr>
+                <td>{{area.area}}</td>
+                <td>{{area.groups_in_area}}</td>
+                <td>{{area.doc_count}}</td>
+                <td>{{area.page_count}}</td>
+                <td>{{area.doc_percent|floatformat:1}}</td>
+                <td>{{area.page_percent|floatformat:1}}</td>
+              </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td>Totals</td>
+                <td>{{totals.group_count}}</td>
+                <td>{{totals.doc_count}}</td>
+                <td>{{totals.page_count}}</td>
+                <td></td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <h2 class="mt-3'">Area Director Load: Documents not yet directly assigned to AD</h2>
+    <div class="small text-body-secondary">Typically these are pre-pubreq documents</div>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th scope="col" data-sort="areadirname">AD</th>
+                <th scope="col" data-sort="areaname">Area Name</th>
+                <th scope="col" data-sort="areagroups">WGs for AD</th>
+                <th scope="col" data-sort="idcount">I-Ds</th>
+                <th scope="col" data-sort="idpages">Pages</th>
+                {# (divider) #}
+                <th scope="col" data-sort="idpercent">% I-Ds</th>
+                <th scope="col" data-sort="pagespercent">% Pages</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ad in noad_summary %}
+                <tr>
+                    <td>{{ad.ad}}</td>
+                    <td>{{ad.area}}</td>
+                    <td>{{ad.ad_group_count}}</td>
+                    <td>{{ad.doc_count}}</td>
+                    <td>{{ad.page_count}}</td>
+                    <td>{{ad.doc_percent|floatformat:1}}</td>
+                    <td>{{ad.page_percent|floatformat:1}}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td>Totals</td>
+                <td></td>
+                <td>{{noad_totals.ad_group_count}}</td>
+                <td>{{noad_totals.doc_count}}</td>
+                <td>{{noad_totals.page_count}}</td>
+                <td></td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>    
+
+    <h2 class="mt-3'">Area Director Load: Documents directly assigned to AD</h2>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th scope="col" data-sort="areadirname">AD</th>
+                <th scope="col" data-sort="areaname">Area Name</th>
+                <th scope="col" data-sort="areagroups">WGs for AD</th>
+                <th scope="col" data-sort="idcount">I-Ds</th>
+                <th scope="col" data-sort="idpages">Pages</th>
+                {# (divider) #}
+                <th scope="col" data-sort="idpercent">% I-Ds</th>
+                <th scope="col" data-sort="pagespercent">% Pages</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ad in ad_summary %}
+                <tr>
+                    <td>{{ad.ad}}</td>
+                    <td>{{ad.area}}</td>
+                    <td>{{ad.ad_group_count}}</td>
+                    <td>{{ad.doc_count}}</td>
+                    <td>{{ad.page_count}}</td>
+                    <td>{{ad.doc_percent|floatformat:1}}</td>
+                    <td>{{ad.page_percent|floatformat:1}}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td>Totals</td>
+                <td></td>
+                <td>{{ad_totals.ad_group_count}}</td>
+                <td>{{ad_totals.doc_count}}</td>
+                <td>{{ad_totals.page_count}}</td>
+                <td></td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>  
+
+    <h2 class="mt-3'">Working Group Summary</h2>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th scope="col" data-sort="wg">WG</th>
+                <th scope="col" data-sort="area">Area</th>
+                <th scope="col" data-sort="ad">AD</th>
+                <th scope="col" data-sort="ids">I-Ds</th>
+                <th scope="col" data-sort="pages">Pages</th>
+                <th scope="col" data-sort="rfcs">RFCs</th>
+                <th scope="col" data-sort="rfcpubrate">RFCs in last 2 years</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for wg in wg_summary %}
+            <tr>
+                <td>{{wg.wg}}</td>
+                <td>{{wg.area}}</td>
+                <td>{{wg.ad}}</td>
+                <td>{{wg.doc_count}}</td>
+                <td>{{wg.page_count}}</td>
+                <td>{{wg.rfc_count}}</td>
+                <td>{{wg.recent_rfc_count}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
+{% endblock %}

@@ -56,5 +56,6 @@
     "python.linting.pylintArgs": ["--load-plugins", "pylint_django"],
     "python.testing.pytestEnabled": false,
     "python.testing.unittestEnabled": false,
-    "python.linting.enabled": true
+    "python.linting.enabled": true,
+    "python.terminal.shellIntegration.enabled": false
 }

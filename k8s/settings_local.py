@@ -114,15 +114,17 @@ BLOBDB_DATABASE = "blobdb"
 
 # Configure persistent connections. A setting of 0 is Django's default.
 _conn_max_age = os.environ.get("DATATRACKER_DB_CONN_MAX_AGE", "0")
-# A string "none" means unlimited age.
-DATABASES["default"]["CONN_MAX_AGE"] = (
-    None if _conn_max_age.lower() == "none" else int(_conn_max_age)
-)
+for dbname in ["default", "blobdb"]:
+    # A string "none" means unlimited age.
+    DATABASES[dbname]["CONN_MAX_AGE"] = (
+        None if _conn_max_age.lower() == "none" else int(_conn_max_age)
+    )
 # Enable connection health checks if DATATRACKER_DB_CONN_HEALTH_CHECK is the string "true"
 _conn_health_checks = bool(
     os.environ.get("DATATRACKER_DB_CONN_HEALTH_CHECKS", "false").lower() == "true"
 )
-DATABASES["default"]["CONN_HEALTH_CHECKS"] = _conn_health_checks
+for dbname in ["default", "blobdb"]:
+    DATABASES[dbname]["CONN_HEALTH_CHECKS"] = _conn_health_checks
 
 # DATATRACKER_ADMINS is a newline-delimited list of addresses parseable by email.utils.parseaddr
 _admins_str = os.environ.get("DATATRACKER_ADMINS", None)
@@ -299,6 +301,17 @@ CACHES = {
         "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
         "VERSION": __version__,
         "KEY_PREFIX": "ietf:dt",
+        # Key function is default except with sha384-encoded key
+        "KEY_FUNCTION": lambda key, key_prefix, version: (
+            f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+        ),
+    },
+    "proceedings": {
+        "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+        "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+        # No release-specific VERSION setting.
+        "KEY_PREFIX": "ietf:dt:proceedings",
+        # Key function is default except with sha384-encoded key
         "KEY_FUNCTION": lambda key, key_prefix, version: (
             f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
         ),

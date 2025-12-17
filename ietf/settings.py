@@ -34,6 +34,7 @@ warnings.filterwarnings("ignore", message="datetime.datetime.utcnow\\(\\) is dep
 warnings.filterwarnings("ignore", message="datetime.datetime.utcnow\\(\\) is deprecated", module="oic.utils.time_util")
 warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="oic.utils.time_util")
 warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="pytz.tzinfo")
+warnings.filterwarnings("ignore", message="'instantiateVariableFont' is deprecated", module="weasyprint")
 
 
 base_path = pathlib.Path(__file__).resolve().parent
@@ -410,6 +411,7 @@ TEMPLATES = [
         ],
         'OPTIONS': {
             'context_processors': [
+                'ietf.context_processors.traceparent_id',
                 'django.contrib.auth.context_processors.auth',
                 'django.template.context_processors.debug',     # makes 'sql_queries' available in templates
                 'django.template.context_processors.i18n',
@@ -442,6 +444,7 @@ if DEBUG:
 
 
 MIDDLEWARE = [
+    "ietf.middleware.add_otel_traceparent_header",
     "django.middleware.csrf.CsrfViewMiddleware",
     "corsheaders.middleware.CorsMiddleware", # see docs on CORS_REPLACE_HTTPS_REFERER before using it
     "django.middleware.common.CommonMiddleware",
@@ -536,7 +539,6 @@ INSTALLED_APPS = [
     'ietf.secr.announcement',
     'ietf.secr.meetings',
     'ietf.secr.rolodex',
-    'ietf.secr.sreq',
     'ietf.secr.telechat',
 ]
 
@@ -786,35 +788,49 @@ STORAGES: dict[str, Any] = {
 
 # Storages for artifacts stored as blobs
 ARTIFACT_STORAGE_NAMES: list[str] = [
+    "active-draft",
+    "agenda",
+    "bibxml-ids",
+    "bluesheets",
     "bofreq",
     "charter",
-    "conflrev",
-    "active-draft",
-    "draft",
-    "slides",
-    "minutes",
-    "agenda",
-    "bluesheets",
-    "procmaterials",
-    "narrativeminutes",
-    "statement",
-    "statchg",
-    "liai-att",
     "chatlog",
-    "polls",
-    "staging",
-    "bibxml-ids",
-    "indexes",
+    "conflrev",
+    "draft",
     "floorplan",
+    "indexes",
+    "liai-att",
     "meetinghostlogo",
+    "minutes",
+    "narrativeminutes",
     "photo",
+    "polls",
+    "procmaterials",
     "review",
+    "slides",
+    "staging",
+    "statchg",
+    "statement",
 ]
 for storagename in ARTIFACT_STORAGE_NAMES:
     STORAGES[storagename] = {
         "BACKEND": "ietf.doc.storage.StoredObjectBlobdbStorage",
         "OPTIONS": {"bucket_name": storagename},
     }
+
+# Buckets / doc types of meeting materials the CF worker is allowed to serve. This
+# differs from the list in Session.meeting_related() by the omission of "recording"
+MATERIALS_TYPES_SERVED_BY_WORKER = [
+    "agenda",
+    "bluesheets",
+    "chatlog",
+    "minutes",
+    "narrativeminutes",
+    "polls",
+    "procmaterials",
+    "slides",
+]
+
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
@@ -1374,6 +1390,17 @@ if "CACHES" not in locals():
                 "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
                 "VERSION": __version__,
                 "KEY_PREFIX": "ietf:dt",
+                # Key function is default except with sha384-encoded key
+                "KEY_FUNCTION": lambda key, key_prefix, version: (
+                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+                ),
+            },
+            "proceedings": {
+                "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+                # No release-specific VERSION setting.
+                "KEY_PREFIX": "ietf:dt:proceedings",
+                # Key function is default except with sha384-encoded key
                 "KEY_FUNCTION": lambda key, key_prefix, version: (
                     f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
                 ),
@@ -1420,6 +1447,17 @@ if "CACHES" not in locals():
                 #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
                 "VERSION": __version__,
                 "KEY_PREFIX": "ietf:dt",
+            },
+            "proceedings": {
+                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+                # "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+                # "LOCATION": "127.0.0.1:11211",
+                # No release-specific VERSION setting.
+                "KEY_PREFIX": "ietf:dt:proceedings",
+                # Key function is default except with sha384-encoded key
+                "KEY_FUNCTION": lambda key, key_prefix, version: (
+                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+                ),
             },
             "sessions": {
                 "BACKEND": "django.core.cache.backends.locmem.LocMemCache",

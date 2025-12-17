@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
+{% load origin static person_filters %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static 'ietf/css/list.css' %}">
+{% endblock %}
+{% block title %}
+   Other SDO groups
+{% endblock %}
+{% block content %}
+  {% origin %}
+  {% regroup sdos by state.name as sdos_by_state %}
+  {% for sdos_in_state in sdos_by_state %}
+    <h1>{{sdos_in_state.grouper|capfirst}} SDO groups</h1>
+      <table class="table tablesorter table-borderless table-striped table-sm mt-3">
+        <thead>
+          <tr>
+            <th scope="col" data-sort="acronym">Acronym</th>
+            <th scope="col" data-sort="name">Name</th>
+            <th scope="col" data-sort="managers">Liaison Managers</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for group in sdos_in_state.list%}
+          <tr>
+            <td><a href="{% url 'ietf.group.views.group_about' acronym=group.acronym %}">{{ group.acronym }}</a></td>
+            <td>{{ group.name }}</td>
+            <td>
+              {% for person in group.liaison_managers %}
+                {% person_link person %}{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+    </table>
+  {% endfor %}
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
+{% endblock %}

@@ -59,7 +59,7 @@ from django.utils.text import slugify
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocHistory, State,
-    LastCallDocEvent, NewRevisionDocEvent, IESG_SUBSTATE_TAGS,
+    NewRevisionDocEvent, IESG_SUBSTATE_TAGS,
     IESG_BALLOT_ACTIVE_STATES, IESG_STATCHG_CONFLREV_ACTIVE_STATES,
     IESG_CHARTER_ACTIVE_STATES )
 from ietf.doc.fields import select2_id_doc_name_json
@@ -74,7 +74,7 @@ from ietf.utils.fields import ModelMultipleChoiceField
 from ietf.utils.log import log
 from ietf.doc.utils_search import prepare_document_table, doc_type, doc_state, doc_type_name, AD_WORKLOAD
 from ietf.ietfauth.utils import has_role
-
+from ietf.utils.unicodenormalize import normalize_for_sorting
 
 class SearchForm(forms.Form):
     name = forms.CharField(required=False)
@@ -480,6 +480,7 @@ def ad_workload(request):
     ).distinct():
         if p in get_active_ads():
             ads.append(p)
+    ads.sort(key=lambda p: normalize_for_sorting(p.plain_name()))
 
     bucket_template = {
         dt: {state: [[] for _ in range(days)] for state in STATE_SLUGS[dt].values()}
@@ -848,31 +849,6 @@ def drafts_in_last_call(request):
     return render(request, 'doc/drafts_in_last_call.html', {
         'form':form, 'docs':results, 'meta':meta, 'pages':pages
     })
-
-def drafts_in_iesg_process(request):
-    states = State.objects.filter(type="draft-iesg").exclude(slug__in=('idexists', 'pub', 'dead', 'rfcqueue'))
-    title = "Documents in IESG process"
-
-    grouped_docs = []
-
-    for s in states.order_by("order"):
-        docs = Document.objects.filter(type="draft", states=s).distinct().order_by("time").select_related("ad", "group", "group__parent")
-        if docs:
-            if s.slug == "lc":
-                for d in docs:
-                    e = d.latest_event(LastCallDocEvent, type="sent_last_call")
-                    # If we don't have an event, use an arbitrary date in the past (but not datetime.datetime.min,
-                    # which causes problems with timezone conversions)
-                    d.lc_expires = e.expires if e else datetime.datetime(1950, 1, 1)
-                docs = list(docs)
-                docs.sort(key=lambda d: d.lc_expires)
-
-            grouped_docs.append((s, docs))
-
-    return render(request, 'doc/drafts_in_iesg_process.html', {
-            "grouped_docs": grouped_docs,
-            "title": title,
-            })
 
 def recent_drafts(request, days=7):
     slowcache = caches['slowpages']
