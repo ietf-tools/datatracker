@@ -57,6 +57,7 @@ from ietf.name.models import (
 
 
 from ietf.stats.models import CountryAlias
+from ietf.utils.admin import SaferTabularInline
 
 
 class NameAdmin(admin.ModelAdmin):
@@ -86,7 +87,7 @@ class GroupTypeNameAdmin(NameAdmin):
 admin.site.register(GroupTypeName, GroupTypeNameAdmin)
 
 
-class CountryAliasInline(admin.TabularInline):
+class CountryAliasInline(SaferTabularInline):
     model = CountryAlias
     extra = 1
 

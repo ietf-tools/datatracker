@@ -90,3 +90,21 @@ onMounted(() => {
 })
 </script>
 
+<style lang="scss">
+@import '../shared/colors.scss';
+
+[data-bs-theme="dark"] .polls {
+    tr,
+    th, 
+    td {
+        background-color: $gray-900 !important;
+        color: $gray-300 !important;
+        border-color: $gray-500 !important;
+        border-width: 0.05 !important;
+    }
+
+    td:hover {
+      background-color: $cyan-600 !important;
+    }
+}
+</style>

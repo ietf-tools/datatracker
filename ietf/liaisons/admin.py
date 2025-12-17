@@ -7,15 +7,16 @@ from django.urls import reverse
 
 from ietf.liaisons.models import  ( LiaisonStatement, LiaisonStatementEvent,
     RelatedLiaisonStatement, LiaisonStatementAttachment )
+from ietf.utils.admin import SaferTabularInline
 
 
-class RelatedLiaisonStatementInline(admin.TabularInline):
+class RelatedLiaisonStatementInline(SaferTabularInline):
     model = RelatedLiaisonStatement
     fk_name = 'source'
     raw_id_fields = ['target']
     extra = 1
 
-class LiaisonStatementAttachmentInline(admin.TabularInline):
+class LiaisonStatementAttachmentInline(SaferTabularInline):
     model = LiaisonStatementAttachment
     raw_id_fields = ['document']
     extra = 1
