@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
-# -*- coding: utf-8 -*-
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from django.conf import settings
 from django.db.models import Max
@@ -7,8 +8,10 @@ from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
 from rest_framework.test import APIRequestFactory
 
-from ietf.doc.factories import IndividualDraftFactory
+from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory
 from ietf.doc.models import RelatedDocument, Document
+from ietf.group.factories import RoleFactory, GroupFactory
+from ietf.person.factories import PersonFactory
 from ietf.utils.test_utils import APITestCase, reload_db_objects
 
 
@@ -18,7 +21,7 @@ class RpcApiTests(APITestCase):
         viewname = "ietf.api.purple_api.draft-references"
 
         # non-existent draft
-        bad_id = Document.objects.aggregate(max_id=Max("id") + 100)["max_id"]
+        bad_id = Document.objects.aggregate(unused_id=Max("id") + 100)["unused_id"]
         url = urlreverse(viewname, kwargs={"doc_id": bad_id})
         # Without credentials
         r = self.client.get(url)
@@ -67,3 +70,105 @@ class RpcApiTests(APITestCase):
         self.assertEqual(len(refs), 1)
         self.assertEqual(refs[0]["id"], draft_bar.id)
         self.assertEqual(refs[0]["name"], draft_bar.name)
+
+    @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
+    def test_notify_rfc_published(self):
+        url = urlreverse("ietf.api.purple_api.notify_rfc_published")
+        area = GroupFactory(type_id="area")
+        draft_ad = RoleFactory(group=area, name_id="ad").person
+        authors = PersonFactory.create_batch(2)
+        draft = WgDraftFactory(group__parent=area, authors=authors)
+        assert isinstance(draft, Document), "WgDraftFactory should return a Document"
+        unused_rfc_number = (
+            Document.objects.filter(rfc_number__isnull=False).aggregate(
+                unused_rfc_number=Max("rfc_number") + 1
+            )["unused_rfc_number"]
+            or 10000
+        )
+
+        post_data = {
+            "published": "2025-12-17T20:29:00Z",
+            "draft_name": draft.name,
+            "draft_rev": draft.rev,
+            "rfc_number": unused_rfc_number,
+            "title": draft.title,
+            "authors": [
+                {
+                    "titlepage_name": f"titlepage {author.name}",
+                    "is_editor": False,
+                    "person": author.pk,
+                    "email": author.email_address(),
+                    "affiliation": "Some Affiliation",
+                    "country": "CA",
+                }
+                for author in authors
+            ],
+            "group": draft.group.acronym,
+            "stream": draft.stream_id,
+            "abstract": draft.abstract,
+            "pages": draft.pages,
+            "words": draft.pages * 250,
+            "formal_languages": [],
+            "std_level": "ps",
+            "ad": draft_ad.pk,
+            "note": "noted",
+            "obsoletes": [],
+            "updates": [],
+            "subseries": [],
+        }
+        r = self.client.post(url, data=post_data, format="json")
+        self.assertEqual(r.status_code, 403)
+
+        r = self.client.post(
+            url, data=post_data, format="json", headers={"X-Api-Key": "valid-token"}
+        )
+        self.assertEqual(r.status_code, 200)
+        rfc = Document.objects.filter(rfc_number=unused_rfc_number).first()
+        self.assertIsNotNone(rfc)
+        self.assertEqual(rfc.came_from_draft(), draft)
+        self.assertEqual(
+            rfc.docevent_set.filter(
+                type="published_rfc", time="2025-12-17T20:29:00Z"
+            ).count(),
+            1,
+        )
+        self.assertEqual(rfc.title, draft.title)
+        self.assertEqual(rfc.documentauthor_set.count(), 0)
+        self.assertEqual(
+            list(
+                rfc.rfcauthor_set.values(
+                    "titlepage_name",
+                    "is_editor",
+                    "person",
+                    "email",
+                    "affiliation",
+                    "country",
+                )
+            ),
+            [
+                {
+                    "titlepage_name": f"titlepage {author.name}",
+                    "is_editor": False,
+                    "person": author.pk,
+                    "email": author.email_address(),
+                    "affiliation": "Some Affiliation",
+                    "country": "CA",
+                }
+                for author in authors
+            ],
+        )
+        self.assertEqual(rfc.group, draft.group)
+        self.assertEqual(rfc.stream, draft.stream)
+        self.assertEqual(rfc.abstract, draft.abstract)
+        self.assertEqual(rfc.pages, draft.pages)
+        self.assertEqual(rfc.words, draft.pages * 250)
+        self.assertEqual(rfc.formal_languages.count(), 0)
+        self.assertEqual(rfc.std_level_id, "ps")
+        self.assertEqual(rfc.ad, draft_ad)
+        self.assertEqual(rfc.note, "noted")
+        self.assertEqual(rfc.related_that_doc("obs"), [])
+        self.assertEqual(rfc.related_that_doc("updates"), [])
+        self.assertEqual(rfc.part_of(), [])
+        self.assertEqual(draft.get_state().slug, "rfc")
+        # todo test non-empty relationships
+        # todo test references (when updating that is part of the handling)

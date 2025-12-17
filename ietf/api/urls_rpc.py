@@ -29,8 +29,16 @@ if settings.SERVER_MODE not in {"production", "test"}:
 urlpatterns = [
     url(r"^doc/drafts_by_names/", views_rpc.DraftsByNamesView.as_view()),
     url(r"^persons/search/", views_rpc.RpcPersonSearch.as_view()),
-    path(r"rfc/publish/", views_rpc.RfcPubNotificationView.as_view()),
-    path(r"rfc/publish/files/", views_rpc.RfcPubFilesView.as_view()),
+    path(
+        r"rfc/publish/",
+        views_rpc.RfcPubNotificationView.as_view(),
+        name="ietf.api.purple_api.notify_rfc_published",
+    ),
+    path(
+        r"rfc/publish/files/",
+        views_rpc.RfcPubFilesView.as_view(),
+        name="ietf.api.purple_api.upload_rfc_files",
+    ),
     path(r"subject/<str:subject_id>/person/", views_rpc.SubjectPersonView.as_view()),
 ]
 
