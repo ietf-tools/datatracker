@@ -374,6 +374,9 @@ class RfcPubFilesView(APIView):
         """
         rfc_path = Path(settings.RFC_PATH)
         filename = Path(filename)  # could potentially have directory components
+        extension = "".join(filename.suffixes)
+        if extension == ".notprepped.xml":
+            return rfc_path / "prerelease" / filename.name
         return rfc_path / filename.name
 
     @extend_schema(
