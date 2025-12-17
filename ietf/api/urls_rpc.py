@@ -6,9 +6,10 @@ from django.conf import settings
 from django.urls import include, path
 
 from ietf.api import views_rpc, views_rpc_demo
+from ietf.api.routers import PrefixedDefaultRouter
 from ietf.utils.urls import url
 
-router = routers.DefaultRouter(use_regex_path=False)
+router = PrefixedDefaultRouter(use_regex_path=False, name_prefix="ietf.api.purple_api")
 router.include_format_suffixes = False
 router.register(r"draft", views_rpc.DraftViewSet, basename="draft")
 router.register(r"person", views_rpc.PersonViewSet)
