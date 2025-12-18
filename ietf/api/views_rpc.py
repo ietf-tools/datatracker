@@ -8,7 +8,7 @@ from django.core.files.uploadedfile import UploadedFile
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import mixins, parsers, serializers, viewsets, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, APIException
+from rest_framework.exceptions import APIException
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -34,7 +34,7 @@ from ietf.api.serializers_rpc import (
     NotificationAckSerializer, RfcPubSerializer, RfcFileSerializer,
     EditableRfcSerializer,
 )
-from ietf.doc.models import Document, DocHistory, RfcAuthor, EditedRfcAuthorsDocEvent
+from ietf.doc.models import Document, DocHistory, RfcAuthor
 from ietf.doc.serializers import RfcAuthorSerializer
 from ietf.person.models import Email, Person
 
