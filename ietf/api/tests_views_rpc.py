@@ -1,14 +1,15 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.db.models import Max
 from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
-from rest_framework.test import APIRequestFactory
 
-from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory
+from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory
 from ietf.doc.models import RelatedDocument, Document
 from ietf.group.factories import RoleFactory, GroupFactory
 from ietf.person.factories import PersonFactory
@@ -78,7 +79,7 @@ class RpcApiTests(APITestCase):
         draft_ad = RoleFactory(group=area, name_id="ad").person
         authors = PersonFactory.create_batch(2)
         draft = WgDraftFactory(group__parent=area, authors=authors)
-        assert isinstance(draft, Document), "WgDraftFactory should return a Document"
+        assert isinstance(draft, Document), "WgDraftFactory should generate a Document"
         unused_rfc_number = (
             Document.objects.filter(rfc_number__isnull=False).aggregate(
                 unused_rfc_number=Max("rfc_number") + 1
@@ -172,3 +173,127 @@ class RpcApiTests(APITestCase):
         self.assertEqual(draft.get_state().slug, "rfc")
         # todo test non-empty relationships
         # todo test references (when updating that is part of the handling)
+
+    @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
+    def test_upload_rfc_files(self):
+        def _valid_post_data():
+            """Generate a valid post data dict
+
+            Each API call needs a fresh set of files, so don't reuse the return
+            value from this for multiple calls!
+            """
+            return {
+                "rfc": rfc.rfc_number,
+                "contents": [
+                    ContentFile(b"This is .xml", "myfile.xml"),
+                    ContentFile(b"This is .txt", "myfile.txt"),
+                    ContentFile(b"This is .html", "myfile.html"),
+                    ContentFile(b"This is .pdf", "myfile.pdf"),
+                    ContentFile(b"This is .json", "myfile.json"),
+                    ContentFile(b"This is .notprepped.xml", "myfile.notprepped.xml"),
+                ],
+                "replace": False,
+            }
+
+        url = urlreverse("ietf.api.purple_api.upload_rfc_files")
+        unused_rfc_number = (
+            Document.objects.filter(rfc_number__isnull=False).aggregate(
+                unused_rfc_number=Max("rfc_number") + 1
+            )["unused_rfc_number"]
+            or 10000
+        )
+
+        rfc = WgRfcFactory(rfc_number=unused_rfc_number)
+        assert isinstance(rfc, Document), "WgRfcFactory should generate a Document"
+        with TemporaryDirectory() as rfc_dir:
+            settings.RFC_PATH = rfc_dir  # affects overridden settings
+            rfc_path = Path(rfc_dir)
+            (rfc_path / "prerelease").mkdir()
+            content = StringIO("XML content\n")
+            content.name = "myrfc.xml"
+
+            # no api key
+            r = self.client.post(url, _valid_post_data(), format="multipart")
+            self.assertEqual(r.status_code, 403)
+
+            # invalid RFC
+            r = self.client.post(
+                url,
+                _valid_post_data() | {"rfc": unused_rfc_number + 1},
+                format="multipart",
+                headers={"X-Api-Key": "valid-token"},
+            )
+            self.assertEqual(r.status_code, 400)
+
+            # empty files
+            r = self.client.post(
+                url,
+                _valid_post_data() | {
+                    "contents": [
+                        ContentFile(b"", "myfile.xml"),
+                        ContentFile(b"", "myfile.txt"),
+                        ContentFile(b"", "myfile.html"),
+                        ContentFile(b"", "myfile.pdf"),
+                        ContentFile(b"", "myfile.json"),
+                        ContentFile(b"", "myfile.notprepped.xml"),
+                    ]
+                },
+                format="multipart",
+                headers={"X-Api-Key": "valid-token"},
+            )
+            self.assertEqual(r.status_code, 400)
+
+            # bad file type
+            r = self.client.post(
+                url,
+                _valid_post_data() | {
+                    "contents": [
+                        ContentFile(b"Some content", "myfile.jpg"),
+                    ]
+                },
+                format="multipart",
+                headers={"X-Api-Key": "valid-token"},
+            )
+            self.assertEqual(r.status_code, 400)
+
+            # valid post
+            r = self.client.post(
+                url,
+                _valid_post_data(),
+                format="multipart",
+                headers={"X-Api-Key": "valid-token"},
+            )
+            self.assertEqual(r.status_code, 200)
+            for suffix in [".xml", ".txt", ".html", ".pdf", ".json"]:
+                self.assertEqual(
+                    (rfc_path / f"rfc{unused_rfc_number}")
+                    .with_suffix(suffix)
+                    .read_text(),
+                    f"This is {suffix}",
+                    f"{suffix} file should contain the expected content",
+                )
+            self.assertEqual(
+                (
+                    rfc_path / "prerelease" / f"rfc{unused_rfc_number}.notprepped.xml"
+                ).read_text(),
+                "This is .notprepped.xml",
+                ".notprepped.xml file should contain the expected content",
+            )
+
+            # re-post with replace = False should now fail
+            r = self.client.post(
+                url,
+                _valid_post_data(),
+                format="multipart",
+                headers={"X-Api-Key": "valid-token"},
+            )
+            self.assertEqual(r.status_code, 409)  # conflict
+            
+            # re-post with replace = True should succeed
+            r = self.client.post(
+                url,
+                _valid_post_data() | {"replace": True},
+                format="multipart",
+                headers={"X-Api-Key": "valid-token"},
+            )
+            self.assertEqual(r.status_code, 200)  # conflict
