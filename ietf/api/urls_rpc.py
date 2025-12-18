@@ -1,7 +1,4 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
-
-from rest_framework import routers
-
 from django.conf import settings
 from django.urls import include, path
 

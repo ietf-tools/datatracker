@@ -1,7 +1,5 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 """Custom django-rest-framework routers"""
-from typing import Protocol
-
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework import routers
 
