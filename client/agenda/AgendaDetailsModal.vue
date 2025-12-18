@@ -419,6 +419,13 @@ async function fetchSessionMaterials () {
       .detail-title {
         display: block;
       }
+
+      .nav-link,
+      .nav-link.active {
+        display: grid;
+        width: 1em;
+        border-width: 1em;
+      }
     }
   }
 }
