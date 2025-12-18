@@ -274,6 +274,7 @@ async function fetchSessionMaterials () {
 <style lang="scss">
 @import "bootstrap/scss/functions";
 @import "bootstrap/scss/variables";
+@import "../shared/breakpoints";
 
 .agenda-eventdetails {
   width: 90vw;
@@ -401,6 +402,23 @@ async function fetchSessionMaterials () {
     .bi {
       color: inherit;
       font-size: 16px;
+    }
+  }
+
+  .n-card-header {
+    @media screen and (max-width: $bs5-break-sm) {
+      display: block;
+      padding: 1em;
+    }
+  }
+
+  .n-card__content {
+    @media screen and (max-width: $bs5-break-sm) {
+      padding: 1em;
+
+      .detail-title {
+        display: block;
+      }
     }
   }
 }
