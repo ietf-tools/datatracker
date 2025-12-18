@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
+{% load origin django_bootstrap5 static %}
+={% block title %}Issue Working Group Last Call for {{ doc }}{% endblock %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static 'ietf/css/datepicker.css' %}">
+{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        Issue Working Group Last Call
+        <br>
+        <small class="text-body-secondary">{{ doc }}</small>
+    </h1>
+    {% if form.errors %}
+        <p class="alert alert-danger my-3">
+            Please correct the following:
+        </p>
+    {% endif %}
+    {% bootstrap_form_errors form %}
+    <form class="mt-5" method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <div id="end_date_warn" class="alert alert-warning d-none" role="alert">
+            All dates have been updated automatically in the Subject and Body fields with the End date value. Since you previously edited these fields manually, review both to ensure they match your expectations.
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <a class="btn btn-secondary float-end" href="{{ doc.get_absolute_url }}">Back</a>
+    </form>
+{% endblock %}
+{% block js %}
+    <script src="{% static 'ietf/js/datepicker.js' %}"></script>
+    <script>
+        (function () {
+            const datepickerElm = document.querySelector('#id_end_date')
+            const subjectElm = document.querySelector('#id_subject')
+            const contentElm = document.querySelector('#id_body')
+            const warnElm = document.querySelector('#end_date_warn')
+            let isSubjectOrContentDirty = false
+
+            // Handle date auto-replace in subject + content
+            datepickerElm.addEventListener('changeDate', ev => {
+                subjectElm.value = subjectElm.value.replaceAll(/2[0-9]{3}-[0-9]{2}-[0-9]{2}/g, datepickerElm.value)
+                contentElm.value = contentElm.value.replaceAll(/2[0-9]{3}-[0-9]{2}-[0-9]{2}/g, datepickerElm.value)
+
+                // Warn about auto-replace on dirtied fields
+                if (isSubjectOrContentDirty) {
+                    warnElm.classList.remove('d-none')
+                }
+            })
+
+            // Detect dirtied fields
+            subjectElm.addEventListener('input', () => {
+                isSubjectOrContentDirty = true
+            })
+            contentElm.addEventListener('input', () => {
+                isSubjectOrContentDirty = true
+            })
+        })()
+    </script>
+{% endblock %}
