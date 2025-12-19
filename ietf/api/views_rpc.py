@@ -8,7 +8,7 @@ from django.core.files.uploadedfile import UploadedFile
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import mixins, parsers, serializers, viewsets, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, APIException
+from rest_framework.exceptions import APIException
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -34,7 +34,7 @@ from ietf.api.serializers_rpc import (
     NotificationAckSerializer, RfcPubSerializer, RfcFileSerializer,
     EditableRfcSerializer,
 )
-from ietf.doc.models import Document, DocHistory, RfcAuthor, EditedRfcAuthorsDocEvent
+from ietf.doc.models import Document, DocHistory, RfcAuthor
 from ietf.doc.serializers import RfcAuthorSerializer
 from ietf.person.models import Email, Person
 
@@ -367,6 +367,18 @@ class RfcPubFilesView(APIView):
     api_key_endpoint = "ietf.api.views_rpc"
     parser_classes = [parsers.MultiPartParser]
 
+    def _destination(self, filename: str | Path) -> Path:
+        """Destination for an uploaded RFC file
+        
+        Strips any path components in filename and returns an absolute Path.
+        """
+        rfc_path = Path(settings.RFC_PATH)
+        filename = Path(filename)  # could potentially have directory components
+        extension = "".join(filename.suffixes)
+        if extension == ".notprepped.xml":
+            return rfc_path / "prerelease" / filename.name
+        return rfc_path / filename.name
+
     @extend_schema(
         operation_id="upload_rfc_files",
         summary="Upload files for a published RFC",
@@ -383,11 +395,10 @@ class RfcPubFilesView(APIView):
         uploaded_files: list[UploadedFile] = serializer.validated_data["contents"]
         replace = serializer.validated_data["replace"]
         dest_stem = f"rfc{rfc.rfc_number}"
-        dest_path = Path(settings.RFC_PATH)
 
         # List of files that might exist for an RFC
         possible_rfc_files = [
-            (dest_path / dest_stem).with_suffix(ext)
+            self._destination(dest_stem + ext)
             for ext in serializer.allowed_extensions
         ]
         if not replace:
@@ -400,23 +411,25 @@ class RfcPubFilesView(APIView):
                     )
 
         with TemporaryDirectory() as tempdir:
-            # save files with desired names in a temporary directory
+            # Save files in a temporary directory. Use the uploaded filename
+            # extensions to identify files, but ignore the stems and generate our own.
             files_to_move: list[Path] = []
             tmpfile_stem = Path(tempdir) / dest_stem
             for upfile in uploaded_files:
-                uploaded_filename = Path(upfile.name)
+                uploaded_filename = Path(upfile.name)  # name supplied by request
                 uploaded_ext = "".join(uploaded_filename.suffixes)
-                dest_filename = tmpfile_stem.with_suffix(uploaded_ext)
-                with dest_filename.open("wb") as dest:
+                tempfile_path = tmpfile_stem.with_suffix(uploaded_ext)
+                with tempfile_path.open("wb") as dest:
                     for chunk in upfile.chunks():
                         dest.write(chunk)
-                files_to_move.append(dest_filename)
+                files_to_move.append(tempfile_path)
             # copy files to final location, removing any existing ones first if the
             # remove flag was set
             if replace:
                 for possible_existing_file in possible_rfc_files:
                     possible_existing_file.unlink(missing_ok=True)
             for ftm in files_to_move:
-                shutil.move(ftm, dest_path)
+                shutil.move(ftm, self._destination(ftm))
+                # todo store in blob storage as well (need a bucket for RFCs)
 
         return Response(NotificationAckSerializer().data)

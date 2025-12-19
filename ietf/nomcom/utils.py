@@ -27,7 +27,7 @@ from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.doc.models import DocEvent, NewRevisionDocEvent, State, Document
+from ietf.doc.models import DocEvent, NewRevisionDocEvent, Document
 from ietf.group.models import Group, Role
 from ietf.person.models import Email, Person
 from ietf.mailtrigger.utils import gather_address_lists
@@ -35,7 +35,7 @@ from ietf.meeting.models import Meeting
 from ietf.meeting.utils import participants_for_meeting
 from ietf.utils.pipe import pipe
 from ietf.utils.mail import send_mail_text, send_mail, get_payload_text
-from ietf.utils.log import assertion, log
+from ietf.utils.log import log
 from ietf.person.name import unidecode_name
 from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
 

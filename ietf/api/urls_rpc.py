@@ -1,14 +1,12 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
-
-from rest_framework import routers
-
 from django.conf import settings
 from django.urls import include, path
 
 from ietf.api import views_rpc, views_rpc_demo
+from ietf.api.routers import PrefixedDefaultRouter
 from ietf.utils.urls import url
 
-router = routers.DefaultRouter(use_regex_path=False)
+router = PrefixedDefaultRouter(use_regex_path=False, name_prefix="ietf.api.purple_api")
 router.include_format_suffixes = False
 router.register(r"draft", views_rpc.DraftViewSet, basename="draft")
 router.register(r"person", views_rpc.PersonViewSet)
@@ -28,8 +26,16 @@ if settings.SERVER_MODE not in {"production", "test"}:
 urlpatterns = [
     url(r"^doc/drafts_by_names/", views_rpc.DraftsByNamesView.as_view()),
     url(r"^persons/search/", views_rpc.RpcPersonSearch.as_view()),
-    path(r"rfc/publish/", views_rpc.RfcPubNotificationView.as_view()),
-    path(r"rfc/publish/files/", views_rpc.RfcPubFilesView.as_view()),
+    path(
+        r"rfc/publish/",
+        views_rpc.RfcPubNotificationView.as_view(),
+        name="ietf.api.purple_api.notify_rfc_published",
+    ),
+    path(
+        r"rfc/publish/files/",
+        views_rpc.RfcPubFilesView.as_view(),
+        name="ietf.api.purple_api.upload_rfc_files",
+    ),
     path(r"subject/<str:subject_id>/person/", views_rpc.SubjectPersonView.as_view()),
 ]
 
