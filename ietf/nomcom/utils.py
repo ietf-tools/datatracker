@@ -18,7 +18,7 @@ from email.iterators import typed_subpart_iterator
 from email.utils import parseaddr
 from textwrap import dedent
 
-from django.db.models import Q, Count
+from django.db.models import Q, Count, F, QuerySet
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.exceptions import ObjectDoesNotExist
@@ -27,7 +27,7 @@ from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.doc.models import DocEvent, NewRevisionDocEvent
+from ietf.doc.models import DocEvent, NewRevisionDocEvent, Document
 from ietf.group.models import Group, Role
 from ietf.person.models import Email, Person
 from ietf.mailtrigger.utils import gather_address_lists
@@ -576,6 +576,70 @@ def get_8989_eligibility_querysets(date, base_qs):
 def get_9389_eligibility_querysets(date, base_qs):
     return get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable=three_of_five_eligible_9389)
 
+
+def get_qualified_author_queryset(
+    base_qs: QuerySet[Person],
+    eligibility_period_start: datetime.datetime,
+    eligibility_period_end: datetime.datetime,
+):
+    """Filter a Person queryset, keeping those qualified by RFC 8989's author path
+    
+    The author path is defined by "path 3" in section 4 of RFC 8989. It qualifies
+    a person who has been a front-page listed author or editor of at least two IETF-
+    stream RFCs within the last five years. An I-D in the RFC Editor queue that was
+    approved by the IESG is treated as an RFC, using the date of entry to the RFC
+    Editor queue as the date for qualification.
+    
+    This method does not strictly enforce "in the RFC Editor queue" for IESG-approved
+    drafts when computing eligibility. In the overwhelming majority of cases, an IESG-
+    approved draft immediately enters the queue and goes on to be published, so this
+    simplification makes the calculation much easier and virtually never affects
+    eligibility.  
+    
+    Arguments eligibility_period_start and eligibility_period_end are datetimes that
+    mark the start and end of the eligibility period. These should be five years apart.
+    """
+    # First, get the RFCs using publication date
+    qualifying_rfc_pub_events = DocEvent.objects.filter(
+        type='published_rfc',
+        time__gte=eligibility_period_start,
+        time__lte=eligibility_period_end,
+    )
+    qualifying_rfcs = Document.objects.filter(
+        type_id="rfc",
+        docevent__in=qualifying_rfc_pub_events
+    ).annotate(
+        rfcauthor_count=Count("rfcauthor")
+    )
+    rfcs_with_rfcauthors = qualifying_rfcs.filter(rfcauthor_count__gt=0).distinct()
+    rfcs_without_rfcauthors = qualifying_rfcs.filter(rfcauthor_count=0).distinct()
+
+    # Second, get the IESG-approved I-Ds excluding any we're already counting as rfcs
+    qualifying_approval_events = DocEvent.objects.filter(
+        type='iesg_approved',
+        time__gte=eligibility_period_start,
+        time__lte=eligibility_period_end,
+    )
+    qualifying_drafts = Document.objects.filter(
+        type_id="draft",
+        docevent__in=qualifying_approval_events,
+    ).exclude(
+        relateddocument__relationship_id="became_rfc",
+        relateddocument__target__in=qualifying_rfcs,
+    ).distinct()
+
+    return base_qs.filter(
+        Q(documentauthor__document__in=qualifying_drafts)
+        | Q(rfcauthor__document__in=rfcs_with_rfcauthors)
+        | Q(documentauthor__document__in=rfcs_without_rfcauthors)
+    ).annotate(
+        document_author_count=Count('documentauthor'),
+        rfc_author_count=Count("rfcauthor")
+    ).annotate(
+        authorship_count=F("document_author_count") + F("rfc_author_count")
+    ).filter(authorship_count__gte=2)
+
+
 def get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable):
     if not base_qs:
         base_qs = Person.objects.all()
@@ -608,14 +672,7 @@ def get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable):
          )
     ).distinct()
 
-    rfc_pks = set(DocEvent.objects.filter(type='published_rfc', time__gte=five_years_ago, time__lte=date_as_dt).values_list('doc__pk', flat=True))
-    iesgappr_pks = set(DocEvent.objects.filter(type='iesg_approved', time__gte=five_years_ago, time__lte=date_as_dt).values_list('doc__pk',flat=True))
-    qualifying_pks = rfc_pks.union(iesgappr_pks.difference(rfc_pks))
-    author_qs = base_qs.filter(
-            documentauthor__document__pk__in=qualifying_pks
-        ).annotate(
-            document_author_count = Count('documentauthor')
-        ).filter(document_author_count__gte=2)
+    author_qs = get_qualified_author_queryset(base_qs, five_years_ago, date_as_dt)
     return three_of_five_qs, officer_qs, author_qs
 
 def list_eligible_8989(date, base_qs=None):
@@ -691,18 +748,42 @@ def three_of_five_eligible_9389(previous_five, queryset=None):
             counts[id] += 1
     return queryset.filter(pk__in=[id for id, count in counts.items() if count >= 3])
 
-def suggest_affiliation(person):
+def suggest_affiliation(person) -> str:
+    """Heuristically suggest a current affiliation for a Person"""
     recent_meeting = person.registration_set.order_by('-meeting__date').first()
-    affiliation = recent_meeting.affiliation if recent_meeting else ''
-    if not affiliation:
-        recent_volunteer = person.volunteer_set.order_by('-nomcom__group__acronym').first()
-        if recent_volunteer:
-            affiliation = recent_volunteer.affiliation 
-    if not affiliation:
-        recent_draft_revision =  NewRevisionDocEvent.objects.filter(doc__type_id='draft',doc__documentauthor__person=person).order_by('-time').first()
-        if recent_draft_revision:
-            affiliation = recent_draft_revision.doc.documentauthor_set.filter(person=person).first().affiliation
-    return affiliation
+    if recent_meeting and recent_meeting.affiliation:
+        return recent_meeting.affiliation
+
+    recent_volunteer = person.volunteer_set.order_by('-nomcom__group__acronym').first()
+    if recent_volunteer and recent_volunteer.affiliation:
+        return recent_volunteer.affiliation 
+
+    recent_draft_revision =  NewRevisionDocEvent.objects.filter(
+        doc__type_id="draft",
+        doc__documentauthor__person=person,
+    ).order_by("-time").first()
+    if recent_draft_revision:
+        draft_author = recent_draft_revision.doc.documentauthor_set.filter(
+            person=person
+        ).first()
+        if draft_author and draft_author.affiliation:
+            return draft_author.affiliation
+    
+    recent_rfc_publication = DocEvent.objects.filter(
+        Q(doc__documentauthor__person=person) | Q(doc__rfcauthor__person=person),
+        doc__type_id="rfc",
+        type="published_rfc",
+    ).order_by("-time").first()
+    if recent_rfc_publication:
+        rfc = recent_rfc_publication.doc
+        if rfc.rfcauthor_set.exists():
+            rfc_author = rfc.rfcauthor_set.filter(person=person).first()
+        else:
+            rfc_author = rfc.documentauthor_set.filter(person=person).first()
+        if rfc_author and rfc_author.affiliation:
+            return rfc_author.affiliation
+    return ""
+
 
 def extract_volunteers(year):
     nomcom = get_nomcom_by_year(year)

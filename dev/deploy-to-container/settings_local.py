@@ -71,11 +71,10 @@ SLIDE_STAGING_PATH = '/test/staging/'
 
 DE_GFM_BINARY = '/usr/local/bin/de-gfm'
 
-# No real secrets here, these are public testing values _only_
 APP_API_TOKENS = {
-  "ietf.api.views.ingest_email_test": ["ingestion-test-token"]
+  "ietf.api.views.ingest_email_test": ["ingestion-test-token"],  # Not a real secret
+  "ietf.api.views_rpc" : ["devtoken"],  # For RPC dev work only, remove before merging to main!!!
 }
-
 
 # OIDC configuration
 SITE_URL = 'https://__HOSTNAME__'

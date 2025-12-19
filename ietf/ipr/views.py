@@ -81,7 +81,8 @@ def get_document_emails(ipr):
 
         addrs = gather_address_lists('ipr_posted_on_doc',doc=doc).as_strings(compact=False)
 
-        author_names = ', '.join(a.person.name for a in doc.documentauthor_set.select_related("person"))
+        # Get a list of author names for the salutation in the body of the email
+        author_names = ', '.join(doc.author_names())
     
         context = dict(
             settings=settings,
