@@ -430,5 +430,6 @@ class RfcPubFilesView(APIView):
                     possible_existing_file.unlink(missing_ok=True)
             for ftm in files_to_move:
                 shutil.move(ftm, self._destination(ftm))
+                # todo store in blob storage as well (need a bucket for RFCs)
 
         return Response(NotificationAckSerializer().data)
