@@ -1,8 +1,7 @@
-# Copyright The IETF Trust 2023-2025, All Rights Reserved
-from django.conf import settings
+# Copyright The IETF Trust 2023-2026, All Rights Reserved
 from django.urls import include, path
 
-from ietf.api import views_rpc, views_rpc_demo
+from ietf.api import views_rpc
 from ietf.api.routers import PrefixedDefaultRouter
 from ietf.utils.urls import url
 
@@ -17,11 +16,6 @@ router.register(
     views_rpc.RfcAuthorViewSet,
     basename="rfc-authors",
 )
-
-if settings.SERVER_MODE not in {"production", "test"}:
-    # for non production demos
-    router.register(r"demo", views_rpc_demo.DemoViewSet, basename="demo")
-
 
 urlpatterns = [
     url(r"^doc/drafts_by_names/", views_rpc.DraftsByNamesView.as_view()),
