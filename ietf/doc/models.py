@@ -768,7 +768,7 @@ class DocumentInfo(models.Model):
     
     def part_of(self):
         return self.related_that("contains")
-    
+
     def referenced_by_rfcs_as_rfc_or_draft(self):
         """Get refs to this doc, or a draft/rfc it came from, from an RFC"""
         refs_to = self.referenced_by_rfcs()
@@ -779,9 +779,8 @@ class DocumentInfo(models.Model):
     def sent_to_rfc_editor_event(self):
         if self.stream_id == "ietf":
             return self.docevent_set.filter(type="iesg_approved").order_by("-time").first()
-        elif self.stream_id in ["iab", "irtf", "ise"]:
+        elif self.stream_id in ["editorial", "iab", "irtf", "ise"]:
             return self.docevent_set.filter(type="requested_publication").order_by("-time").first()
-        #elif self.stream_id == "editorial": #TODO
         else:
             return None
     class Meta:
