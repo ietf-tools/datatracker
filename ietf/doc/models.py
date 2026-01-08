@@ -419,6 +419,7 @@ class DocumentInfo(models.Model):
             return state.name
 
     def author_names(self):
+        """Author names as a list of strings"""
         names = []
         if self.type_id == "rfc" and self.rfcauthor_set.exists():
             for author in self.rfcauthor_set.all():
@@ -435,6 +436,7 @@ class DocumentInfo(models.Model):
         return names
 
     def author_persons_or_names(self):
+        """Authors as a list of named tuples with person and/or titlepage_name"""
         Author = namedtuple("Author", "person titlepage_name")
         persons_or_names = []
         if self.type_id=="rfc" and self.rfcauthor_set.exists():
@@ -445,6 +447,16 @@ class DocumentInfo(models.Model):
                 persons_or_names.append(Author(person=author.person, titlepage_name=""))
         return persons_or_names
 
+    def author_persons(self):
+        """Authors as a list of Persons
+        
+        Omits any RfcAuthors with a null person field.
+        """
+        if self.type_id == "rfc" and self.rfcauthor_set.exists():
+            authors_qs = self.rfcauthor_set.filter(person__isnull=False)
+        else:
+            authors_qs = self.documentauthor_set.all()
+        return [a.person for a in authors_qs.select_related("person")]
 
     def author_list(self):
         """List of author emails"""
@@ -461,18 +473,6 @@ class DocumentInfo(models.Model):
                 else:
                     best_addresses.append(author.email.person.email_address())
         return ", ".join(best_addresses)
-
-    def authors(self):
-        if self.type_id == "rfc" and self.rfcauthor_set.exists():
-            # todo deal with non-Person RfcAuthors if they exist
-            rfc_authors = [a.person for a in self.rfcauthor_set.all()]
-            if None in rfc_authors:
-                log.log(
-                    f"FIXME: authors() cannot handle non-Person authors in {self}"
-                )
-                rfc_authors = [author for author in rfc_authors if author is not None]
-            return rfc_authors
-        return [ a.person for a in self.documentauthor_set.all() ]
 
     # This, and several other ballot related functions here, assume that there is only one active ballot for a document at any point in time.
     # If that assumption is violated, they will only expose the most recently created ballot
