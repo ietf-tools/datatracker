@@ -422,7 +422,7 @@ class DocumentInfo(models.Model):
         """Author names as a list of strings"""
         names = []
         if self.type_id == "rfc" and self.rfcauthor_set.exists():
-            for author in self.rfcauthor_set.all():
+            for author in self.rfcauthor_set.select_related("person"):
                 if author.person:
                     names.append(author.person.name)
                 else:
@@ -440,10 +440,10 @@ class DocumentInfo(models.Model):
         Author = namedtuple("Author", "person titlepage_name")
         persons_or_names = []
         if self.type_id=="rfc" and self.rfcauthor_set.exists():
-            for author in self.rfcauthor_set.all():
+            for author in self.rfcauthor_set.select_related("person"):
                 persons_or_names.append(Author(person=author.person, titlepage_name=author.titlepage_name))
         else:
-            for author in self.documentauthor_set.all():
+            for author in self.documentauthor_set.select_related("person"):
                 persons_or_names.append(Author(person=author.person, titlepage_name=""))
         return persons_or_names
 
