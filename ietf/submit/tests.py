@@ -2404,7 +2404,7 @@ class ApiSubmissionTests(BaseSubmitTestCase):
         response = r.json()
         self.assertCountEqual(
             response.keys(),
-            ['id', 'name', 'rev', 'status_url'],
+            ['id', 'name', 'rev', 'status_url', 'submission_status_url'],
         )
         submission_id = int(response['id'])
         self.assertEqual(response['name'], 'draft-somebody-test')
@@ -2415,6 +2415,13 @@ class ApiSubmissionTests(BaseSubmitTestCase):
                 'ietf.submit.views.api_submission_status',
                 kwargs={'submission_id': submission_id},
             ),
+        )
+        self.assertEqual(
+            response['submission_status_url'],
+            'https://datatracker.example.com' + urlreverse(
+                'ietf.submit.views.submission_status',
+                kwargs={'submission_id': submission_id},
+            )
         )
         self.assertEqual(mock_task.delay.call_count, 1)
         self.assertEqual(mock_task.delay.call_args.args, (submission_id,))
