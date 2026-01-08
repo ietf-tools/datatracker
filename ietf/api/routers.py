@@ -27,5 +27,5 @@ class PrefixedSimpleRouter(PrefixedBasenameMixin, routers.SimpleRouter):
 
 
 class PrefixedDefaultRouter(PrefixedBasenameMixin, routers.DefaultRouter):
-    """SimpleRouter that adds a dot-separated prefix to its basename"""
+    """DefaultRouter that adds a dot-separated prefix to its basename"""
 

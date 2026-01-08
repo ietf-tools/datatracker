@@ -73,7 +73,7 @@ DE_GFM_BINARY = '/usr/local/bin/de-gfm'
 
 APP_API_TOKENS = {
   "ietf.api.views.ingest_email_test": ["ingestion-test-token"],  # Not a real secret
-  "ietf.api.views_rpc" : ["devtoken"],  # For RPC dev work only, remove before merging to main!!!
+  "ietf.api.views_rpc" : ["devtoken"],  # Not a real secret
 }
 
 # OIDC configuration

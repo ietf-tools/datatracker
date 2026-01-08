@@ -34,7 +34,7 @@ urlpatterns = [
 ]
 
 # add routers at the end so individual routes can steal parts of their address
-# space (specifically, ^person/ routes so far)
+# space (e.g., ^rfc/publish/ superseding the ^rfc/ routes of RfcViewSet)
 urlpatterns.extend(
     [
         path("", include(router.urls)),

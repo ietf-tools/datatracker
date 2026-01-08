@@ -102,5 +102,5 @@ for storagename in ARTIFACT_STORAGE_NAMES:
     }
 
 APP_API_TOKENS = {
-    "ietf.api.views_rpc" : ["devtoken"],
+    "ietf.api.views_rpc" : ["devtoken"],  # Not a real secret
 }
