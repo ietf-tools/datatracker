@@ -1403,7 +1403,7 @@ Man                    Expires September 22, 2015               [Page 3]
         country_event = change_events.filter(desc__icontains='changed country').first()
 
         self.assertIsNotNone(email_event)
-        self.assertIn(draft.author.persons()[0].name, email_event.desc)
+        self.assertIn(draft.author_persons()[0].name, email_event.desc)
         self.assertIn(before[0]['email'], email_event.desc)
         self.assertIn(after[0]['email'], email_event.desc)
 
