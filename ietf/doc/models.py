@@ -456,7 +456,6 @@ class DocumentInfo(models.Model):
             authors_qs = self.rfcauthor_set.filter(person__isnull=False)
         else:
             authors_qs = self.documentauthor_set.all()
-        print(f"nyah: {authors_qs.count()}")
         return [a.person for a in authors_qs.select_related("person")]
 
     def author_list(self):
