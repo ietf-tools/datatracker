@@ -35,6 +35,8 @@ warnings.filterwarnings("ignore", message="datetime.datetime.utcnow\\(\\) is dep
 warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="oic.utils.time_util")
 warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="pytz.tzinfo")
 warnings.filterwarnings("ignore", message="'instantiateVariableFont' is deprecated", module="weasyprint")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="bibtexparser")  # https://github.com/sciunto-org/python-bibtexparser/issues/502
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="pyparsing")  # https://github.com/sciunto-org/python-bibtexparser/issues/502
 
 
 base_path = pathlib.Path(__file__).resolve().parent
