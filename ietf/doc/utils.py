@@ -541,7 +541,7 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
             doc.action_holders.clear()
         if tags.removed("need-rev"):
             # Removed the 'need-rev' tag - drop authors from the action holders list
-            DocumentActionHolder.objects.filter(document=doc, person__in=doc.authors()).delete()
+            DocumentActionHolder.objects.filter(document=doc, person__in=doc.author_persons()).delete()
         elif tags.added("need-rev"):
             # Remove the AD if we're asking for a new revision
             DocumentActionHolder.objects.filter(document=doc, person=doc.ad).delete()
@@ -556,7 +556,7 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
                 doc.action_holders.add(doc.ad)
         # Authors get the action if a revision is needed
         if tags.added("need-rev"):
-            for auth in doc.authors():
+            for auth in doc.author_persons():
                 doc.action_holders.add(auth)
 
         # Now create an event if we changed the set

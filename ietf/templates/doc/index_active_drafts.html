@@ -29,7 +29,7 @@
     </p>
     {% for group in groups %}
         <h2 class="mt-3" id="id-{{ group.acronym }}">{{ group.name }} ({{ group.acronym }})</h2>
-        {% for d in group.active_drafts %}
+        {% for d in group.active_drafts %}{# n.b., d is a dict, not a Document #}
             <div class="card mb-3">
                 <div class="card-body">
                     <b>{{ d.title }}.</b>

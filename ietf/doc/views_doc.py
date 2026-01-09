@@ -1948,9 +1948,9 @@ def edit_action_holders(request, name):
     role_ids = dict()  # maps role slug to list of Person IDs (assumed numeric in the JavaScript)
     extra_prefetch = []  # list of Person objects to prefetch for select2 field
 
-    if len(doc.authors()) > 0:
+    authors = doc.author_persons()
+    if len(authors) > 0:
         doc_role_labels.append(dict(slug='authors', label='Authors'))
-        authors = doc.authors()
         role_ids['authors'] = [p.pk for p in authors]
         extra_prefetch += authors
 

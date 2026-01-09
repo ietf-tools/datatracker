@@ -983,7 +983,7 @@ Man                    Expires September 22, 2015               [Page 3]
         # Relevant users not authorized to edit authors
         unauthorized_usernames = [
             'plain',
-            *[author.user.username for author in draft.authors()],
+            *[author.user.username for author in draft.author_persons()],
             draft.group.get_chair().person.user.username,
             'ad'
         ]
@@ -998,7 +998,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.client.logout()
 
         # Try to add an author via POST - still only the secretary should be able to do this.
-        orig_authors = draft.authors()
+        orig_authors = draft.author_persons()
         post_data = self.make_edit_authors_post_data(
             basis='permission test',
             authors=draft.documentauthor_set.all(),
@@ -1016,12 +1016,12 @@ Man                    Expires September 22, 2015               [Page 3]
         for username in unauthorized_usernames:
             login_testing_unauthorized(self, username, url, method='post', request_kwargs=dict(data=post_data))
             draft = Document.objects.get(pk=draft.pk)
-            self.assertEqual(draft.authors(), orig_authors)  # ensure draft author list was not modified
+            self.assertEqual(draft.author_persons(), orig_authors)  # ensure draft author list was not modified
         login_testing_unauthorized(self, 'secretary', url, method='post', request_kwargs=dict(data=post_data))
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 302)
         draft = Document.objects.get(pk=draft.pk)
-        self.assertEqual(draft.authors(), orig_authors + [new_auth_person])
+        self.assertEqual(draft.author_persons(), orig_authors + [new_auth_person])
 
     def make_edit_authors_post_data(self, basis, authors):
         """Helper to generate edit_authors POST data for a set of authors"""
@@ -1369,8 +1369,8 @@ Man                    Expires September 22, 2015               [Page 3]
             basis=change_reason
         )
 
-        old_address = draft.authors()[0].email()
-        new_email = EmailFactory(person=draft.authors()[0], address=f'changed-{old_address}')
+        old_address = draft.author_persons()[0].email()
+        new_email = EmailFactory(person=draft.author_persons()[0], address=f'changed-{old_address}')
         post_data['author-0-email'] = new_email.address
         post_data['author-1-affiliation'] = 'University of Nowhere'
         post_data['author-2-country'] = 'Chile'
@@ -1403,17 +1403,17 @@ Man                    Expires September 22, 2015               [Page 3]
         country_event = change_events.filter(desc__icontains='changed country').first()
 
         self.assertIsNotNone(email_event)
-        self.assertIn(draft.authors()[0].name, email_event.desc)
+        self.assertIn(draft.author_persons()[0].name, email_event.desc)
         self.assertIn(before[0]['email'], email_event.desc)
         self.assertIn(after[0]['email'], email_event.desc)
 
         self.assertIsNotNone(affiliation_event)
-        self.assertIn(draft.authors()[1].name, affiliation_event.desc)
+        self.assertIn(draft.author_persons()[1].name, affiliation_event.desc)
         self.assertIn(before[1]['affiliation'], affiliation_event.desc)
         self.assertIn(after[1]['affiliation'], affiliation_event.desc)
 
         self.assertIsNotNone(country_event)
-        self.assertIn(draft.authors()[2].name, country_event.desc)
+        self.assertIn(draft.author_persons()[2].name, country_event.desc)
         self.assertIn(before[2]['country'], country_event.desc)
         self.assertIn(after[2]['country'], country_event.desc)
 
