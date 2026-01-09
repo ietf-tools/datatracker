@@ -124,10 +124,16 @@ def community_list_rules_matching_doc(doc):
 
     # author rules
     if doc.type_id == "rfc":
-        # this will over-return but will be least likely to surprise
+        has_rfcauthors = doc.rfcauthor_set.exists()
         rules |= SearchRule.objects.filter(
             rule_type="author_rfc",
-            person__in=list(Person.objects.filter(Q(documentauthor__document=doc)|Q(rfcauthor__document=doc))),
+            person__in=list(
+                Person.objects.filter(
+                    Q(rfcauthor__document=doc)
+                    if has_rfcauthors
+                    else Q(documentauthor__document=doc)
+                )
+            ),
         )
     else:
         rules |= SearchRule.objects.filter(
