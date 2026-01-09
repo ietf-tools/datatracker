@@ -182,7 +182,7 @@ def api_submission(request):
                             settings.IDTRACKER_BASE_URL,
                             urlreverse(api_submission_status, kwargs={'submission_id': submission.pk}),
                         ),
-                        'submission_status_url': urljoin(
+                        'submission_url': urljoin(
                             settings.IDTRACKER_BASE_URL,
                             urlreverse("ietf.submit.views.submission_status", kwargs={'submission_id': submission.pk}),
                         ),

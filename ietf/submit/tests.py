@@ -2404,7 +2404,7 @@ class ApiSubmissionTests(BaseSubmitTestCase):
         response = r.json()
         self.assertCountEqual(
             response.keys(),
-            ['id', 'name', 'rev', 'status_url', 'submission_status_url'],
+            ['id', 'name', 'rev', 'status_url', 'submission_url'],
         )
         submission_id = int(response['id'])
         self.assertEqual(response['name'], 'draft-somebody-test')
@@ -2417,7 +2417,7 @@ class ApiSubmissionTests(BaseSubmitTestCase):
             ),
         )
         self.assertEqual(
-            response['submission_status_url'],
+            response['submission_url'],
             'https://datatracker.example.com' + urlreverse(
                 'ietf.submit.views.submission_status',
                 kwargs={'submission_id': submission_id},
