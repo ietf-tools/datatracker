@@ -146,11 +146,11 @@ def replicate_blob(bucket, name):
     blob = fetch_blob_via_sql(bucket, name)
     if blob is None:
         if verbose_logging_enabled():
-            log.log("Deleting {bucket}:{name} from replica")
+            log.log(f"Deleting {bucket}:{name} from replica")
         try:
             destination_storage.delete(name)
         except Exception as e:
-            log.log("Failed to delete {bucket}:{name} from replica: {e}")
+            log.log(f"Failed to delete {bucket}:{name} from replica: {e}")
             raise ReplicationError from e
     else:
         # Add metadata expected by the MetadataS3Storage
@@ -170,7 +170,7 @@ def replicate_blob(bucket, name):
         try:
             destination_storage.save(name, file_with_metadata)
         except Exception as e:
-            log.log("Failed to save {bucket}:{name} to replica: {e}")
+            log.log(f"Failed to save {bucket}:{name} to replica: {e}")
             raise ReplicationError from e
 
 
