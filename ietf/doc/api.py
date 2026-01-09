@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2024-2025, All Rights Reserved
+# Copyright The IETF Trust 2024-2026, All Rights Reserved
 """Doc API implementations"""
 
 from django.db.models import OuterRef, Subquery, Prefetch, Value, JSONField, QuerySet
@@ -7,7 +7,6 @@ from django_filters import rest_framework as filters
 from rest_framework import filters as drf_filters
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import BasePermission
 from rest_framework.viewsets import GenericViewSet
 
 from ietf.group.models import Group
@@ -144,7 +143,7 @@ def augment_rfc_queryset(queryset: QuerySet[Document]):
 
 
 class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
-    permission_classes: list[BasePermission] = []
+    api_key_endpoint = "ietf.api.red_api"  # matches prefix in ietf/api/urls.py
     lookup_field = "rfc_number"
     queryset = augment_rfc_queryset(
         Document.objects.filter(type_id="rfc", rfc_number__isnull=False)
@@ -185,7 +184,7 @@ class SubseriesFilter(filters.FilterSet):
 
 
 class SubseriesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
-    permission_classes: list[BasePermission] = []
+    api_key_endpoint = "ietf.api.red_api"  # matches prefix in ietf/api/urls.py
     lookup_field = "name"
     serializer_class = SubseriesDocSerializer
     queryset = Document.objects.subseries_docs().prefetch_related(
