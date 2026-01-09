@@ -287,7 +287,7 @@ def is_individual_draft_author(user, doc):
     if not hasattr(user, 'person'):
         return False
 
-    if user.person in doc.authors():
+    if user.person in doc.author_persons():
         return True
 
     return False

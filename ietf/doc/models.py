@@ -456,6 +456,7 @@ class DocumentInfo(models.Model):
             authors_qs = self.rfcauthor_set.filter(person__isnull=False)
         else:
             authors_qs = self.documentauthor_set.all()
+        print(f"nyah: {authors_qs.count()}")
         return [a.person for a in authors_qs.select_related("person")]
 
     def author_list(self):
@@ -994,7 +995,7 @@ class DocumentActionHolder(models.Model):
     def role_for_doc(self):
         """Brief string description of this person's relationship to the doc"""
         roles = []
-        if self.person in self.document.authors():
+        if self.person in self.document.author_persons():
             roles.append('Author')
         if self.person == self.document.ad:
             roles.append('Responsible AD')

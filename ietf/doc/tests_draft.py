@@ -140,7 +140,7 @@ class ChangeStateTests(TestCase):
         self.assertEqual(draft.get_state_slug("draft-iesg"), "review-e")
         self.assertTrue(not draft.tags.filter(slug="ad-f-up"))
         self.assertTrue(draft.tags.filter(slug="need-rev"))
-        self.assertCountEqual(draft.action_holders.all(), [ad] + draft.authors())
+        self.assertCountEqual(draft.action_holders.all(), [ad] + draft.author_persons())
         self.assertEqual(draft.docevent_set.count(), events_before + 3)
         self.assertTrue("Test comment" in draft.docevent_set.all()[0].desc)
         self.assertTrue("Changed action holders" in draft.docevent_set.all()[1].desc)
@@ -179,7 +179,7 @@ class ChangeStateTests(TestCase):
             states=[('draft-iesg','rfcqueue')],
         )
         DocEventFactory(type='started_iesg_process',by=ad,doc=draft,rev=draft.rev,desc="Started IESG Process")
-        draft.action_holders.add(*(draft.authors()))
+        draft.action_holders.add(*(draft.author_persons()))
 
         url = urlreverse('ietf.doc.views_draft.change_state', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
@@ -279,7 +279,7 @@ class ChangeStateTests(TestCase):
             states=[('draft-iesg','ad-eval')],
         )
         DocEventFactory(type='started_iesg_process',by=ad,doc=draft,rev=draft.rev,desc="Started IESG Process")
-        draft.action_holders.add(*(draft.authors()))
+        draft.action_holders.add(*(draft.author_persons()))
 
         self.client.login(username="secretary", password="secretary+password")
         url = urlreverse('ietf.doc.views_draft.change_state', kwargs=dict(name=draft.name))
@@ -1369,7 +1369,7 @@ class IndividualInfoFormsTests(TestCase):
 
         _test_changing_ah([doc.ad, doc.shepherd.person], 'this is a first test')
         _test_changing_ah([doc.ad], 'this is a second test')
-        _test_changing_ah(doc.authors(), 'authors can do it, too')
+        _test_changing_ah(doc.author_persons(), 'authors can do it, too')
         _test_changing_ah([], 'clear it back out')
 
     def test_doc_change_action_holders_as_doc_manager(self):
