@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
             field=models.CharField(
                 max_length=255,
                 validators=[
-                    django.core.validators.ProhibitNullCharactersValidator,
+                    django.core.validators.ProhibitNullCharactersValidator,  # type:ignore
                     django.core.validators.RegexValidator(
                         message="Please enter a string without control characters.",
                         regex="^[^\x01-\x1f]*$",
@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
             field=models.CharField(
                 max_length=255,
                 validators=[
-                    django.core.validators.ProhibitNullCharactersValidator,
+                    django.core.validators.ProhibitNullCharactersValidator,  # type:ignore
                     django.core.validators.RegexValidator(
                         message="Please enter a string without control characters.",
                         regex="^[^\x01-\x1f]*$",
