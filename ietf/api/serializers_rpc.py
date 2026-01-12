@@ -78,11 +78,11 @@ class AuthorPersonSerializer(serializers.ModelSerializer):
 
 
 class RfcWithAuthorsSerializer(serializers.ModelSerializer):
-    authors = AuthorPersonSerializer(many=True)
+    author_persons = AuthorPersonSerializer(many=True)
 
     class Meta:
         model = Document
-        fields = ["rfc_number", "authors"]
+        fields = ["rfc_number", "author_persons"]
 
 
 class DraftWithAuthorsSerializer(serializers.ModelSerializer):
