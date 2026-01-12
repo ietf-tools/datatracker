@@ -115,7 +115,7 @@ class DocumentInfo(models.Model):
     title = models.CharField(
         max_length=255,
         validators=[
-            ProhibitNullCharactersValidator,
+            ProhibitNullCharactersValidator(),
             validate_no_control_chars,
         ],
     )
