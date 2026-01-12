@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2025, All Rights Reserved
+# Copyright The IETF Trust 2026, All Rights Reserved
 
 import django.core.validators
 from django.db import migrations, models
@@ -6,7 +6,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("doc", "0026_change_wg_state_descriptions"),
+        ("doc", "0029_editedrfcauthorsdocevent"),
     ]
 
     operations = [
@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
             field=models.CharField(
                 max_length=255,
                 validators=[
-                    django.core.validators.ProhibitNullCharactersValidator,  # type:ignore
+                    django.core.validators.ProhibitNullCharactersValidator(),
                     django.core.validators.RegexValidator(
                         message="Please enter a string without control characters.",
                         regex="^[^\x01-\x1f]*$",
@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
             field=models.CharField(
                 max_length=255,
                 validators=[
-                    django.core.validators.ProhibitNullCharactersValidator,  # type:ignore
+                    django.core.validators.ProhibitNullCharactersValidator(),
                     django.core.validators.RegexValidator(
                         message="Please enter a string without control characters.",
                         regex="^[^\x01-\x1f]*$",

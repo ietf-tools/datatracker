@@ -1,10 +1,9 @@
-# Copyright The IETF Trust 2023-2025, All Rights Reserved
+# Copyright The IETF Trust 2023-2026, All Rights Reserved
 import shutil
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.conf import settings
-from django.core.files.uploadedfile import UploadedFile
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import mixins, parsers, serializers, viewsets, status
 from rest_framework.decorators import action
@@ -392,7 +391,7 @@ class RfcPubFilesView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         rfc = serializer.validated_data["rfc"]
-        uploaded_files: list[UploadedFile] = serializer.validated_data["contents"]
+        uploaded_files = serializer.validated_data["contents"]  # list[UploadedFile]
         replace = serializer.validated_data["replace"]
         dest_stem = f"rfc{rfc.rfc_number}"
 
@@ -413,7 +412,7 @@ class RfcPubFilesView(APIView):
         with TemporaryDirectory() as tempdir:
             # Save files in a temporary directory. Use the uploaded filename
             # extensions to identify files, but ignore the stems and generate our own.
-            files_to_move: list[Path] = []
+            files_to_move = []  # list[Path]
             tmpfile_stem = Path(tempdir) / dest_stem
             for upfile in uploaded_files:
                 uploaded_filename = Path(upfile.name)  # name supplied by request

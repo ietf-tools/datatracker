@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2025, All Rights Reserved
+# Copyright The IETF Trust 2010-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -115,7 +115,7 @@ class DocumentInfo(models.Model):
     title = models.CharField(
         max_length=255,
         validators=[
-            ProhibitNullCharactersValidator,
+            ProhibitNullCharactersValidator(),
             validate_no_control_chars,
         ],
     )

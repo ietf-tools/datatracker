@@ -1,10 +1,11 @@
-# Copyright The IETF Trust 2024-2025, All Rights Reserved
+# Copyright The IETF Trust 2024-2026, All Rights Reserved
 """django-rest-framework serializers"""
 
 from dataclasses import dataclass
 from typing import Literal, ClassVar
 
 from django.db.models.manager import BaseManager
+from django.db.models.query import QuerySet
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -134,7 +135,7 @@ class RfcStatus:
     def from_document(cls, doc: Document):
         """Decide the status that applies to a document"""
         return cls(
-            slug=(cls.stdlevelname_slug_map.get(doc.std_level.slug, "unknown")),
+            slug=(cls.stdlevelname_slug_map.get(doc.std_level.slug, "unkn")),
         )
 
     @classmethod
@@ -237,13 +238,15 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             "errata",
         ]
 
+
     @extend_schema_field(RfcAuthorSerializer(many=True))
     def get_authors(self, doc: Document):
         # If doc has any RfcAuthors, use those, otherwise fall back to DocumentAuthors
-        if doc.rfcauthor_set.exists():
-            author_queryset = doc.rfcauthor_set.all()
-        else:
-            author_queryset = doc.documentauthor_set.all()
+        author_queryset: QuerySet[RfcAuthor] | QuerySet[DocumentAuthor] = (
+            doc.rfcauthor_set.all()
+            if doc.rfcauthor_set.exists()
+            else doc.documentauthor_set.all()
+        )
         # RfcAuthorSerializer can deal with DocumentAuthor instances
         return RfcAuthorSerializer(
             instance=author_queryset,
