@@ -15,7 +15,7 @@ from .models import Document, DocumentAuthor, RfcAuthor
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
-    """Serializer for a DocumentAuthor in a response"""
+    """Serializer for an RfcAuthor / DocumentAuthor in a response"""
     datatracker_person_path = serializers.URLField(
         source="person.get_absolute_url",
         required=False,
