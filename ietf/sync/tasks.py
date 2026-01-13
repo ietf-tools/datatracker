@@ -4,6 +4,10 @@
 #
 import datetime
 import io
+from pathlib import Path
+import subprocess
+from tempfile import NamedTemporaryFile, TemporaryDirectory
+from typing import List
 import requests
 
 from celery import shared_task
@@ -12,6 +16,8 @@ from django.conf import settings
 from django.utils import timezone
 
 from ietf.doc.models import DocEvent, RelatedDocument
+from ietf.doc.storage_utils import AlreadyExistsError, store_bytes
+from ietf.doc.tasks import rebuild_reference_relations_task
 from ietf.sync import iana
 from ietf.sync import rfceditor
 from ietf.sync.rfceditor import MIN_QUEUE_RESULTS, parse_queue, update_drafts_from_queue
@@ -65,11 +71,15 @@ def rfc_editor_index_update_task(full_index=False):
     if len(errata_data) < rfceditor.MIN_ERRATA_RESULTS:
         log.log("Not enough errata entries, only %s" % len(errata_data))
         return  # failed
+    newly_published = {}
     for rfc_number, changes, doc, rfc_published in rfceditor.update_docs_from_rfc_index(
         index_data, errata_data, skip_older_than_date=skip_date
     ):
         for c in changes:
             log.log("RFC%s, %s: %s" % (rfc_number, doc.name, c))
+        if rfc_published:
+            newly_published.add(rfc_number)
+    rsync_rfcs_from_rfceditor.delay(newly_published)
 
 
 @shared_task
@@ -222,3 +232,80 @@ def fix_subseries_docevents_task():
         DocEvent.objects.filter(type="sync_from_rfc_editor", desc=desc).update(
             time=obsoleting_time
         )
+
+@shared_task
+def rsync_rfcs_from_rfceditor(rfc_numbers: List[int]):
+    log.log("Rsyncing rfcs from rfc-editor: " + str(rfc_numbers))
+    from_file = None
+    with NamedTemporaryFile(mode="w", delete=False) as fp:
+        from_file = Path(fp.name)
+        for num in rfc_numbers:
+            for ext in settings.RFC_FILE_TYPES:
+                fp.write(f"rfc{num}.{ext}\n")
+        fp.close()
+        subprocess.run(
+            [
+                "/usr/bin/rsync",
+                "-a",
+                "--ignore-existing",
+                f"--include-from={str(from_file)}",
+                "--exclude=*",
+                "rsync.rfc-editor.org::rfcs/",
+                f"{settings.RFC_PATH}",
+            ]
+        )
+    if from_file is not None:
+        from_file.unlink()
+    for num in rfc_numbers:
+        for ext in settings.RFC_FILE_TYPES:
+            fs_path = Path(settings.RFC_PATH) / f"rfc{num}.{ext}"
+            if fs_path.is_file():
+                with fs_path.open("rb") as f:
+                    bytes = f.read()
+                m_time = fs_path.stat().st_mtime
+                try:
+                    store_bytes(
+                        kind="rfc",
+                        name=f"{ext}/rfc{num}.{ext}",
+                        content=bytes,
+                        allow_overwrite=False,  # Intentionally not allowing overwrite.
+                        doc_name=f"rfc{num}",
+                        doc_rev=None,
+                        # Not setting content_type
+                        mtime=datetime.datetime.fromtimestamp(m_time, tz=datetime.UTC),
+                    )
+                except AlreadyExistsError as e:
+                    log.log(str(e))
+                    # This condition will just log verbosely but not otherwise fail
+    
+        # Also fetch and store the not-prepped xml
+        with TemporaryDirectory() as td:
+            name = f"rfc{num}.notprepped.xml"
+            subprocess.run(
+                [
+                    "/usr/bin/rsync",
+                    "-a",
+                    f"rsync.rfc-editor.org::rfcs/prerelease/{name}",
+                    f"{td}/",
+                ]
+            )
+            source = Path(td)/name
+            with open(source,"rb") as f:
+                bytes = f.read()
+            m_time = source.stat().st_mtime
+            try:
+                store_bytes(
+                    kind="rfc",
+                    name=f"notprepped/{name}",
+                    content=bytes,
+                    allow_overwrite=False,  # Intentionally not allowing overwrite.
+                    doc_name=f"rfc{num}",
+                    doc_rev=None,
+                    # Not setting content_type
+                    mtime=datetime.datetime.fromtimestamp(m_time, tz=datetime.UTC),
+                )
+            except AlreadyExistsError as e:
+                log.log(str(e))
+
+    rebuild_reference_relations_task.delay([f"rfc{num}" for num in rfc_numbers])
+                
