@@ -71,7 +71,7 @@ def rfc_editor_index_update_task(full_index=False):
     if len(errata_data) < rfceditor.MIN_ERRATA_RESULTS:
         log.log("Not enough errata entries, only %s" % len(errata_data))
         return  # failed
-    newly_published = {}
+    newly_published = set()
     for rfc_number, changes, doc, rfc_published in rfceditor.update_docs_from_rfc_index(
         index_data, errata_data, skip_older_than_date=skip_date
     ):
@@ -79,7 +79,8 @@ def rfc_editor_index_update_task(full_index=False):
             log.log("RFC%s, %s: %s" % (rfc_number, doc.name, c))
         if rfc_published:
             newly_published.add(rfc_number)
-    rsync_rfcs_from_rfceditor.delay(newly_published)
+    if len(newly_published) > 0:
+        rsync_rfcs_from_rfceditor.delay(list(newly_published))
 
 
 @shared_task
