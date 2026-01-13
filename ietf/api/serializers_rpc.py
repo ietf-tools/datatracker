@@ -78,16 +78,16 @@ class AuthorPersonSerializer(serializers.ModelSerializer):
 
 
 class RfcWithAuthorsSerializer(serializers.ModelSerializer):
-    author_persons = AuthorPersonSerializer(many=True)
+    authors = AuthorPersonSerializer(many=True, source="author_persons")
 
     class Meta:
         model = Document
-        fields = ["rfc_number", "author_persons"]
+        fields = ["rfc_number", "authors"]
 
 
 class DraftWithAuthorsSerializer(serializers.ModelSerializer):
     draft_name = serializers.CharField(source="name")
-    authors = AuthorPersonSerializer(many=True)
+    authors = AuthorPersonSerializer(many=True, source="author_persons")
 
     class Meta:
         model = Document
@@ -242,6 +242,7 @@ class EditableRfcSerializer(serializers.ModelSerializer):
 
 
 class RfcPubSerializer(serializers.ModelSerializer):
+    """Write-only serializer for RFC publication"""
     # publication-related fields
     published = serializers.DateTimeField(default_timezone=datetime.timezone.utc)
     draft_name = serializers.RegexField(
@@ -295,6 +296,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
             regex=r"^(bcp|std|fyi)[1-9][0-9]{0,4}$", 
         )
     )
+    # N.b., authors is _not_ a field on Document!
     authors = RfcAuthorSerializer(many=True)
 
     class Meta:
