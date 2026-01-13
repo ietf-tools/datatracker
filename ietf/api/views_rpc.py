@@ -1,4 +1,5 @@
 # Copyright The IETF Trust 2023-2026, All Rights Reserved
+import os
 import shutil
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -394,6 +395,7 @@ class RfcPubFilesView(APIView):
         uploaded_files = serializer.validated_data["contents"]  # list[UploadedFile]
         replace = serializer.validated_data["replace"]
         dest_stem = f"rfc{rfc.rfc_number}"
+        mtime = serializer.validated_data["mtime"].timestamp()
 
         # List of files that might exist for an RFC
         possible_rfc_files = [
@@ -421,6 +423,7 @@ class RfcPubFilesView(APIView):
                 with tempfile_path.open("wb") as dest:
                     for chunk in upfile.chunks():
                         dest.write(chunk)
+                os.utime(tempfile_path, (mtime, mtime))
                 files_to_move.append(tempfile_path)
             # copy files to final location, removing any existing ones first if the
             # remove flag was set
