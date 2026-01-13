@@ -1268,7 +1268,7 @@ def process_submission_text(filename, revision):
     if title:
         title = _normalize_title(title)
 
-    # Translation taable drops \r, \n, <, >.
+    # Translation table drops \r, \n, <, >.
     trans_table = str.maketrans("", "", "\r\n<>")
     authors = [
         {
