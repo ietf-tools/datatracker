@@ -889,8 +889,9 @@ class TaskTests(TestCase):
     @mock.patch("ietf.sync.tasks.rfceditor.update_docs_from_rfc_index")
     @mock.patch("ietf.sync.tasks.rfceditor.parse_index")
     @mock.patch("ietf.sync.tasks.requests.get")
+    @mock.patch("ietf.sync.tasks.rsync_rfcs_from_rfceditor.delay")
     def test_rfc_editor_index_update_task(
-        self, requests_get_mock, parse_index_mock, update_docs_mock
+        self, rsync_task_mock, requests_get_mock, parse_index_mock, update_docs_mock
     ) -> None:  # the annotation here prevents mypy from complaining about annotation-unchecked
         """rfc_editor_index_update_task calls helpers correctly
         
@@ -922,6 +923,7 @@ class TaskTests(TestCase):
         rfc = RfcFactory()
     
         # Test with full_index = False
+        rsync_task_mock.return_value = None
         requests_get_mock.side_effect = (index_response, errata_response)  # will step through these
         parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS)
         update_docs_mock.return_value = (
@@ -947,10 +949,13 @@ class TaskTests(TestCase):
         )
         self.assertIsNotNone(update_docs_kwargs["skip_older_than_date"])
 
+        self.assertFalse(rsync_task_mock.called)
+
         # Test again with full_index = True
         requests_get_mock.reset_mock()
         parse_index_mock.reset_mock()
         update_docs_mock.reset_mock()
+        rsync_task_mock.reset_mock()
         requests_get_mock.side_effect = (index_response, errata_response)  # will step through these
         tasks.rfc_editor_index_update_task(full_index=True)
 
@@ -971,40 +976,64 @@ class TaskTests(TestCase):
         )
         self.assertIsNone(update_docs_kwargs["skip_older_than_date"])
 
+        self.assertFalse(rsync_task_mock.called)
+
+        # Test again where the index would cause a new RFC to come into existance
+        requests_get_mock.reset_mock()
+        parse_index_mock.reset_mock()
+        update_docs_mock.reset_mock()
+        rsync_task_mock.reset_mock()
+        requests_get_mock.side_effect = (index_response, errata_response)  # will step through these
+        update_docs_mock.return_value = (
+            (rfc.rfc_number, ("something changed",), rfc, True),
+        )
+        tasks.rfc_editor_index_update_task(full_index=True)
+        self.assertTrue(rsync_task_mock.called)
+        rsync_task_args, rsync_task_kwargs = rsync_task_mock.call_args
+        self.assertEqual((([1000],),{}),(rsync_task_args, rsync_task_kwargs))
+
         # Test error handling
         requests_get_mock.reset_mock()
         parse_index_mock.reset_mock()
         update_docs_mock.reset_mock()
+        rsync_task_mock.reset_mock()
         requests_get_mock.side_effect = requests.Timeout  # timeout on every get()
         tasks.rfc_editor_index_update_task(full_index=False)
         self.assertFalse(parse_index_mock.called)
         self.assertFalse(update_docs_mock.called)
+        self.assertFalse(rsync_task_mock.called)
         
         requests_get_mock.reset_mock()
         parse_index_mock.reset_mock()
         update_docs_mock.reset_mock()
+        rsync_task_mock.reset_mock()
         requests_get_mock.side_effect = [index_response, requests.Timeout]  # timeout second get()
         tasks.rfc_editor_index_update_task(full_index=False)
         self.assertFalse(update_docs_mock.called)
+        self.assertFalse(rsync_task_mock.called)
 
         requests_get_mock.reset_mock()
         parse_index_mock.reset_mock()
         update_docs_mock.reset_mock()
+        rsync_task_mock.reset_mock()
         requests_get_mock.side_effect = [index_response, errata_response]
         # feed in an index that is too short
         parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS - 1)
         tasks.rfc_editor_index_update_task(full_index=False)
         self.assertTrue(parse_index_mock.called)
         self.assertFalse(update_docs_mock.called)
+        self.assertFalse(rsync_task_mock.called)
 
         requests_get_mock.reset_mock()
         parse_index_mock.reset_mock()
         update_docs_mock.reset_mock()
+        rsync_task_mock.reset_mock()
         requests_get_mock.side_effect = [index_response, errata_response]
         errata_response.json_length = rfceditor.MIN_ERRATA_RESULTS - 1  # too short
         parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS)
         tasks.rfc_editor_index_update_task(full_index=False)
         self.assertFalse(update_docs_mock.called)
+        self.assertFalse(rsync_task_mock.called)
 
     @override_settings(RFC_EDITOR_QUEUE_URL="https://rfc-editor.example.com/queue/")
     @mock.patch("ietf.sync.tasks.update_drafts_from_queue")
