@@ -468,14 +468,18 @@ def update_docs_from_rfc_index(
             doc.set_state(rfc_published_state)
             if draft:
                 doc.formal_languages.set(draft.formal_languages.all())
-                for author in draft.documentauthor_set.all():
+                # Create authors based on the last draft in the datatracker. This
+                # path will go away when we publish via the modernized RPC workflow
+                # but until then, these are the only data we have for authors that
+                # are easily connected to Person records.
+                for documentauthor in draft.documentauthor_set.all():
                     # Copy the author but point at the new doc.
                     # See https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
-                    author.pk = None
-                    author.id = None
-                    author._state.adding = True
-                    author.document = doc
-                    author.save()
+                    documentauthor.pk = None
+                    documentauthor.id = None
+                    documentauthor._state.adding = True
+                    documentauthor.document = doc
+                    documentauthor.save()
 
         if draft:
             draft_events = []
