@@ -446,7 +446,7 @@ class RFCSyncTests(TestCase):
 
         rfc_doc = Document.objects.filter(rfc_number=1234, type_id="rfc").first()
         self.assertIsNotNone(rfc_doc, "RFC document should have been created")
-        self.assertEqual(rfc_doc.authors(), draft_doc.authors())
+        self.assertEqual(rfc_doc.author_persons_or_names(), draft_doc.author_persons_or_names())
         rfc_events = rfc_doc.docevent_set.all()
         self.assertEqual(len(rfc_events), 8)
         expected_events = [

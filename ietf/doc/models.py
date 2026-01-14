@@ -1,7 +1,8 @@
-# Copyright The IETF Trust 2010-2025, All Rights Reserved
+# Copyright The IETF Trust 2010-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
+from collections import namedtuple
 import datetime
 import logging
 import os
@@ -20,7 +21,11 @@ from django.db import models
 from django.core import checks
 from django.core.files.base import File
 from django.core.cache import caches
-from django.core.validators import URLValidator, RegexValidator
+from django.core.validators import (
+    URLValidator,
+    RegexValidator,
+    ProhibitNullCharactersValidator,
+)
 from django.urls import reverse as urlreverse
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
@@ -107,7 +112,13 @@ class DocumentInfo(models.Model):
     time = models.DateTimeField(default=timezone.now) # should probably have auto_now=True
 
     type = ForeignKey(DocTypeName, blank=True, null=True) # Draft, Agenda, Minutes, Charter, Discuss, Guideline, Email, Review, Issue, Wiki, External ...
-    title = models.CharField(max_length=255, validators=[validate_no_control_chars, ])
+    title = models.CharField(
+        max_length=255,
+        validators=[
+            ProhibitNullCharactersValidator(),
+            validate_no_control_chars,
+        ],
+    )
 
     states = models.ManyToManyField(State, blank=True) # plain state (Active/Expired/...), IESG state, stream state
     tags = models.ManyToManyField(DocTagName, blank=True) # Revised ID Needed, ExternalParty, AD Followup, ...
@@ -407,18 +418,61 @@ class DocumentInfo(models.Model):
         else:
             return state.name
 
+    def author_names(self):
+        """Author names as a list of strings"""
+        names = []
+        if self.type_id == "rfc" and self.rfcauthor_set.exists():
+            for author in self.rfcauthor_set.select_related("person"):
+                if author.person:
+                    names.append(author.person.name)
+                else:
+                    # titlepage_name cannot be blank
+                    names.append(author.titlepage_name)
+        else:
+            names = [
+                author.person.name
+                for author in self.documentauthor_set.select_related("person")
+            ]
+        return names
+
+    def author_persons_or_names(self):
+        """Authors as a list of named tuples with person and/or titlepage_name"""
+        Author = namedtuple("Author", "person titlepage_name")
+        persons_or_names = []
+        if self.type_id=="rfc" and self.rfcauthor_set.exists():
+            for author in self.rfcauthor_set.select_related("person"):
+                persons_or_names.append(Author(person=author.person, titlepage_name=author.titlepage_name))
+        else:
+            for author in self.documentauthor_set.select_related("person"):
+                persons_or_names.append(Author(person=author.person, titlepage_name=""))
+        return persons_or_names
+
+    def author_persons(self):
+        """Authors as a list of Persons
+        
+        Omits any RfcAuthors with a null person field.
+        """
+        if self.type_id == "rfc" and self.rfcauthor_set.exists():
+            authors_qs = self.rfcauthor_set.filter(person__isnull=False)
+        else:
+            authors_qs = self.documentauthor_set.all()
+        return [a.person for a in authors_qs.select_related("person")]
+
     def author_list(self):
+        """List of author emails"""
+        author_qs = (
+            self.rfcauthor_set
+            if self.type_id == "rfc" and self.rfcauthor_set.exists()
+            else self.documentauthor_set
+        ).select_related("email").order_by("order")
         best_addresses = []
-        for author in self.documentauthor_set.all():
+        for author in author_qs:
             if author.email:
                 if author.email.active or not author.email.person:
                     best_addresses.append(author.email.address)
                 else:
                     best_addresses.append(author.email.person.email_address())
         return ", ".join(best_addresses)
-
-    def authors(self):
-        return [ a.person for a in self.documentauthor_set.all() ]
 
     # This, and several other ballot related functions here, assume that there is only one active ballot for a document at any point in time.
     # If that assumption is violated, they will only expose the most recently created ballot
@@ -721,7 +775,14 @@ class DocumentInfo(models.Model):
         if self.type_id == "rfc" and self.came_from_draft():
             refs_to |= self.came_from_draft().referenced_by_rfcs()
         return refs_to
-    
+
+    def sent_to_rfc_editor_event(self):
+        if self.stream_id == "ietf":
+            return self.docevent_set.filter(type="iesg_approved").order_by("-time").first()
+        elif self.stream_id in ["editorial", "iab", "irtf", "ise"]:
+            return self.docevent_set.filter(type="requested_publication").order_by("-time").first()
+        else:
+            return None
     class Meta:
         abstract = True
 
@@ -845,6 +906,45 @@ class RelatedDocument(models.Model):
 
         return False
 
+class RfcAuthor(models.Model):
+    """Captures the authors of an RFC as represented on the RFC title page.
+
+    This deviates from DocumentAuthor in that it does not get moved into the DocHistory
+    hierarchy as documents are saved. It will attempt to preserve email, country, and affiliation
+    from the DocumentAuthor objects associated with the draft leading to this RFC (which
+    may be wrong if the author moves or changes affiliation while the document is in the
+    queue).
+
+    It does not, at this time, attempt to capture the authors from anything _but_ the title
+    page. The datatracker may know more about such authors based on information from the draft
+    leading to the RFC, and future work may take that into account.
+
+    Once doc.rfcauthor_set.exists() for a doc of type `rfc`, doc.documentauthor_set should be 
+    ignored.
+    """
+
+    document = ForeignKey(
+        "Document",
+        on_delete=models.CASCADE,
+        limit_choices_to={"type_id": "rfc"},  # only affects ModelForms (e.g., admin)
+    )
+    titlepage_name = models.CharField(max_length=128, blank=False)
+    is_editor = models.BooleanField(default=False)
+    person = ForeignKey(Person, null=True, blank=True, on_delete=models.PROTECT)
+    email = ForeignKey(Email, help_text="Email address used by author for submission", blank=True, null=True, on_delete=models.PROTECT)
+    affiliation = models.CharField(max_length=100, blank=True, help_text="Organization/company used by author for submission")
+    country = models.CharField(max_length=255, blank=True, help_text="Country used by author for submission")
+    order = models.IntegerField(default=1)
+
+    def __str__(self):
+        return u"%s %s (%s)" % (self.document.name, self.person, self.order)
+
+    class Meta:
+        ordering=["document", "order"]
+        indexes=[
+            models.Index(fields=["document", "order"])
+        ]
+
 class DocumentAuthorInfo(models.Model):
     person = ForeignKey(Person)
     # email should only be null for some historic documents
@@ -894,7 +994,7 @@ class DocumentActionHolder(models.Model):
     def role_for_doc(self):
         """Brief string description of this person's relationship to the doc"""
         roles = []
-        if self.person in self.document.authors():
+        if self.person in self.document.author_persons():
             roles.append('Author')
         if self.person == self.document.ad:
             roles.append('Responsible AD')
@@ -920,7 +1020,18 @@ validate_docname = RegexValidator(
     'invalid'
 )
 
+
+SUBSERIES_DOC_TYPE_IDS = ("bcp", "fyi", "std")
+
+
+class DocumentQuerySet(models.QuerySet):
+    def subseries_docs(self):
+        return self.filter(type_id__in=SUBSERIES_DOC_TYPE_IDS)
+
+
 class Document(StorableMixin, DocumentInfo):
+    objects = DocumentQuerySet.as_manager()
+
     name = models.CharField(max_length=255, validators=[validate_docname,], unique=True)           # immutable
     
     action_holders = models.ManyToManyField(Person, through=DocumentActionHolder, blank=True)
@@ -1580,6 +1691,11 @@ class EditedAuthorsDocEvent(DocEvent):
         Example 'basis' values might be from ['manually adjusted','recomputed by parsing document', etc.]
     """
     basis = models.CharField(help_text="What is the source or reasoning for the changes to the author list",max_length=255)
+
+
+class EditedRfcAuthorsDocEvent(DocEvent):
+    """Change to the RfcAuthor list for a document"""
+
 
 class BofreqEditorDocEvent(DocEvent):
     """ Capture the proponents of a BOF Request."""
