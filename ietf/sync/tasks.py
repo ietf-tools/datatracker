@@ -276,4 +276,4 @@ def load_rfcs_into_blobdb_task(start: int, end: int):
         start = 1
     if end > 11000:  # Arbitrarily chosen
         end = 11000
-    load_rfcs_into_blobdb(range(start, end + 1))
+    load_rfcs_into_blobdb(list(range(start, end + 1)))
