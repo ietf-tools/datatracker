@@ -833,7 +833,7 @@ def rebuild_reference_relations(doc, filenames):
     else:
         return {
             "errors": [
-                "No Internet-Draft text available for rebuilding reference relations. Need XML or plaintext."
+                "No file available for rebuilding reference relations. Need XML or plaintext."
             ]
         }
 
