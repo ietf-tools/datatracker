@@ -993,7 +993,7 @@ class TaskTests(TestCase):
         tasks.rfc_editor_index_update_task(full_index=True)
         self.assertTrue(rsync_task_mock.called)
         rsync_task_args, rsync_task_kwargs = rsync_task_mock.call_args
-        self.assertEqual((([1000],), {}), (rsync_task_args, rsync_task_kwargs))
+        self.assertEqual((([rfc.rfc_number],), {}), (rsync_task_args, rsync_task_kwargs))
 
         # Test error handling
         requests_get_mock.reset_mock()
