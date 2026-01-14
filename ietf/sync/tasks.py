@@ -6,7 +6,6 @@ import datetime
 import io
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import List
 import requests
 
 from celery import shared_task
@@ -235,7 +234,7 @@ def fix_subseries_docevents_task():
         )
 
 @shared_task
-def rsync_rfcs_from_rfceditor(rfc_numbers: List[int]):
+def rsync_rfcs_from_rfceditor(rfc_numbers: list[int]):
     log.log("Rsyncing rfcs from rfc-editor: " + str(rfc_numbers))
     from_file = None
     with NamedTemporaryFile(mode="w", delete=False) as fp:
