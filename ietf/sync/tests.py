@@ -1166,3 +1166,51 @@ class TaskTests(TestCase):
         self.assertTrue(requests_get_mock.called)
         self.assertFalse(parse_protocols_mock.called)
         self.assertFalse(update_rfc_log_mock.called)
+
+    @mock.patch("ietf.sync.tasks.rsync_helper")
+    @mock.patch("ietf.sync.tasks.load_rfcs_into_blobdb")
+    @mock.patch("ietf.sync.tasks.rebuild_reference_relations_task.delay")
+    def test_rsync_rfcs_from_rfceditor(
+        self,
+        rebuild_relations_mock,
+        load_blobs_mock,
+        rsync_helper_mock,
+    ):
+        tasks.rsync_rfcs_from_rfceditor([12345,54321])
+        self.assertTrue(rsync_helper_mock.called)
+        self.assertTrue(load_blobs_mock.called)
+        load_blobs_args, load_blobs_kwargs = load_blobs_mock.call_args
+        self.assertEqual(load_blobs_args,([12345, 54321],))
+        self.assertEqual(load_blobs_kwargs,{})
+        self.assertTrue(rebuild_relations_mock.called)
+        rebuild_args, rebuild_kwargs = rebuild_relations_mock.call_args
+        self.assertEqual(rebuild_args, (["rfc12345", "rfc54321"],))
+        self.assertEqual(rebuild_kwargs, {})
+
+    @mock.patch("ietf.sync.tasks.load_rfcs_into_blobdb")
+    def test_load_rfcs_into_blobdb_task(
+        self,
+        load_blobs_mock,
+    ):
+        tasks.load_rfcs_into_blobdb_task(5,3)
+        self.assertFalse(load_blobs_mock.called)
+        load_blobs_mock.reset_mock()
+        tasks.load_rfcs_into_blobdb_task(-1,1)
+        self.assertTrue(load_blobs_mock.called)
+        mock_args, mock_kwargs = load_blobs_mock.call_args
+        self.assertEqual(mock_args, ([1],))
+        self.assertEqual(mock_kwargs, {})
+        load_blobs_mock.reset_mock()
+        tasks.load_rfcs_into_blobdb_task(10999,50000)
+        self.assertTrue(load_blobs_mock.called)
+        mock_args, mock_kwargs = load_blobs_mock.call_args
+        self.assertEqual(mock_args, ([10999,11000],))
+        self.assertEqual(mock_kwargs, {})
+        load_blobs_mock.reset_mock()
+        tasks.load_rfcs_into_blobdb_task(3261,3263)
+        self.assertTrue(load_blobs_mock.called)
+        mock_args, mock_kwargs = load_blobs_mock.call_args
+        self.assertEqual(mock_args, ([3261, 3262, 3263],))
+        self.assertEqual(mock_kwargs, {})
+
+
