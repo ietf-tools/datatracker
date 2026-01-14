@@ -5,7 +5,7 @@
 import datetime
 import io
 from pathlib import Path
-from tempfile import NamedTemporaryFile, TemporaryDirectory
+from tempfile import NamedTemporaryFile
 import requests
 
 from celery import shared_task
@@ -14,12 +14,11 @@ from django.conf import settings
 from django.utils import timezone
 
 from ietf.doc.models import DocEvent, RelatedDocument
-from ietf.doc.storage_utils import AlreadyExistsError, store_bytes
 from ietf.doc.tasks import rebuild_reference_relations_task
 from ietf.sync import iana
 from ietf.sync import rfceditor
 from ietf.sync.rfceditor import MIN_QUEUE_RESULTS, parse_queue, update_drafts_from_queue
-from ietf.sync.utils import rsync_helper
+from ietf.sync.utils import load_rfcs_into_blobdb, rsync_helper
 from ietf.utils import log
 from ietf.utils.timezone import date_today
 
@@ -240,9 +239,11 @@ def rsync_rfcs_from_rfceditor(rfc_numbers: list[int]):
     from_file = None
     with NamedTemporaryFile(mode="w", delete_on_close=False) as fp:
         from_file = Path(fp.name)
+        fp.write("prerelease/\n")
         for num in rfc_numbers:
             for ext in types_to_sync:
                 fp.write(f"rfc{num}.{ext}\n")
+            fp.write(f"prerelease/rfc{num}.notprepped.xml\n")
         fp.close()
         rsync_helper(
             [
@@ -255,58 +256,25 @@ def rsync_rfcs_from_rfceditor(rfc_numbers: list[int]):
                 f"{settings.RFC_PATH}",
             ]
         )
-    for num in rfc_numbers:
-        for ext in types_to_sync:
-            fs_path = Path(settings.RFC_PATH) / f"rfc{num}.{ext}"
-            if fs_path.is_file():
-                with fs_path.open("rb") as f:
-                    bytes = f.read()
-                mtime = fs_path.stat().st_mtime
-                try:
-                    store_bytes(
-                        kind="rfc",
-                        name=f"{ext}/rfc{num}.{ext}",
-                        content=bytes,
-                        allow_overwrite=False,  # Intentionally not allowing overwrite.
-                        doc_name=f"rfc{num}",
-                        doc_rev=None,
-                        # Not setting content_type
-                        mtime=datetime.datetime.fromtimestamp(mtime, tz=datetime.UTC),
-                    )
-                except AlreadyExistsError as e:
-                    log.log(str(e))
-                    # This condition will just log verbosely but not otherwise fail
-
-        # Also fetch and store the not-prepped xml
-        name = f"rfc{num}.notprepped.xml"
-        fs_dest = Path(settings.RFC_PATH) / "prerelease"
-        rsync_helper(
-            [
-                "/usr/bin/rsync",
-                "-a",
-                f"rsync.rfc-editor.org::rfcs/prerelease/{name}",
-                f"{fs_dest}/",
-            ]
-        )
-        source = fs_dest / name
-        if source.is_file():
-            with open(source, "rb") as f:
-                bytes = f.read()
-            mtime = source.stat().st_mtime
-            try:
-                store_bytes(
-                    kind="rfc",
-                    name=f"notprepped/{name}",
-                    content=bytes,
-                    allow_overwrite=False,  # Intentionally not allowing overwrite.
-                    doc_name=f"rfc{num}",
-                    doc_rev=None,
-                    # Not setting content_type
-                    mtime=datetime.datetime.fromtimestamp(mtime, tz=datetime.UTC),
-                )
-            except AlreadyExistsError as e:
-                log.log(str(e))
-        else:
-            log.log(f"No content for {name} found.")
+    load_rfcs_into_blobdb(rfc_numbers)
 
     rebuild_reference_relations_task.delay([f"rfc{num}" for num in rfc_numbers])
+
+
+@shared_task
+def load_rfcs_into_blobdb_task(start: int, end: int):
+    """Move file content for rfcs from rfc{start} to rfc{end} inclusive
+
+    As this is expected to be removed once the blobdb is populated, it
+    will truncate its work to a coded max end.
+    This will not overwrite any existing blob content, and will only
+    log a small complaint if asked to load a non-exsiting RFC.
+    """
+    # Protect us from ourselves
+    if end < start:
+        return
+    if start < 1:
+        start = 1
+    if end > 11000:  # Arbitrarily chosen
+        end = 11000
+    load_rfcs_into_blobdb(range(start, end + 1))
