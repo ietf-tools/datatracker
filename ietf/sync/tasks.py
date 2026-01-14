@@ -279,36 +279,36 @@ def rsync_rfcs_from_rfceditor(rfc_numbers: list[int]):
                     # This condition will just log verbosely but not otherwise fail
     
         # Also fetch and store the not-prepped xml
-        with TemporaryDirectory() as td:
-            name = f"rfc{num}.notprepped.xml"
-            rsync_helper(
-                [
-                    "/usr/bin/rsync",
-                    "-a",
-                    f"rsync.rfc-editor.org::rfcs/prerelease/{name}",
-                    f"{td}/",
-                ]
-            )
-            source = Path(td)/name
-            if source.is_file():
-                with open(source,"rb") as f:
-                    bytes = f.read()
-                mtime = source.stat().st_mtime
-                try:
-                    store_bytes(
-                        kind="rfc",
-                        name=f"notprepped/{name}",
-                        content=bytes,
-                        allow_overwrite=False,  # Intentionally not allowing overwrite.
-                        doc_name=f"rfc{num}",
-                        doc_rev=None,
-                        # Not setting content_type
-                        mtime=datetime.datetime.fromtimestamp(mtime, tz=datetime.UTC),
-                    )
-                except AlreadyExistsError as e:
-                    log.log(str(e))
-            else:
-                log.log(f"No content for {name} found.")
+        name = f"rfc{num}.notprepped.xml"
+        fs_dest = Path(settings.RFC_PATH) / "prerelease"
+        rsync_helper(
+            [
+                "/usr/bin/rsync",
+                "-a",
+                f"rsync.rfc-editor.org::rfcs/prerelease/{name}",
+                f"{fs_dest}/",
+            ]
+        )
+        source = fs_dest / name
+        if source.is_file():
+            with open(source, "rb") as f:
+                bytes = f.read()
+            mtime = source.stat().st_mtime
+            try:
+                store_bytes(
+                    kind="rfc",
+                    name=f"notprepped/{name}",
+                    content=bytes,
+                    allow_overwrite=False,  # Intentionally not allowing overwrite.
+                    doc_name=f"rfc{num}",
+                    doc_rev=None,
+                    # Not setting content_type
+                    mtime=datetime.datetime.fromtimestamp(mtime, tz=datetime.UTC),
+                )
+            except AlreadyExistsError as e:
+                log.log(str(e))
+        else:
+            log.log(f"No content for {name} found.")
 
     rebuild_reference_relations_task.delay([f"rfc{num}" for num in rfc_numbers])
                 
