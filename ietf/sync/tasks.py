@@ -262,7 +262,7 @@ def rsync_rfcs_from_rfceditor(rfc_numbers: list[int]):
             if fs_path.is_file():
                 with fs_path.open("rb") as f:
                     bytes = f.read()
-                m_time = fs_path.stat().st_mtime
+                mtime = fs_path.stat().st_mtime
                 try:
                     store_bytes(
                         kind="rfc",
@@ -272,7 +272,7 @@ def rsync_rfcs_from_rfceditor(rfc_numbers: list[int]):
                         doc_name=f"rfc{num}",
                         doc_rev=None,
                         # Not setting content_type
-                        mtime=datetime.datetime.fromtimestamp(m_time, tz=datetime.UTC),
+                        mtime=datetime.datetime.fromtimestamp(mtime, tz=datetime.UTC),
                     )
                 except AlreadyExistsError as e:
                     log.log(str(e))
@@ -293,7 +293,7 @@ def rsync_rfcs_from_rfceditor(rfc_numbers: list[int]):
             if source.is_file():
                 with open(source,"rb") as f:
                     bytes = f.read()
-                m_time = source.stat().st_mtime
+                mtime = source.stat().st_mtime
                 try:
                     store_bytes(
                         kind="rfc",
@@ -303,7 +303,7 @@ def rsync_rfcs_from_rfceditor(rfc_numbers: list[int]):
                         doc_name=f"rfc{num}",
                         doc_rev=None,
                         # Not setting content_type
-                        mtime=datetime.datetime.fromtimestamp(m_time, tz=datetime.UTC),
+                        mtime=datetime.datetime.fromtimestamp(mtime, tz=datetime.UTC),
                     )
                 except AlreadyExistsError as e:
                     log.log(str(e))
