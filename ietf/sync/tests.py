@@ -983,14 +983,17 @@ class TaskTests(TestCase):
         parse_index_mock.reset_mock()
         update_docs_mock.reset_mock()
         rsync_task_mock.reset_mock()
-        requests_get_mock.side_effect = (index_response, errata_response)  # will step through these
+        requests_get_mock.side_effect = (
+            index_response,
+            errata_response,
+        )  # will step through these
         update_docs_mock.return_value = (
             (rfc.rfc_number, ("something changed",), rfc, True),
         )
         tasks.rfc_editor_index_update_task(full_index=True)
         self.assertTrue(rsync_task_mock.called)
         rsync_task_args, rsync_task_kwargs = rsync_task_mock.call_args
-        self.assertEqual((([1000],),{}),(rsync_task_args, rsync_task_kwargs))
+        self.assertEqual((([1000],), {}), (rsync_task_args, rsync_task_kwargs))
 
         # Test error handling
         requests_get_mock.reset_mock()

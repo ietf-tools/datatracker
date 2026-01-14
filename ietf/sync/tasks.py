@@ -276,7 +276,7 @@ def rsync_rfcs_from_rfceditor(rfc_numbers: list[int]):
                 except AlreadyExistsError as e:
                     log.log(str(e))
                     # This condition will just log verbosely but not otherwise fail
-    
+
         # Also fetch and store the not-prepped xml
         name = f"rfc{num}.notprepped.xml"
         fs_dest = Path(settings.RFC_PATH) / "prerelease"
@@ -310,4 +310,3 @@ def rsync_rfcs_from_rfceditor(rfc_numbers: list[int]):
             log.log(f"No content for {name} found.")
 
     rebuild_reference_relations_task.delay([f"rfc{num}" for num in rfc_numbers])
-                
