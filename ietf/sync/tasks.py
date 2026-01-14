@@ -247,7 +247,6 @@ def rsync_rfcs_from_rfceditor(rfc_numbers: list[int]):
         fp.close()
         rsync_helper(
             [
-                "/usr/bin/rsync",
                 "-a",
                 "--ignore-existing",
                 f"--include-from={str(from_file)}",

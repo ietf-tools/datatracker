@@ -12,7 +12,7 @@ from ietf.doc.storage_utils import AlreadyExistsError, store_bytes
 
 
 def rsync_helper(subprocess_arg_array: list[str]):
-    subprocess.run(subprocess_arg_array)
+    subprocess.run(["/usr/bin/rsync"]+subprocess_arg_array)
 
 
 def load_rfcs_into_blobdb(numbers: list[int]):
