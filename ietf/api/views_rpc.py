@@ -36,6 +36,7 @@ from ietf.api.serializers_rpc import (
 )
 from ietf.doc.models import Document, DocHistory, RfcAuthor
 from ietf.doc.serializers import RfcAuthorSerializer
+from ietf.doc.storage_utils import remove_from_storage
 from ietf.person.models import Email, Person
 
 
@@ -367,8 +368,8 @@ class RfcPubFilesView(APIView):
     api_key_endpoint = "ietf.api.views_rpc"
     parser_classes = [parsers.MultiPartParser]
 
-    def _destination(self, filename: str | Path) -> Path:
-        """Destination for an uploaded RFC file
+    def _fs_destination(self, filename: str | Path) -> Path:
+        """Destination for an uploaded RFC file in the filesystem
         
         Strips any path components in filename and returns an absolute Path.
         """
@@ -399,7 +400,7 @@ class RfcPubFilesView(APIView):
 
         # List of files that might exist for an RFC
         possible_rfc_files = [
-            self._destination(dest_stem + ext)
+            self._fs_destination(dest_stem + ext)
             for ext in serializer.allowed_extensions
         ]
         if not replace:
@@ -431,7 +432,7 @@ class RfcPubFilesView(APIView):
                 for possible_existing_file in possible_rfc_files:
                     possible_existing_file.unlink(missing_ok=True)
             for ftm in files_to_move:
-                shutil.move(ftm, self._destination(ftm))
+                shutil.move(ftm, self._fs_destination(ftm))
                 # todo store in blob storage as well (need a bucket for RFCs)
 
         return Response(NotificationAckSerializer().data)
