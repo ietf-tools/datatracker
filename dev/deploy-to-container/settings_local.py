@@ -72,7 +72,7 @@ SLIDE_STAGING_PATH = '/test/staging/'
 DE_GFM_BINARY = '/usr/local/bin/de-gfm'
 
 APP_API_TOKENS = {
-  "ietf.api.red_api" : ["redtoken"],  # Not a real secret
+  "ietf.api.red_api" : ["devtoken", "redtoken"],  # Not a real secret
   "ietf.api.views.ingest_email_test": ["ingestion-test-token"],  # Not a real secret
   "ietf.api.views_rpc" : ["devtoken"],  # Not a real secret
 }
