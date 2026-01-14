@@ -237,7 +237,7 @@ def fix_subseries_docevents_task():
 def rsync_rfcs_from_rfceditor(rfc_numbers: list[int]):
     log.log("Rsyncing rfcs from rfc-editor: " + str(rfc_numbers))
     from_file = None
-    with NamedTemporaryFile(mode="w", delete=False) as fp:
+    with NamedTemporaryFile(mode="w", delete_on_close=False) as fp:
         from_file = Path(fp.name)
         for num in rfc_numbers:
             for ext in settings.RFC_FILE_TYPES:
