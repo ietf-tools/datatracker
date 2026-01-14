@@ -567,8 +567,6 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
             reason='IESG state changed',
         )
 
-# TODO : do we need an analog for rfcauthors here? Likely we do.
-
 
 def _change_field_and_describe(
     author: DocumentAuthor | RfcAuthor,

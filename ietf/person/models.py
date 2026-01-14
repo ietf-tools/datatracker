@@ -203,6 +203,9 @@ class Person(models.Model):
 
     def rfcs(self):
         from ietf.doc.models import Document
+        # When RfcAuthors are populated, this may over-return if an author is dropped
+        # from the author list between the final draft and the published RFC. Should
+        # ignore DocumentAuthors when an RfcAuthor exists for a draft.
         rfcs = list(Document.objects.filter(type="rfc").filter(models.Q(documentauthor__person=self)|models.Q(rfcauthor__person=self)).distinct())
         rfcs.sort(key=lambda d: d.name )
         return rfcs
