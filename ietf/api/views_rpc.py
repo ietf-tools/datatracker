@@ -477,6 +477,5 @@ class RfcPubFilesView(APIView):
                         mtime=mtime,
                     )
                 shutil.move(ftm, self._fs_destination(ftm))
-                # todo store in blob storage as well (need a bucket for RFCs)
 
         return Response(NotificationAckSerializer().data)
