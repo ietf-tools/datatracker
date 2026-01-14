@@ -829,7 +829,7 @@ def rebuild_reference_relations(doc, filenames):
         try:
             refs = draft.PlaintextDraft.from_file(filename).get_refs()
         except IOError as e:
-            return {"errors": ["%s :%s" % (e.strerror, filename)]}
+            return {"errors": [f"{e.strerror}: {filename}")]}
     else:
         return {
             "errors": [

@@ -132,7 +132,7 @@ def investigate_fragment_task(name_fragment: str):
 
 @shared_task
 def rebuild_reference_relations_task(doc_names:list[str]):
-    log.log("Task: Rebuilding reference relations for"+str(doc_names))
+    log.log("Task: Rebuilding reference relations for {doc_names}")
     for doc in Document.objects.filter(name__in=doc_names, type__in=["rfc", "draft"]):
         filenames = dict()
         base = (
