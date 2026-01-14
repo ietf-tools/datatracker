@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 from django.test import override_settings
 from ietf import settings
 from ietf.doc.storage_utils import exists_in_storage, retrieve_str
-from ietf.sync.utils import load_rfcs_into_blobdb, rsync_helper
+from ietf.sync.utils import build_from_file_content, load_rfcs_into_blobdb, rsync_helper
 from ietf.utils.test_utils import TestCase
 
 
@@ -28,6 +28,28 @@ class RsyncHelperTests(TestCase):
             with (Path(dest_dir) / "canary.txt").open("r") as canary_dest_file:
                 chirp = canary_dest_file.read()
             self.assertEqual(chirp, "chirp")
+
+    def test_build_from_file_content(self):
+        content = build_from_file_content([12345, 54321])
+        self.assertEqual(
+            content,
+            """prerelease/
+rfc12345.txt
+rfc12345.html
+rfc12345.xml
+rfc12345.pdf
+rfc12345.ps
+rfc12345.json
+prerelease/rfc12345.notprepped.xml
+rfc54321.txt
+rfc54321.html
+rfc54321.xml
+rfc54321.pdf
+rfc54321.ps
+rfc54321.json
+prerelease/rfc54321.notprepped.xml
+""",
+        )
 
 
 class RfcBlobUploadTests(TestCase):

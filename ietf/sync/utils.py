@@ -14,6 +14,15 @@ from ietf.doc.storage_utils import AlreadyExistsError, store_bytes
 def rsync_helper(subprocess_arg_array: list[str]):
     subprocess.run(["/usr/bin/rsync"]+subprocess_arg_array)
 
+def build_from_file_content(rfc_numbers: list[int]) -> str:
+    types_to_sync = settings.RFC_FILE_TYPES + ("json",)
+    lines = []
+    lines.append("prerelease/")
+    for num in rfc_numbers:
+        for ext in types_to_sync:
+            lines.append(f"rfc{num}.{ext}")
+        lines.append(f"prerelease/rfc{num}.notprepped.xml")
+    return "\n".join(lines)+"\n"
 
 def load_rfcs_into_blobdb(numbers: list[int]):
     types_to_load = settings.RFC_FILE_TYPES + ("json",)

@@ -18,7 +18,7 @@ from ietf.doc.tasks import rebuild_reference_relations_task
 from ietf.sync import iana
 from ietf.sync import rfceditor
 from ietf.sync.rfceditor import MIN_QUEUE_RESULTS, parse_queue, update_drafts_from_queue
-from ietf.sync.utils import load_rfcs_into_blobdb, rsync_helper
+from ietf.sync.utils import build_from_file_content, load_rfcs_into_blobdb, rsync_helper
 from ietf.utils import log
 from ietf.utils.timezone import date_today
 
@@ -234,22 +234,17 @@ def fix_subseries_docevents_task():
 
 @shared_task
 def rsync_rfcs_from_rfceditor(rfc_numbers: list[int]):
-    log.log("Rsyncing rfcs from rfc-editor: " + str(rfc_numbers))
-    types_to_sync = settings.RFC_FILE_TYPES + ("json",)
+    log.log(f"Rsyncing rfcs from rfc-editor: {rfc_numbers}")
     from_file = None
     with NamedTemporaryFile(mode="w", delete_on_close=False) as fp:
-        from_file = Path(fp.name)
-        fp.write("prerelease/\n")
-        for num in rfc_numbers:
-            for ext in types_to_sync:
-                fp.write(f"rfc{num}.{ext}\n")
-            fp.write(f"prerelease/rfc{num}.notprepped.xml\n")
+        fp.write(build_from_file_content(rfc_numbers))
         fp.close()
+        from_file = Path(fp.name)
         rsync_helper(
             [
                 "-a",
                 "--ignore-existing",
-                f"--include-from={str(from_file)}",
+                f"--include-from={from_file}",
                 "--exclude=*",
                 "rsync.rfc-editor.org::rfcs/",
                 f"{settings.RFC_PATH}",
