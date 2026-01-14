@@ -236,11 +236,12 @@ def fix_subseries_docevents_task():
 @shared_task
 def rsync_rfcs_from_rfceditor(rfc_numbers: list[int]):
     log.log("Rsyncing rfcs from rfc-editor: " + str(rfc_numbers))
+    types_to_sync = settings.RFC_FILE_TYPES + ("json",)
     from_file = None
     with NamedTemporaryFile(mode="w", delete_on_close=False) as fp:
         from_file = Path(fp.name)
         for num in rfc_numbers:
-            for ext in settings.RFC_FILE_TYPES:
+            for ext in types_to_sync:
                 fp.write(f"rfc{num}.{ext}\n")
         fp.close()
         rsync_helper(
@@ -254,10 +255,8 @@ def rsync_rfcs_from_rfceditor(rfc_numbers: list[int]):
                 f"{settings.RFC_PATH}",
             ]
         )
-    if from_file is not None:
-        from_file.unlink()
     for num in rfc_numbers:
-        for ext in settings.RFC_FILE_TYPES:
+        for ext in types_to_sync:
             fs_path = Path(settings.RFC_PATH) / f"rfc{num}.{ext}"
             if fs_path.is_file():
                 with fs_path.open("rb") as f:
