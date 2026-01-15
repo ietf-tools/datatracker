@@ -39,11 +39,15 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType,
     EditedAuthorsDocEvent, StateType)
-from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactory,
-    ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
-    IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
-    BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
-    StatusChangeFactory, DocExtResourceFactory, RgDraftFactory, BcpFactory)
+from ietf.doc.factories import (DocumentFactory, DocEventFactory, CharterFactory,
+                                ConflictReviewFactory, WgDraftFactory,
+                                IndividualDraftFactory, WgRfcFactory,
+                                IndividualRfcFactory, StateDocEventFactory,
+                                BallotPositionDocEventFactory,
+                                BallotDocEventFactory, DocumentAuthorFactory,
+                                NewRevisionDocEventFactory,
+                                StatusChangeFactory, DocExtResourceFactory,
+                                RgDraftFactory, BcpFactory, RfcAuthorFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import (
@@ -979,7 +983,7 @@ Man                    Expires September 22, 2015               [Page 3]
         # Relevant users not authorized to edit authors
         unauthorized_usernames = [
             'plain',
-            *[author.user.username for author in draft.authors()],
+            *[author.user.username for author in draft.author_persons()],
             draft.group.get_chair().person.user.username,
             'ad'
         ]
@@ -994,7 +998,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.client.logout()
 
         # Try to add an author via POST - still only the secretary should be able to do this.
-        orig_authors = draft.authors()
+        orig_authors = draft.author_persons()
         post_data = self.make_edit_authors_post_data(
             basis='permission test',
             authors=draft.documentauthor_set.all(),
@@ -1012,12 +1016,12 @@ Man                    Expires September 22, 2015               [Page 3]
         for username in unauthorized_usernames:
             login_testing_unauthorized(self, username, url, method='post', request_kwargs=dict(data=post_data))
             draft = Document.objects.get(pk=draft.pk)
-            self.assertEqual(draft.authors(), orig_authors)  # ensure draft author list was not modified
+            self.assertEqual(draft.author_persons(), orig_authors)  # ensure draft author list was not modified
         login_testing_unauthorized(self, 'secretary', url, method='post', request_kwargs=dict(data=post_data))
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 302)
         draft = Document.objects.get(pk=draft.pk)
-        self.assertEqual(draft.authors(), orig_authors + [new_auth_person])
+        self.assertEqual(draft.author_persons(), orig_authors + [new_auth_person])
 
     def make_edit_authors_post_data(self, basis, authors):
         """Helper to generate edit_authors POST data for a set of authors"""
@@ -1365,8 +1369,8 @@ Man                    Expires September 22, 2015               [Page 3]
             basis=change_reason
         )
 
-        old_address = draft.authors()[0].email()
-        new_email = EmailFactory(person=draft.authors()[0], address=f'changed-{old_address}')
+        old_address = draft.author_persons()[0].email()
+        new_email = EmailFactory(person=draft.author_persons()[0], address=f'changed-{old_address}')
         post_data['author-0-email'] = new_email.address
         post_data['author-1-affiliation'] = 'University of Nowhere'
         post_data['author-2-country'] = 'Chile'
@@ -1399,17 +1403,17 @@ Man                    Expires September 22, 2015               [Page 3]
         country_event = change_events.filter(desc__icontains='changed country').first()
 
         self.assertIsNotNone(email_event)
-        self.assertIn(draft.authors()[0].name, email_event.desc)
+        self.assertIn(draft.author_persons()[0].name, email_event.desc)
         self.assertIn(before[0]['email'], email_event.desc)
         self.assertIn(after[0]['email'], email_event.desc)
 
         self.assertIsNotNone(affiliation_event)
-        self.assertIn(draft.authors()[1].name, affiliation_event.desc)
+        self.assertIn(draft.author_persons()[1].name, affiliation_event.desc)
         self.assertIn(before[1]['affiliation'], affiliation_event.desc)
         self.assertIn(after[1]['affiliation'], affiliation_event.desc)
 
         self.assertIsNotNone(country_event)
-        self.assertIn(draft.authors()[2].name, country_event.desc)
+        self.assertIn(draft.author_persons()[2].name, country_event.desc)
         self.assertIn(before[2]['country'], country_event.desc)
         self.assertIn(after[2]['country'], country_event.desc)
 
@@ -1863,13 +1867,63 @@ class DocTestCase(TestCase):
 
     def test_document_json(self):
         doc = IndividualDraftFactory()
-
+        author = DocumentAuthorFactory(document=doc)
+        
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_json", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
         data = r.json()
-        self.assertEqual(doc.name, data['name'])
-        self.assertEqual(doc.pages,data['pages'])
+        self.assertEqual(data["name"], doc.name)
+        self.assertEqual(data["pages"], doc.pages)
+        self.assertEqual(
+            data["authors"],
+            [
+                {
+                    "name": author.person.name,
+                    "email": author.email.address,
+                    "affiliation": author.affiliation,
+                }
+            ]
+        )
 
+    def test_document_json_rfc(self):
+        doc = IndividualRfcFactory()
+        old_style_author = DocumentAuthorFactory(document=doc)
+        url = urlreverse("ietf.doc.views_doc.document_json", kwargs=dict(name=doc.name))
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertEqual(data["name"], doc.name)
+        self.assertEqual(data["pages"], doc.pages)
+        self.assertEqual(
+            data["authors"],
+            [
+                {
+                    "name": old_style_author.person.name,
+                    "email": old_style_author.email.address,
+                    "affiliation": old_style_author.affiliation,
+                }
+            ]
+        )
+    
+        new_style_author = RfcAuthorFactory(document=doc)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertEqual(data["name"], doc.name)
+        self.assertEqual(data["pages"], doc.pages)
+        self.assertEqual(
+            data["authors"],
+            [
+                {
+                    "name": new_style_author.titlepage_name,
+                    "email": new_style_author.email.address,
+                    "affiliation": new_style_author.affiliation,
+                }
+            ]
+        )
+
+    
     def test_writeup(self):
         doc = IndividualDraftFactory(states = [('draft','active'),('draft-iesg','iesg-eva')],)
 

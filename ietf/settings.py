@@ -22,6 +22,7 @@ warnings.filterwarnings("ignore", "Log out via GET requests is deprecated")  # c
 warnings.filterwarnings("ignore", message="The django.utils.timezone.utc alias is deprecated.", module="oidc_provider")
 warnings.filterwarnings("ignore", message="The django.utils.datetime_safe module is deprecated.", module="tastypie")
 warnings.filterwarnings("ignore", message="The USE_DEPRECATED_PYTZ setting,")  # https://github.com/ietf-tools/datatracker/issues/5635
+warnings.filterwarnings("ignore", message="The is_dst argument to make_aware\\(\\)")  # caused by django-filters when USE_DEPRECATED_PYTZ is true 
 warnings.filterwarnings("ignore", message="The USE_L10N setting is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5648
 warnings.filterwarnings("ignore", message="django.contrib.auth.hashers.CryptPasswordHasher is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5663
 
@@ -35,6 +36,8 @@ warnings.filterwarnings("ignore", message="datetime.datetime.utcnow\\(\\) is dep
 warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="oic.utils.time_util")
 warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="pytz.tzinfo")
 warnings.filterwarnings("ignore", message="'instantiateVariableFont' is deprecated", module="weasyprint")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="bibtexparser")  # https://github.com/sciunto-org/python-bibtexparser/issues/502
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="pyparsing")  # https://github.com/sciunto-org/python-bibtexparser/issues/502
 
 
 base_path = pathlib.Path(__file__).resolve().parent
@@ -500,6 +503,7 @@ INSTALLED_APPS = [
     'django_celery_results',
     'corsheaders',
     'django_markup',
+    'django_filters',
     'oidc_provider',
     'drf_spectacular',
     'drf_standardized_errors',
