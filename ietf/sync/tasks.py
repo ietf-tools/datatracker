@@ -78,7 +78,7 @@ def rfc_editor_index_update_task(full_index=False):
         if rfc_published:
             newly_published.add(rfc_number)
     if len(newly_published) > 0:
-        rsync_rfcs_from_rfceditor.delay(list(newly_published))
+        rsync_rfcs_from_rfceditor_task.delay(list(newly_published))
 
 
 @shared_task
@@ -233,7 +233,7 @@ def fix_subseries_docevents_task():
         )
 
 @shared_task
-def rsync_rfcs_from_rfceditor(rfc_numbers: list[int]):
+def rsync_rfcs_from_rfceditor_task(rfc_numbers: list[int]):
     log.log(f"Rsyncing rfcs from rfc-editor: {rfc_numbers}")
     from_file = None
     with NamedTemporaryFile(mode="w", delete_on_close=False) as fp:

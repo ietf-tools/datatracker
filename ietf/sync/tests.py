@@ -889,7 +889,7 @@ class TaskTests(TestCase):
     @mock.patch("ietf.sync.tasks.rfceditor.update_docs_from_rfc_index")
     @mock.patch("ietf.sync.tasks.rfceditor.parse_index")
     @mock.patch("ietf.sync.tasks.requests.get")
-    @mock.patch("ietf.sync.tasks.rsync_rfcs_from_rfceditor.delay")
+    @mock.patch("ietf.sync.tasks.rsync_rfcs_from_rfceditor_task.delay")
     def test_rfc_editor_index_update_task(
         self, rsync_task_mock, requests_get_mock, parse_index_mock, update_docs_mock
     ) -> None:  # the annotation here prevents mypy from complaining about annotation-unchecked
@@ -1170,13 +1170,13 @@ class TaskTests(TestCase):
     @mock.patch("ietf.sync.tasks.rsync_helper")
     @mock.patch("ietf.sync.tasks.load_rfcs_into_blobdb")
     @mock.patch("ietf.sync.tasks.rebuild_reference_relations_task.delay")
-    def test_rsync_rfcs_from_rfceditor(
+    def test_rsync_rfcs_from_rfceditor_task(
         self,
         rebuild_relations_mock,
         load_blobs_mock,
         rsync_helper_mock,
     ):
-        tasks.rsync_rfcs_from_rfceditor([12345, 54321])
+        tasks.rsync_rfcs_from_rfceditor_task([12345, 54321])
         self.assertTrue(rsync_helper_mock.called)
         self.assertTrue(load_blobs_mock.called)
         load_blobs_args, load_blobs_kwargs = load_blobs_mock.call_args
