@@ -15,21 +15,22 @@ from django.utils.functional import keep_lazy
 from ietf.utils.mime import get_mime_type
 
 
-# Allow the protocols/tags/attributes we specifically want, plus anything that bleach declares
-# to be safe. As of 2025-01-27, the explicit lists for protocols and tags are a strict superset
-# of bleach's defaults.
+# Allow the protocols/tags/attributes we specifically want, plus anything that nh3 declares
+# to be safe.
 
 acceptable_protocols = nh3.ALLOWED_URL_SCHEMES.union(
     {"http", "https", "mailto", "ftp", "xmpp"}
 )
 acceptable_tags = nh3.ALLOWED_TAGS.union(
     {
+         # fmt: off
         "a", "abbr", "acronym", "address", "b", "big",
         "blockquote", "body", "br", "caption", "center", "cite", "code", "col",
         "colgroup", "dd", "del", "dfn", "dir", "div", "dl", "dt", "em", "font",
         "h1", "h2", "h3", "h4", "h5", "h6", "head", "hr", "html", "i", "ins", "kbd",
         "li", "ol", "p", "pre", "q", "s", "samp", "small", "span", "strike",
         "strong", "sub", "sup", "table", "title", "tbody", "td", "tfoot", "th", "thead", "tr", "tt", "u", "ul", "var"
+        # fmt: on
     }
 )
 acceptable_attributes = nh3.ALLOWED_ATTRIBUTES | {
@@ -62,7 +63,7 @@ def clean_html(text: str):
 def liberal_clean_html(text: str):
     return _liberal_nh3_cleaner.clean(text)
 
-## todo dc
+
 @keep_lazy(str)
 def remove_tags(html, tags):
     """Returns the given HTML sanitized, and with the given tags removed."""
