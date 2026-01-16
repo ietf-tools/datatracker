@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db.models import Max
+from django.db.models.functions import Coalesce
 from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
 
@@ -22,7 +23,9 @@ class RpcApiTests(APITestCase):
         viewname = "ietf.api.purple_api.draft-references"
 
         # non-existent draft
-        bad_id = Document.objects.aggregate(unused_id=Max("id") + 100)["unused_id"]
+        bad_id = Document.objects.aggregate(unused_id=Coalesce(Max("id"), 0) + 100)[
+            "unused_id"
+        ]
         url = urlreverse(viewname, kwargs={"doc_id": bad_id})
         # Without credentials
         r = self.client.get(url)
