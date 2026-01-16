@@ -581,7 +581,9 @@ class CoverageTest(unittest.TestCase):
                 try:
                     resolved = resolve(url)  # let Django resolve the URL for us
                 except Resolver404:
-                    warnings.warn("Unable to resolve visited URL {url}", UrlCoverageWarning)
+                    warnings.warn(
+                        f"Unable to resolve visited URL {url}", UrlCoverageWarning
+                    )
                     continue
                 if resolved.route not in patterns:
                     warnings.warn(
