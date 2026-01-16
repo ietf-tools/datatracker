@@ -90,7 +90,11 @@ from mypy_boto3_s3.service_resource import Bucket
 
 class UrlCoverageWarning(UserWarning):
     """Warning category for URL coverage-related warnings"""
-    pass
+    # URLs for which we don't expect patterns to match
+    IGNORE_URLS = (
+        "/_doesnotexist/",
+        "/sitemap.xml.",
+    )
 
 
 class UninterestingPatternWarning(UrlCoverageWarning):
@@ -581,9 +585,10 @@ class CoverageTest(unittest.TestCase):
                 try:
                     resolved = resolve(url)  # let Django resolve the URL for us
                 except Resolver404:
-                    warnings.warn(
-                        f"Unable to resolve visited URL {url}", UrlCoverageWarning
-                    )
+                    if url not in UrlCoverageWarning.IGNORE_URLS:
+                        warnings.warn(
+                            f"Unable to resolve visited URL {url}", UrlCoverageWarning
+                        )
                     continue
                 if resolved.route not in patterns:
                     warnings.warn(
