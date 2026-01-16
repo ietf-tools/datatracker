@@ -23,13 +23,14 @@ acceptable_protocols = nh3.ALLOWED_URL_SCHEMES.union(
 )
 acceptable_tags = nh3.ALLOWED_TAGS.union(
     {
-         # fmt: off
+        # fmt: off
         "a", "abbr", "acronym", "address", "b", "big",
         "blockquote", "body", "br", "caption", "center", "cite", "code", "col",
         "colgroup", "dd", "del", "dfn", "dir", "div", "dl", "dt", "em", "font",
         "h1", "h2", "h3", "h4", "h5", "h6", "head", "hr", "html", "i", "ins", "kbd",
         "li", "ol", "p", "pre", "q", "s", "samp", "small", "span", "strike",
-        "strong", "sub", "sup", "table", "title", "tbody", "td", "tfoot", "th", "thead", "tr", "tt", "u", "ul", "var"
+        "strong", "sub", "sup", "table", "title", "tbody", "td", "tfoot", "th", "thead",
+        "tr", "tt", "u", "ul", "var"
         # fmt: on
     }
 )
@@ -93,5 +94,3 @@ def unescape(text):
     This function undoes what django.utils.html.escape() does
     """
     return text.replace('&amp;', '&').replace('&#39;', "'").replace('&quot;', '"').replace('&gt;', '>').replace('&lt;', '<' )
-
-
