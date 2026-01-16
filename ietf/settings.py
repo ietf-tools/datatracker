@@ -811,6 +811,7 @@ ARTIFACT_STORAGE_NAMES: list[str] = [
     "polls",
     "procmaterials",
     "review",
+    "rfc",
     "slides",
     "staging",
     "statchg",

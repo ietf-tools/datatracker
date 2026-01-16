@@ -941,50 +941,66 @@ def rebuild_reference_relations(doc, filenames):
 
     filenames should be a dict mapping file ext (i.e., type) to the full path of each file.
     """
-    if doc.type.slug != 'draft':
+    if doc.type.slug not in ["draft", "rfc"]:
         return None
+    
+    log.log(f"Rebuilding reference relations for {doc.name}")
 
     # try XML first
-    if 'xml' in filenames:
-        refs = XMLDraft(filenames['xml']).get_refs()
-    elif 'txt' in filenames:
-        filename = filenames['txt']
+    if "xml" in filenames:
+        refs = XMLDraft(filenames["xml"]).get_refs()
+    elif "txt" in filenames:
+        filename = filenames["txt"]
         try:
             refs = draft.PlaintextDraft.from_file(filename).get_refs()
         except IOError as e:
-            return { 'errors': ["%s :%s" %  (e.strerror, filename)] }
+            return {"errors": [f"{e.strerror}: {filename}"]}
     else:
-        return {'errors': ['No Internet-Draft text available for rebuilding reference relations. Need XML or plaintext.']}
+        return {
+            "errors": [
+                "No file available for rebuilding reference relations. Need XML or plaintext."
+            ]
+        }
 
-    doc.relateddocument_set.filter(relationship__slug__in=['refnorm','refinfo','refold','refunk']).delete()
+    doc.relateddocument_set.filter(
+        relationship__slug__in=["refnorm", "refinfo", "refold", "refunk"]
+    ).delete()
 
     warnings = []
     errors = []
     unfound = set()
-    for ( ref, refType ) in refs.items():
+    for ref, refType in refs.items():
         refdoc = Document.objects.filter(name=ref)
         if not refdoc and re.match(r"^draft-.*-\d{2}$", ref):
             refdoc = Document.objects.filter(name=ref[:-3])
         count = refdoc.count()
         if count == 0:
-            unfound.add( "%s" % ref )
+            unfound.add("%s" % ref)
             continue
         elif count > 1:
-            errors.append("Too many Document objects found for %s"%ref)
+            errors.append("Too many Document objects found for %s" % ref)
         else:
             # Don't add references to ourself
             if doc != refdoc[0]:
-                RelatedDocument.objects.get_or_create( source=doc, target=refdoc[ 0 ], relationship=DocRelationshipName.objects.get( slug='ref%s' % refType ) )
+                RelatedDocument.objects.get_or_create(
+                    source=doc,
+                    target=refdoc[0],
+                    relationship=DocRelationshipName.objects.get(
+                        slug="ref%s" % refType
+                    ),
+                )
     if unfound:
-        warnings.append('There were %d references with no matching Document'%len(unfound))
+        warnings.append(
+            "There were %d references with no matching Document" % len(unfound)
+        )
 
     ret = {}
     if errors:
-        ret['errors']=errors
+        ret["errors"] = errors
     if warnings:
-        ret['warnings']=warnings
+        ret["warnings"] = warnings
     if unfound:
-        ret['unfound']=list(unfound)
+        ret["unfound"] = list(unfound)
 
     return ret
 
