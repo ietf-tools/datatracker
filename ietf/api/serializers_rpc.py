@@ -5,6 +5,7 @@ from typing import Literal, Optional
 
 from django.db import transaction
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -570,6 +571,12 @@ class RfcFileSerializer(serializers.Serializer):
             "List of content files. Filename extensions are used to identify "
             "file types, but filenames are otherwise ignored."
         ),
+    )
+    mtime = serializers.DateTimeField(
+        required=False,
+        default=timezone.now,
+        default_timezone=datetime.UTC,
+        help_text="Modification timestamp to apply to uploaded files",
     )
     replace = serializers.BooleanField(
         required=False,
