@@ -44,7 +44,6 @@ _nh3_cleaner = nh3.Cleaner(
     tags=acceptable_tags,
     attributes=acceptable_attributes,
     url_schemes=acceptable_protocols,
-    link_rel=None
 )
 
 
@@ -52,7 +51,6 @@ _liberal_nh3_cleaner = nh3.Cleaner(
     tags=acceptable_tags.union({"img", "figure", "figcaption"}),
     attributes=acceptable_attributes | {"img": {"src", "alt"}},
     url_schemes=acceptable_protocols,
-    link_rel=None
 )
 
 
