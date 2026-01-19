@@ -6,7 +6,6 @@
 
 import nh3
 import html2text
-
 import debug                            # pyflakes:ignore
 
 from django import forms
@@ -19,7 +18,7 @@ from ietf.utils.mime import get_mime_type
 # to be safe.
 
 acceptable_protocols = nh3.ALLOWED_URL_SCHEMES.union(
-    {"http", "https", "mailto", "ftp", "xmpp"}
+    {"ftp", "http", "https", "mailto", "tel", "xmpp"}
 )
 acceptable_tags = nh3.ALLOWED_TAGS.union(
     {
@@ -30,7 +29,7 @@ acceptable_tags = nh3.ALLOWED_TAGS.union(
         "h1", "h2", "h3", "h4", "h5", "h6", "head", "hr", "html", "i", "ins", "kbd",
         "li", "ol", "p", "pre", "q", "s", "samp", "small", "span", "strike",
         "strong", "sub", "sup", "table", "title", "tbody", "td", "tfoot", "th", "thead",
-        "tr", "tt", "u", "ul", "var"
+        "tr", "tt", "u", "ul", "var", "xmp"
         # fmt: on
     }
 )
