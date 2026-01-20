@@ -26,9 +26,9 @@ def build_from_file_content(rfc_numbers: list[int]) -> str:
 
 def load_rfcs_into_blobdb(numbers: list[int]):
     types_to_load = settings.RFC_FILE_TYPES + ("json",)
-    rfc_docs = Document.objects.filter(type="rfc",rfc_number__in=numbers)
+    rfc_docs = Document.objects.filter(type="rfc", rfc_number__in=numbers).values_list("rfc_number", flat=True)
     for num in numbers:
-        if rfc_docs.filter(rfc_number=num).exists():
+        if num in rfc_docs:
             for ext in types_to_load:
                 fs_path = Path(settings.RFC_PATH) / f"rfc{num}.{ext}"
                 if fs_path.is_file():
@@ -44,7 +44,9 @@ def load_rfcs_into_blobdb(numbers: list[int]):
                             doc_name=f"rfc{num}",
                             doc_rev=None,
                             # Not setting content_type
-                            mtime=datetime.datetime.fromtimestamp(mtime, tz=datetime.UTC),
+                            mtime=datetime.datetime.fromtimestamp(
+                                mtime, tz=datetime.UTC
+                            ),
                         )
                     except AlreadyExistsError as e:
                         log.log(str(e))
@@ -70,4 +72,6 @@ def load_rfcs_into_blobdb(numbers: list[int]):
                 except AlreadyExistsError as e:
                     log.log(str(e))
         else:
-            log.log(f"Skipping loading rfc{num} into blobdb as no matching Document exists")
+            log.log(
+                f"Skipping loading rfc{num} into blobdb as no matching Document exists"
+            )
