@@ -6,9 +6,11 @@ from tempfile import TemporaryDirectory
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db.models import Max
+from django.db.models.functions import Coalesce
 from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
 
+from ietf.blobdb.models import Blob
 from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory
 from ietf.doc.models import RelatedDocument, Document
 from ietf.group.factories import RoleFactory, GroupFactory
@@ -22,7 +24,9 @@ class RpcApiTests(APITestCase):
         viewname = "ietf.api.purple_api.draft-references"
 
         # non-existent draft
-        bad_id = Document.objects.aggregate(unused_id=Max("id") + 100)["unused_id"]
+        bad_id = Document.objects.aggregate(unused_id=Coalesce(Max("id"), 0) + 100)[
+            "unused_id"
+        ]
         url = urlreverse(viewname, kwargs={"doc_id": bad_id})
         # Without credentials
         r = self.client.get(url)
@@ -256,6 +260,31 @@ class RpcApiTests(APITestCase):
             )
             self.assertEqual(r.status_code, 400)
 
+            # Put a file in the way. Post should fail because replace = False
+            file_in_the_way = (rfc_path / f"rfc{unused_rfc_number}.txt")
+            file_in_the_way.touch()
+            r = self.client.post(
+                url,
+                _valid_post_data(),
+                format="multipart",
+                headers={"X-Api-Key": "valid-token"},
+            )
+            self.assertEqual(r.status_code, 409)  # conflict
+            file_in_the_way.unlink()
+            
+            # Put a blob in the way. Post should fail because replace = False
+            blob_in_the_way = Blob.objects.create(
+                bucket="rfc", name=f"txt/rfc{unused_rfc_number}.txt", content=b""
+            )
+            r = self.client.post(
+                url,
+                _valid_post_data(),
+                format="multipart",
+                headers={"X-Api-Key": "valid-token"},
+            )
+            self.assertEqual(r.status_code, 409)  # conflict
+            blob_in_the_way.delete()
+
             # valid post
             r = self.client.post(
                 url,
@@ -264,20 +293,40 @@ class RpcApiTests(APITestCase):
                 headers={"X-Api-Key": "valid-token"},
             )
             self.assertEqual(r.status_code, 200)
-            for suffix in [".xml", ".txt", ".html", ".pdf", ".json"]:
+            for extension in ["xml", "txt", "html", "pdf", "json"]:
+                filename = f"rfc{unused_rfc_number}.{extension}"
                 self.assertEqual(
-                    (rfc_path / f"rfc{unused_rfc_number}")
-                    .with_suffix(suffix)
+                    (rfc_path / filename)
                     .read_text(),
-                    f"This is {suffix}",
-                    f"{suffix} file should contain the expected content",
+                    f"This is .{extension}",
+                    f"{extension} file should contain the expected content",
                 )
+                self.assertEqual(
+                    bytes(
+                        Blob.objects.get(
+                            bucket="rfc", name=f"{extension}/{filename}"
+                        ).content
+                    ),
+                    f"This is .{extension}".encode("utf-8"),
+                    f"{extension} blob should contain the expected content",
+                )
+            # special case for notprepped
+            notprepped_fn = f"rfc{unused_rfc_number}.notprepped.xml"
             self.assertEqual(
                 (
-                    rfc_path / "prerelease" / f"rfc{unused_rfc_number}.notprepped.xml"
+                    rfc_path / "prerelease" / notprepped_fn
                 ).read_text(),
                 "This is .notprepped.xml",
                 ".notprepped.xml file should contain the expected content",
+            )
+            self.assertEqual(
+                bytes(
+                    Blob.objects.get(
+                        bucket="rfc", name=f"notprepped/{notprepped_fn}"
+                    ).content
+                ),
+                b"This is .notprepped.xml",
+                ".notprepped.xml blob should contain the expected content",
             )
 
             # re-post with replace = False should now fail

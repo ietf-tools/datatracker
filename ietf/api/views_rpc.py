@@ -1,4 +1,5 @@
 # Copyright The IETF Trust 2023-2026, All Rights Reserved
+import os
 import shutil
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -35,6 +36,7 @@ from ietf.api.serializers_rpc import (
 )
 from ietf.doc.models import Document, DocHistory, RfcAuthor
 from ietf.doc.serializers import RfcAuthorSerializer
+from ietf.doc.storage_utils import remove_from_storage, store_file, exists_in_storage
 from ietf.person.models import Email, Person
 
 
@@ -366,8 +368,8 @@ class RfcPubFilesView(APIView):
     api_key_endpoint = "ietf.api.views_rpc"
     parser_classes = [parsers.MultiPartParser]
 
-    def _destination(self, filename: str | Path) -> Path:
-        """Destination for an uploaded RFC file
+    def _fs_destination(self, filename: str | Path) -> Path:
+        """Destination for an uploaded RFC file in the filesystem
         
         Strips any path components in filename and returns an absolute Path.
         """
@@ -377,6 +379,23 @@ class RfcPubFilesView(APIView):
         if extension == ".notprepped.xml":
             return rfc_path / "prerelease" / filename.name
         return rfc_path / filename.name
+
+    def _blob_destination(self, filename: str | Path) -> str:
+        """Destination name for an uploaded RFC file in the blob store
+        
+        Strips any path components in filename and returns an absolute Path.
+        """
+        filename = Path(filename)  # could potentially have directory components
+        extension = "".join(filename.suffixes)
+        if extension == ".notprepped.xml":
+            file_type = "notprepped"
+        elif extension[0] == ".":
+            file_type = extension[1:]
+        else:
+            raise serializers.ValidationError(
+                f"Extension does not begin with '.'!? ({filename})",
+            )
+        return f"{file_type}/{filename.name}"
 
     @extend_schema(
         operation_id="upload_rfc_files",
@@ -394,10 +413,17 @@ class RfcPubFilesView(APIView):
         uploaded_files = serializer.validated_data["contents"]  # list[UploadedFile]
         replace = serializer.validated_data["replace"]
         dest_stem = f"rfc{rfc.rfc_number}"
+        mtime = serializer.validated_data["mtime"]
+        mtimestamp = mtime.timestamp()
+        blob_kind = "rfc"
 
         # List of files that might exist for an RFC
         possible_rfc_files = [
-            self._destination(dest_stem + ext)
+            self._fs_destination(dest_stem + ext)
+            for ext in serializer.allowed_extensions
+        ]
+        possible_rfc_blobs = [
+            self._blob_destination(dest_stem + ext)
             for ext in serializer.allowed_extensions
         ]
         if not replace:
@@ -407,6 +433,14 @@ class RfcPubFilesView(APIView):
                     raise Conflict(
                         "File(s) already exist for this RFC",
                         code="files-exist",
+                    )
+            for possible_existing_blob in possible_rfc_blobs:
+                if exists_in_storage(
+                    kind=blob_kind, name=possible_existing_blob
+                ):
+                    raise Conflict(
+                        "Blob(s) already exist for this RFC",
+                        code="blobs-exist",
                     )
 
         with TemporaryDirectory() as tempdir:
@@ -421,14 +455,33 @@ class RfcPubFilesView(APIView):
                 with tempfile_path.open("wb") as dest:
                     for chunk in upfile.chunks():
                         dest.write(chunk)
+                os.utime(tempfile_path, (mtimestamp, mtimestamp))
                 files_to_move.append(tempfile_path)
             # copy files to final location, removing any existing ones first if the
             # remove flag was set
             if replace:
                 for possible_existing_file in possible_rfc_files:
                     possible_existing_file.unlink(missing_ok=True)
+                for possible_existing_blob in possible_rfc_blobs:
+                    remove_from_storage(
+                        blob_kind, possible_existing_blob, warn_if_missing=False
+                    )
             for ftm in files_to_move:
-                shutil.move(ftm, self._destination(ftm))
-                # todo store in blob storage as well (need a bucket for RFCs)
+                with ftm.open("rb") as f:
+                    store_file(
+                        kind=blob_kind,
+                        name=self._blob_destination(ftm),
+                        file=f,
+                        doc_name=rfc.name,
+                        doc_rev=rfc.rev,  # expect None, but match whatever it is
+                        mtime=mtime,
+                    )
+                destination = self._fs_destination(ftm)
+                if (
+                    settings.SERVER_MODE != "production"
+                    and not destination.parent.exists()
+                ):
+                    destination.parent.mkdir()
+                shutil.move(ftm, destination)
 
         return Response(NotificationAckSerializer().data)
