@@ -119,7 +119,9 @@ class FullDraftSerializer(serializers.ModelSerializer):
     # Other fields we need to add / adjust
     source_format = serializers.SerializerMethodField()
     authors = DocumentAuthorSerializer(many=True, source="documentauthor_set")
-    shepherd = serializers.SerializerMethodField()
+    shepherd = serializers.PrimaryKeyRelatedField(
+        source="shepherd.person", read_only=True
+    )
     consensus = serializers.SerializerMethodField()
 
     class Meta:
@@ -138,6 +140,8 @@ class FullDraftSerializer(serializers.ModelSerializer):
             "shepherd",
             "intended_std_level",
             "consensus",
+            "shepherd",
+            "ad",
         ]
 
     def get_consensus(self, doc: Document) -> Optional[bool]:
@@ -157,12 +161,6 @@ class FullDraftSerializer(serializers.ModelSerializer):
         elif ".txt" in submission.file_types:
             return "txt"
         return "unknown"
-
-    @extend_schema_field(OpenApiTypes.EMAIL)
-    def get_shepherd(self, doc: Document) -> str:
-        if doc.shepherd:
-            return doc.shepherd.formatted_ascii_email()
-        return ""
 
 
 class DraftSerializer(FullDraftSerializer):
