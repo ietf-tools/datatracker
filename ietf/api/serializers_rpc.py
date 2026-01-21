@@ -114,6 +114,7 @@ class FullDraftSerializer(serializers.ModelSerializer):
     # is used for a writeable view, the validation will need to be added back.
     name = serializers.CharField(max_length=255)
     title = serializers.CharField(max_length=255)
+    group = serializers.SlugRelatedField(slug_field="acronym", read_only=True)
 
     # Other fields we need to add / adjust
     source_format = serializers.SerializerMethodField()
@@ -129,6 +130,8 @@ class FullDraftSerializer(serializers.ModelSerializer):
             "rev",
             "stream",
             "title",
+            "group",
+            "abstract",
             "pages",
             "source_format",
             "authors",
@@ -171,6 +174,7 @@ class DraftSerializer(FullDraftSerializer):
             "rev",
             "stream",
             "title",
+            "group",
             "pages",
             "source_format",
             "authors",
