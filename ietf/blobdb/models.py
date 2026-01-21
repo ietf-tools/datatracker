@@ -64,6 +64,9 @@ class Blob(models.Model):
             ),
         ]
 
+    def __str__(self):
+        return f"{self.bucket}:{self.name}"
+
     def save(self, **kwargs):
         db = get_blobdb()
         with transaction.atomic(using=db):
