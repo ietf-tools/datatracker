@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 
 from django.test import override_settings
 from ietf import settings
+from ietf.doc.factories import RfcFactory
 from ietf.doc.storage_utils import exists_in_storage, retrieve_str
 from ietf.sync.utils import build_from_file_content, load_rfcs_into_blobdb, rsync_helper
 from ietf.utils.test_utils import TestCase
@@ -59,6 +60,7 @@ class RfcBlobUploadTests(TestCase):
                 rfc_path = Path(faux_rfc_path)
                 (rfc_path / "prerelease").mkdir()
                 for num in [12345, 54321]:
+                    RfcFactory(rfc_number=num)
                     for ext in settings.RFC_FILE_TYPES + ("json",):
                         with (rfc_path / f"rfc{num}.{ext}").open("w") as f:
                             f.write(ext)
