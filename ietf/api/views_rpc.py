@@ -476,6 +476,12 @@ class RfcPubFilesView(APIView):
                         doc_rev=rfc.rev,  # expect None, but match whatever it is
                         mtime=mtime,
                     )
-                shutil.move(ftm, self._fs_destination(ftm))
+                destination = self._fs_destination(ftm)
+                if (
+                    settings.SERVER_MODE != "production"
+                    and not destination.parent.exists()
+                ):
+                    destination.parent.mkdir()
+                shutil.move(ftm, destination)
 
         return Response(NotificationAckSerializer().data)
