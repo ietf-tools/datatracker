@@ -114,11 +114,14 @@ class FullDraftSerializer(serializers.ModelSerializer):
     # is used for a writeable view, the validation will need to be added back.
     name = serializers.CharField(max_length=255)
     title = serializers.CharField(max_length=255)
+    group = serializers.SlugRelatedField(slug_field="acronym", read_only=True)
 
     # Other fields we need to add / adjust
     source_format = serializers.SerializerMethodField()
     authors = DocumentAuthorSerializer(many=True, source="documentauthor_set")
-    shepherd = serializers.SerializerMethodField()
+    shepherd = serializers.PrimaryKeyRelatedField(
+        source="shepherd.person", read_only=True
+    )
     consensus = serializers.SerializerMethodField()
 
     class Meta:
@@ -129,12 +132,16 @@ class FullDraftSerializer(serializers.ModelSerializer):
             "rev",
             "stream",
             "title",
+            "group",
+            "abstract",
             "pages",
             "source_format",
             "authors",
             "shepherd",
             "intended_std_level",
             "consensus",
+            "shepherd",
+            "ad",
         ]
 
     def get_consensus(self, doc: Document) -> Optional[bool]:
@@ -155,12 +162,6 @@ class FullDraftSerializer(serializers.ModelSerializer):
             return "txt"
         return "unknown"
 
-    @extend_schema_field(OpenApiTypes.EMAIL)
-    def get_shepherd(self, doc: Document) -> str:
-        if doc.shepherd:
-            return doc.shepherd.formatted_ascii_email()
-        return ""
-
 
 class DraftSerializer(FullDraftSerializer):
     class Meta:
@@ -171,6 +172,7 @@ class DraftSerializer(FullDraftSerializer):
             "rev",
             "stream",
             "title",
+            "group",
             "pages",
             "source_format",
             "authors",
