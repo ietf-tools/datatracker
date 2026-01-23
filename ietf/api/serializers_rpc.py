@@ -137,7 +137,6 @@ class FullDraftSerializer(serializers.ModelSerializer):
             "pages",
             "source_format",
             "authors",
-            "shepherd",
             "intended_std_level",
             "consensus",
             "shepherd",
@@ -263,15 +262,6 @@ class RfcPubSerializer(serializers.ModelSerializer):
     stream = serializers.PrimaryKeyRelatedField(
         queryset=StreamName.objects.filter(used=True)
     )
-    formal_languages = serializers.PrimaryKeyRelatedField(
-        many=True,
-        required=False,
-        queryset=FormalLanguageName.objects.filter(used=True),
-        help_text=(
-            "formal languages used in RFC (defaults to those from draft, send empty"
-            "list to override)"
-        )
-    )
     std_level = serializers.PrimaryKeyRelatedField(
         queryset=StdLevelName.objects.filter(used=True),
     )
@@ -315,11 +305,8 @@ class RfcPubSerializer(serializers.ModelSerializer):
             "stream",
             "abstract",
             "pages",
-            "words",
-            "formal_languages",
             "std_level",
             "ad",
-            "note",
             "obsoletes",
             "updates",
             "subseries",
