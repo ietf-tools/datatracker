@@ -27,7 +27,7 @@ from ietf.doc.utils import (
     update_rfcauthors,
 )
 from ietf.group.models import Group
-from ietf.name.models import StreamName, StdLevelName, FormalLanguageName
+from ietf.name.models import StreamName, StdLevelName
 from ietf.person.models import Person
 from ietf.utils import log
 
@@ -340,9 +340,6 @@ class RfcPubSerializer(serializers.ModelSerializer):
         # If specified, retrieve draft and extract RFC default values from it
         if draft_name is None:
             draft = None
-            defaults_from_draft = {
-                "group": Group.objects.get(acronym="none", type_id="individ"),
-            }
         else:
             # validation enforces that draft_name and draft_rev are both present
             draft = Document.objects.filter(
