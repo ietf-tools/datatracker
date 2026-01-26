@@ -17,9 +17,7 @@ from ietf.utils.mime import get_mime_type
 # Allow the protocols/tags/attributes we specifically want, plus anything that nh3 declares
 # to be safe.
 
-acceptable_protocols = nh3.ALLOWED_URL_SCHEMES.union(
-    {"ftp", "http", "https", "mailto", "tel", "xmpp"}
-)
+acceptable_protocols = {"http", "https", "mailto", "tel", "xmpp"}
 acceptable_tags = nh3.ALLOWED_TAGS.union(
     {
         # fmt: off
