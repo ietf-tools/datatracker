@@ -13,8 +13,79 @@ from django.utils.safestring import mark_safe
 
 from ietf.doc.templatetags.ietf_filters import urlize_ietf_docs
 from .html import clean_html, liberal_clean_html
-from .text import linkify
 
+
+import re
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
+from django.utils.regex_helper import _lazy_re_compile
+import xml
+
+_validate_url = URLValidator()
+
+allowed_protocols = ["http", "https", "xmpp"]
+
+# Simple Markdown extension inspired by https://github.com/django-wiki/django-wiki/blob/main/src/wiki/plugins/links/mdx/urlize.py
+    
+LINKER_URL = (
+    r"^(?P<begin>|.*?[\s\(\<])"
+    r"(?P<url>"  
+    r"(?P<protocol>([a-zA-Z:]+\/{2}|))"
+    r"(?P<host>"  
+    r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|"  # IPv4
+    r"\[[a-zA-Z0-9:]+\]|" # IPv6 
+    r"([A-Z0-9]([A-Z0-9-]{0,61}[A-Z0-9])?\.)+([A-Z]{2,6}\.?|[A-Z]{2,}\.?)"  # FQDN
+    r")"  
+    r"(:(?P<port>[0-9]+))?"
+    r"(/(?P<path>[^\s\[\(\]\)\<\>]*))?"
+    r")"  
+    r"(?P<end>[\s\)\>].*?|)$"
+)
+
+LINKER_EMAIL = (
+    r"^(?P<begin>|.*?[\s\(\<])"
+    r"(?P<email>"  
+    r"[a-zA-Z0-9._-]+@[a-zA-Z0-0._]+\.[a-zA-Z]{2,4}"
+    r")"  
+    r"(?P<end>[\s\)\>].*?|)$"
+)
+
+class Linker(python_markdown.inlinepatterns.Pattern):
+    def __init__(self, pattern, md, linker="url"):
+        super().__init__(pattern, md)
+        self.linker = linker
+        
+    def getCompiledRegExp(self):
+        return _lazy_re_compile(self.pattern, re.DOTALL | re.UNICODE | re.IGNORECASE)
+    
+    def handleMatch(self, m):
+        if self.linker == "url":
+            text = m.group("url")
+            protocol = m.group("protocol") 
+            if protocol == "" or protocol[:-3] not in allowed_protocols:
+                return None
+            href = text 
+            try: 
+                _validate_url(text)
+            except ValidationError:
+                return None
+                
+        else:
+            text = m.group("email")
+            href = "mailto://" + text
+    
+        delimitor = m.group("begin") + m.group("end")
+        tags = re.search(r"(\<([\s\S])+?\>)", delimitor)
+        if tags == True:
+            return None
+          
+        el = xml.etree.ElementTree.Element("a")
+        el.set("href", href)
+        el.set("rel", "noopener noreferrer")
+        el.text = python_markdown.util.AtomicString(text)
+        
+        return el
+        
 
 
 class LinkifyExtension(Extension):
@@ -23,17 +94,20 @@ class LinkifyExtension(Extension):
     but using our own linker directly. Doing the linkification on the converted
     Markdown output introduces artifacts.
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def extendMarkdown(self, md):
-        md.postprocessors.register(LinkifyPostprocessor(md), "linkify", 50)
+        md.inlinePatterns.register(Linker(LINKER_URL, md, linker="url"), "autolink_url", 91) 
+        md.inlinePatterns.register(Linker(LINKER_EMAIL, md, linker="email"), "autolink_email", 92)
         # disable automatic links via angle brackets for email addresses
         md.inlinePatterns.deregister("automail")
         # "autolink" for URLs does not seem to cause issues, so leave it on
-
-
+        
+        
 class LinkifyPostprocessor(Postprocessor):
     def run(self, text):
-        return urlize_ietf_docs(linkify(text))
+        return urlize_ietf_docs(text)
 
 
 def markdown(text):

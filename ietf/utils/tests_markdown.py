@@ -36,14 +36,14 @@ class MarkdownTests(TestCase):
         """
         <h1 id="ietf-markdown-test-file">IETF Markdown Test File</h1>
         <p>This file contains a bunch of constructs to test our markdown converter in<br>
-        <code>ietf/utils/<a href="http://markdown.py" rel="noopener noreferrer">markdown.py</a></code>.</p>
+        <code>ietf/utils/markdown.py</code>.</p>
         <h2 id="links">Links</h2>
         <ul>
         <li><a href="https://example.com" rel="noopener noreferrer">https://example.com</a></li>
         <li><a href="https://example.com" rel="noopener noreferrer">https://example.com</a></li>
         <li><a href="https://example.com" rel="noopener noreferrer">Example</a></li>
-        <li><a href="mailto:user@example.com" rel="noopener noreferrer">user@example.com</a></li>
-        <li>&lt;<a href="mailto:user@example.com" rel="noopener noreferrer">user@example.com</a>&gt;</li>
+        <li><a href="mailto://user@example.com" rel="noopener noreferrer">user@example.com</a></li>
+        <li>&lt;<a href="mailto://user@example.com" rel="noopener noreferrer">user@example.com</a>&gt;</li>
         <li><a href="mailto:user@example.com" rel="noopener noreferrer">User</a></li>
         <li>RFC2119</li>
         <li>BCP 3</li>
