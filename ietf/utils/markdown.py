@@ -10,24 +10,25 @@ from markdown.extensions import Extension
 from markdown.postprocessors import Postprocessor
 
 from django.utils.safestring import mark_safe
+from django.utils.regex_helper import _lazy_re_compile
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator, EmailValidator
 
 from ietf.doc.templatetags.ietf_filters import urlize_ietf_docs
 from .html import clean_html, liberal_clean_html
 
-
 import re
-from django.core.exceptions import ValidationError
-from django.core.validators import URLValidator
-from django.utils.regex_helper import _lazy_re_compile
 import xml
 
+
 _validate_url = URLValidator()
+_validate_email = EmailValidator()
 
 allowed_protocols = ["http", "https", "xmpp"]
 
 # Simple Markdown extension inspired by https://github.com/django-wiki/django-wiki/blob/main/src/wiki/plugins/links/mdx/urlize.py
     
-LINKER_URL = (
+URL_RE = (
     r"^(?P<begin>|.*?[\s\(\<])"
     r"(?P<url>"  
     r"(?P<protocol>([a-zA-Z:]+\/{2}|))"
@@ -42,7 +43,7 @@ LINKER_URL = (
     r"(?P<end>[\s\)\>].*?|)$"
 )
 
-LINKER_EMAIL = (
+EMAIL_RE = (
     r"^(?P<begin>|.*?[\s\(\<])"
     r"(?P<email>"  
     r"[a-zA-Z0-9._-]+@[a-zA-Z0-0._]+\.[a-zA-Z]{2,4}"
@@ -72,11 +73,15 @@ class Linker(python_markdown.inlinepatterns.Pattern):
                 
         else:
             text = m.group("email")
-            href = "mailto://" + text
-    
+            href = "mailto:" + text
+            try: 
+                _validate_email(text)
+            except ValidationError:
+                return None
+                
         delimitor = m.group("begin") + m.group("end")
         tags = re.search(r"(\<([\s\S])+?\>)", delimitor)
-        if tags == True:
+        if tags:
             return None
           
         el = xml.etree.ElementTree.Element("a")
@@ -98,8 +103,9 @@ class LinkifyExtension(Extension):
         super().__init__(*args, **kwargs)
 
     def extendMarkdown(self, md):
-        md.inlinePatterns.register(Linker(LINKER_URL, md, linker="url"), "autolink_url", 91) 
-        md.inlinePatterns.register(Linker(LINKER_EMAIL, md, linker="email"), "autolink_email", 92)
+        md.inlinePatterns.register(Linker(URL_RE, md, linker="url"), "autolink_url", 91) 
+        md.inlinePatterns.register(Linker(EMAIL_RE, md, linker="email"), "autolink_email", 92)
+        md.postprocessors.register(LinkifyPostprocessor(md), "linkify", 93)
         # disable automatic links via angle brackets for email addresses
         md.inlinePatterns.deregister("automail")
         # "autolink" for URLs does not seem to cause issues, so leave it on
