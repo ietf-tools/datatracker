@@ -368,7 +368,7 @@ class RfcPubNotificationView(APIView):
                 rfc_number=serializer.validated_data["rfc_number"]
             ):
                 raise serializers.ValidationError(
-                    f"RFC with that number already exists",
+                    "RFC with that number already exists",
                     code="rfc-number-in-use",
                 )
             raise serializers.ValidationError(
