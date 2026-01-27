@@ -27,7 +27,7 @@ from ietf.doc.utils import (
     update_rfcauthors,
 )
 from ietf.group.models import Group
-from ietf.name.models import StreamName, StdLevelName, FormalLanguageName
+from ietf.name.models import StreamName, StdLevelName
 from ietf.person.models import Person
 from ietf.utils import log
 
@@ -137,7 +137,6 @@ class FullDraftSerializer(serializers.ModelSerializer):
             "pages",
             "source_format",
             "authors",
-            "shepherd",
             "intended_std_level",
             "consensus",
             "shepherd",
@@ -263,15 +262,6 @@ class RfcPubSerializer(serializers.ModelSerializer):
     stream = serializers.PrimaryKeyRelatedField(
         queryset=StreamName.objects.filter(used=True)
     )
-    formal_languages = serializers.PrimaryKeyRelatedField(
-        many=True,
-        required=False,
-        queryset=FormalLanguageName.objects.filter(used=True),
-        help_text=(
-            "formal languages used in RFC (defaults to those from draft, send empty"
-            "list to override)"
-        )
-    )
     std_level = serializers.PrimaryKeyRelatedField(
         queryset=StdLevelName.objects.filter(used=True),
     )
@@ -315,11 +305,8 @@ class RfcPubSerializer(serializers.ModelSerializer):
             "stream",
             "abstract",
             "pages",
-            "words",
-            "formal_languages",
             "std_level",
             "ad",
-            "note",
             "obsoletes",
             "updates",
             "subseries",
@@ -353,9 +340,6 @@ class RfcPubSerializer(serializers.ModelSerializer):
         # If specified, retrieve draft and extract RFC default values from it
         if draft_name is None:
             draft = None
-            defaults_from_draft = {
-                "group": Group.objects.get(acronym="none", type_id="individ"),
-            }
         else:
             # validation enforces that draft_name and draft_rev are both present
             draft = Document.objects.filter(
@@ -378,17 +362,11 @@ class RfcPubSerializer(serializers.ModelSerializer):
                     },
                     code="already-published-draft",
                 )
-            defaults_from_draft = {
-                "ad": draft.ad,
-                "formal_languages": draft.formal_languages.all(),
-                "group": draft.group,
-                "note": draft.note,
-            }
 
         # Transaction to clean up if something fails
         with transaction.atomic():
             # create rfc, letting validated request data override draft defaults
-            rfc = self._create_rfc(defaults_from_draft | validated_data)
+            rfc = self._create_rfc(validated_data)
             DocEvent.objects.create(
                 doc=rfc,
                 rev=rfc.rev,
@@ -523,14 +501,11 @@ class RfcPubSerializer(serializers.ModelSerializer):
 
     def _create_rfc(self, validated_data):
         authors_data = validated_data.pop("authors")
-        formal_languages = validated_data.pop("formal_languages", [])
-        # todo ad field
         rfc = Document.objects.create(
             type_id="rfc",
             name=f"rfc{validated_data['rfc_number']}",
             **validated_data,
         )
-        rfc.formal_languages.set(formal_languages)  # list of PKs is ok
         for order, author_data in enumerate(authors_data):
             rfc.rfcauthor_set.create(
                 order=order,
