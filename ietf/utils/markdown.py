@@ -24,7 +24,7 @@ import xml
 _validate_url = URLValidator()
 _validate_email = EmailValidator()
 
-allowed_protocols = ["http", "https", "xmpp"]
+linkable_protocols = ["http", "https", "mailto", "ftp", "xmpp"]
 
 # Simple Markdown extension inspired by https://github.com/django-wiki/django-wiki/blob/main/src/wiki/plugins/links/mdx/urlize.py
     
@@ -63,7 +63,7 @@ class Linker(python_markdown.inlinepatterns.Pattern):
         if self.linker == "url":
             text = m.group("url")
             protocol = m.group("protocol") 
-            if protocol == "" or protocol[:-3] not in allowed_protocols:
+            if protocol == "" or protocol[:-3] not in linkable_protocols:
                 return None
             href = text 
             try: 
