@@ -80,9 +80,15 @@ class RpcApiTests(APITestCase):
     def test_notify_rfc_published(self):
         url = urlreverse("ietf.api.purple_api.notify_rfc_published")
         area = GroupFactory(type_id="area")
+        rfc_group = GroupFactory(type_id="wg")
         draft_ad = RoleFactory(group=area, name_id="ad").person
-        authors = PersonFactory.create_batch(2)
-        draft = WgDraftFactory(group__parent=area, authors=authors)
+        rfc_ad = PersonFactory()
+        draft_authors = PersonFactory.create_batch(2)
+        rfc_authors = PersonFactory.create_batch(3)
+        draft = WgDraftFactory(
+            group__parent=area, authors=draft_authors, ad=draft_ad, stream_id="ietf"
+        )
+        rfc_stream_id = "ise"
         assert isinstance(draft, Document), "WgDraftFactory should generate a Document"
         unused_rfc_number = (
             Document.objects.filter(rfc_number__isnull=False).aggregate(
@@ -96,7 +102,7 @@ class RpcApiTests(APITestCase):
             "draft_name": draft.name,
             "draft_rev": draft.rev,
             "rfc_number": unused_rfc_number,
-            "title": draft.title,
+            "title": "RFC " + draft.title,
             "authors": [
                 {
                     "titlepage_name": f"titlepage {author.name}",
@@ -106,17 +112,14 @@ class RpcApiTests(APITestCase):
                     "affiliation": "Some Affiliation",
                     "country": "CA",
                 }
-                for author in authors
+                for author in rfc_authors
             ],
-            "group": draft.group.acronym,
-            "stream": draft.stream_id,
-            "abstract": draft.abstract,
-            "pages": draft.pages,
-            "words": draft.pages * 250,
-            "formal_languages": [],
+            "group": rfc_group.acronym,
+            "stream": rfc_stream_id,
+            "abstract": "RFC version of " + draft.abstract,
+            "pages": draft.pages + 10,
             "std_level": "ps",
-            "ad": draft_ad.pk,
-            "note": "noted",
+            "ad": rfc_ad.pk,
             "obsoletes": [],
             "updates": [],
             "subseries": [],
@@ -137,7 +140,7 @@ class RpcApiTests(APITestCase):
             ).count(),
             1,
         )
-        self.assertEqual(rfc.title, draft.title)
+        self.assertEqual(rfc.title, "RFC " + draft.title)
         self.assertEqual(rfc.documentauthor_set.count(), 0)
         self.assertEqual(
             list(
@@ -159,18 +162,15 @@ class RpcApiTests(APITestCase):
                     "affiliation": "Some Affiliation",
                     "country": "CA",
                 }
-                for author in authors
+                for author in rfc_authors
             ],
         )
-        self.assertEqual(rfc.group, draft.group)
-        self.assertEqual(rfc.stream, draft.stream)
-        self.assertEqual(rfc.abstract, draft.abstract)
-        self.assertEqual(rfc.pages, draft.pages)
-        self.assertEqual(rfc.words, draft.pages * 250)
-        self.assertEqual(rfc.formal_languages.count(), 0)
+        self.assertEqual(rfc.group, rfc_group)
+        self.assertEqual(rfc.stream_id, rfc_stream_id)
+        self.assertEqual(rfc.abstract, "RFC version of " + draft.abstract)
+        self.assertEqual(rfc.pages, draft.pages + 10)
         self.assertEqual(rfc.std_level_id, "ps")
-        self.assertEqual(rfc.ad, draft_ad)
-        self.assertEqual(rfc.note, "noted")
+        self.assertEqual(rfc.ad, rfc_ad)
         self.assertEqual(rfc.related_that_doc("obs"), [])
         self.assertEqual(rfc.related_that_doc("updates"), [])
         self.assertEqual(rfc.part_of(), [])
