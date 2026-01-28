@@ -24,7 +24,7 @@ import xml
 _validate_url = URLValidator()
 _validate_email = EmailValidator()
 
-linkable_protocols = ["http", "https", "mailto", "ftp", "xmpp"]
+linkable_protocols = ["http", "https", "ftp", "xmpp"]
 
 # Markdown extension inspired by https://github.com/django-wiki/django-wiki/blob/main/src/wiki/plugins/links/mdx/urlize.py
     
@@ -79,32 +79,26 @@ class Linker(python_markdown.inlinepatterns.Pattern):
             except ValidationError:
                 return None
                 
-        delimitor = m.group("begin") + m.group("end")
-        tags = re.search(r"(\<([\s\S])+?\>)", delimitor)
-        if tags:
+        delimiter = m.group("begin") + m.group("end")
+        if re.search(r"(\<([\s\S])+?\>)", delimiter):
             return None
           
-        el = xml.etree.ElementTree.Element("a")
-        el.set("href", href)
-        el.set("rel", "noopener noreferrer")
-        el.text = python_markdown.util.AtomicString(text)
+        element = xml.etree.ElementTree.Element("a")
+        element.set("href", href)
+        element.set("rel", "noopener noreferrer")
+        element.text = python_markdown.util.AtomicString(text)
         
-        return el
+        return element
         
 
 
 class LinkifyExtension(Extension):
-    """
-    Simple Markdown extension inspired by https://github.com/daGrevis/mdx_linkify,
-    but using our own linker directly. Doing the linkification on the converted
-    Markdown output introduces artifacts.
-    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def extendMarkdown(self, md):
-        md.inlinePatterns.register(Linker(URL_RE, md, linker="url"), "autolink_url", 91) 
-        md.inlinePatterns.register(Linker(EMAIL_RE, md, linker="email"), "autolink_email", 92)
+        md.inlinePatterns.register(Linker(URL_RE, md, linker="url"), "linkify_url", 91) 
+        md.inlinePatterns.register(Linker(EMAIL_RE, md, linker="email"), "linkify_email", 92)
         md.postprocessors.register(LinkifyPostprocessor(md), "linkify", 93)
         # disable automatic links via angle brackets for email addresses
         md.inlinePatterns.deregister("automail")

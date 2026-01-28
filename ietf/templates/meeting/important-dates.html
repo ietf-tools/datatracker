@@ -45,7 +45,7 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {{ d.name.desc|urlize_ietf_docs|markdown|linkify }}{% if d.name.desc|slice:"-1:" != "." %}.{% endif %}
+                                    {{ d.name.desc|urlize_ietf_docs|markdown }}{% if d.name.desc|slice:"-1:" != "." %}.{% endif %}
                                     {% if d.name.slug == 'draftwgagenda' or d.name.slug == 'revwgagenda' or d.name.slug == 'procsub' or d.name.slug == 'revslug' %}
                                         Upload using the
                                         <a href="{% url 'ietf.meeting.views.materials' num=meeting.number %}">Meeting Materials Management Tool</a>.

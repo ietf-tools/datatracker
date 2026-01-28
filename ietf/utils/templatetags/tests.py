@@ -51,12 +51,12 @@ class TextfiltersTests(TestCase):
         )
         self.assertEqual(
             linkify("https://www.ietf.org"),
-            '<a href="https://www.ietf.org">https://www.ietf.org</a>',
+            '<a href="https://www.ietf.org" rel="nofollow">https://www.ietf.org</a>',
         )
         self.assertEqual(
             linkify('<a href="https://www.ietf.org">IETF</a>'),
             (
-                '&lt;a href=&quot;<a href="https://www.ietf.org">https://www.ietf.org</a>&quot;&gt;IETF&lt;/a&gt;'
+                '&lt;a href=&quot;<a href="https://www.ietf.org" rel="nofollow">https://www.ietf.org</a>&quot;&gt;IETF&lt;/a&gt;'
             ),
         )
         self.assertEqual(
@@ -83,7 +83,7 @@ class TextfiltersTests(TestCase):
         )
         self.assertEqual(
             linkify("https://www.ietf.org", autoescape=False),
-            '<a href="https://www.ietf.org">https://www.ietf.org</a>',
+            'https://www.ietf.org',
         )
         self.assertEqual(
             linkify('<a href="https://www.ietf.org">IETF</a>', autoescape=False),
@@ -91,14 +91,13 @@ class TextfiltersTests(TestCase):
         )
         self.assertEqual(
             linkify("somebody@example.com", autoescape=False),
-            '<a href="mailto:somebody@example.com">somebody@example.com</a>',
+            'somebody@example.com',
         )
         # bleach.Linkifier translates the < -> &lt; and > -> &gt; on this one
         self.assertEqual(
             linkify("Some Body <somebody@example.com>", autoescape=False),
             (
-                'Some Body &lt;<a href="mailto:somebody@example.com">'
-                'somebody@example.com</a>&gt;'
+                'Some Body <somebody@example.com>'
             ),
         )
         self.assertEqual(
