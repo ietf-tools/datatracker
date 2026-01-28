@@ -103,8 +103,8 @@ class LinkifyExtension(Extension):
         super().__init__(*args, **kwargs)
 
     def extendMarkdown(self, md):
-        md.inlinePatterns.register(Linker(URL_RE, md, linker="url"), "autolink_url", 91) 
-        md.inlinePatterns.register(Linker(EMAIL_RE, md, linker="email"), "autolink_email", 92)
+        md.inlinePatterns.register(Linker(URL_RE, md, linker="url"), "linkify_url", 91) 
+        md.inlinePatterns.register(Linker(EMAIL_RE, md, linker="email"), "linkify_email", 92)
         md.postprocessors.register(LinkifyPostprocessor(md), "linkify", 93)
         # disable automatic links via angle brackets for email addresses
         md.inlinePatterns.deregister("automail")
@@ -113,7 +113,7 @@ class LinkifyExtension(Extension):
         
 class LinkifyPostprocessor(Postprocessor):
     def run(self, text):
-        return urlize_ietf_docs(text)
+        return urlize_ietf_docs((text))
 
 
 def markdown(text):

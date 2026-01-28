@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
 from django import template
 from django.conf import settings
 from django.utils.html import escape
-from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, striptags
+from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, striptags, urlize
 from django.utils.safestring import mark_safe, SafeData
 from django.utils.html import strip_tags
 from django.utils.encoding import force_str
@@ -29,7 +29,7 @@ from ietf.ietfauth.utils import can_request_rfc_publication as utils_can_request
 from ietf.utils import log
 from ietf.doc.utils import prettify_std_name
 from ietf.utils.html import clean_html
-from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped, linkify
+from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped
 from ietf.utils.validators import validate_url
 
 register = template.Library()
@@ -448,14 +448,14 @@ def ad_area(user):
 def format_history_text(text, trunc_words=25):
     """Run history text through some cleaning and add ellipsis if it's too long."""
     full = mark_safe(clean_html(text))
-    full = linkify(urlize_ietf_docs(full))
+    full = urlize(urlize_ietf_docs(full)) 
 
     return format_snippet(full, trunc_words)
 
 @register.filter
 def format_snippet(text, trunc_words=25): 
     # urlize if there aren't already links present
-    text = linkify(text)
+    text = urlize(text)
     full = keep_spacing(collapsebr(linebreaksbr(mark_safe(clean_html(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
@@ -714,10 +714,6 @@ def rfcbis(s):
     m = re.search(r'^.*-rfc(\d+)-?bis(-.*)?$', s)
     return None if m is None else 'rfc' + m.group(1) 
 
-@register.filter
-@stringfilter
-def urlize(value):
-    raise RuntimeError("Use linkify from textfilters instead of urlize")
 
 @register.filter
 @stringfilter
