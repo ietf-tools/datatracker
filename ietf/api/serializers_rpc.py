@@ -175,6 +175,7 @@ class DraftSerializer(FullDraftSerializer):
             "pages",
             "source_format",
             "authors",
+            "consensus",
         ]
 
 
