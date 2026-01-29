@@ -307,17 +307,20 @@ This test section has some text.
         url = urlreverse('ietf.doc.views_bofreq.submit', kwargs=dict(name=doc.name))
 
         rev = doc.rev
+        doc_time = doc.time 
         r = self.client.post(url,{'bofreq_submission':'enter','bofreq_content':'# oiwefrase'})
         self.assertEqual(r.status_code, 302)
         doc = reload_db_objects(doc)
-        self.assertEqual(rev, doc.rev)
+        self.assertEqual(doc.rev, rev)
+        self.assertEqual(doc.time, doc_time)
 
         nobody = PersonFactory()
         self.client.login(username=nobody.user.username, password=nobody.user.username+'+password')
         r = self.client.post(url,{'bofreq_submission':'enter','bofreq_content':'# oiwefrase'})
         self.assertEqual(r.status_code, 403)
         doc = reload_db_objects(doc)
-        self.assertEqual(rev, doc.rev)
+        self.assertEqual(doc.rev, rev)
+        self.assertEqual(doc.time, doc_time)
         self.client.logout()
 
         editor = bofreq_editors(doc).first()
@@ -339,12 +342,14 @@ This test section has some text.
                         r = self.client.post(url, postdict)
                         self.assertEqual(r.status_code, 302)
                         doc = reload_db_objects(doc)
-                        self.assertEqual('%02d'%(int(rev)+1) ,doc.rev)
-                        self.assertEqual(f'# {username}', doc.text())
-                        self.assertEqual(f'# {username}', retrieve_str('bofreq',doc.get_base_name()))
-                        self.assertEqual(docevent_count+1, doc.docevent_set.count())
-                        self.assertEqual(1, len(outbox))
+                        self.assertEqual(doc.rev, '%02d'%(int(rev)+1))
+                        self.assertGreater(doc.time, doc_time)
+                        self.assertEqual(doc.text(), f'# {username}')
+                        self.assertEqual(retrieve_str('bofreq', doc.get_base_name()), f'# {username}')
+                        self.assertEqual(doc.docevent_set.count(), docevent_count+1)
+                        self.assertEqual(len(outbox), 1)
                         rev = doc.rev
+                        doc_time = doc.time
             finally:
                 os.unlink(file.name)
 
