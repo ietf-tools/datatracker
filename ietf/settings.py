@@ -1519,11 +1519,17 @@ if SERVER_MODE != 'production':
         NOMCOM_APP_SECRET = b'\x9b\xdas1\xec\xd5\xa0SI~\xcb\xd4\xf5t\x99\xc4i\xd7\x9f\x0b\xa9\xe8\xfeY\x80$\x1e\x12tN:\x84'
 
     ALLOWED_HOSTS = ['*',]
-    
+
     try:
         # see https://github.com/omarish/django-cprofile-middleware
-        import django_cprofile_middleware # pyflakes:ignore
-        MIDDLEWARE = MIDDLEWARE + ['django_cprofile_middleware.middleware.ProfilerMiddleware', ]
+        import django_cprofile_middleware  # pyflakes:ignore
+
+        MIDDLEWARE = MIDDLEWARE + [
+            "django_cprofile_middleware.middleware.ProfilerMiddleware",
+        ]
+        DJANGO_CPROFILE_MIDDLEWARE_REQUIRE_STAFF = (
+            False  # Do not use this setting for a public site!
+        )
     except ImportError:
         pass
 
