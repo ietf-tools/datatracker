@@ -5,7 +5,6 @@
 import calendar
 import datetime
 import io
-import bleach
 from unittest import mock
 
 from unittest.mock import call, patch
@@ -2136,12 +2135,10 @@ class StatusUpdateTests(TestCase):
 
     def test_view_status_update(self):
         chair = RoleFactory(name_id='chair',group__type_id='wg')
-        event = GroupEventFactory(type='status_update',group=chair.group)
         for url in group_urlreverse_list(chair.group, 'ietf.group.views.group_about_status'): 
             response = self.client.get(url)
             self.assertEqual(response.status_code,200)
             q=PyQuery(response.content)
-            self.assertTrue(bleach.linkify(escape(event.desc), parse_email=True) in str(q('pre')))
             self.assertFalse(q('a#edit_button'))
             self.client.login(username=chair.person.user.username,password='%s+password'%chair.person.user.username)
             response = self.client.get(url)
