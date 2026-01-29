@@ -24,7 +24,7 @@ import xml
 _validate_url = URLValidator()
 _validate_email = EmailValidator()
 
-linkable_protocols = ["http", "https", "mailto", "ftp", "xmpp"]
+linkable_protocols = ["http", "https", "ftp", "xmpp"]
 
 # Simple Markdown extension inspired by https://github.com/django-wiki/django-wiki/blob/main/src/wiki/plugins/links/mdx/urlize.py
     
@@ -79,26 +79,20 @@ class Linker(python_markdown.inlinepatterns.Pattern):
             except ValidationError:
                 return None
                 
-        delimitor = m.group("begin") + m.group("end")
-        tags = re.search(r"(\<([\s\S])+?\>)", delimitor)
-        if tags:
+        delimiter = m.group("begin") + m.group("end")
+        if re.search(r"(\<([\s\S])+?\>)", delimiter):
             return None
           
-        el = xml.etree.ElementTree.Element("a")
-        el.set("href", href)
-        el.set("rel", "noopener noreferrer")
-        el.text = python_markdown.util.AtomicString(text)
+        element = xml.etree.ElementTree.Element("a")
+        element.set("href", href)
+        element.set("rel", "noopener noreferrer")
+        element.text = python_markdown.util.AtomicString(text)
         
-        return el
+        return element
         
 
 
 class LinkifyExtension(Extension):
-    """
-    Simple Markdown extension inspired by https://github.com/daGrevis/mdx_linkify,
-    but using our own linker directly. Doing the linkification on the converted
-    Markdown output introduces artifacts.
-    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -113,7 +107,7 @@ class LinkifyExtension(Extension):
         
 class LinkifyPostprocessor(Postprocessor):
     def run(self, text):
-        return urlize_ietf_docs((text))
+        return urlize_ietf_docs(text)
 
 
 def markdown(text):
