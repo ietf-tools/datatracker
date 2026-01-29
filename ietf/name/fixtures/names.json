@@ -12994,7 +12994,7 @@
   {
     "fields": {
       "default_offset_days": -89,
-      "desc": "Working Group and BOF scheduling begins. To request a Working Group session, use the [IETF Meeting Session Request Tool](/secr/sreq/). If you are working on a BOF request, it is highly recommended to tell the IESG now by sending an [email to iesg@ietf.org](mailtp:iesg@ietf.org) to get advance help with the request.",
+      "desc": "Working Group and BOF scheduling begins. To request a Working Group session, use the [IETF Meeting Session Request Tool](/secr/sreq/). If you are working on a BOF request, it is highly recommended to tell the IESG now by sending an email to [iesg@ietf.org](mailto:iesg@ietf.org) to get advance help with the request.",
       "name": "Scheduling Opens",
       "order": 0,
       "used": true

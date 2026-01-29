@@ -7,7 +7,7 @@ def markdown_names(apps, schema_editor):
     changes = [
         ('bofproposals', "Preliminary BOF proposals requested. To request a __BoF__ session use the [IETF BoF Request Tool](/doc/bof-requests)."),
         ('openreg', "IETF Online Registration Opens [Register Here](https://www.ietf.org/how/meetings/register/)."),
-        ('opensched', "Working Group and BOF scheduling begins. To request a Working Group session, use the [IETF Meeting Session Request Tool](/secr/sreq/). If you are working on a BOF request, it is highly recommended to tell the IESG now by sending an [email to iesg@ietf.org](mailtp:iesg@ietf.org) to get advance help with the request."),
+        ('opensched', "Working Group and BOF scheduling begins. To request a Working Group session, use the [IETF Meeting Session Request Tool](/secr/sreq/). If you are working on a BOF request, it is highly recommended to tell the IESG now by sending an email to iesg@ietf.org(mailto:iesg@ietf.org) to get advance help with the request."),
         ('cutoffwgreq', "Cut-off date for requests to schedule Working Group Meetings at UTC 23:59. To request a __Working Group__ session, use the [IETF Meeting Session Request Tool](/secr/sreq/)."),
         ('idcutoff', "Internet-Draft submission cut-off (for all Internet-Drafts, including -00) by UTC 23:59. Upload using the [I-D Submission Tool](/submit/)."),
         ('cutoffwgreq', "Cut-off date for requests to schedule Working Group Meetings at UTC 23:59. To request a __Working Group__ session, use the [IETF Meeting Session Request Tool](/secr/sreq/)."),
