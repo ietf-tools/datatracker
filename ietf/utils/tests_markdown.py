@@ -20,6 +20,7 @@ class MarkdownTests(TestCase):
         * https://example.com
         * <https://example.com>
         * [Example](https://example.com)
+        * https://mailman3.ietf.org/mailman3/lists/tls@ietf.org/
         * user@example.com
         * <user@example.com>
         * [User](mailto:user@example.com)
@@ -42,6 +43,7 @@ class MarkdownTests(TestCase):
         <li><a href="https://example.com" rel="noopener noreferrer">https://example.com</a></li>
         <li><a href="https://example.com" rel="noopener noreferrer">https://example.com</a></li>
         <li><a href="https://example.com" rel="noopener noreferrer">Example</a></li>
+        <li><a href="https://mailman3.ietf.org/mailman3/lists/tls@ietf.org/" rel="noopener noreferrer">https://mailman3.ietf.org/mailman3/lists/tls@ietf.org/</a></li>
         <li><a href="mailto:user@example.com" rel="noopener noreferrer">user@example.com</a></li>
         <li>&lt;<a href="mailto:user@example.com" rel="noopener noreferrer">user@example.com</a>&gt;</li>
         <li><a href="mailto:user@example.com" rel="noopener noreferrer">User</a></li>

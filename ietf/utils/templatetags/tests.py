@@ -54,6 +54,10 @@ class TextfiltersTests(TestCase):
             '<a href="https://www.ietf.org" rel="nofollow">https://www.ietf.org</a>',
         )
         self.assertEqual(
+            linkify("https://mailman3.ietf.org/mailman3/lists/tls@ietf.org/"),
+            '<a href="https://mailman3.ietf.org/mailman3/lists/tls@ietf.org/" rel="nofollow">https://mailman3.ietf.org/mailman3/lists/tls@ietf.org/</a>',
+        )
+        self.assertEqual(
             linkify('<a href="https://www.ietf.org">IETF</a>'),
             (
                 '&lt;a href=&quot;<a href="https://www.ietf.org" rel="nofollow">https://www.ietf.org</a>&quot;&gt;IETF&lt;/a&gt;'
