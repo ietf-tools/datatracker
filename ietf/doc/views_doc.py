@@ -316,7 +316,8 @@ def document_main(request, name, rev=None, document_html=False):
                 js = Path(finders.find("ietf/js/document_html.js")).read_text()
                 css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
                 if html:
-                    css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
+                    css += Path(finders.find("ietf/css/document_html_html.css")).read_text()
+                    css += Path(finders.find("ietf/css/document_html_txthtml.css")).read_text()
 
         # submission
         submission = ""
@@ -643,7 +644,8 @@ def document_main(request, name, rev=None, document_html=False):
                     js += Path(finders.find("ietf/js/theme.js")).read_text()
                     css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
                     if html:
-                        css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
+                        css += Path(finders.find("ietf/css/document_html_html.css")).read_text()
+                        css += Path(finders.find("ietf/css/document_html_txthtml.css")).read_text()
 
         return render(request, "doc/document_draft.html" if document_html is False else "doc/document_html.html",
                                   dict(doc=doc,
