@@ -5,6 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.conf import settings
+from django.db import IntegrityError
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import mixins, parsers, serializers, viewsets, status
 from rest_framework.decorators import action
@@ -360,7 +361,20 @@ class RfcPubNotificationView(APIView):
         serializer = RfcPubSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         # Create RFC
-        serializer.save()
+        try:
+            serializer.save()
+        except IntegrityError as err:
+            if Document.objects.filter(
+                rfc_number=serializer.validated_data["rfc_number"]
+            ):
+                raise serializers.ValidationError(
+                    "RFC with that number already exists",
+                    code="rfc-number-in-use",
+                )
+            raise serializers.ValidationError(
+                f"Unable to publish: {err}",
+                code="unknown-integrity-error",
+            )
         return Response(NotificationAckSerializer().data)
 
 
