@@ -2566,8 +2566,14 @@ def parse_agenda_filter_params(querydict):
 
 def should_include_assignment(filter_params, assignment):
     """Decide whether to include an assignment"""
-    shown = len(set(filter_params['show']).intersection(assignment.filter_keywords)) > 0
-    hidden = len(set(filter_params['hide']).intersection(assignment.filter_keywords)) > 0
+    if hasattr(assignment, "filter_keywords"):
+        kw = assignment.filter_keywords
+    elif isinstance(assignment, dict):
+        kw = assignment.get("filterKeywords", [])
+    else:
+        raise ValueError("Unsupported assignment instance")
+    shown = len(set(filter_params['show']).intersection(kw)) > 0
+    hidden = len(set(filter_params['hide']).intersection(kw)) > 0
     return shown and not hidden
 
 def agenda_ical(request, num=None, acronym=None, session_id=None):
@@ -2600,7 +2606,31 @@ def agenda_ical(request, num=None, acronym=None, session_id=None):
 
     if meeting.type_id == "ietf" and request.GET.get("precomp"):  # todo enable without get param
         print("precomp")
+        try:
+            # todo simplify the next line - only needed to strip out the precomp debug param
+            filt_params = parse_agenda_filter_params({k: v for k, v in request.GET.items() if k != "precomp"})
+        except ValueError as e:
+            return HttpResponseBadRequest(str(e))
         agenda_data = generate_agenda_data(meeting.number, force_refresh=False)
+        if acronym:
+            agenda_data["schedule"] = [
+                item
+                for item in agenda_data["schedule"]
+                if item["groupAcronym"] == acronym
+            ]
+        elif session_id:
+            agenda_data["schedule"] = [
+                item
+                for item in agenda_data["schedule"]
+                if item["sessionId"] == session_id
+            ]
+        if filt_params is not None:
+            # Apply the filter
+            agenda_data["schedule"] = [
+                item
+                for item in agenda_data["schedule"]
+                if should_include_assignment(filt_params, item)
+            ]
         return render_icalendar_precomp(agenda_data)
 
     schedule = get_schedule(meeting)
