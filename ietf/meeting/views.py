@@ -40,7 +40,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.validators import URLValidator
-from django.urls import reverse,reverse_lazy
+from django.urls import reverse, reverse_lazy, NoReverseMatch
 from django.db.models import F, Max, Q
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.template import TemplateDoesNotExist
@@ -1978,7 +1978,9 @@ def agenda_extract_schedule (item):
         "acronym": item.acronym,
         "duration": item.timeslot.duration.seconds,
         "name": item.session.name,
+        "slotId": item.timeslot.id,
         "slotName": item.timeslot.name,
+        "slotModified": item.timeslot.modified.isoformat(),
         "startDateTime": item.timeslot.time.isoformat(),
         "status": item.session.current_status,
         "type": item.session.type.slug,
@@ -2290,9 +2292,145 @@ def ical_session_status(assignment):
     else:
         return "CONFIRMED"
 
+
+def render_icalendar_precomp(agenda_data):
+    ical_content = generate_agenda_ical_precomp(agenda_data)
+    return HttpResponse(ical_content, content_type="text/calendar")
+
+
 def render_icalendar(schedule, assignments):
     ical_content = generate_agenda_ical(schedule, assignments)
     return HttpResponse(ical_content, content_type="text/calendar")
+
+def generate_agenda_ical_precomp(agenda_data):
+    """Generate iCalendar from precomputed data using the icalendar library"""
+
+    cal = Calendar()
+    cal.add("prodid", "-//IETF//datatracker.ietf.org ical agenda//EN")
+    cal.add("version", "2.0")
+    cal.add("method", "PUBLISH")
+    
+    meeting_data = agenda_data["meeting"]
+    for item in agenda_data["schedule"]:
+        event = Event()
+        
+        uid = f"ietf-{meeting_data["number"]}-{item["slotId"]}-{item["groupAcronym"]}"
+        event.add("uid", uid)
+
+        # add custom field with meeting's local TZ
+        event.add("x-meeting-tz", meeting_data["timezone"])
+        
+        if item["name"]:
+            summary = item["name"]
+        else:
+            summary = f"{item["groupAcronym"]} - {item["groupName"]}"
+
+        if item["note"]:
+            summary += f" ({item["note"]})"
+
+        event.add("summary", summary)
+
+        if item["room"] is not None:
+            event.add("location", item["room"])  # room name
+
+        if item["status"] == "canceled":
+            status = "CANCELLED"
+        elif item["status"] == "resched":
+            # todo check for tombstone (not captured in precomp yet)
+            status = "RESCHEDULED"
+        else:
+            status = "CONFIRMED"
+        event.add("status", status)
+
+        event.add("class", "PUBLIC")
+
+        start_time = datetime.datetime.fromisoformat(item["startDateTime"])
+        duration = datetime.timedelta(seconds=item["duration"])
+        event.add("dtstart", start_time)
+        event.add("dtend", start_time + duration)
+
+        # DTSTAMP: when the event was created or last modified (in UTC)
+        # n.b. timeslot.modified may not be an accurate measure of this
+        event.add("dtstamp", datetime.datetime.fromisoformat(item["slotModified"]))
+
+        description_parts = [item["slotName"]]
+
+        if item["note"]:
+            description_parts.append(f"Note: {item["note"]}")
+
+        links = item["links"]
+        if links["onsiteTool"]:
+            description_parts.append(f"Onsite tool: {links["onsiteTool"]}")
+
+        if links["videoStream"]:
+            description_parts.append(f"Meetecho: {links["videoStream"]}")
+
+        if links["webex"]:
+            description_parts.append(f"Webex: {links["webex"]}")
+
+        if item["remoteInstructions"]:
+            description_parts.append(
+                f"Remote instructions: {item["remoteInstructions"]}"
+            )
+
+        try:
+            materials_url = absurl(
+                "ietf.meeting.views.session_details",
+                num=meeting_data["number"],
+                acronym=item["groupAcronym"],
+            )
+        except NoReverseMatch:
+            pass
+        else:
+            description_parts.append(f"Session materials: {materials_url}")
+            event.add("url", materials_url)
+
+        if meeting_data["number"].isdigit():
+            try:
+                agenda_url = absurl("agenda", num=meeting_data["number"])
+            except NoReverseMatch:
+                pass
+            else:
+                slug = "-".join(
+                    cpt
+                    for cpt in [
+                        meeting_data["number"],
+                        start_time.strftime("%Y-%m-%d-%a-%H%M"),
+                        "1plenary" if item["type"] == "plenary" else None,
+                        (
+                            item["groupParent"]["acronym"]
+                            if item["type"] == "regular"
+                            else None  # check non-area/irtf/ietf issues
+                        ),
+                        (
+                            item["groupAcronym"]
+                            if item["type"]
+                            in ["regular", "plenary", "break", "reg", "other"]
+                            else None
+                        ),
+                        (
+                            slugify(item["name"])
+                            if item["type"] in ["break", "reg", "other"]
+                            else None
+                        ),
+                    ]
+                    if cpt is not None
+                ).lower()
+                description_parts.append(f"See in schedule: {agenda_url}#row-{slug}")
+
+        if item["agenda"] and item["agenda"]["url"]:
+            # todo was get_versionless_href()
+            description_parts.append(f"Agenda {item["agenda"]["url"]}")
+
+        # Join all description parts with 2 newlines
+        description = "\n\n".join(description_parts)
+        event.add("description", description)
+
+        # Add event to calendar
+        cal.add_component(event)
+
+    return cal.to_ical().decode("utf-8")
+
 
 def generate_agenda_ical(schedule, assignments):
     """Generate iCalendar using the icalendar library"""
@@ -2459,6 +2597,12 @@ def agenda_ical(request, num=None, acronym=None, session_id=None):
             raise Http404
     else:
         meeting = get_meeting(num, type_in=None)  # get requested meeting, whatever its type
+
+    if meeting.type_id == "ietf" and request.GET.get("precomp"):  # todo enable without get param
+        print("precomp")
+        agenda_data = generate_agenda_data(meeting.number, force_refresh=False)
+        return render_icalendar_precomp(agenda_data)
+
     schedule = get_schedule(meeting)
 
     if schedule is None and acronym is None and session_id is None:
