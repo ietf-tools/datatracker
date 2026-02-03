@@ -2000,7 +2000,7 @@ def agenda_extract_schedule (item):
             "showAgenda": True if (item.session.agenda() is not None or item.session.remote_instructions) else False
         },
         "agenda": {
-            "url": item.session.agenda().get_href()
+            "url": item.session.agenda().get_versionless_href()
         } if item.session.agenda() is not None else {
             "url": None
         },
@@ -2419,7 +2419,6 @@ def generate_agenda_ical_precomp(agenda_data):
                 description_parts.append(f"See in schedule: {agenda_url}#row-{slug}")
 
         if item["agenda"] and item["agenda"]["url"]:
-            # todo was get_versionless_href()
             description_parts.append(f"Agenda {item["agenda"]["url"]}")
 
         # Join all description parts with 2 newlines
