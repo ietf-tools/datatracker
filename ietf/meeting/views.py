@@ -1966,7 +1966,11 @@ def api_get_session_materials(request, session_id=None):
     )
 
 
-def agenda_extract_schedule (item):
+def agenda_extract_schedule(item):
+    if item.session.current_status == "resched":
+        resched_to = item.session.tombstone_for.official_timeslotassignment()
+    else:
+        resched_to = None
     return {
         "id": item.id,
         "sessionId": item.session.id,
@@ -1976,13 +1980,17 @@ def agenda_extract_schedule (item):
             "name": item.timeslot.location.floorplan.name,
         } if (item.timeslot.show_location and item.timeslot.location and item.timeslot.location.floorplan) else {},
         "acronym": item.acronym,
-        "duration": item.timeslot.duration.seconds,
+        "duration": item.timeslot.duration.total_seconds(),
         "name": item.session.name,
         "slotId": item.timeslot.id,
         "slotName": item.timeslot.name,
         "slotModified": item.timeslot.modified.isoformat(),
         "startDateTime": item.timeslot.time.isoformat(),
         "status": item.session.current_status,
+        "rescheduledTo": {
+            "startDateTime": resched_to.timeslot.time.isoformat(),
+            "duration": resched_to.timeslot.duration.total_seconds(),
+        } if resched_to is not None else {},
         "type": item.session.type.slug,
         "purpose": item.session.purpose.slug,
         "isBoF": item.session.group_at_the_time().state_id == "bof",
@@ -2302,6 +2310,7 @@ def render_icalendar(schedule, assignments):
     ical_content = generate_agenda_ical(schedule, assignments)
     return HttpResponse(ical_content, content_type="text/calendar")
 
+
 def generate_agenda_ical_precomp(agenda_data):
     """Generate iCalendar from precomputed data using the icalendar library"""
 
@@ -2336,8 +2345,18 @@ def generate_agenda_ical_precomp(agenda_data):
         if item["status"] == "canceled":
             status = "CANCELLED"
         elif item["status"] == "resched":
-            # todo check for tombstone (not captured in precomp yet)
-            status = "RESCHEDULED"
+            resched_to = item["rescheduledTo"]
+            if resched_to is None:
+                status = "RESCHEDULED"
+            else:
+                resched_start = datetime.datetime.fromisoformat(
+                    resched_to["startDateTime"]
+                )
+                dur = datetime.timedelta(seconds=resched_to["duration"])
+                resched_end = resched_start + dur
+                formatted_start = resched_start.strftime("%A %H:%M").upper()
+                formatted_end = resched_end.strftime("%H:%M")
+                status = f"RESCHEDULED TO {formatted_start}-{formatted_end}"
         else:
             status = "CONFIRMED"
         event.add("status", status)
@@ -2391,6 +2410,7 @@ def generate_agenda_ical_precomp(agenda_data):
             except NoReverseMatch:
                 pass
             else:
+                # generates a slug to match session.slug()
                 slug = "-".join(
                     cpt
                     for cpt in [
