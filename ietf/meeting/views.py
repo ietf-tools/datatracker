@@ -1866,7 +1866,7 @@ def generate_agenda_data(num=None, force_refresh=False):
     if meeting is None:
         raise Http404("No such full IETF meeting")
     elif int(meeting.number) <= 64:
-        return Http404("Pre-IETF 64 meetings are not available through this API")
+        raise Http404("Pre-IETF 64 meetings are not available through this API")
     else:
         pass
 
@@ -1973,8 +1973,9 @@ def agenda_extract_schedule(item):
         resched_to = None
     return {
         "id": item.id,
+        "slug": item.slug(),
         "sessionId": item.session.id,
-        "room": item.room_name if item.timeslot.show_location else None,
+        "room": item.timeslot.get_location() if item.timeslot else None,
         "location": {
             "short": item.timeslot.location.floorplan.short,
             "name": item.timeslot.location.floorplan.name,
@@ -2323,7 +2324,7 @@ def generate_agenda_ical_precomp(agenda_data):
     for item in agenda_data["schedule"]:
         event = Event()
         
-        uid = f"ietf-{meeting_data["number"]}-{item["slotId"]}-{item["groupAcronym"]}"
+        uid = f"ietf-{meeting_data["number"]}-{item["slotId"]}-{item["acronym"]}"
         event.add("uid", uid)
 
         # add custom field with meeting's local TZ
@@ -2339,7 +2340,7 @@ def generate_agenda_ical_precomp(agenda_data):
 
         event.add("summary", summary)
 
-        if item["room"] is not None:
+        if item["room"]:
             event.add("location", item["room"])  # room name
 
         if item["status"] == "canceled":
@@ -2396,7 +2397,7 @@ def generate_agenda_ical_precomp(agenda_data):
             materials_url = absurl(
                 "ietf.meeting.views.session_details",
                 num=meeting_data["number"],
-                acronym=item["groupAcronym"],
+                acronym=item["acronym"],
             )
         except NoReverseMatch:
             pass
@@ -2410,33 +2411,7 @@ def generate_agenda_ical_precomp(agenda_data):
             except NoReverseMatch:
                 pass
             else:
-                # generates a slug to match session.slug()
-                slug = "-".join(
-                    cpt
-                    for cpt in [
-                        meeting_data["number"],
-                        start_time.strftime("%Y-%m-%d-%a-%H%M"),
-                        "1plenary" if item["type"] == "plenary" else None,
-                        (
-                            item["groupParent"]["acronym"]
-                            if item["type"] == "regular"
-                            else None  # check non-area/irtf/ietf issues
-                        ),
-                        (
-                            item["groupAcronym"]
-                            if item["type"]
-                            in ["regular", "plenary", "break", "reg", "other"]
-                            else None
-                        ),
-                        (
-                            slugify(item["name"])
-                            if item["type"] in ["break", "reg", "other"]
-                            else None
-                        ),
-                    ]
-                    if cpt is not None
-                ).lower()
-                description_parts.append(f"See in schedule: {agenda_url}#row-{slug}")
+                description_parts.append(f"See in schedule: {agenda_url}#row-{item["slug"]}")
 
         if item["agenda"] and item["agenda"]["url"]:
             description_parts.append(f"Agenda {item["agenda"]["url"]}")
