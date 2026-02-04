@@ -2600,6 +2600,9 @@ def agenda_ical(request, num=None, acronym=None, session_id=None):
     else:
         meeting = get_meeting(num, type_in=None)  # get requested meeting, whatever its type
 
+    if isinstance(session_id, str) and session_id.isdigit():
+        session_id = int(session_id)
+
     if meeting.type_id == "ietf":
         try:
             filt_params = parse_agenda_filter_params(request.GET)
