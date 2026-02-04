@@ -2600,11 +2600,9 @@ def agenda_ical(request, num=None, acronym=None, session_id=None):
     else:
         meeting = get_meeting(num, type_in=None)  # get requested meeting, whatever its type
 
-    if meeting.type_id == "ietf" and request.GET.get("precomp"):  # todo enable without get param
-        print("precomp")
+    if meeting.type_id == "ietf":
         try:
-            # todo simplify the next line - only needed to strip out the precomp debug param
-            filt_params = parse_agenda_filter_params({k: v for k, v in request.GET.items() if k != "precomp"})
+            filt_params = parse_agenda_filter_params(request.GET)
         except ValueError as e:
             return HttpResponseBadRequest(str(e))
         agenda_data = generate_agenda_data(meeting.number, force_refresh=False)
