@@ -1,11 +1,14 @@
-# Copyright The IETF Trust 2024-2025, All Rights Reserved
+# Copyright The IETF Trust 2024-2026, All Rights Reserved
 #
 # Celery task definitions
 #
 import datetime
 
-from celery import shared_task
-# from django.db.models import QuerySet
+from itertools import batched
+
+from celery import shared_task, chain
+from django.db.models import IntegerField
+from django.db.models.functions import Cast
 from django.utils import timezone
 
 from ietf.utils import log
@@ -20,8 +23,38 @@ from .utils import fetch_attendance_from_meetings
 
 
 @shared_task
-def agenda_data_refresh():
-    generate_agenda_data(force_refresh=True)
+def agenda_data_refresh(num=None):
+    """Refresh agenda data for one plenary meeting
+
+    If `num` is `None`, refreshes data for the current meeting.
+    """
+    log.log(f"Refreshing agenda data for IETF-{num}")
+    generate_agenda_data(num, force_refresh=True)
+
+
+@shared_task
+def agenda_data_refresh_all(*, batch_size=10):
+    """Refresh agenda data for all plenary meetings
+
+    Executes as a chain of tasks, each computing up to `batch_size` meetings
+    in a single task.
+    """
+    meeting_numbers = sorted(
+        Meeting.objects.annotate(
+            number_as_int=Cast("number", output_field=IntegerField())
+        )
+        .filter(type_id="ietf", number_as_int__gt=64)
+        .values_list("number_as_int", flat=True)
+    )
+    # Batch using chained maps rather than celery.chunk so we only use one worker
+    # at a time.
+    batched_task_chain = chain(
+        *(
+            agenda_data_refresh.map(nums)
+            for nums in batched(meeting_numbers, batch_size)
+        )
+    )
+    batched_task_chain.delay()
 
 
 @shared_task
@@ -55,7 +88,9 @@ def proceedings_content_refresh_task(*, all=False):
 @shared_task
 def fetch_meeting_attendance_task():
     # fetch most recent two meetings
-    meetings = Meeting.objects.filter(type="ietf", date__lte=timezone.now()).order_by("-date")[:2]
+    meetings = Meeting.objects.filter(type="ietf", date__lte=timezone.now()).order_by(
+        "-date"
+    )[:2]
     try:
         stats = fetch_attendance_from_meetings(meetings)
     except RuntimeError as err:
@@ -64,8 +99,11 @@ def fetch_meeting_attendance_task():
         for meeting, meeting_stats in zip(meetings, stats):
             log.log(
                 "Fetched data for meeting {:>3}: {:4d} created, {:4d} updated, {:4d} deleted, {:4d} processed".format(
-                    meeting.number, meeting_stats['created'], meeting_stats['updated'], meeting_stats['deleted'],
-                    meeting_stats['processed']
+                    meeting.number,
+                    meeting_stats["created"],
+                    meeting_stats["updated"],
+                    meeting_stats["deleted"],
+                    meeting_stats["processed"],
                 )
             )
 
@@ -73,7 +111,7 @@ def fetch_meeting_attendance_task():
 def _select_meetings(
     meetings: list[str] | None = None,
     meetings_since: str | None = None,
-    meetings_until: str | None = None
+    meetings_until: str | None = None,
 ):  # nyah
     """Select meetings by number or date range"""
     # IETF-1 = 1986-01-16
@@ -130,15 +168,15 @@ def _select_meetings(
 @shared_task
 def resolve_meeting_materials_task(
     *,  # only allow kw arguments
-    meetings: list[str] | None=None,
-    meetings_since: str | None=None,
-    meetings_until: str | None=None
+    meetings: list[str] | None = None,
+    meetings_since: str | None = None,
+    meetings_until: str | None = None,
 ):
     """Run materials resolver on meetings
-    
+
     Can request a set of meetings by number by passing a list in the meetings arg, or
     by range by passing an iso-format timestamps in meetings_since / meetings_until.
-    To select all meetings, set meetings_since="zero" and omit other parameters. 
+    To select all meetings, set meetings_since="zero" and omit other parameters.
     """
     meetings_qs = _select_meetings(meetings, meetings_since, meetings_until)
     for meeting in meetings_qs.order_by("date"):
@@ -155,7 +193,9 @@ def resolve_meeting_materials_task(
                 f"meeting {meeting.number}: {err}"
             )
         else:
-            log.log(f"Resolved in {(timezone.now() - mark).total_seconds():0.3f} seconds.")
+            log.log(
+                f"Resolved in {(timezone.now() - mark).total_seconds():0.3f} seconds."
+            )
 
 
 @shared_task
@@ -163,13 +203,13 @@ def store_meeting_materials_as_blobs_task(
     *,  # only allow kw arguments
     meetings: list[str] | None = None,
     meetings_since: str | None = None,
-    meetings_until: str | None = None
+    meetings_until: str | None = None,
 ):
     """Push meeting materials into the blob store
 
     Can request a set of meetings by number by passing a list in the meetings arg, or
     by range by passing an iso-format timestamps in meetings_since / meetings_until.
-    To select all meetings, set meetings_since="zero" and omit other parameters. 
+    To select all meetings, set meetings_since="zero" and omit other parameters.
     """
     meetings_qs = _select_meetings(meetings, meetings_since, meetings_until)
     for meeting in meetings_qs.order_by("date"):
@@ -187,4 +227,5 @@ def store_meeting_materials_as_blobs_task(
             )
         else:
             log.log(
-                f"Blobs created in {(timezone.now() - mark).total_seconds():0.3f} seconds.")
+                f"Blobs created in {(timezone.now() - mark).total_seconds():0.3f} seconds."
+            )

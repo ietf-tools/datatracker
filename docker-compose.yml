@@ -62,6 +62,10 @@ services:
         image: ghcr.io/ietf-tools/static:latest
         restart: unless-stopped
 
+    memcache:
+        image: memcached:1.6-alpine
+        restart: unless-stopped
+
     mq:
         image: rabbitmq:3-alpine
         restart: unless-stopped
