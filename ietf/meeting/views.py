@@ -1859,18 +1859,22 @@ def generate_agenda_data(num=None, force_refresh=False):
     :num: meeting number
     :force_refresh: True to force a refresh of the cache
     """
-    cache = caches["default"]
-    cache_timeout = 6 * 60
-
     meeting = get_ietf_meeting(num)
     if meeting is None:
         raise Http404("No such full IETF meeting")
     elif int(meeting.number) <= 64:
         raise Http404("Pre-IETF 64 meetings are not available through this API")
-    else:
-        pass
+    is_current_meeting = meeting.number == get_current_ietf_meeting_num()
 
-    cache_key = f"generate_agenda_data_{meeting.number}"
+    cache = caches["agenda"]
+    cache_timeout = (
+        settings.AGENDA_CACHE_TIMEOUT_CURRENT_MEETING
+        if is_current_meeting
+        else settings.AGENDA_CACHE_TIMEOUT_DEFAULT
+    )
+    cache_format = "1"  # bump this on backward-incompatible data format changes
+
+    cache_key = f"generate_agenda_data:{meeting.number}:v{cache_format}"
     if not force_refresh:
         cached_value = cache.get(cache_key)
         if cached_value is not None:
@@ -1889,8 +1893,6 @@ def generate_agenda_data(num=None, force_refresh=False):
     AgendaKeywordTagger(assignments=filtered_assignments).apply()
 
     filter_organizer = AgendaFilterOrganizer(assignments=filtered_assignments)
-
-    is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
 
     # Get Floor Plans
     floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
