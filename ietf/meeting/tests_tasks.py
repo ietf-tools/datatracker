@@ -42,6 +42,9 @@ class TaskTests(TestCase):
         numbers = sorted(int(m.number) for m in meetings)
         agenda_data_refresh_all_task(batch_size=2)
         self.assertTrue(mock_chain.called)
+        # The lists in the call() below are the output of the lambda we patched in
+        # via mock_agenda_data_refresh.map.side_effect above. I.e., this tests that
+        # map() was called with the correct batched data.
         self.assertEqual(
             mock_chain.call_args,
             call(
