@@ -1977,7 +1977,7 @@ def agenda_extract_schedule(item):
         "id": item.id,
         "slug": item.slug(),
         "sessionId": item.session.id,
-        "room": item.timeslot.get_location() if item.timeslot else None,
+        "room": (item.timeslot.get_location() or None) if item.timeslot else None,
         "location": {
             "short": item.timeslot.location.floorplan.short,
             "name": item.timeslot.location.floorplan.name,
@@ -2572,6 +2572,56 @@ def should_include_assignment(filter_params, assignment):
     hidden = len(set(filter_params['hide']).intersection(kw)) > 0
     return shown and not hidden
 
+
+def agenda_ical_ietf(meeting, filt_params, acronym=None, session_id=None):
+    agenda_data = generate_agenda_data(meeting.number, force_refresh=False)
+    if acronym:
+        agenda_data["schedule"] = [
+            item
+            for item in agenda_data["schedule"]
+            if item["groupAcronym"] == acronym
+        ]
+    elif session_id:
+        agenda_data["schedule"] = [
+            item
+            for item in agenda_data["schedule"]
+            if item["sessionId"] == session_id
+        ]
+    if filt_params is not None:
+        # Apply the filter
+        agenda_data["schedule"] = [
+            item
+            for item in agenda_data["schedule"]
+            if should_include_assignment(filt_params, item)
+        ]
+    return render_icalendar_precomp(agenda_data)
+
+
+def agenda_ical_interim(meeting, filt_params, acronym=None, session_id=None):
+    schedule = get_schedule(meeting)
+
+    if schedule is None and acronym is None and session_id is None:
+        raise Http404
+
+    assignments = SchedTimeSessAssignment.objects.filter(
+        schedule__in=[schedule, schedule.base],
+        session__on_agenda=True,
+    )
+    assignments = preprocess_assignments_for_agenda(assignments, meeting)
+    AgendaKeywordTagger(assignments=assignments).apply()
+
+    if filt_params is not None:
+        # Apply the filter
+        assignments = [a for a in assignments if should_include_assignment(filt_params, a)]
+
+    if acronym:
+        assignments = [ a for a in assignments if a.session.group_at_the_time().acronym == acronym ]
+    elif session_id:
+        assignments = [ a for a in assignments if a.session_id == int(session_id) ]
+
+    return render_icalendar(schedule, assignments)
+
+
 def agenda_ical(request, num=None, acronym=None, session_id=None):
     """Agenda ical view
 
@@ -2603,60 +2653,16 @@ def agenda_ical(request, num=None, acronym=None, session_id=None):
     if isinstance(session_id, str) and session_id.isdigit():
         session_id = int(session_id)
 
-    if meeting.type_id == "ietf":
-        try:
-            filt_params = parse_agenda_filter_params(request.GET)
-        except ValueError as e:
-            return HttpResponseBadRequest(str(e))
-        agenda_data = generate_agenda_data(meeting.number, force_refresh=False)
-        if acronym:
-            agenda_data["schedule"] = [
-                item
-                for item in agenda_data["schedule"]
-                if item["groupAcronym"] == acronym
-            ]
-        elif session_id:
-            agenda_data["schedule"] = [
-                item
-                for item in agenda_data["schedule"]
-                if item["sessionId"] == session_id
-            ]
-        if filt_params is not None:
-            # Apply the filter
-            agenda_data["schedule"] = [
-                item
-                for item in agenda_data["schedule"]
-                if should_include_assignment(filt_params, item)
-            ]
-        return render_icalendar_precomp(agenda_data)
-
-    schedule = get_schedule(meeting)
-
-    if schedule is None and acronym is None and session_id is None:
-        raise Http404
-
-    assignments = SchedTimeSessAssignment.objects.filter(
-        schedule__in=[schedule, schedule.base],
-        session__on_agenda=True,
-    )
-    assignments = preprocess_assignments_for_agenda(assignments, meeting)
-    AgendaKeywordTagger(assignments=assignments).apply()
-
     try:
         filt_params = parse_agenda_filter_params(request.GET)
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
 
-    if filt_params is not None:
-        # Apply the filter
-        assignments = [a for a in assignments if should_include_assignment(filt_params, a)]
+    if meeting.type_id == "ietf":
+        return agenda_ical_ietf(meeting, filt_params, acronym, session_id)
+    else:
+        return agenda_ical_interim(meeting, filt_params, acronym, session_id)
 
-    if acronym:
-        assignments = [ a for a in assignments if a.session.group_at_the_time().acronym == acronym ]
-    elif session_id:
-        assignments = [ a for a in assignments if a.session_id == int(session_id) ]
-
-    return render_icalendar(schedule, assignments)
 
 @cache_page(15 * 60)
 def agenda_json(request, num=None):

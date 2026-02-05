@@ -33,7 +33,7 @@ def agenda_data_refresh(num=None):
 
 
 @shared_task
-def agenda_data_refresh_all(*, batch_size=10):
+def agenda_data_refresh_all_task(*, batch_size=10):
     """Refresh agenda data for all plenary meetings
 
     Executes as a chain of tasks, each computing up to `batch_size` meetings
