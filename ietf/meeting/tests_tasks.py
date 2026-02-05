@@ -15,10 +15,19 @@ from .tasks import fetch_meeting_attendance_task
 
 class TaskTests(TestCase):
     @patch("ietf.meeting.tasks.generate_agenda_data")
-    def test_agenda_data_refresh(self, mock_generate):
+    def test_agenda_data_refresh_task(self, mock_generate):
         agenda_data_refresh_task()
         self.assertTrue(mock_generate.called)
         self.assertEqual(mock_generate.call_args, call(None, force_refresh=True))
+        
+        mock_generate.reset_mock()
+        mock_generate.side_effect = RuntimeError
+        try:
+            agenda_data_refresh_task()
+        except Exception as err:
+            self.fail(
+                f"agenda_data_refresh_task should not raise exceptions (got {repr(err)})"
+            )
 
     @patch("ietf.meeting.tasks.agenda_data_refresh_task")
     @patch("ietf.meeting.tasks.chain")

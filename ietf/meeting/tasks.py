@@ -31,7 +31,12 @@ def agenda_data_refresh_task(num=None):
     log.log(
         f"Refreshing agenda data for {f"IETF-{num}" if num else "current IETF meeting"}"
     )
-    generate_agenda_data(num, force_refresh=True)
+    try:
+        generate_agenda_data(num, force_refresh=True)
+    except Exception as err:
+        # Log and swallow exceptions so failure on one meeting won't break a chain of
+        # tasks. This is used by agenda_data_refresh_all_task().
+        log.log(f"ERROR: Refreshing agenda data failed for num={num}: {err}")
 
 
 @shared_task
