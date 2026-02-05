@@ -23,13 +23,25 @@ from .utils import fetch_attendance_from_meetings
 
 
 @shared_task
-def agenda_data_refresh(num=None):
+def agenda_data_refresh_task(num=None):
     """Refresh agenda data for one plenary meeting
 
     If `num` is `None`, refreshes data for the current meeting.
     """
-    log.log(f"Refreshing agenda data for IETF-{num}")
+    log.log(
+        f"Refreshing agenda data for {f"IETF-{num}" if num else "current IETF meeting"}"
+    )
     generate_agenda_data(num, force_refresh=True)
+
+
+@shared_task
+def agenda_data_refresh():
+    """Deprecated. Use agenda_data_refresh_task() instead.
+    
+    TODO remove this after switching the periodic task to the new name
+    """
+    log.log("Deprecated agenda_data_refresh task called!")
+    agenda_data_refresh_task()
 
 
 @shared_task
@@ -50,7 +62,7 @@ def agenda_data_refresh_all_task(*, batch_size=10):
     # at a time.
     batched_task_chain = chain(
         *(
-            agenda_data_refresh.map(nums)
+            agenda_data_refresh_task.map(nums)
             for nums in batched(meeting_numbers, batch_size)
         )
     )

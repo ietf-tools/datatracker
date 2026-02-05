@@ -7,7 +7,7 @@ from ietf.utils.timezone import date_today
 from .factories import MeetingFactory
 from .tasks import (
     proceedings_content_refresh_task,
-    agenda_data_refresh,
+    agenda_data_refresh_task,
     agenda_data_refresh_all_task,
 )
 from .tasks import fetch_meeting_attendance_task
@@ -16,14 +16,14 @@ from .tasks import fetch_meeting_attendance_task
 class TaskTests(TestCase):
     @patch("ietf.meeting.tasks.generate_agenda_data")
     def test_agenda_data_refresh(self, mock_generate):
-        agenda_data_refresh()
+        agenda_data_refresh_task()
         self.assertTrue(mock_generate.called)
         self.assertEqual(mock_generate.call_args, call(None, force_refresh=True))
 
-    @patch("ietf.meeting.tasks.agenda_data_refresh")
+    @patch("ietf.meeting.tasks.agenda_data_refresh_task")
     @patch("ietf.meeting.tasks.chain")
     def test_agenda_data_refresh_all_task(self, mock_chain, mock_agenda_data_refresh):
-        # Patch the agenda_data_refresh task with a mock whose `.map` attribute
+        # Patch the agenda_data_refresh_task task with a mock whose `.map` attribute
         # converts its argument, which is expected to be an iterator,  to a list
         # and returns it. We'll use this to check that the expected task chain
         # was set up, but we don't actually run any celery tasks.
