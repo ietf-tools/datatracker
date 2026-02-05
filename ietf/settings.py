@@ -228,6 +228,10 @@ BLOBSTORAGE_MAX_ATTEMPTS = 5  # boto3 default is 3 (for "standard" retry mode)
 BLOBSTORAGE_CONNECT_TIMEOUT = 10  # seconds; boto3 default is 60
 BLOBSTORAGE_READ_TIMEOUT = 10  # seconds; boto3 default is 60
 
+# Caching for agenda data in seconds
+AGENDA_CACHE_TIMEOUT_DEFAULT = 8 * 24 * 60 * 60  # 8 days
+AGENDA_CACHE_TIMEOUT_CURRENT_MEETING = 6 * 60  # 6 minutes
+
 WSGI_APPLICATION = "ietf.wsgi.application"
 
 AUTHENTICATION_BACKENDS = ( 'ietf.ietfauth.backends.CaseInsensitiveModelBackend', )
@@ -1400,6 +1404,16 @@ if "CACHES" not in locals():
                     f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
                 ),
             },
+            "agenda": {
+                "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+                # No release-specific VERSION setting.
+                "KEY_PREFIX": "ietf:dt:agenda",
+                # Key function is default except with sha384-encoded key
+                "KEY_FUNCTION": lambda key, key_prefix, version: (
+                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+                ),
+            },
             "proceedings": {
                 "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
                 "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
@@ -1452,6 +1466,17 @@ if "CACHES" not in locals():
                 #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
                 "VERSION": __version__,
                 "KEY_PREFIX": "ietf:dt",
+            },
+            "agenda": {
+                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+                # "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+                # "LOCATION": "127.0.0.1:11211",
+                # No release-specific VERSION setting.
+                "KEY_PREFIX": "ietf:dt:agenda",
+                # Key function is default except with sha384-encoded key
+                "KEY_FUNCTION": lambda key, key_prefix, version: (
+                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+                ),
             },
             "proceedings": {
                 "BACKEND": "django.core.cache.backends.dummy.DummyCache",
@@ -1519,11 +1544,17 @@ if SERVER_MODE != 'production':
         NOMCOM_APP_SECRET = b'\x9b\xdas1\xec\xd5\xa0SI~\xcb\xd4\xf5t\x99\xc4i\xd7\x9f\x0b\xa9\xe8\xfeY\x80$\x1e\x12tN:\x84'
 
     ALLOWED_HOSTS = ['*',]
-    
+
     try:
         # see https://github.com/omarish/django-cprofile-middleware
-        import django_cprofile_middleware # pyflakes:ignore
-        MIDDLEWARE = MIDDLEWARE + ['django_cprofile_middleware.middleware.ProfilerMiddleware', ]
+        import django_cprofile_middleware  # pyflakes:ignore
+
+        MIDDLEWARE = MIDDLEWARE + [
+            "django_cprofile_middleware.middleware.ProfilerMiddleware",
+        ]
+        DJANGO_CPROFILE_MIDDLEWARE_REQUIRE_STAFF = (
+            False  # Do not use this setting for a public site!
+        )
     except ImportError:
         pass
 
