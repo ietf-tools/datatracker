@@ -38,22 +38,46 @@ def expirable_drafts(queryset=None):
     # Populate this first time through (but after django has been set up)
     if nonexpirable_states is None:
         # all IESG states except I-D Exists and Dead block expiry
-        nonexpirable_states = list(State.objects.filter(used=True, type="draft-iesg").exclude(slug__in=("idexists", "dead")))
+        nonexpirable_states = list(
+            State.objects.filter(used=True, type="draft-iesg").exclude(
+                slug__in=("idexists", "dead")
+            )
+        )
         # sent to RFC Editor and RFC Published block expiry (the latter
         # shouldn't be possible for an active draft, though)
-        nonexpirable_states += list(State.objects.filter(used=True, type__in=("draft-stream-iab", "draft-stream-irtf", "draft-stream-ise"), slug__in=("rfc-edit", "pub")))
+        nonexpirable_states += list(
+            State.objects.filter(
+                used=True,
+                type__in=(
+                    "draft-stream-iab",
+                    "draft-stream-irtf",
+                    "draft-stream-ise",
+                    "draft-stream-editorial",
+                ),
+                slug__in=("rfc-edit", "pub"),
+            )
+        )
         # other IRTF states that block expiration
-        nonexpirable_states += list(State.objects.filter(used=True, type_id="draft-stream-irtf", slug__in=("irsgpoll", "iesg-rev",)))
+        nonexpirable_states += list(
+            State.objects.filter(
+                used=True,
+                type_id="draft-stream-irtf",
+                slug__in=(
+                    "irsgpoll",
+                    "iesg-rev",
+                ),
+            )
+        )
 
-    return queryset.filter(
-        states__type="draft", states__slug="active"
-    ).exclude(
-        expires=None
-    ).exclude(
-        states__in=nonexpirable_states
-    ).exclude(
-        tags="rfc-rev"  # under review by the RFC Editor blocks expiry
-    ).distinct()
+    return (
+        queryset.filter(states__type="draft", states__slug="active")
+        .exclude(expires=None)
+        .exclude(states__in=nonexpirable_states)
+        .exclude(
+            tags="rfc-rev"  # under review by the RFC Editor blocks expiry
+        )
+        .distinct()
+    )
 
 
 def get_soon_to_expire_drafts(days_of_warning):
