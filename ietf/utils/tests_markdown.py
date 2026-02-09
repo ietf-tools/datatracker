@@ -24,6 +24,10 @@ class MarkdownTests(TestCase):
         * user@example.com
         * <user@example.com>
         * [User](mailto:user@example.com)
+        * [User](user@example.com)
+        * <a href="https://example.com">example</a>
+        * <a href="mailto:user@example.com">user@example.com"</a>
+        * <a href="https://mailman3.ietf.org/mailman3/lists/tls@ietf.org/">TLS mailing list</a>
         * RFC2119
         * BCP 3
         * STD  1
@@ -47,6 +51,10 @@ class MarkdownTests(TestCase):
         <li><a href="mailto:user@example.com" rel="noopener noreferrer">user@example.com</a></li>
         <li>&lt;<a href="mailto:user@example.com" rel="noopener noreferrer">user@example.com</a>&gt;</li>
         <li><a href="mailto:user@example.com" rel="noopener noreferrer">User</a></li>
+        <li><a href="user@example.com" rel="noopener noreferrer">User</a></li>
+        <li><a href="https://example.com" rel="noopener noreferrer">example</a></li>
+        <li><a href="mailto:user@example.com" rel="noopener noreferrer">user@example.com"</a></li>
+        <li><a href="https://mailman3.ietf.org/mailman3/lists/tls@ietf.org/" rel="noopener noreferrer">TLS mailing list</a></li>
         <li>RFC2119</li>
         <li>BCP 3</li>
         <li>STD  1</li>
