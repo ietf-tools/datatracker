@@ -7,7 +7,6 @@ import re
 from django import template
 from django.conf import settings
 from django.template.defaultfilters import stringfilter, urlize
-# from django.utils.html import conditional_escape
 from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
@@ -75,8 +74,7 @@ def texescape_filter(value):
 @register.filter(needs_autoescape=True)
 @stringfilter
 def linkify(value, autoescape=True):
-    if autoescape:
-        value = urlize(value, autoescape=True)  # _linkify is a safe operation
+    value = urlize(value, autoescape=True)
     text = mark_safe(value)
     return text
 
