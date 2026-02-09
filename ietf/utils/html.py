@@ -9,7 +9,6 @@ import html2text
 import debug                            # pyflakes:ignore
 
 from django import forms
-from django.utils.functional import keep_lazy
 
 from ietf.utils.mime import get_mime_type
 
@@ -58,13 +57,6 @@ def clean_html(text: str):
 
 def liberal_clean_html(text: str):
     return _liberal_nh3_cleaner.clean(text)
-
-
-@keep_lazy(str)
-def remove_tags(html, tags):
-    """Returns the given HTML sanitized, and with the given tags removed."""
-    allowed = acceptable_tags - set(t.lower() for t in tags)
-    return nh3.clean(html, tags=allowed)
 
 
 # ----------------------------------------------------------------------
