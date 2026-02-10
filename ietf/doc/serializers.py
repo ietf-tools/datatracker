@@ -210,7 +210,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     see_also = serializers.ListField(child=serializers.CharField(), read_only=True)
     formats = serializers.MultipleChoiceField(choices=RFC_FORMATS)
     keywords = serializers.ListField(child=serializers.CharField(), read_only=True)
-    errata = serializers.ListField(child=serializers.CharField(), read_only=True)
+    has_errata = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Document
@@ -235,7 +235,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             "abstract",
             "formats",
             "keywords",
-            "errata",
+            "has_errata",
         ]
 
 

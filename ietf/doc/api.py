@@ -1,7 +1,17 @@
 # Copyright The IETF Trust 2024-2026, All Rights Reserved
 """Doc API implementations"""
 
-from django.db.models import OuterRef, Subquery, Prefetch, Value, JSONField, QuerySet
+from django.db.models import (
+    BooleanField,
+    Count,
+    JSONField,
+    OuterRef,
+    Prefetch,
+    Q,
+    QuerySet,
+    Subquery,
+    Value,
+)
 from django.db.models.functions import TruncDate
 from django_filters import rest_framework as filters
 from rest_framework import filters as drf_filters
@@ -133,11 +143,19 @@ def augment_rfc_queryset(queryset: QuerySet[Document]):
         )
         .annotate(published=TruncDate("published_datetime", tzinfo=RPC_TZINFO))
         .annotate(
+            has_errata=Count(
+                "tags",
+                filter=Q(
+                    tags__slug="verified-errata",
+                ),
+                output_field=BooleanField(),
+            )
+        )
+        .annotate(
             # TODO implement these fake fields for real
             see_also=Value([], output_field=JSONField()),
             formats=Value(["txt", "xml"], output_field=JSONField()),
             keywords=Value(["keyword"], output_field=JSONField()),
-            errata=Value([], output_field=JSONField()),
         )
     )
 
