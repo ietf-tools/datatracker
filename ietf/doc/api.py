@@ -143,6 +143,7 @@ def augment_rfc_queryset(queryset: QuerySet[Document]):
         )
         .annotate(published=TruncDate("published_datetime", tzinfo=RPC_TZINFO))
         .annotate(
+            # Count of "verified-errata" tags will be 1 or 0, convert to Boolean
             has_errata=Count(
                 "tags",
                 filter=Q(
