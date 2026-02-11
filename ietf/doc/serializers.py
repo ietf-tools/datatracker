@@ -245,7 +245,6 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             "updates",
             "updated_by",
             "subseries",
-            "see_also",
             "draft",
             "abstract",
             "formats",
