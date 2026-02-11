@@ -18,7 +18,7 @@ from ietf.utils.timezone import timezone
 
 class StoredObjectFile(MetadataFile):
     """Django storage File object that represents a StoredObject"""
-    def __init__(self, file, name, mtime=None, content_type="", store=None, doc_name=None, doc_rev=None):
+    def __init__(self, file, name, mtime=None, content_type="", store=None, doc_name="", doc_rev=""):
         super().__init__(
             file=file,
             name=name,
@@ -131,12 +131,12 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
                 doc_name=getattr(
                     content,
                     "doc_name",  # Note that these are assumed to be invariant
-                    None,  # should be blank?
+                    "",
                 ),
                 doc_rev=getattr(
                     content,
                     "doc_rev",  # for a given name
-                    None,  # should be blank?
+                    "",
                 ),
             ),
         )

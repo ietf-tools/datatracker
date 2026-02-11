@@ -42,7 +42,7 @@ def load_rfcs_into_blobdb(numbers: list[int]):
                             content=bytes,
                             allow_overwrite=False,  # Intentionally not allowing overwrite.
                             doc_name=f"rfc{num}",
-                            doc_rev=None,
+                            doc_rev="",
                             # Not setting content_type
                             mtime=datetime.datetime.fromtimestamp(
                                 mtime, tz=datetime.UTC
@@ -65,7 +65,7 @@ def load_rfcs_into_blobdb(numbers: list[int]):
                         content=bytes,
                         allow_overwrite=False,  # Intentionally not allowing overwrite.
                         doc_name=f"rfc{num}",
-                        doc_rev=None,
+                        doc_rev="",
                         # Not setting content_type
                         mtime=datetime.datetime.fromtimestamp(mtime, tz=datetime.UTC),
                     )

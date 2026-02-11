@@ -816,8 +816,8 @@ class StorableMixin:
         name: str,
         content: bytes,
         allow_overwrite: bool = False,
-        doc_name: Optional[str] = None,
-        doc_rev: Optional[str] = None
+        doc_name: str = "",
+        doc_rev: str = "",
     ) -> None:
         return utils_store_bytes(self.type_id, name, content, allow_overwrite, self.name, self.rev)
 
@@ -826,8 +826,8 @@ class StorableMixin:
         name: str,
         file: Union[File, BufferedReader],
         allow_overwrite: bool = False,
-        doc_name: Optional[str] = None,
-        doc_rev: Optional[str] = None
+        doc_name: str = "",
+        doc_rev: str = ","
     ) -> None:
         return utils_store_file(self.type_id, name, file, allow_overwrite, self.name, self.rev)
 
