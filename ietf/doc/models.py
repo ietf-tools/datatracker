@@ -1292,7 +1292,10 @@ class Document(StorableMixin, DocumentInfo):
         if self.type_id != "rfc":
             raise RuntimeError("Only allowed for type=rfc")
         return [
-            Path(object_name).parts[0]
+            {
+                "fmt": Path(object_name).parts[0],
+                "name": object_name,
+            }
             for object_name in StoredObject.objects.filter(
                 store="rfc", doc_name=self.name, doc_rev=self.rev
             ).values_list("name", flat=True)

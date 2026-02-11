@@ -16,6 +16,7 @@ from .models import Document, DocumentAuthor, RfcAuthor
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
     """Serializer for an RfcAuthor / DocumentAuthor in a response"""
+
     datatracker_person_path = serializers.URLField(
         source="person.get_absolute_url",
         required=False,
@@ -36,7 +37,7 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         """instance -> primitive data types
-        
+
         Translates a DocumentAuthor into an equivalent RfcAuthor we can use the same
         serializer for either type.
         """
@@ -87,7 +88,15 @@ class DocIdentifierSerializer(serializers.Serializer):
 
 
 type RfcStatusSlugT = Literal[
-    "std", "ps", "ds", "bcp", "inf", "exp", "hist", "unkn", "not-issued",
+    "std",
+    "ps",
+    "ds",
+    "bcp",
+    "inf",
+    "exp",
+    "hist",
+    "unkn",
+    "not-issued",
 ]
 
 
@@ -188,10 +197,15 @@ class ContainingSubseriesSerializer(serializers.Serializer):
     type = serializers.CharField(source="source.type_id")
 
 
+class RfcFormatSerializer(serializers.Serializer):
+    RFC_FORMATS = ("xml", "txt", "html", "pdf", "ps", "json", "notprepped")
+
+    fmt = serializers.ChoiceField(choices=RFC_FORMATS)
+    name = serializers.CharField(help_text="Name of blob in the blob store")
+
+
 class RfcMetadataSerializer(serializers.ModelSerializer):
     """Serialize metadata of an RFC"""
-
-    RFC_FORMATS = ("xml", "txt", "html", "pdf", "ps", "json", "notprepped")
 
     number = serializers.IntegerField(source="rfc_number")
     published = serializers.DateField()
@@ -208,7 +222,9 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     updated_by = ReverseRelatedRfcSerializer(many=True, read_only=True)
     subseries = ContainingSubseriesSerializer(many=True, read_only=True)
     see_also = serializers.ListField(child=serializers.CharField(), read_only=True)
-    formats = serializers.MultipleChoiceField(choices=RFC_FORMATS)
+    formats = RfcFormatSerializer(
+        many=True, read_only=True, help_text="Available formats"
+    )
     keywords = serializers.ListField(child=serializers.CharField(), read_only=True)
     has_errata = serializers.BooleanField(read_only=True)
 
@@ -237,7 +253,6 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             "keywords",
             "has_errata",
         ]
-
 
     @extend_schema_field(RfcAuthorSerializer(many=True))
     def get_authors(self, doc: Document):
