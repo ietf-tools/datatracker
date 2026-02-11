@@ -1284,6 +1284,21 @@ class Document(StorableMixin, DocumentInfo):
         iesg_state = self.get_state('draft-iesg')
         return iesg_state and iesg_state.slug != 'idexists'
 
+    def formats(self):
+        """List of file formats available
+        
+        Only implemented for RFCs. Relies on StoredObject.
+        """
+        if self.type_id != "rfc":
+            raise RuntimeError("Only allowed for type=rfc")
+        return [
+            Path(object_name).parts[0]
+            for object_name in StoredObject.objects.filter(
+                store="rfc", doc_name=self.name, doc_rev=self.rev
+            ).values_list("name", flat=True)
+        ]
+
+
 class DocumentURL(models.Model):
     doc  = ForeignKey(Document)
     tag  = ForeignKey(DocUrlTagName)

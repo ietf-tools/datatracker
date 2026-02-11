@@ -191,7 +191,7 @@ class ContainingSubseriesSerializer(serializers.Serializer):
 class RfcMetadataSerializer(serializers.ModelSerializer):
     """Serialize metadata of an RFC"""
 
-    RFC_FORMATS = ("xml", "txt", "html", "htmlized", "pdf", "ps")
+    RFC_FORMATS = ("xml", "txt", "html", "pdf", "ps", "json", "notprepped")
 
     number = serializers.IntegerField(source="rfc_number")
     published = serializers.DateField()
