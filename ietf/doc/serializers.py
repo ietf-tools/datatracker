@@ -221,7 +221,6 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     updates = RelatedRfcSerializer(many=True, read_only=True)
     updated_by = ReverseRelatedRfcSerializer(many=True, read_only=True)
     subseries = ContainingSubseriesSerializer(many=True, read_only=True)
-    see_also = serializers.ListField(child=serializers.CharField(), read_only=True)
     formats = RfcFormatSerializer(
         many=True, read_only=True, help_text="Available formats"
     )
