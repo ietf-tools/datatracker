@@ -239,14 +239,14 @@ class DocumentInfo(models.Model):
         return revisions
 
     def get_href(self, meeting=None):
-        return self._get_ref(meeting=meeting,meeting_doc_refs=settings.MEETING_DOC_HREFS)
+        return self._get_ref(meeting=meeting, versioned=True)
 
 
     def get_versionless_href(self, meeting=None):
-        return self._get_ref(meeting=meeting,meeting_doc_refs=settings.MEETING_DOC_GREFS)
+        return self._get_ref(meeting=meeting, versioned=False)
 
 
-    def _get_ref(self, meeting=None, meeting_doc_refs=settings.MEETING_DOC_HREFS):
+    def _get_ref(self, meeting=None, versioned=True):
         """
         Returns an url to the document text.  This differs from .get_absolute_url(),
         which returns an url to the datatracker page for the document.   
@@ -255,12 +255,16 @@ class DocumentInfo(models.Model):
         # the earlier resolution order, but there's at the moment one single
         # instance which matches this (with correct results), so we won't
         # break things all over the place.
-        if not hasattr(self, '_cached_href'):
+        cache_attr = "_cached_href" if versioned else "_cached_versionless_href"
+        if not hasattr(self, cache_attr):
             validator = URLValidator()
             if self.external_url and self.external_url.split(':')[0] in validator.schemes:
                 validator(self.external_url)
                 return self.external_url
 
+            meeting_doc_refs = (
+                settings.MEETING_DOC_HREFS if versioned else settings.MEETING_DOC_GREFS
+            )
             if self.type_id in settings.DOC_HREFS and self.type_id in meeting_doc_refs:
                 if self.meeting_related():
                     self.is_meeting_related = True
@@ -312,8 +316,8 @@ class DocumentInfo(models.Model):
 
             if href.startswith('/'):
                 href = settings.IDTRACKER_BASE_URL + href
-            self._cached_href = href
-        return self._cached_href
+            setattr(self, cache_attr, href)
+        return getattr(self, cache_attr)
 
     def set_state(self, state):
         """Switch state type implicit in state to state. This just
@@ -1279,6 +1283,24 @@ class Document(StorableMixin, DocumentInfo):
         """Is the action holder list active for this document?"""
         iesg_state = self.get_state('draft-iesg')
         return iesg_state and iesg_state.slug != 'idexists'
+
+    def formats(self):
+        """List of file formats available
+        
+        Only implemented for RFCs. Relies on StoredObject.
+        """
+        if self.type_id != "rfc":
+            raise RuntimeError("Only allowed for type=rfc")
+        return [
+            {
+                "fmt": Path(object_name).parts[0],
+                "name": object_name,
+            }
+            for object_name in StoredObject.objects.filter(
+                store="rfc", doc_name=self.name, doc_rev=self.rev
+            ).values_list("name", flat=True)
+        ]
+
 
 class DocumentURL(models.Model):
     doc  = ForeignKey(Document)
