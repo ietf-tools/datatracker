@@ -129,7 +129,7 @@ services:
 #  but can be enabled by uncommenting the following.
 #
 #    beat:
-#        image: ghcr.io/ietf-tools/datatracker-celery:latest
+#        image: "${COMPOSE_PROJECT_NAME}-celery"
 #        init: true
 #        environment:
 #            CELERY_APP: ietf
