@@ -40,7 +40,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.validators import URLValidator
-from django.urls import reverse,reverse_lazy
+from django.urls import reverse, reverse_lazy, NoReverseMatch
 from django.db.models import F, Max, Q
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.template import TemplateDoesNotExist
@@ -1859,18 +1859,22 @@ def generate_agenda_data(num=None, force_refresh=False):
     :num: meeting number
     :force_refresh: True to force a refresh of the cache
     """
-    cache = caches["default"]
-    cache_timeout = 6 * 60
-
     meeting = get_ietf_meeting(num)
     if meeting is None:
         raise Http404("No such full IETF meeting")
     elif int(meeting.number) <= 64:
-        return Http404("Pre-IETF 64 meetings are not available through this API")
-    else:
-        pass
+        raise Http404("Pre-IETF 64 meetings are not available through this API")
+    is_current_meeting = meeting.number == get_current_ietf_meeting_num()
 
-    cache_key = f"generate_agenda_data_{meeting.number}"
+    cache = caches["agenda"]
+    cache_timeout = (
+        settings.AGENDA_CACHE_TIMEOUT_CURRENT_MEETING
+        if is_current_meeting
+        else settings.AGENDA_CACHE_TIMEOUT_DEFAULT
+    )
+    cache_format = "1"  # bump this on backward-incompatible data format changes
+
+    cache_key = f"generate_agenda_data:{meeting.number}:v{cache_format}"
     if not force_refresh:
         cached_value = cache.get(cache_key)
         if cached_value is not None:
@@ -1889,8 +1893,6 @@ def generate_agenda_data(num=None, force_refresh=False):
     AgendaKeywordTagger(assignments=filtered_assignments).apply()
 
     filter_organizer = AgendaFilterOrganizer(assignments=filtered_assignments)
-
-    is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
 
     # Get Floor Plans
     floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
@@ -1966,21 +1968,32 @@ def api_get_session_materials(request, session_id=None):
     )
 
 
-def agenda_extract_schedule (item):
+def agenda_extract_schedule(item):
+    if item.session.current_status == "resched":
+        resched_to = item.session.tombstone_for.official_timeslotassignment()
+    else:
+        resched_to = None
     return {
         "id": item.id,
+        "slug": item.slug(),
         "sessionId": item.session.id,
-        "room": item.room_name if item.timeslot.show_location else None,
+        "room": (item.timeslot.get_location() or None) if item.timeslot else None,
         "location": {
             "short": item.timeslot.location.floorplan.short,
             "name": item.timeslot.location.floorplan.name,
         } if (item.timeslot.show_location and item.timeslot.location and item.timeslot.location.floorplan) else {},
         "acronym": item.acronym,
-        "duration": item.timeslot.duration.seconds,
+        "duration": item.timeslot.duration.total_seconds(),
         "name": item.session.name,
+        "slotId": item.timeslot.id,
         "slotName": item.timeslot.name,
+        "slotModified": item.timeslot.modified.isoformat(),
         "startDateTime": item.timeslot.time.isoformat(),
         "status": item.session.current_status,
+        "rescheduledTo": {
+            "startDateTime": resched_to.timeslot.time.isoformat(),
+            "duration": resched_to.timeslot.duration.total_seconds(),
+        } if resched_to is not None else {},
         "type": item.session.type.slug,
         "purpose": item.session.purpose.slug,
         "isBoF": item.session.group_at_the_time().state_id == "bof",
@@ -1998,7 +2011,7 @@ def agenda_extract_schedule (item):
             "showAgenda": True if (item.session.agenda() is not None or item.session.remote_instructions) else False
         },
         "agenda": {
-            "url": item.session.agenda().get_href()
+            "url": item.session.agenda().get_versionless_href()
         } if item.session.agenda() is not None else {
             "url": None
         },
@@ -2290,9 +2303,130 @@ def ical_session_status(assignment):
     else:
         return "CONFIRMED"
 
+
+def render_icalendar_precomp(agenda_data):
+    ical_content = generate_agenda_ical_precomp(agenda_data)
+    return HttpResponse(ical_content, content_type="text/calendar")
+
+
 def render_icalendar(schedule, assignments):
     ical_content = generate_agenda_ical(schedule, assignments)
     return HttpResponse(ical_content, content_type="text/calendar")
+
+
+def generate_agenda_ical_precomp(agenda_data):
+    """Generate iCalendar from precomputed data using the icalendar library"""
+
+    cal = Calendar()
+    cal.add("prodid", "-//IETF//datatracker.ietf.org ical agenda//EN")
+    cal.add("version", "2.0")
+    cal.add("method", "PUBLISH")
+    
+    meeting_data = agenda_data["meeting"]
+    for item in agenda_data["schedule"]:
+        event = Event()
+        
+        uid = f"ietf-{meeting_data["number"]}-{item["slotId"]}-{item["acronym"]}"
+        event.add("uid", uid)
+
+        # add custom field with meeting's local TZ
+        event.add("x-meeting-tz", meeting_data["timezone"])
+        
+        if item["name"]:
+            summary = item["name"]
+        else:
+            summary = f"{item["groupAcronym"]} - {item["groupName"]}"
+
+        if item["note"]:
+            summary += f" ({item["note"]})"
+
+        event.add("summary", summary)
+
+        if item["room"]:
+            event.add("location", item["room"])  # room name
+
+        if item["status"] == "canceled":
+            status = "CANCELLED"
+        elif item["status"] == "resched":
+            resched_to = item["rescheduledTo"]
+            if resched_to is None:
+                status = "RESCHEDULED"
+            else:
+                resched_start = datetime.datetime.fromisoformat(
+                    resched_to["startDateTime"]
+                )
+                dur = datetime.timedelta(seconds=resched_to["duration"])
+                resched_end = resched_start + dur
+                formatted_start = resched_start.strftime("%A %H:%M").upper()
+                formatted_end = resched_end.strftime("%H:%M")
+                status = f"RESCHEDULED TO {formatted_start}-{formatted_end}"
+        else:
+            status = "CONFIRMED"
+        event.add("status", status)
+
+        event.add("class", "PUBLIC")
+
+        start_time = datetime.datetime.fromisoformat(item["startDateTime"])
+        duration = datetime.timedelta(seconds=item["duration"])
+        event.add("dtstart", start_time)
+        event.add("dtend", start_time + duration)
+
+        # DTSTAMP: when the event was created or last modified (in UTC)
+        # n.b. timeslot.modified may not be an accurate measure of this
+        event.add("dtstamp", datetime.datetime.fromisoformat(item["slotModified"]))
+
+        description_parts = [item["slotName"]]
+
+        if item["note"]:
+            description_parts.append(f"Note: {item["note"]}")
+
+        links = item["links"]
+        if links["onsiteTool"]:
+            description_parts.append(f"Onsite tool: {links["onsiteTool"]}")
+
+        if links["videoStream"]:
+            description_parts.append(f"Meetecho: {links["videoStream"]}")
+
+        if links["webex"]:
+            description_parts.append(f"Webex: {links["webex"]}")
+
+        if item["remoteInstructions"]:
+            description_parts.append(
+                f"Remote instructions: {item["remoteInstructions"]}"
+            )
+
+        try:
+            materials_url = absurl(
+                "ietf.meeting.views.session_details",
+                num=meeting_data["number"],
+                acronym=item["acronym"],
+            )
+        except NoReverseMatch:
+            pass
+        else:
+            description_parts.append(f"Session materials: {materials_url}")
+            event.add("url", materials_url)
+
+        if meeting_data["number"].isdigit():
+            try:
+                agenda_url = absurl("agenda", num=meeting_data["number"])
+            except NoReverseMatch:
+                pass
+            else:
+                description_parts.append(f"See in schedule: {agenda_url}#row-{item["slug"]}")
+
+        if item["agenda"] and item["agenda"]["url"]:
+            description_parts.append(f"Agenda {item["agenda"]["url"]}")
+
+        # Join all description parts with 2 newlines
+        description = "\n\n".join(description_parts)
+        event.add("description", description)
+
+        # Add event to calendar
+        cal.add_component(event)
+
+    return cal.to_ical().decode("utf-8")
+
 
 def generate_agenda_ical(schedule, assignments):
     """Generate iCalendar using the icalendar library"""
@@ -2428,9 +2562,65 @@ def parse_agenda_filter_params(querydict):
 
 def should_include_assignment(filter_params, assignment):
     """Decide whether to include an assignment"""
-    shown = len(set(filter_params['show']).intersection(assignment.filter_keywords)) > 0
-    hidden = len(set(filter_params['hide']).intersection(assignment.filter_keywords)) > 0
+    if hasattr(assignment, "filter_keywords"):
+        kw = assignment.filter_keywords
+    elif isinstance(assignment, dict):
+        kw = assignment.get("filterKeywords", [])
+    else:
+        raise ValueError("Unsupported assignment instance")
+    shown = len(set(filter_params['show']).intersection(kw)) > 0
+    hidden = len(set(filter_params['hide']).intersection(kw)) > 0
     return shown and not hidden
+
+
+def agenda_ical_ietf(meeting, filt_params, acronym=None, session_id=None):
+    agenda_data = generate_agenda_data(meeting.number, force_refresh=False)
+    if acronym:
+        agenda_data["schedule"] = [
+            item
+            for item in agenda_data["schedule"]
+            if item["groupAcronym"] == acronym
+        ]
+    elif session_id:
+        agenda_data["schedule"] = [
+            item
+            for item in agenda_data["schedule"]
+            if item["sessionId"] == session_id
+        ]
+    if filt_params is not None:
+        # Apply the filter
+        agenda_data["schedule"] = [
+            item
+            for item in agenda_data["schedule"]
+            if should_include_assignment(filt_params, item)
+        ]
+    return render_icalendar_precomp(agenda_data)
+
+
+def agenda_ical_interim(meeting, filt_params, acronym=None, session_id=None):
+    schedule = get_schedule(meeting)
+
+    if schedule is None and acronym is None and session_id is None:
+        raise Http404
+
+    assignments = SchedTimeSessAssignment.objects.filter(
+        schedule__in=[schedule, schedule.base],
+        session__on_agenda=True,
+    )
+    assignments = preprocess_assignments_for_agenda(assignments, meeting)
+    AgendaKeywordTagger(assignments=assignments).apply()
+
+    if filt_params is not None:
+        # Apply the filter
+        assignments = [a for a in assignments if should_include_assignment(filt_params, a)]
+
+    if acronym:
+        assignments = [ a for a in assignments if a.session.group_at_the_time().acronym == acronym ]
+    elif session_id:
+        assignments = [ a for a in assignments if a.session_id == int(session_id) ]
+
+    return render_icalendar(schedule, assignments)
+
 
 def agenda_ical(request, num=None, acronym=None, session_id=None):
     """Agenda ical view
@@ -2459,33 +2649,20 @@ def agenda_ical(request, num=None, acronym=None, session_id=None):
             raise Http404
     else:
         meeting = get_meeting(num, type_in=None)  # get requested meeting, whatever its type
-    schedule = get_schedule(meeting)
 
-    if schedule is None and acronym is None and session_id is None:
-        raise Http404
-
-    assignments = SchedTimeSessAssignment.objects.filter(
-        schedule__in=[schedule, schedule.base],
-        session__on_agenda=True,
-    )
-    assignments = preprocess_assignments_for_agenda(assignments, meeting)
-    AgendaKeywordTagger(assignments=assignments).apply()
+    if isinstance(session_id, str) and session_id.isdigit():
+        session_id = int(session_id)
 
     try:
         filt_params = parse_agenda_filter_params(request.GET)
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
 
-    if filt_params is not None:
-        # Apply the filter
-        assignments = [a for a in assignments if should_include_assignment(filt_params, a)]
+    if meeting.type_id == "ietf":
+        return agenda_ical_ietf(meeting, filt_params, acronym, session_id)
+    else:
+        return agenda_ical_interim(meeting, filt_params, acronym, session_id)
 
-    if acronym:
-        assignments = [ a for a in assignments if a.session.group_at_the_time().acronym == acronym ]
-    elif session_id:
-        assignments = [ a for a in assignments if a.session_id == int(session_id) ]
-
-    return render_icalendar(schedule, assignments)
 
 @cache_page(15 * 60)
 def agenda_json(request, num=None):
