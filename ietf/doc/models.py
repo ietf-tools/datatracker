@@ -12,8 +12,6 @@ import rfc2html
 
 from io import BufferedReader
 from pathlib import Path
-
-from django.db.models import Q
 from lxml import etree
 from typing import Optional, Protocol, TYPE_CHECKING, Union
 from weasyprint import HTML as wpHTML
@@ -1293,21 +1291,13 @@ class Document(StorableMixin, DocumentInfo):
         """
         if self.type_id != "rfc":
             raise RuntimeError("Only allowed for type=rfc")
-
-        # StoredObject.doc_rev can be null or "" to represent no rev. Match either
-        # of these when self.rev is "" (always expected to be the case for RFCs)
-        rev_q = Q(doc_rev=self.rev)
-        if self.rev == "":
-            rev_q |= Q(doc_rev__isnull=True)
         return [
             {
                 "fmt": Path(object_name).parts[0],
                 "name": object_name,
             }
             for object_name in StoredObject.objects.filter(
-                rev_q,
-                store="rfc",
-                doc_name=self.name,
+                store="rfc", doc_name=self.name, doc_rev=self.rev
             ).values_list("name", flat=True)
         ]
 
