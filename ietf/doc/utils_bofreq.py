@@ -12,6 +12,7 @@ from ietf.doc.models import (
     Document,
 )
 from ietf.person.models import Person
+from ietf.utils import log
 
 
 def bofreq_editors(bofreq):
@@ -29,6 +30,12 @@ def fixup_bofreq_timestamps():
 
     Timestamp errors resulted from the bug fixed by
     https://github.com/ietf-tools/datatracker/pull/10333
+    
+    Does not fix up -00 revs because the timestamps on these were not affected by
+    the bug. Replacing their timestamps creates a confusing event history because the 
+    filesystem timestamp is usually a fraction of a second later than other events
+    created upon the initial rev creation. This causes the "New revision available"
+    event to appear _after_ these events in the history. Better to leave them as is.  
     """
     FIX_DEPLOYMENT_TIME = "2026-02-03T01:16:00+00:00"  # 12.58.0 -> production
 
@@ -41,8 +48,12 @@ def fixup_bofreq_timestamps():
         DocEvent.objects.filter(
             doc__type="bofreq", type="new_revision", time__lt=FIX_DEPLOYMENT_TIME
         )
-        .exclude(rev="00")
+        .exclude(rev="00")  # bug did not affect rev 00 events
         .order_by("doc__name", "rev")
+    )
+    log.log(
+        f"fixup_bofreq_timestamps: found {new_bofreq_events.count()} "
+        f"new_revision events before {FIX_DEPLOYMENT_TIME}"
     )
     document_fixups = {}
     for e in new_bofreq_events:
@@ -64,6 +75,9 @@ def fixup_bofreq_timestamps():
             ) from err
         except DocHistory.DoesNotExist as err:
             if rev == "00":
+                # Unreachable because we don't adjust -00 revs, but could be needed
+                # if we did, in theory. In practice it's still not reached, but
+                # keeping the case for completeness.
                 dochistory = None
             else:
                 raise RuntimeError(
@@ -85,13 +99,25 @@ def fixup_bofreq_timestamps():
     system_person = Person.objects.get(name="(System)")
     for doc_name, fixups in document_fixups.items():
         bofreq = Document.objects.get(type="bofreq", name=doc_name)
+        log_msg_parts = []
         adjusted_revs = []
         for fixup in fixups:
             event_to_fix = fixup["event"]
             dh_to_fix = fixup["dochistory"]
             new_time = fixup["filesystem_time"]
-
             adjusted_revs.append(event_to_fix.rev)
+
+            # Fix up the event
+            event_to_fix.time = new_time
+            event_to_fix.save()
+            log_msg_parts.append(f"rev {event_to_fix.rev} DocEvent")
+
+            # Fix up the DocHistory
+            if dh_to_fix is not None:
+                dh_to_fix.time = new_time
+                dh_to_fix.save()
+                log_msg_parts.append(f"rev {dh_to_fix.rev} DocHistory")
+
             if event_to_fix.rev == bofreq.rev and bofreq.time < new_time:
                 # Update the Document without calling save(). Only update if
                 # the time has not changed so we don't inadvertently overwrite
@@ -100,23 +126,24 @@ def fixup_bofreq_timestamps():
                     time=new_time
                 )
                 bofreq.refresh_from_db()
-
-            # Fix up the event
-            event_to_fix.time = new_time
-            event_to_fix.save()
-
-            # Fix up the DocHistory
-            dh_to_fix.time = new_time
-            dh_to_fix.save()
+                if bofreq.rev == event_to_fix.rev:
+                    log_msg_parts.append(f"rev {bofreq.rev} Document")
+                else:
+                    log.log(
+                        "fixup_bofreq_timestamps: WARNING: bofreq Document rev "
+                        f"changed for {bofreq.name}"
+                    )
+        log.log(f"fixup_bofreq_timestamps: {bofreq.name}: " + ", ".join(log_msg_parts))
 
         # Fix up the Document, if necessary, and add a record of the adjustment
-        change_event = DocEvent.objects.create(
+        DocEvent.objects.create(
             type="added_comment",
             by=system_person,
             doc=bofreq,
             rev=bofreq.rev,
             desc=(
                 "Corrected inaccurate document and new revision event timestamps for "
-                f"revs {', '.join(adjusted_revs)}"
+                + ("version " if len(adjusted_revs) == 1 else "versions ")
+                + ", ".join(adjusted_revs)
             ),
         )
