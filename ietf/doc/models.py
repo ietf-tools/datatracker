@@ -827,7 +827,7 @@ class StorableMixin:
         file: Union[File, BufferedReader],
         allow_overwrite: bool = False,
         doc_name: str = "",
-        doc_rev: str = ","
+        doc_rev: str = "",
     ) -> None:
         return utils_store_file(self.type_id, name, file, allow_overwrite, self.name, self.rev)
 
