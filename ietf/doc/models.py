@@ -818,8 +818,8 @@ class StorableMixin:
         name: str,
         content: bytes,
         allow_overwrite: bool = False,
-        doc_name: Optional[str] = None,
-        doc_rev: Optional[str] = None
+        doc_name: str = "",
+        doc_rev: str = "",
     ) -> None:
         return utils_store_bytes(self.type_id, name, content, allow_overwrite, self.name, self.rev)
 
@@ -828,8 +828,8 @@ class StorableMixin:
         name: str,
         file: Union[File, BufferedReader],
         allow_overwrite: bool = False,
-        doc_name: Optional[str] = None,
-        doc_rev: Optional[str] = None
+        doc_name: str = "",
+        doc_rev: str = "",
     ) -> None:
         return utils_store_file(self.type_id, name, file, allow_overwrite, self.name, self.rev)
 
@@ -1761,8 +1761,8 @@ class StoredObject(models.Model):
         null=False,
         help_text="Last instant object was modified. May not be the same as the storage's modified value for the instance. It will hold mtime for objects imported from older disk storage unless they've actually been overwritten more recently"
     )
-    doc_name = models.CharField(max_length=255, null=True, blank=True)
-    doc_rev = models.CharField(max_length=16, null=True, blank=True)
+    doc_name = models.CharField(max_length=255, null=False, blank=True)
+    doc_rev = models.CharField(max_length=16, null=False, blank=True)
     deleted = models.DateTimeField(null=True)
 
     class Meta:

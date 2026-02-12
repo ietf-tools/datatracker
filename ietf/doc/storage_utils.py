@@ -66,8 +66,8 @@ def store_file(
     name: str,
     file: Union[File, BufferedReader],
     allow_overwrite: bool = False,
-    doc_name: Optional[str] = None,
-    doc_rev: Optional[str] = None,
+    doc_name: str = "",
+    doc_rev: str = "",
     content_type: str="",
     mtime: Optional[datetime.datetime]=None,
 ) -> None:
@@ -106,8 +106,8 @@ def store_bytes(
     name: str,
     content: bytes,
     allow_overwrite: bool = False,
-    doc_name: Optional[str] = None,
-    doc_rev: Optional[str] = None,
+    doc_name: str = "",
+    doc_rev: str = "",
     content_type: str = "",
     mtime: Optional[datetime.datetime] = None,
 ) -> None:
@@ -136,8 +136,8 @@ def store_str(
     name: str,
     content: str,
     allow_overwrite: bool = False,
-    doc_name: Optional[str] = None,
-    doc_rev: Optional[str] = None,
+    doc_name: str = "",
+    doc_rev: str = "",
     content_type: str = "",
     mtime: Optional[datetime.datetime] = None,
 ) -> None:
