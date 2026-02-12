@@ -153,5 +153,5 @@ def rebuild_reference_relations_task(doc_names: list[str]):
 
 
 @shared_task
-def fixup_bofreq_timestamps_task():
+def fixup_bofreq_timestamps_task():  # pragma: nocover
     fixup_bofreq_timestamps()

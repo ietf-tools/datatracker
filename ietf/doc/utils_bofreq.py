@@ -25,7 +25,7 @@ def bofreq_responsible(bofreq):
     return e.responsible.all() if e else Person.objects.none()
 
 
-def fixup_bofreq_timestamps():
+def fixup_bofreq_timestamps():  # pragma: nocover
     """Fixes bofreq event / document timestamps
 
     Timestamp errors resulted from the bug fixed by
