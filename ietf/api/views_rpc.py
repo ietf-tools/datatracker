@@ -487,7 +487,7 @@ class RfcPubFilesView(APIView):
                         name=self._blob_destination(ftm),
                         file=f,
                         doc_name=rfc.name,
-                        doc_rev=rfc.rev,  # expect None, but match whatever it is
+                        doc_rev=rfc.rev,  # expect blank, but match whatever it is
                         mtime=mtime,
                     )
                 destination = self._fs_destination(ftm)
