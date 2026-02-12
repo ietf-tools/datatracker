@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2024-2025, All Rights Reserved
+# Copyright The IETF Trust 2024-2026, All Rights Reserved
 #
 # Celery task definitions
 #
@@ -34,6 +34,7 @@ from .utils import (
     ensure_draft_bibxml_path_exists,
     investigate_fragment,
 )
+from .utils_bofreq import fixup_bofreq_timestamps
 
 
 @shared_task
@@ -149,3 +150,8 @@ def rebuild_reference_relations_task(doc_names: list[str]):
             rebuild_reference_relations(doc, filenames)
         else:
             log.log(f"Found no content for {stem}")
+
+
+@shared_task
+def fixup_bofreq_timestamps_task():
+    fixup_bofreq_timestamps()
