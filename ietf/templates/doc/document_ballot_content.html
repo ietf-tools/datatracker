@@ -133,7 +133,7 @@
                                 </div>
                             </div>
                             <div class="card-body">
-                                <pre class="ballot pasted">{{ p.discuss|escape|urlize_ietf_docs|linkify }}</pre>
+                                <pre class="ballot pasted">{{ p.discuss|escape|urlize_ietf_docs|urlize }}</pre>
                             </div>
                         </div>
                     {% endif %}
@@ -167,7 +167,7 @@
                                 </div>
                             </div>
                             <div class="card-body">
-                                <pre class="ballot pasted">{{ p.comment|escape|urlize_ietf_docs|linkify }}</pre>
+                                <pre class="ballot pasted">{{ p.comment|escape|urlize_ietf_docs|urlize }}</pre>
                             </div>
                         </div>
                     {% endif %}
@@ -231,11 +231,11 @@
                         </div>
                         {% if p.pos.blocking and p.discuss %}
                             <div class="card-body">
-                                <pre class="ballot pasted">{{ p.discuss|escape|urlize_ietf_docs|linkify }}</pre>
+                                <pre class="ballot pasted">{{ p.discuss|escape|urlize_ietf_docs|urlize }}</pre>
                             </div>
                         {% else %}
                             <div class="card-body">
-                                <pre class="ballot pasted">{{ p.comment|escape|urlize_ietf_docs|linkify }}</pre>
+                                <pre class="ballot pasted">{{ p.comment|escape|urlize_ietf_docs|urlize }}</pre>
                             </div>
                         {% endif %}
                     </div>

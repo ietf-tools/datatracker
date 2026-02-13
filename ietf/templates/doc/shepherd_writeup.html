@@ -11,7 +11,7 @@
         <br>
         <small class="text-body-secondary">{{ doc.name }}</small>
     </h1>
-    <pre class="border p-3 my-3">{{writeup|maybewordwrap|urlize_ietf_docs|linkify}}</pre>
+    <pre class="border p-3 my-3">{{writeup|maybewordwrap|urlize_ietf_docs|urlize}}</pre>
     {% if can_edit %}
         <a class="btn btn-primary"
            href="{% url 'ietf.doc.views_draft.edit_shepherd_writeup' name=doc.name %}">Edit</a>

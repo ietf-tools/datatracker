@@ -448,7 +448,7 @@ def ad_area(user):
 def format_history_text(text, trunc_words=25):
     """Run history text through some cleaning and add ellipsis if it's too long."""
     full = mark_safe(clean_html(text))
-    full = urlize(urlize_ietf_docs(full)) 
+    full = urlize(urlize_ietf_docs(full))
 
     return format_snippet(full, trunc_words)
 

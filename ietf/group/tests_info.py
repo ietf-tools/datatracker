@@ -46,7 +46,7 @@ from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent, reload_db_objects
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
-from ietf.utils.templatetags.textfilters import linkify
+from django.template.defaultfilters import urlize
 
 
 def group_urlreverse_list(group, viewname):
@@ -2136,12 +2136,12 @@ class StatusUpdateTests(TestCase):
 
     def test_view_status_update(self):
         chair = RoleFactory(name_id='chair',group__type_id='wg')
-        event = GroupEventFactory(type='status_update', group=chair.group)
+        event = GroupEventFactory(type='status_update',group=chair.group)
         for url in group_urlreverse_list(chair.group, 'ietf.group.views.group_about_status'): 
             response = self.client.get(url)
             self.assertEqual(response.status_code,200)
             q=PyQuery(response.content)
-            self.assertTrue(linkify(escape(event.desc)) in str(q('pre')))
+            self.assertTrue(urlize(escape(event.desc)) in str(q('pre')))
             self.assertFalse(q('a#edit_button'))
             self.client.login(username=chair.person.user.username,password='%s+password'%chair.person.user.username)
             response = self.client.get(url)

@@ -424,7 +424,7 @@
                                 {# IESG Notes are historic and read-only now #}
                             </td>
                             <td>
-                                {{ doc.notedoc.note|urlize_ietf_docs|linkify|linebreaksbr }}
+                                {{ doc.notedoc.note|urlize_ietf_docs|urlize|linebreaksbr }}
                             </td>
                         </tr>
                     {% endif %}
@@ -443,7 +443,7 @@
                         </td>
                         <td>
                             {% if doc.notify %}
-                                {{ doc.notify|linkify }}
+                                {{ doc.notify|urlize }}
                             {% else %}
                                 <span class="text-body-secondary">
                                     (None)

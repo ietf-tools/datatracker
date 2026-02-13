@@ -233,7 +233,7 @@
                     {% if prev %}
                         <td class="ipr-prev">
                             {% if prev.holder_contact_email %}
-                                {{ prev.holder_contact_email|linkify }}
+                                {{ prev.holder_contact_email|urlize }}
                             {% endif %}
                         </td>
                     {% endif %}
@@ -241,14 +241,14 @@
                         Holder contact email
                     </th>
                     <td class="ipr-this">
-                        {{ ipr.holder_contact_email|linkify }}
+                        {{ ipr.holder_contact_email|urlize }}
                     </td>
                 </tr>
                 <tr>
                     {% if prev %}
                         <td class="ipr-prev">
                             {% if prev.holder_contact_info %}
-                                {{ prev.holder_contact_info|linkify|linebreaks }}
+                                {{ prev.holder_contact_info|urlize|linebreaks }}
                             {% endif %}
                         </td>
                     {% endif %}
@@ -256,7 +256,7 @@
                         Holder contact info
                     </th>
                     <td class="ipr-this">
-                        {% if ipr.holder_contact_info %}{{ ipr.holder_contact_info|linkify|linebreaks }}{% endif %}
+                        {% if ipr.holder_contact_info %}{{ ipr.holder_contact_info|urlize|linebreaks }}{% endif %}
                     </td>
                 </tr>
             </tbody>
@@ -314,7 +314,7 @@
                     {% if prev %}
                         <td class="ipr-prev">
                             {% if prev.ietfer_contact_email %}
-                                {{ prev.ietfer_contact_email|linkify }}
+                                {{ prev.ietfer_contact_email|urlize }}
                             {% endif %}
                         </td>
                     {% endif %}
@@ -322,14 +322,14 @@
                         Email
                     </th>
                     <td class="ipr-this">
-                        {{ ipr.ietfer_contact_email|linkify }}
+                        {{ ipr.ietfer_contact_email|urlize }}
                     </td>
                 </tr>
                 <tr>
                     {% if prev %}
                         <td class="ipr-prev">
                             {% if prev.ietfer_contact_info %}
-                                {{ prev.ietfer_contact_info|linkify|linebreaks }}
+                                {{ prev.ietfer_contact_info|urlize|linebreaks }}
                             {% endif %}
                         </td>
                     {% endif %}
@@ -337,7 +337,7 @@
                         Other info
                     </th>
                     <td class="ipr-this">
-                        {{ ipr.ietfer_contact_info|linkify|linebreaks }}
+                        {{ ipr.ietfer_contact_info|urlize|linebreaks }}
                     </td>
                 </tr>
             </tbody>
@@ -513,7 +513,7 @@
                     {% if prev %}
                         <td class="ipr-prev">
                             {% if prev.patent_info %}
-                                {{ prev.patent_info|urlize_ietf_docs|linkify|linebreaks }}
+                                {{ prev.patent_info|urlize_ietf_docs|urlize|linebreaks }}
                             {% endif %}
                         </td>
                     {% endif %}
@@ -523,7 +523,7 @@
                         or Application/File number(s)
                     </th>
                     <td class="ipr-this">
-                        {{ ipr.patent_info|urlize_ietf_docs|linkify|linebreaks }}
+                        {{ ipr.patent_info|urlize_ietf_docs|urlize|linebreaks }}
                     </td>
                 </tr>
             </tbody>
@@ -658,7 +658,7 @@
                     {% if prev %}
                         <td class="ipr-prev">
                             {% if prev.licensing_comments %}
-                                {{ prev.licensing_comments|default:"(No information submitted)"|urlize_ietf_docs|linkify|linebreaks }}
+                                {{ prev.licensing_comments|default:"(No information submitted)"|urlize_ietf_docs|urlize|linebreaks }}
                             {% endif %}
                         </td>
                     {% endif %}
@@ -666,7 +666,7 @@
                         Licensing information, comments, notes, or URL for further information
                     </th>
                     <td class="ipr-this">
-                        {{ ipr.licensing_comments.strip|default:"(No information submitted)"|urlize_ietf_docs|linkify|linebreaks }}
+                        {{ ipr.licensing_comments.strip|default:"(No information submitted)"|urlize_ietf_docs|urlize|linebreaks }}
                     </td>
                 </tr>
             </tbody>
@@ -713,7 +713,7 @@
                     {% if prev %}
                         <td class="ipr-prev">
                             {% if prev.statement %}
-                                {{ prev.statement|urlize_ietf_docs|linkify|linebreaks }}
+                                {{ prev.statement|urlize_ietf_docs|urlize|linebreaks }}
                             {% endif %}
                         </td>
                     {% endif %}
@@ -721,7 +721,7 @@
                         Statement
                     </th>
                     <td class="ipr-this">
-                        {{ ipr.statement|urlize_ietf_docs|linkify|linebreaks }}
+                        {{ ipr.statement|urlize_ietf_docs|urlize|linebreaks }}
                     </td>
                 </tr>
             </tbody>
@@ -778,7 +778,7 @@
                 {% if prev %}
                     <td class="ipr-prev">
                         {% if prev.submitter_email %}
-                            {{ prev.submitter_email|linkify }}
+                            {{ prev.submitter_email|urlize }}
                         {% endif %}
                     </td>
                 {% endif %}
@@ -786,7 +786,7 @@
                     Submitter email
                 </th>
                 <td class="ipr-this">
-                    {{ ipr.submitter_email|linkify }}
+                    {{ ipr.submitter_email|urlize }}
                 </td>
             </tr>
         </tbody>
@@ -828,7 +828,7 @@
                     {% if prev %}
                         <td class="ipr-prev">
                             {% if prev.notes %}
-                                {{ prev.notes|urlize_ietf_docs|linkify|linebreaks }}
+                                {{ prev.notes|urlize_ietf_docs|urlize|linebreaks }}
                             {% endif %}
                         </td>
                     {% endif %}
@@ -836,7 +836,7 @@
                         Additional notes
                     </th>
                     <td class="ipr-this">
-                        {{ ipr.notes|urlize_ietf_docs|linkify|linebreaks }}
+                        {{ ipr.notes|urlize_ietf_docs|urlize|linebreaks }}
                     </td>
                 </tr>
             </tbody>

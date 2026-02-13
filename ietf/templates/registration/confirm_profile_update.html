@@ -10,7 +10,7 @@
         </p>
         {% for email in email_confirmations %}
             <p class="alert alert-success my-3">
-                <b>A confirmation email has been sent to {{ email|linkify }}.</b> The email will be activated after you click on the link it contains.
+                <b>A confirmation email has been sent to {{ email|urlize }}.</b> The email will be activated after you click on the link it contains.
             </p>
         {% endfor %}
         <a class="btn btn-primary"
