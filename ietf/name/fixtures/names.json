@@ -12807,7 +12807,7 @@
   {
     "fields": {
       "default_offset_days": -57,
-      "desc": "Cut-off date for BOF proposal requests. To request a __BoF__ session use the [IETF BoF Request Tool](/doc/bof-requests).",
+      "desc": "",
       "name": "Cut-off preliminary BOF requests",
       "order": 0,
       "used": true
@@ -12818,7 +12818,7 @@
   {
     "fields": {
       "default_offset_days": -57,
-      "desc": "Preliminary BOF proposals requested. To request a __BoF__ session use the [IETF BoF Request Tool](/doc/bof-requests).",
+      "desc": "",
       "name": "Preliminary BOF proposals requested",
       "order": 0,
       "used": false
@@ -12851,7 +12851,7 @@
   {
     "fields": {
       "default_offset_days": -43,
-      "desc": "Cut-off date for BOF proposal requests to Area Directors at UTC 23:59. To request a __BoF__ session use the [IETF BoF Request Tool](/doc/bof-requests).",
+      "desc": "",
       "name": "Cut-off BOF scheduling Requests",
       "order": 0,
       "used": false
@@ -12895,7 +12895,7 @@
   {
     "fields": {
       "default_offset_days": -43,
-      "desc": "Cut-off date for requests to schedule Working Group Meetings at UTC 23:59. To request a __Working Group__ session, use the [IETF Meeting Session Request Tool](/secr/sreq/).",
+      "desc": "",
       "name": "Cut-off WG scheduling Requests",
       "order": 0,
       "used": true
@@ -12950,7 +12950,7 @@
   {
     "fields": {
       "default_offset_days": -12,
-      "desc": "Internet-Draft submission cut-off (for all Internet-Drafts, including -00) by UTC 23:59. Upload using the [I-D Submission Tool](/submit/).",
+      "desc": "",
       "name": "I-D Cutoff",
       "order": 0,
       "used": true
@@ -12983,7 +12983,7 @@
   {
     "fields": {
       "default_offset_days": -82,
-      "desc": "IETF Online Registration Opens [Register Here](https://www.ietf.org/how/meetings/register/).",
+      "desc": "",
       "name": "Registration Opens",
       "order": 0,
       "used": true
@@ -12994,7 +12994,7 @@
   {
     "fields": {
       "default_offset_days": -89,
-      "desc": "Working Group and BOF scheduling begins. To request a Working Group session, use the [IETF Meeting Session Request Tool](/secr/sreq/). If you are working on a BOF request, it is highly recommended to tell the IESG now by sending an [email to iesg@ietf.org](mailtp:iesg@ietf.org) to get advance help with the request.",
+      "desc": "",
       "name": "Scheduling Opens",
       "order": 0,
       "used": true

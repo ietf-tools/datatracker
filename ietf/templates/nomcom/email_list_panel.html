@@ -3,7 +3,7 @@
 {% if list %}
     <ul>
         {% for n in list %}
-            <li>{% person_link n.person with_email=False %} ({{ n.email.address|linkify }})</li>
+            <li>{% person_link n.person with_email=False %} ({{ n.email.address|urlize }})</li>
         {% endfor %}
     </ul>
 {% else %}

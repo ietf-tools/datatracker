@@ -26,7 +26,7 @@
             {% for state in states %}
                 <tr id="{{ state.slug|default:"idexists" }}">
                     <th scope="row">{{ state.name }}</th>
-                    <td>{{ state.desc|safe|urlize_ietf_docs|linkify }}</td>
+                    <td>{{ state.desc|safe|urlize_ietf_docs|urlize }}</td>
                     {% if has_next_states %}
                         <td>
                             {% for s in state.next_states.all %}

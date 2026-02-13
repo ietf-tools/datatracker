@@ -7,12 +7,10 @@ import re
 from django import template
 from django.conf import settings
 from django.template.defaultfilters import stringfilter
-from django.utils.html import conditional_escape
-from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.text import linkify as _linkify, xslugify as _xslugify, texescape
+from ietf.utils.text import xslugify as _xslugify, texescape
 
 register = template.Library()
 
@@ -72,15 +70,6 @@ def texescape_filter(value):
     "A TeX escape filter"
     return texescape(value)
     
-@register.filter(needs_autoescape=True)
-@stringfilter
-def linkify(value, autoescape=True):
-    if autoescape:
-        # Escape unless the input was already a SafeString
-        value = conditional_escape(value)
-    text = mark_safe(_linkify(value))  # _linkify is a safe operation
-    return text
-
 @register.filter
 @stringfilter
 def first_url(value):

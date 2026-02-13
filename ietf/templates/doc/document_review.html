@@ -53,7 +53,7 @@
         <div class="card mt-5">
             <div class="card-header">{{ doc.name }}-{{ doc.rev }}</div>
             <div class="card-body">
-                <pre class="pasted">{{ content|maybewordwrap|urlize_ietf_docs|linkify }}</pre>
+                <pre class="pasted">{{ content|maybewordwrap|urlize_ietf_docs|urlize }}</pre>
             </div>
         </div>
     {% endif %}

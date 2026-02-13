@@ -10,7 +10,7 @@
         <div class="alert alert-success my-3">
             Your account creation request has been successfully received.
             <hr>
-            We have sent an email to {{ to_email|linkify }} with instructions on how to complete the process.
+            We have sent an email to {{ to_email|urlize }} with instructions on how to complete the process.
         </div>
     {% else %}
         <h1>Account creation</h1>

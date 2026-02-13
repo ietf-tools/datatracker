@@ -33,11 +33,11 @@
                             <td>
                                 {% with alias.grouper|add:item.alias_type|default:'' as x %}
                                     {% with x|add:"@"|add:ietf_domain as email %}
-                                        {{ email|linkify }}
+                                        {{ email|urlize }}
                                     {% endwith %}
                                 {% endwith %}
                             </td>
-                            <td>{{ item.expansion|linkify }}</td>
+                            <td>{{ item.expansion|urlize }}</td>
                         </tr>
                     {% endfor %}
                 {% endfor %}

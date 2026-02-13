@@ -96,7 +96,7 @@
                                     aria-label="Close"></button>
                         </div>
                         <div class="modal-body" id="{{ check.checker|slugify }}-message">
-                        <pre>{{ check.message|urlize_ietf_docs|linkify }}</pre>
+                        <pre>{{ check.message|urlize_ietf_docs|urlize }}</pre>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -286,7 +286,7 @@
                     <th scope="row">Author {{ forloop.counter }}</th>
                     <td>
                         {% if author.name %}{{ author.name }}{% endif %}
-                        {% if author.email %}&lt;{{ author.email|linkify }}&gt;{% endif %}
+                        {% if author.email %}&lt;{{ author.email|urlize }}&gt;{% endif %}
                         <br>
                         {% if author.affiliation %}
                             {{ author.affiliation }}
@@ -322,7 +322,7 @@
                     Abstract
                 </th>
                 <td>
-                    {{ submission.abstract|urlize_ietf_docs|linkify|linebreaksbr }}
+                    {{ submission.abstract|urlize_ietf_docs|urlize|linebreaksbr }}
                     {% if errors.abstract %}
                         <p class="mt-1 mb-0 text-danger">
                             {{ errors.abstract }}
@@ -466,7 +466,7 @@
                         Email address
                     </th>
                     <td>
-                        {{ submission.submitter_parsed.email|linkify }}
+                        {{ submission.submitter_parsed.email|urlize }}
                     </td>
                 </tr>
                 </tbody>
@@ -578,7 +578,7 @@
                         </td>
 
                         <td>
-                            {{ e.desc|urlize_ietf_docs|linkify }}
+                            {{ e.desc|urlize_ietf_docs|urlize }}
                         </td>
                     </tr>
                 {% endfor %}

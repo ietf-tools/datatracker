@@ -36,7 +36,7 @@
                         <td>{{ v.person.ascii_name }}</td>
                         <td>{% person_link v.person %}</td>
                         <td>{{ v.affiliation }}</td>
-                        <td>{{ v.person.email|linkify }}</td>
+                        <td>{{ v.person.email|urlize }}</td>
                         <td>{{ v.qualifications }}</td>
                     </tr>
                 {% endfor %}

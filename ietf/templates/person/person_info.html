@@ -27,7 +27,7 @@
 </dt>
 <dd class="col-md-9">
     {% for email in person.email_set.all %}
-        {{ email.address|linkify }}
+        {{ email.address|urlize }}
         <br>
     {% endfor %}
 </dd>

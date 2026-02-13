@@ -111,7 +111,7 @@
                                     {% firstof extres.display_name extres.name.name %}
                                 </dt>
                                 <dd class="col-sm-9">
-                                    {{ extres.value|linkify }}
+                                    {{ extres.value|urlize }}
                                 </dd>
                             {% endfor %}
                         </dl>
@@ -162,7 +162,7 @@
                                        {% if email.active %}checked{% endif %}>
                             </td>
                             <td>
-                                {{ email|linkify }}
+                                {{ email|urlize }}
                             </td>
                             <td>{{ email.origin|default:'(unknown)'|urlize_ietf_docs }}</td>
                         </tr>
