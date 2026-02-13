@@ -14,6 +14,7 @@ services:
 
         depends_on:
             - blobdb
+            - blobstore
             - db
             - mq
 
@@ -80,6 +81,7 @@ services:
             - '--loglevel=INFO'
         depends_on:
             - blobdb
+            - blobstore
             - db
             - mq
         restart: unless-stopped
