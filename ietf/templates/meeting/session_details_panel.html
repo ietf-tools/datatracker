@@ -38,6 +38,12 @@
                             Meeting details
                         </a>
                     {% endif %}
+                    {% if user|has_role:"Secretariat" or meeting.type.slug == 'interim' %} 
+                        <a class="btn btn-danger"
+                        href="{% url 'ietf.meeting.views.interim_request_cancel' number=meeting.number %}">
+                            Cancel meeting
+                        </a>
+                    {% endif %}
                 </div>
                 {% if not session.type_counter.agenda %}
                     <div class="alert alert-warning my-3">This session does not yet have an agenda.</div>

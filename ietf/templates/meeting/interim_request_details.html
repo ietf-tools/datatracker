@@ -126,14 +126,6 @@
                 Skip announcement
             </a>
         {% endif %}
-        {% if can_edit %}
-            {% if status_slug == 'apprw' or status_slug == 'scheda' or status_slug == 'sched' %}
-                <a class="btn btn-danger"
-                   href="{% url 'ietf.meeting.views.interim_request_cancel' number=meeting.number %}">
-                    Cancel meeting
-                </a>
-            {% endif %}
-        {% endif %}
         {% if status_slug == "apprw" %}
             <a class="btn btn-secondary float-end"
                href="{% url 'ietf.meeting.views.interim_pending' %}">Back</a>
