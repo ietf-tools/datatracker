@@ -4,6 +4,8 @@
 #
 import datetime
 import io
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 import requests
 
 from celery import shared_task
@@ -12,9 +14,11 @@ from django.conf import settings
 from django.utils import timezone
 
 from ietf.doc.models import DocEvent, RelatedDocument
+from ietf.doc.tasks import rebuild_reference_relations_task
 from ietf.sync import iana
 from ietf.sync import rfceditor
 from ietf.sync.rfceditor import MIN_QUEUE_RESULTS, parse_queue, update_drafts_from_queue
+from ietf.sync.utils import build_from_file_content, load_rfcs_into_blobdb, rsync_helper
 from ietf.utils import log
 from ietf.utils.timezone import date_today
 
@@ -65,11 +69,16 @@ def rfc_editor_index_update_task(full_index=False):
     if len(errata_data) < rfceditor.MIN_ERRATA_RESULTS:
         log.log("Not enough errata entries, only %s" % len(errata_data))
         return  # failed
+    newly_published = set()
     for rfc_number, changes, doc, rfc_published in rfceditor.update_docs_from_rfc_index(
         index_data, errata_data, skip_older_than_date=skip_date
     ):
         for c in changes:
             log.log("RFC%s, %s: %s" % (rfc_number, doc.name, c))
+        if rfc_published:
+            newly_published.add(rfc_number)
+    if len(newly_published) > 0:
+        rsync_rfcs_from_rfceditor_task.delay(list(newly_published))
 
 
 @shared_task
@@ -222,3 +231,44 @@ def fix_subseries_docevents_task():
         DocEvent.objects.filter(type="sync_from_rfc_editor", desc=desc).update(
             time=obsoleting_time
         )
+
+@shared_task
+def rsync_rfcs_from_rfceditor_task(rfc_numbers: list[int]):
+    log.log(f"Rsyncing rfcs from rfc-editor: {rfc_numbers}")
+    from_file = None
+    with NamedTemporaryFile(mode="w", delete_on_close=False) as fp:
+        fp.write(build_from_file_content(rfc_numbers))
+        fp.close()
+        from_file = Path(fp.name)
+        rsync_helper(
+            [
+                "-a",
+                "--ignore-existing",
+                f"--include-from={from_file}",
+                "--exclude=*",
+                "rsync.rfc-editor.org::rfcs/",
+                f"{settings.RFC_PATH}",
+            ]
+        )
+    load_rfcs_into_blobdb(rfc_numbers)
+
+    rebuild_reference_relations_task.delay([f"rfc{num}" for num in rfc_numbers])
+
+
+@shared_task
+def load_rfcs_into_blobdb_task(start: int, end: int):
+    """Move file content for rfcs from rfc{start} to rfc{end} inclusive
+
+    As this is expected to be removed once the blobdb is populated, it
+    will truncate its work to a coded max end.
+    This will not overwrite any existing blob content, and will only
+    log a small complaint if asked to load a non-exsiting RFC.
+    """
+    # Protect us from ourselves
+    if end < start:
+        return
+    if start < 1:
+        start = 1
+    if end > 11000:  # Arbitrarily chosen
+        end = 11000
+    load_rfcs_into_blobdb(list(range(start, end + 1)))

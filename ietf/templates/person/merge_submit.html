@@ -1,0 +1,57 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
+{% extends "base.html" %}
+{% load static %}
+{% load django_bootstrap5 %}
+{% block title %}Merge Persons{% endblock %}
+{% block content %}
+    <h1>Merge Person Records</h1>
+    <p class="alert alert-info my-3">
+        This tool will merge two Person records into one.  If both records have logins and you want to retain the one on the left, use the Swap button to swap source and target records.
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="row mt-3">
+            <div class="col-md-6">
+                {% bootstrap_field form.source %}
+                {% if source %}
+                    {% with person=source %}
+                        {% include "person/person_info.html" %}
+                    {% endwith %}
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                {% bootstrap_field form.target %}
+                {% if target %}
+                    {% with person=target %}
+                        {% include "person/person_info.html" %}
+                    {% endwith %}
+                {% endif %}
+            </div>
+        </div>
+        {% if change_details %}<div class="alert alert-info my-3" role="alert">{{ change_details }}</div>{% endif %}
+        {% if warn_messages %}
+            {% for message in warn_messages %}<div class="alert alert-warning my-3" role="alert">{{ message }}</div>{% endfor %}
+        {% endif %}
+
+        <a class="btn btn-primary"
+           href="{% url 'ietf.person.views.merge_submit' %}?source={{ target.pk }}&amp;target={{ source.pk }}"
+           role="button"
+           title="Swap source and target">
+            Swap
+        </a>
+
+        <button type="submit" class="btn btn-warning" title="Merge Person records">
+            Merge
+        </button>
+
+        <a class="btn btn-primary"
+           href="{% url 'ietf.person.views.send_merge_request' %}?source={{ source.pk }}&amp;target={{ target.pk }}"
+           role="button"
+           title="Send email to both addresses to confirm they are the same person">
+            Send Email
+        </a>
+
+        <a class="btn btn-primary" href="{% url 'ietf.person.views.merge' %}" role="button">Back</a>
+
+    </form>
+{% endblock %}

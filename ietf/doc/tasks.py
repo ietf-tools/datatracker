@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2024-2025, All Rights Reserved
+# Copyright The IETF Trust 2024-2026, All Rights Reserved
 #
 # Celery task definitions
 #
@@ -29,10 +29,12 @@ from .models import Document, NewRevisionDocEvent
 from .utils import (
     generate_idnits2_rfc_status,
     generate_idnits2_rfcs_obsoleted,
+    rebuild_reference_relations,
     update_or_create_draft_bibxml_file,
     ensure_draft_bibxml_path_exists,
     investigate_fragment,
 )
+from .utils_bofreq import fixup_bofreq_timestamps
 
 
 @shared_task
@@ -128,3 +130,28 @@ def investigate_fragment_task(name_fragment: str):
         "name_fragment": name_fragment,
         "results": investigate_fragment(name_fragment),
     }
+
+@shared_task
+def rebuild_reference_relations_task(doc_names: list[str]):
+    log.log(f"Task: Rebuilding reference relations for {doc_names}")
+    for doc in Document.objects.filter(name__in=doc_names, type__in=["rfc", "draft"]):
+        filenames = dict()
+        base = (
+            settings.RFC_PATH
+            if doc.type_id == "rfc"
+            else settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
+        )
+        stem = doc.name if doc.type_id == "rfc" else f"{doc.name}-{doc.rev}"
+        for ext in ["xml", "txt"]:
+            path = Path(base) / f"{stem}.{ext}"
+            if path.is_file():
+                filenames[ext] = str(path)
+        if len(filenames) > 0:
+            rebuild_reference_relations(doc, filenames)
+        else:
+            log.log(f"Found no content for {stem}")
+
+
+@shared_task
+def fixup_bofreq_timestamps_task():  # pragma: nocover
+    fixup_bofreq_timestamps()

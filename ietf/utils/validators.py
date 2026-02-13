@@ -33,8 +33,9 @@ from ietf.utils.mime import get_mime_type
 # Note that this is an instantiation of the regex validator, _not_ the
 # regex-string validator defined right below
 validate_no_control_chars = RegexValidator(
-                                    regex="^[^\x00-\x1f]*$",
-                                    message="Please enter a string without control characters." )
+    regex="^[^\x01-\x1f]*$",
+    message="Please enter a string without control characters.",
+)
 
 
 @deconstructible

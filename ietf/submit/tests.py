@@ -595,7 +595,7 @@ class SubmitTests(BaseSubmitTestCase):
         TestBlobstoreManager().emptyTestBlobstores()
 
         def _assert_authors_are_action_holders(draft, expect=True):
-            for author in draft.authors():
+            for author in draft.author_persons():
                 if expect:
                     self.assertIn(author, draft.action_holders.all())
                 else:

@@ -1653,11 +1653,18 @@ def document_json(request, name, rev=None):
     data["state"] = extract_name(doc.get_state())
     data["intended_std_level"] = extract_name(doc.intended_std_level)
     data["std_level"] = extract_name(doc.std_level)
+    author_qs = (
+        doc.rfcauthor_set
+        if doc.type_id == "rfc" and doc.rfcauthor_set.exists()
+        else doc.documentauthor_set
+    ).select_related("person", "email").order_by("order")
     data["authors"] = [
-        dict(name=author.person.name,
-             email=author.email.address if author.email else None,
-             affiliation=author.affiliation)
-        for author in doc.documentauthor_set.all().select_related("person", "email").order_by("order")
+        {
+            "name": author.titlepage_name if hasattr(author, "titlepage_name") else author.person.name,
+            "email": author.email.address if author.email else None,
+            "affiliation": author.affiliation,
+        }
+        for author in author_qs
     ]
     data["shepherd"] = doc.shepherd.formatted_email() if doc.shepherd else None
     data["ad"] = doc.ad.role_email("ad").formatted_email() if doc.ad else None
@@ -1941,9 +1948,9 @@ def edit_action_holders(request, name):
     role_ids = dict()  # maps role slug to list of Person IDs (assumed numeric in the JavaScript)
     extra_prefetch = []  # list of Person objects to prefetch for select2 field
 
-    if len(doc.authors()) > 0:
+    authors = doc.author_persons()
+    if len(authors) > 0:
         doc_role_labels.append(dict(slug='authors', label='Authors'))
-        authors = doc.authors()
         role_ids['authors'] = [p.pk for p in authors]
         extra_prefetch += authors
 
