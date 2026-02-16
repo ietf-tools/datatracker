@@ -5889,8 +5889,37 @@ class InterimTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('nnounce')")),2)
 
-    def test_interim_request_details_cancel(self):
-        """Test access to cancel meeting / session features"""
+    def test_interim_meeting_cancel(self):
+        make_interim_test_data()
+        mars_sessions = Session.objects.with_current_status(
+        ).filter(
+            meeting__type='interim',
+            group__acronym='mars',
+            current_status="sched"
+        )
+        meeting = mars_sessions.first().meeting
+        # All these roles should have access to cancel the request
+        usernames_and_passwords = (
+            ('marschairman', 'marschairman+password'),
+            ('secretary', 'secretary+password')
+        )
+        url = urlreverse('ietf.meeting.views.session_details',
+                         kwargs={'num': meeting.number, 'acronym': 'mars'})
+        
+        for username, password in usernames_and_passwords:
+            self.client.login(username=username, password=password)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            cancel_meeting_btns = q("a.btn:contains('Cancel meeting')")
+            self.assertEqual(len(cancel_meeting_btns), 1,
+                'Should be exactly one cancel meeting button for user %s' % username)
+            self.assertEqual(cancel_meeting_btns.eq(0).attr('href'),
+                urlreverse('ietf.meeting.views.interim_request_cancel',
+                           kwargs={'number': meeting.number}),
+                                'Cancel meeting points to wrong URL')
+        
+    def test_interim_session_cancel(self):
         make_interim_test_data()
         mars_sessions = Session.objects.with_current_status(
         ).filter(
@@ -5915,14 +5944,6 @@ class InterimTests(TestCase):
                 r = self.client.get(url)
                 self.assertEqual(r.status_code, 200)
                 q = PyQuery(r.content)
-                cancel_meeting_btns = q("a.btn:contains('Cancel meeting')")
-                self.assertEqual(len(cancel_meeting_btns), 1,
-                                 'Should be exactly one cancel meeting button for user %s' % username)
-                self.assertEqual(cancel_meeting_btns.eq(0).attr('href'),
-                                 urlreverse('ietf.meeting.views.interim_request_cancel',
-                                            kwargs={'number': meeting.number}),
-                                 'Cancel meeting points to wrong URL')
-
                 self.assertEqual(len(q("a.btn:contains('Cancel Session')")), 0,
                                  'Should be no cancel session buttons for user %s' % username)
 
@@ -5939,14 +5960,6 @@ class InterimTests(TestCase):
                 r = self.client.get(url)
                 self.assertEqual(r.status_code, 200)
                 q = PyQuery(r.content)
-                cancel_meeting_btns = q("a.btn:contains('Cancel meeting')")
-                self.assertEqual(len(cancel_meeting_btns), 1,
-                                 'Should be exactly one cancel meeting button for user %s' % username)
-                self.assertEqual(cancel_meeting_btns.eq(0).attr('href'),
-                                 urlreverse('ietf.meeting.views.interim_request_cancel',
-                                            kwargs={'number': meeting.number}),
-                                 'Cancel meeting button points to wrong URL')
-
                 cancel_session_btns = q("a.btn:contains('Cancel session')")
                 self.assertEqual(len(cancel_session_btns), 2,
                                  'Should be two cancel session buttons for user %s' % username)
