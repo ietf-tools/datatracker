@@ -1488,7 +1488,8 @@ if "CACHES" not in locals():
                 ),
             },
             "sessions": {
-                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                "BACKEND": "django.core.cache.backends.redis.RedisCache",
+                "LOCATION": "redis://redis:6379",
             },
             "htmlized": {
                 "BACKEND": "django.core.cache.backends.dummy.DummyCache",
@@ -1534,7 +1535,6 @@ if SERVER_MODE != 'production':
     loaders = TEMPLATES[0]['OPTIONS']['loaders']
     loaders = tuple(l for e in loaders for l in (e[1] if isinstance(e, tuple) and "cached.Loader" in e[0] else (e,)))
     TEMPLATES[0]['OPTIONS']['loaders'] = loaders
-    SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
     if 'SECRET_KEY' not in locals():
         SECRET_KEY = 'PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHka'
