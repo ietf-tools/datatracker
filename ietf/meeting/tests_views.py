@@ -4754,7 +4754,7 @@ class SessionDetailsTests(TestCase):
                 0,
                 "second session proposed slides should be linked for approval",
             )
-        
+
 
 class EditScheduleListTests(TestCase):
     def setUp(self):
@@ -7344,6 +7344,62 @@ class MaterialsTests(TestCase):
         contents = fd.read()
         fd.close()
         self.assertIn('third version', contents)
+
+    @override_settings(
+        MEETECHO_API_CONFIG="fake settings"
+    )  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_notify_meetecho_of_all_slides(self, mock_slides_manager_cls):
+        session = SessionFactory(meeting__type_id="ietf")
+        meeting = session.meeting
+
+        # bad meeting
+        url = urlreverse(
+            "ietf.meeting.views.notify_meetecho_of_all_slides",
+            kwargs={"num": 9999, "acronym": session.group.acronym},
+        )
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+        r = self.client.post(url)
+        self.assertEqual(r.status_code, 404)
+        self.assertFalse(mock_slides_manager_cls.called)
+        self.client.logout()
+
+        # good meeting
+        url = urlreverse(
+            "ietf.meeting.views.notify_meetecho_of_all_slides",
+            kwargs={"num": meeting.number, "acronym": session.group.acronym},
+        )
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 405)
+        self.assertFalse(mock_slides_manager_cls.called)
+        mock_slides_manager = mock_slides_manager_cls.return_value
+        mock_slides_manager.send_update.return_value = True
+        r = self.client.post(url)
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(mock_slides_manager.send_update.call_count, 1)
+        self.assertEqual(mock_slides_manager.send_update.call_args, call(session))
+        r = self.client.get(r["Location"])
+        messages = list(r.context["messages"])
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]), f"Notified Meetecho about slides for {session}"
+        )
+
+        mock_slides_manager.send_update.reset_mock()
+        mock_slides_manager.send_update.return_value = False
+        r = self.client.post(url)
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(mock_slides_manager.send_update.call_count, 1)
+        self.assertEqual(mock_slides_manager.send_update.call_args, call(session))
+        r = self.client.get(r["Location"])
+        messages = list(r.context["messages"])
+        self.assertEqual(len(messages), 1)
+        self.assertIn(
+            "No sessions were eligible for Meetecho slides update.", str(messages[0])
+        )
 
 
 @override_settings(IETF_NOTES_URL='https://notes.ietf.org/')
