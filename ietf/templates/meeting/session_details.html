@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2026, All Rights Reserved #}
 {% load origin ietf_filters static %}
 {% block title %}{{ meeting }} : {{ group.acronym }}{% endblock %}
 {% block morecss %}
@@ -53,69 +53,20 @@
             {% endif %}
         {% if forloop.last %}</div>{% endif %}
     {% endfor %}
+    {% comment %}
+    The existence of an element with id canManageMaterialsFlag is checked in
+    session_details.js to determine whether it should init the sortable tables.
+    Not the most elegant approach, but it works.
+    {% endcomment %}
+    {% if can_manage_materials %} <div id="canManageMaterialsFlag"></div>{% endif %}
 {% endblock %}
 {% block js %}
     <script src="{% static 'ietf/js/list.js' %}"></script>
     <script src="{% static 'ietf/js/moment.js' %}"></script>
     <script src="{% static 'ietf/js/upcoming.js' %}"></script>
     <script src="{% static 'ietf/js/timezone.js' %}"></script>
-    <script>
-    $(function () {
-            // Init with best guess at local timezone.
-            ietf_timezone.set_tz_change_callback(timezone_changed);
-            ietf_timezone.initialize('local');
-    });
-    </script>
     {% if can_manage_materials %}
         <script src="{% static 'ietf/js/sortable.js' %}"></script>
-        <script>
-            var sortables=[];
-            var options = {
-                group: "slides",
-                animation: 150,
-                handle: ".drag-handle",
-                onAdd: function(event) {onAdd(event)},
-                onRemove: function(event) {onRemove(event)},
-                onEnd: function(event) {onEnd(event)}
-            };
-
-            function onAdd(event) {
-                var old_session = event.from.getAttribute("data-session");
-                var new_session = event.to.getAttribute("data-session");
-                $.post(event.to.getAttribute("data-add-to-session"), {
-                    'order': event.newIndex + 1,
-                    'name': event.item.getAttribute("name")
-                });
-                $(event.item).find("td:eq(1)").find("a").each(function(){
-                    $(this).attr("href", $(this).attr("href").replace(old_session,new_session) );
-                });
-            }
-
-            function onRemove(event) {
-                var old_session = event.from.getAttribute("data-session");
-                $.post(event.from.getAttribute("data-remove-from-session"),{
-                    'oldIndex': event.oldIndex + 1,
-                    'name': event.item.getAttribute("name")
-                });
-            }
-
-            function onEnd(event) {
-                if (event.to == event.from) {
-                    $.post(event.from.getAttribute("data-reorder-in-session"),{
-                        'oldIndex': event.oldIndex + 1,
-                        'newIndex': event.newIndex + 1
-                    });
-                }
-            }
-
-            $(document).ready(function() {
-
-                $(".slides tbody").each(function() {
-                    sortables.push(Sortable.create(this, options));
-                });
-
-            });
-
-        </script>
     {% endif %}
+    <script src="{% static 'ietf/js/session_details.js' %}"></script>
 {% endblock %}
