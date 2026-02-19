@@ -53,12 +53,28 @@
             {% endif %}
         {% if forloop.last %}</div>{% endif %}
     {% endfor %}
+    {% if user|has_role:"Secretariat" %}
+        <div class="card text-dark bg-warning mt-5 mb-3">
+            <div class="card-header">
+                Secretariat Only
+            </div>
+            <div class="card-body">
+                <form method="post"
+                      action="{% url 'ietf.meeting.views.notify_meetecho_of_all_slides' num=meeting.number acronym=group.acronym %}">
+                    {% csrf_token %}
+                    <button class="btn btn-primary" type="submit">
+                        Notify Meetecho of Slides
+                    </button>
+                </form>
+            </div>
+        </div>
+    {% endif %}
     {% comment %}
     The existence of an element with id canManageMaterialsFlag is checked in
     session_details.js to determine whether it should init the sortable tables.
     Not the most elegant approach, but it works.
     {% endcomment %}
-    {% if can_manage_materials %} <div id="canManageMaterialsFlag"></div>{% endif %}
+    {% if can_manage_materials %} <div id="can-manage-materials-flag"></div>{% endif %}
 {% endblock %}
 {% block js %}
     <script src="{% static 'ietf/js/list.js' %}"></script>
