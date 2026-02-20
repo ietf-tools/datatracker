@@ -52,7 +52,7 @@ class RfcFilter(filters.FilterSet):
     stream = filters.ModelMultipleChoiceFilter(
         queryset=StreamName.objects.filter(used=True)
     )
-    numbers = NumberInFilter(
+    number = NumberInFilter(
         field_name="rfc_number"
     )
     group = filters.ModelMultipleChoiceFilter(
