@@ -952,7 +952,7 @@ class RfcAuthor(models.Model):
 
     @property
     def email(self) -> Email | None:
-        return self.person.email() if self.person else ""
+        return self.person.email() if self.person else None
 
 
 class DocumentAuthorInfo(models.Model):
