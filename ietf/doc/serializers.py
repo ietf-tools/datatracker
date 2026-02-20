@@ -16,12 +16,6 @@ from .models import Document, DocumentAuthor, RfcAuthor
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
     """Serializer for an RfcAuthor / DocumentAuthor in a response"""
-    email = serializers.EmailField(
-        source="person.email_address",
-        help_text="Author's current email address",
-        allow_blank=True,
-        read_only=True
-    )
 
     datatracker_person_path = serializers.URLField(
         source="person.get_absolute_url",
@@ -40,6 +34,7 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
             "country",
             "datatracker_person_path",
         ]
+        read_only_fields = ["email"]
 
     def to_representation(self, instance):
         """instance -> primitive data types
@@ -54,7 +49,6 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
                 titlepage_name=document_author.person.plain_name(),
                 is_editor=False,
                 person=document_author.person,
-                email=document_author.email,
                 affiliation=document_author.affiliation,
                 country=document_author.country,
                 order=document_author.order,

@@ -242,6 +242,6 @@ admin.site.register(StoredObject, StoredObjectAdmin)
 
 class RfcAuthorAdmin(admin.ModelAdmin):
     list_display = ['id', 'document', 'titlepage_name', 'person', 'email', 'affiliation', 'country', 'order']
-    search_fields = ['document__name', 'titlepage_name', 'person__name', 'email__address', 'affiliation', 'country']
-    raw_id_fields = ["document", "person", "email"]
+    search_fields = ['document__name', 'titlepage_name', 'person__name', 'email', 'affiliation', 'country']
+    raw_id_fields = ["document", "person"]
 admin.site.register(RfcAuthor, RfcAuthorAdmin)
