@@ -180,7 +180,7 @@ class RfcStatusSerializer(serializers.Serializer):
 
 
 class ShepherdSerializer(serializers.Serializer):
-    email = serializers.EmailField(source="formatted_email")
+    email = serializers.EmailField(source="email_address")
 
 
 class RelatedDraftSerializer(serializers.Serializer):
@@ -217,7 +217,7 @@ class RfcFormatSerializer(serializers.Serializer):
 
 class RfcMetadataSerializer(serializers.ModelSerializer):
     """Serialize metadata of an RFC
-    
+
     This needs to be called with a Document queryset that has been processed with
     api.augment_rfc_queryset() or it very likely will not work. Some of the typing
     refers to Document, but this should really be WithAnnotations[Document, ...].
@@ -308,10 +308,9 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
         else:
             # Fallback in case augment_rfc_queryset() was not called
             log.log(
-                f"Warning: {self.__class__}.get_draft() called without "
-                f"prefetched draft"
+                f"Warning: {self.__class__}.get_draft() called without prefetched draft"
             )
-            related_doc = doc.came_from_draft() 
+            related_doc = doc.came_from_draft()
         return RelatedDraftSerializer(related_doc).data
 
 
