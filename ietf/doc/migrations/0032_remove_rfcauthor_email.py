@@ -5,7 +5,7 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("doc", "0030_alter_dochistory_title_alter_document_title"),
+        ("doc", "0031_change_draft_stream_ietf_state_descriptions"),
     ]
 
     operations = [
