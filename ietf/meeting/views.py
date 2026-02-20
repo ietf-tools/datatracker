@@ -5710,6 +5710,52 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                   })
 
 
+@role_required("Secretariat")
+def notify_meetecho_of_all_slides(request, num, acronym):
+    """Notify meetecho of state of all slides for the group
+
+    Respects the usual notification window around each session. Meetecho will ignore
+    notices outside that window anyway, so no sense sending them.
+    """
+    meeting = get_meeting(num=num, type_in=None)  # raises 404
+    if request.method != "POST":
+        return HttpResponseNotAllowed(
+            content="Method not allowed",
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+            permitted_methods=("POST",),
+        )
+    scheduled_sessions = [
+        session
+        for session in get_sessions(meeting.number, acronym)
+        if session.current_status == "sched"
+    ]
+    sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+    updated = []
+    for session in scheduled_sessions:
+        if sm.send_update(session):
+            updated.append(session)
+    if len(updated) > 0:
+        messages.success(
+            request,
+            f"Notified Meetecho about slides for {','.join(str(s) for s in updated)}",
+        )
+    elif sm.slides_notify_time is not None:
+        messages.warning(
+            request,
+            "No sessions were eligible for Meetecho slides update. Updates are "
+            f"only sent within {sm.slides_notify_time} before or after the session.",
+        )
+    else:
+        messages.warning(
+            request,
+            "No sessions were eligible for Meetecho slides update. Updates are "
+            "currently disabled.",
+        )
+    return redirect(
+        "ietf.meeting.views.session_details", num=meeting.number, acronym=acronym
+    )
+
+
 def import_session_minutes(request, session_id, num):
     """Import session minutes from the ietf.notes.org site
 
