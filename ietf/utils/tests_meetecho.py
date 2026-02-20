@@ -547,7 +547,8 @@ class SlidesManagerTests(TestCase):
         sm = SlidesManager(settings.MEETECHO_API_CONFIG)
         session = SessionFactory()
         slides_doc = DocumentFactory(type_id="slides")
-        sm.add(session, slides_doc, 13)
+        retval = sm.add(session, slides_doc, 13)
+        self.assertIs(retval, True)
         self.assertTrue(mock_wg_token.called)
         self.assertTrue(mock_add.called)
         self.assertEqual(
@@ -565,6 +566,14 @@ class SlidesManagerTests(TestCase):
             ),
         )
 
+        # Test return value when no update is sent. Really ought to do a more
+        # careful test of the _should_send_update() method.
+        sm = SlidesManager(
+            settings.MEETECHO_API_CONFIG | {"slides_notify_time": None}
+        )
+        retval = sm.add(session, slides_doc, 14)
+        self.assertIs(retval, False)
+
     @patch("ietf.utils.meetecho.MeetechoAPI.update_slide_decks")
     @patch("ietf.utils.meetecho.MeetechoAPI.delete_slide_deck")
     def test_delete(self, mock_delete, mock_update, mock_wg_token):
@@ -580,7 +589,8 @@ class SlidesManagerTests(TestCase):
             sm.delete(session, slides_doc)  # can't remove slides still attached to the session
         self.assertFalse(any([mock_wg_token.called, mock_delete.called, mock_update.called]))
 
-        sm.delete(session, removed_slides_doc)
+        retval = sm.delete(session, removed_slides_doc)
+        self.assertIs(retval, True)
         self.assertTrue(mock_wg_token.called)
         self.assertTrue(mock_delete.called)
         self.assertEqual(
@@ -609,9 +619,18 @@ class SlidesManagerTests(TestCase):
         
         # Delete the other session and check that we don't make the update call
         slides.delete()
-        sm.delete(session, slides_doc)
+        retval = sm.delete(session, slides_doc)
+        self.assertIs(retval, True)
         self.assertTrue(mock_delete.called)
         self.assertFalse(mock_update.called)
+        
+        # Test return value when no update is sent. Really ought to do a more
+        # careful test of the _should_send_update() method.
+        sm = SlidesManager(
+            settings.MEETECHO_API_CONFIG | {"slides_notify_time": None}
+        )
+        retval = sm.delete(session, slides_doc)
+        self.assertIs(retval, False)
 
     @patch("ietf.utils.meetecho.MeetechoAPI.delete_slide_deck")
     @patch("ietf.utils.meetecho.MeetechoAPI.add_slide_deck")
@@ -619,7 +638,8 @@ class SlidesManagerTests(TestCase):
         sm = SlidesManager(settings.MEETECHO_API_CONFIG)
         slides = SessionPresentationFactory(document__type_id="slides", order=23)
         slides_doc = slides.document
-        sm.revise(slides.session, slides.document)
+        retval = sm.revise(slides.session, slides_doc)
+        self.assertIs(retval, True)
         self.assertTrue(mock_wg_token.called)
         self.assertTrue(mock_delete.called)
         self.assertEqual(
@@ -642,13 +662,22 @@ class SlidesManagerTests(TestCase):
             ),
         )
 
+        # Test return value when no update is sent. Really ought to do a more
+        # careful test of the _should_send_update() method.
+        sm = SlidesManager(
+            settings.MEETECHO_API_CONFIG | {"slides_notify_time": None}
+        )
+        retval = sm.revise(slides.session, slides_doc)
+        self.assertIs(retval, False)
+
 
     @patch("ietf.utils.meetecho.MeetechoAPI.update_slide_decks")
     def test_send_update(self, mock_send_update, mock_wg_token):
         sm = SlidesManager(settings.MEETECHO_API_CONFIG)
         slides = SessionPresentationFactory(document__type_id="slides")
         SessionPresentationFactory(session=slides.session, document__type_id="agenda")
-        sm.send_update(slides.session)
+        retval = sm.send_update(slides.session)
+        self.assertIs(retval, True)
         self.assertTrue(mock_wg_token.called)
         self.assertTrue(mock_send_update.called)
         self.assertEqual(
@@ -667,3 +696,11 @@ class SlidesManagerTests(TestCase):
                 ]
             )
         )
+
+        # Test return value when no update is sent. Really ought to do a more
+        # careful test of the _should_send_update() method.
+        sm = SlidesManager(
+            settings.MEETECHO_API_CONFIG | {"slides_notify_time": None}
+        )
+        retval = sm.send_update(slides.session)
+        self.assertIs(retval, False)

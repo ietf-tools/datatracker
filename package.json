@@ -148,6 +148,7 @@
         "ietf/static/js/moment.js",
         "ietf/static/js/password_strength.js",
         "ietf/static/js/select2.js",
+        "ietf/static/js/session_details.js",
         "ietf/static/js/session_details_form.js",
         "ietf/static/js/session_form.js",
         "ietf/static/js/session_request.js",
