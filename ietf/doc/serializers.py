@@ -9,7 +9,11 @@ from django.db.models.query import QuerySet
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from ietf.group.serializers import GroupSerializer
+from ietf.group.serializers import (
+    AreaDirectorSerializer,
+    AreaSerializer,
+    GroupSerializer,
+)
 from ietf.name.serializers import StreamNameSerializer
 from .models import Document, DocumentAuthor, RfcAuthor
 
@@ -204,6 +208,10 @@ class RfcFormatSerializer(serializers.Serializer):
     name = serializers.CharField(help_text="Name of blob in the blob store")
 
 
+class ShepherdSerializer(serializers.Serializer):
+    email = serializers.EmailField(source="formatted_email")
+
+
 class RfcMetadataSerializer(serializers.ModelSerializer):
     """Serialize metadata of an RFC"""
 
@@ -212,8 +220,11 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     status = RfcStatusSerializer(source="*")
     authors = serializers.SerializerMethodField()
     group = GroupSerializer()
-    area = GroupSerializer(source="group.area", required=False)
+    area = AreaSerializer(source="group.area", required=False)
     stream = StreamNameSerializer()
+    shepherd = serializers.SerializerMethodField()
+    ad = AreaDirectorSerializer(source="ad.email", read_only=True)
+    group_list_email = serializers.EmailField(source="group.list_email", read_only=True)
     identifiers = serializers.SerializerMethodField()
     draft = serializers.SerializerMethodField()
     obsoletes = RelatedRfcSerializer(many=True, read_only=True)
@@ -239,6 +250,9 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             "group",
             "area",
             "stream",
+            "shepherd",
+            "ad",
+            "group_list_email",
             "identifiers",
             "obsoletes",
             "obsoleted_by",
@@ -276,12 +290,29 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
         return DocIdentifierSerializer(instance=identifiers, many=True).data
 
     @extend_schema_field(RelatedDraftSerializer)
-    def get_draft(self, object):
+    def get_draft(self, doc: Document):
         try:
-            related_doc = object.drafts[0]
+            related_doc = doc.drafts[0]
         except IndexError:
             return None
         return RelatedDraftSerializer(related_doc).data
+
+    @extend_schema_field(ShepherdSerializer)
+    def get_shepherd(self, doc: Document):
+        """Get shepherd, falling back to originating draft if needed
+
+        This could be simplified if we backfilled shepherd for RFC Documents
+        """
+        shepherd = (
+            doc.shepherd
+            if doc.shepherd is not None
+            else (
+                doc.came_from_draft().shepherd
+                if doc.came_from_draft() is not None
+                else None
+            )
+        )
+        return None if shepherd is None else ShepherdSerializer(shepherd).data
 
 
 class RfcSerializer(RfcMetadataSerializer):
