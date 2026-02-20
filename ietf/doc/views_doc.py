@@ -1657,7 +1657,7 @@ def document_json(request, name, rev=None):
         doc.rfcauthor_set
         if doc.type_id == "rfc" and doc.rfcauthor_set.exists()
         else doc.documentauthor_set
-    ).select_related("person", "email").order_by("order")
+    ).select_related("person").prefetch_related("person__email_set").order_by("order")
     data["authors"] = [
         {
             "name": author.titlepage_name if hasattr(author, "titlepage_name") else author.person.name,

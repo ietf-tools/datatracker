@@ -9,14 +9,20 @@ from django.db.models.query import QuerySet
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from ietf.group.serializers import GroupSerializer
+from ietf.group.serializers import (
+    AreaDirectorSerializer,
+    AreaSerializer,
+    GroupSerializer,
+)
 from ietf.name.serializers import StreamNameSerializer
+from ietf.utils import log
 from .models import Document, DocumentAuthor, RfcAuthor
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
     """Serializer for an RfcAuthor / DocumentAuthor in a response"""
 
+    email = serializers.EmailField(source="email.address", read_only=True)
     datatracker_person_path = serializers.URLField(
         source="person.get_absolute_url",
         required=False,
@@ -29,7 +35,7 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
             "titlepage_name",
             "is_editor",
             "person",
-            "email",  # relies on email.pk being email.address
+            "email",
             "affiliation",
             "country",
             "datatracker_person_path",
@@ -48,7 +54,6 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
                 titlepage_name=document_author.person.plain_name(),
                 is_editor=False,
                 person=document_author.person,
-                email=document_author.email,
                 affiliation=document_author.affiliation,
                 country=document_author.country,
                 order=document_author.order,
@@ -174,10 +179,16 @@ class RfcStatusSerializer(serializers.Serializer):
         return super().to_representation(instance=RfcStatus.from_document(instance))
 
 
+class ShepherdSerializer(serializers.Serializer):
+    email = serializers.EmailField(source="email_address")
+
+
 class RelatedDraftSerializer(serializers.Serializer):
     id = serializers.IntegerField(source="source.id")
     name = serializers.CharField(source="source.name")
     title = serializers.CharField(source="source.title")
+    shepherd = ShepherdSerializer(source="source.shepherd")
+    ad = AreaDirectorSerializer(source="source.ad")
 
 
 class RelatedRfcSerializer(serializers.Serializer):
@@ -205,15 +216,23 @@ class RfcFormatSerializer(serializers.Serializer):
 
 
 class RfcMetadataSerializer(serializers.ModelSerializer):
-    """Serialize metadata of an RFC"""
+    """Serialize metadata of an RFC
+
+    This needs to be called with a Document queryset that has been processed with
+    api.augment_rfc_queryset() or it very likely will not work. Some of the typing
+    refers to Document, but this should really be WithAnnotations[Document, ...].
+    However, have not been able to make that work yet.
+    """
 
     number = serializers.IntegerField(source="rfc_number")
     published = serializers.DateField()
     status = RfcStatusSerializer(source="*")
     authors = serializers.SerializerMethodField()
     group = GroupSerializer()
-    area = GroupSerializer(source="group.area", required=False)
+    area = AreaSerializer(source="group.area", required=False)
     stream = StreamNameSerializer()
+    ad = AreaDirectorSerializer(read_only=True)
+    group_list_email = serializers.EmailField(source="group.list_email", read_only=True)
     identifiers = serializers.SerializerMethodField()
     draft = serializers.SerializerMethodField()
     obsoletes = RelatedRfcSerializer(many=True, read_only=True)
@@ -239,6 +258,8 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             "group",
             "area",
             "stream",
+            "ad",
+            "group_list_email",
             "identifiers",
             "obsoletes",
             "obsoleted_by",
@@ -276,11 +297,20 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
         return DocIdentifierSerializer(instance=identifiers, many=True).data
 
     @extend_schema_field(RelatedDraftSerializer)
-    def get_draft(self, object):
-        try:
-            related_doc = object.drafts[0]
-        except IndexError:
-            return None
+    def get_draft(self, doc: Document):
+        if hasattr(doc, "drafts"):
+            # This is the expected case - drafts is added by a Prefetch in
+            # the augment_rfc_queryset() method.
+            try:
+                related_doc = doc.drafts[0]
+            except IndexError:
+                return None
+        else:
+            # Fallback in case augment_rfc_queryset() was not called
+            log.log(
+                f"Warning: {self.__class__}.get_draft() called without prefetched draft"
+            )
+            related_doc = doc.came_from_draft()
         return RelatedDraftSerializer(related_doc).data
 
 
