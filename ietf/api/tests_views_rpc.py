@@ -159,7 +159,7 @@ class RpcApiTests(APITestCase):
                     "titlepage_name": f"titlepage {author.name}",
                     "is_editor": False,
                     "person": author,
-                    "email": author.email_address(),
+                    "email": author.email(),
                     "affiliation": "Some Affiliation",
                     "country": "CA",
                 }

@@ -951,8 +951,8 @@ class RfcAuthor(models.Model):
         ]
 
     @property
-    def email(self) -> str:
-        return self.person.email_address() if self.person else ""
+    def email(self) -> Email | None:
+        return self.person.email() if self.person else ""
 
 
 class DocumentAuthorInfo(models.Model):
