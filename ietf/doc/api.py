@@ -48,7 +48,7 @@ class RfcFilter(filters.FilterSet):
         queryset=StreamName.objects.filter(used=True)
     )
     group = filters.ModelMultipleChoiceFilter(
-        queryset=Group.objects.wgs(),
+        queryset=Group.objects.all(),
         field_name="group__acronym",
         to_field_name="acronym",
     )
