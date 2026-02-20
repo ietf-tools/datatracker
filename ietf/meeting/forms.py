@@ -484,11 +484,10 @@ class UploadBlueSheetForm(FileUploadForm):
 class ApplyToAllFileUploadForm(FileUploadForm):
     """FileUploadField that adds an apply_to_all checkbox
 
-    Checkbox can be disabled by passing show_apply_to_all_checkbox=False to the constructor.
-    This entirely removes the field from the form.
+    Checkbox can be removed from form by passing show_apply_to_all_checkbox=False to the constructor.
     """
     # Note: subclasses must set doc_type for FileUploadForm
-    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=True,required=False)
+    apply_to_all = forms.BooleanField(label='Post to all sessions for this group at this meeting', initial=True, required=False)
 
     def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
         super().__init__(*args, **kwargs)
