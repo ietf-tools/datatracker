@@ -187,8 +187,8 @@ class RelatedDraftSerializer(serializers.Serializer):
     id = serializers.IntegerField(source="source.id")
     name = serializers.CharField(source="source.name")
     title = serializers.CharField(source="source.title")
-    shepherd = ShepherdSerializer(source="source.shepherd")
-    ad = AreaDirectorSerializer(source="source.ad")
+    shepherd = ShepherdSerializer(source="source.shepherd", allow_null=True)
+    ad = AreaDirectorSerializer(source="source.ad", allow_null=True)
 
 
 class RelatedRfcSerializer(serializers.Serializer):
@@ -231,7 +231,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     group = GroupSerializer()
     area = AreaSerializer(source="group.area", required=False)
     stream = StreamNameSerializer()
-    ad = AreaDirectorSerializer(read_only=True)
+    ad = AreaDirectorSerializer(read_only=True, allow_null=True)
     group_list_email = serializers.EmailField(source="group.list_email", read_only=True)
     identifiers = serializers.SerializerMethodField()
     draft = serializers.SerializerMethodField()
