@@ -42,10 +42,18 @@ class RfcLimitOffsetPagination(LimitOffsetPagination):
     max_limit = 500
 
 
+class NumberInFilter(filters.BaseInFilter, filters.NumberFilter):
+    """Filter against a comma-separated list of numbers"""
+    pass
+
+
 class RfcFilter(filters.FilterSet):
     published = filters.DateFromToRangeFilter()
     stream = filters.ModelMultipleChoiceFilter(
         queryset=StreamName.objects.filter(used=True)
+    )
+    numbers = NumberInFilter(
+        field_name="rfc_number"
     )
     group = filters.ModelMultipleChoiceFilter(
         queryset=Group.objects.all(),
