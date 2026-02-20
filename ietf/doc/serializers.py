@@ -15,6 +15,7 @@ from ietf.group.serializers import (
     GroupSerializer,
 )
 from ietf.name.serializers import StreamNameSerializer
+from ietf.utils import log
 from .models import Document, DocumentAuthor, RfcAuthor
 
 
@@ -215,7 +216,13 @@ class RfcFormatSerializer(serializers.Serializer):
 
 
 class RfcMetadataSerializer(serializers.ModelSerializer):
-    """Serialize metadata of an RFC"""
+    """Serialize metadata of an RFC
+    
+    This needs to be called with a Document queryset that has been processed with
+    api.augment_rfc_queryset() or it very likely will not work. Some of the typing
+    refers to Document, but this should really be WithAnnotations[Document, ...].
+    However, have not been able to make that work yet.
+    """
 
     number = serializers.IntegerField(source="rfc_number")
     published = serializers.DateField()
@@ -291,10 +298,20 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(RelatedDraftSerializer)
     def get_draft(self, doc: Document):
-        try:
-            related_doc = doc.drafts[0]
-        except IndexError:
-            return None
+        if hasattr(doc, "drafts"):
+            # This is the expected case - drafts is added by a Prefetch in
+            # the augment_rfc_queryset() method.
+            try:
+                related_doc = doc.drafts[0]
+            except IndexError:
+                return None
+        else:
+            # Fallback in case augment_rfc_queryset() was not called
+            log.log(
+                f"Warning: {self.__class__}.get_draft() called without "
+                f"prefetched draft"
+            )
+            related_doc = doc.came_from_draft() 
         return RelatedDraftSerializer(related_doc).data
 
 
