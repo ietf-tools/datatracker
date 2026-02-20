@@ -143,21 +143,22 @@ class RpcApiTests(APITestCase):
         self.assertEqual(rfc.title, "RFC " + draft.title)
         self.assertEqual(rfc.documentauthor_set.count(), 0)
         self.assertEqual(
-            list(
-                rfc.rfcauthor_set.values(
-                    "titlepage_name",
-                    "is_editor",
-                    "person",
-                    "email",
-                    "affiliation",
-                    "country",
-                )
-            ),
+            [
+                {
+                    "titlepage_name": ra.titlepage_name,
+                    "is_editor": ra.is_editor,
+                    "person": ra.person,
+                    "email": ra.email,
+                    "affiliation": ra.affiliation,
+                    "country": ra.country,
+                }
+                for ra in rfc.rfcauthor_set.all()
+            ],
             [
                 {
                     "titlepage_name": f"titlepage {author.name}",
                     "is_editor": False,
-                    "person": author.pk,
+                    "person": author,
                     "email": author.email_address(),
                     "affiliation": "Some Affiliation",
                     "country": "CA",
