@@ -90,4 +90,4 @@ weasyprint>=66.0
 xml2rfc>=3.30.0
 xym>=0.6,<1.0
 zxcvbn>=4.5.0
-types-zxcvbn~=4.5.0.20250223  # match zxcvbn version
+types-zxcvbn~=4.5.0.20250809  # match zxcvbn version
