@@ -17,7 +17,7 @@ Django>4.2,<5
 django-admin-rangefilter>=0.13.3
 django-analytical>=3.2.0
 django-bootstrap5>=25.1
-django-celery-beat>=2.7.0,<2.8.0  # pin until https://github.com/celery/django-celery-beat/issues/875 is resolved, then revisit
+django-celery-beat>=2.7.0,<2.9.0  # pin until https://github.com/celery/django-celery-beat/issues/875 is resolved, then revisit
 django-celery-results>=2.6.0
 django-csp>=3.7
 django-cors-headers>=4.7.0
