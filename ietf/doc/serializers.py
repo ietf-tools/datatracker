@@ -300,7 +300,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
         if doc.group is None:
             return None
         parent = doc.group.parent
-        if parent.is_active and parent.type_id == "area":
+        if parent.type_id == "area":
             return AreaSerializer(parent).data
         return None
 
