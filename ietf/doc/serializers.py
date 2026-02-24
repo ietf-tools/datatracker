@@ -229,7 +229,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     status = RfcStatusSerializer(source="*")
     authors = serializers.SerializerMethodField()
     group = GroupSerializer()
-    area = AreaSerializer(source="group.area", required=False)
+    area = serializers.SerializerMethodField()
     stream = StreamNameSerializer()
     ad = AreaDirectorSerializer(read_only=True, allow_null=True)
     group_list_email = serializers.EmailField(source="group.list_email", read_only=True)
@@ -286,6 +286,23 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             instance=author_queryset,
             many=True,
         ).data
+
+    @extend_schema_field(AreaSerializer(required=False))
+    def get_area(self, doc: Document):
+        """Get area for the RFC
+        
+        This logic might be better moved to Document or a combination of Document
+        and Group. The current (2026-02-24) Group.area() method is not strict enough:
+        it does not limit to WG groups or IETF-stream documents.
+        """
+        if doc.stream_id != "ietf":
+            return None
+        if doc.group is None:
+            return None
+        parent = doc.group.parent
+        if parent.is_active and parent.type_id == "area":
+            return AreaSerializer(parent).data
+        return None
 
     @extend_schema_field(DocIdentifierSerializer(many=True))
     def get_identifiers(self, doc: Document):
