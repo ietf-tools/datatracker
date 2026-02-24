@@ -35,6 +35,7 @@ from .utils import (
     investigate_fragment,
 )
 from .utils_bofreq import fixup_bofreq_timestamps
+from .utils_errata import signal_update_rfc_metadata
 
 
 @shared_task
@@ -155,3 +156,7 @@ def rebuild_reference_relations_task(doc_names: list[str]):
 @shared_task
 def fixup_bofreq_timestamps_task():  # pragma: nocover
     fixup_bofreq_timestamps()
+
+@shared_task
+def signal_update_rfc_metadata_task(rfc_number_list=()):
+    signal_update_rfc_metadata(rfc_number_list)
