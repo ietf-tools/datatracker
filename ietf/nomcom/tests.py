@@ -158,7 +158,7 @@ class NomcomViewsTest(TestCase):
 
         # Verify that nominee table has links to person and feedback pages
         nom_pos = self.create_nominee('accepted', COMMUNITY_USER, 'APP')
-        person_url = reverse('ietf.person.views.profile', 
+        person_url = reverse('ietf.person.views.profile_details', 
                              kwargs={'email_or_name': nom_pos.nominee.name()})
         feedback_url = reverse('ietf.nomcom.views.view_feedback_nominee', 
                                kwargs={'year': self.year, 'nominee_id': nom_pos.nominee.pk})
