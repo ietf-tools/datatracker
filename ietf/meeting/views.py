@@ -3723,9 +3723,9 @@ def upload_session_slides(request, session_id, num, name=None):
                     acronym=session.group.acronym,
                 )
     else:
-        initial = {}
+        initial = {"apply_to_all": False}
         if doc is not None:
-            initial = {"title": doc.title}
+            initial["title"] = doc.title
         form = UploadSlidesForm(session, show_apply_to_all_checkbox, can_manage, initial=initial)
 
     return render(
@@ -5562,7 +5562,7 @@ def request_minutes(request, num=None):
 
 class ApproveSlidesForm(forms.Form):
     title = forms.CharField(max_length=255)
-    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=False,required=False)
+    apply_to_all = forms.BooleanField(label='Post to all sessions for this group at this meeting',initial=False,required=False)
 
     def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
         super(ApproveSlidesForm, self).__init__(*args, **kwargs )
