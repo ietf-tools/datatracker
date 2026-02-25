@@ -226,3 +226,40 @@ drwxrwxr-x   5  100999  100999    4096 May 25 07:56 client
 ```
 
 Try uninstalling Docker Desktop and installing Docker Compose manually. The Docker Compose bundled with Docker Desktop is incompatible with our software. See also [Rootless Docker: file ownership changes #3343](https://github.com/lando/lando/issues/3343), [Docker context desktop-linux has container permission issues #75](https://github.com/docker/desktop-linux/issues/75).
+
+### Using Podman with Docker Compose on Linux
+
+It is possible to use [Podman](https://podman.io) which runs rootless with Docker compose.  The
+steps below have been tested on Fedora Linux 42 with SELinux in enforcing mode, you may need
+to adapt them to your system. After cloning your fork of the repository, install podman,
+podman-docker and docker-compose. Then enable use of podman.socket and set a variable to
+indicate how Podman should use the socket.
+
+```bash
+$ sudo dnf install podman podman-docker docker-compose
+$ systemctl --user enable --now podman.socket
+$ export DOCKER_HOST=unix:///run/user/$UID/podman/podman.sock
+```
+
+Assuming your cloned repository is in a directory `datatracker`, you can then start a local
+instance using the run script in the docker directory.
+
+```bash
+$ git clone git@github.com:myusername/datatracker.git
+$ cd datatracker
+$ docker/run
+```
+
+Once the run is complete, file permissions may have changed. Restore them so
+that you can make changes to the source code.
+
+```bash
+$ cd ..
+$ sudo restorecon -rv datatracker
+$ chown -R $USER:$USER datatracker
+```
+
+This subsection is based on:
+
+- [Use Docker Compose with Podman to Orchestrate Containers on Fedora Linux](https://fedoramagazine.org/use-docker-compose-with-podman-to-orchestrate-containers-on-fedora/)
+- [How to use docker-compose with Podman on Linux](https://linuxconfig.org/how-to-use-docker-compose-with-podman-on-linux)
