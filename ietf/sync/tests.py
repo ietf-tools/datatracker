@@ -301,6 +301,7 @@ class RFCSyncTests(TestCase):
             ad=Person.objects.get(user__username='ad'),
             external_url="http://my-external-url.example.com",
             note="this is a note",
+            pages=54,  # make sure this is not 42
         )
         DocumentAuthorFactory.create_batch(2, document=draft_doc)
         draft_doc.action_holders.add(draft_doc.ad)  # not normally set, but add to be sure it's cleared
