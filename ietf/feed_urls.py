@@ -2,7 +2,7 @@ from django.views.generic import RedirectView
 from django.conf import settings
 
 from ietf.doc.feeds import DocumentChangesFeed, InLastCallFeed, RfcFeed
-from ietf.group.feeds import GroupChangesFeed
+from ietf.group.feeds import GroupChangesFeed, ReviewRequestFeed
 from ietf.iesg.feeds import IESGAgendaFeed
 from ietf.ipr.feeds import LatestIprDisclosuresFeed
 from ietf.liaisons.feeds import LiaisonStatementsFeed
@@ -20,4 +20,5 @@ urlpatterns = [
     url(r'^wg-proceedings/$', LatestMeetingMaterialFeed()),
     url(r'^rfc/(?P<year>\d{4})/?$', RfcFeed()),
     url(r'^rfc/$', RfcFeed()),
+    url(r'^review-requests/%(acronym)s/$' % settings.URL_REGEXPS, ReviewRequestFeed()),
 ]
