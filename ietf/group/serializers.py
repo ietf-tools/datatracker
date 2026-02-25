@@ -39,6 +39,6 @@ class AreaSerializer(serializers.ModelSerializer):
     @extend_schema_field(AreaDirectorSerializer(many=True))
     def get_ads(self, area: Group):
         return AreaDirectorSerializer(
-            area.ads() if area.is_active else Role.objects.none(),
+            area.ads if area.is_active else Role.objects.none(),
             many=True,
         ).data
