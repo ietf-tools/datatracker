@@ -54,7 +54,6 @@ class AreaSerializerTests(TestCase):
             {
                 "acronym": area.acronym,
                 "name": area.name,
-                "type": area.type.slug,
                 "ads": [],
             },
         )
@@ -62,7 +61,6 @@ class AreaSerializerTests(TestCase):
         serialized = AreaSerializer(area).data
         self.assertEqual(serialized["acronym"], area.acronym)
         self.assertEqual(serialized["name"], area.name)
-        self.assertEqual(serialized["type"], area.type.slug)
         self.assertCountEqual(
             serialized["ads"],
             [{"email": ad.email.email_address()} for ad in ad_roles],
@@ -77,7 +75,6 @@ class AreaSerializerTests(TestCase):
             {
                 "acronym": area.acronym,
                 "name": area.name,
-                "type": area.type.slug,
                 "ads": [],
             },
         )
@@ -88,7 +85,6 @@ class AreaSerializerTests(TestCase):
             {
                 "acronym": area.acronym,
                 "name": area.name,
-                "type": area.type.slug,
                 "ads": [],
             },
         )
