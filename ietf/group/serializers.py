@@ -30,8 +30,15 @@ class AreaDirectorSerializer(serializers.Serializer):
 
 
 class AreaSerializer(serializers.ModelSerializer):
-    ads = AreaDirectorSerializer(many=True, read_only=True)
+    ads = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
-        fields = ["acronym", "name", "type", "ads"]
+        fields = ["acronym", "name", "ads"]
+
+    @extend_schema_field(AreaDirectorSerializer(many=True))
+    def get_ads(self, area: Group):
+        return AreaDirectorSerializer(
+            area.ads if area.is_active else Role.objects.none(),
+            many=True,
+        ).data
