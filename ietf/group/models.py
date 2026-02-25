@@ -6,6 +6,8 @@ import email.utils
 import os
 import re
 
+from simple_history.models import HistoricalRecords
+
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
@@ -411,6 +413,33 @@ class ChangeStateGroupEvent(GroupEvent):
 
 class MilestoneGroupEvent(GroupEvent):
     milestone = ForeignKey(GroupMilestone)
+
+
+class RoleBis(models.Model):
+    """A re-envisioned model of group Roles focusing on efficiency.
+
+    The original Role/RoleHistory model isn't capturing enough information to report on when
+    a person was an AD, or what the chairs of a workingroup have been since it formed. While
+    they were intended to, and could be repaired to do so, they are also inefficient for
+    answering history questions or building statistics.
+
+    This re-envisoning will take both "who is in a role now" and efficiently answering
+    questions about roles a person held, roles associated with a group across time, and
+    similar.
+
+    The intent is to be able to answer what we believe is correct about history questions
+    as of the time of the query  directly from the table rather than the tables simple history.
+    The simple history table will capture only why our belief about why history changed (and
+    who captured that change).
+    """
+
+    name = ForeignKey(RoleName)
+    group = ForeignKey(Group)
+    person = ForeignKey(Person)
+    start_time = models.DateTimeField(default=timezone.now)
+    end_time = models.DateTimeField(default=None)
+    email = ForeignKey(Email, help_text="Email address used by person for this role.")
+    history = HistoricalRecords()
 
 class Role(models.Model):
     name = ForeignKey(RoleName)
