@@ -216,6 +216,16 @@ class ReferenceSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "name"]
 
 
+def _update_authors(rfc, authors_data):
+    # Construct unsaved instances from validated author data
+    new_authors = [RfcAuthor(**ad) for ad in authors_data]
+    # Update the RFC with the new author set
+    with transaction.atomic():
+        change_events = update_rfcauthors(rfc, new_authors)
+        for event in change_events:
+            event.save()
+    return change_events
+
 class EditableRfcSerializer(serializers.ModelSerializer):
     # Would be nice to reconcile this with ietf.doc.serializers.RfcSerializer.
     # The purposes of that serializer (representing data for Red) and this one
@@ -232,15 +242,10 @@ class EditableRfcSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         assert isinstance(instance, Document)
+        assert instance.type_id == "rfc"
         authors_data = validated_data.pop("rfcauthor_set", None)
         if authors_data is not None:
-            # Construct unsaved instances from validated author data
-            new_authors = [RfcAuthor(**ad) for ad in authors_data]
-            # Update the RFC with the new author set
-            with transaction.atomic():
-                change_events = update_rfcauthors(instance, new_authors)
-                for event in change_events:
-                    event.save()
+            _update_authors(instance, authors_data)
         return instance
 
 
@@ -326,6 +331,9 @@ class RfcPubSerializer(serializers.ModelSerializer):
                     code="invalid-draft-spec",
                 )
         return data
+
+    def update(self, instance, validated_data):
+        raise RuntimeError("Cannot update with this serializer")
 
     def create(self, validated_data):
         """Publish an RFC"""
@@ -512,6 +520,177 @@ class RfcPubSerializer(serializers.ModelSerializer):
                 order=order,
                 **author_data,
             )
+        return rfc
+
+
+class RfcAmendMetadataSerializer(serializers.ModelSerializer):
+    published = serializers.DateTimeField(default_timezone=datetime.timezone.utc)
+    authors = RfcAuthorSerializer(source="rfcauthor_set", many=True)
+    subseries = serializers.ListField(
+        child=serializers.RegexField(
+            required=False,
+            # pattern: no leading 0, finite length (arbitrarily set to 5 digits)
+            regex=r"^(bcp|std|fyi)[1-9][0-9]{0,4}$", 
+        )
+    )
+
+    class Meta:
+        model = Document
+        fields = [
+            "published",
+            "title",
+            "authors",
+            "stream",
+            "abstract",
+            "pages",
+            "std_level",
+            "subseries",
+        ]
+
+    def create(self, validated_data):
+        raise RuntimeError("Cannot create with this serializer")
+
+    def update(self, instance, validated_data):
+        assert isinstance(instance, Document)
+        assert instance.type_id == "rfc"
+        rfc = instance  # get better name
+        breakpoint()
+
+        system_person = Person.objects.get(name="(System)")
+
+        # Remove data that needs special handling. Use a singleton object to detect
+        # missing values in case we ever support a value that needs None as an option.
+        omitted = object()
+        published = validated_data.pop("published", omitted)
+        subseries = validated_data.pop("subseries", omitted)
+        authors_data = validated_data.pop("authors", omitted)
+
+        # Transaction to clean up if something fails
+        with transaction.atomic():
+            # update the rfc Document itself
+            rfc_changes = []
+            
+            for attr, new_value in validated_data.items():
+                old_value = getattr(instance, attr)
+                if new_value != old_value:
+                    rfc_changes.append(
+                        f"changed {attr} to '{new_value}' from '{old_value}'"
+                    )
+                    setattr(instance, attr, new_value)
+            if len(rfc_changes) > 0:
+                rfc_change_summary = f" ({', '.join(rfc_changes)})"
+            else:
+                rfc_change_summary = ""
+            rfc_events = [
+                (
+                    DocEvent.objects.create(
+                        doc=rfc,
+                        rev=rfc.rev,
+                        by=system_person,
+                        type="sync_from_rfc_editor",
+                        desc=(
+                            "Metadata changes received from RFC Editor"
+                            + rfc_change_summary
+                        ),
+                    )
+                )
+            ]
+            if authors_data is not omitted:
+                rfc_events.extend(_update_authors(instance, authors_data))
+
+            if published is not omitted:
+                published_event = rfc.latest_event(type="published_rfc")
+                if published_event is None:
+                    # unexpected, but possible in theory
+                    rfc_events.append(
+                        DocEvent.objects.create(
+                            doc=rfc,
+                            rev=rfc.rev,
+                            type="published_rfc",
+                            time=published,
+                            by=system_person,
+                            desc="RFC published",
+                        )
+                    )
+                    rfc_events.append(
+                        DocEvent.objects.create(
+                            doc=rfc,
+                            rev=rfc.rev,
+                            type="sync_from_rfc_editor",
+                            by=system_person,
+                            desc=(
+                                f"Set publication timestamp to {published.isoformat()}"
+                            ),
+                        )
+                    )
+                else:
+                    original_pub_time = published_event.time
+                    if published != original_pub_time:
+                        published_event.time = published
+                        published_event.save()
+                        rfc_events.append(
+                            DocEvent.objects.create(
+                                doc=rfc,
+                                rev=rfc.rev,
+                                type="sync_from_rfc_editor",
+                                by=system_person,
+                                desc=(
+                                    f"Changed publication time to "
+                                    f"{published.isoformat()} from "
+                                    f"{original_pub_time.isoformat()}"
+                                )
+                            )
+                        )
+
+            # update subseries relations
+            if subseries is not omitted:
+                for subseries_doc_name in subseries:
+                    ss_slug = subseries_doc_name[:3]
+                    subseries_doc, ss_doc_created = Document.objects.get_or_create(
+                        type_id=ss_slug, name=subseries_doc_name
+                    )
+                    if ss_doc_created:
+                        subseries_doc.docevent_set.create(
+                            type=f"{ss_slug}_doc_created",
+                            by=system_person,
+                            desc=f"Created {subseries_doc_name} via update of {rfc.name}",
+                        )
+                    _, ss_rel_created = subseries_doc.relateddocument_set.get_or_create(
+                        relationship_id="contains", target=rfc
+                    )
+                    if ss_rel_created:
+                        subseries_doc.docevent_set.create(
+                            type="sync_from_rfc_editor",
+                            by=system_person,
+                            desc=f"Added {rfc.name} to {subseries_doc.name}",
+                        )
+                        rfc_events.append(
+                            rfc.docevent_set.create(
+                                type="sync_from_rfc_editor",
+                                by=system_person,
+                                desc=f"Added {rfc.name} to {subseries_doc.name}",
+                            )
+                        )
+                # Delete subseries relations that are no longer current
+                stale_subseries_relations = rfc.relations_that("contains").exclude(
+                    source__name__in=subseries
+                )
+                for stale_relation in stale_subseries_relations:
+                    stale_subseries_doc = stale_relation.source
+                    rfc_events.append(
+                        rfc.docevent_set.create(
+                            type="sync_from_rfc_editor",
+                            by=system_person,
+                            desc=f"Removed {rfc.name} from {stale_subseries_doc.name}",
+                        )
+                    )
+                    stale_subseries_doc.docevent_set.create(
+                        type="sync_from_rfc_editor",
+                        by=system_person,
+                        desc=f"Removed {rfc.name} from {stale_subseries_doc.name}",
+                    )
+                stale_subseries_relations.delete()
+                rfc.save_with_history(rfc_events)
         return rfc
 
 

@@ -33,9 +33,11 @@ from ietf.api.serializers_rpc import (
     RfcWithAuthorsSerializer,
     DraftWithAuthorsSerializer,
     NotificationAckSerializer, RfcPubSerializer, RfcFileSerializer,
-    EditableRfcSerializer,
+    EditableRfcSerializer, RfcAmendMetadataSerializer,
 )
-from ietf.doc.models import Document, DocHistory, RfcAuthor
+from ietf.doc.api import PrefetchRelatedDocument
+from ietf.doc.models import Document, DocHistory, RfcAuthor, SUBSERIES_DOC_TYPE_IDS, \
+    DocEvent
 from ietf.doc.serializers import RfcAuthorSerializer
 from ietf.doc.storage_utils import remove_from_storage, store_file, exists_in_storage
 from ietf.person.models import Email, Person
@@ -273,10 +275,27 @@ class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     )
 )
 class RfcViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
-    queryset = Document.objects.filter(type_id="rfc")
+    queryset = Document.objects.filter(type_id="rfc").prefetch_related(
+        PrefetchRelatedDocument(
+            to_attr="subseries",
+            relationship_id="contains",
+            reverse=True,
+            doc_type_ids=SUBSERIES_DOC_TYPE_IDS,
+        )
+    ).annotate(
+        published=Subquery(
+            DocEvent.objects.filter(
+                doc_id=OuterRef("pk"),
+                type="published_rfc",
+            )
+            .order_by("-time")
+            .values("time")[:1]
+        ),
+    )
+    
     api_key_endpoint = "ietf.api.views_rpc"
     lookup_field = "rfc_number"
-    serializer_class = EditableRfcSerializer
+    serializer_class = RfcAmendMetadataSerializer
 
     @action(detail=False, serializer_class=OriginalStreamSerializer)
     def rfc_original_stream(self, request):
