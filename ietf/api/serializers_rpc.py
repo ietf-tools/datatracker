@@ -524,14 +524,18 @@ class RfcPubSerializer(serializers.ModelSerializer):
 
 
 class RfcAmendMetadataSerializer(serializers.ModelSerializer):
-    published = serializers.DateTimeField(default_timezone=datetime.timezone.utc)
+    published = serializers.DateTimeField(
+        default_timezone=datetime.timezone.utc,
+        write_only=True,
+    )
     authors = RfcAuthorSerializer(source="rfcauthor_set", many=True)
     subseries = serializers.ListField(
         child=serializers.RegexField(
             required=False,
             # pattern: no leading 0, finite length (arbitrarily set to 5 digits)
             regex=r"^(bcp|std|fyi)[1-9][0-9]{0,4}$", 
-        )
+        ),
+        write_only=True,
     )
 
     class Meta:
@@ -554,7 +558,6 @@ class RfcAmendMetadataSerializer(serializers.ModelSerializer):
         assert isinstance(instance, Document)
         assert instance.type_id == "rfc"
         rfc = instance  # get better name
-        breakpoint()
 
         system_person = Person.objects.get(name="(System)")
 
@@ -563,7 +566,7 @@ class RfcAmendMetadataSerializer(serializers.ModelSerializer):
         omitted = object()
         published = validated_data.pop("published", omitted)
         subseries = validated_data.pop("subseries", omitted)
-        authors_data = validated_data.pop("authors", omitted)
+        authors_data = validated_data.pop("rfcauthor_set", omitted)
 
         # Transaction to clean up if something fails
         with transaction.atomic():

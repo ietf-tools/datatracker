@@ -275,24 +275,7 @@ class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     )
 )
 class RfcViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
-    queryset = Document.objects.filter(type_id="rfc").prefetch_related(
-        PrefetchRelatedDocument(
-            to_attr="subseries",
-            relationship_id="contains",
-            reverse=True,
-            doc_type_ids=SUBSERIES_DOC_TYPE_IDS,
-        )
-    ).annotate(
-        published=Subquery(
-            DocEvent.objects.filter(
-                doc_id=OuterRef("pk"),
-                type="published_rfc",
-            )
-            .order_by("-time")
-            .values("time")[:1]
-        ),
-    )
-    
+    queryset = Document.objects.filter(type_id="rfc")
     api_key_endpoint = "ietf.api.views_rpc"
     lookup_field = "rfc_number"
     serializer_class = RfcAmendMetadataSerializer
