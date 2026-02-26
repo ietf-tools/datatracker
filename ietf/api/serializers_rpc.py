@@ -226,28 +226,6 @@ def _update_authors(rfc, authors_data):
             event.save()
     return change_events
 
-class EditableRfcSerializer(serializers.ModelSerializer):
-    # Would be nice to reconcile this with ietf.doc.serializers.RfcSerializer.
-    # The purposes of that serializer (representing data for Red) and this one
-    # (accepting updates from Purple) are different enough that separate formats
-    # may be needed, but if not it'd be nice to have a single RfcSerializer that
-    # can serve both.
-    #
-    # For now, only handles authors
-    authors = RfcAuthorSerializer(many=True, min_length=1, source="rfcauthor_set")
-
-    class Meta:
-        model = Document
-        fields = ["id", "authors"]
-
-    def update(self, instance, validated_data):
-        assert isinstance(instance, Document)
-        assert instance.type_id == "rfc"
-        authors_data = validated_data.pop("rfcauthor_set", None)
-        if authors_data is not None:
-            _update_authors(instance, authors_data)
-        return instance
-
 
 class RfcPubSerializer(serializers.ModelSerializer):
     """Write-only serializer for RFC publication"""
@@ -523,12 +501,21 @@ class RfcPubSerializer(serializers.ModelSerializer):
         return rfc
 
 
-class RfcAmendMetadataSerializer(serializers.ModelSerializer):
+class EditableRfcSerializer(serializers.ModelSerializer):
+    # Would be nice to reconcile this with ietf.doc.serializers.RfcSerializer.
+    # The purposes of that serializer (representing data for Red) and this one
+    # (accepting updates from Purple) are different enough that separate formats
+    # may be needed, but if not it'd be nice to have a single RfcSerializer that
+    # can serve both.
+    #
+    # Treats published and subseries fields as write-only. This isn't quite correct,
+    # but makes it easier and we don't currently use the serialized value except for
+    # debugging.
     published = serializers.DateTimeField(
         default_timezone=datetime.timezone.utc,
         write_only=True,
     )
-    authors = RfcAuthorSerializer(source="rfcauthor_set", many=True)
+    authors = RfcAuthorSerializer(many=True, min_length=1, source="rfcauthor_set")
     subseries = serializers.ListField(
         child=serializers.RegexField(
             required=False,
