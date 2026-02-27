@@ -56,6 +56,7 @@ class EditableRfcSerializerTests(TestCase):
         )
         self.assertTrue(serializer.is_valid())
         result = serializer.save()
+        result.refresh_from_db()
         self.assertEqual(result.title, "Yadda yadda yadda")
         self.assertEqual(
             list(
@@ -86,7 +87,7 @@ class EditableRfcSerializerTests(TestCase):
     def test_partial_update(self):
         # We could test other permutations of fields, but authors is a partial update
         # we know we are going to use, so verifying that one in particular.
-        rfc = WgRfcFactory(pages=10, abstract="do or do not", title="jedi master")
+        rfc = WgRfcFactory(pages=10, abstract="do or do not", title="padawan")
         serializer = EditableRfcSerializer(
             partial=True,
             instance=rfc,
@@ -103,7 +104,8 @@ class EditableRfcSerializerTests(TestCase):
         )
         self.assertTrue(serializer.is_valid())
         result = serializer.save()
-        self.assertEqual(rfc.title, "jedi master")
+        result.refresh_from_db()
+        self.assertEqual(rfc.title, "padawan")
         self.assertEqual(
             list(
                 result.rfcauthor_set.values(
@@ -124,3 +126,14 @@ class EditableRfcSerializerTests(TestCase):
         self.assertEqual(result.pages, 10)
         self.assertEqual(result.std_level_id, "ps")
         self.assertEqual(result.part_of(), [])
+
+        # Test only a field on the Document itself to be sure that it works
+        serializer = EditableRfcSerializer(
+            partial=True,
+            instance=rfc,
+            data={"title": "jedi master"},
+        )
+        self.assertTrue(serializer.is_valid())
+        result = serializer.save()
+        result.refresh_from_db()
+        self.assertEqual(rfc.title, "jedi master")

@@ -563,12 +563,12 @@ class EditableRfcSerializer(serializers.ModelSerializer):
             rfc_events = []
             
             for attr, new_value in validated_data.items():
-                old_value = getattr(instance, attr)
+                old_value = getattr(rfc, attr)
                 if new_value != old_value:
                     rfc_changes.append(
                         f"changed {attr} to '{new_value}' from '{old_value}'"
                     )
-                    setattr(instance, attr, new_value)
+                    setattr(rfc, attr, new_value)
             if len(rfc_changes) > 0:
                 rfc_change_summary = f" ({', '.join(rfc_changes)})"
                 rfc_events.append(
@@ -675,7 +675,7 @@ class EditableRfcSerializer(serializers.ModelSerializer):
                         desc=f"Removed {rfc.name} from {stale_subseries_doc.name}",
                     )
                 stale_subseries_relations.delete()
-                rfc.save_with_history(rfc_events)
+            rfc.save_with_history(rfc_events)
         return rfc
 
 
