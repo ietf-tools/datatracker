@@ -570,7 +570,7 @@ class EditableRfcSerializer(serializers.ModelSerializer):
                     )
                     setattr(rfc, attr, new_value)
             if len(rfc_changes) > 0:
-                rfc_change_summary = f" ({', '.join(rfc_changes)})"
+                rfc_change_summary = f"{', '.join(rfc_changes)}"
                 rfc_events.append(
                     DocEvent.objects.create(
                         doc=rfc,
