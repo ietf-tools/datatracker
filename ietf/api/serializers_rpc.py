@@ -218,7 +218,7 @@ class ReferenceSerializer(serializers.ModelSerializer):
 
 def _update_authors(rfc, authors_data):
     # Construct unsaved instances from validated author data
-    new_authors = [RfcAuthor(**ad) for ad in authors_data]
+    new_authors = [RfcAuthor(**authdata) for authdata in authors_data]
     # Update the RFC with the new author set
     with transaction.atomic():
         change_events = update_rfcauthors(rfc, new_authors)
