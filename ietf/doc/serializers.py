@@ -27,6 +27,7 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
         source="person.get_absolute_url",
         required=False,
         help_text="URL for person link (relative to datatracker base URL)",
+        read_only=True,
     )
 
     class Meta:
