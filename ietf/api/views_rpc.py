@@ -280,6 +280,16 @@ class RfcViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     lookup_field = "rfc_number"
     serializer_class = EditableRfcSerializer
 
+    def perform_update(self, serializer):
+        DocEvent.objects.create(
+            doc=serializer.instance,
+            rev=serializer.instance.rev,
+            by=Person.objects.get(name="(System)"),
+            type="sync_from_rfc_editor",
+            desc="Metadata sync from RFC Editor",
+        )
+        super().perform_update(serializer)
+
     @action(detail=False, serializer_class=OriginalStreamSerializer)
     def rfc_original_stream(self, request):
         rfcs = self.get_queryset().annotate(

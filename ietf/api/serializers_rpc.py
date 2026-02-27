@@ -560,6 +560,7 @@ class EditableRfcSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             # update the rfc Document itself
             rfc_changes = []
+            rfc_events = []
             
             for attr, new_value in validated_data.items():
                 old_value = getattr(instance, attr)
@@ -570,22 +571,15 @@ class EditableRfcSerializer(serializers.ModelSerializer):
                     setattr(instance, attr, new_value)
             if len(rfc_changes) > 0:
                 rfc_change_summary = f" ({', '.join(rfc_changes)})"
-            else:
-                rfc_change_summary = ""
-            rfc_events = [
-                (
+                rfc_events.append(
                     DocEvent.objects.create(
                         doc=rfc,
                         rev=rfc.rev,
                         by=system_person,
                         type="sync_from_rfc_editor",
-                        desc=(
-                            "Metadata changes received from RFC Editor"
-                            + rfc_change_summary
-                        ),
+                        desc=f"Changed metadata: {rfc_change_summary}",
                     )
                 )
-            ]
             if authors_data is not omitted:
                 rfc_events.extend(_update_authors(instance, authors_data))
 
