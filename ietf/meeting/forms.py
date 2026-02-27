@@ -366,8 +366,9 @@ class InterimSessionModelForm(forms.ModelForm):
             filename = get_next_agenda_name(meeting=self.instance.meeting)
             doc = Document.objects.create(
                 type_id='agenda',
+                name = 'agenda-%s-%s' % (self.instance.meeting.number, self.instance.docname_token()),
+                title = 'Agenda %s' % (self.instance.meeting.number, ),
                 group=self.group,
-                name=filename,
                 rev='00',
                 # FIXME: if these are always computed, they shouldn't be in uploaded_filename - just compute them when needed
                 # FIXME: What about agendas in html or markdown format?
