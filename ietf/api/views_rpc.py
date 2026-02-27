@@ -35,9 +35,7 @@ from ietf.api.serializers_rpc import (
     NotificationAckSerializer, RfcPubSerializer, RfcFileSerializer,
     EditableRfcSerializer,
 )
-from ietf.doc.api import PrefetchRelatedDocument
-from ietf.doc.models import Document, DocHistory, RfcAuthor, SUBSERIES_DOC_TYPE_IDS, \
-    DocEvent
+from ietf.doc.models import Document, DocHistory, RfcAuthor, DocEvent
 from ietf.doc.serializers import RfcAuthorSerializer
 from ietf.doc.storage_utils import remove_from_storage, store_file, exists_in_storage
 from ietf.person.models import Email, Person
