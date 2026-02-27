@@ -286,7 +286,7 @@ class RfcViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
             rev=serializer.instance.rev,
             by=Person.objects.get(name="(System)"),
             type="sync_from_rfc_editor",
-            desc="Metadata sync from RFC Editor",
+            desc="Metadata update from RFC Editor",
         )
         super().perform_update(serializer)
 
