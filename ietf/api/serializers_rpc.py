@@ -227,6 +227,15 @@ def _update_authors(rfc, authors_data):
     return change_events
 
 
+class SubseriesNameField(serializers.RegexField):
+
+    def __init__(self, **kwargs):
+        # pattern: no leading 0, finite length (arbitrarily set to 5 digits)
+        regex = r"^(bcp|std|fyi)[1-9][0-9]{0,4}$"
+        super().__init__(regex, **kwargs)
+
+
+
 class RfcPubSerializer(serializers.ModelSerializer):
     """Write-only serializer for RFC publication"""
     # publication-related fields
@@ -266,13 +275,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
         slug_field="rfc_number",
         queryset=Document.objects.filter(type_id="rfc"),
     )
-    subseries = serializers.ListField(
-        child=serializers.RegexField(
-            required=False,
-            # pattern: no leading 0, finite length (arbitrarily set to 5 digits)
-            regex=r"^(bcp|std|fyi)[1-9][0-9]{0,4}$", 
-        )
-    )
+    subseries = serializers.ListField(child=SubseriesNameField(required=False))
     # N.b., authors is _not_ a field on Document!
     authors = RfcAuthorSerializer(many=True)
 
@@ -508,6 +511,8 @@ class EditableRfcSerializer(serializers.ModelSerializer):
     # may be needed, but if not it'd be nice to have a single RfcSerializer that
     # can serve both.
     #
+    # Should also consider whether this and RfcPubSerializer should merge.
+    #
     # Treats published and subseries fields as write-only. This isn't quite correct,
     # but makes it easier and we don't currently use the serialized value except for
     # debugging.
@@ -517,11 +522,7 @@ class EditableRfcSerializer(serializers.ModelSerializer):
     )
     authors = RfcAuthorSerializer(many=True, min_length=1, source="rfcauthor_set")
     subseries = serializers.ListField(
-        child=serializers.RegexField(
-            required=False,
-            # pattern: no leading 0, finite length (arbitrarily set to 5 digits)
-            regex=r"^(bcp|std|fyi)[1-9][0-9]{0,4}$", 
-        ),
+        child=SubseriesNameField(required=False),
         write_only=True,
     )
 
