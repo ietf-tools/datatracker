@@ -675,7 +675,8 @@ class EditableRfcSerializer(serializers.ModelSerializer):
                         desc=f"Removed {rfc.name} from {stale_subseries_doc.name}",
                     )
                 stale_subseries_relations.delete()
-            rfc.save_with_history(rfc_events)
+            if len(rfc_events) > 0:
+                rfc.save_with_history(rfc_events)
         return rfc
 
 
