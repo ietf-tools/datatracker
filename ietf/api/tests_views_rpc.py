@@ -9,9 +9,10 @@ from django.db.models import Max
 from django.db.models.functions import Coalesce
 from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
+import mock
 
 from ietf.blobdb.models import Blob
-from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory
+from ietf.doc.factories import IndividualDraftFactory, RfcFactory, WgDraftFactory, WgRfcFactory
 from ietf.doc.models import RelatedDocument, Document
 from ietf.group.factories import RoleFactory, GroupFactory
 from ietf.person.factories import PersonFactory
@@ -77,7 +78,8 @@ class RpcApiTests(APITestCase):
         self.assertEqual(refs[0]["name"], draft_bar.name)
 
     @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
-    def test_notify_rfc_published(self):
+    @mock.patch("ietf.doc.tasks.signal_update_rfc_metadata_task.delay")
+    def test_notify_rfc_published(self, mock_task_delay):
         url = urlreverse("ietf.api.purple_api.notify_rfc_published")
         area = GroupFactory(type_id="area")
         rfc_group = GroupFactory(type_id="wg")
@@ -90,6 +92,8 @@ class RpcApiTests(APITestCase):
         )
         rfc_stream_id = "ise"
         assert isinstance(draft, Document), "WgDraftFactory should generate a Document"
+        updates = RfcFactory.create_batch(2)
+        obsoletes = RfcFactory.create_batch(2)
         unused_rfc_number = (
             Document.objects.filter(rfc_number__isnull=False).aggregate(
                 unused_rfc_number=Max("rfc_number") + 1
@@ -120,8 +124,8 @@ class RpcApiTests(APITestCase):
             "pages": draft.pages + 10,
             "std_level": "ps",
             "ad": rfc_ad.pk,
-            "obsoletes": [],
-            "updates": [],
+            "obsoletes": [o.rfc_number for o in obsoletes],
+            "updates": [o.rfc_number for o in updates],
             "subseries": [],
         }
         r = self.client.post(url, data=post_data, format="json")
@@ -172,12 +176,24 @@ class RpcApiTests(APITestCase):
         self.assertEqual(rfc.pages, draft.pages + 10)
         self.assertEqual(rfc.std_level_id, "ps")
         self.assertEqual(rfc.ad, rfc_ad)
-        self.assertEqual(rfc.related_that_doc("obs"), [])
-        self.assertEqual(rfc.related_that_doc("updates"), [])
+        self.assertEqual(set(rfc.related_that_doc("obs")), set([o for o in obsoletes]))
+        self.assertEqual(
+            set(rfc.related_that_doc("updates")), set([o for o in updates])
+        )
         self.assertEqual(rfc.part_of(), [])
         self.assertEqual(draft.get_state().slug, "rfc")
         # todo test non-empty relationships
         # todo test references (when updating that is part of the handling)
+
+        self.assertTrue(mock_task_delay.called)
+        mock_args, mock_kwargs = mock_task_delay.call_args
+        self.assertIn("rfc_number_list", mock_kwargs)
+        expected_rfc_number_list = [rfc.rfc_number]
+        expected_rfc_number_list.extend(
+            [d.rfc_number for d in updates + obsoletes]
+        )
+        expected_rfc_number_list = sorted(set(expected_rfc_number_list))
+        self.assertEqual(mock_kwargs["rfc_number_list"], expected_rfc_number_list)
 
     @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
     def test_upload_rfc_files(self):

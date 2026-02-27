@@ -35,9 +35,10 @@ from ietf.api.serializers_rpc import (
     NotificationAckSerializer, RfcPubSerializer, RfcFileSerializer,
     EditableRfcSerializer,
 )
-from ietf.doc.models import Document, DocHistory, RfcAuthor
+from ietf.doc.models import Document, DocHistory, RfcAuthor, DocEvent
 from ietf.doc.serializers import RfcAuthorSerializer
 from ietf.doc.storage_utils import remove_from_storage, store_file, exists_in_storage
+from ietf.doc.tasks import signal_update_rfc_metadata_task
 from ietf.person.models import Email, Person
 
 
@@ -278,6 +279,16 @@ class RfcViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     lookup_field = "rfc_number"
     serializer_class = EditableRfcSerializer
 
+    def perform_update(self, serializer):
+        DocEvent.objects.create(
+            doc=serializer.instance,
+            rev=serializer.instance.rev,
+            by=Person.objects.get(name="(System)"),
+            type="sync_from_rfc_editor",
+            desc="Metadata update from RFC Editor",
+        )
+        super().perform_update(serializer)
+
     @action(detail=False, serializer_class=OriginalStreamSerializer)
     def rfc_original_stream(self, request):
         rfcs = self.get_queryset().annotate(
@@ -362,7 +373,7 @@ class RfcPubNotificationView(APIView):
         serializer.is_valid(raise_exception=True)
         # Create RFC
         try:
-            serializer.save()
+            rfc = serializer.save()
         except IntegrityError as err:
             if Document.objects.filter(
                 rfc_number=serializer.validated_data["rfc_number"]
@@ -375,6 +386,12 @@ class RfcPubNotificationView(APIView):
                 f"Unable to publish: {err}",
                 code="unknown-integrity-error",
             )
+        rfc_number_list = [rfc.rfc_number]
+        rfc_number_list.extend(
+            [d.rfc_number for d in rfc.related_that_doc(("updates", "obs"))]
+        )
+        rfc_number_list = sorted(set(rfc_number_list))
+        signal_update_rfc_metadata_task.delay(rfc_number_list=rfc_number_list)
         return Response(NotificationAckSerializer().data)
 
 
