@@ -3,6 +3,7 @@
 {% load origin markup_tags static %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+    {% if chart_data %}<link rel="stylesheet" href="{% static "ietf/css/highcharts.css" %}">{% endif %}
 {% endblock %}
 {% block title %}IETF {{ meeting.number }} proceedings{% endblock %}
 {% block content %}
@@ -14,8 +15,52 @@
         </a>
     </h1>
     <h2>Attendee list of IETF {{ meeting.number }} meeting</h2>
-    
+
+    {% if chart_data %}
+    <div class="d-flex align-items-center gap-4 mb-3 flex-wrap">
+        <div class="d-flex gap-4">
+            <div>Onsite: <strong>{{ stats.onsite }}</strong></div>
+            <div>Remote: <strong>{{ stats.remote }}</strong></div>
+            <div>Total: <strong>{{ stats.total }}</strong></div>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm"
+                data-bs-toggle="modal" data-bs-target="#attendees-chart-modal">
+            <i class="bi bi-pie-chart-fill"></i> View chart
+        </button>
+    </div>
+
+    <div class="modal fade" id="attendees-chart-modal" tabindex="-1"
+         aria-labelledby="attendees-chart-modal-label" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="attendees-chart-modal-label">
+                        IETF {{ meeting.number }} attendees
+                    </h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="btn-group mb-3" role="group" aria-label="Chart breakdown">
+                        <input type="radio" class="btn-check" name="attendees-breakdown"
+                               id="breakdown-type" value="type" checked>
+                        <label class="btn btn-outline-secondary btn-sm" for="breakdown-type">Onsite/Remote</label>
+                        <input type="radio" class="btn-check" name="attendees-breakdown"
+                               id="breakdown-countries" value="countries">
+                        <label class="btn btn-outline-secondary btn-sm" for="breakdown-countries">Countries</label>
+                    </div>
+                    <div id="attendees-pie-chart" class="bg-body"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{ chart_data|json_script:"attendees-chart-data" }}
+    {% endif %}{# chart_data #}
+
     {% if template %}
+    <div class="alert alert-info" role="alert">
+        Attendee statistics are not available for this meeting.
+    </div>
       {{template|safe}}
     {% else %}
         <table id="id_attendees" class="table table-sm table-striped tablesorter">
@@ -44,4 +89,67 @@
 {% endblock %}
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
+    {% if chart_data %}
+    <script src="{% static "ietf/js/highcharts.js" %}"></script>
+    <script>
+        (function () {
+            var raw = document.getElementById('attendees-chart-data');
+            if (!raw) return;
+            var chartData = JSON.parse(raw.textContent);
+            var chart = null;
+            var currentBreakdown = 'type';
+
+            // Override the global transparent background set by highcharts.js so the
+            // export menu and fullscreen view use the page background color.
+            var container = document.getElementById('attendees-pie-chart');
+            var bodyBg = getComputedStyle(document.body).backgroundColor;
+            container.style.setProperty('--highcharts-background-color', bodyBg);
+
+            function renderChart(breakdown) {
+                var seriesData = chartData[breakdown].map(function (item) {
+                    return { name: item[0], y: item[1] };
+                });
+                if (chart) chart.destroy();
+                chart = Highcharts.chart(container, {
+                    chart: { type: 'pie', height: 400 },
+                    title: { text: null },
+                    tooltip: { pointFormat: '{point.name}: <b>{point.y}</b> ({point.percentage:.1f}%)' },
+                    plotOptions: {
+                        pie: {
+                            dataLabels: {
+                                enabled: true,
+                                format: '<b>{point.name}</b><br>{point.y} ({point.percentage:.1f}%)',
+                            },
+                            showInLegend: false,
+                        }
+                    },
+                    series: [{ name: 'Attendees', data: seriesData }],
+                });
+            }
+
+            var modal = document.getElementById('attendees-chart-modal');
+
+            // Render (or re-render) the chart each time the modal becomes fully visible,
+            // so Highcharts can measure the container dimensions correctly.
+            modal.addEventListener('shown.bs.modal', function () {
+                renderChart(currentBreakdown);
+            });
+
+            // Release the chart when the modal closes to avoid stale renders.
+            modal.addEventListener('hidden.bs.modal', function () {
+                if (chart) {
+                    chart.destroy();
+                    chart = null;
+                }
+            });
+
+            document.querySelectorAll('[name="attendees-breakdown"]').forEach(function (radio) {
+                radio.addEventListener('change', function () {
+                    currentBreakdown = this.value;
+                    renderChart(currentBreakdown);
+                });
+            });
+        })();
+    </script>
+    {% endif %}
 {% endblock %}
