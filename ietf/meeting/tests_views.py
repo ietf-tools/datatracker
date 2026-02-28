@@ -9007,6 +9007,8 @@ class ProceedingsTests(BaseMeetingTestCase):
            - assert onsite checkedin=True appears, not onsite checkedin=False
            - assert remote attended appears, not remote not attended
            - prefer onsite checkedin=True to remote attended when same person has both
+           - summary stats row shows correct counts
+           - chart data JSON is embedded with correct values
         """
 
         m = MeetingFactory(type_id='ietf', date=datetime.date(2023, 11, 4), number="118")
@@ -9027,6 +9029,17 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertEqual(2, len(q("#id_attendees tbody tr")))
         text = q('#id_attendees tbody tr').text().replace('\n', ' ')
         self.assertEqual(text, f"A Person {areg.affiliation} {areg.country_code} onsite C Person {creg.affiliation} {creg.country_code} remote")
+
+        # Summary stats row: Onsite / Remote / Total (matches registration.ietf.org)
+        self.assertContains(response, 'Onsite:')
+        self.assertContains(response, 'Remote:')
+        self.assertContains(response, 'Total:')
+        self.assertContains(response, '<strong>1</strong>')   # onsite and remote
+        self.assertContains(response, '<strong>2</strong>')   # total
+
+        # Chart data embedded in page
+        chart_json = json.loads(q('#attendees-chart-data').text())
+        self.assertEqual(chart_json['type'], [['Onsite', 1], ['Remote', 1]])
 
     def test_proceedings_overview(self):
         '''Test proceedings IETF Overview page.
