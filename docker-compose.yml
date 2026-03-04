@@ -13,9 +13,10 @@ services:
         # network_mode: service:db
 
         depends_on:
+            - blobdb
+            - blobstore
             - db
             - mq
-            - blobstore
 
         ipc: host
 
@@ -79,7 +80,10 @@ services:
         command:
             - '--loglevel=INFO'
         depends_on:
+            - blobdb
+            - blobstore
             - db
+            - mq
         restart: unless-stopped
         stop_grace_period: 1m
         volumes:
@@ -102,7 +106,10 @@ services:
             - '--concurrency=1'
                  
         depends_on:
+            - blobdb
+            - blobstore
             - db
+            - mq
         restart: unless-stopped
         stop_grace_period: 1m
         volumes:

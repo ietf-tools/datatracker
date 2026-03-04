@@ -105,3 +105,7 @@ APP_API_TOKENS = {
     "ietf.api.red_api" : ["devtoken", "redtoken"],  # Not a real secret
     "ietf.api.views_rpc" : ["devtoken"],  # Not a real secret
 }
+
+# Errata system api configuration
+ERRATA_METADATA_NOTIFICATION_URL = "http://host.docker.internal:8808/api/rfc_metadata_update/"
+ERRATA_METADATA_NOTIFICATION_API_KEY = "not a real secret"

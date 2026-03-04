@@ -2528,7 +2528,6 @@ class EligibilityUnitTests(TestCase):
             document=rfc,
             person=people[0],
             titlepage_name="P. Zero",
-            email=people[0].email_set.first(),
         )
         self.assertCountEqual(
             get_qualified_author_queryset(base_qs, now - 5 * one_year, now),

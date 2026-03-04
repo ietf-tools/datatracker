@@ -937,7 +937,6 @@ class RfcAuthor(models.Model):
     titlepage_name = models.CharField(max_length=128, blank=False)
     is_editor = models.BooleanField(default=False)
     person = ForeignKey(Person, null=True, blank=True, on_delete=models.PROTECT)
-    email = ForeignKey(Email, help_text="Email address used by author for submission", blank=True, null=True, on_delete=models.PROTECT)
     affiliation = models.CharField(max_length=100, blank=True, help_text="Organization/company used by author for submission")
     country = models.CharField(max_length=255, blank=True, help_text="Country used by author for submission")
     order = models.IntegerField(default=1)
@@ -950,6 +949,11 @@ class RfcAuthor(models.Model):
         indexes=[
             models.Index(fields=["document", "order"])
         ]
+
+    @property
+    def email(self) -> Email | None:
+        return self.person.email() if self.person else None
+
 
 class DocumentAuthorInfo(models.Model):
     person = ForeignKey(Person)
@@ -1142,6 +1146,22 @@ class Document(StorableMixin, DocumentInfo):
     def request_closed_time(self, review_req):
         e = self.latest_event(ReviewRequestDocEvent, type="closed_review_request", review_request=review_req)
         return e.time if e and e.time else None
+
+    @property
+    def area(self) -> Group | None:
+        """Get area for document, if one exists
+        
+        None for non-IETF-stream documents. N.b., this is stricter than Group.area() and
+        uses different logic from Document.area_acronym().
+        """
+        if self.stream_id != "ietf":
+            return None
+        if self.group is None:
+            return None
+        parent = self.group.parent
+        if parent.type_id == "area":
+            return parent
+        return None
 
     def area_acronym(self):
         g = self.group

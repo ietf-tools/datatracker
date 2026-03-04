@@ -508,8 +508,13 @@ class SlidesManager(Manager):
             return (timeslot.time - self.slides_notify_time) < now < (timeslot.end_time() + self.slides_notify_time)
 
     def add(self, session: "Session", slides: "Document", order: int):
+        """Add a slide deck to the session
+        
+        Returns True if the update was sent, False if it was not sent because the
+        current time is outside the update window for the session.
+        """
         if not self._should_send_update(session):
-            return
+            return False
 
         # Would like to confirm that session.presentations includes the slides Document, but we can't
         # (same problem regarding unsaved Documents discussed in the docstring)
@@ -524,11 +529,16 @@ class SlidesManager(Manager):
                 "order": order,
             }
         )
+        return True
 
     def delete(self, session: "Session", slides: "Document"):
-        """Delete a slide deck from the session"""
+        """Delete a slide deck from the session
+        
+        Returns True if the update was sent, False if it was not sent because the
+        current time is outside the update window for the session.
+        """
         if not self._should_send_update(session):
-            return
+            return False
 
         if session.presentations.filter(document=slides).exists():
             # "order" problems are very likely to result if we delete slides that are actually still
@@ -543,12 +553,17 @@ class SlidesManager(Manager):
             id=slides.pk,
         )
         if session.presentations.filter(document__type_id="slides").exists():
-            self.send_update(session)  # adjust order to fill in the hole        
+            self._send_update(session)  # adjust order to fill in the hole
+        return True
     
     def revise(self, session: "Session", slides: "Document"):
-        """Replace existing deck with its current state"""
+        """Replace existing deck with its current state
+        
+        Returns True if the update was sent, False if it was not sent because the
+        current time is outside the update window for the session.
+        """
         if not self._should_send_update(session):
-            return
+            return False
 
         sp = session.presentations.filter(document=slides).first()
         if sp is None:
@@ -561,11 +576,13 @@ class SlidesManager(Manager):
             id=slides.pk,
         )
         self.add(session, slides, order)  # fill in the hole
+        return True
         
-    def send_update(self, session: "Session"):
-        if not self._should_send_update(session):
-            return
-
+    def _send_update(self, session: "Session"):
+        """Notify of the current state of the session's slides (no time window check)
+        
+        This is a private helper - use send_update() (no leading underscore) instead.
+        """
         self.api.update_slide_decks(
             wg_token=self.wg_token(session.group),
             session=str(session.pk),
@@ -580,3 +597,14 @@ class SlidesManager(Manager):
                 for deck in session.presentations.filter(document__type="slides")
             ]
         )
+
+    def send_update(self, session: "Session"):
+        """Notify of the current state of the session's slides
+        
+        Returns True if the update was sent, False if it was not sent because the
+        current time is outside the update window for the session.
+        """
+        if not self._should_send_update(session):
+            return False
+        self._send_update(session)
+        return True

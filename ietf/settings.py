@@ -1368,6 +1368,11 @@ MEETECHO_VIDEO_STREAM_URL = "https://meetings.conf.meetecho.com/ietf{session.mee
 MEETECHO_AUDIO_STREAM_URL = "https://mp3.conf.meetecho.com/ietf{session.meeting.number}/{session.pk}.m3u"
 MEETECHO_SESSION_RECORDING_URL = "https://meetecho-player.ietf.org/playout/?session={session_label}"
 
+# Errata system api configuration
+# settings should provide
+# ERRATA_METADATA_NOTIFICATION_URL
+# ERRATA_METADATA_NOTIFICATION_API_KEY
+
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from ietf.settings_local import *            # pyflakes:ignore pylint: disable=wildcard-import

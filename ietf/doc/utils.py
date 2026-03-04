@@ -740,14 +740,26 @@ def update_rfcauthors(
             new_author.document = rfc
             new_author.order = order + 1
             new_author.save()
-            changes.append(f'Added "{new_author.titlepage_name}" as author')
+            if new_author.person_id is not None:
+                person_desc = f"Person {new_author.person_id}"
+            else:
+                person_desc = "no Person linked"
+            changes.append(
+                f'Added "{new_author.titlepage_name}" ({person_desc}) as author'
+            )
     # Any authors left in original_authors are no longer in the list, so remove them
     for removed_author in original_authors:
         # Skip actual removal of old authors if we are converting from the
         # DocumentAuthor models - the original_authors were just stand-ins anyway.
         if not converting_from_docauthors:
             removed_author.delete()
-        changes.append(f'Removed "{removed_author.titlepage_name}" as author')
+        if removed_author.person_id is not None:
+            person_desc = f"Person {removed_author.person_id}"
+        else:
+            person_desc = "no Person linked"
+        changes.append(
+            f'Removed "{removed_author.titlepage_name}" ({person_desc}) as author'
+        )
     # Create DocEvents, but leave it up to caller to save
     if by is None:
         by = Person.objects.get(name="(System)")
