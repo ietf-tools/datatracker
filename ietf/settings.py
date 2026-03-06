@@ -838,6 +838,12 @@ MATERIALS_TYPES_SERVED_BY_WORKER = [
     "slides",
 ]
 
+# Other storages
+# todo make this real
+STORAGES["red_bucket"] = {
+    "BACKEND": "django.core.files.storage.FileSystemStorage",
+    "OPTIONS": {"location": "red_bucket"},
+}
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
