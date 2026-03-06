@@ -27,6 +27,7 @@ from ietf.doc.utils import (
     update_rfcauthors,
 )
 from ietf.group.models import Group
+from ietf.group.serializers import AreaSerializer
 from ietf.name.models import StreamName, StdLevelName
 from ietf.person.models import Person
 from ietf.utils import log
@@ -115,6 +116,7 @@ class FullDraftSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=255)
     title = serializers.CharField(max_length=255)
     group = serializers.SlugRelatedField(slug_field="acronym", read_only=True)
+    area = AreaSerializer(read_only=True)
 
     # Other fields we need to add / adjust
     source_format = serializers.SerializerMethodField()
@@ -133,6 +135,7 @@ class FullDraftSerializer(serializers.ModelSerializer):
             "stream",
             "title",
             "group",
+            "area",
             "abstract",
             "pages",
             "source_format",

@@ -1147,6 +1147,22 @@ class Document(StorableMixin, DocumentInfo):
         e = self.latest_event(ReviewRequestDocEvent, type="closed_review_request", review_request=review_req)
         return e.time if e and e.time else None
 
+    @property
+    def area(self) -> Group | None:
+        """Get area for document, if one exists
+        
+        None for non-IETF-stream documents. N.b., this is stricter than Group.area() and
+        uses different logic from Document.area_acronym().
+        """
+        if self.stream_id != "ietf":
+            return None
+        if self.group is None:
+            return None
+        parent = self.group.parent
+        if parent.type_id == "area":
+            return parent
+        return None
+
     def area_acronym(self):
         g = self.group
         if g:
