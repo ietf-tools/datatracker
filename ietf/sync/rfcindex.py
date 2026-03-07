@@ -2,27 +2,33 @@
 import json
 from collections.abc import Container
 from dataclasses import dataclass
-from io import StringIO
+from io import StringIO, BytesIO
 from itertools import chain
 from operator import attrgetter
 from textwrap import fill
 from xml.dom.minidom import parseString
 from xml.etree import ElementTree
 
-from django.conf import settings
 from django.core.files.storage import storages
+from django.db import models
+from django.db.models.functions import Substr, Cast
 from django.template.loader import render_to_string
 from django.utils import timezone
 
 from ietf.doc.models import Document
+from ietf.name.models import StdLevelName
 from ietf.utils.log import log
 
 FORMATS_FOR_INDEX = ["txt", "html", "pdf", "xml", "ps"]
 
 
-def render_doi(rfc: Document):
+def rfc_doi(rfc: Document):
     assert rfc.rfc_number is not None
     return f"10.17487/RFC{rfc.rfc_number:04d}"
+
+
+def errata_url(rfc: Document):
+    return f"https://www.rfc-editor.org/errata/rfc{rfc.rfc_number}"
 
 
 @dataclass
@@ -65,6 +71,24 @@ def get_april1_rfc_numbers() -> Container[int]:
     return records
 
 
+def get_publication_std_levels() -> Container[int]:
+    FILENAME = "publication-std-levels.json"
+    try:
+        with storages["red_bucket"].open(FILENAME) as urn_file:
+            records = json.load(urn_file)
+    except FileNotFoundError:
+        log(f"Error: unable to open {FILENAME} in red_bucket storage")
+        return []
+    except json.JSONDecodeError:
+        log(f"Error: unable to parse {FILENAME} in red_bucket storage")
+        return []
+    assert all(isinstance(record["number"], int) for record in records)
+    return {
+        record["number"]: StdLevelName.objects.get(slug=record["publication_std_level"])
+        for record in records
+    }
+
+
 def format_ordering(rfc_number):
     if rfc_number < 8650:
         ordering = ["txt", "ps", "pdf", "html", "xml"]
@@ -89,10 +113,11 @@ def get_rfc_text_index_entries():
             authors = ", ".join(
                 author.format_for_titlepage() for author in rfc.rfcauthor_set.all()
             )
+            published_at = rfc.pub_date()
             date = (
-                rfc.pub_date().strftime("1 %B %Y")
+                published_at.strftime("1 %B %Y")
                 if rfc.rfc_number in april1_rfc_numbers
-                else rfc.pub_date().strftime("%B %Y")
+                else published_at.strftime("%B %Y")
             )
 
             # formats
@@ -170,7 +195,7 @@ def get_rfc_text_index_entries():
                     f"{rfc.rfc_number:04d} {rfc.title}. {authors}. {date}. "
                     f"(Format: {formats}){doc_relations}{subseries}"
                     f"(Status: {str(rfc.std_level).upper()}) "
-                    f"(DOI: {render_doi(rfc)})"
+                    f"(DOI: {rfc_doi(rfc)})"
                 ),
                 width=73,
                 subsequent_indent=" " * 5,
@@ -180,188 +205,166 @@ def get_rfc_text_index_entries():
     return entries
 
 
-def add_bcp_xml_index_entries(rfc_index):
-    """Add BCP entries for rfc-index.xml"""
-    entries = []
-
-    highest_bcp_number = (
-        SubseriesMember.objects.filter(type_id="bcp").order_by("-number").first().number
+def add_subseries_xml_index_entries(rfc_index, ss_type, include_all=False):
+    """Add subseries entries for rfc-index.xml"""
+    # subseries docs annotated with numeric number
+    ss_docs = list(
+        Document.objects.filter(
+            type_id=ss_type
+        ).annotate(
+            number=Cast(
+                Substr("name", 4, None),
+                output_field=models.IntegerField(),
+            )
+        ).order_by("-number")
     )
-
-    for bcp_number in range(1, highest_bcp_number):
-        entry = ElementTree.SubElement(rfc_index, "bcp-entry")
-        ElementTree.SubElement(entry, "doc-id").text = f"BCP{bcp_number}"
-
-        subseries_members = SubseriesMember.objects.filter(
-            type_id="bcp", number=bcp_number
-        )
-        if subseries_members:
+    if len(ss_docs) == 0:
+        return  # very much not expected
+    highest_number = ss_docs[0].number
+    for ss_number in range(1, highest_number+1):
+        if ss_docs[-1].number == ss_number:
+            this_ss_doc = ss_docs.pop()
+            contained_rfcs = this_ss_doc.contains()
+        else:
+            contained_rfcs = []
+        if len(contained_rfcs) == 0 and not include_all:
+            continue
+        entry = ElementTree.SubElement(rfc_index, f"{ss_type}-entry")
+        ElementTree.SubElement(entry, "doc-id").text = f"{ss_type.upper()}{ss_number:04d}"
+        if len(contained_rfcs) > 0:
             is_also = ElementTree.SubElement(entry, "is-also")
-
-            for bcp_entry in subseries_members:
+            for rfc in sorted(contained_rfcs, key=attrgetter("rfc_number")):
                 ElementTree.SubElement(
                     is_also, "doc-id"
-                ).text = f"RFC{bcp_entry.rfc_to_be.rfc_number}"
-
-        entries.append(entry)
-
-
-def add_fyi_xml_index_entries(rfc_index):
-    """Add FYI entries for rfc-index.xml"""
-    entries = []
-
-    published_fyis = (
-        SubseriesMember.objects.filter(type_id="fyi").order_by("number").distinct()
-    )
-
-    for fyi in published_fyis:
-        entry = ElementTree.SubElement(rfc_index, "fyi-entry")
-        ElementTree.SubElement(entry, "doc-id").text = f"FYI{fyi.number}"
-        is_also = ElementTree.SubElement(entry, "is-also")
-
-        for fyi_entry in SubseriesMember.objects.filter(
-            type_id="fyi", number=fyi.number
-        ):
-            ElementTree.SubElement(
-                is_also, "doc-id"
-            ).text = f"RFC{fyi_entry.rfc_to_be.rfc_number}"
-
-        entries.append(entry)
-
-
-def add_std_xml_index_entries(rfc_index):
-    """Add std entries for rfc-index.xml"""
-    entries = []
-
-    published_stds = (
-        SubseriesMember.objects.filter(type_id="std").order_by("number").distinct()
-    )
-
-    for std in published_stds:
-        entry = ElementTree.SubElement(rfc_index, "std-entry")
-        ElementTree.SubElement(entry, "doc-id").text = f"STD{std.number}"
-        is_also = ElementTree.SubElement(entry, "is-also")
-
-        for std_entry in SubseriesMember.objects.filter(
-            type_id="std", number=std.number
-        ):
-            ElementTree.SubElement(
-                is_also, "doc-id"
-            ).text = f"RFC{std_entry.rfc_to_be.rfc_number}"
-
-        entries.append(entry)
+                ).text = f"RFC{rfc.rfc_number:04d}"
 
 
 def add_rfc_not_be_xml_index_entries(rfc_index):
     """Add unusable RFC entries for rfc-index.xml"""
     entries = []
 
-    for record in UnusableRfcNumber.objects.order_by("number"):
+    for record in sorted(get_unusable_rfc_numbers(), key=attrgetter("rfc_number")):
         entry = ElementTree.SubElement(rfc_index, "rfc-not-issued-entry")
-        ElementTree.SubElement(entry, "doc-id").text = f"RFC{record.number}"
+        ElementTree.SubElement(entry, "doc-id").text = f"RFC{record.rfc_number:04d}"
         entries.append(entry)
 
 
 def add_rfc_xml_index_entries(rfc_index):
     """Add RFC entries for rfc-index.xml"""
     entries = []
+    april1_rfc_numbers = get_april1_rfc_numbers()
+    publication_statuses = get_publication_std_levels()
+    
+    published_rfcs = Document.objects.filter(
+        type_id="rfc"
+    ).order_by("rfc_number")
 
-    published_rfcs = RfcToBe.objects.filter(published_at__isnull=False).order_by(
-        "rfc_number"
-    )
     for rfc in published_rfcs:
         entry = ElementTree.SubElement(rfc_index, "rfc-entry")
 
-        ElementTree.SubElement(entry, "doc-id").text = f"RFC{rfc.rfc_number}"
+        ElementTree.SubElement(entry, "doc-id").text = f"RFC{rfc.rfc_number:04d}"
         ElementTree.SubElement(entry, "title").text = rfc.title
 
-        for author in rfc.authors.all():
+        for author in rfc.rfcauthor_set.all():
             author_element = ElementTree.SubElement(entry, "author")
             ElementTree.SubElement(author_element, "name").text = author.titlepage_name
             if author.is_editor:
                 ElementTree.SubElement(author_element, "title").text = "Editor"
 
         date = ElementTree.SubElement(entry, "date")
-        ElementTree.SubElement(date, "month").text = rfc.published_at.strftime("%B")
-        if rfc.is_april_first_rfc:
-            ElementTree.SubElement(date, "day").text = str(rfc.published_at.day)
-        ElementTree.SubElement(date, "year").text = str(rfc.published_at.year)
+        published_at = rfc.pub_date()
+        ElementTree.SubElement(date, "month").text = published_at.strftime("%B")
+        if rfc.rfc_number in april1_rfc_numbers:
+            ElementTree.SubElement(date, "day").text = str(published_at.day)
+        ElementTree.SubElement(date, "year").text = str(published_at.year)
 
-        format = ElementTree.SubElement(entry, "format")
-        for file_format in rfc.published_formats.filter(
-            slug__in=FORMATS_FOR_INDEX
-        ).values_list("slug", flat=True):
-            ElementTree.SubElement(format, "file-format").text = file_format.upper()
+        format_ = ElementTree.SubElement(entry, "format")
+        fmts = [ff["fmt"] for ff in rfc.formats() if ff["fmt"] in FORMATS_FOR_INDEX]
+        for fmt in sorted(fmts, key=format_ordering(rfc.rfc_number)):
+            ElementTree.SubElement(
+                format_, "file-format"
+            ).text = "ASCII" if fmt == "txt" else fmt.upper()
 
         ElementTree.SubElement(entry, "page-count").text = str(rfc.pages)
 
-        if rfc.obsoletes:
+        part_of_documents = rfc.part_of()
+        if len(part_of_documents) > 0:
+            is_also = ElementTree.SubElement(entry, "is-also")
+            for doc in part_of_documents:
+                ElementTree.SubElement(is_also, "doc-id").text = doc.name.upper()
+        
+        obsoletes_documents = sorted(
+            rfc.related_that_doc("obs"),
+            key=attrgetter("rfc_number"),
+        )
+        if len(obsoletes_documents) > 0:
             obsoletes = ElementTree.SubElement(entry, "obsoletes")
-            for rfc_number in rfc.obsoletes.values_list(
-                "rfc_number", flat=True
-            ).order_by("rfc_number"):
-                ElementTree.SubElement(obsoletes, "doc-id").text = f"RFC{rfc_number}"
+            for doc in obsoletes_documents:
+                ElementTree.SubElement(obsoletes, "doc-id").text = f"RFC{doc.rfc_number:04d}"
 
-        if rfc.updates:
+        updates_documents = sorted(
+            rfc.related_that_doc("updates"),
+            key=attrgetter("rfc_number"),
+        )
+        if len(updates_documents) > 0:
             updates = ElementTree.SubElement(entry, "updates")
-            for rfc_number in rfc.updates.values_list("rfc_number", flat=True).order_by(
-                "rfc_number"
-            ):
-                ElementTree.SubElement(updates, "doc-id").text = f"RFC{rfc_number}"
+            for doc in updates_documents:
+                ElementTree.SubElement(updates, "doc-id").text = f"RFC{doc.rfc_number:04d}"
 
-        if rfc.obsoleted_by:
+        obsoleted_by_documents = sorted(
+            rfc.related_that("obs"),
+            key=attrgetter("rfc_number"),
+        )
+        if len(obsoleted_by_documents) > 0:
             obsoleted_by = ElementTree.SubElement(entry, "obsoleted-by")
-            for rfc_number in rfc.obsoleted_by.values_list(
-                "rfc_number", flat=True
-            ).order_by("rfc_number"):
-                ElementTree.SubElement(obsoleted_by, "doc-id").text = f"RFC{rfc_number}"
+            for doc in obsoleted_by_documents:
+                ElementTree.SubElement(obsoleted_by, "doc-id").text = f"RFC{doc.rfc_number:04d}"
 
-        if rfc.updated_by:
+        updated_by_documents = sorted(
+            rfc.related_that("updates"),
+            key=attrgetter("rfc_number"),
+        )
+        if len(updated_by_documents) > 0:
             updated_by = ElementTree.SubElement(entry, "updated-by")
-            for rfc_number in rfc.updated_by.values_list(
-                "rfc_number", flat=True
-            ).order_by("rfc_number"):
-                ElementTree.SubElement(updated_by, "doc-id").text = f"RFC{rfc_number}"
+            for doc in updated_by_documents:
+                ElementTree.SubElement(updated_by, "doc-id").text = f"RFC{doc.rfc_number:04d}"
 
-        if rfc.keywords.strip():
-            keywords = ElementTree.SubElement(entry, "keywords")
-            for keyword in rfc.keywords.strip().split(","):
-                ElementTree.SubElement(keywords, "kw").text = keyword.strip()
+        # todo implement keywords
+        # if rfc.keywords.strip():
+        #     keywords = ElementTree.SubElement(entry, "keywords")
+        #     for keyword in rfc.keywords.strip().split(","):
+        #         ElementTree.SubElement(keywords, "kw").text = keyword.strip()
 
         if rfc.abstract:
-            abstract = ElementTree.SubElement(entry, "abstract")
-            ElementTree.SubElement(abstract, "p").text = rfc.abstract
+            abstract_ = ElementTree.SubElement(entry, "abstract")
+            ElementTree.SubElement(abstract_, "p").text = rfc.abstract
 
-        if rfc.draft:
-            ElementTree.SubElement(entry, "draft").text = str(rfc.draft)
+        draft = rfc.came_from_draft()
+        if draft is not None:
+            ElementTree.SubElement(entry, "draft").text = draft.name
 
-        ElementTree.SubElement(entry, "current-status").text = str(
-            rfc.std_level
-        ).upper()
-        ElementTree.SubElement(entry, "publication-status").text = str(
-            rfc.publication_std_level
-        ).upper()
-        ElementTree.SubElement(entry, "stream").text = str(rfc.stream)
+        ElementTree.SubElement(entry, "current-status").text = rfc.std_level.name.upper()
+        ElementTree.SubElement(entry, "publication-status").text = publication_statuses[rfc.rfc_number].name.upper()
+        ElementTree.SubElement(entry, "stream").text = rfc.stream.name
 
-        if rfc.area:
-            ElementTree.SubElement(entry, "area").text = str(rfc.area)
+        if rfc.area is not None:
+            ElementTree.SubElement(entry, "area").text = rfc.area.acronym
 
-        if rfc.group:
-            ElementTree.SubElement(entry, "wg_acronym").text = str(rfc.group)
+        if rfc.group and rfc.group.type_id == "wg":
+            ElementTree.SubElement(entry, "wg_acronym").text = rfc.group.acronym
 
-        ElementTree.SubElement(
-            entry, "errata-url"
-        ).text = f"{settings.ERRATA_URL}/rfc{rfc.rfc_number}"
+        if rfc.tags.filter(slug="errata").exists():
+            ElementTree.SubElement(
+                entry, "errata-url"
+            ).text = errata_url(rfc)
         ElementTree.SubElement(
             entry, "doi"
-        ).text = f"{settings.DOI_PREFIX}/RFC{rfc.rfc_number:04d}"
+        ).text = rfc_doi(rfc)
         entries.append(entry)
 
 
 def create_rfc_txt_index():
-    """
-    Create text index of published documents
-    """
+    """Create text index of published documents"""
     DATE_FMT = "%m/%d/%Y"
     created_on = timezone.now().strftime(DATE_FMT)
     log("Creating rfc-index.txt")
@@ -377,15 +380,13 @@ def create_rfc_txt_index():
     # Django 4.2's FileSystemStorage does not support allow_overwrite. We can drop
     # the delete() when we move to a Storage class that supports it.
     red_bucket.delete(filename)
-    red_bucket.save("rfc-index.txt", StringIO(index))
-    log("Created rfc-index.txt in red_bucket storage")
+    red_bucket.save(filename, StringIO(index))
+    log(f"Created {filename} in red_bucket storage")
 
 
-def createRfcXmlIndex():
-    """
-    Create XML index of published documents
-    """
-    logger.info("Creating rfc-index.xml")
+def create_rfc_xml_index():
+    """Create XML index of published documents"""
+    log("Creating rfc-index.xml")
     rfc_index = ElementTree.Element(
         "rfc-index",
         attrib={
@@ -399,14 +400,19 @@ def createRfcXmlIndex():
     )
 
     # add data
-    add_bcp_xml_index_entries(rfc_index)
-    add_fyi_xml_index_entries(rfc_index)
+    add_subseries_xml_index_entries(rfc_index, "bcp", include_all=True)
+    add_subseries_xml_index_entries(rfc_index, "fyi")
     add_rfc_not_be_xml_index_entries(rfc_index)
     add_rfc_xml_index_entries(rfc_index)
-    add_std_xml_index_entries(rfc_index)
+    add_subseries_xml_index_entries(rfc_index, "std")
 
     # make it pretty
     rough_index = parseString(ElementTree.tostring(rfc_index, encoding="UTF-8"))
     pretty_index = rough_index.toprettyxml(indent=" " * 4, encoding="UTF-8")
-    print(pretty_index.decode())  # TODO: Write to a blob store
-    logger.info("Created rfc-index.xml")
+    red_bucket = storages["red_bucket"]
+    filename = "rfc-index.xml"
+    # Django 4.2's FileSystemStorage does not support allow_overwrite. We can drop
+    # the delete() when we move to a Storage class that supports it.
+    red_bucket.delete(filename)
+    red_bucket.save(filename, BytesIO(pretty_index))
+    log(f"Created {filename} in red_bucket storage")
