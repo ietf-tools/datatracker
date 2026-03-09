@@ -4,13 +4,11 @@
 from django.db.models import (
     BooleanField,
     Count,
-    JSONField,
     OuterRef,
     Prefetch,
     Q,
     QuerySet,
     Subquery,
-    Value,
 )
 from django.db.models.functions import TruncDate
 from django_filters import rest_framework as filters

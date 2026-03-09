@@ -116,9 +116,7 @@ def validate_doc_keywords(value):
         not isinstance(value, list | tuple | set) 
         or not all(isinstance(elt, str) for elt in value)
     ):
-        raise ValidationError(
-            f"Value must be an array of strings"
-        )
+        raise ValidationError("Value must be an array of strings")
 
 
 class DocumentInfo(models.Model):
