@@ -160,10 +160,6 @@ def augment_rfc_queryset(queryset: QuerySet[Document]):
                 output_field=BooleanField(),
             )
         )
-        .annotate(
-            # TODO implement this fake field for real
-            keywords=Value(["keyword"], output_field=JSONField()),
-        )
     )
 
 
