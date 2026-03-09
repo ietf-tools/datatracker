@@ -209,19 +209,19 @@ def add_subseries_xml_index_entries(rfc_index, ss_type, include_all=False):
     """Add subseries entries for rfc-index.xml"""
     # subseries docs annotated with numeric number
     ss_docs = list(
-        Document.objects.filter(
-            type_id=ss_type
-        ).annotate(
+        Document.objects.filter(type_id=ss_type)
+        .annotate(
             number=Cast(
                 Substr("name", 4, None),
                 output_field=models.IntegerField(),
             )
-        ).order_by("-number")
+        )
+        .order_by("-number")
     )
     if len(ss_docs) == 0:
         return  # very much not expected
     highest_number = ss_docs[0].number
-    for ss_number in range(1, highest_number+1):
+    for ss_number in range(1, highest_number + 1):
         if ss_docs[-1].number == ss_number:
             this_ss_doc = ss_docs.pop()
             contained_rfcs = this_ss_doc.contains()
@@ -230,7 +230,9 @@ def add_subseries_xml_index_entries(rfc_index, ss_type, include_all=False):
         if len(contained_rfcs) == 0 and not include_all:
             continue
         entry = ElementTree.SubElement(rfc_index, f"{ss_type}-entry")
-        ElementTree.SubElement(entry, "doc-id").text = f"{ss_type.upper()}{ss_number:04d}"
+        ElementTree.SubElement(
+            entry, "doc-id"
+        ).text = f"{ss_type.upper()}{ss_number:04d}"
         if len(contained_rfcs) > 0:
             is_also = ElementTree.SubElement(entry, "is-also")
             for rfc in sorted(contained_rfcs, key=attrgetter("rfc_number")):
@@ -254,10 +256,8 @@ def add_rfc_xml_index_entries(rfc_index):
     entries = []
     april1_rfc_numbers = get_april1_rfc_numbers()
     publication_statuses = get_publication_std_levels()
-    
-    published_rfcs = Document.objects.filter(
-        type_id="rfc"
-    ).order_by("rfc_number")
+
+    published_rfcs = Document.objects.filter(type_id="rfc").order_by("rfc_number")
 
     for rfc in published_rfcs:
         entry = ElementTree.SubElement(rfc_index, "rfc-entry")
@@ -281,9 +281,9 @@ def add_rfc_xml_index_entries(rfc_index):
         format_ = ElementTree.SubElement(entry, "format")
         fmts = [ff["fmt"] for ff in rfc.formats() if ff["fmt"] in FORMATS_FOR_INDEX]
         for fmt in sorted(fmts, key=format_ordering(rfc.rfc_number)):
-            ElementTree.SubElement(
-                format_, "file-format"
-            ).text = "ASCII" if fmt == "txt" else fmt.upper()
+            ElementTree.SubElement(format_, "file-format").text = (
+                "ASCII" if fmt == "txt" else fmt.upper()
+            )
 
         ElementTree.SubElement(entry, "page-count").text = str(rfc.pages)
 
@@ -292,7 +292,7 @@ def add_rfc_xml_index_entries(rfc_index):
             is_also = ElementTree.SubElement(entry, "is-also")
             for doc in part_of_documents:
                 ElementTree.SubElement(is_also, "doc-id").text = doc.name.upper()
-        
+
         obsoletes_documents = sorted(
             rfc.related_that_doc("obs"),
             key=attrgetter("rfc_number"),
@@ -300,7 +300,9 @@ def add_rfc_xml_index_entries(rfc_index):
         if len(obsoletes_documents) > 0:
             obsoletes = ElementTree.SubElement(entry, "obsoletes")
             for doc in obsoletes_documents:
-                ElementTree.SubElement(obsoletes, "doc-id").text = f"RFC{doc.rfc_number:04d}"
+                ElementTree.SubElement(
+                    obsoletes, "doc-id"
+                ).text = f"RFC{doc.rfc_number:04d}"
 
         updates_documents = sorted(
             rfc.related_that_doc("updates"),
@@ -309,7 +311,9 @@ def add_rfc_xml_index_entries(rfc_index):
         if len(updates_documents) > 0:
             updates = ElementTree.SubElement(entry, "updates")
             for doc in updates_documents:
-                ElementTree.SubElement(updates, "doc-id").text = f"RFC{doc.rfc_number:04d}"
+                ElementTree.SubElement(
+                    updates, "doc-id"
+                ).text = f"RFC{doc.rfc_number:04d}"
 
         obsoleted_by_documents = sorted(
             rfc.related_that("obs"),
@@ -318,7 +322,9 @@ def add_rfc_xml_index_entries(rfc_index):
         if len(obsoleted_by_documents) > 0:
             obsoleted_by = ElementTree.SubElement(entry, "obsoleted-by")
             for doc in obsoleted_by_documents:
-                ElementTree.SubElement(obsoleted_by, "doc-id").text = f"RFC{doc.rfc_number:04d}"
+                ElementTree.SubElement(
+                    obsoleted_by, "doc-id"
+                ).text = f"RFC{doc.rfc_number:04d}"
 
         updated_by_documents = sorted(
             rfc.related_that("updates"),
@@ -327,7 +333,9 @@ def add_rfc_xml_index_entries(rfc_index):
         if len(updated_by_documents) > 0:
             updated_by = ElementTree.SubElement(entry, "updated-by")
             for doc in updated_by_documents:
-                ElementTree.SubElement(updated_by, "doc-id").text = f"RFC{doc.rfc_number:04d}"
+                ElementTree.SubElement(
+                    updated_by, "doc-id"
+                ).text = f"RFC{doc.rfc_number:04d}"
 
         if len(rfc.keywords) > 0:
             keywords = ElementTree.SubElement(entry, "keywords")
@@ -342,23 +350,33 @@ def add_rfc_xml_index_entries(rfc_index):
         if draft is not None:
             ElementTree.SubElement(entry, "draft").text = draft.name
 
-        ElementTree.SubElement(entry, "current-status").text = rfc.std_level.name.upper()
-        ElementTree.SubElement(entry, "publication-status").text = publication_statuses[rfc.rfc_number].name.upper()
-        ElementTree.SubElement(entry, "stream").text = rfc.stream.name
-
-        if rfc.area is not None:
-            ElementTree.SubElement(entry, "area").text = rfc.area.acronym
-
-        if rfc.group and rfc.group.type_id == "wg":
-            ElementTree.SubElement(entry, "wg_acronym").text = rfc.group.acronym
+        ElementTree.SubElement(
+            entry, "current-status"
+        ).text = rfc.std_level.name.upper()
+        ElementTree.SubElement(entry, "publication-status").text = publication_statuses[
+            rfc.rfc_number
+        ].name.upper()
+        ElementTree.SubElement(entry, "stream").text = (
+            "INDEPENDENT" if rfc.stream_id == "ise" else rfc.stream.name
+        )
+        
+        # Add area / wg_acronym
+        if rfc.stream_id == "ietf":
+            if rfc.group.acronym in ["none", "gen"]:
+                ElementTree.SubElement(
+                    entry, "wg_acronym"
+                ).text = "NON WORKING GROUP" 
+            else:
+                if rfc.area is not None:
+                    ElementTree.SubElement(entry, "area").text = rfc.area.acronym
+                if rfc.group:
+                    ElementTree.SubElement(
+                        entry, "wg_acronym"
+                    ).text = rfc.group.acronym
 
         if rfc.tags.filter(slug="errata").exists():
-            ElementTree.SubElement(
-                entry, "errata-url"
-            ).text = errata_url(rfc)
-        ElementTree.SubElement(
-            entry, "doi"
-        ).text = rfc_doi(rfc)
+            ElementTree.SubElement(entry, "errata-url").text = errata_url(rfc)
+        ElementTree.SubElement(entry, "doi").text = rfc_doi(rfc)
         entries.append(entry)
 
 
