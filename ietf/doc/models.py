@@ -13,6 +13,7 @@ import rfc2html
 from io import BufferedReader
 from pathlib import Path
 
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from lxml import etree
 from typing import Optional, Protocol, TYPE_CHECKING, Union
@@ -109,6 +110,17 @@ IESG_CHARTER_ACTIVE_STATES = ("intrev", "extrev", "iesgrev")
 IESG_STATCHG_CONFLREV_ACTIVE_STATES = ("iesgeval", "defer")
 IESG_SUBSTATE_TAGS = ('ad-f-up', 'need-rev', 'extpty')
 
+
+def validate_doc_keywords(value):
+    if (
+        not isinstance(value, list | tuple | set) 
+        or not all(isinstance(elt, str) for elt in value)
+    ):
+        raise ValidationError(
+            f"Value must be an array of strings"
+        )
+
+
 class DocumentInfo(models.Model):
     """Any kind of document.  Draft, RFC, Charter, IPR Statement, Liaison Statement"""
     time = models.DateTimeField(default=timezone.now) # should probably have auto_now=True
@@ -142,6 +154,11 @@ class DocumentInfo(models.Model):
     uploaded_filename = models.TextField(blank=True)
     note = models.TextField(blank=True)
     rfc_number = models.PositiveIntegerField(blank=True, null=True)  # only valid for type="rfc"
+    keywords = models.JSONField(
+        default=list,
+        max_length=1000,
+        validators=[validate_doc_keywords],
+    )
 
     def file_extension(self):
         if not hasattr(self, '_cached_extension'):
