@@ -329,11 +329,10 @@ def add_rfc_xml_index_entries(rfc_index):
             for doc in updated_by_documents:
                 ElementTree.SubElement(updated_by, "doc-id").text = f"RFC{doc.rfc_number:04d}"
 
-        # todo implement keywords
-        # if rfc.keywords.strip():
-        #     keywords = ElementTree.SubElement(entry, "keywords")
-        #     for keyword in rfc.keywords.strip().split(","):
-        #         ElementTree.SubElement(keywords, "kw").text = keyword.strip()
+        if len(rfc.keywords) > 0:
+            keywords = ElementTree.SubElement(entry, "keywords")
+            for keyword in rfc.keywords:
+                ElementTree.SubElement(keywords, "kw").text = keyword.strip()
 
         if rfc.abstract:
             abstract_ = ElementTree.SubElement(entry, "abstract")
