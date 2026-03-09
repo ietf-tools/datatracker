@@ -348,7 +348,7 @@ def add_rfc_xml_index_entries(rfc_index):
 
         draft = rfc.came_from_draft()
         if draft is not None:
-            ElementTree.SubElement(entry, "draft").text = draft.name
+            ElementTree.SubElement(entry, "draft").text = f"{draft.name}-{draft.rev}"
 
         ElementTree.SubElement(
             entry, "current-status"
