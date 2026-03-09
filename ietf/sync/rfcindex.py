@@ -4,7 +4,7 @@ from collections.abc import Container
 from dataclasses import dataclass
 from io import StringIO, BytesIO
 from itertools import chain
-from operator import attrgetter
+from operator import attrgetter, itemgetter
 from textwrap import fill
 from xml.dom.minidom import parseString
 from xml.etree import ElementTree
@@ -52,7 +52,7 @@ def get_unusable_rfc_numbers() -> list[UnusableRfcNumber]:
     assert all(isinstance(record["comment"], str) for record in records)
     return [
         UnusableRfcNumber(rfc_number=record["number"], comment=record["comment"])
-        for record in records
+        for record in sorted(records, key=itemgetter("number"))
     ]
 
 
@@ -241,16 +241,6 @@ def add_subseries_xml_index_entries(rfc_index, ss_type, include_all=False):
                 ).text = f"RFC{rfc.rfc_number:04d}"
 
 
-def add_rfc_not_be_xml_index_entries(rfc_index):
-    """Add unusable RFC entries for rfc-index.xml"""
-    entries = []
-
-    for record in sorted(get_unusable_rfc_numbers(), key=attrgetter("rfc_number")):
-        entry = ElementTree.SubElement(rfc_index, "rfc-not-issued-entry")
-        ElementTree.SubElement(entry, "doc-id").text = f"RFC{record.rfc_number:04d}"
-        entries.append(entry)
-
-
 def add_rfc_xml_index_entries(rfc_index):
     """Add RFC entries for rfc-index.xml"""
     entries = []
@@ -259,7 +249,29 @@ def add_rfc_xml_index_entries(rfc_index):
 
     published_rfcs = Document.objects.filter(type_id="rfc").order_by("rfc_number")
 
-    for rfc in published_rfcs:
+    # Iterators for unpublished and published, both sorted by number
+    unpublished_iter = iter(get_unusable_rfc_numbers())
+    published_iter = iter(published_rfcs)
+
+    # Prime the next_* values
+    next_unpublished = next(unpublished_iter, None)
+    next_published = next(published_iter, None)
+
+    while next_published is not None or next_unpublished is not None:
+        if next_unpublished is not None and (
+            next_published is None
+            or next_unpublished.rfc_number < next_published.rfc_number
+        ):
+            entry = ElementTree.SubElement(rfc_index, "rfc-not-issued-entry")
+            ElementTree.SubElement(
+                entry, "doc-id"
+            ).text = f"RFC{next_unpublished.rfc_number:04d}"
+            entries.append(entry)
+            next_unpublished = next(unpublished_iter, None)
+            continue
+
+        rfc = next_published  # hang on to this
+        next_published = next(published_iter, None)  # prep for next iteration
         entry = ElementTree.SubElement(rfc_index, "rfc-entry")
 
         ElementTree.SubElement(entry, "doc-id").text = f"RFC{rfc.rfc_number:04d}"
@@ -415,7 +427,6 @@ def create_rfc_xml_index():
     # add data
     add_subseries_xml_index_entries(rfc_index, "bcp", include_all=True)
     add_subseries_xml_index_entries(rfc_index, "fyi")
-    add_rfc_not_be_xml_index_entries(rfc_index)
     add_rfc_xml_index_entries(rfc_index)
     add_subseries_xml_index_entries(rfc_index, "std")
 
