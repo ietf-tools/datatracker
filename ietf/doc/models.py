@@ -466,11 +466,12 @@ class DocumentInfo(models.Model):
 
     def author_list(self):
         """List of author emails"""
-        author_qs = (
-            self.rfcauthor_set
-            if self.type_id == "rfc" and self.rfcauthor_set.exists()
-            else self.documentauthor_set
-        ).select_related("email").order_by("order")
+        if self.type_id == "rfc" and self.rfcauthor_set.exists():
+            author_qs = self.rfcauthor_set.select_related("person").order_by("order")
+        else:
+            author_qs = self.documentauthor_set.select_related("email").order_by(
+                "order"
+            )
         best_addresses = []
         for author in author_qs:
             if author.email:
@@ -953,6 +954,11 @@ class RfcAuthor(models.Model):
     @property
     def email(self) -> Email | None:
         return self.person.email() if self.person else None
+    
+    def format_for_titlepage(self):
+        if self.is_editor:
+            return f"{self.titlepage_name}, Ed."
+        return self.titlepage_name
 
 
 class DocumentAuthorInfo(models.Model):

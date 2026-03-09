@@ -897,7 +897,7 @@ from ietf.person.resources import EmailResource, PersonResource
 class RfcAuthorResource(ModelResource):
     document         = ToOneField(DocumentResource, 'document')
     person           = ToOneField(PersonResource, 'person', null=True)
-    email            = ToOneField(EmailResource, 'email', null=True)
+    email            = ToOneField(EmailResource, 'email', null=True, readonly=True)
     class Meta:
         queryset = RfcAuthor.objects.all()
         serializer = api.Serializer()
