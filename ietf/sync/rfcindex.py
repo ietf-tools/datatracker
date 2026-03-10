@@ -6,6 +6,9 @@ from io import StringIO, BytesIO
 from itertools import chain
 from operator import attrgetter, itemgetter
 from textwrap import fill
+from urllib.parse import urljoin
+
+from django.conf import settings
 from lxml import etree
 
 from django.core.files.storage import storages
@@ -32,7 +35,7 @@ def format_rfc_number(n):
 
 
 def errata_url(rfc: Document):
-    return f"https://www.rfc-editor.org/errata/rfc{rfc.rfc_number}"
+    return urljoin(settings.RFC_EDITOR_ERRATA_BASE_URL + "/", f"rfc{rfc.rfc_number}")
 
 
 @dataclass
