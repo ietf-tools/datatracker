@@ -839,9 +839,8 @@ MATERIALS_TYPES_SERVED_BY_WORKER = [
 ]
 
 # Other storages
-# todo make this real
 STORAGES["red_bucket"] = {
-    "BACKEND": "django.core.files.storage.FileSystemStorage",
+    "BACKEND": "django.core.files.storage.InMemoryStorage",
     "OPTIONS": {"location": "red_bucket"},
 }
 

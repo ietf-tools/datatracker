@@ -114,3 +114,9 @@ try:
     AUTH_PASSWORD_VALIDATORS = ORIG_AUTH_PASSWORD_VALIDATORS
 except NameError:
     pass
+
+# Use InMemoryStorage for red bucket storage
+STORAGES["red_bucket"] = {
+    "BACKEND": "django.core.files.storage.InMemoryStorage",
+    "OPTIONS": {"location": "red_bucket"},
+}
