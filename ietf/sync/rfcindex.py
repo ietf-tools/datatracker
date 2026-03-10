@@ -388,7 +388,7 @@ def add_rfc_xml_index_entries(rfc_index):
 
         # Add area / wg_acronym
         if rfc.stream_id == "ietf":
-            if rfc.group.acronym in ["none", "gen"]:
+            if rfc.group.type_id in ["individ", "area"]:
                 etree.SubElement(entry, "wg_acronym").text = "NON WORKING GROUP"
             else:
                 if rfc.area is not None:
