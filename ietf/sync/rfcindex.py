@@ -314,6 +314,20 @@ def add_rfc_xml_index_entries(rfc_index):
 
         etree.SubElement(entry, "page-count").text = str(rfc.pages)
 
+        if len(rfc.keywords) > 0:
+            keywords = etree.SubElement(entry, "keywords")
+            for keyword in rfc.keywords:
+                etree.SubElement(keywords, "kw").text = keyword.strip()
+
+        if rfc.abstract:
+            abstract = etree.SubElement(entry, "abstract")
+            for paragraph in rfc.abstract.split("\n\n"):
+                etree.SubElement(abstract, "p").text = paragraph.strip()
+
+        draft = rfc.came_from_draft()
+        if draft is not None:
+            etree.SubElement(entry, "draft").text = f"{draft.name}-{draft.rev}"
+
         part_of_documents = rfc.part_of()
         if len(part_of_documents) > 0:
             is_also = etree.SubElement(entry, "is-also")
@@ -331,17 +345,6 @@ def add_rfc_xml_index_entries(rfc_index):
                     obsoletes, "doc-id"
                 ).text = f"RFC{format_rfc_number(doc.rfc_number)}"
 
-        updates_documents = sorted(
-            rfc.related_that_doc("updates"),
-            key=attrgetter("rfc_number"),
-        )
-        if len(updates_documents) > 0:
-            updates = etree.SubElement(entry, "updates")
-            for doc in updates_documents:
-                etree.SubElement(
-                    updates, "doc-id"
-                ).text = f"RFC{format_rfc_number(doc.rfc_number)}"
-
         obsoleted_by_documents = sorted(
             rfc.related_that("obs"),
             key=attrgetter("rfc_number"),
@@ -351,6 +354,17 @@ def add_rfc_xml_index_entries(rfc_index):
             for doc in obsoleted_by_documents:
                 etree.SubElement(
                     obsoleted_by, "doc-id"
+                ).text = f"RFC{format_rfc_number(doc.rfc_number)}"
+
+        updates_documents = sorted(
+            rfc.related_that_doc("updates"),
+            key=attrgetter("rfc_number"),
+        )
+        if len(updates_documents) > 0:
+            updates = etree.SubElement(entry, "updates")
+            for doc in updates_documents:
+                etree.SubElement(
+                    updates, "doc-id"
                 ).text = f"RFC{format_rfc_number(doc.rfc_number)}"
 
         updated_by_documents = sorted(
@@ -363,20 +377,6 @@ def add_rfc_xml_index_entries(rfc_index):
                 etree.SubElement(
                     updated_by, "doc-id"
                 ).text = f"RFC{format_rfc_number(doc.rfc_number)}"
-
-        if len(rfc.keywords) > 0:
-            keywords = etree.SubElement(entry, "keywords")
-            for keyword in rfc.keywords:
-                etree.SubElement(keywords, "kw").text = keyword.strip()
-
-        if rfc.abstract:
-            abstract = etree.SubElement(entry, "abstract")
-            for paragraph in rfc.abstract.split("\n\n"):
-                etree.SubElement(abstract, "p").text = paragraph.strip()
-
-        draft = rfc.came_from_draft()
-        if draft is not None:
-            etree.SubElement(entry, "draft").text = f"{draft.name}-{draft.rev}"
 
         etree.SubElement(entry, "current-status").text = rfc.std_level.name.upper()
         etree.SubElement(entry, "publication-status").text = publication_statuses[
