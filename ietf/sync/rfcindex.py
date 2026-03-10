@@ -254,6 +254,25 @@ def add_subseries_xml_index_entries(rfc_index, ss_type, include_all=False):
                 ).text = f"RFC{format_rfc_number(rfc.rfc_number)}"
 
 
+def add_related_xml_index_entries(root: etree.Element, rfc: Document, tag: str):
+    relation_getter = {
+        "obsoletes": lambda doc: doc.related_that_doc("obs"),
+        "obsoleted-by": lambda doc: doc.related_that("obs"),
+        "updates": lambda doc: doc.related_that_doc("updates"),
+        "updated-by": lambda doc: doc.related_that("updates"),
+    }
+    related_docs = sorted(
+        relation_getter[tag](rfc),
+        key=attrgetter("rfc_number"),
+    )
+    if len(related_docs) > 0:
+        element = etree.SubElement(root, tag)
+        for doc in related_docs:
+            etree.SubElement(
+                element, "doc-id"
+            ).text = f"RFC{format_rfc_number(doc.rfc_number)}"
+
+
 def add_rfc_xml_index_entries(rfc_index):
     """Add RFC entries for rfc-index.xml"""
     entries = []
@@ -334,49 +353,10 @@ def add_rfc_xml_index_entries(rfc_index):
             for doc in part_of_documents:
                 etree.SubElement(is_also, "doc-id").text = doc.name.upper()
 
-        obsoletes_documents = sorted(
-            rfc.related_that_doc("obs"),
-            key=attrgetter("rfc_number"),
-        )
-        if len(obsoletes_documents) > 0:
-            obsoletes = etree.SubElement(entry, "obsoletes")
-            for doc in obsoletes_documents:
-                etree.SubElement(
-                    obsoletes, "doc-id"
-                ).text = f"RFC{format_rfc_number(doc.rfc_number)}"
-
-        obsoleted_by_documents = sorted(
-            rfc.related_that("obs"),
-            key=attrgetter("rfc_number"),
-        )
-        if len(obsoleted_by_documents) > 0:
-            obsoleted_by = etree.SubElement(entry, "obsoleted-by")
-            for doc in obsoleted_by_documents:
-                etree.SubElement(
-                    obsoleted_by, "doc-id"
-                ).text = f"RFC{format_rfc_number(doc.rfc_number)}"
-
-        updates_documents = sorted(
-            rfc.related_that_doc("updates"),
-            key=attrgetter("rfc_number"),
-        )
-        if len(updates_documents) > 0:
-            updates = etree.SubElement(entry, "updates")
-            for doc in updates_documents:
-                etree.SubElement(
-                    updates, "doc-id"
-                ).text = f"RFC{format_rfc_number(doc.rfc_number)}"
-
-        updated_by_documents = sorted(
-            rfc.related_that("updates"),
-            key=attrgetter("rfc_number"),
-        )
-        if len(updated_by_documents) > 0:
-            updated_by = etree.SubElement(entry, "updated-by")
-            for doc in updated_by_documents:
-                etree.SubElement(
-                    updated_by, "doc-id"
-                ).text = f"RFC{format_rfc_number(doc.rfc_number)}"
+        add_related_xml_index_entries(entry, rfc, "obsoletes")
+        add_related_xml_index_entries(entry, rfc, "obsoleted-by")
+        add_related_xml_index_entries(entry, rfc, "updates")
+        add_related_xml_index_entries(entry, rfc, "updated-by")
 
         etree.SubElement(entry, "current-status").text = rfc.std_level.name.upper()
         etree.SubElement(entry, "publication-status").text = publication_statuses[
