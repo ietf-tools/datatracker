@@ -48,7 +48,7 @@ class UnusableRfcNumber:
 
 def save_to_red_bucket(filename: str, content: BytesIO | StringIO):
     red_bucket = storages["red_bucket"]
-    bucket_path = str(Path(getattr(settings, "RFCINDEX_PATH_IN_BUCKET", "")) / filename)
+    bucket_path = str(Path(getattr(settings, "RFCINDEX_OUTPUT_PATH", "")) / filename)
     if getattr(settings, "RFCINDEX_DELETE_THEN_WRITE", True):
         # Django 4.2's FileSystemStorage does not support allow_overwrite.
         red_bucket.delete(bucket_path)
@@ -57,7 +57,8 @@ def save_to_red_bucket(filename: str, content: BytesIO | StringIO):
 
 
 def get_unusable_rfc_numbers() -> list[UnusableRfcNumber]:
-    FILENAME = "unusable-rfc-numbers.json"
+    bucket_path = Path(getattr(settings, "RFCINDEX_INPUT_PATH", "")) 
+    FILENAME = str(bucket_path / "unusable-rfc-numbers.json")
     try:
         with storages["red_bucket"].open(FILENAME) as urn_file:
             records = json.load(urn_file)
@@ -83,7 +84,8 @@ def get_unusable_rfc_numbers() -> list[UnusableRfcNumber]:
 
 
 def get_april1_rfc_numbers() -> Container[int]:
-    FILENAME = "april-first-rfc-numbers.json"
+    bucket_path = Path(getattr(settings, "RFCINDEX_INPUT_PATH", "")) 
+    FILENAME = str(bucket_path / "april-first-rfc-numbers.json")
     try:
         with storages["red_bucket"].open(FILENAME) as urn_file:
             records = json.load(urn_file)
@@ -105,7 +107,8 @@ def get_april1_rfc_numbers() -> Container[int]:
 
 
 def get_publication_std_levels() -> dict[int, StdLevelName]:
-    FILENAME = "publication-std-levels.json"
+    bucket_path = Path(getattr(settings, "RFCINDEX_INPUT_PATH", "")) 
+    FILENAME = str(bucket_path / "publication-std-levels.json")
     try:
         with storages["red_bucket"].open(FILENAME) as urn_file:
             records = json.load(urn_file)
