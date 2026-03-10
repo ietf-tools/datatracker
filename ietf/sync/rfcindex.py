@@ -20,10 +20,20 @@ from ietf.utils.log import log
 
 FORMATS_FOR_INDEX = ["txt", "html", "pdf", "xml", "ps"]
 
+# If True, tries to more closely match the legacy rfc-index.xml format for easier diff
+RFCINDEX_MATCH_LEGACY_XML = False
+
+
+def format_rfc_number(n):
+    if RFCINDEX_MATCH_LEGACY_XML:
+        return format(n, "04")
+    else:
+        return format(n)
+
 
 def rfc_doi(rfc: Document):
     assert rfc.rfc_number is not None
-    return f"10.17487/RFC{rfc.rfc_number:04d}"
+    return f"10.17487/RFC{format_rfc_number(rfc.rfc_number)}"
 
 
 def errata_url(rfc: Document):
@@ -106,7 +116,7 @@ def get_rfc_text_index_entries():
     )
     for rfc in rfcs:
         if isinstance(rfc, UnusableRfcNumber):
-            entries.append(f"{rfc.rfc_number:04d} Not Issued.")
+            entries.append(f"{format_rfc_number(rfc.rfc_number)} Not Issued.")
         else:
             assert isinstance(rfc, Document)
             authors = ", ".join(
@@ -139,7 +149,8 @@ def get_rfc_text_index_entries():
             )
             if len(obsoletes_documents) > 0:
                 obsoletes_names = ", ".join(
-                    f"RFC{doc.rfc_number:04d}" for doc in obsoletes_documents
+                    f"RFC{format_rfc_number(doc.rfc_number)}"
+                    for doc in obsoletes_documents
                 )
                 obsoletes = f" (Obsoletes {obsoletes_names})"
 
@@ -151,7 +162,8 @@ def get_rfc_text_index_entries():
             )
             if len(obsoleted_by_documents) > 0:
                 obsoleted_by_names = ", ".join(
-                    f"RFC{doc.rfc_number:04d}" for doc in obsoleted_by_documents
+                    f"RFC{format_rfc_number(doc.rfc_number)}"
+                    for doc in obsoleted_by_documents
                 )
                 obsoleted_by = f" (Obsoleted by {obsoleted_by_names})"
 
@@ -163,7 +175,8 @@ def get_rfc_text_index_entries():
             )
             if len(updates_documents) > 0:
                 updates_names = ", ".join(
-                    f"RFC{doc.rfc_number:04d}" for doc in updates_documents
+                    f"RFC{format_rfc_number(doc.rfc_number)}"
+                    for doc in updates_documents
                 )
                 updates = f" (Updates {updates_names})"
 
@@ -175,7 +188,8 @@ def get_rfc_text_index_entries():
             )
             if len(updated_by_documents) > 0:
                 updated_by_names = ", ".join(
-                    f"RFC{doc.rfc_number:04d}" for doc in updated_by_documents
+                    f"RFC{format_rfc_number(doc.rfc_number)}"
+                    for doc in updated_by_documents
                 )
                 updated_by = f" (Updated by {updated_by_names})"
 
@@ -183,7 +197,7 @@ def get_rfc_text_index_entries():
 
             # subseries
             subseries = ",".join(
-                f"{container.type.slug}{int(container.name[3:]):04d}"
+                f"{container.type.slug}{format_rfc_number(int(container.name[3:]))}"
                 for container in rfc.part_of()
             ).upper()
             if subseries:
@@ -191,7 +205,7 @@ def get_rfc_text_index_entries():
 
             entry = fill(
                 (
-                    f"{rfc.rfc_number:04d} {rfc.title}. {authors}. {date}. "
+                    f"{format_rfc_number(rfc.rfc_number)} {rfc.title}. {authors}. {date}. "
                     f"(Format: {formats}){doc_relations}{subseries}"
                     f"(Status: {str(rfc.std_level).upper()}) "
                     f"(DOI: {rfc_doi(rfc)})"
@@ -229,11 +243,15 @@ def add_subseries_xml_index_entries(rfc_index, ss_type, include_all=False):
         if len(contained_rfcs) == 0 and not include_all:
             continue
         entry = etree.SubElement(rfc_index, f"{ss_type}-entry")
-        etree.SubElement(entry, "doc-id").text = f"{ss_type.upper()}{ss_number:04d}"
+        etree.SubElement(
+            entry, "doc-id"
+        ).text = f"{ss_type.upper()}{format_rfc_number(ss_number)}"
         if len(contained_rfcs) > 0:
             is_also = etree.SubElement(entry, "is-also")
             for rfc in sorted(contained_rfcs, key=attrgetter("rfc_number")):
-                etree.SubElement(is_also, "doc-id").text = f"RFC{rfc.rfc_number:04d}"
+                etree.SubElement(
+                    is_also, "doc-id"
+                ).text = f"RFC{format_rfc_number(rfc.rfc_number)}"
 
 
 def add_rfc_xml_index_entries(rfc_index):
@@ -260,7 +278,7 @@ def add_rfc_xml_index_entries(rfc_index):
             entry = etree.SubElement(rfc_index, "rfc-not-issued-entry")
             etree.SubElement(
                 entry, "doc-id"
-            ).text = f"RFC{next_unpublished.rfc_number:04d}"
+            ).text = f"RFC{format_rfc_number(next_unpublished.rfc_number)}"
             entries.append(entry)
             next_unpublished = next(unpublished_iter, None)
             continue
@@ -269,7 +287,9 @@ def add_rfc_xml_index_entries(rfc_index):
         next_published = next(published_iter, None)  # prep for next iteration
         entry = etree.SubElement(rfc_index, "rfc-entry")
 
-        etree.SubElement(entry, "doc-id").text = f"RFC{rfc.rfc_number:04d}"
+        etree.SubElement(
+            entry, "doc-id"
+        ).text = f"RFC{format_rfc_number(rfc.rfc_number)}"
         etree.SubElement(entry, "title").text = rfc.title
 
         for author in rfc.rfcauthor_set.all():
@@ -289,7 +309,7 @@ def add_rfc_xml_index_entries(rfc_index):
         fmts = [ff["fmt"] for ff in rfc.formats() if ff["fmt"] in FORMATS_FOR_INDEX]
         for fmt in sorted(fmts, key=format_ordering(rfc.rfc_number)):
             etree.SubElement(format_, "file-format").text = (
-                "ASCII" if fmt == "txt" else fmt.upper()
+                "ASCII" if RFCINDEX_MATCH_LEGACY_XML and fmt == "txt" else fmt.upper()
             )
 
         etree.SubElement(entry, "page-count").text = str(rfc.pages)
@@ -307,7 +327,9 @@ def add_rfc_xml_index_entries(rfc_index):
         if len(obsoletes_documents) > 0:
             obsoletes = etree.SubElement(entry, "obsoletes")
             for doc in obsoletes_documents:
-                etree.SubElement(obsoletes, "doc-id").text = f"RFC{doc.rfc_number:04d}"
+                etree.SubElement(
+                    obsoletes, "doc-id"
+                ).text = f"RFC{format_rfc_number(doc.rfc_number)}"
 
         updates_documents = sorted(
             rfc.related_that_doc("updates"),
@@ -316,7 +338,9 @@ def add_rfc_xml_index_entries(rfc_index):
         if len(updates_documents) > 0:
             updates = etree.SubElement(entry, "updates")
             for doc in updates_documents:
-                etree.SubElement(updates, "doc-id").text = f"RFC{doc.rfc_number:04d}"
+                etree.SubElement(
+                    updates, "doc-id"
+                ).text = f"RFC{format_rfc_number(doc.rfc_number)}"
 
         obsoleted_by_documents = sorted(
             rfc.related_that("obs"),
@@ -327,7 +351,7 @@ def add_rfc_xml_index_entries(rfc_index):
             for doc in obsoleted_by_documents:
                 etree.SubElement(
                     obsoleted_by, "doc-id"
-                ).text = f"RFC{doc.rfc_number:04d}"
+                ).text = f"RFC{format_rfc_number(doc.rfc_number)}"
 
         updated_by_documents = sorted(
             rfc.related_that("updates"),
@@ -336,7 +360,9 @@ def add_rfc_xml_index_entries(rfc_index):
         if len(updated_by_documents) > 0:
             updated_by = etree.SubElement(entry, "updated-by")
             for doc in updated_by_documents:
-                etree.SubElement(updated_by, "doc-id").text = f"RFC{doc.rfc_number:04d}"
+                etree.SubElement(
+                    updated_by, "doc-id"
+                ).text = f"RFC{format_rfc_number(doc.rfc_number)}"
 
         if len(rfc.keywords) > 0:
             keywords = etree.SubElement(entry, "keywords")
