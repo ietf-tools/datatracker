@@ -344,8 +344,9 @@ def add_rfc_xml_index_entries(rfc_index):
                 etree.SubElement(keywords, "kw").text = keyword.strip()
 
         if rfc.abstract:
-            abstract_ = etree.SubElement(entry, "abstract")
-            etree.SubElement(abstract_, "p").text = rfc.abstract
+            abstract = etree.SubElement(entry, "abstract")
+            for paragraph in rfc.abstract.split("\n\n"):
+                etree.SubElement(abstract, "p").text = paragraph.strip()
 
         draft = rfc.came_from_draft()
         if draft is not None:
