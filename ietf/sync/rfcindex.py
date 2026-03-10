@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 import json
+from collections import defaultdict
 from collections.abc import Container
 from dataclasses import dataclass
 from io import StringIO, BytesIO
@@ -50,7 +51,14 @@ def get_unusable_rfc_numbers() -> list[UnusableRfcNumber]:
         with storages["red_bucket"].open(FILENAME) as urn_file:
             records = json.load(urn_file)
     except FileNotFoundError:
-        log(f"Error: unable to open {FILENAME} in red_bucket storage")
+        if settings.SERVER_MODE == "production":
+            log(f"Error: unable to open {FILENAME} in red_bucket storage")
+            raise
+        elif settings.SERVER_MODE == "development":
+            log(
+                f"Unable to open {FILENAME} in red_bucket storage. This is okay in dev "
+                "but generated rfc-index will not agree with RFC Editor values."
+            )
         return []
     except json.JSONDecodeError:
         log(f"Error: unable to parse {FILENAME} in red_bucket storage")
@@ -69,7 +77,14 @@ def get_april1_rfc_numbers() -> Container[int]:
         with storages["red_bucket"].open(FILENAME) as urn_file:
             records = json.load(urn_file)
     except FileNotFoundError:
-        log(f"Error: unable to open {FILENAME} in red_bucket storage")
+        if settings.SERVER_MODE == "production":
+            log(f"Error: unable to open {FILENAME} in red_bucket storage")
+            raise
+        elif settings.SERVER_MODE == "development":
+            log(
+                f"Unable to open {FILENAME} in red_bucket storage. This is okay in dev "
+                "but generated rfc-index will not agree with RFC Editor values."
+            )
         return []
     except json.JSONDecodeError:
         log(f"Error: unable to parse {FILENAME} in red_bucket storage")
@@ -78,22 +93,34 @@ def get_april1_rfc_numbers() -> Container[int]:
     return records
 
 
-def get_publication_std_levels() -> Container[int]:
+def get_publication_std_levels() -> dict[int, StdLevelName]:
     FILENAME = "publication-std-levels.json"
     try:
         with storages["red_bucket"].open(FILENAME) as urn_file:
             records = json.load(urn_file)
     except FileNotFoundError:
-        log(f"Error: unable to open {FILENAME} in red_bucket storage")
-        return []
+        if settings.SERVER_MODE == "production":
+            log(f"Error: unable to open {FILENAME} in red_bucket storage")
+            raise
+        elif settings.SERVER_MODE == "development":
+            log(
+                f"Unable to open {FILENAME} in red_bucket storage. This is okay in dev "
+                "but generated rfc-index will not agree with RFC Editor values."
+            )
+        values = {}
     except json.JSONDecodeError:
         log(f"Error: unable to parse {FILENAME} in red_bucket storage")
-        return []
-    assert all(isinstance(record["number"], int) for record in records)
-    return {
-        record["number"]: StdLevelName.objects.get(slug=record["publication_std_level"])
-        for record in records
-    }
+        values = {}
+    else:
+        assert all(isinstance(record["number"], int) for record in records)
+        values = {
+            record["number"]: StdLevelName.objects.get(
+                slug=record["publication_std_level"]
+            )
+            for record in records
+        }
+    unknown_std_level = StdLevelName.objects.get(slug="unkn")
+    return defaultdict(lambda: unknown_std_level, values)
 
 
 def format_ordering(rfc_number):
