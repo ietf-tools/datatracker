@@ -158,6 +158,12 @@ class DocumentInfo(models.Model):
         validators=[validate_doc_keywords],
     )
 
+    @property
+    def doi(self) -> str | None:
+        if self.type_id == "rfc" and self.rfc_number is not None:
+            return f"{settings.IETF_DOI_PREFIX}/RFC{self.rfc_number:04d}"
+        return None
+
     def file_extension(self):
         if not hasattr(self, '_cached_extension'):
             if self.uploaded_filename:

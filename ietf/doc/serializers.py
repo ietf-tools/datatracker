@@ -291,9 +291,9 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     @extend_schema_field(DocIdentifierSerializer(many=True))
     def get_identifiers(self, doc: Document):
         identifiers = []
-        if doc.rfc_number:
+        if doc.doi:
             identifiers.append(
-                DocIdentifier(type="doi", value=f"10.17487/RFC{doc.rfc_number:04d}")
+                DocIdentifier(type="doi", value=doc.doi)
             )
         return DocIdentifierSerializer(instance=identifiers, many=True).data
 

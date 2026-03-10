@@ -31,11 +31,6 @@ def format_rfc_number(n):
         return format(n)
 
 
-def rfc_doi(rfc: Document):
-    assert rfc.rfc_number is not None
-    return f"10.17487/RFC{rfc.rfc_number:04d}"
-
-
 def errata_url(rfc: Document):
     return f"https://www.rfc-editor.org/errata/rfc{rfc.rfc_number}"
 
@@ -208,7 +203,7 @@ def get_rfc_text_index_entries():
                     f"{format_rfc_number(rfc.rfc_number)} {rfc.title}. {authors}. {date}. "
                     f"(Format: {formats}){doc_relations}{subseries}"
                     f"(Status: {str(rfc.std_level).upper()}) "
-                    f"(DOI: {rfc_doi(rfc)})"
+                    f"(DOI: {rfc.doi})"
                 ),
                 width=73,
                 subsequent_indent=" " * 5,
@@ -378,7 +373,7 @@ def add_rfc_xml_index_entries(rfc_index):
 
         if rfc.tags.filter(slug="errata").exists():
             etree.SubElement(entry, "errata-url").text = errata_url(rfc)
-        etree.SubElement(entry, "doi").text = rfc_doi(rfc)
+        etree.SubElement(entry, "doi").text = rfc.doi
         entries.append(entry)
 
 

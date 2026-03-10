@@ -1576,3 +1576,5 @@ if SERVER_MODE != 'production':
 
 
 YOUTUBE_DOMAINS = ['www.youtube.com', 'youtube.com', 'youtu.be', 'm.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com']
+
+IETF_DOI_PREFIX = "10.17487"
