@@ -1,5 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2007-2026, All Rights Reserved
 
 import debug  # pyflakes:ignore
 
@@ -266,7 +265,7 @@ class RfcFeed(Feed):
         extra.update(
             {
                 "doi": item.doi,
-                "doiuri": f"http://dx.doi.org/{item.doi}",
+                "doiuri": f"https://doi.org/{item.doi}",
             }
         )
 
