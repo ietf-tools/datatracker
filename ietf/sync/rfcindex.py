@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from io import StringIO, BytesIO
 from itertools import chain
 from operator import attrgetter, itemgetter
+from pathlib import Path
 from textwrap import fill
 from urllib.parse import urljoin
 
@@ -43,6 +44,16 @@ def errata_url(rfc: Document):
 class UnusableRfcNumber:
     rfc_number: int
     comment: str
+
+
+def save_to_red_bucket(filename: str, content: BytesIO | StringIO):
+    red_bucket = storages["red_bucket"]
+    bucket_path = str(Path(getattr(settings, "RFCINDEX_PATH_IN_BUCKET", "")) / filename)
+    if getattr(settings, "RFCINDEX_DELETE_THEN_WRITE", True):
+        # Django 4.2's FileSystemStorage does not support allow_overwrite.
+        red_bucket.delete(bucket_path)
+    red_bucket.save(bucket_path, content)
+    log(f"Saved {bucket_path} in red_bucket storage")
 
 
 def get_unusable_rfc_numbers() -> list[UnusableRfcNumber]:
@@ -419,13 +430,7 @@ def create_rfc_txt_index():
             "rfcs": get_rfc_text_index_entries(),
         },
     )
-    red_bucket = storages["red_bucket"]
-    filename = "rfc-index.txt"
-    # Django 4.2's FileSystemStorage does not support allow_overwrite. We can drop
-    # the delete() when we move to a Storage class that supports it.
-    red_bucket.delete(filename)
-    red_bucket.save(filename, StringIO(index))
-    log(f"Created {filename} in red_bucket storage")
+    save_to_red_bucket("rfc-index.txt", StringIO(index))
 
 
 def create_rfc_xml_index():
@@ -461,10 +466,4 @@ def create_rfc_xml_index():
         xml_declaration=True,
         pretty_print=4,
     )
-    red_bucket = storages["red_bucket"]
-    filename = "rfc-index.xml"
-    # Django 4.2's FileSystemStorage does not support allow_overwrite. We can drop
-    # the delete() when we move to a Storage class that supports it.
-    red_bucket.delete(filename)
-    red_bucket.save(filename, BytesIO(pretty_index))
-    log(f"Created {filename} in red_bucket storage")
+    save_to_red_bucket("rfc-index.xml", BytesIO(pretty_index))

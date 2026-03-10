@@ -442,6 +442,10 @@ STORAGES["red_bucket"] = {
         bucket_name=_red_bucket_name,
     ),
 }
+RFCINDEX_DELETE_THEN_WRITE = False  # S3Storage allows file_overwrite by default
+RFCINDEX_PATH_IN_BUCKET = os.environ.get(
+    "DATATRACKER_RFCINDEX_PATH_IN_BUCKET", "other/"
+)
 
 # Configure the blobdb app for artifact storage
 _blobdb_replication_enabled = (
