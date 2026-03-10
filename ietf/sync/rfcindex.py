@@ -33,7 +33,7 @@ def format_rfc_number(n):
 
 def rfc_doi(rfc: Document):
     assert rfc.rfc_number is not None
-    return f"10.17487/RFC{format_rfc_number(rfc.rfc_number)}"
+    return f"10.17487/RFC{rfc.rfc_number:04d}"
 
 
 def errata_url(rfc: Document):
