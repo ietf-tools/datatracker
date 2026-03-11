@@ -41,12 +41,6 @@ def errata_url(rfc: Document):
     return urljoin(settings.RFC_EDITOR_ERRATA_BASE_URL + "/", f"rfc{rfc.rfc_number}")
 
 
-@dataclass
-class UnusableRfcNumber:
-    rfc_number: int
-    comment: str
-
-
 def save_to_red_bucket(filename: str, content: BytesIO | StringIO):
     red_bucket = storages["red_bucket"]
     bucket_path = str(Path(getattr(settings, "RFCINDEX_OUTPUT_PATH", "")) / filename)
@@ -57,24 +51,30 @@ def save_to_red_bucket(filename: str, content: BytesIO | StringIO):
     log(f"Saved {bucket_path} in red_bucket storage")
 
 
+@dataclass
+class UnusableRfcNumber:
+    rfc_number: int
+    comment: str
+
+
 def get_unusable_rfc_numbers() -> list[UnusableRfcNumber]:
-    bucket_path = Path(getattr(settings, "RFCINDEX_INPUT_PATH", ""))
-    FILENAME = str(bucket_path / "unusable-rfc-numbers.json")
+    FILENAME = "unusable-rfc-numbers.json"
+    bucket_path = str(Path(getattr(settings, "RFCINDEX_INPUT_PATH", "")) / FILENAME)
     try:
-        with storages["red_bucket"].open(FILENAME) as urn_file:
+        with storages["red_bucket"].open(bucket_path) as urn_file:
             records = json.load(urn_file)
     except FileNotFoundError:
         if settings.SERVER_MODE == "production":
-            log(f"Error: unable to open {FILENAME} in red_bucket storage")
+            log(f"Error: unable to open {bucket_path} in red_bucket storage")
             raise
         elif settings.SERVER_MODE == "development":
             log(
-                f"Unable to open {FILENAME} in red_bucket storage. This is okay in dev "
+                f"Unable to open {bucket_path} in red_bucket storage. This is okay in dev "
                 "but generated rfc-index will not agree with RFC Editor values."
             )
         return []
     except json.JSONDecodeError:
-        log(f"Error: unable to parse {FILENAME} in red_bucket storage")
+        log(f"Error: unable to parse {bucket_path} in red_bucket storage")
         return []
     assert all(isinstance(record["number"], int) for record in records)
     assert all(isinstance(record["comment"], str) for record in records)
@@ -85,47 +85,46 @@ def get_unusable_rfc_numbers() -> list[UnusableRfcNumber]:
 
 
 def get_april1_rfc_numbers() -> Container[int]:
-    bucket_path = Path(getattr(settings, "RFCINDEX_INPUT_PATH", ""))
-    FILENAME = str(bucket_path / "april-first-rfc-numbers.json")
+    FILENAME = "april-first-rfc-numbers.json"
+    bucket_path = str(Path(getattr(settings, "RFCINDEX_INPUT_PATH", "")) / FILENAME)
     try:
-        with storages["red_bucket"].open(FILENAME) as urn_file:
+        with storages["red_bucket"].open(bucket_path) as urn_file:
             records = json.load(urn_file)
     except FileNotFoundError:
         if settings.SERVER_MODE == "production":
-            log(f"Error: unable to open {FILENAME} in red_bucket storage")
+            log(f"Error: unable to open {bucket_path} in red_bucket storage")
             raise
         elif settings.SERVER_MODE == "development":
             log(
-                f"Unable to open {FILENAME} in red_bucket storage. This is okay in dev "
+                f"Unable to open {bucket_path} in red_bucket storage. This is okay in dev "
                 "but generated rfc-index will not agree with RFC Editor values."
             )
         return []
     except json.JSONDecodeError:
-        log(f"Error: unable to parse {FILENAME} in red_bucket storage")
+        log(f"Error: unable to parse {bucket_path} in red_bucket storage")
         return []
     assert all(isinstance(record, int) for record in records)
     return records
 
 
 def get_publication_std_levels() -> dict[int, StdLevelName]:
-    bucket_path = Path(getattr(settings, "RFCINDEX_INPUT_PATH", ""))
-    FILENAME = str(bucket_path / "publication-std-levels.json")
+    FILENAME = "publication-std-levels.json"
+    bucket_path = str(Path(getattr(settings, "RFCINDEX_INPUT_PATH", "")) / FILENAME)
+    values: dict[int, StdLevelName] = {}
     try:
-        with storages["red_bucket"].open(FILENAME) as urn_file:
+        with storages["red_bucket"].open(bucket_path) as urn_file:
             records = json.load(urn_file)
     except FileNotFoundError:
         if settings.SERVER_MODE == "production":
-            log(f"Error: unable to open {FILENAME} in red_bucket storage")
+            log(f"Error: unable to open {bucket_path} in red_bucket storage")
             raise
         elif settings.SERVER_MODE == "development":
             log(
-                f"Unable to open {FILENAME} in red_bucket storage. This is okay in dev "
+                f"Unable to open {bucket_path} in red_bucket storage. This is okay in dev "
                 "but generated rfc-index will not agree with RFC Editor values."
             )
-        values = {}
     except json.JSONDecodeError:
-        log(f"Error: unable to parse {FILENAME} in red_bucket storage")
-        values = {}
+        log(f"Error: unable to parse {bucket_path} in red_bucket storage")
     else:
         assert all(isinstance(record["number"], int) for record in records)
         values = {
@@ -134,6 +133,7 @@ def get_publication_std_levels() -> dict[int, StdLevelName]:
             )
             for record in records
         }
+    # defaultdict to return "unknown" for any missing values
     unknown_std_level = StdLevelName.objects.get(slug="unkn")
     return defaultdict(lambda: unknown_std_level, values)
 
