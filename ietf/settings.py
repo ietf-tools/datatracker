@@ -838,6 +838,11 @@ MATERIALS_TYPES_SERVED_BY_WORKER = [
     "slides",
 ]
 
+# Other storages
+STORAGES["red_bucket"] = {
+    "BACKEND": "django.core.files.storage.InMemoryStorage",
+    "OPTIONS": {"location": "red_bucket"},
+}
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
@@ -932,9 +937,10 @@ RFC_EDITOR_GROUP_NOTIFICATION_EMAIL = "webmaster@rfc-editor.org"
 RFC_EDITOR_QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
 RFC_EDITOR_INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
 RFC_EDITOR_ERRATA_JSON_URL = "https://www.rfc-editor.org/errata.json"
-RFC_EDITOR_ERRATA_URL = "https://www.rfc-editor.org/errata_search.php?rfc={rfc_number}"
 RFC_EDITOR_INLINE_ERRATA_URL = "https://www.rfc-editor.org/rfc/inline-errata/rfc{rfc_number}.html"
+RFC_EDITOR_ERRATA_BASE_URL = "https://www.rfc-editor.org/errata/"
 RFC_EDITOR_INFO_BASE_URL = "https://www.rfc-editor.org/info/"
+
 
 # NomCom Tool settings
 ROLODEX_URL = ""
@@ -1570,3 +1576,5 @@ if SERVER_MODE != 'production':
 
 
 YOUTUBE_DOMAINS = ['www.youtube.com', 'youtube.com', 'youtu.be', 'm.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com']
+
+IETF_DOI_PREFIX = "10.17487"

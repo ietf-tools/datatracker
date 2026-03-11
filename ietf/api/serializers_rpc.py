@@ -300,6 +300,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
             "obsoletes",
             "updates",
             "subseries",
+            "keywords",
         ]
 
     def validate(self, data):
@@ -540,6 +541,7 @@ class EditableRfcSerializer(serializers.ModelSerializer):
             "pages",
             "std_level",
             "subseries",
+            "keywords",
         ]
 
     def create(self, validated_data):

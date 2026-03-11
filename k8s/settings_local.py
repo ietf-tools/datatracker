@@ -417,6 +417,39 @@ for storagename in ARTIFACT_STORAGE_NAMES:
         ),
     }
 
+# Configure storage for the red bucket - assume it uses the same credentials as
+# other blobs
+_red_bucket_name = os.environ.get("DATATRACKER_BLOB_STORE_RED_BUCKET_NAME", "").strip()
+if _red_bucket_name == "":
+    raise RuntimeError("DATATRACKER_BLOB_STORE_RED_BUCKET_NAME must be set")
+
+STORAGES["red_bucket"] = {
+    "BACKEND": "storages.backends.s3.S3Storage",
+    "OPTIONS": dict(
+        endpoint_url=_blob_store_endpoint_url,
+        access_key=_blob_store_access_key,
+        secret_key=_blob_store_secret_key,
+        security_token=None,
+        client_config=botocore.config.Config(
+            request_checksum_calculation="when_required",
+            response_checksum_validation="when_required",
+            signature_version="s3v4",
+            connect_timeout=_blob_store_connect_timeout,
+            read_timeout=_blob_store_read_timeout,
+            retries={"total_max_attempts": _blob_store_max_attempts},
+        ),
+        verify=False,
+        bucket_name=_red_bucket_name,
+    ),
+}
+RFCINDEX_DELETE_THEN_WRITE = False  # S3Storage allows file_overwrite by default
+RFCINDEX_OUTPUT_PATH = os.environ.get(
+    "DATATRACKER_RFCINDEX_OUTPUT_PATH", "other/"
+)
+RFCINDEX_INPUT_PATH = os.environ.get(
+    "DATATRACKR_RFCINDEX_INPUT_PATH", ""
+)
+
 # Configure the blobdb app for artifact storage
 _blobdb_replication_enabled = (
     os.environ.get("DATATRACKER_BLOBDB_REPLICATION_ENABLED", "true").lower() == "true"

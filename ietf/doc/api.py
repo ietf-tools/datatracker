@@ -4,13 +4,11 @@
 from django.db.models import (
     BooleanField,
     Count,
-    JSONField,
     OuterRef,
     Prefetch,
     Q,
     QuerySet,
     Subquery,
-    Value,
 )
 from django.db.models.functions import TruncDate
 from django_filters import rest_framework as filters
@@ -159,10 +157,6 @@ def augment_rfc_queryset(queryset: QuerySet[Document]):
                 ),
                 output_field=BooleanField(),
             )
-        )
-        .annotate(
-            # TODO implement this fake field for real
-            keywords=Value(["keyword"], output_field=JSONField()),
         )
     )
 

@@ -1285,9 +1285,7 @@ def document_bibtex(request, name, rev=None):
                     break
 
     elif doc.type_id == "rfc":
-        # This needs to be replaced with a lookup, as the mapping may change
-        # over time.
-        doi = f"10.17487/RFC{doc.rfc_number:04d}"
+        doi = doc.doi
 
     if doc.is_dochistory():
         latest_event = doc.latest_event(type='new_revision', rev=rev)
