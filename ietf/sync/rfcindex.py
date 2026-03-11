@@ -373,8 +373,9 @@ def add_rfc_xml_index_entries(rfc_index):
         format_ = etree.SubElement(entry, "format")
         fmts = [ff["fmt"] for ff in rfc.formats() if ff["fmt"] in FORMATS_FOR_INDEX]
         for fmt in sorted(fmts, key=format_ordering(rfc.rfc_number)):
+            match_legacy = getattr(settings, "RFCINDEX_MATCH_LEGACY_XML", False)
             etree.SubElement(format_, "file-format").text = (
-                "ASCII" if RFCINDEX_MATCH_LEGACY_XML and fmt == "txt" else fmt.upper()
+                "ASCII" if match_legacy and fmt == "txt" else fmt.upper()
             )
 
         etree.SubElement(entry, "page-count").text = str(rfc.pages)

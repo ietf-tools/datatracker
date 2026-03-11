@@ -14,7 +14,7 @@ import os
 import shutil
 import tempfile
 from ietf.settings import *                                          # pyflakes:ignore
-from ietf.settings import ORIG_AUTH_PASSWORD_VALIDATORS
+from ietf.settings import ORIG_AUTH_PASSWORD_VALIDATORS, STORAGES
 import debug                            # pyflakes:ignore
 debug.debug = True
 
