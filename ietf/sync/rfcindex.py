@@ -26,6 +26,7 @@ from ietf.utils.log import log
 FORMATS_FOR_INDEX = ["txt", "html", "pdf", "xml", "ps"]
 
 # If True, tries to more closely match the legacy rfc-index.xml format for easier diff
+# Must be False for tests to pass!
 RFCINDEX_MATCH_LEGACY_XML = False
 
 
@@ -57,7 +58,7 @@ def save_to_red_bucket(filename: str, content: BytesIO | StringIO):
 
 
 def get_unusable_rfc_numbers() -> list[UnusableRfcNumber]:
-    bucket_path = Path(getattr(settings, "RFCINDEX_INPUT_PATH", "")) 
+    bucket_path = Path(getattr(settings, "RFCINDEX_INPUT_PATH", ""))
     FILENAME = str(bucket_path / "unusable-rfc-numbers.json")
     try:
         with storages["red_bucket"].open(FILENAME) as urn_file:
@@ -84,7 +85,7 @@ def get_unusable_rfc_numbers() -> list[UnusableRfcNumber]:
 
 
 def get_april1_rfc_numbers() -> Container[int]:
-    bucket_path = Path(getattr(settings, "RFCINDEX_INPUT_PATH", "")) 
+    bucket_path = Path(getattr(settings, "RFCINDEX_INPUT_PATH", ""))
     FILENAME = str(bucket_path / "april-first-rfc-numbers.json")
     try:
         with storages["red_bucket"].open(FILENAME) as urn_file:
@@ -107,7 +108,7 @@ def get_april1_rfc_numbers() -> Container[int]:
 
 
 def get_publication_std_levels() -> dict[int, StdLevelName]:
-    bucket_path = Path(getattr(settings, "RFCINDEX_INPUT_PATH", "")) 
+    bucket_path = Path(getattr(settings, "RFCINDEX_INPUT_PATH", ""))
     FILENAME = str(bucket_path / "publication-std-levels.json")
     try:
         with storages["red_bucket"].open(FILENAME) as urn_file:

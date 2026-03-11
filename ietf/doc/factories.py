@@ -311,6 +311,12 @@ class NewRevisionDocEventFactory(DocEventFactory):
     def desc(self):
          return 'New version available %s-%s'%(self.doc.name,self.rev)
 
+class PublishedRfcDocEventFactory(DocEventFactory):
+    class Meta:
+        model = DocEvent
+    type = "published_rfc"
+    doc = factory.SubFactory(WgRfcFactory)
+
 class StateDocEventFactory(DocEventFactory):
     class Meta:
         model = StateDocEvent
