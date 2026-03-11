@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 import json
-from io import StringIO
+from io import BytesIO, StringIO
 from unittest import mock
 
 from django.core.files.storage import storages
@@ -8,14 +8,24 @@ from django.test.utils import override_settings
 from lxml import etree
 
 from ietf.doc.factories import PublishedRfcDocEventFactory, IndividualRfcFactory
-from ietf.sync.rfcindex import create_rfc_txt_index, create_rfc_xml_index
+from ietf.name.models import DocTagName
+from ietf.sync.rfcindex import (
+    create_rfc_txt_index,
+    create_rfc_xml_index,
+    format_rfc_number,
+    save_to_red_bucket, get_unusable_rfc_numbers, get_april1_rfc_numbers,
+    get_publication_std_levels,
+)
 from ietf.utils.test_utils import TestCase
 
 
 class RfcIndexTests(TestCase):
     """Tests of rfc-index generation
 
-    Tests are very limited and should cover more cases.
+    Tests are limited and should cover more cases. Needs:
+      * test of subseries docs
+      * test of related docs (obsoletes/updates + reverse directions)
+      * more thorough validation of index contents
 
     Be careful when calling create_rfc_txt_index() or create_rfc_xml_index(). These
     will save to a storage by default, which can introduce cross-talk between tests.
@@ -35,7 +45,12 @@ class RfcIndexTests(TestCase):
         # actual April 1 RFC
         self.april_fools_rfc = PublishedRfcDocEventFactory(
             time="2020-04-01T12:00:00Z",
-            doc=IndividualRfcFactory(stream_id="ise", std_level_id="inf"),
+            doc=IndividualRfcFactory(
+                name="rfc4560",
+                rfc_number=4560,
+                stream_id="ise",
+                std_level_id="inf",
+            ),
         ).doc
         # Set up a JSON file to flag the April 1 RFC
         red_bucket.save(
@@ -45,8 +60,13 @@ class RfcIndexTests(TestCase):
 
         # non-April Fools RFC that happens to have been published on April 1
         self.rfc = PublishedRfcDocEventFactory(
-            time="2021-04-01T12:00:00Z", doc__std_level_id="std"
+            time="2021-04-01T12:00:00Z",
+            doc__name="rfc10000",
+            doc__rfc_number=10000,
+            doc__std_level_id="std",
         ).doc
+        self.rfc.tags.add(DocTagName.objects.get(slug="errata"))
+
         # Set up a publication-std-levels.json file to indicate the publication
         # standard of self.rfc as different from its current value
         red_bucket.save(
@@ -159,3 +179,52 @@ class RfcIndexTests(TestCase):
             [(c.tag, c.text) for c in rfc_entry.find(f"{ns}date")],
             [(f"{ns}month", "April"), (f"{ns}year", "2021")],
         )
+
+
+class HelperTests(TestCase):
+    def test_format_rfc_number(self):
+        self.assertEqual(format_rfc_number(10), "10")
+        with override_settings(RFCINDEX_MATCH_LEGACY_XML=True):
+            self.assertEqual(format_rfc_number(10), "0010")
+
+    def test_save_to_red_bucket(self):
+        red_bucket = storages["red_bucket"]
+        with override_settings(RFCINDEX_DELETE_THEN_WRITE=False):
+            save_to_red_bucket("test", StringIO("contents"))
+        with red_bucket.open("test", "r") as f:
+            self.assertEqual(f.read(), "contents")
+        with override_settings(RFCINDEX_DELETE_THEN_WRITE=True):
+            save_to_red_bucket("test", BytesIO(b"new contents"))
+        with red_bucket.open("test", "r") as f:
+            self.assertEqual(f.read(), "new contents")
+        red_bucket.delete("test")  # clean up like a good child
+
+    def test_get_unusable_rfc_numbers_raises(self):
+        """get_unusable_rfc_numbers should bail on errors"""
+        with self.assertRaises(FileNotFoundError):
+            get_unusable_rfc_numbers()
+        red_bucket = storages["red_bucket"]
+        red_bucket.save("unusable-rfc-numbers.json", StringIO("not json"))
+        with self.assertRaises(json.JSONDecodeError):
+            get_unusable_rfc_numbers()
+        red_bucket.delete("unusable-rfc-numbers.json")
+
+    def test_get_april1_rfc_numbers_raises(self):
+        """get_april1_rfc_numbers should bail on errors"""
+        with self.assertRaises(FileNotFoundError):
+            get_april1_rfc_numbers()
+        red_bucket = storages["red_bucket"]
+        red_bucket.save("april-first-rfc-numbers.json", StringIO("not json"))
+        with self.assertRaises(json.JSONDecodeError):
+            get_april1_rfc_numbers()
+        red_bucket.delete("april-first-rfc-numbers.json")
+
+    def test_get_publication_std_levels_raises(self):
+        """get_publication_std_levels should bail on errors"""
+        with self.assertRaises(FileNotFoundError):
+            get_publication_std_levels()
+        red_bucket = storages["red_bucket"]
+        red_bucket.save("publication-std-levels.json", StringIO("not json"))
+        with self.assertRaises(json.JSONDecodeError):
+            get_publication_std_levels()
+        red_bucket.delete("publication-std-levels.json")

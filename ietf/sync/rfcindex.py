@@ -25,13 +25,14 @@ from ietf.utils.log import log
 
 FORMATS_FOR_INDEX = ["txt", "html", "pdf", "xml", "ps"]
 
-# If True, tries to more closely match the legacy rfc-index.xml format for easier diff
-# Must be False for tests to pass!
-RFCINDEX_MATCH_LEGACY_XML = False
-
 
 def format_rfc_number(n):
-    if RFCINDEX_MATCH_LEGACY_XML:
+    """Format an RFC number (or subseries doc number)
+    
+    Set settings.RFCINDEX_MATCH_LEGACY_XML=True for the legacy (leading-zero) format.
+    That is for debugging only - tests will fail.
+    """
+    if getattr(settings, "RFCINDEX_MATCH_LEGACY_XML", False):
         return format(n, "04")
     else:
         return format(n)
@@ -64,18 +65,19 @@ def get_unusable_rfc_numbers() -> list[UnusableRfcNumber]:
         with storages["red_bucket"].open(bucket_path) as urn_file:
             records = json.load(urn_file)
     except FileNotFoundError:
-        if settings.SERVER_MODE == "production":
-            log(f"Error: unable to open {bucket_path} in red_bucket storage")
-            raise
-        elif settings.SERVER_MODE == "development":
+        if settings.SERVER_MODE == "development":
             log(
                 f"Unable to open {bucket_path} in red_bucket storage. This is okay in dev "
                 "but generated rfc-index will not agree with RFC Editor values."
-            )
-        return []
+            )  # pragma: no cover
+            return []  # pragma: no cover
+        log(f"Error: unable to open {bucket_path} in red_bucket storage")
+        raise
     except json.JSONDecodeError:
         log(f"Error: unable to parse {bucket_path} in red_bucket storage")
-        return []
+        if settings.SERVER_MODE == "development":
+            return []  # pragma: no cover  
+        raise
     assert all(isinstance(record["number"], int) for record in records)
     assert all(isinstance(record["comment"], str) for record in records)
     return [
@@ -91,18 +93,19 @@ def get_april1_rfc_numbers() -> Container[int]:
         with storages["red_bucket"].open(bucket_path) as urn_file:
             records = json.load(urn_file)
     except FileNotFoundError:
-        if settings.SERVER_MODE == "production":
-            log(f"Error: unable to open {bucket_path} in red_bucket storage")
-            raise
-        elif settings.SERVER_MODE == "development":
+        if settings.SERVER_MODE == "development":
             log(
                 f"Unable to open {bucket_path} in red_bucket storage. This is okay in dev "
                 "but generated rfc-index will not agree with RFC Editor values."
-            )
-        return []
+            )  # pragma: no cover
+            return []  # pragma: no cover
+        log(f"Error: unable to open {bucket_path} in red_bucket storage")
+        raise
     except json.JSONDecodeError:
         log(f"Error: unable to parse {bucket_path} in red_bucket storage")
-        return []
+        if settings.SERVER_MODE == "development":
+            return []  # pragma: no cover
+        raise
     assert all(isinstance(record, int) for record in records)
     return records
 
@@ -115,16 +118,19 @@ def get_publication_std_levels() -> dict[int, StdLevelName]:
         with storages["red_bucket"].open(bucket_path) as urn_file:
             records = json.load(urn_file)
     except FileNotFoundError:
-        if settings.SERVER_MODE == "production":
-            log(f"Error: unable to open {bucket_path} in red_bucket storage")
-            raise
-        elif settings.SERVER_MODE == "development":
+        if settings.SERVER_MODE == "development":
             log(
                 f"Unable to open {bucket_path} in red_bucket storage. This is okay in dev "
                 "but generated rfc-index will not agree with RFC Editor values."
-            )
+            )  # pragma: no cover
+            # intentionally fall through instead of return here
+        else:
+            log(f"Error: unable to open {bucket_path} in red_bucket storage")
+            raise
     except json.JSONDecodeError:
         log(f"Error: unable to parse {bucket_path} in red_bucket storage")
+        if settings.SERVER_MODE != "development":
+            raise
     else:
         assert all(isinstance(record["number"], int) for record in records)
         values = {
