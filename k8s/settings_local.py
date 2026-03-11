@@ -447,7 +447,7 @@ RFCINDEX_OUTPUT_PATH = os.environ.get(
     "DATATRACKER_RFCINDEX_OUTPUT_PATH", "other/"
 )
 RFCINDEX_INPUT_PATH = os.environ.get(
-    "DATATRACKR_RFCINDEX_INPUT_PATH", ""
+    "DATATRACKER_RFCINDEX_INPUT_PATH", ""
 )
 
 # Configure the blobdb app for artifact storage
