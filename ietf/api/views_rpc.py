@@ -40,6 +40,7 @@ from ietf.doc.serializers import RfcAuthorSerializer
 from ietf.doc.storage_utils import remove_from_storage, store_file, exists_in_storage
 from ietf.doc.tasks import signal_update_rfc_metadata_task
 from ietf.person.models import Email, Person
+from ietf.sync.tasks import create_rfc_index_task
 
 
 class Conflict(APIException):
@@ -516,3 +517,18 @@ class RfcPubFilesView(APIView):
                 shutil.move(ftm, destination)
 
         return Response(NotificationAckSerializer().data)
+
+
+class RfcIndexView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
+
+    @extend_schema(
+        operation_id="refresh_rfc_index",
+        summary="Refresh rfc-index files",
+        description="Requests creation of rfc-index.xml and rfc-index.txt files",
+        responses={202: None},
+        request=None,
+    )
+    def post(self, request):
+        create_rfc_index_task.delay()
+        return Response(status=202)
