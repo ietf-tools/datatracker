@@ -13,7 +13,9 @@ from ietf.sync.rfcindex import (
     create_rfc_txt_index,
     create_rfc_xml_index,
     format_rfc_number,
-    save_to_red_bucket, get_unusable_rfc_numbers, get_april1_rfc_numbers,
+    save_to_red_bucket,
+    get_unusable_rfc_numbers,
+    get_april1_rfc_numbers,
     get_publication_std_levels,
 )
 from ietf.utils.test_utils import TestCase
@@ -91,7 +93,8 @@ class RfcIndexTests(TestCase):
         create_rfc_txt_index()
         self.assertEqual(mock_save.call_count, 1)
         self.assertEqual(mock_save.call_args[0][0], "rfc-index.txt")
-        contents = mock_save.call_args[0][1].read()
+        contents = mock_save.call_args[0][1]
+        self.assertTrue(isinstance(contents, str))
         self.assertIn(
             "123 Not Issued.",
             contents,
@@ -119,7 +122,8 @@ class RfcIndexTests(TestCase):
         create_rfc_xml_index()
         self.assertEqual(mock_save.call_count, 1)
         self.assertEqual(mock_save.call_args[0][0], "rfc-index.xml")
-        contents = mock_save.call_args[0][1].read()
+        contents = mock_save.call_args[0][1]
+        self.assertTrue(isinstance(contents, bytes))
         ns = "{https://www.rfc-editor.org/rfc-index}"  # NOT an f-string
         index = etree.fromstring(contents)
 
@@ -190,13 +194,15 @@ class HelperTests(TestCase):
     def test_save_to_red_bucket(self):
         red_bucket = storages["red_bucket"]
         with override_settings(RFCINDEX_DELETE_THEN_WRITE=False):
-            save_to_red_bucket("test", "contents")
-        with red_bucket.open("test", "r") as f:
-            self.assertEqual(f.read(), "contents")
+            save_to_red_bucket("test", "contents \U0001f600")
+        # Read as binary and explicitly decode to confirm encoding
+        with red_bucket.open("test", "rb") as f:
+            self.assertEqual(f.read().decode("utf-8"), "contents \U0001f600")
         with override_settings(RFCINDEX_DELETE_THEN_WRITE=True):
-            save_to_red_bucket("test", b"new contents")
-        with red_bucket.open("test", "r") as f:
-            self.assertEqual(f.read(), "new contents")
+            save_to_red_bucket("test", "new contents \U0001fae0".encode("utf-8"))
+        # Read as binary and explicitly decode to confirm encoding
+        with red_bucket.open("test", "rb") as f:
+            self.assertEqual(f.read().decode("utf-8"), "new contents \U0001fae0")
         red_bucket.delete("test")  # clean up like a good child
 
     def test_get_unusable_rfc_numbers_raises(self):
