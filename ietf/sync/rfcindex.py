@@ -3,7 +3,6 @@ import json
 from collections import defaultdict
 from collections.abc import Container
 from dataclasses import dataclass
-from io import StringIO, BytesIO
 from itertools import chain
 from operator import attrgetter, itemgetter
 from pathlib import Path
@@ -11,6 +10,7 @@ from textwrap import fill
 from urllib.parse import urljoin
 
 from django.conf import settings
+from django.core.files.base import ContentFile
 from lxml import etree
 
 from django.core.files.storage import storages
@@ -28,7 +28,7 @@ FORMATS_FOR_INDEX = ["txt", "html", "pdf", "xml", "ps"]
 
 def format_rfc_number(n):
     """Format an RFC number (or subseries doc number)
-    
+
     Set settings.RFCINDEX_MATCH_LEGACY_XML=True for the legacy (leading-zero) format.
     That is for debugging only - tests will fail.
     """
@@ -42,13 +42,16 @@ def errata_url(rfc: Document):
     return urljoin(settings.RFC_EDITOR_ERRATA_BASE_URL + "/", f"rfc{rfc.rfc_number}")
 
 
-def save_to_red_bucket(filename: str, content: BytesIO | StringIO):
+def save_to_red_bucket(filename: str, content: str | bytes):
     red_bucket = storages["red_bucket"]
     bucket_path = str(Path(getattr(settings, "RFCINDEX_OUTPUT_PATH", "")) / filename)
     if getattr(settings, "RFCINDEX_DELETE_THEN_WRITE", True):
         # Django 4.2's FileSystemStorage does not support allow_overwrite.
         red_bucket.delete(bucket_path)
-    red_bucket.save(bucket_path, content)
+    red_bucket.save(
+        bucket_path,
+        ContentFile(content if isinstance(content, bytes) else content.encode("utf-8")),
+    )
     log(f"Saved {bucket_path} in red_bucket storage")
 
 
@@ -76,7 +79,7 @@ def get_unusable_rfc_numbers() -> list[UnusableRfcNumber]:
     except json.JSONDecodeError:
         log(f"Error: unable to parse {bucket_path} in red_bucket storage")
         if settings.SERVER_MODE == "development":
-            return []  # pragma: no cover  
+            return []  # pragma: no cover
         raise
     assert all(isinstance(record["number"], int) for record in records)
     assert all(isinstance(record["comment"], str) for record in records)
@@ -441,7 +444,7 @@ def create_rfc_txt_index():
             "rfcs": get_rfc_text_index_entries(),
         },
     )
-    save_to_red_bucket("rfc-index.txt", StringIO(index))
+    save_to_red_bucket("rfc-index.txt", index)
 
 
 def create_rfc_xml_index():
@@ -477,4 +480,4 @@ def create_rfc_xml_index():
         xml_declaration=True,
         pretty_print=4,
     )
-    save_to_red_bucket("rfc-index.xml", BytesIO(pretty_index))
+    save_to_red_bucket("rfc-index.xml", pretty_index)
