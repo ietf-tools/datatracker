@@ -101,6 +101,17 @@ for storagename in ARTIFACT_STORAGE_NAMES:
         ),
     }
 
+# For dev on rfc-index generation, create a red_bucket/ directory in the project root
+# and uncomment these settings. Generated files will appear in this directory. To
+# generate an accurate index, put up-to-date copies of unusable-rfc-numbers.json,
+# april-first-rfc-numbers.json, and publication-std-levels.json in this directory
+# before generating the index.
+#
+# STORAGES["red_bucket"] = {
+#     "BACKEND": "django.core.files.storage.FileSystemStorage",
+#     "OPTIONS": {"location": "red_bucket"},
+# }
+
 APP_API_TOKENS = {
     "ietf.api.red_api" : ["devtoken", "redtoken"],  # Not a real secret
     "ietf.api.views_rpc" : ["devtoken"],  # Not a real secret

@@ -30,6 +30,11 @@ urlpatterns = [
         views_rpc.RfcPubFilesView.as_view(),
         name="ietf.api.purple_api.upload_rfc_files",
     ),
+    path(
+        r"rfc_index/refresh/",
+        views_rpc.RfcIndexView.as_view(),
+        name="ietf.api.purple_api.refresh_rfc_index",
+    ),
     path(r"subject/<str:subject_id>/person/", views_rpc.SubjectPersonView.as_view()),
 ]
 
