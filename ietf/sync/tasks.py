@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2024, All Rights Reserved
+# Copyright The IETF Trust 2024-2026, All Rights Reserved
 #
 # Celery task definitions
 #
@@ -18,6 +18,7 @@ from ietf.doc.tasks import rebuild_reference_relations_task
 from ietf.sync import iana
 from ietf.sync import rfceditor
 from ietf.sync.rfceditor import MIN_QUEUE_RESULTS, parse_queue, update_drafts_from_queue
+from ietf.sync.rfcindex import create_rfc_txt_index, create_rfc_xml_index
 from ietf.sync.utils import build_from_file_content, load_rfcs_into_blobdb, rsync_helper
 from ietf.utils import log
 from ietf.utils.timezone import date_today
@@ -272,3 +273,10 @@ def load_rfcs_into_blobdb_task(start: int, end: int):
     if end > 11000:  # Arbitrarily chosen
         end = 11000
     load_rfcs_into_blobdb(list(range(start, end + 1)))
+
+
+@shared_task
+def create_rfc_index_task():
+    create_rfc_txt_index()
+    create_rfc_xml_index()
+

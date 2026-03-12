@@ -363,3 +363,18 @@ class RpcApiTests(APITestCase):
                 headers={"X-Api-Key": "valid-token"},
             )
             self.assertEqual(r.status_code, 200)  # conflict
+
+    @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
+    @mock.patch("ietf.api.views_rpc.create_rfc_index_task")
+    def test_refresh_rfc_index(self, mock_task):
+        url = urlreverse("ietf.api.purple_api.refresh_rfc_index")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)
+        response = self.client.get(url, headers={"X-Api-Key": "invalid-token"})
+        self.assertEqual(response.status_code, 403)
+        response = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(response.status_code, 405)
+        self.assertFalse(mock_task.delay.called)
+        response = self.client.post(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(response.status_code, 202)
+        self.assertTrue(mock_task.delay.called)

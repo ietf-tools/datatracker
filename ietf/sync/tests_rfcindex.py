@@ -1,8 +1,8 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 import json
-from io import BytesIO, StringIO
 from unittest import mock
 
+from django.core.files.base import ContentFile
 from django.core.files.storage import storages
 from django.test.utils import override_settings
 from lxml import etree
@@ -13,7 +13,9 @@ from ietf.sync.rfcindex import (
     create_rfc_txt_index,
     create_rfc_xml_index,
     format_rfc_number,
-    save_to_red_bucket, get_unusable_rfc_numbers, get_april1_rfc_numbers,
+    save_to_red_bucket,
+    get_unusable_rfc_numbers,
+    get_april1_rfc_numbers,
     get_publication_std_levels,
 )
 from ietf.utils.test_utils import TestCase
@@ -39,7 +41,7 @@ class RfcIndexTests(TestCase):
         # Create an unused RFC number
         red_bucket.save(
             "input/unusable-rfc-numbers.json",
-            StringIO(json.dumps([{"number": 123, "comment": ""}])),
+            ContentFile(json.dumps([{"number": 123, "comment": ""}])),
         )
 
         # actual April 1 RFC
@@ -55,7 +57,7 @@ class RfcIndexTests(TestCase):
         # Set up a JSON file to flag the April 1 RFC
         red_bucket.save(
             "input/april-first-rfc-numbers.json",
-            StringIO(json.dumps([self.april_fools_rfc.rfc_number])),
+            ContentFile(json.dumps([self.april_fools_rfc.rfc_number])),
         )
 
         # non-April Fools RFC that happens to have been published on April 1
@@ -71,7 +73,7 @@ class RfcIndexTests(TestCase):
         # standard of self.rfc as different from its current value
         red_bucket.save(
             "input/publication-std-levels.json",
-            StringIO(
+            ContentFile(
                 json.dumps(
                     [{"number": self.rfc.rfc_number, "publication_std_level": "ps"}]
                 )
@@ -91,7 +93,8 @@ class RfcIndexTests(TestCase):
         create_rfc_txt_index()
         self.assertEqual(mock_save.call_count, 1)
         self.assertEqual(mock_save.call_args[0][0], "rfc-index.txt")
-        contents = mock_save.call_args[0][1].read()
+        contents = mock_save.call_args[0][1]
+        self.assertTrue(isinstance(contents, str))
         self.assertIn(
             "123 Not Issued.",
             contents,
@@ -119,7 +122,8 @@ class RfcIndexTests(TestCase):
         create_rfc_xml_index()
         self.assertEqual(mock_save.call_count, 1)
         self.assertEqual(mock_save.call_args[0][0], "rfc-index.xml")
-        contents = mock_save.call_args[0][1].read()
+        contents = mock_save.call_args[0][1]
+        self.assertTrue(isinstance(contents, bytes))
         ns = "{https://www.rfc-editor.org/rfc-index}"  # NOT an f-string
         index = etree.fromstring(contents)
 
@@ -190,13 +194,15 @@ class HelperTests(TestCase):
     def test_save_to_red_bucket(self):
         red_bucket = storages["red_bucket"]
         with override_settings(RFCINDEX_DELETE_THEN_WRITE=False):
-            save_to_red_bucket("test", StringIO("contents"))
-        with red_bucket.open("test", "r") as f:
-            self.assertEqual(f.read(), "contents")
+            save_to_red_bucket("test", "contents \U0001f600")
+        # Read as binary and explicitly decode to confirm encoding
+        with red_bucket.open("test", "rb") as f:
+            self.assertEqual(f.read().decode("utf-8"), "contents \U0001f600")
         with override_settings(RFCINDEX_DELETE_THEN_WRITE=True):
-            save_to_red_bucket("test", BytesIO(b"new contents"))
-        with red_bucket.open("test", "r") as f:
-            self.assertEqual(f.read(), "new contents")
+            save_to_red_bucket("test", "new contents \U0001fae0".encode("utf-8"))
+        # Read as binary and explicitly decode to confirm encoding
+        with red_bucket.open("test", "rb") as f:
+            self.assertEqual(f.read().decode("utf-8"), "new contents \U0001fae0")
         red_bucket.delete("test")  # clean up like a good child
 
     def test_get_unusable_rfc_numbers_raises(self):
@@ -204,7 +210,7 @@ class HelperTests(TestCase):
         with self.assertRaises(FileNotFoundError):
             get_unusable_rfc_numbers()
         red_bucket = storages["red_bucket"]
-        red_bucket.save("unusable-rfc-numbers.json", StringIO("not json"))
+        red_bucket.save("unusable-rfc-numbers.json", ContentFile("not json"))
         with self.assertRaises(json.JSONDecodeError):
             get_unusable_rfc_numbers()
         red_bucket.delete("unusable-rfc-numbers.json")
@@ -214,7 +220,7 @@ class HelperTests(TestCase):
         with self.assertRaises(FileNotFoundError):
             get_april1_rfc_numbers()
         red_bucket = storages["red_bucket"]
-        red_bucket.save("april-first-rfc-numbers.json", StringIO("not json"))
+        red_bucket.save("april-first-rfc-numbers.json", ContentFile("not json"))
         with self.assertRaises(json.JSONDecodeError):
             get_april1_rfc_numbers()
         red_bucket.delete("april-first-rfc-numbers.json")
@@ -224,7 +230,7 @@ class HelperTests(TestCase):
         with self.assertRaises(FileNotFoundError):
             get_publication_std_levels()
         red_bucket = storages["red_bucket"]
-        red_bucket.save("publication-std-levels.json", StringIO("not json"))
+        red_bucket.save("publication-std-levels.json", ContentFile("not json"))
         with self.assertRaises(json.JSONDecodeError):
             get_publication_std_levels()
         red_bucket.delete("publication-std-levels.json")
