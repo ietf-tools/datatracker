@@ -276,7 +276,11 @@ def load_rfcs_into_blobdb_task(start: int, end: int):
 
 
 @shared_task
-def create_rfc_index_task():
+def create_rfc_index_txt_task():
     create_rfc_txt_index()
+
+
+@shared_task
+def create_rfc_index_xml_task():
     create_rfc_xml_index()
 
