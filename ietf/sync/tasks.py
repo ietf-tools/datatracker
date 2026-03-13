@@ -8,9 +8,11 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 import requests
 
-from celery import shared_task
+from celery import shared_task, group
 
 from django.conf import settings
+from django.core.files.base import ContentFile
+from django.core.files.storage import storages
 from django.utils import timezone
 
 from ietf.doc.models import DocEvent, RelatedDocument
@@ -18,7 +20,11 @@ from ietf.doc.tasks import rebuild_reference_relations_task
 from ietf.sync import iana
 from ietf.sync import rfceditor
 from ietf.sync.rfceditor import MIN_QUEUE_RESULTS, parse_queue, update_drafts_from_queue
-from ietf.sync.rfcindex import create_rfc_txt_index, create_rfc_xml_index
+from ietf.sync.rfcindex import (
+    create_rfc_txt_index,
+    create_rfc_xml_index,
+    save_to_red_bucket,
+)
 from ietf.sync.utils import build_from_file_content, load_rfcs_into_blobdb, rsync_helper
 from ietf.utils import log
 from ietf.utils.timezone import date_today
@@ -27,13 +33,13 @@ from ietf.utils.timezone import date_today
 @shared_task
 def rfc_editor_index_update_task(full_index=False):
     """Update metadata from the RFC index
-    
+
     Default is to examine only changes in the past 365 days. Call with full_index=True to update
     the full RFC index.
-    
+
     According to comments on the original script, a year's worth took about 20s on production as of
     August 2022
-    
+
     The original rfc-editor-index-update script had a long-disabled provision for running the
     rebuild_reference_relations scripts after the update. That has not been brought over
     at all because it should be implemented as its own task if it is needed.
@@ -51,7 +57,7 @@ def rfc_editor_index_update_task(full_index=False):
             timeout=30,  # seconds
         )
     except requests.Timeout as exc:
-        log.log(f'GET request timed out retrieving RFC editor index: {exc}')
+        log.log(f"GET request timed out retrieving RFC editor index: {exc}")
         return  # failed
     rfc_index_xml = response.text
     index_data = rfceditor.parse_index(io.StringIO(rfc_index_xml))
@@ -61,9 +67,9 @@ def rfc_editor_index_update_task(full_index=False):
             timeout=30,  # seconds
         )
     except requests.Timeout as exc:
-        log.log(f'GET request timed out retrieving RFC editor errata: {exc}')
+        log.log(f"GET request timed out retrieving RFC editor errata: {exc}")
         return  # failed
-    errata_data = response.json()   
+    errata_data = response.json()
     if len(index_data) < rfceditor.MIN_INDEX_RESULTS:
         log.log("Not enough index entries, only %s" % len(index_data))
         return  # failed
@@ -96,15 +102,15 @@ def rfc_editor_queue_updates_task():
     drafts, warnings = parse_queue(io.StringIO(response.text))
     for w in warnings:
         log.log(f"Warning: {w}")
-    
+
     if len(drafts) < MIN_QUEUE_RESULTS:
         log.log("Not enough results, only %s" % len(drafts))
         return  # failed
-    
+
     changed, warnings = update_drafts_from_queue(drafts)
     for w in warnings:
         log.log(f"Warning: {w}")
-    
+
     for c in changed:
         log.log(f"Updated {c}")
 
@@ -120,9 +126,11 @@ def iana_changes_update_task():
     MAX_INTERVAL_ACCEPTED_BY_IANA = datetime.timedelta(hours=23)
 
     start = (
-        timezone.now() 
-        - datetime.timedelta(hours=23) 
-        + datetime.timedelta(seconds=CLOCK_SKEW_COMPENSATION,)
+        timezone.now()
+        - datetime.timedelta(hours=23)
+        + datetime.timedelta(
+            seconds=CLOCK_SKEW_COMPENSATION,
+        )
     )
     end = start + datetime.timedelta(hours=23)
 
@@ -133,7 +141,9 @@ def iana_changes_update_task():
         # requests if necessary
 
         text = iana.fetch_changes_json(
-            settings.IANA_SYNC_CHANGES_URL, t, min(end, t + MAX_INTERVAL_ACCEPTED_BY_IANA)
+            settings.IANA_SYNC_CHANGES_URL,
+            t,
+            min(end, t + MAX_INTERVAL_ACCEPTED_BY_IANA),
         )
         log.log(f"Retrieved the JSON: {text}")
 
@@ -159,9 +169,9 @@ def iana_protocols_update_task():
     # "this needs to be the date where this tool is first deployed" in the original
     # iana-protocols-updates script)"
     rfc_must_published_later_than = datetime.datetime(
-        2012, 
-        11, 
-        26, 
+        2012,
+        11,
+        26,
         tzinfo=datetime.UTC,
     )
 
@@ -171,17 +181,17 @@ def iana_protocols_update_task():
             timeout=30,
         )
     except requests.Timeout as exc:
-        log.log(f'GET request timed out retrieving IANA protocols page: {exc}')
+        log.log(f"GET request timed out retrieving IANA protocols page: {exc}")
         return
 
     rfc_numbers = iana.parse_protocol_page(response.text)
 
     def batched(l, n):
         """Split list l up in batches of max size n.
-        
+
         For Python 3.12 or later, replace this with itertools.batched()
         """
-        return (l[i:i + n] for i in range(0, len(l), n))
+        return (l[i : i + n] for i in range(0, len(l), n))
 
     for batch in batched(rfc_numbers, 100):
         updated = iana.update_rfc_log_from_protocol_page(
@@ -191,6 +201,7 @@ def iana_protocols_update_task():
 
         for d in updated:
             log.log("Added history entry for %s" % d.display_name())
+
 
 @shared_task
 def fix_subseries_docevents_task():
@@ -232,6 +243,7 @@ def fix_subseries_docevents_task():
         DocEvent.objects.filter(type="sync_from_rfc_editor", desc=desc).update(
             time=obsoleting_time
         )
+
 
 @shared_task
 def rsync_rfcs_from_rfceditor_task(rfc_numbers: list[int]):
@@ -276,11 +288,39 @@ def load_rfcs_into_blobdb_task(start: int, end: int):
 
 
 @shared_task
-def create_rfc_index_txt_task():
-    create_rfc_txt_index()
+def create_rfc_index_task():
+    # This does not really need to be a task, but makes it possible to call the
+    # chain 
+    generate_indexes = group(
+        create_rfc_index_txt_task.s(), create_rfc_index_xml_task.s()
+    )
+    # N.b., when using results backends other than memcached, redis, or dynamodb,
+    # the group/chord in this chain leads to repeated polling of the chord status.
+    # Switching to one of those three would reduce overhead.
+    (generate_indexes | save_rfc_indexes_task.s()).delay()
 
 
 @shared_task
-def create_rfc_index_xml_task():
-    create_rfc_xml_index()
+def save_rfc_indexes_task(blobspecs):
+    for spec in blobspecs:
+        with storages["shared_tmp"].open(spec["blob_name"], "rb") as f:
+            save_to_red_bucket(spec["dest_name"], f.read())
+        storages["shared_tmp"].delete(spec["blob_name"])
 
+
+@shared_task(ignore_result=False)
+def create_rfc_index_txt_task() -> dict[str, str]:
+    index_bytes = create_rfc_txt_index()
+    blob_name = storages["shared_tmp"].save(
+        "unpublished-rfc-index.txt", ContentFile(index_bytes)
+    )
+    return {"dest_name": "rfc-index.txt", "blob_name": blob_name}
+
+
+@shared_task(ignore_result=False)
+def create_rfc_index_xml_task() -> dict[str, str]:
+    index_bytes = create_rfc_xml_index()
+    blob_name = storages["shared_tmp"].save(
+        "unpublished-rfc-index.xml", ContentFile(index_bytes)
+    )
+    return {"dest_name": "rfc-index.xml", "blob_name": blob_name}

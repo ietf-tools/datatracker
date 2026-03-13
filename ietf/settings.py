@@ -839,6 +839,15 @@ MATERIALS_TYPES_SERVED_BY_WORKER = [
 ]
 
 # Other storages
+
+# shared scratch space accessible between containers- think about garbage collection
+# before using it 
+STORAGES["shared_tmp"] = {
+    "BACKEND": "ietf.doc.storage.StoredObjectBlobdbStorage",
+    "OPTIONS": {"bucket_name": "shared_tmp"}
+}
+
+# the RFC Editor ("red") bucket
 STORAGES["red_bucket"] = {
     "BACKEND": "django.core.files.storage.InMemoryStorage",
     "OPTIONS": {"location": "red_bucket"},
@@ -1349,6 +1358,7 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # the default, but setting it 
 CELERY_RESULT_BACKEND = 'django-cache'  # use a Django cache for results
 CELERY_CACHE_BACKEND = 'celery-results'  # which Django cache to use
 CELERY_RESULT_EXPIRES = datetime.timedelta(minutes=5)  # how long are results valid? (Default is 1 day)
+CELERY_RESULT_CHORD_RETRY_INTERVAL = 5.0  # seconds, default is 1.0
 CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled for a task
 CELERY_TASK_ROUTES = {
     "ietf.blobdb.tasks.pybob_the_blob_replicator_task": {"queue": "blobdb"}
