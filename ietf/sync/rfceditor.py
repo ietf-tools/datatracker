@@ -650,26 +650,26 @@ def update_docs_from_rfc_index(
             if not doc.relateddocument_set.filter(
                 target=obs_doc, relationship=relationship_obsoletes
             ):
-                doc.relateddocument_set.create(
+                r = doc.relateddocument_set.create(
                     target=obs_doc, relationship=relationship_obsoletes
                 )
                 rfc_changes.append(
                     "created {rel_name} relation between {src} and {tgt}".format(
-                        rel_name=relationship_obsoletes.name.lower(),
-                        src=prettify_std_name(doc.name),
-                        tgt=prettify_std_name(obs_doc.name),
+                        rel_name=r.relationship.name.lower(),
+                        src=prettify_std_name(r.source.name),
+                        tgt=prettify_std_name(r.target.name),
                     )
                 )
         # Remove stale obsoletes relations
-        for stale_obs in doc.relateddocument_set.filter(
+        for r in doc.relateddocument_set.filter(
             relationship=relationship_obsoletes
         ).exclude(target_id__in=[d.pk for d in docs_this_obsoletes]):
-            stale_obs.delete()
+            r.delete()
             rfc_changes.append(
                 "removed {rel_name} relation between {src} and {tgt}".format(
-                    rel_name=relationship_obsoletes.name.lower(),
-                    src=prettify_std_name(doc.name),
-                    tgt=prettify_std_name(stale_obs.target.name),
+                    rel_name=r.relationship.name.lower(),
+                    src=prettify_std_name(r.source.name),
+                    tgt=prettify_std_name(r.target.name),
                 )
             )
 
@@ -678,26 +678,26 @@ def update_docs_from_rfc_index(
             if not RelatedDocument.objects.filter(
                 source=doc, target=upd_doc, relationship=relationship_updates
             ):
-                doc.relateddocument_set.create(
+                r = doc.relateddocument_set.create(
                     target=upd_doc, relationship=relationship_updates
                 )
                 rfc_changes.append(
-                    "created {rel_name} relation between {src_name} and {tgt_name}".format(
-                        rel_name=relationship_updates.name.lower(),
-                        src_name=prettify_std_name(doc.name),
-                        tgt_name=prettify_std_name(upd_doc.name),
+                    "created {rel_name} relation between {src} and {tgt}".format(
+                        rel_name=r.relationship.name.lower(),
+                        src=prettify_std_name(r.source.name),
+                        tgt=prettify_std_name(r.target.name),
                     )
                 )
         # Remove stale updates relations
-        for stale_upd in doc.relateddocument_set.filter(
+        for r in doc.relateddocument_set.filter(
             relationship=relationship_updates
         ).exclude(target_id__in=[d.pk for d in docs_this_updates]):
-            stale_upd.delete()
+            r.delete()
             rfc_changes.append(
                 "removed {rel_name} relation between {src} and {tgt}".format(
-                    rel_name=relationship_updates.name.lower(),
-                    src=prettify_std_name(doc.name),
-                    tgt=prettify_std_name(stale_upd.target.name),
+                    rel_name=r.relationship.name.lower(),
+                    src=prettify_std_name(r.source.name),
+                    tgt=prettify_std_name(r.target.name),
                 )
             )
 
