@@ -145,10 +145,6 @@ def get_data_for_meeting(meeting_number, minimum_required, attendance_type=None)
         registration_counts = registration_counts.filter(tickets__attendance_type=attendance_type)
     registration_counts = registration_counts.values('country_code').annotate(count=Count('country_code')).order_by('-count')
 
-    # Prepare data for the pie chart
-    labels = [item['country_code'] for item in registration_counts]
-    data = [item['count'] for item in registration_counts]
-
     labels = []
     data = []
     others_count = 0
