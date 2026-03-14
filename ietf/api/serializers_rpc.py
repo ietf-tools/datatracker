@@ -100,13 +100,17 @@ class DocumentAuthorSerializer(serializers.ModelSerializer):
     """Serializer for a Person in a response"""
 
     plain_name = serializers.SerializerMethodField()
+    affiliation = serializers.SerializerMethodField()
 
     class Meta:
         model = DocumentAuthor
-        fields = ["person", "plain_name"]
+        fields = ["person", "plain_name", "affiliation"]
 
     def get_plain_name(self, document_author: DocumentAuthor) -> str:
         return document_author.person.plain_name()
+
+    def get_affiliation(self, document_author: DocumentAuthor) -> str:
+        return document_author.affiliation
 
 
 class FullDraftSerializer(serializers.ModelSerializer):
