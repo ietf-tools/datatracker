@@ -319,8 +319,9 @@ th,
         dominant-baseline: central;
     }
 
+    $timeline-bar-text-color: $gray-900;
     .bar text {
-        fill: var(--bs-body-color);
+        fill: $timeline-bar-text-color;
         dominant-baseline: central;
         pointer-events: none;
     }
