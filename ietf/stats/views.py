@@ -167,7 +167,7 @@ def get_data_for_meeting(meeting_number, minimum_required, attendance_type=None)
 
     return labels, data, total
 
-def meeting_stats(request, meeting_number=None, stats_type=None):
+def meeting_stats(request, meeting_number=None, stats_type='country'):
     minimum_required = 10
 
     if meeting_number is None:
