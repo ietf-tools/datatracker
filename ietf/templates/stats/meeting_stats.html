@@ -21,14 +21,14 @@
     </p>
     <div class="row">
         <div class="col-md-6 col-sm-12">
-        <h2>Total Registrations by Country</h2>
-        <div class="chart-wrapper">
+        <h2>Total Registrations by Country ({{ total_total}} in total)</h2>
+        <div class="chart-wrapper col-10">
             <canvas id="totalRegistrationChart" aria-label="Total Registration Pie Chart" role="img"></canvas>
         </div>
         </div><!-- col -->
         <div class="col-md-6 col-sm-12">
-        <h2>In Person Registrations by Country</h2>
-        <div class="chart-wrapper">
+        <h2>In Person Registrations by Country ({{ in_person_total}} in total)</h2>
+        <div class="chart-wrapper col-10">
             <canvas id="inPersonRegistrationChart" aria-label="In Person Registration Pie Chart" role="img"></canvas>
         </div>
         </div><!-- col -->
@@ -42,49 +42,31 @@
     const totalChartData = JSON.parse('{{ total_chart_data|escapejs }}');
     const inPersonChartData = JSON.parse('{{ in_person_chart_data|escapejs }}');
 
-    const totalCtx = document.getElementById('totalRegistrationChart').getContext('2d');
-    const inPersonCtx = document.getElementById('inPersonRegistrationChart').getContext('2d');
-
-    new Chart(totalCtx, {
-        type: 'pie',   // Change to 'doughnut' for a donut chart
-        data: totalChartData,
-        options: {
-            responsive: true,
-            plugins: {
-                autocolors: {
-                    mode: 'data' // Required for Pie charts to color individual slices
-                },
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 20,
-                        font: { size: 13 },
-                        color: '#475569',
+    function displayChart(id, data) {
+        const ctx = document.getElementById(id).getContext('2d');
+        new Chart(ctx, {
+            type: 'pie',   // Change to 'doughnut' for a donut chart
+            data: data,
+            options: {
+                responsive: true,
+                plugins: {
+                    autocolors: {
+                        mode: 'data' // Required for Pie charts to color individual slices
+                    },
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            font: { size: 13 },
+                            color: '#475569',
+                        }
                     }
                 }
             }
-        }
-    });
+        });
+    }
 
-    new Chart(inPersonCtx, {
-        type: 'pie',   // Change to 'doughnut' for a donut chart
-        data: inPersonChartData,
-        options: {
-            responsive: true,
-            plugins: {
-                autocolors: {
-                    mode: 'data' // Required for Pie charts to color individual slices
-                },
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 20,
-                        font: { size: 13 },
-                        color: '#475569',
-                    }
-                }
-            }
-        }
-    });
+    displayChart('totalRegistrationChart', totalChartData) ;
+    displayChart('inPersonRegistrationChart', inPersonChartData) ;
 </script>
 {% endblock %}

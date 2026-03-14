@@ -152,7 +152,9 @@ def get_data_for_meeting(meeting_number, minimum_required, attendance_type=None)
     labels = []
     data = []
     others_count = 0
+    total = 0
     for item in registration_counts:
+        total += item['count']
         if item['count'] > minimum_required:
             labels.append(item['country_code'])
             data.append(item['count'])
@@ -163,7 +165,7 @@ def get_data_for_meeting(meeting_number, minimum_required, attendance_type=None)
         labels.append('Other')
         data.append(others_count)
 
-    return labels, data
+    return labels, data, total
 
 def meeting_stats(request, meeting_number=None, stats_type=None):
     minimum_required = 10
@@ -171,14 +173,14 @@ def meeting_stats(request, meeting_number=None, stats_type=None):
     if meeting_number is None:
         meeting_number = 125 # Will obvioulsy need to be dynamic
 
-    total_labels, total_data = get_data_for_meeting(meeting_number, minimum_required)
-    in_person_labels, in_person_data = get_data_for_meeting(meeting_number, minimum_required, attendance_type='onsite')
+    total_labels, total_data, total_total = get_data_for_meeting(meeting_number, minimum_required)
+    in_person_labels, in_person_data, in_person_total = get_data_for_meeting(meeting_number, minimum_required, attendance_type='onsite')
 
     # Serialize to JSON for safe injection into the template
     total_chart_data = json.dumps({
         'labels': total_labels,
         'datasets': [{
-            'label': 'TotalRegistrations by Country',
+            'label': 'Total Registrations by Country',
             'data': total_data,
             'borderColor': '#ffffff',
             'borderWidth': 2,
@@ -197,7 +199,9 @@ def meeting_stats(request, meeting_number=None, stats_type=None):
         "meeting_number": meeting_number,
         "minimum_required": minimum_required,
         "total_chart_data": total_chart_data,
-        "in_person_chart_data": in_person_chart_data
+        "total_total": total_total,
+        "in_person_chart_data": in_person_chart_data,
+        "in_person_total": in_person_total
     })
 
 
