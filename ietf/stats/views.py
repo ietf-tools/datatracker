@@ -26,10 +26,11 @@ from ietf.review.utils import (extract_review_assignment_data,
 from ietf.group.models import Role, Group
 from ietf.person.models import Person
 from ietf.name.models import ReviewResultName, CountryName, ReviewAssignmentStateName
+from ietf.meeting.models import Registration
 from ietf.ietfauth.utils import has_role
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
-from ietf.meeting.models import Registration
+from ietf.meeting.helpers import get_current_ietf_meeting_num
 
 
 def stats_index(request):
@@ -167,7 +168,7 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
     minimum_required = 10
 
     if meeting_number is None:
-        meeting_number = 125 # Will obvioulsy need to be dynamic
+        meeting_number = get_current_ietf_meeting_num()
 
     if stats_type != 'country':
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
