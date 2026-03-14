@@ -103,7 +103,7 @@ class DocumentAuthorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DocumentAuthor
-        fields = ["person", "plain_name"]
+        fields = ["person", "plain_name", "affiliation"]
 
     def get_plain_name(self, document_author: DocumentAuthor) -> str:
         return document_author.person.plain_name()
