@@ -100,7 +100,6 @@ class DocumentAuthorSerializer(serializers.ModelSerializer):
     """Serializer for a Person in a response"""
 
     plain_name = serializers.SerializerMethodField()
-    affiliation = serializers.CharField()
 
     class Meta:
         model = DocumentAuthor
