@@ -245,7 +245,7 @@ def active_review_dirs(request):
     return render(request, 'group/active_review_dirs.html', {'dirs' : dirs })
 
 def active_teams(request):
-    teams = Group.objects.filter(type="team", state="active").order_by("name")
+    teams = Group.objects.filter(type="team", state="active").order_by("parent__name", "name").select_related("parent")
     for group in teams:
         group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
     return render(request, 'group/active_teams.html', {'teams' : teams })
