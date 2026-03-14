@@ -6,6 +6,7 @@ import calendar
 import datetime
 import itertools
 import json
+from coverage import annotate
 import dateutil.relativedelta
 from collections import defaultdict
 
@@ -13,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse as urlreverse
-
+from django.db.models import Count
 
 import debug                            # pyflakes:ignore
 
@@ -28,6 +29,7 @@ from ietf.name.models import ReviewResultName, CountryName, ReviewAssignmentStat
 from ietf.ietfauth.utils import has_role
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
+from ietf.meeting.models import Registration
 
 
 def stats_index(request):
@@ -136,8 +138,67 @@ def known_countries_list(request, stats_type=None, acronym=None):
         "countries": countries,
     })
 
-def meeting_stats(request, num=None, stats_type=None):
-    return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
+def get_data_for_meeting(meeting_number, minimum_required, attendance_type=None):
+        # Get registration status counts
+    registration_counts = Registration.objects.filter(meeting__number=meeting_number)
+    if attendance_type:
+        registration_counts = registration_counts.filter(tickets__attendance_type=attendance_type)
+    registration_counts = registration_counts.values('country_code').annotate(count=Count('country_code')).order_by('-count')
+
+    # Prepare data for the pie chart
+    labels = [item['country_code'] for item in registration_counts]
+    data = [item['count'] for item in registration_counts]
+
+    labels = []
+    data = []
+    others_count = 0
+    for item in registration_counts:
+        if item['count'] > minimum_required:
+            labels.append(item['country_code'])
+            data.append(item['count'])
+        else:
+            others_count += item['count']
+
+    if others_count > 0:
+        labels.append('Other')
+        data.append(others_count)
+
+    return labels, data
+
+def meeting_stats(request, meeting_number=None, stats_type=None):
+    minimum_required = 10
+
+    if meeting_number is None:
+        meeting_number = 125 # Will obvioulsy need to be dynamic
+
+    total_labels, total_data = get_data_for_meeting(meeting_number, minimum_required)
+    in_person_labels, in_person_data = get_data_for_meeting(meeting_number, minimum_required, attendance_type='onsite')
+
+    # Serialize to JSON for safe injection into the template
+    total_chart_data = json.dumps({
+        'labels': total_labels,
+        'datasets': [{
+            'label': 'TotalRegistrations by Country',
+            'data': total_data,
+            'borderColor': '#ffffff',
+            'borderWidth': 2,
+        }]
+    })
+    in_person_chart_data = json.dumps({
+        'labels': in_person_labels,
+        'datasets': [{
+            'label': 'In Person Registrations by Country',
+            'data': in_person_data,
+            'borderColor': '#ffffff',
+            'borderWidth': 2,
+        }]
+    })
+    return render(request, "stats/meeting_stats.html", {
+        "meeting_number": meeting_number,
+        "minimum_required": minimum_required,
+        "total_chart_data": total_chart_data,
+        "in_person_chart_data": in_person_chart_data
+    })
 
 
 @login_required

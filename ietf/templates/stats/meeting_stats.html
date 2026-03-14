@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load origin %}
+{% origin %}
+{% load ietf_filters static django_bootstrap5 %}
+{% block pagehead %}
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-autocolors"></script>
+{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        {% block title %}
+            Statistics for IETF-{{ meeting_number }} Registrations
+        {% endblock %}
+    </h1>
+    <p>
+        This page provides a visual representation of the total registrations for IETF-{{ meeting_number }} by country. 
+        Only countries having more than {{ minimum_required }} registrations are displayed separately,
+        else they are grouped under "Other".
+    </p>
+    <div class="row">
+        <div class="col-md-6 col-sm-12">
+        <h2>Total Registrations by Country</h2>
+        <div class="chart-wrapper">
+            <canvas id="totalRegistrationChart" aria-label="Total Registration Pie Chart" role="img"></canvas>
+        </div>
+        </div><!-- col -->
+        <div class="col-md-6 col-sm-12">
+        <h2>In Person Registrations by Country</h2>
+        <div class="chart-wrapper">
+            <canvas id="inPersonRegistrationChart" aria-label="In Person Registration Pie Chart" role="img"></canvas>
+        </div>
+        </div><!-- col -->
+    </div><!-- row -->
+
+    <script>
+    // Need to use autocolors plug-in else all slices are gray...
+    const autocolors = window['chartjs-plugin-autocolors'];
+    Chart.register(autocolors);
+    // ── Safely parse JSON data injected from Django view ──
+    const totalChartData = JSON.parse('{{ total_chart_data|escapejs }}');
+    const inPersonChartData = JSON.parse('{{ in_person_chart_data|escapejs }}');
+
+    const totalCtx = document.getElementById('totalRegistrationChart').getContext('2d');
+    const inPersonCtx = document.getElementById('inPersonRegistrationChart').getContext('2d');
+
+    new Chart(totalCtx, {
+        type: 'pie',   // Change to 'doughnut' for a donut chart
+        data: totalChartData,
+        options: {
+            responsive: true,
+            plugins: {
+                autocolors: {
+                    mode: 'data' // Required for Pie charts to color individual slices
+                },
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        font: { size: 13 },
+                        color: '#475569',
+                    }
+                }
+            }
+        }
+    });
+
+    new Chart(inPersonCtx, {
+        type: 'pie',   // Change to 'doughnut' for a donut chart
+        data: inPersonChartData,
+        options: {
+            responsive: true,
+            plugins: {
+                autocolors: {
+                    mode: 'data' // Required for Pie charts to color individual slices
+                },
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        font: { size: 13 },
+                        color: '#475569',
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
