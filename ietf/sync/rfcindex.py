@@ -432,7 +432,7 @@ def add_rfc_xml_index_entries(rfc_index):
         entries.append(entry)
 
 
-def create_rfc_txt_index():
+def create_rfc_txt_index() -> bytes:
     """Create text index of published documents"""
     DATE_FMT = "%m/%d/%Y"
     created_on = timezone.now().strftime(DATE_FMT)
@@ -443,9 +443,8 @@ def create_rfc_txt_index():
             "created_on": created_on,
             "rfcs": get_rfc_text_index_entries(),
         },
-    )
-    save_to_red_bucket("rfc-index.txt", index)
-
+    ).encode("utf-8")
+    return index
 
 def create_rfc_xml_index():
     """Create XML index of published documents"""
@@ -480,4 +479,4 @@ def create_rfc_xml_index():
         xml_declaration=True,
         pretty_print=4,
     )
-    save_to_red_bucket("rfc-index.xml", pretty_index)
+    return pretty_index
