@@ -16,21 +16,29 @@
                 <th scope="col" data-sort="chairs">Chairs</th>
             </tr>
         </thead>
-        <tbody>
-            {% for group in teams %}
-                <tr>
-                    <td>
-                        <a href="{% url "ietf.group.views.group_home" acronym=group.acronym %}">{{ group.acronym }}</a>
-                    </td>
-                    <td>{{ group.name }}</td>
-                    <td>
-                        {% for chair in group.chairs %}
-                            {% person_link chair.person %}{% if not forloop.last %},{% endif %}
-                        {% endfor %}
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
+        {% regroup teams by parent as grouped_teams %}
+        {% for group_entry in grouped_teams %}
+            <tbody>
+                <tr class="table-info"><th scope="col" colspan="3">
+                    {% if group_entry.grouper %}{{ group_entry.grouper.name }}{% else %}Other{% endif %}
+                </th></tr>
+            </tbody>
+            <tbody>
+                {% for group in group_entry.list %}
+                    <tr>
+                        <td>
+                            <a href="{% url "ietf.group.views.group_home" acronym=group.acronym %}">{{ group.acronym }}</a>
+                        </td>
+                        <td>{{ group.name }}</td>
+                        <td>
+                            {% for chair in group.chairs %}
+                                {% person_link chair.person %}{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        {% endfor %}
     </table>
 {% endblock %}
 {% block js %}
