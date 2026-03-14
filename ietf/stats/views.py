@@ -173,6 +173,9 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
     if meeting_number is None:
         meeting_number = 125 # Will obvioulsy need to be dynamic
 
+    if stats_type != 'country':
+        return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
+
     total_labels, total_data, total_total = get_data_for_meeting(meeting_number, minimum_required)
     in_person_labels, in_person_data, in_person_total = get_data_for_meeting(meeting_number, minimum_required, attendance_type='onsite')
 
