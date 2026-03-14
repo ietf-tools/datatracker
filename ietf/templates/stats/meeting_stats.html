@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load origin %}
+{% origin %}
+{% load ietf_filters static django_bootstrap5 %}
+{% block pagehead %}
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-autocolors"></script>
+{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        {% block title %}
+            Statistics for IETF-{{ meeting_number }} Registrations
+        {% endblock %}
+    </h1>
+    <p>
+        This page provides a visual representation of the total registrations for IETF-{{ meeting_number }} by country. 
+        Only countries having more than {{ minimum_required }} registrations are displayed separately,
+        else they are grouped under "Other".
+    </p>
+    <div class="row">
+        <div class="col-md-6 col-sm-12">
+        <h2>Total Registrations by Country ({{ total_total}} in total)</h2>
+        <div class="chart-wrapper col-10">
+            <canvas id="totalRegistrationChart" aria-label="Total Registration Pie Chart" role="img"></canvas>
+        </div>
+        </div><!-- col -->
+        <div class="col-md-6 col-sm-12">
+        <h2>In Person Registrations by Country ({{ in_person_total}} in total)</h2>
+        <div class="chart-wrapper col-10">
+            <canvas id="inPersonRegistrationChart" aria-label="In Person Registration Pie Chart" role="img"></canvas>
+        </div>
+        </div><!-- col -->
+    </div><!-- row -->
+
+    <script>
+    // Need to use autocolors plug-in else all slices are gray...
+    const autocolors = window['chartjs-plugin-autocolors'];
+    Chart.register(autocolors);
+    // ── Safely parse JSON data injected from Django view ──
+    const totalChartData = JSON.parse('{{ total_chart_data|escapejs }}');
+    const inPersonChartData = JSON.parse('{{ in_person_chart_data|escapejs }}');
+
+    function displayChart(id, data) {
+        const ctx = document.getElementById(id).getContext('2d');
+        new Chart(ctx, {
+            type: 'pie',   // Change to 'doughnut' for a donut chart
+            data: data,
+            options: {
+                responsive: true,
+                plugins: {
+                    autocolors: {
+                        mode: 'data' // Required for Pie charts to color individual slices
+                    },
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            font: { size: 13 },
+                            color: '#475569',
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            
+                            return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    displayChart('totalRegistrationChart', totalChartData) ;
+    displayChart('inPersonRegistrationChart', inPersonChartData) ;
+</script>
+{% endblock %}
