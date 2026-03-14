@@ -5,6 +5,7 @@ services:
             dockerfile: docker/app.Dockerfile
                 
         init: true
+        privileged: true
         
         # Overrides default command so things don't shut down after the process ends.
         command: sleep infinity
@@ -40,6 +41,7 @@ services:
         #      context: .
         #      dockerfile: docker/db.Dockerfile
         restart: unless-stopped
+        privileged: true
         volumes:
             - postgresdb-data:/var/lib/postgresql/data
             
@@ -49,6 +51,7 @@ services:
     pgadmin:
         image: dpage/pgadmin4:latest
         restart: unless-stopped
+        privileged: true
         environment:
             - PGADMIN_DEFAULT_EMAIL=dev@ietf.org
             - PGADMIN_DEFAULT_PASSWORD=dev
@@ -72,6 +75,7 @@ services:
             context: .
             dockerfile: docker/celery.Dockerfile
         init: true
+        privileged: true
         environment:
             CELERY_APP: ietf
             CELERY_ROLE: worker
@@ -95,6 +99,7 @@ services:
             context: .
             dockerfile: docker/celery.Dockerfile
         init: true
+        privileged: true
         environment:
             CELERY_APP: ietf
             CELERY_ROLE: worker
@@ -119,12 +124,14 @@ services:
     blobstore:
         image: ghcr.io/ietf-tools/datatracker-devblobstore:latest
         restart: unless-stopped
+        privileged: true
         volumes:
-            - "minio-data:/data"
+            - minio-data:/data
 
     blobdb:
         image: postgres:17
         restart: unless-stopped
+        privileged: true
         environment:
             POSTGRES_DB: blob
             POSTGRES_USER: dt
