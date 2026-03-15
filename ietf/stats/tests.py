@@ -33,9 +33,9 @@ class StatisticsTests(TestCase):
 
 
     def test_meeting_stats(self):
-        r = self.client.get(urlreverse("ietf.stats.views.meeting_stats"))
-        self.assertRedirects(r, urlreverse("ietf.stats.views.stats_index"))
-
+        r = self.client.get(urlreverse("ietf.stats.views.meeting_stats", kwargs=dict(meeting_number=124,stats_type="country")))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Total Registrations by Country (1885 in total)")
                 
     def test_known_country_list(self):
         # check redirect
