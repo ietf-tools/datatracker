@@ -20,7 +20,8 @@ from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 
-from ietf.person.models import Person, Alias, Email, PersonalApiKey, PersonApiKeyEvent, PERSON_API_KEY_ENDPOINTS
+from ietf.person.models import Person, Alias, Email, PersonalApiKey, PersonApiKeyEvent, \
+    PERSON_API_KEY_ENDPOINTS, PersonUUID
 from ietf.person.name import normalize_name, unidecode_name
 
 
@@ -64,12 +65,21 @@ class UserFactory(factory.django.DjangoModelFactory):
         obj.set_password( '%s+password' % obj.username ) # pylint: disable=no-value-for-parameter
         obj.save()
 
+
+class PersonUUIDFactory(factory.django.DjangoModelFactory):
+    person = factory.SubFactory("ietf.person.factories.PersonFactory")
+
+    class Meta:
+        model = PersonUUID
+
+
 class PersonFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Person
         skip_postgeneration_save = True
 
     user = factory.SubFactory(UserFactory)
+    uuid = factory.RelatedFactory("ietf.person.factories.PersonUUIDFactory", "person")
     name = factory.LazyAttribute(lambda p: normalize_name('%s %s'%(p.user.first_name, p.user.last_name)))
     # Some i18n names, e.g., "शिला के.सी." have a dot at the end that is also part of the ASCII, e.g., "Shilaa Kesii."
     # That trailing dot breaks extract_authors(). Avoid this issue by stripping the dot from the ASCII.

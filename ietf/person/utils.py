@@ -52,6 +52,9 @@ def merge_persons(request, source, target, file=sys.stdout, verbose=False):
     move_related_objects(source, target, file=file, verbose=verbose)
     dedupe_aliases(target)
 
+    # move UUIDs
+    source.uuids.update(person=target)
+
     # copy other attributes
     for field in ('ascii','ascii_short', 'biography', 'photo', 'photo_thumb', 'name_from_draft'):
         if getattr(source,field) and not getattr(target,field):
