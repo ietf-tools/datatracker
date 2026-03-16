@@ -15,19 +15,19 @@
         {% endblock %}
     </h1>
     <p>
-        This page provides a visual representation of the total registrations for IETF-{{ meeting_number }} by country. 
-        Only countries having more than {{ minimum_required }} registrations are displayed separately,
+        This page provides a visual representation of the total registrations for IETF-{{ meeting_number }} by {{ stats_type }}. 
+        Only categories having more than {{ minimum_required }} registrations are displayed separately,
         else they are grouped under "Other".
     </p>
     <div class="row">
         <div class="col-md-6 col-sm-12">
-        <h2>Total Registrations by Country ({{ total_total}} in total)</h2>
+        <h2>Total Registrations by {{ stats_type|title }} ({{ total_total}} in total)</h2>
         <div class="chart-wrapper col-10">
             <canvas id="totalRegistrationChart" aria-label="Total Registration Pie Chart" role="img"></canvas>
         </div>
         </div><!-- col -->
         <div class="col-md-6 col-sm-12">
-        <h2>In Person Registrations by Country ({{ in_person_total}} in total)</h2>
+        <h2>In Person Registrations by {{ stats_type|title }} ({{ in_person_total}} in total)</h2>
         <div class="chart-wrapper col-10">
             <canvas id="inPersonRegistrationChart" aria-label="In Person Registration Pie Chart" role="img"></canvas>
         </div>

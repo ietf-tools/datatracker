@@ -139,6 +139,72 @@ def known_countries_list(request, stats_type=None, acronym=None):
         "countries": countries,
     })
 
+def canonicalize_affiliation(affiliation):
+    if not affiliation:
+        return None
+    if affiliation.endswith(" AB"):
+        affiliation = affiliation[:-3]
+    if affiliation.endswith(" AG"):
+        affiliation = affiliation[:-3]
+    if affiliation.endswith(" Corp"):
+        affiliation = affiliation[:-5]
+    if affiliation.endswith(" Corporation"):
+        affiliation = affiliation[:-11]
+    if affiliation.endswith(", Inc."):
+        affiliation = affiliation[:-6]
+    if affiliation.endswith(" GmbH"):
+        affiliation = affiliation[:-5]
+    if affiliation.endswith(", Inc"):
+        affiliation = affiliation[:-5]
+    if affiliation.endswith(" Inc."):
+        affiliation = affiliation[:-5]
+    if affiliation.endswith(" Inc"):
+        affiliation = affiliation[:-4]
+    if affiliation.endswith(" LLC"):
+        affiliation = affiliation[:-4]
+    if affiliation == 'Akamai Technologies':
+        affiliation = 'Akamai'
+    if affiliation == 'Google Inc.':
+        affiliation = 'Google'
+    if affiliation == 'Cisco Systems':
+        affiliation = 'Cisco'
+    if affiliation == 'Futurewei Technologies':
+        affiliation = 'Futurewei'
+    if affiliation == 'Huawei Technologies':
+        affiliation = 'Huawei'
+    return affiliation
+
+def get_affiliation_data_for_meeting(meeting_number, minimum_required, attendance_type=None):
+        # Get registration status counts
+    registrations = Registration.objects.filter(meeting__number=meeting_number)
+    if attendance_type:
+        registrations = registrations.filter(tickets__attendance_type=attendance_type)
+    registrations = registrations.values('affiliation')
+
+    organization = dict()
+    for reg in registrations:
+        affiliation = canonicalize_affiliation(reg['affiliation']) or "Unspecified"
+        organization[affiliation] = organization.get(affiliation, 0) + 1
+
+    sorted_orgs = sorted(organization.items(), key=lambda t: t[1], reverse=True)
+    labels = []
+    data = []
+    others_count = 0
+    total = 0
+    for org, count in sorted_orgs:
+        total += count
+        if count > minimum_required:
+            labels.append(org)
+            data.append(count)
+        else:
+            others_count += count
+
+    if others_count > 0:
+        labels.append('Other')
+        data.append(others_count)
+
+    return labels, data, total
+
 def get_data_for_meeting(meeting_number, minimum_required, attendance_type=None):
         # Get registration status counts
     registration_counts = Registration.objects.filter(meeting__number=meeting_number)
@@ -165,22 +231,27 @@ def get_data_for_meeting(meeting_number, minimum_required, attendance_type=None)
     return labels, data, total
 
 def meeting_stats(request, meeting_number=None, stats_type='country'):
-    minimum_required = 10
 
     if meeting_number is None:
         meeting_number = get_current_ietf_meeting_num()
 
-    if stats_type != 'country':
+    if stats_type == 'affiliation':
+        minimum_required = 5
+        total_labels, total_data, total_total = get_affiliation_data_for_meeting(meeting_number, minimum_required)
+        in_person_labels, in_person_data, in_person_total = get_affiliation_data_for_meeting(meeting_number, minimum_required, attendance_type='onsite')
+    elif stats_type == 'country':
+        minimum_required = 10
+        total_labels, total_data, total_total = get_data_for_meeting(meeting_number, minimum_required)
+        in_person_labels, in_person_data, in_person_total = get_data_for_meeting(meeting_number, minimum_required, attendance_type='onsite')
+    else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
-    total_labels, total_data, total_total = get_data_for_meeting(meeting_number, minimum_required)
-    in_person_labels, in_person_data, in_person_total = get_data_for_meeting(meeting_number, minimum_required, attendance_type='onsite')
 
     # Serialize to JSON for safe injection into the template
     total_chart_data = json.dumps({
         'labels': total_labels,
         'datasets': [{
-            'label': 'Total Registrations by Country',
+            'label': 'Total Registrations by ' + stats_type,
             'data': total_data,
             'borderColor': '#ffffff',
             'borderWidth': 2,
@@ -189,7 +260,7 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
     in_person_chart_data = json.dumps({
         'labels': in_person_labels,
         'datasets': [{
-            'label': 'In Person Registrations by Country',
+            'label': 'In Person Registrations by ' + stats_type,
             'data': in_person_data,
             'borderColor': '#ffffff',
             'borderWidth': 2,
@@ -197,6 +268,7 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
     })
     return render(request, "stats/meeting_stats.html", {
         "meeting_number": meeting_number,
+        "stats_type": stats_type,
         "minimum_required": minimum_required,
         "total_chart_data": total_chart_data,
         "total_total": total_total,
