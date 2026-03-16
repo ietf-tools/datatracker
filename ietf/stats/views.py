@@ -142,26 +142,11 @@ def known_countries_list(request, stats_type=None, acronym=None):
 def canonicalize_affiliation(affiliation):
     if not affiliation:
         return None
-    if affiliation.endswith(" AB"):
-        affiliation = affiliation[:-3]
-    if affiliation.endswith(" AG"):
-        affiliation = affiliation[:-3]
-    if affiliation.endswith(" Corp"):
-        affiliation = affiliation[:-5]
-    if affiliation.endswith(" Corporation"):
-        affiliation = affiliation[:-11]
-    if affiliation.endswith(", Inc."):
-        affiliation = affiliation[:-6]
-    if affiliation.endswith(" GmbH"):
-        affiliation = affiliation[:-5]
-    if affiliation.endswith(", Inc"):
-        affiliation = affiliation[:-5]
-    if affiliation.endswith(" Inc."):
-        affiliation = affiliation[:-5]
-    if affiliation.endswith(" Inc"):
-        affiliation = affiliation[:-4]
-    if affiliation.endswith(" LLC"):
-        affiliation = affiliation[:-4]
+    for suffix in ('ab', 'ag', 'corp', 'corp.', 'corporation', 'gmbh', 'inc.', 'inc', 'llc'):
+        if affiliation.lower().endswith(' ' + suffix):
+            affiliation[:-(len(suffix)+1)]
+        if affiliation.lower().endswith(', ' + suffix):
+            affiliation[:-(len(suffix)+2)]
     if affiliation == 'Akamai Technologies':
         affiliation = 'Akamai'
     if affiliation == 'Google Inc.':
@@ -172,7 +157,7 @@ def canonicalize_affiliation(affiliation):
         affiliation = 'Futurewei'
     if affiliation == 'Huawei Technologies':
         affiliation = 'Huawei'
-    return affiliation
+    return affiliation.title()
 
 def get_affiliation_data_for_meeting(meeting_number, minimum_required, attendance_type=None):
         # Get registration status counts
@@ -236,7 +221,7 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
         meeting_number = get_current_ietf_meeting_num()
 
     if stats_type == 'affiliation':
-        minimum_required = 5
+        minimum_required = 4
         total_labels, total_data, total_total = get_affiliation_data_for_meeting(meeting_number, minimum_required)
         in_person_labels, in_person_data, in_person_total = get_affiliation_data_for_meeting(meeting_number, minimum_required, attendance_type='onsite')
     elif stats_type == 'country':
