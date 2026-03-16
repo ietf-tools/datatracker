@@ -18,6 +18,7 @@ import ietf.stats.views
 from ietf.group.factories import RoleFactory
 from ietf.person.factories import PersonFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
+from ietf.meeting.tests_models import MeetingFactory, RegistrationFactory
 from ietf.utils.timezone import date_today
 
 
@@ -33,9 +34,15 @@ class StatisticsTests(TestCase):
 
 
     def test_meeting_stats(self):
-        r = self.client.get(urlreverse("ietf.stats.views.meeting_stats", kwargs=dict(meeting_number=124,stats_type="country")))
+        meeting = MeetingFactory(type_id='ietf', number='124')
+        RegistrationFactory.create_batch(5, meeting=meeting, with_ticket={'attendance_type_id': 'onsite'}, attended=True)
+        RegistrationFactory(meeting=meeting, with_ticket={'attendance_type_id': 'onsite'}, attended=False)
+        RegistrationFactory.create_batch(4, meeting=meeting, with_ticket={'attendance_type_id': 'remote'}, attended=True)
+        RegistrationFactory(meeting=meeting, with_ticket={'attendance_type_id': 'remote'}, attended=False)
+        r = self.client.get(urlreverse("ietf.stats.views.meeting_stats", kwargs={'meeting_number': '124','stats_type': 'country'}))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Total Registrations by Country (1885 in total)")
+        self.assertContains(r, "Total Registrations by Country (11 in total)")
+        self.assertContains(r, "In Person Registrations by Country (6 in total)")
                 
     def test_known_country_list(self):
         # check redirect
