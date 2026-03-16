@@ -11,9 +11,31 @@
     {% origin %}
     <h1>
         {% block title %}
-            Statistics for IETF-{{ meeting_number }} Registrations
+            Statistics for IETF-{{ meeting_number }} ({{ meeting_date }}, {{ meeting_city }}, {{ meeting_country }}) Registrations
         {% endblock %}
     </h1>
+    <div class="row my-3">
+        <label class="fw-bold col-sm-1 col-form-label">Show:</label>
+        <div class="btn-group col-sm-4">
+            {% for slug, label, url in possible_stats_types %}
+                <a class="btn btn-outline-primary
+                            {% if slug == stats_type %}
+                                active
+                            {% endif %}"
+                    href="{{ url }}">{{ label }}</a>
+            {% endfor %}
+        </div>
+        <label class="fw-bold col-sm-1 col-form-label">Meeting:</label>
+        <div class="btn-group col-sm-2">
+            {% for num, url in possible_meeting_numbers %}
+                <a class="btn btn-outline-primary
+                            {% if num == meeting_number %}
+                                active
+                            {% endif %}"
+                    href="{{ url }}">{{ num }}</a>
+            {% endfor %}
+        </div>
+    </div>
     <p>
         This page provides a visual representation of the total registrations for IETF-{{ meeting_number }} by {{ stats_type }}. 
         Only categories having more than {{ minimum_required }} registrations are displayed separately,

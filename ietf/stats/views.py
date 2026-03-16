@@ -30,7 +30,7 @@ from ietf.meeting.models import Registration
 from ietf.ietfauth.utils import has_role
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
-from ietf.meeting.helpers import get_current_ietf_meeting_num
+from ietf.meeting.helpers import get_current_ietf_meeting_num, get_ietf_meeting
 
 
 def stats_index(request):
@@ -142,35 +142,32 @@ def known_countries_list(request, stats_type=None, acronym=None):
 def canonicalize_affiliation(affiliation):
     if not affiliation:
         return None
-    for suffix in ('ab', 'ag', 'corp', 'corp.', 'corporation', 'gmbh', 'inc.', 'inc', 'llc'):
+    for suffix in ('ab', 'ag', 'corp', 'corp.', 'corporation', 'gmbh', 'inc.', 'inc', 'international pte ltd', 'llc', 'ltd', 'ltd.', 'private limited', 'pty ltd', 'pvt ltd'):
         if affiliation.lower().endswith(' ' + suffix):
+            affiliation[:-(len(suffix)+1)]
+        if affiliation.lower().endswith(',' + suffix):
             affiliation[:-(len(suffix)+1)]
         if affiliation.lower().endswith(', ' + suffix):
             affiliation[:-(len(suffix)+2)]
-    if affiliation == 'Akamai Technologies':
-        affiliation = 'Akamai'
-    if affiliation == 'Google Inc.':
-        affiliation = 'Google'
-    if affiliation == 'Cisco Systems':
-        affiliation = 'Cisco'
-    if affiliation == 'Futurewei Technologies':
-        affiliation = 'Futurewei'
-    if affiliation == 'Huawei Technologies':
-        affiliation = 'Huawei'
+    for prefix in ('akamai','apple', 'cisco', 'futurewei', 'google', 'hpe', 'huawei', 'meta', 'nokia', 'siemens'):
+        if affiliation.lower().startswith(prefix + ' '):
+            affiliation = prefix
     return affiliation.title()
 
 def get_affiliation_data_for_meeting(meeting_number, minimum_required, attendance_type=None):
-        # Get registration status counts
+     # Get registration status details
     registrations = Registration.objects.filter(meeting__number=meeting_number)
     if attendance_type:
         registrations = registrations.filter(tickets__attendance_type=attendance_type)
     registrations = registrations.values('affiliation')
 
+    # Count per canonicalized affiliation
     organization = dict()
     for reg in registrations:
         affiliation = canonicalize_affiliation(reg['affiliation']) or "Unspecified"
         organization[affiliation] = organization.get(affiliation, 0) + 1
 
+    # Sort to have the largest count first (nicer in pie chart)
     sorted_orgs = sorted(organization.items(), key=lambda t: t[1], reverse=True)
     labels = []
     data = []
@@ -191,7 +188,7 @@ def get_affiliation_data_for_meeting(meeting_number, minimum_required, attendanc
     return labels, data, total
 
 def get_data_for_meeting(meeting_number, minimum_required, attendance_type=None):
-        # Get registration status counts
+    # Get registration status counts, aggregated by country_code
     registration_counts = Registration.objects.filter(meeting__number=meeting_number)
     if attendance_type:
         registration_counts = registration_counts.filter(tickets__attendance_type=attendance_type)
@@ -217,8 +214,11 @@ def get_data_for_meeting(meeting_number, minimum_required, attendance_type=None)
 
 def meeting_stats(request, meeting_number=None, stats_type='country'):
 
+    current_meeting = get_current_ietf_meeting_num()
     if meeting_number is None:
-        meeting_number = get_current_ietf_meeting_num()
+        meeting_number = current_meeting
+
+    this_meeting = get_ietf_meeting(meeting_number)
 
     if stats_type == 'affiliation':
         minimum_required = 4
@@ -251,8 +251,28 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
             'borderWidth': 2,
         }]
     })
+
+    # Prepare the list of choice buttons for the template
+    possible_stats_types = [
+        ("affiliation", "Per affiliation", urlreverse(meeting_stats, kwargs={'meeting_number': meeting_number, 'stats_type': 'affiliation'})),
+        ("country", "Per country", urlreverse(meeting_stats, kwargs={'meeting_number': meeting_number, 'stats_type': 'country'})),
+    ]
+
+    # Prepare the list of meeting number buttons for the template
+    possible_meeting_numbers = []
+    if int(meeting_number) > 72:  # No registration data before IETF-72
+        possible_meeting_numbers.append((int(meeting_number)-1, urlreverse(meeting_stats, kwargs={'meeting_number': int(meeting_number)-1, 'stats_type': stats_type})))
+    possible_meeting_numbers.append((meeting_number, urlreverse(meeting_stats, kwargs={'meeting_number': meeting_number, 'stats_type': stats_type})))
+    if int(meeting_number) <= int(current_meeting): # Allow current meeting +1
+        possible_meeting_numbers.append((int(meeting_number)+1, urlreverse(meeting_stats, kwargs={'meeting_number': int(meeting_number)+1, 'stats_type': stats_type})))
+
     return render(request, "stats/meeting_stats.html", {
         "meeting_number": meeting_number,
+        "meeting_date": this_meeting.date,
+        "meeting_country": this_meeting.country,
+        "meeting_city": this_meeting.city,
+        "possible_stats_types": possible_stats_types,
+        "possible_meeting_numbers": possible_meeting_numbers,
         "stats_type": stats_type,
         "minimum_required": minimum_required,
         "total_chart_data": total_chart_data,
