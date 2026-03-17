@@ -196,7 +196,8 @@ class RpcApiTests(APITestCase):
         self.assertEqual(mock_kwargs["rfc_number_list"], expected_rfc_number_list)
 
     @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
-    def test_upload_rfc_files(self):
+    @mock.patch("ietf.doc.tasks.trigger_red_precomputer_task.delay")
+    def test_upload_rfc_files(self, mock_task_delay):
         def _valid_post_data():
             """Generate a valid post data dict
 
@@ -217,6 +218,8 @@ class RpcApiTests(APITestCase):
             }
 
         url = urlreverse("ietf.api.purple_api.upload_rfc_files")
+        updates = RfcFactory.create_batch(2)
+        obsoletes = RfcFactory.create_batch(2)
         unused_rfc_number = (
             Document.objects.filter(rfc_number__isnull=False).aggregate(
                 unused_rfc_number=Max("rfc_number") + 1
@@ -225,6 +228,10 @@ class RpcApiTests(APITestCase):
         )
 
         rfc = WgRfcFactory(rfc_number=unused_rfc_number)
+        for r in obsoletes:
+            rfc.relateddocument_set.create(relationship_id="obs", target=r)
+        for r in updates:
+            rfc.relateddocument_set.create(relationship_id="updates", target=r)
         assert isinstance(rfc, Document), "WgRfcFactory should generate a Document"
         with TemporaryDirectory() as rfc_dir:
             settings.RFC_PATH = rfc_dir  # affects overridden settings
@@ -303,6 +310,7 @@ class RpcApiTests(APITestCase):
             blob_in_the_way.delete()
 
             # valid post
+            mock_task_delay.reset_mock()
             r = self.client.post(
                 url,
                 _valid_post_data(),
@@ -345,6 +353,15 @@ class RpcApiTests(APITestCase):
                 b"This is .notprepped.xml",
                 ".notprepped.xml blob should contain the expected content",
             )
+            self.assertTrue(mock_task_delay.called)
+            _, mock_kwargs = mock_task_delay.call_args
+            self.assertIn("rfc_number_list", mock_kwargs)
+            expected_rfc_number_list = [rfc.rfc_number]
+            expected_rfc_number_list.extend(
+                [d.rfc_number for d in updates + obsoletes]
+            )
+            expected_rfc_number_list = sorted(set(expected_rfc_number_list))
+            self.assertEqual(mock_kwargs["rfc_number_list"], expected_rfc_number_list)
 
             # re-post with replace = False should now fail
             r = self.client.post(

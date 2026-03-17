@@ -1,4 +1,7 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
+
+import mock
+
 from django.utils import timezone
 
 from ietf.utils.test_utils import TestCase
@@ -32,7 +35,8 @@ class EditableRfcSerializerTests(TestCase):
         with self.assertRaises(RuntimeError, msg="serializer does not allow create()"):
             serializer.save()
 
-    def test_update(self):
+    @mock.patch("ietf.doc.tasks.trigger_red_precomputer_task.delay")
+    def test_update(self, mock_task_delay):
         rfc = WgRfcFactory(pages=10)
         serializer = EditableRfcSerializer(
             instance=rfc,
@@ -83,6 +87,10 @@ class EditableRfcSerializerTests(TestCase):
             result.part_of(),
             [Document.objects.get(name="fyi999")],
         )
+        self.assertTrue(mock_task_delay.called)
+        _, mock_kwargs = mock_task_delay.call_args
+        self.assertIn("rfc_number_list", mock_kwargs)
+        self.assertEqual(mock_kwargs["rfc_number_list"], [rfc.rfc_number])
 
     def test_partial_update(self):
         # We could test other permutations of fields, but authors is a partial update
