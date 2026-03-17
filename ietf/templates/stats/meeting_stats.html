@@ -81,6 +81,15 @@
                             padding: 20,
                             font: { size: 13 },
                             color: '#475569',
+                            generateLabels: function(chart) {
+                                const dataset = chart.data.datasets[0];
+                                return chart.data.labels.map((label, i) => ({
+                                    text      : `${label}: ${dataset.data[i]}`,
+                                    fillStyle : dataset.backgroundColor[i],
+                                    hidden    : false,
+                                    index     : i,
+                                }));
+                            }
                         }
                     },
                     tooltip: {
