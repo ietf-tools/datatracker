@@ -443,12 +443,8 @@ STORAGES["red_bucket"] = {
     ),
 }
 RFCINDEX_DELETE_THEN_WRITE = False  # S3Storage allows file_overwrite by default
-RFCINDEX_OUTPUT_PATH = os.environ.get(
-    "DATATRACKER_RFCINDEX_OUTPUT_PATH", "other/"
-)
-RFCINDEX_INPUT_PATH = os.environ.get(
-    "DATATRACKER_RFCINDEX_INPUT_PATH", ""
-)
+RFCINDEX_OUTPUT_PATH = os.environ.get("DATATRACKER_RFCINDEX_OUTPUT_PATH", "other/")
+RFCINDEX_INPUT_PATH = os.environ.get("DATATRACKER_RFCINDEX_INPUT_PATH", "")
 
 # Configure the blobdb app for artifact storage
 _blobdb_replication_enabled = (
@@ -471,3 +467,12 @@ BLOBDB_REPLICATION = {
 PASSWORD_POLICY_ENFORCE_AT_LOGIN = (
     os.environ.get("DATATRACKER_ENFORCE_PW_POLICY", "true").lower() != "false"
 )
+
+
+# Typesense config
+if all(
+    key in os.environ
+    for key in ["DATATRACKER_TYPESENSE_API_KEY", "DATATRACKER_TYPESENSE_API_URL"]
+):
+    TYPESENSE_API_KEY = os.environ["DATATRACKER_TYPESENSE_API_KEY"]
+    TYPESENSE_API_URL = os.environ["DATATRACKER_TYPESENSE_API_URL"]
