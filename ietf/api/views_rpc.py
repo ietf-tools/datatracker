@@ -38,7 +38,7 @@ from ietf.api.serializers_rpc import (
 from ietf.doc.models import Document, DocHistory, RfcAuthor, DocEvent
 from ietf.doc.serializers import RfcAuthorSerializer
 from ietf.doc.storage_utils import remove_from_storage, store_file, exists_in_storage
-from ietf.doc.tasks import signal_update_rfc_metadata_task
+from ietf.doc.tasks import rebuild_reference_relations_task, signal_update_rfc_metadata_task
 from ietf.person.models import Email, Person
 from ietf.sync.tasks import create_rfc_index_task
 
@@ -515,6 +515,8 @@ class RfcPubFilesView(APIView):
                 ):
                     destination.parent.mkdir()
                 shutil.move(ftm, destination)
+
+        rebuild_reference_relations_task.delay(doc_names=[rfc.name])
 
         return Response(NotificationAckSerializer().data)
 

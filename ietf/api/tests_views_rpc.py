@@ -196,7 +196,8 @@ class RpcApiTests(APITestCase):
         self.assertEqual(mock_kwargs["rfc_number_list"], expected_rfc_number_list)
 
     @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
-    def test_upload_rfc_files(self):
+    @mock.patch("ietf.doc.tasks.rebuild_reference_relations_task.delay")
+    def test_upload_rfc_files(self, mock_rebuild_relations_delay):
         def _valid_post_data():
             """Generate a valid post data dict
 
@@ -345,6 +346,11 @@ class RpcApiTests(APITestCase):
                 b"This is .notprepped.xml",
                 ".notprepped.xml blob should contain the expected content",
             )
+
+            self.assertTrue(mock_rebuild_relations_delay.called)
+            _, mock_kwargs = mock_rebuild_relations_delay.call_args
+            self.assertIn("doc_names", mock_kwargs)
+            self.assertEqual(mock_kwargs["doc_names"], [rfc.name])
 
             # re-post with replace = False should now fail
             r = self.client.post(
