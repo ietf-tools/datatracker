@@ -683,7 +683,9 @@ class EditableRfcSerializer(serializers.ModelSerializer):
                 stale_subseries_relations.delete()
             if len(rfc_events) > 0:
                 rfc.save_with_history(rfc_events)
-            trigger_red_precomputer_task.delay(rfc_number_list=[rfc.rfc_number])
+        # Intentionally triggering red even if the above transaction is rolled back.
+        # The unnecessary computation red would do is small.
+        trigger_red_precomputer_task.delay(rfc_number_list=[rfc.rfc_number])
         return rfc
 
 
