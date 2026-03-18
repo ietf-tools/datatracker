@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 """Search indexing utilities"""
-
+import re
 import typing
 from collections.abc import Collection
 from math import floor
@@ -16,6 +16,7 @@ COLLECTION = "docs"
 type DocsSchemaTypeT = typing.Literal["draft", "rfc"]
 
 SlugNameDict = typing.TypedDict("SlugNameDict", {"slug": str, "name": str})
+
 
 class GroupDict(typing.TypedDict):
     acronym: str
@@ -42,6 +43,7 @@ class FlagsDict(typing.TypedDict):
 
 class DocsSchemaDict(typing.TypedDict):
     """TypedDict equivalent to the Typesense "docs" schema"""
+
     rfcNumber: int | None  # integer RFC number, omit for drafts
     rfc: str | None  # string RFC number, omit for drafts
     ref: str | None  # RFC number for drafts corresponding to draft, else omitted
@@ -68,10 +70,31 @@ class DocsSchemaDict(typing.TypedDict):
     ranking: int  # ranking when no explicit sorting (RFC number or rev)
 
 
+
+def _sanitize_text(content):
+    """Sanitize content or abstract text for search"""
+    # REs (with approximate names)
+    RE_DOT_OR_BANG_SPACE = r"\. |! "  # -> " " (space)
+    RE_COMMENT_OR_TOC_CRUD = r"<--|-->|--+|\+|\.\.+"  # -> ""
+    RE_BRACKETED_REF = r"\[[a-zA-Z0-9 -]+\]"  # -> ""
+    RE_DOTTED_NUMBERS = r"[0-9]+\.[0-9]+(\.[0-9]+)?"  # -> ""
+    RE_MULTIPLE_WHITESPACE = r"\s+"  # -> " " (space)
+    # Replacement values (for clarity of intent)
+    SPACE = " "
+    EMPTY = ""
+    # Sanitizing begins here, order is significant!
+    content = re.sub(RE_DOT_OR_BANG_SPACE, SPACE, content.strip())
+    content = re.sub(RE_COMMENT_OR_TOC_CRUD, EMPTY, content)
+    content = re.sub(RE_BRACKETED_REF, EMPTY, content)
+    content = re.sub(RE_DOTTED_NUMBERS, EMPTY, content)
+    content = re.sub(RE_MULTIPLE_WHITESPACE, SPACE, content)
+    return content.strip()
+
+
 def update_or_create_rfc_entry(rfc: Document):
     assert rfc.type_id == "rfc"
     assert rfc.rfc_number is not None
-    
+
     keywords: list[str] = rfc.keywords  # help type checking
 
     subseries = rfc.part_of()
@@ -91,7 +114,7 @@ def update_or_create_rfc_entry(rfc: Document):
         "ref": None,
         "filename": rfc.name,
         "title": rfc.title,
-        "abstract": rfc.abstract,
+        "abstract": _sanitize_text(rfc.abstract),
         "keywords": keywords,
         "type": "rfc",
         "state": [state.name for state in rfc.states.all()],
@@ -101,7 +124,7 @@ def update_or_create_rfc_entry(rfc: Document):
             if subseries is None
             else SubseriesDict(
                 acronym=subseries.type.slug,
-                number=int(subseries.name[len(subseries.type.slug):]),
+                number=int(subseries.name[len(subseries.type.slug) :]),
                 total=len(subseries.contains()),
             )
         ),
@@ -130,7 +153,12 @@ def update_or_create_rfc_entry(rfc: Document):
             else None
         ),
         "stream": {"slug": rfc.stream.slug, "name": rfc.stream.name},
-        "authors": [],
+        "authors": [
+            AuthorDict(
+                name=rfc_author.titlepage_name, affiliation=rfc_author.affiliation
+            )
+            for rfc_author in rfc.rfcauthor_set.all()
+        ],
         "adName": None if rfc.ad is None else rfc.ad.name,
         "flags": {
             "hiddenDefault": False,
@@ -142,8 +170,7 @@ def update_or_create_rfc_entry(rfc: Document):
         "content": None,  # tbd
         "ranking": rfc.rfc_number,
     }
-    
-    
+
     client = typesense.Client(
         {"api_key": settings.TYPESENSE_API_KEY, "nodes": [settings.TYPESENSE_API_URL]}
     )
