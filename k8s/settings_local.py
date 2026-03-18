@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
+# Copyright The IETF Trust 2007-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 from base64 import b64decode
@@ -468,11 +468,12 @@ PASSWORD_POLICY_ENFORCE_AT_LOGIN = (
     os.environ.get("DATATRACKER_ENFORCE_PW_POLICY", "true").lower() != "false"
 )
 
-
-# Typesense config
-if all(
-    key in os.environ
-    for key in ["DATATRACKER_TYPESENSE_API_KEY", "DATATRACKER_TYPESENSE_API_URL"]
-):
-    TYPESENSE_API_KEY = os.environ["DATATRACKER_TYPESENSE_API_KEY"]
-    TYPESENSE_API_URL = os.environ["DATATRACKER_TYPESENSE_API_URL"]
+# Typesense search indexing
+SEARCHINDEX_CONFIG = {
+    "TYPESENSE_API_URL": os.environ.get("DATATRACKER_TYPESENSE_API_URL", ""),
+    "TYPESENSE_API_KEY": os.environ.get("DATATRACKER_TYPESENSE_API_KEY", ""),
+    "TASK_RETRY_DELAY": os.environ.get("DATATRACKER_SEARCHINDEX_TASK_RETRY_DELAY", 10),
+    "TASK_MAX_RETRIES": os.environ.get(
+        "DATATRACKER_SEARCHINDEX_TASK_MAX_RETRIES", "12"
+    ),
+}
