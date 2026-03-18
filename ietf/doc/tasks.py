@@ -186,7 +186,8 @@ def update_rfc_searchindex_task(self, rfc_number: int):
     except Exception as err:
         log.log(f"Search index update for {rfc.name} failed ({err})")
         if isinstance(err, searchindex.RETRYABLE_ERROR_CLASSES):
+            searchindex_settings = searchindex.get_settings()
             self.retry(
-                countdown=getattr(settings, "SEARCHINDEX_TASK_RETRY_DELAY", 10),
-                max_retries=getattr(settings, "SEARCHINDEX_TASK_MAX_RETRIES", 12),
+                countdown=searchindex_settings["TASK_RETRY_DELAY"],
+                max_retries=searchindex_settings["TASK_MAX_RETRIES"],
             )

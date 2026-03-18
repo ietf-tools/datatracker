@@ -26,8 +26,22 @@ RETRYABLE_ERROR_CLASSES = (
 )
 
 
+DEFAULT_SETTINGS = {
+    "TYPESENSE_API_URL": "",
+    "TYPESENSE_API_KEY": "",
+    "TYPESENSE_COLLECTION_NAME": "docs",
+    "TASK_RETRY_DELAY": 10,
+    "TASK_MAX_RETRIES": 12,
+}
+
+
+def get_settings():
+    return DEFAULT_SETTINGS | getattr(settings, "SEARCHINDEX_CONFIG")
+
+
 def enabled():
-    return getattr(settings, "SEARCHINDEX_API_URL", "") != ""
+    _settings = get_settings()
+    return _settings["TYPESENSE_API_URL"] != ""
 
 
 type DocsSchemaTypeT = typing.Literal["draft", "rfc"]
@@ -200,7 +214,12 @@ def update_or_create_rfc_entry(rfc: Document):
         "ranking": rfc.rfc_number,
     }
 
+    _settings = get_settings()
     client = typesense.Client(
-        {"api_key": settings.TYPESENSE_API_KEY, "nodes": [settings.TYPESENSE_API_URL]}
+        {
+            "api_key": _settings["TYPESENSE_API_KEY"], 
+            "nodes": [_settings["TYPESENSE_API_URL"]]}
     )
-    client.collections[COLLECTION].documents.upsert({"id": ts_id} | ts_document)
+    client.collections[
+        _settings["TYPESENSE_COLLECTION_NAME"]
+    ].documents.upsert({"id": ts_id} | ts_document)
