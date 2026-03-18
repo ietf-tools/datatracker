@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 """Search indexing utilities"""
+
 import re
 import typing
 from collections.abc import Collection
@@ -8,7 +9,8 @@ from math import floor
 import typesense
 from django.conf import settings
 
-from ietf.doc.models import Document
+from ietf.doc.models import Document, StoredObject
+from ietf.doc.storage_utils import retrieve_str
 from ietf.utils.log import log
 
 COLLECTION = "docs"
@@ -70,7 +72,6 @@ class DocsSchemaDict(typing.TypedDict):
     ranking: int  # ranking when no explicit sorting (RFC number or rev)
 
 
-
 def _sanitize_text(content):
     """Sanitize content or abstract text for search"""
     # REs (with approximate names)
@@ -106,6 +107,19 @@ def update_or_create_rfc_entry(rfc: Document):
     subseries = subseries[0] if len(subseries) > 0 else None
     obsoleted_by = rfc.relations_that("obs")
     updated_by = rfc.relations_that("updates")
+
+    stored_txt = (
+        StoredObject.objects.exclude_deleted()
+        .filter(store="rfc", doc_name=rfc.name, name__startswith="txt/")
+        .first()
+    )
+    content = None
+    if stored_txt is not None:
+        # Should be available in the blobdb, but be cautious...
+        try:
+            content = retrieve_str(kind=stored_txt.store, name=stored_txt.name)
+        except Exception:
+            log(f"Unable to retrieve {stored_txt} from storage")
 
     ts_id = f"doc-{rfc.pk}"
     ts_document: DocsSchemaDict = {
@@ -167,7 +181,7 @@ def update_or_create_rfc_entry(rfc: Document):
         },
         "obsoletedBy": [str(doc.rfc_number) for doc in obsoleted_by],
         "updatedBy": [str(doc.rfc_number) for doc in updated_by],
-        "content": None,  # tbd
+        "content": None if content is None else _sanitize_text(content),
         "ranking": rfc.rfc_number,
     }
 
