@@ -955,7 +955,7 @@ def rebuild_reference_relations(doc, filenames):
     filenames should be a dict mapping file ext (i.e., type) to the full path of each file.
     """
     if doc.type.slug not in ["draft", "rfc"]:
-        log.log(f"rebuild_reference_relations called for non draf/rfc doc {doc.name}")
+        log.log(f"rebuild_reference_relations called for non draft/rfc doc {doc.name}")
         return None
 
 
