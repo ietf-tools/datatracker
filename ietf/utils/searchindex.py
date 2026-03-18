@@ -6,14 +6,29 @@ import typing
 from collections.abc import Collection
 from math import floor
 
+import httpx  # just for exceptions
 import typesense
+import typesense.exceptions
 from django.conf import settings
 
 from ietf.doc.models import Document, StoredObject
 from ietf.doc.storage_utils import retrieve_str
 from ietf.utils.log import log
 
-COLLECTION = "docs"
+# Error classes that might succeed just by retrying a failed attempt.
+# Must be a tuple for use with isinstance()
+RETRYABLE_ERROR_CLASSES = (
+    httpx.ConnectError,
+    httpx.ConnectTimeout,
+    typesense.exceptions.Timeout,
+    typesense.exceptions.ServerError,
+    typesense.exceptions.ServiceUnavailable,
+)
+
+
+def enabled():
+    return getattr(settings, "SEARCHINDEX_API_URL", "") != ""
+
 
 type DocsSchemaTypeT = typing.Literal["draft", "rfc"]
 

@@ -3,6 +3,7 @@
 # Celery task definitions
 #
 import datetime
+
 import debug  # pyflakes:ignore
 
 from celery import shared_task
@@ -11,7 +12,7 @@ from pathlib import Path
 from django.conf import settings
 from django.utils import timezone
 
-from ietf.utils import log
+from ietf.utils import log, searchindex
 from ietf.utils.timezone import datetime_today
 
 from .expire import (
@@ -166,3 +167,26 @@ def fixup_bofreq_timestamps_task():  # pragma: nocover
 @shared_task
 def signal_update_rfc_metadata_task(rfc_number_list=()):
     signal_update_rfc_metadata(rfc_number_list)
+
+
+@shared_task(bind=True)
+def update_rfc_searchindex_task(self, rfc_number: int):
+    """Update the search index for one RFC"""
+    if not searchindex.enabled():
+        log.log("Search indexing is not enabled, skipping")
+
+    rfc = Document.objects.filter(type_id="rfc", rfc_number=rfc_number).first()
+    if rfc is None:
+        log.log(
+            f"ERROR: Document for rfc{rfc_number} not found, not updating search index"
+        )
+        return
+    try:
+        searchindex.update_or_create_rfc_entry(rfc)
+    except Exception as err:
+        log.log(f"Search index update for {rfc.name} failed ({err})")
+        if isinstance(err, searchindex.RETRYABLE_ERROR_CLASSES):
+            self.retry(
+                countdown=getattr(settings, "SEARCHINDEX_TASK_RETRY_DELAY", 10),
+                max_retries=getattr(settings, "SEARCHINDEX_TASK_MAX_RETRIES", 12),
+            )
