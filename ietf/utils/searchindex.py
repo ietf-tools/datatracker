@@ -26,7 +26,15 @@ RETRYABLE_ERROR_CLASSES = (
 )
 
 
-DEFAULT_SETTINGS = {
+class SettingsDict(typing.TypedDict):
+    TYPESENSE_API_URL: str
+    TYPESENSE_API_KEY: str
+    TYPESENSE_COLLECTION_NAME: str
+    TASK_RETRY_DELAY: int | float
+    TASK_MAX_RETRIES: int
+
+
+DEFAULT_SETTINGS: SettingsDict = {
     "TYPESENSE_API_URL": "",
     "TYPESENSE_API_KEY": "",
     "TYPESENSE_COLLECTION_NAME": "docs",
@@ -35,8 +43,8 @@ DEFAULT_SETTINGS = {
 }
 
 
-def get_settings():
-    return DEFAULT_SETTINGS | getattr(settings, "SEARCHINDEX_CONFIG")
+def get_settings() -> SettingsDict:
+    return DEFAULT_SETTINGS | getattr(settings, "SEARCHINDEX_CONFIG", {})
 
 
 def enabled():
