@@ -1036,7 +1036,7 @@ def rebuild_reference_relations(doc, filenames):
         ret["unfound"] = list(unfound)
 
     logmsg = f"rebuild_reference_relations for {doc.name}: "
-    logmsg += "changed referrences" if changed_references else "references unchanged"
+    logmsg += "changed references" if changed_references else "references unchanged"
     if ret:
         logmsg += f" {json.dumps(ret)}"
 
