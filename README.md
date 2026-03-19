@@ -1,5 +1,5 @@
 <div align="center">
-  
+  data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQMAAABmvDolAAAABlBMVEX///8AAABVwtN+AAACU0lEQVR42uyZzW07OwzEZ6GDjluCSlFjxn4gjamULUFHHYSdh6HWjh0XYOn9zUMQOL8LIw45pPGNb/yTMZHk6QksnjUwR4QNUZ+mgYACYAFEJfubP9YcAcxDAYF5QXRkiTyACOXqWbsDfLoDcyL3YQEKqGEDeCwYD4BJQr/HqtoqKqu/JfdhoIk31Xkv0R3LnErY87u6+wZa6C02AGFnKljzWzvtHJgKXF7ZHkvNKJK7ktx+X7MDIGDeAIkXjnuG5zlTzQgDAWSdT0kC6kMmiZXJk3kkoKDOOyngmryqqJcWNAIQnA1d5eo0Dkobv+gKgMtTiY67VdSlEP8qnO4B0uW1RJevcSCTwyQTgXEAeCpNyzDJP9B00Rcw2YekfiSrKC+Tw8MNBlgdVUwlIpxWTEB58g8DAECwoWYAVUwFZiIer9kHgHnzyf71PCYZYnmEsQB1e0i83LxsQ4asA3ncnsbBCIDL0DiwRfZEW7ZaH+oGUDEt5gY83fUMsgc/T/6hf6AEc8WWJjDlWMI5s4SKgQDIKcg6aDtXC7Luw1+T0wMw8aj32m/2wAzxk7cfAVAL0iJrxaQ1yiYv8dKjRgCs+9h2buo2rQA3DARMPJjXAruBuMPOZ/Zi7tGjPg/c927pou3dGlwwjzAOcL+y3ncpSXzP0R+3oYB2ZY1tqMl8lrYMPvmHDoB22dPg0t4tZ7Aqs5/xAEQ7mtk4UDG97rzjABBQsdielYHwN83PArhOZRtQpYLSvgapGAl4XFlPT4Rrg2LB7e1W3DHwjW/8z+K/AAAA//+c16uQGK+4XAAAAABJRU5ErkJggg==
 <img src="https://raw.githubusercontent.com/ietf-tools/common/main/assets/logos/datatracker.svg" alt="IETF Datatracker" height="125" />
 
 [![Release](https://img.shields.io/github/release/ietf-tools/datatracker.svg?style=flat&maxAge=300)](https://github.com/ietf-tools/datatracker/releases)
