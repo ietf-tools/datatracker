@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2024, All Rights Reserved
+# Copyright The IETF Trust 2024-2026, All Rights Reserved
 
 import debug    # pyflakes:ignore
 import datetime
@@ -6,13 +6,16 @@ from unittest import mock
 
 from pathlib import Path
 
+from celery.exceptions import Retry
 from django.conf import settings
+from django.test.utils import override_settings
 from django.utils import timezone
+from typesense import exceptions as typesense_exceptions
 
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import datetime_today
 
-from .factories import DocumentFactory, NewRevisionDocEventFactory
+from .factories import DocumentFactory, NewRevisionDocEventFactory, WgRfcFactory
 from .models import Document, NewRevisionDocEvent
 from .tasks import (
     expire_ids_task,
@@ -21,8 +24,9 @@ from .tasks import (
     generate_idnits2_rfcs_obsoleted_task,
     generate_idnits2_rfc_status_task,
     investigate_fragment_task,
-    notify_expirations_task,
+    notify_expirations_task, update_rfc_searchindex_task,
 )
+
 
 class TaskTests(TestCase):
     @mock.patch("ietf.doc.tasks.in_draft_expire_freeze")
@@ -111,6 +115,33 @@ class TaskTests(TestCase):
             retval, {"name_fragment": "some fragment", "results": investigation_results}
         )
 
+    @mock.patch("ietf.doc.tasks.searchindex.update_or_create_rfc_entry")
+    @mock.patch("ietf.doc.tasks.searchindex.enabled")
+    def test_update_rfc_searchindex_task(self, mock_searchindex_enabled, mock_create_entry):
+        mock_searchindex_enabled.return_value = False
+
+        self.assertFalse(Document.objects.filter(rfc_number=5073).exists())
+        rfc = WgRfcFactory()
+        update_rfc_searchindex_task(rfc_number=5073)
+        self.assertFalse(mock_create_entry.called)
+        update_rfc_searchindex_task(rfc_number=rfc.rfc_number)
+        self.assertFalse(mock_create_entry.called)
+        
+        mock_searchindex_enabled.return_value = True
+        update_rfc_searchindex_task(rfc_number=5073)
+        self.assertFalse(mock_create_entry.called)
+        update_rfc_searchindex_task(rfc_number=rfc.rfc_number)
+        self.assertTrue(mock_create_entry.called)
+
+        with override_settings(SEARCHINDEX_CONFIG={"TASK_MAX_RETRIES": 0}):
+            # Try a non-retryable error (there are others)
+            mock_create_entry.side_effect = typesense_exceptions.RequestMalformed
+            update_rfc_searchindex_task(rfc_number=rfc.rfc_number)  # no retry
+            # Now what should be a retryable error
+            mock_create_entry.side_effect = typesense_exceptions.Timeout
+            with self.assertRaises(Retry):
+                update_rfc_searchindex_task(rfc_number=rfc.rfc_number)
+            
 
 class Idnits2SupportTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['DERIVED_DIR']

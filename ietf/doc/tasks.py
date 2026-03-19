@@ -174,6 +174,7 @@ def update_rfc_searchindex_task(self, rfc_number: int):
     """Update the search index for one RFC"""
     if not searchindex.enabled():
         log.log("Search indexing is not enabled, skipping")
+        return
 
     rfc = Document.objects.filter(type_id="rfc", rfc_number=rfc_number).first()
     if rfc is None:
