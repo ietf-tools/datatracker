@@ -225,9 +225,10 @@ def update_or_create_rfc_entry(rfc: Document):
     _settings = get_settings()
     client = typesense.Client(
         {
-            "api_key": _settings["TYPESENSE_API_KEY"], 
-            "nodes": [_settings["TYPESENSE_API_URL"]]}
+            "api_key": _settings["TYPESENSE_API_KEY"],
+            "nodes": [_settings["TYPESENSE_API_URL"]],
+        }
     )
-    client.collections[
-        _settings["TYPESENSE_COLLECTION_NAME"]
-    ].documents.upsert({"id": ts_id} | ts_document)
+    client.collections[_settings["TYPESENSE_COLLECTION_NAME"]].documents.upsert(
+        {"id": ts_id} | ts_document
+    )
