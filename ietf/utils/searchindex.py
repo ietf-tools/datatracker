@@ -83,13 +83,13 @@ def update_or_create_rfc_entry(rfc: Document):
         .filter(store="rfc", doc_name=rfc.name, name__startswith="txt/")
         .first()
     )
-    content = None
+    content = ""
     if stored_txt is not None:
         # Should be available in the blobdb, but be cautious...
         try:
             content = retrieve_str(kind=stored_txt.store, name=stored_txt.name)
-        except Exception:
-            log(f"Unable to retrieve {stored_txt} from storage")
+        except Exception as err:
+            log(f"Unable to retrieve {stored_txt} from storage: {err}")
 
     ts_id = f"doc-{rfc.pk}"
     ts_document = {
@@ -141,7 +141,7 @@ def update_or_create_rfc_entry(rfc: Document):
         }
     if rfc.ad is not None:
         ts_document["adName"] = rfc.ad.name
-    if content is not None:
+    if content != "":
         ts_document["content"] = _sanitize_text(content)
     _settings = get_settings()
     client = typesense.Client(
