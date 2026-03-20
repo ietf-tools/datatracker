@@ -2,8 +2,6 @@
 """Search indexing utilities"""
 
 import re
-import typing
-from collections.abc import Collection
 from math import floor
 
 import httpx  # just for exceptions
@@ -26,15 +24,7 @@ RETRYABLE_ERROR_CLASSES = (
 )
 
 
-class SettingsDict(typing.TypedDict):
-    TYPESENSE_API_URL: str
-    TYPESENSE_API_KEY: str
-    TYPESENSE_COLLECTION_NAME: str
-    TASK_RETRY_DELAY: int | float
-    TASK_MAX_RETRIES: int
-
-
-DEFAULT_SETTINGS: SettingsDict = {
+DEFAULT_SETTINGS = {
     "TYPESENSE_API_URL": "",
     "TYPESENSE_API_KEY": "",
     "TYPESENSE_COLLECTION_NAME": "docs",
@@ -43,70 +33,13 @@ DEFAULT_SETTINGS: SettingsDict = {
 }
 
 
-def get_settings() -> SettingsDict:
+def get_settings():
     return DEFAULT_SETTINGS | getattr(settings, "SEARCHINDEX_CONFIG", {})
 
 
 def enabled():
     _settings = get_settings()
     return _settings["TYPESENSE_API_URL"] != ""
-
-
-type DocsSchemaTypeT = typing.Literal["draft", "rfc"]
-
-SlugNameDict = typing.TypedDict("SlugNameDict", {"slug": str, "name": str})
-
-
-class GroupDict(typing.TypedDict):
-    acronym: str
-    name: str
-    full: str
-
-
-class SubseriesDict(typing.TypedDict):
-    acronym: str  # type of subseries
-    number: int  # number of the subseries doc
-    total: int  # total number of docs in the subseries
-
-
-class AuthorDict(typing.TypedDict):
-    name: str
-    affiliation: str
-
-
-class FlagsDict(typing.TypedDict):
-    hiddenDefault: bool  # should doc be hidden in search by default?
-    obsoleted: bool  # obsoleted by another doc?
-    updated: bool  # updated by another doc?
-
-
-class DocsSchemaDict(typing.TypedDict):
-    """TypedDict equivalent to the Typesense "docs" schema"""
-
-    rfcNumber: int | None  # integer RFC number, omit for drafts
-    rfc: str | None  # string RFC number, omit for drafts
-    ref: str | None  # RFC number for drafts corresponding to draft, else omitted
-    filename: str  # filename of the document, without extension
-    title: str  # title of the draft / rfc
-    abstract: str  # abstract of the draft / rfc
-    keywords: Collection[str]  # search keywords, possibly empty
-    type: DocsSchemaTypeT  # type of the document (draft/rfc)
-    state: Collection[str] | None  # state(s) of the document (full name)
-    status: SlugNameDict | None  # standard level name (slug and name)
-    subseries: SubseriesDict | None
-    date: int  # date as a unix timestamp
-    expires: int | None  # expiration date as a unix timestamp
-    publicationDate: int | None  # publication date as a unix timestamp
-    group: GroupDict | None  # working group
-    area: GroupDict | None
-    stream: SlugNameDict | None
-    authors: list[AuthorDict] | None
-    adName: str | None  # area director name
-    flags: FlagsDict
-    obsoletedBy: list[str]  # RFC numbers (as strs) obsoleting this doc
-    updatedBy: list[str]  # RFC numbers (as strs) updating this doc
-    content: str | None  # sanitized content
-    ranking: int  # ranking when no explicit sorting (RFC number or rev)
 
 
 def _sanitize_text(content):
@@ -159,10 +92,9 @@ def update_or_create_rfc_entry(rfc: Document):
             log(f"Unable to retrieve {stored_txt} from storage")
 
     ts_id = f"doc-{rfc.pk}"
-    ts_document: DocsSchemaDict = {
+    ts_document = {
         "rfcNumber": rfc.rfc_number,
         "rfc": str(rfc.rfc_number),
-        "ref": None,
         "filename": rfc.name,
         "title": rfc.title,
         "abstract": _sanitize_text(rfc.abstract),
@@ -170,47 +102,13 @@ def update_or_create_rfc_entry(rfc: Document):
         "type": "rfc",
         "state": [state.name for state in rfc.states.all()],
         "status": {"slug": rfc.std_level.slug, "name": rfc.std_level.name},
-        "subseries": (
-            None
-            if subseries is None
-            else SubseriesDict(
-                acronym=subseries.type.slug,
-                number=int(subseries.name[len(subseries.type.slug) :]),
-                total=len(subseries.contains()),
-            )
-        ),
         "date": floor(rfc.time.timestamp()),
-        "expires": None,
         "publicationDate": floor(rfc.pub_datetime().timestamp()),
-        "group": (
-            None
-            if rfc.group is None  # exclude "none" (individual group)?
-            else GroupDict(
-                acronym=rfc.group.acronym,
-                name=rfc.group.name,
-                full=f"{rfc.group.acronym} - {rfc.group.name}",
-            )
-        ),
-        "area": (
-            GroupDict(
-                acronym=rfc.group.parent.acronym,
-                name=rfc.group.parent.name,
-                full=f"{rfc.group.parent.acronym} - {rfc.group.parent.name}",
-            )
-            if (
-                rfc.group.parent is not None
-                and rfc.stream_id not in ["ise", "irtf", "iab"]  # exclude editorial?
-            )
-            else None
-        ),
         "stream": {"slug": rfc.stream.slug, "name": rfc.stream.name},
         "authors": [
-            AuthorDict(
-                name=rfc_author.titlepage_name, affiliation=rfc_author.affiliation
-            )
+            {"name": rfc_author.titlepage_name, "affiliation": rfc_author.affiliation}
             for rfc_author in rfc.rfcauthor_set.all()
         ],
-        "adName": None if rfc.ad is None else rfc.ad.name,
         "flags": {
             "hiddenDefault": False,
             "obsoleted": len(obsoleted_by) > 0,
@@ -218,10 +116,33 @@ def update_or_create_rfc_entry(rfc: Document):
         },
         "obsoletedBy": [str(doc.rfc_number) for doc in obsoleted_by],
         "updatedBy": [str(doc.rfc_number) for doc in updated_by],
-        "content": None if content is None else _sanitize_text(content),
         "ranking": rfc.rfc_number,
     }
-
+    if subseries is not None:
+        ts_document["subseries"] = {
+            "acronym": subseries.type.slug,
+            "number": int(subseries.name[len(subseries.type.slug) :]),
+            "total": len(subseries.contains()),
+        }
+    if rfc.group is not None:
+        ts_document["group"] = {
+            "acronym": rfc.group.acronym,
+            "name": rfc.group.name,
+            "full": f"{rfc.group.acronym} - {rfc.group.name}",
+        }
+    if (
+        rfc.group.parent is not None
+        and rfc.stream_id not in ["ise", "irtf", "iab"]  # exclude editorial?
+    ):
+        ts_document["area"] = {
+            "acronym": rfc.group.parent.acronym,
+            "name": rfc.group.parent.name,
+            "full": f"{rfc.group.parent.acronym} - {rfc.group.parent.name}",
+        }
+    if rfc.ad is not None:
+        ts_document["adName"] = rfc.ad.name
+    if content is not None:
+        ts_document["content"] = _sanitize_text(content)
     _settings = get_settings()
     client = typesense.Client(
         {
