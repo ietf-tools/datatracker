@@ -58,6 +58,10 @@ height: 100vh;
                         {{ group.parent.name }}
                         <a href="{% url "ietf.group.views.group_home" acronym=group.parent.acronym %}">({{ group.parent.acronym }})</a>
                     </td>
+                {% else %}
+                    <td></td>
+                    <td class="edit"></td>
+                    <td></td>
                 {% endif %}
             </tr>
             <tr>
