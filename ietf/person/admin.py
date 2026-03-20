@@ -4,7 +4,8 @@ import simple_history
 
 from django import forms
 
-from ietf.person.models import Email, Alias, Person, PersonalApiKey, PersonEvent, PersonApiKeyEvent, PersonExtResource
+from ietf.person.models import Email, Alias, Person, PersonalApiKey, PersonEvent, \
+    PersonApiKeyEvent, PersonExtResource, PersonUUID
 from ietf.person.name import name_parts
 
 from ietf.utils.admin import SaferStackedInline, SaferTabularInline
@@ -29,6 +30,18 @@ admin.site.register(Alias, AliasAdmin)
 class AliasInline(SaferStackedInline):
     model = Alias
 
+
+class PersonUUIDAdmin(admin.ModelAdmin):
+    list_display = ["uuid"]
+    raw_id_fields = ["person"]
+admin.site.register(PersonUUID, PersonUUIDAdmin)
+
+
+class PersonUUIDInline(SaferStackedInline):
+    model = PersonUUID
+    extra = 0
+
+
 class PersonAdmin(simple_history.admin.SimpleHistoryAdmin):
     def plain_name(self, obj):
         if obj.plain:
@@ -41,7 +54,7 @@ class PersonAdmin(simple_history.admin.SimpleHistoryAdmin):
     readonly_fields = ("name_from_draft", )
     search_fields = ["name", "ascii"]
     raw_id_fields = ["user"]
-    inlines = [ EmailInline, AliasInline, ]
+    inlines = [ EmailInline, AliasInline, PersonUUIDInline]
 #    actions = None
 admin.site.register(Person, PersonAdmin)
 
