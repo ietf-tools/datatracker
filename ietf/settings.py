@@ -262,92 +262,92 @@ def skip_unreadable_post(record):
 # Logging config
 #
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'loggers': {
-        'django': {
-            'handlers': ['console', 'mail_admins'],
-            'level': 'INFO',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "loggers": {
+        "django": {
+            "handlers": ["console", "mail_admins"],
+            "level": "INFO",
         },
-        'django.server': {
+        "django.server": {
             # Only used by runserver debug server
-            'handlers': ['django.server'],
-            'level': 'INFO',
+            "handlers": ["django.server"],
+            "level": "INFO",
         },
-        'oidc_provider': {
-            'handlers': ['console', ],
-            'level': 'DEBUG',
+        "oidc_provider": {
+            "handlers": ["console"],
+            "level": "DEBUG",
         },
-        'datatracker': {
-            'handlers': ['console'],
-            'level': 'INFO',
+        "datatracker": {
+            "handlers": ["console"],
+            "level": "INFO",
         },
-        'celery': {
-            'handlers': ['console'],
-            'level': 'INFO',
+        "celery": {
+            "handlers": ["console"],
+            "level": "INFO",
         },
     },
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'plain',
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "plain",
         },
-        'debug_console': {
-            'level': 'DEBUG',
-            'filters': ['require_debug_true'],
-            'class': 'logging.StreamHandler',
-            'formatter': 'plain',
+        "debug_console": {
+            "level": "DEBUG",
+            "filters": ["require_debug_true"],
+            "class": "logging.StreamHandler",
+            "formatter": "plain",
         },
-        'django.server': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'django.server',
+        "django.server": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "django.server",
         },
-        'mail_admins': {
-            'level': 'ERROR',
-            'filters': [
-                'require_debug_false',
-                'skip_suspicious_operations',
-                'skip_unreadable_posts',
+        "mail_admins": {
+            "level": "ERROR",
+            "filters": [
+                "require_debug_false",
+                "skip_suspicious_operations",
+                "skip_unreadable_posts",
             ],
-            'class': 'django.utils.log.AdminEmailHandler',
-            'include_html': True,
-        }
+            "class": "django.utils.log.AdminEmailHandler",
+            "include_html": True,
+        },
     },
     # All these are used by handlers
-    'filters': {
-        'require_debug_false': {
-            '()': 'django.utils.log.RequireDebugFalse',
+    "filters": {
+        "require_debug_false": {
+            "()": "django.utils.log.RequireDebugFalse",
         },
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
-        },
-        # custom filter, function defined above:
-        'skip_suspicious_operations': {
-            '()': 'django.utils.log.CallbackFilter',
-            'callback': skip_suspicious_operations,
+        "require_debug_true": {
+            "()": "django.utils.log.RequireDebugTrue",
         },
         # custom filter, function defined above:
-        'skip_unreadable_posts': {
-            '()': 'django.utils.log.CallbackFilter',
-            'callback': skip_unreadable_post,
+        "skip_suspicious_operations": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": skip_suspicious_operations,
+        },
+        # custom filter, function defined above:
+        "skip_unreadable_posts": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": skip_unreadable_post,
         },
     },
-    'formatters': {
-        'django.server': {
-            '()': 'django.utils.log.ServerFormatter',
-            'format': '[%(server_time)s] %(message)s',
+    "formatters": {
+        "django.server": {
+            "()": "django.utils.log.ServerFormatter",
+            "format": "[%(server_time)s] %(message)s",
         },
-        'plain': {
-            'style': '{',
-            'format': '{levelname}: {name}:{lineno}: {message}',
+        "plain": {
+            "style": "{",
+            "format": "{levelname}: {name}:{lineno}: {message}",
         },
-        'json' : {
+        "json": {
             "class": "ietf.utils.jsonlogger.DatatrackerJsonFormatter",
             "style": "{",
             "format": "{asctime}{levelname}{message}{name}{pathname}{lineno}{funcName}{process}",
-        }
+        },
     },
 }
 
