@@ -266,6 +266,7 @@ LOGGING = {
             "handlers": ["console", "mail_admins"],
             "level": "INFO",
         },
+        "django.request": {"level": "ERROR"},  # only log 5xx, ignore 4xx
         "django.security.DisallowedHost": {
             # Invalid Host header - log only to console
             "handlers": ["console"],
@@ -336,7 +337,7 @@ LOGGING = {
             "style": "{",
             "format": (
                 "{asctime}{levelname}{message}{name}{pathname}{lineno}{funcName}"
-                "{process}"
+                "{process}{status_code}"
             ),
         },
     },
