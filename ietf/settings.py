@@ -267,8 +267,8 @@ LOGGING = {
             "level": "INFO",
         },
         "django.request": {"level": "ERROR"},  # only log 5xx, ignore 4xx
-        "django.security.DisallowedHost": {
-            # Invalid Host header - log only to console
+        "django.security": {
+            # SuspiciousOperation errors - log to console only
             "handlers": ["console"],
             "propagate": False,  # no further handling please
         },
