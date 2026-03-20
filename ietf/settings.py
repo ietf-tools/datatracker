@@ -265,6 +265,14 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "loggers": {
+        "celery": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "datatracker": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
         "django": {
             "handlers": ["console", "mail_admins"],
             "level": "INFO",
@@ -277,14 +285,6 @@ LOGGING = {
         "oidc_provider": {
             "handlers": ["console"],
             "level": "DEBUG",
-        },
-        "datatracker": {
-            "handlers": ["console"],
-            "level": "INFO",
-        },
-        "celery": {
-            "handlers": ["console"],
-            "level": "INFO",
         },
     },
     "handlers": {
