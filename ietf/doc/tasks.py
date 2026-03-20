@@ -3,6 +3,7 @@
 # Celery task definitions
 #
 import datetime
+
 import debug  # pyflakes:ignore
 
 from celery import shared_task
@@ -11,7 +12,7 @@ from pathlib import Path
 from django.conf import settings
 from django.utils import timezone
 
-from ietf.utils import log
+from ietf.utils import log, searchindex
 from ietf.utils.timezone import datetime_today
 
 from .expire import (
@@ -77,17 +78,19 @@ def expire_last_calls_task():
         try:
             expire_last_call(doc)
         except Exception:
-            log.log(f"ERROR: Failed to expire last call for {doc.file_tag()} (id={doc.pk})")
+            log.log(
+                f"ERROR: Failed to expire last call for {doc.file_tag()} (id={doc.pk})"
+            )
         else:
             log.log(f"Expired last call for {doc.file_tag()} (id={doc.pk})")
 
 
-@shared_task            
+@shared_task
 def generate_idnits2_rfc_status_task():
     outpath = Path(settings.DERIVED_DIR) / "idnits2-rfc-status"
     blob = generate_idnits2_rfc_status()
     try:
-        outpath.write_text(blob, encoding="utf8") # TODO-BLOBSTORE
+        outpath.write_text(blob, encoding="utf8")  # TODO-BLOBSTORE
     except Exception as e:
         log.log(f"failed to write idnits2-rfc-status: {e}")
 
@@ -97,7 +100,7 @@ def generate_idnits2_rfcs_obsoleted_task():
     outpath = Path(settings.DERIVED_DIR) / "idnits2-rfcs-obsoleted"
     blob = generate_idnits2_rfcs_obsoleted()
     try:
-        outpath.write_text(blob, encoding="utf8") # TODO-BLOBSTORE
+        outpath.write_text(blob, encoding="utf8")  # TODO-BLOBSTORE
     except Exception as e:
         log.log(f"failed to write idnits2-rfcs-obsoleted: {e}")
 
@@ -105,7 +108,7 @@ def generate_idnits2_rfcs_obsoleted_task():
 @shared_task
 def generate_draft_bibxml_files_task(days=7, process_all=False):
     """Generate bibxml files for recently updated docs
-    
+
     If process_all is False (the default), processes only docs with new revisions
     in the last specified number of days.
     """
@@ -117,7 +120,9 @@ def generate_draft_bibxml_files_task(days=7, process_all=False):
         doc__type_id="draft",
     ).order_by("time")
     if not process_all:
-        doc_events = doc_events.filter(time__gte=timezone.now() - datetime.timedelta(days=days))
+        doc_events = doc_events.filter(
+            time__gte=timezone.now() - datetime.timedelta(days=days)
+        )
     for event in doc_events:
         try:
             update_or_create_draft_bibxml_file(event.doc, event.rev)
@@ -131,6 +136,7 @@ def investigate_fragment_task(name_fragment: str):
         "name_fragment": name_fragment,
         "results": investigate_fragment(name_fragment),
     }
+
 
 @shared_task
 def rebuild_reference_relations_task(doc_names: list[str]):
@@ -157,6 +163,32 @@ def rebuild_reference_relations_task(doc_names: list[str]):
 def fixup_bofreq_timestamps_task():  # pragma: nocover
     fixup_bofreq_timestamps()
 
+
 @shared_task
 def signal_update_rfc_metadata_task(rfc_number_list=()):
     signal_update_rfc_metadata(rfc_number_list)
+
+
+@shared_task(bind=True)
+def update_rfc_searchindex_task(self, rfc_number: int):
+    """Update the search index for one RFC"""
+    if not searchindex.enabled():
+        log.log("Search indexing is not enabled, skipping")
+        return
+
+    rfc = Document.objects.filter(type_id="rfc", rfc_number=rfc_number).first()
+    if rfc is None:
+        log.log(
+            f"ERROR: Document for rfc{rfc_number} not found, not updating search index"
+        )
+        return
+    try:
+        searchindex.update_or_create_rfc_entry(rfc)
+    except Exception as err:
+        log.log(f"Search index update for {rfc.name} failed ({err})")
+        if isinstance(err, searchindex.RETRYABLE_ERROR_CLASSES):
+            searchindex_settings = searchindex.get_settings()
+            self.retry(
+                countdown=searchindex_settings["TASK_RETRY_DELAY"],
+                max_retries=searchindex_settings["TASK_MAX_RETRIES"],
+            )

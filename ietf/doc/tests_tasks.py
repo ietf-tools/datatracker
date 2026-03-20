@@ -1,18 +1,20 @@
-# Copyright The IETF Trust 2024, All Rights Reserved
+# Copyright The IETF Trust 2024-2026, All Rights Reserved
 
-import debug    # pyflakes:ignore
 import datetime
 from unittest import mock
 
 from pathlib import Path
 
+from celery.exceptions import Retry
 from django.conf import settings
+from django.test.utils import override_settings
 from django.utils import timezone
+from typesense import exceptions as typesense_exceptions
 
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import datetime_today
 
-from .factories import DocumentFactory, NewRevisionDocEventFactory
+from .factories import DocumentFactory, NewRevisionDocEventFactory, WgRfcFactory
 from .models import Document, NewRevisionDocEvent
 from .tasks import (
     expire_ids_task,
@@ -22,7 +24,9 @@ from .tasks import (
     generate_idnits2_rfc_status_task,
     investigate_fragment_task,
     notify_expirations_task,
+    update_rfc_searchindex_task,
 )
+
 
 class TaskTests(TestCase):
     @mock.patch("ietf.doc.tasks.in_draft_expire_freeze")
@@ -87,7 +91,7 @@ class TaskTests(TestCase):
         self.assertEqual(mock_expire.call_args_list[0], mock.call(docs[0]))
         self.assertEqual(mock_expire.call_args_list[1], mock.call(docs[1]))
         self.assertEqual(mock_expire.call_args_list[2], mock.call(docs[2]))
-    
+
         # Check that it runs even if exceptions occur
         mock_get_expired.reset_mock()
         mock_expire.reset_mock()
@@ -111,9 +115,40 @@ class TaskTests(TestCase):
             retval, {"name_fragment": "some fragment", "results": investigation_results}
         )
 
+    @mock.patch("ietf.doc.tasks.searchindex.update_or_create_rfc_entry")
+    @mock.patch("ietf.doc.tasks.searchindex.enabled")
+    def test_update_rfc_searchindex_task(
+        self, mock_searchindex_enabled, mock_create_entry
+    ):
+        mock_searchindex_enabled.return_value = False
+
+        self.assertFalse(Document.objects.filter(rfc_number=5073).exists())
+        rfc = WgRfcFactory()
+        update_rfc_searchindex_task(rfc_number=5073)
+        self.assertFalse(mock_create_entry.called)
+        update_rfc_searchindex_task(rfc_number=rfc.rfc_number)
+        self.assertFalse(mock_create_entry.called)
+
+        mock_searchindex_enabled.return_value = True
+        update_rfc_searchindex_task(rfc_number=5073)
+        self.assertFalse(mock_create_entry.called)
+        update_rfc_searchindex_task(rfc_number=rfc.rfc_number)
+        self.assertTrue(mock_create_entry.called)
+
+        with override_settings(SEARCHINDEX_CONFIG={"TASK_MAX_RETRIES": 0}):
+            # Try a non-retryable error (there are others)
+            mock_create_entry.side_effect = typesense_exceptions.RequestMalformed
+            update_rfc_searchindex_task(rfc_number=rfc.rfc_number)  # no retry
+            # Now what should be a retryable error
+            mock_create_entry.side_effect = typesense_exceptions.Timeout
+            with self.assertRaises(Retry):
+                update_rfc_searchindex_task(rfc_number=rfc.rfc_number)
+
 
 class Idnits2SupportTests(TestCase):
-    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['DERIVED_DIR']
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [
+        "DERIVED_DIR"
+    ]
 
     @mock.patch("ietf.doc.tasks.generate_idnits2_rfcs_obsoleted")
     def test_generate_idnits2_rfcs_obsoleted_task(self, mock_generate):
@@ -151,7 +186,9 @@ class BIBXMLSupportTests(TestCase):
         )
         # a couple that should always be ignored
         NewRevisionDocEventFactory(
-            time=now - datetime.timedelta(days=6), rev="09", doc__type_id="rfc"  # not a draft
+            time=now - datetime.timedelta(days=6),
+            rev="09",
+            doc__type_id="rfc",  # not a draft
         )
         NewRevisionDocEventFactory(
             type="changed_document",  # not a "new_revision" type
@@ -164,7 +201,9 @@ class BIBXMLSupportTests(TestCase):
 
     @mock.patch("ietf.doc.tasks.ensure_draft_bibxml_path_exists")
     @mock.patch("ietf.doc.tasks.update_or_create_draft_bibxml_file")
-    def test_generate_bibxml_files_for_all_drafts_task(self, mock_create, mock_ensure_path):
+    def test_generate_bibxml_files_for_all_drafts_task(
+        self, mock_create, mock_ensure_path
+    ):
         generate_draft_bibxml_files_task(process_all=True)
         self.assertTrue(mock_ensure_path.called)
         self.assertCountEqual(
@@ -193,12 +232,15 @@ class BIBXMLSupportTests(TestCase):
 
     @mock.patch("ietf.doc.tasks.ensure_draft_bibxml_path_exists")
     @mock.patch("ietf.doc.tasks.update_or_create_draft_bibxml_file")
-    def test_generate_bibxml_files_for_recent_drafts_task(self, mock_create, mock_ensure_path):
+    def test_generate_bibxml_files_for_recent_drafts_task(
+        self, mock_create, mock_ensure_path
+    ):
         # default args - look back 7 days
         generate_draft_bibxml_files_task()
         self.assertTrue(mock_ensure_path.called)
         self.assertCountEqual(
-            mock_create.call_args_list, [mock.call(self.young_event.doc, self.young_event.rev)]
+            mock_create.call_args_list,
+            [mock.call(self.young_event.doc, self.young_event.rev)],
         )
         mock_create.reset_mock()
         mock_ensure_path.reset_mock()
@@ -223,7 +265,9 @@ class BIBXMLSupportTests(TestCase):
 
     @mock.patch("ietf.doc.tasks.ensure_draft_bibxml_path_exists")
     @mock.patch("ietf.doc.tasks.update_or_create_draft_bibxml_file")
-    def test_generate_bibxml_files_for_recent_drafts_task_with_bad_value(self, mock_create, mock_ensure_path):
+    def test_generate_bibxml_files_for_recent_drafts_task_with_bad_value(
+        self, mock_create, mock_ensure_path
+    ):
         with self.assertRaises(ValueError):
             generate_draft_bibxml_files_task(days=0)
         self.assertFalse(mock_create.called)
