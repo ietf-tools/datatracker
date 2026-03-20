@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2025, All Rights Reserved
+# Copyright The IETF Trust 2007-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -13,6 +13,7 @@ import pathlib
 import warnings
 from hashlib import sha384
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
+from django.http import UnreadablePostError
 
 # DeprecationWarnings are suppressed by default, enable them
 warnings.simplefilter("always", DeprecationWarning)
@@ -236,21 +237,19 @@ AUTHENTICATION_BACKENDS = ( 'ietf.ietfauth.backends.CaseInsensitiveModelBackend'
 
 FILE_UPLOAD_PERMISSIONS = 0o644          
 
-# ------------------------------------------------------------------------
-# Django/Python Logging Framework Modifications
-
-# Filter out UreadablePostError:
-from django.http import UnreadablePostError
-def skip_unreadable_post(record):
-    if record.exc_info:
-        exc_type, exc_value = record.exc_info[:2] # pylint: disable=unused-variable
-        if isinstance(exc_value, UnreadablePostError):
-            return False
-    return True
 
 #
 # Logging config
 #
+
+# Callback to filter out UnreadablePostError:
+def skip_unreadable_post(record):
+    if record.exc_info:
+        exc_type, exc_value = record.exc_info[:2]  # pylint: disable=unused-variable
+        if isinstance(exc_value, UnreadablePostError):
+            return False
+    return True
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -273,7 +272,7 @@ LOGGING = {
             "propagate": False,  # no further handling please
         },
         "django.server": {
-            # Only used by runserver debug server
+            # Only used by Django's runserver development server
             "handlers": ["django.server"],
             "level": "INFO",
         },
@@ -335,7 +334,10 @@ LOGGING = {
         "json": {
             "class": "ietf.utils.jsonlogger.DatatrackerJsonFormatter",
             "style": "{",
-            "format": "{asctime}{levelname}{message}{name}{pathname}{lineno}{funcName}{process}",
+            "format": (
+                "{asctime}{levelname}{message}{name}{pathname}{lineno}{funcName}"
+                "{process}"
+            ),
         },
     },
 }
