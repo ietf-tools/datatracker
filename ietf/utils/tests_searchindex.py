@@ -57,7 +57,7 @@ class SearchindexTests(TestCase):
         self.assertEqual(upserted_dict["id"], f"doc-{rfc.pk}")
         self.assertEqual(upserted_dict["rfcNumber"], rfc.rfc_number)
         self.assertEqual(upserted_dict["abstract"], _sanitize_text(rfc.abstract))
-        self.assertEqual(upserted_dict["content"], None)  # no blob
+        self.assertNotIn("content", upserted_dict, None)  # no blob
 
         # repeat, this time with contents
         mock_upsert.reset_mock()
