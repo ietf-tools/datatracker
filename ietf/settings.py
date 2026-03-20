@@ -239,16 +239,6 @@ FILE_UPLOAD_PERMISSIONS = 0o644
 # ------------------------------------------------------------------------
 # Django/Python Logging Framework Modifications
 
-# Filter out "Invalid HTTP_HOST" emails
-# Based on http://www.tiwoc.de/blog/2013/03/django-prevent-email-notification-on-suspiciousoperation/
-from django.core.exceptions import SuspiciousOperation
-def skip_suspicious_operations(record):
-    if record.exc_info:
-        exc_value = record.exc_info[1]
-        if isinstance(exc_value, SuspiciousOperation):
-            return False
-    return True
-
 # Filter out UreadablePostError:
 from django.http import UnreadablePostError
 def skip_unreadable_post(record):
@@ -276,6 +266,11 @@ LOGGING = {
         "django": {
             "handlers": ["console", "mail_admins"],
             "level": "INFO",
+        },
+        "django.security.DisallowedHost": {
+            # Invalid Host header - log only to console
+            "handlers": ["console"],
+            "propagate": False,  # no further handling please
         },
         "django.server": {
             # Only used by runserver debug server
@@ -308,7 +303,6 @@ LOGGING = {
             "level": "ERROR",
             "filters": [
                 "require_debug_false",
-                "skip_suspicious_operations",
                 "skip_unreadable_posts",
             ],
             "class": "django.utils.log.AdminEmailHandler",
@@ -322,11 +316,6 @@ LOGGING = {
         },
         "require_debug_true": {
             "()": "django.utils.log.RequireDebugTrue",
-        },
-        # custom filter, function defined above:
-        "skip_suspicious_operations": {
-            "()": "django.utils.log.CallbackFilter",
-            "callback": skip_suspicious_operations,
         },
         # custom filter, function defined above:
         "skip_unreadable_posts": {
@@ -1520,7 +1509,7 @@ if SERVER_MODE != 'production':
     if 'NOMCOM_APP_SECRET' not in locals():
         NOMCOM_APP_SECRET = b'\x9b\xdas1\xec\xd5\xa0SI~\xcb\xd4\xf5t\x99\xc4i\xd7\x9f\x0b\xa9\xe8\xfeY\x80$\x1e\x12tN:\x84'
 
-    ALLOWED_HOSTS = ['*',]
+    ALLOWED_HOSTS = ['borkbork.org',]
 
     try:
         # see https://github.com/omarish/django-cprofile-middleware
