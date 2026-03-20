@@ -3,6 +3,8 @@
 # Celery task definitions
 #
 import datetime
+
+from celery.exceptions import MaxRetriesExceededError
 import debug  # pyflakes:ignore
 
 from celery import shared_task
@@ -11,6 +13,8 @@ from pathlib import Path
 from django.conf import settings
 from django.utils import timezone
 
+from ietf.doc.utils_r2 import rfcs_are_in_r2
+from ietf.doc.utils_red import trigger_red_precomputer
 from ietf.utils import log
 from ietf.utils.timezone import datetime_today
 
@@ -160,3 +164,17 @@ def fixup_bofreq_timestamps_task():  # pragma: nocover
 @shared_task
 def signal_update_rfc_metadata_task(rfc_number_list=()):
     signal_update_rfc_metadata(rfc_number_list)
+
+
+@shared_task(bind=True)
+def trigger_red_precomputer_task(self, rfc_number_list=()):
+    if not rfcs_are_in_r2(rfc_number_list):
+        log.log(f"Objects are not yet in R2 for RFCs {rfc_number_list}")
+        try:
+            countdown = getattr(settings, "RED_PRECOMPUTER_TRIGGER_RETRY_DELAY", 10)
+            max_retries = getattr(settings, "RED_PRECOMPUTER_TRIGGER_MAX_RETRIES", 12)
+            self.retry(countdown=countdown, max_retries=max_retries)
+        except MaxRetriesExceededError:
+            log.log(f"Gave up waiting for objects in R2 for RFCs {rfc_number_list}")
+    else:
+        trigger_red_precomputer(rfc_number_list)

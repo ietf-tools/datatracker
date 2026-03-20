@@ -20,6 +20,7 @@ from ietf.doc.models import (
     RfcAuthor,
 )
 from ietf.doc.serializers import RfcAuthorSerializer
+from ietf.doc.tasks import trigger_red_precomputer_task
 from ietf.doc.utils import (
     default_consensus,
     prettify_std_name,
@@ -682,6 +683,9 @@ class EditableRfcSerializer(serializers.ModelSerializer):
                 stale_subseries_relations.delete()
             if len(rfc_events) > 0:
                 rfc.save_with_history(rfc_events)
+        # Intentionally triggering red even if the above transaction is rolled back.
+        # The unnecessary computation red would do is small.
+        trigger_red_precomputer_task.delay(rfc_number_list=[rfc.rfc_number])
         return rfc
 
 
