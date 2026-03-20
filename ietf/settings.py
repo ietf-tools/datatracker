@@ -258,43 +258,20 @@ def skip_unreadable_post(record):
             return False
     return True
 
-# Copied from DEFAULT_LOGGING as of Django 1.10.5 on 22 Feb 2017, and modified
-# to incorporate html logging, invalid http_host filtering, and more.
-# Changes from the default has comments.
-
-# The Python logging flow is as follows:
-# (see https://docs.python.org/2.7/howto/logging.html#logging-flow)
 #
-#   Init: get a Logger: logger = logging.getLogger(name)
+# Logging config
 #
-#   Logging call, e.g. logger.error(level, msg, *args, exc_info=(...), extra={...})
-#   --> Logger (discard if level too low for this logger)
-#       (create log record from level, msg, args, exc_info, extra)
-#       --> Filters (discard if any filter attach to logger rejects record)
-#           --> Handlers (discard if level too low for handler)
-#               --> Filters (discard if any filter attached to handler rejects record)
-#                   --> Formatter (format log record and emit)
-#
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    #
     'loggers': {
         'django': {
             'handlers': ['console', 'mail_admins'],
             'level': 'INFO',
         },
-        'django.request': {
-            'handlers': ['console'],
-            'level': 'ERROR',
-        },
         'django.server': {
+            # Only used by runserver debug server
             'handlers': ['django.server'],
-            'level': 'INFO',
-        },
-        'django.security': {
-            'handlers': ['console', ],
             'level': 'INFO',
         },
         'oidc_provider': {
@@ -310,9 +287,6 @@ LOGGING = {
             'level': 'INFO',
         },
     },
-    #
-    # No logger filters
-    #
     'handlers': {
         'console': {
             'level': 'DEBUG',
@@ -320,7 +294,6 @@ LOGGING = {
             'formatter': 'plain',
         },
         'debug_console': {
-            # Active only when DEBUG=True
             'level': 'DEBUG',
             'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
@@ -335,14 +308,13 @@ LOGGING = {
             'level': 'ERROR',
             'filters': [
                 'require_debug_false',
-                'skip_suspicious_operations', # custom
-                'skip_unreadable_posts', # custom
+                'skip_suspicious_operations',
+                'skip_unreadable_posts',
             ],
             'class': 'django.utils.log.AdminEmailHandler',
-            'include_html': True,       # non-default
+            'include_html': True,
         }
     },
-    #
     # All these are used by handlers
     'filters': {
         'require_debug_false': {
@@ -362,7 +334,6 @@ LOGGING = {
             'callback': skip_unreadable_post,
         },
     },
-    # And finally the formatters
     'formatters': {
         'django.server': {
             '()': 'django.utils.log.ServerFormatter',
@@ -379,9 +350,6 @@ LOGGING = {
         }
     },
 }
-
-# End logging
-# ------------------------------------------------------------------------
 
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
