@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2025, All Rights Reserved
+# Copyright The IETF Trust 2007-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -13,6 +13,7 @@ import pathlib
 import warnings
 from hashlib import sha384
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
+from django.http import UnreadablePostError
 
 # DeprecationWarnings are suppressed by default, enable them
 warnings.simplefilter("always", DeprecationWarning)
@@ -236,152 +237,111 @@ AUTHENTICATION_BACKENDS = ( 'ietf.ietfauth.backends.CaseInsensitiveModelBackend'
 
 FILE_UPLOAD_PERMISSIONS = 0o644          
 
-# ------------------------------------------------------------------------
-# Django/Python Logging Framework Modifications
 
-# Filter out "Invalid HTTP_HOST" emails
-# Based on http://www.tiwoc.de/blog/2013/03/django-prevent-email-notification-on-suspiciousoperation/
-from django.core.exceptions import SuspiciousOperation
-def skip_suspicious_operations(record):
-    if record.exc_info:
-        exc_value = record.exc_info[1]
-        if isinstance(exc_value, SuspiciousOperation):
-            return False
-    return True
+#
+# Logging config
+#
 
-# Filter out UreadablePostError:
-from django.http import UnreadablePostError
+# Callback to filter out UnreadablePostError:
 def skip_unreadable_post(record):
     if record.exc_info:
-        exc_type, exc_value = record.exc_info[:2] # pylint: disable=unused-variable
+        exc_type, exc_value = record.exc_info[:2]  # pylint: disable=unused-variable
         if isinstance(exc_value, UnreadablePostError):
             return False
     return True
 
-# Copied from DEFAULT_LOGGING as of Django 1.10.5 on 22 Feb 2017, and modified
-# to incorporate html logging, invalid http_host filtering, and more.
-# Changes from the default has comments.
-
-# The Python logging flow is as follows:
-# (see https://docs.python.org/2.7/howto/logging.html#logging-flow)
-#
-#   Init: get a Logger: logger = logging.getLogger(name)
-#
-#   Logging call, e.g. logger.error(level, msg, *args, exc_info=(...), extra={...})
-#   --> Logger (discard if level too low for this logger)
-#       (create log record from level, msg, args, exc_info, extra)
-#       --> Filters (discard if any filter attach to logger rejects record)
-#           --> Handlers (discard if level too low for handler)
-#               --> Filters (discard if any filter attached to handler rejects record)
-#                   --> Formatter (format log record and emit)
-#
-
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    #
-    'loggers': {
-        'django': {
-            'handlers': ['console', 'mail_admins'],
-            'level': 'INFO',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "loggers": {
+        "celery": {
+            "handlers": ["console"],
+            "level": "INFO",
         },
-        'django.request': {
-            'handlers': ['console'],
-            'level': 'ERROR',
+        "datatracker": {
+            "handlers": ["console"],
+            "level": "INFO",
         },
-        'django.server': {
-            'handlers': ['django.server'],
-            'level': 'INFO',
+        "django": {
+            "handlers": ["console", "mail_admins"],
+            "level": "INFO",
         },
-        'django.security': {
-            'handlers': ['console', ],
-            'level': 'INFO',
+        "django.request": {"level": "ERROR"},  # only log 5xx, ignore 4xx
+        "django.security": {
+            # SuspiciousOperation errors - log to console only
+            "handlers": ["console"],
+            "propagate": False,  # no further handling please
         },
-        'oidc_provider': {
-            'handlers': ['console', ],
-            'level': 'DEBUG',
+        "django.server": {
+            # Only used by Django's runserver development server
+            "handlers": ["django.server"],
+            "level": "INFO",
         },
-        'datatracker': {
-            'handlers': ['console'],
-            'level': 'INFO',
-        },
-        'celery': {
-            'handlers': ['console'],
-            'level': 'INFO',
+        "oidc_provider": {
+            "handlers": ["console"],
+            "level": "DEBUG",
         },
     },
-    #
-    # No logger filters
-    #
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'plain',
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "plain",
         },
-        'debug_console': {
-            # Active only when DEBUG=True
-            'level': 'DEBUG',
-            'filters': ['require_debug_true'],
-            'class': 'logging.StreamHandler',
-            'formatter': 'plain',
+        "debug_console": {
+            "level": "DEBUG",
+            "filters": ["require_debug_true"],
+            "class": "logging.StreamHandler",
+            "formatter": "plain",
         },
-        'django.server': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'django.server',
+        "django.server": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "django.server",
         },
-        'mail_admins': {
-            'level': 'ERROR',
-            'filters': [
-                'require_debug_false',
-                'skip_suspicious_operations', # custom
-                'skip_unreadable_posts', # custom
+        "mail_admins": {
+            "level": "ERROR",
+            "filters": [
+                "require_debug_false",
+                "skip_unreadable_posts",
             ],
-            'class': 'django.utils.log.AdminEmailHandler',
-            'include_html': True,       # non-default
-        }
+            "class": "django.utils.log.AdminEmailHandler",
+            "include_html": True,
+        },
     },
-    #
     # All these are used by handlers
-    'filters': {
-        'require_debug_false': {
-            '()': 'django.utils.log.RequireDebugFalse',
+    "filters": {
+        "require_debug_false": {
+            "()": "django.utils.log.RequireDebugFalse",
         },
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
-        },
-        # custom filter, function defined above:
-        'skip_suspicious_operations': {
-            '()': 'django.utils.log.CallbackFilter',
-            'callback': skip_suspicious_operations,
+        "require_debug_true": {
+            "()": "django.utils.log.RequireDebugTrue",
         },
         # custom filter, function defined above:
-        'skip_unreadable_posts': {
-            '()': 'django.utils.log.CallbackFilter',
-            'callback': skip_unreadable_post,
+        "skip_unreadable_posts": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": skip_unreadable_post,
         },
     },
-    # And finally the formatters
-    'formatters': {
-        'django.server': {
-            '()': 'django.utils.log.ServerFormatter',
-            'format': '[%(server_time)s] %(message)s',
+    "formatters": {
+        "django.server": {
+            "()": "django.utils.log.ServerFormatter",
+            "format": "[%(server_time)s] %(message)s",
         },
-        'plain': {
-            'style': '{',
-            'format': '{levelname}: {name}:{lineno}: {message}',
+        "plain": {
+            "style": "{",
+            "format": "{levelname}: {name}:{lineno}: {message}",
         },
-        'json' : {
+        "json": {
             "class": "ietf.utils.jsonlogger.DatatrackerJsonFormatter",
             "style": "{",
-            "format": "{asctime}{levelname}{message}{name}{pathname}{lineno}{funcName}{process}",
-        }
+            "format": (
+                "{asctime}{levelname}{message}{name}{pathname}{lineno}{funcName}"
+                "{process}{status_code}"
+            ),
+        },
     },
 }
-
-# End logging
-# ------------------------------------------------------------------------
 
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
