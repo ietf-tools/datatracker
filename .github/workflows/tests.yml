@@ -68,7 +68,7 @@ jobs:
         coverage xml
 
     - name: Upload geckodriver.log
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: ${{ failure() }}
       with:
         name: geckodriverlog
@@ -87,7 +87,7 @@ jobs:
         mv latest-coverage.json coverage.json
         
     - name: Upload Coverage Results as Build Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: ${{ always() }}
       with:
         name: coverage
@@ -121,7 +121,7 @@ jobs:
         npx playwright test --project=${{ matrix.project }}
         
     - name: Upload Report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: ${{ always() }}
       continue-on-error: true
       with:
@@ -180,7 +180,7 @@ jobs:
         npx playwright test --project=${{ matrix.project }} -c playwright-legacy.config.js
         
     - name: Upload Report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: ${{ always() }}
       continue-on-error: true
       with:
