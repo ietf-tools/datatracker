@@ -37,7 +37,19 @@ class EditableRfcSerializerTests(TestCase):
 
     @mock.patch("ietf.doc.tasks.trigger_red_precomputer_task.delay")
     def test_update(self, mock_task_delay):
+        updates = WgRfcFactory.create_batch(2)
+        obsoletes = WgRfcFactory.create_batch(2)
         rfc = WgRfcFactory(pages=10)
+        updated_by = WgRfcFactory.create_batch(2)
+        obsoleted_by = WgRfcFactory.create_batch(2)
+        for d in updates:
+            rfc.relateddocument_set.create(relationship_id="updates",target=d)
+        for d in obsoletes:
+            rfc.relateddocument_set.create(relationship_id="updates",target=d)
+        for d in updated_by:
+            d.relateddocument_set.create(relationship_id="updates",target=rfc)
+        for d in obsoleted_by:
+            d.relateddocument_set.create(relationship_id="updates",target=rfc)        
         serializer = EditableRfcSerializer(
             instance=rfc,
             data={
@@ -90,13 +102,31 @@ class EditableRfcSerializerTests(TestCase):
         self.assertTrue(mock_task_delay.called)
         _, mock_kwargs = mock_task_delay.call_args
         self.assertIn("rfc_number_list", mock_kwargs)
-        self.assertEqual(mock_kwargs["rfc_number_list"], [rfc.rfc_number])
+        expected_numbers = sorted(
+            [
+                d.rfc_number
+                for d in [rfc] + updates + obsoletes + updated_by + obsoleted_by
+            ]
+        )
+        self.assertEqual(mock_kwargs["rfc_number_list"], expected_numbers)
 
     @mock.patch("ietf.doc.tasks.trigger_red_precomputer_task.delay")
     def test_partial_update(self, mock_task_delay):
         # We could test other permutations of fields, but authors is a partial update
         # we know we are going to use, so verifying that one in particular.
+        updates = WgRfcFactory.create_batch(2)
+        obsoletes = WgRfcFactory.create_batch(2)
         rfc = WgRfcFactory(pages=10, abstract="do or do not", title="padawan")
+        updated_by = WgRfcFactory.create_batch(2)
+        obsoleted_by = WgRfcFactory.create_batch(2)
+        for d in updates:
+            rfc.relateddocument_set.create(relationship_id="updates",target=d)
+        for d in obsoletes:
+            rfc.relateddocument_set.create(relationship_id="updates",target=d)
+        for d in updated_by:
+            d.relateddocument_set.create(relationship_id="updates",target=rfc)
+        for d in obsoleted_by:
+            d.relateddocument_set.create(relationship_id="updates",target=rfc) 
         serializer = EditableRfcSerializer(
             partial=True,
             instance=rfc,
@@ -138,7 +168,13 @@ class EditableRfcSerializerTests(TestCase):
         self.assertTrue(mock_task_delay.called)
         _, mock_kwargs = mock_task_delay.call_args
         self.assertIn("rfc_number_list", mock_kwargs)
-        self.assertEqual(mock_kwargs["rfc_number_list"], [rfc.rfc_number])
+        expected_numbers = sorted(
+            [
+                d.rfc_number
+                for d in [rfc] + updates + obsoletes + updated_by + obsoleted_by
+            ]
+        )
+        self.assertEqual(mock_kwargs["rfc_number_list"], expected_numbers)
 
         # Test only a field on the Document itself to be sure that it works
         mock_task_delay.reset_mock()
@@ -154,4 +190,4 @@ class EditableRfcSerializerTests(TestCase):
         self.assertTrue(mock_task_delay.called)
         _, mock_kwargs = mock_task_delay.call_args
         self.assertIn("rfc_number_list", mock_kwargs)
-        self.assertEqual(mock_kwargs["rfc_number_list"], [rfc.rfc_number])
+        self.assertEqual(mock_kwargs["rfc_number_list"], expected_numbers)

@@ -683,9 +683,17 @@ class EditableRfcSerializer(serializers.ModelSerializer):
                 stale_subseries_relations.delete()
             if len(rfc_events) > 0:
                 rfc.save_with_history(rfc_events)
-        # Intentionally triggering red even if the above transaction is rolled back.
-        # The unnecessary computation red would do is small.
-        trigger_red_precomputer_task.delay(rfc_number_list=[rfc.rfc_number])
+        # Gather obs and updates in both directions as a title/author change to
+        # this doc affects the info rendering of all of the other RFCs
+        needs_updating = sorted(
+            [
+                d.rfc_number
+                for d in [rfc]
+                + rfc.related_that_doc(("obs", "updates"))
+                + rfc.related_that(("obs", "updates"))
+            ]
+        )
+        trigger_red_precomputer_task.delay(rfc_number_list=needs_updating)
         return rfc
 
 
