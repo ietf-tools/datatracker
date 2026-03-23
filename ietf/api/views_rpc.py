@@ -210,19 +210,19 @@ class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         Those queries overreturn - there may be things, particularly not from the IETF stream that are already in the queue.
         """
         ietf_docs = Q(states__type_id="draft-iesg", states__slug__in=["ann"])
-        irtf_iab_ise_docs = Q(
+        irtf_iab_ise_editorial_docs = Q(
             states__type_id__in=[
                 "draft-stream-iab",
                 "draft-stream-irtf",
                 "draft-stream-ise",
+                "draft-stream-editorial",
             ],
             states__slug__in=["rfc-edit"],
         )
-        # TODO: Need a way to talk about editorial stream docs
         docs = (
             self.get_queryset()
             .filter(type_id="draft")
-            .filter(ietf_docs | irtf_iab_ise_docs)
+            .filter(ietf_docs | irtf_iab_ise_editorial_docs)
         )
         serializer = self.get_serializer(docs, many=True)
         return Response(serializer.data)
