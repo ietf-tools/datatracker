@@ -38,7 +38,12 @@ from ietf.api.serializers_rpc import (
 from ietf.doc.models import Document, DocHistory, RfcAuthor, DocEvent
 from ietf.doc.serializers import RfcAuthorSerializer
 from ietf.doc.storage_utils import remove_from_storage, store_file, exists_in_storage
-from ietf.doc.tasks import signal_update_rfc_metadata_task
+from ietf.doc.tasks import (
+    signal_update_rfc_metadata_task,
+    rebuild_reference_relations_task,
+    trigger_red_precomputer_task,
+    update_rfc_searchindex_task,
+)
 from ietf.person.models import Email, Person
 from ietf.sync.tasks import create_rfc_index_task
 
@@ -205,19 +210,19 @@ class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         Those queries overreturn - there may be things, particularly not from the IETF stream that are already in the queue.
         """
         ietf_docs = Q(states__type_id="draft-iesg", states__slug__in=["ann"])
-        irtf_iab_ise_docs = Q(
+        irtf_iab_ise_editorial_docs = Q(
             states__type_id__in=[
                 "draft-stream-iab",
                 "draft-stream-irtf",
                 "draft-stream-ise",
+                "draft-stream-editorial",
             ],
             states__slug__in=["rfc-edit"],
         )
-        # TODO: Need a way to talk about editorial stream docs
         docs = (
             self.get_queryset()
             .filter(type_id="draft")
-            .filter(ietf_docs | irtf_iab_ise_docs)
+            .filter(ietf_docs | irtf_iab_ise_editorial_docs)
         )
         serializer = self.get_serializer(docs, many=True)
         return Response(serializer.data)
@@ -515,6 +520,16 @@ class RfcPubFilesView(APIView):
                 ):
                     destination.parent.mkdir()
                 shutil.move(ftm, destination)
+
+        # Trigger red precomputer
+        needs_updating = [rfc.rfc_number]
+        for rel in rfc.relateddocument_set.filter(relationship_id__in=["obs","updates"]):
+            needs_updating.append(rel.target.rfc_number)
+        trigger_red_precomputer_task.delay(rfc_number_list=sorted(needs_updating))
+        # Trigger search index update
+        update_rfc_searchindex_task.delay(rfc.rfc_number)
+        # Trigger reference relation srebuild
+        rebuild_reference_relations_task.delay(doc_names=[rfc.name])
 
         return Response(NotificationAckSerializer().data)
 

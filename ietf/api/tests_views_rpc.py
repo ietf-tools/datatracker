@@ -196,7 +196,15 @@ class RpcApiTests(APITestCase):
         self.assertEqual(mock_kwargs["rfc_number_list"], expected_rfc_number_list)
 
     @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
-    def test_upload_rfc_files(self):
+    @mock.patch("ietf.api.views_rpc.rebuild_reference_relations_task")
+    @mock.patch("ietf.api.views_rpc.update_rfc_searchindex_task")
+    @mock.patch("ietf.api.views_rpc.trigger_red_precomputer_task")
+    def test_upload_rfc_files(
+        self,
+        mock_trigger_red_task,
+        mock_update_searchindex_task,
+        mock_rebuild_relations,
+    ):
         def _valid_post_data():
             """Generate a valid post data dict
 
@@ -217,14 +225,14 @@ class RpcApiTests(APITestCase):
             }
 
         url = urlreverse("ietf.api.purple_api.upload_rfc_files")
-        unused_rfc_number = (
-            Document.objects.filter(rfc_number__isnull=False).aggregate(
-                unused_rfc_number=Max("rfc_number") + 1
-            )["unused_rfc_number"]
-            or 10000
-        )
+        updates = RfcFactory.create_batch(2)
+        obsoletes = RfcFactory.create_batch(2)
 
-        rfc = WgRfcFactory(rfc_number=unused_rfc_number)
+        rfc = WgRfcFactory()
+        for r in obsoletes:
+            rfc.relateddocument_set.create(relationship_id="obs", target=r)
+        for r in updates:
+            rfc.relateddocument_set.create(relationship_id="updates", target=r)
         assert isinstance(rfc, Document), "WgRfcFactory should generate a Document"
         with TemporaryDirectory() as rfc_dir:
             settings.RFC_PATH = rfc_dir  # affects overridden settings
@@ -236,15 +244,17 @@ class RpcApiTests(APITestCase):
             # no api key
             r = self.client.post(url, _valid_post_data(), format="multipart")
             self.assertEqual(r.status_code, 403)
+            self.assertFalse(mock_update_searchindex_task.delay.called)
 
             # invalid RFC
             r = self.client.post(
                 url,
-                _valid_post_data() | {"rfc": unused_rfc_number + 1},
+                _valid_post_data() | {"rfc": rfc.rfc_number + 10},
                 format="multipart",
                 headers={"X-Api-Key": "valid-token"},
             )
             self.assertEqual(r.status_code, 400)
+            self.assertFalse(mock_update_searchindex_task.delay.called)
 
             # empty files
             r = self.client.post(
@@ -263,6 +273,7 @@ class RpcApiTests(APITestCase):
                 headers={"X-Api-Key": "valid-token"},
             )
             self.assertEqual(r.status_code, 400)
+            self.assertFalse(mock_update_searchindex_task.delay.called)
 
             # bad file type
             r = self.client.post(
@@ -276,9 +287,10 @@ class RpcApiTests(APITestCase):
                 headers={"X-Api-Key": "valid-token"},
             )
             self.assertEqual(r.status_code, 400)
+            self.assertFalse(mock_update_searchindex_task.delay.called)
 
             # Put a file in the way. Post should fail because replace = False
-            file_in_the_way = (rfc_path / f"rfc{unused_rfc_number}.txt")
+            file_in_the_way = (rfc_path / f"{rfc.name}.txt")
             file_in_the_way.touch()
             r = self.client.post(
                 url,
@@ -287,11 +299,12 @@ class RpcApiTests(APITestCase):
                 headers={"X-Api-Key": "valid-token"},
             )
             self.assertEqual(r.status_code, 409)  # conflict
+            self.assertFalse(mock_update_searchindex_task.delay.called)
             file_in_the_way.unlink()
             
             # Put a blob in the way. Post should fail because replace = False
             blob_in_the_way = Blob.objects.create(
-                bucket="rfc", name=f"txt/rfc{unused_rfc_number}.txt", content=b""
+                bucket="rfc", name=f"txt/{rfc.name}.txt", content=b""
             )
             r = self.client.post(
                 url,
@@ -300,9 +313,11 @@ class RpcApiTests(APITestCase):
                 headers={"X-Api-Key": "valid-token"},
             )
             self.assertEqual(r.status_code, 409)  # conflict
+            self.assertFalse(mock_update_searchindex_task.delay.called)
             blob_in_the_way.delete()
 
             # valid post
+            mock_trigger_red_task.delay.reset_mock()
             r = self.client.post(
                 url,
                 _valid_post_data(),
@@ -310,8 +325,12 @@ class RpcApiTests(APITestCase):
                 headers={"X-Api-Key": "valid-token"},
             )
             self.assertEqual(r.status_code, 200)
+            self.assertEqual(
+                mock_update_searchindex_task.delay.call_args,
+                mock.call(rfc.rfc_number),
+            )
             for extension in ["xml", "txt", "html", "pdf", "json"]:
-                filename = f"rfc{unused_rfc_number}.{extension}"
+                filename = f"{rfc.name}.{extension}"
                 self.assertEqual(
                     (rfc_path / filename)
                     .read_text(),
@@ -328,7 +347,7 @@ class RpcApiTests(APITestCase):
                     f"{extension} blob should contain the expected content",
                 )
             # special case for notprepped
-            notprepped_fn = f"rfc{unused_rfc_number}.notprepped.xml"
+            notprepped_fn = f"{rfc.name}.notprepped.xml"
             self.assertEqual(
                 (
                     rfc_path / "prerelease" / notprepped_fn
@@ -345,8 +364,26 @@ class RpcApiTests(APITestCase):
                 b"This is .notprepped.xml",
                 ".notprepped.xml blob should contain the expected content",
             )
+            # Confirm that the red precomputer was triggered correctly
+            self.assertTrue(mock_trigger_red_task.delay.called)
+            _, mock_kwargs = mock_trigger_red_task.delay.call_args
+            self.assertIn("rfc_number_list", mock_kwargs)
+            expected_rfc_number_list = [rfc.rfc_number]
+            expected_rfc_number_list.extend(
+                [d.rfc_number for d in updates + obsoletes]
+            )
+            expected_rfc_number_list = sorted(set(expected_rfc_number_list))
+            self.assertEqual(mock_kwargs["rfc_number_list"], expected_rfc_number_list)
+            # Confirm that the search index update task was called correctly
+            self.assertTrue(mock_update_searchindex_task.delay.called)
+            # Confirm reference relations rebuild task was called correctly
+            self.assertTrue(mock_rebuild_relations.delay.called)
+            _, mock_kwargs = mock_rebuild_relations.delay.call_args
+            self.assertIn("doc_names", mock_kwargs)
+            self.assertEqual(mock_kwargs["doc_names"], [rfc.name])
 
             # re-post with replace = False should now fail
+            mock_update_searchindex_task.reset_mock()
             r = self.client.post(
                 url,
                 _valid_post_data(),
@@ -354,7 +391,8 @@ class RpcApiTests(APITestCase):
                 headers={"X-Api-Key": "valid-token"},
             )
             self.assertEqual(r.status_code, 409)  # conflict
-            
+            self.assertFalse(mock_update_searchindex_task.delay.called)
+
             # re-post with replace = True should succeed
             r = self.client.post(
                 url,
@@ -362,7 +400,12 @@ class RpcApiTests(APITestCase):
                 format="multipart",
                 headers={"X-Api-Key": "valid-token"},
             )
-            self.assertEqual(r.status_code, 200)  # conflict
+            self.assertEqual(r.status_code, 200)
+            self.assertTrue(mock_update_searchindex_task.delay.called)
+            self.assertEqual(
+                mock_update_searchindex_task.delay.call_args,
+                mock.call(rfc.rfc_number),
+            )
 
     @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
     @mock.patch("ietf.api.views_rpc.create_rfc_index_task")
