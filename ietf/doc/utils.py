@@ -4,6 +4,7 @@
 
 import datetime
 import io
+import json
 import math
 import os
 import re
@@ -954,57 +955,77 @@ def rebuild_reference_relations(doc, filenames):
     filenames should be a dict mapping file ext (i.e., type) to the full path of each file.
     """
     if doc.type.slug not in ["draft", "rfc"]:
+        log.log(f"rebuild_reference_relations called for non draft/rfc doc {doc.name}")
         return None
-    
-    log.log(f"Rebuilding reference relations for {doc.name}")
 
-    # try XML first
-    if "xml" in filenames:
-        refs = XMLDraft(filenames["xml"]).get_refs()
-    elif "txt" in filenames:
-        filename = filenames["txt"]
-        try:
-            refs = draft.PlaintextDraft.from_file(filename).get_refs()
-        except IOError as e:
-            return {"errors": [f"{e.strerror}: {filename}"]}
-    else:
+
+    if "xml" not in filenames and "txt" not in filenames:
+        log.log(f"rebuild_reference_relations error: no file available for {doc.name}")
         return {
             "errors": [
                 "No file available for rebuilding reference relations. Need XML or plaintext."
             ]
         }
+    else:
+        try:
+            # try XML first
+            if "xml" in filenames:
+                refs = XMLDraft(filenames["xml"]).get_refs()
+            elif "txt" in filenames:
+                filename = filenames["txt"]
+                refs = draft.PlaintextDraft.from_file(filename).get_refs()
+        except (IOError, UnicodeDecodeError) as e:
+                log.log(f"rebuild_reference_relations error: On {doc.name}: {e}")
+                return {"errors": [f"{e}: {filename}"]}
 
-    doc.relateddocument_set.filter(
+    before = set(doc.relateddocument_set.filter(
         relationship__slug__in=["refnorm", "refinfo", "refold", "refunk"]
-    ).delete()
+    ).values_list("relationship__slug","target__name"))
 
     warnings = []
     errors = []
     unfound = set()
+    intended = set()
+    names = [ref for ref in refs]
+    names.extend([ref[:-3] for ref in refs if re.match(r"^draft-.*-\d{2}$", ref)])
+    queryset = Document.objects.filter(name__in=names)
     for ref, refType in refs.items():
-        refdoc = Document.objects.filter(name=ref)
-        if not refdoc and re.match(r"^draft-.*-\d{2}$", ref):
-            refdoc = Document.objects.filter(name=ref[:-3])
+        refdoc = queryset.filter(name=ref)
+        if not refdoc.exists() and re.match(r"^draft-.*-\d{2}$", ref):
+            refdoc = queryset.filter(name=ref[:-3])
         count = refdoc.count()
         if count == 0:
             unfound.add("%s" % ref)
             continue
         elif count > 1:
+            log.unreachable("2026-3-16") # This branch is holdover from DocAlias
             errors.append("Too many Document objects found for %s" % ref)
         else:
             # Don't add references to ourself
             if doc != refdoc[0]:
-                RelatedDocument.objects.get_or_create(
-                    source=doc,
-                    target=refdoc[0],
-                    relationship=DocRelationshipName.objects.get(
-                        slug="ref%s" % refType
-                    ),
-                )
+                intended.add((f"ref{refType}", refdoc[0].name))
+
     if unfound:
         warnings.append(
             "There were %d references with no matching Document" % len(unfound)
         )
+
+    if intended != before:
+        for slug, name in before-intended:
+            doc.relateddocument_set.filter(target__name=name, relationship_id=slug).delete()
+        for slug, name in intended-before:
+            doc.relateddocument_set.create(
+                target=queryset.get(name=name),
+                relationship_id=slug
+            )
+        after = set(doc.relateddocument_set.filter(
+            relationship__slug__in=["refnorm", "refinfo", "refold", "refunk"]
+        ).values_list("relationship__slug","target__name"))
+        if after != intended:
+            errors.append("Attempted changed didn't achieve intended results")
+        changed_references = True
+    else:
+        changed_references = False
 
     ret = {}
     if errors:
@@ -1013,6 +1034,13 @@ def rebuild_reference_relations(doc, filenames):
         ret["warnings"] = warnings
     if unfound:
         ret["unfound"] = list(unfound)
+
+    logmsg = f"rebuild_reference_relations for {doc.name}: "
+    logmsg += "changed references" if changed_references else "references unchanged"
+    if ret:
+        logmsg += f" {json.dumps(ret)}"
+
+    log.log(logmsg)
 
     return ret
 

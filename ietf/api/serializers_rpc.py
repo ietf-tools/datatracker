@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2025, All Rights Reserved
+# Copyright The IETF Trust 2025-2026, All Rights Reserved
 import datetime
 from pathlib import Path
 from typing import Literal, Optional
@@ -20,6 +20,7 @@ from ietf.doc.models import (
     RfcAuthor,
 )
 from ietf.doc.serializers import RfcAuthorSerializer
+from ietf.doc.tasks import trigger_red_precomputer_task, update_rfc_searchindex_task
 from ietf.doc.utils import (
     default_consensus,
     prettify_std_name,
@@ -682,6 +683,19 @@ class EditableRfcSerializer(serializers.ModelSerializer):
                 stale_subseries_relations.delete()
             if len(rfc_events) > 0:
                 rfc.save_with_history(rfc_events)
+        # Gather obs and updates in both directions as a title/author change to
+        # this doc affects the info rendering of all of the other RFCs
+        needs_updating = sorted(
+            [
+                d.rfc_number
+                for d in [rfc]
+                + rfc.related_that_doc(("obs", "updates"))
+                + rfc.related_that(("obs", "updates"))
+            ]
+        )
+        trigger_red_precomputer_task.delay(rfc_number_list=needs_updating)
+        # Update the search index also
+        update_rfc_searchindex_task.delay(rfc.rfc_number)
         return rfc
 
 
