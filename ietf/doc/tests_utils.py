@@ -6,7 +6,6 @@ import mock
 import debug  # pyflakes:ignore
 import requests
 
-from hashlib import sha384
 from pathlib import Path
 from unittest.mock import call, patch
 
