@@ -196,9 +196,15 @@ class RpcApiTests(APITestCase):
         self.assertEqual(mock_kwargs["rfc_number_list"], expected_rfc_number_list)
 
     @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
+    @mock.patch("ietf.api.views_rpc.rebuild_reference_relations_task")
     @mock.patch("ietf.api.views_rpc.update_rfc_searchindex_task")
     @mock.patch("ietf.api.views_rpc.trigger_red_precomputer_task")
-    def test_upload_rfc_files(self, mock_trigger_red_task, mock_update_searchindex_task):
+    def test_upload_rfc_files(
+        self,
+        mock_trigger_red_task,
+        mock_update_searchindex_task,
+        mock_rebuild_relations,
+    ):
         def _valid_post_data():
             """Generate a valid post data dict
 
@@ -370,6 +376,11 @@ class RpcApiTests(APITestCase):
             self.assertEqual(mock_kwargs["rfc_number_list"], expected_rfc_number_list)
             # Confirm that the search index update task was called correctly
             self.assertTrue(mock_update_searchindex_task.delay.called)
+            # Confirm reference relations rebuild task was called correctly
+            self.assertTrue(mock_rebuild_relations.delay.called)
+            _, mock_kwargs = mock_rebuild_relations.delay.call_args
+            self.assertIn("doc_names", mock_kwargs)
+            self.assertEqual(mock_kwargs["doc_names"], [rfc.name])
 
             # re-post with replace = False should now fail
             mock_update_searchindex_task.reset_mock()

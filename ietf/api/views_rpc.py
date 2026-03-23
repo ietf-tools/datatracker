@@ -40,6 +40,7 @@ from ietf.doc.serializers import RfcAuthorSerializer
 from ietf.doc.storage_utils import remove_from_storage, store_file, exists_in_storage
 from ietf.doc.tasks import (
     signal_update_rfc_metadata_task,
+    rebuild_reference_relations_task,
     trigger_red_precomputer_task,
     update_rfc_searchindex_task,
 )
@@ -527,6 +528,9 @@ class RfcPubFilesView(APIView):
         trigger_red_precomputer_task.delay(rfc_number_list=sorted(needs_updating))
         # Trigger search index update
         update_rfc_searchindex_task.delay(rfc.rfc_number)
+        # Trigger reference relation srebuild
+        rebuild_reference_relations_task.delay(doc_names=[rfc.name])
+
         return Response(NotificationAckSerializer().data)
 
 
