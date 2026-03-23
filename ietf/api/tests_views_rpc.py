@@ -197,7 +197,7 @@ class RpcApiTests(APITestCase):
 
     @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
     @mock.patch("ietf.api.views_rpc.update_rfc_searchindex_task")
-    @mock.patch("ietf.doc.tasks.trigger_red_precomputer_task")
+    @mock.patch("ietf.api.views_rpc.trigger_red_precomputer_task")
     def test_upload_rfc_files(self, mock_trigger_red_task, mock_update_searchindex_task):
         def _valid_post_data():
             """Generate a valid post data dict

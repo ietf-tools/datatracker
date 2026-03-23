@@ -36,7 +36,7 @@ class EditableRfcSerializerTests(TestCase):
             serializer.save()
 
     @mock.patch("ietf.api.serializers_rpc.update_rfc_searchindex_task")
-    @mock.patch("ietf.doc.tasks.trigger_red_precomputer_task")
+    @mock.patch("ietf.api.serializers_rpc.trigger_red_precomputer_task")
     def test_update(self, mock_trigger_red_task, mock_update_searchindex_task):
         updates = WgRfcFactory.create_batch(2)
         obsoletes = WgRfcFactory.create_batch(2)
@@ -119,7 +119,7 @@ class EditableRfcSerializerTests(TestCase):
         )
 
     @mock.patch("ietf.api.serializers_rpc.update_rfc_searchindex_task")
-    @mock.patch("ietf.doc.tasks.trigger_red_precomputer_task.delay")
+    @mock.patch("ietf.api.serializers_rpc.trigger_red_precomputer_task")
     def test_partial_update(self, mock_trigger_red_task, mock_update_searchindex_task):
         # We could test other permutations of fields, but authors is a partial update
         # we know we are going to use, so verifying that one in particular.
