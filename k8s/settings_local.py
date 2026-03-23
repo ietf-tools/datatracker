@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
+# Copyright The IETF Trust 2007-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 from base64 import b64decode
@@ -453,12 +453,8 @@ STORAGES["red_bucket"] = {
     ),
 }
 RFCINDEX_DELETE_THEN_WRITE = False  # S3Storage allows file_overwrite by default
-RFCINDEX_OUTPUT_PATH = os.environ.get(
-    "DATATRACKER_RFCINDEX_OUTPUT_PATH", "other/"
-)
-RFCINDEX_INPUT_PATH = os.environ.get(
-    "DATATRACKER_RFCINDEX_INPUT_PATH", ""
-)
+RFCINDEX_OUTPUT_PATH = os.environ.get("DATATRACKER_RFCINDEX_OUTPUT_PATH", "other/")
+RFCINDEX_INPUT_PATH = os.environ.get("DATATRACKER_RFCINDEX_INPUT_PATH", "")
 
 # Configure the blobdb app for artifact storage
 _blobdb_replication_enabled = (
@@ -481,3 +477,13 @@ BLOBDB_REPLICATION = {
 PASSWORD_POLICY_ENFORCE_AT_LOGIN = (
     os.environ.get("DATATRACKER_ENFORCE_PW_POLICY", "true").lower() != "false"
 )
+
+# Typesense search indexing
+SEARCHINDEX_CONFIG = {
+    "TYPESENSE_API_URL": os.environ.get("DATATRACKER_TYPESENSE_API_URL", ""),
+    "TYPESENSE_API_KEY": os.environ.get("DATATRACKER_TYPESENSE_API_KEY", ""),
+    "TASK_RETRY_DELAY": os.environ.get("DATATRACKER_SEARCHINDEX_TASK_RETRY_DELAY", 10),
+    "TASK_MAX_RETRIES": os.environ.get(
+        "DATATRACKER_SEARCHINDEX_TASK_MAX_RETRIES", "12"
+    ),
+}

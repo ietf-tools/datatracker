@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 
-import mock
+from unittest import mock
 
 from django.utils import timezone
 
@@ -35,8 +35,9 @@ class EditableRfcSerializerTests(TestCase):
         with self.assertRaises(RuntimeError, msg="serializer does not allow create()"):
             serializer.save()
 
-    @mock.patch("ietf.doc.tasks.trigger_red_precomputer_task.delay")
-    def test_update(self, mock_task_delay):
+    @mock.patch("ietf.api.serializers_rpc.update_rfc_searchindex_task")
+    @mock.patch("ietf.doc.tasks.trigger_red_precomputer_task")
+    def test_update(self, mock_trigger_red_task, mock_update_searchindex_task):
         updates = WgRfcFactory.create_batch(2)
         obsoletes = WgRfcFactory.create_batch(2)
         rfc = WgRfcFactory(pages=10)
@@ -99,8 +100,9 @@ class EditableRfcSerializerTests(TestCase):
             result.part_of(),
             [Document.objects.get(name="fyi999")],
         )
-        self.assertTrue(mock_task_delay.called)
-        _, mock_kwargs = mock_task_delay.call_args
+        # Confirm that red precomputer was triggered correctly
+        self.assertTrue(mock_trigger_red_task.delay.called)
+        _, mock_kwargs = mock_trigger_red_task.delay.call_args
         self.assertIn("rfc_number_list", mock_kwargs)
         expected_numbers = sorted(
             [
@@ -109,9 +111,16 @@ class EditableRfcSerializerTests(TestCase):
             ]
         )
         self.assertEqual(mock_kwargs["rfc_number_list"], expected_numbers)
+        # Confirm that the search index update task was triggered correctly
+        self.assertTrue(mock_update_searchindex_task.delay.called)
+        self.assertEqual(
+            mock_update_searchindex_task.delay.call_args,
+            mock.call(rfc.rfc_number),
+        )
 
+    @mock.patch("ietf.api.serializers_rpc.update_rfc_searchindex_task")
     @mock.patch("ietf.doc.tasks.trigger_red_precomputer_task.delay")
-    def test_partial_update(self, mock_task_delay):
+    def test_partial_update(self, mock_trigger_red_task, mock_update_searchindex_task):
         # We could test other permutations of fields, but authors is a partial update
         # we know we are going to use, so verifying that one in particular.
         updates = WgRfcFactory.create_batch(2)
@@ -165,8 +174,9 @@ class EditableRfcSerializerTests(TestCase):
         self.assertEqual(result.pages, 10)
         self.assertEqual(result.std_level_id, "ps")
         self.assertEqual(result.part_of(), [])
-        self.assertTrue(mock_task_delay.called)
-        _, mock_kwargs = mock_task_delay.call_args
+        # Confirm that the red precomputer was triggered correctly
+        self.assertTrue(mock_trigger_red_task.delay.called)
+        _, mock_kwargs = mock_trigger_red_task.delay.call_args
         self.assertIn("rfc_number_list", mock_kwargs)
         expected_numbers = sorted(
             [
@@ -175,9 +185,16 @@ class EditableRfcSerializerTests(TestCase):
             ]
         )
         self.assertEqual(mock_kwargs["rfc_number_list"], expected_numbers)
+        # Confirm that the search index update task was called correctly
+        self.assertTrue(mock_update_searchindex_task.delay.called)
+        self.assertEqual(
+            mock_update_searchindex_task.delay.call_args,
+            mock.call(rfc.rfc_number),
+        )
 
         # Test only a field on the Document itself to be sure that it works
-        mock_task_delay.reset_mock()
+        mock_trigger_red_task.delay.reset_mock()
+        mock_update_searchindex_task.delay.reset_mock()
         serializer = EditableRfcSerializer(
             partial=True,
             instance=rfc,
@@ -187,7 +204,14 @@ class EditableRfcSerializerTests(TestCase):
         result = serializer.save()
         result.refresh_from_db()
         self.assertEqual(rfc.title, "jedi master")
-        self.assertTrue(mock_task_delay.called)
-        _, mock_kwargs = mock_task_delay.call_args
+        # Confirm that the red precomputer was triggered correctly
+        self.assertTrue(mock_trigger_red_task.delay.called)
+        _, mock_kwargs = mock_trigger_red_task.delay.call_args
         self.assertIn("rfc_number_list", mock_kwargs)
         self.assertEqual(mock_kwargs["rfc_number_list"], expected_numbers)
+        # Confirm that the search index update task was called correctly
+        self.assertTrue(mock_update_searchindex_task.delay.called)
+        self.assertEqual(
+            mock_update_searchindex_task.delay.call_args,
+            mock.call(rfc.rfc_number),
+        )
