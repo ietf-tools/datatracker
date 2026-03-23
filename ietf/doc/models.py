@@ -1285,11 +1285,8 @@ class Document(StorableMixin, DocumentInfo):
         s = s.first()
         return s
 
-    def pub_date(self):
-        """Get the publication date for this document
-
-        This is the rfc publication date for RFCs, and the new-revision date for other documents.
-        """
+    def pub_datetime(self):
+        """Get the publication datetime of this document"""
         if self.type_id == "rfc":
             # As of Sept 2022, in ietf.sync.rfceditor.update_docs_from_rfc_index() `published_rfc` events are
             # created with a timestamp whose date *in the PST8PDT timezone* is the official publication date
@@ -1297,7 +1294,15 @@ class Document(StorableMixin, DocumentInfo):
             event = self.latest_event(type='published_rfc')
         else:
             event = self.latest_event(type='new_revision')
-        return event.time.astimezone(RPC_TZINFO).date() if event else None
+        return event.time.astimezone(RPC_TZINFO) if event else None
+
+    def pub_date(self):
+        """Get the publication date for this document
+
+        This is the rfc publication date for RFCs, and the new-revision date for other documents.
+        """
+        pub_datetime = self.pub_datetime()
+        return None if pub_datetime is None else pub_datetime.date()
 
     def is_dochistory(self):
         return False

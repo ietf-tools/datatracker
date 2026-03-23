@@ -1,4 +1,6 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
+from unittest import mock
+
 from django.utils import timezone
 
 from ietf.utils.test_utils import TestCase
@@ -32,7 +34,8 @@ class EditableRfcSerializerTests(TestCase):
         with self.assertRaises(RuntimeError, msg="serializer does not allow create()"):
             serializer.save()
 
-    def test_update(self):
+    @mock.patch("ietf.api.serializers_rpc.update_rfc_searchindex_task")
+    def test_update(self, mock_update_searchindex_task):
         rfc = WgRfcFactory(pages=10)
         serializer = EditableRfcSerializer(
             instance=rfc,
@@ -56,6 +59,11 @@ class EditableRfcSerializerTests(TestCase):
         )
         self.assertTrue(serializer.is_valid())
         result = serializer.save()
+        self.assertTrue(mock_update_searchindex_task.delay.called)
+        self.assertEqual(
+            mock_update_searchindex_task.delay.call_args,
+            mock.call(rfc.rfc_number),
+        )
         result.refresh_from_db()
         self.assertEqual(result.title, "Yadda yadda yadda")
         self.assertEqual(
@@ -84,7 +92,8 @@ class EditableRfcSerializerTests(TestCase):
             [Document.objects.get(name="fyi999")],
         )
 
-    def test_partial_update(self):
+    @mock.patch("ietf.api.serializers_rpc.update_rfc_searchindex_task")
+    def test_partial_update(self, mock_update_searchindex_task):
         # We could test other permutations of fields, but authors is a partial update
         # we know we are going to use, so verifying that one in particular.
         rfc = WgRfcFactory(pages=10, abstract="do or do not", title="padawan")
@@ -104,6 +113,11 @@ class EditableRfcSerializerTests(TestCase):
         )
         self.assertTrue(serializer.is_valid())
         result = serializer.save()
+        self.assertTrue(mock_update_searchindex_task.delay.called)
+        self.assertEqual(
+            mock_update_searchindex_task.delay.call_args,
+            mock.call(rfc.rfc_number),
+        )
         result.refresh_from_db()
         self.assertEqual(rfc.title, "padawan")
         self.assertEqual(
