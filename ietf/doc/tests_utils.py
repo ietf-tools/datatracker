@@ -663,22 +663,37 @@ class UtilsRedTests(TestCase):
 
 
 class UtilsR2TestCase(TestCase):
-
     def test_rfcs_are_in_r2(self):
         rfcs = WgRfcFactory.create_batch(2)
         rfc_name_list = [rfc.name for rfc in rfcs]
         rfc_number_list = [rfc.rfc_number for rfc in rfcs]
         r2_rfc_bucket = storages["r2-rfc"]
         # Right now the various doc Factories do not populate any content
-        self.assertEqual(StoredObject.objects.filter(store="rfc",doc_name__in=rfc_name_list).count(),0)
+        self.assertEqual(
+            StoredObject.objects.filter(
+                store="rfc", doc_name__in=rfc_name_list
+            ).count(),
+            0,
+        )
         self.assertTrue(rfcs_are_in_r2(rfc_number_list=rfc_number_list))
         for rfc in rfcs:
-            store_str(kind="rfc", name=f"testartifact/{rfc.name}.testartifact", content="", doc_name=rfc.name, doc_rev=None)
-        self.assertEqual(StoredObject.objects.filter(store="rfc",doc_name__in=rfc_name_list).count(),2)
+            store_str(
+                kind="rfc",
+                name=f"testartifact/{rfc.name}.testartifact",
+                content="",
+                doc_name=rfc.name,
+                doc_rev=None,
+            )
+        self.assertEqual(
+            StoredObject.objects.filter(
+                store="rfc", doc_name__in=rfc_name_list
+            ).count(),
+            2,
+        )
         self.assertFalse(rfcs_are_in_r2(rfc_number_list=rfc_number_list))
-        r2_rfc_bucket.save(f"testartifact/{rfcs[0].name}.testartifact",BytesIO(b""))
+        r2_rfc_bucket.save(f"testartifact/{rfcs[0].name}.testartifact", BytesIO(b""))
         self.assertFalse(rfcs_are_in_r2(rfc_number_list=rfc_number_list))
-        r2_rfc_bucket.save(f"testartifact/{rfcs[1].name}.testartifact",BytesIO(b""))
+        r2_rfc_bucket.save(f"testartifact/{rfcs[1].name}.testartifact", BytesIO(b""))
         self.assertTrue(rfcs_are_in_r2(rfc_number_list=rfc_number_list))
 
 
