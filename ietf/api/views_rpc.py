@@ -45,7 +45,7 @@ from ietf.doc.tasks import (
     update_rfc_searchindex_task,
 )
 from ietf.person.models import Email, Person
-from ietf.sync.tasks import create_rfc_index_task
+from ietf.sync.tasks import create_rfc_index_txt_task, create_rfc_index_xml_task
 
 
 class Conflict(APIException):
@@ -545,5 +545,6 @@ class RfcIndexView(APIView):
         request=None,
     )
     def post(self, request):
-        create_rfc_index_task.delay()
+        create_rfc_index_txt_task.delay()
+        create_rfc_index_xml_task.delay()
         return Response(status=202)
