@@ -852,3 +852,43 @@ def send_reminders():
             if _is_time_to_send_reminder(nomcom, date_today(), nominee_position.time.date()):
                 send_questionnaire_reminder_to_nominee(nominee_position)
                 log(f"Sent questionnaire reminder to {nominee_position.nominee.email.address}")
+
+# Temporary home for prototyping - imports are in the function to avoid circular dependencies
+def prototype_report():
+    from django.db.models.functions import Cast
+    from django.db.models import IntegerField
+    from ietf.meeting.models import Registration, Attended
+    from ietf.nomcom.models import NomineePosition
+    import json
+
+    interesting_meetings = (
+        Meeting.objects.filter(type_id="ietf")
+        .annotate(num=Cast("number", output_field=IntegerField()))
+        .filter(num__gte=108)
+    )
+    checked_in_qs = Registration.objects.onsite().filter(
+        meeting__in=interesting_meetings, checkedin=True
+    )
+    attended_qs = Attended.objects.filter(session__meeting__in=interesting_meetings)
+    nominee_positions = NomineePosition.objects.filter(
+        position__nomcom__group__acronym="nomcom2025", state_id="accepted"
+    )
+    person_attended = dict()
+    for nominee_person in set([np.nominee.person for np in nominee_positions]):
+        np_checked_in = checked_in_qs.filter(person=nominee_person).values_list(
+            "meeting__number", flat=True
+        )
+        np_attended = attended_qs.filter(person=nominee_person).values_list(
+            "session__meeting__number", flat=True
+        )
+        np_meetings = set(np_checked_in).union(set(np_attended))
+        person_attended[nominee_person] = sorted([int(n) for n in np_meetings])
+    report_body = []
+    for np in nominee_positions:
+        entry = {
+            "position": np.position.name,
+            "person": np.nominee.person.name,
+            "attended": person_attended[np.nominee.person],
+        }
+        report_body.append(entry)
+    return json.dumps(report_body)
