@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% load origin %}
+{% origin %}
+{% load ietf_filters static django_bootstrap5 %}
+{% block pagehead %}
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-autocolors"></script>
+{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        {% block title %}
+            Statistics for IETF Meeting Registrations
+        {% endblock %}
+    </h1>
+    <div class="row my-3">
+        <label class="fw-bold col-sm-1 col-form-label">Show:</label>
+        <div class="btn-group col-sm-4">
+            {% for slug, label, url in possible_stats_types %}
+                <a class="btn btn-outline-primary
+                            {% if slug == stats_type %}
+                                active
+                            {% endif %}"
+                    href="{{ url }}">{{ label }}</a>
+            {% endfor %}
+        </div>
+        <label class="fw-bold col-sm-1 col-form-label">Meeting:</label>
+        <div class="btn-group col-sm-2">
+            {% for num, url in possible_meeting_numbers %}
+                <a class="btn btn-outline-primary
+                            {% if num == meeting_number %}
+                                active
+                            {% endif %}"
+                    href="{{ url }}">{{ num }}</a>
+            {% endfor %}
+        </div>
+    </div>
+    <p>
+    {% if stats_type == 'total' %}
+        This page provides a timeline of meeting registrations.
+    {% else %}
+        This page provides a timeline of meeting registrations by {{ stats_type }} with a limit of {{ top_n }} categories.
+    {% endif %}
+    </p>
+    <div class="row">
+        <div class="col-md-12">
+        {% if stats_type == 'total' %}
+            <h2>Total Registrations</h2>
+        {% else %}
+            <h2>Total Registrations by {{ stats_type|title }}</h2>
+        {% endif %}
+        <div class="chart-wrapper col-10">
+            <canvas id="totalRegistrationChart" aria-label="Total Registration Timeline" role="img"></canvas>
+        </div>
+        </div><!-- col -->
+        <div class="col-md-12">
+        {% if stats_type == 'total' %}
+            <h2>Total In Person Registrations</h2>
+        {% else %}
+            <h2>In Person Registrations by {{ stats_type|title }}</h2>
+        {% endif %}
+        <div class="chart-wrapper col-10">
+            <canvas id="inPersonRegistrationChart" aria-label="In Person Registration Timeline" role="img"></canvas>
+        </div>
+        </div><!-- col -->
+    </div><!-- row -->
+
+    <script>
+    // Need to use autocolors plug-in else all slices are gray...
+    const autocolors = window['chartjs-plugin-autocolors'];
+    Chart.register(autocolors);
+    // ── Safely parse JSON data injected from Django view ──
+    const totalChartData = JSON.parse('{{ total_chart_data|escapejs }}');
+    const inPersonChartData = JSON.parse('{{ in_person_chart_data|escapejs }}');
+
+    function displayChart(id, data) {
+        const ctx = document.getElementById(id).getContext('2d');
+        new Chart(ctx, {
+            type: 'line',   // Change to 'doughnut' for a donut chart
+            data: data,
+            options: {
+                responsive: true,
+                plugins: {
+                    autocolors: {
+                        mode: 'data' // Required for Pie charts to color individual slices
+                    },
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            font: { size: 12 },
+                        },
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleFont: { size: 14 },
+                        bodyFont: { size: 13 },
+                        callbacks: {
+                            title: function(items) {
+                                return `IETF Meeting ${items[0].label}`;
+                            },
+                            label: function(context) {
+                                return ` ${context.dataset.label}: ${context.parsed.y} participants`;
+                            }
+                        }
+                    },
+                }
+            }
+        });
+    }
+
+    displayChart('totalRegistrationChart', totalChartData) ;
+    displayChart('inPersonRegistrationChart', inPersonChartData) ;
+</script>
+{% endblock %}

@@ -154,6 +154,187 @@ def canonicalize_affiliation(affiliation):
             affiliation = prefix
     return affiliation.title()
 
+def get_country_data_for_meetings(top_n, attendance_type=None):
+    # Get registration status counts, aggregated by country_code
+    if attendance_type:
+        registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
+    else:
+        registrations = Registration.objects.all()
+    queryset = (
+        registrations
+        .values(
+            'meeting__number',      # e.g. "118", "119", "120"
+#            'meeting__date',        # meeting start date
+            'country_code'          # country code of the participant
+        )
+        .annotate(participant_count=Count('id'))
+        .order_by('meeting__number')  # chronological order
+    )
+
+# ── Step 1: Collect all meetings and country totals ──
+    meetings_set = set()
+    country_totals = defaultdict(int)
+    data_map = defaultdict(dict)  # {country: {meeting: count}}
+
+    for row in queryset:
+        meeting = row['meeting__number']
+        country = row['country_code']
+        count = row['participant_count']
+
+        meetings_set.add(meeting)
+        country_totals[country] += count
+        data_map[country][meeting] = count
+
+    # ── Step 2: Sort meetings numerically rather than alphabetically  ──
+    sorted_meetings = sorted(meetings_set, key=lambda x: int(x) if x.isdigit() else x)
+
+    # ── Step 3: Get top N countries ──
+    top_countries = sorted(
+        country_totals.keys(),
+        key=lambda c: country_totals[c],
+        reverse=True
+    )[:top_n]
+
+    # -- Step 3.bis do the 'other' category --
+    non_top_countries = country_totals.keys() - top_countries
+    other_totals = defaultdict(int)
+    for m in sorted_meetings:
+        other_totals[m] = 0
+        for c in non_top_countries:
+            other_totals[m] += int(data_map[c].get(m, 0))
+
+    # ── Step 4: Build Chart.js datasets ──
+    # Color palette for lines
+    colors = [
+        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+        '#FF9F40', '#C9CBCF', '#7BC043', '#F37735', '#00ABA9',
+        '#2B5797', '#E81123', '#00A4EF', '#7FBA00', '#FFB900',
+        '#D83B01', '#B4009E', '#5C2D91', '#008575', '#E3008C',
+    ]
+
+    datasets = []
+    for idx, country in enumerate(top_countries):
+        color = colors[idx % len(colors)]
+        datasets.append({
+            'label': country,
+            'data': [data_map[country].get(m, 0) for m in sorted_meetings],
+            'borderColor': color,
+            'fill': False,
+            'tension': 0.3,
+            'pointColor': color,
+            'pointBackgroundColor': color,
+            'pointRadius': 4,
+            'pointHoverRadius': 6,
+            'borderWidth': 2,
+        })
+
+    # -- Step 4.bis handle the other --
+    datasets.append({
+        'label': 'Other',
+        'data': [other_totals.get(m, 0) for m in sorted_meetings],
+        'borderColor': 'black',
+        'fill': False,
+        'tension': 0.3,
+        'pointColor': 'black',
+        'pointBackgroundColor': 'black',
+        'pointRadius': 4,
+        'pointHoverRadius': 6,
+        'borderWidth': 2,
+    })
+
+    return sorted_meetings, datasets
+
+def get_data_for_meetings(attendance_type=None):
+    # Get registration status counts, aggregated by country_code
+    if attendance_type:
+        registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
+    else:
+        registrations = Registration.objects.all()
+    queryset = (
+        registrations
+        .values(
+            'meeting__number',      # e.g. "118", "119", "120"
+        )
+        .annotate(participant_count=Count('id'))
+        .order_by('meeting__number')  # chronological order
+    )
+
+    # ── Step 1: Collect all meetings totals ──
+
+    meetings_set = set()
+    meeting_totals = defaultdict(int)
+
+    for row in queryset:
+        meetings_set.add(row['meeting__number'])
+        meeting_totals[row['meeting__number']] = row['participant_count']
+
+    # ── Step 2: Sort meetings numerically rather than alphabetically ──
+    sorted_meetings = sorted(meetings_set, key=lambda x: int(x) if x.isdigit() else x)
+    
+    datasets = [ {
+        'label': 'Total participants',
+        'data': [meeting_totals[m] for m in sorted_meetings],
+        'borderColor': 'blue',
+        'fill': False,
+        'tension': 0.3,
+        'pointColor': 'blue',
+        'pointBackgroundColor': 'blue',
+        'pointRadius': 4,
+        'pointHoverRadius': 6,
+        'borderWidth': 2,
+        }
+    ]
+
+    return sorted_meetings, datasets
+
+def meetings_timeline(request, stats_type='country', top_n=10):
+
+    if stats_type == 'total':
+        total_labels, total_data_sets = get_data_for_meetings()
+        in_person_labels, in_person_data_sets = get_data_for_meetings(attendance_type='onsite')
+    elif stats_type == 'country':
+        total_labels, total_data_sets = get_country_data_for_meetings(10)
+        in_person_labels, in_person_data_sets = get_country_data_for_meetings(10, attendance_type='onsite')
+    else:
+        return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
+
+    # Serialize to JSON for safe injection into the template
+    total_chart_data = json.dumps({
+        'labels': total_labels,
+        'datasets': total_data_sets,
+    })
+
+    in_person_chart_data = json.dumps({
+        'labels': in_person_labels,
+        'datasets': in_person_data_sets,
+    })
+
+    # Prepare the list of choice buttons for the template
+    possible_stats_types = [
+#  TODO ("affiliation", "Per affiliation", urlreverse(meetings_timeline, kwargs={'stats_type': 'affiliation'})),
+        ("country", "Per country", urlreverse(meetings_timeline, kwargs={'stats_type': 'country'})),
+        ("total", "Total", urlreverse(meetings_timeline, kwargs={'stats_type': 'total'})),
+    ]
+
+    current_meeting = get_current_ietf_meeting_num()
+    if stats_type == 'total':
+        possible_stats_type = 'country'
+    else:
+        possible_stats_type = stats_type
+    possible_meeting_numbers = [(int(current_meeting)-1, urlreverse(meeting_stats, kwargs={'meeting_number': int(current_meeting)-1, 'stats_type': possible_stats_type})),
+        (int(current_meeting), urlreverse(meeting_stats, kwargs={'meeting_number': int(current_meeting), 'stats_type': possible_stats_type})),
+        (int(current_meeting)+1, urlreverse(meeting_stats, kwargs={'meeting_number': int(current_meeting)+1, 'stats_type': possible_stats_type}))]
+
+    return render(request, "stats/meetings_timeline.html", {
+        "top_n": top_n,
+        "possible_stats_types": possible_stats_types,
+        "possible_meeting_numbers": possible_meeting_numbers,
+        "stats_type": stats_type,
+        "total_chart_data": total_chart_data,
+        "in_person_chart_data": in_person_chart_data,
+    })
+
+
 def get_affiliation_data_for_meeting(meeting_number, minimum_required, attendance_type=None):
      # Get registration status details
     registrations = Registration.objects.filter(meeting__number=meeting_number)
@@ -259,7 +440,7 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
     ]
 
     # Prepare the list of meeting number buttons for the template
-    possible_meeting_numbers = []
+    possible_meeting_numbers = [('All', urlreverse(meetings_timeline, kwargs={'stats_type': stats_type}))]
     if int(meeting_number) > 72:  # No registration data before IETF-72
         possible_meeting_numbers.append((int(meeting_number)-1, urlreverse(meeting_stats, kwargs={'meeting_number': int(meeting_number)-1, 'stats_type': stats_type})))
     possible_meeting_numbers.append((meeting_number, urlreverse(meeting_stats, kwargs={'meeting_number': meeting_number, 'stats_type': stats_type})))
