@@ -34,7 +34,10 @@ from ietf.meeting.helpers import get_current_ietf_meeting_num, get_ietf_meeting
 
 
 def stats_index(request):
-    return render(request, "stats/index.html")
+    current_meeting = get_current_ietf_meeting_num()
+    return render(request, "stats/index.html", {
+        "current_meeting": current_meeting
+    })
 
 def generate_query_string(query_dict, overrides):
     query_part = ""

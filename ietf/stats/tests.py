@@ -10,6 +10,7 @@ from pyquery import PyQuery
 import debug    # pyflakes:ignore
 
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 import ietf.stats.views
@@ -24,26 +25,29 @@ from ietf.utils.timezone import date_today
 
 class StatisticsTests(TestCase):
     def test_stats_index(self):
+        # Create a meeting as the index page needs to know the current meeting
+        MeetingFactory(type_id='ietf', number='124', date=timezone.now())
         url = urlreverse(ietf.stats.views.stats_index)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
     def test_document_stats(self):
-        r = self.client.get(urlreverse("ietf.stats.views.document_stats"))
-        self.assertRedirects(r, urlreverse("ietf.stats.views.stats_index"))
-
+        # Create a meeting as the index page needs to know the current meeting
+        MeetingFactory(type_id='ietf', number='124', date=timezone.now())
+        r = self.client.get(urlreverse(ietf.stats.views.document_stats))
+        self.assertRedirects(r, urlreverse(ietf.stats.views.stats_index))
 
     def test_meeting_stats(self):
-        meeting = MeetingFactory(type_id='ietf', number='124')
+        meeting = MeetingFactory(type_id='ietf', number='124', date=timezone.now())
         RegistrationFactory.create_batch(5, meeting=meeting, with_ticket={'attendance_type_id': 'onsite'}, attended=True)
         RegistrationFactory(meeting=meeting, with_ticket={'attendance_type_id': 'onsite'}, attended=False)
         RegistrationFactory.create_batch(4, meeting=meeting, with_ticket={'attendance_type_id': 'remote'}, attended=True)
         RegistrationFactory(meeting=meeting, with_ticket={'attendance_type_id': 'remote'}, attended=False)
-        r = self.client.get(urlreverse("ietf.stats.views.meeting_stats", kwargs={'meeting_number': '124','stats_type': 'affiliation'}))
+        r = self.client.get(urlreverse(ietf.stats.views.meeting_stats, kwargs={"meeting_number": "124", "stats_type": "affiliation"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Total Registrations by Affiliation (11 in total)")
         self.assertContains(r, "In Person Registrations by Affiliation (6 in total)")
-        r = self.client.get(urlreverse("ietf.stats.views.meeting_stats", kwargs={'meeting_number': '124','stats_type': 'country'}))
+        r = self.client.get(urlreverse(ietf.stats.views.meeting_stats, kwargs={"meeting_number": "124", "stats_type": "country"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Total Registrations by Country (11 in total)")
         self.assertContains(r, "In Person Registrations by Country (6 in total)")
