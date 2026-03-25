@@ -54,6 +54,7 @@
             <canvas id="totalRegistrationChart" aria-label="Total Registration Timeline" role="img"></canvas>
         </div>
         </div><!-- col -->
+        {% if stats_type != 'total' %}
         <div class="col-md-12">
         {% if stats_type == 'total' %}
             <h2>Total In Person Registrations</h2>
@@ -64,12 +65,18 @@
             <canvas id="inPersonRegistrationChart" aria-label="In Person Registration Timeline" role="img"></canvas>
         </div>
         </div><!-- col -->
+        {% endif %}
     </div><!-- row -->
 
     <script>
     // ── Safely parse JSON data injected from Django view ──
     const totalChartData = JSON.parse('{{ total_chart_data|escapejs }}');
     const inPersonChartData = JSON.parse('{{ in_person_chart_data|escapejs }}');
+    {% if stats_type == 'total' %}
+    const stackedLines = true ;
+    {% else %}
+    const stackedLines = false ;
+    {% endif %}
 
     function displayChart(id, data) {
         const ctx = document.getElementById(id).getContext('2d');
@@ -78,6 +85,17 @@
             data: data,
             options: {
                 responsive: true,
+                scales: {
+                    y: {
+                        stacked: stackedLines,
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'IETF Meeting Number',
+                        },
+                    },
+                },
                 plugins: {
                     legend: {
                         position: 'bottom',
@@ -106,6 +124,7 @@
     }
 
     displayChart('totalRegistrationChart', totalChartData) ;
-    displayChart('inPersonRegistrationChart', inPersonChartData) ;
+    if (inPersonChartData != null) 
+        displayChart('inPersonRegistrationChart', inPersonChartData) ;
 </script>
 {% endblock %}
