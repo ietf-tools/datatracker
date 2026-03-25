@@ -245,7 +245,7 @@ def get_country_data_for_meetings(top_n, attendance_type=None):
     return sorted_meetings, datasets
 
 def get_data_for_meetings():
-    # Get registration status counts, aggregated by country_code
+    # Get registration status counts, aggregated by ticket types
     registrations = Registration.objects.filter(tickets__attendance_type__in=['onsite', 'remote'])
     queryset = (
         registrations
