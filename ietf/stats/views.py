@@ -6,7 +6,6 @@ import calendar
 import datetime
 import itertools
 import json
-from coverage import annotate
 import dateutil.relativedelta
 from collections import defaultdict
 
