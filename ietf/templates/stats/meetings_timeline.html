@@ -67,9 +67,6 @@
     </div><!-- row -->
 
     <script>
-    // Need to use autocolors plug-in else all slices are gray...
-    const autocolors = window['chartjs-plugin-autocolors'];
-    Chart.register(autocolors);
     // ── Safely parse JSON data injected from Django view ──
     const totalChartData = JSON.parse('{{ total_chart_data|escapejs }}');
     const inPersonChartData = JSON.parse('{{ in_person_chart_data|escapejs }}');
@@ -82,9 +79,6 @@
             options: {
                 responsive: true,
                 plugins: {
-                    autocolors: {
-                        mode: 'data' // Required for Pie charts to color individual slices
-                    },
                     legend: {
                         position: 'bottom',
                         labels: {
