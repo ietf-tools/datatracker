@@ -4,6 +4,7 @@
 
 import calendar
 import json
+import datetime
 
 from pyquery import PyQuery
 
@@ -38,19 +39,39 @@ class StatisticsTests(TestCase):
         self.assertRedirects(r, urlreverse(ietf.stats.views.stats_index))
 
     def test_meeting_stats(self):
-        meeting = MeetingFactory(type_id='ietf', number='124', date=timezone.now())
-        RegistrationFactory.create_batch(5, meeting=meeting, with_ticket={'attendance_type_id': 'onsite'}, attended=True)
-        RegistrationFactory(meeting=meeting, with_ticket={'attendance_type_id': 'onsite'}, attended=False)
-        RegistrationFactory.create_batch(4, meeting=meeting, with_ticket={'attendance_type_id': 'remote'}, attended=True)
-        RegistrationFactory(meeting=meeting, with_ticket={'attendance_type_id': 'remote'}, attended=False)
+        meeting124 = MeetingFactory(type_id='ietf', number='124', date=timezone.now())
+        meeting125 = MeetingFactory(type_id='ietf', number='125', date=timezone.now() + datetime.timedelta(days=120))
+        RegistrationFactory.create_batch(15, meeting=meeting124, with_ticket={'attendance_type_id': 'onsite'}, attended=True)
+        RegistrationFactory(meeting=meeting124, with_ticket={'attendance_type_id': 'onsite'}, attended=False)
+        RegistrationFactory.create_batch(14, meeting=meeting124, with_ticket={'attendance_type_id': 'remote'}, attended=True)
+        RegistrationFactory(meeting=meeting124, with_ticket={'attendance_type_id': 'remote'}, attended=False)
+        RegistrationFactory.create_batch(15, meeting=meeting125, with_ticket={'attendance_type_id': 'onsite'}, attended=False)
+        RegistrationFactory.create_batch(25, meeting=meeting125, with_ticket={'attendance_type_id': 'onsite'}, attended=False)
+        # Test the meeting specific statitistics per affiliation and per country
         r = self.client.get(urlreverse(ietf.stats.views.meeting_stats, kwargs={"meeting_number": "124", "stats_type": "affiliation"}))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Total Registrations by Affiliation (11 in total)")
-        self.assertContains(r, "In Person Registrations by Affiliation (6 in total)")
+        self.assertContains(r, "Total Registrations by Affiliation (31 in total)")
+        self.assertContains(r, "In Person Registrations by Affiliation (16 in total)")
+        self.assertContains(r, "/stats/meeting/124/affiliation")
+        self.assertContains(r, "/stats/meeting/125/affiliation")
         r = self.client.get(urlreverse(ietf.stats.views.meeting_stats, kwargs={"meeting_number": "124", "stats_type": "country"}))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Total Registrations by Country (11 in total)")
-        self.assertContains(r, "In Person Registrations by Country (6 in total)")
+        self.assertContains(r, "Total Registrations by Country (31 in total)")
+        self.assertContains(r, "In Person Registrations by Country (16 in total)")
+        self.assertContains(r, "/stats/meeting/124/country")
+        self.assertContains(r, "/stats/meeting/125/country")
+        # Test the meetings timeline per country
+        r = self.client.get(urlreverse(ietf.stats.views.meetings_timeline, kwargs={"stats_type": "country"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "/stats/meeting/124/country")
+        self.assertContains(r, "/stats/meeting/125/country")
+        self.assertContains(r, "This page provides a timeline of meeting registrations by country")
+        # Test the meetings timeline (globally)
+        r = self.client.get(urlreverse(ietf.stats.views.meetings_timeline, kwargs={"stats_type": "total"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "/stats/meeting/124/country")
+        self.assertContains(r, "/stats/meeting/125/country")
+        self.assertContains(r, "This page provides a timeline of meeting registrations.")
                 
     def test_known_country_list(self):
         # check redirect
