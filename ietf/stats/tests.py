@@ -7,7 +7,6 @@ import json
 import datetime
 from xml.sax.saxutils import unescape
 
-from botocore import response
 from pyquery import PyQuery
 
 import debug    # pyflakes:ignore
