@@ -5,7 +5,6 @@
 import calendar
 import json
 import datetime
-from xml.sax.saxutils import unescape
 
 from pyquery import PyQuery
 
