@@ -5,7 +5,9 @@
 import calendar
 import json
 import datetime
+from xml.sax.saxutils import unescape
 
+from botocore import response
 from pyquery import PyQuery
 
 import debug    # pyflakes:ignore
@@ -45,8 +47,8 @@ class StatisticsTests(TestCase):
         RegistrationFactory(meeting=meeting124, with_ticket={'attendance_type_id': 'onsite'}, attended=False)
         RegistrationFactory.create_batch(14, meeting=meeting124, with_ticket={'attendance_type_id': 'remote'}, attended=True)
         RegistrationFactory(meeting=meeting124, with_ticket={'attendance_type_id': 'remote'}, attended=False)
-        RegistrationFactory.create_batch(15, meeting=meeting125, with_ticket={'attendance_type_id': 'onsite'}, attended=False)
-        RegistrationFactory.create_batch(25, meeting=meeting125, with_ticket={'attendance_type_id': 'onsite'}, attended=False)
+        RegistrationFactory.create_batch(15, meeting=meeting125, affiliation='Test LLC', with_ticket={'attendance_type_id': 'remote'}, attended=False)
+        RegistrationFactory.create_batch(25, meeting=meeting125, affiliation='Example, Ltd', with_ticket={'attendance_type_id': 'onsite'}, attended=False)
         # Test the meeting specific statitistics per affiliation and per country
         r = self.client.get(urlreverse(ietf.stats.views.meeting_stats, kwargs={"meeting_number": "124", "stats_type": "affiliation"}))
         self.assertEqual(r.status_code, 200)
@@ -66,7 +68,14 @@ class StatisticsTests(TestCase):
         self.assertContains(r, "/stats/meeting/124/country")
         self.assertContains(r, "/stats/meeting/125/country")
         self.assertContains(r, "This page provides a timeline of meeting registrations by country")
-        # Test the meetings timeline (globally)
+        # Test the meetings timeline per affiliation
+        r = self.client.get(urlreverse(ietf.stats.views.meetings_timeline, kwargs={"stats_type": "affiliation"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "/stats/meeting/124/affiliation")
+        self.assertContains(r, "/stats/meeting/125/affiliation")
+        self.assertContains(r, "This page provides a timeline of meeting registrations by affiliation")
+        self.assertContains(r, '\\u0022Example\\u0022, \\u0022data\\u0022: [0, 25]')
+        # Test the global meetings timeline
         r = self.client.get(urlreverse(ietf.stats.views.meetings_timeline, kwargs={"stats_type": "total"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "/stats/meeting/124/country")
