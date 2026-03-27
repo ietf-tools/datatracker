@@ -31,6 +31,13 @@ from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 from ietf.meeting.helpers import get_current_ietf_meeting_num, get_ietf_meeting
 
+# Color palette for lines
+colors = [
+    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+    '#FF9F40', '#C9CBCF', '#7BC043', '#F37735', '#00ABA9',
+    '#2B5797', '#E81123', '#00A4EF', '#7FBA00', '#FFB900',
+    '#D83B01', '#B4009E', '#5C2D91', '#008575', '#E3008C',
+]
 
 def stats_index(request):
     """Render the statistics index page with the current meeting number as it is required by the meeting menu item."""
@@ -105,66 +112,11 @@ def add_url_to_choices(choices, url_builder):
     """
     return [ (slug, label, url_builder(slug)) for slug, label in choices]
 
-def put_into_bin(value, bin_size):
-    if value is None:
-        return (0, '')
-
-    v = (value // bin_size) * bin_size
-    return (v, "{} - {}".format(v, v + bin_size - 1))
-
-def prune_unknown_bin_with_known(bins):
-    # remove from the unknown bin all authors within the
-    # named/known bins
-    all_known = { n for b, names in bins.items() if b for n in names }
-    bins[""] = [name for name in bins[""] if name not in all_known]
-    if not bins[""]:
-        del bins[""]
-
-def count_bins(bins):
-    """Count the total number of unique names across all non-empty bins.
-
-    Returns:
-        The count of unique names.
-    """
-    return len({ n for b, names in bins.items() if b for n in names })
-
-def add_labeled_top_series_from_bins(chart_data, bins, limit):
-    """Add top series data to chart_data from bins.
-
-    Take bins on the form (x, label): [name1, name2, ...], figure out
-    how many there are per label, take the overall top ones and put
-    them into sorted series like [(x1, len(names1)), (x2, len(names2)), ...].
-
-    Args:
-        chart_data: List to append series data to.
-        bins: Dictionary with keys (x, label) and values as lists of names.
-        limit: Maximum number of top labels to include.
-    """
-    aggregated_bins = defaultdict(set)
-    xs = set()
-    for (x, label), names in bins.items():
-        xs.add(x)
-        aggregated_bins[label].update(names)
-
-    xs = list(sorted(xs))
-
-    sorted_bins = sorted(aggregated_bins.items(), key=lambda t: len(t[1]), reverse=True)
-    top = [ label for label, names in list(sorted_bins)[:limit]]
-
-    for label in top:
-        series_data = []
-
-        for x in xs:
-            names = bins.get((x, label), set())
-
-            series_data.append((x, len(names)))
-
-        chart_data.append({
-            "data": series_data,
-            "name": label
-        })
-
 def document_stats(request, stats_type=None):
+    # timeline per year, or per specific year: streams, affiliation, rfc vs I-D
+    # could also be time between individual/WG I-D to rfc publication/IESG ballot
+    # DISCUSS resolution time
+    # Humm also split by authors (affiliation) / documents (the rest) probably
     """Redirect to the stats index page. Deprecated view."""
     return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
@@ -251,13 +203,6 @@ def get_affiliation_data_for_meetings(top_n, attendance_type=None):
             other_totals[m] += int(data_map[c].get(m, 0))
 
     # ── Step 4: Build Chart.js datasets ──
-    # Color palette for lines
-    colors = [
-        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
-        '#FF9F40', '#C9CBCF', '#7BC043', '#F37735', '#00ABA9',
-        '#2B5797', '#E81123', '#00A4EF', '#7FBA00', '#FFB900',
-        '#D83B01', '#B4009E', '#5C2D91', '#008575', '#E3008C',
-    ]
 
     datasets = []
     for idx, org in enumerate(top_orgs):
@@ -349,13 +294,6 @@ def get_country_data_for_meetings(top_n, attendance_type=None):
             other_totals[m] += int(data_map[c].get(m, 0))
 
     # ── Step 4: Build Chart.js datasets ──
-    # Color palette for lines
-    colors = [
-        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
-        '#FF9F40', '#C9CBCF', '#7BC043', '#F37735', '#00ABA9',
-        '#2B5797', '#E81123', '#00A4EF', '#7FBA00', '#FFB900',
-        '#D83B01', '#B4009E', '#5C2D91', '#008575', '#E3008C',
-    ]
 
     datasets = []
     for idx, country in enumerate(top_countries):
@@ -513,7 +451,6 @@ def meetings_timeline(request, stats_type='country', top_n=10):
         "in_person_chart_data": in_person_chart_data,
     })
 
-
 def get_affiliation_data_for_meeting(meeting_number, minimum_required, attendance_type=None):
     """Get affiliation participation data for a specific meeting.
 
@@ -525,7 +462,7 @@ def get_affiliation_data_for_meeting(meeting_number, minimum_required, attendanc
     Returns:
         Tuple of (labels, data, total) for chart display.
     """
-     # Get registration status details
+    # Get registration status details
     registrations = Registration.objects.filter(meeting__number=meeting_number)
     if attendance_type:
         registrations = registrations.filter(tickets__attendance_type=attendance_type)
@@ -620,7 +557,6 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
         in_person_labels, in_person_data, in_person_total = get_data_for_meeting(meeting_number, minimum_required, attendance_type='onsite')
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
-
 
     # Serialize to JSON for safe injection into the template
     total_chart_data = json.dumps({

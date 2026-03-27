@@ -5,7 +5,8 @@
 {% block pagehead %}
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-autocolors"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
 {% endblock %}
 {% block content %}
     {% origin %}
@@ -42,6 +43,8 @@
     {% else %}
         This page provides a timeline of meeting registrations by {{ stats_type }} with a limit of {{ top_n }} categories.
     {% endif %}
+        Panning can be done via the mouse or with a finger. Zooming is done via the mouse wheel or via a pinch gesture. Press <kbd>ESC</kbd> 
+            or click <button class="btn btn-primary" id="resetButton">Reset</button> to reset panning/zooming.
     </p>
     <div class="row">
         <div class="col-md-12">
@@ -80,7 +83,7 @@
 
     function displayChart(id, data) {
         const ctx = document.getElementById(id).getContext('2d');
-        new Chart(ctx, {
+        return new Chart(ctx, {
             type: 'line',   // Change to 'doughnut' for a donut chart
             data: data,
             options: {
@@ -118,13 +121,40 @@
                             }
                         }
                     },
+                    zoom: {
+                        zoom: {
+                            wheel: { enabled: true },      // scroll to zoom
+                            pinch: { enabled: true },      // pinch on mobile
+                            drag: { enabled: true },       // drag to select range
+                            mode: 'xy',                     // zoom X-axis and Y-axis
+                        },
+                        pan: {
+                            enabled: true,
+                            mode: 'xy',                     // pan X-axis and Y-axis
+                        },
+                    },
                 }
             }
         });
     }
 
-    displayChart('totalRegistrationChart', totalChartData) ;
-    if (inPersonChartData != null) 
-        displayChart('inPersonRegistrationChart', inPersonChartData) ;
+    const totalChart = displayChart('totalRegistrationChart', totalChartData) ;
+    if (inPersonChartData != null) { 
+        inPersonChart = displayChart('inPersonRegistrationChart', inPersonChartData) ;
+    }
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            totalChart.resetZoom();
+            if (inPersonChart != null) {
+                inPersonChart.resetZoom();
+            }
+        }
+    });
+    document.getElementById('resetButton').addEventListener('click', () => {
+        totalChart.resetZoom();
+        if (inPersonChart != null) {
+            inPersonChart.resetZoom();
+        }
+     });
 </script>
 {% endblock %}
