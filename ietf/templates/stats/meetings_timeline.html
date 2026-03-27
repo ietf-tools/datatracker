@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% load origin %}
+{% origin %}
+{% load ietf_filters static django_bootstrap5 %}
+{% block pagehead %}
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        {% block title %}
+            Statistics for IETF Meeting Registrations
+        {% endblock %}
+    </h1>
+    <div class="row my-3">
+        <label class="fw-bold col-sm-1 col-form-label">Show:</label>
+        <div class="btn-group col-sm-4">
+            {% for slug, label, url in possible_stats_types %}
+                <a class="btn btn-outline-primary
+                            {% if slug == stats_type %}
+                                active
+                            {% endif %}"
+                    href="{{ url }}">{{ label }}</a>
+            {% endfor %}
+        </div>
+        <label class="fw-bold col-sm-1 col-form-label">Meeting:</label>
+        <div class="btn-group col-sm-2">
+            {% for num, url in possible_meeting_numbers %}
+                <a class="btn btn-outline-primary
+                            {% if num == meeting_number %}
+                                active
+                            {% endif %}"
+                    href="{{ url }}">{{ num }}</a>
+            {% endfor %}
+        </div>
+    </div>
+    <p>
+    {% if stats_type == 'total' %}
+        This page provides a timeline of meeting registrations.
+    {% else %}
+        This page provides a timeline of meeting registrations by {{ stats_type }} with a limit of {{ top_n }} categories.
+    {% endif %}
+        Panning can be done via the mouse or with a finger. Zooming is done via the mouse wheel or via a pinch gesture. Press <kbd>ESC</kbd> 
+            or click <button type="button" class="btn btn-primary" id="resetButton">Reset</button> to reset panning/zooming.
+    </p>
+    <div class="row">
+        <div class="col-md-12">
+        {% if stats_type == 'total' %}
+            <h2>Total Registrations</h2>
+        {% else %}
+            <h2>Total Registrations by {{ stats_type|title }}</h2>
+        {% endif %}
+        <div class="chart-wrapper col-10">
+            <canvas id="totalRegistrationChart" aria-label="Total Registration Timeline" role="img"></canvas>
+        </div>
+        </div><!-- col -->
+        {% if stats_type != 'total' %}
+        <div class="col-md-12">
+        {% if stats_type == 'total' %}
+            <h2>Total In Person Registrations</h2>
+        {% else %}
+            <h2>In Person Registrations by {{ stats_type|title }}</h2>
+        {% endif %}
+        <div class="chart-wrapper col-10">
+            <canvas id="inPersonRegistrationChart" aria-label="In Person Registration Timeline" role="img"></canvas>
+        </div>
+        </div><!-- col -->
+        {% endif %}
+    </div><!-- row -->
+
+    <script>
+    // ── Safely parse JSON data injected from Django view ──
+    const totalChartData = JSON.parse('{{ total_chart_data|escapejs }}');
+    const inPersonChartData = JSON.parse('{{ in_person_chart_data|escapejs }}');
+    {% if stats_type == 'total' %}
+    const stackedLines = true ;
+    {% else %}
+    const stackedLines = false ;
+    {% endif %}
+
+    function displayChart(id, data) {
+        const ctx = document.getElementById(id).getContext('2d');
+        return new Chart(ctx, {
+            type: 'line',   // Change to 'doughnut' for a donut chart
+            data: data,
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        stacked: stackedLines,
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'IETF Meeting Number',
+                        },
+                    },
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            font: { size: 12 },
+                        },
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleFont: { size: 14 },
+                        bodyFont: { size: 13 },
+                        callbacks: {
+                            title: function(items) {
+                                return `IETF Meeting ${items[0].label}`;
+                            },
+                            label: function(context) {
+                                return ` ${context.dataset.label}: ${context.parsed.y} participants`;
+                            }
+                        }
+                    },
+                    zoom: {
+                        zoom: {
+                            wheel: { enabled: true },      // scroll to zoom
+                            pinch: { enabled: true },      // pinch on mobile
+                            drag: { enabled: true },       // drag to select range
+                            mode: 'xy',                     // zoom X-axis and Y-axis
+                        },
+                        pan: {
+                            enabled: true,
+                            mode: 'xy',                     // pan X-axis and Y-axis
+                        },
+                    },
+                }
+            }
+        });
+    }
+
+    const totalChart = displayChart('totalRegistrationChart', totalChartData) ;
+    if (inPersonChartData != null) { 
+        inPersonChart = displayChart('inPersonRegistrationChart', inPersonChartData) ;
+    }
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            totalChart.resetZoom();
+            if (inPersonChart != null) {
+                inPersonChart.resetZoom();
+            }
+        }
+    });
+    document.getElementById('resetButton').addEventListener('click', () => {
+        totalChart.resetZoom();
+        if (inPersonChart != null) {
+            inPersonChart.resetZoom();
+        }
+     });
+</script>
+{% endblock %}
