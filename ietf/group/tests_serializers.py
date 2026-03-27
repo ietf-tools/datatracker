@@ -31,7 +31,7 @@ class AreaDirectorSerializerTests(TestCase):
         serialized = AreaDirectorSerializer(role).data
         self.assertEqual(
             serialized,
-            {"email": role.email.email_address()},
+            {"email": role.email.email_address(), "name": role.person.plain_name()},
         )
 
     def test_serializes_email(self):
@@ -40,7 +40,10 @@ class AreaDirectorSerializerTests(TestCase):
         serialized = AreaDirectorSerializer(email).data
         self.assertEqual(
             serialized,
-            {"email": email.email_address()},
+            {
+                "email": email.email_address(),
+                "name": email.person.plain_name() if email.person else None,
+            },
         )
 
 
@@ -63,7 +66,10 @@ class AreaSerializerTests(TestCase):
         self.assertEqual(serialized["name"], area.name)
         self.assertCountEqual(
             serialized["ads"],
-            [{"email": ad.email.email_address()} for ad in ad_roles],
+            [
+                {"email": ad.email.email_address(), "name": ad.person.plain_name()}
+                for ad in ad_roles
+            ],
         )
 
     def test_serializes_inactive_area(self):
