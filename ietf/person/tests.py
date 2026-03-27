@@ -114,6 +114,31 @@ class PersonTests(TestCase):
         r = self.client.get(url)
         self.assertContains(r, person.name, status_code=200)
 
+    def test_person_profile_by_uuid(self):
+        person_a = PersonFactory(name="A Fine Person")
+        uuid_a = person_a.uuids.first()
+        url_a = urlreverse("ietf.person.views.profile_by_uuid", kwargs={"uuid": uuid_a.uuid})
+
+        person_b = PersonFactory(name="Brilliant Person")
+        uuid_b = person_b.uuids.first()
+        url_b = urlreverse("ietf.person.views.profile_by_uuid", kwargs={"uuid": uuid_b.uuid})
+
+        r = self.client.get(url_a)
+        self.assertContains(r, person_a.name)
+        self.assertNotContains(r, person_b.name)
+
+        r = self.client.get(url_b)
+        self.assertNotContains(r, person_a.name)
+        self.assertContains(r, person_b.name)
+
+        # move the UUID from b to a...
+        uuid_b.person = person_a
+        uuid_b.save()
+        # ... and see that the view returns the other person's values
+        r = self.client.get(url_a)
+        self.assertContains(r, person_a.name)
+        self.assertNotContains(r, person_b.name)
+
     def test_case_insensitive(self):
         # Case insensitive seach
         person = PersonFactory(name="Test Person")
@@ -392,9 +417,12 @@ class PersonUtilsTests(TestCase):
         request = HttpRequest()
         request.user = user
         source = PersonFactory()
+        source.uuids.create()  # give them an extra
         target = PersonFactory()
         mars = RoleFactory(name_id='chair',group__acronym='mars').group
         source_id = source.pk
+        source_uuids = set(source.uuids.values_list("uuid", flat=True))
+        target_uuids = set(target.uuids.values_list("uuid", flat=True))
         source_email = source.email_set.first()
         source_alias = source.alias_set.first()
         source_user = source.user
@@ -413,6 +441,10 @@ class PersonUtilsTests(TestCase):
         self.assertIn(nomination, target.nomination_set.all())
         self.assertFalse(Person.objects.filter(id=source_id))
         self.assertFalse(source_user.is_active)
+        self.assertEqual(
+            set(target.uuids.values_list("uuid", flat=True)),
+            source_uuids | target_uuids,
+        )
 
     def test_merge_persons_reviewer_settings(self):
         secretariat_role = RoleFactory(group__acronym='secretariat', name_id='secr')
