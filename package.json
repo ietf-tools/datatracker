@@ -147,6 +147,7 @@
         "ietf/static/js/manage-review-requests.js",
         "ietf/static/js/meeting-interim-request.js",
         "ietf/static/js/moment.js",
+        "ietf/static/js/navbar-doc-search.js",
         "ietf/static/js/password_strength.js",
         "ietf/static/js/select2.js",
         "ietf/static/js/session_details.js",

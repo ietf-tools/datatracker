@@ -67,13 +67,17 @@
                         </a>
                     {% endif %}
 
-                    <label class="d-none d-md-block" aria-label="Document search">
-                    <input class="form-control select2-field search-select"
-                           id="navbar-doc-search"
-                           data-select2-ajax-url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='document' doc_type='all' %}"
-                           type="text"
-                           data-placeholder="Document search">
-                   </label>
+                    <div class="d-none d-md-block dropdown" id="navbar-doc-search-wrapper">
+                        <input class="form-control"
+                               id="navbar-doc-search"
+                               type="text"
+                               placeholder="Document search"
+                               autocomplete="off"
+                               data-ajax-url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='document' doc_type='all' %}"
+                               aria-label="Document search">
+                        <ul class="dropdown-menu" id="navbar-doc-search-results">
+                        </ul>
+                    </div>
                 </div>
                 <button class="navbar-toggler"
                         type="button"
@@ -164,11 +168,7 @@
         {% block js %}
         {% endblock %}
         <script src="{% static 'ietf/js/select2.js' %}"></script>
-        <script>
-            $('#navbar-doc-search').on('select2:select', function (e) {
-                window.location.href = e.params.data.url;
-            });
-        </script>
+        <script src="{% static 'ietf/js/navbar-doc-search.js' %}"></script>
       {% analytical_body_bottom %}
     </body>
 </html>

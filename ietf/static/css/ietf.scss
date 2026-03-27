@@ -1216,3 +1216,20 @@ iframe.status {
 .overflow-shadows--bottom-only {
     box-shadow: inset 0px -21px 18px -20px var(--bs-body-color);
 }
+
+#navbar-doc-search-wrapper {
+    position: relative;
+}
+
+#navbar-doc-search-results {
+    max-height: 400px;
+    overflow-y: auto;
+    min-width: auto;
+    left: 0;
+    right: 0;
+
+    .dropdown-item {
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
+}
