@@ -24,6 +24,8 @@ from ietf.name.models import StdLevelName
 from ietf.utils.log import log
 
 FORMATS_FOR_INDEX = ["txt", "html", "pdf", "xml", "ps"]
+BCP_TXT_MARGIN = 3
+BCP_TXT_CUE_COL_WIDTH = 14
 
 
 def format_rfc_number(n):
@@ -267,6 +269,86 @@ def get_rfc_text_index_entries():
     return entries
 
 
+def bcp_text_line(line, first=False):
+    """Return BCP text entry line"""
+    indent = " " * BCP_TXT_CUE_COL_WIDTH
+    if first:
+        initial_indent = " " * BCP_TXT_MARGIN
+    else:
+        initial_indent = indent
+    return fill(
+        line,
+        initial_indent=initial_indent,
+        subsequent_indent=indent,
+        width=80,
+        break_on_hyphens=False,
+    )
+
+
+def get_bcp_text_index_entries():
+    """Returns BCP entries for bcp-index.txt"""
+    entries = []
+
+    highest_bcp_number = (
+        Document.objects.filter(type_id="bcp")
+        .annotate(
+            number=Cast(
+                Substr("name", 4, None),
+                output_field=models.IntegerField(),
+            )
+        )
+        .order_by("-number")
+        .first()
+        .number
+    )
+
+    for bcp_number in range(1, highest_bcp_number):
+        bcp_name = f"BCP{bcp_number}"
+        bcp = Document.objects.filter(type_id="bcp", name=f"{bcp_name.lower()}").first()
+
+        if bcp:
+            entry = bcp_text_line(
+                (
+                    f"[{bcp_name}]"
+                    f"{' ' * (BCP_TXT_CUE_COL_WIDTH - len(bcp_name) - 2 - BCP_TXT_MARGIN)}"
+                    f"Best Current Practice {bcp_number},"
+                ),
+                first=True,
+            )
+            entry += "\n"
+            entry += bcp_text_line(
+                f"<{settings.RFC_EDITOR_INFO_BASE_URL}{bcp_name.lower()}>."
+            )
+            entry += "\n"
+            entry += bcp_text_line(
+                "At the time of writing, this BCP comprises the following:"
+            )
+            entry += "\n\n"
+            for rfc in bcp.contains():
+                authors = ", ".join(
+                    author.format_for_titlepage() for author in rfc.rfcauthor_set.all()
+                )
+                entry += bcp_text_line(
+                    (
+                        f'"{authors}{rfc.title}", BCP¶{bcp_number}, RFC¶{rfc.rfc_number}, '
+                        f"DOI¶{rfc.doi}, {rfc.pub_date().strftime('%B %Y')}, "
+                        f"<{settings.RFC_EDITOR_INFO_BASE_URL}rfc{rfc.rfc_number}>."
+                    )
+                ).replace("¶", " ")
+                entry += "\n\n"
+        else:
+            entry = bcp_text_line(
+                (
+                    f"[{bcp_name}]"
+                    f"{' ' * (BCP_TXT_CUE_COL_WIDTH - len(bcp_name) - 2 - BCP_TXT_MARGIN)}"
+                    f"Best Current Practice {bcp_number} currently contains no RFCs"
+                ),
+                first=True,
+            )
+        entries.append(entry)
+    return entries
+
+
 def add_subseries_xml_index_entries(rfc_index, ss_type, include_all=False):
     """Add subseries entries for rfc-index.xml"""
     # subseries docs annotated with numeric number
@@ -481,3 +563,18 @@ def create_rfc_xml_index():
         pretty_print=4,
     )
     save_to_red_bucket("rfc-index.xml", pretty_index)
+
+
+def create_bcp_txt_index():
+    """Create text index of BCPs"""
+    DATE_FMT = "%m/%d/%Y"
+    created_on = timezone.now().strftime(DATE_FMT)
+    log("Creating bcp-index.txt")
+    index = render_to_string(
+        "sync/bcp-index.txt",
+        {
+            "created_on": created_on,
+            "bcps": get_bcp_text_index_entries(),
+        },
+    )
+    save_to_red_bucket("bcp-index.txt", index)
