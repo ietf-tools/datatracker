@@ -24,10 +24,13 @@ def init_blobstore():
         ),
     )
     for bucketname in ARTIFACT_STORAGE_NAMES:
+        adjusted_bucket_name = (
+            os.environ.get("BLOB_STORE_BUCKET_PREFIX", "")
+            + bucketname
+            + os.environ.get("BLOB_STORE_BUCKET_SUFFIX", "")
+        ).strip()
         try:
-            blobstore.create_bucket(
-                Bucket=f"{os.environ.get('BLOB_STORE_BUCKET_PREFIX', '')}{bucketname}".strip()
-            )
+            blobstore.create_bucket(Bucket=adjusted_bucket_name)
         except botocore.exceptions.ClientError as err:
             if err.response["Error"]["Code"] == "BucketAlreadyExists":
                 print(f"Bucket {bucketname} already exists")

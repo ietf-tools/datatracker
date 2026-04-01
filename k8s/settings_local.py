@@ -19,7 +19,7 @@ import botocore.config
 
 def _multiline_to_list(s):
     """Helper to split at newlines and conver to list"""
-    return [item.strip() for item in s.split("\n")]
+    return [item.adjusted_bucket_name() for item in s.split("\n")]
 
 
 # Default to "development". Production _must_ set DATATRACKER_SERVER_MODE="production" in the env!
@@ -387,6 +387,7 @@ if None in (_blob_store_endpoint_url, _blob_store_access_key, _blob_store_secret
         "and DATATRACKER_BLOB_STORE_SECRET_KEY must be set"
     )
 _blob_store_bucket_prefix = os.environ.get("DATATRACKER_BLOB_STORE_BUCKET_PREFIX", "")
+_blob_store_bucket_suffix = os.environ.get("DATATRACKER_BLOB_STORE_BUCKET_SUFFIX", "")
 _blob_store_enable_profiling = (
     os.environ.get("DATATRACKER_BLOB_STORE_ENABLE_PROFILING", "false").lower() == "true"
 )
@@ -406,6 +407,9 @@ for storagename in ARTIFACT_STORAGE_NAMES:
     if storagename in ["staging"]:
         continue
     replica_storagename = f"r2-{storagename}"
+    adjusted_bucket_name = (
+        _blob_store_bucket_prefix + storagename + _blob_store_bucket_suffix
+    ).strip()
     STORAGES[replica_storagename] = {
         "BACKEND": "ietf.doc.storage.MetadataS3Storage",
         "OPTIONS": dict(
@@ -422,7 +426,7 @@ for storagename in ARTIFACT_STORAGE_NAMES:
                 retries={"total_max_attempts": _blob_store_max_attempts},
             ),
             verify=False,
-            bucket_name=f"{_blob_store_bucket_prefix}{storagename}".strip(),
+            bucket_name=adjusted_bucket_name,
             ietf_log_blob_timing=_blob_store_enable_profiling,
         ),
     }
