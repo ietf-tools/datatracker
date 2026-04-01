@@ -18,8 +18,8 @@ import botocore.config
 
 
 def _multiline_to_list(s):
-    """Helper to split at newlines and conver to list"""
-    return [item.adjusted_bucket_name() for item in s.split("\n")]
+    """Helper to split at newlines and convert to list"""
+    return [item.strip() for item in s.split("\n")]
 
 
 # Default to "development". Production _must_ set DATATRACKER_SERVER_MODE="production" in the env!
