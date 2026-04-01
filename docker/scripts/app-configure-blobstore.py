@@ -39,5 +39,6 @@ def init_blobstore():
         else:
             print(f"Bucket {bucketname} created")
 
+
 if __name__ == "__main__":
     sys.exit(init_blobstore())
