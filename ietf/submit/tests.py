@@ -225,8 +225,6 @@ class ManualSubmissionTests(TestCase):
             self.assertEqual(expected_url, selected_elts.attr("href"))
             self.assertIn(submission.name, selected_elts.text())
 
-    def test_manualpost_cancel(self):
-        pass  # 
 
 class SubmitTests(BaseSubmitTestCase):
     def setUp(self):
