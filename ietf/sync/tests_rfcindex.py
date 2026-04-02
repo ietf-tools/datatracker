@@ -7,7 +7,11 @@ from django.core.files.storage import storages
 from django.test.utils import override_settings
 from lxml import etree
 
-from ietf.doc.factories import PublishedRfcDocEventFactory, IndividualRfcFactory
+from ietf.doc.factories import (
+    BcpFactory,
+    IndividualRfcFactory,
+    PublishedRfcDocEventFactory,
+)
 from ietf.name.models import DocTagName
 from ietf.sync.rfcindex import (
     create_bcp_txt_index,
@@ -70,6 +74,9 @@ class RfcIndexTests(TestCase):
             doc__std_level_id="std",
         ).doc
         self.rfc.tags.add(DocTagName.objects.get(slug="errata"))
+
+        # Create a BCP with non-April Fools RFC
+        self.bcp = BcpFactory(contains=[self.rfc], name="bcp11")
 
         # Set up a publication-std-levels.json file to indicate the publication
         # standard of self.rfc as different from its current value
@@ -139,7 +146,7 @@ class RfcIndexTests(TestCase):
 
         children = list(index)  # elements as list
         # Should be one rfc-not-issued-entry
-        self.assertEqual(len(children), 3)
+        self.assertEqual(len(children), 14)
         self.assertEqual(
             [
                 c.find(f"{ns}doc-id").text
@@ -194,12 +201,24 @@ class RfcIndexTests(TestCase):
         self.assertEqual(mock_save.call_args[0][0], "bcp-index.txt")
         contents = mock_save.call_args[0][1]
         self.assertTrue(isinstance(contents, str))
-        self.assertIn(
-            "Best Current Practice 1 currently contains no RFCs",
-            contents,
-        )
+        # starts from 1
         self.assertIn(
             "[BCP1]",
+            contents,
+        )
+        # fill up to 11
+        self.assertIn(
+            "[BCP10]",
+            contents,
+        )
+        # but not to 12
+        self.assertNotIn(
+            "[BCP12]",
+            contents,
+        )
+        # Test empty BCPs
+        self.assertIn(
+            "Best Current Practice 9 currently contains no RFCs",
             contents,
         )
         # No zero prefix!
@@ -207,7 +226,19 @@ class RfcIndexTests(TestCase):
             "[BCP0001]",
             contents,
         )
-        # TODO: Add a BCP to non April 1st RFC in setUp
+        # Has BCP11 with a RFC
+        self.assertIn(
+            "Best Current Practice 11,",
+            contents,
+        )
+        self.assertIn(
+            f'"{self.rfc.title}"',
+            contents,
+        )
+        self.assertIn(
+            f'"BCP 11, RFC {self.rfc.rfc_number},"',
+            contents,
+        )
 
 
 class HelperTests(TestCase):
