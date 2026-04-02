@@ -10,13 +10,15 @@ from lxml import etree
 from ietf.doc.factories import PublishedRfcDocEventFactory, IndividualRfcFactory
 from ietf.name.models import DocTagName
 from ietf.sync.rfcindex import (
+    create_bcp_txt_index,
     create_rfc_txt_index,
     create_rfc_xml_index,
     format_rfc_number,
-    save_to_red_bucket,
-    get_unusable_rfc_numbers,
     get_april1_rfc_numbers,
     get_publication_std_levels,
+    get_unusable_rfc_numbers,
+    save_to_red_bucket,
+    subseries_text_line,
 )
 from ietf.utils.test_utils import TestCase
 
@@ -184,6 +186,29 @@ class RfcIndexTests(TestCase):
             [(f"{ns}month", "April"), (f"{ns}year", "2021")],
         )
 
+    @override_settings(RFCINDEX_INPUT_PATH="input/")
+    @mock.patch("ietf.sync.rfcindex.save_to_red_bucket")
+    def test_create_bcp_txt_index(self, mock_save):
+        create_bcp_txt_index()
+        self.assertEqual(mock_save.call_count, 1)
+        self.assertEqual(mock_save.call_args[0][0], "bcp-index.txt")
+        contents = mock_save.call_args[0][1]
+        self.assertTrue(isinstance(contents, str))
+        self.assertIn(
+            "Best Current Practice 1 currently contains no RFCs",
+            contents,
+        )
+        self.assertIn(
+            "[BCP1]",
+            contents,
+        )
+        # No zero prefix!
+        self.assertNotIn(
+            "[BCP0001]",
+            contents,
+        )
+        # TODO: Add a BCP to non April 1st RFC in setUp
+
 
 class HelperTests(TestCase):
     def test_format_rfc_number(self):
@@ -234,3 +259,8 @@ class HelperTests(TestCase):
         with self.assertRaises(json.JSONDecodeError):
             get_publication_std_levels()
         red_bucket.delete("publication-std-levels.json")
+
+    def test_subseries_text_line(self):
+        text = "foobar"
+        self.assertEqual(subseries_text_line(line=text, first=True), f"   {text}")
+        self.assertEqual(subseries_text_line(line=text), f"              {text}")
