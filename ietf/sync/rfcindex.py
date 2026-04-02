@@ -330,7 +330,7 @@ def get_bcp_text_index_entries():
                 )
                 entry += bcp_text_line(
                     (
-                        f'"{authors}{rfc.title}", BCP¶{bcp_number}, RFC¶{rfc.rfc_number}, '
+                        f'{authors}, "{rfc.title}", BCP¶{bcp_number}, RFC¶{rfc.rfc_number}, '
                         f"DOI¶{rfc.doi}, {rfc.pub_date().strftime('%B %Y')}, "
                         f"<{settings.RFC_EDITOR_INFO_BASE_URL}rfc{rfc.rfc_number}>."
                     )
