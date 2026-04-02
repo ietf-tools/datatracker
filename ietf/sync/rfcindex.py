@@ -324,7 +324,8 @@ def get_bcp_text_index_entries():
                 "At the time of writing, this BCP comprises the following:"
             )
             entry += "\n\n"
-            for rfc in bcp.contains():
+            rfcs = sorted(bcp.contains(), key=lambda x: x.rfc_number)
+            for rfc in rfcs:
                 authors = ", ".join(
                     author.format_for_titlepage() for author in rfc.rfcauthor_set.all()
                 )
