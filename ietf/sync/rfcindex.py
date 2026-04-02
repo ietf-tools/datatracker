@@ -302,7 +302,7 @@ def get_bcp_text_index_entries():
         .number
     )
 
-    for bcp_number in range(1, highest_bcp_number):
+    for bcp_number in range(1, highest_bcp_number + 1):
         bcp_name = f"BCP{bcp_number}"
         bcp = Document.objects.filter(type_id="bcp", name=f"{bcp_name.lower()}").first()
 
