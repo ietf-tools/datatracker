@@ -13,42 +13,32 @@ with the status BEST CURRENT PRACTICE.
 
 BCP citations appear in this format:
 
-  #### Title of BCP.  Author 1, Author 2, Author 3.  Issue date.
-       (Format: ASCII) (Obsoletes xxx) (Obsoleted by xxx) (Updates xxx)
-       (Updated by xxx) (Also RFC####)
+   [BCP#]     Best Current Practice #,
+              <BCP URL>.
+              At the time of writing, this BCP comprises the following:
+
+              Author 1, Author 2, "Title of the RFC", BCP #, RFC №,
+              DOI DOI string, Issue date,
+              <RFC URL>.
 
 For example:
 
-  0009 The Internet Standards Process -- Revision 3. S. Bradner. October
-       1996. (Format: TXT=86731 bytes) (Obsoletes RFC1602) (Also RFC2026)
+   [BCP3]     Best Current Practice 3,
+              <https://www.rfc-editor.org/info/bcp3>.
+              At the time of writing, this BCP comprises the following:
+
+              F. Kastenholz, "Variance for The PPP Compression Control Protocol
+              and The PPP Encryption Control Protocol", BCP 3, RFC 1915,
+              DOI 10.17487/RFC1915, February 1996,
+              <https://www.rfc-editor.org/info/rfc1915>.
 
 Key to fields:
 
-#### is the BCP number.  The remainder of the fields are the same as
-those of the corresponding RFC, whose number is given in the final
-(Also RFC####) field.
+# is the BCP number.
 
-Following the BCP number are the title, the author(s), and the
-publication date of the RFC.  Each of these is terminated by a period.
+№ is the RFC number.
 
-The format and length of the RFC follow in parenthesis.  One or more of
-the following alternative formats are listed:  ASCII text (TXT),
-PostScript (PS), and/or Portable Document Format (PDF). Each format is 
-followed by an equals sign and the number of bytes for that version.  
-For example (Format:  TXT=aaaaa, PS=bbbbbb bytes) shows that the ASCII 
-text version is aaaaa bytes, and the PostScript version of the RFC is 
-bbbbbb bytes.
-
-Obsoletes xxxx refers to other RFCs that this one replaces;
-Obsoleted by xxxx refers to RFCs that have replaced this one.
-Updates xxxx refers to other RFCs that this one merely updates (but
-does not replace); Updated by xxxx refers to RFCs that have updated
-(but not replaced) this one.  Generally, only immediately succeeding
-and/or preceding RFCs are indicated, not the entire history of each
-related earlier or later RFC in a related series.
-
-BCPs and other RFCs may be obtained using HTTP, FTP, or email.  See the
-RFC Editor Web page http://www.rfc-editor.org.
+BCPs and other RFCs may be obtained from https://www.rfc-editor.org.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
