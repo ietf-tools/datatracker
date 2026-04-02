@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2023, All Rights Reserved
+# Copyright The IETF Trust 2011-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -207,20 +207,24 @@ class ManualSubmissionTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn(
-            urlreverse(
-                "ietf.submit.views.submission_status", 
-                kwargs=dict(submission_id=submission.pk)
-            ),
-            q("#manual.submissions td a").attr("href")
+        # Validate that the basic submission status URL is on the manual post page
+        # _without_ an access token, even if logged in as various users.
+        expected_url = urlreverse(
+            "ietf.submit.views.submission_status", 
+            kwargs=dict(submission_id=submission.pk)
         )
-        self.assertIn(
-            submission.name,
-            q("#manual.submissions td a").text()
-        )
+        selected_elts = q("#manual.submissions td a")
+        self.assertEqual(expected_url, selected_elts.attr("href"))
+        self.assertIn(submission.name, selected_elts.text())
+        for username in ["plain", "secretary"]:
+            self.client.login(username=username, password=username + "+password")
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            selected_elts = q("#manual.submissions td a")
+            self.assertEqual(expected_url, selected_elts.attr("href"))
+            self.assertIn(submission.name, selected_elts.text())
 
-    def test_manualpost_cancel(self):
-        pass
 
 class SubmitTests(BaseSubmitTestCase):
     def setUp(self):
