@@ -42,6 +42,17 @@ class BlobdbStorage(Storage):
     def exists(self, name):
         return self.get_queryset().filter(name=name).exists()
 
+    def save(self, name, content, max_length=None):
+        # Wrap content in a MetadataFile if needed 
+        if not isinstance(content, MetadataFile):
+            content = MetadataFile(
+                content,
+                name=getattr(content, "name", None),
+                mtime=getattr(content, "mtime", None),
+                content_type=getattr(content, "content_type", ""),
+            )
+        return super().save(name, content, max_length)
+
     def size(self, name):
         sizes = (
             self.get_queryset()
