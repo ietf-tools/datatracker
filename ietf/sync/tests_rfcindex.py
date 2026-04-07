@@ -9,6 +9,7 @@ from lxml import etree
 
 from ietf.doc.factories import (
     BcpFactory,
+    StdFactory,
     IndividualRfcFactory,
     PublishedRfcDocEventFactory,
 )
@@ -17,6 +18,7 @@ from ietf.sync.rfcindex import (
     create_bcp_txt_index,
     create_rfc_txt_index,
     create_rfc_xml_index,
+    create_std_txt_index,
     format_rfc_number,
     get_april1_rfc_numbers,
     get_publication_std_levels,
@@ -77,6 +79,9 @@ class RfcIndexTests(TestCase):
 
         # Create a BCP with non-April Fools RFC
         self.bcp = BcpFactory(contains=[self.rfc], name="bcp11")
+
+        # Create a STD with non-April Fools RFC
+        self.std = StdFactory(contains=[self.rfc], name="std11")
 
         # Set up a publication-std-levels.json file to indicate the publication
         # standard of self.rfc as different from its current value
@@ -146,7 +151,7 @@ class RfcIndexTests(TestCase):
 
         children = list(index)  # elements as list
         # Should be one rfc-not-issued-entry
-        self.assertEqual(len(children), 14)
+        self.assertEqual(len(children), 15)
         self.assertEqual(
             [
                 c.find(f"{ns}doc-id").text
@@ -237,6 +242,57 @@ class RfcIndexTests(TestCase):
         )
         self.assertIn(
             "BCP 11,",
+            contents,
+        )
+        self.assertIn(
+            f"RFC {self.rfc.rfc_number},",
+            contents,
+        )
+
+    @override_settings(RFCINDEX_INPUT_PATH="input/")
+    @mock.patch("ietf.sync.rfcindex.save_to_red_bucket")
+    def test_create_std_txt_index(self, mock_save):
+        create_std_txt_index()
+        self.assertEqual(mock_save.call_count, 1)
+        self.assertEqual(mock_save.call_args[0][0], "std-index.txt")
+        contents = mock_save.call_args[0][1]
+        self.assertTrue(isinstance(contents, str))
+        # starts from 1
+        self.assertIn(
+            "[STD1]",
+            contents,
+        )
+        # fill up to 11
+        self.assertIn(
+            "[STD10]",
+            contents,
+        )
+        # but not to 12
+        self.assertNotIn(
+            "[STD12]",
+            contents,
+        )
+        # Test empty STDs
+        self.assertIn(
+            "Internet Standard 9 currently contains no RFCs",
+            contents,
+        )
+        # No zero prefix!
+        self.assertNotIn(
+            "[STD0001]",
+            contents,
+        )
+        # Has STD11 with a RFC
+        self.assertIn(
+            "Internet Standard 11,",
+            contents,
+        )
+        self.assertIn(
+            f'"{self.rfc.title}"',
+            contents,
+        )
+        self.assertIn(
+            "STD 11,",
             contents,
         )
         self.assertIn(
