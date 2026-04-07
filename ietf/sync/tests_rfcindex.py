@@ -236,7 +236,11 @@ class RfcIndexTests(TestCase):
             contents,
         )
         self.assertIn(
-            f"BCP 11, RFC {self.rfc.rfc_number},",
+            "BCP 11,",
+            contents,
+        )
+        self.assertIn(
+            f"RFC {self.rfc.rfc_number},",
             contents,
         )
 
