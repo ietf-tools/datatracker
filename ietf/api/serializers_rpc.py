@@ -27,7 +27,7 @@ from ietf.doc.utils import (
     update_action_holders,
     update_rfcauthors,
 )
-from ietf.group.models import Group
+from ietf.group.models import Group, Role
 from ietf.group.serializers import AreaSerializer
 from ietf.name.models import StreamName, StdLevelName
 from ietf.person.models import Person
@@ -97,6 +97,21 @@ class DraftWithAuthorsSerializer(serializers.ModelSerializer):
         fields = ["draft_name", "authors"]
 
 
+class WgChairSerializer(serializers.Serializer):
+    """Serialize a WG chair's name and email from a Role"""
+
+    name = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.CharField)
+    def get_name(self, role: Role) -> str:
+        return role.person.plain_name()
+
+    @extend_schema_field(serializers.EmailField)
+    def get_email(self, role: Role) -> str:
+        return role.email.email_address()
+
+
 class DocumentAuthorSerializer(serializers.ModelSerializer):
     """Serializer for a Person in a response"""
 
@@ -126,6 +141,7 @@ class FullDraftSerializer(serializers.ModelSerializer):
         source="shepherd.person", read_only=True
     )
     consensus = serializers.SerializerMethodField()
+    wg_chairs = serializers.SerializerMethodField()
 
     class Meta:
         model = Document
@@ -145,10 +161,20 @@ class FullDraftSerializer(serializers.ModelSerializer):
             "consensus",
             "shepherd",
             "ad",
+            "wg_chairs",
         ]
 
     def get_consensus(self, doc: Document) -> Optional[bool]:
         return default_consensus(doc)
+
+    @extend_schema_field(WgChairSerializer(many=True))
+    def get_wg_chairs(self, doc: Document):
+        if doc.group is None:
+            return []
+        chairs = doc.group.role_set.filter(name_id="chair").select_related(
+            "person", "email"
+        )
+        return WgChairSerializer(chairs, many=True).data
 
     def get_source_format(
         self, doc: Document

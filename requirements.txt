@@ -41,6 +41,7 @@ gunicorn>=23.0.0
 hashids>=1.3.1
 html2text>=2025.4.15  # Used only to clean comment field of secr/sreq
 html5lib>=1.1    # Only used in tests
+httpx>=0.28.1  # Indirect req of typesense, but we import and refer to exceptions
 icalendar>=5.0.0 
 inflect>= 7.5.0
 jsonfield>=3.2.0  # deprecated - need to replace with Django's JSONField
