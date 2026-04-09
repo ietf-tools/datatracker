@@ -130,6 +130,7 @@ jobs:
         if-no-files-found: ignore
 
   tests-playwright-legacy:
+    if: ${{ false }}  # disable until we sort out suspected test runner issue
     name: Playwright Legacy Tests
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/datatracker-app-base:${{ inputs.targetBaseVersion }}
