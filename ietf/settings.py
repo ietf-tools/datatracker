@@ -235,7 +235,9 @@ WSGI_APPLICATION = "ietf.wsgi.application"
 
 AUTHENTICATION_BACKENDS = ( 'ietf.ietfauth.backends.CaseInsensitiveModelBackend', )
 
-FILE_UPLOAD_PERMISSIONS = 0o644          
+FILE_UPLOAD_PERMISSIONS = 0o644
+
+FIRST_V3_RFC = 8650
 
 
 #
