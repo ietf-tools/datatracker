@@ -12,7 +12,7 @@ from ietf.doc.storage_utils import store_bytes
 from ietf.utils.test_utils import TestCase
 
 
-class RfcV3ViewTests(TestCase):
+class UnpreppedRfcXmlTests(TestCase):
     def test_editor_source_button_visibility(self):
         pre_v3 = WgRfcFactory(rfc_number=settings.FIRST_V3_RFC - 1)
         first_v3 = WgRfcFactory(rfc_number=settings.FIRST_V3_RFC)
