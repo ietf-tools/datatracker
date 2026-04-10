@@ -126,7 +126,7 @@
             </a>
             {% if doc.rfc_number >= settings.FIRST_V3_RFC %}
             <a class="btn btn-primary btn-sm"
-              href="#"
+              href="{% url 'ietf.doc.views_doc.rfcxml_notprepped_wrapper' number=doc.rfc_number %}"
               rel="nofollow">
               <i class="bi bi-vector-pen">
               </i>

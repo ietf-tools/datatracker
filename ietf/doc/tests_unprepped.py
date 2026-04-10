@@ -28,8 +28,14 @@ class UnpreppedRfcXmlTests(TestCase):
             buttons = PyQuery(r.content)('a.btn:contains("Get editor source")')
             if expect_button:
                 self.assertEqual(len(buttons), 1, msg=f"rfc_number={rfc.rfc_number}")
+                expected_href = urlreverse(
+                    "ietf.doc.views_doc.rfcxml_notprepped_wrapper",
+                    kwargs=dict(number=rfc.rfc_number),
+                )
                 self.assertEqual(
-                    buttons.attr("href"), "#", msg=f"rfc_number={rfc.rfc_number}"
+                    buttons.attr("href"),
+                    expected_href,
+                    msg=f"rfc_number={rfc.rfc_number}",
                 )
             else:
                 self.assertEqual(len(buttons), 0, msg=f"rfc_number={rfc.rfc_number}")
@@ -73,3 +79,40 @@ class UnpreppedRfcXmlTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r["Content-Type"], "application/xml")
         self.assertEqual(r.content, xml_content)
+
+    def test_rfcxml_notprepped_wrapper(self):
+        number = settings.FIRST_V3_RFC
+
+        # 404 for pre-v3 RFC numbers (no document needed)
+        r = self.client.get(
+            urlreverse(
+                "ietf.doc.views_doc.rfcxml_notprepped_wrapper",
+                kwargs=dict(number=number - 1),
+            )
+        )
+        self.assertEqual(r.status_code, 404)
+
+        # 404 when no RFC document exists in the database
+        r = self.client.get(
+            urlreverse(
+                "ietf.doc.views_doc.rfcxml_notprepped_wrapper",
+                kwargs=dict(number=number),
+            )
+        )
+        self.assertEqual(r.status_code, 404)
+
+        # 200 with rendered template when RFC document exists
+        rfc = WgRfcFactory(rfc_number=number)
+        r = self.client.get(
+            urlreverse(
+                "ietf.doc.views_doc.rfcxml_notprepped_wrapper",
+                kwargs=dict(number=number),
+            )
+        )
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertIn(str(rfc.rfc_number), q("h1").text())
+        download_url = urlreverse(
+            "ietf.doc.views_doc.rfcxml_notprepped", kwargs=dict(number=number)
+        )
+        self.assertEqual(len(q(f'a.btn[href="{download_url}"]')), 1)

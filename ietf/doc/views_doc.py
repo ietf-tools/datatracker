@@ -2376,5 +2376,10 @@ def rfcxml_notprepped(request, number):
 
 
 def rfcxml_notprepped_wrapper(request, number):
-    return Http404
-
+    number = int(number)
+    if number < settings.FIRST_V3_RFC:
+        raise Http404
+    rfc = Document.objects.filter(type="rfc", rfc_number=number).first()
+    if rfc is None:
+        raise Http404
+    return render(request, "doc/notprepped_wrapper.html", context={"rfc": rfc})
