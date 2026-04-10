@@ -6,8 +6,8 @@
     "fs-extra": "^11.3.4",
     "nanoid": "5.1.7",
     "nanoid-dictionary": "5.0.0",
-    "slugify": "1.6.8",
-    "tar": "^7.5.12",
+    "slugify": "1.6.9",
+    "tar": "^7.5.13",
     "yargs": "^17.7.2"
   },
   "engines": {
