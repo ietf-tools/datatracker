@@ -178,8 +178,7 @@ def retrieve_bytes(kind: str, name: str) -> bytes:
                     content = f.read()
         except Exception as err:
             log(f"Blobstore Error: Failed to read bytes from {kind}:{name}: {repr(err)}")
-            if settings.SERVER_MODE == "development":
-                raise
+            raise
     return content
 
 

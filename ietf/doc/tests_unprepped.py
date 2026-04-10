@@ -1,15 +1,18 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 
 from django.conf import settings
+from django.utils import timezone
 from django.urls import reverse as urlreverse
 
 from pyquery import PyQuery
 
 from ietf.doc.factories import WgRfcFactory
+from ietf.doc.models import StoredObject
+from ietf.doc.storage_utils import store_bytes
 from ietf.utils.test_utils import TestCase
 
 
-class RfcEditorSourceButtonTests(TestCase):
+class RfcV3ViewTests(TestCase):
     def test_editor_source_button_visibility(self):
         pre_v3 = WgRfcFactory(rfc_number=settings.FIRST_V3_RFC - 1)
         first_v3 = WgRfcFactory(rfc_number=settings.FIRST_V3_RFC)
@@ -30,3 +33,43 @@ class RfcEditorSourceButtonTests(TestCase):
                 )
             else:
                 self.assertEqual(len(buttons), 0, msg=f"rfc_number={rfc.rfc_number}")
+
+    def test_rfcxml_notprepped(self):
+        number = settings.FIRST_V3_RFC
+        stored_name = f"notprepped/rfc{number}.notprepped.xml"
+        url = f"/doc/rfc{number}/notprepped/"
+
+        # 404 for pre-v3 RFC numbers (no document needed)
+        r = self.client.get(f"/doc/rfc{number - 1}/notprepped/")
+        self.assertEqual(r.status_code, 404)
+
+        # 404 when no RFC document exists in the database
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
+        # 404 when RFC document exists but has no StoredObject
+        WgRfcFactory(rfc_number=number)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
+        # 404 when StoredObject exists but backing storage is missing (FileNotFoundError)
+        now = timezone.now()
+        StoredObject.objects.create(
+            store="rfc",
+            name=stored_name,
+            sha384="a" * 96,
+            len=0,
+            store_created=now,
+            created=now,
+            modified=now,
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
+        # 200 with correct content-type and body when object is fully stored
+        xml_content = b"<rfc>test</rfc>"
+        store_bytes("rfc", stored_name, xml_content, allow_overwrite=True)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "application/xml")
+        self.assertEqual(r.content, xml_content)
