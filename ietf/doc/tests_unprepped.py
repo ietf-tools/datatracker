@@ -10,34 +10,23 @@ from ietf.utils.test_utils import TestCase
 
 
 class RfcEditorSourceButtonTests(TestCase):
-    def test_button_shown_for_v3_rfc(self):
-        rfc = WgRfcFactory(rfc_number=settings.FIRST_V3_RFC)
-        r = self.client.get(
-            urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name))
-        )
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        buttons = q('a.btn:contains("Get editor source")')
-        self.assertEqual(len(buttons), 1)
-        self.assertEqual(buttons.attr("href"), "#")
+    def test_editor_source_button_visibility(self):
+        pre_v3 = WgRfcFactory(rfc_number=settings.FIRST_V3_RFC - 1)
+        first_v3 = WgRfcFactory(rfc_number=settings.FIRST_V3_RFC)
+        post_v3 = WgRfcFactory(rfc_number=settings.FIRST_V3_RFC + 1)
 
-    def test_button_shown_for_rfc_above_v3_threshold(self):
-        rfc = WgRfcFactory(rfc_number=settings.FIRST_V3_RFC + 1)
-        r = self.client.get(
-            urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name))
-        )
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        buttons = q('a.btn:contains("Get editor source")')
-        self.assertEqual(len(buttons), 1)
-        self.assertEqual(buttons.attr("href"), "#")
-
-    def test_button_not_shown_for_pre_v3_rfc(self):
-        rfc = WgRfcFactory(rfc_number=settings.FIRST_V3_RFC - 1)
-        r = self.client.get(
-            urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name))
-        )
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        buttons = q('a.btn:contains("Get editor source")')
-        self.assertEqual(len(buttons), 0)
+        for rfc, expect_button in [(pre_v3, False), (first_v3, True), (post_v3, True)]:
+            r = self.client.get(
+                urlreverse(
+                    "ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name)
+                )
+            )
+            self.assertEqual(r.status_code, 200)
+            buttons = PyQuery(r.content)('a.btn:contains("Get editor source")')
+            if expect_button:
+                self.assertEqual(len(buttons), 1, msg=f"rfc_number={rfc.rfc_number}")
+                self.assertEqual(
+                    buttons.attr("href"), "#", msg=f"rfc_number={rfc.rfc_number}"
+                )
+            else:
+                self.assertEqual(len(buttons), 0, msg=f"rfc_number={rfc.rfc_number}")
