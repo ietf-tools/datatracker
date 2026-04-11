@@ -625,6 +625,157 @@ class InterimTests(TestCase):
         self.assertEqual(len(msgs), 1)
         self.assertIn('An error occurred', msgs[0])
 
+    @patch('ietf.utils.meetecho.ConferenceManager')
+    def test_create_interim_session_conferences_preserves_url_on_failure(self, mock):
+        """A failed (re)create must not clobber the existing remote_instructions.
+
+        Regression test for ietf-tools/datatracker#10689: the WG chair reported
+        that editing an interim meeting wiped the working Meetecho URL whenever
+        the API call failed. The previous URL must survive the failure so the
+        meeting is still reachable.
+        """
+        mock_conf_mgr = mock.return_value
+        original_url = 'https://meetings.conf.meetecho.com/interim/?session=42'
+        session = SessionFactory(
+            meeting__type_id='interim',
+            remote_instructions=original_url,
+        )
+
+        # create() raises -> RuntimeError, URL untouched
+        mock_conf_mgr.create.side_effect = ValueError('meetecho down')
+        with self.assertRaises(RuntimeError):
+            create_interim_session_conferences([session])
+        self.assertEqual(
+            Session.objects.get(pk=session.pk).remote_instructions,
+            original_url,
+        )
+
+        # create() returns [] -> RuntimeError, URL still untouched
+        mock_conf_mgr.create.side_effect = None
+        mock_conf_mgr.create.return_value = []
+        with self.assertRaises(RuntimeError):
+            create_interim_session_conferences([session])
+        self.assertEqual(
+            Session.objects.get(pk=session.pk).remote_instructions,
+            original_url,
+        )
+
+    @patch('ietf.utils.meetecho.ConferenceManager')
+    def test_create_interim_session_conferences_deletes_previous_conference(self, mock):
+        """On a successful recreate, the old Meetecho conference must be cleaned up.
+
+        The issue report noted that the secretariat ended up with orphaned
+        interims because each edit created a brand new Meetecho session without
+        deleting the one it was replacing.
+        """
+        mock_conf_mgr = mock.return_value
+        original_url = 'https://meetings.conf.meetecho.com/interim/?session=42'
+        session = SessionFactory(
+            meeting__type_id='interim',
+            remote_instructions=original_url,
+        )
+        timeslot = session.official_timeslotassignment().timeslot
+
+        new_conf = Conference(
+            manager=mock_conf_mgr, id=int(session.pk), public_id='new-uuid',
+            description='desc', start_time=timeslot.utc_start_time(),
+            duration=timeslot.duration, url='https://meetings.conf.meetecho.com/interim/?session=99',
+            deletion_token='please-delete-me',
+        )
+        old_conf = Conference(
+            manager=mock_conf_mgr, id=int(session.pk), public_id='old-uuid',
+            description='desc', start_time=timeslot.utc_start_time(),
+            duration=timeslot.duration, url=original_url,
+            deletion_token='please-delete-old',
+        )
+        mock_conf_mgr.create.return_value = [new_conf]
+        mock_conf_mgr.fetch.return_value = [old_conf]
+
+        create_interim_session_conferences([session])
+
+        self.assertEqual(
+            Session.objects.get(pk=session.pk).remote_instructions,
+            new_conf.url,
+        )
+        self.assertTrue(mock_conf_mgr.fetch.called)
+        self.assertEqual(mock_conf_mgr.fetch.call_args[0], (session.group,))
+        # The old conference's delete() should have been invoked exactly once.
+        self.assertEqual(mock_conf_mgr.delete_conference.call_count, 1)
+        self.assertEqual(
+            mock_conf_mgr.delete_conference.call_args[0],
+            (old_conf,),
+        )
+
+    @patch('ietf.meeting.helpers.create_interim_session_conferences')
+    def test_sessions_post_save_skips_meetecho_when_only_agenda_changed(self, mock_create_method):
+        """If the session already has a Meetecho URL and only non-timing fields
+        changed, sessions_post_save must not ask the helper to recreate it.
+
+        This is the primary fix for ietf-tools/datatracker#10689: merely editing
+        the agenda must leave the existing conference alone.
+        """
+        session = SessionFactory(
+            meeting__type_id='interim',
+            remote_instructions='https://meetings.conf.meetecho.com/interim/?session=42',
+        )
+        mock_form = Mock()
+        mock_form.instance = session
+        mock_form.has_changed.return_value = True
+        mock_form.changed_data = ['agenda']
+        mock_form.requires_approval = True
+        mock_form.cleaned_data = {
+            'date': date_today(),
+            'time': datetime.time(1, 23),
+            'remote_participation': 'meetecho',
+        }
+        sessions_post_save(RequestFactory().post('/some/url'), [mock_form])
+        self.assertTrue(mock_create_method.called)
+        self.assertCountEqual(mock_create_method.call_args[0][0], [])
+
+    @patch('ietf.meeting.helpers.create_interim_session_conferences')
+    def test_sessions_post_save_recreates_meetecho_when_timing_changed(self, mock_create_method):
+        """If a timing field changed, the helper must be asked to recreate."""
+        session = SessionFactory(
+            meeting__type_id='interim',
+            remote_instructions='https://meetings.conf.meetecho.com/interim/?session=42',
+        )
+        mock_form = Mock()
+        mock_form.instance = session
+        mock_form.has_changed.return_value = True
+        mock_form.requires_approval = True
+        mock_form.cleaned_data = {
+            'date': date_today(),
+            'time': datetime.time(1, 23),
+            'remote_participation': 'meetecho',
+        }
+        for field in ('date', 'time', 'requested_duration', 'end_time'):
+            mock_create_method.reset_mock()
+            mock_form.changed_data = [field]
+            sessions_post_save(RequestFactory().post('/some/url'), [mock_form])
+            self.assertTrue(mock_create_method.called)
+            self.assertCountEqual(
+                mock_create_method.call_args[0][0], [session],
+                f'expected recreate when {field!r} changed',
+            )
+
+    @patch('ietf.meeting.helpers.create_interim_session_conferences')
+    def test_sessions_post_save_creates_meetecho_when_no_existing_url(self, mock_create_method):
+        """A session without any existing Meetecho URL must always be (re)created."""
+        session = SessionFactory(meeting__type_id='interim', remote_instructions='')
+        mock_form = Mock()
+        mock_form.instance = session
+        mock_form.has_changed.return_value = True
+        mock_form.changed_data = ['agenda']  # no timing field changed
+        mock_form.requires_approval = True
+        mock_form.cleaned_data = {
+            'date': date_today(),
+            'time': datetime.time(1, 23),
+            'remote_participation': 'meetecho',
+        }
+        sessions_post_save(RequestFactory().post('/some/url'), [mock_form])
+        self.assertTrue(mock_create_method.called)
+        self.assertCountEqual(mock_create_method.call_args[0][0], [session])
+
 
 class HelperTests(TestCase):
     def test_get_ietf_meeting(self):
