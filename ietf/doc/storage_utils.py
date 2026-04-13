@@ -191,6 +191,5 @@ def retrieve_str(kind: str, name: str) -> str:
             content = content_bytes.decode("utf-8")
         except Exception as err:
             log(f"Blobstore Error: Failed to read string from {kind}:{name}: {repr(err)}")
-            if settings.SERVER_MODE == "development":
-                raise
+            raise
     return content
