@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2020, All Rights Reserved
+# Copyright The IETF Trust 2011-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -64,8 +64,13 @@ class SaferTabularInline(admin.TabularInline):
     show_change_link = True  # show a link to the resource (where it can be deleted)
 
 
-from .models import DumpInfo
+from .models import DumpInfo, DirtyBits
 class DumpInfoAdmin(admin.ModelAdmin):
     list_display = ['date', 'host', 'tz']
     list_filter = ['date']
 admin.site.register(DumpInfo, DumpInfoAdmin)
+
+
+@admin.register(DirtyBits)
+class DirtyBitsAdmin(admin.ModelAdmin):
+    list_display = ["slug", "dirty_time", "processed_time"]
