@@ -19,7 +19,7 @@ from ietf.sync import iana
 from ietf.sync import rfceditor
 from ietf.sync.rfceditor import MIN_QUEUE_RESULTS, parse_queue, update_drafts_from_queue
 from ietf.sync.rfcindex import create_rfc_txt_index, create_rfc_xml_index, \
-    rfcindex_is_dirty
+    rfcindex_is_dirty, mark_rfcindex_as_processed
 from ietf.sync.utils import build_from_file_content, load_rfcs_into_blobdb, rsync_helper
 from ietf.utils import log
 from ietf.utils.timezone import date_today
@@ -279,6 +279,9 @@ def load_rfcs_into_blobdb_task(start: int, end: int):
 @shared_task
 def refresh_rfc_index_task():
     if rfcindex_is_dirty():
+        # new_processed_time is the *start* of processing so that any changes after
+        # this point will trigger another refresh
+        new_processed_time = timezone.now()
         create_rfc_txt_index()
         create_rfc_xml_index()
-
+        mark_rfcindex_as_processed(new_processed_time)
