@@ -774,7 +774,7 @@ def rfcindex_is_dirty():
         slug=RFCINDEX_SLUG, defaults={"dirty_time": timezone.now()}
     )
     if created:
-        log(f"Created DirtyBits(slug={RFCINDEX_SLUG})s')")
+        log(f"Created DirtyBits(slug='{RFCINDEX_SLUG}')")
     display_processed_time = (
         dirty_work.processed_time.isoformat()
         if dirty_work.processed_time is not None
