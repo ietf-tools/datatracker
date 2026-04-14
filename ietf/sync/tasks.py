@@ -18,7 +18,8 @@ from ietf.doc.tasks import rebuild_reference_relations_task
 from ietf.sync import iana
 from ietf.sync import rfceditor
 from ietf.sync.rfceditor import MIN_QUEUE_RESULTS, parse_queue, update_drafts_from_queue
-from ietf.sync.rfcindex import create_rfc_txt_index, create_rfc_xml_index
+from ietf.sync.rfcindex import create_rfc_txt_index, create_rfc_xml_index, \
+    rfcindex_is_dirty
 from ietf.sync.utils import build_from_file_content, load_rfcs_into_blobdb, rsync_helper
 from ietf.utils import log
 from ietf.utils.timezone import date_today
@@ -276,7 +277,8 @@ def load_rfcs_into_blobdb_task(start: int, end: int):
 
 
 @shared_task
-def create_rfc_index_task():
-    create_rfc_txt_index()
-    create_rfc_xml_index()
+def refresh_rfc_index_task():
+    if rfcindex_is_dirty():
+        create_rfc_txt_index()
+        create_rfc_xml_index()
 
