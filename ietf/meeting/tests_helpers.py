@@ -706,6 +706,40 @@ class InterimTests(TestCase):
             (old_conf,),
         )
 
+    @patch('ietf.utils.meetecho.ConferenceManager')
+    def test_create_interim_session_conferences_cleanup_failure_is_swallowed(self, mock):
+        """If deleting the previous conference fails, the successful recreate must stand.
+
+        The cleanup of the replaced Meetecho conference is best-effort - any
+        error in fetch/delete must be logged and swallowed, not propagated.
+        """
+        mock_conf_mgr = mock.return_value
+        original_url = 'https://meetings.conf.meetecho.com/interim/?session=42'
+        session = SessionFactory(
+            meeting__type_id='interim',
+            remote_instructions=original_url,
+        )
+        timeslot = session.official_timeslotassignment().timeslot
+
+        new_conf = Conference(
+            manager=mock_conf_mgr, id=int(session.pk), public_id='new-uuid',
+            description='desc', start_time=timeslot.utc_start_time(),
+            duration=timeslot.duration, url='https://meetings.conf.meetecho.com/interim/?session=99',
+            deletion_token='please-delete-me',
+        )
+        mock_conf_mgr.create.return_value = [new_conf]
+        mock_conf_mgr.fetch.side_effect = RuntimeError('meetecho unreachable')
+
+        # Must not raise, and the new URL must still be persisted.
+        create_interim_session_conferences([session])
+
+        self.assertEqual(
+            Session.objects.get(pk=session.pk).remote_instructions,
+            new_conf.url,
+        )
+        self.assertTrue(mock_conf_mgr.fetch.called)
+        self.assertFalse(mock_conf_mgr.delete_conference.called)
+
     @patch('ietf.meeting.helpers.create_interim_session_conferences')
     def test_sessions_post_save_skips_meetecho_when_only_agenda_changed(self, mock_create_method):
         """If the session already has a Meetecho URL and only non-timing fields
