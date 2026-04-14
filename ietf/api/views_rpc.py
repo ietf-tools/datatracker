@@ -32,7 +32,9 @@ from ietf.api.serializers_rpc import (
     EmailPersonSerializer,
     RfcWithAuthorsSerializer,
     DraftWithAuthorsSerializer,
-    NotificationAckSerializer, RfcPubSerializer, RfcFileSerializer,
+    NotificationAckSerializer,
+    RfcPubSerializer,
+    RfcFileSerializer,
     EditableRfcSerializer,
 )
 from ietf.doc.models import Document, DocHistory, RfcAuthor, DocEvent
@@ -344,9 +346,10 @@ class DraftsByNamesView(APIView):
 
 class RfcAuthorViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for RfcAuthor model
-    
+
     Router needs to provide rfc_number as a kwarg
     """
+
     api_key_endpoint = "ietf.api.views_rpc"
 
     queryset = RfcAuthor.objects.all()
@@ -407,7 +410,7 @@ class RfcPubFilesView(APIView):
 
     def _fs_destination(self, filename: str | Path) -> Path:
         """Destination for an uploaded RFC file in the filesystem
-        
+
         Strips any path components in filename and returns an absolute Path.
         """
         rfc_path = Path(settings.RFC_PATH)
@@ -419,7 +422,7 @@ class RfcPubFilesView(APIView):
 
     def _blob_destination(self, filename: str | Path) -> str:
         """Destination name for an uploaded RFC file in the blob store
-        
+
         Strips any path components in filename and returns an absolute Path.
         """
         filename = Path(filename)  # could potentially have directory components
@@ -472,9 +475,7 @@ class RfcPubFilesView(APIView):
                         code="files-exist",
                     )
             for possible_existing_blob in possible_rfc_blobs:
-                if exists_in_storage(
-                    kind=blob_kind, name=possible_existing_blob
-                ):
+                if exists_in_storage(kind=blob_kind, name=possible_existing_blob):
                     raise Conflict(
                         "Blob(s) already exist for this RFC",
                         code="blobs-exist",
@@ -523,7 +524,9 @@ class RfcPubFilesView(APIView):
 
         # Trigger red precomputer
         needs_updating = [rfc.rfc_number]
-        for rel in rfc.relateddocument_set.filter(relationship_id__in=["obs","updates"]):
+        for rel in rfc.relateddocument_set.filter(
+            relationship_id__in=["obs", "updates"]
+        ):
             needs_updating.append(rel.target.rfc_number)
         trigger_red_precomputer_task.delay(rfc_number_list=sorted(needs_updating))
         # Trigger search index update
@@ -540,7 +543,7 @@ class RfcIndexView(APIView):
     @extend_schema(
         operation_id="refresh_rfc_index",
         summary="Refresh rfc-index files",
-        description="Requests creation of rfc-index.xml and rfc-index.txt files",
+        description="Requests creation of various index files.",
         responses={202: None},
         request=None,
     )
