@@ -511,3 +511,8 @@ if ERRATA_METADATA_NOTIFICATION_API_KEY is not None:
             "DATATRACKER_ERRATA_METADATA_NOTIFICATION_URL must be set if "
             "DATATRACKER_ERRATA_METADATA_NOTIFICATION_API_KEY is provided"
         )
+
+# name (with path) of errata.json in the red bucket
+ERRATA_JSON_BLOB_NAME = os.environ.get(
+    "DATATRACKER_ERRATA_JSON_BLOB_NAME", "other/errata.json"
+)

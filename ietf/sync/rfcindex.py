@@ -1,4 +1,5 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
+import datetime
 import json
 from collections import defaultdict
 from collections.abc import Container
@@ -11,6 +12,7 @@ from urllib.parse import urljoin
 
 from django.conf import settings
 from django.core.files.base import ContentFile
+from django.db.models import Q
 from lxml import etree
 
 from django.core.files.storage import storages
@@ -22,6 +24,7 @@ from django.utils import timezone
 from ietf.doc.models import Document
 from ietf.name.models import StdLevelName
 from ietf.utils.log import log
+from ietf.utils.models import DirtyBits
 
 FORMATS_FOR_INDEX = ["txt", "html", "pdf", "xml", "ps"]
 SS_TXT_MARGIN = 3
@@ -739,3 +742,50 @@ def create_fyi_txt_index():
         },
     )
     save_to_red_bucket("fyi-index.txt", index)
+
+
+## DirtyBits management for the RFC index
+
+RFCINDEX_SLUG = DirtyBits.Slugs.RFCINDEX
+
+
+def mark_rfcindex_as_dirty():
+    _, created = DirtyBits.objects.update_or_create(
+        slug=RFCINDEX_SLUG, defaults={"dirty_time": timezone.now()}
+    )
+    if created:
+        log(f"Created DirtyBits(slug='{RFCINDEX_SLUG}')")
+
+
+def mark_rfcindex_as_processed(when: datetime.datetime):
+    n_updated = DirtyBits.objects.filter(
+        Q(processed_time__isnull=True) | Q(processed_time__lt=when),
+        slug=RFCINDEX_SLUG,
+    ).update(processed_time=when)
+    if n_updated > 0:
+        log(f"processed_time is now {when.isoformat()}")
+    else:
+        log("processed_time not updated, no matching record found")
+
+
+def rfcindex_is_dirty():
+    """Does the rfc index need to be updated?"""
+    dirty_work, created = DirtyBits.objects.get_or_create(
+        slug=RFCINDEX_SLUG, defaults={"dirty_time": timezone.now()}
+    )
+    if created:
+        log(f"Created DirtyBits(slug='{RFCINDEX_SLUG}')")
+    display_processed_time = (
+        dirty_work.processed_time.isoformat()
+        if dirty_work.processed_time is not None
+        else "never"
+    )
+    log(
+        f"DirtyBits(slug='{RFCINDEX_SLUG}'): "
+        f"dirty_time={dirty_work.dirty_time.isoformat()} "
+        f"processed_time={display_processed_time}"
+    )
+    return (
+        dirty_work.processed_time is None
+        or dirty_work.dirty_time >= dirty_work.processed_time
+    )

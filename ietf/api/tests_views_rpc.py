@@ -1,4 +1,5 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
+import datetime
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -10,12 +11,15 @@ from django.db.models.functions import Coalesce
 from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
 import mock
+from django.utils import timezone
 
 from ietf.blobdb.models import Blob
 from ietf.doc.factories import IndividualDraftFactory, RfcFactory, WgDraftFactory, WgRfcFactory
 from ietf.doc.models import RelatedDocument, Document
 from ietf.group.factories import RoleFactory, GroupFactory
 from ietf.person.factories import PersonFactory
+from ietf.sync.rfcindex import rfcindex_is_dirty
+from ietf.utils.models import DirtyBits
 from ietf.utils.test_utils import APITestCase, reload_db_objects
 
 
@@ -408,8 +412,13 @@ class RpcApiTests(APITestCase):
             )
 
     @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
-    @mock.patch("ietf.api.views_rpc.create_rfc_index_task")
-    def test_refresh_rfc_index(self, mock_task):
+    def test_refresh_rfc_index(self):
+        DirtyBits.objects.create(
+            slug=DirtyBits.Slugs.RFCINDEX,
+            dirty_time=timezone.now() - datetime.timedelta(days=1),
+            processed_time=timezone.now() - datetime.timedelta(hours=12),
+        )
+        self.assertFalse(rfcindex_is_dirty())
         url = urlreverse("ietf.api.purple_api.refresh_rfc_index")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 403)
@@ -417,7 +426,7 @@ class RpcApiTests(APITestCase):
         self.assertEqual(response.status_code, 403)
         response = self.client.get(url, headers={"X-Api-Key": "valid-token"})
         self.assertEqual(response.status_code, 405)
-        self.assertFalse(mock_task.delay.called)
+        self.assertFalse(rfcindex_is_dirty())
         response = self.client.post(url, headers={"X-Api-Key": "valid-token"})
         self.assertEqual(response.status_code, 202)
-        self.assertTrue(mock_task.delay.called)
+        self.assertTrue(rfcindex_is_dirty())

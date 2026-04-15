@@ -1,6 +1,7 @@
 .DS_store
 datatracker.sublime-project
 datatracker.sublime-workspace
+/.claude
 /.coverage
 /.factoryboy_random_state
 /.mypy_cache

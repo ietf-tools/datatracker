@@ -1,5 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2012-2026, All Rights Reserved
 
 
 import os
@@ -13,6 +12,8 @@ import requests
 from dataclasses import dataclass
 
 from django.conf import settings
+from django.core.files.base import ContentFile
+from django.core.files.storage import storages
 from django.urls import reverse as urlreverse
 from django.utils import timezone
 from django.test.utils import override_settings
@@ -25,15 +26,34 @@ from ietf.doc.factories import (
     RfcFactory,
     DocumentAuthorFactory,
     DocEventFactory,
-    BcpFactory,
+    BcpFactory, WgRfcFactory,
 )
-from ietf.doc.models import Document, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
+from ietf.doc.models import (
+    Document,
+    DocEvent,
+    DeletedEvent,
+    DocTagName,
+    RelatedDocument,
+    State,
+    StateDocEvent,
+)
 from ietf.doc.utils import add_state_change_event
 from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory
 from ietf.person.models import Person
 from ietf.sync import iana, rfceditor, tasks
+from ietf.sync.errata import (
+    update_errata_from_rfceditor,
+    get_errata_last_updated,
+    get_errata_data,
+    errata_map_from_json,
+    update_errata_dirty_time,
+    mark_errata_as_processed,
+    update_errata_tags,
+)
+from ietf.sync.tasks import update_errata_from_rfceditor_task
 from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.models import DirtyBits
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import date_today, RPC_TZINFO
@@ -882,6 +902,191 @@ class RFCEditorUndoTests(TestCase):
         self.assertTrue(StateDocEvent.objects.filter(desc="First", doc=draft))
 
 
+class ErrataTests(TestCase):
+    @override_settings(ERRATA_JSON_BLOB_NAME="myblob.json")
+    def test_get_errata_last_update(self):
+        red_bucket = storages["red_bucket"]  # InMemoryStorage in test
+        red_bucket.save("myblob.json", ContentFile("file"))
+        self.assertEqual(
+            get_errata_last_updated(), red_bucket.get_modified_time("myblob.json")
+        )
+    
+    @override_settings(ERRATA_JSON_BLOB_NAME="myblob.json")
+    def test_get_errata_data(self):
+        red_bucket = storages["red_bucket"]  # InMemoryStorage in test
+        red_bucket.save("myblob.json", ContentFile('[{"value": 3}]'))
+        self.assertEqual(
+            get_errata_data(),
+            [{"value": 3}],
+        )
+
+    def test_errata_map_from_json(self):
+        input_data = [
+            {
+                "doc-id": "not-an-rfc",
+                "errata_status_code": "Verified",
+            },
+            {
+                "doc-id": "rfc01234",
+                "errata_status_code": "Reported",
+            },
+            {
+                "doc-id": "RFC1001",
+                "errata_status_code": "Verified"
+            },
+            {
+                "doc-id": "RfC1234",
+                "errata_status_code": "Verified",
+            },
+        ]
+        expected_output = {1001: [input_data[2]], 1234: [input_data[1], input_data[3]]}
+        self.assertDictEqual(errata_map_from_json(input_data), expected_output)
+
+    @mock.patch("ietf.sync.errata.update_errata_tags")
+    @mock.patch("ietf.sync.errata.get_errata_data")
+    def test_update_errata_from_rfceditor(self, mock_get_data, mock_update):
+        fake_data = object()
+        mock_get_data.return_value = fake_data
+        update_errata_from_rfceditor()
+        self.assertTrue(mock_get_data.called)
+        self.assertTrue(mock_update.called)
+        self.assertEqual(mock_update.call_args, mock.call(fake_data))
+
+    def test_update_errata_tags(self):
+        tag_has_errata = DocTagName.objects.get(slug="errata")
+        tag_has_verified_errata = DocTagName.objects.get(slug="verified-errata")
+
+        rfcs = WgRfcFactory.create_batch(10)
+        rfcs[0].tags.set([tag_has_errata])
+        rfcs[1].tags.set([tag_has_errata, tag_has_verified_errata])
+        rfcs[2].tags.set([tag_has_errata])
+        rfcs[3].tags.set([tag_has_errata, tag_has_verified_errata])
+        rfcs[4].tags.set([tag_has_errata])
+        rfcs[5].tags.set([tag_has_errata, tag_has_verified_errata])
+
+        # Only contains the fields we care about, not the full JSON
+        errata_data = [
+            # rfcs[0] had errata and should keep it
+            {"doc-id": rfcs[0].name, "errata_status_code": "Held for Document Update"},
+            {"doc-id": rfcs[0].name, "errata_status_code": "Rejected"},
+            # rfcs[1] had errata+verified-errata and should keep both
+            {"doc-id": rfcs[1].name, "errata_status_code": "Verified"},
+            # rfcs[2] had errata and should gain verified-errata
+            {"doc-id": rfcs[2].name, "errata_status_code": "Verified"},
+            # rfcs[3] had errata+verified errata and should lose both
+            {"doc-id": rfcs[3].name, "errata_status_code": "Rejected"},
+            # rfcs[4] had errata and should gain verified-errata
+            {"doc-id": rfcs[4].name, "errata_status_code": "Verified"},
+            {"doc-id": rfcs[4].name, "errata_status_code": "Reported"},
+            # rfcs[5] had errata+verified-errata and should lose verified-errata
+            {"doc-id": rfcs[5].name, "errata_status_code": "Reported"},
+            # rfcs[6] had none and should gain errata
+            {"doc-id": rfcs[6].name, "errata_status_code": "Reported"},
+            # rfcs[7] had none and should gain errata+verified-errata
+            {"doc-id": rfcs[7].name, "errata_status_code": "Verified"},
+            # rfcs[8] had none and it should stay that way
+            {"doc-id": rfcs[8].name, "errata_status_code": "Rejected"},
+            # rfcs[9] had none and it should stay that way (no entry at all)
+        ]
+        update_errata_tags(errata_data)
+
+        self.assertCountEqual(rfcs[0].tags.all(), [tag_has_errata])
+        self.assertIsNone(rfcs[0].docevent_set.first())  # no change
+
+        self.assertCountEqual(
+            rfcs[1].tags.all(), [tag_has_errata, tag_has_verified_errata]
+        )
+        self.assertIsNone(rfcs[1].docevent_set.first())  # no change
+
+        self.assertCountEqual(
+            rfcs[2].tags.all(), [tag_has_errata, tag_has_verified_errata]
+        )
+        self.assertEqual(rfcs[2].docevent_set.count(), 1)
+        self.assertIn(": added verified-errata tag", rfcs[2].docevent_set.first().desc)
+
+        self.assertCountEqual(rfcs[3].tags.all(), [])
+        self.assertEqual(rfcs[3].docevent_set.count(), 1)
+        self.assertIn(
+            ": removed errata tag, removed verified-errata tag (all errata rejected)",
+            rfcs[3].docevent_set.first().desc,
+        )
+
+        self.assertCountEqual(
+            rfcs[4].tags.all(), [tag_has_errata, tag_has_verified_errata]
+        )
+        self.assertEqual(rfcs[4].docevent_set.count(), 1)
+        self.assertIn(": added verified-errata tag", rfcs[4].docevent_set.first().desc)
+
+        self.assertCountEqual(rfcs[5].tags.all(), [tag_has_errata])
+        self.assertEqual(rfcs[5].docevent_set.count(), 1)
+        self.assertIn(
+            ": removed verified-errata tag", rfcs[5].docevent_set.first().desc
+        )
+
+        self.assertCountEqual(rfcs[6].tags.all(), [tag_has_errata])
+        self.assertEqual(rfcs[6].docevent_set.count(), 1)
+        self.assertIn(": added errata tag", rfcs[6].docevent_set.first().desc)
+
+        self.assertCountEqual(
+            rfcs[7].tags.all(), [tag_has_errata, tag_has_verified_errata]
+        )
+        self.assertEqual(rfcs[7].docevent_set.count(), 1)
+        self.assertIn(
+            ": added errata tag, added verified-errata tag",
+            rfcs[7].docevent_set.first().desc,
+        )
+
+        self.assertCountEqual(rfcs[8].tags.all(), [])
+        self.assertIsNone(rfcs[8].docevent_set.first())  # no change
+
+        self.assertCountEqual(rfcs[9].tags.all(), [])
+        self.assertIsNone(rfcs[9].docevent_set.first())  # no change
+
+    @override_settings(ERRATA_JSON_BLOB_NAME="myblob.json")
+    @mock.patch("ietf.sync.errata.get_errata_last_updated")
+    def test_update_errata_dirty_time(self, mock_last_updated):
+        ERRATA_SLUG = DirtyBits.Slugs.ERRATA
+        
+        # No time available
+        mock_last_updated.side_effect = FileNotFoundError
+        self.assertIsNone(DirtyBits.objects.filter(slug=ERRATA_SLUG).first())
+        self.assertIsNone(update_errata_dirty_time())  # no blob yet
+        self.assertIsNone(DirtyBits.objects.filter(slug=ERRATA_SLUG).first())
+
+        # Now set a time
+        first_timestamp = timezone.now() - datetime.timedelta(hours=3)
+        mock_last_updated.return_value = first_timestamp
+        mock_last_updated.side_effect = None
+        result = update_errata_dirty_time()
+        self.assertTrue(isinstance(result, DirtyBits))
+        result.refresh_from_db()
+        self.assertEqual(result.slug, ERRATA_SLUG)
+        self.assertEqual(result.processed_time, None)
+        self.assertEqual(result.dirty_time, first_timestamp)
+        
+        # Update the time
+        second_timestamp = timezone.now()
+        mock_last_updated.return_value = second_timestamp
+        second_result = update_errata_dirty_time()
+        self.assertEqual(result.pk, second_result.pk)  # should be the same record
+        result.refresh_from_db()
+        self.assertEqual(result.slug, ERRATA_SLUG)
+        self.assertEqual(result.processed_time, None)
+        self.assertEqual(result.dirty_time, second_timestamp)
+
+    def test_mark_errata_as_processed(self):
+        ERRATA_SLUG = DirtyBits.Slugs.ERRATA
+        first_timestamp = timezone.now()
+        mark_errata_as_processed(first_timestamp)  # no DirtyBits is not an error
+        self.assertIsNone(DirtyBits.objects.filter(slug=ERRATA_SLUG).first())
+        dbits = DirtyBits.objects.create(slug=ERRATA_SLUG, dirty_time=first_timestamp)
+        second_timestamp = timezone.now()
+        mark_errata_as_processed(second_timestamp)
+        dbits.refresh_from_db()
+        self.assertEqual(dbits.dirty_time, first_timestamp)
+        self.assertEqual(dbits.processed_time, second_timestamp)
+        
+
 class TaskTests(TestCase):
     @override_settings(
         RFC_EDITOR_INDEX_URL="https://rfc-editor.example.com/index/",
@@ -1215,3 +1420,28 @@ class TaskTests(TestCase):
         self.assertEqual(mock_kwargs, {})
 
 
+    @mock.patch("ietf.sync.tasks.update_errata_from_rfceditor")
+    @mock.patch("ietf.sync.tasks.mark_rfcindex_as_dirty")
+    @mock.patch("ietf.sync.tasks.mark_errata_as_processed")
+    @mock.patch("ietf.sync.tasks.errata_are_dirty")
+    def test_update_errata_from_rfceditor_task(
+        self,
+        mock_errata_are_dirty,
+        mock_mark_errata_processed,
+        mock_mark_rfcindex_dirty,
+        mock_update,
+    ):
+        mock_errata_are_dirty.return_value = False
+        update_errata_from_rfceditor_task()
+        self.assertTrue(mock_errata_are_dirty.called)
+        self.assertFalse(mock_mark_errata_processed.called)
+        self.assertFalse(mock_mark_rfcindex_dirty.called)
+        self.assertFalse(mock_update.called)
+
+        mock_errata_are_dirty.reset_mock()
+        mock_errata_are_dirty.return_value = True
+        update_errata_from_rfceditor_task()
+        self.assertTrue(mock_errata_are_dirty.called)
+        self.assertTrue(mock_mark_errata_processed.called)
+        self.assertTrue(mock_mark_rfcindex_dirty.called)
+        self.assertTrue(mock_update.called)
