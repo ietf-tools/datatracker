@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2024, All Rights Reserved
+# Copyright The IETF Trust 2009-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
@@ -57,7 +57,7 @@ from django.contrib.staticfiles import finders
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocHistory, DocEvent, BallotDocEvent, BallotType,
-    ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
+    ConsensusDocEvent, NewRevisionDocEvent, StoredObject, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
     RelatedDocument, RelatedDocHistory)
 from ietf.doc.tasks import investigate_fragment_task
@@ -86,6 +86,7 @@ from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions,
 from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs, review_requests_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
+from ietf.doc.storage_utils import retrieve_bytes
 from ietf.utils import markup_txt, log, markdown
 from ietf.utils.draft import get_status_from_draft_text
 from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
@@ -2356,3 +2357,29 @@ def investigate(request):
             "results": results,
         },
     )
+
+def rfcxml_notprepped(request, number):
+    number = int(number)
+    if number < settings.FIRST_V3_RFC:
+        raise Http404
+    rfc = Document.objects.filter(type="rfc", rfc_number=number).first()
+    if rfc is None:
+        raise Http404
+    name = f"notprepped/rfc{number}.notprepped.xml"
+    if not StoredObject.objects.filter(name=name).exists():
+        raise Http404
+    try:
+        bytes = retrieve_bytes("rfc", name)
+    except FileNotFoundError:
+        raise Http404
+    return HttpResponse(bytes, content_type="application/xml")
+
+
+def rfcxml_notprepped_wrapper(request, number):
+    number = int(number)
+    if number < settings.FIRST_V3_RFC:
+        raise Http404
+    rfc = Document.objects.filter(type="rfc", rfc_number=number).first()
+    if rfc is None:
+        raise Http404
+    return render(request, "doc/notprepped_wrapper.html", context={"rfc": rfc})

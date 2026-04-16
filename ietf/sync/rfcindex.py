@@ -153,7 +153,7 @@ def get_publication_std_levels() -> dict[int, StdLevelName]:
 
 
 def format_ordering(rfc_number):
-    if rfc_number < 8650:
+    if rfc_number < settings.FIRST_V3_RFC:
         ordering = ["txt", "ps", "pdf", "html", "xml"]
     else:
         ordering = ["html", "txt", "ps", "pdf", "xml"]
