@@ -12,7 +12,7 @@ from ietf.doc.storage_utils import store_bytes
 from ietf.utils.test_utils import TestCase
 
 
-class UnpreppedRfcXmlTests(TestCase):
+class NotpreppedRfcXmlTests(TestCase):
     def test_editor_source_button_visibility(self):
         pre_v3 = WgRfcFactory(rfc_number=settings.FIRST_V3_RFC - 1)
         first_v3 = WgRfcFactory(rfc_number=settings.FIRST_V3_RFC)
@@ -72,13 +72,17 @@ class UnpreppedRfcXmlTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 404)
 
-        # 200 with correct content-type and body when object is fully stored
+        # 200 with correct content-type, attachment disposition, and body when object is fully stored
         xml_content = b"<rfc>test</rfc>"
         store_bytes("rfc", stored_name, xml_content, allow_overwrite=True)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r["Content-Type"], "application/xml")
-        self.assertEqual(r.content, xml_content)
+        self.assertEqual(
+            r["Content-Disposition"],
+            f'attachment; filename="rfc{number}.notprepped.xml"',
+        )
+        self.assertEqual(b"".join(r.streaming_content), xml_content)
 
     def test_rfcxml_notprepped_wrapper(self):
         number = settings.FIRST_V3_RFC

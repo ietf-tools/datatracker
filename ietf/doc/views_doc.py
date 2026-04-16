@@ -43,9 +43,10 @@ from pathlib import Path
 
 from celery.result import AsyncResult
 from django.core.cache import caches
+from django.core.files.base import ContentFile
 from django.core.exceptions import PermissionDenied
 from django.db.models import Max
-from django.http import HttpResponse, Http404, HttpResponseBadRequest, JsonResponse
+from django.http import FileResponse, HttpResponse, Http404, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
@@ -2372,7 +2373,7 @@ def rfcxml_notprepped(request, number):
         bytes = retrieve_bytes("rfc", name)
     except FileNotFoundError:
         raise Http404
-    return HttpResponse(bytes, content_type="application/xml")
+    return FileResponse(ContentFile(bytes, name=f"rfc{number}.notprepped.xml"), as_attachment=True)
 
 
 def rfcxml_notprepped_wrapper(request, number):
