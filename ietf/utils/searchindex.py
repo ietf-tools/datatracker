@@ -2,12 +2,15 @@
 """Search indexing utilities"""
 
 import re
+from itertools import batched
 from math import floor
+from typing import Iterable, Any
 
 import httpx  # just for exceptions
 import typesense
 import typesense.exceptions
 from django.conf import settings
+from typesense.types.document import TDoc
 
 from ietf.doc.models import Document, StoredObject
 from ietf.doc.storage_utils import retrieve_str
@@ -80,7 +83,7 @@ def _sanitize_text(content):
     return content.strip()
 
 
-def update_or_create_rfc_entry(rfc: Document):
+def typesense_doc_from_rfc(rfc: Document) -> TDoc:
     assert rfc.type_id == "rfc"
     assert rfc.rfc_number is not None
 
@@ -93,8 +96,8 @@ def update_or_create_rfc_entry(rfc: Document):
             f"Indexing as {subseries[0].name}"
         )
     subseries = subseries[0] if len(subseries) > 0 else None
-    obsoleted_by = rfc.relations_that("obs")
-    updated_by = rfc.relations_that("updates")
+    obsoleted_by = rfc.related_that("obs")
+    updated_by = rfc.related_that("updates")
 
     stored_txt = (
         StoredObject.objects.exclude_deleted()
@@ -109,8 +112,8 @@ def update_or_create_rfc_entry(rfc: Document):
         except Exception as err:
             log(f"Unable to retrieve {stored_txt} from storage: {err}")
 
-    ts_id = f"doc-{rfc.pk}"
     ts_document = {
+        "id": f"doc-{rfc.pk}",
         "rfcNumber": rfc.rfc_number,
         "rfc": str(rfc.rfc_number),
         "filename": rfc.name,
@@ -139,7 +142,7 @@ def update_or_create_rfc_entry(rfc: Document):
     if subseries is not None:
         ts_document["subseries"] = {
             "acronym": subseries.type.slug,
-            "number": int(subseries.name[len(subseries.type.slug) :]),
+            "number": int(subseries.name[len(subseries.type.slug):]),
             "total": len(subseries.contains()),
         }
     if rfc.group is not None:
@@ -161,10 +164,31 @@ def update_or_create_rfc_entry(rfc: Document):
         ts_document["adName"] = rfc.ad.name
     if content != "":
         ts_document["content"] = _sanitize_text(content)
+    return ts_document
+
+
+def update_or_create_rfc_entry(rfc: Document):
+    """Update/create index entries for one RFC"""
+    ts_document = typesense_doc_from_rfc(rfc)
     client = get_typesense_client()
-    client.collections[get_collection_name()].documents.upsert(
-        {"id": ts_id} | ts_document
-    )
+    client.collections[get_collection_name()].documents.upsert(ts_document)
+
+
+def update_or_create_rfc_entries(rfcs: Iterable[Document], batchsize=40):
+    """Update/create index entries for RFCs in bulk
+    
+    Computes index data in batches of batchsize and adds to the index. Will make
+    a total of (len(rfcs) // batchsize) + 1 API calls.
+    
+    N.b. that typesense has a server-side batch size that defaults to 40. This does
+    not adjust that. 
+    """
+    client = get_typesense_client()
+    for batch in batched(rfcs, batchsize):
+        client.collections[get_collection_name()].documents.import_(
+            [typesense_doc_from_rfc(rfc) for rfc in batch],
+            {"action": "upsert"},
+        )
 
 
 DOCS_SCHEMA = {
@@ -318,3 +342,11 @@ def create_collection():
     client.collections.create(
         {"name": get_collection_name()} | DOCS_SCHEMA
     )
+
+
+def delete_collection():
+    client = get_typesense_client()
+    try:
+        client.collections[get_collection_name()].delete()
+    except typesense.exceptions.ObjectNotFound:
+        pass
