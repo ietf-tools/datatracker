@@ -31,6 +31,8 @@ class TestDecoders(TestCase):
         utf8_bytes = "𒀭𒊩𒌆𒄈𒋢".encode("utf-8")  # ends with 4-byte character
         latin1_bytes = "àéîøü".encode("latin-1")
         other_bytes = "àéîøü".encode("macintosh")  # different from its latin-1 encoding
+        assert other_bytes.decode("macintosh") != other_bytes.decode("latin-1"),\
+            "test broken: other_bytes must decode differently as latin-1"
 
         # simplest case
         self.assertEqual(
