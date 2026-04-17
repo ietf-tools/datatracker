@@ -174,21 +174,33 @@ def update_or_create_rfc_entry(rfc: Document):
     client.collections[get_collection_name()].documents.upsert(ts_document)
 
 
-def update_or_create_rfc_entries(rfcs: Iterable[Document], batchsize=40):
+def update_or_create_rfc_entries(rfcs: Iterable[Document], batchsize: int | None=None):
     """Update/create index entries for RFCs in bulk
     
-    Computes index data in batches of batchsize and adds to the index. Will make
-    a total of (len(rfcs) // batchsize) + 1 API calls.
+    If batchsize is set, computes index data in batches of batchsize and adds to the
+    index. Will make a total of (len(rfcs) // batchsize) + 1 API calls.
     
-    N.b. that typesense has a server-side batch size that defaults to 40. This does
-    not adjust that. 
+    N.b. that typesense has a server-side batch size that defaults to 40, which should
+    "almost never be changed from the default." This does not change that. Further,
+    the python client library's import_ method has a batch_size parameter that does
+    client-side batching. We don't use that, either.
     """
+    success_count = 0
+    fail_count = 0
     client = get_typesense_client()
-    for batch in batched(rfcs, batchsize):
-        client.collections[get_collection_name()].documents.import_(
-            [typesense_doc_from_rfc(rfc) for rfc in batch],
-            {"action": "upsert"},
+    batches = [rfcs] if batchsize is None else batched(rfcs, batchsize) 
+    for batch in batches:
+        tdoc_batch = [typesense_doc_from_rfc(rfc) for rfc in batch]
+        results = client.collections[get_collection_name()].documents.import_(
+            tdoc_batch, {"action": "upsert"}
         )
+        for tdoc, result in zip(tdoc_batch, results):
+            if result["success"]:
+                success_count += 1
+            else:
+                fail_count += 1
+                log(f"Failed to index RFC {tdoc["rfcNumber"]}: {result["error"]}")
+    log(f"Added {success_count} RFCs to the index, failed to add {fail_count}")
 
 
 DOCS_SCHEMA = {
@@ -338,6 +350,8 @@ DOCS_SCHEMA = {
 
 
 def create_collection():
+    collection_name = get_collection_name()
+    log(f"Creating '{collection_name}' collection")
     client = get_typesense_client()
     client.collections.create(
         {"name": get_collection_name()} | DOCS_SCHEMA
@@ -345,8 +359,10 @@ def create_collection():
 
 
 def delete_collection():
+    collection_name = get_collection_name()
+    log(f"Deleting '{collection_name}' collection")
     client = get_typesense_client()
     try:
-        client.collections[get_collection_name()].delete()
+        client.collections[collection_name].delete()
     except typesense.exceptions.ObjectNotFound:
         pass
