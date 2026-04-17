@@ -4,13 +4,13 @@
 import re
 from itertools import batched
 from math import floor
-from typing import Iterable, Any
+from typing import Iterable
 
 import httpx  # just for exceptions
 import typesense
 import typesense.exceptions
 from django.conf import settings
-from typesense.types.document import TDoc
+from typesense.types.document import DocumentSchema
 
 from ietf.doc.models import Document, StoredObject
 from ietf.doc.storage_utils import retrieve_str
@@ -83,7 +83,7 @@ def _sanitize_text(content):
     return content.strip()
 
 
-def typesense_doc_from_rfc(rfc: Document) -> TDoc:
+def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
     assert rfc.type_id == "rfc"
     assert rfc.rfc_number is not None
 
@@ -142,7 +142,7 @@ def typesense_doc_from_rfc(rfc: Document) -> TDoc:
     if subseries is not None:
         ts_document["subseries"] = {
             "acronym": subseries.type.slug,
-            "number": int(subseries.name[len(subseries.type.slug):]),
+            "number": int(subseries.name[len(subseries.type.slug) :]),
             "total": len(subseries.contains()),
         }
     if rfc.group is not None:
@@ -174,12 +174,14 @@ def update_or_create_rfc_entry(rfc: Document):
     client.collections[get_collection_name()].documents.upsert(ts_document)
 
 
-def update_or_create_rfc_entries(rfcs: Iterable[Document], batchsize: int | None=None):
+def update_or_create_rfc_entries(
+    rfcs: Iterable[Document], batchsize: int | None = None
+):
     """Update/create index entries for RFCs in bulk
-    
+
     If batchsize is set, computes index data in batches of batchsize and adds to the
     index. Will make a total of (len(rfcs) // batchsize) + 1 API calls.
-    
+
     N.b. that typesense has a server-side batch size that defaults to 40, which should
     "almost never be changed from the default." This does not change that. Further,
     the python client library's import_ method has a batch_size parameter that does
@@ -188,7 +190,7 @@ def update_or_create_rfc_entries(rfcs: Iterable[Document], batchsize: int | None
     success_count = 0
     fail_count = 0
     client = get_typesense_client()
-    batches = [rfcs] if batchsize is None else batched(rfcs, batchsize) 
+    batches = [rfcs] if batchsize is None else batched(rfcs, batchsize)
     for batch in batches:
         tdoc_batch = [typesense_doc_from_rfc(rfc) for rfc in batch]
         results = client.collections[get_collection_name()].documents.import_(
@@ -199,7 +201,7 @@ def update_or_create_rfc_entries(rfcs: Iterable[Document], batchsize: int | None
                 success_count += 1
             else:
                 fail_count += 1
-                log(f"Failed to index RFC {tdoc["rfcNumber"]}: {result["error"]}")
+                log(f"Failed to index RFC {tdoc['rfcNumber']}: {result['error']}")
     log(f"Added {success_count} RFCs to the index, failed to add {fail_count}")
 
 
@@ -353,9 +355,7 @@ def create_collection():
     collection_name = get_collection_name()
     log(f"Creating '{collection_name}' collection")
     client = get_typesense_client()
-    client.collections.create(
-        {"name": get_collection_name()} | DOCS_SCHEMA
-    )
+    client.collections.create({"name": get_collection_name()} | DOCS_SCHEMA)
 
 
 def delete_collection():
