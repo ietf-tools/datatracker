@@ -10,6 +10,7 @@ from django.core.files.base import ContentFile, File
 from django.core.files.storage import storages, Storage
 
 from ietf.utils.log import log
+from ietf.utils.text import decode_document_content
 
 
 class StorageUtilsError(Exception):
@@ -164,32 +165,30 @@ def store_str(
 
 def retrieve_bytes(kind: str, name: str) -> bytes:
     from ietf.doc.storage import maybe_log_timing
-    content = b""
-    if settings.ENABLE_BLOBSTORAGE:
-        try:
-            store = _get_storage(kind)
-            with store.open(name) as f:
-                with maybe_log_timing(
-                    hasattr(store, "ietf_log_blob_timing") and store.ietf_log_blob_timing,
-                    "read",
-                    bucket_name=store.bucket_name if hasattr(store, "bucket_name") else "",
-                    name=name,
-                ):
-                    content = f.read()
-        except Exception as err:
-            log(f"Blobstore Error: Failed to read bytes from {kind}:{name}: {repr(err)}")
-            raise
+    if not settings.ENABLE_BLOBSTORAGE:
+        return b""
+    try:
+        store = _get_storage(kind)
+        with store.open(name) as f:
+            with maybe_log_timing(
+                hasattr(store, "ietf_log_blob_timing") and store.ietf_log_blob_timing,
+                "read",
+                bucket_name=store.bucket_name if hasattr(store, "bucket_name") else "",
+                name=name,
+            ):
+                content = f.read()
+    except Exception as err:
+        log(f"Blobstore Error: Failed to read bytes from {kind}:{name}: {repr(err)}")
+        raise
     return content
 
 
 def retrieve_str(kind: str, name: str) -> str:
-    content = ""
-    if settings.ENABLE_BLOBSTORAGE:
-        try:
-            content_bytes = retrieve_bytes(kind, name)
-            # TODO-BLOBSTORE: try to decode all the different ways doc.text() does
-            content = content_bytes.decode("utf-8")
-        except Exception as err:
-            log(f"Blobstore Error: Failed to read string from {kind}:{name}: {repr(err)}")
-            raise
+    if not settings.ENABLE_BLOBSTORAGE:
+        return ""
+    try:
+        content = decode_document_content(retrieve_bytes(kind, name))
+    except Exception as err:
+        log(f"Blobstore Error: Failed to read string from {kind}:{name}: {repr(err)}")
+        raise
     return content

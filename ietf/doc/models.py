@@ -52,6 +52,7 @@ from ietf.person.models import Email, Person
 from ietf.person.utils import get_active_balloters
 from ietf.utils import log
 from ietf.utils.decorators import memoize
+from ietf.utils.text import decode_document_content
 from ietf.utils.validators import validate_no_control_chars
 from ietf.utils.mail import formataddr
 from ietf.utils.models import ForeignKey
@@ -640,19 +641,7 @@ class DocumentInfo(models.Model):
         except IOError as e:
             log.log(f"Error reading text for {path}: {e}")
             return None
-        text = None
-        try:
-            text = raw.decode('utf-8')
-        except UnicodeDecodeError:
-            for back in range(1,4):
-                try:
-                    text = raw[:-back].decode('utf-8')
-                    break
-                except UnicodeDecodeError:
-                    pass
-            if text is None:
-                text = raw.decode('latin-1')
-        return text
+        return decode_document_content(raw)
 
     def text_or_error(self):
         return self.text() or "Error; cannot read '%s'"%self.get_base_name()
