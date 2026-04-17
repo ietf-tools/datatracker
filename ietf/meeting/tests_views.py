@@ -33,6 +33,7 @@ from django.db.models import F, Max
 from django.http import QueryDict, FileResponse
 from django.template import Context, Template
 from django.utils import timezone
+from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 
@@ -9491,7 +9492,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertEqual(r.status_code, 200)  
         self.assertContains(r, '3 attendees')
         for person in persons:
-            self.assertContains(r, person.plain_name())
+            self.assertContains(r, escape(person.plain_name()))
 
         # Test for the "I was there" button.
         def _test_button(person, expected):
@@ -9511,14 +9512,14 @@ class ProceedingsTests(BaseMeetingTestCase):
         # attempt to POST anyway is ignored
         r = self.client.post(attendance_url)
         self.assertEqual(r.status_code, 200)
-        self.assertNotContains(r, persons[3].plain_name())
+        self.assertNotContains(r, escape(persons[3].plain_name()))
         self.assertEqual(session.attended_set.count(), 3)
         # button is shown, and POST is accepted
         meeting.importantdate_set.update(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
         _test_button(persons[3], True)
         r = self.client.post(attendance_url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, persons[3].plain_name())
+        self.assertContains(r, escape(persons[3].plain_name()))
         self.assertEqual(session.attended_set.count(), 4)
 
         # When the meeting is finalized, a bluesheet file is generated,
