@@ -271,7 +271,11 @@ def decode_document_content(content: bytes) -> str:
     Method was developed in DocumentInfo.text() where it gave acceptable results
     for existing documents / RFCs.
     """
-    for back in range(4):
+    try:
+        return content.decode("utf-8")
+    except UnicodeDecodeError:
+        pass
+    for back in range(1, 4):
         try:
             return content[:-back].decode("utf-8")
         except UnicodeDecodeError:
