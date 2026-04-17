@@ -263,3 +263,17 @@ def parse_unicode(text):
     else:
         text = decoded_string
     return text
+
+
+def decode_document_content(content: bytes) -> str:
+    """Decode document contents as utf-8 or latin1
+    
+    Method was developed in DocumentInfo.text() where it gave acceptable results
+    for existing documents / RFCs.
+    """
+    for back in range(4):
+        try:
+            return content[:-back].decode("utf-8")
+        except UnicodeDecodeError:
+            pass
+    return content.decode("latin-1")  # everything is legal in latin-1
