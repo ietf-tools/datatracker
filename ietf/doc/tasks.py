@@ -212,7 +212,7 @@ def update_rfc_searchindex_task(self, rfc_number: int):
 
 
 @shared_task
-def rebuild_searchindex(*, batchsize=40, drop_collection=False):
+def rebuild_searchindex_task(*, batchsize=40, drop_collection=False):
     if drop_collection:
         searchindex.delete_collection()
     searchindex.create_collection()
