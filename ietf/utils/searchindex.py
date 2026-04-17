@@ -86,6 +86,7 @@ def _sanitize_text(content):
 def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
     assert rfc.type_id == "rfc"
     assert rfc.rfc_number is not None
+    assert rfc.pages is not None
 
     keywords: list[str] = rfc.keywords  # help type checking
 
@@ -119,6 +120,7 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
         "filename": rfc.name,
         "title": rfc.title,
         "abstract": _sanitize_text(rfc.abstract),
+        "pages": rfc.pages,
         "keywords": keywords,
         "type": "rfc",
         "state": [state.name for state in rfc.states.all()],
@@ -231,6 +233,8 @@ DOCS_SCHEMA = {
         {"name": "title", "type": "string", "facet": False},
         # Abstract of the draft / rfc
         {"name": "abstract", "type": "string", "facet": False},
+        # Number of pages
+        {"name": "pages", "type": "int32", "facet": False},
         # A list of search keywords if relevant, set to empty array otherwise
         {"name": "keywords", "type": "string[]", "facet": True},
         # Type of the document

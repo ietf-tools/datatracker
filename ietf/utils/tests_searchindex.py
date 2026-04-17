@@ -70,6 +70,7 @@ class SearchindexTests(TestCase):
         self.assertEqual(result["id"], f"doc-{rfc.pk}")
         self.assertEqual(result["rfcNumber"], rfc.rfc_number)
         self.assertEqual(result["abstract"], searchindex._sanitize_text(rfc.abstract))
+        self.assertEqual(result["pages"], rfc.pages)
         self.assertNotIn("adName", result)
         self.assertNotIn("content", result)  # no blob
         self.assertNotIn("subseries", result)
