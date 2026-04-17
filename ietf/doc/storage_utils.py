@@ -10,6 +10,7 @@ from django.core.files.base import ContentFile, File
 from django.core.files.storage import storages, Storage
 
 from ietf.utils.log import log
+from ietf.utils.text import decode_document_content
 
 
 class StorageUtilsError(Exception):
@@ -183,13 +184,10 @@ def retrieve_bytes(kind: str, name: str) -> bytes:
 
 
 def retrieve_str(kind: str, name: str) -> str:
-    content = ""
-    if settings.ENABLE_BLOBSTORAGE:
-        try:
-            content_bytes = retrieve_bytes(kind, name)
-            # TODO-BLOBSTORE: try to decode all the different ways doc.text() does
-            content = content_bytes.decode("utf-8")
-        except Exception as err:
-            log(f"Blobstore Error: Failed to read string from {kind}:{name}: {repr(err)}")
-            raise
-    return content
+    if not settings.ENABLE_BLOBSTORAGE:
+        return ""
+    try:
+        return decode_document_content(retrieve_bytes(kind, name))
+    except Exception as err:
+        log(f"Blobstore Error: Failed to read string from {kind}:{name}: {repr(err)}")
+        raise
