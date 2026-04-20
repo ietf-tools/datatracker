@@ -59,4 +59,4 @@ spec:
             name: files-cfgmap
       dnsPolicy: ClusterFirst
       restartPolicy: Always
-      terminationGracePeriodSeconds: 600
+      terminationGracePeriodSeconds: 10
