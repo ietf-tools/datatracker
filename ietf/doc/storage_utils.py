@@ -9,7 +9,6 @@ from django.conf import settings
 from django.core.files.base import ContentFile, File
 from django.core.files.storage import storages, Storage
 
-from ietf.blobdb.storage import BlobdbStorage
 from ietf.utils.log import log
 from ietf.utils.text import decode_document_content
 
@@ -199,5 +198,6 @@ def force_replication(kind: str, name: str):
     if not settings.ENABLE_BLOBSTORAGE:
         return
     storage = _get_storage(kind)
+    from ietf.blobdb.storage import BlobdbStorage
     if isinstance(storage, BlobdbStorage):
         storage.force_replication(name)
