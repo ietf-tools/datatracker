@@ -19,6 +19,7 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
 
 from ietf.utils.admin import SaferTabularInline
 from ietf.utils.validators import validate_external_resource_value
+from .storage_utils import force_replication
 from .utils import replicate_stored_objects_for_document
 
 
@@ -254,11 +255,24 @@ class StoredObjectAdmin(admin.ModelAdmin):
     ]
     search_fields = ['name', 'doc_name', 'doc_rev']
     list_display_links = ['name']
+    actions = ["replicate_stored_object"]
 
     @admin.display(boolean=True, description="Deleted?", ordering="deleted")
     def is_deleted(self, instance):
         return instance.deleted is not None
-    
+
+    @admin.action(description="Replicate related blobs to R2")
+    def replicate_stored_object(self, request, queryset: QuerySet[StoredObject]):
+        stored_obj_count = 0
+        for stored_object in queryset.all():
+            if isinstance(stored_object, StoredObject):
+                force_replication(kind=stored_object.store, name=stored_object.name)
+                stored_obj_count += 1
+        self.message_user(
+            request,
+            f"Queued replication of a total of {stored_obj_count} StoredObject(s)",
+        )
+
 
 admin.site.register(StoredObject, StoredObjectAdmin)
 
