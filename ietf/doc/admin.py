@@ -102,7 +102,7 @@ class DocumentAdmin(admin.ModelAdmin):
     def state(self, instance):
         return self.get_state()
 
-    @admin.action(description="Replicate related blobs to R2")
+    @admin.action(description="Replicate related blobs")
     def replicate_stored_objects(self, request, queryset: QuerySet[Document]):
         doc_count = 0
         stored_obj_count = 0
@@ -261,7 +261,7 @@ class StoredObjectAdmin(admin.ModelAdmin):
     def is_deleted(self, instance):
         return instance.deleted is not None
 
-    @admin.action(description="Replicate related blobs to R2")
+    @admin.action(description="Replicate related blobs")
     def replicate_stored_object(self, request, queryset: QuerySet[StoredObject]):
         stored_obj_count = 0
         for stored_object in queryset.all():

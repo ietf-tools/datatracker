@@ -34,7 +34,7 @@ class BlobAdmin(admin.ModelAdmin):
         """Get the size of the object"""
         return instance.object_size  # annotation added in get_queryset()
 
-    @admin.action(description="Replicate related blobs to R2")
+    @admin.action(description="Replicate blobs")
     def replicate_blob(self, request, queryset: QuerySet[Blob]):
         blob_count = 0
         for blob in queryset.all():
