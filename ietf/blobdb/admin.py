@@ -1,10 +1,10 @@
 # Copyright The IETF Trust 2025-2026, All Rights Reserved
-from django.conf import settings
 from django.contrib import admin
 from django.db.models import QuerySet
 from django.db.models.functions import Length
 from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
+from .apps import get_blobdb
 from .models import Blob, ResolvedMaterial
 from .utils import queue_for_replication
 
@@ -40,7 +40,7 @@ class BlobAdmin(admin.ModelAdmin):
         for blob in queryset.all():
             if isinstance(blob, Blob):
                 queue_for_replication(
-                    bucket=blob.bucket, name=blob.name, using=settings.BLOBDB_DATABASE
+                    bucket=blob.bucket, name=blob.name, using=get_blobdb()
                 )
                 blob_count += 1
         self.message_user(
