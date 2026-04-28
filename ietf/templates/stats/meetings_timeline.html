@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load origin %}
+{% origin %}
+{% load ietf_filters static django_bootstrap5 %}
+{% block js %}
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    {{ total_chart_data|json_script:"total-chart-data" }}
+    {{ in_person_chart_data|json_script:"in-person-chart-data" }}
+    {{ stats_type|json_script:"stats-type-data" }}
+    <script src="{% static 'ietf/js/meeting_timeline.js' %}"></script>
+{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        {% block title %}
+            Statistics for IETF Meeting Registrations
+        {% endblock %}
+    </h1>
+    
+    <div class="row my-3">
+        <label class="fw-bold col-sm-1 col-form-label">Show:</label>
+        <div class="btn-group col-sm-4">
+            {% for slug, label, url in possible_stats_types %}
+                <a class="btn btn-outline-primary
+                            {% if slug == stats_type %}
+                                active
+                            {% endif %}"
+                    href="{{ url }}">{{ label }}</a>
+            {% endfor %}
+        </div>
+        <label class="fw-bold col-sm-1 col-form-label">Meeting:</label>
+        <div class="btn-group col-sm-2">
+            {% for num, url in possible_meeting_numbers %}
+                <a class="btn btn-outline-primary
+                            {% if num == meeting_number %}
+                                active
+                            {% endif %}"
+                    href="{{ url }}">{{ num }}</a>
+            {% endfor %}
+        </div>
+    </div>
+    <p>
+    {% if stats_type == 'total' %}
+        This page provides a timeline of meeting registrations.
+    {% else %}
+        This page provides a timeline of meeting registrations by {{ stats_type }} with a limit of {{ top_n }} categories.
+    {% endif %}
+        Panning can be done via the mouse or with a finger. Zooming is done via the mouse wheel or via a pinch gesture. Press <kbd>ESC</kbd> 
+            or click <button type="button" class="btn btn-primary" id="resetButton">Reset</button> to reset panning/zooming.
+    </p>
+    <div class="row">
+        <div class="col-md-12">
+        {% if stats_type == 'total' %}
+            <h2>Total Registrations</h2>
+        {% else %}
+            <h2>Total Registrations by {{ stats_type|title }}</h2>
+        {% endif %}
+        <div class="chart-wrapper col-10">
+            <canvas id="totalRegistrationChart" aria-label="Total Registration Timeline" role="img"></canvas>
+        </div>
+        </div><!-- col -->
+        {% if stats_type != 'total' %}
+        <div class="col-md-12">
+        {% if stats_type == 'total' %}
+            <h2>Total In Person Registrations</h2>
+        {% else %}
+            <h2>In Person Registrations by {{ stats_type|title }}</h2>
+        {% endif %}
+        <div class="chart-wrapper col-10">
+            <canvas id="inPersonRegistrationChart" aria-label="In Person Registration Timeline" role="img"></canvas>
+        </div>
+        </div><!-- col -->
+        {% endif %}
+    </div><!-- row -->
+{% endblock %}

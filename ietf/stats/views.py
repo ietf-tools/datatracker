@@ -9,11 +9,13 @@ import json
 import dateutil.relativedelta
 from collections import defaultdict
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse as urlreverse
-
+from django.db.models import Count
 
 import debug                            # pyflakes:ignore
 
@@ -25,15 +27,32 @@ from ietf.review.utils import (extract_review_assignment_data,
 from ietf.group.models import Role, Group
 from ietf.person.models import Person
 from ietf.name.models import ReviewResultName, CountryName, ReviewAssignmentStateName
+from ietf.meeting.models import Registration
 from ietf.ietfauth.utils import has_role
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
+from ietf.meeting.helpers import get_current_ietf_meeting_num, get_ietf_meeting
 
+# Color palette for lines
+colors = [
+    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+    '#FF9F40', '#C9CBCF', '#7BC043', '#F37735', '#00ABA9',
+    '#2B5797', '#E81123', '#00A4EF', '#7FBA00', '#FFB900',
+    '#D83B01', '#B4009E', '#5C2D91', '#008575', '#E3008C',
+]
 
 def stats_index(request):
-    return render(request, "stats/index.html")
+    """Render the statistics index page with the current meeting number as it is required by the meeting menu item."""
+    current_meeting = get_current_ietf_meeting_num()
+    return render(request, "stats/index.html", {
+        "current_meeting": current_meeting
+    })
 
 def generate_query_string(query_dict, overrides):
+    """
+    Returns:
+        A query string starting with '?' if there are parameters, empty string otherwise.
+    """
     query_part = ""
 
     if query_dict or overrides:
@@ -58,9 +77,20 @@ def generate_query_string(query_dict, overrides):
     return query_part
 
 def get_choice(request, get_parameter, possible_choices, multiple=False):
-    # the statistics are built with links to make navigation faster,
-    # so we don't really have a form in most cases, so just use this
-    # helper instead to select between the choices
+    """Extract a choice from the request GET parameters.
+
+    Since statistics pages use links for navigation instead of forms,
+    this helper selects between possible choices from the URL parameters.
+
+    Args:
+        request: The HTTP request object.
+        get_parameter: The name of the GET parameter.
+        possible_choices: List of tuples (value, label).
+        multiple: If True, return a list of found values; otherwise return the first found or None.
+
+    Returns:
+        The selected value(s) or None.
+    """
     values = request.GET.getlist(get_parameter)
     found = [t[0] for t in possible_choices if t[0] in values]
 
@@ -73,59 +103,27 @@ def get_choice(request, get_parameter, possible_choices, multiple=False):
             return None
 
 def add_url_to_choices(choices, url_builder):
+    """Add URLs to a list of choices.
+
+    Args:
+        choices: List of tuples (slug, label).
+        url_builder: Function that takes a slug and returns a URL.
+
+    Returns:
+        List of tuples (slug, label, url).
+    """
     return [ (slug, label, url_builder(slug)) for slug, label in choices]
 
-def put_into_bin(value, bin_size):
-    if value is None:
-        return (0, '')
-
-    v = (value // bin_size) * bin_size
-    return (v, "{} - {}".format(v, v + bin_size - 1))
-
-def prune_unknown_bin_with_known(bins):
-    # remove from the unknown bin all authors within the
-    # named/known bins
-    all_known = { n for b, names in bins.items() if b for n in names }
-    bins[""] = [name for name in bins[""] if name not in all_known]
-    if not bins[""]:
-        del bins[""]
-
-def count_bins(bins):
-    return len({ n for b, names in bins.items() if b for n in names })
-
-def add_labeled_top_series_from_bins(chart_data, bins, limit):
-    """Take bins on the form (x, label): [name1, name2, ...], figure out
-    how many there are per label, take the overall top ones and put
-    them into sorted series like [(x1, len(names1)), (x2, len(names2)), ...]."""
-    aggregated_bins = defaultdict(set)
-    xs = set()
-    for (x, label), names in bins.items():
-        xs.add(x)
-        aggregated_bins[label].update(names)
-
-    xs = list(sorted(xs))
-
-    sorted_bins = sorted(aggregated_bins.items(), key=lambda t: len(t[1]), reverse=True)
-    top = [ label for label, names in list(sorted_bins)[:limit]]
-
-    for label in top:
-        series_data = []
-
-        for x in xs:
-            names = bins.get((x, label), set())
-
-            series_data.append((x, len(names)))
-
-        chart_data.append({
-            "data": series_data,
-            "name": label
-        })
-
 def document_stats(request, stats_type=None):
+    # timeline per year, or per specific year: streams, affiliation, rfc vs I-D
+    # could also be time between individual/WG I-D to rfc publication/IESG ballot
+    # DISCUSS resolution time
+    # Humm also split by authors (affiliation) / documents (the rest) probably
+    """Redirect to the stats index page. Deprecated view."""
     return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
-
 def known_countries_list(request, stats_type=None, acronym=None):
+    """Render a list of known countries with their aliases."""
     countries = CountryName.objects.prefetch_related("countryalias_set")
     for c in countries:
         # the sorting is a bit of a hack - it puts the ISO code first
@@ -136,12 +134,522 @@ def known_countries_list(request, stats_type=None, acronym=None):
         "countries": countries,
     })
 
-def meeting_stats(request, num=None, stats_type=None):
-    return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
+def canonicalize_affiliation(affiliation):
+    """Canonicalize an affiliation string by removing common suffixes and standardizing prefixes.
+
+    Args:
+        affiliation: The affiliation string to canonicalize.
+
+    Returns:
+        The canonicalized affiliation string, or None if input is None.
+    """
+    if not affiliation or affiliation.lower() in ('n/a', 'none', 'unspecified'):
+        return None
+    for suffix in ('ab', 'ag', 'corp', 'corp.', 'corporation', 'gmbh', 'inc.', 'inc', 'international pte ltd', 'llc', 'ltd', 'ltd.', 'private limited', 'pty ltd', 'pvt ltd'):
+        if affiliation.lower().endswith(', ' + suffix):
+            affiliation = affiliation[:-(len(suffix)+2)]
+        elif affiliation.lower().endswith(' ' + suffix):
+            affiliation = affiliation[:-(len(suffix)+1)]
+        elif affiliation.lower().endswith(',' + suffix):
+            affiliation = affiliation[:-(len(suffix)+1)]
+    for prefix in ('akamai','apple', 'cisco', 'futurewei', 'google', 'hitachi', 'hpe', 'huawei', 'juniper', 'meta', 'nokia', 'ntt', 'siemens'):
+        if affiliation.lower().startswith(prefix + ' '):
+            affiliation = prefix
+    return affiliation.title()
+
+def get_affiliation_data_for_meetings(attendance_type=None):
+    """Get affiliation participation data for meetings timeline chart.
+
+    Args:
+        attendance_type: Optional filter for attendance type (e.g., 'onsite').
+
+    Returns:
+        Tuple of (sorted_meetings, datasets) for Chart.js.
+    """
+    cache_key = f'stats:get_affiliation_data_for_meetings:{attendance_type}'
+    sorted_meetings, datasets = cache.get(cache_key, (None, None))
+    if (sorted_meetings, datasets) == (None, None):
+        top_n = 20  # could be a parameter, but would need to adjust cache handling
+
+        # Get registration status details
+        if attendance_type:
+            registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
+        else:
+            registrations = Registration.objects.all()
+        registrations = registrations.values('affiliation', 'meeting__number')
+    
+        # Count per canonicalized affiliation
+        organization = dict()
+        meetings_set = set()
+        org_totals = defaultdict(int)
+        data_map = defaultdict(dict)  # {org: {meeting: count}}
+    
+        for reg in registrations:
+            meeting = reg['meeting__number']
+            meetings_set.add(meeting)
+            affiliation = canonicalize_affiliation(reg['affiliation']) or "Unspecified"
+            organization[affiliation] = organization.get(affiliation, 0) + 1
+            org_totals[affiliation] = org_totals.get(affiliation, 0) + 1
+            data_map[affiliation][meeting] = data_map[affiliation].get(meeting, 0) + 1
+    
+        # ── Step 2: Sort meetings numerically rather than alphabetically  ──
+        sorted_meetings = sorted(meetings_set, key=lambda x: int(x) if x.isdigit() else x)
+    
+        # ── Step 3: Get top N countries ──
+        top_orgs = sorted(
+            org_totals.keys(),
+            key=lambda c: org_totals[c],
+            reverse=True
+        )[:top_n]
+        non_top_orgs = org_totals.keys() - top_orgs
+        other_totals = defaultdict(int)
+        for m in sorted_meetings:
+            other_totals[m] = 0
+            for c in non_top_orgs:
+                other_totals[m] += int(data_map[c].get(m, 0))
+    
+        # ── Step 4: Build Chart.js datasets ──
+    
+        datasets = []
+        for idx, org in enumerate(top_orgs):
+            color = colors[idx % len(colors)]
+            datasets.append({
+                'label': org,
+                'data': [data_map[org].get(m, 0) for m in sorted_meetings],
+                'borderColor': color,
+                'fill': False,
+                'tension': 0.3,
+                'pointColor': color,
+                'pointBackgroundColor': color,
+                'pointRadius': 4,
+                'pointHoverRadius': 6,
+                'borderWidth': 2,
+            })
+    
+        # -- Step 4.bis handle the other --
+        datasets.append({
+            'label': 'Other',
+            'data': [other_totals.get(m, 0) for m in sorted_meetings],
+            'borderColor': 'black',
+            'fill': False,
+            'tension': 0.3,
+            'pointColor': 'black',
+            'pointBackgroundColor': 'black',
+            'pointRadius': 4,
+            'pointHoverRadius': 6,
+            'borderWidth': 2,
+        })
+        cache.set(
+            cache_key,
+            (sorted_meetings, datasets),
+            settings.STATS_TIMELINE_CACHE_TIMEOUT,
+        )
+
+    return sorted_meetings, datasets
+
+def get_country_data_for_meetings(attendance_type=None):
+    """Get country participation data for meetings timeline chart.
+
+    Args:
+        attendance_type: Optional filter for attendance type (e.g., 'onsite').
+
+    Returns:
+        Tuple of (sorted_meetings, datasets) for Chart.js.
+    """
+    cache_key = f'stats:get_country_data_for_meetings:{attendance_type}'
+    sorted_meetings, datasets = cache.get(cache_key, (None, None))
+    if (sorted_meetings, datasets) == (None, None):
+        top_n = 10  # could be a parameter, but would need to adjust cache handling
+        # Get registration status counts, aggregated by country_code
+        if attendance_type:
+            registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
+        else:
+            registrations = Registration.objects.all()
+        queryset = (
+            registrations
+            .values(
+                'meeting__number',      # e.g. "118", "119", "120"
+                'country_code'          # country code of the participant
+            )
+            .annotate(participant_count=Count('id'))
+            .order_by('meeting__number')  # chronological order
+        )
+    
+        # ── Step 1: Collect all meetings and country totals ──
+        meetings_set = set()
+        country_totals = defaultdict(int)
+        data_map = defaultdict(dict)  # {country: {meeting: count}}
+    
+        for row in queryset:
+            meeting = row['meeting__number']
+            country = row['country_code']
+            count = row['participant_count']
+    
+            meetings_set.add(meeting)
+            country_totals[country] += count
+            data_map[country][meeting] = count
+    
+        # ── Step 2: Sort meetings numerically rather than alphabetically  ──
+        sorted_meetings = sorted(meetings_set, key=lambda x: int(x) if x.isdigit() else x)
+    
+        # ── Step 3: Get top N countries ──
+        top_countries = sorted(
+            country_totals.keys(),
+            key=lambda c: country_totals[c],
+            reverse=True
+        )[:top_n]
+    
+        # -- Step 3.bis do the 'other' category --
+        non_top_countries = country_totals.keys() - top_countries
+        other_totals = defaultdict(int)
+        for m in sorted_meetings:
+            other_totals[m] = 0
+            for c in non_top_countries:
+                other_totals[m] += int(data_map[c].get(m, 0))
+    
+        # ── Step 4: Build Chart.js datasets ──
+    
+        datasets = []
+        for idx, country in enumerate(top_countries):
+            color = colors[idx % len(colors)]
+            datasets.append({
+                'label': country,
+                'data': [data_map[country].get(m, 0) for m in sorted_meetings],
+                'borderColor': color,
+                'fill': False,
+                'tension': 0.3,
+                'pointColor': color,
+                'pointBackgroundColor': color,
+                'pointRadius': 4,
+                'pointHoverRadius': 6,
+                'borderWidth': 2,
+            })
+    
+        # -- Step 4.bis handle the other --
+        datasets.append({
+            'label': 'Other',
+            'data': [other_totals.get(m, 0) for m in sorted_meetings],
+            'borderColor': 'black',
+            'fill': False,
+            'tension': 0.3,
+            'pointColor': 'black',
+            'pointBackgroundColor': 'black',
+            'pointRadius': 4,
+            'pointHoverRadius': 6,
+            'borderWidth': 2,
+        })
+        cache.set(
+            cache_key,
+            (sorted_meetings, datasets),
+            settings.STATS_TIMELINE_CACHE_TIMEOUT,
+        )
+
+    return sorted_meetings, datasets
+
+def get_data_for_meetings():
+    """Get total participation data by attendance type for meetings timeline chart.
+
+    Returns:
+        Tuple of (sorted_meetings, datasets) for Chart.js.
+    """
+    cache_key = "stats:get_data_for_meetings"
+    sorted_meetings, datasets = cache.get(cache_key, (None, None))
+    if (sorted_meetings, datasets) == (None, None):
+        # Get registration status counts, aggregated by ticket types
+        registrations = Registration.objects.filter(tickets__attendance_type__in=['onsite', 'remote'])
+        queryset = (
+            registrations
+            .values(
+                'meeting__number',      # e.g. "118", "119", "120"
+                'tickets__attendance_type'
+            )
+            .annotate(participant_count=Count('id'))
+            .order_by('meeting__number')  # chronological order
+        )
+    
+        # ── Step 1: Collect all meetings and tickets totals ──
+        meetings_set = set()
+        tickets_totals = defaultdict(int)
+        data_map = defaultdict(dict)  # {ticket: {meeting: count}}
+    
+        for row in queryset:
+            meeting = row['meeting__number']
+            ticket = row['tickets__attendance_type']
+            count = row['participant_count']
+    
+            meetings_set.add(meeting)
+            tickets_totals[ticket] += count
+            data_map[ticket][meeting] = count
+    
+        # ── Step 2: Sort meetings numerically rather than alphabetically  ──
+        sorted_meetings = sorted(meetings_set, key=lambda x: int(x) if x.isdigit() else x)
+        ticket_types = tickets_totals.keys()
+        
+        # ── Step 4: Build Chart.js datasets ──
+        # Color palette for lines
+        colors = [ '#FF6384', '#36A2EB']
+    
+        datasets = []
+        for idx, ticket_type in enumerate(ticket_types):
+            color = colors[idx % len(colors)]
+            datasets.append({
+                'label': ticket_type,
+                'data': [data_map[ticket_type].get(m, 0) for m in sorted_meetings],
+                'borderColor': color,
+                'backgroundColor': color + '99', # 60% opacity fill
+                'fill': True,
+                'tension': 0.0,
+                'pointColor': color,
+                'pointBackgroundColor': color,
+                'pointRadius': 4,
+                'pointHoverRadius': 6,
+                'borderWidth': 2,
+            })
+        cache.set(
+            cache_key,
+            (sorted_meetings, datasets),
+            settings.STATS_TIMELINE_CACHE_TIMEOUT,
+        )
+    return sorted_meetings, datasets
+
+def meetings_timeline(request, stats_type='country'):
+    """Render the meetings timeline page with participation statistics over time.
+
+    Args:
+        request: The HTTP request object.
+        stats_type: Type of statistics ('country' or 'total').
+        top_n: Number of top items to show (for country stats).
+
+    Returns:
+        Rendered response for the meetings timeline template.
+    """
+    if stats_type == 'total':
+        total_labels, total_data_sets = get_data_for_meetings()
+        in_person_labels = ([], [])
+        in_person_data_sets = ([], [])
+        top_n = len(total_data_sets) - 1  # subtract one because we don't count "other"
+    elif stats_type == 'affiliation':
+        total_labels, total_data_sets = get_affiliation_data_for_meetings()
+        in_person_labels, in_person_data_sets = get_affiliation_data_for_meetings(attendance_type='onsite')
+        top_n = len(total_data_sets) - 1  # subtract one because we don't count "other"
+    elif stats_type == 'country':
+        total_labels, total_data_sets = get_country_data_for_meetings()
+        in_person_labels, in_person_data_sets = get_country_data_for_meetings(attendance_type='onsite')
+        top_n = len(total_data_sets) - 1  # subtract one because we don't count "other"
+    else:
+        return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
+
+    total_chart_data = {
+        'labels': total_labels,
+        'datasets': total_data_sets,
+    }
+
+    # On per country/affiliation have a separate graph for inperson
+    if stats_type == 'total':
+        in_person_chart_data = None
+    else:
+        in_person_chart_data = {
+            'labels': in_person_labels,
+            'datasets': in_person_data_sets,
+        }
+
+    # Prepare the list of choice buttons for the template
+    possible_stats_types = [
+        ("affiliation", "Per affiliation", urlreverse(meetings_timeline, kwargs={'stats_type': 'affiliation'})),
+        ("country", "Per country", urlreverse(meetings_timeline, kwargs={'stats_type': 'country'})),
+        ("total", "Total", urlreverse(meetings_timeline, kwargs={'stats_type': 'total'})),
+    ]
+
+    current_meeting = get_current_ietf_meeting_num()
+    if stats_type == 'total':
+        possible_stats_type = 'country'
+    else:
+        possible_stats_type = stats_type
+
+    possible_meeting_numbers = [(int(current_meeting)-1, urlreverse(meeting_stats, kwargs={'meeting_number': int(current_meeting)-1, 'stats_type': possible_stats_type})),
+        (int(current_meeting), urlreverse(meeting_stats, kwargs={'meeting_number': int(current_meeting), 'stats_type': possible_stats_type})),
+        (int(current_meeting)+1, urlreverse(meeting_stats, kwargs={'meeting_number': int(current_meeting)+1, 'stats_type': possible_stats_type}))]
+
+    return render(request, "stats/meetings_timeline.html", {
+        "top_n": top_n,
+        "possible_stats_types": possible_stats_types,
+        "possible_meeting_numbers": possible_meeting_numbers,
+        "stats_type": stats_type,
+        "total_chart_data": total_chart_data,
+        "in_person_chart_data": in_person_chart_data,
+    })
+
+def get_affiliation_data_for_meeting(meeting_number, minimum_required, attendance_type=None):
+    """Get affiliation participation data for a specific meeting.
+
+    Args:
+        meeting_number: The meeting number.
+        minimum_required: Minimum count to include in main data (others go to 'Other').
+        attendance_type: Optional filter for attendance type.
+
+    Returns:
+        Tuple of (labels, data, total) for chart display.
+    """
+    # Get registration status details
+    registrations = Registration.objects.filter(meeting__number=meeting_number)
+    if attendance_type:
+        registrations = registrations.filter(tickets__attendance_type=attendance_type)
+    registrations = registrations.values('affiliation')
+
+    # Count per canonicalized affiliation
+    organization = dict()
+    for reg in registrations:
+        affiliation = canonicalize_affiliation(reg['affiliation']) or "Unspecified"
+        organization[affiliation] = organization.get(affiliation, 0) + 1
+
+    # Sort to have the largest count first (nicer in pie chart)
+    sorted_orgs = sorted(organization.items(), key=lambda t: t[1], reverse=True)
+    labels = []
+    data = []
+    others_count = 0
+    total = 0
+    for org, count in sorted_orgs:
+        total += count
+        if count > minimum_required:
+            labels.append(org)
+            data.append(count)
+        else:
+            others_count += count
+
+    if others_count > 0:
+        labels.append('Other')
+        data.append(others_count)
+
+    return labels, data, total
+
+def get_data_for_meeting(meeting_number, minimum_required, attendance_type=None):
+    """Get country participation data for a specific meeting.
+
+    Args:
+        meeting_number: The meeting number.
+        minimum_required: Minimum count to include in main data (others go to 'Other').
+        attendance_type: Optional filter for attendance type.
+
+    Returns:
+        Tuple of (labels, data, total) for chart display.
+    """
+    # Get registration status counts, aggregated by country_code
+    registration_counts = Registration.objects.filter(meeting__number=meeting_number)
+    if attendance_type:
+        registration_counts = registration_counts.filter(tickets__attendance_type=attendance_type)
+    registration_counts = registration_counts.values('country_code').annotate(count=Count('country_code')).order_by('-count')
+
+    labels = []
+    data = []
+    others_count = 0
+    total = 0
+    for item in registration_counts:
+        total += item['count']
+        if item['count'] > minimum_required:
+            labels.append(item['country_code'])
+            data.append(item['count'])
+        else:
+            others_count += item['count']
+
+    if others_count > 0:
+        labels.append('Other')
+        data.append(others_count)
+
+    return labels, data, total
+
+def meeting_stats(request, meeting_number=None, stats_type='country'):
+    """Render statistics for a specific meeting.
+
+    Args:
+        request: The HTTP request object.
+        meeting_number: The meeting number (defaults to current).
+        stats_type: Type of statistics ('country' or 'affiliation').
+
+    Returns:
+        Rendered response for the meeting stats template.
+    """
+
+    current_meeting = get_current_ietf_meeting_num()
+    if meeting_number is None:
+        meeting_number = current_meeting
+
+    this_meeting = get_ietf_meeting(meeting_number)
+
+    if stats_type == 'affiliation':
+        minimum_required = 4
+        total_labels, total_data, total_total = get_affiliation_data_for_meeting(meeting_number, minimum_required)
+        in_person_labels, in_person_data, in_person_total = get_affiliation_data_for_meeting(meeting_number, minimum_required, attendance_type='onsite')
+    elif stats_type == 'country':
+        minimum_required = 10
+        total_labels, total_data, total_total = get_data_for_meeting(meeting_number, minimum_required)
+        in_person_labels, in_person_data, in_person_total = get_data_for_meeting(meeting_number, minimum_required, attendance_type='onsite')
+    else:
+        return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
+
+    total_chart_data = {
+        'labels': total_labels,
+        'datasets': [{
+            'label': 'Total Registrations by ' + stats_type,
+            'data': total_data,
+            'borderColor': '#ffffff',
+            'borderWidth': 2,
+        }]
+    }
+    in_person_chart_data = {
+        'labels': in_person_labels,
+        'datasets': [{
+            'label': 'In Person Registrations by ' + stats_type,
+            'data': in_person_data,
+            'borderColor': '#ffffff',
+            'borderWidth': 2,
+        }]
+    }
+
+    # Prepare the list of choice buttons for the template
+    possible_stats_types = [
+        ("affiliation", "Per affiliation", urlreverse(meeting_stats, kwargs={'meeting_number': meeting_number, 'stats_type': 'affiliation'})),
+        ("country", "Per country", urlreverse(meeting_stats, kwargs={'meeting_number': meeting_number, 'stats_type': 'country'})),
+    ]
+
+    # Prepare the list of meeting number buttons for the template
+    possible_meeting_numbers = [('All', urlreverse(meetings_timeline, kwargs={'stats_type': stats_type}))]
+    if int(meeting_number) > 72:  # No registration data before IETF-72
+        possible_meeting_numbers.append((int(meeting_number)-1, urlreverse(meeting_stats, kwargs={'meeting_number': int(meeting_number)-1, 'stats_type': stats_type})))
+    possible_meeting_numbers.append((meeting_number, urlreverse(meeting_stats, kwargs={'meeting_number': meeting_number, 'stats_type': stats_type})))
+    if int(meeting_number) <= int(current_meeting): # Allow current meeting +1
+        possible_meeting_numbers.append((int(meeting_number)+1, urlreverse(meeting_stats, kwargs={'meeting_number': int(meeting_number)+1, 'stats_type': stats_type})))
+
+    return render(request, "stats/meeting_stats.html", {
+        "meeting_number": meeting_number,
+        "meeting_date": this_meeting.date,
+        "meeting_country": this_meeting.country,
+        "meeting_city": this_meeting.city,
+        "possible_stats_types": possible_stats_types,
+        "possible_meeting_numbers": possible_meeting_numbers,
+        "stats_type": stats_type,
+        "minimum_required": minimum_required,
+        "total_chart_data": total_chart_data,
+        "total_total": total_total,
+        "in_person_chart_data": in_person_chart_data,
+        "in_person_total": in_person_total
+    })
 
 
 @login_required
 def review_stats(request, stats_type=None, acronym=None):
+    """Render review statistics page with tables and charts for review assignments.
+
+    Shows completion status, results, assignment states, and time series data.
+    Supports both team-level and reviewer-level views with filtering options.
+
+    Args:
+        request: The HTTP request object.
+        stats_type: Type of statistics ('completion', 'results', 'states', 'time').
+        acronym: Team acronym for reviewer-level view (None for team view).
+
+    Returns:
+        Rendered response for the review stats template.
+    """
     # This view is a bit complex because we want to show a bunch of
     # tables with various filtering options, and both a team overview
     # and a reviewers-within-team overview - and a time series chart.

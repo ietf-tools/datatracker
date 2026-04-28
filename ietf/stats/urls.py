@@ -11,7 +11,8 @@ urlpatterns = [
     url(r"^$", views.stats_index),
     url(r"^document/(?:(?P<stats_type>authors|pages|words|format|formlang|author/(?:documents|affiliation|country|continent|citations|hindex)|yearly/(?:affiliation|country|continent))/)?$", views.document_stats),
     url(r"^knowncountries/$", views.known_countries_list),
-    url(r"^meeting/(?P<num>\d+)/(?P<stats_type>country|continent)/$", views.meeting_stats),
-    url(r"^meeting/(?:(?P<stats_type>overview|country|continent)/)?$", views.meeting_stats),
+    url(r"^meeting/$", views.meetings_timeline),
+    url(r"^meeting/(?P<meeting_number>\d+)/(?P<stats_type>affiliation|country)/$", views.meeting_stats),
+    url(r"^meeting/(?:(?P<stats_type>affiliation|country|total)/)?$", views.meetings_timeline),
     url(r"^review/(?:(?P<stats_type>completion|results|states|time)/)?(?:%(acronym)s/)?$" % settings.URL_REGEXPS, views.review_stats),
 ]

@@ -192,3 +192,12 @@ def retrieve_str(kind: str, name: str) -> str:
         log(f"Blobstore Error: Failed to read string from {kind}:{name}: {repr(err)}")
         raise
     return content
+
+
+def force_replication(kind: str, name: str):
+    if not settings.ENABLE_BLOBSTORAGE:
+        return
+    storage = _get_storage(kind)
+    from ietf.blobdb.storage import BlobdbStorage
+    if isinstance(storage, BlobdbStorage):
+        storage.force_replication(name)

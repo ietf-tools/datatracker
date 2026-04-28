@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2024-2025, All Rights Reserved
+# Copyright The IETF Trust 2024-2026, All Rights Reserved
 
 import os
 import ietf
@@ -11,6 +11,22 @@ from opentelemetry.instrumentation.django import DjangoInstrumentor
 from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
 from opentelemetry.instrumentation.pymemcache import PymemcacheInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
+
+# Bind interfaces for both ipv4 and ipv6
+bind = ["127.0.0.1:8000", "[::1]:8000"]
+
+# Disable control socket
+control_socket_disable = True
+
+# Settings configurable via environment
+workers = int(os.environ.get("DATATRACKER_GUNICORN_WORKERS", "9"))
+max_requests = int(os.environ.get("DATATRACKER_GUNICORN_MAX_REQUESTS", "32768"))
+timeout = int(os.environ.get("DATATRACKER_GUNICORN_TIMEOUT", "180"))
+loglevel = os.environ.get("DATATRACKER_GUNICORN_LOG_LEVEL", "info") 
+
+# Logging / stdout capture
+capture_output = True
+accesslog = "-"
 
 # Configure security scheme headers for forwarded requests. Cloudflare sets X-Forwarded-Proto 
 # for us. Don't trust any of the other similar headers. Only trust the header if it's coming

@@ -146,6 +146,8 @@
         "ietf/static/js/manage-community-list.js",
         "ietf/static/js/manage-review-requests.js",
         "ietf/static/js/meeting-interim-request.js",
+        "ietf/static/js/meeting_stats.js",
+        "ietf/static/js/meeting_timeline.js",
         "ietf/static/js/moment.js",
         "ietf/static/js/navbar-doc-search.js",
         "ietf/static/js/password_strength.js",

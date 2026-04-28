@@ -45,16 +45,6 @@ cleanup () {
 trap 'trap "" TERM; cleanup' TERM
 
 # start gunicorn in the background so we can trap the TERM signal
-gunicorn \
-          -c /workspace/gunicorn.conf.py \
-          --workers "${DATATRACKER_GUNICORN_WORKERS:-9}" \
-          --max-requests "${DATATRACKER_GUNICORN_MAX_REQUESTS:-32768}" \
-          --timeout "${DATATRACKER_GUNICORN_TIMEOUT:-180}" \
-          --bind :8000 \
-          --log-level "${DATATRACKER_GUNICORN_LOG_LEVEL:-info}" \
-          --capture-output \
-          --access-logfile -\
-          ${DATATRACKER_GUNICORN_EXTRA_ARGS} \
-          ietf.wsgi:application &
+gunicorn -c /workspace/gunicorn.conf.py ${DATATRACKER_GUNICORN_EXTRA_ARGS} ietf.wsgi:application &
 gunicorn_pid=$!
 wait "${gunicorn_pid}"

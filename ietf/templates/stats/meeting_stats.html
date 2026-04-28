@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load origin %}
+{% origin %}
+{% load ietf_filters static django_bootstrap5 %}
+{% block js %}
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-autocolors"></script>
+    {{ total_chart_data|json_script:"total-chart-data" }}
+    {{ in_person_chart_data|json_script:"in-person-chart-data" }}
+    <script src="{% static 'ietf/js/meeting_stats.js' %}"></script>
+{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        {% block title %}
+            Statistics for IETF-{{ meeting_number }} ({{ meeting_date }}, {{ meeting_city }}, {{ meeting_country }}) Registrations
+        {% endblock %}
+    </h1>
+    <div class="row my-3">
+        <label class="fw-bold col-sm-1 col-form-label">Show:</label>
+        <div class="btn-group col-sm-4">
+            {% for slug, label, url in possible_stats_types %}
+                <a class="btn btn-outline-primary
+                            {% if slug == stats_type %}
+                                active
+                            {% endif %}"
+                    href="{{ url }}">{{ label }}</a>
+            {% endfor %}
+        </div>
+        <label class="fw-bold col-sm-1 col-form-label">Meeting:</label>
+        <div class="btn-group col-sm-2">
+            {% for num, url in possible_meeting_numbers %}
+                <a class="btn btn-outline-primary
+                            {% if num == meeting_number %}
+                                active
+                            {% endif %}"
+                    href="{{ url }}">{{ num }}</a>
+            {% endfor %}
+        </div>
+    </div>
+    <p>
+        This page provides a visual representation of the total registrations for IETF-{{ meeting_number }} by {{ stats_type }}. 
+        Only categories having more than {{ minimum_required }} registrations are displayed separately,
+        else they are grouped under "Other".
+    </p>
+    <div class="row">
+        <div class="col-md-6 col-sm-12">
+        <h2>Total Registrations by {{ stats_type|title }} ({{ total_total}} in total)</h2>
+        <div class="chart-wrapper col-10">
+            <canvas id="totalRegistrationChart" aria-label="Total Registration Pie Chart" role="img"></canvas>
+        </div>
+        </div><!-- col -->
+        <div class="col-md-6 col-sm-12">
+        <h2>In Person Registrations by {{ stats_type|title }} ({{ in_person_total}} in total)</h2>
+        <div class="chart-wrapper col-10">
+            <canvas id="inPersonRegistrationChart" aria-label="In Person Registration Pie Chart" role="img"></canvas>
+        </div>
+        </div><!-- col -->
+    </div><!-- row -->
+{% endblock %}
