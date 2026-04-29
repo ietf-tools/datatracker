@@ -12,8 +12,8 @@ from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
 from opentelemetry.instrumentation.pymemcache import PymemcacheInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
-# Bind all ipv4 interfaces, ipv6 loopback
-bind = ["0.0.0.0:8000", "[::1]:8000"]
+# Bind all ipv4 and ipv6 interfaces
+bind = ["0.0.0.0:8000", "[::]:8000"]
 
 # Disable control socket
 control_socket_disable = True
