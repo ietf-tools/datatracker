@@ -1,7 +1,9 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 import json
+from pathlib import Path
 from unittest import mock
 
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import storages
 from django.test.utils import override_settings
@@ -26,7 +28,7 @@ from ietf.sync.rfcindex import (
     get_publication_std_levels,
     get_unusable_rfc_numbers,
     save_to_red_bucket,
-    subseries_text_line,
+    subseries_text_line, save_to_filesystem,
 )
 from ietf.utils.test_utils import TestCase
 
@@ -377,6 +379,23 @@ class HelperTests(TestCase):
             self.assertEqual(f.read().decode("utf-8"), "new contents \U0001fae0")
         red_bucket.delete("test")  # clean up like a good child
 
+    def test_save_to_filesystem(self):
+        rfc_path = Path(settings.RFC_PATH)
+        self.assertFalse((rfc_path / "test").exists())
+        save_to_filesystem("test", "contents \U0001f600")
+        self.assertEqual((rfc_path / "test").read_text("utf-8"), "contents \U0001f600")
+        self.assertFalse((rfc_path / "subdir" / "test").exists())
+        
+        self.assertFalse((rfc_path / "test2").exists())
+        self.assertFalse((rfc_path / "subdir" / "test2").exists())
+        save_to_filesystem("test", "contents \U0001f600".encode("utf-8"), ["subdir"])
+        self.assertEqual((rfc_path / "test").read_text("utf-8"), "contents \U0001f600")
+        self.assertEqual((rfc_path / "subdir" / "test").read_text("utf-8"), "contents \U0001f600")
+        self.assertEqual(
+            (rfc_path / "test").stat().st_mtime,
+            (rfc_path / "subdir" / "test").stat().st_mtime,
+        )
+        
     def test_get_unusable_rfc_numbers_raises(self):
         """get_unusable_rfc_numbers should bail on errors"""
         with self.assertRaises(FileNotFoundError):
