@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from itertools import chain
 from operator import attrgetter, itemgetter
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from textwrap import fill
 from urllib.parse import urljoin
 
@@ -62,9 +61,11 @@ def save_to_red_bucket(filename: str, content: str | bytes):
     log(f"Saved {bucket_path} in red_bucket storage")
 
 
-def save_to_filesystem(filename: str, content: str | bytes, subdirs: Iterable[str]=()):
+def save_to_filesystem(
+    filename: str, content: str | bytes, subdirs: Iterable[str] = ()
+):
     """Save contents to the RFC_PATH in the filesystem
-    
+
     Always saves directly to settings.RFC_PATH/filename. Additionally saves a copy
     to settings.RFC_PATH/subdir/filename for each entry in subdirs. Uses shutil.copy2
     to create the copies, which will preserve mtime and other metadata between copies.
