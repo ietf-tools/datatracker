@@ -76,6 +76,7 @@ def save_to_filesystem(
         content if isinstance(content, bytes) else content.encode("utf-8")
     )
     for subdir in subdirs:
+        (rfc_path / subdir).mkdir(parents=False, exist_ok=True)
         shutil.copy2(dest_path, rfc_path / subdir / filename)
 
 
