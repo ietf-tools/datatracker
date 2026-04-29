@@ -23,7 +23,7 @@ def trigger_red_precomputer(rfc_number_list=()):
         except requests.Timeout as e:
             log(f"POST request timed out for {url} : {e}")
             return
-        if response.status_code != 200:
+        if response.status_code // 100 != 2:  # 2xx status codes are ok
             log(
                 f"POST request failed for {url} : status_code={response.status_code}"
             )
