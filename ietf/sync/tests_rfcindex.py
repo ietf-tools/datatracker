@@ -28,7 +28,8 @@ from ietf.sync.rfcindex import (
     get_publication_std_levels,
     get_unusable_rfc_numbers,
     save_to_red_bucket,
-    subseries_text_line, save_to_filesystem,
+    subseries_text_line,
+    save_to_filesystem,
 )
 from ietf.utils.test_utils import TestCase
 
@@ -118,9 +119,7 @@ class RfcIndexTests(TestCase):
         contents = mock_save_blob.call_args[0][1]
 
         self.assertEqual(mock_save_file.call_count, 1)
-        self.assertEqual(
-            mock_save_file.call_args, mock.call("rfc-index.txt", contents)
-        )
+        self.assertEqual(mock_save_file.call_args, mock.call("rfc-index.txt", contents))
 
         self.assertTrue(isinstance(contents, str))
         self.assertIn(
@@ -154,9 +153,7 @@ class RfcIndexTests(TestCase):
         contents = mock_save_blob.call_args[0][1]
 
         self.assertEqual(mock_save_file.call_count, 1)
-        self.assertEqual(
-            mock_save_file.call_args, mock.call("rfc-index.xml", contents)
-        )
+        self.assertEqual(mock_save_file.call_args, mock.call("rfc-index.xml", contents))
 
         self.assertTrue(isinstance(contents, bytes))
         ns = "{https://www.rfc-editor.org/rfc-index}"  # NOT an f-string
@@ -351,7 +348,7 @@ class RfcIndexTests(TestCase):
             mock_save_file.call_args,
             mock.call("fyi-index.txt", contents, ["fyi"]),
         )
-        
+
         self.assertTrue(isinstance(contents, str))
         # starts from 1
         self.assertIn(
@@ -423,17 +420,19 @@ class HelperTests(TestCase):
         save_to_filesystem("test", "contents \U0001f600")
         self.assertEqual((rfc_path / "test").read_text("utf-8"), "contents \U0001f600")
         self.assertFalse((rfc_path / "subdir" / "test").exists())
-        
+
         self.assertFalse((rfc_path / "test2").exists())
         self.assertFalse((rfc_path / "subdir" / "test2").exists())
         save_to_filesystem("test", "contents \U0001f600".encode("utf-8"), ["subdir"])
         self.assertEqual((rfc_path / "test").read_text("utf-8"), "contents \U0001f600")
-        self.assertEqual((rfc_path / "subdir" / "test").read_text("utf-8"), "contents \U0001f600")
+        self.assertEqual(
+            (rfc_path / "subdir" / "test").read_text("utf-8"), "contents \U0001f600"
+        )
         self.assertEqual(
             (rfc_path / "test").stat().st_mtime,
             (rfc_path / "subdir" / "test").stat().st_mtime,
         )
-        
+
     def test_get_unusable_rfc_numbers_raises(self):
         """get_unusable_rfc_numbers should bail on errors"""
         with self.assertRaises(FileNotFoundError):
