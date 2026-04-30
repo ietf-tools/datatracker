@@ -1,22 +1,35 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 import json
+from pathlib import Path
 from unittest import mock
 
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import storages
 from django.test.utils import override_settings
 from lxml import etree
 
-from ietf.doc.factories import PublishedRfcDocEventFactory, IndividualRfcFactory
+from ietf.doc.factories import (
+    BcpFactory,
+    FyiFactory,
+    StdFactory,
+    IndividualRfcFactory,
+    PublishedRfcDocEventFactory,
+)
 from ietf.name.models import DocTagName
 from ietf.sync.rfcindex import (
+    create_bcp_txt_index,
+    create_fyi_txt_index,
     create_rfc_txt_index,
     create_rfc_xml_index,
+    create_std_txt_index,
     format_rfc_number,
-    save_to_red_bucket,
-    get_unusable_rfc_numbers,
     get_april1_rfc_numbers,
     get_publication_std_levels,
+    get_unusable_rfc_numbers,
+    save_to_red_bucket,
+    subseries_text_line,
+    save_to_filesystem,
 )
 from ietf.utils.test_utils import TestCase
 
@@ -69,6 +82,15 @@ class RfcIndexTests(TestCase):
         ).doc
         self.rfc.tags.add(DocTagName.objects.get(slug="errata"))
 
+        # Create a BCP with non-April Fools RFC
+        self.bcp = BcpFactory(contains=[self.rfc], name="bcp11")
+
+        # Create a STD with non-April Fools RFC
+        self.std = StdFactory(contains=[self.rfc], name="std11")
+
+        # Create a FYI with non-April Fools RFC
+        self.fyi = FyiFactory(contains=[self.rfc], name="fyi11")
+
         # Set up a publication-std-levels.json file to indicate the publication
         # standard of self.rfc as different from its current value
         red_bucket.save(
@@ -88,12 +110,17 @@ class RfcIndexTests(TestCase):
         super().tearDown()
 
     @override_settings(RFCINDEX_INPUT_PATH="input/")
+    @mock.patch("ietf.sync.rfcindex.save_to_filesystem")
     @mock.patch("ietf.sync.rfcindex.save_to_red_bucket")
-    def test_create_rfc_txt_index(self, mock_save):
+    def test_create_rfc_txt_index(self, mock_save_blob, mock_save_file):
         create_rfc_txt_index()
-        self.assertEqual(mock_save.call_count, 1)
-        self.assertEqual(mock_save.call_args[0][0], "rfc-index.txt")
-        contents = mock_save.call_args[0][1]
+        self.assertEqual(mock_save_blob.call_count, 1)
+        self.assertEqual(mock_save_blob.call_args[0][0], "rfc-index.txt")
+        contents = mock_save_blob.call_args[0][1]
+
+        self.assertEqual(mock_save_file.call_count, 1)
+        self.assertEqual(mock_save_file.call_args, mock.call("rfc-index.txt", contents))
+
         self.assertTrue(isinstance(contents, str))
         self.assertIn(
             "123 Not Issued.",
@@ -117,12 +144,17 @@ class RfcIndexTests(TestCase):
         self.assertNotIn("1 April 2021", contents)
 
     @override_settings(RFCINDEX_INPUT_PATH="input/")
+    @mock.patch("ietf.sync.rfcindex.save_to_filesystem")
     @mock.patch("ietf.sync.rfcindex.save_to_red_bucket")
-    def test_create_rfc_xml_index(self, mock_save):
+    def test_create_rfc_xml_index(self, mock_save_blob, mock_save_file):
         create_rfc_xml_index()
-        self.assertEqual(mock_save.call_count, 1)
-        self.assertEqual(mock_save.call_args[0][0], "rfc-index.xml")
-        contents = mock_save.call_args[0][1]
+        self.assertEqual(mock_save_blob.call_count, 1)
+        self.assertEqual(mock_save_blob.call_args[0][0], "rfc-index.xml")
+        contents = mock_save_blob.call_args[0][1]
+
+        self.assertEqual(mock_save_file.call_count, 1)
+        self.assertEqual(mock_save_file.call_args, mock.call("rfc-index.xml", contents))
+
         self.assertTrue(isinstance(contents, bytes))
         ns = "{https://www.rfc-editor.org/rfc-index}"  # NOT an f-string
         index = etree.fromstring(contents)
@@ -137,7 +169,7 @@ class RfcIndexTests(TestCase):
 
         children = list(index)  # elements as list
         # Should be one rfc-not-issued-entry
-        self.assertEqual(len(children), 3)
+        self.assertEqual(len(children), 16)
         self.assertEqual(
             [
                 c.find(f"{ns}doc-id").text
@@ -184,6 +216,183 @@ class RfcIndexTests(TestCase):
             [(f"{ns}month", "April"), (f"{ns}year", "2021")],
         )
 
+    @override_settings(RFCINDEX_INPUT_PATH="input/")
+    @mock.patch("ietf.sync.rfcindex.save_to_filesystem")
+    @mock.patch("ietf.sync.rfcindex.save_to_red_bucket")
+    def test_create_bcp_txt_index(self, mock_save_blob, mock_save_file):
+        create_bcp_txt_index()
+        self.assertEqual(mock_save_blob.call_count, 1)
+        self.assertEqual(mock_save_blob.call_args[0][0], "bcp-index.txt")
+        contents = mock_save_blob.call_args[0][1]
+
+        self.assertEqual(mock_save_file.call_count, 1)
+        self.assertEqual(
+            mock_save_file.call_args,
+            mock.call("bcp-index.txt", contents, ["bcp"]),
+        )
+
+        self.assertTrue(isinstance(contents, str))
+        # starts from 1
+        self.assertIn(
+            "[BCP1]",
+            contents,
+        )
+        # fill up to 11
+        self.assertIn(
+            "[BCP10]",
+            contents,
+        )
+        # but not to 12
+        self.assertNotIn(
+            "[BCP12]",
+            contents,
+        )
+        # Test empty BCPs
+        self.assertIn(
+            "Best Current Practice 9 currently contains no RFCs",
+            contents,
+        )
+        # No zero prefix!
+        self.assertNotIn(
+            "[BCP0001]",
+            contents,
+        )
+        # Has BCP11 with a RFC
+        self.assertIn(
+            "Best Current Practice 11,",
+            contents,
+        )
+        self.assertIn(
+            f'"{self.rfc.title}"',
+            contents,
+        )
+        self.assertIn(
+            "BCP 11,",
+            contents,
+        )
+        self.assertIn(
+            f"RFC {self.rfc.rfc_number},",
+            contents,
+        )
+
+    @override_settings(RFCINDEX_INPUT_PATH="input/")
+    @mock.patch("ietf.sync.rfcindex.save_to_filesystem")
+    @mock.patch("ietf.sync.rfcindex.save_to_red_bucket")
+    def test_create_std_txt_index(self, mock_save_blob, mock_save_file):
+        create_std_txt_index()
+        self.assertEqual(mock_save_blob.call_count, 1)
+        self.assertEqual(mock_save_blob.call_args[0][0], "std-index.txt")
+        contents = mock_save_blob.call_args[0][1]
+
+        self.assertEqual(mock_save_file.call_count, 1)
+        self.assertEqual(
+            mock_save_file.call_args,
+            mock.call("std-index.txt", contents, ["std"]),
+        )
+
+        self.assertTrue(isinstance(contents, str))
+        # starts from 1
+        self.assertIn(
+            "[STD1]",
+            contents,
+        )
+        # fill up to 11
+        self.assertIn(
+            "[STD10]",
+            contents,
+        )
+        # but not to 12
+        self.assertNotIn(
+            "[STD12]",
+            contents,
+        )
+        # Test empty STDs
+        self.assertIn(
+            "Internet Standard 9 currently contains no RFCs",
+            contents,
+        )
+        # No zero prefix!
+        self.assertNotIn(
+            "[STD0001]",
+            contents,
+        )
+        # Has STD11 with a RFC
+        self.assertIn(
+            "Internet Standard 11,",
+            contents,
+        )
+        self.assertIn(
+            f'"{self.rfc.title}"',
+            contents,
+        )
+        self.assertIn(
+            "STD 11,",
+            contents,
+        )
+        self.assertIn(
+            f"RFC {self.rfc.rfc_number},",
+            contents,
+        )
+
+    @override_settings(RFCINDEX_INPUT_PATH="input/")
+    @mock.patch("ietf.sync.rfcindex.save_to_filesystem")
+    @mock.patch("ietf.sync.rfcindex.save_to_red_bucket")
+    def test_create_fyi_txt_index(self, mock_save_blob, mock_save_file):
+        create_fyi_txt_index()
+        self.assertEqual(mock_save_blob.call_count, 1)
+        self.assertEqual(mock_save_blob.call_args[0][0], "fyi-index.txt")
+        contents = mock_save_blob.call_args[0][1]
+
+        self.assertEqual(mock_save_file.call_count, 1)
+        self.assertEqual(
+            mock_save_file.call_args,
+            mock.call("fyi-index.txt", contents, ["fyi"]),
+        )
+
+        self.assertTrue(isinstance(contents, str))
+        # starts from 1
+        self.assertIn(
+            "[FYI1]",
+            contents,
+        )
+        # fill up to 11
+        self.assertIn(
+            "[FYI10]",
+            contents,
+        )
+        # but not to 12
+        self.assertNotIn(
+            "[FYI12]",
+            contents,
+        )
+        # Test empty FYIs
+        self.assertIn(
+            "For Your Information 9 currently contains no RFCs",
+            contents,
+        )
+        # No zero prefix!
+        self.assertNotIn(
+            "[FYI0001]",
+            contents,
+        )
+        # Has FYI11 with a RFC
+        self.assertIn(
+            "For Your Information 11,",
+            contents,
+        )
+        self.assertIn(
+            f'"{self.rfc.title}"',
+            contents,
+        )
+        self.assertIn(
+            "FYI 11,",
+            contents,
+        )
+        self.assertIn(
+            f"RFC {self.rfc.rfc_number},",
+            contents,
+        )
+
 
 class HelperTests(TestCase):
     def test_format_rfc_number(self):
@@ -204,6 +413,25 @@ class HelperTests(TestCase):
         with red_bucket.open("test", "rb") as f:
             self.assertEqual(f.read().decode("utf-8"), "new contents \U0001fae0")
         red_bucket.delete("test")  # clean up like a good child
+
+    def test_save_to_filesystem(self):
+        rfc_path = Path(settings.RFC_PATH)
+        self.assertFalse((rfc_path / "test").exists())
+        save_to_filesystem("test", "contents \U0001f600")
+        self.assertEqual((rfc_path / "test").read_text("utf-8"), "contents \U0001f600")
+        self.assertFalse((rfc_path / "subdir" / "test").exists())
+
+        self.assertFalse((rfc_path / "test2").exists())
+        self.assertFalse((rfc_path / "subdir" / "test2").exists())
+        save_to_filesystem("test", "contents \U0001f600".encode("utf-8"), ["subdir"])
+        self.assertEqual((rfc_path / "test").read_text("utf-8"), "contents \U0001f600")
+        self.assertEqual(
+            (rfc_path / "subdir" / "test").read_text("utf-8"), "contents \U0001f600"
+        )
+        self.assertEqual(
+            (rfc_path / "test").stat().st_mtime,
+            (rfc_path / "subdir" / "test").stat().st_mtime,
+        )
 
     def test_get_unusable_rfc_numbers_raises(self):
         """get_unusable_rfc_numbers should bail on errors"""
@@ -234,3 +462,8 @@ class HelperTests(TestCase):
         with self.assertRaises(json.JSONDecodeError):
             get_publication_std_levels()
         red_bucket.delete("publication-std-levels.json")
+
+    def test_subseries_text_line(self):
+        text = "foobar"
+        self.assertEqual(subseries_text_line(line=text, first=True), f"   {text}")
+        self.assertEqual(subseries_text_line(line=text), f"              {text}")

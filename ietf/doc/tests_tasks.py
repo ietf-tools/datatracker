@@ -24,6 +24,7 @@ from .tasks import (
     generate_idnits2_rfc_status_task,
     investigate_fragment_task,
     notify_expirations_task,
+    rebuild_searchindex_task,
     update_rfc_searchindex_task,
 )
 
@@ -143,6 +144,48 @@ class TaskTests(TestCase):
             mock_create_entry.side_effect = typesense_exceptions.Timeout
             with self.assertRaises(Retry):
                 update_rfc_searchindex_task(rfc_number=rfc.rfc_number)
+
+    @mock.patch("ietf.doc.tasks.searchindex.update_or_create_rfc_entries")
+    @mock.patch("ietf.doc.tasks.searchindex.create_collection")
+    @mock.patch("ietf.doc.tasks.searchindex.delete_collection")
+    def test_rebuild_searchindex_task(self, mock_delete, mock_create, mock_update):
+        rfcs = WgRfcFactory.create_batch(10)
+        rebuild_searchindex_task()
+        self.assertFalse(mock_delete.called)
+        self.assertFalse(mock_create.called)
+        self.assertTrue(mock_update.called)
+        self.assertQuerysetEqual(
+            mock_update.call_args.args[0],
+            sorted(rfcs, key=lambda doc: -doc.rfc_number),
+            ordered=True,
+        )
+
+        mock_delete.reset_mock()
+        mock_create.reset_mock()
+        mock_update.reset_mock()
+        rebuild_searchindex_task(drop_collection=True)
+        self.assertTrue(mock_delete.called)
+        self.assertTrue(mock_create.called)
+        self.assertTrue(mock_update.called)
+        self.assertQuerysetEqual(
+            mock_update.call_args.args[0],
+            sorted(rfcs, key=lambda doc: -doc.rfc_number),
+            ordered=True,
+        )
+
+        mock_delete.reset_mock()
+        mock_create.reset_mock()
+        mock_update.reset_mock()
+        rebuild_searchindex_task(drop_collection=True, batchsize=3)
+        self.assertTrue(mock_delete.called)
+        self.assertTrue(mock_create.called)
+        self.assertTrue(mock_update.called)
+        self.assertQuerysetEqual(
+            mock_update.call_args.args[0],
+            sorted(rfcs, key=lambda doc: -doc.rfc_number),
+            ordered=True,
+        )
+        self.assertEqual(mock_update.call_args.kwargs["batchsize"], 3)
 
 
 class Idnits2SupportTests(TestCase):

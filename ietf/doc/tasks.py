@@ -209,3 +209,14 @@ def update_rfc_searchindex_task(self, rfc_number: int):
                 countdown=searchindex_settings["TASK_RETRY_DELAY"],
                 max_retries=searchindex_settings["TASK_MAX_RETRIES"],
             )
+
+
+@shared_task
+def rebuild_searchindex_task(*, batchsize=40, drop_collection=False):
+    if drop_collection:
+        searchindex.delete_collection()
+        searchindex.create_collection()
+    searchindex.update_or_create_rfc_entries(
+        Document.objects.filter(type_id="rfc").order_by("-rfc_number"),
+        batchsize=batchsize,
+    )

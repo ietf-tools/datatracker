@@ -2,10 +2,13 @@
 {% load origin %}
 {% origin %}
 {% load ietf_filters static django_bootstrap5 %}
-{% block pagehead %}
+{% block js %}
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-autocolors"></script>
+    {{ total_chart_data|json_script:"total-chart-data" }}
+    {{ in_person_chart_data|json_script:"in-person-chart-data" }}
+    <script src="{% static 'ietf/js/meeting_stats.js' %}"></script>
 {% endblock %}
 {% block content %}
     {% origin %}
@@ -55,61 +58,4 @@
         </div>
         </div><!-- col -->
     </div><!-- row -->
-
-    <script>
-    // Need to use autocolors plug-in else all slices are gray...
-    const autocolors = window['chartjs-plugin-autocolors'];
-    Chart.register(autocolors);
-    // ── Safely parse JSON data injected from Django view ──
-    const totalChartData = JSON.parse('{{ total_chart_data|escapejs }}');
-    const inPersonChartData = JSON.parse('{{ in_person_chart_data|escapejs }}');
-
-    function displayChart(id, data) {
-        const ctx = document.getElementById(id).getContext('2d');
-        new Chart(ctx, {
-            type: 'pie',   // Change to 'doughnut' for a donut chart
-            data: data,
-            options: {
-                responsive: true,
-                plugins: {
-                    autocolors: {
-                        mode: 'data' // Required for Pie charts to color individual slices
-                    },
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 20,
-                            font: { size: 13 },
-                            color: '#475569',
-                            generateLabels: function(chart) {
-                                const dataset = chart.data.datasets[0];
-                                return chart.data.labels.map((label, i) => ({
-                                    text      : `${label}: ${dataset.data[i]}`,
-                                    fillStyle : dataset.backgroundColor[i],
-                                    hidden    : false,
-                                    index     : i,
-                                }));
-                            }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                            const label = context.label || '';
-                            const value = context.raw;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = ((value / total) * 100).toFixed(1);
-                            
-                            return `${label}: ${value} (${percentage}%)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    displayChart('totalRegistrationChart', totalChartData) ;
-    displayChart('inPersonRegistrationChart', inPersonChartData) ;
-</script>
 {% endblock %}

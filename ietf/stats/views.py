@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-from ast import pattern
 import calendar
 import datetime
 import itertools
@@ -11,7 +10,9 @@ import re
 import dateutil.relativedelta
 from collections import defaultdict
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse as urlreverse
@@ -31,7 +32,6 @@ from ietf.name.models import ReviewResultName, CountryName, ReviewAssignmentStat
 from ietf.meeting.models import Registration
 from ietf.doc.models import Document, DocumentAuthor
 from ietf.ietfauth.utils import has_role
-from ietf.utils import text
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 from ietf.meeting.helpers import get_current_ietf_meeting_num, get_ietf_meeting
@@ -399,175 +399,192 @@ def documents_timeline(request, doc_type='all', group_by='stream', top_n=10):
         "chart_data": chart_data,
     })
 
-def get_affiliation_data_for_meetings(top_n, attendance_type=None):
+def get_affiliation_data_for_meetings(attendance_type=None):
     """Get affiliation participation data for meetings timeline chart.
 
     Args:
-        top_n: Number of top affiliations to include.
         attendance_type: Optional filter for attendance type (e.g., 'onsite').
 
     Returns:
         Tuple of (sorted_meetings, datasets) for Chart.js.
     """
-     # Get registration status details
-    if attendance_type:
-        registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
-    else:
-        registrations = Registration.objects.all()
-    registrations = registrations.values('affiliation', 'meeting__number')
+    cache_key = f'stats:get_affiliation_data_for_meetings:{attendance_type}'
+    sorted_meetings, datasets = cache.get(cache_key, (None, None))
+    if (sorted_meetings, datasets) == (None, None):
+        top_n = 20  # could be a parameter, but would need to adjust cache handling
 
-    # Count per canonicalized affiliation
-    organization = dict()
-    meetings_set = set()
-    org_totals = defaultdict(int)
-    data_map = defaultdict(dict)  # {org: {meeting: count}}
-
-    for reg in registrations:
-        meeting = reg['meeting__number']
-        meetings_set.add(meeting)
-        affiliation = canonicalize_affiliation(reg['affiliation']) or "Unspecified"
-        organization[affiliation] = organization.get(affiliation, 0) + 1
-        org_totals[affiliation] = org_totals.get(affiliation, 0) + 1
-        data_map[affiliation][meeting] = data_map[affiliation].get(meeting, 0) + 1
-
-    # ── Step 2: Sort meetings numerically rather than alphabetically  ──
-    sorted_meetings = sorted(meetings_set, key=lambda x: int(x) if x.isdigit() else x)
-
-    # ── Step 3: Get top N  ──
-    top_orgs = sorted(
-        org_totals.keys(),
-        key=lambda c: org_totals[c],
-        reverse=True
-    )[:top_n]
-    non_top_orgs = org_totals.keys() - top_orgs
-    other_totals = defaultdict(int)
-    for m in sorted_meetings:
-        other_totals[m] = 0
-        for c in non_top_orgs:
-            other_totals[m] += int(data_map[c].get(m, 0))
-
-    # ── Step 4: Build Chart.js datasets ──
-
-    datasets = []
-    for idx, org in enumerate(top_orgs):
-        color = colors[idx % len(colors)]
+        # Get registration status details
+        if attendance_type:
+            registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
+        else:
+            registrations = Registration.objects.all()
+        registrations = registrations.values('affiliation', 'meeting__number')
+    
+        # Count per canonicalized affiliation
+        organization = dict()
+        meetings_set = set()
+        org_totals = defaultdict(int)
+        data_map = defaultdict(dict)  # {org: {meeting: count}}
+    
+        for reg in registrations:
+            meeting = reg['meeting__number']
+            meetings_set.add(meeting)
+            affiliation = canonicalize_affiliation(reg['affiliation']) or "Unspecified"
+            organization[affiliation] = organization.get(affiliation, 0) + 1
+            org_totals[affiliation] = org_totals.get(affiliation, 0) + 1
+            data_map[affiliation][meeting] = data_map[affiliation].get(meeting, 0) + 1
+    
+        # ── Step 2: Sort meetings numerically rather than alphabetically  ──
+        sorted_meetings = sorted(meetings_set, key=lambda x: int(x) if x.isdigit() else x)
+    
+        # ── Step 3: Get top N countries ──
+        top_orgs = sorted(
+            org_totals.keys(),
+            key=lambda c: org_totals[c],
+            reverse=True
+        )[:top_n]
+        non_top_orgs = org_totals.keys() - top_orgs
+        other_totals = defaultdict(int)
+        for m in sorted_meetings:
+            other_totals[m] = 0
+            for c in non_top_orgs:
+                other_totals[m] += int(data_map[c].get(m, 0))
+    
+        # ── Step 4: Build Chart.js datasets ──
+    
+        datasets = []
+        for idx, org in enumerate(top_orgs):
+            color = colors[idx % len(colors)]
+            datasets.append({
+                'label': org,
+                'data': [data_map[org].get(m, 0) for m in sorted_meetings],
+                'borderColor': color,
+                'fill': False,
+                'tension': 0.3,
+                'pointColor': color,
+                'pointBackgroundColor': color,
+                'pointRadius': 4,
+                'pointHoverRadius': 6,
+                'borderWidth': 2,
+            })
+    
+        # -- Step 4.bis handle the other --
         datasets.append({
-            'label': org,
-            'data': [data_map[org].get(m, 0) for m in sorted_meetings],
-            'borderColor': color,
+            'label': 'Other',
+            'data': [other_totals.get(m, 0) for m in sorted_meetings],
+            'borderColor': 'black',
             'fill': False,
             'tension': 0.3,
-            'pointColor': color,
-            'pointBackgroundColor': color,
+            'pointColor': 'black',
+            'pointBackgroundColor': 'black',
             'pointRadius': 4,
             'pointHoverRadius': 6,
             'borderWidth': 2,
         })
-
-    # -- Step 4.bis handle the other --
-    datasets.append({
-        'label': 'Other',
-        'data': [other_totals.get(m, 0) for m in sorted_meetings],
-        'borderColor': 'black',
-        'fill': False,
-        'tension': 0.3,
-        'pointColor': 'black',
-        'pointBackgroundColor': 'black',
-        'pointRadius': 4,
-        'pointHoverRadius': 6,
-        'borderWidth': 2,
-    })
+        cache.set(
+            cache_key,
+            (sorted_meetings, datasets),
+            settings.STATS_TIMELINE_CACHE_TIMEOUT,
+        )
 
     return sorted_meetings, datasets
 
-def get_country_data_for_meetings(top_n, attendance_type=None):
+def get_country_data_for_meetings(attendance_type=None):
     """Get country participation data for meetings timeline chart.
 
     Args:
-        top_n: Number of top countries to include.
         attendance_type: Optional filter for attendance type (e.g., 'onsite').
 
     Returns:
         Tuple of (sorted_meetings, datasets) for Chart.js.
     """
-    # Get registration status counts, aggregated by country_code
-    if attendance_type:
-        registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
-    else:
-        registrations = Registration.objects.all()
-    queryset = (
-        registrations
-        .values(
-            'meeting__number',      # e.g. "118", "119", "120"
-            'country_code'          # country code of the participant
+    cache_key = f'stats:get_country_data_for_meetings:{attendance_type}'
+    sorted_meetings, datasets = cache.get(cache_key, (None, None))
+    if (sorted_meetings, datasets) == (None, None):
+        top_n = 10  # could be a parameter, but would need to adjust cache handling
+        # Get registration status counts, aggregated by country_code
+        if attendance_type:
+            registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
+        else:
+            registrations = Registration.objects.all()
+        queryset = (
+            registrations
+            .values(
+                'meeting__number',      # e.g. "118", "119", "120"
+                'country_code'          # country code of the participant
+            )
+            .annotate(participant_count=Count('id'))
+            .order_by('meeting__number')  # chronological order
         )
-        .annotate(participant_count=Count('id'))
-        .order_by('meeting__number')  # chronological order
-    )
-
-# ── Step 1: Collect all meetings and country totals ──
-    meetings_set = set()
-    country_totals = defaultdict(int)
-    data_map = defaultdict(dict)  # {country: {meeting: count}}
-
-    for row in queryset:
-        meeting = row['meeting__number']
-        country = row['country_code']
-        count = row['participant_count']
-
-        meetings_set.add(meeting)
-        country_totals[country] += count
-        data_map[country][meeting] = count
-
-    # ── Step 2: Sort meetings numerically rather than alphabetically  ──
-    sorted_meetings = sorted(meetings_set, key=lambda x: int(x) if x.isdigit() else x)
-
-    # ── Step 3: Get top N countries ──
-    top_countries = sorted(
-        country_totals.keys(),
-        key=lambda c: country_totals[c],
-        reverse=True
-    )[:top_n]
-
-    # -- Step 3.bis do the 'other' category --
-    non_top_countries = country_totals.keys() - top_countries
-    other_totals = defaultdict(int)
-    for m in sorted_meetings:
-        other_totals[m] = 0
-        for c in non_top_countries:
-            other_totals[m] += int(data_map[c].get(m, 0))
-
-    # ── Step 4: Build Chart.js datasets ──
-
-    datasets = []
-    for idx, country in enumerate(top_countries):
-        color = colors[idx % len(colors)]
+    
+        # ── Step 1: Collect all meetings and country totals ──
+        meetings_set = set()
+        country_totals = defaultdict(int)
+        data_map = defaultdict(dict)  # {country: {meeting: count}}
+    
+        for row in queryset:
+            meeting = row['meeting__number']
+            country = row['country_code']
+            count = row['participant_count']
+    
+            meetings_set.add(meeting)
+            country_totals[country] += count
+            data_map[country][meeting] = count
+    
+        # ── Step 2: Sort meetings numerically rather than alphabetically  ──
+        sorted_meetings = sorted(meetings_set, key=lambda x: int(x) if x.isdigit() else x)
+    
+        # ── Step 3: Get top N countries ──
+        top_countries = sorted(
+            country_totals.keys(),
+            key=lambda c: country_totals[c],
+            reverse=True
+        )[:top_n]
+    
+        # -- Step 3.bis do the 'other' category --
+        non_top_countries = country_totals.keys() - top_countries
+        other_totals = defaultdict(int)
+        for m in sorted_meetings:
+            other_totals[m] = 0
+            for c in non_top_countries:
+                other_totals[m] += int(data_map[c].get(m, 0))
+    
+        # ── Step 4: Build Chart.js datasets ──
+    
+        datasets = []
+        for idx, country in enumerate(top_countries):
+            color = colors[idx % len(colors)]
+            datasets.append({
+                'label': country,
+                'data': [data_map[country].get(m, 0) for m in sorted_meetings],
+                'borderColor': color,
+                'fill': False,
+                'tension': 0.3,
+                'pointColor': color,
+                'pointBackgroundColor': color,
+                'pointRadius': 4,
+                'pointHoverRadius': 6,
+                'borderWidth': 2,
+            })
+    
+        # -- Step 4.bis handle the other --
         datasets.append({
-            'label': country,
-            'data': [data_map[country].get(m, 0) for m in sorted_meetings],
-            'borderColor': color,
+            'label': 'Other',
+            'data': [other_totals.get(m, 0) for m in sorted_meetings],
+            'borderColor': 'black',
             'fill': False,
             'tension': 0.3,
-            'pointColor': color,
-            'pointBackgroundColor': color,
+            'pointColor': 'black',
+            'pointBackgroundColor': 'black',
             'pointRadius': 4,
             'pointHoverRadius': 6,
             'borderWidth': 2,
         })
-
-    # -- Step 4.bis handle the other --
-    datasets.append({
-        'label': 'Other',
-        'data': [other_totals.get(m, 0) for m in sorted_meetings],
-        'borderColor': 'black',
-        'fill': False,
-        'tension': 0.3,
-        'pointColor': 'black',
-        'pointBackgroundColor': 'black',
-        'pointRadius': 4,
-        'pointHoverRadius': 6,
-        'borderWidth': 2,
-    })
+        cache.set(
+            cache_key,
+            (sorted_meetings, datasets),
+            settings.STATS_TIMELINE_CACHE_TIMEOUT,
+        )
 
     return sorted_meetings, datasets
 
@@ -577,60 +594,67 @@ def get_data_for_meetings():
     Returns:
         Tuple of (sorted_meetings, datasets) for Chart.js.
     """
-    # Get registration status counts, aggregated by ticket types
-    registrations = Registration.objects.filter(tickets__attendance_type__in=['onsite', 'remote'])
-    queryset = (
-        registrations
-        .values(
-            'meeting__number',      # e.g. "118", "119", "120"
-            'tickets__attendance_type'
+    cache_key = "stats:get_data_for_meetings"
+    sorted_meetings, datasets = cache.get(cache_key, (None, None))
+    if (sorted_meetings, datasets) == (None, None):
+        # Get registration status counts, aggregated by ticket types
+        registrations = Registration.objects.filter(tickets__attendance_type__in=['onsite', 'remote'])
+        queryset = (
+            registrations
+            .values(
+                'meeting__number',      # e.g. "118", "119", "120"
+                'tickets__attendance_type'
+            )
+            .annotate(participant_count=Count('id'))
+            .order_by('meeting__number')  # chronological order
         )
-        .annotate(participant_count=Count('id'))
-        .order_by('meeting__number')  # chronological order
-    )
-
-# ── Step 1: Collect all meetings and tickets totals ──
-    meetings_set = set()
-    tickets_totals = defaultdict(int)
-    data_map = defaultdict(dict)  # {ticket: {meeting: count}}
-
-    for row in queryset:
-        meeting = row['meeting__number']
-        ticket = row['tickets__attendance_type']
-        count = row['participant_count']
-
-        meetings_set.add(meeting)
-        tickets_totals[ticket] += count
-        data_map[ticket][meeting] = count
-
-    # ── Step 2: Sort meetings numerically rather than alphabetically  ──
-    sorted_meetings = sorted(meetings_set, key=lambda x: int(x) if x.isdigit() else x)
-    ticket_types = tickets_totals.keys()
     
-    # ── Step 4: Build Chart.js datasets ──
-    # Color palette for lines
-    colors = [ '#FF6384', '#36A2EB']
-
-    datasets = []
-    for idx, ticket_type in enumerate(ticket_types):
-        color = colors[idx % len(colors)]
-        datasets.append({
-            'label': ticket_type,
-            'data': [data_map[ticket_type].get(m, 0) for m in sorted_meetings],
-            'borderColor': color,
-            'backgroundColor': color + '99', # 60% opacity fill
-            'fill': True,
-            'tension': 0.0,
-            'pointColor': color,
-            'pointBackgroundColor': color,
-            'pointRadius': 4,
-            'pointHoverRadius': 6,
-            'borderWidth': 2,
-        })
-
+        # ── Step 1: Collect all meetings and tickets totals ──
+        meetings_set = set()
+        tickets_totals = defaultdict(int)
+        data_map = defaultdict(dict)  # {ticket: {meeting: count}}
+    
+        for row in queryset:
+            meeting = row['meeting__number']
+            ticket = row['tickets__attendance_type']
+            count = row['participant_count']
+    
+            meetings_set.add(meeting)
+            tickets_totals[ticket] += count
+            data_map[ticket][meeting] = count
+    
+        # ── Step 2: Sort meetings numerically rather than alphabetically  ──
+        sorted_meetings = sorted(meetings_set, key=lambda x: int(x) if x.isdigit() else x)
+        ticket_types = tickets_totals.keys()
+        
+        # ── Step 4: Build Chart.js datasets ──
+        # Color palette for lines
+        colors = [ '#FF6384', '#36A2EB']
+    
+        datasets = []
+        for idx, ticket_type in enumerate(ticket_types):
+            color = colors[idx % len(colors)]
+            datasets.append({
+                'label': ticket_type,
+                'data': [data_map[ticket_type].get(m, 0) for m in sorted_meetings],
+                'borderColor': color,
+                'backgroundColor': color + '99', # 60% opacity fill
+                'fill': True,
+                'tension': 0.0,
+                'pointColor': color,
+                'pointBackgroundColor': color,
+                'pointRadius': 4,
+                'pointHoverRadius': 6,
+                'borderWidth': 2,
+            })
+        cache.set(
+            cache_key,
+            (sorted_meetings, datasets),
+            settings.STATS_TIMELINE_CACHE_TIMEOUT,
+        )
     return sorted_meetings, datasets
 
-def meetings_timeline(request, stats_type='country', top_n=10):
+def meetings_timeline(request, stats_type='country'):
     """Render the meetings timeline page with participation statistics over time.
 
     Args:
@@ -641,33 +665,35 @@ def meetings_timeline(request, stats_type='country', top_n=10):
     Returns:
         Rendered response for the meetings timeline template.
     """
-
     if stats_type == 'total':
         total_labels, total_data_sets = get_data_for_meetings()
+        in_person_labels = ([], [])
+        in_person_data_sets = ([], [])
+        top_n = len(total_data_sets) - 1  # subtract one because we don't count "other"
     elif stats_type == 'affiliation':
-        top_n = 20  # For affiliations we can have more entries, so show more by default
-        total_labels, total_data_sets = get_affiliation_data_for_meetings(top_n)
-        in_person_labels, in_person_data_sets = get_affiliation_data_for_meetings(top_n, attendance_type='onsite')
+        total_labels, total_data_sets = get_affiliation_data_for_meetings()
+        in_person_labels, in_person_data_sets = get_affiliation_data_for_meetings(attendance_type='onsite')
+        top_n = len(total_data_sets) - 1  # subtract one because we don't count "other"
     elif stats_type == 'country':
-        total_labels, total_data_sets = get_country_data_for_meetings(top_n)
-        in_person_labels, in_person_data_sets = get_country_data_for_meetings(top_n, attendance_type='onsite')
+        total_labels, total_data_sets = get_country_data_for_meetings()
+        in_person_labels, in_person_data_sets = get_country_data_for_meetings(attendance_type='onsite')
+        top_n = len(total_data_sets) - 1  # subtract one because we don't count "other"
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
-    # Serialize to JSON for safe injection into the template
-    total_chart_data = json.dumps({
+    total_chart_data = {
         'labels': total_labels,
         'datasets': total_data_sets,
-    })
+    }
 
     # On per country/affiliation have a separate graph for inperson
     if stats_type == 'total':
-        in_person_chart_data = json.dumps(None)
+        in_person_chart_data = None
     else:
-        in_person_chart_data = json.dumps({
+        in_person_chart_data = {
             'labels': in_person_labels,
             'datasets': in_person_data_sets,
-        })
+        }
 
     # Prepare the list of choice buttons for the template
     possible_stats_types = [
@@ -802,8 +828,7 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
-    # Serialize to JSON for safe injection into the template
-    total_chart_data = json.dumps({
+    total_chart_data = {
         'labels': total_labels,
         'datasets': [{
             'label': 'Total Registrations by ' + stats_type,
@@ -811,8 +836,8 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
             'borderColor': '#ffffff',
             'borderWidth': 2,
         }]
-    })
-    in_person_chart_data = json.dumps({
+    }
+    in_person_chart_data = {
         'labels': in_person_labels,
         'datasets': [{
             'label': 'In Person Registrations by ' + stats_type,
@@ -820,7 +845,7 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
             'borderColor': '#ffffff',
             'borderWidth': 2,
         }]
-    })
+    }
 
     # Prepare the list of choice buttons for the template
     possible_stats_types = [
@@ -850,7 +875,6 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
         "in_person_chart_data": in_person_chart_data,
         "in_person_total": in_person_total
     })
-
 
 @login_required
 def review_stats(request, stats_type=None, acronym=None):

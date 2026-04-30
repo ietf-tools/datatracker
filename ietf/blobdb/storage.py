@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2025, All Rights Reserved
+# Copyright The IETF Trust 2025-2026, All Rights Reserved
 from typing import Optional
 
 from django.core.exceptions import SuspiciousFileOperation
@@ -10,6 +10,7 @@ from django.utils import timezone
 
 from ietf.utils.storage import MetadataFile
 from .models import Blob
+from .utils import queue_for_replication
 
 
 class BlobFile(MetadataFile):
@@ -94,3 +95,12 @@ class BlobdbStorage(Storage):
                 f"asked to store the name '{name[:5]}...{name[-5:]} of length {len(name)}"
             )
         return name  # overwrite is permitted
+
+    def force_replication(self, name: str):
+        """Force replication of a blob by name
+
+        Be careful with this - replication includes replicating deletion of blobs, so
+        if you call it with a name that does not exist in blobdb, it will be removed
+        from R2 if it exists there!
+        """
+        queue_for_replication(bucket=self.bucket_name, name=name)

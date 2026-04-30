@@ -231,11 +231,14 @@ BLOBSTORAGE_READ_TIMEOUT = 10  # seconds; boto3 default is 60
 AGENDA_CACHE_TIMEOUT_DEFAULT = 8 * 24 * 60 * 60  # 8 days
 AGENDA_CACHE_TIMEOUT_CURRENT_MEETING = 6 * 60  # 6 minutes
 
+
 WSGI_APPLICATION = "ietf.wsgi.application"
 
 AUTHENTICATION_BACKENDS = ( 'ietf.ietfauth.backends.CaseInsensitiveModelBackend', )
 
-FILE_UPLOAD_PERMISSIONS = 0o644          
+FILE_UPLOAD_PERMISSIONS = 0o644
+
+FIRST_V3_RFC = 8650
 
 
 #
@@ -1268,7 +1271,7 @@ if DEBUG:
     except ImportError:
         pass
 
-STATS_NAMES_LIMIT = 25
+STATS_TIMELINE_CACHE_TIMEOUT = 86400
 
 UTILS_MEETING_CONFERENCE_DOMAINS = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', 'gather.town', ]
 UTILS_TEST_RANDOM_STATE_FILE = '.factoryboy_random_state'

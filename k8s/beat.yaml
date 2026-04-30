@@ -17,16 +17,6 @@ spec:
       labels:
         app: beat
     spec:
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                      - datatracker
-              topologyKey: "kubernetes.io/hostname"
       securityContext:
         runAsNonRoot: true
       containers:
@@ -69,4 +59,4 @@ spec:
             name: files-cfgmap
       dnsPolicy: ClusterFirst
       restartPolicy: Always
-      terminationGracePeriodSeconds: 600
+      terminationGracePeriodSeconds: 10

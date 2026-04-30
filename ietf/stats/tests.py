@@ -33,10 +33,8 @@ class StatisticsTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_document_stats(self):
-        # Create a meeting as the index page needs to know the current meeting
-        MeetingFactory(type_id='ietf', number='124', date=timezone.now())
-        r = self.client.get(urlreverse(ietf.stats.views.document_stats))
-        self.assertRedirects(r, urlreverse(ietf.stats.views.stats_index))
+        # TODO !!! evyncke
+        self.assertFalse(True)
 
     def test_meeting_stats(self):
         meeting124 = MeetingFactory(type_id='ietf', number='124', date=timezone.now())
@@ -72,7 +70,15 @@ class StatisticsTests(TestCase):
         self.assertContains(r, "/stats/meeting/124/affiliation")
         self.assertContains(r, "/stats/meeting/125/affiliation")
         self.assertContains(r, "This page provides a timeline of meeting registrations by affiliation")
-        self.assertContains(r, '\\u0022Example\\u0022, \\u0022data\\u0022: [0, 25]')
+        # Extract the JSON embedded in the response
+        pq = PyQuery(r.content)
+        in_person_data = json.loads(pq.find("script#in-person-chart-data").text())
+        self.assertTrue(
+            any(
+                ds["label"] == "Example" and ds["data"] == [0, 25]
+                for ds in in_person_data["datasets"]
+            )
+        )
         # Test the global meetings timeline
         r = self.client.get(urlreverse(ietf.stats.views.meetings_timeline, kwargs={"stats_type": "total"}))
         self.assertEqual(r.status_code, 200)

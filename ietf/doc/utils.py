@@ -39,12 +39,15 @@ from ietf.doc.models import (
     DocHistoryAuthor,
     Document,
     DocumentAuthor,
+    EditedRfcAuthorsDocEvent,
     RfcAuthor,
-    State, EditedRfcAuthorsDocEvent,
+    State,
+    StoredObject,
 )
 from ietf.doc.models import RelatedDocument, RelatedDocHistory, BallotType, DocReminder
 from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBallotDocEvent, NewRevisionDocEvent, StateDocEvent
 from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthorsDocEvent, BallotPositionDocEvent
+from ietf.doc.storage_utils import force_replication
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role, Group, GroupFeatures
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author, is_bofreq_editor
@@ -1713,3 +1716,23 @@ def update_or_create_draft_bibxml_file(doc, rev):
 
 def ensure_draft_bibxml_path_exists():
     (Path(settings.BIBXML_BASE_PATH) / "bibxml-ids").mkdir(exist_ok=True)
+
+
+def replicate_stored_objects_for_document(doc: Document) -> int:
+    """Sync all StoredObjects associated with doc to the replica blob store
+    
+    Returns count of StoredObjects queued for replication (which may or may not
+    be replicated, depending on whether replication is enabled / the storages are
+    actually BlobdbStorage instances, etc).
+    """
+    # n.b., StoredObjects have a nullable doc_rev field, but Documents do not.
+    # Until / unless we straighten that out, treat "" and None equivalently when
+    # matching rev.
+    qs_matching_rev = StoredObject.objects.filter(doc_rev=doc.rev)
+    if doc.rev == "":
+        qs_matching_rev |= StoredObject.objects.filter(doc_rev__isnull=True)
+    count = 0
+    for stored_object in qs_matching_rev.filter(doc_name=doc.name):
+        force_replication(kind=stored_object.store, name=stored_object.name)
+        count += 1
+    return count

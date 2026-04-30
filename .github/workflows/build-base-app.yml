@@ -28,7 +28,7 @@ jobs:
         echo "IMGVERSION=$CURDATE" >> $GITHUB_ENV
 
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      uses: docker/setup-qemu-action@v4
     
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v4
@@ -60,7 +60,7 @@ jobs:
         echo "${{ env.IMGVERSION }}" > dev/build/TARGET_BASE
 
     - name: Commit CHANGELOG.md
-      uses: stefanzweifel/git-auto-commit-action@v6
+      uses: stefanzweifel/git-auto-commit-action@v7
       with:
         branch: ${{ github.ref_name }}
         commit_message: 'ci: update base image target version to ${{ env.IMGVERSION }}'

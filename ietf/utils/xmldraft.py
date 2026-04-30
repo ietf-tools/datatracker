@@ -102,6 +102,17 @@ class XMLDraft(Draft):
             number = int(maybe_number)
             return f"{label}{number}"
 
+        target = ref.get("target")
+        if isinstance(target, str):
+            target = target.lower()
+            if target.startswith("https://datatracker.ietf.org/doc/"):
+                # len("https://datatracker.ietf.org/doc/")==33
+                m = re.match(r"^(draft-[a-z0-9-]*[a-z0-9])([/-]\d{2})?/?$",target[33:])
+                if m:
+                    name = m.group(1)
+                    return name
+
+
         # if we couldn't find a match so far, try the seriesInfo
         series_query = " or ".join(f"@name='{x.upper()}'" for x in series)
         for info in ref.xpath(
