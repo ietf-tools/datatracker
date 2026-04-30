@@ -35,7 +35,7 @@
         <div class="btn-group col-sm-2">
             {% for num, url in possible_meeting_numbers %}
                 <a class="btn btn-outline-primary
-                            {% if num == meeting_number %}
+                            {% if num == 'All' %}
                                 active
                             {% endif %}"
                     href="{{ url }}">{{ num }}</a>

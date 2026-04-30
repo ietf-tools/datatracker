@@ -708,7 +708,9 @@ def meetings_timeline(request, stats_type='country'):
     else:
         possible_stats_type = stats_type
 
-    possible_meeting_numbers = [(int(current_meeting)-1, urlreverse(meeting_stats, kwargs={'meeting_number': int(current_meeting)-1, 'stats_type': possible_stats_type})),
+    possible_meeting_numbers = [
+        ('All', urlreverse(meetings_timeline, kwargs={'stats_type': stats_type})),
+        (int(current_meeting)-1, urlreverse(meeting_stats, kwargs={'meeting_number': int(current_meeting)-1, 'stats_type': possible_stats_type})),
         (int(current_meeting), urlreverse(meeting_stats, kwargs={'meeting_number': int(current_meeting), 'stats_type': possible_stats_type})),
         (int(current_meeting)+1, urlreverse(meeting_stats, kwargs={'meeting_number': int(current_meeting)+1, 'stats_type': possible_stats_type}))]
 
