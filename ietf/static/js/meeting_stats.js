@@ -1,7 +1,8 @@
 // Copyright The IETF Trust 2026, All Rights Reserved
+import Chart from 'chart.js/auto'
+import autocolors from 'chartjs-plugin-autocolors'
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Need to use autocolors plug-in else all slices are gray...
-    const autocolors = window['chartjs-plugin-autocolors']
     Chart.register(autocolors)
     // ── Safely parse JSON data injected from Django view ──
     const totalChartData = JSON.parse(document.getElementById('total-chart-data').textContent)

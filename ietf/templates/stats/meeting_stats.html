@@ -3,9 +3,6 @@
 {% origin %}
 {% load ietf_filters static django_bootstrap5 %}
 {% block js %}
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-autocolors"></script>
     {{ total_chart_data|json_script:"total-chart-data" }}
     {{ in_person_chart_data|json_script:"in-person-chart-data" }}
     <script src="{% static 'ietf/js/meeting_stats.js' %}"></script>
