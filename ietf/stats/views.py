@@ -7,6 +7,7 @@ import datetime
 import itertools
 import json
 import re
+import hashlib
 import dateutil.relativedelta
 from collections import defaultdict
 
@@ -43,6 +44,15 @@ colors = [
     '#2B5797', '#E81123', '#00A4EF', '#7FBA00', '#FFB900',
     '#D83B01', '#B4009E', '#5C2D91', '#008575', '#E3008C',
 ]
+
+def color_from_hash(s):
+    if s == 'Unspecified':
+        return "#B0B0B0 "
+    if s == 'Other':
+        return "#E0E0E0"
+    full_hash = hashlib.md5(s.encode('utf-8')).digest()
+    hash = int.from_bytes(full_hash[:2])
+    return colors[hash % len(colors)]
 
 def stats_index(request):
     """Render the statistics index page with the current meeting number as it is required by the meeting menu item."""
@@ -454,7 +464,7 @@ def get_affiliation_data_for_meetings(attendance_type=None):
     
         datasets = []
         for idx, org in enumerate(top_orgs):
-            color = colors[idx % len(colors)]
+            color = color_from_hash(org)
             datasets.append({
                 'label': org,
                 'data': [data_map[org].get(m, 0) for m in sorted_meetings],
@@ -553,7 +563,7 @@ def get_country_data_for_meetings(attendance_type=None):
     
         datasets = []
         for idx, country in enumerate(top_countries):
-            color = colors[idx % len(colors)]
+            color = color_from_hash(country)
             datasets.append({
                 'label': country,
                 'data': [data_map[country].get(m, 0) for m in sorted_meetings],
@@ -633,7 +643,7 @@ def get_data_for_meetings():
     
         datasets = []
         for idx, ticket_type in enumerate(ticket_types):
-            color = colors[idx % len(colors)]
+            color = color_from_hash(ticket_type)
             datasets.append({
                 'label': ticket_type,
                 'data': [data_map[ticket_type].get(m, 0) for m in sorted_meetings],
@@ -766,7 +776,7 @@ def get_affiliation_data_for_meeting(meeting_number, minimum_required, attendanc
 
     return labels, data, total
 
-def get_data_for_meeting(meeting_number, minimum_required, attendance_type=None):
+def get_country_data_for_meeting(meeting_number, minimum_required, attendance_type=None):
     """Get country participation data for a specific meeting.
 
     Args:
@@ -825,8 +835,8 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
         in_person_labels, in_person_data, in_person_total = get_affiliation_data_for_meeting(meeting_number, minimum_required, attendance_type='onsite')
     elif stats_type == 'country':
         minimum_required = 10
-        total_labels, total_data, total_total = get_data_for_meeting(meeting_number, minimum_required)
-        in_person_labels, in_person_data, in_person_total = get_data_for_meeting(meeting_number, minimum_required, attendance_type='onsite')
+        total_labels, total_data, total_total = get_country_data_for_meeting(meeting_number, minimum_required)
+        in_person_labels, in_person_data, in_person_total = get_country_data_for_meeting(meeting_number, minimum_required, attendance_type='onsite')
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
@@ -835,6 +845,7 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
         'datasets': [{
             'label': 'Total Registrations by ' + stats_type,
             'data': total_data,
+            'backgroundColor': [color_from_hash(label) if label else '#202020' for label in total_labels],
             'borderColor': '#ffffff',
             'borderWidth': 2,
         }]
@@ -844,6 +855,7 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
         'datasets': [{
             'label': 'In Person Registrations by ' + stats_type,
             'data': in_person_data,
+            'backgroundColor': [color_from_hash(label) if label else '#202020' for label in in_person_labels],
             'borderColor': '#ffffff',
             'borderWidth': 2,
         }]
