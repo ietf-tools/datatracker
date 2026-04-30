@@ -46,6 +46,11 @@ $bootstrap-icons-font-src: url("npm:bootstrap-icons/font/fonts/bootstrap-icons.w
 url("npm:bootstrap-icons/font/fonts/bootstrap-icons.woff") format("woff");
 @import "bootstrap-icons/font/bootstrap-icons";
 
+// Disable contextual alternates (calt)
+body {
+  font-feature-settings: "calt" off;
+}
+
 // Leave room for fixed-top navbar...
 body.navbar-offset {
     padding-top: 60px;

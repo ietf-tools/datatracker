@@ -368,7 +368,38 @@ class RfcAuthorViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
 
-class RfcPubNotificationView(APIView):
+class DestinationHelperMixin:
+    def fs_destination(self, filename: str | Path) -> Path:
+        """Destination for an uploaded RFC file in the filesystem
+
+        Strips any path components in filename and returns an absolute Path.
+        """
+        rfc_path = Path(settings.RFC_PATH)
+        filename = Path(filename)  # could potentially have directory components
+        extension = "".join(filename.suffixes)
+        if extension == ".notprepped.xml":
+            return rfc_path / "prerelease" / filename.name
+        return rfc_path / filename.name
+
+    def blob_destination(self, filename: str | Path) -> str:
+        """Destination name for an uploaded RFC file in the blob store
+
+        Strips any path components in filename and returns an absolute Path.
+        """
+        filename = Path(filename)  # could potentially have directory components
+        extension = "".join(filename.suffixes)
+        if extension == ".notprepped.xml":
+            file_type = "notprepped"
+        elif extension[0] == ".":
+            file_type = extension[1:]
+        else:
+            raise serializers.ValidationError(
+                f"Extension does not begin with '.'!? ({filename})",
+            )
+        return f"{file_type}/{filename.name}"
+
+
+class RfcPubNotificationView(DestinationHelperMixin, APIView):
     api_key_endpoint = "ietf.api.views_rpc"
 
     @extend_schema(
@@ -380,6 +411,30 @@ class RfcPubNotificationView(APIView):
     def post(self, request):
         serializer = RfcPubSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        # Check blobstore & filesystem for conflicts
+        rfc_number = serializer.validated_data["rfc_number"]
+        dest_stem = f"rfc{rfc_number}"
+        blob_kind = "rfc"
+        possible_rfc_files = [
+            self.fs_destination(dest_stem + ext)
+            for ext in RfcFileSerializer.allowed_extensions
+        ]
+        possible_rfc_blobs = [
+            self.blob_destination(dest_stem + ext)
+            for ext in RfcFileSerializer.allowed_extensions
+        ]
+        for possible_existing_file in possible_rfc_files:
+            if possible_existing_file.exists():
+                raise Conflict(
+                    "File(s) already exist for this RFC",
+                    code="files-exist",
+                )
+        for possible_existing_blob in possible_rfc_blobs:
+            if exists_in_storage(kind=blob_kind, name=possible_existing_blob):
+                raise Conflict(
+                    "Blob(s) already exist for this RFC",
+                    code="blobs-exist",
+                )
         # Create RFC
         try:
             rfc = serializer.save()
@@ -404,38 +459,9 @@ class RfcPubNotificationView(APIView):
         return Response(NotificationAckSerializer().data)
 
 
-class RfcPubFilesView(APIView):
+class RfcPubFilesView(DestinationHelperMixin, APIView):
     api_key_endpoint = "ietf.api.views_rpc"
     parser_classes = [parsers.MultiPartParser]
-
-    def _fs_destination(self, filename: str | Path) -> Path:
-        """Destination for an uploaded RFC file in the filesystem
-
-        Strips any path components in filename and returns an absolute Path.
-        """
-        rfc_path = Path(settings.RFC_PATH)
-        filename = Path(filename)  # could potentially have directory components
-        extension = "".join(filename.suffixes)
-        if extension == ".notprepped.xml":
-            return rfc_path / "prerelease" / filename.name
-        return rfc_path / filename.name
-
-    def _blob_destination(self, filename: str | Path) -> str:
-        """Destination name for an uploaded RFC file in the blob store
-
-        Strips any path components in filename and returns an absolute Path.
-        """
-        filename = Path(filename)  # could potentially have directory components
-        extension = "".join(filename.suffixes)
-        if extension == ".notprepped.xml":
-            file_type = "notprepped"
-        elif extension[0] == ".":
-            file_type = extension[1:]
-        else:
-            raise serializers.ValidationError(
-                f"Extension does not begin with '.'!? ({filename})",
-            )
-        return f"{file_type}/{filename.name}"
 
     @extend_schema(
         operation_id="upload_rfc_files",
@@ -459,11 +485,11 @@ class RfcPubFilesView(APIView):
 
         # List of files that might exist for an RFC
         possible_rfc_files = [
-            self._fs_destination(dest_stem + ext)
+            self.fs_destination(dest_stem + ext)
             for ext in serializer.allowed_extensions
         ]
         possible_rfc_blobs = [
-            self._blob_destination(dest_stem + ext)
+            self.blob_destination(dest_stem + ext)
             for ext in serializer.allowed_extensions
         ]
         if not replace:
@@ -508,13 +534,13 @@ class RfcPubFilesView(APIView):
                 with ftm.open("rb") as f:
                     store_file(
                         kind=blob_kind,
-                        name=self._blob_destination(ftm),
+                        name=self.blob_destination(ftm),
                         file=f,
                         doc_name=rfc.name,
                         doc_rev=rfc.rev,  # expect blank, but match whatever it is
                         mtime=mtime,
                     )
-                destination = self._fs_destination(ftm)
+                destination = self.fs_destination(ftm)
                 if (
                     settings.SERVER_MODE != "production"
                     and not destination.parent.exists()

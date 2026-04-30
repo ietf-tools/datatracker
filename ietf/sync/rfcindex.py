@@ -1,8 +1,9 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 import datetime
 import json
+import shutil
 from collections import defaultdict
-from collections.abc import Container
+from collections.abc import Container, Iterable
 from dataclasses import dataclass
 from itertools import chain
 from operator import attrgetter, itemgetter
@@ -58,6 +59,25 @@ def save_to_red_bucket(filename: str, content: str | bytes):
         ContentFile(content if isinstance(content, bytes) else content.encode("utf-8")),
     )
     log(f"Saved {bucket_path} in red_bucket storage")
+
+
+def save_to_filesystem(
+    filename: str, content: str | bytes, subdirs: Iterable[str] = ()
+):
+    """Save contents to the RFC_PATH in the filesystem
+
+    Always saves directly to settings.RFC_PATH/filename. Additionally saves a copy
+    to settings.RFC_PATH/subdir/filename for each entry in subdirs. Uses shutil.copy2
+    to create the copies, which will preserve mtime and other metadata between copies.
+    """
+    rfc_path = Path(settings.RFC_PATH)
+    dest_path = rfc_path / filename
+    dest_path.write_bytes(
+        content if isinstance(content, bytes) else content.encode("utf-8")
+    )
+    for subdir in subdirs:
+        (rfc_path / subdir).mkdir(parents=False, exist_ok=True)
+        shutil.copy2(dest_path, rfc_path / subdir / filename)
 
 
 @dataclass
@@ -660,7 +680,9 @@ def create_rfc_txt_index():
             "rfcs": get_rfc_text_index_entries(),
         },
     )
-    save_to_red_bucket("rfc-index.txt", index)
+    filename = "rfc-index.txt"
+    save_to_red_bucket(filename, index)
+    save_to_filesystem(filename, index)
 
 
 def create_rfc_xml_index():
@@ -696,7 +718,9 @@ def create_rfc_xml_index():
         xml_declaration=True,
         pretty_print=4,
     )
-    save_to_red_bucket("rfc-index.xml", pretty_index)
+    filename = "rfc-index.xml"
+    save_to_red_bucket(filename, pretty_index)
+    save_to_filesystem(filename, pretty_index)
 
 
 def create_bcp_txt_index():
@@ -711,7 +735,9 @@ def create_bcp_txt_index():
             "bcps": get_bcp_text_index_entries(),
         },
     )
-    save_to_red_bucket("bcp-index.txt", index)
+    filename = "bcp-index.txt"
+    save_to_red_bucket(filename, index)
+    save_to_filesystem(filename, index, ["bcp"])
 
 
 def create_std_txt_index():
@@ -726,7 +752,9 @@ def create_std_txt_index():
             "stds": get_std_text_index_entries(),
         },
     )
-    save_to_red_bucket("std-index.txt", index)
+    filename = "std-index.txt"
+    save_to_red_bucket(filename, index)
+    save_to_filesystem(filename, index, ["std"])
 
 
 def create_fyi_txt_index():
@@ -741,7 +769,9 @@ def create_fyi_txt_index():
             "fyis": get_fyi_text_index_entries(),
         },
     )
-    save_to_red_bucket("fyi-index.txt", index)
+    filename = "fyi-index.txt"
+    save_to_red_bucket(filename, index)
+    save_to_filesystem(filename, index, ["fyi"])
 
 
 ## DirtyBits management for the RFC index
