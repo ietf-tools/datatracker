@@ -13,7 +13,8 @@ from opentelemetry.instrumentation.pymemcache import PymemcacheInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
 # Bind all ipv4 interfaces (nginx uses loopback, but k8s health checks don't)
-bind = ["0.0.0.0:8001"]
+_BIND_PORT = os.environ.get("DATATRACKER_GUNICORN_BIND_PORT", "8000")
+bind = [f"0.0.0.0:{_BIND_PORT}"]
 
 # Disable control socket
 control_socket_disable = True
