@@ -36,7 +36,9 @@
         </div>
     </div>
     <p>
-        This page provides a timeline of IETF {{ doc_type }} {{ objects }} by {{ stats_type }}.
+        This page provides a timeline of IETF {{ doc_type|upper }} documents {{ objects }} by {{ stats_type }}. Only the top-{{ top_n }} categories are listed,
+        the remaining ones are aggregated into 'Other'. The year is the actual publication date for a RFC and the
+        submission date of the latest revision for a draft (i.e., only the authors of latest revision).
     </p>
     <div class="row">
         <div class="col-md-12">
