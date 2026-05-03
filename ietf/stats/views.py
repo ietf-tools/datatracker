@@ -220,9 +220,10 @@ def get_authors_data_for_documents(doc_type = 'all', group_by = 'country', top_n
         queryset = DocumentAuthor.objects.all()
     queryset = (
         queryset
-        .select_related('person', 'document')
-        .filter(document__stream__isnull=False)
-        .all()
+        .select_related('document')
+        .filter(document__stream__isnull=False,
+                document__name__startswith='draft-ietf-snac')
+        [0:10]
     )
 
 # ── Step 1: Collect all meetings and tickets totals ──
@@ -231,12 +232,10 @@ def get_authors_data_for_documents(doc_type = 'all', group_by = 'country', top_n
     data_map = defaultdict(dict)  # {year: {stream: count}}
 
     for row in queryset:
-#        print(row)
-#        print(row.document)
+        print(row.document.__dict__)
         if not row.document.pub_date():
             continue
         year = row.document.pub_date().year
-#        print(year)
         group = getattr(row, group_by)
         if group_by == 'country':
             if len(group) == 0 :
@@ -375,19 +374,18 @@ def authors_timeline(request, doc_type='all', stats_type='stream', top_n=20):
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
-    # Serialize to JSON for safe injection into the template
-    chart_data = json.dumps({
+    chart_data = {
         'labels': total_labels,
         'datasets': total_data_sets,
-    })
+    }
 
     # Prepare the list of choice buttons for the template
     possible_docs_types = [
-        ("all documents", "All documents", urlreverse(authors_timeline, kwargs={'doc_type': 'all', 'stats_type': stats_type})),
+        ("all", "All documents", urlreverse(authors_timeline, kwargs={'doc_type': 'all', 'stats_type': stats_type})),
         ("draft", "Drafts", urlreverse(authors_timeline, kwargs={'doc_type': 'draft', 'stats_type': stats_type})),
-        ("RFC", "RFCs", urlreverse(authors_timeline, kwargs={'doc_type': 'rfc', 'stats_type': stats_type})),
+        ("rfc", "RFCs", urlreverse(authors_timeline, kwargs={'doc_type': 'rfc', 'stats_type': stats_type})),
     ]
-    possible_stat_types = [
+    possible_stats_types = [
         ("affiliation", "Affiliation", urlreverse(authors_timeline, kwargs={'doc_type': doc_type, 'stats_type': 'affiliation'})),
         ("country", "Country", urlreverse(authors_timeline, kwargs={'doc_type': doc_type, 'stats_type': 'country'})),
     ]
@@ -396,7 +394,7 @@ def authors_timeline(request, doc_type='all', stats_type='stream', top_n=20):
         "top_n": top_n,
         "objects": "authors",
         "possible_docs_types": possible_docs_types,
-        "possible_stat_types": possible_stat_types,
+        "possible_stats_types": possible_stats_types,
         "doc_type": doc_type,
         "stats_type": stats_type,
         "chart_data": chart_data,
@@ -419,19 +417,18 @@ def documents_timeline(request, doc_type='all', stats_type='stream', top_n=10):
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
-    # Serialize to JSON for safe injection into the template
-    chart_data = json.dumps({
+    chart_data = {
         'labels': total_labels,
         'datasets': total_data_sets,
-    })
+    }
 
     # Prepare the list of choice buttons for the template
     possible_docs_types = [
-        ("all documents", "All documents", urlreverse(documents_timeline, kwargs={'doc_type': 'all', 'stats_type': stats_type})),
+        ("all", "All documents", urlreverse(documents_timeline, kwargs={'doc_type': 'all', 'stats_type': stats_type})),
         ("draft", "Drafts", urlreverse(documents_timeline, kwargs={'doc_type': 'draft', 'stats_type': stats_type})),
-        ("RFC", "RFC", urlreverse(documents_timeline, kwargs={'doc_type': 'rfc', 'stats_type': stats_type})),
+        ("rfc", "RFC", urlreverse(documents_timeline, kwargs={'doc_type': 'rfc', 'stats_type': stats_type})),
     ]
-    possible_stat_types = [
+    possible_stats_types = [
         ("stream", "Streams", urlreverse(documents_timeline, kwargs={'doc_type': doc_type, 'stats_type': 'stream'})),
     ]
 
@@ -439,7 +436,7 @@ def documents_timeline(request, doc_type='all', stats_type='stream', top_n=10):
         "top_n": top_n,
         "objects": "documents",
         "possible_docs_types": possible_docs_types,
-        "possible_stat_types": possible_stat_types,
+        "possible_stats_types": possible_stats_types,
         "doc_type": doc_type,
         "stats_type": stats_type,
         "chart_data": chart_data,
@@ -674,9 +671,6 @@ def get_data_for_meetings():
         ticket_types = tickets_totals.keys()
         
         # ── Step 4: Build Chart.js datasets ──
-        # Color palette for lines
-        colors = [ '#FF6384', '#36A2EB']
-    
         datasets = []
         for idx, ticket_type in enumerate(ticket_types):
             color = color_from_hash(ticket_type)

@@ -15,13 +15,13 @@
             (requires login)
         </li>
         <li>
+            <a rel="nofollow" href="{% url 'ietf.stats.views.authors_timeline' doc_type='rfc' stats_type='affiliation' %}">Per country/affiliation authors for IETF drafts and RFC</a>
+        </li>
+        <li>
             <a rel="nofollow" href="{% url "ietf.stats.views.meeting_stats" meeting_number=current_meeting stats_type='country' %}">Per country/affiliation registration for a specific meeting, by default IETF-{{ current_meeting }}.</a>
         </li>
         <li>
             <a rel="nofollow" href="{% url "ietf.stats.views.meetings_timeline" %}">Per country/affiliation registration timeline for last meetings</a>
         </li>
     </ul>
-    <p>
-        Statistics on authorship are not currently available.
-    </p>
 {% endblock %}
