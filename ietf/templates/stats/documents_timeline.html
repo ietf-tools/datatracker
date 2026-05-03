@@ -12,10 +12,20 @@
     {% origin %}
     <h1>
         {% block title %}
-            Statistics for IETF Documents
+            Statistics for IETF {{ objects|title }}
         {% endblock %}
     </h1>
     <div class="row my-3">
+        <label class="fw-bold col-sm-1 col-form-label">Group by:</label>
+        <div class="btn-group col-sm-2">
+            {% for slug, label, url in possible_stat_types %}
+                <a class="btn btn-outline-primary
+                            {% if slug == stat_type %}
+                                active
+                            {% endif %}"
+                    href="{{ url }}">{{ label }}</a>
+            {% endfor %}
+        </div>
         <label class="fw-bold col-sm-1 col-form-label">Document:</label>
         <div class="btn-group col-sm-4">
             {% for slug, label, url in possible_docs_types %}
@@ -26,25 +36,15 @@
                     href="{{ url }}">{{ label }}</a>
             {% endfor %}
         </div>
-        <label class="fw-bold col-sm-1 col-form-label">Meeting:</label>
-        <div class="btn-group col-sm-2">
-            {% for num, url in possible_meeting_numbers %}
-                <a class="btn btn-outline-primary
-                            {% if num == meeting_number %}
-                                active
-                            {% endif %}"
-                    href="{{ url }}">{{ num }}</a>
-            {% endfor %}
-        </div>
     </div>
     <p>
-        This page provides a timeline of IETF {{ doc_type }} documents by {{ group_by }}.
+        This page provides a timeline of IETF {{ doc_type }} {{ objects }} by {{ stats_type }}.
         Panning can be done via the mouse or with a finger. Zooming is done via the mouse wheel or via a pinch gesture. Press <kbd>ESC</kbd> 
             or click <button type="button" class="btn btn-primary" id="resetButton">Reset</button> to reset panning/zooming.
     </p>
     <div class="row">
         <div class="col-md-12">
-            <h2>{{ doc_type|title }} Documents by {{ group_by|title }}</h2>
+            <h2>{{ doc_type|title }} {{ objects|title }} by {{ stats_type|title }}</h2>
         <div class="chart-wrapper col-10">
             <canvas id="documentsChart" aria-label="Document Timeline" role="img"></canvas>
         </div>

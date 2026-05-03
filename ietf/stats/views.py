@@ -132,24 +132,6 @@ def add_url_to_choices(choices, url_builder):
     """
     return [ (slug, label, url_builder(slug)) for slug, label in choices]
 
-def old_document_stats(request, stats_type=None):
-    # timeline per year, or per specific year: streams, affiliation, rfc vs I-D
-    # could also be time between individual/WG I-D to rfc publication/IESG ballot
-    # DISCUSS resolution time
-    # Humm also split by authors (affiliation) / documents (the rest) probably
-    """Redirect to the stats index page. Deprecated view."""
-    print("Deprecated view: redirecting to stats index")
-    return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
-
-def authors_timeline(request, stats_type=None):
-    # timeline per year, or per specific year: streams, affiliation, rfc vs I-D
-    # could also be time between individual/WG I-D to rfc publication/IESG ballot
-    # DISCUSS resolution time
-    # Humm also split by authors (affiliation) / documents (the rest) probably
-    """Redirect to the stats index page. Deprecated view."""
-    print("Deprecated view: redirecting to stats index")
-    return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
-
 def known_countries_list(request, stats_type=None, acronym=None):
     """Render a list of known countries with their aliases."""
     countries = CountryName.objects.prefetch_related("countryalias_set")
@@ -251,7 +233,9 @@ def get_authors_data_for_documents(doc_type = 'all', group_by = 'country', top_n
     for row in queryset:
 #        print(row)
 #        print(row.document)
-        year = row.document.pub_date().year if row.document.pub_date() else None
+        if not row.document.pub_date():
+            continue
+        year = row.document.pub_date().year
 #        print(year)
         group = getattr(row, group_by)
         if group_by == 'country':
@@ -290,7 +274,7 @@ def get_authors_data_for_documents(doc_type = 'all', group_by = 'country', top_n
 
     datasets = []
     for idx, group in enumerate(top_groups):
-        color = colors[idx % len(colors)]
+        color = color_from_hash(group)
         datasets.append({
             'label': group,
             'data': [data_map[year].get(group, 0) for year in years_set],
@@ -355,7 +339,7 @@ def get_stream_data_for_documents(doc_type = 'all', group_by = 'stream__name'):
 
     datasets = []
     for idx, group in enumerate(group_types):
-        color = colors[idx % len(colors)]
+        color = color_from_hash(group)
         datasets.append({
             'label': group,
             'data': [data_map[year].get(group, 0) for year in years_set],
@@ -372,7 +356,7 @@ def get_stream_data_for_documents(doc_type = 'all', group_by = 'stream__name'):
 
     return years_set, datasets
 
-def documents_timeline(request, doc_type='all', group_by='stream', top_n=10):
+def authors_timeline(request, doc_type='all', stats_type='stream', top_n=20):
     """Render the documents timeline page with document statistics over time.
 
     Args:
@@ -384,11 +368,53 @@ def documents_timeline(request, doc_type='all', group_by='stream', top_n=10):
         Rendered response for the documents timeline template.
     """
 
-    if group_by == 'affiliation':
-        total_labels, total_data_sets = get_authors_data_for_documents(doc_type, 'affiliation', top_n * 2)
-    elif group_by == 'country':
-        total_labels, total_data_sets = get_authors_data_for_documents(doc_type, 'country', top_n * 4)
-    elif group_by == 'stream':
+    if stats_type == 'affiliation':
+        total_labels, total_data_sets = get_authors_data_for_documents(doc_type, 'affiliation', top_n)
+    elif stats_type == 'country':
+        total_labels, total_data_sets = get_authors_data_for_documents(doc_type, 'country', top_n)
+    else:
+        return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
+
+    # Serialize to JSON for safe injection into the template
+    chart_data = json.dumps({
+        'labels': total_labels,
+        'datasets': total_data_sets,
+    })
+
+    # Prepare the list of choice buttons for the template
+    possible_docs_types = [
+        ("all documents", "All documents", urlreverse(authors_timeline, kwargs={'doc_type': 'all', 'stats_type': stats_type})),
+        ("draft", "Drafts", urlreverse(authors_timeline, kwargs={'doc_type': 'draft', 'stats_type': stats_type})),
+        ("RFC", "RFCs", urlreverse(authors_timeline, kwargs={'doc_type': 'rfc', 'stats_type': stats_type})),
+    ]
+    possible_stat_types = [
+        ("affiliation", "Affiliation", urlreverse(authors_timeline, kwargs={'doc_type': doc_type, 'stats_type': 'affiliation'})),
+        ("country", "Country", urlreverse(authors_timeline, kwargs={'doc_type': doc_type, 'stats_type': 'country'})),
+    ]
+
+    return render(request, "stats/documents_timeline.html", {
+        "top_n": top_n,
+        "objects": "authors",
+        "possible_docs_types": possible_docs_types,
+        "possible_stat_types": possible_stat_types,
+        "doc_type": doc_type,
+        "stats_type": stats_type,
+        "chart_data": chart_data,
+    })
+
+def documents_timeline(request, doc_type='all', stats_type='stream', top_n=10):
+    """Render the documents timeline page with document statistics over time.
+
+    Args:
+        request: The HTTP request object.
+        stats_type: Type of statistics.
+        top_n: Number of top items to show (for country stats).
+
+    Returns:
+        Rendered response for the documents timeline template.
+    """
+
+    if stats_type == 'stream':
         total_labels, total_data_sets = get_stream_data_for_documents(doc_type, 'stream__name')
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
@@ -401,16 +427,21 @@ def documents_timeline(request, doc_type='all', group_by='stream', top_n=10):
 
     # Prepare the list of choice buttons for the template
     possible_docs_types = [
-        ("all documents", "All documents", urlreverse(documents_timeline, kwargs={'doc_type': 'all', 'group_by': group_by})),
-        ("draft", "Drafts", urlreverse(documents_timeline, kwargs={'doc_type': 'draft', 'group_by': group_by})),
-        ("RFC", "RFC", urlreverse(documents_timeline, kwargs={'doc_type': 'rfc', 'group_by': group_by})),
+        ("all documents", "All documents", urlreverse(documents_timeline, kwargs={'doc_type': 'all', 'stats_type': stats_type})),
+        ("draft", "Drafts", urlreverse(documents_timeline, kwargs={'doc_type': 'draft', 'stats_type': stats_type})),
+        ("RFC", "RFC", urlreverse(documents_timeline, kwargs={'doc_type': 'rfc', 'stats_type': stats_type})),
+    ]
+    possible_stat_types = [
+        ("stream", "Streams", urlreverse(documents_timeline, kwargs={'doc_type': doc_type, 'stats_type': 'stream'})),
     ]
 
     return render(request, "stats/documents_timeline.html", {
         "top_n": top_n,
+        "objects": "documents",
         "possible_docs_types": possible_docs_types,
+        "possible_stat_types": possible_stat_types,
         "doc_type": doc_type,
-        "group_by": group_by,
+        "stats_type": stats_type,
         "chart_data": chart_data,
     })
 
