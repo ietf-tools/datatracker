@@ -435,7 +435,12 @@
         <ul class="dropdown-menu">
             <li>
                 <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
-                   href="{% url 'ietf.stats.views.documents_timeline' doc_type='all' group_by='stream' %}">
+                   href="{% url 'ietf.stats.views.authors_timeline' doc_type='all' stats_type='affiliation' %}">
+                    Authors
+                </a>
+            </li>            <li>
+                <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
+                   href="{% url 'ietf.stats.views.documents_timeline' doc_type='all' stats_type='stream' %}">
                     Documents
                 </a>
             </li>
