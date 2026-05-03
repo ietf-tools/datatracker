@@ -24,7 +24,6 @@
     "browser-fs-access": "0.35.0",
     "caniuse-lite": "1.0.30001603",
     "chart.js": "^4.5.1",
-    "chartjs-plugin-autocolors": "0.3.1",
     "chartjs-plugin-zoom": "2.2.0",
     "d3": "7.9.0",
     "file-saver": "2.0.5",
