@@ -1,5 +1,10 @@
 // Copyright The IETF Trust 2026, All Rights Reserved
+import Chart from 'chart.js/auto'
+import zoomPlugin from 'chartjs-plugin-zoom'
+
 document.addEventListener('DOMContentLoaded', () => {
+    Chart.register(zoomPlugin) // enable the zoom plugin
+
     // ── Safely parse JSON data injected from Django view ──
     const totalChartData = JSON.parse(document.getElementById('total-chart-data').textContent)
     const inPersonChartData = JSON.parse(document.getElementById('in-person-chart-data').textContent)
@@ -50,7 +55,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         zoom: {
                             wheel: { enabled: true },      // scroll to zoom
                             pinch: { enabled: true },      // pinch on mobile
-                            drag: { enabled: true },       // drag to select range
+                            drag: {                        // drag to select range 
+                                enabled: true,
+                                modifierKey: 'alt'
+                            },
                             mode: 'xy',                     // zoom X-axis and Y-axis
                         },
                         pan: {

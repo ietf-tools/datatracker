@@ -155,14 +155,18 @@ USING_DEBUG_EMAIL_SERVER = (
 EMAIL_HOST = os.environ.get("DATATRACKER_EMAIL_HOST", "localhost")
 EMAIL_PORT = int(os.environ.get("DATATRACKER_EMAIL_PORT", "2025"))
 
+_broker_url = os.environ.get("DATATRACKER_BROKER_URL", None)
 _celery_password = os.environ.get("CELERY_PASSWORD", None)
-if _celery_password is None:
-    raise RuntimeError("CELERY_PASSWORD must be set")
-CELERY_BROKER_URL = "amqp://datatracker:{password}@{host}/{queue}".format(
-    host=os.environ.get("RABBITMQ_HOSTNAME", "dt-rabbitmq"),
-    password=_celery_password,
-    queue=os.environ.get("RABBITMQ_QUEUE", "dt"),
-)
+if _broker_url is not None:
+    CELERY_BROKER_URL = _broker_url
+elif _celery_password is not None:
+    CELERY_BROKER_URL = "amqp://datatracker:{password}@{host}/{queue}".format(
+        host=os.environ.get("RABBITMQ_HOSTNAME", "dt-rabbitmq"),
+        password=_celery_password,
+        queue=os.environ.get("RABBITMQ_QUEUE", "dt"),
+    )
+else:
+    raise RuntimeError("DATATRACKER_BROKER_URL or CELERY_PASSWORD must be set")
 
 # mailarchive API key
 _mailing_list_archive_api_key = os.environ.get(
