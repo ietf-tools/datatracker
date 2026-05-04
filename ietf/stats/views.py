@@ -319,6 +319,8 @@ def get_data_for_documents(doc_type = 'rfc', group_by = 'stream__name'):
     #     .filter(stream__isnull=False)
     # )
 
+    # TODO add related() for stream and group ?
+
 # ── Step 1: Collect all meetings and tickets totals ──
     years_set = set()
     documents_totals = defaultdict(int)
@@ -332,7 +334,12 @@ def get_data_for_documents(doc_type = 'rfc', group_by = 'stream__name'):
             if row.stream is None:
                 group = 'Unspecified'
             else:
-                    group = row.stream.name
+                group = row.stream.name
+        elif group_by == 'group__name':
+            if row.group is None:
+                group = 'Unspecified'
+            else:
+                group = row.group.name
         else:
             group = getattr(row, group_by)
             if group is None:
@@ -430,6 +437,8 @@ def documents_timeline(request, doc_type='rfc', stats_type='level', top_n=10):
         total_labels, total_data_sets = get_data_for_documents(doc_type, 'intended_std_level_id')
     elif stats_type == 'level' and doc_type == 'rfc':
         total_labels, total_data_sets = get_data_for_documents(doc_type, 'std_level_id')
+    elif stats_type == 'wg':
+        total_labels, total_data_sets = get_data_for_documents(doc_type, 'group__name')
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
@@ -445,6 +454,7 @@ def documents_timeline(request, doc_type='rfc', stats_type='level', top_n=10):
     ]
     possible_stats_types = [
         ("stream", "Streams", urlreverse(documents_timeline, kwargs={'doc_type': doc_type, 'stats_type': 'stream'})),
+        ("wg", "Working Groups", urlreverse(documents_timeline, kwargs={'doc_type': doc_type, 'stats_type': 'wg'})),
     ]
     if doc_type == 'draft':
         possible_stats_types.append(("level", "Intended Status", urlreverse(documents_timeline, kwargs={'doc_type': doc_type, 'stats_type': 'level'})))

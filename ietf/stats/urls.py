@@ -9,8 +9,8 @@ from ietf.utils.urls  import url
 
 urlpatterns = [
     url(r"^$", views.stats_index),
-    url(r"^authors/(?P<doc_type>draft|wg-draft|rfc|all)/(?P<stats_type>affiliation|country)/$", views.authors_timeline),
-    url(r"^document/(?P<doc_type>draft|rfc)/(?P<stats_type>level|stream)/$", views.documents_timeline),
+    url(r"^authors/(?P<doc_type>all|draft|wg-draft|rfc)/(?P<stats_type>affiliation|country)/$", views.authors_timeline),
+    url(r"^document/(?P<doc_type>draft|rfc)/(?P<stats_type>level|stream|wg)/$", views.documents_timeline),
     url(r"^knowncountries/$", views.known_countries_list),
     url(r"^meeting/$", views.meetings_timeline),
     url(r"^meeting/(?P<meeting_number>\d+)/(?P<stats_type>affiliation|country)/$", views.meeting_stats),
