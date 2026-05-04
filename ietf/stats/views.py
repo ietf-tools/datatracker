@@ -17,8 +17,7 @@ from django.core.cache import cache
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse as urlreverse
-from django.db.models import Count
-from django.db.models.functions import ExtractYear
+from django.db.models import Count, Q
 
 import debug                            # pyflakes:ignore
 
@@ -147,10 +146,15 @@ def known_countries_list(request, stats_type=None, acronym=None):
 def canonicalize_country(country):
     if country is None or country.strip() == '':
         return 'Unspecified'
+    # TODO use a cache system (?) and 
+    #     from ietf.stats.models import CountryAlias
+    # CountryAlias.alias = 'Belgique' (in French!) CountryAlias = 'BE'
+    # CountryName.slug = 'BE' CountryName.name = 'Belgium'
+    # To only use official names ?
     country = country.strip().lower()
-    if country in ('china', 'chinese', 'p.r. china', 'prc', 'cn', 'p.r.china', 'p.r. china') or country.endswith(' china'):
+    if country in ('china', 'chinese', 'p.r. china', 'prc', 'cn', 'p.r.china', 'p.r. china') or country.endswith(' china') or country.endswith(' p.r.china'):
         return 'China'
-    elif country in ('uk', 'u.k.', 'gb', 'united kingdom', 'england', 'scotland', 'wales') or country.endswith(' uk'):
+    elif country in ('uk', 'u.k.', 'gb', 'united kingdom', 'england', 'great britain', 'scotland', 'wales') or country.endswith(' uk'):
         return 'United Kingdom'
     elif country in ('germany', 'deutschland', 'de') or country.endswith(' germany'):
         return 'Germany'
@@ -214,16 +218,18 @@ def canonicalize_affiliation(affiliation):
     return affiliation.title()
 
 def get_authors_data_for_documents(doc_type = 'all', group_by = 'country', top_n = 20):
-    if doc_type != 'all':
-        queryset = DocumentAuthor.objects.filter(document__type_id=doc_type)
-    else:
-        queryset = DocumentAuthor.objects.all()
+    # Build a dynamic query set filter
+    filters = Q()    
+    if doc_type != 'all' and doc_type  != 'wg-draft':
+        filters &= Q(document__type_id=doc_type)
+    if doc_type == 'wg-draft':
+        filters &= Q(document__type_id= 'draft')
+        filters &= Q(document__name__startswith='draft-ietf')
     queryset = (
-        queryset
+        DocumentAuthor.objects
         .select_related('document')
-        .filter(document__stream__isnull=False,
-                document__name__startswith='draft-ietf-snac')
-        [0:10]
+        .filter(filters)
+        [0:100] # During development to go faster
     )
 
 # ── Step 1: Collect all meetings and tickets totals ──
@@ -232,7 +238,6 @@ def get_authors_data_for_documents(doc_type = 'all', group_by = 'country', top_n
     data_map = defaultdict(dict)  # {year: {stream: count}}
 
     for row in queryset:
-        print(row.document.__dict__)
         if not row.document.pub_date():
             continue
         year = row.document.pub_date().year
@@ -272,7 +277,7 @@ def get_authors_data_for_documents(doc_type = 'all', group_by = 'country', top_n
     # ── Step 4: Build Chart.js datasets ──
 
     datasets = []
-    for idx, group in enumerate(top_groups):
+    for group in top_groups:
         color = color_from_hash(group)
         datasets.append({
             'label': group,
@@ -304,15 +309,15 @@ def get_authors_data_for_documents(doc_type = 'all', group_by = 'country', top_n
 
     return years_set, datasets
 
-def get_stream_data_for_documents(doc_type = 'all', group_by = 'stream__name'):
+def get_data_for_documents(doc_type = 'rfc', group_by = 'stream__name'):
     if doc_type != 'all':
         queryset = Document.objects.filter(type_id=doc_type)
     else:
         queryset = Document.objects.all()
-    queryset = (
-        queryset
-        .filter(stream__isnull=False)
-    )
+    # queryset = (
+    #     queryset
+    #     .filter(stream__isnull=False)
+    # )
 
 # ── Step 1: Collect all meetings and tickets totals ──
     years_set = set()
@@ -324,8 +329,14 @@ def get_stream_data_for_documents(doc_type = 'all', group_by = 'stream__name'):
             continue
         year = row.pub_date().year
         if group_by == 'stream__name':
-            group = row.stream.name
-
+            if row.stream is None:
+                group = 'Unspecified'
+            else:
+                    group = row.stream.name
+        else:
+            group = getattr(row, group_by)
+            if group is None:
+                group = 'Unspecified'
         years_set.add(year)
         documents_totals[group] += 1
         data_map[year][group] = data_map[year].get(group, 0) + 1
@@ -337,7 +348,7 @@ def get_stream_data_for_documents(doc_type = 'all', group_by = 'stream__name'):
     # ── Step 4: Build Chart.js datasets ──
 
     datasets = []
-    for idx, group in enumerate(group_types):
+    for group in group_types:
         color = color_from_hash(group)
         datasets.append({
             'label': group,
@@ -383,6 +394,7 @@ def authors_timeline(request, doc_type='all', stats_type='stream', top_n=20):
     possible_docs_types = [
         ("all", "All documents", urlreverse(authors_timeline, kwargs={'doc_type': 'all', 'stats_type': stats_type})),
         ("draft", "Drafts", urlreverse(authors_timeline, kwargs={'doc_type': 'draft', 'stats_type': stats_type})),
+        ("wg-draft", "WG Drafts", urlreverse(authors_timeline, kwargs={'doc_type': 'wg-draft', 'stats_type': stats_type})),
         ("rfc", "RFCs", urlreverse(authors_timeline, kwargs={'doc_type': 'rfc', 'stats_type': stats_type})),
     ]
     possible_stats_types = [
@@ -400,7 +412,7 @@ def authors_timeline(request, doc_type='all', stats_type='stream', top_n=20):
         "chart_data": chart_data,
     })
 
-def documents_timeline(request, doc_type='all', stats_type='stream', top_n=10):
+def documents_timeline(request, doc_type='rfc', stats_type='level', top_n=10):
     """Render the documents timeline page with document statistics over time.
 
     Args:
@@ -413,7 +425,11 @@ def documents_timeline(request, doc_type='all', stats_type='stream', top_n=10):
     """
 
     if stats_type == 'stream':
-        total_labels, total_data_sets = get_stream_data_for_documents(doc_type, 'stream__name')
+        total_labels, total_data_sets = get_data_for_documents(doc_type, 'stream__name')
+    elif stats_type == 'level' and doc_type == 'draft':
+        total_labels, total_data_sets = get_data_for_documents(doc_type, 'intended_std_level_id')
+    elif stats_type == 'level' and doc_type == 'rfc':
+        total_labels, total_data_sets = get_data_for_documents(doc_type, 'std_level_id')
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
@@ -424,13 +440,16 @@ def documents_timeline(request, doc_type='all', stats_type='stream', top_n=10):
 
     # Prepare the list of choice buttons for the template
     possible_docs_types = [
-        ("all", "All documents", urlreverse(documents_timeline, kwargs={'doc_type': 'all', 'stats_type': stats_type})),
         ("draft", "Drafts", urlreverse(documents_timeline, kwargs={'doc_type': 'draft', 'stats_type': stats_type})),
         ("rfc", "RFC", urlreverse(documents_timeline, kwargs={'doc_type': 'rfc', 'stats_type': stats_type})),
     ]
     possible_stats_types = [
         ("stream", "Streams", urlreverse(documents_timeline, kwargs={'doc_type': doc_type, 'stats_type': 'stream'})),
     ]
+    if doc_type == 'draft':
+        possible_stats_types.append(("level", "Intended Status", urlreverse(documents_timeline, kwargs={'doc_type': doc_type, 'stats_type': 'level'})))
+    elif doc_type == 'rfc':
+        possible_stats_types.append(("level", "Category", urlreverse(documents_timeline, kwargs={'doc_type': doc_type, 'stats_type': 'level'})))
 
     return render(request, "stats/documents_timeline.html", {
         "top_n": top_n,
