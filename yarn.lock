@@ -2758,16 +2758,6 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"chartjs-plugin-autocolors@npm:0.3.1":
-  version: 0.3.1
-  resolution: "chartjs-plugin-autocolors@npm:0.3.1"
-  peerDependencies:
-    "@kurkle/color": ^0.3.1
-    chart.js: ">=2"
-  checksum: de4f87b5bb3e042aa1d3de3886425bbd2340a55ca455b645569d0def602079833182ef214e205ff4466fb5ab1e708761cf37eb51ab3cd622284242c05ed94128
-  languageName: node
-  linkType: hard
-
 "chartjs-plugin-zoom@npm:2.2.0":
   version: 2.2.0
   resolution: "chartjs-plugin-zoom@npm:2.2.0"
@@ -7105,7 +7095,6 @@ browserlist@latest:
     c8: 9.1.0
     caniuse-lite: 1.0.30001603
     chart.js: ^4.5.1
-    chartjs-plugin-autocolors: 0.3.1
     chartjs-plugin-zoom: 2.2.0
     d3: 7.9.0
     eslint: 8.57.0
