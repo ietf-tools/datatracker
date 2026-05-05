@@ -6,6 +6,7 @@ import calendar
 import json
 import datetime
 
+import factory
 from pyquery import PyQuery
 
 import debug    # pyflakes:ignore
@@ -19,6 +20,8 @@ import ietf.stats.views
 
 from ietf.group.factories import RoleFactory
 from ietf.person.factories import PersonFactory
+from ietf.doc.factories import WgDraftFactory, WgRfcFactory, DocumentAuthorFactory, DocumentFactory, DocEventFactory, NewRevisionDocEventFactory
+from ietf.group.factories import GroupFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
 from ietf.meeting.tests_models import MeetingFactory, RegistrationFactory
 from ietf.utils.timezone import date_today
@@ -33,8 +36,111 @@ class StatisticsTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_document_stats(self):
-        # TODO !!! evyncke
-        self.assertFalse(True)
+        timeNow = timezone.now()
+        yearNow = timeNow.year
+        time1960 = datetime.datetime(1960, 7, 26, 12, 13, 14)
+        year1960 = time1960.year
+
+        # Let's create some WGs
+        group1 = GroupFactory(type_id="wg")
+        group2 = GroupFactory(type_id="wg")
+
+        # Let's create some RFC and drafts with publication dates
+        rfcPsGroup1 = WgRfcFactory(std_level_id='ps', group=group1)
+        DocEventFactory(type='published_rfc', doc=rfcPsGroup1, time=time1960)
+        rfcExpGroup1 = WgRfcFactory(std_level_id='exp', group=group1)
+        DocEventFactory(type='published_rfc', doc=rfcExpGroup1, time=time1960)
+        rfcInfGroup2 = WgRfcFactory(std_level_id='inf', group=group2)
+        DocEventFactory(type='published_rfc', doc=rfcInfGroup2, time=timeNow)
+        rfcBcpIAB1 = WgRfcFactory(std_level_id='bcp', stream_id='iab')
+        DocEventFactory(type='published_rfc', doc=rfcBcpIAB1, time=time1960)
+        rfcBcpIAB2 = WgRfcFactory(std_level_id='bcp', stream_id='iab')
+        DocEventFactory(type='published_rfc', doc=rfcBcpIAB2, time=time1960)
+        wgDraftPsGroup1 = WgDraftFactory(name='draft-ietf-' + group1.acronym + '-random-thing', intended_std_level_id='ps', group=group1)
+        NewRevisionDocEventFactory(doc=wgDraftPsGroup1, time=time1960)
+        wgDraftPsGroup2 = WgDraftFactory(name='draft-ietf-' + group2.acronym + '-random-thing', intended_std_level_id='inf', group=group2)
+        NewRevisionDocEventFactory(doc=wgDraftPsGroup2, time=timeNow)
+        draftExp = DocumentFactory(type_id='draft', intended_std_level_id='exp')
+        NewRevisionDocEventFactory(doc=draftExp, time=timeNow)
+
+        # Let's create some authors, first get some test strings for affiliations and countries
+        affiliation = factory.Faker('company').evaluate(None, None, {'locale': None})
+        country = factory.Faker('country').evaluate(None, None, {'locale': None})
+
+        DocumentAuthorFactory(document=rfcPsGroup1, affiliation=affiliation, country=country)
+        DocumentAuthorFactory(document=rfcExpGroup1, affiliation=affiliation + ', LLC', country=country)
+        DocumentAuthorFactory(document=rfcExpGroup1, affiliation=factory.Faker('company'), country=factory.Faker('country'))
+        DocumentAuthorFactory(document=wgDraftPsGroup1, affiliation=affiliation + ' AG', country=country)
+        DocumentAuthorFactory(document=rfcInfGroup2, affiliation='CiScO InC.', country=country)
+        DocumentAuthorFactory(document=wgDraftPsGroup2, affiliation='CISCO corp.', country='KINGDOM of BELGIUM')
+        DocumentAuthorFactory(document=wgDraftPsGroup2, affiliation=affiliation, country=country)
+        DocumentAuthorFactory(document=rfcBcpIAB1, affiliation='CiScO PTY LTD', country='UnItEd StAtEs')
+        DocumentAuthorFactory(document=rfcBcpIAB2, affiliation=affiliation, country='usa')
+        DocumentAuthorFactory(document=draftExp, affiliation=affiliation + ',inc', country='U.S.A.')
+
+        # Test#1 the documents specific statistics: for RFC about the level
+        r = self.client.get(urlreverse(ietf.stats.views.documents_timeline, kwargs={"doc_type": "rfc", "stats_type": "level"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Specific lines can be removed")
+        self.assertContains(r, "Rfc Documents by Level")
+        # Extract the JSON embedded in the response
+        pq = PyQuery(r.content)
+        chart_data = json.loads(pq.find("script#chart_data").text())
+        self.assertTrue(chart_data["labels"] == [year1960, yearNow])
+        self.assertTrue(
+            any(
+                ds["label"] == "inf" and ds["data"] == [0, 1]
+                for ds in chart_data["datasets"]
+            )
+        )
+        self.assertTrue(
+            any(
+                ds["label"] == "bcp" and ds["data"] == [2, 0]
+                for ds in chart_data["datasets"]
+            )
+        )
+        print("DONE: Test#1 the documents specific statistics: for RFC about the level")
+
+        # Test#2 the documents specific statistics: for RFC about the WG
+        r = self.client.get(urlreverse(ietf.stats.views.documents_timeline, kwargs={"doc_type": "rfc", "stats_type": "wg"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Rfc Documents by Wg")
+        # Extract the JSON embedded in the response
+        pq = PyQuery(r.content)
+        chart_data = json.loads(pq.find("script#chart_data").text())
+        self.assertTrue(chart_data["labels"] == [year1960, yearNow])
+        self.assertTrue(
+            any(
+                ds["label"] == group1.name and ds["data"] == [2, 0]
+                for ds in chart_data["datasets"]
+            )
+        )
+        print("DONE: # Test#2 the documents specific statistics: for RFC about the WG")
+
+        # Test#3 the documents specific statistics: for drafts about the streams
+        r = self.client.get(urlreverse(ietf.stats.views.documents_timeline, kwargs={"doc_type": "draft", "stats_type": "stream"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Draft Documents by Stream")
+        # Extract the JSON embedded in the response
+        pq = PyQuery(r.content)
+        chart_data = json.loads(pq.find("script#chart_data").text())
+        print(chart_data)
+        self.assertTrue(chart_data["labels"] == [yearNow])
+        print("Test on labels OK")
+        self.assertTrue(
+            any(
+                ds["label"] == "IETF" and ds["data"] == [2]
+                for ds in chart_data["datasets"]
+            )
+        )
+        self.assertTrue(
+            any(
+                ds["label"] == "Unspecified" and ds["data"] == [1]
+                for ds in chart_data["datasets"]
+            )
+        )
+        print("DONE: Test#3 the documents specific statistics: for drafts about the streams")
+
 
     def test_meeting_stats(self):
         meeting124 = MeetingFactory(type_id='ietf', number='124', date=timezone.now())
