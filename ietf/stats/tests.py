@@ -38,7 +38,7 @@ class StatisticsTests(TestCase):
     def test_document_stats(self):
         timeNow = timezone.now()
         yearNow = timeNow.year
-        time1960 = datetime.datetime(1960, 7, 26, 12, 13, 14)
+        time1960 = datetime.datetime(1960, 7, 26, 12, 13, 14, tzinfo=datetime.timezone.utc)
         year1960 = time1960.year
 
         # Let's create some WGs
@@ -99,7 +99,6 @@ class StatisticsTests(TestCase):
                 for ds in chart_data["datasets"]
             )
         )
-        print("DONE: Test#1 the documents specific statistics: for RFC about the level")
 
         # Test#2 the documents specific statistics: for RFC about the WG
         r = self.client.get(urlreverse(ietf.stats.views.documents_timeline, kwargs={"doc_type": "rfc", "stats_type": "wg"}))
@@ -115,7 +114,6 @@ class StatisticsTests(TestCase):
                 for ds in chart_data["datasets"]
             )
         )
-        print("DONE: # Test#2 the documents specific statistics: for RFC about the WG")
 
         # Test#3 the documents specific statistics: for drafts about the streams
         r = self.client.get(urlreverse(ietf.stats.views.documents_timeline, kwargs={"doc_type": "draft", "stats_type": "stream"}))
@@ -124,9 +122,7 @@ class StatisticsTests(TestCase):
         # Extract the JSON embedded in the response
         pq = PyQuery(r.content)
         chart_data = json.loads(pq.find("script#chart_data").text())
-        print(chart_data)
         self.assertTrue(chart_data["labels"] == [yearNow])
-        print("Test on labels OK")
         self.assertTrue(
             any(
                 ds["label"] == "IETF" and ds["data"] == [2]
@@ -139,8 +135,75 @@ class StatisticsTests(TestCase):
                 for ds in chart_data["datasets"]
             )
         )
-        print("DONE: Test#3 the documents specific statistics: for drafts about the streams")
 
+        # Test#4 the authors specific statistics: for all docs about the countries
+        r = self.client.get(urlreverse(ietf.stats.views.authors_timeline, kwargs={"doc_type": "all", "stats_type": "country"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "All Authors by Country")
+        # Extract the JSON embedded in the response
+        pq = PyQuery(r.content)
+        chart_data = json.loads(pq.find("script#chart_data").text())
+        self.assertTrue(chart_data["labels"] == [year1960, yearNow])
+        self.assertTrue(
+            any(
+                ds["label"] == "USA" and ds["data"] == [2, 1]
+                for ds in chart_data["datasets"]
+            )
+        )
+        self.assertTrue(
+            any(
+                ds["label"] == "Belgium" and ds["data"] == [0, 1]
+                for ds in chart_data["datasets"]
+            )
+        )
+
+        # Test#5 the authors specific statistics: for all all rfcs about the affiliation
+        r = self.client.get(urlreverse(ietf.stats.views.authors_timeline, kwargs={"doc_type": "rfc", "stats_type": "affiliation"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Rfc Authors by Affiliation")
+        # Extract the JSON embedded in the response
+        pq = PyQuery(r.content)
+        chart_data = json.loads(pq.find("script#chart_data").text())
+        self.assertTrue(chart_data["labels"] == [year1960, yearNow])
+        self.assertTrue(
+            any(
+                ds["label"].casefold() == affiliation.casefold() and ds["data"] == [3, 0]
+                for ds in chart_data["datasets"]
+            )
+        )
+        self.assertTrue(
+            any(
+                ds["label"] == "Cisco" and ds["data"] == [1, 1]
+                for ds in chart_data["datasets"]
+            )
+        )
+        self.assertTrue(
+            any(
+                ds["label"] == "Other" and ds["data"] == [0, 0]
+                for ds in chart_data["datasets"]
+            )
+        )
+
+        # Test#6 the authors specific statistics: for all WG drafts about the country
+        r = self.client.get(urlreverse(ietf.stats.views.authors_timeline, kwargs={"doc_type": "wg-draft", "stats_type": "country"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Wg-Draft Authors by Country")
+        # Extract the JSON embedded in the response
+        pq = PyQuery(r.content)
+        chart_data = json.loads(pq.find("script#chart_data").text())
+        self.assertTrue(chart_data["labels"] == [yearNow])
+        self.assertTrue(
+            any(
+                ds["label"].casefold() == country.casefold() and ds["data"] == [2]
+                for ds in chart_data["datasets"]
+            )
+        )
+        self.assertTrue(
+            any(
+                ds["label"] == "Belgium" and ds["data"] == [1]
+                for ds in chart_data["datasets"]
+            )
+        )
 
     def test_meeting_stats(self):
         meeting124 = MeetingFactory(type_id='ietf', number='124', date=timezone.now())
