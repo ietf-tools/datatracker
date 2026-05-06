@@ -511,35 +511,3 @@ This is an automated notification of a group name change:
 """ % (current.acronym, current.name, instance.name, )
             send_mail_text(None, to=addr, frm=None, subject="Group '%s' name change"%instance.acronym, txt=msg)
             log.log("Sent notification email: %s: '%s' --> '%s' to %s" % (current.acronym, current.name, instance.name, addr))
-
-            
-## Keep this code as a worked and tested example of sending signed notifies
-## by HTTP POST.  (superseded for this use case by email notification)
-#         url = settings.RFC_EDITOR_GROUP_NOTIFICATION_URL
-#         if url and instance.name != current.name:
-#             data = {
-#                 'acronym': current.acronym,
-#                 'old_name': current.name,
-#                 'name': instance.name,
-#             }
-#             # Build signed data
-#             key = jwk.JWK()
-#             key.import_from_pem(settings.API_PRIVATE_KEY_PEM)
-#             payload = json.dumps(data)
-#             jwstoken = jws.JWS(payload.encode('utf-8'))
-#             jwstoken.add_signature(key, None,
-#                            json_encode({"alg": settings.API_KEY_TYPE}),
-#                            json_encode({"kid": key.thumbprint()}))
-#             sig = jwstoken.serialize()
-#             # Send signed data
-#             response = requests.post(url, data = { 'jws': sig, })
-#             log.log("Sent notify: %s: '%s' --> '%s' to %s, result code %s" %
-#                 (current.acronym, current.name, instance.name, url, response.status_code))
-#             # Verify locally, to make sure we've got things right
-#             key = jwk.JWK()
-#             key.import_from_pem(settings.API_PUBLIC_KEY_PEM)
-#             jwstoken = jws.JWS()
-#             jwstoken.deserialize(sig)
-#             jwstoken.verify(key)
-#             log.assertion('payload == jwstoken.payload')
-
