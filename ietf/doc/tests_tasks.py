@@ -146,13 +146,17 @@ class TaskTests(TestCase):
                 update_rfc_searchindex_task(rfc_number=rfc.rfc_number)
 
     @mock.patch("ietf.doc.tasks.searchindex.update_or_create_rfc_entries")
+    @mock.patch("ietf.doc.tasks.searchindex.upsert_presets")
     @mock.patch("ietf.doc.tasks.searchindex.create_collection")
     @mock.patch("ietf.doc.tasks.searchindex.delete_collection")
-    def test_rebuild_searchindex_task(self, mock_delete, mock_create, mock_update):
+    def test_rebuild_searchindex_task(
+        self, mock_delete, mock_create, mock_presets, mock_update
+    ):
         rfcs = WgRfcFactory.create_batch(10)
         rebuild_searchindex_task()
         self.assertFalse(mock_delete.called)
         self.assertFalse(mock_create.called)
+        self.assertTrue(mock_presets.called)
         self.assertTrue(mock_update.called)
         self.assertQuerysetEqual(
             mock_update.call_args.args[0],
@@ -162,10 +166,12 @@ class TaskTests(TestCase):
 
         mock_delete.reset_mock()
         mock_create.reset_mock()
+        mock_presets.reset_mock()
         mock_update.reset_mock()
         rebuild_searchindex_task(drop_collection=True)
         self.assertTrue(mock_delete.called)
         self.assertTrue(mock_create.called)
+        self.assertTrue(mock_presets.called)
         self.assertTrue(mock_update.called)
         self.assertQuerysetEqual(
             mock_update.call_args.args[0],
@@ -175,10 +181,14 @@ class TaskTests(TestCase):
 
         mock_delete.reset_mock()
         mock_create.reset_mock()
+        mock_presets.reset_mock()
         mock_update.reset_mock()
-        rebuild_searchindex_task(drop_collection=True, batchsize=3)
+        rebuild_searchindex_task(
+            drop_collection=True, batchsize=3, upsert_presets=False
+        )
         self.assertTrue(mock_delete.called)
         self.assertTrue(mock_create.called)
+        self.assertFalse(mock_presets.called)
         self.assertTrue(mock_update.called)
         self.assertQuerysetEqual(
             mock_update.call_args.args[0],
