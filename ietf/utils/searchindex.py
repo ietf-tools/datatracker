@@ -393,11 +393,11 @@ def upsert_presets():
     _settings = get_settings()
     api_base = _settings["TYPESENSE_API_URL"]
     api_key = _settings["TYPESENSE_API_KEY"]
-    for preset_name, payload in SEARCH_PRESETS:
+    for preset_name, payload in SEARCH_PRESETS.items():
         log(f"Upserting '{preset_name}' preset")
         response = requests.put(
             urljoin(api_base, f"/presets/{preset_name}"),
-            json=payload,
+            json={"value": payload},
             headers={
                 "X-TYPESENSE-API-KEY": api_key,
             },
