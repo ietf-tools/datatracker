@@ -212,10 +212,14 @@ def update_rfc_searchindex_task(self, rfc_number: int):
 
 
 @shared_task
-def rebuild_searchindex_task(*, batchsize=40, drop_collection=False):
+def rebuild_searchindex_task(
+    *, batchsize=40, drop_collection=False, upsert_presets=True
+):
     if drop_collection:
         searchindex.delete_collection()
         searchindex.create_collection()
+    if upsert_presets:
+        searchindex.upsert_presets()  # ok if they already exist
     searchindex.update_or_create_rfc_entries(
         Document.objects.filter(type_id="rfc").order_by("-rfc_number"),
         batchsize=batchsize,
