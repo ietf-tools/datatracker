@@ -9,7 +9,7 @@ import json
 import re
 import hashlib
 import dateutil.relativedelta
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -25,13 +25,15 @@ from ietf.review.utils import (extract_review_assignment_data,
                                aggregate_raw_period_review_assignment_stats,
                                ReviewAssignmentData,
                                sum_period_review_assignment_stats,
-                               sum_raw_review_assignment_aggregations)
+                               sum_raw_review_assignment_aggregations,
+                               )
 from ietf.group.models import Role, Group
 from ietf.person.models import Person
 from ietf.name.models import ReviewResultName, CountryName, ReviewAssignmentStateName
 from ietf.meeting.models import Registration
 from ietf.doc.models import Document, DocumentAuthor
 from ietf.ietfauth.utils import has_role
+from ietf.stats.utils import get_aliased_affiliations, get_aliased_countries
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 from ietf.meeting.helpers import get_current_ietf_meeting_num, get_ietf_meeting
@@ -151,6 +153,10 @@ def canonicalize_country(country):
     # CountryAlias.alias = 'Belgique' (in French!) CountryAlias = 'BE'
     # CountryName.slug = 'BE' CountryName.name = 'Belgium'
     # To only use official names ?
+    # alias_map = dict(
+#     CountryAlias.objects
+#     .values_list('alias', 'name__name')
+#     )
     country = country.strip().lower()
     if country in ('china', 'chinese', 'p.r. china', 'prc', 'cn', 'p.r.china', 'p.r. china') or country.endswith(' china') or country.endswith(' p.r.china'):
         return 'China'
@@ -217,7 +223,109 @@ def canonicalize_affiliation(affiliation):
             affiliation = prefix
     return affiliation.title()
 
-def get_authors_data_for_documents(doc_type = 'all', group_by = 'country', top_n = 20):
+def get_authors_total_data_for_documents(doc_type = 'all', group_by = 'country', top_n = 20):
+    # Build a dynamic query set filter
+    filters = Q()    
+    if doc_type != 'all' and doc_type  != 'wg-draft':
+        filters &= Q(document__type_id=doc_type)
+    if doc_type == 'wg-draft':
+        filters &= Q(document__type_id= 'draft')
+        filters &= Q(document__name__startswith='draft-ietf')
+    queryset = (
+        DocumentAuthor.objects
+        .filter(filters)
+        .values(group_by)
+        .annotate(author_count=Count('person', distinct=True))
+        .order_by('-author_count')
+       # [0:40] # During development to go faster
+    )
+
+    group_count_set = {
+        (group, count)
+        for group, count in queryset.values_list(group_by, 'author_count')
+    }
+
+    print('Group_count_set:', group_count_set)
+
+    if group_by == 'affiliation':
+        alias_map = get_aliased_affiliations(group for group, _ in group_count_set)
+        print('Group_by:', group_by, ', alias map:', alias_map)
+    elif group_by == 'country':
+        alias_map = get_aliased_countries(group for group, _ in group_count_set)
+        print('Group_by:', group_by, ', alias map:', alias_map)
+    else:
+        alias_map = {}
+
+    group_count_dict = dict()
+    for group, count in group_count_set:
+        group = alias_map.get(group, group)
+        if group == '':
+            group = 'Unspecified'
+        group_count_dict[group] = group_count_dict.get(group, 0) + count
+
+    group_count_dict = sorted(group_count_dict.items(), key=lambda x: x[1], reverse=True)
+    top_groups = group_count_dict[:top_n]
+    other_count = sum(count for _, count in group_count_dict[top_n:])
+    if other_count > 0:
+        top_groups.append(('Other', other_count))
+
+    labels, data = zip(*top_groups) if top_groups else ([], [])
+    chart_data = {
+        'labels': labels,
+        'datasets': [{
+            'data': data,
+            'backgroundColor': [color_from_hash(label) if label else '#202020' for label in labels],
+            'borderColor': 'black',
+            'borderWidth': 1,
+        }],
+    }
+
+    return chart_data
+
+def authors_total(request, doc_type='all', stats_type='affiliation', top_n=20):
+    """Render the documents timeline page with document statistics over time.
+
+    Args:
+        request: The HTTP request object.
+        stats_type: Type of statistics.
+        top_n: Number of top items to show (for country stats).
+
+    Returns:
+        Rendered response for the documents timeline template.
+    """
+    if stats_type == 'affiliation':
+        chart_data = get_authors_total_data_for_documents(doc_type, 'affiliation', top_n)
+    elif stats_type == 'country':
+        chart_data = get_authors_total_data_for_documents(doc_type, 'country', top_n)
+    else:
+        return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
+
+    # Prepare the list of choice buttons for the template
+    possible_docs_types = [
+        ("all", "All documents", urlreverse(authors_total, kwargs={'doc_type': 'all', 'stats_type': stats_type})),
+        ("draft", "Drafts", urlreverse(authors_total, kwargs={'doc_type': 'draft', 'stats_type': stats_type})),
+        ("wg-draft", "WG Drafts", urlreverse(authors_total, kwargs={'doc_type': 'wg-draft', 'stats_type': stats_type})),
+        ("rfc", "RFCs", urlreverse(authors_total, kwargs={'doc_type': 'rfc', 'stats_type': stats_type})),
+    ]
+    possible_stats_types = [
+        ("affiliation", "Affiliation", urlreverse(authors_total, kwargs={'doc_type': doc_type, 'stats_type': 'affiliation'})),
+        ("country", "Country", urlreverse(authors_total, kwargs={'doc_type': doc_type, 'stats_type': 'country'})),
+    ]
+
+    return render(request, "stats/documents_total.html", {
+        "top_n": top_n,
+        "objects": "authors",
+        "possible_docs_types": possible_docs_types,
+        "possible_stats_types": possible_stats_types,
+        "timeline_url": urlreverse(authors_timeline, kwargs={'doc_type': doc_type, 'stats_type': stats_type}),
+        "total_url": urlreverse(authors_total, kwargs={'doc_type': doc_type, 'stats_type': stats_type}),
+        "doc_type": doc_type,
+        "stats_type": stats_type,
+        "chart_data": chart_data,
+    })
+
+
+def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'country', top_n = 20):
     # Build a dynamic query set filter
     filters = Q()    
     if doc_type != 'all' and doc_type  != 'wg-draft':
@@ -229,7 +337,7 @@ def get_authors_data_for_documents(doc_type = 'all', group_by = 'country', top_n
         DocumentAuthor.objects
         .select_related('document')
         .filter(filters)
-        [0:100] # During development to go faster
+        [0:1000] # During development to go faster
     )
 
 # ── Step 1: Collect all meetings and tickets totals ──
@@ -237,29 +345,37 @@ def get_authors_data_for_documents(doc_type = 'all', group_by = 'country', top_n
     documents_totals = defaultdict(int)
     data_map = defaultdict(dict)  # {year: {stream: count}}
 
-    for row in queryset:
-        if not row.document.pub_date():
-            continue
-        year = row.document.pub_date().year
-        group = getattr(row, group_by)
-        if group_by == 'country':
-            if len(group) == 0 :
-                group = 'Unspecified'
-            else:
-                group = canonicalize_country(group)
-        if group_by == 'affiliation':
-            if len(group) == 0 :
-                group = 'Unspecified'
-            else:
-                group = canonicalize_affiliation(group)
+    years_set = set()
+    documents_totals = defaultdict(int)
+    data_map = defaultdict(dict)
+    year_group_list = [
+        (row.document.pub_date().year, getattr(row, group_by))
+        for row in queryset
+        if row.document.pub_date() is not None
+    ]
+    if group_by == 'affiliation':
+        alias_map = get_aliased_affiliations(group for _, group in year_group_list)
+        year_group_list = [(year, alias_map.get(group, group)) for year, group in year_group_list]
+    elif group_by == 'country':
+        alias_map = get_aliased_countries(group for _, group in year_group_list)
+        print('Group_by:', group_by, ', alias map:', alias_map)
+        year_group_list = [(year, alias_map.get(group, group)) for year, group in year_group_list]
+    alias_map[''] = 'Unspecified'
 
-        years_set.add(year)
-        documents_totals[group] += 1
+    years_set = {year for year, _ in year_group_list}
+    documents_totals = dict(Counter(group for _, group in year_group_list))
+    for year, group in year_group_list:
+        # possibly faster with list processing above 
+        # years_set.add(year)
+        # documents_totals[group] += 1
+        if group is None or group == '':
+            group = 'Unspecified'
+        else:
+            group = alias_map.get(group, group)
         data_map[year][group] = data_map[year].get(group, 0) + 1
 
     # ── Step 2: Sort years numerically rather than alphabetically  ──
     years_set = sorted(years_set)
-    # group_types = documents_totals.keys() 
 
     # ── Step 3: Get top N and others ──
     top_groups = sorted(
@@ -314,12 +430,6 @@ def get_data_for_documents(doc_type = 'rfc', group_by = 'stream__name'):
         queryset = Document.objects.filter(type_id=doc_type)
     else:
         queryset = Document.objects.all()
-    # queryset = (
-    #     queryset
-    #     .filter(stream__isnull=False)
-    # )
-
-    # TODO add related() for stream and group ?
 
 # ── Step 1: Collect all meetings and tickets totals ──
     years_set = set()
@@ -373,7 +483,7 @@ def get_data_for_documents(doc_type = 'rfc', group_by = 'stream__name'):
 
     return years_set, datasets
 
-def authors_timeline(request, doc_type='all', stats_type='stream', top_n=20):
+def authors_timeline(request, doc_type='all', stats_type='affiliation', top_n=20):
     """Render the documents timeline page with document statistics over time.
 
     Args:
@@ -386,9 +496,9 @@ def authors_timeline(request, doc_type='all', stats_type='stream', top_n=20):
     """
 
     if stats_type == 'affiliation':
-        total_labels, total_data_sets = get_authors_data_for_documents(doc_type, 'affiliation', top_n)
+        total_labels, total_data_sets = get_authors_timeline_data_for_documents(doc_type, 'affiliation', top_n)
     elif stats_type == 'country':
-        total_labels, total_data_sets = get_authors_data_for_documents(doc_type, 'country', top_n)
+        total_labels, total_data_sets = get_authors_timeline_data_for_documents(doc_type, 'country', top_n)
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
@@ -414,6 +524,8 @@ def authors_timeline(request, doc_type='all', stats_type='stream', top_n=20):
         "objects": "authors",
         "possible_docs_types": possible_docs_types,
         "possible_stats_types": possible_stats_types,
+        "timeline_url": urlreverse(authors_timeline, kwargs={'doc_type': doc_type, 'stats_type': stats_type}),
+        "total_url": urlreverse(authors_total, kwargs={'doc_type': doc_type, 'stats_type': stats_type}),
         "doc_type": doc_type,
         "stats_type": stats_type,
         "chart_data": chart_data,

@@ -4,7 +4,7 @@
 {% load ietf_filters static django_bootstrap5 %}
 {% block js %}
     {{ chart_data|json_script:"chart_data" }}
-    <script src="{% static 'ietf/js/document_timeline.js' %}"></script>
+    <script src="{% static 'ietf/js/document_total.js' %}"></script>
 {% endblock %}
 {% block content %}
     {% origin %}
@@ -16,9 +16,9 @@
     <div class="row my-3">
         <label class="fw-bold col-sm-1 col-form-label">Format:</label>
         <div class="btn-group col-sm-2">
-                <a class="btn btn-outline-primary active"
-                    href="{{ timeline_url }}">Timeline</a>
                 <a class="btn btn-outline-primary"
+                    href="{{ timeline_url }}">Timeline</a>
+                <a class="btn btn-outline-primary active"
                     href="{{ total_url }}">Total</a>
         </div>
         <label class="fw-bold col-sm-1 col-form-label">Group by:</label>
@@ -43,21 +43,20 @@
         </div>
     </div>
     <p>
-        This page provides a timeline of IETF {{ doc_type|upper }} documents {{ objects }} by {{ stats_type }}. Only the top-{{ top_n }} categories are listed,
-        the remaining ones are aggregated into 'Other'. The year is the actual publication date for a RFC and the
-        submission date of the latest revision for a draft (i.e., only the authors of latest revision).
+        This page provides the top-{{ top_n }} {{ stats_type }} for IETF {{ doc_type|upper }} authors. Note: an author is counted for as many documents they have authored.
+        Only the top-{{ top_n }} categories are listed, the remaining ones are aggregated into 'Other'.
     </p>
     <div class="row">
         <div class="col-md-12">
             <h2>{{ doc_type|title }} {{ objects|title }} by {{ stats_type|title }}</h2>
         <div class="chart-wrapper col-10">
-            <canvas id="documentsChart" aria-label="Document Timeline" role="img"></canvas>
+            <canvas id="documentsChart" aria-label="Authors Total" role="img"></canvas>
         </div>
         </div><!-- col -->
     </div><!-- row -->
     <div class="row">
         <p class="text-body-secondary text-end">
-            Specific lines can be removed by clicking on their legend at the bottom of the graphic. Panning can be done via the mouse or with a finger. Zooming is done via the mouse wheel or via a pinch gesture. Press <kbd>ESC</kbd> 
+            <small>Hold <kbd>Alt</kbd> (or <kbd>⌥</kbd> on Mac) and scroll/drag to zoom & pan. Zooming is done via the mouse wheel or via a pinch gesture. Press <kbd>ESC</kbd> 
             or click <button type="button" class="btn btn-primary" id="resetButton">Reset</button> to reset panning/zooming.
         </p>
     </div><!-- row-->
