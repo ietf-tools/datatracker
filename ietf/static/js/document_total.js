@@ -62,6 +62,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             text: 'Number of authors',
                         },
                     },
+                    y: {
+                        ticks: {
+                            autoSkip: false, // Display all labels even if messy...
+                        }
+                    },
                 },
                 plugins: {
                     legend: {
