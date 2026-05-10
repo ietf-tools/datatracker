@@ -246,10 +246,8 @@ def get_authors_total_data_for_documents(doc_type = 'all', group_by = 'country',
 
     if group_by == 'affiliation':
         alias_map = get_aliased_affiliations(group for group, _ in group_count_set)
-#        print('Group_by:', group_by, ', alias map:', alias_map)
     elif group_by == 'country':
         alias_map = get_aliased_countries(group for group, _ in group_count_set)
-#       print('Group_by:', group_by, ', alias map:', alias_map)
     else:
         alias_map = {}
 
