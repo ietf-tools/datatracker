@@ -4,17 +4,56 @@ import zoomPlugin from 'chartjs-plugin-zoom'
 
 document.addEventListener('DOMContentLoaded', () => {
     Chart.register(zoomPlugin) // enable the zoom plugin
+    const hidden = new Set();   // track suppressed categories
 
     // ── Safely parse JSON data injected from Django view ──
     const chartData = JSON.parse(document.getElementById('chart_data').textContent) ;
 
+    function refreshChart() {
+        // On first call, snapshot the original data onto the chart instance itself
+        if (!chart._originalData) {
+            chart._originalData = {
+                labels: [...chart.data.labels],
+                values: [...chart.data.datasets[0].data],
+                colors: Array.isArray(chart.data.datasets[0].backgroundColor)
+                    ? [...chart.data.datasets[0].backgroundColor]
+                    : chart.data.labels.map(() => chart.data.datasets[0].backgroundColor),
+            };
+        }
+
+        const original = chart._originalData;
+        const labels = [], values = [], colors = [];
+
+        original.labels.forEach((lbl, i) => {
+            if (!hidden.has(lbl)) {
+                labels.push(lbl);
+                values.push(original.values[i]);
+                colors.push(original.colors[i]);
+            }
+        });
+
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = values;
+        chart.data.datasets[0].backgroundColor = colors;
+        chart.update();
+    }
+
     function displayChart (id, data) {
         const ctx = document.getElementById(id).getContext('2d') ;
-        return new Chart(ctx, {
+        chart = new Chart(ctx, {
             type: 'bar',
             data: data,
             options: {
                 indexAxis: 'y',
+                onClick: (event, elements) => {
+                    console.log('Clicked elements:', elements);
+                    if (elements.length > 0) {
+                        const idx = elements[0].index;
+                        const label = chart.data.labels[idx];
+                        hidden.add(label);
+                        refreshChart();
+                    }
+                },
                 responsive: true,
                 scales: {
                     x: {
@@ -37,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 return `${items[0].label}`;
                             },
                             label: function(context) {
-                                return `${context.parsed.y} authors`;
+                                return `${context.formattedValue} authors`;
                             }
                         }
                     },
@@ -65,7 +104,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                 }
             }
-        })
+        }) ;
+        return chart;
     }
 
     const documentsChart = displayChart('documentsChart', chartData) ;
