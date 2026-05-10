@@ -42,6 +42,15 @@ class AffiliationIgnoredEnding(models.Model):
     def __str__(self):
         return self.ending
 
+class AffiliationMainName(models.Model):
+    main_name = models.CharField(max_length=255, unique=True)
+
+    class Meta:
+        verbose_name_plural = 'affiliation main names'
+        ordering = ['main_name']
+
+    def __str__(self):
+        return self.main_name
 class CountryAlias(models.Model):
     """Records that alias should be treated as country for statistical
     purposes."""

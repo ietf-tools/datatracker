@@ -7,7 +7,7 @@ from collections import defaultdict
 
 import debug                            # pyflakes:ignore
 
-from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, CountryAlias
+from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, AffiliationMainName, CountryAlias
 from ietf.name.models import CountryName
 
 import logging
@@ -50,13 +50,16 @@ def get_aliased_affiliations(affiliations):
     ending_re = compile_affiliation_ending_stripping_regexp()
 
     known_aliases = { alias.lower(): name for alias, name in AffiliationAlias.objects.values_list("alias", "name") }
+    # Let's prepare a dict for things like "Google Inc." -> "Google" adding a space to the end of the main name 
+    # so we only match it at the beginning of the affiliation and not in the middle of it, e.g. "Google Analytics"
+    affiliation_main_names = [(main_name.lower() + ' ', main_name) for main_name in AffiliationMainName.objects.values_list("main_name", flat=True)]
 
     affiliations_with_case_spellings = defaultdict(set)
     case_spelling_count = defaultdict(int)
     for affiliation in affiliations:
         original_affiliation = affiliation
 
-        # check aliases from DB
+        # check aliases from Aliases DB
         name = known_aliases.get(affiliation.lower())
         if name is not None:
             affiliation = name
@@ -68,8 +71,14 @@ def get_aliased_affiliations(affiliations):
             affiliation = name
             res[original_affiliation] = affiliation
 
-        # check aliases from DB
+        # check again aliases from Aliases DB ???
         name = known_aliases.get(affiliation.lower())
+        if name is not None:
+            affiliation = name
+            res[original_affiliation] = affiliation
+
+        # check again aliases from Main Names DB 
+        name = next((original for lower, original in affiliation_main_names if affiliation.lower().startswith(lower)), None)
         if name is not None:
             affiliation = name
             res[original_affiliation] = affiliation
