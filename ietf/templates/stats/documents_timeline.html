@@ -17,9 +17,9 @@
         <label class="fw-bold col-sm-1 col-form-label">Format:</label>
         <div class="btn-group col-sm-2">
                 <a class="btn btn-outline-primary active"
-                    href="{{ timeline_url }}">Timeline</a>
+                    href="{{ timeline_url }}?top={{ top_n }}">Timeline</a>
                 <a class="btn btn-outline-primary"
-                    href="{{ total_url }}">Total</a>
+                    href="{{ total_url }}?top={{ top_n }}">Total</a>
         </div>
         <label class="fw-bold col-sm-1 col-form-label">Group by:</label>
         <div class="btn-group col-sm-2">
@@ -28,7 +28,7 @@
                             {% if slug == stats_type %}
                                 active
                             {% endif %}"
-                    href="{{ url }}">{{ label }}</a>
+                    href="{{ url }}?top={{ top_n }}">{{ label }}</a>
             {% endfor %}
         </div>
         <label class="fw-bold col-sm-1 col-form-label">Documents:</label>
@@ -38,7 +38,7 @@
                             {% if slug == doc_type %}
                                 active
                             {% endif %}"
-                    href="{{ url }}">{{ label }}</a>
+                    href="{{ url }}?top={{ top_n }}">{{ label }}</a>
             {% endfor %}
         </div>
     </div>

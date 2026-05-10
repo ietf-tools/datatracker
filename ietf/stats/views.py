@@ -235,9 +235,8 @@ def get_authors_total_data_for_documents(doc_type = 'all', group_by = 'country',
         DocumentAuthor.objects
         .filter(filters)
         .values(group_by)
-        .annotate(author_count=Count('person', distinct=True))
+        .annotate(author_count=Count('person', distinct=False))  # Count as many document authored by this author
         .order_by('-author_count')
-       # [0:40] # During development to go faster
     )
 
     group_count_set = {
@@ -245,14 +244,12 @@ def get_authors_total_data_for_documents(doc_type = 'all', group_by = 'country',
         for group, count in queryset.values_list(group_by, 'author_count')
     }
 
-    print('Group_count_set:', group_count_set)
-
     if group_by == 'affiliation':
         alias_map = get_aliased_affiliations(group for group, _ in group_count_set)
-        print('Group_by:', group_by, ', alias map:', alias_map)
+#        print('Group_by:', group_by, ', alias map:', alias_map)
     elif group_by == 'country':
         alias_map = get_aliased_countries(group for group, _ in group_count_set)
-        print('Group_by:', group_by, ', alias map:', alias_map)
+#       print('Group_by:', group_by, ', alias map:', alias_map)
     else:
         alias_map = {}
 
@@ -282,7 +279,7 @@ def get_authors_total_data_for_documents(doc_type = 'all', group_by = 'country',
 
     return chart_data
 
-def authors_total(request, doc_type='all', stats_type='affiliation', top_n=20):
+def authors_total(request, doc_type='all', stats_type='affiliation'):
     """Render the documents timeline page with document statistics over time.
 
     Args:
@@ -293,6 +290,10 @@ def authors_total(request, doc_type='all', stats_type='affiliation', top_n=20):
     Returns:
         Rendered response for the documents timeline template.
     """
+
+    # Query parameters (from ?key=value)
+    top_n = int(request.GET.get('top', '10'))
+
     if stats_type == 'affiliation':
         chart_data = get_authors_total_data_for_documents(doc_type, 'affiliation', top_n)
     elif stats_type == 'country':
@@ -363,16 +364,19 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
     alias_map[''] = 'Unspecified'
 
     years_set = {year for year, _ in year_group_list}
-    documents_totals = dict(Counter(group for _, group in year_group_list))
+    # documents_totals = dict(Counter(group for _, group in year_group_list))  # Does not work too well as aliases are not applied, so we do the counting in the loop below
     for year, group in year_group_list:
         # possibly faster with list processing above 
         # years_set.add(year)
-        # documents_totals[group] += 1
         if group is None or group == '':
             group = 'Unspecified'
+            print("Found unspecified affiliation/country for year", year, group)
         else:
             group = alias_map.get(group, group)
         data_map[year][group] = data_map[year].get(group, 0) + 1
+        documents_totals[group] += 1
+        if group == 'Unspecified':
+            print("After aliasing, found unspecified affiliation/country for year", year, group, data_map[year][group])
 
     # ── Step 2: Sort years numerically rather than alphabetically  ──
     years_set = sorted(years_set)
@@ -383,6 +387,7 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
         key=lambda c: documents_totals[c],
         reverse=True
     )[:top_n]
+    print('Top groups:', top_groups[:2])
     non_top_groups = documents_totals.keys() - top_groups
     other_totals = defaultdict(int)
     for y in years_set:
@@ -483,7 +488,7 @@ def get_data_for_documents(doc_type = 'rfc', group_by = 'stream__name'):
 
     return years_set, datasets
 
-def authors_timeline(request, doc_type='all', stats_type='affiliation', top_n=20):
+def authors_timeline(request, doc_type='all', stats_type='affiliation'):
     """Render the documents timeline page with document statistics over time.
 
     Args:
@@ -494,6 +499,9 @@ def authors_timeline(request, doc_type='all', stats_type='affiliation', top_n=20
     Returns:
         Rendered response for the documents timeline template.
     """
+
+    # Query parameters (from ?key=value)
+    top_n = int(request.GET.get('top', '20'))
 
     if stats_type == 'affiliation':
         total_labels, total_data_sets = get_authors_timeline_data_for_documents(doc_type, 'affiliation', top_n)
@@ -531,7 +539,7 @@ def authors_timeline(request, doc_type='all', stats_type='affiliation', top_n=20
         "chart_data": chart_data,
     })
 
-def documents_timeline(request, doc_type='rfc', stats_type='level', top_n=10):
+def documents_timeline(request, doc_type='rfc', stats_type='level'):
     """Render the documents timeline page with document statistics over time.
 
     Args:
@@ -542,6 +550,9 @@ def documents_timeline(request, doc_type='rfc', stats_type='level', top_n=10):
     Returns:
         Rendered response for the documents timeline template.
     """
+
+    # Query parameters (from ?key=value)
+    top_n = int(request.GET.get('top', '10'))
 
     if stats_type == 'stream':
         total_labels, total_data_sets = get_data_for_documents(doc_type, 'stream__name')
