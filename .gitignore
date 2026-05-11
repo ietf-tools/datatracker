@@ -11,6 +11,7 @@ datatracker.sublime-workspace
 /.settings
 /.tmp
 /.vite
+/.yarn
 /client/dist
 /data
 /dist
@@ -37,3 +38,7 @@ __pycache__
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+yarn.lock
+.gitignore
+yarn.lock
+.pnp.cjs

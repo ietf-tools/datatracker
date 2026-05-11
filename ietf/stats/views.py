@@ -145,60 +145,6 @@ def known_countries_list(request, stats_type=None, acronym=None):
         "countries": countries,
     })
 
-def canonicalize_country(country):
-    if country is None or country.strip() == '':
-        return 'Unspecified'
-    # TODO use a cache system (?) and 
-    #     from ietf.stats.models import CountryAlias
-    # CountryAlias.alias = 'Belgique' (in French!) CountryAlias = 'BE'
-    # CountryName.slug = 'BE' CountryName.name = 'Belgium'
-    # To only use official names ?
-    # alias_map = dict(
-#     CountryAlias.objects
-#     .values_list('alias', 'name__name')
-#     )
-    country = country.strip().lower()
-    if country in ('china', 'chinese', 'p.r. china', 'prc', 'cn', 'p.r.china', 'p.r. china') or country.endswith(' china') or country.endswith(' p.r.china'):
-        return 'China'
-    elif country in ('uk', 'u.k.', 'gb', 'united kingdom', 'england', 'great britain', 'scotland', 'wales') or country.endswith(' uk'):
-        return 'United Kingdom'
-    elif country in ('germany', 'deutschland', 'de') or country.endswith(' germany'):
-        return 'Germany'
-    elif country in ('the netherlands', 'nederland', 'holland', 'nl'):
-        return 'Netherlands'
-    elif country in ('france', 'fr'):
-        return 'France'
-    elif country in ('belgium', 'be') or country.endswith(' belgium'):
-        return 'Belgium'
-    elif country in ('sweden', 'se') or country.endswith(' sweden'):
-        return 'Sweden'
-    elif country in ('new zealand', 'nz') or country.endswith(' new zealand'):
-        return 'New Zealand'
-    elif country in ('canada', 'ca'):
-        return 'Canada'
-    elif country in ('india', 'in') or country.endswith(' india'):
-        return 'India'
-    elif country in ('australia', 'au'):
-        return 'Australia'
-    elif country in ('japan', 'jp'):
-        return 'Japan'
-    elif country in ('italy', 'it'):
-        return 'Italy'
-    elif country in ('finland', 'finlandia', 'suomi', 'fi') or country.endswith(' finland'):
-        return 'Finland'
-    elif country in ('russia', 'ru', 'россия', 'российская федерация', 'russian federation', 'ussr', 'soviet union', 'u.s.s.r.'):
-        return 'Russia'
-    elif country in ('republic of korea', 'south korea', 'kr', 'korea'):
-        return 'South Korea'
-    # Should do a regex match here instead of hardcoding all the variations, but for now this is good enough
-    elif (
-        country in ('usa', 'united states', 'united states of america', 'us', 'u.s.', 'u.s.a.', 'u.s.a') or
-        country.endswith(' usa') or 
-        re.match(r'^([a-z\s\.\-]+),*\s*([a-z]{2}),*\s+(\d{5}(-\d{4})?)$', country)
-    ):
-        return 'USA'
-    return country.title()
-
 def get_authors_total_data_for_documents(doc_type = 'all', group_by = 'country', top_n = 20):
     # Build a dynamic query set filter
     filters = Q()    
