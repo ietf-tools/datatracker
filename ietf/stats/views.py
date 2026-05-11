@@ -534,7 +534,7 @@ def documents_timeline(request, doc_type='rfc', stats_type='level'):
         "chart_data": chart_data,
     })
 
-def get_affiliation_data_for_meetings(attendance_type=None):
+def get_affiliation_data_for_meetings(attendance_type=None, top_n=20):
     """Get affiliation participation data for meetings timeline chart.
 
     Args:
@@ -543,10 +543,9 @@ def get_affiliation_data_for_meetings(attendance_type=None):
     Returns:
         Tuple of (sorted_meetings, datasets) for Chart.js.
     """
-    cache_key = f'stats:get_affiliation_data_for_meetings:{attendance_type}'
+    cache_key = f'stats:get_affiliation_data_for_meetings:{attendance_type}-{top_n}'
     sorted_meetings, datasets = cache.get(cache_key, (None, None))
     if (sorted_meetings, datasets) == (None, None):
-        top_n = 20  # could be a parameter, but would need to adjust cache handling
 
         # Get registration status details
         if attendance_type:
@@ -630,7 +629,7 @@ def get_affiliation_data_for_meetings(attendance_type=None):
 
     return sorted_meetings, datasets
 
-def get_country_data_for_meetings(attendance_type=None):
+def get_country_data_for_meetings(attendance_type=None, top_n=20):
     """Get country participation data for meetings timeline chart.
 
     Args:
@@ -639,10 +638,9 @@ def get_country_data_for_meetings(attendance_type=None):
     Returns:
         Tuple of (sorted_meetings, datasets) for Chart.js.
     """
-    cache_key = f'stats:get_country_data_for_meetings:{attendance_type}'
+    cache_key = f'stats:get_country_data_for_meetings:{attendance_type}-{top_n}'
     sorted_meetings, datasets = cache.get(cache_key, (None, None))
     if (sorted_meetings, datasets) == (None, None):
-        top_n = 10  # could be a parameter, but would need to adjust cache handling
         # Get registration status counts, aggregated by country_code
         if attendance_type:
             registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
@@ -657,7 +655,12 @@ def get_country_data_for_meetings(attendance_type=None):
             .annotate(participant_count=Count('id'))
             .order_by('meeting__number')  # chronological order
         )
-    
+
+        # Prepare country affiliation data, applying canonicalization and aliasing
+        # Mainly used to conver 2-letter country code into a full name
+        # Could possible use Country directly
+        alias_map = get_aliased_countries(country_code for country_code in queryset.values_list('country_code', flat=True))
+
         # ── Step 1: Collect all meetings and country totals ──
         meetings_set = set()
         country_totals = defaultdict(int)
@@ -665,7 +668,7 @@ def get_country_data_for_meetings(attendance_type=None):
     
         for row in queryset:
             meeting = row['meeting__number']
-            country = row['country_code']
+            country = alias_map.get(row['country_code'], row['country_code']) 
             count = row['participant_count']
     
             meetings_set.add(meeting)
@@ -729,13 +732,13 @@ def get_country_data_for_meetings(attendance_type=None):
 
     return sorted_meetings, datasets
 
-def get_data_for_meetings():
+def get_data_for_meetings(top_n=20):
     """Get total participation data by attendance type for meetings timeline chart.
 
     Returns:
         Tuple of (sorted_meetings, datasets) for Chart.js.
     """
-    cache_key = "stats:get_data_for_meetings"
+    cache_key = f'stats:get_data_for_meetings:{top_n}'
     sorted_meetings, datasets = cache.get(cache_key, (None, None))
     if (sorted_meetings, datasets) == (None, None):
         # Get registration status counts, aggregated by ticket types
@@ -803,19 +806,22 @@ def meetings_timeline(request, stats_type='country'):
     Returns:
         Rendered response for the meetings timeline template.
     """
+        # Query parameters (from ?key=value)
+    top_n = int(request.GET.get('top', '20'))
+
     if stats_type == 'total':
-        total_labels, total_data_sets = get_data_for_meetings()
+        total_labels, total_data_sets = get_data_for_meetings(top_n=top_n)
         in_person_labels = ([], [])
         in_person_data_sets = ([], [])
-        top_n = len(total_data_sets) - 1  # subtract one because we don't count "other"
+        plural_stats_type = ''
     elif stats_type == 'affiliation':
-        total_labels, total_data_sets = get_affiliation_data_for_meetings()
-        in_person_labels, in_person_data_sets = get_affiliation_data_for_meetings(attendance_type='onsite')
-        top_n = len(total_data_sets) - 1  # subtract one because we don't count "other"
+        total_labels, total_data_sets = get_affiliation_data_for_meetings(top_n=top_n)
+        in_person_labels, in_person_data_sets = get_affiliation_data_for_meetings(attendance_type='onsite', top_n=top_n)
+        plural_stats_type = 'affiliations'
     elif stats_type == 'country':
-        total_labels, total_data_sets = get_country_data_for_meetings()
-        in_person_labels, in_person_data_sets = get_country_data_for_meetings(attendance_type='onsite')
-        top_n = len(total_data_sets) - 1  # subtract one because we don't count "other"
+        total_labels, total_data_sets = get_country_data_for_meetings(top_n=top_n)
+        in_person_labels, in_person_data_sets = get_country_data_for_meetings(attendance_type='onsite', top_n=top_n)
+        plural_stats_type = 'countries'
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
@@ -857,6 +863,7 @@ def meetings_timeline(request, stats_type='country'):
         "possible_stats_types": possible_stats_types,
         "possible_meeting_numbers": possible_meeting_numbers,
         "stats_type": stats_type,
+        "plural_stats_type": plural_stats_type,
         "total_chart_data": total_chart_data,
         "in_person_chart_data": in_person_chart_data,
     })
