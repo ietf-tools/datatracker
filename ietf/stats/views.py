@@ -199,30 +199,6 @@ def canonicalize_country(country):
         return 'USA'
     return country.title()
 
-def canonicalize_affiliation(affiliation):
-    """Canonicalize an affiliation string by removing common suffixes and standardizing prefixes.
-
-    Args:
-        affiliation: The affiliation string to canonicalize.
-
-    Returns:
-        The canonicalized affiliation string, or None if input is None.
-    """
-    if not affiliation or affiliation.lower() in ('n/a', 'none', 'unspecified'):
-        return None
-    affiliation = affiliation.strip()
-    for suffix in ('ab', 'ag', 'corp', 'corp.', 'corporation', 'gmbh', 'inc.', 'inc', 'international pte ltd', 'llc', 'ltd', 'ltd.', 'private limited', 'pty ltd', 'pvt ltd'):
-        if affiliation.lower().endswith(', ' + suffix):
-            affiliation = affiliation[:-(len(suffix)+2)]
-        elif affiliation.lower().endswith(' ' + suffix):
-            affiliation = affiliation[:-(len(suffix)+1)]
-        elif affiliation.lower().endswith(',' + suffix):
-            affiliation = affiliation[:-(len(suffix)+1)]
-    for prefix in ('akamai','apple', 'cisco', 'futurewei', 'google', 'hitachi', 'hpe', 'huawei', 'juniper', 'meta', 'nokia', 'ntt', 'siemens'):
-        if affiliation.lower().startswith(prefix + ' '):
-            affiliation = prefix
-    return affiliation.title()
-
 def get_authors_total_data_for_documents(doc_type = 'all', group_by = 'country', top_n = 20):
     # Build a dynamic query set filter
     filters = Q()    
@@ -613,6 +589,9 @@ def get_affiliation_data_for_meetings(attendance_type=None):
             registrations = Registration.objects.all()
         registrations = registrations.values('affiliation', 'meeting__number')
     
+        # Prepare affiliation data, applying canonicalization and aliasing
+        alias_map = get_aliased_affiliations(affiliation for affiliation in registrations.values_list('affiliation', flat=True))
+
         # Count per canonicalized affiliation
         organization = dict()
         meetings_set = set()
@@ -622,7 +601,10 @@ def get_affiliation_data_for_meetings(attendance_type=None):
         for reg in registrations:
             meeting = reg['meeting__number']
             meetings_set.add(meeting)
-            affiliation = canonicalize_affiliation(reg['affiliation']) or "Unspecified"
+            if reg['affiliation'] is None or reg['affiliation'].strip() == '':
+                affiliation = 'Unspecified'
+            else:                
+                affiliation = alias_map.get(reg['affiliation'], reg['affiliation'])
             organization[affiliation] = organization.get(affiliation, 0) + 1
             org_totals[affiliation] = org_totals.get(affiliation, 0) + 1
             data_map[affiliation][meeting] = data_map[affiliation].get(meeting, 0) + 1
@@ -930,10 +912,15 @@ def get_affiliation_data_for_meeting(meeting_number, minimum_required, attendanc
         registrations = registrations.filter(tickets__attendance_type=attendance_type)
     registrations = registrations.values('affiliation')
 
+    alias_map = get_aliased_affiliations(affiliation for affiliation in registrations.values_list('affiliation', flat=True))
+
     # Count per canonicalized affiliation
     organization = dict()
     for reg in registrations:
-        affiliation = canonicalize_affiliation(reg['affiliation']) or "Unspecified"
+        if reg['affiliation'] is None or reg['affiliation'].strip() == '':
+            affiliation = 'Unspecified'
+        else:
+            affiliation = alias_map.get(reg['affiliation'], reg['affiliation'])                                
         organization[affiliation] = organization.get(affiliation, 0) + 1
 
     # Sort to have the largest count first (nicer in pie chart)
