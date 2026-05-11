@@ -22,7 +22,7 @@
                     href="{{ total_url }}?top={{ top_n }}">Total</a>
         </div>
         <label class="fw-bold col-sm-1 col-form-label">Group by:</label>
-        <div class="btn-group col-sm-2">
+        <div class="btn-group col-sm-4">
             {% for slug, label, url in possible_stats_types %}
                 <a class="btn btn-outline-primary
                             {% if slug == stats_type %}
@@ -32,7 +32,7 @@
             {% endfor %}
         </div>
         <label class="fw-bold col-sm-1 col-form-label">Documents:</label>
-        <div class="btn-group col-sm-4">
+        <div class="btn-group col-sm-2">
             {% for slug, label, url in possible_docs_types %}
                 <a class="btn btn-outline-primary
                             {% if slug == doc_type %}
