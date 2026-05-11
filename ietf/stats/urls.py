@@ -13,8 +13,8 @@ urlpatterns = [
     url(r"^total/authors/(?P<doc_type>all|draft|wg-draft|rfc)/(?P<stats_type>affiliation|country)/$", views.authors_total),
     url(r"^documents/(?P<doc_type>draft|rfc)/(?P<stats_type>level|stream|wg)/$", views.documents_timeline),
     url(r"^knowncountries/$", views.known_countries_list),
-    url(r"^meeting/$", views.meetings_timeline),
+    url(r"^meetings/$", views.meetings_timeline),
     url(r"^meeting/(?P<meeting_number>\d+)/(?P<stats_type>affiliation|country)/$", views.meeting_stats),
-    url(r"^meeting/(?:(?P<stats_type>affiliation|country|total)/)?$", views.meetings_timeline),
+    url(r"^meetings/(?:(?P<stats_type>affiliation|country|total)/)?$", views.meetings_timeline),
     url(r"^review/(?:(?P<stats_type>completion|results|states|time)/)?(?:%(acronym)s/)?$" % settings.URL_REGEXPS, views.review_stats),
 ]
