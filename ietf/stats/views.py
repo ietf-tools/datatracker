@@ -246,7 +246,7 @@ def authors_total(request, doc_type='all', stats_type='affiliation'):
     })
 
 
-def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'country', top_n = 20):
+def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'country', top_n = 10):
     # Build a dynamic query set filter
     filters = Q()    
     if doc_type != 'all' and doc_type  != 'wg-draft':
@@ -307,7 +307,6 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
         key=lambda c: documents_totals[c],
         reverse=True
     )[:top_n]
-    print('Top groups:', top_groups[:2])
     non_top_groups = documents_totals.keys() - top_groups
     other_totals = defaultdict(int)
     for y in years_set:
@@ -350,7 +349,7 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
 
     return years_set, datasets
 
-def get_data_for_documents(doc_type = 'rfc', group_by = 'stream__name'):
+def get_data_for_documents(doc_type = 'rfc', group_by = 'stream__name', top_n = 10):
     if doc_type != 'all':
         queryset = Document.objects.filter(type_id=doc_type)
     else:
@@ -385,12 +384,23 @@ def get_data_for_documents(doc_type = 'rfc', group_by = 'stream__name'):
 
     # ── Step 2: Sort years numerically rather than alphabetically  ──
     years_set = sorted(years_set)
-    group_types = documents_totals.keys() 
+
+    top_groups = sorted(
+        documents_totals.keys(),
+        key=lambda c: documents_totals[c],
+        reverse=True
+    )[:top_n]
+    non_top_groups = documents_totals.keys() - top_groups
+    other_totals = defaultdict(int)
+    for y in years_set:
+        other_totals[y] = 0
+        for g in non_top_groups:
+            other_totals[y] += int(data_map[y].get(g, 0))
 
     # ── Step 4: Build Chart.js datasets ──
 
     datasets = []
-    for group in group_types:
+    for group in top_groups:
         color = color_from_hash(group)
         datasets.append({
             'label': group,
@@ -406,6 +416,18 @@ def get_data_for_documents(doc_type = 'rfc', group_by = 'stream__name'):
             'borderWidth': 2,
         })
 
+    datasets.append({
+        'label': 'Other',
+        'data': [other_totals.get(year, 0) for year in years_set],
+        'borderColor': 'black',
+        'fill': False,
+        'tension': 0.0,
+        'pointColor': 'black',
+        'pointBackgroundColor': 'black',
+        'pointRadius': 4,
+        'pointHoverRadius': 6,
+        'borderWidth': 2,
+    })
     return years_set, datasets
 
 def authors_timeline(request, doc_type='all', stats_type='affiliation'):
@@ -475,13 +497,13 @@ def documents_timeline(request, doc_type='rfc', stats_type='level'):
     top_n = int(request.GET.get('top', '10'))
 
     if stats_type == 'stream':
-        total_labels, total_data_sets = get_data_for_documents(doc_type, 'stream__name')
+        total_labels, total_data_sets = get_data_for_documents(doc_type, 'stream__name', top_n)
     elif stats_type == 'level' and doc_type == 'draft':
-        total_labels, total_data_sets = get_data_for_documents(doc_type, 'intended_std_level_id')
+        total_labels, total_data_sets = get_data_for_documents(doc_type, 'intended_std_level_id', top_n)
     elif stats_type == 'level' and doc_type == 'rfc':
-        total_labels, total_data_sets = get_data_for_documents(doc_type, 'std_level_id')
+        total_labels, total_data_sets = get_data_for_documents(doc_type, 'std_level_id', top_n)
     elif stats_type == 'wg':
-        total_labels, total_data_sets = get_data_for_documents(doc_type, 'group__name')
+        total_labels, total_data_sets = get_data_for_documents(doc_type, 'group__name', top_n)
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
