@@ -2,10 +2,20 @@
 
 import factory
 
-from ietf.stats.models import MeetingRegistration
+from ietf.stats.models import AffiliationIgnoredEnding, AffiliationMainName, MeetingRegistration
 from ietf.meeting.factories import MeetingFactory
 from ietf.person.factories import PersonFactory
 
+class AffiliationIgnoredEndingFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = AffiliationIgnoredEnding
+
+    ending = ''
+class AffiliationMainNameFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = AffiliationMainName
+
+    main_name = factory.Faker('company')
 class MeetingRegistrationFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = MeetingRegistration

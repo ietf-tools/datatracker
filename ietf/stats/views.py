@@ -6,10 +6,9 @@ import calendar
 import datetime
 import itertools
 import json
-import re
 import hashlib
 import dateutil.relativedelta
-from collections import defaultdict, Counter
+from collections import defaultdict
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -279,7 +278,6 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
         year_group_list = [(year, alias_map.get(group, group)) for year, group in year_group_list]
     elif group_by == 'country':
         alias_map = get_aliased_countries(group for _, group in year_group_list)
-        print('Group_by:', group_by, ', alias map:', alias_map)
         year_group_list = [(year, alias_map.get(group, group)) for year, group in year_group_list]
     alias_map[''] = 'Unspecified'
 

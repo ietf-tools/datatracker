@@ -24,6 +24,7 @@ from ietf.doc.factories import WgDraftFactory, WgRfcFactory, DocumentAuthorFacto
 from ietf.group.factories import GroupFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
 from ietf.meeting.tests_models import MeetingFactory, RegistrationFactory
+from ietf.stats.factories import AffiliationIgnoredEndingFactory, AffiliationMainNameFactory
 from ietf.utils.timezone import date_today
 
 
@@ -67,12 +68,19 @@ class StatisticsTests(TestCase):
         affiliation = factory.Faker('company').evaluate(None, None, {'locale': None})
         country = factory.Faker('country').evaluate(None, None, {'locale': None})
 
+        # Create the various aliases ancilliary content
+        AffiliationIgnoredEndingFactory(ending='llc\\.?')
+        AffiliationIgnoredEndingFactory(ending='ag\\.?')
+        AffiliationIgnoredEndingFactory(ending='inc\\.?')
+        AffiliationIgnoredEndingFactory(ending='corp\\.?')
+        AffiliationMainNameFactory(main_name='Cisco')
+
         DocumentAuthorFactory(document=rfcPsGroup1, affiliation=affiliation, country=country)
         DocumentAuthorFactory(document=rfcExpGroup1, affiliation=affiliation + ', LLC', country=country)
         DocumentAuthorFactory(document=rfcExpGroup1, affiliation=factory.Faker('company'), country=factory.Faker('country'))
         DocumentAuthorFactory(document=wgDraftPsGroup1, affiliation=affiliation + ' AG', country=country)
         DocumentAuthorFactory(document=rfcInfGroup2, affiliation='CiScO InC.', country=country)
-        DocumentAuthorFactory(document=wgDraftPsGroup2, affiliation='CISCO corp.', country='KINGDOM of BELGIUM')
+        DocumentAuthorFactory(document=wgDraftPsGroup2, affiliation='CISCO corp.', country='belgique')
         DocumentAuthorFactory(document=wgDraftPsGroup2, affiliation=affiliation, country=country)
         DocumentAuthorFactory(document=rfcBcpIAB1, affiliation='CiScO PTY LTD', country='UnItEd StAtEs')
         DocumentAuthorFactory(document=rfcBcpIAB2, affiliation=affiliation, country='usa')
@@ -146,7 +154,7 @@ class StatisticsTests(TestCase):
         self.assertTrue(chart_data["labels"] == [year1960, yearNow])
         self.assertTrue(
             any(
-                ds["label"] == "USA" and ds["data"] == [2, 1]
+                ds["label"] == "United States of America" and ds["data"] == [2, 1]
                 for ds in chart_data["datasets"]
             )
         )
@@ -214,6 +222,11 @@ class StatisticsTests(TestCase):
         RegistrationFactory(meeting=meeting124, with_ticket={'attendance_type_id': 'remote'}, attended=False)
         RegistrationFactory.create_batch(15, meeting=meeting125, affiliation='Test LLC', with_ticket={'attendance_type_id': 'remote'}, attended=False)
         RegistrationFactory.create_batch(25, meeting=meeting125, affiliation='Example, Ltd', with_ticket={'attendance_type_id': 'onsite'}, attended=False)
+
+        # Create the various aliases ancilliary content
+        AffiliationIgnoredEndingFactory(ending='llc\\.?')
+        AffiliationIgnoredEndingFactory(ending='ltd\\.?')
+
         # Test the meeting specific statitistics per affiliation and per country
         r = self.client.get(urlreverse(ietf.stats.views.meeting_stats, kwargs={"meeting_number": "124", "stats_type": "affiliation"}))
         self.assertEqual(r.status_code, 200)

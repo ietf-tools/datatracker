@@ -17,6 +17,7 @@ logger = logging.getLogger('django')
 def compile_affiliation_ending_stripping_regexp():
     parts = []
     for ending_re in AffiliationIgnoredEnding.objects.values_list("ending", flat=True):
+        # Try to compile as a syntax check
         try:
             re.compile(ending_re)
         except re.error:
