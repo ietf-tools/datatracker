@@ -43,11 +43,11 @@ class AffiliationIgnoredEnding(models.Model):
         return self.ending
 
 class AffiliationMainName(models.Model):
+    """Records that this start of an affiliation is what matters (for statistical purposes)."""
     main_name = models.CharField(max_length=255, unique=True)
-
+    
     class Meta:
         verbose_name_plural = 'affiliation main names'
-        ordering = ['main_name']
 
     def __str__(self):
         return self.main_name
