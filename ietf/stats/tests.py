@@ -17,7 +17,6 @@ from django.utils import timezone
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 import ietf.stats.views
 
-
 from ietf.group.factories import RoleFactory
 from ietf.person.factories import PersonFactory
 from ietf.doc.factories import WgDraftFactory, WgRfcFactory, DocumentAuthorFactory, DocumentFactory, DocEventFactory, NewRevisionDocEventFactory
@@ -26,8 +25,6 @@ from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory,
 from ietf.meeting.tests_models import MeetingFactory, RegistrationFactory
 from ietf.stats.factories import AffiliationIgnoredEndingFactory, AffiliationMainNameFactory
 from ietf.utils.timezone import date_today
-
-
 class StatisticsTests(TestCase):
     def test_stats_index(self):
         # Create a meeting as the index page needs to know the current meeting
@@ -212,6 +209,20 @@ class StatisticsTests(TestCase):
                 for ds in chart_data["datasets"]
             )
         )
+
+        # Test#7 the authors specific statistics global
+        r = self.client.get(urlreverse(ietf.stats.views.authors_total, kwargs={"doc_type": "draft", "stats_type": "country"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Draft Authors by Country")
+        # Extract the JSON embedded in the response
+        pq = PyQuery(r.content)
+        chart_data = json.loads(pq.find("script#chart_data").text())
+        self.assertTrue('Belgium' in chart_data["labels"])
+        self.assertTrue('United States of America' in chart_data["labels"])
+        self.assertTrue(country in chart_data["labels"])
+        USA_index = chart_data["labels"].index('United States of America')
+        # Let's check whether USA has indeed 1 
+        self.assertTrue(chart_data["datasets"][0]["data"][USA_index] == 1)
 
     def test_meeting_stats(self):
         meeting124 = MeetingFactory(type_id='ietf', number='124', date=timezone.now())
