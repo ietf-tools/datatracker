@@ -122,24 +122,11 @@ class Migration(migrations.Migration):
             name='AffiliationMainName',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('main_name', models.CharField(max_length=255, help_text="Main leading part of an affiliation, the remaing part can be ignored.")),
+                ('main_name', models.CharField(max_length=255, unique=True, help_text="Main leading part of an affiliation, the remaing part can be ignored.")),
             ],
             options={
-                'verbose_name': 'affiliation main name',
-                'verbose_name_plural': 'affiliations main names',
+                'verbose_name_plural': 'affiliation main names',
             },
         ),
-        # # proposed/required by CI/CD in github
-        # migrations.AlterModelOptions(
-        #     name='affiliationmainname',
-        #     options={'verbose_name_plural': 'affiliation main names'},
-        # ),
-        # # proposed/required by CI/CD in github
-        # migrations.AddField(
-        #     model_name='affiliationmainname',
-        #     name='id',
-        #     field=models.AutoField(auto_created=True, default=None, primary_key=True, serialize=False, verbose_name='ID'),
-        #     preserve_default=False,
-        # ),
         migrations.RunPython(forward, backward),
     ]
