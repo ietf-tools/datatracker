@@ -44,8 +44,8 @@ class AffiliationIgnoredEnding(models.Model):
 
 class AffiliationMainName(models.Model):
     """Records that this start of an affiliation is what matters (for statistical purposes)."""
-    main_name = models.CharField(max_length=255, unique=True)
-    
+    main_name = models.CharField(max_length=255, help_text="Main leading part of an affiliation, the remaing part can be ignored.")
+
     class Meta:
         verbose_name_plural = 'affiliation main names'
 
