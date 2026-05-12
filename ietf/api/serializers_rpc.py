@@ -9,6 +9,8 @@ from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from rest_framework.fields import empty
+from rest_framework.relations import SlugRelatedField
 
 from ietf.doc.expire import move_draft_files_to_archive
 from ietf.doc.models import (
@@ -265,6 +267,23 @@ class SubseriesNameField(serializers.RegexField):
         super().__init__(regex, **kwargs)
 
 
+class RfcGroupRelatedField(SlugRelatedField):
+    """SlugRelatedField that translates None / "" to the acronym "none" """
+
+    def __init__(self, **kwargs):
+        super().__init__(
+            slug_field="acronym",
+            queryset=Group.objects.all(),
+            allow_null=True,
+            required=False,
+        )
+
+    def run_validation(self, data=empty):
+        # Use the Group with acronym "none" when group is not specified 
+        if data is empty or data is None or data == "":
+            data = "none"
+        return super().run_validation(data)
+
 
 class RfcPubSerializer(serializers.ModelSerializer):
     """Write-only serializer for RFC publication"""
@@ -279,9 +298,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
 
     # fields on the RFC Document that need tweaking from ModelSerializer defaults
     rfc_number = serializers.IntegerField(min_value=1, required=True)
-    group = serializers.SlugRelatedField(
-        slug_field="acronym", queryset=Group.objects.all(), required=False
-    )
+    group = RfcGroupRelatedField()
     stream = serializers.PrimaryKeyRelatedField(
         queryset=StreamName.objects.filter(used=True)
     )
@@ -329,6 +346,11 @@ class RfcPubSerializer(serializers.ModelSerializer):
             "subseries",
             "keywords",
         ]
+
+    # def validate_group(self, value):
+    #     """Substitute the "none" group for a null group field"""
+    #     breakpoint()
+    #     return Group.objects.get("none") if value is None else value
 
     def validate(self, data):
         if "draft_name" in data or "draft_rev" in data:
