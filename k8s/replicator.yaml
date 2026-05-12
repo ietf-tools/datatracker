@@ -52,6 +52,10 @@ spec:
             readOnlyRootFilesystem: true
             runAsUser: 1000
             runAsGroup: 1000
+          resources:
+            requests:
+              cpu: 100m
+              memory: 500Mi
       volumes:
         # To be overridden with the actual shared volume
         - name: dt-vol

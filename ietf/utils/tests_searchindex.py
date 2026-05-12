@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 from unittest import mock
 
+import requests.exceptions
 import typesense.exceptions
 from django.conf import settings
 from django.test.utils import override_settings
@@ -211,3 +212,34 @@ class SearchindexTests(TestCase):
 
         mock_collections["frogs"].side_effect = typesense.exceptions.ObjectNotFound
         searchindex.delete_collection()  # should ignore the exception
+
+    @override_settings(
+        SEARCHINDEX_CONFIG={
+            "TYPESENSE_API_URL": "http://ts.example.com",
+            "TYPESENSE_API_KEY": "test-api-key",
+            "TYPESENSE_COLLECTION_NAME": "frogs",
+        }
+    )
+    def test_upsert_presets(self):
+        self.requests_mock.put(
+            "http://ts.example.com/presets/red", text="ok", status_code=201
+        )
+        self.requests_mock.put(
+            "http://ts.example.com/presets/red-content", text="ok", status_code=202
+        )
+        searchindex.upsert_presets()
+
+        self.requests_mock.put(
+            "http://ts.example.com/presets/red", text="not ok", status_code=400
+        )
+        with self.assertRaises(requests.exceptions.HTTPError):
+            searchindex.upsert_presets()
+
+        self.requests_mock.put(
+            "http://ts.example.com/presets/red", text="ok", status_code=200
+        )
+        self.requests_mock.put(
+            "http://ts.example.com/presets/red-content", text="not ok", status_code=400
+        )
+        with self.assertRaises(requests.exceptions.HTTPError):
+            searchindex.upsert_presets()

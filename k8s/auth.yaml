@@ -9,7 +9,7 @@ spec:
     matchLabels:
       app: auth
   strategy:
-    type: Recreate
+    type: DEPLOY_STRATEGY
   template:
     metadata:
       labels:
@@ -61,6 +61,10 @@ spec:
             readOnlyRootFilesystem: true
             runAsUser: 1000
             runAsGroup: 1000
+          resources:
+            requests:
+              cpu: 250m
+              memory: 4Gi
         # -----------------------------------------------------
         # Nginx Container
         # -----------------------------------------------------
@@ -86,6 +90,10 @@ spec:
             - name: dt-cfg
               mountPath: /etc/nginx/conf.d/default.conf
               subPath: nginx-auth.conf
+          resources:
+            requests:
+              cpu: 10m
+              memory: 10Mi
         # -----------------------------------------------------
         # ScoutAPM Container
         # -----------------------------------------------------
@@ -111,6 +119,10 @@ spec:
             readOnlyRootFilesystem: true
             runAsUser: 65534 # "nobody" user by default
             runAsGroup: 65534  # "nogroup" group by default
+          resources:
+            requests:
+              cpu: 10m
+              memory: 50Mi
       volumes:
         # To be overriden with the actual shared volume
         - name: dt-vol
@@ -129,8 +141,6 @@ spec:
         - name: nginx-tmp
           emptyDir:
             sizeLimit: "500Mi"
-      dnsPolicy: ClusterFirst
-      restartPolicy: Always
       terminationGracePeriodSeconds: 60
 ---
 apiVersion: v1
