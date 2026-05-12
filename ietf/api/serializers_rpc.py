@@ -8,9 +8,7 @@ from django.urls import reverse as urlreverse
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
-from rest_framework import serializers
-from rest_framework.fields import empty
-from rest_framework.relations import SlugRelatedField
+from rest_framework import fields, serializers
 
 from ietf.doc.expire import move_draft_files_to_archive
 from ietf.doc.models import (
@@ -267,7 +265,7 @@ class SubseriesNameField(serializers.RegexField):
         super().__init__(regex, **kwargs)
 
 
-class RfcGroupRelatedField(SlugRelatedField):
+class RfcGroupRelatedField(serializers.SlugRelatedField):
     """SlugRelatedField that translates None / "" to the acronym "none" """
 
     def __init__(self, **kwargs):
@@ -278,9 +276,9 @@ class RfcGroupRelatedField(SlugRelatedField):
             required=False,
         )
 
-    def run_validation(self, data=empty):
+    def run_validation(self, data=fields.empty):
         # Use the Group with acronym "none" when group is not specified 
-        if data is empty or data is None or data == "":
+        if data is fields.empty or data is None or data == "":
             data = "none"
         return super().run_validation(data)
 
