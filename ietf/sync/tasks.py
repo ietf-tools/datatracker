@@ -342,3 +342,8 @@ def refresh_rfc_index_task():
             pass
 
         mark_rfcindex_as_processed(new_processed_time)
+
+@shared_task
+def process_rpc_queue_task(data: list):
+
+    return
