@@ -288,7 +288,7 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
         # years_set.add(year)
         if group is None or group == '':
             group = 'Unspecified'
-            print("Found unspecified affiliation/country for year", year, group)
+            print("Found empty affiliation/country for year", year, group)
         else:
             group = alias_map.get(group, group)
         data_map[year][group] = data_map[year].get(group, 0) + 1
@@ -908,6 +908,7 @@ def get_affiliation_data_for_meeting(meeting_number, top_n=20, attendance_type=N
     other_total = 0
     for _, count in sorted_orgs[top_n:]:
         other_total += count
+        total += count
 
     if other_total > 0:
         labels.append('Other')
@@ -948,6 +949,7 @@ def get_country_data_for_meeting(meeting_number, top_n=20, attendance_type=None)
     other_total = 0
     for item in registration_counts[top_n:]:
         other_total += item['count']
+        total += item['count']
 
     if other_total > 0:
         labels.append('Other')
