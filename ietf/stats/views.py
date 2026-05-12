@@ -933,14 +933,16 @@ def get_country_data_for_meeting(meeting_number, minimum_required, attendance_ty
         registration_counts = registration_counts.filter(tickets__attendance_type=attendance_type)
     registration_counts = registration_counts.values('country_code').annotate(count=Count('country_code')).order_by('-count')
 
+    alias_map = get_aliased_countries(reg for reg in registration_counts.values_list('country_code', flat=True))
     labels = []
     data = []
     others_count = 0
     total = 0
     for item in registration_counts:
         total += item['count']
+        country_code = alias_map.get(item['country_code'], item['country_code'])
         if item['count'] > minimum_required:
-            labels.append(item['country_code'])
+            labels.append(country_code)
             data.append(item['count'])
         else:
             others_count += item['count']
