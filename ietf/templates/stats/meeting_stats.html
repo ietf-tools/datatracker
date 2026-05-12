@@ -22,7 +22,7 @@
                             {% if slug == stats_type %}
                                 active
                             {% endif %}"
-                    href="{{ url }}">{{ label }}</a>
+                    href="{{ url }}?top={{ top_n }}">{{ label }}</a>
             {% endfor %}
         </div>
         <label class="fw-bold col-sm-1 col-form-label">Meeting:</label>
@@ -32,13 +32,13 @@
                             {% if num == meeting_number %}
                                 active
                             {% endif %}"
-                    href="{{ url }}">{{ num }}</a>
+                    href="{{ url }}?top={{ top_n }}">{{ num }}</a>
             {% endfor %}
         </div>
     </div>
     <p>
         This page provides a visual representation of the total registrations for IETF-{{ meeting_number }} by {{ stats_type }}. 
-        Only categories having more than {{ minimum_required }} registrations are displayed separately,
+        Only the top-{{ top_n }} {{ stats_type }} registrations are displayed separately,
         else they are grouped under "Other".
     </p>
     <div class="row">

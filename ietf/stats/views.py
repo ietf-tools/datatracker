@@ -806,7 +806,7 @@ def meetings_timeline(request, stats_type='country'):
     Returns:
         Rendered response for the meetings timeline template.
     """
-        # Query parameters (from ?key=value)
+    # Query parameters (from ?key=value)
     top_n = int(request.GET.get('top', '20'))
 
     if stats_type == 'total':
@@ -868,12 +868,11 @@ def meetings_timeline(request, stats_type='country'):
         "in_person_chart_data": in_person_chart_data,
     })
 
-def get_affiliation_data_for_meeting(meeting_number, minimum_required, attendance_type=None):
+def get_affiliation_data_for_meeting(meeting_number, top_n=20, attendance_type=None):
     """Get affiliation participation data for a specific meeting.
 
     Args:
         meeting_number: The meeting number.
-        minimum_required: Minimum count to include in main data (others go to 'Other').
         attendance_type: Optional filter for attendance type.
 
     Returns:
@@ -900,23 +899,24 @@ def get_affiliation_data_for_meeting(meeting_number, minimum_required, attendanc
     sorted_orgs = sorted(organization.items(), key=lambda t: t[1], reverse=True)
     labels = []
     data = []
-    others_count = 0
     total = 0
-    for org, count in sorted_orgs:
+    for org, count in sorted_orgs[:top_n]:
         total += count
-        if count > minimum_required:
-            labels.append(org)
-            data.append(count)
-        else:
-            others_count += count
+        labels.append(org)
+        data.append(count)
 
-    if others_count > 0:
+    other_total = 0
+    for _, count in sorted_orgs[top_n:]:
+        other_total += count
+
+    if other_total > 0:
         labels.append('Other')
-        data.append(others_count)
+        data.append(other_total)
+
 
     return labels, data, total
 
-def get_country_data_for_meeting(meeting_number, minimum_required, attendance_type=None):
+def get_country_data_for_meeting(meeting_number, top_n=20, attendance_type=None):
     """Get country participation data for a specific meeting.
 
     Args:
@@ -936,20 +936,22 @@ def get_country_data_for_meeting(meeting_number, minimum_required, attendance_ty
     alias_map = get_aliased_countries(reg for reg in registration_counts.values_list('country_code', flat=True))
     labels = []
     data = []
-    others_count = 0
     total = 0
-    for item in registration_counts:
+    country_totals = defaultdict(int)
+    for item in registration_counts[:top_n]:
         total += item['count']
-        country_code = alias_map.get(item['country_code'], item['country_code'])
-        if item['count'] > minimum_required:
-            labels.append(country_code)
-            data.append(item['count'])
-        else:
-            others_count += item['count']
+        country = alias_map.get(item['country_code'], item['country_code'])
+        labels.append(country)
+        data.append(item['count'])
+        country_totals[country] = item['count']
 
-    if others_count > 0:
+    other_total = 0
+    for item in registration_counts[top_n:]:
+        other_total += item['count']
+
+    if other_total > 0:
         labels.append('Other')
-        data.append(others_count)
+        data.append(other_total)
 
     return labels, data, total
 
@@ -969,16 +971,17 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
     if meeting_number is None:
         meeting_number = current_meeting
 
+    # Query parameters (from ?key=value)
+    top_n = int(request.GET.get('top', '20'))
+
     this_meeting = get_ietf_meeting(meeting_number)
 
     if stats_type == 'affiliation':
-        minimum_required = 4
-        total_labels, total_data, total_total = get_affiliation_data_for_meeting(meeting_number, minimum_required)
-        in_person_labels, in_person_data, in_person_total = get_affiliation_data_for_meeting(meeting_number, minimum_required, attendance_type='onsite')
+        total_labels, total_data, total_total = get_affiliation_data_for_meeting(meeting_number, top_n=top_n)
+        in_person_labels, in_person_data, in_person_total = get_affiliation_data_for_meeting(meeting_number, top_n=top_n, attendance_type='onsite')
     elif stats_type == 'country':
-        minimum_required = 10
-        total_labels, total_data, total_total = get_country_data_for_meeting(meeting_number, minimum_required)
-        in_person_labels, in_person_data, in_person_total = get_country_data_for_meeting(meeting_number, minimum_required, attendance_type='onsite')
+        total_labels, total_data, total_total = get_country_data_for_meeting(meeting_number, top_n=top_n)
+        in_person_labels, in_person_data, in_person_total = get_country_data_for_meeting(meeting_number, top_n=top_n, attendance_type='onsite')
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
@@ -1025,7 +1028,7 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
         "possible_stats_types": possible_stats_types,
         "possible_meeting_numbers": possible_meeting_numbers,
         "stats_type": stats_type,
-        "minimum_required": minimum_required,
+        "top_n": top_n,
         "total_chart_data": total_chart_data,
         "total_total": total_total,
         "in_person_chart_data": in_person_chart_data,
