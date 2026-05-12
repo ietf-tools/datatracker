@@ -390,10 +390,13 @@ def get_data_for_documents(doc_type = 'rfc', group_by = 'stream__name', top_n = 
     )[:top_n]
     non_top_groups = documents_totals.keys() - top_groups
     other_totals = defaultdict(int)
+    other_bin_is_empty = True
     for y in years_set:
         other_totals[y] = 0
         for g in non_top_groups:
             other_totals[y] += int(data_map[y].get(g, 0))
+            if int(data_map[y].get(g, 0)) > 0:
+                other_bin_is_empty = False
 
     # ── Step 4: Build Chart.js datasets ──
 
@@ -413,19 +416,19 @@ def get_data_for_documents(doc_type = 'rfc', group_by = 'stream__name', top_n = 
             'pointHoverRadius': 6,
             'borderWidth': 2,
         })
-
-    datasets.append({
-        'label': 'Other',
-        'data': [other_totals.get(year, 0) for year in years_set],
-        'borderColor': 'black',
-        'fill': False,
-        'tension': 0.0,
-        'pointColor': 'black',
-        'pointBackgroundColor': 'black',
-        'pointRadius': 4,
-        'pointHoverRadius': 6,
-        'borderWidth': 2,
-    })
+    if not other_bin_is_empty:
+        datasets.append({
+            'label': 'Other',
+            'data': [other_totals.get(year, 0) for year in years_set],
+            'borderColor': 'black',
+            'fill': False,
+            'tension': 0.0,
+            'pointColor': 'black',
+            'pointBackgroundColor': 'black',
+            'pointRadius': 4,
+            'pointHoverRadius': 6,
+            'borderWidth': 2,
+        })
     return years_set, datasets
 
 def authors_timeline(request, doc_type='all', stats_type='affiliation'):
@@ -485,7 +488,6 @@ def documents_timeline(request, doc_type='rfc', stats_type='level'):
     Args:
         request: The HTTP request object.
         stats_type: Type of statistics.
-        top_n: Number of top items to show (for country stats).
 
     Returns:
         Rendered response for the documents timeline template.

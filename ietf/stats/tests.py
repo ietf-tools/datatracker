@@ -64,15 +64,12 @@ class StatisticsTests(TestCase):
 
         # Let's create some authors, first get some test strings for affiliations and countries
         affiliation = factory.Faker('company').evaluate(None, None, {'locale': None})
-        print('affiliation=', affiliation)
         # Sometimes the factory adds "LLC" or some other suffix, causing problem in the tests
         # below as another ", LLC" is added. Let's only take the first word of the affiliation
         # up to a space or ","
         if re.sub(r',?\s*\S+\s*$', '', affiliation) != '':
             affiliation = re.sub(r',?\s*\S+\s*$', '', affiliation)
-            print("Affiliation is now: ", affiliation)
         country = factory.Faker('country').evaluate(None, None, {'locale': None})
-        print('country=', country)
 
         # Create the various aliases ancilliary content
         AffiliationIgnoredEndingFactory(ending='llc\\.?')
@@ -206,6 +203,7 @@ class StatisticsTests(TestCase):
         pq = PyQuery(r.content)
         chart_data = json.loads(pq.find("script#chart_data").text())
         self.assertTrue(chart_data["labels"] == [yearNow])
+        # Test failing on line 209
         self.assertTrue(
             any(
                 ds["label"].casefold() == country.casefold() and ds["data"] == [2]
