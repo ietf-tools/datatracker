@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Safely parse JSON data injected from Django view ──
     const chartData = JSON.parse(document.getElementById('chart_data').textContent) ;
+    const objects = JSON.parse(document.getElementById('objects').textContent) ;
+    console.log("Objects=", objects) ;
+    console.log("chartData=", chartData) ;
 
     function refreshChart() {
         // On first call, snapshot the original data onto the chart instance itself
@@ -59,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     x: {
                         title: {
                             display: true,
-                            text: 'Number of authors',
+                            text: 'Number of ' + objects,
                         },
                     },
                     y: {
@@ -81,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 return `${items[0].label}`;
                             },
                             label: function(context) {
-                                return `${context.formattedValue} authors`;
+                                return `${context.formattedValue} ${objects}`;
                             }
                         }
                     },
@@ -114,13 +117,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const documentsChart = displayChart('documentsChart', chartData) ;
-
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            documentsChart.resetZoom()
-        }
-    })
-    document.getElementById('resetButton').addEventListener('click', () => {
-        documentsChart.resetZoom()
-    })
 })

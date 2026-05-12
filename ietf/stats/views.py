@@ -199,16 +199,6 @@ def get_authors_total_data_for_documents(doc_type = 'all', group_by = 'country',
     return chart_data
 
 def authors_total(request, doc_type='all', stats_type='affiliation'):
-    """Render the documents timeline page with document statistics over time.
-
-    Args:
-        request: The HTTP request object.
-        stats_type: Type of statistics.
-        top_n: Number of top items to show (for country stats).
-
-    Returns:
-        Rendered response for the documents timeline template.
-    """
 
     # Query parameters (from ?key=value)
     top_n = int(request.GET.get('top', '10'))
@@ -347,7 +337,96 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
 
     return years_set, datasets
 
-def get_data_for_documents(doc_type = 'rfc', group_by = 'stream__name', top_n = 10):
+def get_total_data_for_documents(doc_type = 'rfc', group_by = 'level', top_n = 20):
+    # Build a dynamic query set filter
+    filters = Q()    
+    if doc_type != 'all' and doc_type  != 'wg-draft':
+        filters &= Q(type_id=doc_type)
+    if doc_type == 'wg-draft':
+        filters &= Q(type_id= 'draft')
+        filters &= Q(name__startswith='draft-ietf')
+    queryset = (
+        Document.objects
+        .filter(filters)
+        .values(group_by)
+        .annotate(document_count=Count('id', distinct=True))  # Count as many document authored by this author
+        .order_by('-document_count')
+    )
+
+    group_count_set = {
+        (group, count)
+        for group, count in queryset.values_list(group_by, 'document_count')
+    }
+
+    group_count_dict = dict()
+    for group, count in group_count_set:
+        if group is None or group == '':
+            group = 'Unspecified'
+        group_count_dict[group] = group_count_dict.get(group, 0) + count
+
+    group_count_dict = sorted(group_count_dict.items(), key=lambda x: x[1], reverse=True)
+    top_groups = group_count_dict[:top_n]
+    other_count = sum(count for _, count in group_count_dict[top_n:])
+    if other_count > 0:
+        top_groups.append(('Other', other_count))
+
+    labels, data = zip(*top_groups) if top_groups else ([], [])
+    chart_data = {
+        'labels': labels,
+        'datasets': [{
+            'data': data,
+            'backgroundColor': [color_from_hash(label) if label else '#202020' for label in labels],
+            'borderColor': 'black',
+            'borderWidth': 1,
+        }],
+    }
+
+    return chart_data
+
+def documents_total(request, doc_type='rfc', stats_type='level'):
+
+    # Query parameters (from ?key=value)
+    top_n = int(request.GET.get('top', '10'))
+
+    if stats_type == 'stream':
+        chart_data = get_total_data_for_documents(doc_type, 'stream__name', top_n)
+    elif stats_type == 'level' and doc_type == 'draft':
+        chart_data = get_total_data_for_documents(doc_type, 'intended_std_level_id', top_n)
+    elif stats_type == 'level' and doc_type == 'rfc':
+        chart_data = get_total_data_for_documents(doc_type, 'std_level_id', top_n)
+    elif stats_type == 'wg':
+        chart_data = get_total_data_for_documents(doc_type, 'group__name', top_n)
+    else:
+        return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
+
+    # Prepare the list of choice buttons for the template
+    possible_docs_types = [
+        ("draft", "Drafts", urlreverse(documents_total, kwargs={'doc_type': 'draft', 'stats_type': stats_type})),
+        ("rfc", "RFCs", urlreverse(documents_total, kwargs={'doc_type': 'rfc', 'stats_type': stats_type})),
+    ]
+
+    possible_stats_types = [
+        ("stream", "Streams", urlreverse(documents_total, kwargs={'doc_type': doc_type, 'stats_type': 'stream'})),
+        ("wg", "Working Groups", urlreverse(documents_total, kwargs={'doc_type': doc_type, 'stats_type': 'wg'})),
+    ]
+    if doc_type == 'draft':
+        possible_stats_types.append(("level", "Intended Status", urlreverse(documents_total, kwargs={'doc_type': doc_type, 'stats_type': 'level'})))
+    elif doc_type == 'rfc':
+        possible_stats_types.append(("level", "Category", urlreverse(documents_total, kwargs={'doc_type': doc_type, 'stats_type': 'level'})))
+
+    return render(request, "stats/documents_total.html", {
+        "top_n": top_n,
+        "objects": "documents",
+        "possible_docs_types": possible_docs_types,
+        "possible_stats_types": possible_stats_types,
+        "timeline_url": urlreverse(documents_timeline, kwargs={'doc_type': doc_type, 'stats_type': stats_type}),
+        "total_url": urlreverse(documents_total, kwargs={'doc_type': doc_type, 'stats_type': stats_type}),
+        "doc_type": doc_type,
+        "stats_type": stats_type,
+        "chart_data": chart_data,
+    })
+
+def get_timeline_data_for_documents(doc_type = 'rfc', group_by = 'stream__name', top_n = 10):
     if doc_type != 'all':
         queryset = Document.objects.filter(type_id=doc_type)
     else:
@@ -416,6 +495,7 @@ def get_data_for_documents(doc_type = 'rfc', group_by = 'stream__name', top_n = 
             'pointHoverRadius': 6,
             'borderWidth': 2,
         })
+
     if not other_bin_is_empty:
         datasets.append({
             'label': 'Other',
@@ -497,13 +577,13 @@ def documents_timeline(request, doc_type='rfc', stats_type='level'):
     top_n = int(request.GET.get('top', '10'))
 
     if stats_type == 'stream':
-        total_labels, total_data_sets = get_data_for_documents(doc_type, 'stream__name', top_n)
+        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, 'stream__name', top_n)
     elif stats_type == 'level' and doc_type == 'draft':
-        total_labels, total_data_sets = get_data_for_documents(doc_type, 'intended_std_level_id', top_n)
+        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, 'intended_std_level_id', top_n)
     elif stats_type == 'level' and doc_type == 'rfc':
-        total_labels, total_data_sets = get_data_for_documents(doc_type, 'std_level_id', top_n)
+        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, 'std_level_id', top_n)
     elif stats_type == 'wg':
-        total_labels, total_data_sets = get_data_for_documents(doc_type, 'group__name', top_n)
+        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, 'group__name', top_n)
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
