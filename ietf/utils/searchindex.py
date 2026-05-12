@@ -5,8 +5,10 @@ import re
 from itertools import batched
 from math import floor
 from typing import Iterable
+from urllib.parse import urljoin
 
 import httpx  # just for exceptions
+import requests
 import typesense
 import typesense.exceptions
 from django.conf import settings
@@ -25,7 +27,6 @@ RETRYABLE_ERROR_CLASSES = (
     typesense.exceptions.ServerError,
     typesense.exceptions.ServiceUnavailable,
 )
-
 
 DEFAULT_SETTINGS = {
     "TYPESENSE_API_URL": "",
@@ -144,7 +145,7 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
     if subseries is not None:
         ts_document["subseries"] = {
             "acronym": subseries.type.slug,
-            "number": int(subseries.name[len(subseries.type.slug) :]),
+            "number": int(subseries.name[len(subseries.type.slug):]),
             "total": len(subseries.contains()),
         }
     if rfc.group is not None:
@@ -354,6 +355,21 @@ DOCS_SCHEMA = {
     ],
 }
 
+SEARCH_PRESETS = {
+    "red": {
+        "collection": "docs",
+        "infix": "off,always,off,off,off,off,off,off",
+        "query_by": "rfc,filename,title,abstract,keywords,authors,group,area",
+        "query_by_weights": "127,50,50,20,20,5,2,1"
+    },
+    "red-content": {
+        "collection": "docs",
+        "infix": "off,always,off,off",
+        "query_by": "rfc,filename,authors,content",
+        "query_by_weights": "127,50,5,1"
+    },
+}
+
 
 def create_collection():
     collection_name = get_collection_name()
@@ -370,3 +386,21 @@ def delete_collection():
         client.collections[collection_name].delete()
     except typesense.exceptions.ObjectNotFound:
         pass
+
+
+def upsert_presets():
+    # typesense-python does not support presets, so use requests
+    _settings = get_settings()
+    api_base = _settings["TYPESENSE_API_URL"]
+    api_key = _settings["TYPESENSE_API_KEY"]
+    for preset_name, payload in SEARCH_PRESETS.items():
+        log(f"Upserting '{preset_name}' preset")
+        response = requests.put(
+            urljoin(api_base, f"/presets/{preset_name}"),
+            json={"value": payload},
+            headers={
+                "X-TYPESENSE-API-KEY": api_key,
+            },
+            timeout=3,
+        )
+        response.raise_for_status()
