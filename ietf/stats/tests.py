@@ -204,6 +204,7 @@ class StatisticsTests(TestCase):
         chart_data = json.loads(pq.find("script#chart_data").text())
         self.assertTrue(chart_data["labels"] == [yearNow])
         # Test failing on line 209
+        print("L207, chart_data=", chart_data)
         self.assertTrue(
             any(
                 ds["label"].casefold() == country.casefold() and ds["data"] == [2]
@@ -234,9 +235,14 @@ class StatisticsTests(TestCase):
         # Test#8 the documents specific statistics global
         r = self.client.get(urlreverse(ietf.stats.views.documents_total, kwargs={"doc_type": "draft", "stats_type": "wg"}))
         self.assertEqual(r.status_code, 200)
-#
-# TODO 
-#
+        self.assertContains(r, "Draft Documents by Wg")
+        # Extract the JSON embedded in the response
+        pq = PyQuery(r.content)
+        chart_data = json.loads(pq.find("script#chart_data").text())
+        self.assertTrue(group1.name in chart_data["labels"])
+        individual_index = chart_data["labels"].index('Individual submissions')
+        # Let's check whether USA has indeed 1 
+        self.assertTrue(chart_data["datasets"][0]["data"][individual_index] == 1)
 
     def test_meeting_stats(self):
         meeting124 = MeetingFactory(type_id='ietf', number='124', date=timezone.now())
