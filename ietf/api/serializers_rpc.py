@@ -345,11 +345,6 @@ class RfcPubSerializer(serializers.ModelSerializer):
             "keywords",
         ]
 
-    # def validate_group(self, value):
-    #     """Substitute the "none" group for a null group field"""
-    #     breakpoint()
-    #     return Group.objects.get("none") if value is None else value
-
     def validate(self, data):
         if "draft_name" in data or "draft_rev" in data:
             if "draft_name" not in data:
