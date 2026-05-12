@@ -231,6 +231,13 @@ class StatisticsTests(TestCase):
         # Let's check whether USA has indeed 1 
         self.assertTrue(chart_data["datasets"][0]["data"][USA_index] == 1)
 
+        # Test#8 the documents specific statistics global
+        r = self.client.get(urlreverse(ietf.stats.views.documents_total, kwargs={"doc_type": "draft", "stats_type": "wg"}))
+        self.assertEqual(r.status_code, 200)
+#
+# TODO 
+#
+
     def test_meeting_stats(self):
         meeting124 = MeetingFactory(type_id='ietf', number='124', date=timezone.now())
         meeting125 = MeetingFactory(type_id='ietf', number='125', date=timezone.now() + datetime.timedelta(days=120))
