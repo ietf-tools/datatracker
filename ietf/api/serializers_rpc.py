@@ -600,6 +600,24 @@ class EditableRfcSerializer(serializers.ModelSerializer):
             "obsoletes",
         ]
 
+    def _validate_rfc_number_list(self, field_name, rfc_numbers):
+        """Raise ValidationError if any RFC numbers in the list don't exist."""
+        unknown = [
+            n for n in rfc_numbers
+            if not Document.objects.filter(rfc_number=n, type_id="rfc").exists()
+        ]
+        if unknown:
+            raise serializers.ValidationError(
+                {field_name: [f"Unknown RFC number: {n}" for n in unknown]}
+            )
+        return rfc_numbers
+
+    def validate_updates(self, value):
+        return self._validate_rfc_number_list("updates", value)
+
+    def validate_obsoletes(self, value):
+        return self._validate_rfc_number_list("obsoletes", value)
+
     def create(self, validated_data):
         raise RuntimeError("Cannot create with this serializer")
 
@@ -694,25 +712,19 @@ class EditableRfcSerializer(serializers.ModelSerializer):
                     source=rfc, relationship_id="updates"
                 ).exclude(target__rfc_number__in=updates).delete()
                 for rfc_num in updates:
-                    target = Document.objects.filter(
-                        rfc_number=rfc_num, type_id="rfc"
-                    ).first()
-                    if target:
-                        RelatedDocument.objects.get_or_create(
-                            source=rfc, relationship_id="updates", target=target
-                        )
+                    target = Document.objects.get(rfc_number=rfc_num, type_id="rfc")
+                    RelatedDocument.objects.get_or_create(
+                        source=rfc, relationship_id="updates", target=target
+                    )
             if obsoletes is not omitted:
                 RelatedDocument.objects.filter(
                     source=rfc, relationship_id="obs"
                 ).exclude(target__rfc_number__in=obsoletes).delete()
                 for rfc_num in obsoletes:
-                    target = Document.objects.filter(
-                        rfc_number=rfc_num, type_id="rfc"
-                    ).first()
-                    if target:
-                        RelatedDocument.objects.get_or_create(
-                            source=rfc, relationship_id="obs", target=target
-                        )
+                    target = Document.objects.get(rfc_number=rfc_num, type_id="rfc")
+                    RelatedDocument.objects.get_or_create(
+                        source=rfc, relationship_id="obs", target=target
+                    )
 
             # update subseries relations
             if subseries is not omitted:
