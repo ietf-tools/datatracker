@@ -247,7 +247,6 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
         DocumentAuthor.objects
         .select_related('document')
         .filter(filters)
-        [0:1000] # During development to go faster
     )
 
 # ── Step 1: Collect all meetings and tickets totals ──
@@ -611,6 +610,7 @@ def documents_timeline(request, doc_type='rfc', stats_type='level'):
         "objects": "documents",
         "possible_docs_types": possible_docs_types,
         "possible_stats_types": possible_stats_types,
+        "total_url": urlreverse(documents_total, kwargs={'doc_type': doc_type, 'stats_type': stats_type}),
         "doc_type": doc_type,
         "stats_type": stats_type,
         "chart_data": chart_data,
