@@ -264,7 +264,9 @@ class ProcessRpcQueueTaskTests(TestCase):
 
         tasks.process_rpc_queue_task([_make_entry(draft.name)])
 
-        event = draft.latest_event(RpcAssignmentDocEvent, type="changed_rpc_assignments")
+        event = draft.latest_event(
+            RpcAssignmentDocEvent, type="changed_rpc_assignments"
+        )
         self.assertIsNotNone(event)
         self.assertEqual(event.assignments, "Awaiting Editor Assignment")
 
