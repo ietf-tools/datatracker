@@ -9,8 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Safely parse JSON data injected from Django view ──
     const chartData = JSON.parse(document.getElementById('chart_data').textContent) ;
     const objects = JSON.parse(document.getElementById('objects').textContent) ;
-    console.log("Objects=", objects) ;
-    console.log("chartData=", chartData) ;
 
     function refreshChart() {
         // On first call, snapshot the original data onto the chart instance itself
@@ -49,7 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
             options: {
                 indexAxis: 'y',
                 onClick: (event, elements) => {
-                    console.log('Clicked elements:', elements);
                     if (elements.length > 0) {
                         const idx = elements[0].index;
                         const label = chart.data.labels[idx];
