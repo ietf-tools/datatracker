@@ -578,10 +578,14 @@ class RfcIndexView(APIView):
         mark_rfcindex_as_dirty()
         return Response(status=202)
 
+
 class RpcQueueDataSerializer(serializers.Serializer):
     data = serializers.JSONField()
+
+
 class ProcessRpcQueueView(APIView):
     api_key_endpoint = "ietf.api.views_rpc"
+
     @extend_schema(
         operation_id="process_rpc_queue",
         summary="Process the provided RPC queue",
@@ -594,4 +598,3 @@ class ProcessRpcQueueView(APIView):
         serializer.is_valid(raise_exception=True)
         process_rpc_queue_task.delay(serializer.validated_data["data"])
         return Response(status=202)
-

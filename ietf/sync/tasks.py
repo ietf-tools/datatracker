@@ -346,15 +346,20 @@ def refresh_rfc_index_task():
 
         mark_rfcindex_as_processed(new_processed_time)
 
+
 @shared_task
 def process_rpc_queue_task(data: list):
-    in_progress_state = State.objects.get(used=True, type="draft-rfceditor", slug="in_progress")
+    in_progress_state = State.objects.get(
+        used=True, type="draft-rfceditor", slug="in_progress"
+    )
     blocked_state = State.objects.get(used=True, type="draft-rfceditor", slug="blocked")
     system = Person.objects.get(name="(System)")
     iana_ref_tags = list(DocTagName.objects.filter(slug__in=["iana", "ref"]))
 
     names = [obj["name"] for obj in data]
-    docs_in_db = {d.name: d for d in Document.objects.filter(type="draft", name__in=names)}
+    docs_in_db = {
+        d.name: d for d in Document.objects.filter(type="draft", name__in=names)
+    }
 
     for obj in data:
         name = obj["name"]
@@ -373,7 +378,9 @@ def process_rpc_queue_task(data: list):
             and not prev_state
             and not d.latest_event(DocEvent, type="rfc_editor_received_announcement")
         ):
-            e = DocEvent(doc=d, rev=d.rev, by=system, type="rfc_editor_received_announcement")
+            e = DocEvent(
+                doc=d, rev=d.rev, by=system, type="rfc_editor_received_announcement"
+            )
             e.desc = "Announcement was received by RFC Editor"
             e.save()
             send_mail_text(
@@ -383,8 +390,12 @@ def process_rpc_queue_task(data: list):
                 "%s in RFC Editor queue" % d.name,
                 "The announcement for %s has been received by the RFC Editor." % d.name,
             )
-            prev_iesg_state = State.objects.get(used=True, type="draft-iesg", slug="ann")
-            next_iesg_state = State.objects.get(used=True, type="draft-iesg", slug="rfcqueue")
+            prev_iesg_state = State.objects.get(
+                used=True, type="draft-iesg", slug="ann"
+            )
+            next_iesg_state = State.objects.get(
+                used=True, type="draft-iesg", slug="rfcqueue"
+            )
             d.set_state(next_iesg_state)
             e = add_state_change_event(d, system, prev_iesg_state, next_iesg_state)
             if e:
@@ -405,15 +416,27 @@ def process_rpc_queue_task(data: list):
 
         roles = sorted(a["role"] for a in obj.get("assignment_set", []))
         next_assignments = ", ".join(roles)
-        blocking_names = sorted(br["reason"]["name"] for br in obj.get("blocking_reasons", []))
+        blocking_names = sorted(
+            br["reason"]["name"] for br in obj.get("blocking_reasons", [])
+        )
         if blocking_names:
             next_assignments += ":" + ", ".join(blocking_names)
 
-        prev_assignments_event = d.latest_event(RpcAssignmentDocEvent, type="changed_rpc_assignments")
-        prev_assignments = prev_assignments_event.assignments if prev_assignments_event else None
+        prev_assignments_event = d.latest_event(
+            RpcAssignmentDocEvent, type="changed_rpc_assignments"
+        )
+        prev_assignments = (
+            prev_assignments_event.assignments if prev_assignments_event else None
+        )
 
         if next_assignments != prev_assignments:
-            e = RpcAssignmentDocEvent(doc=d, rev=d.rev, by=system, type="changed_rpc_assignments", assignments=next_assignments)
+            e = RpcAssignmentDocEvent(
+                doc=d,
+                rev=d.rev,
+                by=system,
+                type="changed_rpc_assignments",
+                assignments=next_assignments,
+            )
             e.desc = f"RPC status changed to {next_assignments}"
             if prev_assignments is not None and prev_assignments != "":
                 e.desc += f" from {prev_assignments}"
@@ -424,7 +447,9 @@ def process_rpc_queue_task(data: list):
             if obj.get("final_approval") and rfc_number:
                 d.documenturl_set.update_or_create(
                     tag_id="auth48",
-                    defaults=dict(url=f"{settings.RFC_EDITOR_QUEUE_SITE_BASE_URL}/final-review/rfc{rfc_number}/"),
+                    defaults=dict(
+                        url=f"{settings.RFC_EDITOR_QUEUE_SITE_BASE_URL}/final-review/rfc{rfc_number}/"
+                    ),
                 )
             else:
                 d.documenturl_set.filter(tag_id="auth48").delete()
@@ -434,6 +459,10 @@ def process_rpc_queue_task(data: list):
         if events:
             d.save_with_history(events)
 
-    for d in Document.objects.exclude(name__in=names).filter(states__type="draft-rfceditor").distinct():
+    for d in (
+        Document.objects.exclude(name__in=names)
+        .filter(states__type="draft-rfceditor")
+        .distinct()
+    ):
         d.tags.remove(*iana_ref_tags)
         d.unset_state("draft-rfceditor")

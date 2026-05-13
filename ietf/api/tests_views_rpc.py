@@ -493,7 +493,12 @@ class RpcApiTests(APITestCase):
                 "labels": [],
                 "cluster": None,
                 "assignment_set": [
-                    {"id": 434, "rfc_to_be": 9850, "role": "first_editor", "state": "in_progress"}
+                    {
+                        "id": 434,
+                        "rfc_to_be": 9850,
+                        "role": "first_editor",
+                        "state": "in_progress",
+                    }
                 ],
                 "actionholder_set": [],
                 "pending_activities": [],
@@ -501,7 +506,11 @@ class RpcApiTests(APITestCase):
                 "pages": 33,
                 "enqueued_at": "2026-01-26T12:00:00Z",
                 "final_approval": [],
-                "iana_status": {"slug": "completed", "name": "completed", "desc": "IANA has completed actions in draft"},
+                "iana_status": {
+                    "slug": "completed",
+                    "name": "completed",
+                    "desc": "IANA has completed actions in draft",
+                },
                 "blocking_reasons": [],
                 "authors": [{"titlepage_name": "Q. Ma", "is_editor": True}],
                 "approval_log_message": [],
