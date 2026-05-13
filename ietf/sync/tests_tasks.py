@@ -243,7 +243,7 @@ class ProcessRpcQueueTaskTests(TestCase):
             RpcAssignmentDocEvent, type="changed_rpc_assignments"
         )
         self.assertIsNotNone(event)
-        self.assertEqual(event.assignments, "blocked:missing reference")
+        self.assertEqual(event.assignments, "blocked: missing reference")
 
     def test_roles_sorted_in_assignment_string(self):
         """Roles are sorted alphabetically in the assignment string."""

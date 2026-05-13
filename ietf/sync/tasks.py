@@ -420,7 +420,7 @@ def process_rpc_queue_task(data: list):
             br["reason"]["name"] for br in obj.get("blocking_reasons", [])
         )
         if blocking_names:
-            next_assignments += ":" + ", ".join(blocking_names)
+            next_assignments += ": " + ", ".join(blocking_names)
 
         if next_assignments == "":
             next_assignments = "Awaiting Editor Assignment"
