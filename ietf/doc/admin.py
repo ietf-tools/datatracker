@@ -15,7 +15,7 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
     ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
     BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject, RfcAuthor,
-    EditedRfcAuthorsDocEvent)
+    EditedRfcAuthorsDocEvent, RpcAssignmentDocEvent)
 
 from ietf.utils.admin import SaferTabularInline
 from ietf.utils.validators import validate_external_resource_value
@@ -228,6 +228,10 @@ admin.site.register(AddedMessageEvent, AddedMessageEventAdmin)
 class SubmissionDocEventAdmin(DocEventAdmin):
     raw_id_fields = DocEventAdmin.raw_id_fields + ["submission"]
 admin.site.register(SubmissionDocEvent, SubmissionDocEventAdmin)
+
+class RpcAssignmentDocEventAdmin(DocEventAdmin):
+    search_fields = DocEventAdmin.search_fields + ["assignments"]
+admin.site.register(RpcAssignmentDocEvent, RpcAssignmentDocEventAdmin)
 
 class DocumentUrlAdmin(admin.ModelAdmin):
     list_display = ['id', 'doc', 'tag', 'url', 'desc', ]
