@@ -157,6 +157,7 @@ class DocumentInfo(models.Model):
         default=list,
         max_length=1000,
         validators=[validate_doc_keywords],
+        blank=True,
     )
 
     @property
