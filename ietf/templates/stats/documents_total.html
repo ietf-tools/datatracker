@@ -42,6 +42,11 @@
                     href="{{ url }}?top={{ top_n }}">{{ label }}</a>
             {% endfor %}
         </div>
+        <form method="GET">
+            <label class="fw-bold col-sm-2 col-form-label">Categories to display:</label>
+            <input class="col-sm-1" type="text" name="top" value="{{ top_n }}">
+            <button class="btn btn-primary" type="submit">Set</button>
+        </form>
     </div>
     <p>
         This page provides the top-{{ top_n }} {{ stats_type }} for IETF {{ doc_type|upper }} {{ objects}}. 
