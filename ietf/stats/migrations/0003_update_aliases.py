@@ -14,6 +14,7 @@ OBSOLETED_AFFILIATION_ALIASES = [
     {'alias': 'cisco systems india pvt', 'name': 'cisco Systems'},
     {'alias': 'cisco systems (india) private limited', 'name': 'cisco Systems'},
     {'alias': 'cisco system', 'name': 'cisco Systems'},
+    {'alias': 'cisco', 'name': 'cisco Systems'},
 ]
 
 ADDITIONAL_AFFILIATION_ALIASES = [    
