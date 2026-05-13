@@ -125,7 +125,7 @@ class ProcessRpcQueueTaskTests(TestCase):
             [
                 {
                     "name": draft.name,
-                    "assignment_set": [{"role": "blocked", "state": "blocked"}],
+                    "assignment_set": [{"role": "blocked", "state": "in_progress"}],
                     "blocking_reasons": [],
                     "rfc_number": None,
                     "final_approval": [],
@@ -155,7 +155,7 @@ class ProcessRpcQueueTaskTests(TestCase):
             [
                 {
                     "name": draft.name,
-                    "assignment_set": [{"role": "blocked", "state": "blocked"}],
+                    "assignment_set": [{"role": "blocked", "state": "in_progress"}],
                     "blocking_reasons": [],
                     "rfc_number": None,
                     "final_approval": [],
@@ -229,7 +229,7 @@ class ProcessRpcQueueTaskTests(TestCase):
             [
                 {
                     "name": draft.name,
-                    "assignment_set": [{"role": "blocked", "state": "blocked"}],
+                    "assignment_set": [{"role": "blocked", "state": "in_progress"}],
                     "blocking_reasons": [
                         {"reason": {"name": "missing reference"}},
                     ],
