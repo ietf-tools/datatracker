@@ -236,59 +236,73 @@ def authors_total(request, doc_type='all', stats_type='affiliation'):
 
 
 def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'country', top_n = 10):
-    # Build a dynamic query set filter
-    filters = Q()    
-    if doc_type != 'all' and doc_type  != 'wg-draft':
-        filters &= Q(document__type_id=doc_type)
-    if doc_type == 'wg-draft':
-        filters &= Q(document__type_id= 'draft')
-        filters &= Q(document__name__startswith='draft-ietf')
-    queryset = (
-        DocumentAuthor.objects
-        .select_related('document')
-        .filter(filters)
-    )
 
-# ── Step 1: Collect all meetings and tickets totals ──
-    years_set = set()
-    documents_totals = defaultdict(int)
-    data_map = defaultdict(dict)  # {year: {stream: count}}
+    cache_key = f'stats:get_authors_timeline_data_for_documents:{doc_type}-{group_by}'
+    result = cache.get(cache_key, None)
+    print("Result:", result)
+    if result is not None:
+        years_set, documents_totals = result
+        print("Using caching, years_set=", years_set)
+    else:
+        # Build a dynamic query set filter
+        filters = Q()    
+        if doc_type != 'all' and doc_type  != 'wg-draft':
+            filters &= Q(document__type_id=doc_type)
+        if doc_type == 'wg-draft':
+            filters &= Q(document__type_id= 'draft')
+            filters &= Q(document__name__startswith='draft-ietf')
+        queryset = (
+            DocumentAuthor.objects
+            .select_related('document')
+            .filter(filters)
+        )
 
-    years_set = set()
-    documents_totals = defaultdict(int)
-    data_map = defaultdict(dict)
-    year_group_list = [
-        (row.document.pub_date().year, getattr(row, group_by))
-        for row in queryset
-        if row.document.pub_date() is not None
-    ]
-    if group_by == 'affiliation':
-        alias_map = get_aliased_affiliations(group for _, group in year_group_list)
-        year_group_list = [(year, alias_map.get(group, group)) for year, group in year_group_list]
-    elif group_by == 'country':
-        alias_map = get_aliased_countries(group for _, group in year_group_list)
-        year_group_list = [(year, alias_map.get(group, group)) for year, group in year_group_list]
-    alias_map[''] = 'Unspecified'
+    # ── Step 1: Collect all meetings and tickets totals ──
+        years_set = set()
+        documents_totals = defaultdict(int)
+        data_map = defaultdict(dict)  # {year: {stream: count}}
 
-    years_set = {year for year, _ in year_group_list}
-    # documents_totals = dict(Counter(group for _, group in year_group_list))  # Does not work too well as aliases are not applied, so we do the counting in the loop below
-    for year, group in year_group_list:
-        # possibly faster with list processing above 
-        # years_set.add(year)
-        if group is None or group == '':
-            group = 'Unspecified'
-            print("Found empty affiliation/country for year", year, group)
-        else:
-            group = alias_map.get(group, group)
-        data_map[year][group] = data_map[year].get(group, 0) + 1
-        documents_totals[group] += 1
-        if group == 'Unspecified':
-            print("After aliasing, found unspecified affiliation/country for year", year, group, data_map[year][group])
+        years_set = set()
+        documents_totals = defaultdict(int)
+        data_map = defaultdict(dict)
+        year_group_list = [
+            (row.document.pub_date().year, getattr(row, group_by))
+            for row in queryset
+            if row.document.pub_date() is not None
+        ]
+        if group_by == 'affiliation':
+            alias_map = get_aliased_affiliations(group for _, group in year_group_list)
+            year_group_list = [(year, alias_map.get(group, group)) for year, group in year_group_list]
+        elif group_by == 'country':
+            alias_map = get_aliased_countries(group for _, group in year_group_list)
+            year_group_list = [(year, alias_map.get(group, group)) for year, group in year_group_list]
+        alias_map[''] = 'Unspecified'
 
-    # ── Step 2: Sort years numerically rather than alphabetically  ──
-    years_set = sorted(years_set)
+        years_set = {year for year, _ in year_group_list}
 
-    # ── Step 3: Get top N and others ──
+        # documents_totals = dict(Counter(group for _, group in year_group_list))  # Does not work too well as aliases are not applied, so we do the counting in the loop below
+        for year, group in year_group_list:
+            # possibly faster with list processing above 
+            # years_set.add(year)
+            if group is None or group == '':
+                group = 'Unspecified'
+#                print("Found empty affiliation/country for year", year, group)
+            else:
+                group = alias_map.get(group, group)
+            data_map[year][group] = data_map[year].get(group, 0) + 1
+            documents_totals[group] += 1
+            # if group == 'Unspecified':
+            #     print("After aliasing, found unspecified affiliation/country for year", year, group, data_map[year][group])
+
+        # ── Step 2: Sort years numerically rather than alphabetically  ──
+        years_set = sorted(years_set)
+        cache.set(
+            cache_key,
+            (years_set, documents_totals),
+            settings.STATS_TIMELINE_CACHE_TIMEOUT,
+        )
+
+    # ── Step 3: Get top N and others ── must be outside of the cache
     top_groups = sorted(
         documents_totals.keys(),
         key=lambda c: documents_totals[c],
