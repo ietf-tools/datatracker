@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("doc", "0034_add_rpc_queue_draft_rfceditor_states"),
+        ("doc", "0035_add_rpc_queue_draft_rfceditor_states"),
     ]
 
     operations = [
