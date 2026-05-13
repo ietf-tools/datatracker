@@ -239,10 +239,8 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
 
     cache_key = f'stats:get_authors_timeline_data_for_documents:{doc_type}-{group_by}'
     result = cache.get(cache_key, None)
-    print("Result:", result)
     if result is not None:
-        years_set, documents_totals = result
-        print("Using caching, years_set=", years_set)
+        years_set, documents_totals, data_map = result
     else:
         # Build a dynamic query set filter
         filters = Q()    
@@ -280,25 +278,19 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
 
         years_set = {year for year, _ in year_group_list}
 
-        # documents_totals = dict(Counter(group for _, group in year_group_list))  # Does not work too well as aliases are not applied, so we do the counting in the loop below
         for year, group in year_group_list:
-            # possibly faster with list processing above 
-            # years_set.add(year)
             if group is None or group == '':
                 group = 'Unspecified'
-#                print("Found empty affiliation/country for year", year, group)
             else:
                 group = alias_map.get(group, group)
             data_map[year][group] = data_map[year].get(group, 0) + 1
             documents_totals[group] += 1
-            # if group == 'Unspecified':
-            #     print("After aliasing, found unspecified affiliation/country for year", year, group, data_map[year][group])
 
         # ── Step 2: Sort years numerically rather than alphabetically  ──
         years_set = sorted(years_set)
         cache.set(
             cache_key,
-            (years_set, documents_totals),
+            (years_set, documents_totals, data_map),
             settings.STATS_TIMELINE_CACHE_TIMEOUT,
         )
 
