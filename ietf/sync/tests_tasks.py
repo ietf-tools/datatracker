@@ -318,7 +318,7 @@ class ProcessRpcQueueTaskTests(TestCase):
 
     @override_settings(RFC_EDITOR_QUEUE_SITE_BASE_URL="https://queue.example.com")
     def test_auth48_url_deleted_when_final_approval_cleared(self):
-        """Existing auth48 URL is deleted when assignments change and final_approval is empty."""
+        """Existing auth48 URL is deleted whenever final_approval is empty, regardless of whether assignments changed."""
         draft = WgDraftFactory()
         DocumentURL.objects.create(
             doc=draft,
@@ -340,7 +340,7 @@ class ProcessRpcQueueTaskTests(TestCase):
 
     @override_settings(RFC_EDITOR_QUEUE_SITE_BASE_URL="https://queue.example.com")
     def test_auth48_url_updated_when_rfc_number_changes(self):
-        """auth48 URL is updated when assignments change and a new rfc_number is present."""
+        """auth48 URL is updated whenever final_approval and rfc_number are set, regardless of whether assignments changed."""
         draft = WgDraftFactory()
         DocumentURL.objects.create(
             doc=draft,
@@ -373,6 +373,59 @@ class ProcessRpcQueueTaskTests(TestCase):
         url_obj = draft.documenturl_set.filter(tag_id="auth48").first()
         self.assertIsNotNone(url_obj)
         self.assertEqual(url_obj.url, "https://queue.example.com/final-review/rfc9999/")
+
+    @override_settings(RFC_EDITOR_QUEUE_SITE_BASE_URL="https://queue.example.com")
+    def test_auth48_url_created_when_assignments_unchanged(self):
+        """auth48 URL is created even when assignments have not changed."""
+        draft = WgDraftFactory()
+        RpcAssignmentDocEvent.objects.create(
+            doc=draft,
+            rev=draft.rev,
+            by=self.system,
+            type="changed_rpc_assignments",
+            assignments="first_editor",
+            desc="RPC status changed to first_editor",
+        )
+
+        tasks.process_rpc_queue_task(
+            [
+                {
+                    "name": draft.name,
+                    "assignment_set": [
+                        {"role": "first_editor", "state": "in_progress"}
+                    ],
+                    "blocking_reasons": [],
+                    "rfc_number": 9999,
+                    "final_approval": [{"approved": True}],
+                }
+            ]
+        )
+
+        url_obj = draft.documenturl_set.filter(tag_id="auth48").first()
+        self.assertIsNotNone(url_obj)
+        self.assertEqual(url_obj.url, "https://queue.example.com/final-review/rfc9999/")
+
+    @override_settings(RFC_EDITOR_QUEUE_SITE_BASE_URL="https://queue.example.com")
+    def test_auth48_url_deleted_when_assignments_unchanged(self):
+        """Existing auth48 URL is deleted even when assignments have not changed."""
+        draft = WgDraftFactory()
+        DocumentURL.objects.create(
+            doc=draft,
+            tag_id="auth48",
+            url="https://queue.example.com/final-review/rfc9999/",
+        )
+        RpcAssignmentDocEvent.objects.create(
+            doc=draft,
+            rev=draft.rev,
+            by=self.system,
+            type="changed_rpc_assignments",
+            assignments="first_editor",
+            desc="RPC status changed to first_editor",
+        )
+
+        tasks.process_rpc_queue_task([_make_entry(draft.name, roles=["first_editor"])])
+
+        self.assertFalse(draft.documenturl_set.filter(tag_id="auth48").exists())
 
     # --- Tag handling ------------------------------------------------------------
 

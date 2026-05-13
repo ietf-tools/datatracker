@@ -446,16 +446,16 @@ def process_rpc_queue_task(data: list):
             e.save()
             events.append(e)
 
-            rfc_number = obj.get("rfc_number")
-            if obj.get("final_approval") and rfc_number:
-                d.documenturl_set.update_or_create(
-                    tag_id="auth48",
-                    defaults=dict(
-                        url=f"{settings.RFC_EDITOR_QUEUE_SITE_BASE_URL}/final-review/rfc{rfc_number}/"
-                    ),
-                )
-            else:
-                d.documenturl_set.filter(tag_id="auth48").delete()
+        rfc_number = obj.get("rfc_number")
+        if obj.get("final_approval") and rfc_number:
+            d.documenturl_set.update_or_create(
+                tag_id="auth48",
+                defaults=dict(
+                    url=f"{settings.RFC_EDITOR_QUEUE_SITE_BASE_URL}/final-review/rfc{rfc_number}/"
+                ),
+            )
+        else:
+            d.documenturl_set.filter(tag_id="auth48").delete()
 
         d.tags.remove(*iana_ref_tags)
 
