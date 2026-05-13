@@ -422,6 +422,9 @@ def process_rpc_queue_task(data: list):
         if blocking_names:
             next_assignments += ":" + ", ".join(blocking_names)
 
+        if next_assignments == "":
+            next_assignments = "Awaiting Editor Assignment"
+
         prev_assignments_event = d.latest_event(
             RpcAssignmentDocEvent, type="changed_rpc_assignments"
         )

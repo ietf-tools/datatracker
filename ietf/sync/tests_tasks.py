@@ -258,6 +258,16 @@ class ProcessRpcQueueTaskTests(TestCase):
         )
         self.assertEqual(event.assignments, "first_editor, second_editor")
 
+    def test_empty_roles_uses_awaiting_editor_assignment(self):
+        """Empty assignment_set records 'Awaiting Editor Assignment' rather than an empty string."""
+        draft = WgDraftFactory()
+
+        tasks.process_rpc_queue_task([_make_entry(draft.name)])
+
+        event = draft.latest_event(RpcAssignmentDocEvent, type="changed_rpc_assignments")
+        self.assertIsNotNone(event)
+        self.assertEqual(event.assignments, "Awaiting Editor Assignment")
+
     # --- DocumentURL (auth48) handling -------------------------------------------
 
     @override_settings(RFC_EDITOR_QUEUE_SITE_BASE_URL="https://queue.example.com")
