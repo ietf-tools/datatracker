@@ -258,7 +258,7 @@ def document_main(request, name, rev=None, document_html=False):
         interesting_relations_that, interesting_relations_that_doc = interesting_doc_relations(doc)
 
         can_edit = has_role(request.user, ("Area Director", "Secretariat"))
-        can_edit_authors = has_role(request.user, ("Secretariat"))
+        can_edit_authors = has_role(request.user, ("Secretariat")) and not doc.rfcauthor_set.exists()
 
         stream_slugs = StreamName.objects.values_list("slug", flat=True)
         # For some reason, AnonymousUser has __iter__, but is not iterable,
@@ -1842,12 +1842,15 @@ def edit_authors(request, name):
                 if fh in form.fields:
                     form.fields[fh].widget = forms.HiddenInput()
 
+    doc = get_object_or_404(Document, name=name)
+    if doc.rfcauthor_set.exists():
+        return HttpResponseForbidden("Contact the Rfc-Editor to change RFC Author information")
+
     AuthorFormSet = forms.formset_factory(DocAuthorForm,
                                           formset=_AuthorsBaseFormSet,
                                           can_delete=True,
                                           can_order=True,
                                           extra=0)
-    doc = get_object_or_404(Document, name=name)
     
     if request.method == 'POST':
         change_basis_form = DocAuthorChangeBasisForm(request.POST)
