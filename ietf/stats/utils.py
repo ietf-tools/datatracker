@@ -3,7 +3,6 @@
 
 
 import re
-from collections import defaultdict
 
 import debug                            # pyflakes:ignore
 
