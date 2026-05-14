@@ -39,12 +39,7 @@ def get_aliased_affiliations(affiliations):
     - Stripping company endings like Inc., GmbH etc. from database
 
     - Looking up aliases stored directly in the database, like
-      "Examplar International" -> "Examplar"
-
-    - Case-folding so Examplar and EXAMPLAR is merged with the
-      winner being the one with most occurrences (so input should not
-      be made unique) or most upper case letters in case of ties.
-      Case folding can be overridden by the aliases in the database."""
+      "Examplar International" -> "Examplar" """
 
     res = {}
 
@@ -55,10 +50,9 @@ def get_aliased_affiliations(affiliations):
     # so we only match it at the beginning of the affiliation and not in the middle of it, e.g. "Google Analytics"
     affiliation_main_names = [(main_name.lower() + ' ', main_name) for main_name in AffiliationMainName.objects.values_list("main_name", flat=True)]
 
-    affiliations_with_case_spellings = defaultdict(set)
-    case_spelling_count = defaultdict(int)
     for affiliation in affiliations:
         original_affiliation = affiliation
+        affiliation_plus_space = affiliation + " " # to match main names with a space added to the end of them
 
         # check aliases from Aliases DB
         name = known_aliases.get(affiliation.lower())
@@ -78,28 +72,11 @@ def get_aliased_affiliations(affiliations):
             affiliation = name
             res[original_affiliation] = affiliation
 
-        # check again aliases from Main Names DB 
-        name = next((original for lower, original in affiliation_main_names if affiliation.lower().startswith(lower)), None)
+        # check aliases from Main Names DB 
+        name = next((original for lower, original in affiliation_main_names if affiliation.lower().startswith(lower) or affiliation_plus_space.lower().startswith(lower)), None)
         if name is not None:
             affiliation = name
             res[original_affiliation] = affiliation
-
-        affiliations_with_case_spellings[affiliation.lower()].add(original_affiliation)
-        case_spelling_count[affiliation] += 1
-
-    def affiliation_sort_key(affiliation):
-        count = case_spelling_count[affiliation]
-        uppercase_letters = sum(1 for c in affiliation if c.isupper())
-        return (count, uppercase_letters)
-
-    # now we just need to pick the most popular uppercase/lowercase
-    # spelling for each affiliation with more than one
-    for similar_affiliations in affiliations_with_case_spellings.values():
-        if len(similar_affiliations) > 1:
-            most_popular = sorted(similar_affiliations, key=affiliation_sort_key, reverse=True)[0]
-            for affiliation in similar_affiliations:
-                if affiliation != most_popular:
-                    res[affiliation] = most_popular
 
     return res
 
