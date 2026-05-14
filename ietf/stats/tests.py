@@ -203,13 +203,16 @@ class StatisticsTests(TestCase):
         pq = PyQuery(r.content)
         chart_data = json.loads(pq.find("script#chart_data").text())
         self.assertTrue(chart_data["labels"] == [yearNow])
-        # Test failing on line 209
-        print("L207, chart_data=", chart_data)
+        # Test sometimes failing below with the factory country name being different from the country name in the chart data, 
+        # even though they should be the same country. 
+        # Using casefold to make the comparison more robust, as the country names in the chart data are title-cased 
+        # while the factory can return them in different cases.
         self.assertTrue(
             any(
                 ds["label"].casefold() == country.casefold() and ds["data"] == [2]
                 for ds in chart_data["datasets"]
-            )
+            ),
+            msg=f"Country '{country}' not found in chart data labels: {chart_data['datasets']}"
         )
         self.assertTrue(
             any(
