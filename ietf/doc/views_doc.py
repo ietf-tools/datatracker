@@ -46,7 +46,7 @@ from django.core.cache import caches
 from django.core.files.base import ContentFile
 from django.core.exceptions import PermissionDenied
 from django.db.models import Max
-from django.http import FileResponse, HttpResponse, Http404, HttpResponseBadRequest, JsonResponse
+from django.http import FileResponse, HttpResponse, Http404, HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
