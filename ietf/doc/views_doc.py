@@ -1844,7 +1844,7 @@ def edit_authors(request, name):
 
     doc = get_object_or_404(Document, name=name)
     if doc.rfcauthor_set.exists():
-        return HttpResponseForbidden("Contact the Rfc-Editor to change RFC Author information")
+        return HttpResponseForbidden("Contact the RFC Editor to change RFC Author information")
 
     AuthorFormSet = forms.formset_factory(DocAuthorForm,
                                           formset=_AuthorsBaseFormSet,
