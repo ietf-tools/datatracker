@@ -903,6 +903,7 @@ RFC_EDITOR_ERRATA_JSON_URL = "https://www.rfc-editor.org/errata.json"
 RFC_EDITOR_INLINE_ERRATA_URL = "https://www.rfc-editor.org/rfc/inline-errata/rfc{rfc_number}.html"
 RFC_EDITOR_ERRATA_BASE_URL = "https://www.rfc-editor.org/errata/"
 RFC_EDITOR_INFO_BASE_URL = "https://www.rfc-editor.org/info/"
+RFC_EDITOR_QUEUE_SITE_BASE_URL = "https://queue.rfc-editor.org"
 
 
 # NomCom Tool settings

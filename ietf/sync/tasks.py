@@ -13,8 +13,11 @@ from celery import shared_task
 from django.conf import settings
 from django.utils import timezone
 
-from ietf.doc.models import DocEvent, RelatedDocument
+from ietf.doc.models import DocEvent, DocTagName, Document, RelatedDocument, RpcAssignmentDocEvent, State
 from ietf.doc.tasks import rebuild_reference_relations_task
+from ietf.doc.utils import add_state_change_event, new_state_change_event, update_action_holders
+from ietf.person.models import Person
+from ietf.utils.mail import send_mail_text
 from ietf.sync import iana
 from ietf.sync import rfceditor
 from ietf.sync.errata import (
@@ -342,3 +345,127 @@ def refresh_rfc_index_task():
             pass
 
         mark_rfcindex_as_processed(new_processed_time)
+
+
+@shared_task
+def process_rpc_queue_task(data: list):
+    in_progress_state = State.objects.get(
+        used=True, type="draft-rfceditor", slug="in_progress"
+    )
+    blocked_state = State.objects.get(used=True, type="draft-rfceditor", slug="blocked")
+    system = Person.objects.get(name="(System)")
+    iana_ref_tags = list(DocTagName.objects.filter(slug__in=["iana", "ref"]))
+
+    names = [obj["name"] for obj in data]
+    docs_in_db = {
+        d.name: d for d in Document.objects.filter(type="draft", name__in=names)
+    }
+
+    for obj in data:
+        name = obj["name"]
+        if name not in docs_in_db:
+            log.log(f"process_rpc_queue_task: unknown document {name}")
+            continue
+
+        d = docs_in_db[name]
+        events = []
+        prev_state = d.get_state("draft-rfceditor")
+
+        # Same check as ietf.sync.rfceditor.update_drafts_from_queue:
+        # if this document just arrived at the RFC Editor for the first time, record it.
+        if (
+            d.get_state_slug("draft-iesg") == "ann"
+            and not prev_state
+            and not d.latest_event(DocEvent, type="rfc_editor_received_announcement")
+        ):
+            e = DocEvent(
+                doc=d, rev=d.rev, by=system, type="rfc_editor_received_announcement"
+            )
+            e.desc = "Announcement was received by RFC Editor"
+            e.save()
+            send_mail_text(
+                None,
+                "iesg-secretary@ietf.org",
+                None,
+                "%s in RFC Editor queue" % d.name,
+                "The announcement for %s has been received by the RFC Editor." % d.name,
+            )
+            prev_iesg_state = State.objects.get(
+                used=True, type="draft-iesg", slug="ann"
+            )
+            next_iesg_state = State.objects.get(
+                used=True, type="draft-iesg", slug="rfcqueue"
+            )
+            d.set_state(next_iesg_state)
+            e = add_state_change_event(d, system, prev_iesg_state, next_iesg_state)
+            if e:
+                events.append(e)
+            e = update_action_holders(d, prev_iesg_state, next_iesg_state)
+            if e:
+                events.append(e)
+
+        is_blocked = any(a["role"] == "blocked" for a in obj.get("assignment_set", []))
+        next_state = blocked_state if is_blocked else in_progress_state
+
+        if prev_state != next_state:
+            d.set_state(next_state)
+            e = new_state_change_event(d, system, prev_state, next_state)
+            if e:
+                e.save()
+                events.append(e)
+
+        roles = sorted(a["role"] for a in obj.get("assignment_set", []))
+        next_assignments = ", ".join(roles)
+        blocking_names = sorted(
+            br["reason"]["name"] for br in obj.get("blocking_reasons", [])
+        )
+        if blocking_names:
+            next_assignments += ": " + ", ".join(blocking_names)
+
+        if next_assignments == "":
+            next_assignments = "Awaiting Editor Assignment"
+
+        prev_assignments_event = d.latest_event(
+            RpcAssignmentDocEvent, type="changed_rpc_assignments"
+        )
+        prev_assignments = (
+            prev_assignments_event.assignments if prev_assignments_event else None
+        )
+
+        if next_assignments != prev_assignments:
+            e = RpcAssignmentDocEvent(
+                doc=d,
+                rev=d.rev,
+                by=system,
+                type="changed_rpc_assignments",
+                assignments=next_assignments,
+            )
+            e.desc = f"RPC status changed to {next_assignments}"
+            if prev_assignments is not None and prev_assignments != "":
+                e.desc += f" from {prev_assignments}"
+            e.save()
+            events.append(e)
+
+        rfc_number = obj.get("rfc_number")
+        if obj.get("final_approval") and rfc_number:
+            d.documenturl_set.update_or_create(
+                tag_id="auth48",
+                defaults=dict(
+                    url=f"{settings.RFC_EDITOR_QUEUE_SITE_BASE_URL}/final-review/rfc{rfc_number}/"
+                ),
+            )
+        else:
+            d.documenturl_set.filter(tag_id="auth48").delete()
+
+        d.tags.remove(*iana_ref_tags)
+
+        if events:
+            d.save_with_history(events)
+
+    for d in (
+        Document.objects.exclude(name__in=names)
+        .filter(states__type="draft-rfceditor")
+        .distinct()
+    ):
+        d.tags.remove(*iana_ref_tags)
+        d.unset_state("draft-rfceditor")

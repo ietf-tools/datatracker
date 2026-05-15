@@ -1612,6 +1612,4 @@ def populate_yang_model_dirs():
             log.log(f"Error processing {item.name}: {e}")
 
     ftp_moddir = Path(settings.FTP_DIR) / "yang" / "draftmod/"
-    if not moddir.endswith("/"):
-        moddir += "/"
-    subprocess.call(("/usr/bin/rsync", "-aq", "--delete", moddir, ftp_moddir))
+    subprocess.call(("/usr/bin/rsync", "-aq", "--delete", f"{moddir}/", str(ftp_moddir)))

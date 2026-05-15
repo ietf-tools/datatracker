@@ -36,6 +36,11 @@ urlpatterns = [
         name="ietf.api.purple_api.refresh_rfc_index",
     ),
     path(r"subject/<str:subject_id>/person/", views_rpc.SubjectPersonView.as_view()),
+    path(
+        r"queue/process/",
+        views_rpc.ProcessRpcQueueView.as_view(),
+        name="ietf.api.purple_api.process_rpc_queue",
+    ),
 ]
 
 # add routers at the end so individual routes can steal parts of their address

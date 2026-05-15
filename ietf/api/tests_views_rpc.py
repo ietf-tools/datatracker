@@ -477,3 +477,91 @@ class RpcApiTests(APITestCase):
             DestinationHelperMixin().blob_destination(filename),
             f"notprepped/{filename}",
         )
+
+    @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
+    @mock.patch("ietf.api.views_rpc.process_rpc_queue_task.delay")
+    def test_process_rpc_queue(self, mock_task_delay):
+        url = urlreverse("ietf.api.purple_api.process_rpc_queue")
+        queue_entries = [
+            {
+                "id": 9850,
+                "name": "draft-ietf-netmod-system-config",
+                "title": "System-defined Configuration",
+                "draft_url": "http://localhost:8000/doc/draft-ietf-netmod-system-config-20",
+                "disposition": "in_progress",
+                "external_deadline": None,
+                "labels": [],
+                "cluster": None,
+                "assignment_set": [
+                    {
+                        "id": 434,
+                        "rfc_to_be": 9850,
+                        "role": "first_editor",
+                        "state": "in_progress",
+                    }
+                ],
+                "actionholder_set": [],
+                "pending_activities": [],
+                "rfc_number": None,
+                "pages": 33,
+                "enqueued_at": "2026-01-26T12:00:00Z",
+                "final_approval": [],
+                "iana_status": {
+                    "slug": "completed",
+                    "name": "completed",
+                    "desc": "IANA has completed actions in draft",
+                },
+                "blocking_reasons": [],
+                "authors": [{"titlepage_name": "Q. Ma", "is_editor": True}],
+                "approval_log_message": [],
+                "stream": "ietf",
+                "group": "netmod",
+                "group_name": "Network Modeling",
+                "std_level": "ps",
+                "references": [],
+                "rev": "20",
+            }
+        ]
+        queue_data = {"data": queue_entries}
+
+        # no credentials
+        response = self.client.post(
+            url, data=queue_data, content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 403)
+        mock_task_delay.assert_not_called()
+
+        # invalid token
+        response = self.client.post(
+            url,
+            data=queue_data,
+            content_type="application/json",
+            headers={"X-Api-Key": "invalid-token"},
+        )
+        self.assertEqual(response.status_code, 403)
+        mock_task_delay.assert_not_called()
+
+        # valid token, wrong method
+        response = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(response.status_code, 405)
+        mock_task_delay.assert_not_called()
+
+        # valid token, missing "data" field
+        response = self.client.post(
+            url,
+            data={},
+            content_type="application/json",
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(response.status_code, 400)
+        mock_task_delay.assert_not_called()
+
+        # valid token, POST with data
+        response = self.client.post(
+            url,
+            data=queue_data,
+            content_type="application/json",
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(response.status_code, 202)
+        mock_task_delay.assert_called_once_with(queue_entries)
