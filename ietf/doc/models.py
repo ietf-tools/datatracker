@@ -157,6 +157,7 @@ class DocumentInfo(models.Model):
         default=list,
         max_length=1000,
         validators=[validate_doc_keywords],
+        blank=True,
     )
 
     @property
@@ -1545,6 +1546,7 @@ EVENT_TYPES = [
     ("rfc_editor_received_announcement", "Announcement was received by RFC Editor"),
     ("requested_publication", "Publication at RFC Editor requested"),
     ("sync_from_rfc_editor", "Received updated information from RFC Editor"),
+    ("changed_rpc_assignments", "Changed RPC queue assignments"),
 
     # review
     ("requested_review", "Requested review"),
@@ -1609,6 +1611,9 @@ class StateDocEvent(DocEvent):
 
 class ConsensusDocEvent(DocEvent):
     consensus = models.BooleanField(null=True, default=None)
+
+class RpcAssignmentDocEvent(DocEvent):
+    assignments = models.TextField(blank=True)
 
 # IESG events
 class BallotType(models.Model):

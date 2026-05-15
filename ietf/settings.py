@@ -903,6 +903,7 @@ RFC_EDITOR_ERRATA_JSON_URL = "https://www.rfc-editor.org/errata.json"
 RFC_EDITOR_INLINE_ERRATA_URL = "https://www.rfc-editor.org/rfc/inline-errata/rfc{rfc_number}.html"
 RFC_EDITOR_ERRATA_BASE_URL = "https://www.rfc-editor.org/errata/"
 RFC_EDITOR_INFO_BASE_URL = "https://www.rfc-editor.org/info/"
+RFC_EDITOR_QUEUE_SITE_BASE_URL = "https://queue.rfc-editor.org"
 
 
 # NomCom Tool settings
@@ -1261,7 +1262,10 @@ CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/change-oidc-provider-field-sizes-228.patch',
     'patch/fix-oidc-access-token-post.patch',
     'patch/fix-jwkest-jwt-logging.patch',
-    'patch/django-cookie-delete-with-all-settings.patch',
+    # Patch includes old cookie-delete-with-all-settings and a backport of the fix
+    # to CVE-2026-35192 from Django 5.2. The patches conflict, so cannot be applied
+    # separately.
+    'patch/django-cookie-delete-settings-and-CVE-2026-35192.patch',
     'patch/tastypie-django22-fielderror-response.patch',
 ]
 if DEBUG:

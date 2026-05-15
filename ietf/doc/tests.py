@@ -1023,6 +1023,34 @@ Man                    Expires September 22, 2015               [Page 3]
         draft = Document.objects.get(pk=draft.pk)
         self.assertEqual(draft.author_persons(), orig_authors + [new_auth_person])
 
+    def test_edit_authors_blocked_when_rfcauthors_exist(self):
+        """edit_authors returns 403 for all users when RfcAuthors exist"""
+        rfc = WgRfcFactory()
+        RfcAuthorFactory(document=rfc)
+        url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=rfc.name))
+
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+        r = self.client.post(url, {})
+        self.assertEqual(r.status_code, 403)
+
+    def test_document_main_hides_edit_authors_when_rfcauthors_exist(self):
+        """document_main does not offer edit link for authors when RfcAuthors exist"""
+        rfc = WgRfcFactory()
+        edit_authors_url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=rfc.name))
+
+        self.client.login(username='secretary', password='secretary+password')
+
+        r = self.client.get(urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=rfc.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, edit_authors_url)
+
+        RfcAuthorFactory(document=rfc)
+        r = self.client.get(urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=rfc.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, edit_authors_url)
+
     def make_edit_authors_post_data(self, basis, authors):
         """Helper to generate edit_authors POST data for a set of authors"""
         def _add_prefix(s):

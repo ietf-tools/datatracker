@@ -48,6 +48,7 @@ from ietf.doc.tasks import (
 )
 from ietf.person.models import Email, Person
 from ietf.sync.rfcindex import mark_rfcindex_as_dirty
+from ietf.sync.tasks import process_rpc_queue_task
 
 
 class Conflict(APIException):
@@ -575,4 +576,25 @@ class RfcIndexView(APIView):
     )
     def post(self, request):
         mark_rfcindex_as_dirty()
+        return Response(status=202)
+
+
+class RpcQueueDataSerializer(serializers.Serializer):
+    data = serializers.JSONField()
+
+
+class ProcessRpcQueueView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
+
+    @extend_schema(
+        operation_id="process_rpc_queue",
+        summary="Process the provided RPC queue",
+        description="Schedules parsing the provided queue to update documents with change dqueue data",
+        responses={202: None},
+        request=RpcQueueDataSerializer,
+    )
+    def post(self, request):
+        serializer = RpcQueueDataSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        process_rpc_queue_task.delay(serializer.validated_data["data"])
         return Response(status=202)
