@@ -1274,9 +1274,6 @@ def build_file_urls(doc: Union[Document, DocHistory]):
             label = "plain text" if t == "txt" else t
             file_urls.append((label, base + doc.name + "." + t))
 
-        if "pdf" not in found_types and "txt" in found_types:
-            file_urls.append(("pdf", base + "pdfrfc/" + doc.name + ".txt.pdf"))
-
         if "txt" in found_types:
             file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name))))
             if doc.tags.filter(slug="verified-errata").exists():
