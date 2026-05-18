@@ -806,6 +806,10 @@ STORAGES["red_bucket"] = {
     "BACKEND": "django.core.files.storage.InMemoryStorage",
     "OPTIONS": {"location": "red_bucket"},
 }
+STORAGES["bibxml_bucket"] = {
+    "BACKEND": "django.core.files.storage.InMemoryStorage",
+    "OPTIONS": {"location": "bibxml_bucket"},
+}
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
