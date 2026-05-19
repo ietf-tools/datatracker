@@ -31,7 +31,7 @@ from ietf.meeting.models import Registration, Meeting
 from ietf.ietfauth.utils import has_role
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
-from ietf.meeting.helpers import get_current_ietf_meeting_num, get_ietf_meeting
+from ietf.meeting.helpers import get_current_ietf_meeting_num
 
 # Color palette for lines
 colors = [
