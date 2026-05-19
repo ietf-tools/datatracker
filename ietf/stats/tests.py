@@ -6,6 +6,7 @@ import calendar
 import json
 import datetime
 
+from django.http import Http404
 from pyquery import PyQuery
 
 import debug    # pyflakes:ignore
@@ -13,6 +14,7 @@ import debug    # pyflakes:ignore
 from django.urls import reverse as urlreverse
 from django.utils import timezone
 
+from ietf.meeting.models import Meeting
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 import ietf.stats.views
 
@@ -87,7 +89,25 @@ class StatisticsTests(TestCase):
         self.assertContains(r, "/stats/meeting/124/country")
         self.assertContains(r, "/stats/meeting/125/country")
         self.assertContains(r, "This page provides a timeline of meeting registrations.")
-                
+
+    def test_meeting_stats_for_bad_meeting(self):
+        self.assertFalse(Meeting.objects.filter(number=676767).exists())
+        with self.assertRaises(Http404):
+            self.client.get(
+                urlreverse(
+                    "ietf.stats.views.meeting_stats",
+                    kwargs={"meeting_number": 676767},
+                )
+            )
+        interim_num = MeetingFactory(type_id="interim").number
+        with self.assertRaises(Http404):
+            self.client.get(
+                urlreverse(
+                    "ietf.stats.views.meeting_stats",
+                    kwargs={"meeting_number": interim_num},
+                )
+            )
+
     def test_known_country_list(self):
         # check redirect
         url = urlreverse(ietf.stats.views.known_countries_list)
