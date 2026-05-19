@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 import json
+import re
 from pathlib import Path
 from unittest import mock
 
@@ -131,17 +132,20 @@ class RfcIndexTests(TestCase):
             "0123 Not Issued.",
             contents,
         )
+
+        # strip whitespace so line breaks don't interfere with the next few tests
+        stripped_contents = re.sub(r"\s+", " ", mock_save_blob.call_args[0][1])
         self.assertIn(
             f"{self.april_fools_rfc.rfc_number} {self.april_fools_rfc.title}",
-            contents,
+            stripped_contents,
         )
         self.assertIn("1 April 2020", contents)  # from the April 1 RFC
         self.assertIn(
             f"{self.rfc.rfc_number} {self.rfc.title}",
-            contents,
+            stripped_contents,
         )
-        self.assertIn("April 2021", contents)  # from the non-April 1 RFC
-        self.assertNotIn("1 April 2021", contents)
+        self.assertIn("April 2021", stripped_contents)  # from the non-April 1 RFC
+        self.assertNotIn("1 April 2021", stripped_contents)
 
     @override_settings(RFCINDEX_INPUT_PATH="input/")
     @mock.patch("ietf.sync.rfcindex.save_to_filesystem")

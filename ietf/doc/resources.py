@@ -19,7 +19,7 @@ from ietf.doc.models import (BallotType, DeletedEvent, StateType, State, Documen
     ReviewRequestDocEvent, ReviewAssignmentDocEvent, EditedAuthorsDocEvent, DocumentURL,
     IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
     BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject, RfcAuthor,
-    EditedRfcAuthorsDocEvent)
+    EditedRfcAuthorsDocEvent, RpcAssignmentDocEvent)
 
 from ietf.name.resources import BallotPositionNameResource, DocTypeNameResource
 class BallotTypeResource(ModelResource):
@@ -916,3 +916,28 @@ class RfcAuthorResource(ModelResource):
             "email": ALL_WITH_RELATIONS,
         }
 api.doc.register(RfcAuthorResource())
+
+
+from ietf.person.resources import PersonResource
+class RpcAssignmentDocEventResource(ModelResource):
+    by               = ToOneField(PersonResource, 'by')
+    doc              = ToOneField(DocumentResource, 'doc')
+    docevent_ptr     = ToOneField(DocEventResource, 'docevent_ptr')
+    class Meta:
+        queryset = RpcAssignmentDocEvent.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'rpcassignmentdocevent'
+        ordering = ['docevent_ptr', ]
+        filtering = { 
+            "id": ALL,
+            "time": ALL,
+            "type": ALL,
+            "rev": ALL,
+            "desc": ALL,
+            "assignments": ALL,
+            "by": ALL_WITH_RELATIONS,
+            "doc": ALL_WITH_RELATIONS,
+            "docevent_ptr": ALL_WITH_RELATIONS,
+        }
+api.doc.register(RpcAssignmentDocEventResource())
