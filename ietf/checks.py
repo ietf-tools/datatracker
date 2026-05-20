@@ -4,7 +4,6 @@
 
 import os
 import time
-from textwrap import dedent
 from typing import List, Tuple      # pyflakes:ignore
 
 import debug                            # pyflakes:ignore
@@ -270,40 +269,3 @@ def maybe_patch_library(app_configs, **kwargs):
             )
             pass
     return errors
-
-@checks.register('security')
-def check_api_key_in_local_settings(app_configs, **kwargs):
-    errors = []
-    import ietf.settings_local
-    if settings.SERVER_MODE == 'production':
-        if not (    hasattr(ietf.settings_local, 'API_PUBLIC_KEY_PEM')
-                and hasattr(ietf.settings_local, 'API_PRIVATE_KEY_PEM')):
-            errors.append(checks.Critical(
-                "There are no API key settings in your settings_local.py",
-                hint = dedent("""
-                    You are running in production mode, and need API key settings that are
-                    different than the default settings.  Please add settings for
-                    API_PUBLIC_KEY_PEM and API_PRIVATE_KEY_PEM to your settings local.  The
-                    content should be matching public and private keys in PEM format.  You
-                    can generate a suitable keypair with 'ssh-keygen -f apikey.pem', and then
-                    extract the public key with 'openssl rsa -in apikey.pem -pubout > apikey.pub'.
-                    
-                    """).replace('\n', '\n   ').rstrip(),
-                id = "datatracker.E0020",
-            ))
-        elif not ( ietf.settings_local.API_PUBLIC_KEY_PEM == settings.API_PUBLIC_KEY_PEM
-                    and ietf.settings_local.API_PRIVATE_KEY_PEM == settings.API_PRIVATE_KEY_PEM ):
-            errors.append(checks.Critical(
-                "Your API key settings in your settings_local.py are not picked up in settings.",
-                hint = dedent("""
-                    You are running in production mode, and need API key settings which are
-                    different than the default settings.  You seem to have  API key settings
-                    in settings_local.py, but they don't seem to propagate to django.conf.settings.
-                    Please check if you have multiple settings_local.py files.
-
-                    """).replace('\n', '\n   ').rstrip(),
-                id = "datatracker.E0021",
-            ))
-
-    return errors
-    

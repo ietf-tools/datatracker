@@ -56,30 +56,6 @@ if _YOUTUBE_API_KEY is not None:
 else:
     raise RuntimeError("DATATRACKER_YOUTUBE_API_KEY must be set")
 
-_GITHUB_BACKUP_API_KEY = os.environ.get("DATATRACKER_GITHUB_BACKUP_API_KEY", None)
-if _GITHUB_BACKUP_API_KEY is not None:
-    GITHUB_BACKUP_API_KEY = _GITHUB_BACKUP_API_KEY
-else:
-    raise RuntimeError("DATATRACKER_GITHUB_BACKUP_API_KEY must be set")
-
-_API_KEY_TYPE = os.environ.get("DATATRACKER_API_KEY_TYPE", None)
-if _API_KEY_TYPE is not None:
-    API_KEY_TYPE = _API_KEY_TYPE
-else:
-    raise RuntimeError("DATATRACKER_API_KEY_TYPE must be set")
-
-_API_PUBLIC_KEY_PEM_B64 = os.environ.get("DATATRACKER_API_PUBLIC_KEY_PEM_B64", None)
-if _API_PUBLIC_KEY_PEM_B64 is not None:
-    API_PUBLIC_KEY_PEM = b64decode(_API_PUBLIC_KEY_PEM_B64)
-else:
-    raise RuntimeError("DATATRACKER_API_PUBLIC_KEY_PEM_B64 must be set")
-
-_API_PRIVATE_KEY_PEM_B64 = os.environ.get("DATATRACKER_API_PRIVATE_KEY_PEM_B64", None)
-if _API_PRIVATE_KEY_PEM_B64 is not None:
-    API_PRIVATE_KEY_PEM = b64decode(_API_PRIVATE_KEY_PEM_B64)
-else:
-    raise RuntimeError("DATATRACKER_API_PRIVATE_KEY_PEM_B64 must be set")
-
 _RED_PRECOMPUTER_TRIGGER_RETRY_DELAY = os.environ.get(
     "DATATRACKER_RED_PRECOMPUTER_TRIGGER_RETRY_DELAY", None
 )
