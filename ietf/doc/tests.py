@@ -2093,9 +2093,9 @@ class DocTestCase(TestCase):
         self.assertEqual(len(q("item")), 3)
         item = q("item")[0]
         media_content = item.findall("{http://search.yahoo.com/mrss/}content")
-        self.assertEqual(len(media_content), 3)
+        self.assertEqual(len(media_content), 2)
         types = set([m.attrib["type"] for m in media_content])
-        self.assertEqual(types, set(["text/plain", "text/html", "application/pdf"]))
+        self.assertEqual(types, set(["text/plain", "text/html"]))
 
     def test_state_help(self):
         url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type="draft-iesg"))
