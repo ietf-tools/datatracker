@@ -106,7 +106,7 @@ class SearchindexTests(TestCase):
         self.assertNotIn("content", result)
 
     def test_typesense_doc_from_rfc_flags_obsoleted(self):
-        """typesense docs should set obsoleted flag correctly"""
+        """typesense docs should set correct flags for obsoleted RFC"""
         rfc = PublishedRfcDocEventFactory().doc
         assert isinstance(rfc, Document)
         self.assertEqual(len(rfc.related_that("obs")), 0)
@@ -128,7 +128,7 @@ class SearchindexTests(TestCase):
         self.assertFalse(result["flags"]["updated"])
 
     def test_typesense_doc_from_rfc_flags_updated(self):
-        """typesense docs should set updated flag correctly"""
+        """typesense docs should set flags correctly for updated RFC"""
         rfc = PublishedRfcDocEventFactory().doc
         assert isinstance(rfc, Document)
         self.assertEqual(len(rfc.related_that("obs")), 0)
@@ -150,7 +150,7 @@ class SearchindexTests(TestCase):
         self.assertTrue(result["flags"]["updated"])
 
     def test_typesense_doc_from_rfc_flags_historic(self):
-        """typesense docs should set updated flag correctly"""
+        """typesense docs should set flags correctly for historic RFC"""
         rfc = PublishedRfcDocEventFactory(doc__std_level_id="hist").doc
         assert isinstance(rfc, Document)
         result = searchindex.typesense_doc_from_rfc(rfc)
