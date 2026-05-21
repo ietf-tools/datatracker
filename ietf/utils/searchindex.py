@@ -99,7 +99,10 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
         )
     subseries = subseries[0] if len(subseries) > 0 else None
     obsoleted_by = rfc.related_that("obs")
+    is_obsoleted = len(obsoleted_by) > 0
     updated_by = rfc.related_that("updates")
+    is_updated = len(updated_by) > 0
+    is_historic = rfc.std_level.slug == "hist"
 
     stored_txt = (
         StoredObject.objects.exclude_deleted()
@@ -134,9 +137,9 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
             for rfc_author in rfc.rfcauthor_set.all()
         ],
         "flags": {
-            "hiddenDefault": False,
-            "obsoleted": len(obsoleted_by) > 0,
-            "updated": len(updated_by) > 0,
+            "hiddenDefault": is_obsoleted or is_historic,
+            "obsoleted": is_obsoleted,
+            "updated": is_updated,
         },
         "obsoletedBy": [str(doc.rfc_number) for doc in obsoleted_by],
         "updatedBy": [str(doc.rfc_number) for doc in updated_by],

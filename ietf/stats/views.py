@@ -13,7 +13,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.http import HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.urls import reverse as urlreverse
 from django.db.models import Count
 
@@ -27,11 +27,11 @@ from ietf.review.utils import (extract_review_assignment_data,
 from ietf.group.models import Role, Group
 from ietf.person.models import Person
 from ietf.name.models import ReviewResultName, CountryName, ReviewAssignmentStateName
-from ietf.meeting.models import Registration
+from ietf.meeting.models import Registration, Meeting
 from ietf.ietfauth.utils import has_role
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
-from ietf.meeting.helpers import get_current_ietf_meeting_num, get_ietf_meeting
+from ietf.meeting.helpers import get_current_ietf_meeting_num
 
 # Color palette for lines
 colors = [
@@ -568,12 +568,12 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
     Returns:
         Rendered response for the meeting stats template.
     """
-
-    current_meeting = get_current_ietf_meeting_num()
+    current_meeting_number = get_current_ietf_meeting_num()
     if meeting_number is None:
-        meeting_number = current_meeting
-
-    this_meeting = get_ietf_meeting(meeting_number)
+        meeting_number = current_meeting_number
+    this_meeting = get_object_or_404(
+        Meeting.objects.filter(type_id="ietf"), number=meeting_number
+    )
 
     if stats_type == 'affiliation':
         minimum_required = 4
@@ -616,7 +616,7 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
     if int(meeting_number) > 72:  # No registration data before IETF-72
         possible_meeting_numbers.append((int(meeting_number)-1, urlreverse(meeting_stats, kwargs={'meeting_number': int(meeting_number)-1, 'stats_type': stats_type})))
     possible_meeting_numbers.append((meeting_number, urlreverse(meeting_stats, kwargs={'meeting_number': meeting_number, 'stats_type': stats_type})))
-    if int(meeting_number) <= int(current_meeting): # Allow current meeting +1
+    if int(meeting_number) <= int(current_meeting_number): # Allow current meeting +1
         possible_meeting_numbers.append((int(meeting_number)+1, urlreverse(meeting_stats, kwargs={'meeting_number': int(meeting_number)+1, 'stats_type': stats_type})))
 
     return render(request, "stats/meeting_stats.html", {

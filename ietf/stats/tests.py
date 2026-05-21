@@ -1,18 +1,19 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
-
+# Copyright The IETF Trust 2016-2026, All Rights Reserved
 
 import calendar
 import json
 import datetime
 
+from django.http import Http404
 from pyquery import PyQuery
 
 import debug    # pyflakes:ignore
 
+from django.test import RequestFactory
 from django.urls import reverse as urlreverse
 from django.utils import timezone
 
+from ietf.meeting.models import Meeting
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 import ietf.stats.views
 
@@ -87,7 +88,29 @@ class StatisticsTests(TestCase):
         self.assertContains(r, "/stats/meeting/124/country")
         self.assertContains(r, "/stats/meeting/125/country")
         self.assertContains(r, "This page provides a timeline of meeting registrations.")
-                
+
+    def test_meeting_stats_for_bad_meeting(self):
+        self.assertFalse(Meeting.objects.filter(number=676767).exists())
+        for stats_type in ["affiliation", "country"]:
+            r = self.client.get(
+                urlreverse(
+                    "ietf.stats.views.meeting_stats",
+                    kwargs={"meeting_number": 676767, "stats_type": stats_type},
+                )
+            )
+            self.assertEqual(r.status_code, 404)
+
+            # We don't have a URL for an interim, but make sure the view will 404 if
+            # somehow a non-interim gets selected...
+            interim_num = MeetingFactory(type_id="interim").number
+            request_factory = RequestFactory()
+            with self.assertRaises(Http404):
+                ietf.stats.views.meeting_stats(
+                    request_factory.get(f"/stats/meeting/{interim_num}/{stats_type}"),
+                    meeting_number=interim_num,
+                    stats_type=stats_type,
+                )
+
     def test_known_country_list(self):
         # check redirect
         url = urlreverse(ietf.stats.views.known_countries_list)
