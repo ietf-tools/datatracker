@@ -43,6 +43,18 @@ def get_rfc_bibxml(rfc_number):
     return f"""<reference anchor="RFC{rfc_number}" target="{link}"><front><title>{rfc.title}</title>{date}{authors}<abstract><t>{rfc.abstract}</t></abstract></front><seriesInfo name="RFC" value="{rfc_number}"/><seriesInfo name="DOI" value="{rfc.doi}"/></reference>"""
 
 
+def get_bcp_bibxml(bcp_number):
+    """Return BibXML entry for the given bcp"""
+    bcp = Document.objects.get(name=f"bcp{bcp_number}")
+    bcp_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"bcp{bcp_number}")
+    rfc_bibxml = ""
+    rfcs = sorted(bcp.contains(), key=lambda x: x.rfc_number)
+    for rfc in rfcs:
+        rfc_bibxml += get_rfc_bibxml(rfc.rfc_number)
+
+    return f"""<referencegroup anchor="BCP{bcp_number}" target="{bcp_link}">{rfc_bibxml}</referencegroup>"""
+
+
 def save_bibxml(bibxml, filename):
     """Prettify and save given BibXML"""
 

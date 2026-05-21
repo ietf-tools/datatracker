@@ -6,8 +6,9 @@ from django.conf import settings
 from django.core.files.storage import storages
 from django.test.utils import override_settings
 
-from ietf.doc.factories import PublishedRfcDocEventFactory
+from ietf.doc.factories import BcpFactory, PublishedRfcDocEventFactory
 from ietf.sync.bibxml import (
+    get_bcp_bibxml,
     get_rfc_bibxml,
     recreate_rfc_bibxml,
     save_bibxml,
@@ -30,9 +31,24 @@ class BibXmlTests(TestCase):
             doc__std_level_id="std",
         ).doc
 
+        # Create a BCP with non-April Fools RFC
+        self.bcp = BcpFactory(contains=[self.rfc], name="bcp44")
+
     def test_get_rfc_bibxml(self):
         bibxml = get_rfc_bibxml(self.rfc.rfc_number)
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
+        self.assertIn(f"RFC{self.rfc.rfc_number}", bibxml)
+        self.assertIn(
+            f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
+        )
+        self.assertIn('<date month="April" year="2021"/>', bibxml)
+
+    def test_get_bcp_bibxml(self):
+        bcp_number = self.bcp.name[3:]
+        bibxml = get_bcp_bibxml(bcp_number)
+        self.assertIsNotNone(ElementTree.fromstring(bibxml))
+        self.assertIn(f"BCP{bcp_number}", bibxml)
+        self.assertIn(f"{settings.RFC_EDITOR_INFO_BASE_URL}bcp{bcp_number}", bibxml)
         self.assertIn(f"RFC{self.rfc.rfc_number}", bibxml)
         self.assertIn(
             f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
@@ -62,6 +78,21 @@ class BibXmlTests(TestCase):
             bibxml = f.read().decode("utf-8")
             self.assertIsNotNone(ElementTree.fromstring(bibxml))
             self.assertIn(f"RFC{self.rfc.rfc_number}", bibxml)
+            self.assertIn(
+                f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
+            )
+            self.assertIn('<date month="April" year="2021"/>', bibxml)
+
+    def test_create_bcp_bibxml(self):
+        bibxml_bucket = storages["bibxml_bucket"]
+        bcp_number = self.bcp.name[3:]
+        bibxml = get_bcp_bibxml(bcp_number)
+        filename = f"bibxml-rfcsubseries/bcp{bcp_number}.xml"
+        save_bibxml(bibxml, filename)
+        with bibxml_bucket.open(filename, "rb") as f:
+            bibxml = f.read().decode("utf-8")
+            self.assertIsNotNone(ElementTree.fromstring(bibxml))
+            self.assertIn(f"BCP{bcp_number}", bibxml)
             self.assertIn(
                 f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
             )
