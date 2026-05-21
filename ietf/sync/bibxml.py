@@ -67,6 +67,18 @@ def get_std_bibxml(std_number):
     return f"""<referencegroup anchor="STD{std_number}" target="{std_link}">{rfc_bibxml}</referencegroup>"""
 
 
+def get_fyi_bibxml(fyi_number):
+    """Return BibXML entry for the given fyi"""
+    fyi = Document.objects.get(name=f"fyi{fyi_number}")
+    fyi_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"fyi{fyi_number}")
+    rfc_bibxml = ""
+    rfcs = sorted(fyi.contains(), key=lambda x: x.rfc_number)
+    for rfc in rfcs:
+        rfc_bibxml += get_rfc_bibxml(rfc.rfc_number)
+
+    return f"""<referencegroup anchor="FYI{fyi_number}" target="{fyi_link}">{rfc_bibxml}</referencegroup>"""
+
+
 def save_bibxml(bibxml, filename):
     """Prettify and save given BibXML"""
 
