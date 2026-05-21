@@ -71,7 +71,11 @@ class StatisticsTests(TestCase):
         if re.sub(r',?\s*\S+\s*$', '', affiliation) != '':
             affiliation = re.sub(r',?\s*\S+\s*$', '', affiliation)
         country = factory.Faker('country').evaluate(None, None, {'locale': None})
-
+        # Factory sometimes generates country names that are not exactly canonical
+        # causing problems in the tests below.
+        if country == 'Korea':
+            country = 'South Korea'
+            
         # Create the various aliases ancilliary content
         AffiliationIgnoredEndingFactory(ending='llc\\.?')
         AffiliationIgnoredEndingFactory(ending='ag\\.?')
