@@ -6,10 +6,11 @@ from django.conf import settings
 from django.core.files.storage import storages
 from django.test.utils import override_settings
 
-from ietf.doc.factories import BcpFactory, PublishedRfcDocEventFactory
+from ietf.doc.factories import BcpFactory, PublishedRfcDocEventFactory, StdFactory
 from ietf.sync.bibxml import (
     get_bcp_bibxml,
     get_rfc_bibxml,
+    get_std_bibxml,
     recreate_rfc_bibxml,
     save_bibxml,
     save_to_bucket,
@@ -34,6 +35,9 @@ class BibXmlTests(TestCase):
         # Create a BCP with non-April Fools RFC
         self.bcp = BcpFactory(contains=[self.rfc], name="bcp44")
 
+        # Create a STD with non-April Fools RFC
+        self.std = StdFactory(contains=[self.rfc], name="std46")
+
     def test_get_rfc_bibxml(self):
         bibxml = get_rfc_bibxml(self.rfc.rfc_number)
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
@@ -49,6 +53,18 @@ class BibXmlTests(TestCase):
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
         self.assertIn(f"BCP{bcp_number}", bibxml)
         self.assertIn(f"{settings.RFC_EDITOR_INFO_BASE_URL}bcp{bcp_number}", bibxml)
+        self.assertIn(f"RFC{self.rfc.rfc_number}", bibxml)
+        self.assertIn(
+            f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
+        )
+        self.assertIn('<date month="April" year="2021"/>', bibxml)
+
+    def test_get_std_bibxml(self):
+        std_number = self.std.name[3:]
+        bibxml = get_std_bibxml(std_number)
+        self.assertIsNotNone(ElementTree.fromstring(bibxml))
+        self.assertIn(f"STD{std_number}", bibxml)
+        self.assertIn(f"{settings.RFC_EDITOR_INFO_BASE_URL}std{std_number}", bibxml)
         self.assertIn(f"RFC{self.rfc.rfc_number}", bibxml)
         self.assertIn(
             f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
@@ -93,6 +109,21 @@ class BibXmlTests(TestCase):
             bibxml = f.read().decode("utf-8")
             self.assertIsNotNone(ElementTree.fromstring(bibxml))
             self.assertIn(f"BCP{bcp_number}", bibxml)
+            self.assertIn(
+                f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
+            )
+            self.assertIn('<date month="April" year="2021"/>', bibxml)
+
+    def test_create_std_bibxml(self):
+        bibxml_bucket = storages["bibxml_bucket"]
+        std_number = self.std.name[3:]
+        bibxml = get_std_bibxml(std_number)
+        filename = f"bibxml-rfcsubseries/std{std_number}.xml"
+        save_bibxml(bibxml, filename)
+        with bibxml_bucket.open(filename, "rb") as f:
+            bibxml = f.read().decode("utf-8")
+            self.assertIsNotNone(ElementTree.fromstring(bibxml))
+            self.assertIn(f"STD{std_number}", bibxml)
             self.assertIn(
                 f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
             )

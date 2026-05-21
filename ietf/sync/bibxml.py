@@ -55,6 +55,18 @@ def get_bcp_bibxml(bcp_number):
     return f"""<referencegroup anchor="BCP{bcp_number}" target="{bcp_link}">{rfc_bibxml}</referencegroup>"""
 
 
+def get_std_bibxml(std_number):
+    """Return BibXML entry for the given std"""
+    std = Document.objects.get(name=f"std{std_number}")
+    std_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"std{std_number}")
+    rfc_bibxml = ""
+    rfcs = sorted(std.contains(), key=lambda x: x.rfc_number)
+    for rfc in rfcs:
+        rfc_bibxml += get_rfc_bibxml(rfc.rfc_number)
+
+    return f"""<referencegroup anchor="STD{std_number}" target="{std_link}">{rfc_bibxml}</referencegroup>"""
+
+
 def save_bibxml(bibxml, filename):
     """Prettify and save given BibXML"""
 
