@@ -43,20 +43,16 @@ def get_rfc_bibxml(rfc_number):
     return f"""<reference anchor="RFC{rfc_number}" target="{link}"><front><title>{rfc.title}</title>{date}{authors}<abstract><t>{rfc.abstract}</t></abstract></front><seriesInfo name="RFC" value="{rfc_number}"/><seriesInfo name="DOI" value="{rfc.doi}"/></reference>"""
 
 
-def create_rfc_bibxml(rfc_number):
-    """Creates BibXML for given RFC number"""
-
-    log(f"Creating BibXML for {rfc_number}")
-    bibxml = etree.fromstring(get_rfc_bibxml(rfc_number))
+def save_bibxml(bibxml, filename):
+    """Prettify and save given BibXML"""
 
     # make it pretty
     pretty_bibxml = etree.tostring(
-        bibxml,
+        etree.fromstring(bibxml),
         encoding="utf-8",
         xml_declaration=True,
         pretty_print=4,
     )
-    filename = f"bibxml/rfc{rfc_number}.xml"
     save_to_bucket(filename, pretty_bibxml)
 
 
@@ -65,4 +61,6 @@ def recreate_rfc_bibxml():
     for rfc_number in Document.objects.filter(type_id="rfc").values_list(
         "rfc_number", flat=True
     ):
-        create_rfc_bibxml(rfc_number)
+        filename = f"bibxml/rfc{rfc_number}.xml"
+        bibxml = get_rfc_bibxml(rfc_number)
+        save_bibxml(bibxml, filename)

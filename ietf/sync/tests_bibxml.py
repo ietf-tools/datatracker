@@ -1,5 +1,5 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
-from unittest.mock import patch
+from unittest.mock import patch, ANY
 from xml.etree import ElementTree
 
 from django.conf import settings
@@ -8,9 +8,9 @@ from django.test.utils import override_settings
 
 from ietf.doc.factories import PublishedRfcDocEventFactory
 from ietf.sync.bibxml import (
-    create_rfc_bibxml,
     get_rfc_bibxml,
     recreate_rfc_bibxml,
+    save_bibxml,
     save_to_bucket,
 )
 from ietf.utils.test_utils import TestCase
@@ -22,6 +22,7 @@ class BibXmlTests(TestCase):
     def setUp(self):
         super().setUp()
 
+        # non-April Fools RFC that happens to have been published on April 1
         self.rfc = PublishedRfcDocEventFactory(
             time="2021-04-01T12:00:00Z",
             doc__name="rfc10000",
@@ -54,8 +55,10 @@ class BibXmlTests(TestCase):
 
     def test_create_rfc_bibxml(self):
         bibxml_bucket = storages["bibxml_bucket"]
-        create_rfc_bibxml(self.rfc.rfc_number)
-        with bibxml_bucket.open(f"bibxml/rfc{self.rfc.rfc_number}.xml", "rb") as f:
+        bibxml = get_rfc_bibxml(self.rfc.rfc_number)
+        filename = f"bibxml/rfc{self.rfc.rfc_number}.xml"
+        save_bibxml(bibxml, filename)
+        with bibxml_bucket.open(filename, "rb") as f:
             bibxml = f.read().decode("utf-8")
             self.assertIsNotNone(ElementTree.fromstring(bibxml))
             self.assertIn(f"RFC{self.rfc.rfc_number}", bibxml)
@@ -64,7 +67,8 @@ class BibXmlTests(TestCase):
             )
             self.assertIn('<date month="April" year="2021"/>', bibxml)
 
-    @patch("ietf.sync.bibxml.create_rfc_bibxml")
-    def test_recreate_rfc_bibxml(self, mock_create_rfc_bibxml):
+    @patch("ietf.sync.bibxml.save_bibxml")
+    def test_recreate_rfc_bibxml(self, mock_save_bibxml):
         recreate_rfc_bibxml()
-        mock_create_rfc_bibxml.assert_called_with(self.rfc.rfc_number)
+        filename = f"bibxml/rfc{self.rfc.rfc_number}.xml"
+        mock_save_bibxml.assert_called_with(ANY, filename)
