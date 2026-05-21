@@ -16,7 +16,7 @@ from ..doc.factories import (
     BcpFactory,
     StdFactory,
 )
-from ..doc.models import Document
+from ..doc.models import Document, RelatedDocument
 from ..doc.storage_utils import store_str
 from ..person.factories import PersonFactory
 
@@ -46,13 +46,6 @@ class SearchindexTests(TestCase):
         sanitized = "This is text It is full of problems Fix it."
         self.assertEqual(searchindex._sanitize_text(dirty_text), sanitized)
 
-    @override_settings(
-        SEARCHINDEX_CONFIG={
-            "TYPESENSE_API_URL": "http://ts.example.com",
-            "TYPESENSE_API_KEY": "test-api-key",
-            "TYPESENSE_COLLECTION_NAME": "frogs",
-        }
-    )
     def test_typesense_doc_from_rfc(self):
         not_rfc = WgDraftFactory()
         assert isinstance(not_rfc, Document)
@@ -111,6 +104,60 @@ class SearchindexTests(TestCase):
         Blob.objects.get(bucket="rfc", name=f"txt/{rfc.name}.txt").delete()
         result = searchindex.typesense_doc_from_rfc(rfc)
         self.assertNotIn("content", result)
+
+    def test_typesense_doc_from_rfc_flags_obsoleted(self):
+        """typesense docs should set obsoleted flag correctly"""
+        rfc = PublishedRfcDocEventFactory().doc
+        assert isinstance(rfc, Document)
+        self.assertEqual(len(rfc.related_that("obs")), 0)
+        self.assertEqual(len(rfc.related_that("updates")), 0)
+        self.assertNotEqual(rfc.std_level.slug, "hist")
+        result = searchindex.typesense_doc_from_rfc(rfc)
+        self.assertFalse(result["flags"]["hiddenDefault"])
+        self.assertFalse(result["flags"]["obsoleted"])
+        self.assertFalse(result["flags"]["updated"])
+
+        RelatedDocument.objects.create(
+            source=(PublishedRfcDocEventFactory().doc),
+            target=rfc,
+            relationship_id="obs",
+        )
+        result = searchindex.typesense_doc_from_rfc(rfc)
+        self.assertTrue(result["flags"]["hiddenDefault"])
+        self.assertTrue(result["flags"]["obsoleted"])
+        self.assertFalse(result["flags"]["updated"])
+
+    def test_typesense_doc_from_rfc_flags_updated(self):
+        """typesense docs should set updated flag correctly"""
+        rfc = PublishedRfcDocEventFactory().doc
+        assert isinstance(rfc, Document)
+        self.assertEqual(len(rfc.related_that("obs")), 0)
+        self.assertEqual(len(rfc.related_that("updates")), 0)
+        self.assertNotEqual(rfc.std_level.slug, "hist")
+        result = searchindex.typesense_doc_from_rfc(rfc)
+        self.assertFalse(result["flags"]["hiddenDefault"])
+        self.assertFalse(result["flags"]["obsoleted"])
+        self.assertFalse(result["flags"]["updated"])
+
+        RelatedDocument.objects.create(
+            source=(PublishedRfcDocEventFactory().doc),
+            target=rfc,
+            relationship_id="updates",
+        )
+        result = searchindex.typesense_doc_from_rfc(rfc)
+        self.assertFalse(result["flags"]["hiddenDefault"])
+        self.assertFalse(result["flags"]["obsoleted"])
+        self.assertTrue(result["flags"]["updated"])
+
+    def test_typesense_doc_from_rfc_flags_historic(self):
+        """typesense docs should set updated flag correctly"""
+        rfc = PublishedRfcDocEventFactory(doc__std_level_id="hist").doc
+        assert isinstance(rfc, Document)
+        result = searchindex.typesense_doc_from_rfc(rfc)
+        self.assertTrue(result["flags"]["hiddenDefault"])
+        self.assertFalse(result["flags"]["obsoleted"])
+        self.assertFalse(result["flags"]["updated"])
+
 
     @override_settings(
         SEARCHINDEX_CONFIG={
