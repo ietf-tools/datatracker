@@ -1058,7 +1058,7 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
     """
     current_meeting_number = get_current_ietf_meeting_num()
     if meeting_number is None:
-        meeting_number = current_meeting
+        meeting_number = current_meeting_number
     this_meeting = get_object_or_404(
         Meeting.objects.filter(type_id="ietf"), number=meeting_number
     )
