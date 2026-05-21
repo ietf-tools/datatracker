@@ -1,18 +1,24 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
-from unittest.mock import patch, ANY
+from unittest.mock import call, patch, ANY
 from xml.etree import ElementTree
 
 from django.conf import settings
 from django.core.files.storage import storages
 from django.test.utils import override_settings
 
-from ietf.doc.factories import BcpFactory, FyiFactory, PublishedRfcDocEventFactory, StdFactory
+from ietf.doc.factories import (
+    BcpFactory,
+    FyiFactory,
+    PublishedRfcDocEventFactory,
+    StdFactory,
+)
 from ietf.sync.bibxml import (
     get_bcp_bibxml,
     get_fyi_bibxml,
     get_rfc_bibxml,
     get_std_bibxml,
     recreate_rfc_bibxml,
+    recreate_rfcsubseries_bibxml,
     save_bibxml,
     save_to_bucket,
 )
@@ -165,3 +171,17 @@ class BibXmlTests(TestCase):
         recreate_rfc_bibxml()
         filename = f"bibxml/rfc{self.rfc.rfc_number}.xml"
         mock_save_bibxml.assert_called_with(ANY, filename)
+
+    @patch("ietf.sync.bibxml.save_bibxml")
+    def test_recreate_rfcsubseries_bibxml(self, mock_save_bibxml):
+        recreate_rfcsubseries_bibxml()
+        bcp_filename = f"bibxml-rfcsubseries/bcp{self.bcp.name[3:]}.xml"
+        std_filename = f"bibxml-rfcsubseries/std{self.std.name[3:]}.xml"
+        fyi_filename = f"bibxml-rfcsubseries/fyi{self.fyi.name[3:]}.xml"
+        mock_save_bibxml.assert_has_calls(
+            [
+                call(ANY, bcp_filename),
+                call(ANY, std_filename),
+                call(ANY, fyi_filename),
+            ]
+        )

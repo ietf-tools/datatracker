@@ -6,6 +6,8 @@ from xml.sax.saxutils import quoteattr as qa
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import storages
+from django.db import models
+from django.db.models.functions import Substr, Cast
 from lxml import etree
 
 from ietf.doc.models import Document
@@ -99,4 +101,58 @@ def recreate_rfc_bibxml():
     ):
         filename = f"bibxml/rfc{rfc_number}.xml"
         bibxml = get_rfc_bibxml(rfc_number)
+        save_bibxml(bibxml, filename)
+
+
+def recreate_rfcsubseries_bibxml():
+    """Creates BibXML for all RFC subseries."""
+    # BCPs
+    bcps = (
+        Document.objects.filter(type_id="bcp")
+        .annotate(
+            number=Cast(
+                Substr("name", 4, None),
+                output_field=models.IntegerField(),
+            )
+        )
+        .order_by("-number")
+        .values_list("number", flat=True)
+    )
+    for bcp_number in bcps:
+        filename = f"bibxml-rfcsubseries/bcp{bcp_number}.xml"
+        bibxml = get_bcp_bibxml(bcp_number)
+        save_bibxml(bibxml, filename)
+
+    # STDs
+    stds = (
+        Document.objects.filter(type_id="std")
+        .annotate(
+            number=Cast(
+                Substr("name", 4, None),
+                output_field=models.IntegerField(),
+            )
+        )
+        .order_by("-number")
+        .values_list("number", flat=True)
+    )
+    for std_number in stds:
+        filename = f"bibxml-rfcsubseries/std{std_number}.xml"
+        bibxml = get_std_bibxml(std_number)
+        save_bibxml(bibxml, filename)
+
+    # FYIs
+    fyis = (
+        Document.objects.filter(type_id="fyi")
+        .annotate(
+            number=Cast(
+                Substr("name", 4, None),
+                output_field=models.IntegerField(),
+            )
+        )
+        .order_by("-number")
+        .values_list("number", flat=True)
+    )
+    for fyi_number in fyis:
+        filename = f"bibxml-rfcsubseries/fyi{fyi_number}.xml"
+        bibxml = get_fyi_bibxml(fyi_number)
         save_bibxml(bibxml, filename)
