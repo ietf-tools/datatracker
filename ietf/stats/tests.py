@@ -75,6 +75,8 @@ class StatisticsTests(TestCase):
         # causing problems in the tests below.
         if country == 'Korea':
             country = 'South Korea'
+        elif country == 'Brunei Darussalam':
+            country = 'Brunei'
             
         # Create the various aliases ancilliary content
         AffiliationIgnoredEndingFactory(ending='llc\\.?')
