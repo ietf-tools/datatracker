@@ -6,6 +6,8 @@ from xml.sax.saxutils import quoteattr as qa
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import storages
+from django.db import models
+from django.db.models.functions import Substr, Cast
 from lxml import etree
 
 from ietf.doc.models import Document
@@ -43,20 +45,52 @@ def get_rfc_bibxml(rfc_number):
     return f"""<reference anchor="RFC{rfc_number}" target="{link}"><front><title>{rfc.title}</title>{date}{authors}<abstract><t>{rfc.abstract}</t></abstract></front><seriesInfo name="RFC" value="{rfc_number}"/><seriesInfo name="DOI" value="{rfc.doi}"/></reference>"""
 
 
-def create_rfc_bibxml(rfc_number):
-    """Creates BibXML for given RFC number"""
+def get_bcp_bibxml(bcp_number):
+    """Return BibXML entry for the given bcp"""
+    bcp = Document.objects.get(name=f"bcp{bcp_number}")
+    bcp_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"bcp{bcp_number}")
+    rfc_bibxml = ""
+    rfcs = sorted(bcp.contains(), key=lambda x: x.rfc_number)
+    for rfc in rfcs:
+        rfc_bibxml += get_rfc_bibxml(rfc.rfc_number)
 
-    log(f"Creating BibXML for {rfc_number}")
-    bibxml = etree.fromstring(get_rfc_bibxml(rfc_number))
+    return f"""<referencegroup anchor="BCP{bcp_number}" target="{bcp_link}">{rfc_bibxml}</referencegroup>"""
+
+
+def get_std_bibxml(std_number):
+    """Return BibXML entry for the given std"""
+    std = Document.objects.get(name=f"std{std_number}")
+    std_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"std{std_number}")
+    rfc_bibxml = ""
+    rfcs = sorted(std.contains(), key=lambda x: x.rfc_number)
+    for rfc in rfcs:
+        rfc_bibxml += get_rfc_bibxml(rfc.rfc_number)
+
+    return f"""<referencegroup anchor="STD{std_number}" target="{std_link}">{rfc_bibxml}</referencegroup>"""
+
+
+def get_fyi_bibxml(fyi_number):
+    """Return BibXML entry for the given fyi"""
+    fyi = Document.objects.get(name=f"fyi{fyi_number}")
+    fyi_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"fyi{fyi_number}")
+    rfc_bibxml = ""
+    rfcs = sorted(fyi.contains(), key=lambda x: x.rfc_number)
+    for rfc in rfcs:
+        rfc_bibxml += get_rfc_bibxml(rfc.rfc_number)
+
+    return f"""<referencegroup anchor="FYI{fyi_number}" target="{fyi_link}">{rfc_bibxml}</referencegroup>"""
+
+
+def save_bibxml(bibxml, filename):
+    """Prettify and save given BibXML"""
 
     # make it pretty
     pretty_bibxml = etree.tostring(
-        bibxml,
+        etree.fromstring(bibxml),
         encoding="utf-8",
         xml_declaration=True,
         pretty_print=4,
     )
-    filename = f"bibxml/rfc{rfc_number}.xml"
     save_to_bucket(filename, pretty_bibxml)
 
 
@@ -65,4 +99,60 @@ def recreate_rfc_bibxml():
     for rfc_number in Document.objects.filter(type_id="rfc").values_list(
         "rfc_number", flat=True
     ):
-        create_rfc_bibxml(rfc_number)
+        filename = f"bibxml/rfc{rfc_number}.xml"
+        bibxml = get_rfc_bibxml(rfc_number)
+        save_bibxml(bibxml, filename)
+
+
+def recreate_rfcsubseries_bibxml():
+    """Creates BibXML for all RFC subseries."""
+    # BCPs
+    bcps = (
+        Document.objects.filter(type_id="bcp")
+        .annotate(
+            number=Cast(
+                Substr("name", 4, None),
+                output_field=models.IntegerField(),
+            )
+        )
+        .order_by("-number")
+        .values_list("number", flat=True)
+    )
+    for bcp_number in bcps:
+        filename = f"bibxml-rfcsubseries/bcp{bcp_number}.xml"
+        bibxml = get_bcp_bibxml(bcp_number)
+        save_bibxml(bibxml, filename)
+
+    # STDs
+    stds = (
+        Document.objects.filter(type_id="std")
+        .annotate(
+            number=Cast(
+                Substr("name", 4, None),
+                output_field=models.IntegerField(),
+            )
+        )
+        .order_by("-number")
+        .values_list("number", flat=True)
+    )
+    for std_number in stds:
+        filename = f"bibxml-rfcsubseries/std{std_number}.xml"
+        bibxml = get_std_bibxml(std_number)
+        save_bibxml(bibxml, filename)
+
+    # FYIs
+    fyis = (
+        Document.objects.filter(type_id="fyi")
+        .annotate(
+            number=Cast(
+                Substr("name", 4, None),
+                output_field=models.IntegerField(),
+            )
+        )
+        .order_by("-number")
+        .values_list("number", flat=True)
+    )
+    for fyi_number in fyis:
+        filename = f"bibxml-rfcsubseries/fyi{fyi_number}.xml"
+        bibxml = get_fyi_bibxml(fyi_number)
+        save_bibxml(bibxml, filename)
