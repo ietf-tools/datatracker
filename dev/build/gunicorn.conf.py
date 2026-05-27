@@ -9,7 +9,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.instrumentation.django import DjangoInstrumentor
 from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
-from opentelemetry.instrumentation.pymemcache import PymemcacheInstrumentor
+from opentelemetry.instrumentation.redis import RedisInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
 # Bind all ipv4 interfaces (nginx uses loopback, but k8s health checks don't)
@@ -175,7 +175,7 @@ def post_fork(server, worker):
             DjangoInstrumentor().instrument()
         if "all" in enabled_telemetry or "psycopg2" in enabled_telemetry: 
             Psycopg2Instrumentor().instrument()
-        if "all" in enabled_telemetry or "pymemcache" in enabled_telemetry: 
-            PymemcacheInstrumentor().instrument()
+        if "all" in enabled_telemetry or "redis" in enabled_telemetry: 
+            RedisInstrumentor().instrument()
         if "all" in enabled_telemetry or "requests" in enabled_telemetry: 
             RequestsInstrumentor().instrument()
