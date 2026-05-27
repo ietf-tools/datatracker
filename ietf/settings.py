@@ -1434,16 +1434,16 @@ if "CACHES" not in locals():
         CACHES = {
             "default": {
                 "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-                #'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
-                #'LOCATION': '127.0.0.1:11211',
+                # "BACKEND": "django.core.cache.backends.redis.RedisCache",
+                # "LOCATION": "redis://redis:6379",
                 #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
                 "VERSION": __version__,
                 "KEY_PREFIX": "ietf:dt",
             },
             "agenda": {
                 "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-                # "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
-                # "LOCATION": "127.0.0.1:11211",
+                # "BACKEND": "django.core.cache.backends.redis.RedisCache",
+                # "LOCATION": "redis://redis:6379",
                 # No release-specific VERSION setting.
                 "KEY_PREFIX": "ietf:dt:agenda",
                 # Key function is default except with sha384-encoded key
@@ -1453,8 +1453,8 @@ if "CACHES" not in locals():
             },
             "proceedings": {
                 "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-                # "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
-                # "LOCATION": "127.0.0.1:11211",
+                #"BACKEND": "django.core.cache.backends.redis.RedisCache",
+                #"LOCATION": "redis://redis:6379",
                 # No release-specific VERSION setting.
                 "KEY_PREFIX": "ietf:dt:proceedings",
                 # Key function is default except with sha384-encoded key
@@ -1491,8 +1491,8 @@ if "CACHES" not in locals():
                 },
             },
             "celery-results": {
-                "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
-                "LOCATION": "app:11211",
+                "BACKEND": "django.core.cache.backends.redis.RedisCache",
+                "LOCATION": "redis://redis:6379",
                 "KEY_PREFIX": "ietf:celery",
             },
         }

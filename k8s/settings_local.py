@@ -368,8 +368,8 @@ CACHES = {
         },
     },
     "celery-results": {
-        "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
-        "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": f"{REDIS_HOST}:{REDIS_PORT}",
         "KEY_PREFIX": "ietf:celery",
     },
 }
