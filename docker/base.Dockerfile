@@ -59,12 +59,10 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 	libxtst6 \
 	libmagic-dev \
 	libmariadb-dev \
-	libmemcached-tools \
 	libyang2-tools \
 	locales \
 	make \
 	mariadb-client \
-	memcached \
 	nano \
 	netcat-traditional \
 	nodejs \

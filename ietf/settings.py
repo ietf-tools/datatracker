@@ -1364,137 +1364,87 @@ else:
 
 if "CACHES" not in locals():
     if SERVER_MODE == "production":
-        MEMCACHED_HOST = os.environ.get("MEMCACHED_SERVICE_HOST", "127.0.0.1")
-        MEMCACHED_PORT = os.environ.get("MEMCACHED_SERVICE_PORT", "11211")
-        CACHES = {
-            "default": {
-                "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
-                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
-                "VERSION": __version__,
-                "KEY_PREFIX": "ietf:dt",
-                # Key function is default except with sha384-encoded key
-                "KEY_FUNCTION": lambda key, key_prefix, version: (
-                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
-                ),
+        raise RuntimeError("Must set CACHES in settings_local for production mode")
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+            # "BACKEND": "django_redis.cache.RedisCache",
+            # "LOCATION": "redis://redis:6379/0",
+            # "OPTIONS": {
+            #     "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            # },
+            # "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+            "VERSION": __version__,
+            "KEY_PREFIX": "ietf:dt",
+        },
+        "agenda": {
+            "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+            # "BACKEND": "django_redis.cache.RedisCache",
+            # "LOCATION": "redis://redis:6379/0",
+            # "OPTIONS": {
+            #     "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            # },
+            # No release-specific VERSION setting.
+            "KEY_PREFIX": "ietf:dt:agenda",
+            # Key function is default except with sha384-encoded key
+            "KEY_FUNCTION": lambda key, key_prefix, version: (
+                f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+            ),
+        },
+        "proceedings": {
+            "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+            # "BACKEND": "django_redis.cache.RedisCache",
+            # "LOCATION": "redis://redis:6379/0",
+            # "OPTIONS": {
+            #     "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            # },
+            # No release-specific VERSION setting.
+            "KEY_PREFIX": "ietf:dt:proceedings",
+            # Key function is default except with sha384-encoded key
+            "KEY_FUNCTION": lambda key, key_prefix, version: (
+                f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+            ),
+        },
+        "sessions": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": "redis://redis:6379/0",
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
             },
-            "agenda": {
-                "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
-                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
-                # No release-specific VERSION setting.
-                "KEY_PREFIX": "ietf:dt:agenda",
-                # Key function is default except with sha384-encoded key
-                "KEY_FUNCTION": lambda key, key_prefix, version: (
-                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
-                ),
+        },
+        "htmlized": {
+            "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+            #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            "LOCATION": "/var/cache/datatracker/htmlized",
+            "OPTIONS": {
+                "MAX_ENTRIES": 1000,
             },
-            "proceedings": {
-                "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
-                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
-                # No release-specific VERSION setting.
-                "KEY_PREFIX": "ietf:dt:proceedings",
-                # Key function is default except with sha384-encoded key
-                "KEY_FUNCTION": lambda key, key_prefix, version: (
-                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
-                ),
+        },
+        "pdfized": {
+            "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+            #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            "LOCATION": "/var/cache/datatracker/pdfized",
+            "OPTIONS": {
+                "MAX_ENTRIES": 1000,
             },
-            "sessions": {
-                "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
-                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
-                # No release-specific VERSION setting.
-                "KEY_PREFIX": "ietf:dt",
+        },
+        "slowpages": {
+            "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+            #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            "LOCATION": "/var/cache/datatracker/",
+            "OPTIONS": {
+                "MAX_ENTRIES": 5000,
             },
-            "htmlized": {
-                "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
-                "LOCATION": "/a/cache/datatracker/htmlized",
-                "OPTIONS": {
-                    "MAX_ENTRIES": 100000,  # 100,000
-                },
+        },
+        "celery-results": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": "redis://redis:6379/0",
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
             },
-            "pdfized": {
-                "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
-                "LOCATION": "/a/cache/datatracker/pdfized",
-                "OPTIONS": {
-                    "MAX_ENTRIES": 100000,  # 100,000
-                },
-            },
-            "slowpages": {
-                "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
-                "LOCATION": "/a/cache/datatracker/slowpages",
-                "OPTIONS": {
-                    "MAX_ENTRIES": 5000,
-                },
-            },
-            "celery-results": {
-                "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
-                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
-                "KEY_PREFIX": "ietf:celery",
-            },
-        }
-    else:
-        CACHES = {
-            "default": {
-                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-                #'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
-                #'LOCATION': '127.0.0.1:11211',
-                #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-                "VERSION": __version__,
-                "KEY_PREFIX": "ietf:dt",
-            },
-            "agenda": {
-                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-                # "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
-                # "LOCATION": "127.0.0.1:11211",
-                # No release-specific VERSION setting.
-                "KEY_PREFIX": "ietf:dt:agenda",
-                # Key function is default except with sha384-encoded key
-                "KEY_FUNCTION": lambda key, key_prefix, version: (
-                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
-                ),
-            },
-            "proceedings": {
-                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-                # "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
-                # "LOCATION": "127.0.0.1:11211",
-                # No release-specific VERSION setting.
-                "KEY_PREFIX": "ietf:dt:proceedings",
-                # Key function is default except with sha384-encoded key
-                "KEY_FUNCTION": lambda key, key_prefix, version: (
-                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
-                ),
-            },
-            "sessions": {
-                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            },
-            "htmlized": {
-                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-                #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-                "LOCATION": "/var/cache/datatracker/htmlized",
-                "OPTIONS": {
-                    "MAX_ENTRIES": 1000,
-                },
-            },
-            "pdfized": {
-                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-                #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-                "LOCATION": "/var/cache/datatracker/pdfized",
-                "OPTIONS": {
-                    "MAX_ENTRIES": 1000,
-                },
-            },
-            "slowpages": {
-                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-                #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-                "LOCATION": "/var/cache/datatracker/",
-                "OPTIONS": {
-                    "MAX_ENTRIES": 5000,
-                },
-            },
-            "celery-results": {
-                "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
-                "LOCATION": "app:11211",
-                "KEY_PREFIX": "ietf:celery",
-            },
-        }
+            "KEY_PREFIX": "ietf:celery",
+        },
+    }
 
 PUBLISH_IPR_STATES = ['posted', 'removed', 'removed_objfalse']
 
@@ -1509,7 +1459,6 @@ if SERVER_MODE != 'production':
     loaders = TEMPLATES[0]['OPTIONS']['loaders']
     loaders = tuple(l for e in loaders for l in (e[1] if isinstance(e, tuple) and "cached.Loader" in e[0] else (e,)))
     TEMPLATES[0]['OPTIONS']['loaders'] = loaders
-    SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
     if 'SECRET_KEY' not in locals():
         SECRET_KEY = 'PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHka'
