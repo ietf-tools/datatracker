@@ -1434,16 +1434,22 @@ if "CACHES" not in locals():
         CACHES = {
             "default": {
                 "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-                # "BACKEND": "django.core.cache.backends.redis.RedisCache",
-                # "LOCATION": "redis://redis:6379",
-                #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+                # "BACKEND": "django_redis.cache.RedisCache",
+                # "LOCATION": "redis://redis:6379/0",
+                # "OPTIONS": {
+                #     "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                # },
+                # "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
                 "VERSION": __version__,
                 "KEY_PREFIX": "ietf:dt",
             },
             "agenda": {
                 "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-                # "BACKEND": "django.core.cache.backends.redis.RedisCache",
-                # "LOCATION": "redis://redis:6379",
+                # "BACKEND": "django_redis.cache.RedisCache",
+                # "LOCATION": "redis://redis:6379/0",
+                # "OPTIONS": {
+                #     "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                # },
                 # No release-specific VERSION setting.
                 "KEY_PREFIX": "ietf:dt:agenda",
                 # Key function is default except with sha384-encoded key
@@ -1453,8 +1459,11 @@ if "CACHES" not in locals():
             },
             "proceedings": {
                 "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-                #"BACKEND": "django.core.cache.backends.redis.RedisCache",
-                #"LOCATION": "redis://redis:6379",
+                # "BACKEND": "django_redis.cache.RedisCache",
+                # "LOCATION": "redis://redis:6379/0",
+                # "OPTIONS": {
+                #     "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                # },
                 # No release-specific VERSION setting.
                 "KEY_PREFIX": "ietf:dt:proceedings",
                 # Key function is default except with sha384-encoded key
@@ -1463,8 +1472,11 @@ if "CACHES" not in locals():
                 ),
             },
             "sessions": {
-                "BACKEND": "django.core.cache.backends.redis.RedisCache",
-                "LOCATION": "redis://redis:6379",
+                "BACKEND": "django_redis.cache.RedisCache",
+                "LOCATION": "redis://redis:6379/0",
+                "OPTIONS": {
+                    "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                },
             },
             "htmlized": {
                 "BACKEND": "django.core.cache.backends.dummy.DummyCache",
@@ -1491,8 +1503,11 @@ if "CACHES" not in locals():
                 },
             },
             "celery-results": {
-                "BACKEND": "django.core.cache.backends.redis.RedisCache",
-                "LOCATION": "redis://redis:6379",
+                "BACKEND": "django_redis.cache.RedisCache",
+                "LOCATION": "redis://redis:6379/0",
+                "OPTIONS": {
+                    "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                },
                 "KEY_PREFIX": "ietf:celery",
             },
         }
