@@ -312,7 +312,7 @@ REDIS_SENTINEL_PORT = os.environ.get("DATATRACKER_REDIS_SENTINEL_PORT", "26379")
 DJANGO_REDIS_CONNECTION_FACTORY = "django_redis.pool.SentinelConnectionFactory"
 REDIS_CACHE_CONFIG_COMMON = {
     "BACKEND": "django_redis.cache.RedisCache",
-    "LOCATION": "redis://myMaster/0",
+    "LOCATION": "redis://dt-master/0",
     "OPTIONS": {
         "CLIENT_CLASS": "django_redis.client.SentinelClient",
         "SENTINELS": [(REDIS_SENTINEL_SERVICE, REDIS_SENTINEL_PORT)],
