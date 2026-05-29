@@ -314,7 +314,10 @@ REDIS_CACHE_CONFIG_COMMON = {
     "BACKEND": "django_redis.cache.RedisCache",
     "LOCATION": "redis://dt-master/0",
     "OPTIONS": {
-        "CLIENT_CLASS": "django_redis.client.SentinelClient",
+        "CLIENT_CLASS": "ietf.utils.cache.SizeLimitingSentinelClient",
+        "MAX_ENCODED_VALUE_LEN": int(
+            os.environ.get("DATATRACKER_REDIS_MAX_ENCODED_VALUE_LEN", 1 << 20)
+        ),
         "SENTINELS": [(REDIS_SENTINEL_SERVICE, REDIS_SENTINEL_PORT)],
         "SENTINEL_KWARGS": {},
         "CONNECTION_POOL_CLASS": "redis.sentinel.SentinelConnectionPool",
