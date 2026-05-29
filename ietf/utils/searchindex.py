@@ -95,7 +95,8 @@ def _sanitize_abstract(abstract: str):
     """
     abstract = abstract.strip()
     abstract = re.sub("\r\n|\n\r|\r", "\n", abstract)  # normalize on \n
-    return abstract.strip()
+    abstract = "\n".join(line.strip() for line in abstract.split("\n"))  # strip by line
+    return abstract
 
 
 def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
