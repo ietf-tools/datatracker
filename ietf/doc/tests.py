@@ -36,9 +36,9 @@ from weasyprint.urls import URLFetchingError
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, DocRelationshipName, RelatedDocument, State,
-    DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType,
-    EditedAuthorsDocEvent, StateType)
+from ietf.doc.models import (Document, DocRelationshipName, RelatedDocument, State,
+                             DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType,
+                             EditedAuthorsDocEvent, StateType, RfcAuthor)
 from ietf.doc.factories import (DocumentFactory, DocEventFactory, CharterFactory,
                                 ConflictReviewFactory, WgDraftFactory,
                                 IndividualDraftFactory, WgRfcFactory,
@@ -73,7 +73,7 @@ from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.utils.mail import get_payload_text, outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
-from ietf.utils.text import normalize_text
+from ietf.utils.text import normalize_text, texescape
 from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO, RPC_TZINFO
 from ietf.doc.utils_search import AD_WORKLOAD
 
@@ -2133,9 +2133,11 @@ class DocTestCase(TestCase):
             doc = factory()
             url = urlreverse("ietf.doc.views_doc.document_bibtex", kwargs=dict(name=doc.name))
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 404)          
+            self.assertEqual(r.status_code, 404)       
+        authors = PersonFactory.create_batch(2)
         rfc = WgRfcFactory.create(
-            time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE))
+            time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE)),
+            authors=authors,
         )
         num = rfc.rfc_number
         DocEventFactory.create(
@@ -2153,6 +2155,11 @@ class DocTestCase(TestCase):
         self.assertEqual(entry["year"], "2010")
         self.assertEqual(entry["month"].lower()[0:3], "oct")
         self.assertEqual(entry["url"], f"https://www.rfc-editor.ietf.org/info/rfc{num}")
+        escaped_author_names = [
+            texescape(ra.titlepage_name)
+            for ra in RfcAuthor.objects.filter(document=rfc)
+        ]
+        self.assertEqual(entry["author"], " and ".join(escaped_author_names))    
         #
         self.assertNotIn("day", entry)
     
