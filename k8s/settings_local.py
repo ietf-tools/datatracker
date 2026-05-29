@@ -325,7 +325,8 @@ REDIS_CACHE_CONFIG_COMMON = {
 }
 
 CACHES = {
-    "default": REDIS_CACHE_CONFIG_COMMON | {
+    "default": REDIS_CACHE_CONFIG_COMMON
+    | {
         "VERSION": __version__,
         "KEY_PREFIX": "ietf:dt",
         # Key function is default except with sha384-encoded key
@@ -333,7 +334,8 @@ CACHES = {
             f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
         ),
     },
-    "agenda": REDIS_CACHE_CONFIG_COMMON | {
+    "agenda": REDIS_CACHE_CONFIG_COMMON
+    | {
         # No release-specific VERSION setting.
         "KEY_PREFIX": "ietf:dt:agenda",
         # Key function is default except with sha384-encoded key
@@ -341,7 +343,8 @@ CACHES = {
             f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
         ),
     },
-    "proceedings": REDIS_CACHE_CONFIG_COMMON | {
+    "proceedings": REDIS_CACHE_CONFIG_COMMON
+    | {
         # No release-specific VERSION setting.
         "KEY_PREFIX": "ietf:dt:proceedings",
         # Key function is default except with sha384-encoded key
@@ -349,7 +352,8 @@ CACHES = {
             f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
         ),
     },
-    "sessions": REDIS_CACHE_CONFIG_COMMON | {
+    "sessions": REDIS_CACHE_CONFIG_COMMON
+    | {
         # No release-specific VERSION setting.
         "KEY_PREFIX": "ietf:dt",
     },
@@ -374,7 +378,8 @@ CACHES = {
             "MAX_ENTRIES": 5000,
         },
     },
-    "celery-results": REDIS_CACHE_CONFIG_COMMON | {
+    "celery-results": REDIS_CACHE_CONFIG_COMMON
+    | {
         "KEY_PREFIX": "ietf:celery",
     },
 }
