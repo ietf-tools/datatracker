@@ -2154,7 +2154,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry["doi"], "10.17487/RFC%s" % num)
         self.assertEqual(entry["year"], "2010")
         self.assertEqual(entry["month"].lower()[0:3], "oct")
-        self.assertEqual(entry["url"], f"https://www.rfc-editor.ietf.org/info/rfc{num}")
+        self.assertEqual(entry["url"], f"https://www.rfc-editor.ietf.org/info/rfc{num}/")
         escaped_author_names = [
             texescape(ra.titlepage_name)
             for ra in RfcAuthor.objects.filter(document=rfc)
@@ -2195,7 +2195,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry["year"], "1990")
         self.assertEqual(entry["month"].lower()[0:3], "apr")
         self.assertEqual(entry["day"], "1")
-        self.assertEqual(entry["url"], f"https://www.rfc-editor.ietf.org/info/rfc{num}")
+        self.assertEqual(entry["url"], f"https://www.rfc-editor.ietf.org/info/rfc{num}/")
     
         draft = IndividualDraftFactory.create()
         docname = "%s-%s" % (draft.name, draft.rev)
