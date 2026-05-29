@@ -302,9 +302,24 @@ def update_errata_from_rfceditor_task():
         # new_processed_time is the *start* of processing so that any changes after
         # this point will trigger another refresh
         new_processed_time = timezone.now()
-        update_errata_from_rfceditor()
+        changed_numbers = update_errata_from_rfceditor()
         mark_errata_as_processed(new_processed_time)
         mark_rfcindex_as_dirty()  # ensure any changes are reflected in the indexes
+        if changed_numbers:
+            update_rfc_json_task.delay(list(changed_numbers))
+
+
+@shared_task
+def update_rfc_json_task(rfc_numbers: list[int]) -> None:
+    from ietf.doc.utils_rfc_json import generate_rfc_json
+    from ietf.sync.rfcindex import get_publication_std_levels
+
+    pub_levels = get_publication_std_levels()
+    for rfc_number in rfc_numbers:
+        try:
+            generate_rfc_json(rfc_number, pub_levels=pub_levels)
+        except Exception as e:
+            log.log(f"update_rfc_json_task: failed for RFC {rfc_number}: {e}")
 
 
 @shared_task
