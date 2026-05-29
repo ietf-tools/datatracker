@@ -4819,11 +4819,16 @@ def proceedings_attendees(request, num=None):
         onsite, remote = meeting.get_attendees()
         onsite_count = len(onsite)
         remote_count = len(remote)
+        onsite_pks = frozenset(p.pk for p in onsite)
         remote_pks = frozenset(p.pk for p in remote)
 
-        regs = list(
-            Registration.objects.onsite().filter(meeting__number=num, checkedin=True)
-        ) + [
+        regs = [
+            reg
+            for reg in Registration.objects.onsite()
+            .filter(meeting__number=num)
+            .select_related("person")
+            if reg.person.pk in onsite_pks
+        ] + [
             reg
             for reg in Registration.objects.remote()
             .filter(meeting__number=num)
