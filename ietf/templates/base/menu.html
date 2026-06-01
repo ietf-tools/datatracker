@@ -453,7 +453,7 @@
             {% if user and user.is_authenticated %}
                 <li>
                     <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
-                       href="{% url "ietf.stats.views.review_stats" %}">
+                       href="{% url "ietf.stats.views_reviews.review_stats" %}">
                         Reviews
                     </a>
                 </li>
