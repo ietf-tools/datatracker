@@ -12,7 +12,7 @@ from ietf.name.models import StdLevelName
 from ietf.doc.storage_utils import exists_in_storage, store_bytes
 from ietf.sync.errata import errata_map_from_json, get_errata_data
 from ietf.sync.rfcindex import get_april1_rfc_numbers, get_publication_std_levels
-from ietf.utils.log import log
+from ietf.utils.log import assertion, log
 
 
 _FORMAT_CHECKS = [
@@ -94,9 +94,27 @@ def generate_rfc_json(rfc_number: int, *, pub_levels=None) -> None:
             pub_status = StdLevelName.objects.get(slug="unkn").name.upper()
 
     # source: adapted from errata system's display_source() logic
-    stream_slug = rfc.stream.slug if rfc.stream else ""
-    group_acronym = rfc.group.acronym if rfc.group else "none"
-    area_acronym = rfc.group.parent.acronym if rfc.group and rfc.group.parent else ""
+    if rfc.stream is None or rfc.group is None:
+        # Basic expectations (should be constraints) on RFC Document objects
+        # have been violated.
+        assertion("rfc.stream is not None and rfc.group is not None")
+        log(
+            f"Malformed document object enoutered for rfc{rfc_number}. Aborting update of rfc{rfc_number}.json"
+        )
+        return
+    stream_slug = rfc.stream.slug
+    group_acronym = rfc.group.acronym
+
+    area_acronym = None
+    if stream_slug == "ietf":
+        if rfc.group.parent is None:
+            assertion("rfc.group.parent is not None")
+            log(
+                f"Malformed document object enoutered for rfc{rfc_number}. Aborting update of rfc{rfc_number}.json"
+            )
+            return
+        else:
+            area_acronym = rfc.group.parent.acronym
 
     if stream_slug == "ise":
         source = "INDEPENDENT"

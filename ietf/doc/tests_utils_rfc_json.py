@@ -276,12 +276,15 @@ class GenerateRfcJsonTests(TestCase):
 
     def test_source_ietf_no_wg(self):
         """IETF-stream individual RFC (group acronym 'none'): source is 'IETF - NON WORKING GROUP'."""
+        area = GroupFactory(type_id="area")
         rfc = PublishedRfcDocEventFactory(
             doc=RfcFactory(
                 group=GroupFactory(acronym="none"),
                 stream_id="ietf",
             ),
         ).doc
+        rfc.group.parent = area
+        rfc.group.save()
         _put_pub_levels(rfc.rfc_number, "inf")
         _put_empty_errata()
 
@@ -293,7 +296,7 @@ class GenerateRfcJsonTests(TestCase):
     def test_source_iab(self):
         """IAB-stream RFC: source is 'IAB'."""
         rfc = PublishedRfcDocEventFactory(
-            doc=RfcFactory(stream_id="iab"),
+            doc=RfcFactory(stream_id="iab", group=GroupFactory(acronym="iab")),
         ).doc
         _put_pub_levels(rfc.rfc_number, "inf")
         _put_empty_errata()
@@ -306,7 +309,7 @@ class GenerateRfcJsonTests(TestCase):
     def test_source_ise(self):
         """ISE-stream RFC: source is 'INDEPENDENT'."""
         rfc = PublishedRfcDocEventFactory(
-            doc=RfcFactory(stream_id="ise"),
+            doc=RfcFactory(stream_id="ise", group=GroupFactory(acronym="none")),
         ).doc
         _put_pub_levels(rfc.rfc_number, "inf")
         _put_empty_errata()
@@ -380,3 +383,50 @@ class GenerateRfcJsonTests(TestCase):
 
         data = _read_json(rfc.rfc_number)
         self.assertEqual(data["pub_status"], "UNKNOWN")
+
+    def _assert_no_blob_written(self, rfc):
+        from ietf.blobdb.models import Blob
+
+        self.assertFalse(
+            Blob.objects.filter(
+                bucket="rfc", name=f"json/rfc{rfc.rfc_number}.json"
+            ).exists()
+        )
+
+    def test_source_malformed_no_stream(self):
+        """RFC with stream=None triggers assertion (logged to admins in production) and no blob is written."""
+        rfc = PublishedRfcDocEventFactory(doc=WgRfcFactory()).doc
+        rfc.stream = None
+        rfc.save()
+        ps_level = StdLevelName.objects.get(slug="ps")
+
+        with self.assertRaises(AssertionError):
+            generate_rfc_json(rfc.rfc_number, pub_levels={rfc.rfc_number: ps_level})
+
+        self._assert_no_blob_written(rfc)
+
+    def test_source_malformed_no_group(self):
+        """RFC with group=None triggers assertion (logged to admins in production) and no blob is written."""
+        rfc = PublishedRfcDocEventFactory(doc=WgRfcFactory()).doc
+        rfc.group = None
+        rfc.save()
+        ps_level = StdLevelName.objects.get(slug="ps")
+
+        with self.assertRaises(AssertionError):
+            generate_rfc_json(rfc.rfc_number, pub_levels={rfc.rfc_number: ps_level})
+
+        self._assert_no_blob_written(rfc)
+
+    def test_source_ietf_malformed_no_area(self):
+        """IETF-stream RFC whose group has no parent triggers assertion (logged to admins in production) and no blob is written."""
+        rfc = PublishedRfcDocEventFactory(
+            doc=RfcFactory(stream_id="ietf", group=GroupFactory()),
+        ).doc
+        rfc.group.parent = None
+        rfc.group.save()
+        ps_level = StdLevelName.objects.get(slug="ps")
+
+        with self.assertRaises(AssertionError):
+            generate_rfc_json(rfc.rfc_number, pub_levels={rfc.rfc_number: ps_level})
+
+        self._assert_no_blob_written(rfc)
