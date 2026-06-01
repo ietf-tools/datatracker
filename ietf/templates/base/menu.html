@@ -435,18 +435,18 @@
         <ul class="dropdown-menu">
             <li>
                 <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
-                   href="{% url 'ietf.stats.views.authors_timeline' doc_type='rfc' stats_type='affiliation' %}">
+                   href="{% url 'ietf.stats.views_authors.authors_timeline' doc_type='rfc' stats_type='affiliation' %}">
                     Authors
                 </a>
             </li>            <li>
                 <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
-                   href="{% url 'ietf.stats.views.documents_timeline' doc_type='rfc' stats_type='level' %}">
+                   href="{% url 'ietf.stats.views_documents.documents_timeline' doc_type='rfc' stats_type='level' %}">
                     Documents
                 </a>
             </li>
             <li>
                 <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
-                   href="{% url 'ietf.stats.views.meetings_timeline' %}">
+                   href="{% url 'ietf.stats.views_meetings.meetings_timeline' %}">
                     Meetings
                 </a>
             </li>

@@ -33,7 +33,8 @@ class StatisticsTests(TestCase):
         MeetingFactory(type_id='ietf', number='124', date=timezone.now())
         url = urlreverse(ietf.stats.views.stats_index)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.status_code, 200, 
+            msg=f"Unexpected status code {r.status_code} for URL {url}")
 
     def test_document_stats(self):
         timeNow = timezone.now()
@@ -97,7 +98,7 @@ class StatisticsTests(TestCase):
         DocumentAuthorFactory(document=draftExp, affiliation=affiliation + ',inc', country='U.S.A.')
 
         # Test#1 the documents specific statistics: for RFC about the level
-        r = self.client.get(urlreverse(ietf.stats.views.documents_timeline, kwargs={"doc_type": "rfc", "stats_type": "level"}))
+        r = self.client.get(urlreverse(ietf.stats.views_documents.documents_timeline, kwargs={"doc_type": "rfc", "stats_type": "level"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Specific lines can be removed")
         self.assertContains(r, "Rfc Documents by Level")
@@ -119,7 +120,7 @@ class StatisticsTests(TestCase):
         )
 
         # Test#2 the documents specific statistics: for RFC about the WG
-        r = self.client.get(urlreverse(ietf.stats.views.documents_timeline, kwargs={"doc_type": "rfc", "stats_type": "wg"}))
+        r = self.client.get(urlreverse(ietf.stats.views_documents.documents_timeline, kwargs={"doc_type": "rfc", "stats_type": "wg"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Rfc Documents by Wg")
         # Extract the JSON embedded in the response
@@ -134,7 +135,7 @@ class StatisticsTests(TestCase):
         )
 
         # Test#3 the documents specific statistics: for drafts about the streams
-        r = self.client.get(urlreverse(ietf.stats.views.documents_timeline, kwargs={"doc_type": "draft", "stats_type": "stream"}))
+        r = self.client.get(urlreverse(ietf.stats.views_documents.documents_timeline, kwargs={"doc_type": "draft", "stats_type": "stream"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Draft Documents by Stream")
         # Extract the JSON embedded in the response
@@ -155,7 +156,7 @@ class StatisticsTests(TestCase):
         )
 
         # Test#4 the authors specific statistics: for all docs about the countries
-        r = self.client.get(urlreverse(ietf.stats.views.authors_timeline, kwargs={"doc_type": "all", "stats_type": "country"}))
+        r = self.client.get(urlreverse(ietf.stats.views_authors.authors_timeline, kwargs={"doc_type": "all", "stats_type": "country"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "All Authors by Country")
         # Extract the JSON embedded in the response
@@ -176,7 +177,7 @@ class StatisticsTests(TestCase):
         )
 
         # Test#5 the authors specific statistics: for all all rfcs about the affiliation
-        r = self.client.get(urlreverse(ietf.stats.views.authors_timeline, kwargs={"doc_type": "rfc", "stats_type": "affiliation"}))
+        r = self.client.get(urlreverse(ietf.stats.views_authors.authors_timeline, kwargs={"doc_type": "rfc", "stats_type": "affiliation"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Rfc Authors by Affiliation")
         # Extract the JSON embedded in the response
@@ -203,7 +204,7 @@ class StatisticsTests(TestCase):
         )
 
         # Test#6 the authors specific statistics: for all WG drafts about the country
-        r = self.client.get(urlreverse(ietf.stats.views.authors_timeline, kwargs={"doc_type": "wg-draft", "stats_type": "country"}))
+        r = self.client.get(urlreverse(ietf.stats.views_authors.authors_timeline, kwargs={"doc_type": "wg-draft", "stats_type": "country"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Wg-Draft Authors by Country")
         # Extract the JSON embedded in the response
@@ -229,7 +230,7 @@ class StatisticsTests(TestCase):
         )
 
         # Test#7 the authors specific statistics global
-        r = self.client.get(urlreverse(ietf.stats.views.authors_total, kwargs={"doc_type": "draft", "stats_type": "country"}))
+        r = self.client.get(urlreverse(ietf.stats.views_authors.authors_total, kwargs={"doc_type": "draft", "stats_type": "country"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Draft Authors by Country")
         # Extract the JSON embedded in the response
@@ -243,7 +244,7 @@ class StatisticsTests(TestCase):
         self.assertTrue(chart_data["datasets"][0]["data"][USA_index] == 1)
 
         # Test#8 the documents specific statistics global
-        r = self.client.get(urlreverse(ietf.stats.views.documents_total, kwargs={"doc_type": "draft", "stats_type": "wg"}))
+        r = self.client.get(urlreverse(ietf.stats.views_documents.documents_total, kwargs={"doc_type": "draft", "stats_type": "wg"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Draft Documents by Wg")
         # Extract the JSON embedded in the response
@@ -269,26 +270,26 @@ class StatisticsTests(TestCase):
         AffiliationIgnoredEndingFactory(ending='ltd\\.?')
 
         # Test the meeting specific statitistics per affiliation and per country
-        r = self.client.get(urlreverse(ietf.stats.views.meeting_stats, kwargs={"meeting_number": "124", "stats_type": "affiliation"}))
+        r = self.client.get(urlreverse(ietf.stats.views_meetings.meeting_stats, kwargs={"meeting_number": "124", "stats_type": "affiliation"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Total Registrations by Affiliation (31 in total)")
         self.assertContains(r, "In Person Registrations by Affiliation (16 in total)")
         self.assertContains(r, "/stats/meeting/124/affiliation")
         self.assertContains(r, "/stats/meeting/125/affiliation")
-        r = self.client.get(urlreverse(ietf.stats.views.meeting_stats, kwargs={"meeting_number": "124", "stats_type": "country"}))
+        r = self.client.get(urlreverse(ietf.stats.views_meetings.meeting_stats, kwargs={"meeting_number": "124", "stats_type": "country"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Total Registrations by Country (31 in total)")
         self.assertContains(r, "In Person Registrations by Country (16 in total)")
         self.assertContains(r, "/stats/meeting/124/country")
         self.assertContains(r, "/stats/meeting/125/country")
         # Test the meetings timeline per country
-        r = self.client.get(urlreverse(ietf.stats.views.meetings_timeline, kwargs={"stats_type": "country"}))
+        r = self.client.get(urlreverse(ietf.stats.views_meetings.meetings_timeline, kwargs={"stats_type": "country"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "/stats/meeting/124/country")
         self.assertContains(r, "/stats/meeting/125/country")
         self.assertContains(r, "This page provides a timeline of meeting registrations by country")
         # Test the meetings timeline per affiliation
-        r = self.client.get(urlreverse(ietf.stats.views.meetings_timeline, kwargs={"stats_type": "affiliation"}))
+        r = self.client.get(urlreverse(ietf.stats.views_meetings.meetings_timeline, kwargs={"stats_type": "affiliation"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "/stats/meeting/124/affiliation")
         self.assertContains(r, "/stats/meeting/125/affiliation")
@@ -303,7 +304,7 @@ class StatisticsTests(TestCase):
             )
         )
         # Test the global meetings timeline
-        r = self.client.get(urlreverse(ietf.stats.views.meetings_timeline, kwargs={"stats_type": "total"}))
+        r = self.client.get(urlreverse(ietf.stats.views_meetings.meetings_timeline, kwargs={"stats_type": "total"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "/stats/meeting/124/country")
         self.assertContains(r, "/stats/meeting/125/country")
@@ -314,7 +315,7 @@ class StatisticsTests(TestCase):
         for stats_type in ["affiliation", "country"]:
             r = self.client.get(
                 urlreverse(
-                    "ietf.stats.views.meeting_stats",
+                    "ietf.stats.views_meetings.meeting_stats",
                     kwargs={"meeting_number": 676767, "stats_type": stats_type},
                 )
             )
@@ -325,7 +326,7 @@ class StatisticsTests(TestCase):
             interim_num = MeetingFactory(type_id="interim").number
             request_factory = RequestFactory()
             with self.assertRaises(Http404):
-                ietf.stats.views.meeting_stats(
+                ietf.stats.views_meetings.meeting_stats(
                     request_factory.get(f"/stats/meeting/{interim_num}/{stats_type}"),
                     meeting_number=interim_num,
                     stats_type=stats_type,

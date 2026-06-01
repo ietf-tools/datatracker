@@ -3,6 +3,7 @@
 
 
 import re
+import hashlib
 
 import debug                            # pyflakes:ignore
 
@@ -12,6 +13,27 @@ from ietf.name.models import CountryName
 import logging
 logger = logging.getLogger('django')
 
+# Color palette for lines
+colors = [
+    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+    '#FF9F40', '#C9CBCF', '#7BC043', '#F37735', '#00ABA9',
+    '#2B5797', '#E81123', '#00A4EF', '#7FBA00', '#FFB900',
+    '#D83B01', '#B4009E', '#5C2D91', '#008575', '#E3008C',
+    # New additions — same vibrant/saturated theme
+    '#A4C639', '#FF7043', '#26A69A', '#AB47BC', '#42A5F5',
+    '#EC407A', '#FFA726', '#66BB6A', '#5E35B1', '#29B6F6',
+    '#D4AC0D', '#8E44AD', '#16A085', '#C0392B', '#2980B9',
+    '#E67E22', '#27AE60', '#CB4335', '#1F618D', '#AF7AC5',
+]
+
+def color_from_hash(s):
+    if s == 'Unspecified':
+        return "#B0B0B0 "
+    if s == 'Other':
+        return "#E0E0E0"
+    full_hash = hashlib.md5(s.encode('utf-8')).digest()
+    hash = int.from_bytes(full_hash[:2])
+    return colors[hash % len(colors)]
 
 def compile_affiliation_ending_stripping_regexp():
     parts = []
