@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 
+import datetime
 import json
 from pathlib import Path
 
@@ -7,6 +8,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from ietf.doc.models import Document, RelatedDocument
+from ietf.name.models import StdLevelName
 from ietf.doc.storage_utils import exists_in_storage, store_bytes
 from ietf.sync.errata import errata_map_from_json, get_errata_data
 from ietf.sync.rfcindex import get_april1_rfc_numbers, get_publication_std_levels
@@ -42,6 +44,13 @@ def generate_rfc_json(rfc_number: int, *, pub_levels=None) -> None:
         log(f"generate_rfc_json: no RFC found for rfc_number={rfc_number}")
         return
 
+    if pub_levels is None:
+        try:
+            pub_levels = get_publication_std_levels()
+        except Exception as e:
+            log(f"generate_rfc_json: failed to get publication std levels: {e}")
+            return
+
     doc_id = f"RFC{rfc_number}"
 
     # draft name
@@ -66,13 +75,23 @@ def generate_rfc_json(rfc_number: int, *, pub_levels=None) -> None:
     # page_count
     page_count = str(rfc.pages) if rfc.pages is not None else ""
 
-    # pub_status from publication-std-levels.json in the red bucket
-    if pub_levels is None:
-        pub_levels = get_publication_std_levels()
-    pub_status = pub_levels[rfc_number].name.upper()
-
     # status: current std_level
     status = rfc.std_level.name.upper() if rfc.std_level else ""
+
+    # pub_status from publication-std-levels.json in the red bucket
+    # but guard against recent publication not having updated the bucket yet
+    pub_event = rfc.latest_event(type="published_rfc")
+    if rfc_number in pub_levels:
+        pub_status = pub_levels[rfc_number].name.upper()
+    else:
+        if (
+            pub_event is not None
+            and timezone.now() - pub_event.time < datetime.timedelta(days=2)
+        ):
+            pub_status = status
+        else:
+            log(f"Assuming an unknown publication status for rfc{rfc_number}")
+            pub_status = StdLevelName.objects.get(slug="unkn").name.upper()
 
     # source: adapted from errata system's display_source() logic
     stream_slug = rfc.stream.slug if rfc.stream else ""
@@ -99,7 +118,6 @@ def generate_rfc_json(rfc_number: int, *, pub_levels=None) -> None:
         source = ""
 
     # pub_date: month/year of publication, with April 1st special-casing
-    pub_event = rfc.latest_event(type="published_rfc")
     pub_date = None
     if pub_event:
         dt = pub_event.time

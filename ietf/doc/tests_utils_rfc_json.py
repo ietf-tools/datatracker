@@ -1,10 +1,13 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 
+import datetime
 import json
+from unittest import mock
 
 from django.core.files.base import ContentFile
 from django.core.files.storage import storages
 from django.test.utils import override_settings
+from django.utils import timezone
 
 from ietf.doc.factories import (
     PublishedRfcDocEventFactory,
@@ -315,8 +318,6 @@ class GenerateRfcJsonTests(TestCase):
 
     def test_pub_levels_passed_in(self):
         """When pub_levels is passed in, get_publication_std_levels() is not called."""
-        import mock
-
         rfc = PublishedRfcDocEventFactory(doc=WgRfcFactory()).doc
         _put_empty_errata()
 
@@ -331,3 +332,51 @@ class GenerateRfcJsonTests(TestCase):
 
         data = _read_json(rfc.rfc_number)
         self.assertEqual(data["pub_status"], "PROPOSED STANDARD")
+
+    def test_pub_levels_fetch_failure_returns_without_writing(self):
+        """If get_publication_std_levels() raises, function logs and returns without writing a blob."""
+        rfc = PublishedRfcDocEventFactory(doc=WgRfcFactory()).doc
+        _put_empty_errata()
+
+        with mock.patch(
+            "ietf.doc.utils_rfc_json.get_publication_std_levels",
+            side_effect=FileNotFoundError("not found"),
+        ):
+            generate_rfc_json(rfc.rfc_number)  # must not raise
+
+        from ietf.blobdb.models import Blob
+
+        self.assertFalse(
+            Blob.objects.filter(
+                bucket="rfc", name=f"json/rfc{rfc.rfc_number}.json"
+            ).exists()
+        )
+
+    def test_pub_status_fallback_to_status_for_recent_rfc(self):
+        """RFC missing from pub_levels but published within 2 days: pub_status falls back to current std_level."""
+        now = timezone.now()
+        rfc = PublishedRfcDocEventFactory(
+            time=now - datetime.timedelta(hours=1),
+            doc=WgRfcFactory(std_level_id="ps"),
+        ).doc
+        _put_empty_errata()
+
+        with mock.patch("ietf.doc.utils_rfc_json.timezone") as mock_tz:
+            mock_tz.now.return_value = now
+            generate_rfc_json(rfc.rfc_number, pub_levels={})
+
+        data = _read_json(rfc.rfc_number)
+        self.assertEqual(data["pub_status"], "PROPOSED STANDARD")
+
+    def test_pub_status_unknown_for_old_rfc_missing_from_levels(self):
+        """RFC missing from pub_levels and published more than 2 days ago: pub_status is UNKNOWN."""
+        rfc = PublishedRfcDocEventFactory(
+            time="2020-01-01T00:00:00Z",
+            doc=WgRfcFactory(std_level_id="ps"),
+        ).doc
+        _put_empty_errata()
+
+        generate_rfc_json(rfc.rfc_number, pub_levels={})
+
+        data = _read_json(rfc.rfc_number)
+        self.assertEqual(data["pub_status"], "UNKNOWN")

@@ -314,7 +314,11 @@ def update_rfc_json_task(rfc_numbers: list[int]) -> None:
     from ietf.doc.utils_rfc_json import generate_rfc_json
     from ietf.sync.rfcindex import get_publication_std_levels
 
-    pub_levels = get_publication_std_levels()
+    try:
+        pub_levels = get_publication_std_levels()
+    except Exception as e:
+        log.log(f"update_rfc_json_task: failed to get publication std levels: {e}")
+        return
     for rfc_number in rfc_numbers:
         try:
             generate_rfc_json(rfc_number, pub_levels=pub_levels)
