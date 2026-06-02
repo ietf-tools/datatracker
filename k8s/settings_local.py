@@ -248,8 +248,19 @@ else:
 
 EMAIL_COPY_TO = ""
 
-# Until we teach the datatracker to look beyond cloudflare for this check
-IDSUBMIT_MAX_DAILY_SAME_SUBMITTER = 5000
+# I-D Submission settings
+
+# Until we teach the datatracker to look beyond cloudflare for this check, it needs
+# to be very large. 5000 has been working without complaint.
+IDSUBMIT_MAX_DAILY_SAME_SUBMITTER = int(
+    os.environ.get("DATATRACKER_IDSUBMIT_MAX_DAILY_SAME_SUBMITTER", "5000")
+)
+
+# Default is 20 minutes. Allow override via environment.
+if "DATATRACKER_IDSUBMIT_MAX_VALIDATION_TIME" in os.environ:
+    IDSUBMIT_MAX_VALIDATION_TIME = datetime.timedelta(
+        minutes=int(os.environ.get("DATATRACKER_IDSUBMIT_MAX_VALIDATION_TIME"))
+    )
 
 # Leave DATATRACKER_MATOMO_SITE_ID unset to disable Matomo reporting
 if "DATATRACKER_MATOMO_SITE_ID" in os.environ:
