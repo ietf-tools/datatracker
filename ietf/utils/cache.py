@@ -49,7 +49,7 @@ class SizeLimitingRedisClient(DefaultClient):
             return super().set(key, value, timeout, version, client, nx, xx)
         except EncodedValueTooBig as err:
             log(
-                f"Refused to cache large object for {key} "
+                f"Refused to cache large object for {key!r} "
                 f"({err.value_len} > {self.max_encoded_value_len} bytes)"
             )
             return False
