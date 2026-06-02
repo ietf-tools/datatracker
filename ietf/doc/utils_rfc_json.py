@@ -99,7 +99,7 @@ def generate_rfc_json(rfc_number: int, *, pub_levels=None) -> None:
         # have been violated.
         assertion("rfc.stream is not None and rfc.group is not None")
         log(
-            f"Malformed document object enoutered for rfc{rfc_number}. Aborting update of rfc{rfc_number}.json"
+            f"Malformed document object encountered for rfc{rfc_number}. Aborting update of rfc{rfc_number}.json"
         )
         return
     stream_slug = rfc.stream.slug
@@ -110,7 +110,7 @@ def generate_rfc_json(rfc_number: int, *, pub_levels=None) -> None:
         if rfc.group.parent is None:
             assertion("rfc.group.parent is not None")
             log(
-                f"Malformed document object enoutered for rfc{rfc_number}. Aborting update of rfc{rfc_number}.json"
+                f"Malformed document object encountered for rfc{rfc_number}. Aborting update of rfc{rfc_number}.json"
             )
             return
         else:
