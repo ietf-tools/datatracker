@@ -1406,7 +1406,7 @@ class TaskTests(TestCase):
         self.assertEqual(mock_args, ([3261, 3262, 3263],))
         self.assertEqual(mock_kwargs, {})
 
-
+    @mock.patch("ietf.sync.tasks.update_rfc_json_task.delay")
     @mock.patch("ietf.sync.tasks.update_errata_from_rfceditor")
     @mock.patch("ietf.sync.tasks.mark_rfcindex_as_dirty")
     @mock.patch("ietf.sync.tasks.mark_errata_as_processed")
@@ -1417,6 +1417,7 @@ class TaskTests(TestCase):
         mock_mark_errata_processed,
         mock_mark_rfcindex_dirty,
         mock_update,
+        mock_rfc_json_delay,
     ):
         mock_errata_are_dirty.return_value = False
         update_errata_from_rfceditor_task()

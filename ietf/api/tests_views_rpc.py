@@ -567,8 +567,12 @@ class RpcApiTests(APITestCase):
         mock_task_delay.assert_called_once_with(queue_entries)
 
     @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
+    @mock.patch("ietf.api.serializers_rpc.update_rfc_searchindex_task.delay")
+    @mock.patch("ietf.api.serializers_rpc.trigger_red_precomputer_task.delay")
     @mock.patch("ietf.api.views_rpc.update_rfc_json_task.delay")
-    def test_rfc_patch_triggers_json_update(self, mock_delay):
+    def test_rfc_patch_triggers_json_update(
+        self, mock_delay, mock_precompute_delay, mock_searchindex_delay
+    ):
         """PATCHing RFC metadata dispatches update_rfc_json_task for that RFC."""
         rfc = WgRfcFactory()
         url = urlreverse(
