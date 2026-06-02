@@ -1371,7 +1371,7 @@ if "CACHES" not in locals():
             # "BACKEND": "django_redis.cache.RedisCache",
             # "LOCATION": "redis://redis:6379/0",
             # "OPTIONS": {
-            #     "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            #     "CLIENT_CLASS": "ietf.utils.cache.SizeLimitingRedisClient",
             # },
             # "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
             "VERSION": __version__,
@@ -1382,7 +1382,7 @@ if "CACHES" not in locals():
             # "BACKEND": "django_redis.cache.RedisCache",
             # "LOCATION": "redis://redis:6379/0",
             # "OPTIONS": {
-            #     "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            #     "CLIENT_CLASS": "ietf.utils.cache.SizeLimitingRedisClient",
             # },
             # No release-specific VERSION setting.
             "KEY_PREFIX": "ietf:dt:agenda",
@@ -1396,7 +1396,7 @@ if "CACHES" not in locals():
             # "BACKEND": "django_redis.cache.RedisCache",
             # "LOCATION": "redis://redis:6379/0",
             # "OPTIONS": {
-            #     "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            #     "CLIENT_CLASS": "ietf.utils.cache.SizeLimitingRedisClient",
             # },
             # No release-specific VERSION setting.
             "KEY_PREFIX": "ietf:dt:proceedings",
@@ -1409,7 +1409,7 @@ if "CACHES" not in locals():
             "BACKEND": "django_redis.cache.RedisCache",
             "LOCATION": "redis://redis:6379/0",
             "OPTIONS": {
-                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "CLIENT_CLASS": "ietf.utils.cache.SizeLimitingRedisClient",
             },
         },
         "htmlized": {
