@@ -27,6 +27,9 @@ CACHES = {
             'MAX_ENTRIES': 10000,
         },
     },
+    'agenda': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
     'proceedings': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     },

@@ -32,7 +32,6 @@
                 "mutantdino.resourcemonitor",
                 "oderwat.indent-rainbow",
                 "redhat.vscode-yaml",
-                "spmeesseman.vscode-taskexplorer",
                 "ms-python.pylint",
                 "charliermarsh.ruff"
             ],

@@ -24,23 +24,32 @@ jobs:
       packages: write
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      uses: docker/setup-qemu-action@v4
     
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@v4
 
     - name: Login to GitHub Container Registry
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Set rabbitmq version
+      id: rabbitmq-version
+      run: |
+        if [[ "${{ inputs.rabbitmq_version }}" == "" ]]; then
+          echo "RABBITMQ_VERSION=3.13-alpine" >> $GITHUB_OUTPUT
+        else
+          echo "RABBITMQ_VERSION=${{ inputs.rabbitmq_version }}" >> $GITHUB_OUTPUT
+        fi
+
     - name: Docker Build & Push
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       env:
         DOCKER_BUILD_SUMMARY: false
       with:
@@ -48,7 +57,7 @@ jobs:
         file: dev/mq/Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
-        build-args: RABBITMQ_VERSION=${{ inputs.rabbitmq_version }}
+        build-args: RABBITMQ_VERSION=${{ steps.rabbitmq-version.outputs.RABBITMQ_VERSION }}
         tags: |
-          ghcr.io/ietf-tools/datatracker-mq:${{ inputs.rabbitmq_version }}
+          ghcr.io/ietf-tools/datatracker-mq:${{ steps.rabbitmq-version.outputs.RABBITMQ_VERSION }}
           ghcr.io/ietf-tools/datatracker-mq:latest

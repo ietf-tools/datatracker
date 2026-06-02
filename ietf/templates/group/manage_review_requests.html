@@ -66,10 +66,10 @@
                                     <span class="badge rounded-pill text-bg-info">Auto-suggested</span>
                                     <br>
                                 {% endif %}
-                                {% if r.doc.authors %}
+                                {% if r.doc.author_persons_or_names %}
                                     <span class="fw-bold">Authors:</span>
-                                    {% for person in r.doc.authors %}
-                                        {% person_link person %}{% if not forloop.last %},{% endif %}
+                                    {% for person, tp_name in r.doc.author_persons_or_names %}
+                                        {% if person %}{% person_link person %}{% else %}<span>{{ tp_name }}</span>{% endif %}{% if not forloop.last %},{% endif %}
                                     {% endfor %}
                                     <br>
                                 {% endif %}

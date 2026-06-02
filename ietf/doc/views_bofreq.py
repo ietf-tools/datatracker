@@ -91,7 +91,6 @@ def submit(request, name):
                 by=request.user.person,
                 rev=bofreq.rev,
                 desc='New revision available',
-                time=bofreq.time,
             )
             bofreq.save_with_history([e])
             bofreq_submission = form.cleaned_data['bofreq_submission']

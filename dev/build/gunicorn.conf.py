@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2024-2025, All Rights Reserved
+# Copyright The IETF Trust 2024-2026, All Rights Reserved
 
 import os
 import ietf
@@ -11,6 +11,23 @@ from opentelemetry.instrumentation.django import DjangoInstrumentor
 from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
 from opentelemetry.instrumentation.pymemcache import PymemcacheInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
+
+# Bind all ipv4 interfaces (nginx uses loopback, but k8s health checks don't)
+_BIND_PORT = os.environ.get("DATATRACKER_GUNICORN_BIND_PORT", "8000")
+bind = [f"0.0.0.0:{_BIND_PORT}"]
+
+# Disable control socket
+control_socket_disable = True
+
+# Settings configurable via environment
+workers = int(os.environ.get("DATATRACKER_GUNICORN_WORKERS", "9"))
+max_requests = int(os.environ.get("DATATRACKER_GUNICORN_MAX_REQUESTS", "32768"))
+timeout = int(os.environ.get("DATATRACKER_GUNICORN_TIMEOUT", "180"))
+loglevel = os.environ.get("DATATRACKER_GUNICORN_LOG_LEVEL", "info") 
+
+# Logging / stdout capture
+capture_output = True
+accesslog = "-"
 
 # Configure security scheme headers for forwarded requests. Cloudflare sets X-Forwarded-Proto 
 # for us. Don't trust any of the other similar headers. Only trust the header if it's coming
@@ -135,21 +152,30 @@ def post_request(worker, req, environ, resp):
 def post_fork(server, worker):
     server.log.info("Worker spawned (pid: %s)", worker.pid)
 
-    resource = Resource.create(attributes={
-        "service.name": "datatracker",
-        "service.version": ietf.__version__,
-        "service.instance.id": worker.pid,
-        "service.namespace": "datatracker",
-        "deployment.environment.name": os.environ.get("DATATRACKER_SERVICE_ENV", "dev")
-    })
-
-    trace.set_tracer_provider(TracerProvider(resource=resource))
-    otlp_exporter = OTLPSpanExporter(endpoint="https://heimdall-otlp.ietf.org/v1/traces")
-
-    trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(otlp_exporter))
-
-    # Instrumentations
-    DjangoInstrumentor().instrument()
-    Psycopg2Instrumentor().instrument()
-    PymemcacheInstrumentor().instrument()
-    RequestsInstrumentor().instrument()
+    # Setting DATATRACKER_OPENTELEMETRY_ENABLE=all in the environment will enable all
+    # opentelemetry instrumentations. Individual instrumentations can be selected by
+    # using a space-separated list. See the code below for available instrumentations.
+    telemetry_env = os.environ.get("DATATRACKER_OPENTELEMETRY_ENABLE", "").strip()
+    if telemetry_env != "":
+        enabled_telemetry = [tok.strip().lower() for tok in telemetry_env.split()]
+        resource = Resource.create(attributes={
+            "service.name": "datatracker",
+            "service.version": ietf.__version__,
+            "service.instance.id": worker.pid,
+            "service.namespace": "datatracker",
+            "deployment.environment.name": os.environ.get("DATATRACKER_SERVICE_ENV", "dev")
+        })
+        trace.set_tracer_provider(TracerProvider(resource=resource))
+        otlp_exporter = OTLPSpanExporter(endpoint="https://heimdall-otlp.ietf.org/v1/traces")
+    
+        trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(otlp_exporter))
+    
+        # Instrumentations
+        if "all" in enabled_telemetry or "django" in enabled_telemetry: 
+            DjangoInstrumentor().instrument()
+        if "all" in enabled_telemetry or "psycopg2" in enabled_telemetry: 
+            Psycopg2Instrumentor().instrument()
+        if "all" in enabled_telemetry or "pymemcache" in enabled_telemetry: 
+            PymemcacheInstrumentor().instrument()
+        if "all" in enabled_telemetry or "requests" in enabled_telemetry: 
+            RequestsInstrumentor().instrument()

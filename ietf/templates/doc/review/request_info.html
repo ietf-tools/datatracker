@@ -74,13 +74,13 @@
                 <td>{% person_link review_req.requested_by %}</td>
             </tr>
         {% endif %}
-        {% if review_req.doc.authors %}
+        {% if review_req.doc.author_persons_or_names %}
             <tr>
                 <td></td>
                 <th scope="row">Authors</th>
                 <td>
-                    {% for author in review_req.doc.authors %}
-                        {% person_link author %}{% if not forloop.last %},{% endif %}
+                    {% for person, tp_name in review_req.doc.author_persons_or_names %}
+                        {% if person %}{% person_link person %}{% else %}<span>{{ tp_name }}</span>{% endif %}{% if not forloop.last %},{% endif %}
                     {% endfor %}
                 </td>
             </tr>

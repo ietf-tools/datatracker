@@ -256,7 +256,7 @@ class SecrTelechatTestCase(TestCase):
         self.assertEqual(response.status_code,302)
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state('draft-iesg').slug,'defer')
-        self.assertCountEqual(draft.action_holders.all(), [draft.ad] + draft.authors())
+        self.assertCountEqual(draft.action_holders.all(), [draft.ad] + draft.author_persons())
         self.assertEqual(draft.docevent_set.filter(type='changed_action_holders').count(), 1)
 
         # Removing need-rev should remove authors
@@ -273,7 +273,7 @@ class SecrTelechatTestCase(TestCase):
 
         # Setting to approved should remove all action holders
         # noinspection DjangoOrm
-        draft.action_holders.add(*(draft.authors()))  # add() with through model ok in Django 2.2+
+        draft.action_holders.add(*(draft.author_persons()))  # add() with through model ok in Django 2.2+
         response = self.client.post(url,{
             'submit': 'update_state',
             'state': State.objects.get(type_id='draft-iesg', slug='approved').pk,

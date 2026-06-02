@@ -543,6 +543,25 @@ class GroupPagesTests(TestCase):
                 for username in list(set(interesting_users)-set(can_edit[group.type_id])):
                     verify_cannot_edit_group(url, group, username)
 
+    def test_group_about_team_parent(self):
+        """Team about page should show parent when parent is not an area"""
+        GroupFactory(type_id='team', parent=GroupFactory(type_id='area', acronym='gen'))
+        GroupFactory(type_id='team', parent=GroupFactory(type_id='ietf', acronym='iab'))
+        GroupFactory(type_id='team', parent=None)
+
+        for team in Group.objects.filter(type='team').select_related('parent'):
+            url = urlreverse('ietf.group.views.group_about', kwargs=dict(acronym=team.acronym))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            if team.parent and team.parent.type_id != 'area':
+                self.assertContains(r, 'Parent')
+                self.assertContains(r, team.parent.acronym)
+            elif team.parent and team.parent.type_id == 'area':
+                self.assertContains(r, team.parent.name)
+                self.assertNotContains(r, '>Parent<')
+            else:
+                self.assertNotContains(r, '>Parent<')
+
     def test_group_about_personnel(self):
         """Correct personnel should appear on the group About page"""
         group = GroupFactory()

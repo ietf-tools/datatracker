@@ -26,14 +26,15 @@ from ietf.group.models import (Group, GroupFeatures, GroupHistory, GroupEvent, G
     MilestoneGroupEvent, GroupExtResource, Appeal, AppealArtifact )
 from ietf.name.models import GroupTypeName
 
-from ietf.utils.validators import validate_external_resource_value
+from ietf.utils.admin import SaferTabularInline
 from ietf.utils.response import permission_denied
+from ietf.utils.validators import validate_external_resource_value
 
-class RoleInline(admin.TabularInline):
+class RoleInline(SaferTabularInline):
     model = Role
     raw_id_fields = ["person", "email"]
 
-class GroupURLInline(admin.TabularInline):
+class GroupURLInline(SaferTabularInline):
     model = GroupURL
 
 class GroupForm(forms.ModelForm):

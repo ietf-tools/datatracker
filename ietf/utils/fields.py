@@ -1,10 +1,11 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 import datetime
 import json
 import re
+from email.utils import parseaddr
 
 import debug                            # pyflakes:ignore
 
@@ -15,6 +16,7 @@ from django.db import models # pyflakes:ignore
 from django.core.validators import ProhibitNullCharactersValidator, validate_email
 from django.core.exceptions import ValidationError
 from django.utils.dateparse import parse_duration
+
 
 class MultiEmailField(forms.Field):
     def to_python(self, value):
@@ -37,6 +39,25 @@ class MultiEmailField(forms.Field):
 
         for email in value:
             validate_email(email)
+
+
+def validate_name_addr_email(value):
+    "Validate name-addr style email address"
+    name, addr = parseaddr(value)
+    if not addr:
+        raise ValidationError("Invalid email format.")
+    try:
+        validate_email(addr)  # validate the actual address part
+    except ValidationError:
+        raise ValidationError("Invalid email address.")
+
+
+class NameAddrEmailField(forms.CharField):
+    def validate(self, value):
+        "Check if value consists only of valid emails."
+        super().validate(value)
+        validate_name_addr_email(value)
+
 
 def yyyymmdd_to_strftime_format(fmt):
     translation_table = sorted([

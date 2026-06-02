@@ -21,7 +21,13 @@ from ietf.meeting.models import (Meeting, ResourceAssociation, Constraint, Room,
                                  Attended,
                                  Registration, RegistrationTicket)
 
-from ietf.name.resources import MeetingTypeNameResource
+from ietf.name.resources import (
+    AttendanceTypeNameResource,
+    MeetingTypeNameResource,
+    RegistrationTicketTypeNameResource,
+)
+
+
 class MeetingResource(ModelResource):
     type             = ToOneField(MeetingTypeNameResource, 'type')
     schedule         = ToOneField('ietf.meeting.resources.ScheduleResource', 'schedule', null=True)
@@ -437,11 +443,16 @@ class AttendedResource(ModelResource):
         }
 api.meeting.register(AttendedResource())
 
-from ietf.meeting.resources import MeetingResource
 from ietf.person.resources import PersonResource
 class RegistrationResource(ModelResource):
     meeting          = ToOneField(MeetingResource, 'meeting')
     person           = ToOneField(PersonResource, 'person', null=True)
+    tickets          = ToManyField(
+        'ietf.meeting.resources.RegistrationTicketResource',
+        'tickets',
+        full=True,
+    )
+    
     class Meta:
         queryset = Registration.objects.all()
         serializer = api.Serializer()
@@ -456,13 +467,17 @@ class RegistrationResource(ModelResource):
             "country_code": ALL,
             "email": ALL,
             "attended": ALL,
+            "checkedin": ALL,
             "meeting": ALL_WITH_RELATIONS,
             "person": ALL_WITH_RELATIONS,
+            "tickets": ALL_WITH_RELATIONS,
         }
 api.meeting.register(RegistrationResource())
 
 class RegistrationTicketResource(ModelResource):
     registration          = ToOneField(RegistrationResource, 'registration')
+    attendance_type       = ToOneField(AttendanceTypeNameResource, 'attendance_type')
+    ticket_type           = ToOneField(RegistrationTicketTypeNameResource, 'ticket_type')
     class Meta:
         queryset = RegistrationTicket.objects.all()
         serializer = api.Serializer()
@@ -471,8 +486,8 @@ class RegistrationTicketResource(ModelResource):
         ordering = ['id', ]
         filtering = { 
             "id": ALL,
-            "ticket_type": ALL,
-            "attendance_type": ALL,
+            "ticket_type": ALL_WITH_RELATIONS,
+            "attendance_type": ALL_WITH_RELATIONS,
             "registration": ALL_WITH_RELATIONS,
         }
 api.meeting.register(RegistrationTicketResource())

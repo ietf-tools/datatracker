@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2025, All Rights Reserved
+# Copyright The IETF Trust 2007-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -13,6 +13,7 @@ import pathlib
 import warnings
 from hashlib import sha384
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
+from django.http import UnreadablePostError
 
 # DeprecationWarnings are suppressed by default, enable them
 warnings.simplefilter("always", DeprecationWarning)
@@ -22,6 +23,7 @@ warnings.filterwarnings("ignore", "Log out via GET requests is deprecated")  # c
 warnings.filterwarnings("ignore", message="The django.utils.timezone.utc alias is deprecated.", module="oidc_provider")
 warnings.filterwarnings("ignore", message="The django.utils.datetime_safe module is deprecated.", module="tastypie")
 warnings.filterwarnings("ignore", message="The USE_DEPRECATED_PYTZ setting,")  # https://github.com/ietf-tools/datatracker/issues/5635
+warnings.filterwarnings("ignore", message="The is_dst argument to make_aware\\(\\)")  # caused by django-filters when USE_DEPRECATED_PYTZ is true 
 warnings.filterwarnings("ignore", message="The USE_L10N setting is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5648
 warnings.filterwarnings("ignore", message="django.contrib.auth.hashers.CryptPasswordHasher is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5663
 
@@ -225,158 +227,124 @@ BLOBSTORAGE_MAX_ATTEMPTS = 5  # boto3 default is 3 (for "standard" retry mode)
 BLOBSTORAGE_CONNECT_TIMEOUT = 10  # seconds; boto3 default is 60
 BLOBSTORAGE_READ_TIMEOUT = 10  # seconds; boto3 default is 60
 
+# Caching for agenda data in seconds
+AGENDA_CACHE_TIMEOUT_DEFAULT = 8 * 24 * 60 * 60  # 8 days
+AGENDA_CACHE_TIMEOUT_CURRENT_MEETING = 6 * 60  # 6 minutes
+
+
 WSGI_APPLICATION = "ietf.wsgi.application"
 
 AUTHENTICATION_BACKENDS = ( 'ietf.ietfauth.backends.CaseInsensitiveModelBackend', )
 
-FILE_UPLOAD_PERMISSIONS = 0o644          
+FILE_UPLOAD_PERMISSIONS = 0o644
 
-# ------------------------------------------------------------------------
-# Django/Python Logging Framework Modifications
+FIRST_V3_RFC = 8650
 
-# Filter out "Invalid HTTP_HOST" emails
-# Based on http://www.tiwoc.de/blog/2013/03/django-prevent-email-notification-on-suspiciousoperation/
-from django.core.exceptions import SuspiciousOperation
-def skip_suspicious_operations(record):
-    if record.exc_info:
-        exc_value = record.exc_info[1]
-        if isinstance(exc_value, SuspiciousOperation):
-            return False
-    return True
 
-# Filter out UreadablePostError:
-from django.http import UnreadablePostError
+#
+# Logging config
+#
+
+# Callback to filter out UnreadablePostError:
 def skip_unreadable_post(record):
     if record.exc_info:
-        exc_type, exc_value = record.exc_info[:2] # pylint: disable=unused-variable
+        exc_type, exc_value = record.exc_info[:2]  # pylint: disable=unused-variable
         if isinstance(exc_value, UnreadablePostError):
             return False
     return True
 
-# Copied from DEFAULT_LOGGING as of Django 1.10.5 on 22 Feb 2017, and modified
-# to incorporate html logging, invalid http_host filtering, and more.
-# Changes from the default has comments.
-
-# The Python logging flow is as follows:
-# (see https://docs.python.org/2.7/howto/logging.html#logging-flow)
-#
-#   Init: get a Logger: logger = logging.getLogger(name)
-#
-#   Logging call, e.g. logger.error(level, msg, *args, exc_info=(...), extra={...})
-#   --> Logger (discard if level too low for this logger)
-#       (create log record from level, msg, args, exc_info, extra)
-#       --> Filters (discard if any filter attach to logger rejects record)
-#           --> Handlers (discard if level too low for handler)
-#               --> Filters (discard if any filter attached to handler rejects record)
-#                   --> Formatter (format log record and emit)
-#
-
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    #
-    'loggers': {
-        'django': {
-            'handlers': ['console', 'mail_admins'],
-            'level': 'INFO',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "loggers": {
+        "celery": {
+            "handlers": ["console"],
+            "level": "INFO",
         },
-        'django.request': {
-            'handlers': ['console'],
-            'level': 'ERROR',
+        "datatracker": {
+            "handlers": ["console"],
+            "level": "INFO",
         },
-        'django.server': {
-            'handlers': ['django.server'],
-            'level': 'INFO',
+        "django": {
+            "handlers": ["console", "mail_admins"],
+            "level": "INFO",
         },
-        'django.security': {
-            'handlers': ['console', ],
-            'level': 'INFO',
+        "django.request": {"level": "ERROR"},  # only log 5xx, ignore 4xx
+        "django.security": {
+            # SuspiciousOperation errors - log to console only
+            "handlers": ["console"],
+            "propagate": False,  # no further handling please
         },
-        'oidc_provider': {
-            'handlers': ['console', ],
-            'level': 'DEBUG',
+        "django.server": {
+            # Only used by Django's runserver development server
+            "handlers": ["django.server"],
+            "level": "INFO",
         },
-        'datatracker': {
-            'handlers': ['console'],
-            'level': 'INFO',
-        },
-        'celery': {
-            'handlers': ['console'],
-            'level': 'INFO',
+        "oidc_provider": {
+            "handlers": ["console"],
+            "level": "DEBUG",
         },
     },
-    #
-    # No logger filters
-    #
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'plain',
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "plain",
         },
-        'debug_console': {
-            # Active only when DEBUG=True
-            'level': 'DEBUG',
-            'filters': ['require_debug_true'],
-            'class': 'logging.StreamHandler',
-            'formatter': 'plain',
+        "debug_console": {
+            "level": "DEBUG",
+            "filters": ["require_debug_true"],
+            "class": "logging.StreamHandler",
+            "formatter": "plain",
         },
-        'django.server': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'django.server',
+        "django.server": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "django.server",
         },
-        'mail_admins': {
-            'level': 'ERROR',
-            'filters': [
-                'require_debug_false',
-                'skip_suspicious_operations', # custom
-                'skip_unreadable_posts', # custom
+        "mail_admins": {
+            "level": "ERROR",
+            "filters": [
+                "require_debug_false",
+                "skip_unreadable_posts",
             ],
-            'class': 'django.utils.log.AdminEmailHandler',
-            'include_html': True,       # non-default
-        }
+            "class": "django.utils.log.AdminEmailHandler",
+            "include_html": True,
+        },
     },
-    #
     # All these are used by handlers
-    'filters': {
-        'require_debug_false': {
-            '()': 'django.utils.log.RequireDebugFalse',
+    "filters": {
+        "require_debug_false": {
+            "()": "django.utils.log.RequireDebugFalse",
         },
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
-        },
-        # custom filter, function defined above:
-        'skip_suspicious_operations': {
-            '()': 'django.utils.log.CallbackFilter',
-            'callback': skip_suspicious_operations,
+        "require_debug_true": {
+            "()": "django.utils.log.RequireDebugTrue",
         },
         # custom filter, function defined above:
-        'skip_unreadable_posts': {
-            '()': 'django.utils.log.CallbackFilter',
-            'callback': skip_unreadable_post,
+        "skip_unreadable_posts": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": skip_unreadable_post,
         },
     },
-    # And finally the formatters
-    'formatters': {
-        'django.server': {
-            '()': 'django.utils.log.ServerFormatter',
-            'format': '[%(server_time)s] %(message)s',
+    "formatters": {
+        "django.server": {
+            "()": "django.utils.log.ServerFormatter",
+            "format": "[%(server_time)s] %(message)s",
         },
-        'plain': {
-            'style': '{',
-            'format': '{levelname}: {name}:{lineno}: {message}',
+        "plain": {
+            "style": "{",
+            "format": "{levelname}: {name}:{lineno}: {message}",
         },
-        'json' : {
+        "json": {
             "class": "ietf.utils.jsonlogger.DatatrackerJsonFormatter",
             "style": "{",
-            "format": "{asctime}{levelname}{message}{name}{pathname}{lineno}{funcName}{process}",
-        }
+            "format": (
+                "{asctime}{levelname}{message}{name}{pathname}{lineno}{funcName}"
+                "{process}{status_code}"
+            ),
+        },
     },
 }
-
-# End logging
-# ------------------------------------------------------------------------
 
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
@@ -451,6 +419,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "ietf.middleware.is_authenticated_header_middleware",
     "django.middleware.http.ConditionalGetMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
     # comment in this to get logging of SQL insert and update statements:
@@ -461,7 +430,6 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "ietf.middleware.unicode_nfkc_normalization_middleware",
-    "ietf.middleware.is_authenticated_header_middleware",
 ]
 
 ROOT_URLCONF = 'ietf.urls'
@@ -500,6 +468,7 @@ INSTALLED_APPS = [
     'django_celery_results',
     'corsheaders',
     'django_markup',
+    'django_filters',
     'oidc_provider',
     'drf_spectacular',
     'drf_standardized_errors',
@@ -807,6 +776,7 @@ ARTIFACT_STORAGE_NAMES: list[str] = [
     "polls",
     "procmaterials",
     "review",
+    "rfc",
     "slides",
     "staging",
     "statchg",
@@ -831,6 +801,11 @@ MATERIALS_TYPES_SERVED_BY_WORKER = [
     "slides",
 ]
 
+# Other storages
+STORAGES["red_bucket"] = {
+    "BACKEND": "django.core.files.storage.InMemoryStorage",
+    "OPTIONS": {"location": "red_bucket"},
+}
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
@@ -918,16 +893,15 @@ IANA_SYNC_PASSWORD = "secret"
 IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"
 IANA_SYNC_PROTOCOLS_URL = "https://www.iana.org/protocols/"
 
-RFC_EDITOR_SYNC_PASSWORD="secret"
-RFC_EDITOR_SYNC_NOTIFICATION_URL = "https://www.rfc-editor.org/parser/parser.php"
 RFC_EDITOR_GROUP_NOTIFICATION_EMAIL = "webmaster@rfc-editor.org"
-#RFC_EDITOR_GROUP_NOTIFICATION_URL = "https://www.rfc-editor.org/notification/group.php"
 RFC_EDITOR_QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
 RFC_EDITOR_INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
 RFC_EDITOR_ERRATA_JSON_URL = "https://www.rfc-editor.org/errata.json"
-RFC_EDITOR_ERRATA_URL = "https://www.rfc-editor.org/errata_search.php?rfc={rfc_number}"
 RFC_EDITOR_INLINE_ERRATA_URL = "https://www.rfc-editor.org/rfc/inline-errata/rfc{rfc_number}.html"
+RFC_EDITOR_ERRATA_BASE_URL = "https://www.rfc-editor.org/errata/"
 RFC_EDITOR_INFO_BASE_URL = "https://www.rfc-editor.org/info/"
+RFC_EDITOR_QUEUE_SITE_BASE_URL = "https://queue.rfc-editor.org"
+
 
 # NomCom Tool settings
 ROLODEX_URL = ""
@@ -1285,7 +1259,10 @@ CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/change-oidc-provider-field-sizes-228.patch',
     'patch/fix-oidc-access-token-post.patch',
     'patch/fix-jwkest-jwt-logging.patch',
-    'patch/django-cookie-delete-with-all-settings.patch',
+    # Patch includes old cookie-delete-with-all-settings and a backport of the fix
+    # to CVE-2026-35192 from Django 5.2. The patches conflict, so cannot be applied
+    # separately.
+    'patch/django-cookie-delete-settings-and-CVE-2026-35192.patch',
     'patch/tastypie-django22-fielderror-response.patch',
 ]
 if DEBUG:
@@ -1295,7 +1272,7 @@ if DEBUG:
     except ImportError:
         pass
 
-STATS_NAMES_LIMIT = 25
+STATS_TIMELINE_CACHE_TIMEOUT = 86400
 
 UTILS_MEETING_CONFERENCE_DOMAINS = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', 'gather.town', ]
 UTILS_TEST_RANDOM_STATE_FILE = '.factoryboy_random_state'
@@ -1361,6 +1338,11 @@ MEETECHO_VIDEO_STREAM_URL = "https://meetings.conf.meetecho.com/ietf{session.mee
 MEETECHO_AUDIO_STREAM_URL = "https://mp3.conf.meetecho.com/ietf{session.meeting.number}/{session.pk}.m3u"
 MEETECHO_SESSION_RECORDING_URL = "https://meetecho-player.ietf.org/playout/?session={session_label}"
 
+# Errata system api configuration
+# settings should provide
+# ERRATA_METADATA_NOTIFICATION_URL
+# ERRATA_METADATA_NOTIFICATION_API_KEY
+
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from ietf.settings_local import *            # pyflakes:ignore pylint: disable=wildcard-import
@@ -1390,6 +1372,16 @@ if "CACHES" not in locals():
                 "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
                 "VERSION": __version__,
                 "KEY_PREFIX": "ietf:dt",
+                # Key function is default except with sha384-encoded key
+                "KEY_FUNCTION": lambda key, key_prefix, version: (
+                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+                ),
+            },
+            "agenda": {
+                "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+                # No release-specific VERSION setting.
+                "KEY_PREFIX": "ietf:dt:agenda",
                 # Key function is default except with sha384-encoded key
                 "KEY_FUNCTION": lambda key, key_prefix, version: (
                     f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
@@ -1447,6 +1439,17 @@ if "CACHES" not in locals():
                 #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
                 "VERSION": __version__,
                 "KEY_PREFIX": "ietf:dt",
+            },
+            "agenda": {
+                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+                # "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+                # "LOCATION": "127.0.0.1:11211",
+                # No release-specific VERSION setting.
+                "KEY_PREFIX": "ietf:dt:agenda",
+                # Key function is default except with sha384-encoded key
+                "KEY_FUNCTION": lambda key, key_prefix, version: (
+                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+                ),
             },
             "proceedings": {
                 "BACKEND": "django.core.cache.backends.dummy.DummyCache",
@@ -1514,11 +1517,17 @@ if SERVER_MODE != 'production':
         NOMCOM_APP_SECRET = b'\x9b\xdas1\xec\xd5\xa0SI~\xcb\xd4\xf5t\x99\xc4i\xd7\x9f\x0b\xa9\xe8\xfeY\x80$\x1e\x12tN:\x84'
 
     ALLOWED_HOSTS = ['*',]
-    
+
     try:
         # see https://github.com/omarish/django-cprofile-middleware
-        import django_cprofile_middleware # pyflakes:ignore
-        MIDDLEWARE = MIDDLEWARE + ['django_cprofile_middleware.middleware.ProfilerMiddleware', ]
+        import django_cprofile_middleware  # pyflakes:ignore
+
+        MIDDLEWARE = MIDDLEWARE + [
+            "django_cprofile_middleware.middleware.ProfilerMiddleware",
+        ]
+        DJANGO_CPROFILE_MIDDLEWARE_REQUIRE_STAFF = (
+            False  # Do not use this setting for a public site!
+        )
     except ImportError:
         pass
 
@@ -1531,3 +1540,5 @@ if SERVER_MODE != 'production':
 
 
 YOUTUBE_DOMAINS = ['www.youtube.com', 'youtube.com', 'youtu.be', 'm.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com']
+
+IETF_DOI_PREFIX = "10.17487"

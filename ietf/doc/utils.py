@@ -4,6 +4,7 @@
 
 import datetime
 import io
+import json
 import math
 import os
 import re
@@ -13,7 +14,7 @@ from collections import defaultdict, namedtuple, Counter
 from dataclasses import dataclass
 from hashlib import sha384
 from pathlib import Path
-from typing import Iterator, Optional, Union
+from typing import Iterator, Optional, Union, Iterable
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -33,10 +34,20 @@ import debug                            # pyflakes:ignore
 from ietf.community.models import CommunityList
 from ietf.community.utils import docs_tracked_by_community_list
 
-from ietf.doc.models import Document, DocHistory, State, DocumentAuthor, DocHistoryAuthor
+from ietf.doc.models import (
+    DocHistory,
+    DocHistoryAuthor,
+    Document,
+    DocumentAuthor,
+    EditedRfcAuthorsDocEvent,
+    RfcAuthor,
+    State,
+    StoredObject,
+)
 from ietf.doc.models import RelatedDocument, RelatedDocHistory, BallotType, DocReminder
 from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBallotDocEvent, NewRevisionDocEvent, StateDocEvent
 from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthorsDocEvent, BallotPositionDocEvent
+from ietf.doc.storage_utils import force_replication
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role, Group, GroupFeatures
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author, is_bofreq_editor
@@ -534,7 +545,7 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
             doc.action_holders.clear()
         if tags.removed("need-rev"):
             # Removed the 'need-rev' tag - drop authors from the action holders list
-            DocumentActionHolder.objects.filter(document=doc, person__in=doc.authors()).delete()
+            DocumentActionHolder.objects.filter(document=doc, person__in=doc.author_persons()).delete()
         elif tags.added("need-rev"):
             # Remove the AD if we're asking for a new revision
             DocumentActionHolder.objects.filter(document=doc, person=doc.ad).delete()
@@ -549,7 +560,7 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
                 doc.action_holders.add(doc.ad)
         # Authors get the action if a revision is needed
         if tags.added("need-rev"):
-            for auth in doc.authors():
+            for auth in doc.author_persons():
                 doc.action_holders.add(auth)
 
         # Now create an event if we changed the set
@@ -559,6 +570,40 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
             prev_set,
             reason='IESG state changed',
         )
+
+
+def _change_field_and_describe(
+    author: DocumentAuthor | RfcAuthor,
+    field: str,
+    newval,
+    field_display_name: str | None = None,
+):
+    # make the change
+    oldval = getattr(author, field)
+    setattr(author, field, newval)
+
+    was_empty = oldval is None or len(str(oldval)) == 0
+    now_empty = newval is None or len(str(newval)) == 0
+
+    # describe the change
+    if oldval == newval:
+        return None
+    else:
+        if field_display_name is None:
+            field_display_name = field
+
+        if was_empty and not now_empty:
+            return 'set {field} to "{new}"'.format(
+                field=field_display_name, new=newval
+            )
+        elif now_empty and not was_empty:
+            return 'cleared {field} (was "{old}")'.format(
+                field=field_display_name, old=oldval
+            )
+        else:
+            return 'changed {field} from "{old}" to "{new}"'.format(
+                field=field_display_name, old=oldval, new=newval
+            )
 
 
 def update_documentauthors(doc, new_docauthors, by=None, basis=None):
@@ -573,27 +618,6 @@ def update_documentauthors(doc, new_docauthors, by=None, basis=None):
     used. These objects will not be saved, their attributes will be used to create new
     DocumentAuthor instances. (The document and order fields will be ignored.)
     """
-    def _change_field_and_describe(auth, field, newval):
-        # make the change
-        oldval = getattr(auth, field)
-        setattr(auth, field, newval)
-        
-        was_empty = oldval is None or len(str(oldval)) == 0
-        now_empty = newval is None or len(str(newval)) == 0
-        
-        # describe the change
-        if oldval == newval:
-            return None
-        else:
-            if was_empty and not now_empty:
-                return 'set {field} to "{new}"'.format(field=field, new=newval)
-            elif now_empty and not was_empty:
-                return 'cleared {field} (was "{old}")'.format(field=field, old=oldval)
-            else:
-                return 'changed {field} from "{old}" to "{new}"'.format(
-                    field=field, old=oldval, new=newval
-                )
-
     persons = []
     changes = []  # list of change descriptions
 
@@ -636,6 +660,123 @@ def update_documentauthors(doc, new_docauthors, by=None, basis=None):
             type='edited_authors', by=by, doc=doc, rev=doc.rev, desc=change, basis=basis
         ) for change in changes
     ] 
+
+
+def update_rfcauthors(
+    rfc: Document, new_rfcauthors: Iterable[RfcAuthor], by: Person | None = None
+) -> Iterable[EditedRfcAuthorsDocEvent]:
+    def _find_matching_author(
+        author_to_match: RfcAuthor, existing_authors: Iterable[RfcAuthor]
+    ) -> RfcAuthor | None:
+        """Helper to find a matching existing author"""
+        if author_to_match.person_id is not None:
+            for candidate in existing_authors:
+                if candidate.person_id == author_to_match.person_id:
+                    return candidate
+            return None  # no match
+        # author does not have a person, match on titlepage name
+        for candidate in existing_authors:
+            if candidate.titlepage_name == author_to_match.titlepage_name:
+                return candidate
+        return None  # no match
+
+    def _rfcauthor_from_documentauthor(docauthor: DocumentAuthor) -> RfcAuthor:
+        """Helper to create an equivalent RfcAuthor from a DocumentAuthor"""
+        return RfcAuthor(
+            document_id=docauthor.document_id,
+            titlepage_name=docauthor.person.plain_name(),  # closest thing we have
+            is_editor=False,
+            person_id=docauthor.person_id,
+            affiliation=docauthor.affiliation,
+            country=docauthor.country,
+            order=docauthor.order,
+        )
+
+    # Is this the first time this document is getting an RfcAuthor? If so, the
+    # updates will need to account for the model change.
+    converting_from_docauthors = not rfc.rfcauthor_set.exists()
+    
+    if converting_from_docauthors:
+        original_authors = [
+            _rfcauthor_from_documentauthor(da) for da in rfc.documentauthor_set.all()
+        ]
+    else:
+        original_authors = list(rfc.rfcauthor_set.all())
+
+    authors_to_commit = []
+    changes = []
+    for order, new_author in enumerate(new_rfcauthors):
+        matching_author = _find_matching_author(new_author, original_authors)
+        if matching_author is not None:
+            # Update existing matching author using new_author data
+            authors_to_commit.append(matching_author)
+            original_authors.remove(matching_author)  # avoid reuse
+            # Describe changes to this author
+            author_changes = []
+            # Update fields other than order
+            for field in ["titlepage_name", "is_editor", "affiliation", "country"]:
+                author_changes.append(
+                    _change_field_and_describe(
+                        matching_author,
+                        field,
+                        getattr(new_author, field),
+                        # List titlepage_name as "name" in logs
+                        "name" if field == "titlepage_name" else field,
+                    )
+                )
+            # Update order
+            author_changes.append(
+                _change_field_and_describe(matching_author, "order", order + 1)
+            )
+            matching_author.save()
+            author_change_summary = ", ".join(
+                [ch for ch in author_changes if ch is not None]
+            )
+            if len(author_change_summary) > 0:
+                changes.append(
+                    'Changed author "{name}": {summary}'.format(
+                        name=matching_author.titlepage_name,
+                        summary=author_change_summary,
+                    )
+                )
+        else:
+            # No author matched, so update the new_author and use that
+            new_author.document = rfc
+            new_author.order = order + 1
+            new_author.save()
+            if new_author.person_id is not None:
+                person_desc = f"Person {new_author.person_id}"
+            else:
+                person_desc = "no Person linked"
+            changes.append(
+                f'Added "{new_author.titlepage_name}" ({person_desc}) as author'
+            )
+    # Any authors left in original_authors are no longer in the list, so remove them
+    for removed_author in original_authors:
+        # Skip actual removal of old authors if we are converting from the
+        # DocumentAuthor models - the original_authors were just stand-ins anyway.
+        if not converting_from_docauthors:
+            removed_author.delete()
+        if removed_author.person_id is not None:
+            person_desc = f"Person {removed_author.person_id}"
+        else:
+            person_desc = "no Person linked"
+        changes.append(
+            f'Removed "{removed_author.titlepage_name}" ({person_desc}) as author'
+        )
+    # Create DocEvents, but leave it up to caller to save
+    if by is None:
+        by = Person.objects.get(name="(System)")
+    return [
+        EditedRfcAuthorsDocEvent(
+            type="edited_authors",
+            by=by,
+            doc=rfc,
+            desc=change,
+        )
+        for change in changes
+    ]
+
 
 def update_reminder(doc, reminder_type_slug, event, due_date):
     reminder_type = DocReminderTypeName.objects.get(slug=reminder_type_slug)
@@ -816,50 +957,93 @@ def rebuild_reference_relations(doc, filenames):
 
     filenames should be a dict mapping file ext (i.e., type) to the full path of each file.
     """
-    if doc.type.slug != 'draft':
+    if doc.type.slug not in ["draft", "rfc"]:
+        log.log(f"rebuild_reference_relations called for non draft/rfc doc {doc.name}")
         return None
 
-    # try XML first
-    if 'xml' in filenames:
-        refs = XMLDraft(filenames['xml']).get_refs()
-    elif 'txt' in filenames:
-        filename = filenames['txt']
-        try:
-            refs = draft.PlaintextDraft.from_file(filename).get_refs()
-        except IOError as e:
-            return { 'errors': ["%s :%s" %  (e.strerror, filename)] }
-    else:
-        return {'errors': ['No Internet-Draft text available for rebuilding reference relations. Need XML or plaintext.']}
 
-    doc.relateddocument_set.filter(relationship__slug__in=['refnorm','refinfo','refold','refunk']).delete()
+    if "xml" not in filenames and "txt" not in filenames:
+        log.log(f"rebuild_reference_relations error: no file available for {doc.name}")
+        return {
+            "errors": [
+                "No file available for rebuilding reference relations. Need XML or plaintext."
+            ]
+        }
+    else:
+        try:
+            # try XML first
+            if "xml" in filenames:
+                refs = XMLDraft(filenames["xml"]).get_refs()
+            elif "txt" in filenames:
+                filename = filenames["txt"]
+                refs = draft.PlaintextDraft.from_file(filename).get_refs()
+        except (IOError, UnicodeDecodeError) as e:
+                log.log(f"rebuild_reference_relations error: On {doc.name}: {e}")
+                return {"errors": [f"{e}: {filename}"]}
+
+    before = set(doc.relateddocument_set.filter(
+        relationship__slug__in=["refnorm", "refinfo", "refold", "refunk"]
+    ).values_list("relationship__slug","target__name"))
 
     warnings = []
     errors = []
     unfound = set()
-    for ( ref, refType ) in refs.items():
-        refdoc = Document.objects.filter(name=ref)
-        if not refdoc and re.match(r"^draft-.*-\d{2}$", ref):
-            refdoc = Document.objects.filter(name=ref[:-3])
+    intended = set()
+    names = [ref for ref in refs]
+    names.extend([ref[:-3] for ref in refs if re.match(r"^draft-.*-\d{2}$", ref)])
+    queryset = Document.objects.filter(name__in=names)
+    for ref, refType in refs.items():
+        refdoc = queryset.filter(name=ref)
+        if not refdoc.exists() and re.match(r"^draft-.*-\d{2}$", ref):
+            refdoc = queryset.filter(name=ref[:-3])
         count = refdoc.count()
         if count == 0:
-            unfound.add( "%s" % ref )
+            unfound.add("%s" % ref)
             continue
         elif count > 1:
-            errors.append("Too many Document objects found for %s"%ref)
+            log.unreachable("2026-3-16") # This branch is holdover from DocAlias
+            errors.append("Too many Document objects found for %s" % ref)
         else:
             # Don't add references to ourself
             if doc != refdoc[0]:
-                RelatedDocument.objects.get_or_create( source=doc, target=refdoc[ 0 ], relationship=DocRelationshipName.objects.get( slug='ref%s' % refType ) )
+                intended.add((f"ref{refType}", refdoc[0].name))
+
     if unfound:
-        warnings.append('There were %d references with no matching Document'%len(unfound))
+        warnings.append(
+            "There were %d references with no matching Document" % len(unfound)
+        )
+
+    if intended != before:
+        for slug, name in before-intended:
+            doc.relateddocument_set.filter(target__name=name, relationship_id=slug).delete()
+        for slug, name in intended-before:
+            doc.relateddocument_set.create(
+                target=queryset.get(name=name),
+                relationship_id=slug
+            )
+        after = set(doc.relateddocument_set.filter(
+            relationship__slug__in=["refnorm", "refinfo", "refold", "refunk"]
+        ).values_list("relationship__slug","target__name"))
+        if after != intended:
+            errors.append("Attempted changed didn't achieve intended results")
+        changed_references = True
+    else:
+        changed_references = False
 
     ret = {}
     if errors:
-        ret['errors']=errors
+        ret["errors"] = errors
     if warnings:
-        ret['warnings']=warnings
+        ret["warnings"] = warnings
     if unfound:
-        ret['unfound']=list(unfound)
+        ret["unfound"] = list(unfound)
+
+    logmsg = f"rebuild_reference_relations for {doc.name}: "
+    logmsg += "changed references" if changed_references else "references unchanged"
+    if ret:
+        logmsg += f" {json.dumps(ret)}"
+
+    log.log(logmsg)
 
     return ret
 
@@ -1089,9 +1273,6 @@ def build_file_urls(doc: Union[Document, DocHistory]):
                 continue
             label = "plain text" if t == "txt" else t
             file_urls.append((label, base + doc.name + "." + t))
-
-        if "pdf" not in found_types and "txt" in found_types:
-            file_urls.append(("pdf", base + "pdfrfc/" + doc.name + ".txt.pdf"))
 
         if "txt" in found_types:
             file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name))))
@@ -1532,3 +1713,23 @@ def update_or_create_draft_bibxml_file(doc, rev):
 
 def ensure_draft_bibxml_path_exists():
     (Path(settings.BIBXML_BASE_PATH) / "bibxml-ids").mkdir(exist_ok=True)
+
+
+def replicate_stored_objects_for_document(doc: Document) -> int:
+    """Sync all StoredObjects associated with doc to the replica blob store
+    
+    Returns count of StoredObjects queued for replication (which may or may not
+    be replicated, depending on whether replication is enabled / the storages are
+    actually BlobdbStorage instances, etc).
+    """
+    # n.b., StoredObjects have a nullable doc_rev field, but Documents do not.
+    # Until / unless we straighten that out, treat "" and None equivalently when
+    # matching rev.
+    qs_matching_rev = StoredObject.objects.filter(doc_rev=doc.rev)
+    if doc.rev == "":
+        qs_matching_rev |= StoredObject.objects.filter(doc_rev__isnull=True)
+    count = 0
+    for stored_object in qs_matching_rev.filter(doc_name=doc.name):
+        force_replication(kind=stored_object.store, name=stored_object.name)
+        count += 1
+    return count

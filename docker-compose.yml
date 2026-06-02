@@ -13,9 +13,10 @@ services:
         # network_mode: service:db
 
         depends_on:
+            - blobdb
+            - blobstore
             - db
             - mq
-            - blobstore
 
         ipc: host
 
@@ -79,7 +80,10 @@ services:
         command:
             - '--loglevel=INFO'
         depends_on:
+            - blobdb
+            - blobstore
             - db
+            - mq
         restart: unless-stopped
         stop_grace_period: 1m
         volumes:
@@ -102,7 +106,10 @@ services:
             - '--concurrency=1'
                  
         depends_on:
+            - blobdb
+            - blobstore
             - db
+            - mq
         restart: unless-stopped
         stop_grace_period: 1m
         volumes:
@@ -125,11 +132,23 @@ services:
         volumes:
             - blobdb-data:/var/lib/postgresql/data
 
+#    typesense:
+#        image: typesense/typesense:30.1
+#        restart: on-failure
+#        ports:
+#            - "8108:8108"
+#        volumes:
+#            - ./typesense-data:/data
+#        command:
+#            - '--data-dir=/data'
+#            - '--api-key=typesense-api-key'
+#            - '--enable-cors'
+
 #  Celery Beat is a periodic task runner. It is not normally needed for development,
 #  but can be enabled by uncommenting the following.
 #
 #    beat:
-#        image: ghcr.io/ietf-tools/datatracker-celery:latest
+#        image: "${COMPOSE_PROJECT_NAME}-celery"
 #        init: true
 #        environment:
 #            CELERY_APP: ietf

@@ -2,20 +2,15 @@
 # -*- coding: utf-8 -*-
 
 
-import base64
 import datetime
 import re
-import requests
 
 from typing import Iterator, Optional, Union
-from urllib.parse import urlencode
 from xml.dom import pulldom, Node
 
-from django.conf import settings
 from django.db import transaction
 from django.db.models import Subquery, OuterRef, F, Q
 from django.utils import timezone
-from django.utils.encoding import smart_bytes, force_str
 
 import debug                            # pyflakes:ignore
 
@@ -468,14 +463,18 @@ def update_docs_from_rfc_index(
             doc.set_state(rfc_published_state)
             if draft:
                 doc.formal_languages.set(draft.formal_languages.all())
-                for author in draft.documentauthor_set.all():
+                # Create authors based on the last draft in the datatracker. This
+                # path will go away when we publish via the modernized RPC workflow
+                # but until then, these are the only data we have for authors that
+                # are easily connected to Person records.
+                for documentauthor in draft.documentauthor_set.all():
                     # Copy the author but point at the new doc.
                     # See https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
-                    author.pk = None
-                    author.id = None
-                    author._state.adding = True
-                    author.document = doc
-                    author.save()
+                    documentauthor.pk = None
+                    documentauthor.id = None
+                    documentauthor._state.adding = True
+                    documentauthor.document = doc
+                    documentauthor.save()
 
         if draft:
             draft_events = []
@@ -632,43 +631,70 @@ def update_docs_from_rfc_index(
             )
             rfc_published = True
 
-        def parse_relation_list(l):
-            res = []
-            for x in l:
-                for a in Document.objects.filter(name=x.lower(), type_id="rfc"):
-                    if a not in res:
-                        res.append(a)
-            return res
+        def parse_relation_list(rel_list: list[str]) -> list[Document]:
+            return list(
+                Document.objects.filter(
+                    name__in=[name.strip().lower() for name in rel_list],
+                    type_id="rfc"
+                )
+            )
 
-        for x in parse_relation_list(obsoletes):
-            if not RelatedDocument.objects.filter(
-                source=doc, target=x, relationship=relationship_obsoletes
+        # Create missing obsoletes relations
+        docs_this_obsoletes = parse_relation_list(obsoletes)
+        for obs_doc in docs_this_obsoletes:
+            if not doc.relateddocument_set.filter(
+                target=obs_doc, relationship=relationship_obsoletes
             ):
-                r = RelatedDocument.objects.create(
-                    source=doc, target=x, relationship=relationship_obsoletes
+                r = doc.relateddocument_set.create(
+                    target=obs_doc, relationship=relationship_obsoletes
                 )
                 rfc_changes.append(
-                    "created {rel_name} relation between {src_name} and {tgt_name}".format(
+                    "created {rel_name} relation between {src} and {tgt}".format(
                         rel_name=r.relationship.name.lower(),
-                        src_name=prettify_std_name(r.source.name),
-                        tgt_name=prettify_std_name(r.target.name),
+                        src=prettify_std_name(r.source.name),
+                        tgt=prettify_std_name(r.target.name),
                     )
                 )
+        # Remove stale obsoletes relations
+        for r in doc.relateddocument_set.filter(
+            relationship=relationship_obsoletes
+        ).exclude(target_id__in=[d.pk for d in docs_this_obsoletes]):
+            r.delete()
+            rfc_changes.append(
+                "removed {rel_name} relation between {src} and {tgt}".format(
+                    rel_name=r.relationship.name.lower(),
+                    src=prettify_std_name(r.source.name),
+                    tgt=prettify_std_name(r.target.name),
+                )
+            )
 
-        for x in parse_relation_list(updates):
+        docs_this_updates = parse_relation_list(updates)
+        for upd_doc in docs_this_updates:
             if not RelatedDocument.objects.filter(
-                source=doc, target=x, relationship=relationship_updates
+                source=doc, target=upd_doc, relationship=relationship_updates
             ):
-                r = RelatedDocument.objects.create(
-                    source=doc, target=x, relationship=relationship_updates
+                r = doc.relateddocument_set.create(
+                    target=upd_doc, relationship=relationship_updates
                 )
                 rfc_changes.append(
-                    "created {rel_name} relation between {src_name} and {tgt_name}".format(
+                    "created {rel_name} relation between {src} and {tgt}".format(
                         rel_name=r.relationship.name.lower(),
-                        src_name=prettify_std_name(r.source.name),
-                        tgt_name=prettify_std_name(r.target.name),
+                        src=prettify_std_name(r.source.name),
+                        tgt=prettify_std_name(r.target.name),
                     )
                 )
+        # Remove stale updates relations
+        for r in doc.relateddocument_set.filter(
+            relationship=relationship_updates
+        ).exclude(target_id__in=[d.pk for d in docs_this_updates]):
+            r.delete()
+            rfc_changes.append(
+                "removed {rel_name} relation between {src} and {tgt}".format(
+                    rel_name=r.relationship.name.lower(),
+                    src=prettify_std_name(r.source.name),
+                    tgt=prettify_std_name(r.target.name),
+                )
+            )
 
         if also:
             # recondition also to have proper subseries document names:
@@ -816,50 +842,4 @@ def update_docs_from_rfc_index(
         ).update(document=F("subseries_target"))
 
 
-def post_approved_draft(url, name):
-    """Post an approved draft to the RFC Editor so they can retrieve
-    the data from the Datatracker and start processing it. Returns
-    response and error (empty string if no error)."""
 
-    if settings.SERVER_MODE != "production":
-        log(f"In production, would have posted RFC-Editor notification of approved I-D '{name}' to '{url}'")
-        return "", ""
-
-    # HTTP basic auth
-    username = "dtracksync"
-    password = settings.RFC_EDITOR_SYNC_PASSWORD
-    headers = {
-            "Content-type": "application/x-www-form-urlencoded",
-            "Accept": "text/plain",
-            "Authorization": "Basic %s" % force_str(base64.encodebytes(smart_bytes("%s:%s" % (username, password)))).replace("\n", ""),
-        }
-
-    log("Posting RFC-Editor notification of approved Internet-Draft '%s' to '%s'" % (name, url))
-    text = error = ""
-
-    try:
-        r = requests.post(
-            url,
-            headers=headers,
-            data=smart_bytes(urlencode({ 'draft': name })),
-            timeout=settings.DEFAULT_REQUESTS_TIMEOUT,
-        )
-
-        log("RFC-Editor notification result for Internet-Draft '%s': %s:'%s'" % (name, r.status_code, r.text))
-
-        if r.status_code != 200:
-            raise RuntimeError("Status code is not 200 OK (it's %s)." % r.status_code)
-
-        if force_str(r.text) != "OK":
-            raise RuntimeError('Response is not "OK" (it\'s "%s").' % r.text)
-
-    except Exception as e:
-        # catch everything so we don't leak exceptions, convert them
-        # into string instead
-        msg = "Exception on RFC-Editor notification for Internet-Draft '%s': %s: %s" % (name, type(e), str(e))
-        log(msg)
-        if settings.SERVER_MODE == 'test':
-            debug.say(msg)
-        error = str(e)
-
-    return text, error

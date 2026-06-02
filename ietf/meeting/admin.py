@@ -10,6 +10,7 @@ from ietf.meeting.models import (Attended, Meeting, Room, Session, TimeSlot, Con
     SessionPresentation, ImportantDate, SlideSubmission, SchedulingEvent, BusinessConstraint,
     ProceedingsMaterial, MeetingHost, Registration, RegistrationTicket,
     AttendanceTypeName)
+from ietf.utils.admin import SaferTabularInline
 
 
 class UrlResourceAdmin(admin.ModelAdmin):
@@ -18,7 +19,7 @@ class UrlResourceAdmin(admin.ModelAdmin):
     raw_id_fields = ['room', ]
 admin.site.register(UrlResource, UrlResourceAdmin)
 
-class UrlResourceInline(admin.TabularInline):
+class UrlResourceInline(SaferTabularInline):
     model = UrlResource
 
 class RoomAdmin(admin.ModelAdmin):
@@ -28,7 +29,7 @@ class RoomAdmin(admin.ModelAdmin):
 
 admin.site.register(Room, RoomAdmin)
 
-class RoomInline(admin.TabularInline):
+class RoomInline(SaferTabularInline):
     model = Room
 
 class MeetingAdmin(admin.ModelAdmin):
@@ -93,7 +94,7 @@ class ConstraintAdmin(admin.ModelAdmin):
 
 admin.site.register(Constraint, ConstraintAdmin)
 
-class SchedulingEventInline(admin.TabularInline):
+class SchedulingEventInline(SaferTabularInline):
     model = SchedulingEvent
     raw_id_fields = ["by"]
 
@@ -244,7 +245,7 @@ class AttendanceFilter(admin.SimpleListFilter):
             return queryset.filter(tickets__attendance_type__slug=self.value()).distinct()
         return queryset
 
-class RegistrationTicketInline(admin.TabularInline):
+class RegistrationTicketInline(SaferTabularInline):
     model = RegistrationTicket
 
 class RegistrationAdmin(admin.ModelAdmin):

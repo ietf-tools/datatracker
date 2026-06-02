@@ -70,7 +70,7 @@ from django.template import TemplateDoesNotExist
 from django.template.loaders.filesystem import Loader as BaseLoader
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
-from django.urls import URLResolver # type: ignore
+from django.urls import URLResolver, resolve, Resolver404  # type: ignore
 from django.template.backends.django import DjangoTemplates
 from django.template.backends.django import Template  # type: ignore[attr-defined]
 from django.utils import timezone
@@ -86,6 +86,30 @@ from ietf.utils.aiosmtpd import SMTPTestServerDriver
 from ietf.utils.test_utils import TestCase
 
 from mypy_boto3_s3.service_resource import Bucket
+
+
+class UrlCoverageWarning(UserWarning):
+    """Warning category for URL coverage-related warnings"""
+    # URLs for which we don't expect patterns to match
+    IGNORE_URLS = (
+        "/_doesnotexist/",
+        "/sitemap.xml.",
+    )
+
+
+class UninterestingPatternWarning(UrlCoverageWarning):
+    """Warning category for unexpected URL match patterns
+    
+    These are common, caused by tests that hit a URL that is not selected for
+    coverage checking. The warning is in place to help with a putative future 
+    review of whether we're selecting the right patterns to check for coverage. 
+    """
+    pass
+
+
+# Configure warnings for reasonable output quantity
+warnings.simplefilter("once", UrlCoverageWarning)
+warnings.simplefilter("ignore", UninterestingPatternWarning)
 
 
 loaded_templates: set[str] = set()
@@ -550,21 +574,38 @@ class CoverageTest(unittest.TestCase):
                         )
                         or pattern.callback == django.views.static.serve)
 
-            patterns = [(regex, re.compile(regex, re.U), obj) for regex, obj in url_patterns
-                        if not ignore_pattern(regex, obj)]
+            patterns ={
+                regex: obj
+                for regex, obj in url_patterns
+                if not ignore_pattern(regex, obj)
+            }
 
             covered = set()
             for url in visited_urls:
-                for regex, compiled, obj in patterns:
-                    if regex not in covered and compiled.match(url[1:]): # strip leading /
-                        covered.add(regex)
-                        break
+                try:
+                    resolved = resolve(url)  # let Django resolve the URL for us
+                except Resolver404:
+                    if url not in UrlCoverageWarning.IGNORE_URLS:
+                        warnings.warn(
+                            f"Unable to resolve visited URL {url}", UrlCoverageWarning
+                        )
+                    continue
+                if resolved.route not in patterns:
+                    warnings.warn(
+                        f"WARNING: url resolved to an unexpected pattern (url='{url}', "
+                        f"resolved to r'{resolved.route}'",
+                        UninterestingPatternWarning,
+                    )
+                    continue
+                covered.add(resolved.route)
 
             self.runner.coverage_data["url"] = {
-                "coverage": 1.0*len(covered)/len(patterns),
-                "covered": dict( (k, (o.lookup_str, k in covered)) for k,p,o in patterns ),
+                "coverage": 1.0 * len(covered) / len(patterns),
+                "covered": dict(
+                    (k, (o.lookup_str, k in covered)) for k, o in patterns.items()
+                ),
                 "format": 4,
-                }
+            }
 
             self.report_test_result("url")
         else:

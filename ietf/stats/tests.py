@@ -1,16 +1,19 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
-
+# Copyright The IETF Trust 2016-2026, All Rights Reserved
 
 import calendar
 import json
+import datetime
 
+from django.http import Http404
 from pyquery import PyQuery
 
 import debug    # pyflakes:ignore
 
+from django.test import RequestFactory
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 
+from ietf.meeting.models import Meeting
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 import ietf.stats.views
 
@@ -18,25 +21,96 @@ import ietf.stats.views
 from ietf.group.factories import RoleFactory
 from ietf.person.factories import PersonFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
+from ietf.meeting.tests_models import MeetingFactory, RegistrationFactory
 from ietf.utils.timezone import date_today
 
 
 class StatisticsTests(TestCase):
     def test_stats_index(self):
+        # Create a meeting as the index page needs to know the current meeting
+        MeetingFactory(type_id='ietf', number='124', date=timezone.now())
         url = urlreverse(ietf.stats.views.stats_index)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
     def test_document_stats(self):
-        r = self.client.get(urlreverse("ietf.stats.views.document_stats"))
-        self.assertRedirects(r, urlreverse("ietf.stats.views.stats_index"))
-
+        # Create a meeting as the index page needs to know the current meeting
+        MeetingFactory(type_id='ietf', number='124', date=timezone.now())
+        r = self.client.get(urlreverse(ietf.stats.views.document_stats))
+        self.assertRedirects(r, urlreverse(ietf.stats.views.stats_index))
 
     def test_meeting_stats(self):
-        r = self.client.get(urlreverse("ietf.stats.views.meeting_stats"))
-        self.assertRedirects(r, urlreverse("ietf.stats.views.stats_index"))
+        meeting124 = MeetingFactory(type_id='ietf', number='124', date=timezone.now())
+        meeting125 = MeetingFactory(type_id='ietf', number='125', date=timezone.now() + datetime.timedelta(days=120))
+        RegistrationFactory.create_batch(15, meeting=meeting124, with_ticket={'attendance_type_id': 'onsite'}, attended=True)
+        RegistrationFactory(meeting=meeting124, with_ticket={'attendance_type_id': 'onsite'}, attended=False)
+        RegistrationFactory.create_batch(14, meeting=meeting124, with_ticket={'attendance_type_id': 'remote'}, attended=True)
+        RegistrationFactory(meeting=meeting124, with_ticket={'attendance_type_id': 'remote'}, attended=False)
+        RegistrationFactory.create_batch(15, meeting=meeting125, affiliation='Test LLC', with_ticket={'attendance_type_id': 'remote'}, attended=False)
+        RegistrationFactory.create_batch(25, meeting=meeting125, affiliation='Example, Ltd', with_ticket={'attendance_type_id': 'onsite'}, attended=False)
+        # Test the meeting specific statitistics per affiliation and per country
+        r = self.client.get(urlreverse(ietf.stats.views.meeting_stats, kwargs={"meeting_number": "124", "stats_type": "affiliation"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Total Registrations by Affiliation (31 in total)")
+        self.assertContains(r, "In Person Registrations by Affiliation (16 in total)")
+        self.assertContains(r, "/stats/meeting/124/affiliation")
+        self.assertContains(r, "/stats/meeting/125/affiliation")
+        r = self.client.get(urlreverse(ietf.stats.views.meeting_stats, kwargs={"meeting_number": "124", "stats_type": "country"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Total Registrations by Country (31 in total)")
+        self.assertContains(r, "In Person Registrations by Country (16 in total)")
+        self.assertContains(r, "/stats/meeting/124/country")
+        self.assertContains(r, "/stats/meeting/125/country")
+        # Test the meetings timeline per country
+        r = self.client.get(urlreverse(ietf.stats.views.meetings_timeline, kwargs={"stats_type": "country"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "/stats/meeting/124/country")
+        self.assertContains(r, "/stats/meeting/125/country")
+        self.assertContains(r, "This page provides a timeline of meeting registrations by country")
+        # Test the meetings timeline per affiliation
+        r = self.client.get(urlreverse(ietf.stats.views.meetings_timeline, kwargs={"stats_type": "affiliation"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "/stats/meeting/124/affiliation")
+        self.assertContains(r, "/stats/meeting/125/affiliation")
+        self.assertContains(r, "This page provides a timeline of meeting registrations by affiliation")
+        # Extract the JSON embedded in the response
+        pq = PyQuery(r.content)
+        in_person_data = json.loads(pq.find("script#in-person-chart-data").text())
+        self.assertTrue(
+            any(
+                ds["label"] == "Example" and ds["data"] == [0, 25]
+                for ds in in_person_data["datasets"]
+            )
+        )
+        # Test the global meetings timeline
+        r = self.client.get(urlreverse(ietf.stats.views.meetings_timeline, kwargs={"stats_type": "total"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "/stats/meeting/124/country")
+        self.assertContains(r, "/stats/meeting/125/country")
+        self.assertContains(r, "This page provides a timeline of meeting registrations.")
 
-                
+    def test_meeting_stats_for_bad_meeting(self):
+        self.assertFalse(Meeting.objects.filter(number=676767).exists())
+        for stats_type in ["affiliation", "country"]:
+            r = self.client.get(
+                urlreverse(
+                    "ietf.stats.views.meeting_stats",
+                    kwargs={"meeting_number": 676767, "stats_type": stats_type},
+                )
+            )
+            self.assertEqual(r.status_code, 404)
+
+            # We don't have a URL for an interim, but make sure the view will 404 if
+            # somehow a non-interim gets selected...
+            interim_num = MeetingFactory(type_id="interim").number
+            request_factory = RequestFactory()
+            with self.assertRaises(Http404):
+                ietf.stats.views.meeting_stats(
+                    request_factory.get(f"/stats/meeting/{interim_num}/{stats_type}"),
+                    meeting_number=interim_num,
+                    stats_type=stats_type,
+                )
+
     def test_known_country_list(self):
         # check redirect
         url = urlreverse(ietf.stats.views.known_countries_list)

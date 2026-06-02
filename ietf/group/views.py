@@ -245,10 +245,19 @@ def active_review_dirs(request):
     return render(request, 'group/active_review_dirs.html', {'dirs' : dirs })
 
 def active_teams(request):
-    teams = Group.objects.filter(type="team", state="active").order_by("name")
+    parent_type_order = {"area": 1, "adm": 3, None: 4}
+
+    def team_sort_key(group):
+        type_id = group.parent.type_id if group.parent else None
+        return (parent_type_order.get(type_id, 2), group.parent.name if group.parent else "", group.name)
+
+    teams = sorted(
+        Group.objects.filter(type="team", state="active").select_related("parent"),
+        key=team_sort_key,
+    )
     for group in teams:
         group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
-    return render(request, 'group/active_teams.html', {'teams' : teams })
+    return render(request, 'group/active_teams.html', {'teams': teams})
 
 def active_iab(request):
     iabgroups = Group.objects.filter(type__in=("program","iabasg","iabworkshop"), state="active").order_by("-type_id","name")

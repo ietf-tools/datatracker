@@ -23,7 +23,7 @@ jobs:
       base_image_version: ${{ steps.baseimgversion.outputs.base_image_version }}
 
     steps:   
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 1
         fetch-tags: false

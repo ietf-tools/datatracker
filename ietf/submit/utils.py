@@ -395,10 +395,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
 
     log.log(f"{submission.name}: updated state and info")
 
-    trouble = rebuild_reference_relations(draft, find_submission_filenames(draft))
-    if trouble:
-        log.log('Rebuild_reference_relations trouble: %s'%trouble)
-    log.log(f"{submission.name}: rebuilt reference relations")
+    rebuild_reference_relations(draft, find_submission_filenames(draft))
     
     if draft.stream_id == "ietf" and draft.group.type_id == "wg" and draft.rev == "00":
         # automatically set state "WG Document"
@@ -1268,7 +1265,7 @@ def process_submission_text(filename, revision):
     if title:
         title = _normalize_title(title)
 
-    # Translation taable drops \r, \n, <, >.
+    # Translation table drops \r, \n, <, >.
     trans_table = str.maketrans("", "", "\r\n<>")
     authors = [
         {
@@ -1615,6 +1612,4 @@ def populate_yang_model_dirs():
             log.log(f"Error processing {item.name}: {e}")
 
     ftp_moddir = Path(settings.FTP_DIR) / "yang" / "draftmod/"
-    if not moddir.endswith("/"):
-        moddir += "/"
-    subprocess.call(("/usr/bin/rsync", "-aq", "--delete", moddir, ftp_moddir))
+    subprocess.call(("/usr/bin/rsync", "-aq", "--delete", f"{moddir}/", str(ftp_moddir)))

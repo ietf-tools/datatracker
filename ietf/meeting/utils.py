@@ -1025,9 +1025,18 @@ def resolve_materials_for_one_meeting(meeting: Meeting):
         )
 
 def resolve_uploaded_material(meeting: Meeting, doc: Document):
-    resolved = []
+    resolved: list[ResolvedMaterial] = []
+    remove = ResolvedMaterial.objects.none()
     blob = resolve_one_material(doc, rev=None, ext=None)
-    if blob is not None:
+    if blob is None:
+        # Versionless file does not exist. Remove the versionless ResolvedMaterial
+        # if it existed. This is to avoid leaving behind a stale link to a replaced
+        # version. This comes up e.g. if a ProceedingsMaterial is changed from having
+        # an uploaded file to being an external URL.
+        remove = ResolvedMaterial.objects.filter(
+            name=doc.name, meeting_number=meeting.number
+        )
+    else:
         resolved.append(
             ResolvedMaterial(
                 name=doc.name,
@@ -1047,12 +1056,15 @@ def resolve_uploaded_material(meeting: Meeting, doc: Document):
                 blob=blob.name,
             )
         )
+    # Create the new record(s) 
     ResolvedMaterial.objects.bulk_create(
         resolved,
         update_conflicts=True,
         unique_fields=["name", "meeting_number"],
         update_fields=["bucket", "blob"],
     )
+    # and remove one if necessary (will be a none() queryset if not)
+    remove.delete()
 
 
 def store_blob_for_one_material_file(doc: Document, rev: str, filepath: Path):

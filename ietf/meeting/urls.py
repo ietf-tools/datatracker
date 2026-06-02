@@ -15,6 +15,7 @@ class AgendaRedirectView(RedirectView):
 
 safe_for_all_meeting_types = [
     url(r'^session/(?P<acronym>[-a-z0-9]+)/?$',  views.session_details),
+    url(r'^session/(?P<acronym>[-a-z0-9]+)/send_slide_notifications$',  views.notify_meetecho_of_all_slides),
     url(r'^session/(?P<session_id>\d+)/drafts$',  views.add_session_drafts),
     url(r'^session/(?P<session_id>\d+)/recordings$', views.add_session_recordings),
     url(r'^session/(?P<session_id>\d+)/attendance$', views.session_attendance),
@@ -30,7 +31,7 @@ safe_for_all_meeting_types = [
     url(r'^session/(?P<session_id>\d+)/doc/%(name)s/remove$' % settings.URL_REGEXPS, views.remove_sessionpresentation),
     url(r'^session/(?P<session_id>\d+)\.ics$',    views.agenda_ical),
     url(r'^sessions/(?P<acronym>[-a-z0-9]+)\.ics$', views.agenda_ical),
-    url(r'^slidesubmission/(?P<slidesubmission_id>\d+)$', views.approve_proposed_slides)
+    url(r'^slidesubmission/(?P<slidesubmission_id>\d+)$', views.approve_proposed_slides),
 ]
 
 

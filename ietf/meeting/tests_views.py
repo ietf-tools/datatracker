@@ -33,6 +33,7 @@ from django.db.models import F, Max
 from django.http import QueryDict, FileResponse
 from django.template import Context, Template
 from django.utils import timezone
+from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 
@@ -4754,7 +4755,7 @@ class SessionDetailsTests(TestCase):
                 0,
                 "second session proposed slides should be linked for approval",
             )
-        
+
 
 class EditScheduleListTests(TestCase):
     def setUp(self):
@@ -7345,6 +7346,67 @@ class MaterialsTests(TestCase):
         fd.close()
         self.assertIn('third version', contents)
 
+    @override_settings(
+        MEETECHO_API_CONFIG="fake settings"
+    )  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_notify_meetecho_of_all_slides(self, mock_slides_manager_cls):
+        for meeting_type in ["ietf", "interim"]:
+            # Reset for the sake of the second iteration
+            self.client.logout()
+            mock_slides_manager_cls.reset_mock()
+
+            session = SessionFactory(meeting__type_id=meeting_type)
+            meeting = session.meeting
+    
+            # bad meeting
+            url = urlreverse(
+                "ietf.meeting.views.notify_meetecho_of_all_slides",
+                kwargs={"num": 9999, "acronym": session.group.acronym},
+            )
+            login_testing_unauthorized(self, "secretary", url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 404)
+            r = self.client.post(url)
+            self.assertEqual(r.status_code, 404)
+            self.assertFalse(mock_slides_manager_cls.called)
+            self.client.logout()
+    
+            # good meeting
+            url = urlreverse(
+                "ietf.meeting.views.notify_meetecho_of_all_slides",
+                kwargs={"num": meeting.number, "acronym": session.group.acronym},
+            )
+            login_testing_unauthorized(self, "secretary", url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 405)
+            self.assertFalse(mock_slides_manager_cls.called)
+            mock_slides_manager = mock_slides_manager_cls.return_value
+            mock_slides_manager.send_update.return_value = True
+            r = self.client.post(url)
+            self.assertEqual(r.status_code, 302)
+            self.assertEqual(mock_slides_manager.send_update.call_count, 1)
+            self.assertEqual(mock_slides_manager.send_update.call_args, call(session))
+            r = self.client.get(r["Location"])
+            messages = list(r.context["messages"])
+            self.assertEqual(len(messages), 1)
+            self.assertEqual(
+                str(messages[0]), f"Notified Meetecho about slides for {session}"
+            )
+    
+            mock_slides_manager.send_update.reset_mock()
+            mock_slides_manager.send_update.return_value = False
+            r = self.client.post(url)
+            self.assertEqual(r.status_code, 302)
+            self.assertEqual(mock_slides_manager.send_update.call_count, 1)
+            self.assertEqual(mock_slides_manager.send_update.call_args, call(session))
+            r = self.client.get(r["Location"])
+            messages = list(r.context["messages"])
+            self.assertEqual(len(messages), 1)
+            self.assertIn(
+                "No sessions were eligible for Meetecho slides update.", str(messages[0])
+            )
+
 
 @override_settings(IETF_NOTES_URL='https://notes.ietf.org/')
 class ImportNotesTests(TestCase):
@@ -8946,6 +9008,8 @@ class ProceedingsTests(BaseMeetingTestCase):
            - assert onsite checkedin=True appears, not onsite checkedin=False
            - assert remote attended appears, not remote not attended
            - prefer onsite checkedin=True to remote attended when same person has both
+           - summary stats row shows correct counts
+           - chart data JSON is embedded with correct values
         """
 
         m = MeetingFactory(type_id='ietf', date=datetime.date(2023, 11, 4), number="118")
@@ -8966,6 +9030,17 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertEqual(2, len(q("#id_attendees tbody tr")))
         text = q('#id_attendees tbody tr').text().replace('\n', ' ')
         self.assertEqual(text, f"A Person {areg.affiliation} {areg.country_code} onsite C Person {creg.affiliation} {creg.country_code} remote")
+
+        # Summary stats row: Onsite / Remote / Total (matches registration.ietf.org)
+        self.assertContains(response, 'Onsite:')
+        self.assertContains(response, 'Remote:')
+        self.assertContains(response, 'Total:')
+        self.assertContains(response, '<strong>1</strong>')   # onsite and remote
+        self.assertContains(response, '<strong>2</strong>')   # total
+
+        # Chart data embedded in page
+        chart_json = json.loads(q('#attendees-chart-data').text())
+        self.assertEqual(chart_json['type'], [['Onsite', 1], ['Remote', 1]])
 
     def test_proceedings_overview(self):
         '''Test proceedings IETF Overview page.
@@ -9417,7 +9492,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertEqual(r.status_code, 200)  
         self.assertContains(r, '3 attendees')
         for person in persons:
-            self.assertContains(r, person.plain_name())
+            self.assertContains(r, escape(person.plain_name()))
 
         # Test for the "I was there" button.
         def _test_button(person, expected):
@@ -9437,14 +9512,14 @@ class ProceedingsTests(BaseMeetingTestCase):
         # attempt to POST anyway is ignored
         r = self.client.post(attendance_url)
         self.assertEqual(r.status_code, 200)
-        self.assertNotContains(r, persons[3].plain_name())
+        self.assertNotContains(r, escape(persons[3].plain_name()))
         self.assertEqual(session.attended_set.count(), 3)
         # button is shown, and POST is accepted
         meeting.importantdate_set.update(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
         _test_button(persons[3], True)
         r = self.client.post(attendance_url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, persons[3].plain_name())
+        self.assertContains(r, escape(persons[3].plain_name()))
         self.assertEqual(session.attended_set.count(), 4)
 
         # When the meeting is finalized, a bluesheet file is generated,

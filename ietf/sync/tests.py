@@ -1,5 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2012-2026, All Rights Reserved
 
 
 import os
@@ -13,6 +12,8 @@ import requests
 from dataclasses import dataclass
 
 from django.conf import settings
+from django.core.files.base import ContentFile
+from django.core.files.storage import storages
 from django.urls import reverse as urlreverse
 from django.utils import timezone
 from django.test.utils import override_settings
@@ -25,15 +26,34 @@ from ietf.doc.factories import (
     RfcFactory,
     DocumentAuthorFactory,
     DocEventFactory,
-    BcpFactory,
+    BcpFactory, WgRfcFactory,
 )
-from ietf.doc.models import Document, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
+from ietf.doc.models import (
+    Document,
+    DocEvent,
+    DeletedEvent,
+    DocTagName,
+    RelatedDocument,
+    State,
+    StateDocEvent,
+)
 from ietf.doc.utils import add_state_change_event
 from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory
 from ietf.person.models import Person
 from ietf.sync import iana, rfceditor, tasks
+from ietf.sync.errata import (
+    update_errata_from_rfceditor,
+    get_errata_last_updated,
+    get_errata_data,
+    errata_map_from_json,
+    update_errata_dirty_time,
+    mark_errata_as_processed,
+    update_errata_tags,
+)
+from ietf.sync.tasks import update_errata_from_rfceditor_task
 from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.models import DirtyBits
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import date_today, RPC_TZINFO
@@ -301,6 +321,7 @@ class RFCSyncTests(TestCase):
             ad=Person.objects.get(user__username='ad'),
             external_url="http://my-external-url.example.com",
             note="this is a note",
+            pages=54,  # make sure this is not 42
         )
         DocumentAuthorFactory.create_batch(2, document=draft_doc)
         draft_doc.action_holders.add(draft_doc.ad)  # not normally set, but add to be sure it's cleared
@@ -446,7 +467,7 @@ class RFCSyncTests(TestCase):
 
         rfc_doc = Document.objects.filter(rfc_number=1234, type_id="rfc").first()
         self.assertIsNotNone(rfc_doc, "RFC document should have been created")
-        self.assertEqual(rfc_doc.authors(), draft_doc.authors())
+        self.assertEqual(rfc_doc.author_persons_or_names(), draft_doc.author_persons_or_names())
         rfc_events = rfc_doc.docevent_set.all()
         self.assertEqual(len(rfc_events), 8)
         expected_events = [
@@ -774,30 +795,6 @@ class RFCSyncTests(TestCase):
         auth48_docurl = draft.documenturl_set.filter(tag_id='auth48').first()
         self.assertIsNone(auth48_docurl)
 
-    def test_post_approved_draft_in_production_only(self):
-        self.requests_mock.post("https://rfceditor.example.com/", status_code=200, text="OK")
-
-        # be careful playing with SERVER_MODE!
-        with override_settings(SERVER_MODE="test"):
-            self.assertEqual(
-                rfceditor.post_approved_draft("https://rfceditor.example.com/", "some-draft"),
-                ("", "")
-            )
-            self.assertFalse(self.requests_mock.called)
-        with override_settings(SERVER_MODE="development"):
-            self.assertEqual(
-                rfceditor.post_approved_draft("https://rfceditor.example.com/", "some-draft"),
-                ("", "")
-            )
-            self.assertFalse(self.requests_mock.called)
-        with override_settings(SERVER_MODE="production"):
-            self.assertEqual(
-                rfceditor.post_approved_draft("https://rfceditor.example.com/", "some-draft"),
-                ("", "")
-            )
-            self.assertTrue(self.requests_mock.called)
-
-
 class DiscrepanciesTests(TestCase):
     def test_discrepancies(self):
 
@@ -881,6 +878,202 @@ class RFCEditorUndoTests(TestCase):
         self.assertTrue(StateDocEvent.objects.filter(desc="First", doc=draft))
 
 
+class ErrataTests(TestCase):
+    @override_settings(ERRATA_JSON_BLOB_NAME="myblob.json")
+    def test_get_errata_last_update(self):
+        red_bucket = storages["red_bucket"]  # InMemoryStorage in test
+        red_bucket.save("myblob.json", ContentFile("file"))
+        self.assertEqual(
+            get_errata_last_updated(), red_bucket.get_modified_time("myblob.json")
+        )
+    
+    @override_settings(ERRATA_JSON_BLOB_NAME="myblob.json")
+    def test_get_errata_data(self):
+        red_bucket = storages["red_bucket"]  # InMemoryStorage in test
+        red_bucket.save("myblob.json", ContentFile('[{"value": 3}]'))
+        self.assertEqual(
+            get_errata_data(),
+            [{"value": 3}],
+        )
+
+    def test_errata_map_from_json(self):
+        input_data = [
+            {
+                "doc-id": "not-an-rfc",
+                "errata_status_code": "Verified",
+            },
+            {
+                "doc-id": "rfc01234",
+                "errata_status_code": "Reported",
+            },
+            {
+                "doc-id": "RFC1001",
+                "errata_status_code": "Verified"
+            },
+            {
+                "doc-id": "RfC1234",
+                "errata_status_code": "Verified",
+            },
+        ]
+        expected_output = {1001: [input_data[2]], 1234: [input_data[1], input_data[3]]}
+        self.assertDictEqual(errata_map_from_json(input_data), expected_output)
+
+    @mock.patch("ietf.sync.errata.update_errata_tags")
+    @mock.patch("ietf.sync.errata.get_errata_data")
+    def test_update_errata_from_rfceditor(self, mock_get_data, mock_update):
+        fake_data = object()
+        fake_changed = {1234, 5678}
+        mock_get_data.return_value = fake_data
+        mock_update.return_value = fake_changed
+        result = update_errata_from_rfceditor()
+        self.assertTrue(mock_get_data.called)
+        self.assertTrue(mock_update.called)
+        self.assertEqual(mock_update.call_args, mock.call(fake_data))
+        self.assertEqual(result, fake_changed)
+
+    def test_update_errata_tags(self):
+        tag_has_errata = DocTagName.objects.get(slug="errata")
+        tag_has_verified_errata = DocTagName.objects.get(slug="verified-errata")
+
+        rfcs = WgRfcFactory.create_batch(10)
+        rfcs[0].tags.set([tag_has_errata])
+        rfcs[1].tags.set([tag_has_errata, tag_has_verified_errata])
+        rfcs[2].tags.set([tag_has_errata])
+        rfcs[3].tags.set([tag_has_errata, tag_has_verified_errata])
+        rfcs[4].tags.set([tag_has_errata])
+        rfcs[5].tags.set([tag_has_errata, tag_has_verified_errata])
+
+        # Only contains the fields we care about, not the full JSON
+        errata_data = [
+            # rfcs[0] had errata and should keep it
+            {"doc-id": rfcs[0].name, "errata_status_code": "Held for Document Update"},
+            {"doc-id": rfcs[0].name, "errata_status_code": "Rejected"},
+            # rfcs[1] had errata+verified-errata and should keep both
+            {"doc-id": rfcs[1].name, "errata_status_code": "Verified"},
+            # rfcs[2] had errata and should gain verified-errata
+            {"doc-id": rfcs[2].name, "errata_status_code": "Verified"},
+            # rfcs[3] had errata+verified errata and should lose both
+            {"doc-id": rfcs[3].name, "errata_status_code": "Rejected"},
+            # rfcs[4] had errata and should gain verified-errata
+            {"doc-id": rfcs[4].name, "errata_status_code": "Verified"},
+            {"doc-id": rfcs[4].name, "errata_status_code": "Reported"},
+            # rfcs[5] had errata+verified-errata and should lose verified-errata
+            {"doc-id": rfcs[5].name, "errata_status_code": "Reported"},
+            # rfcs[6] had none and should gain errata
+            {"doc-id": rfcs[6].name, "errata_status_code": "Reported"},
+            # rfcs[7] had none and should gain errata+verified-errata
+            {"doc-id": rfcs[7].name, "errata_status_code": "Verified"},
+            # rfcs[8] had none and it should stay that way
+            {"doc-id": rfcs[8].name, "errata_status_code": "Rejected"},
+            # rfcs[9] had none and it should stay that way (no entry at all)
+        ]
+        changed = update_errata_tags(errata_data)
+
+        self.assertCountEqual(rfcs[0].tags.all(), [tag_has_errata])
+        self.assertIsNone(rfcs[0].docevent_set.first())  # no change
+
+        self.assertCountEqual(
+            rfcs[1].tags.all(), [tag_has_errata, tag_has_verified_errata]
+        )
+        self.assertIsNone(rfcs[1].docevent_set.first())  # no change
+
+        self.assertCountEqual(
+            rfcs[2].tags.all(), [tag_has_errata, tag_has_verified_errata]
+        )
+        self.assertEqual(rfcs[2].docevent_set.count(), 1)
+        self.assertIn(": added verified-errata tag", rfcs[2].docevent_set.first().desc)
+
+        self.assertCountEqual(rfcs[3].tags.all(), [])
+        self.assertEqual(rfcs[3].docevent_set.count(), 1)
+        self.assertIn(
+            ": removed errata tag, removed verified-errata tag (all errata rejected)",
+            rfcs[3].docevent_set.first().desc,
+        )
+
+        self.assertCountEqual(
+            rfcs[4].tags.all(), [tag_has_errata, tag_has_verified_errata]
+        )
+        self.assertEqual(rfcs[4].docevent_set.count(), 1)
+        self.assertIn(": added verified-errata tag", rfcs[4].docevent_set.first().desc)
+
+        self.assertCountEqual(rfcs[5].tags.all(), [tag_has_errata])
+        self.assertEqual(rfcs[5].docevent_set.count(), 1)
+        self.assertIn(
+            ": removed verified-errata tag", rfcs[5].docevent_set.first().desc
+        )
+
+        self.assertCountEqual(rfcs[6].tags.all(), [tag_has_errata])
+        self.assertEqual(rfcs[6].docevent_set.count(), 1)
+        self.assertIn(": added errata tag", rfcs[6].docevent_set.first().desc)
+
+        self.assertCountEqual(
+            rfcs[7].tags.all(), [tag_has_errata, tag_has_verified_errata]
+        )
+        self.assertEqual(rfcs[7].docevent_set.count(), 1)
+        self.assertIn(
+            ": added errata tag, added verified-errata tag",
+            rfcs[7].docevent_set.first().desc,
+        )
+
+        self.assertCountEqual(rfcs[8].tags.all(), [])
+        self.assertIsNone(rfcs[8].docevent_set.first())  # no change
+
+        self.assertCountEqual(rfcs[9].tags.all(), [])
+        self.assertIsNone(rfcs[9].docevent_set.first())  # no change
+
+        # return value: only RFCs whose tags actually changed
+        # rfcs[0], rfcs[1], rfcs[8], rfcs[9] had no tag changes
+        for unchanged_rfc in (rfcs[0], rfcs[1], rfcs[8], rfcs[9]):
+            self.assertNotIn(unchanged_rfc.rfc_number, changed)
+        # rfcs[2..7] had tag changes
+        for changed_rfc in rfcs[2:8]:
+            self.assertIn(changed_rfc.rfc_number, changed)
+
+    @override_settings(ERRATA_JSON_BLOB_NAME="myblob.json")
+    @mock.patch("ietf.sync.errata.get_errata_last_updated")
+    def test_update_errata_dirty_time(self, mock_last_updated):
+        ERRATA_SLUG = DirtyBits.Slugs.ERRATA
+        
+        # No time available
+        mock_last_updated.side_effect = FileNotFoundError
+        self.assertIsNone(DirtyBits.objects.filter(slug=ERRATA_SLUG).first())
+        self.assertIsNone(update_errata_dirty_time())  # no blob yet
+        self.assertIsNone(DirtyBits.objects.filter(slug=ERRATA_SLUG).first())
+
+        # Now set a time
+        first_timestamp = timezone.now() - datetime.timedelta(hours=3)
+        mock_last_updated.return_value = first_timestamp
+        mock_last_updated.side_effect = None
+        result = update_errata_dirty_time()
+        self.assertTrue(isinstance(result, DirtyBits))
+        result.refresh_from_db()
+        self.assertEqual(result.slug, ERRATA_SLUG)
+        self.assertEqual(result.processed_time, None)
+        self.assertEqual(result.dirty_time, first_timestamp)
+        
+        # Update the time
+        second_timestamp = timezone.now()
+        mock_last_updated.return_value = second_timestamp
+        second_result = update_errata_dirty_time()
+        self.assertEqual(result.pk, second_result.pk)  # should be the same record
+        result.refresh_from_db()
+        self.assertEqual(result.slug, ERRATA_SLUG)
+        self.assertEqual(result.processed_time, None)
+        self.assertEqual(result.dirty_time, second_timestamp)
+
+    def test_mark_errata_as_processed(self):
+        ERRATA_SLUG = DirtyBits.Slugs.ERRATA
+        first_timestamp = timezone.now()
+        mark_errata_as_processed(first_timestamp)  # no DirtyBits is not an error
+        self.assertIsNone(DirtyBits.objects.filter(slug=ERRATA_SLUG).first())
+        dbits = DirtyBits.objects.create(slug=ERRATA_SLUG, dirty_time=first_timestamp)
+        second_timestamp = timezone.now()
+        mark_errata_as_processed(second_timestamp)
+        dbits.refresh_from_db()
+        self.assertEqual(dbits.dirty_time, first_timestamp)
+        self.assertEqual(dbits.processed_time, second_timestamp)
+        
+
 class TaskTests(TestCase):
     @override_settings(
         RFC_EDITOR_INDEX_URL="https://rfc-editor.example.com/index/",
@@ -889,8 +1082,9 @@ class TaskTests(TestCase):
     @mock.patch("ietf.sync.tasks.rfceditor.update_docs_from_rfc_index")
     @mock.patch("ietf.sync.tasks.rfceditor.parse_index")
     @mock.patch("ietf.sync.tasks.requests.get")
+    @mock.patch("ietf.sync.tasks.rsync_rfcs_from_rfceditor_task.delay")
     def test_rfc_editor_index_update_task(
-        self, requests_get_mock, parse_index_mock, update_docs_mock
+        self, rsync_task_mock, requests_get_mock, parse_index_mock, update_docs_mock
     ) -> None:  # the annotation here prevents mypy from complaining about annotation-unchecked
         """rfc_editor_index_update_task calls helpers correctly
         
@@ -922,6 +1116,7 @@ class TaskTests(TestCase):
         rfc = RfcFactory()
     
         # Test with full_index = False
+        rsync_task_mock.return_value = None
         requests_get_mock.side_effect = (index_response, errata_response)  # will step through these
         parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS)
         update_docs_mock.return_value = (
@@ -947,10 +1142,13 @@ class TaskTests(TestCase):
         )
         self.assertIsNotNone(update_docs_kwargs["skip_older_than_date"])
 
+        self.assertFalse(rsync_task_mock.called)
+
         # Test again with full_index = True
         requests_get_mock.reset_mock()
         parse_index_mock.reset_mock()
         update_docs_mock.reset_mock()
+        rsync_task_mock.reset_mock()
         requests_get_mock.side_effect = (index_response, errata_response)  # will step through these
         tasks.rfc_editor_index_update_task(full_index=True)
 
@@ -971,40 +1169,67 @@ class TaskTests(TestCase):
         )
         self.assertIsNone(update_docs_kwargs["skip_older_than_date"])
 
+        self.assertFalse(rsync_task_mock.called)
+
+        # Test again where the index would cause a new RFC to come into existance
+        requests_get_mock.reset_mock()
+        parse_index_mock.reset_mock()
+        update_docs_mock.reset_mock()
+        rsync_task_mock.reset_mock()
+        requests_get_mock.side_effect = (
+            index_response,
+            errata_response,
+        )  # will step through these
+        update_docs_mock.return_value = (
+            (rfc.rfc_number, ("something changed",), rfc, True),
+        )
+        tasks.rfc_editor_index_update_task(full_index=True)
+        self.assertTrue(rsync_task_mock.called)
+        rsync_task_args, rsync_task_kwargs = rsync_task_mock.call_args
+        self.assertEqual((([rfc.rfc_number],), {}), (rsync_task_args, rsync_task_kwargs))
+
         # Test error handling
         requests_get_mock.reset_mock()
         parse_index_mock.reset_mock()
         update_docs_mock.reset_mock()
+        rsync_task_mock.reset_mock()
         requests_get_mock.side_effect = requests.Timeout  # timeout on every get()
         tasks.rfc_editor_index_update_task(full_index=False)
         self.assertFalse(parse_index_mock.called)
         self.assertFalse(update_docs_mock.called)
+        self.assertFalse(rsync_task_mock.called)
         
         requests_get_mock.reset_mock()
         parse_index_mock.reset_mock()
         update_docs_mock.reset_mock()
+        rsync_task_mock.reset_mock()
         requests_get_mock.side_effect = [index_response, requests.Timeout]  # timeout second get()
         tasks.rfc_editor_index_update_task(full_index=False)
         self.assertFalse(update_docs_mock.called)
+        self.assertFalse(rsync_task_mock.called)
 
         requests_get_mock.reset_mock()
         parse_index_mock.reset_mock()
         update_docs_mock.reset_mock()
+        rsync_task_mock.reset_mock()
         requests_get_mock.side_effect = [index_response, errata_response]
         # feed in an index that is too short
         parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS - 1)
         tasks.rfc_editor_index_update_task(full_index=False)
         self.assertTrue(parse_index_mock.called)
         self.assertFalse(update_docs_mock.called)
+        self.assertFalse(rsync_task_mock.called)
 
         requests_get_mock.reset_mock()
         parse_index_mock.reset_mock()
         update_docs_mock.reset_mock()
+        rsync_task_mock.reset_mock()
         requests_get_mock.side_effect = [index_response, errata_response]
         errata_response.json_length = rfceditor.MIN_ERRATA_RESULTS - 1  # too short
         parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS)
         tasks.rfc_editor_index_update_task(full_index=False)
         self.assertFalse(update_docs_mock.called)
+        self.assertFalse(rsync_task_mock.called)
 
     @override_settings(RFC_EDITOR_QUEUE_URL="https://rfc-editor.example.com/queue/")
     @mock.patch("ietf.sync.tasks.update_drafts_from_queue")
@@ -1134,3 +1359,77 @@ class TaskTests(TestCase):
         self.assertTrue(requests_get_mock.called)
         self.assertFalse(parse_protocols_mock.called)
         self.assertFalse(update_rfc_log_mock.called)
+
+    @mock.patch("ietf.sync.tasks.rsync_helper")
+    @mock.patch("ietf.sync.tasks.load_rfcs_into_blobdb")
+    @mock.patch("ietf.sync.tasks.rebuild_reference_relations_task.delay")
+    def test_rsync_rfcs_from_rfceditor_task(
+        self,
+        rebuild_relations_mock,
+        load_blobs_mock,
+        rsync_helper_mock,
+    ):
+        tasks.rsync_rfcs_from_rfceditor_task([12345, 54321])
+        self.assertTrue(rsync_helper_mock.called)
+        self.assertTrue(load_blobs_mock.called)
+        load_blobs_args, load_blobs_kwargs = load_blobs_mock.call_args
+        self.assertEqual(load_blobs_args, ([12345, 54321],))
+        self.assertEqual(load_blobs_kwargs, {})
+        self.assertTrue(rebuild_relations_mock.called)
+        rebuild_args, rebuild_kwargs = rebuild_relations_mock.call_args
+        self.assertEqual(rebuild_args, (["rfc12345", "rfc54321"],))
+        self.assertEqual(rebuild_kwargs, {})
+
+    @mock.patch("ietf.sync.tasks.load_rfcs_into_blobdb")
+    def test_load_rfcs_into_blobdb_task(
+        self,
+        load_blobs_mock,
+    ):
+        tasks.load_rfcs_into_blobdb_task(5, 3)
+        self.assertFalse(load_blobs_mock.called)
+        load_blobs_mock.reset_mock()
+        tasks.load_rfcs_into_blobdb_task(-1, 1)
+        self.assertTrue(load_blobs_mock.called)
+        mock_args, mock_kwargs = load_blobs_mock.call_args
+        self.assertEqual(mock_args, ([1],))
+        self.assertEqual(mock_kwargs, {})
+        load_blobs_mock.reset_mock()
+        tasks.load_rfcs_into_blobdb_task(10999, 50000)
+        self.assertTrue(load_blobs_mock.called)
+        mock_args, mock_kwargs = load_blobs_mock.call_args
+        self.assertEqual(mock_args, ([10999, 11000],))
+        self.assertEqual(mock_kwargs, {})
+        load_blobs_mock.reset_mock()
+        tasks.load_rfcs_into_blobdb_task(3261, 3263)
+        self.assertTrue(load_blobs_mock.called)
+        mock_args, mock_kwargs = load_blobs_mock.call_args
+        self.assertEqual(mock_args, ([3261, 3262, 3263],))
+        self.assertEqual(mock_kwargs, {})
+
+    @mock.patch("ietf.sync.tasks.update_rfc_json_task.delay")
+    @mock.patch("ietf.sync.tasks.update_errata_from_rfceditor")
+    @mock.patch("ietf.sync.tasks.mark_rfcindex_as_dirty")
+    @mock.patch("ietf.sync.tasks.mark_errata_as_processed")
+    @mock.patch("ietf.sync.tasks.errata_are_dirty")
+    def test_update_errata_from_rfceditor_task(
+        self,
+        mock_errata_are_dirty,
+        mock_mark_errata_processed,
+        mock_mark_rfcindex_dirty,
+        mock_update,
+        mock_rfc_json_delay,
+    ):
+        mock_errata_are_dirty.return_value = False
+        update_errata_from_rfceditor_task()
+        self.assertTrue(mock_errata_are_dirty.called)
+        self.assertFalse(mock_mark_errata_processed.called)
+        self.assertFalse(mock_mark_rfcindex_dirty.called)
+        self.assertFalse(mock_update.called)
+
+        mock_errata_are_dirty.reset_mock()
+        mock_errata_are_dirty.return_value = True
+        update_errata_from_rfceditor_task()
+        self.assertTrue(mock_errata_are_dirty.called)
+        self.assertTrue(mock_mark_errata_processed.called)
+        self.assertTrue(mock_mark_rfcindex_dirty.called)
+        self.assertTrue(mock_update.called)

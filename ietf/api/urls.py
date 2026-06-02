@@ -1,25 +1,30 @@
 # Copyright The IETF Trust 2017-2024, All Rights Reserved
 
+from drf_spectacular.views import SpectacularAPIView
+
 from django.conf import settings
-from django.urls import include
+from django.urls import include, path
 from django.views.generic import TemplateView
 
 from ietf import api
-from ietf.doc import views_ballot
+from ietf.doc import views_ballot, api as doc_api
 from ietf.meeting import views as meeting_views
 from ietf.submit import views as submit_views
 from ietf.utils.urls import url
 
 from . import views as api_views
+from .routers import PrefixedSimpleRouter 
 
 # DRF API routing - disabled until we plan to use it
-# from drf_spectacular.views import SpectacularAPIView
-# from django.urls import path
 # from ietf.person import api as person_api
-# from .routers import PrefixedSimpleRouter 
 # core_router = PrefixedSimpleRouter(name_prefix="ietf.api.core_api")  # core api router
 # core_router.register("email", person_api.EmailViewSet)
 # core_router.register("person", person_api.PersonViewSet)
+
+# todo more general name for this API?
+red_router = PrefixedSimpleRouter(name_prefix="ietf.api.red_api")  # red api router
+red_router.register("doc", doc_api.RfcViewSet)
+red_router.register("subseries", doc_api.SubseriesViewSet, basename="subseries")
 
 api.autodiscover()
 
@@ -32,7 +37,9 @@ urlpatterns = [
     url(r'^v2/person/person', api_views.ApiV2PersonExportView.as_view()),
     # --- DRF API ---
     # path("core/", include(core_router.urls)),
-    # path("schema/", SpectacularAPIView.as_view()),
+    path("purple/", include("ietf.api.urls_rpc")),
+    path("red/", include(red_router.urls)),
+    path("schema/", SpectacularAPIView.as_view()),
     #
     # --- Custom API endpoints, sorted alphabetically ---
     # Email alias information for drafts

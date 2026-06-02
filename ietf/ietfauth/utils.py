@@ -211,9 +211,9 @@ def role_required(*role_names):
 
 # specific permissions
 
+
 def is_authorized_in_doc_stream(user, doc):
-    """Return whether user is authorized to perform stream duties on
-    document."""
+    """Is user authorized to perform stream duties on doc?"""
     if has_role(user, ["Secretariat"]):
         return True
 
@@ -287,7 +287,7 @@ def is_individual_draft_author(user, doc):
     if not hasattr(user, 'person'):
         return False
 
-    if user.person in doc.authors():
+    if user.person in doc.author_persons():
         return True
 
     return False
