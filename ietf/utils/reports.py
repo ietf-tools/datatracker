@@ -1,6 +1,5 @@
-# Copyright The IETF Trust 2023-2024, All Rights Reserved
+# Copyright The IETF Trust 2023-2026, All Rights Reserved
 
-import csv
 from typing import List, Set, Tuple
 from django.db.models import QuerySet
 
@@ -48,20 +47,3 @@ def unique_people(addresses: List[str]) -> Tuple["QuerySet[Person]", Set]:
     return (persons, set(addresses) - set(known_email))
 
 
-def write_reports(year: int) -> None:
-    authors = authors_by_year(year)
-    submitters = submitters_by_year(year)
-    print(f"authors: {len(authors)}")
-    print(f"submitters: {len(submitters)}")
-    persons, nopersons = unique_people(authors)
-    print(f"authors: unique persons: {len(persons)}, no person found: {len(nopersons)}")
-    persons, nopersons = unique_people(submitters)
-    print(
-        f"submitters: unique persons: {len(persons)}, no person found: {len(nopersons)}"
-    )
-    with open("authors.csv", "w", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow(authors)
-    with open("submitters.csv", "w", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow(submitters)
