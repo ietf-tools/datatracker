@@ -9,7 +9,7 @@ spec:
     matchLabels:
       app: datatracker
   strategy:
-    type: DEPLOY_STRATEGY
+    type: Recreate
   template:
     metadata:
       labels:
