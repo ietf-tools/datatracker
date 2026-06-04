@@ -26,8 +26,7 @@ def get_authors_total_data_for_documents(doc_type = 'all', group_by = 'country',
         DocumentAuthor.objects
         .filter(filters)
         .values(group_by)
-        .annotate(author_count=Count('person', distinct=False))  # Count as many document authored by this author
-        .order_by('-author_count')
+        .annotate(author_count=Count('person', distinct=True))  # Count as many document authored by this author
     )
 
     group_count_set = {
@@ -49,9 +48,9 @@ def get_authors_total_data_for_documents(doc_type = 'all', group_by = 'country',
             group = 'Unspecified'
         group_count_dict[group] = group_count_dict.get(group, 0) + count
 
-    group_count_dict = sorted(group_count_dict.items(), key=lambda x: x[1], reverse=True)
-    top_groups = group_count_dict[:top_n]
-    other_count = sum(count for _, count in group_count_dict[top_n:])
+    group_count_sorted = sorted(group_count_dict.items(), key=lambda x: x[1], reverse=True)
+    top_groups = group_count_sorted[:top_n]
+    other_count = sum(count for _, count in group_count_sorted[top_n:])
     if other_count > 0:
         top_groups.append(('Other', other_count))
 
@@ -71,7 +70,10 @@ def get_authors_total_data_for_documents(doc_type = 'all', group_by = 'country',
 def authors_total(request, doc_type='all', stats_type='affiliation'):
 
     # Query parameters (from ?key=value)
-    top_n = int(request.GET.get('top', '10'))
+    try:
+        top_n = max(1, min(int(request.GET.get('top', '10')), 100))
+    except ValueError:
+        top_n = 10
 
     if stats_type == 'affiliation':
         chart_data = get_authors_total_data_for_documents(doc_type, 'affiliation', top_n)
@@ -110,7 +112,7 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
     cache_key = f'stats:get_authors_timeline_data_for_documents:{doc_type}-{group_by}'
     result = cache.get(cache_key, None)
     if result is not None:
-        years_set, documents_totals, data_map = result
+        years_list, documents_totals, data_map = result
     else:
         # Build a dynamic query set filter
         filters = Q()    
@@ -128,10 +130,6 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
     # ── Step 1: Collect all meetings and tickets totals ──
         years_set = set()
         documents_totals = defaultdict(int)
-        data_map = defaultdict(dict)  # {year: {stream: count}}
-
-        years_set = set()
-        documents_totals = defaultdict(int)
         data_map = defaultdict(dict)
         year_group_list = [
             (row.document.pub_date().year, getattr(row, group_by))
@@ -144,6 +142,8 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
         elif group_by == 'country':
             alias_map = get_aliased_countries(group for _, group in year_group_list)
             year_group_list = [(year, alias_map.get(group, group)) for year, group in year_group_list]
+        else:
+            alias_map = {}
         alias_map[''] = 'Unspecified'
 
         years_set = {year for year, _ in year_group_list}
@@ -157,10 +157,10 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
             documents_totals[group] += 1
 
         # ── Step 2: Sort years numerically rather than alphabetically  ──
-        years_set = sorted(years_set)
+        years_list = sorted(years_set)
         cache.set(
             cache_key,
-            (years_set, documents_totals, data_map),
+            (years_list, documents_totals, data_map),
             settings.STATS_TIMELINE_CACHE_TIMEOUT,
         )
 
@@ -170,9 +170,9 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
         key=lambda c: documents_totals[c],
         reverse=True
     )[:top_n]
-    non_top_groups = documents_totals.keys() - top_groups
+    non_top_groups = documents_totals.keys() - set(top_groups)
     other_totals = defaultdict(int)
-    for y in years_set:
+    for y in years_list:
         other_totals[y] = 0
         for g in non_top_groups:
             other_totals[y] += int(data_map[y].get(g, 0))
@@ -184,7 +184,7 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
         color = color_from_hash(group)
         datasets.append({
             'label': group,
-            'data': [data_map[year].get(group, 0) for year in years_set],
+            'data': [data_map[year].get(group, 0) for year in years_list],
             'borderColor': color,
             'backgroundColor': color + '99', # 60% opacity fill
             'fill': False,
@@ -199,7 +199,7 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
     # -- Step 4.bis handle the other --
     datasets.append({
         'label': 'Other',
-        'data': [other_totals.get(year, 0) for year in years_set],
+        'data': [other_totals.get(year, 0) for year in years_list],
         'borderColor': 'black',
         'fill': False,
         'tension': 0.0,
@@ -210,7 +210,7 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
         'borderWidth': 2,
     })
 
-    return years_set, datasets
+    return years_list, datasets
 
 
 def authors_timeline(request, doc_type='all', stats_type='affiliation'):
@@ -226,7 +226,10 @@ def authors_timeline(request, doc_type='all', stats_type='affiliation'):
     """
 
     # Query parameters (from ?key=value)
-    top_n = int(request.GET.get('top', '20'))
+    try:
+        top_n = max(1, min(int(request.GET.get('top', '20')), 100))
+    except ValueError:
+        top_n = 20
 
     if stats_type == 'affiliation':
         total_labels, total_data_sets = get_authors_timeline_data_for_documents(doc_type, 'affiliation', top_n)
