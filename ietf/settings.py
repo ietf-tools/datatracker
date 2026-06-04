@@ -1363,8 +1363,13 @@ else:
     TEMPLATES[0]['OPTIONS']['context_processors'] += DEV_TEMPLATE_CONTEXT_PROCESSORS
 
 if "CACHES" not in locals():
-    if SERVER_MODE == "production":
-        raise RuntimeError("Must set CACHES in settings_local for production mode")
+    # Would like to refuse to start when in prod mode, but this currently blocks
+    # the collectstatics call in the release GHA. We should probably arrange for that
+    # to have its own caches config, but in the meantime just let this fall back to
+    # the dev cache configuration.
+    #
+    # if SERVER_MODE == "production":
+    #     raise RuntimeError("Must set CACHES in settings_local for production mode")
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.dummy.DummyCache",
