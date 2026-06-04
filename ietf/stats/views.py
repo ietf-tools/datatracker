@@ -15,7 +15,7 @@ def stats_index(request):
         "current_meeting": current_meeting
     })
 
-def known_countries_list(request, stats_type=None, acronym=None):
+def known_countries_list(request):
     """Render a list of known countries with their aliases."""
     countries = CountryName.objects.prefetch_related("countryalias_set")
     for c in countries:
