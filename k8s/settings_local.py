@@ -315,15 +315,29 @@ DJANGO_VITE["default"]["manifest_path"] = os.path.join(
 DE_GFM_BINARY = "/usr/local/bin/de-gfm"
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 
-# Duplicating production cache from settings.py and using it whether we're in production mode or not
-MEMCACHED_HOST = os.environ.get("DT_MEMCACHED_SERVICE_HOST", "127.0.0.1")
-MEMCACHED_PORT = os.environ.get("DT_MEMCACHED_SERVICE_PORT", "11211")
 from ietf import __version__
 
+# Common config for redis caches
+REDIS_SENTINEL_SERVICE = os.environ.get("DATATRACKER_REDIS_SENTINEL_HOST")
+REDIS_SENTINEL_PORT = os.environ.get("DATATRACKER_REDIS_SENTINEL_PORT", "26379")
+DJANGO_REDIS_CONNECTION_FACTORY = "django_redis.pool.SentinelConnectionFactory"
+REDIS_CACHE_CONFIG_COMMON = {
+    "BACKEND": "django_redis.cache.RedisCache",
+    "LOCATION": "redis://dt-master/0",
+    "OPTIONS": {
+        "CLIENT_CLASS": "ietf.utils.cache.SizeLimitingSentinelClient",
+        "MAX_ENCODED_VALUE_LEN": int(
+            os.environ.get("DATATRACKER_REDIS_MAX_ENCODED_VALUE_LEN", 1 << 20)
+        ),
+        "SENTINELS": [(REDIS_SENTINEL_SERVICE, REDIS_SENTINEL_PORT)],
+        "SENTINEL_KWARGS": {},
+        "CONNECTION_POOL_CLASS": "redis.sentinel.SentinelConnectionPool",
+    },
+}
+
 CACHES = {
-    "default": {
-        "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
-        "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+    "default": REDIS_CACHE_CONFIG_COMMON
+    | {
         "VERSION": __version__,
         "KEY_PREFIX": "ietf:dt",
         # Key function is default except with sha384-encoded key
@@ -331,9 +345,8 @@ CACHES = {
             f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
         ),
     },
-    "agenda": {
-        "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
-        "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+    "agenda": REDIS_CACHE_CONFIG_COMMON
+    | {
         # No release-specific VERSION setting.
         "KEY_PREFIX": "ietf:dt:agenda",
         # Key function is default except with sha384-encoded key
@@ -341,9 +354,8 @@ CACHES = {
             f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
         ),
     },
-    "proceedings": {
-        "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
-        "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+    "proceedings": REDIS_CACHE_CONFIG_COMMON
+    | {
         # No release-specific VERSION setting.
         "KEY_PREFIX": "ietf:dt:proceedings",
         # Key function is default except with sha384-encoded key
@@ -351,9 +363,8 @@ CACHES = {
             f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
         ),
     },
-    "sessions": {
-        "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
-        "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+    "sessions": REDIS_CACHE_CONFIG_COMMON
+    | {
         # No release-specific VERSION setting.
         "KEY_PREFIX": "ietf:dt",
     },
@@ -378,9 +389,8 @@ CACHES = {
             "MAX_ENTRIES": 5000,
         },
     },
-    "celery-results": {
-        "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
-        "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+    "celery-results": REDIS_CACHE_CONFIG_COMMON
+    | {
         "KEY_PREFIX": "ietf:celery",
     },
 }
