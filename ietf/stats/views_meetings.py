@@ -1,13 +1,15 @@
 # Copyright The IETF Trust 2016-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+from typing import Optional, Tuple, List, Dict, Any
+from collections import defaultdict
+
 from django.conf import settings
 from django.db.models import Count
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse as urlreverse
 from django.core.cache import cache
-from collections import defaultdict
 
 import debug                            # pyflakes:ignore
 
@@ -15,8 +17,102 @@ from ietf.meeting.models import Registration, Meeting
 from ietf.stats.utils import color_from_hash, get_aliased_affiliations, get_aliased_countries
 from ietf.meeting.helpers import get_current_ietf_meeting_num
 
+# Constants
+FIRST_MEETING_WITH_REGISTRATION_DATA = 72
 
-def get_affiliation_data_for_meetings(attendance_type=None, top_n=20):
+
+def _build_timeline_datasets(
+    top_items: List[str],
+    data_map: Dict[str, Dict[str, int]],
+    sorted_meetings: List[str],
+    other_totals: Dict[str, int],
+    include_background_color: bool = False,
+) -> List[Dict[str, Any]]:
+    """Build Chart.js datasets for timeline charts.
+
+    Args:
+        top_items: List of top item labels (countries, affiliations, etc.).
+        data_map: Mapping of {item: {meeting: count}}.
+        sorted_meetings: Sorted list of meeting numbers.
+        other_totals: Mapping of {meeting: count} for 'Other' category.
+        include_background_color: Whether to include backgroundColor (for filled areas).
+
+    Returns:
+        List of Chart.js dataset dictionaries.
+    """
+    datasets = []
+    for item in top_items:
+        color = color_from_hash(item)
+        dataset = {
+            'label': item,
+            'data': [data_map[item].get(m, 0) for m in sorted_meetings],
+            'borderColor': color,
+            'fill': bool(include_background_color),
+            'tension': 0.0 if include_background_color else 0.3,
+            'pointColor': color,
+            'pointBackgroundColor': color,
+            'pointRadius': 4,
+            'pointHoverRadius': 6,
+            'borderWidth': 2,
+        }
+        if include_background_color:
+            dataset['backgroundColor'] = color + '99'
+        datasets.append(dataset)
+
+    # Add "Other" category
+    datasets.append({
+        'label': 'Other',
+        'data': [other_totals.get(m, 0) for m in sorted_meetings],
+        'borderColor': 'black',
+        'fill': bool(include_background_color),
+        'tension': 0.0 if include_background_color else 0.3,
+        'pointColor': 'black',
+        'pointBackgroundColor': 'black',
+        'pointRadius': 4,
+        'pointHoverRadius': 6,
+        'borderWidth': 2,
+    })
+    if include_background_color:
+        datasets[-1]['backgroundColor'] = '#00000099'
+
+    return datasets
+
+
+def _build_pie_chart_data(
+    items_with_counts: List[Tuple[str, int]],
+    top_n: int = 20,
+) -> Tuple[List[str], List[int], int]:
+    """Build pie chart data from sorted items.
+
+    Args:
+        items_with_counts: List of (label, count) tuples, already sorted.
+        top_n: Number of top items to display.
+
+    Returns:
+        Tuple of (labels, data, total).
+    """
+    labels = []
+    data = []
+    total = 0
+
+    for item, count in items_with_counts[:top_n]:
+        total += count
+        labels.append(item)
+        data.append(count)
+
+    other_total = 0
+    for _, count in items_with_counts[top_n:]:
+        other_total += count
+        total += count
+
+    if other_total > 0:
+        labels.append('Other')
+        data.append(other_total)
+
+    return labels, data, total
+
+
+def get_affiliation_data_for_meetings(attendance_type: Optional[str] = None, top_n: int = 20) -> Tuple[List[str], List[Dict[str, Any]]]:
     """Get affiliation participation data for meetings timeline chart.
 
     Args:
@@ -48,7 +144,7 @@ def get_affiliation_data_for_meetings(attendance_type=None, top_n=20):
         for reg in registrations:
             meeting = reg['meeting__number']
             meetings_set.add(meeting)
-            if reg['affiliation'] is None or reg['affiliation'].strip() == '':
+            if not reg['affiliation'] or not reg['affiliation'].strip():
                 affiliation = 'Unspecified'
             else:                
                 affiliation = alias_map.get(reg['affiliation'], reg['affiliation'])
@@ -73,36 +169,7 @@ def get_affiliation_data_for_meetings(attendance_type=None, top_n=20):
                 other_totals[m] += int(data_map[c].get(m, 0))
     
         # ── Step 4: Build Chart.js datasets ──
-    
-        datasets = []
-        for idx, org in enumerate(top_orgs):
-            color = color_from_hash(org)
-            datasets.append({
-                'label': org,
-                'data': [data_map[org].get(m, 0) for m in sorted_meetings],
-                'borderColor': color,
-                'fill': False,
-                'tension': 0.3,
-                'pointColor': color,
-                'pointBackgroundColor': color,
-                'pointRadius': 4,
-                'pointHoverRadius': 6,
-                'borderWidth': 2,
-            })
-    
-        # -- Step 4.bis handle the other --
-        datasets.append({
-            'label': 'Other',
-            'data': [other_totals.get(m, 0) for m in sorted_meetings],
-            'borderColor': 'black',
-            'fill': False,
-            'tension': 0.3,
-            'pointColor': 'black',
-            'pointBackgroundColor': 'black',
-            'pointRadius': 4,
-            'pointHoverRadius': 6,
-            'borderWidth': 2,
-        })
+        datasets = _build_timeline_datasets(top_orgs, data_map, sorted_meetings, other_totals)
         cache.set(
             cache_key,
             (sorted_meetings, datasets),
@@ -111,7 +178,7 @@ def get_affiliation_data_for_meetings(attendance_type=None, top_n=20):
 
     return sorted_meetings, datasets
 
-def get_country_data_for_meetings(attendance_type=None, top_n=20):
+def get_country_data_for_meetings(attendance_type: Optional[str] = None, top_n: int = 20) -> Tuple[List[str], List[Dict[str, Any]]]:
     """Get country participation data for meetings timeline chart.
 
     Args:
@@ -176,36 +243,7 @@ def get_country_data_for_meetings(attendance_type=None, top_n=20):
                 other_totals[m] += int(data_map[c].get(m, 0))
     
         # ── Step 4: Build Chart.js datasets ──
-    
-        datasets = []
-        for idx, country in enumerate(top_countries):
-            color = color_from_hash(country)
-            datasets.append({
-                'label': country,
-                'data': [data_map[country].get(m, 0) for m in sorted_meetings],
-                'borderColor': color,
-                'fill': False,
-                'tension': 0.3,
-                'pointColor': color,
-                'pointBackgroundColor': color,
-                'pointRadius': 4,
-                'pointHoverRadius': 6,
-                'borderWidth': 2,
-            })
-    
-        # -- Step 4.bis handle the other --
-        datasets.append({
-            'label': 'Other',
-            'data': [other_totals.get(m, 0) for m in sorted_meetings],
-            'borderColor': 'black',
-            'fill': False,
-            'tension': 0.3,
-            'pointColor': 'black',
-            'pointBackgroundColor': 'black',
-            'pointRadius': 4,
-            'pointHoverRadius': 6,
-            'borderWidth': 2,
-        })
+        datasets = _build_timeline_datasets(top_countries, data_map, sorted_meetings, other_totals)
         cache.set(
             cache_key,
             (sorted_meetings, datasets),
@@ -214,7 +252,7 @@ def get_country_data_for_meetings(attendance_type=None, top_n=20):
 
     return sorted_meetings, datasets
 
-def get_data_for_meetings(top_n=20):
+def get_data_for_meetings(top_n: int = 20) -> Tuple[List[str], List[Dict[str, Any]]]:
     """Get total participation data by attendance type for meetings timeline chart.
 
     Returns:
@@ -254,22 +292,7 @@ def get_data_for_meetings(top_n=20):
         ticket_types = tickets_totals.keys()
         
         # ── Step 4: Build Chart.js datasets ──
-        datasets = []
-        for idx, ticket_type in enumerate(ticket_types):
-            color = color_from_hash(ticket_type)
-            datasets.append({
-                'label': ticket_type,
-                'data': [data_map[ticket_type].get(m, 0) for m in sorted_meetings],
-                'borderColor': color,
-                'backgroundColor': color + '99', # 60% opacity fill
-                'fill': True,
-                'tension': 0.0,
-                'pointColor': color,
-                'pointBackgroundColor': color,
-                'pointRadius': 4,
-                'pointHoverRadius': 6,
-                'borderWidth': 2,
-            })
+        datasets = _build_timeline_datasets(list(ticket_types), data_map, sorted_meetings, {}, include_background_color=True)
         cache.set(
             cache_key,
             (sorted_meetings, datasets),
@@ -277,7 +300,7 @@ def get_data_for_meetings(top_n=20):
         )
     return sorted_meetings, datasets
 
-def meetings_timeline(request, stats_type='country'):
+def meetings_timeline(request: Any, stats_type: str = 'country') -> Any:
     """Render the meetings timeline page with participation statistics over time.
 
     Args:
@@ -289,7 +312,10 @@ def meetings_timeline(request, stats_type='country'):
         Rendered response for the meetings timeline template.
     """
     # Query parameters (from ?key=value)
-    top_n = int(request.GET.get('top', '20'))
+    try:
+        top_n = max(1, min(int(request.GET.get('top', '20')), 100))
+    except ValueError:
+        top_n = 20
 
     if stats_type == 'total':
         total_labels, total_data_sets = get_data_for_meetings(top_n=top_n)
@@ -350,7 +376,7 @@ def meetings_timeline(request, stats_type='country'):
         "in_person_chart_data": in_person_chart_data,
     })
 
-def get_affiliation_data_for_meeting(meeting_number, top_n=20, attendance_type=None):
+def get_affiliation_data_for_meeting(meeting_number: str, top_n: int = 20, attendance_type: Optional[str] = None) -> Tuple[List[str], List[int], int]:
     """Get affiliation participation data for a specific meeting.
 
     Args:
@@ -371,7 +397,7 @@ def get_affiliation_data_for_meeting(meeting_number, top_n=20, attendance_type=N
     # Count per canonicalized affiliation
     organization = dict()
     for reg in registrations:
-        if reg['affiliation'] is None or reg['affiliation'].strip() == '':
+        if not reg['affiliation'] or not reg['affiliation'].strip():
             affiliation = 'Unspecified'
         else:
             affiliation = alias_map.get(reg['affiliation'], reg['affiliation'])                                
@@ -379,27 +405,9 @@ def get_affiliation_data_for_meeting(meeting_number, top_n=20, attendance_type=N
 
     # Sort to have the largest count first (nicer in pie chart)
     sorted_orgs = sorted(organization.items(), key=lambda t: t[1], reverse=True)
-    labels = []
-    data = []
-    total = 0
-    for org, count in sorted_orgs[:top_n]:
-        total += count
-        labels.append(org)
-        data.append(count)
+    return _build_pie_chart_data(sorted_orgs, top_n)
 
-    other_total = 0
-    for _, count in sorted_orgs[top_n:]:
-        other_total += count
-        total += count
-
-    if other_total > 0:
-        labels.append('Other')
-        data.append(other_total)
-
-
-    return labels, data, total
-
-def get_country_data_for_meeting(meeting_number, top_n=20, attendance_type=None):
+def get_country_data_for_meeting(meeting_number: str, top_n: int = 20, attendance_type: Optional[str] = None) -> Tuple[List[str], List[int], int]:
     """Get country participation data for a specific meeting.
 
     Args:
@@ -417,29 +425,16 @@ def get_country_data_for_meeting(meeting_number, top_n=20, attendance_type=None)
     registration_counts = registration_counts.values('country_code').annotate(count=Count('country_code')).order_by('-count')
 
     alias_map = get_aliased_countries(reg for reg in registration_counts.values_list('country_code', flat=True))
-    labels = []
-    data = []
-    total = 0
-    country_totals = defaultdict(int)
-    for item in registration_counts[:top_n]:
-        total += item['count']
-        country = alias_map.get(item['country_code'], item['country_code'])
-        labels.append(country)
-        data.append(item['count'])
-        country_totals[country] = item['count']
+    
+    # Convert queryset to list of (label, count) tuples
+    items_with_counts = [
+        (alias_map.get(item['country_code'], item['country_code']), item['count'])
+        for item in registration_counts
+    ]
+    
+    return _build_pie_chart_data(items_with_counts, top_n)
 
-    other_total = 0
-    for item in registration_counts[top_n:]:
-        other_total += item['count']
-        total += item['count']
-
-    if other_total > 0:
-        labels.append('Other')
-        data.append(other_total)
-
-    return labels, data, total
-
-def meeting_stats(request, meeting_number=None, stats_type='country'):
+def meeting_stats(request: Any, meeting_number: Optional[str] = None, stats_type: str = 'country') -> Any:
     """Render statistics for a specific meeting.
 
     Args:
@@ -458,7 +453,10 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
     )
 
     # Query parameters (from ?key=value)
-    top_n = int(request.GET.get('top', '20'))
+    try:
+        top_n = max(1, min(int(request.GET.get('top', '20')), 100))
+    except ValueError:
+        top_n = 20
 
     if stats_type == 'affiliation':
         total_labels, total_data, total_total = get_affiliation_data_for_meeting(meeting_number, top_n=top_n)
@@ -472,7 +470,7 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
     total_chart_data = {
         'labels': total_labels,
         'datasets': [{
-            'label': 'Total Registrations by ' + stats_type,
+            'label': f'Total Registrations by {stats_type}',
             'data': total_data,
             'backgroundColor': [color_from_hash(label) if label else '#202020' for label in total_labels],
             'borderColor': '#ffffff',
@@ -482,7 +480,7 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
     in_person_chart_data = {
         'labels': in_person_labels,
         'datasets': [{
-            'label': 'In Person Registrations by ' + stats_type,
+            'label': f'In Person Registrations by {stats_type}',
             'data': in_person_data,
             'backgroundColor': [color_from_hash(label) if label else '#202020' for label in in_person_labels],
             'borderColor': '#ffffff',
@@ -498,7 +496,7 @@ def meeting_stats(request, meeting_number=None, stats_type='country'):
 
     # Prepare the list of meeting number buttons for the template
     possible_meeting_numbers = [('All', urlreverse(meetings_timeline, kwargs={'stats_type': stats_type}))]
-    if int(meeting_number) > 72:  # No registration data before IETF-72
+    if int(meeting_number) > FIRST_MEETING_WITH_REGISTRATION_DATA:
         possible_meeting_numbers.append((int(meeting_number)-1, urlreverse(meeting_stats, kwargs={'meeting_number': int(meeting_number)-1, 'stats_type': stats_type})))
     possible_meeting_numbers.append((meeting_number, urlreverse(meeting_stats, kwargs={'meeting_number': meeting_number, 'stats_type': stats_type})))
     if int(meeting_number) <= int(current_meeting_number): # Allow current meeting +1
