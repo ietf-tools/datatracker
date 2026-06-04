@@ -8,8 +8,6 @@ spec:
   selector:
     matchLabels:
       app: datatracker
-  strategy:
-    type: DEPLOY_STRATEGY
   template:
     metadata:
       labels:
@@ -69,7 +67,7 @@ spec:
         # Nginx Container
         # -----------------------------------------------------
         - name: nginx
-          image: "ghcr.io/nginxinc/nginx-unprivileged:1.27"
+          image: "ghcr.io/nginx/nginx-unprivileged:1.30"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

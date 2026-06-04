@@ -25,6 +25,7 @@ django-debug-toolbar>=6.0.0
 django-filter>=24.3
 django-markup>=1.10    # Limited use - need to reconcile against direct use of markdown
 django-oidc-provider==0.8.2    # 0.8.3 changes logout flow and claim return
+django-redis>=6.0.0
 django-simple-history>=3.10.1
 django-storages>=1.14.6
 django-stubs>=4.2.7,<5    # The django-stubs version used determines the the mypy version indicated below
@@ -58,8 +59,8 @@ oic>=1.7.0  # Used only by tests
 opentelemetry-sdk>=1.38.0
 opentelemetry-instrumentation-django>=0.59b0
 opentelemetry-instrumentation-psycopg2>=0.59b0
-opentelemetry-instrumentation-pymemcache>=0.59b0
 opentelemetry-instrumentation-requests>=0.59b0
+opentelemetry-instrumentation-redis>=0.63b1
 opentelemetry-exporter-otlp-proto-http>=1.38.0
 pillow>=11.3.0
 psycopg2>=2.9.10
@@ -72,11 +73,9 @@ python-dateutil>=2.9.0
 types-python-dateutil>=2.9.0
 python-json-logger>=3.3.0
 python-magic==0.4.18    # Versions beyond the yanked .19 and .20 introduce form failures
-pymemcache>=4.0.0  # for django.core.cache.backends.memcached.PyMemcacheCache
 python-mimeparse>=2.0.0  # from TastyPie
 pytz==2025.2  # Pinned as changes need to be vetted for their effect on Meeting fields
 types-pytz==2025.2.0.20251108  # match pytz version
-typesense>=2.0.0
 requests>=2.32.4
 types-requests>=2.32.4
 requests-mock>=1.12.1
@@ -86,10 +85,11 @@ selenium>=4.34.2
 tblib>=3.1.0  # So that the django test runner provides tracebacks
 tlds>=2022042700  # Used to teach bleach about which TLDs currently exist
 tqdm>=4.67.1
+typesense>=2.0.0
 unidecode>=1.4.0
 urllib3>=2.5.0
 weasyprint>=66.0
 xml2rfc>=3.30.0
-xym>=0.6,<1.0
+xym>=0.6,<0.10.0
 zxcvbn>=4.5.0
 types-zxcvbn~=4.5.0.20250223  # match zxcvbn version
