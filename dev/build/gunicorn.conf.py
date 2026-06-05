@@ -7,6 +7,10 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExport
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.instrumentation.django import DjangoInstrumentor
+from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
+from opentelemetry.instrumentation.pymemcache import PymemcacheInstrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
 # Bind all ipv4 interfaces (nginx uses loopback, but k8s health checks don't)
 _BIND_PORT = os.environ.get("DATATRACKER_GUNICORN_BIND_PORT", "8000")
@@ -167,15 +171,11 @@ def post_fork(server, worker):
         trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(otlp_exporter))
     
         # Instrumentations
-        if "all" in enabled_telemetry or "django" in enabled_telemetry:
-            from opentelemetry.instrumentation.django import DjangoInstrumentor
+        if "all" in enabled_telemetry or "django" in enabled_telemetry: 
             DjangoInstrumentor().instrument()
-        if "all" in enabled_telemetry or "psycopg2" in enabled_telemetry:
-            from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
+        if "all" in enabled_telemetry or "psycopg2" in enabled_telemetry: 
             Psycopg2Instrumentor().instrument()
-        if "all" in enabled_telemetry or "redis" in enabled_telemetry:
-            from opentelemetry.instrumentation.redis import RedisInstrumentor
-            RedisInstrumentor().instrument()
-        if "all" in enabled_telemetry or "requests" in enabled_telemetry:
-            from opentelemetry.instrumentation.requests import RequestsInstrumentor
+        if "all" in enabled_telemetry or "pymemcache" in enabled_telemetry: 
+            PymemcacheInstrumentor().instrument()
+        if "all" in enabled_telemetry or "requests" in enabled_telemetry: 
             RequestsInstrumentor().instrument()

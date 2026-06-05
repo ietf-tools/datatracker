@@ -8,6 +8,8 @@ spec:
   selector:
     matchLabels:
       app: datatracker
+  strategy:
+    type: DEPLOY_STRATEGY
   template:
     metadata:
       labels:
