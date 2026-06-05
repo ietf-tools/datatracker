@@ -4,14 +4,14 @@
 from typing import Optional, Tuple, List, Dict, Any
 from collections import defaultdict
 
+import debug                            # pyflakes:ignore
+
 from django.conf import settings
 from django.db.models import Count
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse as urlreverse
 from django.core.cache import cache
-
-import debug                            # pyflakes:ignore
 
 from ietf.meeting.models import Registration, Meeting
 from ietf.stats.utils import color_from_hash, get_aliased_affiliations, get_aliased_countries
@@ -40,7 +40,7 @@ def _build_timeline_datasets(
     Returns:
         List of Chart.js dataset dictionaries.
     """
-    datasets = []
+    datasets: List[Dict[str, Any]] = []
     for item in top_items:
         color = color_from_hash(item)
         dataset = {
@@ -91,8 +91,8 @@ def _build_pie_chart_data(
     Returns:
         Tuple of (labels, data, total).
     """
-    labels = []
-    data = []
+    labels: List[str] = []
+    data: List[int] = []
     total = 0
 
     for item, count in items_with_counts[:top_n]:
@@ -127,19 +127,19 @@ def get_affiliation_data_for_meetings(attendance_type: Optional[str] = None, top
 
         # Get registration status details
         if attendance_type:
-            registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
+            base_registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
         else:
-            registrations = Registration.objects.all()
-        registrations = registrations.values('affiliation', 'meeting__number')
+            base_registrations = Registration.objects.all()
+        registrations = base_registrations.values('affiliation', 'meeting__number')
     
         # Prepare affiliation data, applying canonicalization and aliasing
         alias_map = get_aliased_affiliations(affiliation for affiliation in registrations.values_list('affiliation', flat=True))
 
         # Count per canonicalized affiliation
-        organization = dict()
-        meetings_set = set()
-        org_totals = defaultdict(int)
-        data_map = defaultdict(dict)  # {org: {meeting: count}}
+        organization: Dict[str, int] = {}
+        meetings_set: set[str] = set()
+        org_totals: Dict[str, int] = defaultdict(int)
+        data_map: Dict[str, Dict[str, int]] = defaultdict(dict)  # {org: {meeting: count}}
     
         for reg in registrations:
             meeting = reg['meeting__number']
@@ -161,8 +161,8 @@ def get_affiliation_data_for_meetings(attendance_type: Optional[str] = None, top
             key=lambda c: org_totals[c],
             reverse=True
         )[:top_n]
-        non_top_orgs = org_totals.keys() - top_orgs
-        other_totals = defaultdict(int)
+        non_top_orgs = set(org_totals.keys()) - set(top_orgs)
+        other_totals: Dict[str, int] = defaultdict(int)
         for m in sorted_meetings:
             other_totals[m] = 0
             for c in non_top_orgs:
@@ -192,11 +192,11 @@ def get_country_data_for_meetings(attendance_type: Optional[str] = None, top_n: 
     if (sorted_meetings, datasets) == (None, None):
         # Get registration status counts, aggregated by country_code
         if attendance_type:
-            registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
+            base_registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
         else:
-            registrations = Registration.objects.all()
+            base_registrations = Registration.objects.all()
         queryset = (
-            registrations
+            base_registrations
             .values(
                 'meeting__number',      # e.g. "118", "119", "120"
                 'country_code'          # country code of the participant
@@ -211,9 +211,9 @@ def get_country_data_for_meetings(attendance_type: Optional[str] = None, top_n: 
         alias_map = get_aliased_countries(country_code for country_code in queryset.values_list('country_code', flat=True))
 
         # ── Step 1: Collect all meetings and country totals ──
-        meetings_set = set()
-        country_totals = defaultdict(int)
-        data_map = defaultdict(dict)  # {country: {meeting: count}}
+        meetings_set: set[str] = set()
+        country_totals: Dict[str, int] = defaultdict(int)
+        data_map: Dict[str, Dict[str, int]] = defaultdict(dict)  # {country: {meeting: count}}
     
         for row in queryset:
             meeting = row['meeting__number']
@@ -235,8 +235,8 @@ def get_country_data_for_meetings(attendance_type: Optional[str] = None, top_n: 
         )[:top_n]
     
         # -- Step 3.bis do the 'other' category --
-        non_top_countries = country_totals.keys() - top_countries
-        other_totals = defaultdict(int)
+        non_top_countries = set(country_totals.keys()) - set(top_countries)
+        other_totals: Dict[str, int] = defaultdict(int)
         for m in sorted_meetings:
             other_totals[m] = 0
             for c in non_top_countries:
@@ -262,9 +262,9 @@ def get_data_for_meetings(top_n: int = 20) -> Tuple[List[str], List[Dict[str, An
     sorted_meetings, datasets = cache.get(cache_key, (None, None))
     if (sorted_meetings, datasets) == (None, None):
         # Get registration status counts, aggregated by ticket types
-        registrations = Registration.objects.filter(tickets__attendance_type__in=['onsite', 'remote'])
+        base_registrations = Registration.objects.filter(tickets__attendance_type__in=['onsite', 'remote'])
         queryset = (
-            registrations
+            base_registrations
             .values(
                 'meeting__number',      # e.g. "118", "119", "120"
                 'tickets__attendance_type'
@@ -274,9 +274,9 @@ def get_data_for_meetings(top_n: int = 20) -> Tuple[List[str], List[Dict[str, An
         )
     
         # ── Step 1: Collect all meetings and tickets totals ──
-        meetings_set = set()
-        tickets_totals = defaultdict(int)
-        data_map = defaultdict(dict)  # {ticket: {meeting: count}}
+        meetings_set: set[str] = set()
+        tickets_totals: Dict[str, int] = defaultdict(int)
+        data_map: Dict[str, Dict[str, int]] = defaultdict(dict)  # {ticket: {meeting: count}}
     
         for row in queryset:
             meeting = row['meeting__number']
@@ -319,8 +319,8 @@ def meetings_timeline(request: Any, stats_type: str = 'country') -> Any:
 
     if stats_type == 'total':
         total_labels, total_data_sets = get_data_for_meetings(top_n=top_n)
-        in_person_labels = ([], [])
-        in_person_data_sets = ([], [])
+        in_person_labels: List[str] = []
+        in_person_data_sets: List[Dict[str, Any]] = []
         plural_stats_type = ''
     elif stats_type == 'affiliation':
         total_labels, total_data_sets = get_affiliation_data_for_meetings(top_n=top_n)
@@ -360,7 +360,7 @@ def meetings_timeline(request: Any, stats_type: str = 'country') -> Any:
     else:
         possible_stats_type = stats_type
 
-    possible_meeting_numbers = [
+    possible_meeting_numbers: List[Tuple[str | int, str]] = [
         ('All', urlreverse(meetings_timeline, kwargs={'stats_type': stats_type})),
         (int(current_meeting)-1, urlreverse(meeting_stats, kwargs={'meeting_number': int(current_meeting)-1, 'stats_type': possible_stats_type})),
         (int(current_meeting), urlreverse(meeting_stats, kwargs={'meeting_number': int(current_meeting), 'stats_type': possible_stats_type})),
@@ -387,15 +387,15 @@ def get_affiliation_data_for_meeting(meeting_number: str, top_n: int = 20, atten
         Tuple of (labels, data, total) for chart display.
     """
     # Get registration status details
-    registrations = Registration.objects.filter(meeting__number=meeting_number)
+    base_registrations = Registration.objects.filter(meeting__number=meeting_number)
     if attendance_type:
-        registrations = registrations.filter(tickets__attendance_type=attendance_type)
-    registrations = registrations.values('affiliation')
+        base_registrations = base_registrations.filter(tickets__attendance_type=attendance_type)
+    registrations = base_registrations.values('affiliation')
 
     alias_map = get_aliased_affiliations(affiliation for affiliation in registrations.values_list('affiliation', flat=True))
 
     # Count per canonicalized affiliation
-    organization = dict()
+    organization: Dict[str, int] = {}
     for reg in registrations:
         if not reg['affiliation'] or not reg['affiliation'].strip():
             affiliation = 'Unspecified'
@@ -419,10 +419,10 @@ def get_country_data_for_meeting(meeting_number: str, top_n: int = 20, attendanc
         Tuple of (labels, data, total) for chart display.
     """
     # Get registration status counts, aggregated by country_code
-    registration_counts = Registration.objects.filter(meeting__number=meeting_number)
+    base_registration_counts = Registration.objects.filter(meeting__number=meeting_number)
     if attendance_type:
-        registration_counts = registration_counts.filter(tickets__attendance_type=attendance_type)
-    registration_counts = registration_counts.values('country_code').annotate(count=Count('country_code')).order_by('-count')
+        base_registration_counts = base_registration_counts.filter(tickets__attendance_type=attendance_type)
+    registration_counts = base_registration_counts.values('country_code').annotate(count=Count('country_code')).order_by('-count')
 
     alias_map = get_aliased_countries(reg for reg in registration_counts.values_list('country_code', flat=True))
     
@@ -495,7 +495,7 @@ def meeting_stats(request: Any, meeting_number: Optional[str] = None, stats_type
     ]
 
     # Prepare the list of meeting number buttons for the template
-    possible_meeting_numbers = [('All', urlreverse(meetings_timeline, kwargs={'stats_type': stats_type}))]
+    possible_meeting_numbers: List[Tuple[str | int, str]] = [('All', urlreverse(meetings_timeline, kwargs={'stats_type': stats_type}))]
     if int(meeting_number) > FIRST_MEETING_WITH_REGISTRATION_DATA:
         possible_meeting_numbers.append((int(meeting_number)-1, urlreverse(meeting_stats, kwargs={'meeting_number': int(meeting_number)-1, 'stats_type': stats_type})))
     possible_meeting_numbers.append((meeting_number, urlreverse(meeting_stats, kwargs={'meeting_number': meeting_number, 'stats_type': stats_type})))
