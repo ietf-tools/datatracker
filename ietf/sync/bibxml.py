@@ -191,7 +191,7 @@ def recreate_id_bibxml_by_draft_name(draft_name):
     for revision in reversed(doc.revisions_by_newrevisionevent()):
         doc_rev = doc.history_set.order_by("-time").filter(rev=revision).first()
         bibxml = get_id_bibxml(draft_name, doc_rev)
-        filename = f"bibxml-ids/reference.I-D.{draft_name}.xml"
+        filename = f"bibxml-ids/reference.I-D.{draft_name}-{revision}.xml"
         save_bibxml(bibxml, filename)
 
 
