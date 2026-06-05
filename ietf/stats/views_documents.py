@@ -1,6 +1,8 @@
 # Copyright The IETF Trust 2016-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+from typing import Tuple, List, Dict, Any
+
 from django.conf import settings
 from django.db.models import Count, Q
 from django.http import HttpResponseRedirect
@@ -8,48 +10,59 @@ from django.shortcuts import render
 from django.urls import reverse as urlreverse
 from django.core.cache import cache
 
-from collections import defaultdict
-
 import debug                            # pyflakes:ignore
+
+from collections import defaultdict
 
 from ietf.doc.models import Document
 from ietf.stats.utils import color_from_hash
 
-def get_total_data_for_documents(doc_type = 'rfc', group_by = 'level', top_n = 20):
+def get_total_data_for_documents(
+    doc_type: str = 'rfc',
+    group_by: str = 'level',
+    top_n: int = 20,
+) -> Dict[str, Any]:
+    """Get aggregated document statistics grouped by the specified field.
+
+    Args:
+        doc_type: Document type filter ('rfc', 'draft', 'all', 'wg-draft').
+        group_by: Field to group by (e.g., 'stream__name', 'group__name').
+        top_n: Number of top groups to display.
+
+    Returns:
+        Chart.js compatible data dictionary with labels and datasets.
+    """
     # Build a dynamic query set filter
-    filters = Q()    
-    if doc_type != 'all' and doc_type  != 'wg-draft':
+    filters = Q()
+    if doc_type != 'all' and doc_type != 'wg-draft':
         filters &= Q(type_id=doc_type)
     if doc_type == 'wg-draft':
-        filters &= Q(type_id= 'draft')
+        filters &= Q(type_id='draft')
         filters &= Q(name__startswith='draft-ietf')
     queryset = (
         Document.objects
         .filter(filters)
         .values(group_by)
-        .annotate(document_count=Count('id', distinct=True))  # Count as many document authored by this author
+        .annotate(document_count=Count('id', distinct=True))
         .order_by('-document_count')
     )
 
-    group_count_set = {
-        (group, count)
-        for group, count in queryset.values_list(group_by, 'document_count')
-    }
-
-    group_count_dict = dict()
-    for group, count in group_count_set:
-        if group is None or group == '':
+    # Convert queryset to dictionary, aggregating by group
+    group_count_dict: Dict[str, int] = {}
+    for group, count in queryset.values_list(group_by, 'document_count'):
+        if not group or group == '':
             group = 'Unspecified'
         group_count_dict[group] = group_count_dict.get(group, 0) + count
 
-    group_count_dict = sorted(group_count_dict.items(), key=lambda x: x[1], reverse=True)
-    top_groups = group_count_dict[:top_n]
-    other_count = sum(count for _, count in group_count_dict[top_n:])
+    sorted_groups = sorted(group_count_dict.items(), key=lambda x: x[1], reverse=True)
+    top_groups = sorted_groups[:top_n]
+    other_count = sum(count for _, count in sorted_groups[top_n:])
     if other_count > 0:
         top_groups.append(('Other', other_count))
 
-    labels, data = zip(*top_groups) if top_groups else ([], [])
-    chart_data = {
+    labels: Tuple[str, ...] = tuple(label for label, _ in top_groups)
+    data: Tuple[int, ...] = tuple(count for _, count in top_groups)
+    chart_data: Dict[str, Any] = {
         'labels': labels,
         'datasets': [{
             'data': data,
@@ -58,13 +71,24 @@ def get_total_data_for_documents(doc_type = 'rfc', group_by = 'level', top_n = 2
             'borderWidth': 1,
         }],
     }
-
     return chart_data
 
-def documents_total(request, doc_type='rfc', stats_type='level'):
+def documents_total(request: Any, doc_type: str = 'rfc', stats_type: str = 'level') -> Any:
+    """Render document statistics page with pie chart aggregations.
 
+    Args:
+        request: The HTTP request object.
+        doc_type: Type of documents to display.
+        stats_type: Field to aggregate by.
+
+    Returns:
+        Rendered response for the documents_total template.
+    """
     # Query parameters (from ?key=value)
-    top_n = int(request.GET.get('top', '10'))
+    try:
+        top_n = max(1, min(int(request.GET.get('top', '10')), 100))
+    except (ValueError, TypeError):
+        top_n = 10
 
     if stats_type == 'stream':
         chart_data = get_total_data_for_documents(doc_type, 'stream__name', top_n)
@@ -104,9 +128,29 @@ def documents_total(request, doc_type='rfc', stats_type='level'):
         "chart_data": chart_data,
     })
 
-def get_timeline_data_for_documents(doc_type = 'rfc', group_by = 'stream__name', top_n = 10):
+def get_timeline_data_for_documents(
+    doc_type: str = 'rfc',
+    group_by: str = 'stream__name',
+    top_n: int = 10,
+) -> Tuple[List[int], List[Dict[str, Any]]]:
+    """Get timeline data for documents grouped by field over years.
+
+    Args:
+        doc_type: Document type filter ('rfc', 'draft', 'all').
+        group_by: Field to group by (e.g., 'stream__name', 'group__name').
+        top_n: Number of top groups to display.
+
+    Returns:
+        Tuple of (sorted_years, datasets) for Chart.js timeline chart.
+    """
     cache_key = f'stats:get_timeline_data_for_documents:{doc_type}-{group_by}'
     result = cache.get(cache_key, None)
+    
+    # Initialize variables with proper types
+    years_set: list[int]
+    documents_totals: Dict[str, int]
+    data_map: Dict[int, Dict[str, int]]
+    
     if result is not None:
         years_set, documents_totals, data_map = result
     else:
@@ -115,35 +159,29 @@ def get_timeline_data_for_documents(doc_type = 'rfc', group_by = 'stream__name',
         else:
             queryset = Document.objects.all()
 
-    # ── Step 1: Collect all meetings and tickets totals ──
-        years_set = set()
+        # ── Step 1: Collect all years and document totals ──
+        years_set_temp: set[int] = set()
         documents_totals = defaultdict(int)
-        data_map = defaultdict(dict)  # {year: {stream: count}}
+        data_map = defaultdict(dict)  # {year: {group: count}}
 
         for row in queryset:
             if not row.pub_date():
                 continue
             year = row.pub_date().year
             if group_by == 'stream__name':
-                if row.stream is None:
-                    group = 'Unspecified'
-                else:
-                    group = row.stream.name
+                group = row.stream.name if row.stream else 'Unspecified'
             elif group_by == 'group__name':
-                if row.group is None:
-                    group = 'Unspecified'
-                else:
-                    group = row.group.name
+                group = row.group.name if row.group else 'Unspecified'
             else:
-                group = getattr(row, group_by)
-                if group is None:
+                group = getattr(row, group_by, None)
+                if not group:
                     group = 'Unspecified'
-            years_set.add(year)
+            years_set_temp.add(year)
             documents_totals[group] += 1
             data_map[year][group] = data_map[year].get(group, 0) + 1
 
-        # ── Step 2: Sort years numerically rather than alphabetically  ──
-        years_set = sorted(years_set)
+        # ── Step 2: Sort years numerically ──
+        years_set = sorted(years_set_temp)
         cache.set(
             cache_key,
             (years_set, documents_totals, data_map),
@@ -155,26 +193,26 @@ def get_timeline_data_for_documents(doc_type = 'rfc', group_by = 'stream__name',
         key=lambda c: documents_totals[c],
         reverse=True
     )[:top_n]
-    non_top_groups = documents_totals.keys() - top_groups
-    other_totals = defaultdict(int)
+    non_top_groups = set(documents_totals.keys()) - set(top_groups)
+    other_totals: Dict[int, int] = defaultdict(int)
     other_bin_is_empty = True
     for y in years_set:
         other_totals[y] = 0
         for g in non_top_groups:
-            other_totals[y] += int(data_map[y].get(g, 0))
-            if int(data_map[y].get(g, 0)) > 0:
+            count = int(data_map[y].get(g, 0))
+            other_totals[y] += count
+            if count > 0:
                 other_bin_is_empty = False
 
-    # ── Step 4: Build Chart.js datasets ──
-
-    datasets = []
+    # ── Step 3: Build Chart.js datasets ──
+    datasets: List[Dict[str, Any]] = []
     for group in top_groups:
         color = color_from_hash(group)
         datasets.append({
             'label': group,
             'data': [data_map[year].get(group, 0) for year in years_set],
             'borderColor': color,
-            'backgroundColor': color + '99', # 60% opacity fill
+            'backgroundColor': color + '99',  # 60% opacity fill
             'fill': False,
             'tension': 0.0,
             'pointColor': color,
@@ -199,19 +237,22 @@ def get_timeline_data_for_documents(doc_type = 'rfc', group_by = 'stream__name',
         })
     return years_set, datasets
 
-def documents_timeline(request, doc_type='rfc', stats_type='level'):
+def documents_timeline(request: Any, doc_type: str = 'rfc', stats_type: str = 'level') -> Any:
     """Render the documents timeline page with document statistics over time.
 
     Args:
         request: The HTTP request object.
-        stats_type: Type of statistics.
+        doc_type: Type of documents to display.
+        stats_type: Field to aggregate by.
 
     Returns:
         Rendered response for the documents timeline template.
     """
-
     # Query parameters (from ?key=value)
-    top_n = int(request.GET.get('top', '10'))
+    try:
+        top_n = max(1, min(int(request.GET.get('top', '10')), 100))
+    except (ValueError, TypeError):
+        top_n = 10
 
     if stats_type == 'stream':
         total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, 'stream__name', top_n)
@@ -253,4 +294,3 @@ def documents_timeline(request, doc_type='rfc', stats_type='level'):
         "stats_type": stats_type,
         "chart_data": chart_data,
     })
-
