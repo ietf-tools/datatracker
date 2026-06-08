@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2015-2025, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2026, All Rights Reserved #}
 {% load origin %}
 {% origin %}
 {% load ietf_filters managed_groups wg_menu active_groups_menu group_filters cache meetings_filters %}
@@ -450,6 +450,14 @@
                     <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
                        href="{% url "ietf.stats.views.review_stats" %}">
                         Reviews
+                    </a>
+                </li>
+            {% endif %}
+            {% if user|has_role:"LLC Staff" %}
+                <li>
+                    <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
+                       href="{% url "ietf.stats.views.annual_report_inputs" %}">
+                        Annual report inputs
                     </a>
                 </li>
             {% endif %}

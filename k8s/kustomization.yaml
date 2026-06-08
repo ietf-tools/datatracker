@@ -12,5 +12,6 @@ resources:
   - beat.yaml
   - celery.yaml
   - datatracker.yaml
+  - memcached.yaml
   - rabbitmq.yaml
   - replicator.yaml

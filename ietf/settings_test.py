@@ -69,9 +69,6 @@ PHOTOS_DIRNAME = "photo"
 PHOTOS_DIR = os.path.join(MEDIA_ROOT, PHOTOS_DIRNAME)
 os.mkdir(PHOTOS_DIR)
 
-# Use database-backed sessions for tests
-SESSION_ENGINE = "django.contrib.sessions.backends.db"
-
 # Undo any developer-dependent middleware when running the tests
 MIDDLEWARE = [ c for c in MIDDLEWARE if not c in DEV_MIDDLEWARE ] # pyflakes:ignore
 
