@@ -171,6 +171,7 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
             "acronym": rfc.group.acronym,
             "name": rfc.group.name,
             "full": f"{rfc.group.acronym} - {rfc.group.name}",
+            "type": rfc.group.type.slug,
         }
     if (
         rfc.group.parent is not None
