@@ -329,7 +329,8 @@ LOGGING = {
     "formatters": {
         "django.server": {
             "()": "django.utils.log.ServerFormatter",
-            "format": "[%(server_time)s] %(message)s",
+            "format": "[{server_time}] {message}",
+            "style": "{",
         },
         "plain": {
             "style": "{",
