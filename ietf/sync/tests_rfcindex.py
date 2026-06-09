@@ -139,7 +139,10 @@ class RfcIndexTests(TestCase):
             f"{self.april_fools_rfc.rfc_number} {self.april_fools_rfc.title}",
             stripped_contents,
         )
-        self.assertIn("1 April 2020", contents)  # from the April 1 RFC
+        # "1 April 2020" may be split across a line wrap (e.g. "1 April\n     2020")
+        # when the randomly-generated title is long enough to push the date off the line.
+        # assertRegex handles both wrapped and non-wrapped cases explicitly.
+        self.assertRegex(contents, r"1 April\s+2020")  # from the April 1 RFC
         self.assertIn(
             f"{self.rfc.rfc_number} {self.rfc.title}",
             stripped_contents,
