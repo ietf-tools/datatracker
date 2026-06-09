@@ -49,11 +49,11 @@ def errata_url(rfc: Document):
 
 
 def red_bucket_input_path(filename: str) -> str:
-    return str(Path(getattr(settings, "RFCINDEX_INPUT_PATH", "other/")) / filename)
+    return str(Path(settings.RFCINDEX_INPUT_PATH) / filename)
 
 
 def red_bucket_output_path(filename: str) -> str:
-    return str(Path(getattr(settings, "RFCINDEX_OUTPUT_PATH", "other/")) / filename)
+    return str(Path(settings.RFCINDEX_OUTPUT_PATH) / filename)
 
 
 def save_to_red_bucket(filename: str, content: str | bytes):
