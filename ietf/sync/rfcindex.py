@@ -48,9 +48,17 @@ def errata_url(rfc: Document):
     return urljoin(settings.RFC_EDITOR_ERRATA_BASE_URL + "/", f"rfc{rfc.rfc_number}")
 
 
+def red_bucket_input_path(filename: str) -> str:
+    return str(Path(getattr(settings, "RFCINDEX_INPUT_PATH", "other/")) / filename)
+
+
+def red_bucket_output_path(filename: str) -> str:
+    return str(Path(getattr(settings, "RFCINDEX_OUTPUT_PATH", "other/")) / filename)
+
+
 def save_to_red_bucket(filename: str, content: str | bytes):
     red_bucket = storages["red_bucket"]
-    bucket_path = str(Path(getattr(settings, "RFCINDEX_OUTPUT_PATH", "")) / filename)
+    bucket_path = red_bucket_output_path(filename)
     if getattr(settings, "RFCINDEX_DELETE_THEN_WRITE", True):
         # Django 4.2's FileSystemStorage does not support allow_overwrite.
         red_bucket.delete(bucket_path)
@@ -84,10 +92,6 @@ def save_to_filesystem(
 class UnusableRfcNumber:
     rfc_number: int
     comment: str
-
-
-def red_bucket_input_path(filename: str) -> str:
-    return str(Path(getattr(settings, "RFCINDEX_INPUT_PATH", "other/")) / filename)
 
 
 def get_unusable_rfc_numbers() -> list[UnusableRfcNumber]:
