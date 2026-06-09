@@ -3,7 +3,7 @@
 
 from django.conf import settings
 from django.db.models import Count, Q
-from django.http import HttpResponseRedirect
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse as urlreverse
 from django.core.cache import cache
@@ -14,7 +14,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import DocumentAuthor
 from ietf.stats.utils import color_from_hash, get_aliased_affiliations, get_aliased_countries
 
-def get_authors_total_data_for_documents(doc_type = 'all', group_by = 'country', top_n = 20):
+def get_authors_total_data_for_documents(doc_type: str = 'all', group_by: str = 'country', top_n: int = 20) -> dict[str, object]:
     # Build a dynamic query set filter
     filters = Q()    
     if doc_type != 'all' and doc_type  != 'wg-draft':
@@ -67,7 +67,7 @@ def get_authors_total_data_for_documents(doc_type = 'all', group_by = 'country',
 
     return chart_data
 
-def authors_total(request, doc_type='all', stats_type='affiliation'):
+def authors_total(request: HttpRequest, doc_type: str = 'all', stats_type: str = 'affiliation') -> HttpResponse:
 
     # Query parameters (from ?key=value)
     try:
@@ -107,7 +107,7 @@ def authors_total(request, doc_type='all', stats_type='affiliation'):
     })
 
 
-def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'country', top_n = 10):
+def get_authors_timeline_data_for_documents(doc_type: str = 'all', group_by: str = 'country', top_n: int = 10) -> tuple[list[int], list[dict[str, object]]]:
 
     cache_key = f'stats:get_authors_timeline_data_for_documents:{doc_type}-{group_by}'
     result = cache.get(cache_key, None)
@@ -213,7 +213,7 @@ def get_authors_timeline_data_for_documents(doc_type = 'all', group_by = 'countr
     return years_list, datasets
 
 
-def authors_timeline(request, doc_type='all', stats_type='affiliation'):
+def authors_timeline(request: HttpRequest, doc_type: str = 'all', stats_type: str = 'affiliation') -> HttpResponse:
     """Render the documents timeline page with document statistics over time.
 
     Args:
