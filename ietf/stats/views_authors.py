@@ -15,6 +15,16 @@ from ietf.doc.models import DocumentAuthor
 from ietf.stats.utils import color_from_hash, get_aliased_affiliations, get_aliased_countries
 
 def get_authors_total_data_for_documents(doc_type: str = 'all', group_by: str = 'country', top_n: int = 20) -> dict[str, object]:
+    """Build chart data for author totals.
+
+    Args:
+        doc_type: Document category to filter on.
+        group_by: Field used to group authors.
+        top_n: Maximum number of top groups to include before aggregating into Other.
+
+    Returns:
+        A Chart.js-compatible data dictionary.
+    """
     # Build a dynamic query set filter
     filters = Q()    
     if doc_type != 'all' and doc_type  != 'wg-draft':
@@ -68,6 +78,16 @@ def get_authors_total_data_for_documents(doc_type: str = 'all', group_by: str = 
     return chart_data
 
 def authors_total(request: HttpRequest, doc_type: str = 'all', stats_type: str = 'affiliation') -> HttpResponse:
+    """Render total author statistics.
+
+    Args:
+        request: The incoming HTTP request.
+        doc_type: Document category to filter on.
+        stats_type: Grouping type for statistics.
+
+    Returns:
+        Rendered response for the total statistics page.
+    """
 
     # Query parameters (from ?key=value)
     try:
@@ -108,6 +128,16 @@ def authors_total(request: HttpRequest, doc_type: str = 'all', stats_type: str =
 
 
 def get_authors_timeline_data_for_documents(doc_type: str = 'all', group_by: str = 'country', top_n: int = 10) -> tuple[list[int], list[dict[str, object]]]:
+    """Build timeline datasets for author statistics.
+
+    Args:
+        doc_type: Document category to filter on.
+        group_by: Field used to group authors.
+        top_n: Maximum number of top groups to include before aggregating into Other.
+
+    Returns:
+        A tuple containing the ordered years list and Chart.js datasets.
+    """
 
     cache_key = f'stats:get_authors_timeline_data_for_documents:{doc_type}-{group_by}'
     result = cache.get(cache_key, None)
@@ -214,15 +244,15 @@ def get_authors_timeline_data_for_documents(doc_type: str = 'all', group_by: str
 
 
 def authors_timeline(request: HttpRequest, doc_type: str = 'all', stats_type: str = 'affiliation') -> HttpResponse:
-    """Render the documents timeline page with document statistics over time.
+    """Render author timeline statistics.
 
     Args:
-        request: The HTTP request object.
-        stats_type: Type of statistics.
-        top_n: Number of top items to show (for country stats).
+        request: The incoming HTTP request.
+        doc_type: Document category to filter on.
+        stats_type: Grouping type for statistics.
 
     Returns:
-        Rendered response for the documents timeline template.
+        Rendered response for the timeline statistics page.
     """
 
     # Query parameters (from ?key=value)
