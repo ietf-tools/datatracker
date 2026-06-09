@@ -86,9 +86,12 @@ class UnusableRfcNumber:
     comment: str
 
 
+def red_bucket_input_path(filename: str) -> str:
+    return str(Path(getattr(settings, "RFCINDEX_INPUT_PATH", "other/")) / filename)
+
+
 def get_unusable_rfc_numbers() -> list[UnusableRfcNumber]:
-    FILENAME = "unusable-rfc-numbers.json"
-    bucket_path = str(Path(getattr(settings, "RFCINDEX_INPUT_PATH", "")) / FILENAME)
+    bucket_path = red_bucket_input_path("unusable-rfc-numbers.json") 
     try:
         with storages["red_bucket"].open(bucket_path) as urn_file:
             records = json.load(urn_file)
@@ -115,8 +118,7 @@ def get_unusable_rfc_numbers() -> list[UnusableRfcNumber]:
 
 
 def get_april1_rfc_numbers() -> Container[int]:
-    FILENAME = "april-first-rfc-numbers.json"
-    bucket_path = str(Path(getattr(settings, "RFCINDEX_INPUT_PATH", "")) / FILENAME)
+    bucket_path = red_bucket_input_path("april-first-rfc-numbers.json")
     try:
         with storages["red_bucket"].open(bucket_path) as urn_file:
             records = json.load(urn_file)
@@ -139,8 +141,7 @@ def get_april1_rfc_numbers() -> Container[int]:
 
 
 def get_publication_std_levels() -> dict[int, StdLevelName]:
-    FILENAME = "publication-std-levels.json"
-    bucket_path = str(Path(getattr(settings, "RFCINDEX_INPUT_PATH", "")) / FILENAME)
+    bucket_path = red_bucket_input_path("publication-std-levels.json")
     values: dict[int, StdLevelName] = {}
     try:
         with storages["red_bucket"].open(bucket_path) as urn_file:
