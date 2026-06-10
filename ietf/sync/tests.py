@@ -1135,11 +1135,14 @@ class ErrataTests(TestCase):
     @mock.patch("ietf.sync.errata.get_errata_data")
     def test_update_errata_from_rfceditor(self, mock_get_data, mock_update):
         fake_data = object()
+        fake_changed = {1234, 5678}
         mock_get_data.return_value = fake_data
-        update_errata_from_rfceditor()
+        mock_update.return_value = fake_changed
+        result = update_errata_from_rfceditor()
         self.assertTrue(mock_get_data.called)
         self.assertTrue(mock_update.called)
         self.assertEqual(mock_update.call_args, mock.call(fake_data))
+        self.assertEqual(result, fake_changed)
 
     def test_update_errata_tags(self):
         tag_has_errata = DocTagName.objects.get(slug="errata")
@@ -1177,7 +1180,7 @@ class ErrataTests(TestCase):
             {"doc-id": rfcs[8].name, "errata_status_code": "Rejected"},
             # rfcs[9] had none and it should stay that way (no entry at all)
         ]
-        update_errata_tags(errata_data)
+        changed = update_errata_tags(errata_data)
 
         self.assertCountEqual(rfcs[0].tags.all(), [tag_has_errata])
         self.assertIsNone(rfcs[0].docevent_set.first())  # no change
@@ -1230,6 +1233,14 @@ class ErrataTests(TestCase):
 
         self.assertCountEqual(rfcs[9].tags.all(), [])
         self.assertIsNone(rfcs[9].docevent_set.first())  # no change
+
+        # return value: only RFCs whose tags actually changed
+        # rfcs[0], rfcs[1], rfcs[8], rfcs[9] had no tag changes
+        for unchanged_rfc in (rfcs[0], rfcs[1], rfcs[8], rfcs[9]):
+            self.assertNotIn(unchanged_rfc.rfc_number, changed)
+        # rfcs[2..7] had tag changes
+        for changed_rfc in rfcs[2:8]:
+            self.assertIn(changed_rfc.rfc_number, changed)
 
     @override_settings(ERRATA_JSON_BLOB_NAME="myblob.json")
     @mock.patch("ietf.sync.errata.get_errata_last_updated")
@@ -1652,6 +1663,7 @@ class TaskTests(TestCase):
         mock_mark_errata_processed,
         mock_mark_rfcindex_dirty,
         mock_update,
+        mock_rfc_json_delay,
     ):
         mock_errata_are_dirty.return_value = False
         update_errata_from_rfceditor_task()
