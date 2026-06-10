@@ -20,7 +20,6 @@ DEFAULT_ERRATA_JSON_BLOB_NAME = "other/errata.json"
 
 type ErrataJsonEntry = dict[str, str]
 
-
 def get_errata_last_updated() -> datetime.datetime:
     """Get timestamp of the last errata.json update
 
@@ -124,12 +123,10 @@ def update_errata_tags(errata_data: list[ErrataJsonEntry]):
                 desc=summary,
             )
 
-    return {rfc.rfc_number for rfc in changes}
 
-
-def update_errata_from_rfceditor() -> set[int]:
+def update_errata_from_rfceditor():
     errata_data = get_errata_data()
-    return update_errata_tags(errata_data)
+    update_errata_tags(errata_data)
 
 
 ## DirtyBits management for the errata tags

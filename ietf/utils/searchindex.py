@@ -64,11 +64,8 @@ def get_collection_name() -> str:
     return collection_name
 
 
-def _sanitize_text(content: str):
-    """Sanitize content text for search
-    
-    Aggressively simplifies whitespace, removes most punctuation
-    """
+def _sanitize_text(content):
+    """Sanitize content or abstract text for search"""
     # REs (with approximate names)
     RE_DOT_OR_BANG_SPACE = r"\. |! "  # -> " " (space)
     RE_COMMENT_OR_TOC_CRUD = r"<--|-->|--+|\+|\.\.+"  # -> ""
@@ -87,18 +84,6 @@ def _sanitize_text(content: str):
     return content.strip()
 
 
-def _sanitize_abstract(abstract: str):
-    """Sanitize abstract text for search
-    
-    Simplifies whitespace but mostly leaves text intact. Abstract text will be
-    displayed in search results, so a light touch is needed.
-    """
-    abstract = abstract.strip()
-    abstract = re.sub("\r\n|\n\r|\r", "\n", abstract)  # normalize on \n
-    abstract = "\n".join(line.strip() for line in abstract.split("\n"))  # strip by line
-    return abstract
-
-
 def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
     assert rfc.type_id == "rfc"
     assert rfc.rfc_number is not None
@@ -114,10 +99,7 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
         )
     subseries = subseries[0] if len(subseries) > 0 else None
     obsoleted_by = rfc.related_that("obs")
-    is_obsoleted = len(obsoleted_by) > 0
     updated_by = rfc.related_that("updates")
-    is_updated = len(updated_by) > 0
-    is_historic = rfc.std_level.slug == "hist"
 
     stored_txt = (
         StoredObject.objects.exclude_deleted()
@@ -138,7 +120,7 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
         "rfc": str(rfc.rfc_number),
         "filename": rfc.name,
         "title": rfc.title,
-        "abstract": _sanitize_abstract(rfc.abstract),
+        "abstract": _sanitize_text(rfc.abstract),
         "pages": rfc.pages,
         "keywords": keywords,
         "type": "rfc",
@@ -152,9 +134,9 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
             for rfc_author in rfc.rfcauthor_set.all()
         ],
         "flags": {
-            "hiddenDefault": is_obsoleted or is_historic,
-            "obsoleted": is_obsoleted,
-            "updated": is_updated,
+            "hiddenDefault": False,
+            "obsoleted": len(obsoleted_by) > 0,
+            "updated": len(updated_by) > 0,
         },
         "obsoletedBy": [str(doc.rfc_number) for doc in obsoleted_by],
         "updatedBy": [str(doc.rfc_number) for doc in updated_by],
@@ -171,7 +153,6 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
             "acronym": rfc.group.acronym,
             "name": rfc.group.name,
             "full": f"{rfc.group.acronym} - {rfc.group.name}",
-            "type": rfc.group.type.slug,
         }
     if (
         rfc.group.parent is not None

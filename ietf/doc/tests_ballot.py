@@ -3,6 +3,7 @@
 
 
 import datetime
+from unittest import mock
 
 from pyquery import PyQuery
 
@@ -715,8 +716,11 @@ class BallotWriteupsTests(TestCase):
             verify_can_see(username, url)
 
 class ApproveBallotTests(TestCase):
-    def test_approve_ballot(self):
-
+    @mock.patch('ietf.sync.rfceditor.requests.post', autospec=True)
+    def test_approve_ballot(self, mock_urlopen):
+        mock_urlopen.return_value.text = b'OK'
+        mock_urlopen.return_value.status_code = 200
+        #
         ad = Person.objects.get(name="Areað Irector")
         draft = IndividualDraftFactory(ad=ad, intended_std_level_id='ps')
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva")) # make sure it's approvable
