@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2022, All Rights Reserved
+# Copyright The IETF Trust 2013-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -163,6 +163,7 @@ def has_role(user, role_names, *args, **kwargs):
                 | Q(name="atlarge", group__acronym="irsg")
             ),
             "RSAB Member": Q(name="member", group__acronym="rsab"),
+            "LLC Staff": Q(name="member", group__acronym="llc-staff"),
             "Robot": Q(name="robot", group__acronym="secretariat"),
         }
 
