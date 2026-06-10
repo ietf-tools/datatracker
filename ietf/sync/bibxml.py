@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 from pathlib import Path
 from urllib.parse import urljoin
-from xml.sax.saxutils import quoteattr as qa
+from xml.sax.saxutils import escape as esc, quoteattr as qa
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -42,7 +42,7 @@ def get_rfc_bibxml(rfc_number):
             author_entry = f"""<author fullname={qa(author.titlepage_name)} surname={qa(author.titlepage_name.split(".")[-1].strip())}/>"""
         authors += author_entry
 
-    return f"""<reference anchor="RFC{rfc_number}" target="{link}"><front><title>{rfc.title}</title>{date}{authors}<abstract><t>{rfc.abstract}</t></abstract></front><seriesInfo name="RFC" value="{rfc_number}"/><seriesInfo name="DOI" value="{rfc.doi}"/></reference>"""
+    return f"""<reference anchor="RFC{rfc_number}" target="{link}"><front><title>{esc(rfc.title)}</title>{date}{authors}<abstract><t>{esc(rfc.abstract)}</t></abstract></front><seriesInfo name="RFC" value="{rfc_number}"/><seriesInfo name="DOI" value="{rfc.doi}"/></reference>"""
 
 
 def get_bcp_bibxml(bcp_number):
