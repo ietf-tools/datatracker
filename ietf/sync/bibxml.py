@@ -81,6 +81,25 @@ def get_fyi_bibxml(fyi_number):
     return f"""<referencegroup anchor="FYI{fyi_number}" target="{fyi_link}">{rfc_bibxml}</referencegroup>"""
 
 
+def get_id_bibxml(draft_name, doc):
+    """Return BibXML entry for the given I-D doc"""
+    name = "-".join(draft_name.split("-", 2)[1:])
+    date = ""
+    if doc.is_dochistory():
+        latest_event = doc.latest_event(type="new_revision", rev=doc.rev)
+        if latest_event:
+            doc.pub_date = latest_event.time
+            date = doc.pub_date.strftime('<date day="%-d" month="%B" year="%Y"/>')
+    else:
+        date = doc.pub_date().strftime('<date day="%-d" month="%B" year="%Y"/>')
+    link = f"https://datatracker.ietf.org/doc/html/{draft_name}-{doc.rev}"
+    authors = ""
+    for author in doc.author_persons_or_names():
+        authors += f"""<author fullname={qa(author.person.name)} />"""
+
+    return f"""<reference anchor="I-D.{name}" target="{link}"><front><title>{doc.title}</title>{date}{authors}<abstract><t>{doc.abstract}</t></abstract></front><seriesInfo name="Internet-Draft" value="{draft_name}-{doc.rev}"/></reference>"""
+
+
 def save_bibxml(bibxml, filename):
     """Prettify and save given BibXML"""
 
@@ -156,3 +175,31 @@ def recreate_rfcsubseries_bibxml():
         filename = f"bibxml-rfcsubseries/fyi{fyi_number}.xml"
         bibxml = get_fyi_bibxml(fyi_number)
         save_bibxml(bibxml, filename)
+
+
+def recreate_id_bibxml_by_draft_name(draft_name):
+    """Creates BibXML for given draft_name."""
+    doc = Document.objects.get(name=draft_name)
+    name = "-".join(draft_name.split("-", 2)[1:])
+
+    # revision less BibXML
+    bibxml = get_id_bibxml(draft_name, doc)
+    filename = f"bibxml-ids/reference.I-D.{name}.xml"
+    save_bibxml(bibxml, filename)
+
+    # draft BibXML for each revision
+    for revision in reversed(doc.revisions_by_newrevisionevent()):
+        doc_rev = doc.history_set.order_by("-time").filter(rev=revision).first()
+        bibxml = get_id_bibxml(draft_name, doc_rev)
+        filename = f"bibxml-ids/reference.I-D.{draft_name}-{revision}.xml"
+        save_bibxml(bibxml, filename)
+
+
+def recreate_id_bibxml():
+    """Creates BibXML for all Internet Drafts."""
+    for draft_name in (
+        Document.objects.filter(type_id="draft")
+        .values_list("name", flat=True)
+        .order_by("-time")
+    ):
+        recreate_id_bibxml_by_draft_name(draft_name)

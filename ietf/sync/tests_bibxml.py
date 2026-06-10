@@ -11,12 +11,16 @@ from ietf.doc.factories import (
     FyiFactory,
     PublishedRfcDocEventFactory,
     StdFactory,
+    WgDraftFactory,
 )
 from ietf.sync.bibxml import (
     get_bcp_bibxml,
     get_fyi_bibxml,
+    get_id_bibxml,
     get_rfc_bibxml,
     get_std_bibxml,
+    recreate_id_bibxml,
+    recreate_id_bibxml_by_draft_name,
     recreate_rfc_bibxml,
     recreate_rfcsubseries_bibxml,
     save_bibxml,
@@ -47,6 +51,9 @@ class BibXmlTests(TestCase):
 
         # Create a FYI with non-April Fools RFC
         self.fyi = FyiFactory(contains=[self.rfc], name="fyi3")
+
+        # Create a draft with multiple revisions
+        self.draft = WgDraftFactory(create_revisions=(0, 1, 2))
 
     def test_get_rfc_bibxml(self):
         bibxml = get_rfc_bibxml(self.rfc.rfc_number)
@@ -92,6 +99,25 @@ class BibXmlTests(TestCase):
             f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
         )
         self.assertIn('<date month="April" year="2021"/>', bibxml)
+
+    def test_get_id_bibxml(self):
+        draft_name = self.draft.name
+
+        # revisionless test
+        bibxml = get_id_bibxml(draft_name, self.draft)
+        self.assertIsNotNone(ElementTree.fromstring(bibxml))
+        self.assertIn(draft_name, bibxml)
+        self.assertIn(f"{draft_name}-02", bibxml)
+
+        # revision test
+        for revision in self.draft.revisions_by_newrevisionevent():
+            draft_rev = (
+                self.draft.history_set.order_by("-time").filter(rev=revision).first()
+            )
+            bibxml = get_id_bibxml(draft_name, draft_rev)
+            self.assertIsNotNone(ElementTree.fromstring(bibxml))
+            self.assertIn(draft_name, bibxml)
+            self.assertIn(f"{draft_name}-{revision}", bibxml)
 
     def test_save_to_bucket(self):
         bibxml_bucket = storages["bibxml_bucket"]
@@ -183,5 +209,41 @@ class BibXmlTests(TestCase):
                 call(ANY, bcp_filename),
                 call(ANY, std_filename),
                 call(ANY, fyi_filename),
+            ]
+        )
+
+    @patch("ietf.sync.bibxml.save_bibxml")
+    def test_recreate_id_bibxml_by_draft_name(self, mock_save_bibxml):
+        draft_name = self.draft.name
+        name = "-".join(draft_name.split("-", 2)[1:])
+
+        recreate_id_bibxml_by_draft_name(draft_name)
+        revision_less_filename = f"bibxml-ids/reference.I-D.{name}.xml"
+        revisioned_file_names = [
+            f"bibxml-ids/reference.I-D.{draft_name}-{r}.xml"
+            for r in reversed(self.draft.revisions_by_newrevisionevent())
+        ]
+        mock_save_bibxml.assert_has_calls(
+            [
+                call(ANY, revision_less_filename),
+                *[call(ANY, file_name) for file_name in revisioned_file_names],
+            ]
+        )
+
+    @patch("ietf.sync.bibxml.save_bibxml")
+    def test_recreate_id_bibxml(self, mock_save_bibxml):
+        draft_name = self.draft.name
+        name = "-".join(draft_name.split("-", 2)[1:])
+
+        recreate_id_bibxml()
+        revision_less_filename = f"bibxml-ids/reference.I-D.{name}.xml"
+        revisioned_file_names = [
+            f"bibxml-ids/reference.I-D.{draft_name}-{r}.xml"
+            for r in reversed(self.draft.revisions_by_newrevisionevent())
+        ]
+        mock_save_bibxml.assert_has_calls(
+            [
+                call(ANY, revision_less_filename),
+                *[call(ANY, file_name) for file_name in revisioned_file_names],
             ]
         )
