@@ -1640,6 +1640,20 @@ class FeedbackLastSeenTests(TestCase):
         q = PyQuery(response.content)
         self.assertEqual( len(q('.text-bg-success')), 0 )
 
+    def test_feedback_index_sort_keys(self):
+        url = reverse('ietf.nomcom.views.view_feedback', kwargs={'year': self.nc.year()})
+        login_testing_unauthorized(self, self.member.user.username, url)
+        provide_private_key_to_test_client(self)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        # Feedback count cells must carry a numeric data-sort-number so that
+        # a "New" badge appearing before the count doesn't corrupt the sort key.
+        sort_cells = q('td[data-sort-number]')
+        self.assertTrue(len(sort_cells) > 0)
+        for cell in sort_cells.items():
+            self.assertRegex(cell.attr('data-sort-number'), r'^\d+$')
+
 class NewActiveNomComTests(TestCase):
 
     def setUp(self):
