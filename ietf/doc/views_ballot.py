@@ -939,6 +939,16 @@ def approve_ballot(request, name):
         if ballot_writeup_event.pk == None:
             ballot_writeup_event.save()
 
+        if new_state.slug == "ann" and new_state.slug != prev_state.slug:
+            # start by notifying the RFC Editor
+            import ietf.sync.rfceditor
+            response, error = ietf.sync.rfceditor.post_approved_draft(settings.RFC_EDITOR_SYNC_NOTIFICATION_URL, doc.name)
+            if error:
+                return render(request, 'doc/draft/rfceditor_post_approved_draft_failed.html',
+                              dict(name=doc.name,
+                                   response=response,
+                                   error=error))
+
         doc.set_state(new_state)
         doc.tags.remove(*prev_tags)
         

@@ -6,6 +6,7 @@ import json
 import os
 import datetime
 import io
+from unittest import mock
 
 from collections import Counter
 from pathlib import Path
@@ -1548,8 +1549,11 @@ class SubmitToIesgTests(TestCase):
 
 
 class RequestPublicationTests(TestCase):
-    def test_request_publication(self):
-
+    @mock.patch('ietf.sync.rfceditor.requests.post', autospec=True)
+    def test_request_publication(self, mockobj):
+        mockobj.return_value.text = b'OK'
+        mockobj.return_value.status_code = 200
+        #
         draft = IndividualDraftFactory(stream_id='iab',group__acronym='iab',intended_std_level_id='inf',states=[('draft-stream-iab','approved')])
 
         url = urlreverse('ietf.doc.views_draft.request_publication', kwargs=dict(name=draft.name))

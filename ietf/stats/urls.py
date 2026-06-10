@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2026, All Rights Reserved
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -15,5 +15,4 @@ urlpatterns = [
     url(r"^meeting/(?P<meeting_number>\d+)/(?P<stats_type>affiliation|country)/$", views.meeting_stats),
     url(r"^meeting/(?:(?P<stats_type>affiliation|country|total)/)?$", views.meetings_timeline),
     url(r"^review/(?:(?P<stats_type>completion|results|states|time)/)?(?:%(acronym)s/)?$" % settings.URL_REGEXPS, views.review_stats),
-    url(r"^annual_report_inputs/(?:(?P<year>\d{4})/)?$", views.annual_report_inputs),
 ]

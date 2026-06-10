@@ -44,6 +44,12 @@ if _IANA_SYNC_PASSWORD is not None:
 else:
     raise RuntimeError("DATATRACKER_IANA_SYNC_PASSWORD must be set")
 
+_RFC_EDITOR_SYNC_PASSWORD = os.environ.get("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD", None)
+if _RFC_EDITOR_SYNC_PASSWORD is not None:
+    RFC_EDITOR_SYNC_PASSWORD = os.environ.get("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD")
+else:
+    raise RuntimeError("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD must be set")
+
 _YOUTUBE_API_KEY = os.environ.get("DATATRACKER_YOUTUBE_API_KEY", None)
 if _YOUTUBE_API_KEY is not None:
     YOUTUBE_API_KEY = _YOUTUBE_API_KEY
@@ -248,19 +254,8 @@ else:
 
 EMAIL_COPY_TO = ""
 
-# I-D Submission settings
-
-# Until we teach the datatracker to look beyond cloudflare for this check, it needs
-# to be very large. 5000 has been working without complaint.
-IDSUBMIT_MAX_DAILY_SAME_SUBMITTER = int(
-    os.environ.get("DATATRACKER_IDSUBMIT_MAX_DAILY_SAME_SUBMITTER", "5000")
-)
-
-# Default is 20 minutes. Allow override via environment.
-if "DATATRACKER_IDSUBMIT_MAX_VALIDATION_TIME" in os.environ:
-    IDSUBMIT_MAX_VALIDATION_TIME = datetime.timedelta(
-        minutes=int(os.environ.get("DATATRACKER_IDSUBMIT_MAX_VALIDATION_TIME"))
-    )
+# Until we teach the datatracker to look beyond cloudflare for this check
+IDSUBMIT_MAX_DAILY_SAME_SUBMITTER = 5000
 
 # Leave DATATRACKER_MATOMO_SITE_ID unset to disable Matomo reporting
 if "DATATRACKER_MATOMO_SITE_ID" in os.environ:
@@ -528,11 +523,9 @@ PASSWORD_POLICY_ENFORCE_AT_LOGIN = (
 SEARCHINDEX_CONFIG = {
     "TYPESENSE_API_URL": os.environ.get("DATATRACKER_TYPESENSE_API_URL", ""),
     "TYPESENSE_API_KEY": os.environ.get("DATATRACKER_TYPESENSE_API_KEY", ""),
-    "TASK_RETRY_DELAY": int(
-        os.environ.get("DATATRACKER_SEARCHINDEX_TASK_RETRY_DELAY", "10")
-    ),
-    "TASK_MAX_RETRIES": int(
-        os.environ.get("DATATRACKER_SEARCHINDEX_TASK_MAX_RETRIES", "12")
+    "TASK_RETRY_DELAY": os.environ.get("DATATRACKER_SEARCHINDEX_TASK_RETRY_DELAY", 10),
+    "TASK_MAX_RETRIES": os.environ.get(
+        "DATATRACKER_SEARCHINDEX_TASK_MAX_RETRIES", "12"
     ),
 }
 

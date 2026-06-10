@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.conf import settings
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import mixins, parsers, serializers, viewsets, status
 from rest_framework.decorators import action
@@ -48,7 +48,7 @@ from ietf.doc.tasks import (
 )
 from ietf.person.models import Email, Person
 from ietf.sync.rfcindex import mark_rfcindex_as_dirty
-from ietf.sync.tasks import process_rpc_queue_task, update_rfc_json_task
+from ietf.sync.tasks import process_rpc_queue_task
 
 
 class Conflict(APIException):
@@ -297,8 +297,6 @@ class RfcViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
             desc="Metadata update from RFC Editor",
         )
         super().perform_update(serializer)
-        rfc_number = serializer.instance.rfc_number
-        transaction.on_commit(lambda: update_rfc_json_task.delay([rfc_number]))
 
     @action(detail=False, serializer_class=OriginalStreamSerializer)
     def rfc_original_stream(self, request):
@@ -459,11 +457,6 @@ class RfcPubNotificationView(DestinationHelperMixin, APIView):
         )
         rfc_number_list = sorted(set(rfc_number_list))
         signal_update_rfc_metadata_task.delay(rfc_number_list=rfc_number_list)
-        related_numbers = sorted(
-            {d.rfc_number for d in rfc.related_that_doc(("updates", "obs"))}
-        )
-        if related_numbers:
-            transaction.on_commit(lambda: update_rfc_json_task.delay(related_numbers))
         return Response(NotificationAckSerializer().data)
 
 

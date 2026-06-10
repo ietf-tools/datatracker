@@ -2,15 +2,20 @@
 # -*- coding: utf-8 -*-
 
 
+import base64
 import datetime
 import re
+import requests
 
 from typing import Iterator, Optional, Union
+from urllib.parse import urlencode
 from xml.dom import pulldom, Node
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Subquery, OuterRef, F, Q
 from django.utils import timezone
+from django.utils.encoding import smart_bytes, force_str
 
 import debug                            # pyflakes:ignore
 
@@ -842,4 +847,50 @@ def update_docs_from_rfc_index(
         ).update(document=F("subseries_target"))
 
 
+def post_approved_draft(url, name):
+    """Post an approved draft to the RFC Editor so they can retrieve
+    the data from the Datatracker and start processing it. Returns
+    response and error (empty string if no error)."""
 
+    if settings.SERVER_MODE != "production":
+        log(f"In production, would have posted RFC-Editor notification of approved I-D '{name}' to '{url}'")
+        return "", ""
+
+    # HTTP basic auth
+    username = "dtracksync"
+    password = settings.RFC_EDITOR_SYNC_PASSWORD
+    headers = {
+            "Content-type": "application/x-www-form-urlencoded",
+            "Accept": "text/plain",
+            "Authorization": "Basic %s" % force_str(base64.encodebytes(smart_bytes("%s:%s" % (username, password)))).replace("\n", ""),
+        }
+
+    log("Posting RFC-Editor notification of approved Internet-Draft '%s' to '%s'" % (name, url))
+    text = error = ""
+
+    try:
+        r = requests.post(
+            url,
+            headers=headers,
+            data=smart_bytes(urlencode({ 'draft': name })),
+            timeout=settings.DEFAULT_REQUESTS_TIMEOUT,
+        )
+
+        log("RFC-Editor notification result for Internet-Draft '%s': %s:'%s'" % (name, r.status_code, r.text))
+
+        if r.status_code != 200:
+            raise RuntimeError("Status code is not 200 OK (it's %s)." % r.status_code)
+
+        if force_str(r.text) != "OK":
+            raise RuntimeError('Response is not "OK" (it\'s "%s").' % r.text)
+
+    except Exception as e:
+        # catch everything so we don't leak exceptions, convert them
+        # into string instead
+        msg = "Exception on RFC-Editor notification for Internet-Draft '%s': %s: %s" % (name, type(e), str(e))
+        log(msg)
+        if settings.SERVER_MODE == 'test':
+            debug.say(msg)
+        error = str(e)
+
+    return text, error

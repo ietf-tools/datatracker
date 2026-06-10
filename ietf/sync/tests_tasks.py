@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 
-import mock
 from django.test.utils import override_settings
 
 from ietf.doc.factories import WgDraftFactory
@@ -475,64 +474,3 @@ class ProcessRpcQueueTaskTests(TestCase):
 
         draft = Document.objects.get(pk=draft.pk)
         self.assertIsNotNone(draft.get_state("draft-rfceditor"))
-
-
-class UpdateErrataFromRfcEditorTaskTests(TestCase):
-    @mock.patch("ietf.sync.tasks.update_rfc_json_task.delay")
-    @mock.patch("ietf.sync.tasks.update_errata_from_rfceditor")
-    @mock.patch("ietf.sync.tasks.mark_rfcindex_as_dirty")
-    @mock.patch("ietf.sync.tasks.mark_errata_as_processed")
-    @mock.patch("ietf.sync.tasks.errata_are_dirty")
-    def test_no_update_when_not_dirty(
-        self,
-        mock_dirty,
-        mock_mark_processed,
-        mock_mark_index,
-        mock_update,
-        mock_json_delay,
-    ):
-        """When errata are not dirty nothing runs."""
-        mock_dirty.return_value = False
-        tasks.update_errata_from_rfceditor_task()
-        mock_update.assert_not_called()
-        mock_json_delay.assert_not_called()
-
-    @mock.patch("ietf.sync.tasks.update_rfc_json_task.delay")
-    @mock.patch("ietf.sync.tasks.update_errata_from_rfceditor")
-    @mock.patch("ietf.sync.tasks.mark_rfcindex_as_dirty")
-    @mock.patch("ietf.sync.tasks.mark_errata_as_processed")
-    @mock.patch("ietf.sync.tasks.errata_are_dirty")
-    def test_json_task_called_for_changed_rfcs(
-        self,
-        mock_dirty,
-        mock_mark_processed,
-        mock_mark_index,
-        mock_update,
-        mock_json_delay,
-    ):
-        """update_rfc_json_task is dispatched with the changed RFC numbers."""
-        mock_dirty.return_value = True
-        mock_update.return_value = {3261, 9000}
-        tasks.update_errata_from_rfceditor_task()
-        mock_json_delay.assert_called_once()
-        called_numbers = mock_json_delay.call_args[0][0]
-        self.assertCountEqual(called_numbers, [3261, 9000])
-
-    @mock.patch("ietf.sync.tasks.update_rfc_json_task.delay")
-    @mock.patch("ietf.sync.tasks.update_errata_from_rfceditor")
-    @mock.patch("ietf.sync.tasks.mark_rfcindex_as_dirty")
-    @mock.patch("ietf.sync.tasks.mark_errata_as_processed")
-    @mock.patch("ietf.sync.tasks.errata_are_dirty")
-    def test_json_task_not_called_when_no_changes(
-        self,
-        mock_dirty,
-        mock_mark_processed,
-        mock_mark_index,
-        mock_update,
-        mock_json_delay,
-    ):
-        """update_rfc_json_task is not dispatched when no errata tags changed."""
-        mock_dirty.return_value = True
-        mock_update.return_value = set()
-        tasks.update_errata_from_rfceditor_task()
-        mock_json_delay.assert_not_called()
