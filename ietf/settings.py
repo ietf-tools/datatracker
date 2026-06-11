@@ -329,7 +329,8 @@ LOGGING = {
     "formatters": {
         "django.server": {
             "()": "django.utils.log.ServerFormatter",
-            "format": "[%(server_time)s] %(message)s",
+            "format": "[{server_time}] {message}",
+            "style": "{",
         },
         "plain": {
             "style": "{",
@@ -975,6 +976,10 @@ IDSUBMIT_FILE_TYPES = (
     'ps',
 )
 RFC_FILE_TYPES = IDSUBMIT_FILE_TYPES
+
+# Paths in the red bucket
+RFCINDEX_INPUT_PATH = "other/"
+RFCINDEX_OUTPUT_PATH = "other/"
 
 IDSUBMIT_MAX_DRAFT_SIZE =  {
     'txt':  2*1024*1024,  # Max size of txt draft file in bytes
