@@ -14,6 +14,7 @@ from ietf.doc.factories import (
     RfcAuthorFactory,
     RfcFactory,
     RgRfcFactory,
+    WgDraftFactory,
     WgRfcFactory,
 )
 from ietf.doc.models import RelatedDocument
@@ -198,6 +199,19 @@ class GenerateRfcJsonTests(TestCase):
             data["errata_url"],
             f"https://www.rfc-editor.org/errata/rfc{rfc.rfc_number}",
         )
+
+    def test_draft_field_includes_revision(self):
+        """draft field is '<name>-<rev>' when the RFC originated from a draft."""
+        draft = WgDraftFactory(rev="07")
+        rfc = PublishedRfcDocEventFactory(doc=WgRfcFactory()).doc
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+        _put_pub_levels(rfc.rfc_number, "ps")
+        _put_empty_errata()
+
+        generate_rfc_json(rfc.rfc_number)
+        data = _read_json(rfc.rfc_number)
+
+        self.assertEqual(data["draft"], f"{draft.name}-07")
 
     def test_errata_url_none_when_no_errata(self):
         """errata_url is None when errata.json has no entries for the RFC."""

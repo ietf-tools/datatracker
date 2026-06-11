@@ -55,7 +55,7 @@ def generate_rfc_json(rfc_number: int, *, pub_levels=None) -> None:
 
     # draft name
     draft_doc = rfc.came_from_draft()
-    draft = draft_doc.name if draft_doc else None
+    draft = f"{draft_doc.name}-{draft_doc.rev}" if draft_doc else None
 
     # authors: ordered list of display strings
     authors = []
