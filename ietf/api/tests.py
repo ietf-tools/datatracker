@@ -1135,6 +1135,16 @@ class CustomApiTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(list(csv.DictReader(io.StringIO(r.content.decode()))), [])
 
+        # The testing parameter fakes the email domain while keeping the mailbox.
+        r = self.client.get(url + "?testing", headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        rows = list(csv.DictReader(io.StringIO(r.content.decode())))
+        self.assertEqual(len(rows), 1)
+        mailbox = author.email().address.split("@", 1)[0]
+        self.assertEqual(rows[0]["Email"], f"{mailbox}@fake.example.com")
+        # Non-email fields are unaffected.
+        self.assertEqual(rows[0]["Name"], "Jane Q. Author")
+
         # An invalid days parameter is rejected.
         r = self.client.get(url + "?days=garbage", headers={"X-Api-Key": "valid-token"})
         self.assertEqual(r.status_code, 400)

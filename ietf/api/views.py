@@ -569,9 +569,16 @@ def recent_rfc_authors(request):
     The lookback window is controlled by the ?days=N query parameter (default 7).
     Each author appears once, with their RFC numbers, names, titles, and
     publication dates accumulated across every RFC they published in the window.
+
+    When the ?testing query parameter is supplied, each author's real email
+    address is replaced with a fake one that keeps the original mailbox but uses
+    the "fake.example.com" domain, so the output can be shared without exposing
+    real addresses.
     """
     if request.method != "GET":
         return HttpResponse(status=405)
+
+    testing = "testing" in request.GET
 
     days = 7
     days_param = request.GET.get("days")
@@ -652,10 +659,14 @@ def recent_rfc_authors(request):
     writer.writeheader()
 
     for entry in author_data.values():
+        email = entry["email"]
+        if testing:
+            mailbox = email.split("@", 1)[0]
+            email = f"{mailbox}@fake.example.com"
         writer.writerow(
             {
                 "Name": entry["name"],
-                "Email": entry["email"],
+                "Email": email,
                 "RFCNumber": ", ".join(entry["rfc_numbers"]),
                 "RFCName": ", ".join(entry["rfc_names"]),
                 "RFCTitle": ", ".join(entry["rfc_titles"]),
