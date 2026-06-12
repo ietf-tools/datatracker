@@ -1,0 +1,209 @@
+name: Make Release and Deploy
+run-name: RELEASE ${{ github.run_number }} by @${{ github.actor }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployStrategy:
+        description: 'Deploy Strategy'
+        default: 'Recreate'
+        required: true
+        type: choice
+        options:
+          - Recreate
+          - RollingUpdate
+          - Current
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  # -----------------------------------------------------------------
+  # PREPARE
+  # -----------------------------------------------------------------
+  prepare:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    outputs:
+      buildVersion: ${{ steps.buildvars.outputs.buildVersion }}
+      previousVersion: ${{ steps.semver.outputs.current }}
+      baseImageVersion: ${{ steps.baseimgversion.outputs.baseImageVersion }}
+
+    steps:
+      - name: Ensure release branch
+        if: github.ref != 'refs/heads/release'
+        run: |
+          echo "This workflow can only run on the 'release' branch (current: ${{ github.ref_name }})"
+          exit 1
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          fetch-tags: false
+
+      - name: Get Next Version
+        id: semver
+        uses: ietf-tools/semver-action@v1
+        with:
+          token: ${{ github.token }}
+          branch: release
+          skipInvalidTags: true
+          patchList: fix, bugfix, perf, refactor, test, tests, chore
+          
+      - name: Create Draft Release
+        uses: ncipollo/release-action@v1.21.0
+        with:
+          prerelease: true
+          draft: false
+          commit: ${{ github.sha }}
+          tag: ${{ steps.semver.outputs.nextStrict }}
+          name: ${{ steps.semver.outputs.nextStrict }}
+          body: '*pending*'
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set Build Variables
+        id: buildvars
+        run: |
+          echo "Will set build version to: ${{ steps.semver.outputs.nextStrict }}"
+          echo "buildVersion=${{ steps.semver.outputs.nextStrict }}" >> $GITHUB_OUTPUT
+          echo "::notice::Release ${{ steps.semver.outputs.nextStrict }} created using branch $GITHUB_REF_NAME"
+
+      - name: Get Base Image Target Version
+        id: baseimgversion
+        run: |
+          echo "baseImageVersion=$(sed -n '1p' dev/build/TARGET_BASE)" >> $GITHUB_OUTPUT
+
+  # -----------------------------------------------------------------
+  # TESTS
+  # -----------------------------------------------------------------
+  tests:
+    name: Run Tests
+    uses: ./.github/workflows/reusable-tests.yml
+    needs: [prepare]
+    secrets: inherit
+    with:
+      ignoreLowerCoverage: false
+      skipSelenium: true
+      targetBaseVersion: ${{ needs.prepare.outputs.baseImageVersion }}
+
+  # -----------------------------------------------------------------
+  # BUILD RELEASE
+  # -----------------------------------------------------------------
+  build:
+    name: Build Release Image
+    uses: ./.github/workflows/reusable-build.yml
+    if: ${{ !failure() && !cancelled() }}
+    needs: [tests, prepare]
+    permissions:
+      contents: write
+      packages: write
+    secrets: inherit
+    with:
+      buildVersion: ${{needs.prepare.outputs.buildVersion}}
+      isReleaseBuild: true
+      previousVersion: ${{needs.prepare.outputs.previousVersion}}
+      handleCoverageResults: true
+      updateCoverageBaseline: true
+      baseImageVersion: ${{ needs.prepare.outputs.baseImageVersion }}
+
+  # -----------------------------------------------------------------
+  # NOTIFY
+  # -----------------------------------------------------------------
+  notify:
+    name: Notify
+    if: ${{ always() }}
+    needs: [prepare, tests, build]
+    runs-on: ubuntu-latest
+    env:
+      BUILD_VERSION: ${{needs.prepare.outputs.buildVersion}}
+        
+    steps:      
+    - name: Notify on Slack (Success)
+      if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
+      uses: slackapi/slack-github-action@v3
+      with:
+        token: ${{ secrets.SLACK_GH_BOT }}
+        method: chat.postMessage
+        payload: |
+          channel: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+          text: "Datatracker Release Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.BUILD_VERSION }}> by ${{ github.triggering_actor }}"
+          attachments:
+            - color: "28a745"
+              fields:
+                - title: "Status"
+                  short: true
+                  value: "Completed"
+    - name: Notify on Slack (Failure)
+      if: ${{ contains(join(needs.*.result, ','), 'failure') }}
+      uses: slackapi/slack-github-action@v3
+      with:
+        token: ${{ secrets.SLACK_GH_BOT }}
+        method: chat.postMessage
+        payload: |
+          channel: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+          text: "Datatracker Release Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.BUILD_VERSION }}> by ${{ github.triggering_actor }}"
+          attachments:
+            - color: "a82929"
+              fields:
+                - title: "Status"
+                  short: true
+                  value: "Failed 😱"
+
+  # -----------------------------------------------------------------
+  # STAGING
+  # -----------------------------------------------------------------
+  staging:
+    name: Deploy to Staging
+    if: ${{ !failure() && !cancelled() }}
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+    env:
+      BUILD_VERSION: ${{needs.prepare.outputs.buildVersion}}
+      
+    steps:
+      - name: Refresh Staging DB
+        uses: ietf-tools/workflow-dispatch-action@v1
+        with:
+          workflow: deploy-db.yml
+          repo: ietf-tools/infra-k8s
+          ref: main
+          token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
+          inputs: '{ "environment":"${{ secrets.GHA_K8S_CLUSTER }}", "app":"datatracker", "manifest":"postgres", "forceRecreate":true, "restoreToLastFullSnapshot":true, "waitClusterReady":true }'
+          waitForCompletionTimeout: 120m
+
+      - name: Deploy to staging
+        uses: ietf-tools/workflow-dispatch-action@v1
+        with:
+          workflow: deploy.yml
+          repo: ietf-tools/infra-k8s
+          ref: main
+          token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
+          inputs: '{ "environment":"${{ secrets.GHA_K8S_CLUSTER }}", "app":"datatracker", "appVersion":"${{ env.BUILD_VERSION }}", "remoteRef":"${{ github.sha }}", "deployStrategy":"${{ inputs.deployStrategy }}" }'
+          waitForCompletionTimeout: 30m
+
+  # -----------------------------------------------------------------
+  # PROD
+  # -----------------------------------------------------------------
+  prod:
+    name: Deploy to Production
+    if: ${{ !failure() && !cancelled() }}
+    needs: [prepare, staging]
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    env:
+      BUILD_VERSION: ${{needs.prepare.outputs.buildVersion}}
+
+    steps:
+      - name: Deploy to production
+        uses: ietf-tools/workflow-dispatch-action@v1
+        with:
+          workflow: deploy.yml
+          repo: ietf-tools/infra-k8s
+          ref: main
+          token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
+          inputs: '{ "environment":"${{ secrets.GHA_K8S_CLUSTER }}", "app":"datatracker", "appVersion":"${{ env.BUILD_VERSION }}", "remoteRef":"${{ github.sha }}", "deployStrategy":"${{ inputs.deployStrategy }}" }'
+          waitForCompletionTimeout: 30m

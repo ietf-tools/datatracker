@@ -1,10 +1,7 @@
-name: Build and Release
-run-name: ${{ github.ref_name == 'release' && '[Prod]' || '[Dev]' }} Build ${{ github.run_number }} of branch ${{ github.ref_name }} by @${{ github.actor }}
+name: Build Dev and Deploy
+run-name: Dev Build ${{ github.run_number }} of branch ${{ github.ref_name }} by @${{ github.actor }}
 
 on:
-  push:
-    branches: [release]
-    
   workflow_dispatch:
     inputs:
       deploy:
@@ -14,24 +11,28 @@ on:
         type: choice
         options:
           - Skip
-          - Staging Only
-          - Staging + Prod
-      dev:
-        description: 'Deploy to Dev'
-        default: true
+          - Dev
+          - Staging
+      deployStrategy:
+        description: 'Deploy Strategy'
+        default: 'Recreate'
         required: true
-        type: boolean
+        type: choice
+        options:
+          - Recreate
+          - RollingUpdate
+          - Current
       devNoDbRefresh:
         description: 'Dev Disable Daily DB Refresh'
         default: false
         required: true
         type: boolean
-      skiptests:
+      skipTests:
         description: 'Skip Tests'
         default: false
         required: true
         type: boolean
-      skiparm:
+      skipArmBuild:
         description: 'Skip ARM64 Build'
         default: false
         required: true
@@ -56,14 +57,12 @@ jobs:
   # PREPARE
   # -----------------------------------------------------------------
   prepare:
-    name: Prepare Release
+    name: Prepare
     runs-on: ubuntu-latest
     outputs:
-      should_deploy: ${{ steps.buildvars.outputs.should_deploy }}
-      pkg_version: ${{ steps.buildvars.outputs.pkg_version }}
-      from_tag: ${{ steps.semver.outputs.nextStrict }}
-      to_tag: ${{ steps.semver.outputs.current }}
-      base_image_version: ${{ steps.baseimgversion.outputs.base_image_version }}
+      buildVersion: ${{ steps.buildvars.outputs.buildVersion }}
+      previousVersion: ${{ steps.semver.outputs.current }}
+      baseImageVersion: ${{ steps.baseimgversion.outputs.baseImageVersion }}
 
     steps:   
     - uses: actions/checkout@v6
@@ -71,19 +70,8 @@ jobs:
         fetch-depth: 1
         fetch-tags: false
 
-    - name: Get Next Version (Prod)
-      if: ${{ github.ref_name == 'release' }}
-      id: semver
-      uses: ietf-tools/semver-action@v1
-      with:
-        token: ${{ github.token }}
-        branch: release
-        skipInvalidTags: true
-        patchList: fix, bugfix, perf, refactor, test, tests, chore
-
     - name: Get Dev Version
-      if: ${{ github.ref_name != 'release' }}
-      id: semverdev
+      id: semver
       uses: ietf-tools/semver-action@v1
       with:
         token: ${{ github.token }}
@@ -91,260 +79,53 @@ jobs:
         skipInvalidTags: true
         noVersionBumpBehavior: 'current'
         noNewCommitBehavior: 'current'
-      
-    - name: Set Release Flag
-      if: ${{ github.ref_name == 'release' }}
-      run: |
-        echo "IS_RELEASE=true" >> $GITHUB_ENV
-        
-    - name: Create Draft Release
-      uses: ncipollo/release-action@v1.21.0
-      if: ${{ github.ref_name == 'release' }}
-      with:
-        prerelease: true
-        draft: false
-        commit: ${{ github.sha }}
-        tag: ${{ steps.semver.outputs.nextStrict }}
-        name: ${{ steps.semver.outputs.nextStrict }}
-        body: '*pending*'
-        token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Set Build Variables
       id: buildvars
       run: |
-        if [[ $IS_RELEASE ]]; then
-          echo "Using AUTO SEMVER mode: ${{ steps.semver.outputs.nextStrict }}"
-          echo "should_deploy=true" >> $GITHUB_OUTPUT
-          echo "pkg_version=${{ steps.semver.outputs.nextStrict }}" >> $GITHUB_OUTPUT
-          echo "::notice::Release ${{ steps.semver.outputs.nextStrict }} created using branch $GITHUB_REF_NAME"
-        else
-          echo "Using TEST mode: ${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$GITHUB_RUN_NUMBER"
-          echo "should_deploy=false" >> $GITHUB_OUTPUT
-          echo "pkg_version=${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
-          echo "::notice::Non-production build ${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
-        fi
+        SHORT_SHA="${GITHUB_SHA:0:7}"
+        echo "Will set build version to: ${{ steps.semver.outputs.nextMajorStrict }}.0.0-dev.$SHORT_SHA"
+        echo "buildVersion=${{ steps.semver.outputs.nextMajorStrict }}.0.0-dev.$SHORT_SHA" >> $GITHUB_OUTPUT
+        echo "::notice::Non-production build ${{ steps.semver.outputs.nextMajorStrict }}.0.0-dev.$SHORT_SHA created using branch $GITHUB_REF_NAME"
 
     - name: Get Base Image Target Version
       id: baseimgversion
       run: |
-        echo "base_image_version=$(sed -n '1p' dev/build/TARGET_BASE)" >> $GITHUB_OUTPUT
+        echo "baseImageVersion=$(sed -n '1p' dev/build/TARGET_BASE)" >> $GITHUB_OUTPUT
 
   # -----------------------------------------------------------------
   # TESTS
   # -----------------------------------------------------------------
-  
   tests:
     name: Run Tests
-    uses: ./.github/workflows/tests.yml
-    if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
+    uses: ./.github/workflows/reusable-tests.yml
+    if: ${{ inputs.skipTests == 'false' }}
     needs: [prepare]
     secrets: inherit
     with:
-      ignoreLowerCoverage: ${{ github.event.inputs.ignoreLowerCoverage == 'true' }}
+      ignoreLowerCoverage: ${{ inputs.ignoreLowerCoverage == 'true' }}
       skipSelenium: true
-      targetBaseVersion: ${{ needs.prepare.outputs.base_image_version }}
+      targetBaseVersion: ${{ needs.prepare.outputs.baseImageVersion }}
 
   # -----------------------------------------------------------------
-  # RELEASE
+  # BUILD IMAGE
   # -----------------------------------------------------------------
-  release:
-    name: Make Release
+  build:
+    name: Build Image
+    uses: ./.github/workflows/reusable-build.yml
     if: ${{ !failure() && !cancelled() }}
     needs: [tests, prepare]
-    runs-on:
-      group: hperf-8c32r
     permissions:
       contents: write
       packages: write
-    env:
-      SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
-      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
-      FROM_TAG: ${{needs.prepare.outputs.from_tag}}
-      TO_TAG: ${{needs.prepare.outputs.to_tag}}
-      TARGET_BASE: ${{needs.prepare.outputs.base_image_version}}
-
-    steps:
-    - uses: actions/checkout@v6
-      with:
-        fetch-depth: 1
-        fetch-tags: false
-
-    - name: Setup Node.js environment
-      uses: actions/setup-node@v6
-      with:
-        node-version: 18.x
-
-    - name: Setup Python
-      uses: actions/setup-python@v6
-      with:
-        python-version: "3.x"
-
-    - name: Setup AWS CLI
-      uses: unfor19/install-aws-cli-action@v1
-      with:
-        version: 2.22.35
-
-    - name: Download a Coverage Results
-      if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
-      uses: actions/download-artifact@v8.0.1
-      with:
-        name: coverage
-
-    - name: Make Release Build
-      env:
-        DEBIAN_FRONTEND: noninteractive
-        BROWSERSLIST_IGNORE_OLD_DATA: 1
-      run: |
-        echo "PKG_VERSION: $PKG_VERSION"
-        echo "GITHUB_SHA: $GITHUB_SHA"
-        echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
-        echo "Running frontend build script..."
-        echo "Compiling native node packages..."
-        yarn rebuild
-        echo "Packaging static assets..."
-        yarn build --base=https://static.ietf.org/dt/$PKG_VERSION/
-        yarn legacy:build
-        echo "Setting version $PKG_VERSION..."
-        sed -i -r -e "s|^__version__ += '.*'$|__version__ = '$PKG_VERSION'|" ietf/__init__.py
-        sed -i -r -e "s|^__release_hash__ += '.*'$|__release_hash__ = '$GITHUB_SHA'|" ietf/__init__.py
-        sed -i -r -e "s|^__release_branch__ += '.*'$|__release_branch__ = '$GITHUB_REF_NAME'|" ietf/__init__.py
-
-    - name: Set Production Flags
-      if: ${{ env.SHOULD_DEPLOY == 'true' }}
-      run: |
-        echo "Setting production flags in settings.py..."
-        sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = False/' -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'production'/" ietf/settings.py
-        
-    - name: Make Release Tarball
-      env:
-        DEBIAN_FRONTEND: noninteractive
-      run: |
-        echo "Build release tarball..."
-        mkdir -p /home/runner/work/release
-        tar -czf /home/runner/work/release/release.tar.gz -X dev/build/exclude-patterns.txt .
-
-    - name: Collect + Push Statics
-      env:
-        DEBIAN_FRONTEND: noninteractive
-        AWS_ACCESS_KEY_ID: ${{ secrets.CF_R2_STATIC_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_STATIC_KEY_SECRET }}
-        AWS_DEFAULT_REGION: auto
-        AWS_ENDPOINT_URL: ${{ secrets.CF_R2_ENDPOINT }}
-      run: |
-        echo "Collecting statics..."
-        echo "Using ghcr.io/ietf-tools/datatracker-app-base:${{ env.TARGET_BASE }}"
-        docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:${{ env.TARGET_BASE }} sh dev/build/collectstatics.sh
-        echo "Pushing statics..."
-        cd static
-        aws s3 sync . s3://static/dt/$PKG_VERSION --only-show-errors
-
-    - name: Augment dockerignore for docker image build
-      env:
-        DEBIAN_FRONTEND: noninteractive
-      run: |
-        cat >> .dockerignore <<EOL
-        .devcontainer
-        .github
-        .vscode
-        k8s
-        playwright
-        svn-history
-        docker-compose.yml
-        EOL
-
-    - name: Setup Docker Buildx
-      uses: docker/setup-buildx-action@v4
-
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v4
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Add feature-latest tag
-      if: ${{ startsWith(github.ref_name, 'feat/') }}
-      run: echo "FEATURE_LATEST_TAG=$(echo $GITHUB_REF_NAME | tr / -)" >> $GITHUB_ENV
-
-    - name: Build Images
-      uses: docker/build-push-action@v7
-      env:
-        DOCKER_BUILD_SUMMARY: false
-      with:
-        context: .
-        file: dev/build/Dockerfile
-        platforms: ${{ github.event.inputs.skiparm == 'true' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
-        push: true
-        tags: |
-          ghcr.io/ietf-tools/datatracker:${{ env.PKG_VERSION }}
-          ${{ env.FEATURE_LATEST_TAG && format('ghcr.io/ietf-tools/datatracker:{0}-latest', env.FEATURE_LATEST_TAG) || null }}
-
-    - name: Update CHANGELOG
-      id: changelog
-      uses: Requarks/changelog-action@v1
-      if: ${{ env.SHOULD_DEPLOY == 'true' }}
-      with:
-        token: ${{ github.token }}
-        fromTag: ${{ env.FROM_TAG }}
-        toTag: ${{ env.TO_TAG }}
-        writeToFile: false
-
-    - name: Download Coverage Results
-      if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
-      uses: actions/download-artifact@v8.0.1
-      with:
-        name: coverage
-
-    - name: Prepare Coverage Action
-      if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
-      working-directory: ./dev/coverage-action
-      run: npm install
-        
-    - name: Process Coverage Stats + Chart
-      id: covprocess
-      uses: ./dev/coverage-action/
-      if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
-      with:
-        token: ${{ github.token }}
-        tokenCommon: ${{ secrets.GH_COMMON_TOKEN }}
-        repoCommon: common
-        version: ${{needs.prepare.outputs.pkg_version}}
-        changelog: ${{ steps.changelog.outputs.changes }}
-        summary: ''
-        coverageResultsPath: coverage.json
-        histCoveragePath: historical-coverage.json
-        
-    - name: Create Release
-      uses: ncipollo/release-action@v1.21.0
-      if: ${{ env.SHOULD_DEPLOY == 'true' }}
-      with:
-        allowUpdates: true
-        makeLatest: true
-        draft: false
-        tag: ${{ env.PKG_VERSION }}
-        name: ${{ env.PKG_VERSION }}
-        body: ${{ steps.covprocess.outputs.changelog }}
-        artifacts: "/home/runner/work/release/release.tar.gz,coverage.json,historical-coverage.json"
-        token: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Update Baseline Coverage
-      uses: ncipollo/release-action@v1.21.0
-      if: ${{ github.event.inputs.updateCoverage == 'true' || github.ref_name == 'release' }}
-      with:
-        allowUpdates: true
-        tag: baseline
-        omitBodyDuringUpdate: true
-        omitNameDuringUpdate: true
-        omitPrereleaseDuringUpdate: true
-        replacesArtifacts: true
-        artifacts: "coverage.json"
-        token: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v7
-      with:
-        name: release-${{ env.PKG_VERSION }}
-        path: /home/runner/work/release/release.tar.gz
+    with:
+      buildVersion: ${{ needs.prepare.outputs.buildVersion }}
+      isReleaseBuild: false
+      previousVersion: ${{ needs.prepare.outputs.previousVersion }}
+      handleCoverageResults: ${{ inputs.skipTests == 'false' }}
+      updateCoverageBaseline: ${{ inputs.updateCoverage }}
+      baseImageVersion: ${{ needs.prepare.outputs.baseImageVersion }}
+      skipArmBuild: ${{ inputs.skipArmBuild }}
         
   # -----------------------------------------------------------------
   # NOTIFY
@@ -352,10 +133,10 @@ jobs:
   notify:
     name: Notify
     if: ${{ always() }}
-    needs: [prepare, tests, release]
+    needs: [prepare, tests, build]
     runs-on: ubuntu-latest
     env:
-      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+      BUILD_VERSION: ${{ needs.prepare.outputs.buildVersion }}
         
     steps:      
     - name: Notify on Slack (Success)
@@ -366,7 +147,7 @@ jobs:
         method: chat.postMessage
         payload: |
           channel: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
-          text: "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }}"
+          text: "Datatracker Dev Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.BUILD_VERSION }}> by ${{ github.triggering_actor }}"
           attachments:
             - color: "28a745"
               fields:
@@ -381,26 +162,26 @@ jobs:
         method: chat.postMessage
         payload: |
           channel: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
-          text: "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }}"
+          text: "Datatracker Dev Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.BUILD_VERSION }}> by ${{ github.triggering_actor }}"
           attachments:
             - color: "a82929"
               fields:
                 - title: "Status"
                   short: true
-                  value: "Failed"
+                  value: "Failed 😱"
         
   # -----------------------------------------------------------------
   # DEV
   # -----------------------------------------------------------------
   dev:
     name: Deploy to Dev
-    if: ${{ !failure() && !cancelled() && github.event.inputs.dev == 'true' }}
-    needs: [prepare, release]
+    if: ${{ !failure() && !cancelled() && inputs.deploy == 'Dev' }}
+    needs: [prepare, build]
     runs-on: ubuntu-latest
     environment:
       name: dev
     env:
-      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+      BUILD_VERSION: ${{ needs.prepare.outputs.buildVersion }}
       
     steps:
       - uses: actions/checkout@v6
@@ -424,7 +205,7 @@ jobs:
           repo: ietf-tools/infra-k8s
           ref: main
           token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
-          inputs: '{ "app":"datatracker", "appVersion":"${{ env.PKG_VERSION }}", "remoteRef":"${{ github.sha }}", "namespace":"${{ env.DEPLOY_NAMESPACE }}", "disableDailyDbRefresh":${{ inputs.devNoDbRefresh }} }'
+          inputs: '{ "app":"datatracker", "appVersion":"${{ env.BUILD_VERSION }}", "remoteRef":"${{ github.sha }}", "namespace":"${{ env.DEPLOY_NAMESPACE }}", "disableDailyDbRefresh":${{ inputs.devNoDbRefresh }}, "deployStrategy":"${{ inputs.deployStrategy }}" }'
           waitForCompletionTimeout: 60m
 
   # -----------------------------------------------------------------
@@ -432,13 +213,13 @@ jobs:
   # -----------------------------------------------------------------
   staging:
     name: Deploy to Staging
-    if: ${{ !failure() && !cancelled() && (github.event.inputs.deploy == 'Staging Only' || github.event.inputs.deploy == 'Staging + Prod' || github.ref_name == 'release') }}
-    needs: [prepare, release]
+    if: ${{ !failure() && !cancelled() && inputs.deploy == 'Staging' }}
+    needs: [prepare, build]
     runs-on: ubuntu-latest
     environment:
       name: staging
     env:
-      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+      BUILD_VERSION: ${{ needs.prepare.outputs.buildVersion }}
       
     steps:
       - name: Refresh Staging DB
@@ -458,29 +239,5 @@ jobs:
           repo: ietf-tools/infra-k8s
           ref: main
           token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
-          inputs: '{ "environment":"${{ secrets.GHA_K8S_CLUSTER }}", "app":"datatracker", "appVersion":"${{ env.PKG_VERSION }}", "remoteRef":"${{ github.sha }}" }'
-          waitForCompletionTimeout: 30m
-
-  # -----------------------------------------------------------------
-  # PROD
-  # -----------------------------------------------------------------
-  prod:
-    name: Deploy to Production
-    if: ${{ !failure() && !cancelled() && (github.event.inputs.deploy == 'Staging + Prod' || github.ref_name == 'release') }}
-    needs: [prepare, staging]
-    runs-on: ubuntu-latest
-    environment:
-      name: production
-    env:
-      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
-
-    steps:
-      - name: Deploy to production
-        uses: ietf-tools/workflow-dispatch-action@v1
-        with:
-          workflow: deploy.yml
-          repo: ietf-tools/infra-k8s
-          ref: main
-          token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
-          inputs: '{ "environment":"${{ secrets.GHA_K8S_CLUSTER }}", "app":"datatracker", "appVersion":"${{ env.PKG_VERSION }}", "remoteRef":"${{ github.sha }}" }'
+          inputs: '{ "environment":"${{ secrets.GHA_K8S_CLUSTER }}", "app":"datatracker", "appVersion":"${{ env.BUILD_VERSION }}", "remoteRef":"${{ github.sha }}", "deployStrategy":"${{ inputs.deployStrategy }}" }'
           waitForCompletionTimeout: 30m

@@ -1,0 +1,226 @@
+name: Reusable Build Workflow
+
+on:
+  workflow_call:
+    inputs:
+      buildVersion:
+        required: true
+        type: string
+      isReleaseBuild:
+        default: false
+        required: false
+        type: boolean
+      previousVersion:
+        required: false
+        type: string
+      handleCoverageResults:
+        default: true
+        required: false
+        type: boolean
+      updateCoverageBaseline:
+        default: false
+        required: false
+        type: boolean
+      baseImageVersion:
+        default: latest
+        required: false
+        type: string
+      skipArmBuild:
+        default: false
+        required: false
+        type: boolean
+
+jobs:
+  # -----------------------------------------------------------------
+  # BUILD IMAGE
+  # -----------------------------------------------------------------
+  build:
+    name: Build Image
+    runs-on:
+      group: hperf-8c32r
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        fetch-depth: 1
+        fetch-tags: false
+
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v6
+      with:
+        node-version: 18.x
+
+    - name: Setup Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.x"
+
+    - name: Setup AWS CLI
+      uses: unfor19/install-aws-cli-action@v1
+      with:
+        version: 2.22.35
+
+    - name: Download a Coverage Results
+      if: ${{ inputs.handleCoverageResults }}
+      uses: actions/download-artifact@v8.0.1
+      with:
+        name: coverage
+
+    - name: Make Build
+      env:
+        DEBIAN_FRONTEND: noninteractive
+        BROWSERSLIST_IGNORE_OLD_DATA: 1
+      run: |
+        echo "BUILD_VERSION: ${{ inputs.buildVersion }}"
+        echo "GITHUB_SHA: $GITHUB_SHA"
+        echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
+        echo "Running frontend build script..."
+        echo "Compiling native node packages..."
+        yarn rebuild
+        echo "Packaging static assets..."
+        yarn build --base=https://static.ietf.org/dt/${{ inputs.buildVersion }}/
+        yarn legacy:build
+        echo "Setting version ${{ inputs.buildVersion }}..."
+        sed -i -r -e "s|^__version__ += '.*'$|__version__ = '${{ inputs.buildVersion }}'|" ietf/__init__.py
+        sed -i -r -e "s|^__release_hash__ += '.*'$|__release_hash__ = '$GITHUB_SHA'|" ietf/__init__.py
+        sed -i -r -e "s|^__release_branch__ += '.*'$|__release_branch__ = '$GITHUB_REF_NAME'|" ietf/__init__.py
+
+    - name: Set Production Flags
+      if: ${{ inputs.isReleaseBuild }}
+      run: |
+        echo "Setting production flags in settings.py..."
+        sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = False/' -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'production'/" ietf/settings.py
+        
+    - name: Make Tarball
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        echo "Build release tarball..."
+        mkdir -p /home/runner/work/release
+        tar -czf /home/runner/work/release/release.tar.gz -X dev/build/exclude-patterns.txt .
+
+    - name: Collect + Push Statics
+      env:
+        DEBIAN_FRONTEND: noninteractive
+        AWS_ACCESS_KEY_ID: ${{ secrets.CF_R2_STATIC_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_STATIC_KEY_SECRET }}
+        AWS_DEFAULT_REGION: auto
+        AWS_ENDPOINT_URL: ${{ secrets.CF_R2_ENDPOINT }}
+      run: |
+        echo "Collecting statics..."
+        echo "Using ghcr.io/ietf-tools/datatracker-app-base:${{ inputs.baseImageVersion }}"
+        docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:${{ inputs.baseImageVersion }} sh dev/build/collectstatics.sh
+        echo "Pushing statics..."
+        cd static
+        aws s3 sync . s3://static/dt/${{ inputs.buildVersion }} --only-show-errors
+
+    - name: Augment dockerignore for docker image build
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        cat >> .dockerignore <<EOL
+        .devcontainer
+        .github
+        .vscode
+        k8s
+        playwright
+        svn-history
+        docker-compose.yml
+        EOL
+
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v4
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v4
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Add feature-latest tag
+      if: ${{ startsWith(github.ref_name, 'feat/') }}
+      run: echo "FEATURE_LATEST_TAG=$(echo $GITHUB_REF_NAME | tr / -)" >> $GITHUB_ENV
+
+    - name: Build Images
+      uses: docker/build-push-action@v7
+      env:
+        DOCKER_BUILD_SUMMARY: false
+      with:
+        context: .
+        file: dev/build/Dockerfile
+        platforms: ${{ inputs.skipArmBuild && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
+        push: true
+        tags: |
+          ghcr.io/ietf-tools/datatracker:${{ inputs.buildVersion }}
+          ${{ env.FEATURE_LATEST_TAG && format('ghcr.io/ietf-tools/datatracker:{0}-latest', env.FEATURE_LATEST_TAG) || null }}
+
+    - name: Update CHANGELOG
+      id: changelog
+      uses: Requarks/changelog-action@v1
+      if: ${{ inputs.isReleaseBuild }}
+      with:
+        token: ${{ github.token }}
+        fromTag: ${{ inputs.buildVersion }}
+        toTag: ${{ inputs.previousVersion }}
+        writeToFile: false
+
+    - name: Download Coverage Results
+      if: ${{ inputs.handleCoverageResults }}
+      uses: actions/download-artifact@v8.0.1
+      with:
+        name: coverage
+
+    - name: Prepare Coverage Action
+      if: ${{ inputs.handleCoverageResults }}
+      working-directory: ./dev/coverage-action
+      run: npm install
+        
+    - name: Process Coverage Stats + Chart
+      id: covprocess
+      uses: ./dev/coverage-action/
+      if: ${{ inputs.handleCoverageResults }}
+      with:
+        token: ${{ github.token }}
+        tokenCommon: ${{ secrets.GH_COMMON_TOKEN }}
+        repoCommon: common
+        version: ${{ inputs.buildVersion }}
+        changelog: ${{ steps.changelog.outputs.changes }}
+        summary: ''
+        coverageResultsPath: coverage.json
+        histCoveragePath: historical-coverage.json
+        
+    - name: Create Release
+      uses: ncipollo/release-action@v1.21.0
+      if: ${{ inputs.isReleaseBuild }}
+      with:
+        allowUpdates: true
+        makeLatest: true
+        draft: false
+        tag: ${{ inputs.buildVersion }}
+        name: ${{ inputs.buildVersion }}
+        body: ${{ steps.covprocess.outputs.changelog }}
+        artifacts: "/home/runner/work/release/release.tar.gz,coverage.json,historical-coverage.json"
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Update Baseline Coverage
+      uses: ncipollo/release-action@v1.21.0
+      if: ${{ inputs.updateCoverageBaseline }}
+      with:
+        allowUpdates: true
+        tag: baseline
+        omitBodyDuringUpdate: true
+        omitNameDuringUpdate: true
+        omitPrereleaseDuringUpdate: true
+        replacesArtifacts: true
+        artifacts: "coverage.json"
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: release-${{ inputs.buildVersion }}
+        path: /home/runner/work/release/release.tar.gz
