@@ -1,8 +1,8 @@
-# Copyright The IETF Trust 2017-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2017-2026, All Rights Reserved
 
 import base64
 import binascii
+import csv
 import datetime
 import json
 from pathlib import Path
@@ -38,6 +38,7 @@ import ietf
 from ietf.api import _api_list
 from ietf.api.ietf_utils import is_valid_token, requires_api_token
 from ietf.api.serializer import JsonExportMixin
+from ietf.doc.models import Document, DocEvent
 from ietf.doc.utils import DraftAliasGenerator, fuzzy_find_documents
 from ietf.group.utils import GroupAliasGenerator, role_holder_emails
 from ietf.ietfauth.utils import role_required
@@ -558,6 +559,129 @@ def role_holder_addresses(request):
             }
         )
     return HttpResponse(status=405)
+
+
+@requires_api_token
+@csrf_exempt
+def recent_rfc_authors(request):
+    """Return authors of recently published RFCs as a CSV.
+
+    The lookback window is controlled by the ?days=N query parameter (default 7).
+    Each author appears once, with their RFC numbers, names, titles, and
+    publication dates accumulated across every RFC they published in the window.
+    """
+    if request.method != "GET":
+        return HttpResponse(status=405)
+
+    days = 7
+    days_param = request.GET.get("days")
+    if days_param is not None:
+        try:
+            days = int(days_param)
+        except ValueError:
+            return HttpResponseBadRequest("Invalid days parameter")
+
+    since = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(
+        days=days
+    )
+
+    rfcs = Document.objects.filter(
+        type_id="rfc",
+        docevent__type="published_rfc",
+        docevent__time__gt=since,
+    ).distinct()
+
+    # Collect per-author data keyed by email so each author gets one row.
+    # Values accumulate RFC numbers, names, titles, and dates across all RFCs.
+    author_data = {}
+
+    for rfc in rfcs:
+        pub_event = (
+            DocEvent.objects.filter(
+                doc=rfc,
+                type="published_rfc",
+            )
+            .order_by("-time")
+            .first()
+        )
+        published_date = pub_event.time.date() if pub_event else None
+
+        # RfcAuthor is the authoritative source for RFC authors.
+        # Fall back to DocumentAuthor for older RFCs that predate RfcAuthor.
+        if rfc.rfcauthor_set.exists():
+            authors = [
+                {
+                    "name": a.person.name if a.person else a.titlepage_name,
+                    "email": a.person.email().address
+                    if (a.person and a.person.email())
+                    else None,
+                }
+                for a in rfc.rfcauthor_set.select_related("person").order_by("order")
+            ]
+        else:
+            authors = [
+                {
+                    "name": a.person.name,
+                    "email": a.email.address if a.email else None,
+                }
+                for a in rfc.documentauthor_set.select_related(
+                    "person", "email"
+                ).order_by("order")
+            ]
+
+        for author in authors:
+            if not author["email"]:
+                continue
+
+            email = author["email"]
+            if email not in author_data:
+                author_data[email] = {
+                    "name": author["name"],
+                    "email": email,
+                    "rfc_numbers": [],
+                    "rfc_names": [],
+                    "rfc_titles": [],
+                    "published_dates": [],
+                }
+            author_data[email]["rfc_numbers"].append(str(rfc.rfc_number))
+            author_data[email]["rfc_names"].append(rfc.name)
+            author_data[email]["rfc_titles"].append(rfc.title)
+            author_data[email]["published_dates"].append(str(published_date))
+
+    csv_columns = [
+        "FirstName",
+        "LastName",
+        "Email",
+        "RFCNumber",
+        "RFCName",
+        "RFCTitle",
+        "RFCNumber_And_RFCTitle",
+        "PublishedDate",
+    ]
+
+    response = HttpResponse(content_type="text/csv")
+    writer = csv.DictWriter(response, fieldnames=csv_columns)
+    writer.writeheader()
+
+    for entry in author_data.values():
+        name_parts = entry["name"].split(None, 1)
+        writer.writerow(
+            {
+                "FirstName": name_parts[0] if name_parts else "",
+                "LastName": name_parts[1] if len(name_parts) > 1 else "",
+                "Email": entry["email"],
+                "RFCNumber": ", ".join(entry["rfc_numbers"]),
+                "RFCName": ", ".join(entry["rfc_names"]),
+                "RFCTitle": ", ".join(entry["rfc_titles"]),
+                "RFCNumber_And_RFCTitle": ", ".join(
+                    f"RFC {num} {title}"
+                    for num, title in zip(entry["rfc_numbers"], entry["rfc_titles"])
+                ),
+                "PublishedDate": ", ".join(entry["published_dates"]),
+            }
+        )
+
+    return response
 
 
 _response_email_json_validator = jsonschema.Draft202012Validator(
