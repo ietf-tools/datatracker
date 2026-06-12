@@ -14,7 +14,7 @@ on:
           - Dev
           - Staging
       deployStrategy:
-        description: 'Deploy Strategy'
+        description: 'Deploy Strategy (Staging Only)'
         default: 'Recreate'
         required: true
         type: choice
@@ -23,7 +23,7 @@ on:
           - RollingUpdate
           - Current
       devNoDbRefresh:
-        description: 'Dev Disable Daily DB Refresh'
+        description: 'Disable Daily DB Refresh (Dev Only)'
         default: false
         required: true
         type: boolean
@@ -206,7 +206,7 @@ jobs:
           repo: ietf-tools/infra-k8s
           ref: main
           token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
-          inputs: '{ "app":"datatracker", "appVersion":"${{ env.BUILD_VERSION }}", "remoteRef":"${{ github.sha }}", "namespace":"${{ env.DEPLOY_NAMESPACE }}", "disableDailyDbRefresh":${{ inputs.devNoDbRefresh }}, "deployStrategy":"${{ inputs.deployStrategy }}" }'
+          inputs: '{ "app":"datatracker", "appVersion":"${{ env.BUILD_VERSION }}", "remoteRef":"${{ github.sha }}", "namespace":"${{ env.DEPLOY_NAMESPACE }}", "disableDailyDbRefresh":${{ inputs.devNoDbRefresh }} }'
           waitForCompletionTimeout: 60m
 
   # -----------------------------------------------------------------
