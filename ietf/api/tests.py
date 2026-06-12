@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 import base64
 import copy
-import csv
 import datetime
-import io
 import json
 import html
 from unittest import mock
@@ -1113,37 +1111,37 @@ class CustomApiTests(TestCase):
 
         r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.headers["Content-Type"], "text/csv")
-        rows = list(csv.DictReader(io.StringIO(r.content.decode())))
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        rows = json.loads(r.content)
 
-        # Only the recent RFC's author appears, as a single aggregated row.
+        # Only the recent RFC's author appears, as a single aggregated object.
         self.assertEqual(len(rows), 1)
         row = rows[0]
-        self.assertEqual(row["Name"], "Jane Q. Author")
-        self.assertEqual(row["Email"], author.email().address)
-        self.assertEqual(row["RFCNumber"], str(recent_rfc.rfc_number))
-        self.assertEqual(row["RFCName"], recent_rfc.name)
-        self.assertEqual(row["RFCTitle"], recent_rfc.title)
+        self.assertEqual(row["name"], "Jane Q. Author")
+        self.assertEqual(row["email"], author.email().address)
+        self.assertEqual(row["rfc_number"], str(recent_rfc.rfc_number))
+        self.assertEqual(row["rfc_name"], recent_rfc.name)
+        self.assertEqual(row["rfc_title"], recent_rfc.title)
         self.assertEqual(
-            row["RFCNumber_And_RFCTitle"],
+            row["rfc_number_and_title"],
             f"RFC {recent_rfc.rfc_number} {recent_rfc.title}",
         )
-        self.assertEqual(row["PublishedDate"], str(recent_event.time.date()))
+        self.assertEqual(row["published_date"], str(recent_event.time.date()))
 
         # A narrow window excludes the recent RFC, too.
         r = self.client.get(url + "?days=1", headers={"X-Api-Key": "valid-token"})
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(list(csv.DictReader(io.StringIO(r.content.decode()))), [])
+        self.assertEqual(json.loads(r.content), [])
 
         # The testing parameter fakes the email domain while keeping the mailbox.
         r = self.client.get(url + "?testing", headers={"X-Api-Key": "valid-token"})
         self.assertEqual(r.status_code, 200)
-        rows = list(csv.DictReader(io.StringIO(r.content.decode())))
+        rows = json.loads(r.content)
         self.assertEqual(len(rows), 1)
         mailbox = author.email().address.split("@", 1)[0]
-        self.assertEqual(rows[0]["Email"], f"{mailbox}@fake.example.com")
+        self.assertEqual(rows[0]["email"], f"{mailbox}@fake.example.com")
         # Non-email fields are unaffected.
-        self.assertEqual(rows[0]["Name"], "Jane Q. Author")
+        self.assertEqual(rows[0]["name"], "Jane Q. Author")
 
         # An invalid days parameter is rejected.
         r = self.client.get(url + "?days=garbage", headers={"X-Api-Key": "valid-token"})

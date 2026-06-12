@@ -2,7 +2,6 @@
 
 import base64
 import binascii
-import csv
 import datetime
 import json
 from pathlib import Path
@@ -564,7 +563,7 @@ def role_holder_addresses(request):
 @requires_api_token
 @csrf_exempt
 def recent_rfc_authors(request):
-    """Return authors of recently published RFCs as a CSV.
+    """Return authors of recently published RFCs as a JSON list of objects.
 
     The lookback window is controlled by the ?days=N query parameter (default 7).
     Each author appears once, with their RFC numbers, names, titles, and
@@ -644,41 +643,28 @@ def recent_rfc_authors(request):
             author_data[email]["rfc_titles"].append(rfc.title)
             author_data[email]["published_dates"].append(str(published_date))
 
-    csv_columns = [
-        "Name",
-        "Email",
-        "RFCNumber",
-        "RFCName",
-        "RFCTitle",
-        "RFCNumber_And_RFCTitle",
-        "PublishedDate",
-    ]
-
-    response = HttpResponse(content_type="text/csv")
-    writer = csv.DictWriter(response, fieldnames=csv_columns)
-    writer.writeheader()
-
+    rows = []
     for entry in author_data.values():
         email = entry["email"]
         if testing:
             mailbox = email.split("@", 1)[0]
             email = f"{mailbox}@fake.example.com"
-        writer.writerow(
+        rows.append(
             {
-                "Name": entry["name"],
-                "Email": email,
-                "RFCNumber": ", ".join(entry["rfc_numbers"]),
-                "RFCName": ", ".join(entry["rfc_names"]),
-                "RFCTitle": ", ".join(entry["rfc_titles"]),
-                "RFCNumber_And_RFCTitle": ", ".join(
+                "name": entry["name"],
+                "email": email,
+                "rfc_number": ", ".join(entry["rfc_numbers"]),
+                "rfc_name": ", ".join(entry["rfc_names"]),
+                "rfc_title": ", ".join(entry["rfc_titles"]),
+                "rfc_number_and_title": ", ".join(
                     f"RFC {num} {title}"
                     for num, title in zip(entry["rfc_numbers"], entry["rfc_titles"])
                 ),
-                "PublishedDate": ", ".join(entry["published_dates"]),
+                "published_date": ", ".join(entry["published_dates"]),
             }
         )
 
-    return response
+    return JsonResponse(rows, safe=False)
 
 
 _response_email_json_validator = jsonschema.Draft202012Validator(
