@@ -118,6 +118,7 @@ jobs:
     permissions:
       contents: write
       packages: write
+    secrets: inherit
     with:
       buildVersion: ${{ needs.prepare.outputs.buildVersion }}
       isReleaseBuild: false
