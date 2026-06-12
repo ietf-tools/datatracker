@@ -606,28 +606,17 @@ def recent_rfc_authors(request):
         )
         published_date = pub_event.time.date() if pub_event else None
 
-        # RfcAuthor is the authoritative source for RFC authors.
-        # Fall back to DocumentAuthor for older RFCs that predate RfcAuthor.
-        if rfc.rfcauthor_set.exists():
-            authors = [
-                {
-                    "name": a.person.name if a.person else a.titlepage_name,
-                    "email": a.person.email().address
-                    if (a.person and a.person.email())
-                    else None,
-                }
-                for a in rfc.rfcauthor_set.select_related("person").order_by("order")
-            ]
-        else:
-            authors = [
-                {
-                    "name": a.person.name,
-                    "email": a.email.address if a.email else None,
-                }
-                for a in rfc.documentauthor_set.select_related(
-                    "person", "email"
-                ).order_by("order")
-            ]
+        # RfcAuthor is the authoritative source for RFC authors. Documents of
+        # type "rfc" always have an rfcauthor_set, so no fallback is needed.
+        authors = [
+            {
+                "name": a.person.name if a.person else a.titlepage_name,
+                "email": a.person.email().address
+                if (a.person and a.person.email())
+                else None,
+            }
+            for a in rfc.rfcauthor_set.select_related("person").order_by("order")
+        ]
 
         for author in authors:
             if not author["email"]:
@@ -649,8 +638,7 @@ def recent_rfc_authors(request):
             author_data[email]["published_dates"].append(str(published_date))
 
     csv_columns = [
-        "FirstName",
-        "LastName",
+        "Name",
         "Email",
         "RFCNumber",
         "RFCName",
@@ -664,11 +652,9 @@ def recent_rfc_authors(request):
     writer.writeheader()
 
     for entry in author_data.values():
-        name_parts = entry["name"].split(None, 1)
         writer.writerow(
             {
-                "FirstName": name_parts[0] if name_parts else "",
-                "LastName": name_parts[1] if len(name_parts) > 1 else "",
+                "Name": entry["name"],
                 "Email": entry["email"],
                 "RFCNumber": ", ".join(entry["rfc_numbers"]),
                 "RFCName": ", ".join(entry["rfc_names"]),

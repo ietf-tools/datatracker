@@ -1119,8 +1119,7 @@ class CustomApiTests(TestCase):
         # Only the recent RFC's author appears, as a single aggregated row.
         self.assertEqual(len(rows), 1)
         row = rows[0]
-        self.assertEqual(row["FirstName"], "Jane")
-        self.assertEqual(row["LastName"], "Q. Author")
+        self.assertEqual(row["Name"], "Jane Q. Author")
         self.assertEqual(row["Email"], author.email().address)
         self.assertEqual(row["RFCNumber"], str(recent_rfc.rfc_number))
         self.assertEqual(row["RFCName"], recent_rfc.name)
