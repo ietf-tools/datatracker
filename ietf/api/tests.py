@@ -1143,6 +1143,27 @@ class CustomApiTests(TestCase):
         # Non-email fields are unaffected.
         self.assertEqual(rows[0]["name"], "Jane Q. Author")
 
+        # If in test mode and testaddr parameters are present, records for those
+        # addresses should be returned with a fake RFC.
+        r = self.client.get(
+            url + "?testing&testaddr=fake@a.example.com&testaddr=phony@b.example.com",
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        rows = json.loads(r.content)
+        self.assertEqual(len(rows), 3)
+        fake_author_addr = author.email().address.split("@", 1)[0] + "@fake.example.com"
+        self.assertCountEqual(
+            [fake_author_addr, "fake@a.example.com", "phony@b.example.com"],
+            [r["email"] for r in rows],
+        )
+
+        # Can only use testaddr when testing is also present
+        r = self.client.get(
+            url + "?testaddr=fake.a.example.com", headers={"X-Api-Key": "valid-token"}
+        )
+        self.assertEqual(r.status_code, 400)
+
         # An invalid days parameter is rejected.
         r = self.client.get(url + "?days=garbage", headers={"X-Api-Key": "valid-token"})
         self.assertEqual(r.status_code, 400)

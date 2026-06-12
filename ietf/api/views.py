@@ -18,6 +18,7 @@ from django.contrib.auth.models import User
 from django.http import HttpResponse, Http404, JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.gzip import gzip_page
@@ -573,12 +574,26 @@ def recent_rfc_authors(request):
     address is replaced with a fake one that keeps the original mailbox but uses
     the "fake.example.com" domain, so the output can be shared without exposing
     real addresses.
+    
+    When the ?testing query parameter is supplied, one or more testaddr=ADDRESS query
+    parameters can also be specified. The value of each parameter is an email
+    address. When these parameters are present, the response data will include an
+    entry for each address as though it belonged to the author of a recently published
+    RFC.
     """
     if request.method != "GET":
         return HttpResponse(status=405)
 
+    # Test mode parameters
     testing = "testing" in request.GET
+    test_addresses = request.GET.getlist("testaddr", [])
+    if len(test_addresses) > 0:
+        if not testing:
+            return HttpResponseBadRequest(
+                "Must include the testing parameter when using testaddr"
+            )
 
+    # lookback parameters
     days = 7
     days_param = request.GET.get("days")
     if days_param is not None:
@@ -587,9 +602,7 @@ def recent_rfc_authors(request):
         except ValueError:
             return HttpResponseBadRequest("Invalid days parameter")
 
-    since = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(
-        days=days
-    )
+    since = timezone.now() - datetime.timedelta(days=days)
 
     rfcs = Document.objects.filter(
         type_id="rfc",
@@ -628,7 +641,12 @@ def recent_rfc_authors(request):
             if not author["email"]:
                 continue
 
-            email = author["email"]
+            if testing:
+                mailbox = author["email"].split("@", 1)[0]
+                email = f"{mailbox}@fake.example.com"
+            else:
+                email = author["email"]
+
             if email not in author_data:
                 author_data[email] = {
                     "name": author["name"],
@@ -643,16 +661,25 @@ def recent_rfc_authors(request):
             author_data[email]["rfc_titles"].append(rfc.title)
             author_data[email]["published_dates"].append(str(published_date))
 
+    if testing:
+        for n, email in enumerate(test_addresses):
+            if email in author_data:
+                continue  # author will already be included
+            author_data[email] = {
+                "name": f"Test Author {n + 1}",
+                "email": email,
+                "rfc_numbers": ["99999"],
+                "rfc_names": ["rfc99999"],
+                "rfc_titles": ["A Fake RFC for Testing"],
+                "published_dates": [str(timezone.now().date())],
+            }
+
     rows = []
     for entry in author_data.values():
-        email = entry["email"]
-        if testing:
-            mailbox = email.split("@", 1)[0]
-            email = f"{mailbox}@fake.example.com"
         rows.append(
             {
                 "name": entry["name"],
-                "email": email,
+                "email": entry["email"],
                 "rfc_number": ", ".join(entry["rfc_numbers"]),
                 "rfc_name": ", ".join(entry["rfc_names"]),
                 "rfc_title": ", ".join(entry["rfc_titles"]),
