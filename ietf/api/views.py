@@ -615,16 +615,6 @@ def recent_rfc_authors(request):
     author_data = {}
 
     for rfc in rfcs:
-        pub_event = (
-            DocEvent.objects.filter(
-                doc=rfc,
-                type="published_rfc",
-            )
-            .order_by("-time")
-            .first()
-        )
-        published_date = pub_event.time.date() if pub_event else None
-
         # RfcAuthor is the authoritative source for RFC authors. Documents of
         # type "rfc" always have an rfcauthor_set, so no fallback is needed.
         authors = [
@@ -659,7 +649,7 @@ def recent_rfc_authors(request):
             author_data[email]["rfc_numbers"].append(str(rfc.rfc_number))
             author_data[email]["rfc_names"].append(rfc.name)
             author_data[email]["rfc_titles"].append(rfc.title)
-            author_data[email]["published_dates"].append(str(published_date))
+            author_data[email]["published_dates"].append(str(rfc.pub_date()))
 
     if testing:
         for n, email in enumerate(test_addresses):
