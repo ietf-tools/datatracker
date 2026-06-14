@@ -127,6 +127,7 @@ urlpatterns = [
     url(r'^interim/pending/?$', views.interim_pending),
     url(r'^requests.html$', RedirectView.as_view(url='/meeting/requests', permanent=True)),
     url(r'^past/?$', views.past),
+    url(r'^past_ietf/?$', views.past_ietf),
     url(r'^upcoming/?$', views.upcoming),
     url(r'^upcoming\.ics/?$', views.upcoming_ical),
     url(r'^upcoming\.json/?$', views.upcoming_json),

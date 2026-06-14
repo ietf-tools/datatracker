@@ -366,6 +366,12 @@
     </li>
     <li>
         <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
+        href="{% url 'ietf.meeting.views.past_ietf' %}">
+            Past IETF meetings
+        </a>
+    </li>
+    <li>
+        <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
            href="https://www.ietf.org/how/meetings/past/">
             Meeting proceedings
         </a>

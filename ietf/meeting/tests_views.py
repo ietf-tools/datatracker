@@ -5254,6 +5254,15 @@ class InterimTests(TestCase):
         #id="-%s" % interim.group.acronym
         #self.assertIn('Cancelled', q('[id*="'+id+'"]').text())
         self.assertIn('Cancelled', q('tr>td>a+span').text())
+    
+    def test_past_ietf_meetings(self):
+        today = date_today()
+        last_week = today - datetime.timedelta(days=7)
+        ietf = SessionFactory(meeting__type_id='ietf', meeting__date=last_week)
+        url = urlreverse('ietf.meeting.views.past_ietf')
+        r = self.client.get(url)
+        self.assertContains(r, 'IETF-%02d'%int(ietf.meeting.number))
+        self.assertContains(r, '%04d-%02d-%02d'%(ietf.meeting.date.year, ietf.meeting.date.month, ietf.meeting.date.day))        
 
     def do_upcoming_test(self, querystring=None, create_meeting=True):
         if create_meeting:
