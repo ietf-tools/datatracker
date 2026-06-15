@@ -195,7 +195,7 @@ class Serializer(tastypie.serializers.Serializer):
         simple_data = super().to_simple(data, options)
         if options.get(self.OPTION_ESCAPE_XML_INVALID, False) and isinstance(simple_data, str):
             # Replace control chars invalid in XML 1.0 with their Unicode
-            # control pictures (U+2400\u2013U+241F) so lxml won't reject the string.
+            # control pictures (U+2400-U+241F) so lxml won't reject the string.
             simple_data = _XML_INVALID_CTRL_RE.sub(
                 lambda m: chr(ord(m.group()) + 0x2400), simple_data
             )
