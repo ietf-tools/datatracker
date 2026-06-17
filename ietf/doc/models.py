@@ -344,6 +344,11 @@ class DocumentInfo(models.Model):
             setattr(self, cache_attr, href)
         return getattr(self, cache_attr)
 
+    def refresh_from_db(self, using=None, fields=None, **kwargs):
+        super().refresh_from_db(using=using, fields=fields, **kwargs)
+        self.state_cache = None
+        self._cached_state_slug = {}
+
     def set_state(self, state):
         """Switch state type implicit in state to state. This just
         sets the state, doesn't log the change."""
