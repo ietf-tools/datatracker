@@ -134,6 +134,12 @@
             </li>
             <li>
                 <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
+                href="{% url 'ietf.iesg.views.review_decisions' %}">
+                    IESG decisions
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
                 href="{% url 'ietf.group.views.statements' acronym='iesg' %}">
                     IESG statements
                 </a>

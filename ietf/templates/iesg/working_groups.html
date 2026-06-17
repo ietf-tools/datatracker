@@ -1,11 +1,11 @@
-{% extends "base.html" %}
+{% extends "group/group_base.html" %}
 {# Copyright The IETF Trust 2025, All Rights Reserved #}
 {% load origin static %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static 'ietf/css/list.css' %}">
 {% endblock %}
-{% block title %}IESG view of working groups{% endblock %}
-{% block content %}
+{% block group_subtitle %}IESG view of working groups{% endblock %}
+{% block group_content %}
     {% origin %}
     <h1 class="mt-4">IESG view of working groups</h1>
     <h2 class="mt-3'">Area Size and Load</h2>
