@@ -163,7 +163,7 @@ class DocumentInfo(models.Model):
     @property
     def doi(self) -> str | None:
         if self.type_id == "rfc" and self.rfc_number is not None:
-            return f"{settings.IETF_DOI_PREFIX}/RFC{self.rfc_number:04d}"
+            return f"{settings.IETF_DOI_PREFIX}/RFC{self.rfc_number}"
         return None
 
     def file_extension(self):
