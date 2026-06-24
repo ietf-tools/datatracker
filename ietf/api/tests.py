@@ -29,7 +29,7 @@ import ietf
 from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils import get_unicode_document_content
 from ietf.doc.models import RelatedDocument, State
-from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory
+from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory, RfcAuthorFactory, DocEventFactory
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.models import Session, Registration
@@ -1069,6 +1069,104 @@ class CustomApiTests(TestCase):
             content_dict["addresses"],
             sorted(e.address for e in emails),
         )
+
+    @override_settings(
+        APP_API_TOKENS={"ietf.api.views.recent_rfc_authors": ["valid-token"]}
+    )
+    def test_recent_rfc_authors(self):
+        url = urlreverse("ietf.api.views.recent_rfc_authors")
+        # auth and method checks
+        self.assertEqual(
+            self.client.get(url, headers={}).status_code, 403, "No api token, no access"
+        )
+        self.assertEqual(
+            self.client.get(url, headers={"X-Api-Key": "not-valid-token"}).status_code,
+            403,
+            "Bad api token, no access",
+        )
+        self.assertEqual(
+            self.client.post(url, headers={"X-Api-Key": "valid-token"}).status_code,
+            405,
+            "Bad method, no access",
+        )
+
+        # A recently published RFC with a known author...
+        author = PersonFactory(name="Jane Q. Author")
+        recent_rfc = WgRfcFactory(title="A Recently Published RFC")
+        recent_event = DocEventFactory(
+            doc=recent_rfc,
+            type="published_rfc",
+            time=timezone.now() - datetime.timedelta(days=2),
+        )
+        RfcAuthorFactory(document=recent_rfc, person=author)
+
+        # ...and an RFC published well outside the default window, which must be excluded.
+        old_rfc = WgRfcFactory(title="An Old RFC")
+        DocEventFactory(
+            doc=old_rfc,
+            type="published_rfc",
+            time=timezone.now() - datetime.timedelta(days=400),
+        )
+        RfcAuthorFactory(document=old_rfc)
+
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        rows = json.loads(r.content)
+
+        # Only the recent RFC's author appears, as a single aggregated object.
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row["name"], "Jane Q. Author")
+        self.assertEqual(row["email"], author.email().address)
+        self.assertEqual(row["rfc_number"], str(recent_rfc.rfc_number))
+        self.assertEqual(row["rfc_name"], recent_rfc.name)
+        self.assertEqual(row["rfc_title"], recent_rfc.title)
+        self.assertEqual(
+            row["rfc_number_and_title"],
+            f"RFC {recent_rfc.rfc_number} {recent_rfc.title}",
+        )
+        self.assertEqual(row["published_date"], str(recent_event.time.date()))
+
+        # A narrow window excludes the recent RFC, too.
+        r = self.client.get(url + "?days=1", headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(json.loads(r.content), [])
+
+        # The testing parameter fakes the email domain while keeping the mailbox.
+        r = self.client.get(url + "?testing", headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        rows = json.loads(r.content)
+        self.assertEqual(len(rows), 1)
+        mailbox = author.email().address.split("@", 1)[0]
+        self.assertEqual(rows[0]["email"], f"{mailbox}@fake.example.com")
+        # Non-email fields are unaffected.
+        self.assertEqual(rows[0]["name"], "Jane Q. Author")
+
+        # If in test mode and testaddr parameters are present, records for those
+        # addresses should be returned with a fake RFC.
+        r = self.client.get(
+            url + "?testing&testaddr=fake@a.example.com&testaddr=phony@b.example.com",
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        rows = json.loads(r.content)
+        self.assertEqual(len(rows), 3)
+        fake_author_addr = author.email().address.split("@", 1)[0] + "@fake.example.com"
+        self.assertCountEqual(
+            [fake_author_addr, "fake@a.example.com", "phony@b.example.com"],
+            [r["email"] for r in rows],
+        )
+
+        # Can only use testaddr when testing is also present
+        r = self.client.get(
+            url + "?testaddr=fake.a.example.com", headers={"X-Api-Key": "valid-token"}
+        )
+        self.assertEqual(r.status_code, 400)
+
+        # An invalid days parameter is rejected.
+        r = self.client.get(url + "?days=garbage", headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 400)
 
     @override_settings(
         APP_API_TOKENS={"ietf.api.views.ingest_email": "valid-token", "ietf.api.views.ingest_email_test": "test-token"}
