@@ -691,7 +691,7 @@ class EditableRfcSerializer(serializers.ModelSerializer):
                     )
                 else:
                     original_pub_time = published_event.time
-                    if published != original_pub_time:
+                    if published != original_pub_time.replace(microsecond=0):
                         published_event.time = published
                         published_event.save()
                         rfc_events.append(
