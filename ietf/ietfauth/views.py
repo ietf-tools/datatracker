@@ -232,9 +232,9 @@ def confirm_account(request, auth):
             if not person:
                 name = form.cleaned_data["name"]
                 ascii = form.cleaned_data["ascii"]
-                person = Person.objects.create(user=user,
-                                               name=name,
-                                               ascii=ascii)
+
+                person = Person.objects.create(user=user, name=name, ascii=ascii)
+                person.uuids.create(person=person)
 
                 for name in set([ person.name, person.ascii, person.plain_name(), person.plain_ascii(), ]):
                     Alias.objects.create(person=person, name=name)

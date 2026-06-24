@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q
 from django.http import HttpResponse, Http404
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.utils import timezone
 
@@ -75,6 +75,13 @@ def ajax_select2_search(request, model_name):
 def profile(request, email_or_name):
     persons = lookup_persons(email_or_name)
     return render(request, 'person/profile.html', {'persons': persons, 'today': timezone.now()})
+
+
+def profile_by_uuid(request, uuid):
+    person = get_object_or_404(Person, uuids=uuid)
+    return render(
+        request, "person/profile.html", {"persons": [person], "today": timezone.now()}
+    )
 
 
 def photo(request, email_or_name):
