@@ -114,7 +114,7 @@
 }
 
 .rfcmarkup,
-.rfchtml {
+.rfctxthtml {
     font-family: var(--bs-font-monospace);
 
     caption {
@@ -342,7 +342,7 @@ tbody.meta tr {
         line-height: 1.25em !important;
     }
 
-    .rfchtml {
+    .rfctxthtml {
         font-size: 9.75pt;
         line-height: 1.25em;
     }
