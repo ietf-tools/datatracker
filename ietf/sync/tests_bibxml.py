@@ -134,6 +134,7 @@ class BibXmlTests(TestCase):
             self.assertIn(
                 f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
             )
+            self.assertIn(f'<seriesInfo name="BCP" value="{bcp_number}"/>', bibxml)
             self.assertIn('<date month="April" year="2021"/>', bibxml)
 
     def test_create_std_bibxml(self):
@@ -149,6 +150,7 @@ class BibXmlTests(TestCase):
             self.assertIn(
                 f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
             )
+            self.assertIn(f'<seriesInfo name="STD" value="{std_number}"/>', bibxml)
             self.assertIn('<date month="April" year="2021"/>', bibxml)
 
     def test_create_fyi_bibxml(self):
@@ -164,6 +166,7 @@ class BibXmlTests(TestCase):
             self.assertIn(
                 f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
             )
+            self.assertIn(f'<seriesInfo name="FYI" value="{fyi_number}"/>', bibxml)
             self.assertIn('<date month="April" year="2021"/>', bibxml)
 
     @patch("ietf.sync.bibxml.save_bibxml")
