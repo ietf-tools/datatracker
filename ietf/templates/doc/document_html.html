@@ -28,7 +28,8 @@
         {% else %}
             <link rel="stylesheet" href="{% static 'ietf/css/document_html_referenced.css' %}">
             {% if html %}
-                <link rel="stylesheet" href="{% static 'ietf/css/document_html_txt.css' %}">
+                <link rel="stylesheet" href="{% static 'ietf/css/document_html_txthtml.css' %}">
+                <link rel="stylesheet" href="{% static 'ietf/css/document_html_html.css' %}">
             {% endif %}
             {% vite_asset 'client/embedded.js' %}
             <script src="{% static 'ietf/js/document_html.js' %}"></script>
@@ -104,7 +105,7 @@
                href="{% url 'ietf.doc.views_doc.document_main' name=doc.name %}">
                 {% if doc.type_id == "rfc" %}
                     RFC {{ doc.rfc_number }}
-                {% else %} 
+                {% else %}
                     {{ doc.name }}-{{ doc.rev }}
                 {% endif %}
                 <br class="d-sm-none">
@@ -163,7 +164,11 @@
                  tabindex="0"
                  id="content">
                 {% if html and request.COOKIES.htmlconf != 'txt' %}
+                  {% if request.COOKIES.htmlconf == 'html' %}
                     <div class="rfchtml">
+                  {% else %}
+                    <div class="rfctxthtml">
+                  {% endif %}
                         <br class="noprint">
                         {{ html|safe }}
                     </div>
@@ -190,14 +195,14 @@
                                 {% document_type_badge doc snapshot submission resurrected_by %}
                             </p>
                         </div>
-                        {% if request.COOKIES.htmlconf and request.COOKIES.htmlconf != 'html' and html %}
+                        {% if request.COOKIES.htmlconf and request.COOKIES.htmlconf == 'txt' and html %}
                         <div class="alert alert-info small">
                             You are viewing the legacy <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/rfc2html">rfc2html</a></code>
                             rendering of this document. Change the
                             preferences for a modern <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/xml2rfc">xml2rfc</a></code>-based
                             HTMLization.
                         </div>
-                        {% elif request.COOKIES.htmlconf == 'html' and not html %}
+                        {% elif request.COOKIES.htmlconf != 'txt' and not html %}
                         <div class="alert alert-info small">
                             You are viewing the legacy <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/rfc2html">rfc2html</a></code>
                             rendering, because no <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/xml2rfc">xml2rfc</a></code>-generated
@@ -295,9 +300,13 @@
                                     <label class="btn btn-outline-primary" for="txt-radio" title="This is the traditional HTMLization method.">
                                         <i class="bi bi-badge-sd me-1"></i>HTMLize the plaintext
                                     </label>
-                                    <input type="radio" class="btn-check" name="htmlconf" id="html-radio">
-                                    <label class="btn btn-outline-primary" for="html-radio" title="This is the modern HTMLization method.">
+                                    <input type="radio" class="btn-check" name="htmlconf" id="txthtml-radio">
+                                    <label class="btn btn-outline-primary" for="txthtml-radio" title="This is the modern HTMLization method.">
                                         <i class="bi bi-badge-hd me-1"></i>Plaintextify the HTML
+                                    </label>
+                                    <input type="radio" class="btn-check" name="htmlconf" id="html-radio">
+                                    <label class="btn btn-outline-primary" for="html-radio" title="Render the HTML.">
+                                        <i class="bi bi-badge-4k me-1"></i>Just show the HTML
                                     </label>
                                 </div>
                                 <label class="form-label fw-bold mt-4 mb-2" for="ptsize">Maximum font size</label>
