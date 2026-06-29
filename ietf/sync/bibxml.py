@@ -27,10 +27,10 @@ def save_to_bucket(filename: str, content: str | bytes):
     log(f"Saved {bucket_path} in bibxml_bucket storage")
 
 
-def get_rfc_bibxml(rfc_number, subseries=None):
-    """Return BibXML entry for the given rfc"""
+def get_rfc_bibxml(rfc):
+    """Return BibXML entry for the given rfc Document object"""
 
-    rfc = Document.objects.get(rfc_number=rfc_number)
+    rfc_number = rfc.rfc_number
     link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"rfc{rfc_number}")
     date = rfc.pub_date().strftime('<date month="%B" year="%Y"/>')
     authors = ""
@@ -43,22 +43,20 @@ def get_rfc_bibxml(rfc_number, subseries=None):
             author_entry = f"""<author fullname={qa(author.titlepage_name)} surname={qa(author.titlepage_name.split(".")[-1].strip())}/>"""
         authors += author_entry
 
-    if subseries:
-        subseries_info = f"""<seriesInfo name="{subseries["type"]}" value="{subseries["number"]}"/>"""
+    for subseries in rfc.part_of():
+        subseries_info += f"""<seriesInfo name="{subseries.type_id.upper()}" value="{subseries.name[3:]}"/>"""
 
     return f"""<reference anchor="RFC{rfc_number}" target="{link}"><front><title>{esc(rfc.title)}</title>{date}{authors}<abstract><t>{esc(rfc.abstract)}</t></abstract></front>{subseries_info}<seriesInfo name="RFC" value="{rfc_number}"/><seriesInfo name="DOI" value="{rfc.doi}"/></reference>"""
 
 
 def get_bcp_bibxml(bcp_number):
     """Return BibXML entry for the given bcp"""
-    bcp = Document.objects.get(type_id="bcb", name=f"bcp{bcp_number}")
+    bcp = Document.objects.get(type_id="bcp", name=f"bcp{bcp_number}")
     bcp_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"bcp{bcp_number}")
     rfc_bibxml = ""
     rfcs = sorted(bcp.contains(), key=lambda x: x.rfc_number)
     for rfc in rfcs:
-        rfc_bibxml += get_rfc_bibxml(
-            rfc.rfc_number, subseries={"type": "BCP", "number": bcp_number}
-        )
+        rfc_bibxml += get_rfc_bibxml(rfc)
 
     return f"""<referencegroup anchor="BCP{bcp_number}" target="{bcp_link}">{rfc_bibxml}</referencegroup>"""
 
@@ -70,9 +68,7 @@ def get_std_bibxml(std_number):
     rfc_bibxml = ""
     rfcs = sorted(std.contains(), key=lambda x: x.rfc_number)
     for rfc in rfcs:
-        rfc_bibxml += get_rfc_bibxml(
-            rfc.rfc_number, subseries={"type": "STD", "number": std_number}
-        )
+        rfc_bibxml += get_rfc_bibxml(rfc)
 
     return f"""<referencegroup anchor="STD{std_number}" target="{std_link}">{rfc_bibxml}</referencegroup>"""
 
@@ -84,9 +80,7 @@ def get_fyi_bibxml(fyi_number):
     rfc_bibxml = ""
     rfcs = sorted(fyi.contains(), key=lambda x: x.rfc_number)
     for rfc in rfcs:
-        rfc_bibxml += get_rfc_bibxml(
-            rfc.rfc_number, subseries={"type": "FYI", "number": fyi_number}
-        )
+        rfc_bibxml += get_rfc_bibxml(rfc)
 
     return f"""<referencegroup anchor="FYI{fyi_number}" target="{fyi_link}">{rfc_bibxml}</referencegroup>"""
 
@@ -106,11 +100,10 @@ def save_bibxml(bibxml, filename):
 
 def recreate_rfc_bibxml():
     """Creates BibXML for all RFCs."""
-    for rfc_number in Document.objects.filter(type_id="rfc").values_list(
-        "rfc_number", flat=True
-    ):
+    for rfc in Document.objects.filter(type_id="rfc"):
+        rfc_number = rfc.rfc_number
         filename = f"bibxml/rfc{rfc_number}.xml"
-        bibxml = get_rfc_bibxml(rfc_number)
+        bibxml = get_rfc_bibxml(rfc)
         save_bibxml(bibxml, filename)
 
 

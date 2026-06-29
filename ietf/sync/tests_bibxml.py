@@ -49,7 +49,7 @@ class BibXmlTests(TestCase):
         self.fyi = FyiFactory(contains=[self.rfc], name="fyi3")
 
     def test_get_rfc_bibxml(self):
-        bibxml = get_rfc_bibxml(self.rfc.rfc_number)
+        bibxml = get_rfc_bibxml(self.rfc)
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
         self.assertIn(f"RFC{self.rfc.rfc_number}", bibxml)
         self.assertIn(
@@ -109,7 +109,7 @@ class BibXmlTests(TestCase):
 
     def test_create_rfc_bibxml(self):
         bibxml_bucket = storages["bibxml_bucket"]
-        bibxml = get_rfc_bibxml(self.rfc.rfc_number)
+        bibxml = get_rfc_bibxml(self.rfc)
         filename = f"bibxml/rfc{self.rfc.rfc_number}.xml"
         save_bibxml(bibxml, filename)
         with bibxml_bucket.open(filename, "rb") as f:
