@@ -51,7 +51,7 @@ def get_rfc_bibxml(rfc_number, subseries=None):
 
 def get_bcp_bibxml(bcp_number):
     """Return BibXML entry for the given bcp"""
-    bcp = Document.objects.get(name=f"bcp{bcp_number}")
+    bcp = Document.objects.get(type_id="bcb", name=f"bcp{bcp_number}")
     bcp_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"bcp{bcp_number}")
     rfc_bibxml = ""
     rfcs = sorted(bcp.contains(), key=lambda x: x.rfc_number)
@@ -65,7 +65,7 @@ def get_bcp_bibxml(bcp_number):
 
 def get_std_bibxml(std_number):
     """Return BibXML entry for the given std"""
-    std = Document.objects.get(name=f"std{std_number}")
+    std = Document.objects.get(type_id="std", name=f"std{std_number}")
     std_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"std{std_number}")
     rfc_bibxml = ""
     rfcs = sorted(std.contains(), key=lambda x: x.rfc_number)
@@ -79,7 +79,7 @@ def get_std_bibxml(std_number):
 
 def get_fyi_bibxml(fyi_number):
     """Return BibXML entry for the given fyi"""
-    fyi = Document.objects.get(name=f"fyi{fyi_number}")
+    fyi = Document.objects.get(type_id="fyi", name=f"fyi{fyi_number}")
     fyi_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"fyi{fyi_number}")
     rfc_bibxml = ""
     rfcs = sorted(fyi.contains(), key=lambda x: x.rfc_number)
