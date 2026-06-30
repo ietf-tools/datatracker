@@ -93,7 +93,7 @@ class PersonFactory(factory.django.DjangoModelFactory):
     def default_emails(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         if extracted is None:
             extracted = True
-        if create and extracted:           
+        if create and extracted:
             make_email = getattr(EmailFactory, 'create' if create else 'build')
             make_email(person=obj, address=obj.user.email, primary=True, **kwargs)
 
