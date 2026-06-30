@@ -6,8 +6,8 @@
 {% if doc.type_id == "rfc" %}
 {% if doc.stream|slugify == "legacy" %}
 % Datatracker information for RFCs on the Legacy Stream is unfortunately often
-% incorrect. Please correct the bibtex below based on the information in the
-% actual RFC at https://rfc-editor.org/rfc/rfc{{ doc.rfc_number }}.txt
+% incorrect. Please correct the bibtex below based on the information available
+% at {{ doc.rfc_number|rfceditor_info_url }}
 {% endif %}
 @misc{% templatetag openbrace %}rfc{{ doc.rfc_number }},
     series =    {Request for Comments},
@@ -25,7 +25,7 @@
     publisher = {% templatetag openbrace %}Internet Engineering Task Force{% templatetag closebrace %},
     note =      {% templatetag openbrace %}Work in Progress{% templatetag closebrace %},
     url =       {% templatetag openbrace %}{{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.doc.views_doc.document_main' name=doc.name rev=doc.rev %}{% templatetag closebrace %},{% endif %}
-    author =    {% templatetag openbrace %}{% for author in doc.documentauthor_set.all %}{{ author.person.name|texescape}}{% if not forloop.last %} and {% endif %}{% endfor %}{% templatetag closebrace %},
+    author =    {% templatetag openbrace %}{% for author in doc.author_persons_or_names %}{% firstof author.titlepage_name|texescape author.person.name|texescape %}{% if not forloop.last %} and {% endif %}{% endfor %}{% templatetag closebrace %},
     title =     {% templatetag openbrace %}{% templatetag openbrace %}{{doc.title|texescape}}{% templatetag closebrace %}{% templatetag closebrace %},
     pagetotal = {{ doc.pages }},
     year =      {{ doc.pub_date.year }},

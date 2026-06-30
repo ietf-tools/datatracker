@@ -138,7 +138,7 @@ def prettystdname(string, space=" "):
 @register.filter
 def rfceditor_info_url(rfcnum : str):
     """Link to the RFC editor info page for an RFC"""
-    return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f'rfc{rfcnum}')
+    return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f'rfc{rfcnum}/')
 
 
 def doc_name(name):
