@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
+{% load origin %}
+{% load markup_tags %}
+{% load static %}
+{% load ietf_filters textfilters %}
+{% load group_filters %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+    <link rel="stylesheet" href="{% static "ietf/css/highcharts.css" %}">
+{% endblock %}
+{% block title %}Profile for {{ persons.0 }}{% endblock %}
+{% block content %}
+    {% origin %}
+    {% if persons|length > 1 %}
+        <p class="alert alert-warning my-3">
+            More than one person with this name has been found.  Showing all.
+        </p>
+    {% endif %}
+    {% for person in persons %}
+        {% if not forloop.first %}<hr>{% endif %}
+         <h1>
+            {{ person.name }}
+            {% if person.ascii != person.name %}
+                <br>
+                <span class="text-body-secondary fs-2">({{ person.ascii }})</span>
+            {% endif %}
+            {% if person.pronouns %}
+                <br>
+                <span class="text-body-secondary fs-3">Pronouns: {{person.pronouns}}</span>
+            {% endif %}
+        </h1>
+        <div class="bio-text">
+            {% if person.photo %}
+                <div class="float-end ms-3 mb-3">{% include "person/photo.html" with person=person %}</div>
+            {% endif %}
+            {{ person.biography|apply_markup:"restructuredtext"|urlize_ietf_docs|linkify }}
+        </div>
+        {% if person.role_set.exists %}
+            <h2 class="mt-5" id="roles-{{ forloop.counter }}">Roles</h2>
+            {% if person.role_set.all|active_roles %}
+            <table class="table table-sm table-striped tablesorter">
+                <thead>
+                    <tr>
+                        <th scope="col" data-sort="role">Role</th>
+                        <th scope="col" data-sort="group">Active Group</th>
+                        <th scope="col" data-sort="email">Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for role in person.role_set.all|active_roles %}
+                        <tr>
+                            <td>{{ role.name.name }}
+                                {% if role.name.name == 'Reviewer' %}
+                                 (<a href="{% url 'ietf.group.views.review_requests_history' acronym=role.group.acronym %}?reviewer_email={{ role.email.address }}&since=1y">See reviews</a>)
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.name }}</a>
+                                (<a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.acronym }}</a>)
+                            </td>
+                            <td>
+                                <a href="mailto:{{ role.email.address }}">{{ role.email.address }}</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <p>{{ person.first_name }} has no active roles as of {{ today|date:"Y-m-d" }}.</p>
+            {% endif %}
+            {% if person.role_set.all|inactive_roles %}
+            <table class="table table-sm table-striped tablesorter">
+                <thead>
+                    <tr>
+                        <th scope="col" data-sort="role">Role at Conclusion Time</th>
+                        <th scope="col" data-sort="group">Concluded Group</th>
+                        <th scope="col" data-sort="email">Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for role in person.role_set.all|inactive_roles %}
+                        <tr>
+                            <td>{{ role.name.name }}
+                                {% if role.name.name == 'Reviewer' %}
+                                 (<a href="{% url 'ietf.group.views.review_requests_history' acronym=role.group.acronym %}?reviewer_email={{ role.email.address }}&since=1y">See reviews</a>)
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.name }}</a>
+                                (<a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.acronym }}</a>)
+                            </td>
+                            <td>
+                                <a href="mailto:{{ role.email.address }}">{{ role.email.address }}</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        {% endif %}
+        <p>Note: the datatracker has currently no way to displayed previous roles in IETF Active/Concluded Working Groups.</p>
+        {% if person.personextresource_set.exists %}
+            <h2 class="mt-5" id="extresources-{{ forloop.counter }}">External Resources</h2>
+            <table class="table table-sm table-striped tablesorter">
+                <thead>
+                    <tr>
+                        <th scope="col" data-sort="name">Name</th>
+                        <th scope="col" data-sort="value">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for extres in person.personextresource_set.all %}
+                        <tr>
+                            <td>
+                                <span title="{{ extres.name.name }}">{% firstof extres.display_name extres.name.name %}</span>
+                            </td>
+                            <td>{{ extres.value|linkify }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+        <h2 class="mt-5" id="rfcs-{{ forloop.counter }}">
+            RFCs <small class="text-body-secondary">({{ person.rfcs|length }})</small>
+        </h2>
+        {% if person.rfcs %}
+            <table class="table table-sm table-striped tablesorter">
+                <thead>
+                    <tr>
+                        <th scope="col" data-sort="rfc">RFC</th>
+                        <th scope="col" data-sort="date">Date</th>
+                        <th scope="col" data-sort="title">Title</th>
+                        <th scope="col" data-sort="citedby">Cited by</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in person.rfcs  %}
+                        <tr>
+                            <td>
+                                <a class="text-nowrap" href="{{ doc.get_absolute_url }}">RFC {{ doc.rfc_number }}</a>
+                            </td>
+                            <td data-sort-number="{{ doc.pub_date|date:"U" }}">{{ doc.pub_date|date:"b Y"|title }}</td>
+                            <td>{{ doc.title|urlize_ietf_docs }}</td>
+                            <td class="text-end">
+                                {% with doc.referenced_by_rfcs_as_rfc_or_draft.count as refbycount %}
+                                    {% if refbycount %}
+                                        <a class="text-end"
+                                           href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.name %}"
+                                           rel="nofollow">
+                                            {{ refbycount }} RFC{{ refbycount|pluralize }}
+                                        </a>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            {{ person.first_name }} has no RFCs as of {{ today|date:"Y-m-d" }}.
+        {% endif %}
+        <h2 class="mt-5" id="drafts-{{ forloop.counter }}">
+            Active Internet-Drafts <small class="text-body-secondary">({{ person.active_drafts|length }})</small>
+        </h2>
+        {% if person.active_drafts.exists %}
+            <ul>
+                {% for doc in person.active_drafts %}
+                    <li>
+                        <a href="{{ doc.get_absolute_url }}">{{ doc.name }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            {{ person.first_name }} has no active Internet-Drafts as of {{ today|date:"Y-m-d" }}.
+        {% endif %}
+        <h2 class="mt-5">
+            Expired Internet-Drafts <small class="text-body-secondary">({{ person.expired_drafts|length }})</small>
+        </h2>
+        {% if person.expired_drafts.exists %}
+            <ul>
+                {% for doc in person.expired_drafts %}
+                    {% if not doc.replaced_by %}
+                        <li>
+                            <a href="{{ doc.get_absolute_url }}">
+                                {{ doc.name }}
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+            (Excluding replaced Internet-Drafts.)
+        {% else %}
+            {{ person.first_name }} has no expired Internet-Drafts as of {{ today|date:"Y-m-d" }}.
+        {% endif %}
+        {% if person.has_drafts %}
+            <h2 class="mt-5">
+                Internet-Draft Activity
+            </h2>
+            <div id="chart-{{ forloop.counter }}">
+            </div>
+        {% endif %}
+       <h2 class="mt-5" id="meetings-{{ forloop.counter }}">
+            IETF Meeting Participations <small class="text-body-secondary">({{ person.registration_set.all|length }})</small>
+        </h2>
+        {% if person.registration_set.all %}
+            <table class="table table-sm table-striped tablesorter">
+                <thead>
+                    <tr>
+                        <th scope="col" data-sort="meeting">Meeting</th>
+                        <th scope="col" data-sort="date" data-default-sort="desc">Date</th>
+                        <th scope="col" data-sort="city">City, Country</th>
+                        <th scope="col" data-sort="type">Attendance Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for reg in person.registration_set.all %}
+                    {% if reg.meeting.date|date:"Y-m-d" >= cutoff|date:"Y-m-d" and reg.meeting.type.name == "IETF" %}
+                        <tr>
+                            <td>{{ reg.meeting.number }}</td>
+                            <td>{{ reg.meeting.date|date:"Y-m-d" }}</td>
+                            <td>{{ reg.meeting.city }}, {{ reg.meeting.country }}</td>
+                            <td>{{ reg.attendance_type }}</td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>{{ person.first_name }} has not participated at an IETF meeting since {{ cutoff|date:"Y-m-d" }}.</p>
+        {% endif %}    
+    {% endfor %}
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
+    <script src="{% static 'ietf/js/highstock.js' %}"></script>
+    <script>
+        $(function () {
+            {% for person in persons %}
+                {% if person.has_drafts %}
+                    $.getJSON('{% url "ietf.doc.views_stats.chart_conf_person_drafts" id=person.id %}', function (conf) {
+                        // Create the chart
+                        chart = Highcharts.stockChart('chart-{{ forloop.counter }}', conf);
+                        chart.showLoading();
+                        $.getJSON('{% url "ietf.doc.views_stats.chart_data_person_drafts" id=person.id %}', function (data) {
+                            chart.series[0].setData(data);
+                            chart.hideLoading();
+                        });
+                    });
+                {% endif %}
+            {% endfor %}
+        });
+    </script>
+{% endblock %}
