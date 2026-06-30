@@ -49,7 +49,7 @@ class BibXmlTests(TestCase):
         self.fyi = FyiFactory(contains=[self.rfc], name="fyi3")
 
     def test_get_rfc_bibxml(self):
-        bibxml = get_rfc_bibxml(self.rfc.rfc_number)
+        bibxml = get_rfc_bibxml(self.rfc)
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
         self.assertIn(f"RFC{self.rfc.rfc_number}", bibxml)
         self.assertIn(
@@ -109,7 +109,7 @@ class BibXmlTests(TestCase):
 
     def test_create_rfc_bibxml(self):
         bibxml_bucket = storages["bibxml_bucket"]
-        bibxml = get_rfc_bibxml(self.rfc.rfc_number)
+        bibxml = get_rfc_bibxml(self.rfc)
         filename = f"bibxml/rfc{self.rfc.rfc_number}.xml"
         save_bibxml(bibxml, filename)
         with bibxml_bucket.open(filename, "rb") as f:
@@ -134,6 +134,7 @@ class BibXmlTests(TestCase):
             self.assertIn(
                 f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
             )
+            self.assertIn(f'<seriesInfo name="BCP" value="{bcp_number}"/>', bibxml)
             self.assertIn('<date month="April" year="2021"/>', bibxml)
 
     def test_create_std_bibxml(self):
@@ -149,6 +150,7 @@ class BibXmlTests(TestCase):
             self.assertIn(
                 f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
             )
+            self.assertIn(f'<seriesInfo name="STD" value="{std_number}"/>', bibxml)
             self.assertIn('<date month="April" year="2021"/>', bibxml)
 
     def test_create_fyi_bibxml(self):
@@ -164,6 +166,7 @@ class BibXmlTests(TestCase):
             self.assertIn(
                 f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
             )
+            self.assertIn(f'<seriesInfo name="FYI" value="{fyi_number}"/>', bibxml)
             self.assertIn('<date month="April" year="2021"/>', bibxml)
 
     @patch("ietf.sync.bibxml.save_bibxml")
