@@ -43,9 +43,13 @@
         </div>
         <form method="GET">
             <label class="fw-bold col-sm-2 col-form-label">Categories to display:
-                <input class="col-sm-2" type="text" name="top" value="{{ top_n }}">
+                <select class="col-sm-2" name="top" onchange="this.form.submit()">
+                    {% for choice in top_n_choices %}
+                        <option value="{{ choice }}" {% if choice|stringformat:"s" == top_n|stringformat:"s" %}selected{% endif %}>{{ choice }}</option>
+                    {% endfor %}
+                </select>
             </label>
-            <button class="btn btn-primary" type="submit">Set</button>
+            <button class="visually-hidden" type="submit">Submit</button>
         </form>
     </div>
     <p>

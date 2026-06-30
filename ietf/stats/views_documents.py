@@ -15,7 +15,7 @@ import debug                            # pyflakes:ignore
 from collections import defaultdict
 
 from ietf.doc.models import Document
-from ietf.stats.utils import color_from_hash
+from ietf.stats.utils import color_from_hash, check_top_n_choice, get_top_n_choices
 
 def get_total_data_for_documents(
     doc_type: str = 'rfc',
@@ -89,6 +89,10 @@ def documents_total(request: Any, doc_type: str = 'rfc', stats_type: str = 'leve
         top_n = max(1, min(int(request.GET.get('top', '10')), 100))
     except (ValueError, TypeError):
         top_n = 10
+    # Check the top-n value against the allowed choices
+    if not check_top_n_choice(top_n):
+        return render(request, "stats/error.html", {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"})
+
 
     if stats_type == 'stream':
         chart_data = get_total_data_for_documents(doc_type, 'stream__name', top_n)
@@ -118,6 +122,7 @@ def documents_total(request: Any, doc_type: str = 'rfc', stats_type: str = 'leve
 
     return render(request, "stats/documents_total.html", {
         "top_n": top_n,
+        "top_n_choices": get_top_n_choices(),
         "objects": "documents",
         "possible_docs_types": possible_docs_types,
         "possible_stats_types": possible_stats_types,
@@ -252,6 +257,9 @@ def documents_timeline(request: Any, doc_type: str = 'rfc', stats_type: str = 'l
         top_n = max(1, min(int(request.GET.get('top', '10')), 100))
     except (ValueError, TypeError):
         top_n = 10
+    # Check the top-n value against the allowed choices
+    if not check_top_n_choice(top_n):
+        return render(request, "stats/error.html", {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"})
 
     if stats_type == 'stream':
         total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, 'stream__name', top_n)
@@ -285,6 +293,7 @@ def documents_timeline(request: Any, doc_type: str = 'rfc', stats_type: str = 'l
 
     return render(request, "stats/documents_timeline.html", {
         "top_n": top_n,
+        "top_n_choices": get_top_n_choices(),
         "objects": "documents",
         "possible_docs_types": possible_docs_types,
         "possible_stats_types": possible_stats_types,

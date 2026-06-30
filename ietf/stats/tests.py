@@ -39,6 +39,13 @@ class StatisticsTests(TestCase):
         self.assertEqual(r.status_code, 200, 
             msg=f"Unexpected status code {r.status_code} for URL {url}")
 
+    def test_invalid_top_n(self):
+        url = urlreverse(ietf.stats.views_authors.authors_timeline, kwargs={"doc_type": "rfc", "stats_type": "country"})
+        r = self.client.get(url + "?top=3")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "There was an error in your request")
+        self.assertContains(r, "Invalid top_n choice: 3")
+
     def test_document_stats(self):
         timeNow = timezone.now()
         yearNow = timeNow.year

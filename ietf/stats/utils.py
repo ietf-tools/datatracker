@@ -35,6 +35,14 @@ def color_from_hash(s):
     hash = int.from_bytes(full_hash[:2])
     return colors[hash % len(colors)]
 
+top_n_choices = [5, 10, 20, 50, 100]
+
+def get_top_n_choices():
+    return top_n_choices
+
+def check_top_n_choice(n):
+    return n in top_n_choices
+    
 def compile_affiliation_ending_stripping_regexp():
     parts = []
     for ending_re in AffiliationIgnoredEnding.objects.values_list("ending", flat=True):

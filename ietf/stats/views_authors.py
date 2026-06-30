@@ -12,7 +12,7 @@ from collections import defaultdict
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocumentAuthor
-from ietf.stats.utils import color_from_hash, get_aliased_affiliations, get_aliased_countries
+from ietf.stats.utils import color_from_hash, get_aliased_affiliations, get_aliased_countries, check_top_n_choice, get_top_n_choices
 
 def get_authors_total_data_for_documents(doc_type: str = 'all', group_by: str = 'country', top_n: int = 20) -> dict[str, object]:
     """Build chart data for author totals.
@@ -25,6 +25,7 @@ def get_authors_total_data_for_documents(doc_type: str = 'all', group_by: str = 
     Returns:
         A Chart.js-compatible data dictionary.
     """
+
     # Build a dynamic query set filter
     filters = Q()    
     if doc_type != 'all' and doc_type  != 'wg-draft':
@@ -98,6 +99,9 @@ def authors_total(request: HttpRequest, doc_type: str = 'all', stats_type: str =
         top_n = max(1, min(int(request.GET.get('top', '10')), 100))
     except ValueError:
         top_n = 10
+    # Check the top-n value against the allowed choices
+    if not check_top_n_choice(top_n):
+        return render(request, "stats/error.html", {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"})
 
     if stats_type == 'affiliation':
         chart_data = get_authors_total_data_for_documents(doc_type, 'affiliation', top_n)
@@ -120,6 +124,7 @@ def authors_total(request: HttpRequest, doc_type: str = 'all', stats_type: str =
 
     return render(request, "stats/documents_total.html", {
         "top_n": top_n,
+        "top_n_choices": get_top_n_choices(),
         "objects": "authors",
         "possible_docs_types": possible_docs_types,
         "possible_stats_types": possible_stats_types,
@@ -264,6 +269,9 @@ def authors_timeline(request: HttpRequest, doc_type: str = 'all', stats_type: st
         top_n = max(1, min(int(request.GET.get('top', '20')), 100))
     except ValueError:
         top_n = 20
+    # Check the top-n value against the allowed choices
+    if not check_top_n_choice(top_n):
+        return render(request, "stats/error.html", {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"})
 
     if stats_type == 'affiliation':
         total_labels, total_data_sets = get_authors_timeline_data_for_documents(doc_type, 'affiliation', top_n)
@@ -291,6 +299,7 @@ def authors_timeline(request: HttpRequest, doc_type: str = 'all', stats_type: st
 
     return render(request, "stats/documents_timeline.html", {
         "top_n": top_n,
+        "top_n_choices": get_top_n_choices(),
         "objects": "authors",
         "possible_docs_types": possible_docs_types,
         "possible_stats_types": possible_stats_types,

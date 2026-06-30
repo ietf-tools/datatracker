@@ -14,7 +14,7 @@ from django.urls import reverse as urlreverse
 from django.core.cache import cache
 
 from ietf.meeting.models import Registration, Meeting
-from ietf.stats.utils import color_from_hash, get_aliased_affiliations, get_aliased_countries
+from ietf.stats.utils import color_from_hash, get_aliased_affiliations, get_aliased_countries, check_top_n_choice, get_top_n_choices
 from ietf.meeting.helpers import get_current_ietf_meeting_num
 
 # Constants
@@ -316,6 +316,9 @@ def meetings_timeline(request: Any, stats_type: str = 'country') -> Any:
         top_n = max(1, min(int(request.GET.get('top', '20')), 100))
     except ValueError:
         top_n = 20
+    # Check the top-n value against the allowed choices
+    if not check_top_n_choice(top_n):
+        return render(request, "stats/error.html", {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"})
 
     if stats_type == 'total':
         total_labels, total_data_sets = get_data_for_meetings(top_n=top_n)
@@ -368,6 +371,7 @@ def meetings_timeline(request: Any, stats_type: str = 'country') -> Any:
 
     return render(request, "stats/meetings_timeline.html", {
         "top_n": top_n,
+        "top_n_choices": get_top_n_choices(),
         "possible_stats_types": possible_stats_types,
         "possible_meeting_numbers": possible_meeting_numbers,
         "stats_type": stats_type,
@@ -457,6 +461,9 @@ def meeting_stats(request: Any, meeting_number: Optional[str] = None, stats_type
         top_n = max(1, min(int(request.GET.get('top', '20')), 100))
     except ValueError:
         top_n = 20
+    # Check the top-n value against the allowed choices
+    if not check_top_n_choice(top_n):
+        return render(request, "stats/error.html", {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"})
 
     if stats_type == 'affiliation':
         total_labels, total_data, total_total = get_affiliation_data_for_meeting(meeting_number, top_n=top_n)
@@ -511,6 +518,7 @@ def meeting_stats(request: Any, meeting_number: Optional[str] = None, stats_type
         "possible_meeting_numbers": possible_meeting_numbers,
         "stats_type": stats_type,
         "top_n": top_n,
+        "top_n_choices": get_top_n_choices(),
         "total_chart_data": total_chart_data,
         "total_total": total_total,
         "in_person_chart_data": in_person_chart_data,
