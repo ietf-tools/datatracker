@@ -11,11 +11,15 @@ class AffiliationIgnoredEndingFactory(factory.django.DjangoModelFactory):
         model = AffiliationIgnoredEnding
 
     ending = ''
+
+
 class AffiliationMainNameFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = AffiliationMainName
 
     main_name = factory.Faker('company')
+
+
 class MeetingRegistrationFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = MeetingRegistration

@@ -197,7 +197,6 @@ def get_timeline_data_for_documents(
     other_totals: Dict[int, int] = defaultdict(int)
     other_bin_is_empty = True
     for y in years_set:
-        other_totals[y] = 0
         for g in non_top_groups:
             count = int(data_map[y].get(g, 0))
             other_totals[y] += count

@@ -18,7 +18,7 @@ import botocore.config
 
 
 def _multiline_to_list(s):
-    """Helper to split at newlines and conver to list"""
+    """Helper to split at newlines and convert to list"""
     return [item.strip() for item in s.split("\n")]
 
 
