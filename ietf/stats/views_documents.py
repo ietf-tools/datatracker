@@ -36,7 +36,7 @@ def get_total_data_for_documents(
     filters = Q()
     if doc_type != 'all' and doc_type != 'wg-draft':
         filters &= Q(type_id=doc_type)
-    if doc_type == 'wg-draft':
+    elif doc_type == 'wg-draft':
         filters &= Q(type_id='draft')
         filters &= Q(name__startswith='draft-ietf')
     queryset = (

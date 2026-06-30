@@ -30,7 +30,7 @@ def get_authors_total_data_for_documents(doc_type: str = 'all', group_by: str = 
     filters = Q()    
     if doc_type != 'all' and doc_type  != 'wg-draft':
         filters &= Q(document__type_id=doc_type)
-    if doc_type == 'wg-draft':
+    elif doc_type == 'wg-draft':
         filters &= Q(document__type_id= 'draft')
         filters &= Q(document__name__startswith='draft-ietf')
     queryset = (
@@ -210,9 +210,8 @@ def get_authors_timeline_data_for_documents(doc_type: str = 'all', group_by: str
         reverse=True
     )[:top_n]
     non_top_groups = documents_totals.keys() - set(top_groups)
-    other_totals = defaultdict(int)
+    other_totals: dict[int, int] = defaultdict(int)
     for y in years_list:
-        other_totals[y] = 0
         for g in non_top_groups:
             other_totals[y] += int(data_map[y].get(g, 0))
 
