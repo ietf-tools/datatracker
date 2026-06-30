@@ -34,11 +34,13 @@ def get_total_data_for_documents(
     """
     # Build a dynamic query set filter
     filters = Q()
-    if doc_type != 'all' and doc_type != 'wg-draft':
-        filters &= Q(type_id=doc_type)
+    if doc_type == 'all':
+        filters &= Q(type_id__in=['draft', 'rfc'])
     elif doc_type == 'wg-draft':
         filters &= Q(type_id='draft')
         filters &= Q(name__startswith='draft-ietf')
+    else:
+        filters &= Q(type_id=doc_type)
     queryset = (
         Document.objects
         .filter(filters)
