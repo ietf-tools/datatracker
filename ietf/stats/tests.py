@@ -92,6 +92,8 @@ class StatisticsTests(TestCase):
             country = 'Cabo Verde'
         elif country == "Lao People's Democratic Republic":
             country = 'Laos'
+        elif country == 'British Virgin Islands':
+            country = 'Virgin Islands'
             
         # Create the various aliases ancilliary content
         AffiliationIgnoredEndingFactory(ending='llc\\.?')
