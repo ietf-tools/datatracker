@@ -605,12 +605,12 @@ def update_docs_from_rfc_index(
             # at the moment because the data only has month/year, so
             # try to deduce it
             #
-            # Note: This is in done PST8PDT to preserve compatibility with events created when
+            # Note: This is in done America/Los_Angeles to preserve compatibility with events created when
             # USE_TZ was False. The published_rfc event was created with a timestamp whose
-            # server-local datetime (PST8PDT) matched the publication date from the RFC index.
+            # server-local datetime (America/Los_Angeles) matched the publication date from the RFC index.
             # When switching to USE_TZ=True, the timestamps were migrated so they still
-            # matched the publication date in PST8PDT. When interpreting the event timestamp
-            # as a publication date, you must treat it in the PST8PDT time zone. The
+            # matched the publication date in America/Los_Angeles. When interpreting the event timestamp
+            # as a publication date, you must treat it in the America/Los_Angeles time zone. The
             # RPC_TZINFO constant in ietf.utils.timezone is defined for this purpose.
             d = datetime_from_date(rfc_published_date, RPC_TZINFO)
             synthesized = timezone.now().astimezone(RPC_TZINFO)

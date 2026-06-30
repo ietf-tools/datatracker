@@ -1279,7 +1279,7 @@ class Document(StorableMixin, DocumentInfo):
         """Get the publication datetime of this document"""
         if self.type_id == "rfc":
             # As of Sept 2022, in ietf.sync.rfceditor.update_docs_from_rfc_index() `published_rfc` events are
-            # created with a timestamp whose date *in the PST8PDT timezone* is the official publication date
+            # created with a timestamp whose date *in the America/Los_Angeles timezone* is the official publication date
             # assigned by the RFC editor.
             event = self.latest_event(type='published_rfc')
         else:
