@@ -13,6 +13,8 @@ from ietf.doc.factories import (
     PublishedRfcDocEventFactory,
     RfcAuthorFactory,
     RfcFactory,
+    RgRfcFactory,
+    WgDraftFactory,
     WgRfcFactory,
 )
 from ietf.doc.models import RelatedDocument
@@ -198,6 +200,19 @@ class GenerateRfcJsonTests(TestCase):
             f"https://www.rfc-editor.org/errata/rfc{rfc.rfc_number}",
         )
 
+    def test_draft_field_includes_revision(self):
+        """draft field is '<name>-<rev>' when the RFC originated from a draft."""
+        draft = WgDraftFactory(rev="07")
+        rfc = PublishedRfcDocEventFactory(doc=WgRfcFactory()).doc
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+        _put_pub_levels(rfc.rfc_number, "ps")
+        _put_empty_errata()
+
+        generate_rfc_json(rfc.rfc_number)
+        data = _read_json(rfc.rfc_number)
+
+        self.assertEqual(data["draft"], f"{draft.name}-07")
+
     def test_errata_url_none_when_no_errata(self):
         """errata_url is None when errata.json has no entries for the RFC."""
         rfc = PublishedRfcDocEventFactory(doc=WgRfcFactory()).doc
@@ -245,6 +260,19 @@ class GenerateRfcJsonTests(TestCase):
 
         self.assertEqual(data["pub_date"], "1 April 2020")
 
+    def test_empty_keywords_filtered(self):
+        """Empty-string keywords are stripped from the keywords list."""
+        rfc = PublishedRfcDocEventFactory(
+            doc=WgRfcFactory(keywords=["foo", "", "bar"]),
+        ).doc
+        _put_pub_levels(rfc.rfc_number, "ps")
+        _put_empty_errata()
+
+        generate_rfc_json(rfc.rfc_number)
+        data = _read_json(rfc.rfc_number)
+
+        self.assertEqual(data["keywords"], ["foo", "bar"])
+
     def test_non_april_first_april_date(self):
         """An April publication that is NOT in the April Fools list gets 'April YYYY'."""
         rfc = PublishedRfcDocEventFactory(
@@ -260,7 +288,7 @@ class GenerateRfcJsonTests(TestCase):
         self.assertEqual(data["pub_date"], "April 2020")
 
     def test_source_ietf_wg(self):
-        """IETF-stream WG RFC: source is 'acronym (area)'."""
+        """IETF-stream WG RFC: source is the group's full name."""
         area = GroupFactory(type_id="area")
         wg = GroupFactory(type_id="wg", parent=area)
         rfc = PublishedRfcDocEventFactory(
@@ -272,7 +300,7 @@ class GenerateRfcJsonTests(TestCase):
         generate_rfc_json(rfc.rfc_number)
         data = _read_json(rfc.rfc_number)
 
-        self.assertEqual(data["source"], f"{wg.acronym} ({area.acronym})")
+        self.assertEqual(data["source"], wg.name)
 
     def test_source_ietf_no_wg(self):
         """IETF-stream individual RFC (group acronym 'none'): source is 'IETF - NON WORKING GROUP'."""
@@ -285,6 +313,22 @@ class GenerateRfcJsonTests(TestCase):
         ).doc
         rfc.group.parent = area
         rfc.group.save()
+        _put_pub_levels(rfc.rfc_number, "inf")
+        _put_empty_errata()
+
+        generate_rfc_json(rfc.rfc_number)
+        data = _read_json(rfc.rfc_number)
+
+        self.assertEqual(data["source"], "IETF - NON WORKING GROUP")
+
+    def test_source_ietf_area(self):
+        """IETF-stream RFC with area-type group: source is 'IETF - NON WORKING GROUP'."""
+        area = GroupFactory(type_id="area")
+        area.parent = GroupFactory()
+        area.save()
+        rfc = PublishedRfcDocEventFactory(
+            doc=RfcFactory(group=area, stream_id="ietf"),
+        ).doc
         _put_pub_levels(rfc.rfc_number, "inf")
         _put_empty_errata()
 
@@ -318,6 +362,30 @@ class GenerateRfcJsonTests(TestCase):
         data = _read_json(rfc.rfc_number)
 
         self.assertEqual(data["source"], "INDEPENDENT")
+
+    def test_source_irtf_rg(self):
+        """IRTF-stream RG RFC: source is the group's full name."""
+        rfc = PublishedRfcDocEventFactory(doc=RgRfcFactory()).doc
+        _put_pub_levels(rfc.rfc_number, "inf")
+        _put_empty_errata()
+
+        generate_rfc_json(rfc.rfc_number)
+        data = _read_json(rfc.rfc_number)
+
+        self.assertEqual(data["source"], rfc.group.name)
+
+    def test_source_irtf_no_rg(self):
+        """IRTF-stream RFC with no specific RG (group acronym 'none'): source is 'IRTF'."""
+        rfc = PublishedRfcDocEventFactory(
+            doc=RfcFactory(stream_id="irtf", group=GroupFactory(acronym="none")),
+        ).doc
+        _put_pub_levels(rfc.rfc_number, "inf")
+        _put_empty_errata()
+
+        generate_rfc_json(rfc.rfc_number)
+        data = _read_json(rfc.rfc_number)
+
+        self.assertEqual(data["source"], "IRTF")
 
     def test_pub_levels_passed_in(self):
         """When pub_levels is passed in, get_publication_std_levels() is not called."""

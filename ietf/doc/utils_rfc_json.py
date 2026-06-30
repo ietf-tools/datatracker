@@ -55,7 +55,7 @@ def generate_rfc_json(rfc_number: int, *, pub_levels=None) -> None:
 
     # draft name
     draft_doc = rfc.came_from_draft()
-    draft = draft_doc.name if draft_doc else None
+    draft = f"{draft_doc.name}-{draft_doc.rev}" if draft_doc else None
 
     # authors: ordered list of display strings
     authors = []
@@ -105,7 +105,6 @@ def generate_rfc_json(rfc_number: int, *, pub_levels=None) -> None:
     stream_slug = rfc.stream.slug
     group_acronym = rfc.group.acronym
 
-    area_acronym = None
     if stream_slug == "ietf":
         if rfc.group.parent is None:
             assertion("rfc.group.parent is not None")
@@ -113,23 +112,22 @@ def generate_rfc_json(rfc_number: int, *, pub_levels=None) -> None:
                 f"Malformed document object encountered for rfc{rfc_number}. Aborting update of rfc{rfc_number}.json"
             )
             return
-        else:
-            area_acronym = rfc.group.parent.acronym
 
     if stream_slug == "ise":
         source = "INDEPENDENT"
     elif stream_slug == "iab":
         source = "IAB"
     elif stream_slug == "ietf" and (
-        group_acronym in ("none", "gen") or not area_acronym
+        group_acronym == "none" or rfc.group.type_id == "area"
     ):
         source = "IETF - NON WORKING GROUP"
-    elif group_acronym not in ("none", ""):
-        source = group_acronym
-        if stream_slug == "ietf" and area_acronym:
-            source += f" ({area_acronym})"
-        elif stream_slug:
-            source += f" ({stream_slug})"
+    elif stream_slug == "irtf":
+        if group_acronym == "none":
+            source = "IRTF"
+        else:
+            source = rfc.group.name
+    elif group_acronym not in ("none", "") and stream_slug in ["ietf", "editorial"]:
+        source = rfc.group.name
     elif stream_slug:
         source = "Legacy" if stream_slug == "legacy" else stream_slug.upper()
     else:
@@ -207,7 +205,7 @@ def generate_rfc_json(rfc_number: int, *, pub_levels=None) -> None:
         "source": source,
         "abstract": rfc.abstract,
         "pub_date": pub_date,
-        "keywords": rfc.keywords,
+        "keywords": [kw for kw in rfc.keywords if kw],
         "obsoletes": obsoletes,
         "obsoleted_by": obsoleted_by,
         "updates": updates,

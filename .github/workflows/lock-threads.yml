@@ -16,9 +16,10 @@ jobs:
   action:
     runs-on: ubuntu-latest
     steps:
-      - uses: ietf-tools/lock-threads@v3.1.1
+      - uses: dessant/lock-threads@v6
         with:
           github-token: ${{ github.token }}
+          process-only: 'issues, prs'
           issue-inactive-days: 7
           pr-inactive-days: 3
           log-output: true
