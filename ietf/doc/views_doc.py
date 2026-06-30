@@ -1129,6 +1129,7 @@ def get_diff_revisions(request, name, doc):
                 "draft",
                 "charter",
                 "conflict-review",
+                "statement",
                 "status-change",
             ]
         ]
@@ -1136,7 +1137,7 @@ def get_diff_revisions(request, name, doc):
 
     if not diffable:
         return []
-
+    
     # pick up revisions from events
     diff_revisions = []
 
@@ -1182,7 +1183,7 @@ def get_diff_revisions(request, name, doc):
             url = find_history_active_at(e.doc, e.time).get_href()
         elif name.startswith("status-change"):
             url = find_history_active_at(e.doc, e.time).get_href()
-        elif name.startswith("draft") or name.startswith("rfc"):
+        elif name.startswith("draft") or name.startswith("rfc") or name.startswith("statement"):
             # rfcdiff tool has special support for IDs
             url = e.doc.name + "-" + e.rev
 
