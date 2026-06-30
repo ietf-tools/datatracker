@@ -2785,3 +2785,43 @@ class BallotEmailAjaxTests(TestCase):
         ]:
             self.assertIn(snippet, response["text"])
 
+        # Non-IETF stream: from address uses balloter.formatted_email(), not role_email("ad").
+        # Give the balloter a chair role (in a different RG) with a distinct email to prove
+        # that chair role address is not used; formatted_email() uses the primary email.
+        irtf_doc = RgDraftFactory()
+        non_ad_balloter = PersonFactory(name="Some Irsgmember")
+        other_rg = GroupFactory(type_id="rg")
+        chair_role_email = EmailFactory(
+            person=non_ad_balloter, address="chair-role@example.com"
+        )
+        RoleFactory(
+            name_id="chair",
+            group=other_rg,
+            person=non_ad_balloter,
+            email=chair_role_email,
+        )
+        response = _post_json(
+            self,
+            url,
+            {
+                "post_data": {
+                    "discuss": "",
+                    "comment": "cccccc",
+                    "position": "yes",
+                    "balloter": non_ad_balloter.pk,
+                    "docname": irtf_doc.name,
+                    "cc_choices": [],
+                    "additional_cc": "",
+                }
+            },
+        )
+        self.assertTrue(response["success"])
+        from_line = next(
+            line for line in response["text"].split("\n") if line.startswith("From: ")
+        )
+        # formatted_email() uses the primary email, not the chair role email
+        self.assertIn(non_ad_balloter.email().address, from_line)
+        self.assertNotIn(chair_role_email.address, from_line)
+        for snippet in ["cccccc", non_ad_balloter.plain_name(), irtf_doc.name]:
+            self.assertIn(snippet, response["text"])
+
