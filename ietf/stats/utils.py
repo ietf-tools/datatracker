@@ -66,7 +66,7 @@ def get_aliased_affiliations(affiliations):
     We employ the following strategies, interleaved:
 
     - Stripping company endings like Inc., GmbH etc. from database
-
+    - Using a leading name from the database, like "Google Analytics" -> "Google"
     - Looking up aliases stored directly in the database, like
       "Examplar International" -> "Examplar" """
 
@@ -75,8 +75,10 @@ def get_aliased_affiliations(affiliations):
     ending_re = compile_affiliation_ending_stripping_regexp()
 
     known_aliases = { alias.lower(): name for alias, name in AffiliationAlias.objects.values_list("alias", "name") }
-    # Let's prepare a dict for things like "Google Inc." -> "Google" adding a space to the end of the main name 
-    # so we only match it at the beginning of the affiliation and not in the middle of it, e.g. "Google Analytics"
+    # Let's prepare a dict for things like "Google Inc." or "Google Analytics"-> "Google" 
+    # by adding a space to the end of the main name 
+    # so we only match it at the beginning of the affiliation and not in the middle of it, e.g. "Google Analytics" will match "Google" 
+    # but neither "My Google Analytics" nor "GoogleIsGreat" will match "Google"
     affiliation_main_names = [(main_name.lower() + ' ', main_name) for main_name in AffiliationMainName.objects.values_list("main_name", flat=True)]
 
     for affiliation in affiliations:
