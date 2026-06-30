@@ -2,38 +2,18 @@
 # -*- coding: utf-8 -*-
 
 
-import calendar
 import csv
 import datetime
-import itertools
-import json
-import dateutil.relativedelta
-from collections import defaultdict
 
-from django.conf import settings
-from django.contrib.auth.decorators import login_required
-from django.core.cache import cache
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render
 from django.urls import reverse as urlreverse
-from django.db.models import Count
 
 import debug                            # pyflakes:ignore
 
-from ietf.review.utils import (extract_review_assignment_data,
-                               aggregate_raw_period_review_assignment_stats,
-                               ReviewAssignmentData,
-                               sum_period_review_assignment_stats,
-                               sum_raw_review_assignment_aggregations)
-from ietf.group.models import Role, Group
-from ietf.person.models import Person
-from ietf.name.models import ReviewResultName, CountryName, ReviewAssignmentStateName
-from ietf.meeting.models import Registration, Meeting
-from ietf.ietfauth.utils import has_role, role_required
-from ietf.utils.response import permission_denied
-from ietf.utils.timezone import date_today, DEADLINE_TZINFO
-from ietf.meeting.helpers import get_current_ietf_meeting_num
 from ietf.name.models import CountryName
+from ietf.ietfauth.utils import role_required
+from ietf.meeting.helpers import get_current_ietf_meeting_num
 
 def stats_index(request):
     """Render the statistics index page with the current meeting number as it is required by the meeting menu item."""

@@ -51,11 +51,13 @@ def get_authors_total_data_for_documents(doc_type: str = 'all', group_by: str = 
     else:
         alias_map = {}
 
-    group_count_dict = dict()
+    group_count_dict: dict[str, int] = {}
     for group, count in group_count_set:
         group = alias_map.get(group, group)
-        if group == '':
+        if not group:
             group = 'Unspecified'
+        else:
+            group = str(group)
         group_count_dict[group] = group_count_dict.get(group, 0) + count
 
     group_count_sorted = sorted(group_count_dict.items(), key=lambda x: x[1], reverse=True)
@@ -64,12 +66,14 @@ def get_authors_total_data_for_documents(doc_type: str = 'all', group_by: str = 
     if other_count > 0:
         top_groups.append(('Other', other_count))
 
-    labels, data = zip(*top_groups) if top_groups else ([], [])
-    chart_data = {
-        'labels': labels,
+    labels, data = zip(*top_groups) if top_groups else ((), ())
+    labels_list = list(labels)
+    data_list = list(data)
+    chart_data: dict[str, object] = {
+        'labels': labels_list,
         'datasets': [{
-            'data': data,
-            'backgroundColor': [color_from_hash(label) if label else '#202020' for label in labels],
+            'data': data_list,
+            'backgroundColor': [color_from_hash(label) if label else '#202020' for label in labels_list],
             'borderColor': 'black',
             'borderWidth': 1,
         }],

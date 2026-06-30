@@ -24,10 +24,8 @@ import ietf.stats.views
 from ietf.doc.factories import WgDraftFactory, WgRfcFactory, DocumentAuthorFactory, DocumentFactory, DocEventFactory, NewRevisionDocEventFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
 from ietf.stats.factories import AffiliationIgnoredEndingFactory, AffiliationMainNameFactory
-from ietf.doc.factories import NewRevisionDocEventFactory
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.person.factories import EmailFactory, PersonFactory
-from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
 from ietf.meeting.tests_models import MeetingFactory, RegistrationFactory
 from ietf.submit.factories import SubmissionFactory
 from ietf.utils.timezone import date_today
