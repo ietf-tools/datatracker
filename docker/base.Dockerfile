@@ -2,7 +2,7 @@ FROM python:3.12-trixie
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV NODE_MAJOR=16
+ENV NODE_MAJOR=26
 
 # Update system packages
 RUN apt-get update \
