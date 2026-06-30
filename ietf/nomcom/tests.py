@@ -1190,8 +1190,8 @@ class ReminderTest(TestCase):
         today = datetime_today()
         t_minus_3 = today - datetime.timedelta(days=3)
         t_minus_4 = today - datetime.timedelta(days=4)
-        e1 = EmailFactory(address="nominee1@example.org", person=PersonFactory(name="Nominee 1"), origin='test')
-        e2 = EmailFactory(address="nominee2@example.org", person=PersonFactory(name="Nominee 2"), origin='test')
+        e1 = EmailFactory(address="nominee1@example.org", person__name="Nominee 1", origin='test', primary=True)
+        e2 = EmailFactory(address="nominee2@example.org", person__name="Nominee 2", origin='test', primary=True)
         n = make_nomineeposition(self.nomcom,e1.person,gen,None)
         np = n.nomineeposition_set.get(position=gen)
         np.time = t_minus_3

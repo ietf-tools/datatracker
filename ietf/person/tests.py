@@ -78,7 +78,9 @@ class PersonTests(TestCase):
 
     def test_default_email(self):
         person = PersonFactory()
-        primary = EmailFactory(person=person, primary=True, active=True)
+        primary = person.email_set.get()
+        self.assertEqual(primary.primary, True)
+        self.assertEqual(primary.active, True)
         EmailFactory(person=person, primary=False, active=True)
         EmailFactory(person=person, primary=False, active=False)
         self.assertTrue(primary.address in person.formatted_email())
@@ -358,7 +360,7 @@ class PersonUtilsTests(TestCase):
         source = PersonFactory()
         target = PersonFactory()
         extra = get_extra_primary(source, target)
-        self.assertTrue(extra == list(source.email_set.filter(primary=True)))
+        self.assertEqual(set(extra), set(source.email_set.filter(primary=True)))
 
     def test_dedupe_aliases(self):
         person = PersonFactory()
