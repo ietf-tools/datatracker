@@ -90,6 +90,8 @@ class StatisticsTests(TestCase):
             country = 'Brunei'
         elif country == 'Cape Verde':
             country = 'Cabo Verde'
+        elif country == "Lao People's Democratic Republic":
+            country = 'Laos'
             
         # Create the various aliases ancilliary content
         AffiliationIgnoredEndingFactory(ending='llc\\.?')
@@ -286,25 +288,25 @@ class StatisticsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Total Registrations by Affiliation (31 in total)")
         self.assertContains(r, "In Person Registrations by Affiliation (16 in total)")
-        self.assertContains(r, "/stats/meeting/124/affiliation")
-        self.assertContains(r, "/stats/meeting/125/affiliation")
+        self.assertContains(r, "/stats/meetings/124/affiliation")
+        self.assertContains(r, "/stats/meetings/125/affiliation")
         r = self.client.get(urlreverse(ietf.stats.views_meetings.meeting_stats, kwargs={"meeting_number": "124", "stats_type": "country"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Total Registrations by Country (31 in total)")
         self.assertContains(r, "In Person Registrations by Country (16 in total)")
-        self.assertContains(r, "/stats/meeting/124/country")
-        self.assertContains(r, "/stats/meeting/125/country")
+        self.assertContains(r, "/stats/meetings/124/country")
+        self.assertContains(r, "/stats/meetings/125/country")
         # Test the meetings timeline per country
         r = self.client.get(urlreverse(ietf.stats.views_meetings.meetings_timeline, kwargs={"stats_type": "country"}))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "/stats/meeting/124/country")
-        self.assertContains(r, "/stats/meeting/125/country")
+        self.assertContains(r, "/stats/meetings/124/country")
+        self.assertContains(r, "/stats/meetings/125/country")
         self.assertContains(r, "This page provides a timeline of meeting registrations by country")
         # Test the meetings timeline per affiliation
         r = self.client.get(urlreverse(ietf.stats.views_meetings.meetings_timeline, kwargs={"stats_type": "affiliation"}))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "/stats/meeting/124/affiliation")
-        self.assertContains(r, "/stats/meeting/125/affiliation")
+        self.assertContains(r, "/stats/meetings/124/affiliation")
+        self.assertContains(r, "/stats/meetings/125/affiliation")
         self.assertContains(r, "This page provides a timeline of meeting registrations by affiliation")
         # Extract the JSON embedded in the response
         pq = PyQuery(r.content)
@@ -318,8 +320,8 @@ class StatisticsTests(TestCase):
         # Test the global meetings timeline
         r = self.client.get(urlreverse(ietf.stats.views_meetings.meetings_timeline, kwargs={"stats_type": "total"}))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "/stats/meeting/124/country")
-        self.assertContains(r, "/stats/meeting/125/country")
+        self.assertContains(r, "/stats/meetings/124/country")
+        self.assertContains(r, "/stats/meetings/125/country")
         self.assertContains(r, "This page provides a timeline of meeting registrations.")
 
     def test_meeting_stats_for_bad_meeting(self):
@@ -339,7 +341,7 @@ class StatisticsTests(TestCase):
             request_factory = RequestFactory()
             with self.assertRaises(Http404):
                 ietf.stats.views_meetings.meeting_stats(
-                    request_factory.get(f"/stats/meeting/{interim_num}/{stats_type}"),
+                    request_factory.get(f"/stats/meetings/{interim_num}/{stats_type}"),
                     meeting_number=interim_num,
                     stats_type=stats_type,
                 )
