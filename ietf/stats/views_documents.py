@@ -161,10 +161,10 @@ def get_timeline_data_for_documents(
     if result is not None:
         years_set, documents_totals, data_map = result
     else:
-        if doc_type != 'all':
+        if doc_type != 'all':  # Filter by specific document type
             queryset = Document.objects.filter(type_id=doc_type)
-        else:
-            queryset = Document.objects.all()
+        else: # doc_type == 'all', include both drafts and RFCs (and this option is no more used in urls.py though)
+            queryset = Document.objects.filter(type_id__in=['draft', 'rfc'])
 
         # ── Step 1: Collect all years and document totals ──
         years_set_temp: set[int] = set()
