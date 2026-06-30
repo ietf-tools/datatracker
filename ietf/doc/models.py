@@ -344,6 +344,11 @@ class DocumentInfo(models.Model):
             setattr(self, cache_attr, href)
         return getattr(self, cache_attr)
 
+    def refresh_from_db(self, using=None, fields=None, **kwargs):
+        super().refresh_from_db(using=using, fields=fields, **kwargs)
+        self.state_cache = None
+        self._cached_state_slug = {}
+
     def set_state(self, state):
         """Switch state type implicit in state to state. This just
         sets the state, doesn't log the change."""
@@ -1278,9 +1283,6 @@ class Document(StorableMixin, DocumentInfo):
     def pub_datetime(self):
         """Get the publication datetime of this document"""
         if self.type_id == "rfc":
-            # As of Sept 2022, in ietf.sync.rfceditor.update_docs_from_rfc_index() `published_rfc` events are
-            # created with a timestamp whose date *in the PST8PDT timezone* is the official publication date
-            # assigned by the RFC editor.
             event = self.latest_event(type='published_rfc')
         else:
             event = self.latest_event(type='new_revision')

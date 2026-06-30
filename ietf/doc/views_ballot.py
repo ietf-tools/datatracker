@@ -425,7 +425,10 @@ def build_position_email_from_dict(pos_dict):
                                  pos=pos_name,
                                  blocking_name=blocking_name,
                                  settings=settings))
-    frm = balloter.role_email("ad").formatted_email()
+    if doc.stream_id == "ietf":
+        frm = balloter.role_email("ad").formatted_email()
+    else:
+        frm = balloter.formatted_email()
 
     if doc.stream_id == "irtf":
         addrs = gather_address_lists('irsg_ballot_saved',doc=doc)
