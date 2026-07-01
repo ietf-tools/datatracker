@@ -5905,7 +5905,7 @@ class InterimTests(TestCase):
         )
         url = urlreverse('ietf.meeting.views.session_details',
                          kwargs={'num': meeting.number, 'acronym': 'mars'})
-        
+    
         for username, password in usernames_and_passwords:
             self.client.login(username=username, password=password)
             r = self.client.get(url)
@@ -5918,6 +5918,17 @@ class InterimTests(TestCase):
                 urlreverse('ietf.meeting.views.interim_request_cancel',
                            kwargs={'number': meeting.number}),
                                 'Cancel meeting points to wrong URL')
+            
+        # test unauthorized access to cancellation button
+        self.client.login(username="ameschairman", password="ameschairman+password")
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("a.btn:contains('Cancel meeting')")), 0)
+        self.client.logout()
+        self.client.login(username="<nobody>")
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("a.btn:contains('Cancel meeting')")), 0)
         
     def test_interim_session_cancel(self):
         make_interim_test_data()
