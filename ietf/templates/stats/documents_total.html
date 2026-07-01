@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load origin %}
+{% origin %}
+{% load ietf_filters static django_bootstrap5 %}
+{% block js %}
+    {{ chart_data|json_script:"chart_data" }}
+    {{ objects|json_script:"objects" }}
+    <script src="{% static 'ietf/js/document_total.js' %}"></script>
+{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        {% block title %}
+            Statistics for IETF {{ objects|title }}
+        {% endblock %}
+    </h1>
+    <div class="row my-3">
+        <label class="fw-bold col-sm-1 col-form-label">Format:</label>
+        <div class="btn-group col-sm-2">
+                <a class="btn btn-outline-primary"
+                    href="{{ timeline_url }}?top={{ top_n }}">Timeline</a>
+                <a class="btn btn-outline-primary active"
+                    href="{{ total_url }}?top={{ top_n }}">Total</a>
+        </div>
+        <label class="fw-bold col-sm-1 col-form-label">Group by:</label>
+        <div class="btn-group col-sm-3">
+            {% for slug, label, url in possible_stats_types %}
+                <a class="btn btn-outline-primary
+                            {% if slug == stats_type %}
+                                active
+                            {% endif %}"
+                    href="{{ url }}?top={{ top_n }}">{{ label }}</a>
+            {% endfor %}
+        </div>
+        <label class="fw-bold col-sm-1 col-form-label">Documents:</label>
+        <div class="btn-group col-sm-3">
+            {% for slug, label, url in possible_docs_types %}
+                <a class="btn btn-outline-primary
+                            {% if slug == doc_type %}
+                                active
+                            {% endif %}"
+                    href="{{ url }}?top={{ top_n }}">{{ label }}</a>
+            {% endfor %}
+        </div>
+        <form method="GET">
+            <label class="fw-bold col-sm-2 col-form-label">Categories to display:
+                <select class="col-sm-2" name="top" onchange="this.form.submit()">
+                    {% for choice in top_n_choices %}
+                        <option value="{{ choice }}" {% if choice|stringformat:"s" == top_n|stringformat:"s" %}selected{% endif %}>{{ choice }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <button class="visually-hidden" type="submit">Submit</button>
+        </form>
+    </div>
+    <p>
+        This page provides the top-{{ top_n }} {{ stats_type }} for IETF {{ doc_type|upper }} {{ objects}}. 
+        Only the top-{{ top_n }} categories are listed, the remaining ones are aggregated into 'Other'.
+        {% if objects == 'authors' %}
+            Note: an author is counted for as many documents they have authored.
+        {% endif %}
+    </p>
+    <div class="row">
+        <div class="col-md-12">
+            <h2>{{ doc_type|title }} {{ objects|title }} by {{ stats_type|title }}</h2>
+        <div class="chart-wrapper col-10">
+            <canvas id="documentsChart" aria-label="Authors Total" role="img"></canvas>
+        </div>
+        </div><!-- col -->
+    </div><!-- row -->
+    <div class="row">
+        <p class="text-body-secondary text-end">
+            Click on a bar to hide it and rescale the graph. 
+        </p>
+    </div><!-- row-->
+{% endblock %}

@@ -3,21 +3,25 @@
 {% origin %}
 {% load ietf_filters static django_bootstrap5 %}
 {% block js %}
-    {{ total_chart_data|json_script:"total-chart-data" }}
-    {{ in_person_chart_data|json_script:"in-person-chart-data" }}
-    {{ stats_type|json_script:"stats-type-data" }}
-    <script src="{% static 'ietf/js/meeting_timeline.js' %}"></script>
+    {{ chart_data|json_script:"chart_data" }}
+    <script src="{% static 'ietf/js/document_timeline.js' %}"></script>
 {% endblock %}
 {% block content %}
     {% origin %}
     <h1>
         {% block title %}
-            Statistics for IETF Meeting Registrations
+            Statistics for IETF {{ objects|title }}
         {% endblock %}
     </h1>
-    
     <div class="row my-3">
-        <label class="fw-bold col-sm-1 col-form-label">Show:</label>
+        <label class="fw-bold col-sm-1 col-form-label">Format:</label>
+        <div class="btn-group col-sm-2">
+                <a class="btn btn-outline-primary active"
+                    href="{{ timeline_url }}?top={{ top_n }}">Timeline</a>
+                <a class="btn btn-outline-primary"
+                    href="{{ total_url }}?top={{ top_n }}">Total</a>
+        </div>
+        <label class="fw-bold col-sm-1 col-form-label">Group by:</label>
         <div class="btn-group col-sm-4">
             {% for slug, label, url in possible_stats_types %}
                 <a class="btn btn-outline-primary
@@ -27,14 +31,14 @@
                     href="{{ url }}?top={{ top_n }}">{{ label }}</a>
             {% endfor %}
         </div>
-        <label class="fw-bold col-sm-1 col-form-label">Meeting:</label>
+        <label class="fw-bold col-sm-1 col-form-label">Documents:</label>
         <div class="btn-group col-sm-2">
-            {% for num, url in possible_meeting_numbers %}
+            {% for slug, label, url in possible_docs_types %}
                 <a class="btn btn-outline-primary
-                            {% if num == 'All' %}
+                            {% if slug == doc_type %}
                                 active
                             {% endif %}"
-                    href="{{ url }}?top={{ top_n }}">{{ num }}</a>
+                    href="{{ url }}?top={{ top_n }}">{{ label }}</a>
             {% endfor %}
         </div>
         <form method="GET">
@@ -49,42 +53,25 @@
         </form>
     </div>
     <p>
-    {% if stats_type == 'total' %}
-        This page provides a timeline of meeting registrations.
-    {% else %}
-        This page provides a timeline of meeting registrations by {{ stats_type }} with a limit of {{ top_n }} {{ plural_stats_type }}.
-    {% endif %}
+        This page provides a timeline of IETF {{ doc_type|upper }} documents {{ objects }} by {{ stats_type }}. Only the top-{{ top_n }} categories are listed,
+        the remaining ones are aggregated into 'Other'. The year is the actual publication date for a RFC and the
+        submission date of the latest revision for a draft (i.e., only the authors of latest revision).
     </p>
     <div class="row">
         <div class="col-md-12">
-        {% if stats_type == 'total' %}
-            <h2>Total Registrations</h2>
-        {% else %}
-            <h2>Total Registrations by {{ stats_type|title }}</h2>
-        {% endif %}
+            <h2>{{ doc_type|title }} {{ objects|title }} by {{ stats_type|title }}</h2>
         <div class="chart-wrapper col-10">
-            <canvas id="totalRegistrationChart" aria-label="Total Registration Timeline" role="img"></canvas>
+            <canvas id="documentsChart" aria-label="Document Timeline" role="img"></canvas>
         </div>
         </div><!-- col -->
-        {% if stats_type != 'total' %}
-        <div class="col-md-12">
-        {% if stats_type == 'total' %}
-            <h2>Total In Person Registrations</h2>
-        {% else %}
-            <h2>In Person Registrations by {{ stats_type|title }}</h2>
-        {% endif %}
-        <div class="chart-wrapper col-10">
-            <canvas id="inPersonRegistrationChart" aria-label="In Person Registration Timeline" role="img"></canvas>
-        </div>
-        </div><!-- col -->
-        {% endif %}
     </div><!-- row -->
     <div class="row">
-        <p>
-            Specific lines can be removed by clicking on their legend at the bottom of the graphic. 
+        <p class="text-body-secondary text-end">
+            Specific lines can be removed by clicking on their legend at the bottom of the graphic.
             Hold <kbd>Alt</kbd> (or <kbd>⌥</kbd> on Mac) and scroll/drag to zoom &amp; pan. 
             Panning can be done via the mouse or with a finger. 
-            Zooming is done via the mouse wheel or via a pinch gesture. Press <kbd>ESC</kbd> 
+            Zooming is done via the mouse wheel or via a pinch gesture. 
+            Press <kbd>ESC</kbd> 
             or click <button type="button" class="btn btn-primary" id="resetButton">Reset</button> to reset panning/zooming.
         </p>
     </div><!-- row-->

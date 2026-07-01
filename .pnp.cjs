@@ -58,7 +58,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["c8", "npm:9.1.0"],\
             ["caniuse-lite", "npm:1.0.30001603"],\
             ["chart.js", "npm:4.5.1"],\
-            ["chartjs-plugin-autocolors", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:0.3.1"],\
             ["chartjs-plugin-zoom", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.2.0"],\
             ["d3", "npm:7.9.0"],\
             ["eslint", "npm:8.57.0"],\
@@ -3580,32 +3579,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [\
             ["chart.js", "npm:4.5.1"],\
             ["@kurkle/color", "npm:0.3.4"]\
-          ],\
-          "linkType": "HARD"\
-        }]\
-      ]],\
-      ["chartjs-plugin-autocolors", [\
-        ["npm:0.3.1", {\
-          "packageLocation": "./.yarn/cache/chartjs-plugin-autocolors-npm-0.3.1-7e93d38139-de4f87b5bb.zip/node_modules/chartjs-plugin-autocolors/",\
-          "packageDependencies": [\
-            ["chartjs-plugin-autocolors", "npm:0.3.1"]\
-          ],\
-          "linkType": "SOFT"\
-        }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:0.3.1", {\
-          "packageLocation": "./.yarn/__virtual__/chartjs-plugin-autocolors-virtual-6e228c1a1e/0/cache/chartjs-plugin-autocolors-npm-0.3.1-7e93d38139-de4f87b5bb.zip/node_modules/chartjs-plugin-autocolors/",\
-          "packageDependencies": [\
-            ["chartjs-plugin-autocolors", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:0.3.1"],\
-            ["@kurkle/color", "npm:0.3.1"],\
-            ["@types/chart.js", null],\
-            ["@types/kurkle__color", null],\
-            ["chart.js", "npm:4.5.1"]\
-          ],\
-          "packagePeers": [\
-            "@kurkle/color",\
-            "@types/chart.js",\
-            "@types/kurkle__color",\
-            "chart.js"\
           ],\
           "linkType": "HARD"\
         }]\
@@ -8440,7 +8413,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["c8", "npm:9.1.0"],\
             ["caniuse-lite", "npm:1.0.30001603"],\
             ["chart.js", "npm:4.5.1"],\
-            ["chartjs-plugin-autocolors", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:0.3.1"],\
             ["chartjs-plugin-zoom", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.2.0"],\
             ["d3", "npm:7.9.0"],\
             ["eslint", "npm:8.57.0"],\
