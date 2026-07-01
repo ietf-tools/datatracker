@@ -32,7 +32,7 @@ def get_authors_total_data_for_documents(doc_type: str = 'all', group_by: str = 
         filters &= Q(document__type_id=doc_type)
     elif doc_type == 'wg-draft':
         filters &= Q(document__type_id= 'draft')
-        filters &= Q(document__name__startswith='draft-ietf')
+        filters &= Q(document__group__type_id="wg")
     queryset = (
         DocumentAuthor.objects
         .filter(filters)
@@ -159,7 +159,7 @@ def get_authors_timeline_data_for_documents(doc_type: str = 'all', group_by: str
             filters &= Q(document__type_id=doc_type)
         if doc_type == 'wg-draft':
             filters &= Q(document__type_id= 'draft')
-            filters &= Q(document__name__startswith='draft-ietf')
+            filters &= Q(document__group__type_id="wg")
         queryset = (
             DocumentAuthor.objects
             .select_related('document')
