@@ -91,6 +91,8 @@ class StatisticsTests(TestCase):
             country = 'Laos'
         elif country == 'British Virgin Islands':
             country = 'Virgin Islands'
+        elif country == 'Pitcairn Islands':
+            country = 'Pitcairn'
             
         # Create the various aliases ancilliary content
         AffiliationIgnoredEndingFactory(ending='llc\\.?')
@@ -393,15 +395,15 @@ class StatisticsTests(TestCase):
         url += "?team={}".format(review_req.team.acronym)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        data = json.loads(r.context['data'])
-        # Extract the timestamp from the actual response to avoid timezone/timing issues
-        self.assertEqual(len(data), 2)
-        self.assertEqual(data[0]['label'], 'in time')
-        self.assertEqual(data[0]['color'], '#3d22b3')
-        self.assertEqual(data[0]['data'], [[data[0]['data'][0][0], 0]])
-        self.assertEqual(data[1]['label'], 'late')
-        self.assertEqual(data[1]['color'], '#b42222')
-        self.assertEqual(data[1]['data'], [[data[0]['data'][0][0], 0]])
+        stacked_data = json.loads(r.context['data'])
+        # Ignore the timestamp elements, just check that the data is correct
+        self.assertEqual(len(stacked_data), 2)
+        self.assertEqual(stacked_data[0]['label'], 'in time')
+        self.assertEqual(stacked_data[0]['color'], '#3d22b3')
+        self.assertEqual(stacked_data[0]['data'], [[stacked_data[0]['data'][0][0], 0]])
+        self.assertEqual(stacked_data[1]['label'], 'late')
+        self.assertEqual(stacked_data[1]['color'], '#b42222')
+        self.assertEqual(stacked_data[1]['data'], [[stacked_data[0]['data'][0][0], 0]])
         q = PyQuery(r.content)
         self.assertTrue(q('#stats-time-graph'))
 
@@ -412,7 +414,7 @@ class StatisticsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         non_stacked_data = json.loads(r.context['data'])
-        # Use the same timestamp from stacked chart
+        # Ignore the timestamp elements, just check that the data is correct
         self.assertEqual(len(non_stacked_data), 1)
         self.assertEqual(non_stacked_data[0]['color'], '#3d22b3')
         self.assertEqual(non_stacked_data[0]['data'], [[non_stacked_data[0]['data'][0][0], 0]])
