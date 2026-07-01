@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2026, All Rights Reserved #}
+{% load origin %}
+{% load ietf_filters static %}
+{% load cache %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
+{% block title %}Past IETF Meetings{% endblock %}
+{% block content %}
+    {% cache 3600 pastmeetings %}
+    {% origin %}
+    A list of all previous IETF plenary meetings, records of the proceedings and post-meeting surveys can be found <a href="https://www.ietf.org/meeting/past/"> here </a>
+    {% if meetings_ietf %}
+        <table class="table table-sm table-striped tablesorter">
+                    <thead>
+                        <tr>
+                            <th scope="col" data-sort="date">Date</th>
+                            <th scope="col" data-sort="name">Name</th>
+                            <th scope="col" data-sort="proceedings">Proceedings</th>
+                            <th scope="col" class="d-none d-sm-table-cell"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for meeting in meetings_ietf %}
+                            <tr>
+                                <td>{{ meeting.date }}</td>
+                                <td>
+                                    {% if meeting.get_number > 28 %}
+                                        <a href="{% url 'agenda' num=meeting.number %}">IETF-{{ meeting.number }}</a>
+                                    {% else %}
+                                        <a href="https://www.ietf.org/proceedings/{{meeting.get_number|stringformat:'02d'}}.pdf">IETF-{{ meeting.number }}</a>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                <a href="{% url 'ietf.meeting.views.proceedings' num=meeting.number %}">
+                                IETF {{ meeting.number }} proceedings
+                                 </a>
+                                </td>
+                                <td class="d-none d-sm-table-cell">
+                                    {% if meeting.get_number > 97 %}
+                                        <a href="{% url 'ietf.meeting.views.important_dates' num=meeting.number %}">Important dates</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+    {% endcache %}
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
+{% endblock %}

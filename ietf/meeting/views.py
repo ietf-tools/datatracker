@@ -4487,6 +4487,16 @@ def past(request):
     return render(request, 'meeting/past.html', {
                   'meetings': meetings,
                   })
+    
+def past_ietf(request):
+    '''List of past IETF planetart meetings'''
+    today = timezone.now()
+    
+    meetings_ietf = data_for_meetings_overview(Meeting.objects.filter(type_id='ietf').filter(date__lte=today).order_by('-date'))
+    
+    return render(request, 'meeting/past_ietf.html', {
+                'meetings_ietf': meetings_ietf,
+                })
 
 def upcoming(request):
     '''List of upcoming meetings'''
