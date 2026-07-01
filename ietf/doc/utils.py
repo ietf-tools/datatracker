@@ -4,6 +4,7 @@
 
 import datetime
 import io
+import json
 import math
 import os
 import re
@@ -38,12 +39,15 @@ from ietf.doc.models import (
     DocHistoryAuthor,
     Document,
     DocumentAuthor,
+    EditedRfcAuthorsDocEvent,
     RfcAuthor,
-    State, EditedRfcAuthorsDocEvent,
+    State,
+    StoredObject,
 )
 from ietf.doc.models import RelatedDocument, RelatedDocHistory, BallotType, DocReminder
 from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBallotDocEvent, NewRevisionDocEvent, StateDocEvent
 from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthorsDocEvent, BallotPositionDocEvent
+from ietf.doc.storage_utils import force_replication
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role, Group, GroupFeatures
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author, is_bofreq_editor
@@ -740,14 +744,26 @@ def update_rfcauthors(
             new_author.document = rfc
             new_author.order = order + 1
             new_author.save()
-            changes.append(f'Added "{new_author.titlepage_name}" as author')
+            if new_author.person_id is not None:
+                person_desc = f"Person {new_author.person_id}"
+            else:
+                person_desc = "no Person linked"
+            changes.append(
+                f'Added "{new_author.titlepage_name}" ({person_desc}) as author'
+            )
     # Any authors left in original_authors are no longer in the list, so remove them
     for removed_author in original_authors:
         # Skip actual removal of old authors if we are converting from the
         # DocumentAuthor models - the original_authors were just stand-ins anyway.
         if not converting_from_docauthors:
             removed_author.delete()
-        changes.append(f'Removed "{removed_author.titlepage_name}" as author')
+        if removed_author.person_id is not None:
+            person_desc = f"Person {removed_author.person_id}"
+        else:
+            person_desc = "no Person linked"
+        changes.append(
+            f'Removed "{removed_author.titlepage_name}" ({person_desc}) as author'
+        )
     # Create DocEvents, but leave it up to caller to save
     if by is None:
         by = Person.objects.get(name="(System)")
@@ -942,57 +958,77 @@ def rebuild_reference_relations(doc, filenames):
     filenames should be a dict mapping file ext (i.e., type) to the full path of each file.
     """
     if doc.type.slug not in ["draft", "rfc"]:
+        log.log(f"rebuild_reference_relations called for non draft/rfc doc {doc.name}")
         return None
-    
-    log.log(f"Rebuilding reference relations for {doc.name}")
 
-    # try XML first
-    if "xml" in filenames:
-        refs = XMLDraft(filenames["xml"]).get_refs()
-    elif "txt" in filenames:
-        filename = filenames["txt"]
-        try:
-            refs = draft.PlaintextDraft.from_file(filename).get_refs()
-        except IOError as e:
-            return {"errors": [f"{e.strerror}: {filename}"]}
-    else:
+
+    if "xml" not in filenames and "txt" not in filenames:
+        log.log(f"rebuild_reference_relations error: no file available for {doc.name}")
         return {
             "errors": [
                 "No file available for rebuilding reference relations. Need XML or plaintext."
             ]
         }
+    else:
+        try:
+            # try XML first
+            if "xml" in filenames:
+                refs = XMLDraft(filenames["xml"]).get_refs()
+            elif "txt" in filenames:
+                filename = filenames["txt"]
+                refs = draft.PlaintextDraft.from_file(filename).get_refs()
+        except (IOError, UnicodeDecodeError) as e:
+                log.log(f"rebuild_reference_relations error: On {doc.name}: {e}")
+                return {"errors": [f"{e}: {filename}"]}
 
-    doc.relateddocument_set.filter(
+    before = set(doc.relateddocument_set.filter(
         relationship__slug__in=["refnorm", "refinfo", "refold", "refunk"]
-    ).delete()
+    ).values_list("relationship__slug","target__name"))
 
     warnings = []
     errors = []
     unfound = set()
+    intended = set()
+    names = [ref for ref in refs]
+    names.extend([ref[:-3] for ref in refs if re.match(r"^draft-.*-\d{2}$", ref)])
+    queryset = Document.objects.filter(name__in=names)
     for ref, refType in refs.items():
-        refdoc = Document.objects.filter(name=ref)
-        if not refdoc and re.match(r"^draft-.*-\d{2}$", ref):
-            refdoc = Document.objects.filter(name=ref[:-3])
+        refdoc = queryset.filter(name=ref)
+        if not refdoc.exists() and re.match(r"^draft-.*-\d{2}$", ref):
+            refdoc = queryset.filter(name=ref[:-3])
         count = refdoc.count()
         if count == 0:
             unfound.add("%s" % ref)
             continue
         elif count > 1:
+            log.unreachable("2026-3-16") # This branch is holdover from DocAlias
             errors.append("Too many Document objects found for %s" % ref)
         else:
             # Don't add references to ourself
             if doc != refdoc[0]:
-                RelatedDocument.objects.get_or_create(
-                    source=doc,
-                    target=refdoc[0],
-                    relationship=DocRelationshipName.objects.get(
-                        slug="ref%s" % refType
-                    ),
-                )
+                intended.add((f"ref{refType}", refdoc[0].name))
+
     if unfound:
         warnings.append(
             "There were %d references with no matching Document" % len(unfound)
         )
+
+    if intended != before:
+        for slug, name in before-intended:
+            doc.relateddocument_set.filter(target__name=name, relationship_id=slug).delete()
+        for slug, name in intended-before:
+            doc.relateddocument_set.create(
+                target=queryset.get(name=name),
+                relationship_id=slug
+            )
+        after = set(doc.relateddocument_set.filter(
+            relationship__slug__in=["refnorm", "refinfo", "refold", "refunk"]
+        ).values_list("relationship__slug","target__name"))
+        if after != intended:
+            errors.append("Attempted changed didn't achieve intended results")
+        changed_references = True
+    else:
+        changed_references = False
 
     ret = {}
     if errors:
@@ -1001,6 +1037,13 @@ def rebuild_reference_relations(doc, filenames):
         ret["warnings"] = warnings
     if unfound:
         ret["unfound"] = list(unfound)
+
+    logmsg = f"rebuild_reference_relations for {doc.name}: "
+    logmsg += "changed references" if changed_references else "references unchanged"
+    if ret:
+        logmsg += f" {json.dumps(ret)}"
+
+    log.log(logmsg)
 
     return ret
 
@@ -1230,9 +1273,6 @@ def build_file_urls(doc: Union[Document, DocHistory]):
                 continue
             label = "plain text" if t == "txt" else t
             file_urls.append((label, base + doc.name + "." + t))
-
-        if "pdf" not in found_types and "txt" in found_types:
-            file_urls.append(("pdf", base + "pdfrfc/" + doc.name + ".txt.pdf"))
 
         if "txt" in found_types:
             file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name))))
@@ -1673,3 +1713,23 @@ def update_or_create_draft_bibxml_file(doc, rev):
 
 def ensure_draft_bibxml_path_exists():
     (Path(settings.BIBXML_BASE_PATH) / "bibxml-ids").mkdir(exist_ok=True)
+
+
+def replicate_stored_objects_for_document(doc: Document) -> int:
+    """Sync all StoredObjects associated with doc to the replica blob store
+    
+    Returns count of StoredObjects queued for replication (which may or may not
+    be replicated, depending on whether replication is enabled / the storages are
+    actually BlobdbStorage instances, etc).
+    """
+    # n.b., StoredObjects have a nullable doc_rev field, but Documents do not.
+    # Until / unless we straighten that out, treat "" and None equivalently when
+    # matching rev.
+    qs_matching_rev = StoredObject.objects.filter(doc_rev=doc.rev)
+    if doc.rev == "":
+        qs_matching_rev |= StoredObject.objects.filter(doc_rev__isnull=True)
+    count = 0
+    for stored_object in qs_matching_rev.filter(doc_name=doc.name):
+        force_replication(kind=stored_object.store, name=stored_object.name)
+        count += 1
+    return count

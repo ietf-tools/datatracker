@@ -23,7 +23,7 @@ jobs:
       base_image_version: ${{ steps.baseimgversion.outputs.base_image_version }}
 
     steps:   
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         fetch-depth: 1
         fetch-tags: false
@@ -38,7 +38,7 @@ jobs:
   # -----------------------------------------------------------------
   tests:
     name: Run Tests
-    uses: ./.github/workflows/tests.yml
+    uses: ./.github/workflows/reusable-tests.yml
     needs: [prepare]
     with:
       ignoreLowerCoverage: false

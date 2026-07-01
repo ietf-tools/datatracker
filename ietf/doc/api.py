@@ -4,13 +4,11 @@
 from django.db.models import (
     BooleanField,
     Count,
-    JSONField,
     OuterRef,
     Prefetch,
     Q,
     QuerySet,
     Subquery,
-    Value,
 )
 from django.db.models.functions import TruncDate
 from django_filters import rest_framework as filters
@@ -42,13 +40,21 @@ class RfcLimitOffsetPagination(LimitOffsetPagination):
     max_limit = 500
 
 
+class NumberInFilter(filters.BaseInFilter, filters.NumberFilter):
+    """Filter against a comma-separated list of numbers"""
+    pass
+
+
 class RfcFilter(filters.FilterSet):
     published = filters.DateFromToRangeFilter()
     stream = filters.ModelMultipleChoiceFilter(
         queryset=StreamName.objects.filter(used=True)
     )
+    number = NumberInFilter(
+        field_name="rfc_number"
+    )
     group = filters.ModelMultipleChoiceFilter(
-        queryset=Group.objects.wgs(),
+        queryset=Group.objects.all(),
         field_name="group__acronym",
         to_field_name="acronym",
     )
@@ -151,10 +157,6 @@ def augment_rfc_queryset(queryset: QuerySet[Document]):
                 ),
                 output_field=BooleanField(),
             )
-        )
-        .annotate(
-            # TODO implement this fake field for real
-            keywords=Value(["keyword"], output_field=JSONField()),
         )
     )
 

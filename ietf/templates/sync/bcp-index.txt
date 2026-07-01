@@ -1,0 +1,52 @@
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                             BCP INDEX
+                           -------------
+
+(CREATED ON: {{created_on}}.)
+
+This file contains citations for all BCPs in numeric order.  The BCPs
+form a sub-series of the RFC document series, specifically those RFCs
+with the status BEST CURRENT PRACTICE.
+
+BCP citations appear in this format:
+
+   [BCP#]     Best Current Practice #,
+              <BCP URL>.
+              At the time of writing, this BCP comprises the following:
+
+              Author 1, Author 2, "Title of the RFC", BCP #, RFC №,
+              DOI DOI string, Issue date,
+              <RFC URL>.
+
+For example:
+
+   [BCP3]     Best Current Practice 3,
+              <https://www.rfc-editor.org/info/bcp3>.
+              At the time of writing, this BCP comprises the following:
+
+              F. Kastenholz, "Variance for The PPP Compression Control Protocol
+              and The PPP Encryption Control Protocol", BCP 3, RFC 1915,
+              DOI 10.17487/RFC1915, February 1996,
+              <https://www.rfc-editor.org/info/rfc1915>.
+
+Key to fields:
+
+# is the BCP number.
+
+№ is the RFC number.
+
+BCPs and other RFCs may be obtained from https://www.rfc-editor.org.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                                BCP INDEX
+                                ---------
+   
+
+
+{% for bcp in bcps %}{{bcp|safe}}
+
+{% endfor %}

@@ -177,8 +177,15 @@ class ToOneField(tastypie.fields.ToOneField):
         return dehydrated
 
 
+
+# XML 1.0 forbids all control characters except tab (#x9), LF (#xA), and CR (#xD).
+# Replace each with its Unicode control picture (U+2400 + codepoint) so the
+# substitution is lossless and the result is valid XML.
+_XML_INVALID_CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
 class Serializer(tastypie.serializers.Serializer):
-    OPTION_ESCAPE_NULLS = "datatracker-escape-nulls"
+    OPTION_ESCAPE_XML_INVALID = "datatracker-escape-xml-invalid"
 
     def format_datetime(self, data):
         return data.astimezone(datetime.UTC).replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
@@ -186,18 +193,17 @@ class Serializer(tastypie.serializers.Serializer):
     def to_simple(self, data, options):
         options = options or {}
         simple_data = super().to_simple(data, options)
-        if (
-            options.get(self.OPTION_ESCAPE_NULLS, False) 
-            and isinstance(simple_data, str)
-        ):
-            # replace nulls with unicode "symbol for null character", \u2400
-            simple_data = simple_data.replace("\x00", "\u2400")
+        if options.get(self.OPTION_ESCAPE_XML_INVALID, False) and isinstance(simple_data, str):
+            # Replace control chars invalid in XML 1.0 with their Unicode
+            # control pictures (U+2400-U+241F) so lxml won't reject the string.
+            simple_data = _XML_INVALID_CTRL_RE.sub(
+                lambda m: chr(ord(m.group()) + 0x2400), simple_data
+            )
         return simple_data
 
     def to_etree(self, data, options=None, name=None, depth=0):
-        # lxml does not escape nulls on its own, so ask to_simple() to do it.
-        # This is mostly (only?) an issue when generating errors responses for
-        # fuzzers.
+        # lxml rejects control characters that are invalid in XML 1.0.
+        # Ask to_simple() to escape them before they reach lxml.
         options = options or {}
-        options[self.OPTION_ESCAPE_NULLS] = True
+        options[self.OPTION_ESCAPE_XML_INVALID] = True
         return super().to_etree(data, options, name, depth)

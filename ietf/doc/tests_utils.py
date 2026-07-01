@@ -1,15 +1,23 @@
 # Copyright The IETF Trust 2020, All Rights Reserved
 import datetime
+from io import BytesIO
+
+import mock
 import debug  # pyflakes:ignore
+import requests
 
 from pathlib import Path
 from unittest.mock import call, patch
 
 from django.conf import settings
+from django.core.files.storage import storages
 from django.db import IntegrityError
 from django.test.utils import override_settings
 from django.utils import timezone
 
+
+from ietf.doc.utils_r2 import rfcs_are_in_r2
+from ietf.doc.utils_red import trigger_red_precomputer
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.name.models import DocTagName
 from ietf.person.factories import PersonFactory
@@ -17,11 +25,12 @@ from ietf.doc.factories import BallotPositionDocEventFactory
 from ietf.utils.test_utils import TestCase, name_of_file_containing, reload_db_objects
 from ietf.person.models import Person
 from ietf.doc.factories import DocumentFactory, WgRfcFactory, WgDraftFactory
-from ietf.doc.models import State, DocumentActionHolder, DocumentAuthor
+from ietf.doc.models import State, DocumentActionHolder, DocumentAuthor, StoredObject
 from ietf.doc.utils import (update_action_holders, add_state_change_event, update_documentauthors,
                             fuzzy_find_documents, rebuild_reference_relations, build_file_urls,
                             ensure_draft_bibxml_path_exists, update_or_create_draft_bibxml_file,
                             last_ballot_doc_revision)
+from ietf.doc.storage_utils import store_str
 from ietf.utils.draft import Draft, PlaintextDraft
 from ietf.utils.xmldraft import XMLDraft
 
@@ -559,3 +568,132 @@ class LastBallotDocRevisionTests(TestCase):
         nobody = PersonFactory()
         self.assertIsNone(last_ballot_doc_revision(doc, nobody))
         self.assertEqual(rev, last_ballot_doc_revision(doc, ad))
+
+
+class UtilsRedTests(TestCase):
+    @mock.patch("ietf.doc.utils_red.log")
+    @mock.patch("ietf.doc.utils_red.requests.post")
+    def test_trigger_red_precomputer_not_configured(self, mock_post, mock_log):
+        with override_settings():
+            try:
+                del settings.CUSTOM_SETTING_NAME
+            except AttributeError:
+                pass
+            trigger_red_precomputer(rfc_number_list=[1, 2, 3])
+            self.assertEqual(mock_log.call_count, 1)
+            mock_args, _ = mock_log.call_args
+            self.assertEqual(
+                mock_args,
+                ("No URL configured for triggering red precompute multiple, skipping",),
+            )
+
+        mock_log.reset_mock()
+        with override_settings(TRIGGER_RED_PRECOMPUTE_MULTIPLE_URL=None):
+            trigger_red_precomputer(rfc_number_list=[1, 2, 3])
+            self.assertFalse(mock_post.called)
+            self.assertEqual(mock_log.call_count, 1)
+            mock_args, _ = mock_log.call_args
+            self.assertEqual(
+                mock_args,
+                ("No URL configured for triggering red precompute multiple, skipping",),
+            )
+
+    @override_settings(
+        TRIGGER_RED_PRECOMPUTE_MULTIPLE_URL="urlbits",
+    )
+    @mock.patch("ietf.doc.utils_red.log")
+    @mock.patch("ietf.doc.utils_red.requests.post", side_effect=requests.Timeout())
+    def test_trigger_red_precomputer_swallows_timeout_exception(
+        self, mock_post, mock_log
+    ):
+        exception_raised = False
+        try:
+            trigger_red_precomputer(rfc_number_list=[1, 2, 3])
+        except Exception:
+            exception_raised = True
+        self.assertFalse(exception_raised)
+        self.assertEqual(mock_log.call_count, 2)
+        # only checking the last log call
+        mock_args, _ = mock_log.call_args
+        self.assertEqual(len(mock_args), 1)
+        self.assertIn("POST request timed out", mock_args[0])
+
+    @override_settings(
+        TRIGGER_RED_PRECOMPUTE_MULTIPLE_URL="urlbits",
+    )
+    @mock.patch("ietf.doc.utils_red.requests.post", side_effect=Exception())
+    def test_trigger_red_precomputer_does_not_swallow_too_much(self, mock_post):
+        exception_raised = False
+        try:
+            trigger_red_precomputer(rfc_number_list=[1, 2, 3])
+        except Exception:
+            exception_raised = True
+        self.assertTrue(exception_raised)
+
+    @override_settings(
+        TRIGGER_RED_PRECOMPUTE_MULTIPLE_URL="urlbits",
+        DEFAULT_REQUESTS_TIMEOUT=314159265,
+    )
+    @mock.patch("ietf.doc.utils_red.log")
+    @mock.patch("ietf.doc.utils_red.requests.post")
+    def test_trigger_red_precomputer(self, mock_post, mock_log):
+        mock_post.return_value = mock.Mock(status_code=200)
+        trigger_red_precomputer(rfc_number_list=[1, 2, 3])
+        self.assertTrue(mock_post.called)
+        _, mock_kwargs = mock_post.call_args
+        self.assertIn("url", mock_kwargs)
+        self.assertEqual(mock_kwargs["url"], "urlbits")
+        self.assertIn("json", mock_kwargs)
+        self.assertEqual(mock_kwargs["json"], {"rfcs": "1,2,3"})
+        self.assertIn("timeout", mock_kwargs)
+        self.assertEqual(mock_kwargs["timeout"], 314159265)
+        self.assertEqual(mock_log.call_count, 1)  # Not testing the first info log value
+        mock_log.reset_mock()
+        mock_post.reset_mock()
+        mock_post.return_value = mock.Mock(
+            status_code=500,
+        )
+        trigger_red_precomputer(rfc_number_list=[1, 2, 3])
+        self.assertEqual(mock_log.call_count, 2)
+        mock_args, _ = mock_log.call_args
+        self.assertEqual(len(mock_args), 1)
+        expected = f"POST request failed for {settings.TRIGGER_RED_PRECOMPUTE_MULTIPLE_URL} : status_code=500"
+        self.assertEqual(mock_args[0], expected)
+
+
+class UtilsR2TestCase(TestCase):
+    def test_rfcs_are_in_r2(self):
+        rfcs = WgRfcFactory.create_batch(2)
+        rfc_name_list = [rfc.name for rfc in rfcs]
+        rfc_number_list = [rfc.rfc_number for rfc in rfcs]
+        r2_rfc_bucket = storages["r2-rfc"]
+        # Right now the various doc Factories do not populate any content
+        self.assertEqual(
+            StoredObject.objects.filter(
+                store="rfc", doc_name__in=rfc_name_list
+            ).count(),
+            0,
+        )
+        self.assertTrue(rfcs_are_in_r2(rfc_number_list=rfc_number_list))
+        for rfc in rfcs:
+            store_str(
+                kind="rfc",
+                name=f"testartifact/{rfc.name}.testartifact",
+                content="",
+                doc_name=rfc.name,
+                doc_rev=None,
+            )
+        self.assertEqual(
+            StoredObject.objects.filter(
+                store="rfc", doc_name__in=rfc_name_list
+            ).count(),
+            2,
+        )
+        self.assertFalse(rfcs_are_in_r2(rfc_number_list=rfc_number_list))
+        r2_rfc_bucket.save(f"testartifact/{rfcs[0].name}.testartifact", BytesIO(b""))
+        self.assertFalse(rfcs_are_in_r2(rfc_number_list=rfc_number_list))
+        r2_rfc_bucket.save(f"testartifact/{rfcs[1].name}.testartifact", BytesIO(b""))
+        self.assertTrue(rfcs_are_in_r2(rfc_number_list=rfc_number_list))
+
+
+

@@ -5,6 +5,7 @@
 from django.contrib import admin
 from django.db import models
 from django import forms
+from django.db.models import QuerySet
 from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document, RelatedDocHistory,
@@ -14,10 +15,13 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
     ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
     BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject, RfcAuthor,
-    EditedRfcAuthorsDocEvent)
+    EditedRfcAuthorsDocEvent, RpcAssignmentDocEvent)
 
 from ietf.utils.admin import SaferTabularInline
 from ietf.utils.validators import validate_external_resource_value
+from .storage_utils import force_replication
+from .utils import replicate_stored_objects_for_document
+
 
 class StateTypeAdmin(admin.ModelAdmin):
     list_display = ["slug", "label"]
@@ -73,7 +77,9 @@ class DocumentAuthorAdmin(admin.ModelAdmin):
     search_fields = ['document__name', 'person__name', 'email__address', 'affiliation', 'country']
     raw_id_fields = ["document", "person", "email"]
 admin.site.register(DocumentAuthor, DocumentAuthorAdmin)
-    
+
+
+
 class DocumentAdmin(admin.ModelAdmin):
     list_display = ['name', 'rev', 'group', 'pages', 'intended_std_level', 'author_list', 'time']
     search_fields = ['name']
@@ -81,6 +87,7 @@ class DocumentAdmin(admin.ModelAdmin):
     raw_id_fields = ['group', 'shepherd', 'ad']
     inlines = [DocAuthorInline, DocActionHolderInline, RelatedDocumentInline, AdditionalUrlInLine]
     form = DocumentForm
+    actions = ["replicate_stored_objects"]
 
     def save_model(self, request, obj, form, change):
         e = DocEvent.objects.create(
@@ -94,6 +101,22 @@ class DocumentAdmin(admin.ModelAdmin):
 
     def state(self, instance):
         return self.get_state()
+
+    @admin.action(description="Replicate related blobs")
+    def replicate_stored_objects(self, request, queryset: QuerySet[Document]):
+        doc_count = 0
+        stored_obj_count = 0
+        for doc in queryset.all():
+            doc_count += 1
+            if isinstance(doc, Document):
+                stored_obj_count += replicate_stored_objects_for_document(doc)
+        self.message_user(
+            request,
+            (
+                f"Queued replication of a total of {stored_obj_count} StoredObject(s) "
+                f"for {doc_count} Document(s)"
+            )
+        )
 
 admin.site.register(Document, DocumentAdmin)
 
@@ -206,6 +229,10 @@ class SubmissionDocEventAdmin(DocEventAdmin):
     raw_id_fields = DocEventAdmin.raw_id_fields + ["submission"]
 admin.site.register(SubmissionDocEvent, SubmissionDocEventAdmin)
 
+class RpcAssignmentDocEventAdmin(DocEventAdmin):
+    search_fields = DocEventAdmin.search_fields + ["assignments"]
+admin.site.register(RpcAssignmentDocEvent, RpcAssignmentDocEventAdmin)
+
 class DocumentUrlAdmin(admin.ModelAdmin):
     list_display = ['id', 'doc', 'tag', 'url', 'desc', ]
     search_fields = ['doc__name', 'url', ]
@@ -232,16 +259,31 @@ class StoredObjectAdmin(admin.ModelAdmin):
     ]
     search_fields = ['name', 'doc_name', 'doc_rev']
     list_display_links = ['name']
+    actions = ["replicate_stored_object"]
 
     @admin.display(boolean=True, description="Deleted?", ordering="deleted")
     def is_deleted(self, instance):
         return instance.deleted is not None
-    
+
+    @admin.action(description="Replicate related blobs")
+    def replicate_stored_object(self, request, queryset: QuerySet[StoredObject]):
+        stored_obj_count = 0
+        for stored_object in queryset.all():
+            if isinstance(stored_object, StoredObject):
+                force_replication(kind=stored_object.store, name=stored_object.name)
+                stored_obj_count += 1
+        self.message_user(
+            request,
+            f"Queued replication of a total of {stored_obj_count} StoredObject(s)",
+        )
+
 
 admin.site.register(StoredObject, StoredObjectAdmin)
 
 class RfcAuthorAdmin(admin.ModelAdmin):
+    # the email field in the list_display/readonly_fields works through a @property
     list_display = ['id', 'document', 'titlepage_name', 'person', 'email', 'affiliation', 'country', 'order']
-    search_fields = ['document__name', 'titlepage_name', 'person__name', 'email__address', 'affiliation', 'country']
-    raw_id_fields = ["document", "person", "email"]
+    search_fields = ['document__name', 'titlepage_name', 'person__name', 'person__email__address', 'affiliation', 'country']
+    raw_id_fields = ["document", "person"]
+    readonly_fields = ["email"]
 admin.site.register(RfcAuthor, RfcAuthorAdmin)

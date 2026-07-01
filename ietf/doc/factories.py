@@ -311,6 +311,12 @@ class NewRevisionDocEventFactory(DocEventFactory):
     def desc(self):
          return 'New version available %s-%s'%(self.doc.name,self.rev)
 
+class PublishedRfcDocEventFactory(DocEventFactory):
+    class Meta:
+        model = DocEvent
+    type = "published_rfc"
+    doc = factory.SubFactory(WgRfcFactory)
+
 class StateDocEventFactory(DocEventFactory):
     class Meta:
         model = StateDocEvent
@@ -391,7 +397,6 @@ class RfcAuthorFactory(factory.django.DjangoModelFactory):
         lambda obj: " ".join([obj.person.initials(), obj.person.last_name()])
     )
     person = factory.SubFactory('ietf.person.factories.PersonFactory')
-    email = factory.LazyAttribute(lambda obj: obj.person.email())
     affiliation = factory.Faker('company')
     order = factory.LazyAttribute(lambda o: o.document.rfcauthor_set.count() + 1)
 

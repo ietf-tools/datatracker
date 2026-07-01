@@ -57,5 +57,8 @@
     "python.testing.pytestEnabled": false,
     "python.testing.unittestEnabled": false,
     "python.linting.enabled": true,
-    "python.terminal.shellIntegration.enabled": false
+    "python.terminal.shellIntegration.enabled": false,
+    "vs-kubernetes": {
+        "disable-linters": ["resource-limits"]
+    }
 }

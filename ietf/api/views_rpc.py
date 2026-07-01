@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.conf import settings
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import mixins, parsers, serializers, viewsets, status
 from rest_framework.decorators import action
@@ -32,13 +32,23 @@ from ietf.api.serializers_rpc import (
     EmailPersonSerializer,
     RfcWithAuthorsSerializer,
     DraftWithAuthorsSerializer,
-    NotificationAckSerializer, RfcPubSerializer, RfcFileSerializer,
+    NotificationAckSerializer,
+    RfcPubSerializer,
+    RfcFileSerializer,
     EditableRfcSerializer,
 )
-from ietf.doc.models import Document, DocHistory, RfcAuthor
+from ietf.doc.models import Document, DocHistory, RfcAuthor, DocEvent
 from ietf.doc.serializers import RfcAuthorSerializer
 from ietf.doc.storage_utils import remove_from_storage, store_file, exists_in_storage
+from ietf.doc.tasks import (
+    signal_update_rfc_metadata_task,
+    rebuild_reference_relations_task,
+    trigger_red_precomputer_task,
+    update_rfc_searchindex_task,
+)
 from ietf.person.models import Email, Person
+from ietf.sync.rfcindex import mark_rfcindex_as_dirty
+from ietf.sync.tasks import process_rpc_queue_task, update_rfc_json_task
 
 
 class Conflict(APIException):
@@ -203,19 +213,19 @@ class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         Those queries overreturn - there may be things, particularly not from the IETF stream that are already in the queue.
         """
         ietf_docs = Q(states__type_id="draft-iesg", states__slug__in=["ann"])
-        irtf_iab_ise_docs = Q(
+        irtf_iab_ise_editorial_docs = Q(
             states__type_id__in=[
                 "draft-stream-iab",
                 "draft-stream-irtf",
                 "draft-stream-ise",
+                "draft-stream-editorial",
             ],
             states__slug__in=["rfc-edit"],
         )
-        # TODO: Need a way to talk about editorial stream docs
         docs = (
             self.get_queryset()
             .filter(type_id="draft")
-            .filter(ietf_docs | irtf_iab_ise_docs)
+            .filter(ietf_docs | irtf_iab_ise_editorial_docs)
         )
         serializer = self.get_serializer(docs, many=True)
         return Response(serializer.data)
@@ -278,6 +288,18 @@ class RfcViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     lookup_field = "rfc_number"
     serializer_class = EditableRfcSerializer
 
+    def perform_update(self, serializer):
+        DocEvent.objects.create(
+            doc=serializer.instance,
+            rev=serializer.instance.rev,
+            by=Person.objects.get(name="(System)"),
+            type="sync_from_rfc_editor",
+            desc="Metadata update from RFC Editor",
+        )
+        super().perform_update(serializer)
+        rfc_number = serializer.instance.rfc_number
+        transaction.on_commit(lambda: update_rfc_json_task.delay([rfc_number]))
+
     @action(detail=False, serializer_class=OriginalStreamSerializer)
     def rfc_original_stream(self, request):
         rfcs = self.get_queryset().annotate(
@@ -327,9 +349,10 @@ class DraftsByNamesView(APIView):
 
 class RfcAuthorViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for RfcAuthor model
-    
+
     Router needs to provide rfc_number as a kwarg
     """
+
     api_key_endpoint = "ietf.api.views_rpc"
 
     queryset = RfcAuthor.objects.all()
@@ -348,43 +371,10 @@ class RfcAuthorViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
 
-class RfcPubNotificationView(APIView):
-    api_key_endpoint = "ietf.api.views_rpc"
-
-    @extend_schema(
-        operation_id="notify_rfc_published",
-        summary="Notify datatracker of RFC publication",
-        request=RfcPubSerializer,
-        responses=NotificationAckSerializer,
-    )
-    def post(self, request):
-        serializer = RfcPubSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        # Create RFC
-        try:
-            serializer.save()
-        except IntegrityError as err:
-            if Document.objects.filter(
-                rfc_number=serializer.validated_data["rfc_number"]
-            ):
-                raise serializers.ValidationError(
-                    "RFC with that number already exists",
-                    code="rfc-number-in-use",
-                )
-            raise serializers.ValidationError(
-                f"Unable to publish: {err}",
-                code="unknown-integrity-error",
-            )
-        return Response(NotificationAckSerializer().data)
-
-
-class RfcPubFilesView(APIView):
-    api_key_endpoint = "ietf.api.views_rpc"
-    parser_classes = [parsers.MultiPartParser]
-
-    def _fs_destination(self, filename: str | Path) -> Path:
+class DestinationHelperMixin:
+    def fs_destination(self, filename: str | Path) -> Path:
         """Destination for an uploaded RFC file in the filesystem
-        
+
         Strips any path components in filename and returns an absolute Path.
         """
         rfc_path = Path(settings.RFC_PATH)
@@ -394,9 +384,9 @@ class RfcPubFilesView(APIView):
             return rfc_path / "prerelease" / filename.name
         return rfc_path / filename.name
 
-    def _blob_destination(self, filename: str | Path) -> str:
+    def blob_destination(self, filename: str | Path) -> str:
         """Destination name for an uploaded RFC file in the blob store
-        
+
         Strips any path components in filename and returns an absolute Path.
         """
         filename = Path(filename)  # could potentially have directory components
@@ -410,6 +400,76 @@ class RfcPubFilesView(APIView):
                 f"Extension does not begin with '.'!? ({filename})",
             )
         return f"{file_type}/{filename.name}"
+
+
+class RfcPubNotificationView(DestinationHelperMixin, APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
+
+    @extend_schema(
+        operation_id="notify_rfc_published",
+        summary="Notify datatracker of RFC publication",
+        request=RfcPubSerializer,
+        responses=NotificationAckSerializer,
+    )
+    def post(self, request):
+        serializer = RfcPubSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        # Check blobstore & filesystem for conflicts
+        rfc_number = serializer.validated_data["rfc_number"]
+        dest_stem = f"rfc{rfc_number}"
+        blob_kind = "rfc"
+        possible_rfc_files = [
+            self.fs_destination(dest_stem + ext)
+            for ext in RfcFileSerializer.allowed_extensions
+        ]
+        possible_rfc_blobs = [
+            self.blob_destination(dest_stem + ext)
+            for ext in RfcFileSerializer.allowed_extensions
+        ]
+        for possible_existing_file in possible_rfc_files:
+            if possible_existing_file.exists():
+                raise Conflict(
+                    "File(s) already exist for this RFC",
+                    code="files-exist",
+                )
+        for possible_existing_blob in possible_rfc_blobs:
+            if exists_in_storage(kind=blob_kind, name=possible_existing_blob):
+                raise Conflict(
+                    "Blob(s) already exist for this RFC",
+                    code="blobs-exist",
+                )
+        # Create RFC
+        try:
+            rfc = serializer.save()
+        except IntegrityError as err:
+            if Document.objects.filter(
+                rfc_number=serializer.validated_data["rfc_number"]
+            ):
+                raise serializers.ValidationError(
+                    "RFC with that number already exists",
+                    code="rfc-number-in-use",
+                )
+            raise serializers.ValidationError(
+                f"Unable to publish: {err}",
+                code="unknown-integrity-error",
+            )
+        rfc_number_list = [rfc.rfc_number]
+        rfc_number_list.extend(
+            [d.rfc_number for d in rfc.related_that_doc(("updates", "obs"))]
+        )
+        rfc_number_list = sorted(set(rfc_number_list))
+        signal_update_rfc_metadata_task.delay(rfc_number_list=rfc_number_list)
+        related_numbers = sorted(
+            {d.rfc_number for d in rfc.related_that_doc(("updates", "obs"))}
+        )
+        if related_numbers:
+            transaction.on_commit(lambda: update_rfc_json_task.delay(related_numbers))
+        return Response(NotificationAckSerializer().data)
+
+
+class RfcPubFilesView(DestinationHelperMixin, APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
+    parser_classes = [parsers.MultiPartParser]
 
     @extend_schema(
         operation_id="upload_rfc_files",
@@ -433,11 +493,11 @@ class RfcPubFilesView(APIView):
 
         # List of files that might exist for an RFC
         possible_rfc_files = [
-            self._fs_destination(dest_stem + ext)
+            self.fs_destination(dest_stem + ext)
             for ext in serializer.allowed_extensions
         ]
         possible_rfc_blobs = [
-            self._blob_destination(dest_stem + ext)
+            self.blob_destination(dest_stem + ext)
             for ext in serializer.allowed_extensions
         ]
         if not replace:
@@ -449,9 +509,7 @@ class RfcPubFilesView(APIView):
                         code="files-exist",
                     )
             for possible_existing_blob in possible_rfc_blobs:
-                if exists_in_storage(
-                    kind=blob_kind, name=possible_existing_blob
-                ):
+                if exists_in_storage(kind=blob_kind, name=possible_existing_blob):
                     raise Conflict(
                         "Blob(s) already exist for this RFC",
                         code="blobs-exist",
@@ -484,13 +542,13 @@ class RfcPubFilesView(APIView):
                 with ftm.open("rb") as f:
                     store_file(
                         kind=blob_kind,
-                        name=self._blob_destination(ftm),
+                        name=self.blob_destination(ftm),
                         file=f,
                         doc_name=rfc.name,
                         doc_rev=rfc.rev,  # expect blank, but match whatever it is
                         mtime=mtime,
                     )
-                destination = self._fs_destination(ftm)
+                destination = self.fs_destination(ftm)
                 if (
                     settings.SERVER_MODE != "production"
                     and not destination.parent.exists()
@@ -498,4 +556,52 @@ class RfcPubFilesView(APIView):
                     destination.parent.mkdir()
                 shutil.move(ftm, destination)
 
+        # Trigger red precomputer
+        needs_updating = [rfc.rfc_number]
+        for rel in rfc.relateddocument_set.filter(
+            relationship_id__in=["obs", "updates"]
+        ):
+            needs_updating.append(rel.target.rfc_number)
+        trigger_red_precomputer_task.delay(rfc_number_list=sorted(needs_updating))
+        # Trigger search index update
+        update_rfc_searchindex_task.delay(rfc.rfc_number)
+        # Trigger reference relation srebuild
+        rebuild_reference_relations_task.delay(doc_names=[rfc.name])
+
         return Response(NotificationAckSerializer().data)
+
+
+class RfcIndexView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
+
+    @extend_schema(
+        operation_id="refresh_rfc_index",
+        summary="Refresh rfc-index files",
+        description="Requests creation of various index files.",
+        responses={202: None},
+        request=None,
+    )
+    def post(self, request):
+        mark_rfcindex_as_dirty()
+        return Response(status=202)
+
+
+class RpcQueueDataSerializer(serializers.Serializer):
+    data = serializers.JSONField()
+
+
+class ProcessRpcQueueView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
+
+    @extend_schema(
+        operation_id="process_rpc_queue",
+        summary="Process the provided RPC queue",
+        description="Schedules parsing the provided queue to update documents with change dqueue data",
+        responses={202: None},
+        request=RpcQueueDataSerializer,
+    )
+    def post(self, request):
+        serializer = RpcQueueDataSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        process_rpc_queue_task.delay(serializer.validated_data["data"])
+        return Response(status=202)

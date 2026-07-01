@@ -107,9 +107,9 @@ from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments, bulk_
 from ietf.meeting.utils import preprocess_meeting_important_dates
 from ietf.meeting.utils import new_doc_for_session, write_doc_for_session
 from ietf.meeting.utils import get_activity_stats, post_process, create_recording, delete_recording
-from ietf.meeting.utils import participants_for_meeting, generate_bluesheet, bluesheet_data, save_bluesheet
+from ietf.meeting.utils import generate_bluesheet, bluesheet_data, save_bluesheet
 from ietf.message.utils import infer_message
-from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
+from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName, CountryName
 from ietf.utils import markdown
 from ietf.utils.decorators import require_api_key
 from ietf.utils.hedgedoc import Note, NoteError
@@ -4812,15 +4812,45 @@ def proceedings_attendees(request, num=None):
     template = None
     registrations = None
 
+    stats = None
+    chart_data = None
+
     if int(meeting.number) >= 118:
-        checked_in, attended = participants_for_meeting(meeting)
-        regs = list(Registration.objects.onsite().filter(meeting__number=num, checkedin=True))
+        onsite, remote = meeting.get_attendees()
+        onsite_count = len(onsite)
+        remote_count = len(remote)
+        onsite_pks = frozenset(p.pk for p in onsite)
+        remote_pks = frozenset(p.pk for p in remote)
 
-        for reg in Registration.objects.remote().filter(meeting__number=num).select_related('person'):
-            if reg.person.pk in attended and reg.person.pk not in checked_in:
-                regs.append(reg)
-
+        regs = [
+            reg
+            for reg in Registration.objects.onsite()
+            .filter(meeting__number=num)
+            .select_related("person")
+            if reg.person.pk in onsite_pks
+        ] + [
+            reg
+            for reg in Registration.objects.remote()
+            .filter(meeting__number=num)
+            .select_related("person")
+            if reg.person.pk in remote_pks
+        ]
         registrations = sorted(regs, key=lambda x: (x.last_name, x.first_name))
+
+        country_codes = [r.country_code for r in registrations if r.country_code]
+        stats = {
+            'total': onsite_count + remote_count,
+            'onsite': onsite_count,
+            'remote': remote_count,
+        }
+
+        code_to_name = dict(CountryName.objects.values_list('slug', 'name'))
+        country_counts = Counter(code_to_name.get(c, c) for c in country_codes).most_common()
+
+        chart_data = {
+            'type': [['Onsite', onsite_count], ['Remote', remote_count]],
+            'countries': country_counts,
+        }
     else:
         overview_template = "/meeting/proceedings/%s/attendees.html" % meeting.number
         try:
@@ -4832,6 +4862,8 @@ def proceedings_attendees(request, num=None):
         'meeting': meeting,
         'registrations': registrations,
         'template': template,
+        'stats': stats,
+        'chart_data': chart_data,
     })
 
 def proceedings_overview(request, num=None):
@@ -5708,6 +5740,52 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                    'existing_doc' : existing_doc,
                    'form': form,
                   })
+
+
+@role_required("Secretariat")
+def notify_meetecho_of_all_slides(request, num, acronym):
+    """Notify meetecho of state of all slides for the group
+
+    Respects the usual notification window around each session. Meetecho will ignore
+    notices outside that window anyway, so no sense sending them.
+    """
+    meeting = get_meeting(num=num, type_in=None)  # raises 404
+    if request.method != "POST":
+        return HttpResponseNotAllowed(
+            content="Method not allowed",
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+            permitted_methods=("POST",),
+        )
+    scheduled_sessions = [
+        session
+        for session in get_sessions(meeting.number, acronym)
+        if session.current_status == "sched"
+    ]
+    sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+    updated = []
+    for session in scheduled_sessions:
+        if sm.send_update(session):
+            updated.append(session)
+    if len(updated) > 0:
+        messages.success(
+            request,
+            f"Notified Meetecho about slides for {','.join(str(s) for s in updated)}",
+        )
+    elif sm.slides_notify_time is not None:
+        messages.warning(
+            request,
+            "No sessions were eligible for Meetecho slides update. Updates are "
+            f"only sent within {sm.slides_notify_time} before or after the session.",
+        )
+    else:
+        messages.warning(
+            request,
+            "No sessions were eligible for Meetecho slides update. Updates are "
+            "currently disabled.",
+        )
+    return redirect(
+        "ietf.meeting.views.session_details", num=meeting.number, acronym=acronym
+    )
 
 
 def import_session_minutes(request, session_id, num):

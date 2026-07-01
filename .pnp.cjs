@@ -42,6 +42,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@fullcalendar/luxon3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.11"],\
             ["@fullcalendar/timegrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.11"],\
             ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.11"],\
+            ["@kurkle/color", "npm:0.3.1"],\
             ["@parcel/optimizer-data-url", "npm:2.12.0"],\
             ["@parcel/transformer-inline-string", "npm:2.12.0"],\
             ["@parcel/transformer-sass", "npm:2.12.0"],\
@@ -56,6 +57,9 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["browserlist", "npm:1.0.1"],\
             ["c8", "npm:9.1.0"],\
             ["caniuse-lite", "npm:1.0.30001603"],\
+            ["chart.js", "npm:4.5.1"],\
+            ["chartjs-plugin-autocolors", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:0.3.1"],\
+            ["chartjs-plugin-zoom", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.2.0"],\
             ["d3", "npm:7.9.0"],\
             ["eslint", "npm:8.57.0"],\
             ["eslint-config-standard", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:17.1.0"],\
@@ -879,6 +883,22 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/@juggle-resize-observer-npm-3.3.1-f36d80a4f0-ddabc40442.zip/node_modules/@juggle/resize-observer/",\
           "packageDependencies": [\
             ["@juggle/resize-observer", "npm:3.3.1"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["@kurkle/color", [\
+        ["npm:0.3.1", {\
+          "packageLocation": "./.yarn/cache/@kurkle-color-npm-0.3.1-174f3d038c-e6be5c081b.zip/node_modules/@kurkle/color/",\
+          "packageDependencies": [\
+            ["@kurkle/color", "npm:0.3.1"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:0.3.4", {\
+          "packageLocation": "./.yarn/cache/@kurkle-color-npm-0.3.4-fbd637031f-b95c6abe02.zip/node_modules/@kurkle/color/",\
+          "packageDependencies": [\
+            ["@kurkle/color", "npm:0.3.4"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -2616,6 +2636,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
+      ["@types/hammerjs", [\
+        ["npm:2.0.46", {\
+          "packageLocation": "./.yarn/cache/@types-hammerjs-npm-2.0.46-de99d4d9d1-caba6ec788.zip/node_modules/@types/hammerjs/",\
+          "packageDependencies": [\
+            ["@types/hammerjs", "npm:2.0.46"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
       ["@types/istanbul-lib-coverage", [\
         ["npm:2.0.4", {\
           "packageLocation": "./.yarn/cache/@types-istanbul-lib-coverage-npm-2.0.4-734954bb56-a25d7589ee.zip/node_modules/@types/istanbul-lib-coverage/",\
@@ -3541,6 +3570,66 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [\
             ["character-parser", "npm:2.2.0"],\
             ["is-regex", "npm:1.1.4"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["chart.js", [\
+        ["npm:4.5.1", {\
+          "packageLocation": "./.yarn/cache/chart.js-npm-4.5.1-97698d58cc-34b35b3736.zip/node_modules/chart.js/",\
+          "packageDependencies": [\
+            ["chart.js", "npm:4.5.1"],\
+            ["@kurkle/color", "npm:0.3.4"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["chartjs-plugin-autocolors", [\
+        ["npm:0.3.1", {\
+          "packageLocation": "./.yarn/cache/chartjs-plugin-autocolors-npm-0.3.1-7e93d38139-de4f87b5bb.zip/node_modules/chartjs-plugin-autocolors/",\
+          "packageDependencies": [\
+            ["chartjs-plugin-autocolors", "npm:0.3.1"]\
+          ],\
+          "linkType": "SOFT"\
+        }],\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:0.3.1", {\
+          "packageLocation": "./.yarn/__virtual__/chartjs-plugin-autocolors-virtual-6e228c1a1e/0/cache/chartjs-plugin-autocolors-npm-0.3.1-7e93d38139-de4f87b5bb.zip/node_modules/chartjs-plugin-autocolors/",\
+          "packageDependencies": [\
+            ["chartjs-plugin-autocolors", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:0.3.1"],\
+            ["@kurkle/color", "npm:0.3.1"],\
+            ["@types/chart.js", null],\
+            ["@types/kurkle__color", null],\
+            ["chart.js", "npm:4.5.1"]\
+          ],\
+          "packagePeers": [\
+            "@kurkle/color",\
+            "@types/chart.js",\
+            "@types/kurkle__color",\
+            "chart.js"\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["chartjs-plugin-zoom", [\
+        ["npm:2.2.0", {\
+          "packageLocation": "./.yarn/cache/chartjs-plugin-zoom-npm-2.2.0-85aea0b81e-a540e38340.zip/node_modules/chartjs-plugin-zoom/",\
+          "packageDependencies": [\
+            ["chartjs-plugin-zoom", "npm:2.2.0"]\
+          ],\
+          "linkType": "SOFT"\
+        }],\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.2.0", {\
+          "packageLocation": "./.yarn/__virtual__/chartjs-plugin-zoom-virtual-45332d2c47/0/cache/chartjs-plugin-zoom-npm-2.2.0-85aea0b81e-a540e38340.zip/node_modules/chartjs-plugin-zoom/",\
+          "packageDependencies": [\
+            ["chartjs-plugin-zoom", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.2.0"],\
+            ["@types/chart.js", null],\
+            ["@types/hammerjs", "npm:2.0.46"],\
+            ["chart.js", "npm:4.5.1"],\
+            ["hammerjs", "npm:2.0.8"]\
+          ],\
+          "packagePeers": [\
+            "@types/chart.js",\
+            "chart.js"\
           ],\
           "linkType": "HARD"\
         }]\
@@ -5705,6 +5794,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/graphemer-npm-1.4.0-0627732d35-bab8f0be9b.zip/node_modules/graphemer/",\
           "packageDependencies": [\
             ["graphemer", "npm:1.4.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["hammerjs", [\
+        ["npm:2.0.8", {\
+          "packageLocation": "./.yarn/cache/hammerjs-npm-2.0.8-f656ba2573-b092da7d15.zip/node_modules/hammerjs/",\
+          "packageDependencies": [\
+            ["hammerjs", "npm:2.0.8"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -8326,6 +8424,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@fullcalendar/luxon3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.11"],\
             ["@fullcalendar/timegrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.11"],\
             ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.11"],\
+            ["@kurkle/color", "npm:0.3.1"],\
             ["@parcel/optimizer-data-url", "npm:2.12.0"],\
             ["@parcel/transformer-inline-string", "npm:2.12.0"],\
             ["@parcel/transformer-sass", "npm:2.12.0"],\
@@ -8340,6 +8439,9 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["browserlist", "npm:1.0.1"],\
             ["c8", "npm:9.1.0"],\
             ["caniuse-lite", "npm:1.0.30001603"],\
+            ["chart.js", "npm:4.5.1"],\
+            ["chartjs-plugin-autocolors", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:0.3.1"],\
+            ["chartjs-plugin-zoom", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.2.0"],\
             ["d3", "npm:7.9.0"],\
             ["eslint", "npm:8.57.0"],\
             ["eslint-config-standard", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:17.1.0"],\

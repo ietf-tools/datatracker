@@ -14,7 +14,7 @@ import os
 import shutil
 import tempfile
 from ietf.settings import *                                          # pyflakes:ignore
-from ietf.settings import ORIG_AUTH_PASSWORD_VALIDATORS
+from ietf.settings import ORIG_AUTH_PASSWORD_VALIDATORS, STORAGES
 import debug                            # pyflakes:ignore
 debug.debug = True
 
@@ -114,3 +114,13 @@ try:
     AUTH_PASSWORD_VALIDATORS = ORIG_AUTH_PASSWORD_VALIDATORS
 except NameError:
     pass
+
+# Use InMemoryStorage for red bucket and r2-rfc storages
+STORAGES["red_bucket"] = {
+    "BACKEND": "django.core.files.storage.InMemoryStorage",
+    "OPTIONS": {"location": "red_bucket"},
+}
+STORAGES["r2-rfc"] = {
+    "BACKEND": "django.core.files.storage.InMemoryStorage",
+    "OPTIONS": {"location": "r2-rfc"},
+}

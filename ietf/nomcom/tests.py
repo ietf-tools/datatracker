@@ -1190,8 +1190,8 @@ class ReminderTest(TestCase):
         today = datetime_today()
         t_minus_3 = today - datetime.timedelta(days=3)
         t_minus_4 = today - datetime.timedelta(days=4)
-        e1 = EmailFactory(address="nominee1@example.org", person=PersonFactory(name="Nominee 1"), origin='test')
-        e2 = EmailFactory(address="nominee2@example.org", person=PersonFactory(name="Nominee 2"), origin='test')
+        e1 = EmailFactory(address="nominee1@example.org", person__name="Nominee 1", origin='test', primary=True)
+        e2 = EmailFactory(address="nominee2@example.org", person__name="Nominee 2", origin='test', primary=True)
         n = make_nomineeposition(self.nomcom,e1.person,gen,None)
         np = n.nomineeposition_set.get(position=gen)
         np.time = t_minus_3
@@ -1639,6 +1639,20 @@ class FeedbackLastSeenTests(TestCase):
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
         self.assertEqual( len(q('.text-bg-success')), 0 )
+
+    def test_feedback_index_sort_keys(self):
+        url = reverse('ietf.nomcom.views.view_feedback', kwargs={'year': self.nc.year()})
+        login_testing_unauthorized(self, self.member.user.username, url)
+        provide_private_key_to_test_client(self)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        # Feedback count cells must carry a numeric data-sort-number so that
+        # a "New" badge appearing before the count doesn't corrupt the sort key.
+        sort_cells = q('td[data-sort-number]')
+        self.assertTrue(len(sort_cells) > 0)
+        for cell in sort_cells.items():
+            self.assertRegex(cell.attr('data-sort-number'), r'^\d+$')
 
 class NewActiveNomComTests(TestCase):
 
@@ -2528,7 +2542,6 @@ class EligibilityUnitTests(TestCase):
             document=rfc,
             person=people[0],
             titlepage_name="P. Zero",
-            email=people[0].email_set.first(),
         )
         self.assertCountEqual(
             get_qualified_author_queryset(base_qs, now - 5 * one_year, now),

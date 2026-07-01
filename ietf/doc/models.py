@@ -13,6 +13,7 @@ import rfc2html
 from io import BufferedReader
 from pathlib import Path
 
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from lxml import etree
 from typing import Optional, Protocol, TYPE_CHECKING, Union
@@ -51,6 +52,7 @@ from ietf.person.models import Email, Person
 from ietf.person.utils import get_active_balloters
 from ietf.utils import log
 from ietf.utils.decorators import memoize
+from ietf.utils.text import decode_document_content
 from ietf.utils.validators import validate_no_control_chars
 from ietf.utils.mail import formataddr
 from ietf.utils.models import ForeignKey
@@ -109,6 +111,15 @@ IESG_CHARTER_ACTIVE_STATES = ("intrev", "extrev", "iesgrev")
 IESG_STATCHG_CONFLREV_ACTIVE_STATES = ("iesgeval", "defer")
 IESG_SUBSTATE_TAGS = ('ad-f-up', 'need-rev', 'extpty')
 
+
+def validate_doc_keywords(value):
+    if (
+        not isinstance(value, list | tuple | set) 
+        or not all(isinstance(elt, str) for elt in value)
+    ):
+        raise ValidationError("Value must be an array of strings")
+
+
 class DocumentInfo(models.Model):
     """Any kind of document.  Draft, RFC, Charter, IPR Statement, Liaison Statement"""
     time = models.DateTimeField(default=timezone.now) # should probably have auto_now=True
@@ -142,6 +153,18 @@ class DocumentInfo(models.Model):
     uploaded_filename = models.TextField(blank=True)
     note = models.TextField(blank=True)
     rfc_number = models.PositiveIntegerField(blank=True, null=True)  # only valid for type="rfc"
+    keywords = models.JSONField(
+        default=list,
+        max_length=1000,
+        validators=[validate_doc_keywords],
+        blank=True,
+    )
+
+    @property
+    def doi(self) -> str | None:
+        if self.type_id == "rfc" and self.rfc_number is not None:
+            return f"{settings.IETF_DOI_PREFIX}/RFC{self.rfc_number}"
+        return None
 
     def file_extension(self):
         if not hasattr(self, '_cached_extension'):
@@ -321,6 +344,11 @@ class DocumentInfo(models.Model):
             setattr(self, cache_attr, href)
         return getattr(self, cache_attr)
 
+    def refresh_from_db(self, using=None, fields=None, **kwargs):
+        super().refresh_from_db(using=using, fields=fields, **kwargs)
+        self.state_cache = None
+        self._cached_state_slug = {}
+
     def set_state(self, state):
         """Switch state type implicit in state to state. This just
         sets the state, doesn't log the change."""
@@ -466,11 +494,12 @@ class DocumentInfo(models.Model):
 
     def author_list(self):
         """List of author emails"""
-        author_qs = (
-            self.rfcauthor_set
-            if self.type_id == "rfc" and self.rfcauthor_set.exists()
-            else self.documentauthor_set
-        ).select_related("email").order_by("order")
+        if self.type_id == "rfc" and self.rfcauthor_set.exists():
+            author_qs = self.rfcauthor_set.select_related("person").order_by("order")
+        else:
+            author_qs = self.documentauthor_set.select_related("email").order_by(
+                "order"
+            )
         best_addresses = []
         for author in author_qs:
             if author.email:
@@ -618,19 +647,7 @@ class DocumentInfo(models.Model):
         except IOError as e:
             log.log(f"Error reading text for {path}: {e}")
             return None
-        text = None
-        try:
-            text = raw.decode('utf-8')
-        except UnicodeDecodeError:
-            for back in range(1,4):
-                try:
-                    text = raw[:-back].decode('utf-8')
-                    break
-                except UnicodeDecodeError:
-                    pass
-            if text is None:
-                text = raw.decode('latin-1')
-        return text
+        return decode_document_content(raw)
 
     def text_or_error(self):
         return self.text() or "Error; cannot read '%s'"%self.get_base_name()
@@ -937,7 +954,6 @@ class RfcAuthor(models.Model):
     titlepage_name = models.CharField(max_length=128, blank=False)
     is_editor = models.BooleanField(default=False)
     person = ForeignKey(Person, null=True, blank=True, on_delete=models.PROTECT)
-    email = ForeignKey(Email, help_text="Email address used by author for submission", blank=True, null=True, on_delete=models.PROTECT)
     affiliation = models.CharField(max_length=100, blank=True, help_text="Organization/company used by author for submission")
     country = models.CharField(max_length=255, blank=True, help_text="Country used by author for submission")
     order = models.IntegerField(default=1)
@@ -950,6 +966,16 @@ class RfcAuthor(models.Model):
         indexes=[
             models.Index(fields=["document", "order"])
         ]
+
+    @property
+    def email(self) -> Email | None:
+        return self.person.email() if self.person else None
+    
+    def format_for_titlepage(self):
+        if self.is_editor:
+            return f"{self.titlepage_name}, Ed."
+        return self.titlepage_name
+
 
 class DocumentAuthorInfo(models.Model):
     person = ForeignKey(Person)
@@ -1143,6 +1169,22 @@ class Document(StorableMixin, DocumentInfo):
         e = self.latest_event(ReviewRequestDocEvent, type="closed_review_request", review_request=review_req)
         return e.time if e and e.time else None
 
+    @property
+    def area(self) -> Group | None:
+        """Get area for document, if one exists
+        
+        None for non-IETF-stream documents. N.b., this is stricter than Group.area() and
+        uses different logic from Document.area_acronym().
+        """
+        if self.stream_id != "ietf":
+            return None
+        if self.group is None:
+            return None
+        parent = self.group.parent
+        if parent.type_id == "area":
+            return parent
+        return None
+
     def area_acronym(self):
         g = self.group
         if g:
@@ -1238,19 +1280,21 @@ class Document(StorableMixin, DocumentInfo):
         s = s.first()
         return s
 
+    def pub_datetime(self):
+        """Get the publication datetime of this document"""
+        if self.type_id == "rfc":
+            event = self.latest_event(type='published_rfc')
+        else:
+            event = self.latest_event(type='new_revision')
+        return event.time.astimezone(RPC_TZINFO) if event else None
+
     def pub_date(self):
         """Get the publication date for this document
 
         This is the rfc publication date for RFCs, and the new-revision date for other documents.
         """
-        if self.type_id == "rfc":
-            # As of Sept 2022, in ietf.sync.rfceditor.update_docs_from_rfc_index() `published_rfc` events are
-            # created with a timestamp whose date *in the PST8PDT timezone* is the official publication date
-            # assigned by the RFC editor.
-            event = self.latest_event(type='published_rfc')
-        else:
-            event = self.latest_event(type='new_revision')
-        return event.time.astimezone(RPC_TZINFO).date() if event else None
+        pub_datetime = self.pub_datetime()
+        return None if pub_datetime is None else pub_datetime.date()
 
     def is_dochistory(self):
         return False
@@ -1504,6 +1548,7 @@ EVENT_TYPES = [
     ("rfc_editor_received_announcement", "Announcement was received by RFC Editor"),
     ("requested_publication", "Publication at RFC Editor requested"),
     ("sync_from_rfc_editor", "Received updated information from RFC Editor"),
+    ("changed_rpc_assignments", "Changed RPC queue assignments"),
 
     # review
     ("requested_review", "Requested review"),
@@ -1568,6 +1613,9 @@ class StateDocEvent(DocEvent):
 
 class ConsensusDocEvent(DocEvent):
     consensus = models.BooleanField(null=True, default=None)
+
+class RpcAssignmentDocEvent(DocEvent):
+    assignments = models.TextField(blank=True)
 
 # IESG events
 class BallotType(models.Model):

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2024, All Rights Reserved
+# Copyright The IETF Trust 2009-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
@@ -43,9 +43,10 @@ from pathlib import Path
 
 from celery.result import AsyncResult
 from django.core.cache import caches
+from django.core.files.base import ContentFile
 from django.core.exceptions import PermissionDenied
 from django.db.models import Max
-from django.http import HttpResponse, Http404, HttpResponseBadRequest, JsonResponse
+from django.http import FileResponse, HttpResponse, Http404, HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
@@ -57,7 +58,7 @@ from django.contrib.staticfiles import finders
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocHistory, DocEvent, BallotDocEvent, BallotType,
-    ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
+    ConsensusDocEvent, NewRevisionDocEvent, StoredObject, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
     RelatedDocument, RelatedDocHistory)
 from ietf.doc.tasks import investigate_fragment_task
@@ -86,6 +87,7 @@ from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions,
 from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs, review_requests_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
+from ietf.doc.storage_utils import retrieve_bytes
 from ietf.utils import markup_txt, log, markdown
 from ietf.utils.draft import get_status_from_draft_text
 from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
@@ -256,7 +258,7 @@ def document_main(request, name, rev=None, document_html=False):
         interesting_relations_that, interesting_relations_that_doc = interesting_doc_relations(doc)
 
         can_edit = has_role(request.user, ("Area Director", "Secretariat"))
-        can_edit_authors = has_role(request.user, ("Secretariat"))
+        can_edit_authors = has_role(request.user, ("Secretariat")) and not doc.rfcauthor_set.exists()
 
         stream_slugs = StreamName.objects.values_list("slug", flat=True)
         # For some reason, AnonymousUser has __iter__, but is not iterable,
@@ -1285,9 +1287,7 @@ def document_bibtex(request, name, rev=None):
                     break
 
     elif doc.type_id == "rfc":
-        # This needs to be replaced with a lookup, as the mapping may change
-        # over time.
-        doi = f"10.17487/RFC{doc.rfc_number:04d}"
+        doi = doc.doi
 
     if doc.is_dochistory():
         latest_event = doc.latest_event(type='new_revision', rev=rev)
@@ -1657,7 +1657,7 @@ def document_json(request, name, rev=None):
         doc.rfcauthor_set
         if doc.type_id == "rfc" and doc.rfcauthor_set.exists()
         else doc.documentauthor_set
-    ).select_related("person", "email").order_by("order")
+    ).select_related("person").prefetch_related("person__email_set").order_by("order")
     data["authors"] = [
         {
             "name": author.titlepage_name if hasattr(author, "titlepage_name") else author.person.name,
@@ -1842,12 +1842,15 @@ def edit_authors(request, name):
                 if fh in form.fields:
                     form.fields[fh].widget = forms.HiddenInput()
 
+    doc = get_object_or_404(Document, name=name)
+    if doc.rfcauthor_set.exists():
+        return HttpResponseForbidden("Contact the RFC Editor to change RFC Author information")
+
     AuthorFormSet = forms.formset_factory(DocAuthorForm,
                                           formset=_AuthorsBaseFormSet,
                                           can_delete=True,
                                           can_order=True,
                                           extra=0)
-    doc = get_object_or_404(Document, name=name)
     
     if request.method == 'POST':
         change_basis_form = DocAuthorChangeBasisForm(request.POST)
@@ -2358,3 +2361,29 @@ def investigate(request):
             "results": results,
         },
     )
+
+def rfcxml_notprepped(request, number):
+    number = int(number)
+    if number < settings.FIRST_V3_RFC:
+        raise Http404
+    rfc = Document.objects.filter(type="rfc", rfc_number=number).first()
+    if rfc is None:
+        raise Http404
+    name = f"notprepped/rfc{number}.notprepped.xml"
+    if not StoredObject.objects.filter(name=name).exists():
+        raise Http404
+    try:
+        bytes = retrieve_bytes("rfc", name)
+    except FileNotFoundError:
+        raise Http404
+    return FileResponse(ContentFile(bytes, name=f"rfc{number}.notprepped.xml"), as_attachment=True)
+
+
+def rfcxml_notprepped_wrapper(request, number):
+    number = int(number)
+    if number < settings.FIRST_V3_RFC:
+        raise Http404
+    rfc = Document.objects.filter(type="rfc", rfc_number=number).first()
+    if rfc is None:
+        raise Http404
+    return render(request, "doc/notprepped_wrapper.html", context={"rfc": rfc})

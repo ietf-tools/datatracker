@@ -1,4 +1,4 @@
-{% autoescape off %}{{ doc.file_tag|safe }} was just expired.
+{% autoescape off %}{{ doc.file_tag|safe }} just expired.
 This Internet-Draft is in the state "{{ state }}" in the Datatracker.
 
 
