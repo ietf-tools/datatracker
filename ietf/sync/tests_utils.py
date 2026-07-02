@@ -30,6 +30,12 @@ class ExpandRfcNumberRangeListTests(TestCase):
             [1, 3, 4, 9],
         )
 
+    def test_overlapping_ranges_are_sorted_and_deduplicated(self):
+        self.assertEqual(
+            expand_rfc_number_range_list("[5,1-4,3-6,2]"),
+            [1, 2, 3, 4, 5],
+        )
+
     def test_empty_input_yields_empty_list(self):
         self.assertEqual(expand_rfc_number_range_list("[]"), [])
         self.assertEqual(expand_rfc_number_range_list(""), [])

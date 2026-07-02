@@ -38,10 +38,13 @@ def expand_rfc_number_range_list(ranges: str) -> list[int]:
     included and the right value is excluded. For example, "[1,100,1000-1004]"
     expands to [1, 100, 1000, 1001, 1002, 1003].
 
+    The returned list is sorted and deduplicated, so overlapping ranges do not
+    produce repeated numbers.
+
     Raises ValueError if the input contains anything other than positive
     integers and well-formed (non-reversed) ranges.
     """
-    numbers: list[int] = []
+    numbers: set[int] = set()
     stripped = ranges.strip()
     if stripped.startswith("[") and stripped.endswith("]"):
         stripped = stripped[1:-1]
@@ -57,10 +60,10 @@ def expand_rfc_number_range_list(ranges: str) -> list[int]:
                 raise ValueError(
                     f"'{token}' is not a valid range (start must be less than end)"
                 )
-            numbers.extend(range(start, end))
+            numbers.update(range(start, end))
         else:
-            numbers.append(_parse_positive_int(token))
-    return numbers
+            numbers.add(_parse_positive_int(token))
+    return sorted(numbers)
 
 def build_from_file_content(rfc_numbers: list[int]) -> str:
     types_to_sync = settings.RFC_FILE_TYPES + ("json",)
