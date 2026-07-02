@@ -31,7 +31,12 @@ from ietf.sync.rfcindex import (
     create_std_txt_index,
     rfcindex_is_dirty, mark_rfcindex_as_processed, mark_rfcindex_as_dirty,
 )
-from ietf.sync.utils import build_from_file_content, load_rfcs_into_blobdb, rsync_helper
+from ietf.sync.utils import (
+    build_from_file_content,
+    expand_rfc_number_range_list,
+    load_rfcs_into_blobdb,
+    rsync_helper,
+)
 from ietf.utils import log
 
 
@@ -219,6 +224,23 @@ def update_errata_from_rfceditor_task():
         if changed_numbers:
             update_rfc_json_task.delay(list(changed_numbers))
 
+@shared_task
+def update_rfc_json_by_range_list_task(ranges: str) -> None:
+    """Regenerate RFC JSON for the RFCs described by a range-list string
+
+    See expand_rfc_number_range_list() for the accepted format (e.g.
+    "[1,100,1000-1004]"). Invalid input is logged and otherwise ignored.
+    """
+    try:
+        rfc_numbers = expand_rfc_number_range_list(ranges)
+    except ValueError as e:
+        log.log(
+            f"update_rfc_json_by_range_list_task: ignoring invalid input "
+            f"'{ranges}': {e}"
+        )
+        return
+    if rfc_numbers:
+        update_rfc_json_task(rfc_numbers)
 
 @shared_task
 def update_rfc_json_task(rfc_numbers: list[int]) -> None:

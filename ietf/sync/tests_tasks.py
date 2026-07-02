@@ -536,3 +536,20 @@ class UpdateErrataFromRfcEditorTaskTests(TestCase):
         mock_update.return_value = set()
         tasks.update_errata_from_rfceditor_task()
         mock_json_delay.assert_not_called()
+
+
+class UpdateRfcJsonByRangeListTaskTests(TestCase):
+    @mock.patch("ietf.sync.tasks.update_rfc_json_task")
+    def test_expands_range_list_and_calls_update(self, mock_update):
+        tasks.update_rfc_json_by_range_list_task("[1,100,1000-1004]")
+        mock_update.assert_called_once_with([1, 100, 1000, 1001, 1002, 1003])
+
+    @mock.patch("ietf.sync.tasks.update_rfc_json_task")
+    def test_invalid_input_is_ignored(self, mock_update):
+        tasks.update_rfc_json_by_range_list_task("[5-3]")
+        mock_update.assert_not_called()
+
+    @mock.patch("ietf.sync.tasks.update_rfc_json_task")
+    def test_empty_input_does_not_call_update(self, mock_update):
+        tasks.update_rfc_json_by_range_list_task("[]")
+        mock_update.assert_not_called()

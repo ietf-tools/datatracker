@@ -14,6 +14,54 @@ from ietf.doc.storage_utils import AlreadyExistsError, store_bytes
 def rsync_helper(subprocess_arg_array: list[str]):
     subprocess.run(["/usr/bin/rsync"]+subprocess_arg_array)
 
+
+def _parse_positive_int(value: str) -> int:
+    """Parse a string as a positive (>= 1) integer, raising ValueError otherwise"""
+    token = value.strip()
+    # str.isdigit() rejects signs, whitespace, and non-digits, so anything that
+    # passes is a non-negative integer literal; guard against zero separately.
+    if not token.isdigit():
+        raise ValueError(f"'{value}' is not a positive integer")
+    number = int(token)
+    if number < 1:
+        raise ValueError(f"'{value}' is not a positive integer")
+    return number
+
+
+def expand_rfc_number_range_list(ranges: str) -> list[int]:
+    """Expand a range-list string into a list of RFC numbers
+
+    The string is a comma-separated list of tokens, optionally surrounded by a
+    pair of square brackets. Each token is either a bare positive integer or a
+    pair of positive integers separated by a hyphen. A hyphenated pair is
+    expanded following the convention of Python's range(): the left value is
+    included and the right value is excluded. For example, "[1,100,1000-1004]"
+    expands to [1, 100, 1000, 1001, 1002, 1003].
+
+    Raises ValueError if the input contains anything other than positive
+    integers and well-formed (non-reversed) ranges.
+    """
+    numbers: list[int] = []
+    stripped = ranges.strip()
+    if stripped.startswith("[") and stripped.endswith("]"):
+        stripped = stripped[1:-1]
+    for raw_token in stripped.split(","):
+        token = raw_token.strip()
+        if not token:
+            continue
+        if "-" in token:
+            start_str, _, end_str = token.partition("-")
+            start = _parse_positive_int(start_str)
+            end = _parse_positive_int(end_str)
+            if start >= end:
+                raise ValueError(
+                    f"'{token}' is not a valid range (start must be less than end)"
+                )
+            numbers.extend(range(start, end))
+        else:
+            numbers.append(_parse_positive_int(token))
+    return numbers
+
 def build_from_file_content(rfc_numbers: list[int]) -> str:
     types_to_sync = settings.RFC_FILE_TYPES + ("json",)
     lines = []
