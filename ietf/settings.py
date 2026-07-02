@@ -899,7 +899,6 @@ IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"
 IANA_SYNC_PROTOCOLS_URL = "https://www.iana.org/protocols/"
 
 RFC_EDITOR_GROUP_NOTIFICATION_EMAIL = "webmaster@rfc-editor.org"
-RFC_EDITOR_QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
 RFC_EDITOR_INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
 RFC_EDITOR_ERRATA_JSON_URL = "https://www.rfc-editor.org/errata.json"
 RFC_EDITOR_INLINE_ERRATA_URL = "https://www.rfc-editor.org/rfc/inline-errata/rfc{rfc_number}.html"
@@ -980,6 +979,10 @@ IDSUBMIT_FILE_TYPES = (
     'ps',
 )
 RFC_FILE_TYPES = IDSUBMIT_FILE_TYPES
+
+# Paths in the red bucket
+RFCINDEX_INPUT_PATH = "other/"
+RFCINDEX_OUTPUT_PATH = "other/"
 
 IDSUBMIT_MAX_DRAFT_SIZE =  {
     'txt':  2*1024*1024,  # Max size of txt draft file in bytes

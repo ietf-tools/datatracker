@@ -43,7 +43,7 @@
                             </a>
                         </td>
                         {% for fbtype_name, fbtype_count, fbtype_newflag in fb_dict.feedback %}
-                            <td>
+                            <td data-sort-number="{{ fbtype_count }}">
                                 {% if fbtype_newflag %}<span class="badge rounded-pill text-bg-success">New</span>{% endif %}
                                 {{ fbtype_count }}
                             </td>
@@ -82,7 +82,7 @@
                         </a>
                     </td>
                     {% for fbtype_name, fbtype_count, fbtype_newflag in fb_dict.feedback %}
-                        <td>
+                        <td data-sort-number="{{ fbtype_count }}">
                             {% if fbtype_newflag %}<span class="badge rounded-pill text-bg-success">New</span>{% endif %}
                             {{ fbtype_count }}
                         </td>

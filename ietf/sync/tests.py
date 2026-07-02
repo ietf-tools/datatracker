@@ -1,17 +1,11 @@
 # Copyright The IETF Trust 2012-2026, All Rights Reserved
 
-
-import os
-import io
 import json
 import datetime
 from unittest import mock
 import quopri
 import requests
 
-from dataclasses import dataclass
-
-from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import storages
 from django.urls import reverse as urlreverse
@@ -24,7 +18,6 @@ from ietf.api.views import EmailIngestionError
 from ietf.doc.factories import (
     WgDraftFactory,
     RfcFactory,
-    DocumentAuthorFactory,
     DocEventFactory,
     BcpFactory,
     WgRfcFactory,
@@ -34,15 +27,13 @@ from ietf.doc.models import (
     DocEvent,
     DeletedEvent,
     DocTagName,
-    RelatedDocument,
     State,
     StateDocEvent,
 )
 from ietf.doc.utils import add_state_change_event
-from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory
 from ietf.person.models import Person
-from ietf.sync import iana, rfceditor, tasks
+from ietf.sync import iana, tasks
 from ietf.sync.errata import (
     update_errata_from_rfceditor,
     get_errata_last_updated,
@@ -57,7 +48,6 @@ from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.models import DirtyBits
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_utils import TestCase
-from ietf.utils.timezone import date_today, RPC_TZINFO
 
 
 class IANASyncTests(TestCase):

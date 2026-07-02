@@ -1542,20 +1542,27 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
                     self.assertIn(model._meta.model_name, list(app_resources.keys()),
                         "There doesn't seem to be any API resource for model %s.models.%s"%(app.__name__,model.__name__,))
 
-    def test_serializer_to_etree_handles_nulls(self):
-        """Serializer to_etree() should handle a null character"""
+    def test_serializer_to_etree_handles_xml_invalid_control_chars(self):
+        """Serializer to_etree() must not raise ValueError for any XML-invalid control character."""
         serializer = Serializer()
+        # Ordinary strings and strings with valid whitespace must pass through unchanged.
         try:
-            serializer.to_etree("string with no nulls in it")
+            serializer.to_etree("string with no special chars")
+            serializer.to_etree("tab\there lf\nhere cr\rhere")
         except ValueError:
             self.fail("serializer.to_etree raised ValueError on an ordinary string")
-        try:
-            serializer.to_etree("string with a \x00 in it")
-        except ValueError:
-            self.fail(
-                "serializer.to_etree raised ValueError on a string "
-                "containing a null character"
-            )
+        # Every control character that XML 1.0 forbids must be escaped rather than
+        # causing a ValueError.  This is the class of characters that triggered the
+        # production exception (lxml.etree._utf8 rejects them all).
+        invalid_chars = [chr(c) for c in list(range(0x00, 0x09)) + [0x0b, 0x0c] + list(range(0x0e, 0x20))]
+        for ch in invalid_chars:
+            try:
+                serializer.to_etree(f"string with {ch!r} in it")
+            except ValueError:
+                self.fail(
+                    f"serializer.to_etree raised ValueError on a string "
+                    f"containing control character U+{ord(ch):04X}"
+                )
 
 
 class RfcdiffSupportTests(TestCase):

@@ -19,14 +19,12 @@ from ietf.doc.utils import add_state_change_event, new_state_change_event, updat
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_text
 from ietf.sync import iana
-from ietf.sync import rfceditor
 from ietf.sync.bibxml import recreate_rfc_bibxml
 from ietf.sync.errata import (
     errata_are_dirty,
     mark_errata_as_processed,
     update_errata_from_rfceditor,
 )
-from ietf.sync.rfceditor import MIN_QUEUE_RESULTS, parse_queue, update_drafts_from_queue
 from ietf.sync.rfcindex import (
     create_bcp_txt_index,
     create_fyi_txt_index,
@@ -39,92 +37,6 @@ from ietf.sync.rfcindex import (
 )
 from ietf.sync.utils import build_from_file_content, load_rfcs_into_blobdb, rsync_helper
 from ietf.utils import log
-from ietf.utils.timezone import date_today
-
-
-@shared_task
-def rfc_editor_index_update_task(full_index=False):
-    """Update metadata from the RFC index
-
-    Default is to examine only changes in the past 365 days. Call with full_index=True to update
-    the full RFC index.
-
-    According to comments on the original script, a year's worth took about 20s on production as of
-    August 2022
-
-    The original rfc-editor-index-update script had a long-disabled provision for running the
-    rebuild_reference_relations scripts after the update. That has not been brought over
-    at all because it should be implemented as its own task if it is needed.
-    """
-    skip_date = None if full_index else date_today() - datetime.timedelta(days=365)
-    log.log(
-        "Updating document metadata from RFC index going back to {since}, from {url}".format(
-            since=skip_date if skip_date is not None else "the beginning",
-            url=settings.RFC_EDITOR_INDEX_URL,
-        )
-    )
-    try:
-        response = requests.get(
-            settings.RFC_EDITOR_INDEX_URL,
-            timeout=30,  # seconds
-        )
-    except requests.Timeout as exc:
-        log.log(f"GET request timed out retrieving RFC editor index: {exc}")
-        return  # failed
-    rfc_index_xml = response.text
-    index_data = rfceditor.parse_index(io.StringIO(rfc_index_xml))
-    try:
-        response = requests.get(
-            settings.RFC_EDITOR_ERRATA_JSON_URL,
-            timeout=30,  # seconds
-        )
-    except requests.Timeout as exc:
-        log.log(f"GET request timed out retrieving RFC editor errata: {exc}")
-        return  # failed
-    errata_data = response.json()
-    if len(index_data) < rfceditor.MIN_INDEX_RESULTS:
-        log.log("Not enough index entries, only %s" % len(index_data))
-        return  # failed
-    if len(errata_data) < rfceditor.MIN_ERRATA_RESULTS:
-        log.log("Not enough errata entries, only %s" % len(errata_data))
-        return  # failed
-    newly_published = set()
-    for rfc_number, changes, doc, rfc_published in rfceditor.update_docs_from_rfc_index(
-        index_data, errata_data, skip_older_than_date=skip_date
-    ):
-        for c in changes:
-            log.log("RFC%s, %s: %s" % (rfc_number, doc.name, c))
-        if rfc_published:
-            newly_published.add(rfc_number)
-    if len(newly_published) > 0:
-        rsync_rfcs_from_rfceditor_task.delay(list(newly_published))
-
-
-@shared_task
-def rfc_editor_queue_updates_task():
-    log.log(f"Updating RFC Editor queue states from {settings.RFC_EDITOR_QUEUE_URL}")
-    try:
-        response = requests.get(
-            settings.RFC_EDITOR_QUEUE_URL,
-            timeout=30,  # seconds
-        )
-    except requests.Timeout as exc:
-        log.log(f"GET request timed out retrieving RFC editor queue: {exc}")
-        return  # failed
-    drafts, warnings = parse_queue(io.StringIO(response.text))
-    for w in warnings:
-        log.log(f"Warning: {w}")
-
-    if len(drafts) < MIN_QUEUE_RESULTS:
-        log.log("Not enough results, only %s" % len(drafts))
-        return  # failed
-
-    changed, warnings = update_drafts_from_queue(drafts)
-    for w in warnings:
-        log.log(f"Warning: {w}")
-
-    for c in changed:
-        log.log(f"Updated {c}")
 
 
 @shared_task
