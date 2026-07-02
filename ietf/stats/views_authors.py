@@ -27,6 +27,8 @@ def get_authors_total_data_for_documents(doc_type: str = 'all', group_by: str = 
     """
 
     # Build a dynamic query set filter
+    # RfcAuthor to get country/affiliation for RFC
+    # DocumentAuthor for other documents (i.e., drafts)
     filters = Q()    
     if doc_type != 'all' and doc_type  != 'wg-draft':
         filters &= Q(document__type_id=doc_type)
@@ -183,15 +185,13 @@ def get_authors_timeline_data_for_documents(doc_type: str = 'all', group_by: str
             year_group_list = [(year, alias_map.get(group, group)) for year, group in year_group_list]
         else:
             alias_map = {}
+        # Let's define a value when there is none...
         alias_map[''] = 'Unspecified'
 
         years_set = {year for year, _ in year_group_list}
 
         for year, group in year_group_list:
-            if group is None or group == '':
-                group = 'Unspecified'
-            else:
-                group = alias_map.get(group, group)
+            group = alias_map.get(group, group)
             data_map[year][group] = data_map[year].get(group, 0) + 1
             documents_totals[group] += 1
 
