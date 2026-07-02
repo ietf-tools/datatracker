@@ -27,6 +27,8 @@ from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.person.factories import EmailFactory, PersonFactory
 from ietf.meeting.tests_models import MeetingFactory, RegistrationFactory
 from ietf.submit.factories import SubmissionFactory
+
+
 class StatisticsTests(TestCase):
     def test_stats_index(self):
         # Create a meeting as the index page needs to know the current meeting
