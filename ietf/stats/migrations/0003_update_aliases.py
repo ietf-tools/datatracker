@@ -2,13 +2,15 @@
 
 from django.db import migrations, models
 
-INITIAL_MAIN_NAMES = ['Akamai', 'Alcatel', 'Alcatel-Lucent', 'Amazon', 'Apple', 'Arista', 'Aruba', 'AT&T', 'Avaya', 'BBN', 'Boeing', 
-    'Broadcom', 'Cabletron', 
-    'CERNET', 'Check Point', 'Ciena', 'Cisco', 'DEC', 'Ericsson', 'EMC', 'Fastmail', 'France Telecom', 'Fraunhofer', 'Fujitsu', 
+INITIAL_MAIN_NAMES = ['Adibe', 'Agilent', 'Akamai', 'Alcatel', 'Alcatel-Lucent', 'Alibaba', 'Amazon', 'Apple', 'Arista', 'Aruba', 'AT&T', 'Avaya', 
+    'BBN', 'Bell Labs', 'Boeing', 'Broadcom', 'Brocade', 'BT', 'Bunyip', 'Cabletron', 
+    'CERNET', 'Check Point', 'Ciena', 'Cisco', 'Comcast', 'DEC', 'Dell', 'Ericsson', 'EMC', 
+    'F5', 'Fastmail', 'France Telecom', 'Fraunhofer', 'Fujitsu', 
     'Futurewei', 'Google', 'Hewlett-Packard', 'Hitachi', 'HPE', 'Huawei', 'IBM', 'INRIA', 'Intel', 'IEEE', 'ISODE', 'JHU', 'Juniper', 
     'KDDI', 'Lucent', 'MCI', 'Meta', 'Microsoft', 'MIT', 'Motorola', 'Mozilla',
-    'NASA', 'NEC', 'Netscape','Nokia', 'Nortel', 'NTT', 'NVIDIA', 'Oracle', 'Pantheon', 'Redback', 
-    'Qualcomm', 'Samsung', 'Siemens', 'Softbank', 'Telefonica', 'T-Mobile', 'Telia', 'Tencent',
+    'NASA', 'NEC', 'Netscape','Nokia', 'Nortel', 'NTT', 'NVIDIA', 'Oracle', 'Orange', 'Pantheon', 'Redback', 
+    'Qualcomm', 'Samsung', 'Siemens', 'SNMP Research', 'Softbank', 'Sun Microsystems', 'SURFnet', 
+    'Telefonica', 'T-Mobile', 'Telecom Italia', 'Telia', 'Tencent',
     'UUNET', 'VeriSign', 'Verizon', 'Videotron','Vodafone', 'Wellfleet', 'Xerox', 'ZTE']
 
 OBSOLETED_AFFILIATION_ALIASES = [
@@ -22,10 +24,11 @@ ADDITIONAL_AFFILIATION_ALIASES = [
     {'alias': 'Asia Pacific Network Information Centre', 'name': 'APNIC'},
     {'alias': 'ATT', 'name': 'AT&T'},
     {'alias': 'AWS', 'name': 'Amazon'},
+    {'alias': 'British Telecom', 'name': 'BT'},
     {'alias': 'BUPT', 'name': 'Beijing University of Posts and Telecommunications'},
     {'alias': 'CERT', 'name': 'US-CERT'},
     {'alias': 'CMU', 'name': 'Carnegie Mellon University'},
-    {'alias': 'Columbia University', 'name': 'Columbia University'},
+    {'alias': 'Columbia U.', 'name': 'Columbia University'},
     {'alias': 'Consultant', 'name': 'Independent'},
     {'alias': 'Digital Equipment Corporation', 'name': 'DEC'},
     {'alias': 'HP', 'name': 'Hewlett-Packard'},
@@ -39,6 +42,8 @@ ADDITIONAL_AFFILIATION_ALIASES = [
     {'alias': 'Person', 'name': 'Independent'},
     {'alias': 'The Boeing Company', 'name': 'Boeing'},
     {'alias': 'Unaffiliated', 'name': 'Independent'},
+    {'alias': 'US NIST', 'name': 'US-NIST'},
+    {'alias': 'USA NIST', 'name': 'US-NIST'},
 ]
 
 ADDITIONAL_IGNORE_ENDINGS = [
