@@ -466,7 +466,7 @@ class RfcPubNotificationView(DestinationHelperMixin, APIView):
         if related_numbers:
             # Only update json for related rfcs. We can't generate json for _this_ rfc
             # until we receive the files and know what formats we have.
-            transaction.on_commit(lambda: update_rfc_json_task.delay(related_numbers))
+            transaction.on_commit(partial(update_rfc_json_task.delay, related_numbers))
         return Response(NotificationAckSerializer().data)
 
 
