@@ -11,41 +11,60 @@ from collections import defaultdict
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import DocumentAuthor
+from ietf.doc.models import DocumentAuthor, RfcAuthor
 from ietf.stats.utils import color_from_hash, get_aliased_affiliations, get_aliased_countries, check_top_n_choice, get_top_n_choices
 
 def get_authors_total_data_for_documents(doc_type: str = 'all', group_by: str = 'country', top_n: int = 20) -> dict[str, object]:
     """Build chart data for author totals.
 
     Args:
-        doc_type: Document category to filter on.
-        group_by: Field used to group authors.
+        doc_type: Document category to filter on: all, draft, wg-draft, rfc,
+        group_by: Field used to group authors, e.g., 'country' or 'affiliation'.
         top_n: Maximum number of top groups to include before aggregating into Other.
 
     Returns:
         A Chart.js-compatible data dictionary.
     """
 
-    # Build a dynamic query set filter
-    # RfcAuthor to get country/affiliation for RFC
+    # Build a dynamic query set filter to get country/affiliation using the appropriate model based on doc_type.
+    # RfcAuthor  for RFC
     # DocumentAuthor for other documents (i.e., drafts)
-    filters = Q()    
-    if doc_type != 'all' and doc_type  != 'wg-draft':
-        filters &= Q(document__type_id=doc_type)
-    elif doc_type == 'wg-draft':
-        filters &= Q(document__type_id= 'draft')
-        filters &= Q(document__group__type_id="wg")
-    queryset = (
-        DocumentAuthor.objects
-        .filter(filters)
-        .values(group_by)
-        .annotate(author_count=Count('person', distinct=True))  # Count as many document authored by this author
-    )
 
-    group_count_set = {
-        (group, count)
-        for group, count in queryset.values_list(group_by, 'author_count')
-    }
+    # Using distinct=True in Count to avoid double counting authors who may have multiple entries in the database
+    if doc_type in ('draft', 'wg-draft'):
+        filters = Q(document__type_id='draft')
+        if doc_type == 'wg-draft':
+            filters &= Q(document__group__type_id='wg')
+        queryset = (
+            DocumentAuthor.objects
+            .filter(filters)
+            .values(group_by)
+            .annotate(author_count=Count('person', distinct=True))
+        )
+    elif doc_type == 'rfc':
+        queryset = (
+            RfcAuthor.objects
+            .values(group_by)
+            .annotate(author_count=Count('person', distinct=True))
+        )
+    else:
+        draft_queryset = (
+            DocumentAuthor.objects
+            .filter(document__type_id='draft')
+            .values(group_by)
+            .annotate(author_count=Count('person', distinct=True))
+        )
+        rfc_queryset = (
+            RfcAuthor.objects
+            .values(group_by)
+            .annotate(author_count=Count('person', distinct=True))
+        )
+        queryset = draft_queryset.union(rfc_queryset, all=True)
+
+    group_count_set = [
+        (row.get(group_by), row.get('author_count', 0))
+        for row in queryset
+    ]
 
     if group_by == 'affiliation':
         alias_map = get_aliased_affiliations(group for group, _ in group_count_set)
@@ -142,8 +161,8 @@ def get_authors_timeline_data_for_documents(doc_type: str = 'all', group_by: str
     """Build timeline datasets for author statistics.
 
     Args:
-        doc_type: Document category to filter on.
-        group_by: Field used to group authors.
+        doc_type: Document category to filter on: all, draft, wg-draft, rfc,
+        group_by: Field used to group authors, e.g., 'country' or 'affiliation'.
         top_n: Maximum number of top groups to include before aggregating into Other.
 
     Returns:
@@ -155,18 +174,49 @@ def get_authors_timeline_data_for_documents(doc_type: str = 'all', group_by: str
     if result is not None:
         years_list, documents_totals, data_map = result
     else:
-        # Build a dynamic query set filter
-        filters = Q()    
-        if doc_type != 'all' and doc_type  != 'wg-draft':
-            filters &= Q(document__type_id=doc_type)
-        if doc_type == 'wg-draft':
-            filters &= Q(document__type_id= 'draft')
-            filters &= Q(document__group__type_id="wg")
-        queryset = (
-            DocumentAuthor.objects
-            .select_related('document')
-            .filter(filters)
-        )
+        # # Build a dynamic query set filter
+        # filters = Q()    
+        # if doc_type != 'all' and doc_type  != 'wg-draft':
+        #     filters &= Q(document__type_id=doc_type)
+        # if doc_type == 'wg-draft':
+        #     filters &= Q(document__type_id= 'draft')
+        #     filters &= Q(document__group__type_id="wg")
+        # queryset = (
+        #     DocumentAuthor.objects
+        #     .select_related('document')
+        #     .filter(filters)
+        # )
+        # Build a dynamic query set filter to get country/affiliation using the appropriate model based on doc_type.
+        # RfcAuthor  for RFC
+        # DocumentAuthor for other documents (i.e., drafts)
+
+        # Using distinct=True in Count to avoid double counting authors who may have multiple entries in the database
+        if doc_type in ('draft', 'wg-draft'):
+            filters = Q(document__type_id='draft')
+            if doc_type == 'wg-draft':
+                filters &= Q(document__group__type_id='wg')
+            queryset = (
+                DocumentAuthor.objects
+                .filter(filters)
+                .select_related('document')
+            )
+        elif doc_type == 'rfc':
+            queryset = (
+                RfcAuthor.objects
+                .select_related('document')
+            )
+        else:
+            draft_queryset = (
+                DocumentAuthor.objects
+                .filter(document__type_id='draft')
+                .select_related('document')
+            )
+            rfc_queryset = (
+                RfcAuthor.objects
+                .select_related('document')
+            )
+            queryset = draft_queryset.union(rfc_queryset, all=True)
+
 
     # ── Step 1: Collect all meetings and tickets totals ──
         years_set = set()
