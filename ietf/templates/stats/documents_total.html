@@ -57,7 +57,7 @@
         This page provides the top-{{ top_n }} {{ stats_type }} for IETF {{ doc_type|upper }} {{ objects}}. 
         Only the top-{{ top_n }} categories are listed, the remaining ones are aggregated into 'Other'.
         {% if objects == 'authors' %}
-            Note: authors are counted for as many documents they have authored.
+            Note: authors are counted only once no matter how many documents they have authored.
         {% endif %}
     </p>
     <div class="row">
