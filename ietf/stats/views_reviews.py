@@ -192,7 +192,7 @@ def review_stats(request, stats_type=None, acronym=None):
                 secr_access.add(r.group_id)
                 reviewer_only_access.discard(r.group_id)
             elif r.name_id == "reviewer":
-                if not r.group_id in secr_access:
+                if r.group_id not in secr_access:
                     reviewer_only_access.add(r.group_id)
 
         if not secr_access and not reviewer_only_access:
