@@ -20,7 +20,7 @@ from ietf.meeting.models import Meeting
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 import ietf.stats.views
 
-from ietf.doc.factories import WgDraftFactory, WgRfcFactory, DocumentAuthorFactory, DocumentFactory, DocEventFactory, NewRevisionDocEventFactory
+from ietf.doc.factories import WgDraftFactory, WgRfcFactory, DocumentAuthorFactory, RfcAuthorFactory, DocumentFactory, DocEventFactory, NewRevisionDocEventFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
 from ietf.stats.factories import AffiliationIgnoredEndingFactory, AffiliationMainNameFactory
 from ietf.group.factories import GroupFactory, RoleFactory
@@ -103,15 +103,15 @@ class StatisticsTests(TestCase):
         AffiliationIgnoredEndingFactory(ending='corp\\.?')
         AffiliationMainNameFactory(main_name='Cisco')
 
-        DocumentAuthorFactory(document=rfcPsGroup1, affiliation=affiliation, country=country)
-        DocumentAuthorFactory(document=rfcExpGroup1, affiliation=affiliation + ', LLC', country=country)
-        DocumentAuthorFactory(document=rfcExpGroup1, affiliation=factory.Faker('company'), country=factory.Faker('country'))
+        RfcAuthorFactory(document=rfcPsGroup1, affiliation=affiliation, country=country)
+        RfcAuthorFactory(document=rfcExpGroup1, affiliation=affiliation + ', LLC', country=country)
+        RfcAuthorFactory(document=rfcExpGroup1, affiliation=factory.Faker('company'), country=factory.Faker('country'))
         DocumentAuthorFactory(document=wgDraftPsGroup1, affiliation=affiliation + ' AG', country=country)
-        DocumentAuthorFactory(document=rfcInfGroup2, affiliation='CiScO InC.', country=country)
+        RfcAuthorFactory(document=rfcInfGroup2, affiliation='CiScO InC.', country=country)
         DocumentAuthorFactory(document=wgDraftPsGroup2, affiliation='CISCO corp.', country='belgique')
         DocumentAuthorFactory(document=wgDraftPsGroup2, affiliation=affiliation, country=country)
-        DocumentAuthorFactory(document=rfcBcpIAB1, affiliation='CiScO PTY LTD', country='UnItEd StAtEs')
-        DocumentAuthorFactory(document=rfcBcpIAB2, affiliation=affiliation, country='usa')
+        RfcAuthorFactory(document=rfcBcpIAB1, affiliation='CiScO PTY LTD', country='UnItEd StAtEs')
+        RfcAuthorFactory(document=rfcBcpIAB2, affiliation=affiliation, country='usa')
         DocumentAuthorFactory(document=draftExp, affiliation=affiliation + ',inc', country='U.S.A.')
 
         # Test#1 the documents specific statistics: for RFC about the level

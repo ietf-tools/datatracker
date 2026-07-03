@@ -174,34 +174,24 @@ def get_authors_timeline_data_for_documents(doc_type: str = 'all', group_by: str
     if result is not None:
         years_list, documents_totals, data_map = result
     else:
-        # # Build a dynamic query set filter
-        # filters = Q()    
-        # if doc_type != 'all' and doc_type  != 'wg-draft':
-        #     filters &= Q(document__type_id=doc_type)
-        # if doc_type == 'wg-draft':
-        #     filters &= Q(document__type_id= 'draft')
-        #     filters &= Q(document__group__type_id="wg")
-        # queryset = (
-        #     DocumentAuthor.objects
-        #     .select_related('document')
-        #     .filter(filters)
-        # )
         # Build a dynamic query set filter to get country/affiliation using the appropriate model based on doc_type.
         # RfcAuthor  for RFC
         # DocumentAuthor for other documents (i.e., drafts)
 
         # Using distinct=True in Count to avoid double counting authors who may have multiple entries in the database
+        draft_queryset = None
+        rfc_queryset = None
         if doc_type in ('draft', 'wg-draft'):
             filters = Q(document__type_id='draft')
             if doc_type == 'wg-draft':
                 filters &= Q(document__group__type_id='wg')
-            queryset = (
+            draft_queryset = (
                 DocumentAuthor.objects
                 .filter(filters)
                 .select_related('document')
             )
         elif doc_type == 'rfc':
-            queryset = (
+            rfc_queryset = (
                 RfcAuthor.objects
                 .select_related('document')
             )
@@ -215,18 +205,25 @@ def get_authors_timeline_data_for_documents(doc_type: str = 'all', group_by: str
                 RfcAuthor.objects
                 .select_related('document')
             )
-            queryset = draft_queryset.union(rfc_queryset, all=True)
 
-
-    # ── Step 1: Collect all meetings and tickets totals ──
+    # ── Step 1: Collect all authors publication dates ──
         years_set = set()
         documents_totals = defaultdict(int)
         data_map = defaultdict(dict)
-        year_group_list = [
+        year_group_list = []
+        if draft_queryset is not None:
+            year_group_list += [
             (row.document.pub_date().year, getattr(row, group_by))
-            for row in queryset
+            for row in draft_queryset
             if row.document.pub_date() is not None
         ]
+        if rfc_queryset is not None:
+            year_group_list += [
+            (row.document.pub_date().year, getattr(row, group_by))
+            for row in rfc_queryset
+            if row.document.pub_date() is not None
+        ]
+            
         if group_by == 'affiliation':
             alias_map = get_aliased_affiliations(group for _, group in year_group_list)
             year_group_list = [(year, alias_map.get(group, group)) for year, group in year_group_list]
