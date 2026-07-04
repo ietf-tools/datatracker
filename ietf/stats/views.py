@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2026, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 
 import csv
@@ -9,17 +8,16 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse as urlreverse
 
-import debug                            # pyflakes:ignore
-
-from ietf.name.models import CountryName
 from ietf.ietfauth.utils import role_required
 from ietf.meeting.helpers import get_current_ietf_meeting_num
+from ietf.name.models import CountryName
+
 
 def stats_index(request):
     """Render the statistics index page with the current meeting number as it is required by the meeting menu item."""
     current_meeting = get_current_ietf_meeting_num()
     return render(request, "stats/index.html", {
-        "current_meeting": current_meeting
+        "current_meeting": current_meeting,
     })
 
 def known_countries_list(request):
@@ -38,7 +36,7 @@ def known_countries_list(request):
 def annual_report_inputs(request, year=None):
     if year is None and "year" in request.GET:
         return HttpResponseRedirect(
-            urlreverse("ietf.stats.views.annual_report_inputs", kwargs={"year": request.GET["year"]})
+            urlreverse("ietf.stats.views.annual_report_inputs", kwargs={"year": request.GET["year"]}),
         )
     year = int(year) if year else datetime.date.today().year - 1
 
@@ -61,8 +59,8 @@ def annual_report_inputs(request, year=None):
 
     draft_count = len(set(
         NewRevisionDocEvent.objects.filter(
-            doc__type_id="draft", time__year=year
-        ).values_list("doc__name", flat=True)
+            doc__type_id="draft", time__year=year,
+        ).values_list("doc__name", flat=True),
     ))
 
     return render(request, "stats/annual_report_inputs.html", {

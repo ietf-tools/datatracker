@@ -2,40 +2,51 @@
 
 import csv
 import datetime
-import re
 import io
 import json
+import re
 
 import factory
 from django.http import Http404
-from pyquery import PyQuery
-
-import debug    # pyflakes:ignore
-
 from django.test import RequestFactory
 from django.urls import reverse as urlreverse
 from django.utils import timezone
+from pyquery import PyQuery
 
-from ietf.meeting.models import Meeting
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 import ietf.stats.views
-
-from ietf.doc.factories import WgDraftFactory, WgRfcFactory, DocumentAuthorFactory, RfcAuthorFactory, DocumentFactory, DocEventFactory, NewRevisionDocEventFactory
-from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
-from ietf.stats.factories import AffiliationIgnoredEndingFactory, AffiliationMainNameFactory
+from ietf.doc.factories import (
+    DocEventFactory,
+    DocumentAuthorFactory,
+    DocumentFactory,
+    NewRevisionDocEventFactory,
+    RfcAuthorFactory,
+    WgDraftFactory,
+    WgRfcFactory,
+)
 from ietf.group.factories import GroupFactory, RoleFactory
-from ietf.person.factories import EmailFactory, PersonFactory
+from ietf.meeting.models import Meeting
 from ietf.meeting.tests_models import MeetingFactory, RegistrationFactory
+from ietf.person.factories import EmailFactory, PersonFactory
+from ietf.review.factories import (
+    ReviewAssignmentFactory,
+    ReviewerSettingsFactory,
+    ReviewRequestFactory,
+)
+from ietf.stats.factories import (
+    AffiliationIgnoredEndingFactory,
+    AffiliationMainNameFactory,
+)
 from ietf.submit.factories import SubmissionFactory
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 
 
 class StatisticsTests(TestCase):
     def test_stats_index(self):
         # Create a meeting as the index page needs to know the current meeting
-        MeetingFactory(type_id='ietf', number='124', date=timezone.now())
+        MeetingFactory(type_id="ietf", number="124", date=timezone.now())
         url = urlreverse(ietf.stats.views.stats_index)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200, 
+        self.assertEqual(r.status_code, 200,
             msg=f"Unexpected status code {r.status_code} for URL {url}")
 
     def test_invalid_top_n(self):
@@ -56,63 +67,63 @@ class StatisticsTests(TestCase):
         group2 = GroupFactory(type_id="wg")
 
         # Let's create some RFC and drafts with publication dates
-        rfcPsGroup1 = WgRfcFactory(std_level_id='ps', group=group1)
-        DocEventFactory(type='published_rfc', doc=rfcPsGroup1, time=time1960)
-        rfcExpGroup1 = WgRfcFactory(std_level_id='exp', group=group1)
-        DocEventFactory(type='published_rfc', doc=rfcExpGroup1, time=time1960)
-        rfcInfGroup2 = WgRfcFactory(std_level_id='inf', group=group2)
-        DocEventFactory(type='published_rfc', doc=rfcInfGroup2, time=timeNow)
-        rfcBcpIAB1 = WgRfcFactory(std_level_id='bcp', stream_id='iab')
-        DocEventFactory(type='published_rfc', doc=rfcBcpIAB1, time=time1960)
-        rfcBcpIAB2 = WgRfcFactory(std_level_id='bcp', stream_id='iab')
-        DocEventFactory(type='published_rfc', doc=rfcBcpIAB2, time=time1960)
-        wgDraftPsGroup1 = WgDraftFactory(name='draft-ietf-' + group1.acronym + '-random-thing', intended_std_level_id='ps', group=group1)
+        rfcPsGroup1 = WgRfcFactory(std_level_id="ps", group=group1)
+        DocEventFactory(type="published_rfc", doc=rfcPsGroup1, time=time1960)
+        rfcExpGroup1 = WgRfcFactory(std_level_id="exp", group=group1)
+        DocEventFactory(type="published_rfc", doc=rfcExpGroup1, time=time1960)
+        rfcInfGroup2 = WgRfcFactory(std_level_id="inf", group=group2)
+        DocEventFactory(type="published_rfc", doc=rfcInfGroup2, time=timeNow)
+        rfcBcpIAB1 = WgRfcFactory(std_level_id="bcp", stream_id="iab")
+        DocEventFactory(type="published_rfc", doc=rfcBcpIAB1, time=time1960)
+        rfcBcpIAB2 = WgRfcFactory(std_level_id="bcp", stream_id="iab")
+        DocEventFactory(type="published_rfc", doc=rfcBcpIAB2, time=time1960)
+        wgDraftPsGroup1 = WgDraftFactory(name="draft-ietf-" + group1.acronym + "-random-thing", intended_std_level_id="ps", group=group1)
         NewRevisionDocEventFactory(doc=wgDraftPsGroup1, time=time1960)
-        wgDraftPsGroup2 = WgDraftFactory(name='draft-ietf-' + group2.acronym + '-random-thing', intended_std_level_id='inf', group=group2)
+        wgDraftPsGroup2 = WgDraftFactory(name="draft-ietf-" + group2.acronym + "-random-thing", intended_std_level_id="inf", group=group2)
         NewRevisionDocEventFactory(doc=wgDraftPsGroup2, time=timeNow)
-        draftExp = DocumentFactory(type_id='draft', intended_std_level_id='exp')
+        draftExp = DocumentFactory(type_id="draft", intended_std_level_id="exp")
         NewRevisionDocEventFactory(doc=draftExp, time=timeNow)
 
         # Let's create some authors, first get some test strings for affiliations and countries
-        affiliation = factory.Faker('company').evaluate(None, None, {'locale': None})
+        affiliation = factory.Faker("company").evaluate(None, None, {"locale": None})
         # Sometimes the factory adds "LLC" or some other suffix, causing problem in the tests
         # below as another ", LLC" is added. Let's only take the first word of the affiliation
         # up to a space or ","
-        if re.sub(r',?\s*\S+\s*$', '', affiliation) != '':
-            affiliation = re.sub(r',?\s*\S+\s*$', '', affiliation)
-        country = factory.Faker('country').evaluate(None, None, {'locale': None})
+        if re.sub(r",?\s*\S+\s*$", "", affiliation) != "":
+            affiliation = re.sub(r",?\s*\S+\s*$", "", affiliation)
+        country = factory.Faker("country").evaluate(None, None, {"locale": None})
         # Factory sometimes generates country names that are not exactly canonical
         # causing problems in the tests below.
-        if country == 'Korea':
-            country = 'South Korea'
-        elif country == 'Brunei Darussalam':
-            country = 'Brunei'
-        elif country == 'Cape Verde':
-            country = 'Cabo Verde'
+        if country == "Korea":
+            country = "South Korea"
+        elif country == "Brunei Darussalam":
+            country = "Brunei"
+        elif country == "Cape Verde":
+            country = "Cabo Verde"
         elif country == "Lao People's Democratic Republic":
-            country = 'Laos'
-        elif country == 'British Virgin Islands':
-            country = 'Virgin Islands'
-        elif country == 'Pitcairn Islands':
-            country = 'Pitcairn'
-            
+            country = "Laos"
+        elif country == "British Virgin Islands":
+            country = "Virgin Islands"
+        elif country == "Pitcairn Islands":
+            country = "Pitcairn"
+
         # Create the various aliases ancilliary content
-        AffiliationIgnoredEndingFactory(ending='llc\\.?')
-        AffiliationIgnoredEndingFactory(ending='ag\\.?')
-        AffiliationIgnoredEndingFactory(ending='inc\\.?')
-        AffiliationIgnoredEndingFactory(ending='corp\\.?')
-        AffiliationMainNameFactory(main_name='Cisco')
+        AffiliationIgnoredEndingFactory(ending="llc\\.?")
+        AffiliationIgnoredEndingFactory(ending="ag\\.?")
+        AffiliationIgnoredEndingFactory(ending="inc\\.?")
+        AffiliationIgnoredEndingFactory(ending="corp\\.?")
+        AffiliationMainNameFactory(main_name="Cisco")
 
         RfcAuthorFactory(document=rfcPsGroup1, affiliation=affiliation, country=country)
-        RfcAuthorFactory(document=rfcExpGroup1, affiliation=affiliation + ', LLC', country=country)
-        RfcAuthorFactory(document=rfcExpGroup1, affiliation=factory.Faker('company'), country=factory.Faker('country'))
-        DocumentAuthorFactory(document=wgDraftPsGroup1, affiliation=affiliation + ' AG', country=country)
-        RfcAuthorFactory(document=rfcInfGroup2, affiliation='CiScO InC.', country=country)
-        DocumentAuthorFactory(document=wgDraftPsGroup2, affiliation='CISCO corp.', country='belgique')
+        RfcAuthorFactory(document=rfcExpGroup1, affiliation=affiliation + ", LLC", country=country)
+        RfcAuthorFactory(document=rfcExpGroup1, affiliation=factory.Faker("company"), country=factory.Faker("country"))
+        DocumentAuthorFactory(document=wgDraftPsGroup1, affiliation=affiliation + " AG", country=country)
+        RfcAuthorFactory(document=rfcInfGroup2, affiliation="CiScO InC.", country=country)
+        DocumentAuthorFactory(document=wgDraftPsGroup2, affiliation="CISCO corp.", country="belgique")
         DocumentAuthorFactory(document=wgDraftPsGroup2, affiliation=affiliation, country=country)
-        RfcAuthorFactory(document=rfcBcpIAB1, affiliation='CiScO PTY LTD', country='UnItEd StAtEs')
-        RfcAuthorFactory(document=rfcBcpIAB2, affiliation=affiliation, country='usa')
-        DocumentAuthorFactory(document=draftExp, affiliation=affiliation + ',inc', country='U.S.A.')
+        RfcAuthorFactory(document=rfcBcpIAB1, affiliation="CiScO PTY LTD", country="UnItEd StAtEs")
+        RfcAuthorFactory(document=rfcBcpIAB2, affiliation=affiliation, country="usa")
+        DocumentAuthorFactory(document=draftExp, affiliation=affiliation + ",inc", country="U.S.A.")
 
         # Test#1 the documents specific statistics: for RFC about the level
         r = self.client.get(urlreverse(ietf.stats.views_documents.documents_timeline, kwargs={"doc_type": "rfc", "stats_type": "level"}))
@@ -127,13 +138,13 @@ class StatisticsTests(TestCase):
             any(
                 ds["label"] == "inf" and ds["data"] == [0, 1]
                 for ds in chart_data["datasets"]
-            )
+            ),
         )
         self.assertTrue(
             any(
                 ds["label"] == "bcp" and ds["data"] == [2, 0]
                 for ds in chart_data["datasets"]
-            )
+            ),
         )
 
         # Test#2 the documents specific statistics: for RFC about the WG
@@ -148,7 +159,7 @@ class StatisticsTests(TestCase):
             any(
                 ds["label"] == group1.name and ds["data"] == [2, 0]
                 for ds in chart_data["datasets"]
-            )
+            ),
         )
 
         # Test#3 the documents specific statistics: for drafts about the streams
@@ -163,13 +174,13 @@ class StatisticsTests(TestCase):
             any(
                 ds["label"] == "IETF" and ds["data"] == [2]
                 for ds in chart_data["datasets"]
-            )
+            ),
         )
         self.assertTrue(
             any(
                 ds["label"] == "Unspecified" and ds["data"] == [1]
                 for ds in chart_data["datasets"]
-            )
+            ),
         )
 
         # Test#4 the authors specific statistics: for all docs about the countries
@@ -184,13 +195,13 @@ class StatisticsTests(TestCase):
             any(
                 ds["label"] == "United States of America" and ds["data"] == [2, 1]
                 for ds in chart_data["datasets"]
-            )
+            ),
         )
         self.assertTrue(
             any(
                 ds["label"] == "Belgium" and ds["data"] == [0, 1]
                 for ds in chart_data["datasets"]
-            )
+            ),
         )
 
         # Test#5 the authors specific statistics: for all all rfcs about the affiliation
@@ -205,19 +216,19 @@ class StatisticsTests(TestCase):
             any(
                 ds["label"].casefold() == affiliation.casefold() and ds["data"] == [3, 0]
                 for ds in chart_data["datasets"]
-            )
+            ),
         )
         self.assertTrue(
             any(
                 ds["label"] == "Cisco" and ds["data"] == [1, 1]
                 for ds in chart_data["datasets"]
-            )
+            ),
         )
         self.assertTrue(
             any(
                 ds["label"] == "Other" and ds["data"] == [0, 0]
                 for ds in chart_data["datasets"]
-            )
+            ),
         )
 
         # Test#6 the authors specific statistics: for all WG drafts about the country
@@ -228,22 +239,22 @@ class StatisticsTests(TestCase):
         pq = PyQuery(r.content)
         chart_data = json.loads(pq.find("script#chart_data").text())
         self.assertTrue(chart_data["labels"] == [yearNow])
-        # Test sometimes failing below with the factory country name being different from the country name in the chart data, 
-        # even though they should be the same country. 
-        # Using casefold to make the comparison more robust, as the country names in the chart data are title-cased 
+        # Test sometimes failing below with the factory country name being different from the country name in the chart data,
+        # even though they should be the same country.
+        # Using casefold to make the comparison more robust, as the country names in the chart data are title-cased
         # while the factory can return them in different cases.
         self.assertTrue(
             any(
                 ds["label"].casefold() == country.casefold() and ds["data"] == [2]
                 for ds in chart_data["datasets"]
             ),
-            msg=f"Country '{country}' not found in chart data labels: {chart_data['datasets']}"
+            msg=f"Country '{country}' not found in chart data labels: {chart_data['datasets']}",
         )
         self.assertTrue(
             any(
                 ds["label"] == "Belgium" and ds["data"] == [1]
                 for ds in chart_data["datasets"]
-            )
+            ),
         )
 
         # Test#7 the authors specific statistics global
@@ -253,11 +264,11 @@ class StatisticsTests(TestCase):
         # Extract the JSON embedded in the response
         pq = PyQuery(r.content)
         chart_data = json.loads(pq.find("script#chart_data").text())
-        self.assertTrue('Belgium' in chart_data["labels"])
-        self.assertTrue('United States of America' in chart_data["labels"])
+        self.assertTrue("Belgium" in chart_data["labels"])
+        self.assertTrue("United States of America" in chart_data["labels"])
         self.assertTrue(country in chart_data["labels"])
-        USA_index = chart_data["labels"].index('United States of America')
-        # Let's check whether USA has indeed 1 
+        USA_index = chart_data["labels"].index("United States of America")
+        # Let's check whether USA has indeed 1
         self.assertTrue(chart_data["datasets"][0]["data"][USA_index] == 1)
 
         # Test#8 the documents specific statistics global
@@ -268,23 +279,23 @@ class StatisticsTests(TestCase):
         pq = PyQuery(r.content)
         chart_data = json.loads(pq.find("script#chart_data").text())
         self.assertTrue(group1.name in chart_data["labels"])
-        individual_index = chart_data["labels"].index('Individual submissions')
-        # Let's check whether USA has indeed 1 
+        individual_index = chart_data["labels"].index("Individual submissions")
+        # Let's check whether USA has indeed 1
         self.assertTrue(chart_data["datasets"][0]["data"][individual_index] == 1)
 
     def test_meeting_stats(self):
-        meeting124 = MeetingFactory(type_id='ietf', number='124', date=timezone.now())
-        meeting125 = MeetingFactory(type_id='ietf', number='125', date=timezone.now() + datetime.timedelta(days=120))
-        RegistrationFactory.create_batch(15, meeting=meeting124, with_ticket={'attendance_type_id': 'onsite'}, attended=True)
-        RegistrationFactory(meeting=meeting124, with_ticket={'attendance_type_id': 'onsite'}, attended=False)
-        RegistrationFactory.create_batch(14, meeting=meeting124, with_ticket={'attendance_type_id': 'remote'}, attended=True)
-        RegistrationFactory(meeting=meeting124, with_ticket={'attendance_type_id': 'remote'}, attended=False)
-        RegistrationFactory.create_batch(15, meeting=meeting125, affiliation='Test LLC', with_ticket={'attendance_type_id': 'remote'}, attended=False)
-        RegistrationFactory.create_batch(25, meeting=meeting125, affiliation='Example, Ltd', with_ticket={'attendance_type_id': 'onsite'}, attended=False)
+        meeting124 = MeetingFactory(type_id="ietf", number="124", date=timezone.now())
+        meeting125 = MeetingFactory(type_id="ietf", number="125", date=timezone.now() + datetime.timedelta(days=120))
+        RegistrationFactory.create_batch(15, meeting=meeting124, with_ticket={"attendance_type_id": "onsite"}, attended=True)
+        RegistrationFactory(meeting=meeting124, with_ticket={"attendance_type_id": "onsite"}, attended=False)
+        RegistrationFactory.create_batch(14, meeting=meeting124, with_ticket={"attendance_type_id": "remote"}, attended=True)
+        RegistrationFactory(meeting=meeting124, with_ticket={"attendance_type_id": "remote"}, attended=False)
+        RegistrationFactory.create_batch(15, meeting=meeting125, affiliation="Test LLC", with_ticket={"attendance_type_id": "remote"}, attended=False)
+        RegistrationFactory.create_batch(25, meeting=meeting125, affiliation="Example, Ltd", with_ticket={"attendance_type_id": "onsite"}, attended=False)
 
         # Create the various aliases ancilliary content
-        AffiliationIgnoredEndingFactory(ending='llc\\.?')
-        AffiliationIgnoredEndingFactory(ending='ltd\\.?')
+        AffiliationIgnoredEndingFactory(ending="llc\\.?")
+        AffiliationIgnoredEndingFactory(ending="ltd\\.?")
 
         # Test the meeting specific statitistics per affiliation and per country
         r = self.client.get(urlreverse(ietf.stats.views_meetings.meeting_stats, kwargs={"meeting_number": "124", "stats_type": "affiliation"}))
@@ -318,7 +329,7 @@ class StatisticsTests(TestCase):
             any(
                 ds["label"] == "Example" and ds["data"] == [0, 25]
                 for ds in in_person_data["datasets"]
-            )
+            ),
         )
         # Test the global meetings timeline
         r = self.client.get(urlreverse(ietf.stats.views_meetings.meetings_timeline, kwargs={"stats_type": "total"}))
@@ -334,7 +345,7 @@ class StatisticsTests(TestCase):
                 urlreverse(
                     "ietf.stats.views_meetings.meeting_stats",
                     kwargs={"meeting_number": 676767, "stats_type": stats_type},
-                )
+                ),
             )
             self.assertEqual(r.status_code, 404)
 
@@ -359,11 +370,11 @@ class StatisticsTests(TestCase):
 
     def test_review_stats(self):
         reviewer = PersonFactory()
-        review_req = ReviewRequestFactory(state_id='assigned')
-        ReviewAssignmentFactory(review_request=review_req, state_id='assigned', reviewer=reviewer.email_set.first())
-        RoleFactory(group=review_req.team,name_id='reviewer',person=reviewer)
+        review_req = ReviewRequestFactory(state_id="assigned")
+        ReviewAssignmentFactory(review_request=review_req, state_id="assigned", reviewer=reviewer.email_set.first())
+        RoleFactory(group=review_req.team,name_id="reviewer",person=reviewer)
         ReviewerSettingsFactory(team=review_req.team, person=reviewer)
-        PersonFactory(user__username='plain')
+        PersonFactory(user__username="plain")
 
         # check redirect
         url = urlreverse(ietf.stats.views_reviews.review_stats)
@@ -394,34 +405,34 @@ class StatisticsTests(TestCase):
         # check stacked chart
 
         url = urlreverse(ietf.stats.views_reviews.review_stats, kwargs={ "stats_type": "time" })
-        url += "?team={}".format(review_req.team.acronym)
+        url += f"?team={review_req.team.acronym}"
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        stacked_data = json.loads(r.context['data'])
+        stacked_data = json.loads(r.context["data"])
         # Ignore the timestamp elements, just check that the data is correct
         self.assertEqual(len(stacked_data), 2)
-        self.assertEqual(stacked_data[0]['label'], 'in time')
-        self.assertEqual(stacked_data[0]['color'], '#3d22b3')
-        self.assertEqual(stacked_data[0]['data'], [[stacked_data[0]['data'][0][0], 0]])
-        self.assertEqual(stacked_data[1]['label'], 'late')
-        self.assertEqual(stacked_data[1]['color'], '#b42222')
-        self.assertEqual(stacked_data[1]['data'], [[stacked_data[0]['data'][0][0], 0]])
+        self.assertEqual(stacked_data[0]["label"], "in time")
+        self.assertEqual(stacked_data[0]["color"], "#3d22b3")
+        self.assertEqual(stacked_data[0]["data"], [[stacked_data[0]["data"][0][0], 0]])
+        self.assertEqual(stacked_data[1]["label"], "late")
+        self.assertEqual(stacked_data[1]["color"], "#b42222")
+        self.assertEqual(stacked_data[1]["data"], [[stacked_data[0]["data"][0][0], 0]])
         q = PyQuery(r.content)
-        self.assertTrue(q('#stats-time-graph'))
+        self.assertTrue(q("#stats-time-graph"))
 
         # check non-stacked chart
         url = urlreverse(ietf.stats.views_reviews.review_stats, kwargs={ "stats_type": "time" })
-        url += "?team={}".format(review_req.team.acronym)
+        url += f"?team={review_req.team.acronym}"
         url += "&completion=not_completed"
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        non_stacked_data = json.loads(r.context['data'])
+        non_stacked_data = json.loads(r.context["data"])
         # Ignore the timestamp elements, just check that the data is correct
         self.assertEqual(len(non_stacked_data), 1)
-        self.assertEqual(non_stacked_data[0]['color'], '#3d22b3')
-        self.assertEqual(non_stacked_data[0]['data'], [[non_stacked_data[0]['data'][0][0], 0]])
+        self.assertEqual(non_stacked_data[0]["color"], "#3d22b3")
+        self.assertEqual(non_stacked_data[0]["data"], [[non_stacked_data[0]["data"][0][0], 0]])
         q = PyQuery(r.content)
-        self.assertTrue(q('#stats-time-graph'))
+        self.assertTrue(q("#stats-time-graph"))
 
         # check reviewer level
         url = urlreverse(ietf.stats.views_reviews.review_stats, kwargs={ "stats_type": "completion", "acronym": review_req.team.acronym })
