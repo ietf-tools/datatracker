@@ -1,14 +1,13 @@
 # Copyright The IETF Trust 2016-2026, All Rights Reserved
 
+from collections import defaultdict
+
 from django.conf import settings
+from django.core.cache import cache
 from django.db.models import Count, Q
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse as urlreverse
-from django.core.cache import cache
-from collections import defaultdict
-
-import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocumentAuthor, RfcAuthor
 from ietf.stats.utils import (
@@ -18,6 +17,7 @@ from ietf.stats.utils import (
     get_aliased_countries,
     get_top_n_choices,
 )
+
 
 def get_authors_total_data_for_documents(doc_type: str = "all",
                                          group_by: str = "country",
@@ -132,27 +132,33 @@ def authors_total(request: HttpRequest, doc_type: str = "all",
         top_n = 10
     # Check the top-n value against the allowed choices
     if not check_top_n_choice(top_n):
-        return render(request, "stats/error.html",
+        return render(request,
+                      "stats/error.html",
                       {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"})
 
     if stats_type == "affiliation":
         chart_data = get_authors_total_data_for_documents(doc_type, "affiliation", top_n)
     elif stats_type == "country":
+        if doc_type in ["all", "rfc"]:
+            return render(request,
+                          "stats/error.html",
+                        {"message": f"Country information not (yet) available for {doc_type} documents from the RFC Editor."})
         chart_data = get_authors_total_data_for_documents(doc_type, "country", top_n)
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
     # Prepare the list of choice buttons for the template
+    # A little tricky/ugly has in Juy 2026 there is no more country information for RFCs,
+    # so we don't want to show that option for RFCs or all documents
     possible_docs_types = [
-        ("all", "All documents", urlreverse(authors_total, kwargs={"doc_type": "all", "stats_type": stats_type})),
         ("draft", "Drafts", urlreverse(authors_total, kwargs={"doc_type": "draft", "stats_type": stats_type})),
         ("wg-draft", "WG Drafts", urlreverse(authors_total, kwargs={"doc_type": "wg-draft", "stats_type": stats_type})),
-        ("rfc", "RFCs", urlreverse(authors_total, kwargs={"doc_type": "rfc", "stats_type": stats_type})),
     ]
-    possible_stats_types = [
-        ("affiliation", "Affiliation", urlreverse(authors_total, kwargs={"doc_type": doc_type, "stats_type": "affiliation"})),
-        ("country", "Country", urlreverse(authors_total, kwargs={"doc_type": doc_type, "stats_type": "country"})),
-    ]
+    if stats_type != "country":
+        possible_docs_types = [("all", "All documents", urlreverse(authors_total, kwargs={"doc_type": "all", "stats_type": stats_type}))] + possible_docs_types + [("rfc", "RFCs", urlreverse(authors_total, kwargs={"doc_type": "rfc", "stats_type": stats_type})) ]
+    possible_stats_types = [("affiliation", "Affiliation", urlreverse(authors_total, kwargs={"doc_type": doc_type, "stats_type": "affiliation"}))]
+    if doc_type not in ["all", "rfc"]:
+        possible_stats_types.append(("country", "Country", urlreverse(authors_total, kwargs={"doc_type": doc_type, "stats_type": "country"})))
 
     return render(request, "stats/documents_total.html", {
         "top_n": top_n,
@@ -328,11 +334,17 @@ def authors_timeline(request: HttpRequest, doc_type: str = "all", stats_type: st
         top_n = 20
     # Check the top-n value against the allowed choices
     if not check_top_n_choice(top_n):
-        return render(request, "stats/error.html", {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"})
+        return render(request,
+                      "stats/error.html",
+                      {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"})
 
     if stats_type == "affiliation":
         total_labels, total_data_sets = get_authors_timeline_data_for_documents(doc_type, "affiliation", top_n)
     elif stats_type == "country":
+        if doc_type in ["all", "rfc"]:
+            return render(request,
+                    "stats/error.html",
+                    {"message": f"Country information not (yet) available for {doc_type} documents from the RFC Editor."})
         total_labels, total_data_sets = get_authors_timeline_data_for_documents(doc_type, "country", top_n)
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
@@ -344,15 +356,17 @@ def authors_timeline(request: HttpRequest, doc_type: str = "all", stats_type: st
 
     # Prepare the list of choice buttons for the template
     possible_docs_types = [
-        ("all", "All documents", urlreverse(authors_timeline, kwargs={"doc_type": "all", "stats_type": stats_type})),
         ("draft", "Drafts", urlreverse(authors_timeline, kwargs={"doc_type": "draft", "stats_type": stats_type})),
         ("wg-draft", "WG Drafts", urlreverse(authors_timeline, kwargs={"doc_type": "wg-draft", "stats_type": stats_type})),
-        ("rfc", "RFCs", urlreverse(authors_timeline, kwargs={"doc_type": "rfc", "stats_type": stats_type})),
     ]
+    if stats_type != "country":
+        possible_docs_types = [("all", "All documents", urlreverse(authors_timeline, kwargs={"doc_type": "all", "stats_type": stats_type})),
+        ] + possible_docs_types + [
+            ("rfc", "RFCs", urlreverse(authors_timeline, kwargs={"doc_type": "rfc", "stats_type": stats_type}))]
     possible_stats_types = [
-        ("affiliation", "Affiliation", urlreverse(authors_timeline, kwargs={"doc_type": doc_type, "stats_type": "affiliation"})),
-        ("country", "Country", urlreverse(authors_timeline, kwargs={"doc_type": doc_type, "stats_type": "country"})),
-    ]
+        ("affiliation", "Affiliation", urlreverse(authors_timeline, kwargs={"doc_type": doc_type, "stats_type": "affiliation"}))]
+    if doc_type not in ["all", "rfc"]:
+        possible_stats_types.append(("country", "Country", urlreverse(authors_timeline, kwargs={"doc_type": doc_type, "stats_type": "country"})))
 
     return render(request, "stats/documents_timeline.html", {
         "top_n": top_n,
