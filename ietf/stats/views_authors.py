@@ -230,16 +230,16 @@ def get_authors_timeline_data_for_documents(doc_type: str = "all", group_by: str
         year_group_list = []
         if draft_queryset is not None:
             year_group_list += [
-            (row.document.pub_date().year, getattr(row, group_by))
-            for row in draft_queryset
-            if row.document.pub_date() is not None
-        ]
+                (row.document.pub_date().year, getattr(row, group_by))
+                for row in draft_queryset
+                if row.document.pub_date() is not None
+            ]
         if rfc_queryset is not None:
             year_group_list += [
-            (row.document.pub_date().year, getattr(row, group_by))
-            for row in rfc_queryset
-            if row.document.pub_date() is not None
-        ]
+                (row.document.pub_date().year, getattr(row, group_by))
+                for row in rfc_queryset
+                if row.document.pub_date() is not None
+            ]
 
         if group_by == "affiliation":
             alias_map = get_aliased_affiliations(group for _, group in year_group_list)
