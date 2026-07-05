@@ -78,11 +78,13 @@ class StatisticsTests(TestCase):
         rfcBcpIAB2 = WgRfcFactory(std_level_id="bcp", stream_id="iab")
         DocEventFactory(type="published_rfc", doc=rfcBcpIAB2, time=time1960)
         wgDraftPsGroup1 = WgDraftFactory(name="draft-ietf-" + group1.acronym + "-random-thing", intended_std_level_id="ps", group=group1)
-        NewRevisionDocEventFactory(doc=wgDraftPsGroup1, time=time1960)
+        # Using NewRevisionDocEventFactory(doc=wgDraftPsGroup1, rev="01", time=time1960) does not work
+        # as pub_date() always use the latest, i.e., more recent "new_revision" event, which is not what we want for this test.
+        wgDraftPsGroup1.docevent_set.filter(type="new_revision").update(time=time1960)
+        # The next 2 draft Documents have an auto-created "new_revision" event dated now, which is what we want for this test.
         wgDraftPsGroup2 = WgDraftFactory(name="draft-ietf-" + group2.acronym + "-random-thing", intended_std_level_id="inf", group=group2)
-        NewRevisionDocEventFactory(doc=wgDraftPsGroup2, time=timeNow)
+        # This one has no stream specified and no WG, so it will be counted as "Unspecified" in the stream statistics.
         draftExp = DocumentFactory(type_id="draft", intended_std_level_id="exp")
-        NewRevisionDocEventFactory(doc=draftExp, time=timeNow)
 
         # Let's create some authors, first get some test strings for affiliations and countries
         affiliation = factory.Faker("company").evaluate(None, None, {"locale": None})
@@ -92,20 +94,15 @@ class StatisticsTests(TestCase):
         if re.sub(r",?\s*\S+\s*$", "", affiliation) != "":
             affiliation = re.sub(r",?\s*\S+\s*$", "", affiliation)
         country = factory.Faker("country").evaluate(None, None, {"locale": None})
+        # Later tests assume country is not BE/USA 
+        # Let also ensure that the country is a single word to avoid wrongly canonicalised names
+        # Such as Brunei Darussalam or Lao People's Democratic Republic, which are not canonicalised in the tests below.
+        while country in {"Belgium", "United States of America"} or " " in country:
+            country = factory.Faker("country").evaluate(None, None, {"locale": None})
         # Factory sometimes generates country names that are not exactly canonical
         # causing problems in the tests below.
         if country == "Korea":
             country = "South Korea"
-        elif country == "Brunei Darussalam":
-            country = "Brunei"
-        elif country == "Cape Verde":
-            country = "Cabo Verde"
-        elif country == "Lao People's Democratic Republic":
-            country = "Laos"
-        elif country == "British Virgin Islands":
-            country = "Virgin Islands"
-        elif country == "Pitcairn Islands":
-            country = "Pitcairn"
 
         # Create the various aliases ancilliary content
         AffiliationIgnoredEndingFactory(ending="llc\\.?")
@@ -169,37 +166,50 @@ class StatisticsTests(TestCase):
         # Extract the JSON embedded in the response
         pq = PyQuery(r.content)
         chart_data = json.loads(pq.find("script#chart_data").text())
-        self.assertTrue(chart_data["labels"] == [yearNow])
+        self.assertTrue(chart_data["labels"] == [year1960, yearNow],
+                        msg=f"Labels ({chart_data['labels']}) for years do not match expected values=[{year1960}, {yearNow}]")
         self.assertTrue(
             any(
-                ds["label"] == "IETF" and ds["data"] == [2]
+                ds["label"] == "IETF" and ds["data"] == [1, 1]
                 for ds in chart_data["datasets"]
             ),
         )
         self.assertTrue(
             any(
-                ds["label"] == "Unspecified" and ds["data"] == [1]
+                ds["label"] == "Unspecified" and ds["data"] == [0, 1]
                 for ds in chart_data["datasets"]
             ),
         )
 
         # Test#4 the authors specific statistics: for all docs about the countries
+        # With the current production data, there is an error message, so check for it
         r = self.client.get(urlreverse(ietf.stats.views_authors.authors_timeline, kwargs={"doc_type": "all", "stats_type": "country"}))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "All Authors by Country")
+        self.assertContains(r, "Country information not (yet) available")
+        # Test#4.bis the authors specific statistics: for all docs about the countries
+        r = self.client.get(urlreverse(ietf.stats.views_authors.authors_timeline, kwargs={"doc_type": "draft", "stats_type": "country"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Draft Authors by Country")
         # Extract the JSON embedded in the response
         pq = PyQuery(r.content)
         chart_data = json.loads(pq.find("script#chart_data").text())
-        self.assertTrue(chart_data["labels"] == [year1960, yearNow])
+        self.assertTrue(chart_data["labels"] == [year1960, yearNow], 
+                        msg=f"Labels ({chart_data['labels']}) for years do not match expected values=[{year1960}, {yearNow}]")
         self.assertTrue(
             any(
-                ds["label"] == "United States of America" and ds["data"] == [2, 1]
+                ds["label"] == "United States of America" and ds["data"] == [0, 1]
                 for ds in chart_data["datasets"]
             ),
         )
         self.assertTrue(
             any(
                 ds["label"] == "Belgium" and ds["data"] == [0, 1]
+                for ds in chart_data["datasets"]
+            ),
+        )
+        self.assertTrue(
+            any(
+                ds["label"] == country and ds["data"] == [1, 1]
                 for ds in chart_data["datasets"]
             ),
         )
@@ -238,21 +248,21 @@ class StatisticsTests(TestCase):
         # Extract the JSON embedded in the response
         pq = PyQuery(r.content)
         chart_data = json.loads(pq.find("script#chart_data").text())
-        self.assertTrue(chart_data["labels"] == [yearNow])
+        self.assertTrue(chart_data["labels"] == [year1960, yearNow])
         # Test sometimes failing below with the factory country name being different from the country name in the chart data,
         # even though they should be the same country.
         # Using casefold to make the comparison more robust, as the country names in the chart data are title-cased
         # while the factory can return them in different cases.
         self.assertTrue(
             any(
-                ds["label"].casefold() == country.casefold() and ds["data"] == [2]
+                ds["label"].casefold() == country.casefold() and ds["data"] == [1, 1]
                 for ds in chart_data["datasets"]
             ),
             msg=f"Country '{country}' not found in chart data labels: {chart_data['datasets']}",
         )
         self.assertTrue(
             any(
-                ds["label"] == "Belgium" and ds["data"] == [1]
+                ds["label"] == "Belgium" and ds["data"] == [0, 1]
                 for ds in chart_data["datasets"]
             ),
         )
