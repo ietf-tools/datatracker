@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2023-2026, All Rights Reserved
 import os
 import shutil
+from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -463,7 +464,9 @@ class RfcPubNotificationView(DestinationHelperMixin, APIView):
             {d.rfc_number for d in rfc.related_that_doc(("updates", "obs"))}
         )
         if related_numbers:
-            transaction.on_commit(lambda: update_rfc_json_task.delay(related_numbers))
+            # Only update json for related rfcs. We can't generate json for _this_ rfc
+            # until we receive the files and know what formats we have.
+            transaction.on_commit(partial(update_rfc_json_task.delay, related_numbers))
         return Response(NotificationAckSerializer().data)
 
 
@@ -523,6 +526,10 @@ class RfcPubFilesView(DestinationHelperMixin, APIView):
             for upfile in uploaded_files:
                 uploaded_filename = Path(upfile.name)  # name supplied by request
                 uploaded_ext = "".join(uploaded_filename.suffixes)
+                # Ignore json files, which are deprecated. Remove this when purple no
+                # longer tries to send them.
+                if uploaded_ext == ".json":
+                    continue
                 tempfile_path = tmpfile_stem.with_suffix(uploaded_ext)
                 with tempfile_path.open("wb") as dest:
                     for chunk in upfile.chunks():
@@ -565,9 +572,10 @@ class RfcPubFilesView(DestinationHelperMixin, APIView):
         trigger_red_precomputer_task.delay(rfc_number_list=sorted(needs_updating))
         # Trigger search index update
         update_rfc_searchindex_task.delay(rfc.rfc_number)
-        # Trigger reference relation srebuild
+        # Trigger reference relations rebuild
         rebuild_reference_relations_task.delay(doc_names=[rfc.name])
-
+        # Build rfc json (json for related rfcs was updated in RfcPubNotificationView) 
+        transaction.on_commit(partial(update_rfc_json_task.delay, [rfc.rfc_number]))
         return Response(NotificationAckSerializer().data)
 
 
