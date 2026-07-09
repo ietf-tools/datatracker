@@ -1,0 +1,8 @@
+{
+    "silenceDeprecations": [
+        "import",
+        "if-function",
+        "global-builtin",
+        "color-functions"
+    ]
+}

@@ -37,13 +37,6 @@ indent_size = 2
 [{package.json,.eslintrc.js,.yarnrc.yml,vite.config.js,jsconfig.json}]
 indent_size = 2
 
-# Settings for cypress tests
-# ---------------------------------------------------------
-# StandardJS Style
-
-[cypress/**]
-indent_size = 2
-
 # Settings for HTML templates
 # ---------------------------------------------------------
 # HTML should not have final newlines, because that causes visible whitespace when includes are rendered

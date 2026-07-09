@@ -98,9 +98,6 @@ RUN GK_VERSION=$(if [ ${GECKODRIVER_VERSION:-latest} = "latest" ]; then echo "0.
   && chmod 755 /opt/geckodriver-$GK_VERSION \
   && ln -fs /opt/geckodriver-$GK_VERSION /usr/bin/geckodriver
 
-# Activate Yarn
-RUN corepack enable
-
 # Get rid of installation files we don't need in the image, to reduce size
 RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
@@ -110,8 +107,6 @@ ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
 
 # avoid million NPM install messages
 ENV npm_config_loglevel=warn
-# allow installing when the main user is root
-ENV npm_config_unsafe_perm=true
 # disable NPM funding messages
 ENV npm_config_fund=false
 
