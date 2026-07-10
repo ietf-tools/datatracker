@@ -12,6 +12,7 @@ import sys
 from importlib import import_module
 from pathlib import Path
 from random import randrange
+from urllib.parse import urljoin
 
 from django.apps import apps
 from django.conf import settings
@@ -1640,20 +1641,57 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
                     self.assertIn(model._meta.model_name, list(app_resources.keys()),
                         "There doesn't seem to be any API resource for model %s.models.%s"%(app.__name__,model.__name__,))
 
-    def test_serializer_to_etree_handles_nulls(self):
-        """Serializer to_etree() should handle a null character"""
+    def test_serializer_to_etree_handles_xml_invalid_control_chars(self):
+        """Serializer to_etree() must not raise ValueError for any XML-invalid control character."""
         serializer = Serializer()
+        # Ordinary strings and strings with valid whitespace must pass through unchanged.
         try:
-            serializer.to_etree("string with no nulls in it")
+            serializer.to_etree("string with no special chars")
+            serializer.to_etree("tab\there lf\nhere cr\rhere")
         except ValueError:
             self.fail("serializer.to_etree raised ValueError on an ordinary string")
-        try:
-            serializer.to_etree("string with a \x00 in it")
-        except ValueError:
-            self.fail(
-                "serializer.to_etree raised ValueError on a string "
-                "containing a null character"
+        # Every control character that XML 1.0 forbids must be escaped rather than
+        # causing a ValueError.  This is the class of characters that triggered the
+        # production exception (lxml.etree._utf8 rejects them all).
+        invalid_chars = [chr(c) for c in list(range(0x00, 0x09)) + [0x0b, 0x0c] + list(range(0x0e, 0x20))]
+        for ch in invalid_chars:
+            try:
+                serializer.to_etree(f"string with {ch!r} in it")
+            except ValueError:
+                self.fail(
+                    f"serializer.to_etree raised ValueError on a string "
+                    f"containing control character U+{ord(ch):04X}"
+                )
+
+    def test_post_detail_is_not_allowed(self):
+        """POST to a detail route returns 405
+        
+        Added because default TastyPie behavior is a 500 due to a NotImplemented
+        exception.
+        """
+        r = self.client.get("/api/v1", headers={"Accept": "application/json"})
+        self.assertValidJSONResponse(r)
+        resource_list = r.json()
+        for name in self.apps:
+            r = self.client.get(
+                resource_list[name]["list_endpoint"],
+                headers={"Accept": "application/json"},
             )
+            self.assertValidJSONResponse(r)
+            app_resources = r.json()
+            model_list = apps.get_app_config(name).get_models()
+            for model in model_list:
+                model_name = model._meta.model_name
+                assert model_name
+                detail_url = urljoin(
+                    app_resources[model_name]["list_endpoint"], "some-id/"
+                )
+                r = self.client.post(detail_url)
+                self.assertEqual(
+                    r.status_code,
+                    405,
+                    f"POST to {name}.{model_name} detail should return 405 status",
+                )
 
 
 class RfcdiffSupportTests(TestCase):

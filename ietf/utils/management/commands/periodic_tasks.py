@@ -84,34 +84,6 @@ class Command(BaseCommand):
         )
 
         PeriodicTask.objects.get_or_create(
-            name="Partial sync with RFC Editor index",
-            task="ietf.sync.tasks.rfc_editor_index_update_task",
-            kwargs=json.dumps(dict(full_index=False)),
-            defaults=dict(
-                enabled=False,
-                crontab=self.crontabs["every_15m_except_midnight"],  # don't collide with full sync
-                description=(
-                    "Reparse the last _year_ of RFC index entries until "
-                    "https://github.com/ietf-tools/datatracker/issues/3734 is addressed. "
-                    "This takes about 20s on production as of 2022-08-11."
-                )
-            ),
-        )
-
-        PeriodicTask.objects.get_or_create(
-            name="Full sync with RFC Editor index",
-            task="ietf.sync.tasks.rfc_editor_index_update_task",
-            kwargs=json.dumps(dict(full_index=True)),
-            defaults=dict(
-                enabled=False,
-                crontab=self.crontabs["daily"],
-                description=(
-                    "Run an extended version of the rfc editor update to catch changes with backdated timestamps"
-                ),
-            ),
-        )
-
-        PeriodicTask.objects.get_or_create(
             name="Fetch meeting attendance",
             task="ietf.stats.tasks.fetch_meeting_attendance_task",
             defaults=dict(

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Portion Copyright (C) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
@@ -59,6 +59,7 @@ import debug               # pyflakes:ignore
 from ietf.doc.models import Document, State, LastCallDocEvent, ConsensusDocEvent, DocEvent, IESG_BALLOT_ACTIVE_STATES
 from ietf.doc.utils import update_telechat, augment_events_with_revision
 from ietf.group.models import GroupMilestone, Role
+from ietf.group.utils import construct_group_menu_context, get_group_or_404
 from ietf.iesg.agenda import agenda_data, agenda_sections, fill_in_agenda_docs, get_agenda_date
 from ietf.iesg.models import TelechatDate, TelechatAgendaContent
 from ietf.iesg.utils import get_wg_dashboard_info, telechat_page_count
@@ -89,13 +90,15 @@ def review_decisions(request, year=None):
     #doc_levels = ["exp", "inf"]
 
     timeframe = "%s" % year if year else "the past 6 months"
+    group_type = None
+    group = get_group_or_404("iesg", group_type)
 
     return render(request, 'iesg/review_decisions.html',
-                              dict(events=events,
-                                   years=years,
-                                   year=year,
-                                   timeframe=timeframe),
-                              )
+            construct_group_menu_context(request, group, "decisions", group_type, {
+                    "events": events,
+                    "years": years,
+                    "year": year,
+                    "timeframe": timeframe}))
 
 def agenda_json(request, date=None):
     data = agenda_data(date)
@@ -632,8 +635,17 @@ def working_groups(request):
  
     area_summary, area_totals, ad_summary, noad_summary, ad_totals, noad_totals, totals, wg_summary = get_wg_dashboard_info()
 
-    return render(
-        request,
-        "iesg/working_groups.html",
-        dict(area_summary=area_summary, area_totals=area_totals, ad_summary=ad_summary, noad_summary=noad_summary, ad_totals=ad_totals, noad_totals=noad_totals, totals=totals, wg_summary=wg_summary),
-    )
+    group_type = None
+    group = get_group_or_404("iesg", group_type)
+
+    return render(request, 'iesg/working_groups.html',
+            construct_group_menu_context(request, group, "working groups", group_type, {
+                "area_summary": area_summary,
+                "area_totals": area_totals,
+                "ad_summary": ad_summary,
+                "noad_summary": noad_summary,
+                "ad_totals": ad_totals,
+                "noad_totals": noad_totals,
+                "totals": totals,
+                "wg_summary": wg_summary,
+            }))

@@ -15,7 +15,7 @@ from django.utils import timezone
 DEADLINE_TZINFO = ZoneInfo('PST8PDT')
 
 # Time zone for dates from the RPC. This value is baked into the timestamps on DocEvents
-# of type="published_rfc" - see Document.pub_date() and ietf.sync.refceditor.update_docs_from_rfc_index()
+# of type="published_rfc" - see Document.pub_date() and the rfc publication workflow
 # for more information about how that works.
 RPC_TZINFO = ZoneInfo('PST8PDT')
 

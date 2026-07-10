@@ -236,16 +236,24 @@ class Meeting(models.Model):
             document__states__slug='active', document__states__type_id='procmaterials'
         ).order_by('type__order')
 
-    def get_attendance(self):
-        """Get the meeting attendance from the Registrations
+    def get_attendees(self, sessions=None):
+        """Get the meeting attendees from the Registrations
 
-        Returns a NamedTuple with onsite and remote attributes. Returns None if the record is unavailable
-        for this meeting.
+        Returns a pair of sets containing Person objects for persons attending
+        the meeting either onsite or online (remote). Returns None if the record
+        is unavailable for this meeting.
+
+        sessions: optional queryset of Sessions to restrict which Attended records
+            count toward attendance. Defaults to all sessions at this meeting.
+            Note: restricting sessions does not affect the registration-based path
+            (checkedin / attended flags), only the Attended-record path.
         """
         number = self.get_number()
         if number is None or number < 110:
             return None
-        Attendance = namedtuple('Attendance', 'onsite remote')
+
+        if sessions is None:
+            sessions = self.session_set.all()
 
         # MeetingRegistration.attended started conflating badge-pickup and session attendance before IETF 114.
         # We've separated session attendance off to ietf.meeting.Attended, but need to report attendance at older
@@ -254,11 +262,8 @@ class Meeting(models.Model):
         # Looking up by registration and attendance records separately and joining in
         # python is far faster than combining the Q objects in the query (~100x).
         # Further optimization may be possible, but the queries are tricky...
-        attended_per_meeting_registration = (
-            Q(registration__meeting=self) & (
-                Q(registration__attended=True) |
-                Q(registration__checkedin=True)
-            )
+        attended_per_meeting_registration = Q(registration__meeting=self) & (
+            Q(registration__attended=True) | Q(registration__checkedin=True)
         )
         attendees_by_reg = set(
             Person.objects.filter(attended_per_meeting_registration).values_list(
@@ -266,29 +271,81 @@ class Meeting(models.Model):
             )
         )
 
-        attended_per_meeting_attended = (
-            Q(attended__session__meeting=self)
-            # Note that we are not filtering to plenary, wg, or rg sessions
-            # as we do for nomcom eligibility - if picking up a badge (see above)
-            # is good enough, just attending e.g. a training session is also good enough
-        )
         attendees_by_att = set(
-            Person.objects.filter(attended_per_meeting_attended).values_list(
+            Person.objects.filter(attended__session__in=sessions).values_list(
                 "pk", flat=True
             )
         )
-        
-        attendees = Person.objects.filter(
-            pk__in=attendees_by_att | attendees_by_reg
+
+        attendees = Person.objects.filter(pk__in=attendees_by_att | attendees_by_reg)
+        onsite = set(
+            attendees.filter(
+                registration__meeting=self,
+                registration__tickets__attendance_type__slug="onsite",
+            )
         )
-        onsite = set(attendees.filter(registration__meeting=self, registration__tickets__attendance_type__slug='onsite'))
-        remote = set(attendees.filter(registration__meeting=self, registration__tickets__attendance_type__slug='remote'))
+        remote = set(
+            attendees.filter(
+                registration__meeting=self,
+                registration__tickets__attendance_type__slug="remote",
+            )
+        )
         remote.difference_update(onsite)
 
-        return Attendance(
-            onsite=len(onsite),
-            remote=len(remote)
+        return (onsite, remote)
+
+    def get_attendance(self):
+        """Get the meeting attendance from the Registrations
+
+        Returns a NamedTuple with onsite and remote attributes. Returns None if the record is unavailable
+        for this meeting.
+        """
+        attendees = self.get_attendees()
+        if attendees is None:
+            return None
+        Attendance = namedtuple("Attendance", "onsite remote")
+        onsite, remote = attendees
+        return Attendance(onsite=len(onsite), remote=len(remote))
+
+    def nomcom_eligible_participants(self):
+        """Return (onsite_pks, remote_pks) as frozensets for nomcom eligibility.
+
+        Onsite: has onsite ticket AND (checked in OR attended a qualifying session).
+        Remote: has remote ticket AND attended a qualifying plenary/wg/rg session.
+            The registration attended flag alone is not sufficient for remote.
+        """
+        sessions = self.session_set.filter(
+            Q(type="plenary") | Q(group__type__in=["wg", "rg"])
         )
+        attendees = self.get_attendees(sessions=sessions)
+        if attendees is None:
+            onsite_pks = frozenset(
+                self.registration_set.onsite()
+                .filter(checkedin=True)
+                .values_list("person", flat=True)
+                .distinct()
+            )
+            remote_pks = (
+                frozenset(
+                    Attended.objects.filter(session__in=sessions)
+                    .values_list("person", flat=True)
+                    .distinct()
+                )
+                - onsite_pks
+            )
+            return (onsite_pks, remote_pks)
+        onsite, remote = attendees
+        onsite_pks = frozenset(p.pk for p in onsite)
+        # Remote requires actual qualifying session attendance; the registration
+        # attended flag alone (used as a proxy before Attended records existed)
+        # is not sufficient.
+        session_attended_pks = frozenset(
+            Attended.objects.filter(session__in=sessions)
+                .values_list("person", flat=True)
+                .distinct()
+        )
+        remote_pks = frozenset(p.pk for p in remote) & session_attended_pks
+        return (onsite_pks, remote_pks)
 
     @property
     def proceedings_format_version(self):

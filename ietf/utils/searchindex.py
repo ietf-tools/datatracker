@@ -383,9 +383,9 @@ SEARCH_PRESETS = {
     },
     "red-content": {
         "collection": "docs",
-        "infix": "off,always,off,off",
-        "query_by": "rfc,filename,authors,content",
-        "query_by_weights": "127,50,5,1"
+        "infix": "off,always,off,off,off",
+        "query_by": "rfc,filename,keywords,authors,content",
+        "query_by_weights": "127,50,20,5,1"
     },
 }
 

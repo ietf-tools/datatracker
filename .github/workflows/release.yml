@@ -37,7 +37,7 @@ jobs:
           echo "This workflow can only run on the 'release' branch (current: ${{ github.ref_name }})"
           exit 1
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
           fetch-tags: false
