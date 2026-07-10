@@ -12,7 +12,7 @@ import sys
 from importlib import import_module
 from pathlib import Path
 from random import randrange
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlencode
 
 from django.apps import apps
 from django.conf import settings
@@ -1072,10 +1072,10 @@ class CustomApiTests(TestCase):
         )
 
     @override_settings(
-        APP_API_TOKENS={"ietf.api.views.recent_rfc_authors": ["valid-token"]}
+        APP_API_TOKENS={"ietf.api.views.rfc_authors": ["valid-token"]}
     )
-    def test_recent_rfc_authors(self):
-        url = urlreverse("ietf.api.views.recent_rfc_authors")
+    def test_rfc_authors(self):
+        url = urlreverse("ietf.api.views.rfc_authors")
         # auth and method checks
         self.assertEqual(
             self.client.get(url, headers={}).status_code, 403, "No api token, no access"
@@ -1090,24 +1090,24 @@ class CustomApiTests(TestCase):
             405,
             "Bad method, no access",
         )
-
+        # Timestamps of interest
+        now = timezone.now()
+        one_day_ago = now - datetime.timedelta(days=1)
+        two_days_ago = now - datetime.timedelta(days=2)
+        three_days_ago = now - datetime.timedelta(days=3)
+        long_long_ago = now - datetime.timedelta(days=400)
+    
         # A recently published RFC with a known author...
         author = PersonFactory(name="Jane Q. Author")
         recent_rfc = WgRfcFactory(title="A Recently Published RFC")
         recent_event = DocEventFactory(
-            doc=recent_rfc,
-            type="published_rfc",
-            time=timezone.now() - datetime.timedelta(days=2),
+            doc=recent_rfc, type="published_rfc", time=two_days_ago
         )
         RfcAuthorFactory(document=recent_rfc, person=author)
 
         # ...and an RFC published well outside the default window, which must be excluded.
         old_rfc = WgRfcFactory(title="An Old RFC")
-        DocEventFactory(
-            doc=old_rfc,
-            type="published_rfc",
-            time=timezone.now() - datetime.timedelta(days=400),
-        )
+        DocEventFactory(doc=old_rfc, type="published_rfc", time=long_long_ago)
         RfcAuthorFactory(document=old_rfc)
 
         r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
@@ -1129,10 +1129,46 @@ class CustomApiTests(TestCase):
         )
         self.assertEqual(row["published_date"], str(recent_event.time.date()))
 
-        # A narrow window excludes the recent RFC, too.
-        r = self.client.get(url + "?days=1", headers={"X-Api-Key": "valid-token"})
+        # A narrow window excludes the recent RFC, too. First, using from-only
+        r = self.client.get(
+            url + "?" + urlencode({"from": one_day_ago.isoformat()}),
+            headers={"X-Api-Key": "valid-token"},
+        )
         self.assertEqual(r.status_code, 200)
         self.assertEqual(json.loads(r.content), [])
+        # Second, using both from and to
+        r = self.client.get(
+            url
+            + "?"
+            + urlencode({"from": one_day_ago.isoformat(), "to": now.isoformat()}),
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(json.loads(r.content), [])
+        # Third, from and to, but on the other side of the recent event. This also
+        # confirms that the "to" side comparison is < and not <=.
+        r = self.client.get(
+            url
+            + "?"
+            + urlencode(
+                {"from": three_days_ago.isoformat(), "to": two_days_ago.isoformat()}
+            ),
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(json.loads(r.content), [])
+
+        # Make sure the "from" side is >= and not >.
+        r = self.client.get(
+            url
+            + "?"
+            + urlencode(
+                {"from": two_days_ago.isoformat(), "to": one_day_ago.isoformat()}
+            ),
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(json.loads(r.content)), 1)
 
         # The testing parameter fakes the email domain while keeping the mailbox.
         r = self.client.get(url + "?testing", headers={"X-Api-Key": "valid-token"})
@@ -1165,9 +1201,17 @@ class CustomApiTests(TestCase):
         )
         self.assertEqual(r.status_code, 400)
 
-        # An invalid days parameter is rejected.
-        r = self.client.get(url + "?days=garbage", headers={"X-Api-Key": "valid-token"})
-        self.assertEqual(r.status_code, 400)
+        # Invalid to/from parameters are rejected.
+        r = self.client.get(url + "?from=garbage", headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 400, "bad from parameter")
+        r = self.client.get(url + "?to=garbage", headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 400, "bad to parameter")
+        r = self.client.get(
+            url + f"?from={two_days_ago.isoformat()}&to={three_days_ago.isoformat()}",
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 400, "out-of-order from/to parameters")
+        
 
     @override_settings(
         APP_API_TOKENS={"ietf.api.views.ingest_email": "valid-token", "ietf.api.views.ingest_email_test": "test-token"}
