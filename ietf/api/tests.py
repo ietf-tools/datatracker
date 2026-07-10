@@ -1125,7 +1125,7 @@ class CustomApiTests(TestCase):
         self.assertEqual(row["rfc_title"], recent_rfc.title)
         self.assertEqual(
             row["rfc_number_and_title"],
-            f"RFC {recent_rfc.rfc_number} {recent_rfc.title}",
+            f"RFC {recent_rfc.rfc_number}: {recent_rfc.title}",
         )
         self.assertEqual(row["published_date"], str(recent_event.time.date()))
 

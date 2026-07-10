@@ -38,7 +38,7 @@ import ietf
 from ietf.api import _api_list
 from ietf.api.ietf_utils import is_valid_token, requires_api_token
 from ietf.api.serializer import JsonExportMixin
-from ietf.doc.models import Document, DocEvent
+from ietf.doc.models import Document
 from ietf.doc.utils import DraftAliasGenerator, fuzzy_find_documents
 from ietf.group.utils import GroupAliasGenerator, role_holder_emails
 from ietf.ietfauth.utils import role_required
@@ -697,7 +697,7 @@ def rfc_authors(request):
                 "rfc_name": ", ".join(entry["rfc_names"]),
                 "rfc_title": ", ".join(entry["rfc_titles"]),
                 "rfc_number_and_title": ", ".join(
-                    f"RFC {num} {title}"
+                    f"RFC {num}: {title}"
                     for num, title in zip(entry["rfc_numbers"], entry["rfc_titles"])
                 ),
                 "published_date": ", ".join(entry["published_dates"]),
