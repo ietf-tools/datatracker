@@ -224,6 +224,7 @@ class RpcApiTests(APITestCase):
         self.assertEqual(mock_kwargs["rfc_number_list"], expected_rfc_number_list)
 
     @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
+    @mock.patch("ietf.api.views_rpc.update_rfc_json_task")
     @mock.patch("ietf.api.views_rpc.rebuild_reference_relations_task")
     @mock.patch("ietf.api.views_rpc.update_rfc_searchindex_task")
     @mock.patch("ietf.api.views_rpc.trigger_red_precomputer_task")
@@ -232,6 +233,7 @@ class RpcApiTests(APITestCase):
         mock_trigger_red_task,
         mock_update_searchindex_task,
         mock_rebuild_relations,
+        mock_update_rfc_json,
     ):
         def _valid_post_data():
             """Generate a valid post data dict
@@ -292,7 +294,7 @@ class RpcApiTests(APITestCase):
                     ContentFile(b"", "myfile.txt"),
                     ContentFile(b"", "myfile.html"),
                     ContentFile(b"", "myfile.pdf"),
-                    ContentFile(b"", "myfile.json"),
+                    ContentFile(b"", "myfile.json"),  # deprecated!
                     ContentFile(b"", "myfile.notprepped.xml"),
                 ]
             },
@@ -346,18 +348,19 @@ class RpcApiTests(APITestCase):
 
         # valid post
         mock_trigger_red_task.delay.reset_mock()
-        r = self.client.post(
-            url,
-            _valid_post_data(),
-            format="multipart",
-            headers={"X-Api-Key": "valid-token"},
-        )
+        with self.captureOnCommitCallbacks(execute=True):
+            r = self.client.post(
+                url,
+                _valid_post_data(),
+                format="multipart",
+                headers={"X-Api-Key": "valid-token"},
+            )
         self.assertEqual(r.status_code, 200)
         self.assertEqual(
             mock_update_searchindex_task.delay.call_args,
             mock.call(rfc.rfc_number),
         )
-        for extension in ["xml", "txt", "html", "pdf", "json"]:
+        for extension in ["xml", "txt", "html", "pdf"]:  # no "json"!
             filename = f"{rfc.name}.{extension}"
             self.assertEqual(
                 (rfc_path / filename).read_text(),
@@ -389,6 +392,12 @@ class RpcApiTests(APITestCase):
             b"This is .notprepped.xml",
             ".notprepped.xml blob should contain the expected content",
         )
+        # special case for json (deprecated and should be ignored)
+        self.assertFalse((rfc_path / f"{rfc.name}.json").exists())
+        self.assertFalse(
+            Blob.objects.filter(bucket="rfc", name=f"json/{rfc.name}.json").exists()
+        )
+
         # Confirm that the red precomputer was triggered correctly
         self.assertTrue(mock_trigger_red_task.delay.called)
         _, mock_kwargs = mock_trigger_red_task.delay.call_args
@@ -404,6 +413,10 @@ class RpcApiTests(APITestCase):
         _, mock_kwargs = mock_rebuild_relations.delay.call_args
         self.assertIn("doc_names", mock_kwargs)
         self.assertEqual(mock_kwargs["doc_names"], [rfc.name])
+        # Confirm rfc JSON creation was triggered correctly
+        self.assertTrue(mock_update_rfc_json.delay.called)
+        mock_args, _ = mock_update_rfc_json.delay.call_args
+        self.assertEqual(mock_args[0], [rfc.rfc_number])
 
         # re-post with replace = False should now fail
         mock_update_searchindex_task.reset_mock()

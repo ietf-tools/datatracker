@@ -10,6 +10,7 @@ from urllib.parse import urlencode
 
 from django.apps import apps as django_apps
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponseNotAllowed
 from django.utils.module_loading import autodiscover_modules
 
 
@@ -50,6 +51,9 @@ def autodiscover():
 
 
 class ModelResource(tastypie.resources.ModelResource):
+    def post_detail(self, request, **kwargs):
+        return HttpResponseNotAllowed(["GET"])
+
     def generate_cache_key(self, *args, **kwargs):
         """
         Creates a unique-enough cache key.
