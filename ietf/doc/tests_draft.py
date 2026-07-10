@@ -2187,9 +2187,34 @@ class ChangeStreamStateTests(TestCase):
         chair = RoleFactory(name_id="chair", group=doc.group).person
         url = urlreverse("ietf.doc.views_draft.issue_wg_lc", kwargs=dict(name=doc.name))
         login_testing_unauthorized(self, chair.user.username, url)
+
+        # GET: check 200 and that the pre-populated body contains the archive URL
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
+        prefilled_body = q("textarea#id_body").text()
+        expected_archive_url = f"{settings.IETF_ID_ARCHIVE_URL}{doc.name}-{doc.rev}.txt"
+        self.assertIn(
+            expected_archive_url,
+            prefilled_body,
+            "Pre-populated body must contain the I-D archive .txt URL",
+        )
+
+        # Invalid POST: end_date in the past must not change state
+        bad_postdict = dict(
+            end_date=date_today(DEADLINE_TZINFO),
+            to=q("input#id_to").attr("value"),
+            subject=q("input#id_subject").attr("value"),
+            body=prefilled_body,
+        )
+        r = self.client.post(url, bad_postdict)
+        self.assertEqual(r.status_code, 200, "Invalid POST should re-render the form")
+        self.assertNotEqual(
+            doc.get_state_slug("draft-stream-ietf"),
+            "wg-lc",
+            "State must not change on invalid POST",
+        )
+
         postdict = dict()
         postdict["end_date"] = q("input#id_end_date").attr("value")
         postdict["to"] = q("input#id_to").attr("value") + ", extrato@example.org"
@@ -2199,15 +2224,36 @@ class ChangeStreamStateTests(TestCase):
         else:
             postdict["cc"] = "extracc@example.org"
         postdict["subject"] = q("input#id_subject").attr("value") + " Extra Subject Words"
-        postdict["body"] = q("textarea#id_body").text() + "FGgqbQ$UNeXs"
+        postdict["body"] = prefilled_body + "FGgqbQ$UNeXs"
         empty_outbox()
         r = self.client.post(
             url,
             postdict,
         )
         self.assertEqual(r.status_code, 302)
+        doc.refresh_from_db()
         self.assertEqual(doc.get_state_slug("draft-stream-ietf"), "wg-lc")
+
+        # A StateDocEvent recording the transition must exist
+        self.assertTrue(
+            doc.docevent_set.filter(type="changed_state").exists(),
+            "Expected a changed_state event after issuing WG LC",
+        )
+
+        # A stream-s reminder must be active for the doc
+        self.assertTrue(
+            DocReminder.objects.filter(
+                event__doc=doc, type_id="stream-s", active=True
+            ).exists(),
+            "Expected an active stream-s reminder after issuing WG LC",
+        )
+
         self.assertEqual(len(outbox), 2)
+
+        # outbox[0] is the stream-state-changed notification
+        self.assertIn(doc.name, outbox[0]["Subject"])
+
+        # outbox[1] is the WGLC announcement sent to the WG list
         self.assertIn(f"{doc.group.acronym}@ietf.org", outbox[1]["To"])
         self.assertIn("extrato@example.org", outbox[1]["To"])
         self.assertIn("extracc@example.org", outbox[1]["Cc"])
@@ -2216,6 +2262,11 @@ class ChangeStreamStateTests(TestCase):
         body = get_payload_text(outbox[1])
         self.assertIn("disclosure obligations", body)
         self.assertIn("FGgqbQ$UNeXs", body)
+        self.assertIn(
+            expected_archive_url,
+            body,
+            "WGLC email body must contain the I-D archive .txt URL",
+        )
 
     def test_issue_wg_call_for_adoption_form(self):
         end_date = date_today(DEADLINE_TZINFO) + datetime.timedelta(days=1)
@@ -2783,5 +2834,45 @@ class BallotEmailAjaxTests(TestCase):
             doc.group.list_email,
             "foo@example.com",
         ]:
+            self.assertIn(snippet, response["text"])
+
+        # Non-IETF stream: from address uses balloter.formatted_email(), not role_email("ad").
+        # Give the balloter a chair role (in a different RG) with a distinct email to prove
+        # that chair role address is not used; formatted_email() uses the primary email.
+        irtf_doc = RgDraftFactory()
+        non_ad_balloter = PersonFactory(name="Some Irsgmember")
+        other_rg = GroupFactory(type_id="rg")
+        chair_role_email = EmailFactory(
+            person=non_ad_balloter, address="chair-role@example.com"
+        )
+        RoleFactory(
+            name_id="chair",
+            group=other_rg,
+            person=non_ad_balloter,
+            email=chair_role_email,
+        )
+        response = _post_json(
+            self,
+            url,
+            {
+                "post_data": {
+                    "discuss": "",
+                    "comment": "cccccc",
+                    "position": "yes",
+                    "balloter": non_ad_balloter.pk,
+                    "docname": irtf_doc.name,
+                    "cc_choices": [],
+                    "additional_cc": "",
+                }
+            },
+        )
+        self.assertTrue(response["success"])
+        from_line = next(
+            line for line in response["text"].split("\n") if line.startswith("From: ")
+        )
+        # formatted_email() uses the primary email, not the chair role email
+        self.assertIn(non_ad_balloter.email().address, from_line)
+        self.assertNotIn(chair_role_email.address, from_line)
+        for snippet in ["cccccc", non_ad_balloter.plain_name(), irtf_doc.name]:
             self.assertIn(snippet, response["text"])
 

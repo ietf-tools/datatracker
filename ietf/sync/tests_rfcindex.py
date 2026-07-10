@@ -28,9 +28,11 @@ from ietf.sync.rfcindex import (
     get_april1_rfc_numbers,
     get_publication_std_levels,
     get_unusable_rfc_numbers,
+    red_bucket_input_path,
+    red_bucket_output_path,
+    save_to_filesystem,
     save_to_red_bucket,
     subseries_text_line,
-    save_to_filesystem,
 )
 from ietf.utils.test_utils import TestCase
 
@@ -139,7 +141,10 @@ class RfcIndexTests(TestCase):
             f"{self.april_fools_rfc.rfc_number} {self.april_fools_rfc.title}",
             stripped_contents,
         )
-        self.assertIn("1 April 2020", contents)  # from the April 1 RFC
+        # "1 April 2020" may be split across a line wrap (e.g. "1 April\n     2020")
+        # when the randomly-generated title is long enough to push the date off the line.
+        # assertRegex handles both wrapped and non-wrapped cases explicitly.
+        self.assertRegex(contents, r"1\s+April\s+2020")  # from the April 1 RFC
         self.assertIn(
             f"{self.rfc.rfc_number} {self.rfc.title}",
             stripped_contents,
@@ -398,25 +403,47 @@ class RfcIndexTests(TestCase):
         )
 
 
+@override_settings(RFCINDEX_INPUT_PATH="input/", RFCINDEX_OUTPUT_PATH="output/")
 class HelperTests(TestCase):
+    INPUT_PATH = "input"
+    OUTPUT_PATH = "output"
+
     def test_format_rfc_number(self):
         self.assertEqual(format_rfc_number(10), "10")
         with override_settings(RFCINDEX_MATCH_LEGACY_XML=True):
             self.assertEqual(format_rfc_number(10), "0010")
+
+    def test_red_bucket_input_path(self):
+        with override_settings(RFCINDEX_INPUT_PATH="bar"):
+            self.assertEqual(red_bucket_input_path("foo"), "bar/foo")
+        with override_settings(RFCINDEX_INPUT_PATH="bar/"):
+            self.assertEqual(red_bucket_input_path("foo"), "bar/foo")
+
+    def test_red_bucket_output_path(self):
+        self.assertEqual(red_bucket_input_path("foo"), f"{self.INPUT_PATH}/foo")
+        with override_settings(RFCINDEX_OUTPUT_PATH="bar"):
+            self.assertEqual(red_bucket_output_path("foo"), "bar/foo")
+        with override_settings(RFCINDEX_OUTPUT_PATH="bar/"):
+            self.assertEqual(red_bucket_output_path("foo"), "bar/foo")
 
     def test_save_to_red_bucket(self):
         red_bucket = storages["red_bucket"]
         with override_settings(RFCINDEX_DELETE_THEN_WRITE=False):
             save_to_red_bucket("test", "contents \U0001f600")
         # Read as binary and explicitly decode to confirm encoding
-        with red_bucket.open("test", "rb") as f:
+        with red_bucket.open(f"{self.OUTPUT_PATH}/test", "rb") as f:
             self.assertEqual(f.read().decode("utf-8"), "contents \U0001f600")
         with override_settings(RFCINDEX_DELETE_THEN_WRITE=True):
             save_to_red_bucket("test", "new contents \U0001fae0".encode("utf-8"))
         # Read as binary and explicitly decode to confirm encoding
-        with red_bucket.open("test", "rb") as f:
+        with red_bucket.open(f"{self.OUTPUT_PATH}/test", "rb") as f:
             self.assertEqual(f.read().decode("utf-8"), "new contents \U0001fae0")
-        red_bucket.delete("test")  # clean up like a good child
+        red_bucket.delete(f"{self.OUTPUT_PATH}/test")  # clean up like a good child
+        # check that we can override the path
+        with override_settings(RFCINDEX_OUTPUT_PATH="fruit"):
+            save_to_red_bucket("test", "content")
+        self.assertTrue(red_bucket.exists("fruit/test"))
+        red_bucket.delete("fruit/test")  # clean up like a good child
 
     def test_save_to_filesystem(self):
         rfc_path = Path(settings.RFC_PATH)
@@ -442,30 +469,36 @@ class HelperTests(TestCase):
         with self.assertRaises(FileNotFoundError):
             get_unusable_rfc_numbers()
         red_bucket = storages["red_bucket"]
-        red_bucket.save("unusable-rfc-numbers.json", ContentFile("not json"))
+        red_bucket.save(
+            f"{self.INPUT_PATH}/unusable-rfc-numbers.json", ContentFile("not json")
+        )
         with self.assertRaises(json.JSONDecodeError):
             get_unusable_rfc_numbers()
-        red_bucket.delete("unusable-rfc-numbers.json")
+        red_bucket.delete(f"{self.INPUT_PATH}/unusable-rfc-numbers.json")
 
     def test_get_april1_rfc_numbers_raises(self):
         """get_april1_rfc_numbers should bail on errors"""
         with self.assertRaises(FileNotFoundError):
             get_april1_rfc_numbers()
         red_bucket = storages["red_bucket"]
-        red_bucket.save("april-first-rfc-numbers.json", ContentFile("not json"))
+        red_bucket.save(
+            f"{self.INPUT_PATH}/april-first-rfc-numbers.json", ContentFile("not json")
+        )
         with self.assertRaises(json.JSONDecodeError):
             get_april1_rfc_numbers()
-        red_bucket.delete("april-first-rfc-numbers.json")
+        red_bucket.delete(f"{self.INPUT_PATH}/april-first-rfc-numbers.json")
 
     def test_get_publication_std_levels_raises(self):
         """get_publication_std_levels should bail on errors"""
         with self.assertRaises(FileNotFoundError):
             get_publication_std_levels()
         red_bucket = storages["red_bucket"]
-        red_bucket.save("publication-std-levels.json", ContentFile("not json"))
+        red_bucket.save(
+            f"{self.INPUT_PATH}/publication-std-levels.json", ContentFile("not json")
+        )
         with self.assertRaises(json.JSONDecodeError):
             get_publication_std_levels()
-        red_bucket.delete("publication-std-levels.json")
+        red_bucket.delete(f"{self.INPUT_PATH}/publication-std-levels.json")
 
     def test_subseries_text_line(self):
         text = "foobar"

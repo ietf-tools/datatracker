@@ -32,7 +32,6 @@ from ietf.group.models import Group, Role
 from ietf.person.models import Email, Person
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting
-from ietf.meeting.utils import participants_for_meeting
 from ietf.utils.pipe import pipe
 from ietf.utils.mail import send_mail_text, send_mail, get_payload_text
 from ietf.utils.log import log
@@ -743,8 +742,8 @@ def three_of_five_eligible_9389(previous_five, queryset=None):
 
     counts = defaultdict(lambda: 0)
     for meeting in previous_five:
-        checked_in, attended = participants_for_meeting(meeting)
-        for id in set(checked_in) | set(attended):
+        onsite_pks, remote_pks = meeting.nomcom_eligible_participants()
+        for id in onsite_pks | remote_pks:
             counts[id] += 1
     return queryset.filter(pk__in=[id for id, count in counts.items() if count >= 3])
 

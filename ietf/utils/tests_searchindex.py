@@ -46,6 +46,39 @@ class SearchindexTests(TestCase):
         sanitized = "This is text It is full of problems Fix it."
         self.assertEqual(searchindex._sanitize_text(dirty_text), sanitized)
 
+    def test_sanitize_abstract(self):
+        dirty_abstract = (
+            "Mixed\n"
+            "Newlines\r"
+            "And\r\n"
+            "Things\n\r"
+            " Sometimes\n"
+            "\n"
+            "With\r\n"
+            "\r\n"
+            "Double  \n\r"
+            "\n\r"
+            "   Newlines\r"
+            "\r"
+            "Whee!"
+        )
+        sanitized = (
+            "Mixed\n"
+            "Newlines\n"
+            "And\n"
+            "Things\n"
+            "Sometimes\n"
+            "\n"
+            "With\n"
+            "\n"
+            "Double\n"
+            "\n"
+            "Newlines\n"
+            "\n"
+            "Whee!"
+        )
+        self.assertEqual(searchindex._sanitize_abstract(dirty_abstract), sanitized)
+
     def test_typesense_doc_from_rfc(self):
         not_rfc = WgDraftFactory()
         assert isinstance(not_rfc, Document)
@@ -63,7 +96,7 @@ class SearchindexTests(TestCase):
         # Check a few values, not exhaustive
         self.assertEqual(result["id"], f"doc-{rfc.pk}")
         self.assertEqual(result["rfcNumber"], rfc.rfc_number)
-        self.assertEqual(result["abstract"], searchindex._sanitize_text(rfc.abstract))
+        self.assertEqual(result["abstract"], searchindex._sanitize_abstract(rfc.abstract))
         self.assertEqual(result["pages"], rfc.pages)
         self.assertNotIn("adName", result)
         self.assertNotIn("content", result)  # no blob

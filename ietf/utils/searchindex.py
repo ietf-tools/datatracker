@@ -64,8 +64,11 @@ def get_collection_name() -> str:
     return collection_name
 
 
-def _sanitize_text(content):
-    """Sanitize content or abstract text for search"""
+def _sanitize_text(content: str):
+    """Sanitize content text for search
+    
+    Aggressively simplifies whitespace, removes most punctuation
+    """
     # REs (with approximate names)
     RE_DOT_OR_BANG_SPACE = r"\. |! "  # -> " " (space)
     RE_COMMENT_OR_TOC_CRUD = r"<--|-->|--+|\+|\.\.+"  # -> ""
@@ -82,6 +85,18 @@ def _sanitize_text(content):
     content = re.sub(RE_DOTTED_NUMBERS, EMPTY, content)
     content = re.sub(RE_MULTIPLE_WHITESPACE, SPACE, content)
     return content.strip()
+
+
+def _sanitize_abstract(abstract: str):
+    """Sanitize abstract text for search
+    
+    Simplifies whitespace but mostly leaves text intact. Abstract text will be
+    displayed in search results, so a light touch is needed.
+    """
+    abstract = abstract.strip()
+    abstract = re.sub("\r\n|\n\r|\r", "\n", abstract)  # normalize on \n
+    abstract = "\n".join(line.strip() for line in abstract.split("\n"))  # strip by line
+    return abstract
 
 
 def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
@@ -123,7 +138,7 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
         "rfc": str(rfc.rfc_number),
         "filename": rfc.name,
         "title": rfc.title,
-        "abstract": _sanitize_text(rfc.abstract),
+        "abstract": _sanitize_abstract(rfc.abstract),
         "pages": rfc.pages,
         "keywords": keywords,
         "type": "rfc",
@@ -156,6 +171,7 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
             "acronym": rfc.group.acronym,
             "name": rfc.group.name,
             "full": f"{rfc.group.acronym} - {rfc.group.name}",
+            "type": rfc.group.type.slug,
         }
     if (
         rfc.group.parent is not None
@@ -367,9 +383,9 @@ SEARCH_PRESETS = {
     },
     "red-content": {
         "collection": "docs",
-        "infix": "off,always,off,off",
-        "query_by": "rfc,filename,authors,content",
-        "query_by_weights": "127,50,5,1"
+        "infix": "off,always,off,off,off",
+        "query_by": "rfc,filename,keywords,authors,content",
+        "query_by_weights": "127,50,20,5,1"
     },
 }
 

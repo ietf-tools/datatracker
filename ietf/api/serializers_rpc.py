@@ -805,7 +805,7 @@ class RfcFileSerializer(serializers.Serializer):
     # works.
     allowed_extensions = (
         ".html",
-        ".json",
+        ".json",  # deprecated - accepted but ignored, datatracker generates its own
         ".notprepped.xml",
         ".pdf",
         ".txt",

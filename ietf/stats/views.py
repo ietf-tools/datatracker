@@ -1,8 +1,9 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 import calendar
+import csv
 import datetime
 import itertools
 import json
@@ -12,7 +13,7 @@ from collections import defaultdict
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse as urlreverse
 from django.db.models import Count
@@ -28,7 +29,7 @@ from ietf.group.models import Role, Group
 from ietf.person.models import Person
 from ietf.name.models import ReviewResultName, CountryName, ReviewAssignmentStateName
 from ietf.meeting.models import Registration, Meeting
-from ietf.ietfauth.utils import has_role
+from ietf.ietfauth.utils import has_role, role_required
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 from ietf.meeting.helpers import get_current_ietf_meeting_num
@@ -956,4 +957,47 @@ def review_stats(request, stats_type=None, acronym=None):
         "selected_result": selected_result,
         "possible_states": possible_states,
         "selected_state": selected_state,
+    })
+
+
+@role_required("LLC Staff")
+def annual_report_inputs(request, year=None):
+    if year is None and "year" in request.GET:
+        return HttpResponseRedirect(
+            urlreverse("ietf.stats.views.annual_report_inputs", kwargs={"year": request.GET["year"]})
+        )
+    year = int(year) if year else datetime.date.today().year - 1
+
+    from ietf.doc.models import NewRevisionDocEvent
+    from ietf.utils.reports import authors_by_year, submitters_by_year, unique_people
+
+    download = request.GET.get("download")
+    if download in ("authors", "submitters"):
+        addresses = authors_by_year(year) if download == "authors" else submitters_by_year(year)
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{download}-{year}.csv"'
+        writer = csv.writer(response)
+        writer.writerow(sorted(addresses))
+        return response
+
+    authors = authors_by_year(year)
+    submitters = submitters_by_year(year)
+    author_persons, author_nopersons = unique_people(authors)
+    submitter_persons, submitter_nopersons = unique_people(submitters)
+
+    draft_count = len(set(
+        NewRevisionDocEvent.objects.filter(
+            doc__type_id="draft", time__year=year
+        ).values_list("doc__name", flat=True)
+    ))
+
+    return render(request, "stats/annual_report_inputs.html", {
+        "year": year,
+        "author_count": len(authors),
+        "submitter_count": len(submitters),
+        "author_person_count": author_persons.count(),
+        "author_noperson_count": len(author_nopersons),
+        "submitter_person_count": submitter_persons.count(),
+        "submitter_noperson_count": len(submitter_nopersons),
+        "draft_count": draft_count,
     })
