@@ -563,10 +563,14 @@ def role_holder_addresses(request):
 
 @requires_api_token
 @csrf_exempt
-def recent_rfc_authors(request):
-    """Return authors of recently published RFCs as a JSON list of objects.
+def rfc_authors(request):
+    """Return authors of published RFCs as a JSON list of objects.
 
-    The lookback window is controlled by the ?days=N query parameter (default 7).
+    Finds authors by date, though this could be extended to other selection
+    criteria in the future. Specify the range as ?from=<datetime>&to=<datetime>.
+    Each <datetime> is an ISO-8601 timestamp, treated as UTC if it does not include
+    time zone information. Defaults to `to`=now, `from`=14 days before `to`
+
     Each author appears once, with their RFC numbers, names, titles, and
     publication dates accumulated across every RFC they published in the window.
 
@@ -593,21 +597,40 @@ def recent_rfc_authors(request):
                 "Must include the testing parameter when using testaddr"
             )
 
-    # lookback parameters
-    days = 7
-    days_param = request.GET.get("days")
-    if days_param is not None:
+    # filter parameters
+    to_param = request.GET.get("to")
+    if to_param is None:
+        # Did not receive a to parameter. Default to now().
+        time_range_end = datetime.datetime.now(datetime.UTC)
+    else:
+        # Did receive a to parameter. Parse it.
         try:
-            days = int(days_param)
+            time_range_end = datetime.datetime.fromisoformat(to_param)
         except ValueError:
-            return HttpResponseBadRequest("Invalid days parameter")
+            return HttpResponseBadRequest("Invalid to parameter")
+        if time_range_end.tzinfo is None:
+            time_range_end = time_range_end.replace(tzinfo=datetime.UTC)
 
-    since = timezone.now() - datetime.timedelta(days=days)
+    from_param = request.GET.get("from")
+    if from_param is None:
+        # Did not receive a from parameter. Default to 14 days before end time.
+        time_range_start = time_range_end - datetime.timedelta(days=14)
+    else:
+        # Did receive a from parameter. Parse it.
+        try:
+            time_range_start = datetime.datetime.fromisoformat(from_param)
+        except ValueError:
+            return HttpResponseBadRequest("Invalid from parameter")
+        if time_range_start.tzinfo is None:
+            time_range_start = time_range_start.replace(tzinfo=datetime.UTC)
+    if time_range_start > time_range_end:
+        return HttpResponseBadRequest("Invalid time range, from is later than to")
 
     rfcs = Document.objects.filter(
         type_id="rfc",
         docevent__type="published_rfc",
-        docevent__time__gt=since,
+        docevent__time__gte=time_range_start,
+        docevent__time__lt=time_range_end,
     ).distinct()
 
     # Collect per-author data keyed by email so each author gets one row.
