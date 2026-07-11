@@ -6,36 +6,24 @@ root = true
 
 # Global settings for IETF datatracker
 # ---------------------------------------------------------
-# PEP8 Style
 
 [*]
-indent_size = 4
+indent_size = 2
 indent_style = space
 charset = utf-8
-trim_trailing_whitespace = false
+trim_trailing_whitespace = true
 insert_final_newline = true
+end_of_line = lf
 
 # Specializations below *add to* the above defaults
 
-# Settings for .github folder
+# Settings for Python files
 # ---------------------------------------------------------
-# GitHub Markdown Style
+# PEP8 Style
 
-[.github/**]
-indent_size = 2
-
-# Settings for client-side JS / Vue files
-# ---------------------------------------------------------
-# StandardJS Style
-
-[client/**]
-indent_size = 2
-
-[dev/**.js]
-indent_size = 2
-
-[{package.json,.eslintrc.js,.yarnrc.yml,vite.config.js,jsconfig.json}]
-indent_size = 2
+[*.{py,py.bak}]
+indent_size = 4
+trim_trailing_whitespace = false
 
 # Settings for HTML templates
 # ---------------------------------------------------------
@@ -44,8 +32,14 @@ indent_size = 2
 [ietf/**.html]
 insert_final_newline = false
 
-# Settings for Kubernetes yaml
+# Settings for Markdown
 # ---------------------------------------------------------
-# Use 2-space indents
-[k8s/**.yaml]
-indent_size = 2
+# Avoid trimming trailing whitespace
+[*.md]
+trim_trailing_whitespace = false
+
+# Unset for special / output files
+# ---------------------------------------------------------
+[{patch,vzic,bin}/**]
+indent_style = unset
+indent_size = unset
