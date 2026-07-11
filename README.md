@@ -130,7 +130,7 @@ The minio container exposes the minio api at port 9000 and the minio console at 
 
 #### Intro
 
-We now use `yarn` to manage assets for the Datatracker, and `vite`/`parcel` to package them. `yarn` maintains its `node` packages under the `.yarn` directory.
+Assets are built + bundled using `vite` / `parcel`.
 
 The datatracker uses 2 different build systems, depending on the use case:
 - [**Vite**](https://vitejs.dev/) for Vue 3 pages / components
@@ -147,7 +147,7 @@ The datatracker makes use of the Django-Vite plugin to point to either the Vite.
 In development mode, you must start the Vite.js development server, in addition to the usual Datatracker server:
 
 ```sh
-yarn dev
+npm run dev
 ```
 
 Any changes made to the files under `/client` will automatically trigger a hot-reload of the modified components.
@@ -155,7 +155,7 @@ Any changes made to the files under `/client` will automatically trigger a hot-r
 To generate production assets, run the build command:
 
 ```sh
-yarn build
+npm run build
 ```
 
 This will create packages under `ietf/static/dist-neue`, which are then served by the Django development server, and which must be uploaded to the CDN.
@@ -168,7 +168,7 @@ Static images are likewise in `ietf/static/images`.
 Whenever changes are made to the files under `ietf/static`, you must re-run the build command to package them:
 
 ``` shell
-yarn legacy:build
+npm run legacy:build
 ```
 
 This will create packages under `ietf/static/dist/ietf`, which are then served by the Django development server, and which must be uploaded to the CDN.
@@ -218,11 +218,9 @@ In order to work backwards from a file served in development mode to the locatio
 
 #### Handling of External Javascript and CSS Components
 
-In order to make it easy to keep track of and upgrade external components, these are now handled by a tool called `yarn` via the configuration in `package.json`.
-
 To add a new package, simply run (replace `<package-name>` with the NPM module name):
 ```sh
-yarn add <package-name>
+npm install <package-name>
 ```
 
 #### Handling of Internal Static Files
@@ -277,7 +275,7 @@ Frontend tests are done via Playwright. There're 2 different type of tests:
 
 2. Run in a **separate process**, from the **project root directory**:
     ```sh
-    yarn preview
+    npm run preview
     ```
 
 3. Run the tests, in of these 3 modes, from the `./playwright` directory:
