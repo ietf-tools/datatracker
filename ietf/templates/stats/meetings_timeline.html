@@ -49,7 +49,7 @@
         </form>
     </div>
     <p>
-    {% if stats_type == 'total' %}
+    {% if stats_type == 'reg_type' %}
         This page provides a timeline of meeting registrations.
     {% else %}
         This page provides a timeline of meeting registrations by {{ stats_type }} with a limit of {{ top_n }} {{ plural_stats_type }}.
@@ -57,7 +57,7 @@
     </p>
     <div class="row">
         <div class="col-md-12">
-        {% if stats_type == 'total' %}
+        {% if stats_type == 'reg_type' %}
             <h2>Total Registrations</h2>
         {% else %}
             <h2>Total Registrations by {{ stats_type|title }}</h2>
@@ -66,9 +66,9 @@
             <canvas id="totalRegistrationChart" aria-label="Total Registration Timeline" role="img"></canvas>
         </div>
         </div><!-- col -->
-        {% if stats_type != 'total' %}
+        {% if stats_type != 'reg_type' %}
         <div class="col-md-12">
-        {% if stats_type == 'total' %}
+        {% if stats_type == 'reg_type' %}
             <h2>Total In Person Registrations</h2>
         {% else %}
             <h2>In Person Registrations by {{ stats_type|title }}</h2>
