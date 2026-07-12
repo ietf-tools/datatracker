@@ -16,7 +16,7 @@ urlpatterns = [
     url(r"^documents/(?P<doc_type>draft|rfc)/(?P<stats_type>level|stream|wg)/total/$", views_documents.documents_total),
     url(r"^documents/(?P<doc_type>draft|rfc)/(?P<stats_type>level|stream|wg)/$", views_documents.documents_timeline),
     url(r"^knowncountries/$", views.known_countries_list),
-    url(r"^meetings/(?:(?P<stats_type>affiliation|country|total)/)?$", views_meetings.meetings_timeline),
+    url(r"^meetings/(?:(?P<stats_type>affiliation|country|reg_type)/)?$", views_meetings.meetings_timeline),
     url(r"^meetings/(?P<meeting_number>\d+)/(?P<stats_type>affiliation|country)/$", views_meetings.meeting_stats),
     url(r"^review/(?:(?P<stats_type>completion|results|states|time)/)?(?:%(acronym)s/)?$" % settings.URL_REGEXPS, views_reviews.review_stats),
 ]

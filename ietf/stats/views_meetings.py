@@ -344,11 +344,11 @@ def meetings_timeline(request: Any, stats_type: str = "country") -> Any:
                       "stats/error.html",
                       {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"})
 
-    if stats_type == "total":
+    if stats_type == "reg_type":
         total_labels, total_data_sets = get_data_for_meetings(top_n=top_n)
         in_person_labels: list[str] = []
         in_person_data_sets: list[dict[str, Any]] = []
-        plural_stats_type = ""
+        plural_stats_type = "registration types"
     elif stats_type == "affiliation":
         total_labels, total_data_sets = get_affiliation_data_for_meetings(top_n=top_n)
         in_person_labels, in_person_data_sets = get_affiliation_data_for_meetings(attendance_type="onsite", top_n=top_n)
@@ -366,7 +366,7 @@ def meetings_timeline(request: Any, stats_type: str = "country") -> Any:
     }
 
     # On per country/affiliation have a separate graph for inperson
-    if stats_type == "total":
+    if stats_type == "reg_type":
         in_person_chart_data = None
     else:
         in_person_chart_data = {
@@ -380,12 +380,12 @@ def meetings_timeline(request: Any, stats_type: str = "country") -> Any:
                                                       kwargs={"stats_type": "affiliation"})),
         ("country", "Per country", urlreverse(meetings_timeline,
                                               kwargs={"stats_type": "country"})),
-        ("total", "Total", urlreverse(meetings_timeline,
-                                      kwargs={"stats_type": "total"})),
+        ("reg_type", "Registration type", urlreverse(meetings_timeline,
+                                      kwargs={"stats_type": "reg_type"})),
     ]
 
     current_meeting = get_current_ietf_meeting_num()
-    if stats_type == "total":
+    if stats_type == "reg_type":
         possible_stats_type = "country"
     else:
         possible_stats_type = stats_type
