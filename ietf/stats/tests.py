@@ -342,7 +342,7 @@ class StatisticsTests(TestCase):
             ),
         )
         # Test the global meetings timeline
-        r = self.client.get(urlreverse(ietf.stats.views_meetings.meetings_timeline, kwargs={"stats_type": "total"}))
+        r = self.client.get(urlreverse(ietf.stats.views_meetings.meetings_timeline, kwargs={"stats_type": "reg_type"}))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "/stats/meetings/124/country")
         self.assertContains(r, "/stats/meetings/125/country")
