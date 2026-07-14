@@ -341,6 +341,14 @@ class StatisticsTests(TestCase):
                 for ds in in_person_data["datasets"]
             ),
         )
+        # Test for CSV download of the meeting stats per affiliation
+        r = self.client.get(urlreverse(ietf.stats.views_meetings.meeting_stats, kwargs={"meeting_number": "125", "stats_type": "affiliation"}) + "?download=total&top_n=5")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "text/csv")
+        self.assertIn("attachment;", r["Content-Disposition"])
+        csv_lines = r.content.decode("utf-8").splitlines()
+        self.assertTrue(csv_lines[0].startswith('"affiliation","count"'))
+        self.assertTrue(csv_lines[1].startswith('"Example",25'))
         # Test the global meetings timeline
         r = self.client.get(urlreverse(ietf.stats.views_meetings.meetings_timeline, kwargs={"stats_type": "reg_type"}))
         self.assertEqual(r.status_code, 200)

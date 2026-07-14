@@ -2,11 +2,12 @@
 
 from collections import defaultdict
 from typing import Any
+import csv
 
 from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Count
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse as urlreverse
 
@@ -519,6 +520,23 @@ def meeting_stats(request: Any, meeting_number: str | None = None, stats_type: s
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
+    # Handle the download of CSV data if requested
+    download = request.GET.get("download")
+    if download in ("total", "in_person"):
+        if download == "total":
+            labels, data = total_labels, total_data
+        else:
+            labels, data = in_person_labels, in_person_data
+
+        response = HttpResponse(content_type="text/csv")
+        # Let's set the filename to include the stats_type, download type, and meeting number (even if template sets it, this ensures the correct filename is used)
+        response["Content-Disposition"] = f'attachment; filename="{stats_type}-{download}-{meeting_number}.csv"'
+        writer = csv.writer(response, quoting=csv.QUOTE_NONNUMERIC, lineterminator="\n", dialect="excel")
+        writer.writerow([stats_type, "count"])
+        for label, count in zip(labels, data):
+            writer.writerow([label, count])
+        return response
+    
     total_chart_data = {
         "labels": total_labels,
         "datasets": [{

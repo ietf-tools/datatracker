@@ -53,13 +53,25 @@
     </p>
     <div class="row">
         <div class="col-md-6 col-sm-12">
-        <h2>Total Registrations by {{ stats_type|title }} ({{ total_total}} in total)</h2>
+        <h2>
+            Total Registrations by {{ stats_type|title }} ({{ total_total}} in total)
+            <a href="{% url 'ietf.stats.views_meetings.meeting_stats' meeting_number=meeting_number stats_type=stats_type %}?top={{ top_n }}&download=total" class="btn btn-outline-primary" 
+                download="{{ stats_type }}-total-{{ meeting_number }}.csv" aria-label="Download CSV">
+                <i class="bi bi-filetype-csv" aria-hidden="true" title="Download CSV file"></i>
+            </a>
+        </h2>
         <div class="chart-wrapper col-10">
             <canvas id="totalRegistrationChart" aria-label="Total Registration Pie Chart" role="img"></canvas>
         </div>
         </div><!-- col -->
         <div class="col-md-6 col-sm-12">
-        <h2>In Person Registrations by {{ stats_type|title }} ({{ in_person_total}} in total)</h2>
+        <h2>
+            In Person Registrations by {{ stats_type|title }} ({{ in_person_total}} in total)
+            <a href="{% url 'ietf.stats.views_meetings.meeting_stats' meeting_number=meeting_number stats_type=stats_type %}?top={{ top_n }}&download=in_person" class="btn btn-outline-primary" 
+                download="{{ stats_type }}-in_person-{{ meeting_number }}.csv" aria-label="Download CSV">
+                <i class="bi bi-filetype-csv" aria-hidden="true" title="Download CSV file"></i>
+            </a>
+        </h2>
         <div class="chart-wrapper col-10">
             <canvas id="inPersonRegistrationChart" aria-label="In Person Registration Pie Chart" role="img"></canvas>
         </div>
@@ -67,7 +79,9 @@
     </div><!-- row -->
     <div class="row">
         <p class="text-body-secondary text-end">
-            Click on a legend at the bottom to hide it and rescale the graph. 
+            Hover over a slice to see the count and percentage of total registrations.
+            Click on a legend at the bottom to hide it and rescale the graph; click again to show it. 
+            Click on <i class="bi bi-filetype-csv" aria-hidden="true" title="Download CSV file"></i> to download the data as a CSV file.
         </p>
     </div><!-- row-->
 {% endblock %}
