@@ -72,6 +72,7 @@ from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, \
 from ..blobdb.models import ResolvedMaterial
 from ietf.meeting.models import ImportantDate, SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
 from ietf.meeting.models import Registration
+from ietf.meeting.models import MeetingSurvey
 from ietf.meeting.forms import ( CustomDurationField, SwapDaysForm, SwapTimeslotsForm, ImportMinutesForm,
                                  TimeSlotCreateForm, TimeSlotEditForm, SessionCancelForm, SessionEditForm )
 from ietf.meeting.helpers import get_person_by_email, get_schedule_by_name
@@ -4491,8 +4492,15 @@ def past(request):
 def past_ietf(request):
     '''List of past IETF plenary meetings'''
     today = timezone.now()
-    
     meetings_ietf = data_for_meetings_overview(Meeting.objects.filter(type_id='ietf').filter(date__lte=today).order_by('-date'))
+    meeting_survey_urls = MeetingSurvey.get_meeting_survey_url("https://www.ietf.org/meeting/past/")
+    
+    # add IETF-120 qualtrics survey link
+    meeting_survey_urls['120'] = "https://ietf.co1.qualtrics.com/results/public/aWV0Zi1VUl8zT3laRG9JQWxidUkxZ0otNjZjMzQwNWI4ZjhlYTQwMDA4Nzg5MjNi#/pages/Page_1fe9399e-cacb-4063-af49-ee1340c57993"
+    
+    for meeting in meetings_ietf:
+        meeting.survey_url = meeting_survey_urls.get(meeting.number)
+        meeting.attendance = meeting.get_attendance()
     
     return render(request, 'meeting/past_ietf.html', {
                 'meetings_ietf': meetings_ietf,
