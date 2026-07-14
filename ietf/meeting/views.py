@@ -4492,18 +4492,16 @@ def past(request):
 def past_ietf(request):
     '''List of past IETF plenary meetings'''
     today = timezone.now()
-    meetings_ietf = data_for_meetings_overview(Meeting.objects.filter(type_id='ietf').filter(date__lte=today).order_by('-date'))
+    ietf_meetings = data_for_meetings_overview(Meeting.objects.filter(type_id='ietf').filter(date__lte=today).order_by('-date'))
     meeting_survey_urls = MeetingSurvey.get_meeting_survey_url("https://www.ietf.org/meeting/past/")
     
-    # add IETF-120 qualtrics survey link
-    meeting_survey_urls['120'] = "https://ietf.co1.qualtrics.com/results/public/aWV0Zi1VUl8zT3laRG9JQWxidUkxZ0otNjZjMzQwNWI4ZjhlYTQwMDA4Nzg5MjNi#/pages/Page_1fe9399e-cacb-4063-af49-ee1340c57993"
-    
-    for meeting in meetings_ietf:
-        meeting.survey_url = meeting_survey_urls.get(meeting.number)
+    for meeting in ietf_meetings:
+        if meeting_survey_urls is not None:
+            meeting.survey_url = meeting_survey_urls.get(meeting.number)
         meeting.attendance = meeting.get_attendance()
     
     return render(request, 'meeting/past_ietf.html', {
-                'meetings_ietf': meetings_ietf,
+                'ietf_meetings': ietf_meetings,
                 })
 
 def upcoming(request):

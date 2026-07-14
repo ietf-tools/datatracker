@@ -12,9 +12,9 @@
     {% cache 3600 pastmeetings %}
     {% origin %}
     <h1>Past Plenary Meetings</h1>
-    {% if meetings_ietf %}
+    {% if ietf_meetings %}
         <dl>
-            {% for meeting in meetings_ietf %}
+            {% for meeting in ietf_meetings %}
             <dt>IETF-{{ meeting.number }}</dt>
             <dd>{{meeting.date }}, {{meeting.city}}, {{meeting.country}}</dd>
             <dd>
@@ -40,6 +40,10 @@
             <dd>
                 {% if meeting.survey_url %}
                     <a href="{{ meeting.survey_url }}">Survey Results</a>
+                {% else %}
+                    {% if meeting.get_number == 120 %}
+                        <a href="https://ietf.co1.qualtrics.com/results/public/aWV0Zi1VUl8zT3laRG9JQWxidUkxZ0otNjZjMzQwNWI4ZjhlYTQwMDA4Nzg5MjNi#/pages/Page_1fe9399e-cacb-4063-af49-ee1340c57993">Survey Results</a>
+                    {% endif %}
                 {% endif %}
             </dd>
             {% endfor %}
