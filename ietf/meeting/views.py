@@ -4489,7 +4489,7 @@ def past(request):
                   })
     
 def past_ietf(request):
-    '''List of past IETF planetart meetings'''
+    '''List of past IETF plenary meetings'''
     today = timezone.now()
     
     meetings_ietf = data_for_meetings_overview(Meeting.objects.filter(type_id='ietf').filter(date__lte=today).order_by('-date'))
