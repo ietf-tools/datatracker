@@ -57,22 +57,24 @@
     </p>
     <div class="row">
         <div class="col-md-12">
-        {% if stats_type == 'reg_type' %}
-            <h2>Total Registrations by Registration Types</h2>
-        {% else %}
-            <h2>Total Registrations by {{ stats_type|title }}</h2>
-        {% endif %}
+            <h2>Total Registrations by {{ stats_type|title }}
+                <a href="{% url 'ietf.stats.views_meetings.meetings_timeline' stats_type=stats_type %}?top={{ top_n }}&download=total" class="btn btn-outline-primary" 
+                download="{{ stats_type }}-total-all.csv" aria-label="Download CSV">
+                <i class="bi bi-filetype-csv" aria-hidden="true" title="Download CSV file"></i>
+                </a>
+            </h2>
         <div class="chart-wrapper col-10">
             <canvas id="totalRegistrationChart" aria-label="Total Registration Timeline" role="img"></canvas>
         </div>
         </div><!-- col -->
         {% if stats_type != 'reg_type' %}
         <div class="col-md-12">
-        {% if stats_type == 'reg_type' %}
-            <h2>Total In Person Registrations</h2>
-        {% else %}
-            <h2>In Person Registrations by {{ stats_type|title }}</h2>
-        {% endif %}
+            <h2>In Person Registrations by {{ stats_type|title }}
+                <a href="{% url 'ietf.stats.views_meetings.meetings_timeline' stats_type=stats_type %}?top={{ top_n }}&download=in_person" class="btn btn-outline-primary" 
+                download="{{ stats_type }}-in_person-all.csv" aria-label="Download CSV">
+                <i class="bi bi-filetype-csv" aria-hidden="true" title="Download CSV file"></i>
+                </a>
+            </h2>
         <div class="chart-wrapper col-10">
             <canvas id="inPersonRegistrationChart" aria-label="In Person Registration Timeline" role="img"></canvas>
         </div>
@@ -86,6 +88,7 @@
             Panning can be done via the mouse or with a finger. 
             Zooming is done via the mouse wheel or via a pinch gesture. Press <kbd>ESC</kbd> 
             or click <button type="button" class="btn btn-primary" id="resetButton">Reset</button> to reset panning/zooming.
+            Click on <i class="bi bi-filetype-csv" aria-hidden="true" title="Download CSV file"></i> to download the data as a CSV file.
         </p>
     </div><!-- row-->
 {% endblock %}

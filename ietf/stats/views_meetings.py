@@ -361,6 +361,26 @@ def meetings_timeline(request: Any, stats_type: str = "country") -> Any:
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
+    # Handle the download of CSV data if requested
+    download = request.GET.get("download")
+    if download in ("total", "in_person"):
+        if download == "total":
+            labels, data_sets = total_labels, total_data_sets
+        else:
+            labels, data_sets = in_person_labels, in_person_data_sets
+
+        response = HttpResponse(content_type="text/csv")
+        # Let's set the filename to include the stats_type, download type, and meeting number (even if template sets it, this ensures the correct filename is used)
+        response["Content-Disposition"] = f'attachment; filename="{stats_type}-{download}-all.csv"'
+        writer = csv.writer(response, quoting=csv.QUOTE_NONNUMERIC, lineterminator="\n", dialect="excel")
+        writer.writerow(["IETF meeting", stats_type, "count"])
+        for meeting_nr in labels:
+            for ds in data_sets:
+                count = ds["data"][labels.index(meeting_nr)]
+                writer.writerow([int(meeting_nr), ds["label"], count])
+        return response
+
+    # Not for download, prepare the chart data for rendering in the template
     total_chart_data = {
         "labels": total_labels,
         "datasets": total_data_sets,
@@ -537,6 +557,7 @@ def meeting_stats(request: Any, meeting_number: str | None = None, stats_type: s
             writer.writerow([label, count])
         return response
     
+    # Not for download, prepare the chart data for rendering in the template
     total_chart_data = {
         "labels": total_labels,
         "datasets": [{

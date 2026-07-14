@@ -355,6 +355,16 @@ class StatisticsTests(TestCase):
         self.assertContains(r, "/stats/meetings/124/country")
         self.assertContains(r, "/stats/meetings/125/country")
         self.assertContains(r, "This page provides a timeline of meeting registrations.")
+        # Test for CSV download of the meetings timeline per affiliation
+        r = self.client.get(urlreverse(ietf.stats.views_meetings.meetings_timeline, kwargs={"stats_type": "affiliation"}) + "?download=total&top_n=5")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "text/csv")
+        self.assertIn("attachment;", r["Content-Disposition"])
+        body = r.content.decode("utf-8")
+        csv_lines = body.splitlines()
+        self.assertTrue(csv_lines[0].startswith('"IETF meeting","affiliation","count"'))
+        self.assertTrue(csv_lines[1].startswith('124,"Example",0'))
+        self.assertIn('125,"Test",15', body)
 
     def test_meeting_stats_for_bad_meeting(self):
         self.assertFalse(Meeting.objects.filter(number=676767).exists())
