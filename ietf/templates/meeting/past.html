@@ -6,11 +6,11 @@
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-{% block title %}Past Meetings{% endblock %}
+{% block title %}All Past Meetings{% endblock %}
 {% block content %}
     {% cache 3600 pastmeetings %}
     {% origin %}
-    <h1>Past Meetings</h1>
+    <h1>All Past Meetings</h1>
     {% if meetings %}
         <table class="table table-sm table-striped tablesorter">
             <thead>
