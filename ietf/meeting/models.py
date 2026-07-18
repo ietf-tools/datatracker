@@ -1243,6 +1243,9 @@ class Session(models.Model):
     def is_material_submission_cutoff(self):
         return date_today(datetime.UTC) > self.meeting.get_submission_correction_date()
     
+    def is_past(self):
+        return timezone.now() > self.official_timeslotassignment().timeslot.end_time()
+     
     def joint_with_groups_acronyms(self):
         return [group.acronym for group in self.joint_with_groups.all()]
 

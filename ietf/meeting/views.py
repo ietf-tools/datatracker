@@ -3546,6 +3546,12 @@ def upload_session_slides(request, session_id, num, name=None):
             "The materials cutoff for this session has passed. Contact the secretariat for further action.",
         )
 
+    if session.is_past() and not can_manage:
+        permission_denied(
+            request,
+            "This meeting has already occurred. Contact a chair or the secretariat for further action.",
+        )
+
     session_number = None
     sessions = get_sessions(session.meeting.number, session.group.acronym)
     show_apply_to_all_checkbox = (
