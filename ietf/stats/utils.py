@@ -54,7 +54,9 @@ def compile_affiliation_ending_stripping_regexp():
 
         parts.append(ending_re)
 
-    re_str = ",? *({}) *$".format("|".join(parts))
+    # Build a regexp that matches any of the endings at the end of a string, 
+    # optionally preceded by whitespace or commas. The regexp is case-insensitive.
+    re_str = "(?:, *| +)({}) *$".format("|".join(parts))
 
     return re.compile(re_str, re.IGNORECASE)
 
