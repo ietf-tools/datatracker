@@ -60,7 +60,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, DocHistory, DocEvent, BallotDocEvent, BallotType,
     ConsensusDocEvent, NewRevisionDocEvent, StoredObject, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
-    RelatedDocument, RelatedDocHistory)
+    RelatedDocument, RelatedDocHistory, RpcAssignmentDocEvent)
 from ietf.doc.tasks import investigate_fragment_task
 from ietf.doc.utils import (augment_events_with_revision,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
@@ -196,6 +196,22 @@ def interesting_doc_relations(doc):
     interesting_relations_that_doc = cls.objects.filter(source=doc, relationship__in=that_doc_relationships).prefetch_related('target')
 
     return interesting_relations_that, interesting_relations_that_doc
+
+
+def rfc_editor_queue_status(doc):
+    """Human-readable RPC publication queue "Status" for the document, or None.
+
+    While a document is in the RFC Editor queue (draft-rfceditor state
+    "in_progress" or "blocked"), this is the status text pushed by the RFC
+    Production Center, matching what the queue website shows. It is displayed in
+    place of the raw draft-rfceditor state name. Returns None for documents whose
+    draft-rfceditor state predates the queue integration (they fall back to the
+    state name).
+    """
+    if doc.get_state_slug("draft-rfceditor") not in ("in_progress", "blocked"):
+        return None
+    event = doc.latest_event(RpcAssignmentDocEvent, type="changed_rpc_assignments")
+    return event.assignments if event else None
 
 def document_main(request, name, rev=None, document_html=False):
 
@@ -364,6 +380,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        has_errata=doc.pk and doc.tags.filter(slug="errata"), # doc.pk == None if using a fake_history_obj
                                        file_urls=file_urls,
                                        rfc_editor_state=doc.get_state("draft-rfceditor"),
+                                       rfc_editor_queue_status=rfc_editor_queue_status(doc),
                                        iana_review_state=doc.get_state("draft-iana-review"),
                                        iana_action_state=doc.get_state("draft-iana-action"),
                                        iana_experts_state=doc.get_state("draft-iana-experts"),
@@ -707,6 +724,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        iesg_state=iesg_state,
                                        iesg_state_summary=iesg_state_summary,
                                        rfc_editor_state=doc.get_state("draft-rfceditor"),
+                                       rfc_editor_queue_status=rfc_editor_queue_status(doc),
                                        rfc_editor_auth48_url=auth48_url,
                                        iana_review_state=doc.get_state("draft-iana-review"),
                                        iana_action_state=doc.get_state("draft-iana-action"),

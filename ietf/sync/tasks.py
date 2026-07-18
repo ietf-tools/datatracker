@@ -299,6 +299,89 @@ def refresh_rfc_index_task():
         mark_rfcindex_as_processed(new_processed_time)
 
 
+# Human-readable labels for the RPC publication queue "Status", mirroring the
+# ietf-tools/queue website (website/app/utils/queue.ts, renderAssignmentsByRoles)
+# so the datatracker shows the same status text that appears at
+# https://queue.rfc-editor.org/. The queue "Status" is not a stored field; it is
+# derived from the active assignment roles, pending activities, blocking reasons
+# and IANA status carried in the purple pubq queue payload.
+RPC_QUEUE_ROLE_LABELS = {
+    "first_editor": "In Progress (First Edit)",
+    "second_editor": "In Progress (Second Edit)",
+    "final_review_editor": "In Final Review",
+}
+# Roles the queue site does not surface in the Status column.
+RPC_QUEUE_HIDDEN_ROLES = {"ref_checker", "publisher"}
+
+
+def _humanize_slug(slug):
+    return slug.replace("_", " ")
+
+
+def _rpc_role_label(role):
+    return RPC_QUEUE_ROLE_LABELS.get(role, _humanize_slug(role))
+
+
+def _rpc_blocking_reason_label(name):
+    # Special case mirrored from the queue site's humanFriendlyBlockingReason().
+    if name == "Reference: First Edit Incomplete":
+        return "Author Input Required"
+    return _humanize_slug(name)
+
+
+def format_rpc_queue_status(obj):
+    """Render the RPC publication queue "Status" for a single queue entry.
+
+    Mirrors renderAssignmentsByRoles() from the ietf-tools/queue website so the
+    datatracker presents the same status text. ``obj`` is one entry of the purple
+    pubq queue payload. Roles, pending activities and blocking reasons are sorted
+    so the result is stable (a change to the string is what triggers a new
+    RpcAssignmentDocEvent).
+    """
+    roles = {
+        a["role"] for a in (obj.get("assignment_set") or []) if a.get("role")
+    }
+    is_blocked = "blocked" in roles
+
+    parts = []
+
+    # IANA hold: iana_status "not_completed" while a first_editor is assigned.
+    iana_status = obj.get("iana_status") or {}
+    if iana_status.get("slug") == "not_completed" and "first_editor" in roles:
+        parts.append("IANA hold")
+
+    # Pending activities (only when not blocked): "Awaiting <role>", skipping any
+    # role that is already a current assignment. Note the queue site does NOT hide
+    # ref_checker/publisher here (only for current-role badges below), so e.g.
+    # "Awaiting Reference Checker" can appear.
+    if not is_blocked:
+        for activity in sorted(
+            obj.get("pending_activities") or [],
+            key=lambda a: (a.get("name") or a.get("slug") or ""),
+        ):
+            slug = activity.get("slug")
+            if not slug or slug in roles:
+                continue
+            parts.append(f"Awaiting {activity.get('name') or _humanize_slug(slug)}")
+
+    # Current assignment roles (ref_checker/publisher hidden). Blocking reason
+    # names are appended to the "blocked" role.
+    blocking_names = sorted(
+        _rpc_blocking_reason_label(br["reason"]["name"])
+        for br in (obj.get("blocking_reasons") or [])
+        if br.get("reason", {}).get("name")
+    )
+    for role in sorted(roles - RPC_QUEUE_HIDDEN_ROLES):
+        label = _rpc_role_label(role)
+        if role == "blocked" and blocking_names:
+            label += ": " + ", ".join(blocking_names)
+        parts.append(label)
+
+    if not parts:
+        return "Awaiting Editor Assignment"
+    return ", ".join(parts)
+
+
 @shared_task
 def process_rpc_queue_task(data: list):
     in_progress_state = State.objects.get(
@@ -366,16 +449,7 @@ def process_rpc_queue_task(data: list):
                 e.save()
                 events.append(e)
 
-        roles = sorted(a["role"] for a in obj.get("assignment_set", []))
-        next_assignments = ", ".join(roles)
-        blocking_names = sorted(
-            br["reason"]["name"] for br in obj.get("blocking_reasons", [])
-        )
-        if blocking_names:
-            next_assignments += ": " + ", ".join(blocking_names)
-
-        if next_assignments == "":
-            next_assignments = "Awaiting Editor Assignment"
+        next_assignments = format_rpc_queue_status(obj)
 
         prev_assignments_event = d.latest_event(
             RpcAssignmentDocEvent, type="changed_rpc_assignments"
