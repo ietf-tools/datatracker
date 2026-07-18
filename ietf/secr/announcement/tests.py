@@ -116,3 +116,24 @@ class SubmitAnnouncementCase(TestCase):
         message = Message.objects.filter(by__user__username="secretary").last()
         self.assertEqual(message.subject, "Test Subject")
         self.assertTrue(nomcom in message.related_groups.all())
+    
+    def test_invalid_submit(self):
+        "Invalid Submit"
+        nomcom_test_data()
+        empty_outbox()
+        url = reverse("ietf.secr.announcement.views.main")
+        nomcom = Group.objects.get(type="nomcom")
+        post_data = {
+                "nomcom": nomcom.pk,
+                "to": "Other...",
+                "to_custom": "test@test",
+                "frm": "IETF Secretariat &lt;ietf-secretariat@ietf.org&gt;",
+                "reply_to": "secretariat@ietf.org",
+                "subject": "Test Subject",
+                "body": "This is a test.",
+            }
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.post(url, post_data)
+        self.assertNotContains(response, "Confirm Announcement")
+        self.assertEqual(len(outbox), 0)
+        
