@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2025, All Rights Reserved #}
+{# Copyright The IETF Trust 2026, All Rights Reserved #}
 {% extends "group/group_base.html" %}
 {% load origin static %}
 {% block title %}
@@ -38,16 +38,19 @@
             </table>
         {% endwith %}
     {% endif %}
-    {% if future %}
+    {% if future or pending_interims %}
         <h2 class="mt-5" id="futuremeets">
             Future Meetings
-            {% for cal_action in cal_actions %}
-                <a class="btn btn-primary"
-                   href="{{ cal_action.url }}">
-                    {{ cal_action.label }}
-                </a>
-            {% endfor %}
+            {% if future %}
+               {% for cal_action in cal_actions %}
+                   <a class="btn btn-primary"
+                      href="{{ cal_action.url }}">
+                       {{ cal_action.label }}
+                   </a>
+               {% endfor %}
+            {% endif %}
         </h2>
+        {% if future %}
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
@@ -63,6 +66,14 @@
                 </tbody>
             {% endwith %}
         </table>
+       {% endif %}
+       {% if pending_interims %}
+          <p id="pending_warning" class="alert alert-warning my-3">
+            One or more {{ group.acronym }} interim meetings are
+            <a href="{% url 'ietf.meeting.views.interim_pending' %}">pending approval</a> or
+            <a href="{% url 'ietf.meeting.views.interim_announce' %}">waiting to be announced</a>.
+          </p>
+       {% endif %}
     {% endif %}
     {% if past or recent %}
         <h2 class="mt-5" id="pastmeets">Past Meetings (within the last four years)</h2>

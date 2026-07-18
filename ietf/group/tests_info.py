@@ -2112,7 +2112,28 @@ class MeetingInfoTests(TestCase):
         self.assertEqual(response.status_code, 200) 
         q = PyQuery(response.content)
         self.assertFalse(q('#inprogressmeets'))
-        
+
+
+class PendingInterimMeetingTests(TestCase):
+
+    def test_pending_interim_meeting(self):
+        group = GroupFactory.create(type_id='wg')
+        SessionFactory.create(meeting__type_id='interim', group=group, status_id='apprw')
+        url = urlreverse('ietf.group.views.meetings', kwargs={'acronym':group.acronym})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue(q('#pending_warning'))
+
+    def test_no_pending_interim_meeting(self):
+        group = GroupFactory.create(type_id='wg')
+        SessionFactory.create(meeting__type_id='interim', group=group)
+        url = urlreverse('ietf.group.views.meetings', kwargs={'acronym':group.acronym})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertFalse(q('#pending_warning'))
+
 
 class StatusUpdateTests(TestCase):
 
