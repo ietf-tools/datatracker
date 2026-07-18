@@ -20,6 +20,8 @@ from django.template.loader import render_to_string
 from django.forms.utils import ErrorList
 from django.template.defaultfilters import pluralize
 from django.utils import timezone
+from django.db.models.functions import Collate
+
 
 import debug                            # pyflakes:ignore
 
@@ -1130,7 +1132,7 @@ class AdForm(forms.Form):
             role__name__in=("ad", "pre-ad"),
             role__group__state="active",
             role__group__type="area",
-        ).order_by('name'),
+        ).order_by(Collate('name', "en-US-x-icu")),
         label="Shepherding AD",
         empty_label="(None)",
         required=False,
