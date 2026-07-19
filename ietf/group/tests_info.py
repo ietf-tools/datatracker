@@ -2115,23 +2115,61 @@ class MeetingInfoTests(TestCase):
 
 
 class PendingInterimMeetingTests(TestCase):
+    """Tests for the pending-interim warning on a group's meetings list.
 
-    def test_pending_interim_meeting(self):
+    The meetings page shows a ``#pending_warning`` banner when the group has an
+    interim meeting that is either awaiting approval (session status ``apprw``)
+    or approved but not yet announced (session status ``scheda``). See
+    ietf.meeting.helpers.has_pending_interim.
+    """
+
+    def _meetings_page(self, group):
+        url = urlreverse('ietf.group.views.meetings', kwargs={'acronym': group.acronym})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        return PyQuery(response.content)
+
+    def test_pending_approval_interim_shows_warning(self):
+        """An interim awaiting approval (apprw) triggers the warning."""
         group = GroupFactory.create(type_id='wg')
         SessionFactory.create(meeting__type_id='interim', group=group, status_id='apprw')
-        url = urlreverse('ietf.group.views.meetings', kwargs={'acronym':group.acronym})
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        q = PyQuery(response.content)
+        q = self._meetings_page(group)
+        warning = q('#pending_warning')
+        self.assertTrue(warning)
+        # The warning links to both the pending-approval and to-be-announced views
+        # and names the group.
+        self.assertIn(urlreverse('ietf.meeting.views.interim_pending'),
+                      [a.attrib['href'] for a in warning.find('a')])
+        self.assertIn(urlreverse('ietf.meeting.views.interim_announce'),
+                      [a.attrib['href'] for a in warning.find('a')])
+        self.assertIn(group.acronym, warning.text())
+
+    def test_to_be_announced_interim_shows_warning(self):
+        """An approved-but-unannounced interim (scheda) triggers the warning."""
+        group = GroupFactory.create(type_id='wg')
+        SessionFactory.create(meeting__type_id='interim', group=group, status_id='scheda')
+        q = self._meetings_page(group)
         self.assertTrue(q('#pending_warning'))
 
-    def test_no_pending_interim_meeting(self):
+    def test_scheduled_interim_shows_no_warning(self):
+        """A fully scheduled interim (sched) does not trigger the warning."""
         group = GroupFactory.create(type_id='wg')
-        SessionFactory.create(meeting__type_id='interim', group=group)
-        url = urlreverse('ietf.group.views.meetings', kwargs={'acronym':group.acronym})
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        q = PyQuery(response.content)
+        SessionFactory.create(meeting__type_id='interim', group=group, status_id='sched')
+        q = self._meetings_page(group)
+        self.assertFalse(q('#pending_warning'))
+
+    def test_no_interim_meetings_shows_no_warning(self):
+        """A group with no interim meetings does not trigger the warning."""
+        group = GroupFactory.create(type_id='wg')
+        q = self._meetings_page(group)
+        self.assertFalse(q('#pending_warning'))
+
+    def test_pending_interim_for_other_group_not_shown(self):
+        """A pending interim belonging to another group must not warn on this group."""
+        group = GroupFactory.create(type_id='wg')
+        other = GroupFactory.create(type_id='wg')
+        SessionFactory.create(meeting__type_id='interim', group=other, status_id='apprw')
+        q = self._meetings_page(group)
         self.assertFalse(q('#pending_warning'))
 
 
