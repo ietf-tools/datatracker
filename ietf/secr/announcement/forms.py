@@ -157,10 +157,11 @@ class AnnounceForm(forms.ModelForm):
             addrlist = data["to_custom"]
         else:
             addrlist = data["to"]
+        addrlist.extend([data["cc"]])
         emails = [email.strip() for email in addrlist if email.strip()]
         for email in emails:
             if not is_valid_email(email):
-                raise forms.ValidationError("An exception occured while trying to send email to '%s'" % email)
+                raise forms.ValidationError("An exception occurred while trying to send email to '%s'" % email)
             
         for k in [
             "to",
