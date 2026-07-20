@@ -126,7 +126,8 @@ class SubmitAnnouncementCase(TestCase):
         post_data = {
                 "nomcom": nomcom.pk,
                 "to": "Other...",
-                "to_custom": "test@test",
+                "to_custom": "phil@example.com",
+                "cc": "lizz@example.com, test@invalid_email",
                 "frm": "IETF Secretariat &lt;ietf-secretariat@ietf.org&gt;",
                 "reply_to": "secretariat@ietf.org",
                 "subject": "Test Subject",
