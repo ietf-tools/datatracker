@@ -156,8 +156,10 @@ class AnnounceForm(forms.ModelForm):
         if data["to"] == "Other..." and data["to_custom"]:
             addrlist = data["to_custom"]
         else:
-            addrlist = data["to"]
-        addrlist.extend([data["cc"]])
+            addrlist = [data["to"]]
+        if data["cc"]:
+            cc = [email.strip() for email in data["cc"].split(",") if email.strip()]
+            addrlist.extend(cc)
         emails = [email.strip() for email in addrlist if email.strip()]
         for email in emails:
             if not is_valid_email(email):

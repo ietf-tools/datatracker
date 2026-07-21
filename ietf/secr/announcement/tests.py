@@ -100,6 +100,7 @@ class SubmitAnnouncementCase(TestCase):
             "nomcom": nomcom.pk,
             "to": "Other...",
             "to_custom": "phil@example.com",
+            "cc": "lizz@example.com, test@example.com",
             "frm": "IETF Secretariat &lt;ietf-secretariat@ietf.org&gt;",
             "reply_to": "secretariat@ietf.org",
             "subject": "Test Subject",
@@ -112,7 +113,7 @@ class SubmitAnnouncementCase(TestCase):
         self.assertRedirects(response, url)
         self.assertEqual(len(outbox), 1)
         self.assertEqual(outbox[0]["subject"], "Test Subject")
-        self.assertEqual(outbox[0]["to"], "<phil@example.com>")
+        self.assertEqual(outbox[0]["to"], "<phil@example.com>, <lizz@example.com>, <test@example.com>")
         message = Message.objects.filter(by__user__username="secretary").last()
         self.assertEqual(message.subject, "Test Subject")
         self.assertTrue(nomcom in message.related_groups.all())
@@ -127,7 +128,7 @@ class SubmitAnnouncementCase(TestCase):
                 "nomcom": nomcom.pk,
                 "to": "Other...",
                 "to_custom": "phil@example.com",
-                "cc": "lizz@example.com, test@invalid_email",
+                "cc": "lizz@example.com, invalid_email@example",
                 "frm": "IETF Secretariat &lt;ietf-secretariat@ietf.org&gt;",
                 "reply_to": "secretariat@ietf.org",
                 "subject": "Test Subject",
