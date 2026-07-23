@@ -1931,9 +1931,11 @@ def api_get_session_materials(request, session_id=None):
 
     minutes = session.minutes()
     slides_actions = []
-    if has_role(request.user, "Secretariat") \
-            or (not session.is_material_submission_cutoff() and session.can_manage_materials(request.user)) \
-            or not session.is_past():
+    if (
+        has_role(request.user, "Secretariat")
+        or (not session.is_material_submission_cutoff() and session.can_manage_materials(request.user))
+        or not session.is_past()
+    ):
         slides_actions.append(
             {
                 "label": "Upload slides",
