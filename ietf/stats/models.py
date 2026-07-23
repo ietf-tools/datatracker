@@ -31,8 +31,10 @@ class AffiliationAlias(models.Model):
         update_fields = {"alias"}.union(kwargs.pop("update_fields", set()))
         super(AffiliationAlias, self).save(update_fields=update_fields, *args, **kwargs)
 
+
     class Meta:
         verbose_name_plural = "affiliation aliases"
+
 
 class AffiliationIgnoredEnding(models.Model):
     """Records that ending should be stripped from the affiliation for statistical purposes."""
@@ -41,6 +43,21 @@ class AffiliationIgnoredEnding(models.Model):
 
     def __str__(self):
         return self.ending
+
+class AffiliationMainName(models.Model):
+    """Records that this start of an affiliation is what matters (for statistical purposes)."""
+    main_name = models.CharField(
+        max_length=255, 
+        unique=True,
+        help_text="Main leading part of an affiliation, the remaining part can be ignored.")
+
+    class Meta:
+        verbose_name_plural = 'affiliation main names'
+
+
+    def __str__(self):
+        return self.main_name
+
 
 class CountryAlias(models.Model):
     """Records that alias should be treated as country for statistical
@@ -55,6 +72,7 @@ class CountryAlias(models.Model):
     class Meta:
         verbose_name_plural = "country aliases"
     
+
 class MeetingRegistration(models.Model):
     """Registration attendee records from the IETF registration system"""
     meeting = ForeignKey(Meeting)
