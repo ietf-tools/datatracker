@@ -217,6 +217,9 @@ if _MEETECHO_CLIENT_ID is not None and _MEETECHO_CLIENT_SECRET is not None:
         "client_id": _MEETECHO_CLIENT_ID,
         "client_secret": _MEETECHO_CLIENT_SECRET,
         "request_timeout": 3.01,  # python-requests doc recommend slightly > a multiple of 3 seconds
+        "slides_notify_time": int(
+            os.environ.get("DATATRACKER_MEETECHO_SLIDES_NOTIFY_TIME_MINUTES", "15")
+        ),
     }
 else:
     raise RuntimeError(
