@@ -37,10 +37,16 @@ def get_rfc_bibxml(rfc):
     subseries_info = ""
 
     for author in rfc.rfcauthor_set.all():
-        if author.is_editor:
-            author_entry = f"""<author fullname={qa(author.titlepage_name)} surname={qa(author.titlepage_name.split(".")[-1].strip())} role="editor"/>"""
-        else:
-            author_entry = f"""<author fullname={qa(author.titlepage_name)} surname={qa(author.titlepage_name.split(".")[-1].strip())}/>"""
+        try:
+            initials, surname = author.titlepage_name.split(maxsplit=1)
+            if author.is_editor:
+                author_entry = f"""<author fullname={qa(author.titlepage_name)} initials={qa(initials)} surname={qa(surname)} role="editor"/>"""
+            else:
+                author_entry = f"""<author fullname={qa(author.titlepage_name)} initials={qa(initials)} surname={qa(surname)}/>"""
+        except ValueError:
+            # Assuming author is an org
+            # See https://github.com/ietf-tools/datatracker/issues/11173
+            author_entry = f"""<author><organization>{esc(author.titlepage_name)}</organization></author>"""
         authors += author_entry
 
     for subseries in rfc.part_of():
