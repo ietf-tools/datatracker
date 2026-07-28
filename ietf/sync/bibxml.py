@@ -1,13 +1,14 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 from pathlib import Path
 from urllib.parse import urljoin
-from xml.sax.saxutils import escape as esc, quoteattr as qa
+from xml.sax.saxutils import escape as esc
+from xml.sax.saxutils import quoteattr as qa
 
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import storages
 from django.db import models
-from django.db.models.functions import Substr, Cast
+from django.db.models.functions import Cast, Substr
 from lxml import etree
 
 from ietf.doc.models import Document
