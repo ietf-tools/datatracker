@@ -91,7 +91,6 @@ ORG_LOOKUP = {
     "The Internet Society": (None, "The Internet Society"),
     "IAB Advisory Committee": (None, "IAB Advisory Committee"),
     "ISOC Board of Trustees": (None, "ISOC Board of Trustees"),
-    "Mitra": (None, "Mitra"),
     "RFC Editor, et al.": (None, "RFC Editor, et al."),
 }
 
