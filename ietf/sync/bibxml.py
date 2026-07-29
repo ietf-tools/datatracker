@@ -188,7 +188,7 @@ def save_bibxml(bibxml, filename):
     pretty_bibxml = etree.tostring(
         etree.fromstring(bibxml),
         encoding="utf-8",
-        xml_declaration=True,
+        xml_declaration=False,
         pretty_print=4,
     )
     save_to_bucket(filename, pretty_bibxml)
