@@ -1,17 +1,98 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 from pathlib import Path
 from urllib.parse import urljoin
-from xml.sax.saxutils import escape as esc, quoteattr as qa
+from xml.sax.saxutils import escape as esc
+from xml.sax.saxutils import quoteattr as qa
 
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import storages
 from django.db import models
-from django.db.models.functions import Substr, Cast
+from django.db.models.functions import Cast, Substr
 from lxml import etree
 
 from ietf.doc.models import Document
 from ietf.utils.log import log
+
+ORG_LOOKUP = {
+    # Format: {"lookup string" : ("abbrev", "display name")}
+    "ISO": ("ISO", "International Organization for Standardization"),
+    "IAB": ("IAB", "Internet Architecture Board"),
+    "IESG": ("IESG", "Internet Engineering Steering Group"),
+    "IANA": ("IANA", "Internet Assigned Numbers Authority"),
+    "International Organization for Standardization": (
+        "ISO",
+        "International Organization for Standardization",
+    ),
+    "Federal Networking Council": ("FNC", "Federal Networking Council"),
+    "Internet Architecture Board": ("IAB", "Internet Architecture Board"),
+    "Internet Activities Board": ("IAB", "Internet Activities Board"),
+    "Defense Advanced Research Projects Agency": (
+        "DARPA",
+        "Defense Advanced Research Projects Agency",
+    ),
+    "National Science Foundation": ("NSF", "National Science Foundation"),
+    "National Research Council": ("NRC", "National Research Council"),
+    "National Bureau of Standards": ("NBS", "National Bureau of Standards"),
+    "Internet Engineering Steering Group": (
+        "IESG",
+        "Internet Engineering Steering Group",
+    ),
+    "IETF Secretariat": ("IETF", "IETF Secretariat"),
+    "Internet Assigned Numbers Authority (IANA)": (
+        "IANA",
+        "Internet Assigned Numbers Authority (IANA)",
+    ),
+    "ESnet Site Coordinating Comittee (ESCC)": (
+        "ESCC",
+        "ESnet Site Coordinating Comittee (ESCC)",
+    ),
+    "Energy Sciences Network (ESnet)": ("ESnet", "Energy Sciences Network (ESnet)"),
+    "International Telegraph and Telephone Consultative Committee of the International Telecommunication Union": (
+        "CCITT",
+        "International Telegraph and Telephone Consultative Committee of the International Telecommunication Union",
+    ),
+    "Audio-Video Transport Working Group": (
+        None,
+        "Audio-Video Transport Working Group",
+    ),
+    "EARN Staff": (None, "EARN Staff"),
+    "Vietnamese Standardization Working Group": (
+        None,
+        "Vietnamese Standardization Working Group",
+    ),
+    "ACM SIGUCCS": (None, "ACM SIGUCCS"),
+    "ESCC X.500/X.400 Task Force": (None, "ESCC X.500/X.400 Task Force"),
+    "Sun Microsystems": (None, "Sun Microsystems"),
+    "NetBIOS Working Group in the Defense Advanced Research Projects Agency": (
+        None,
+        "NetBIOS Working Group in the Defense Advanced Research Projects Agency",
+    ),
+    "End-to-End Services Task Force": (None, "End-to-End Services Task Force"),
+    "Network Technical Advisory Group": (None, "Network Technical Advisory Group"),
+    "Bolt Beranek": (None, "Bolt Beranek"),
+    "Newman Laboratories": (None, "Newman Laboratories"),
+    "Gateway Algorithms and Data Structures Task Force": (
+        None,
+        "Gateway Algorithms and Data Structures Task Force",
+    ),
+    "Network Information Center. Stanford Research Institute": (
+        None,
+        "Network Information Center. Stanford Research Institute",
+    ),
+    "RFC Editor": (None, "RFC Editor"),
+    "Information Sciences Institute University of Southern California": (
+        None,
+        "Information Sciences Institute University of Southern California",
+    ),
+    "IAB and IESG": (None, "IAB and IESG"),
+    "RARE WG-MSG Task Force 88": (None, "RARE WG-MSG Task Force 88"),
+    "KOI8-U Working Group": (None, "KOI8-U Working Group"),
+    "The Internet Society": (None, "The Internet Society"),
+    "IAB Advisory Committee": (None, "IAB Advisory Committee"),
+    "ISOC Board of Trustees": (None, "ISOC Board of Trustees"),
+    "RFC Editor, et al.": (None, "RFC Editor, et al."),
+}
 
 
 def save_to_bucket(filename: str, content: str | bytes):
@@ -37,10 +118,25 @@ def get_rfc_bibxml(rfc):
     subseries_info = ""
 
     for author in rfc.rfcauthor_set.all():
-        if author.is_editor:
-            author_entry = f"""<author fullname={qa(author.titlepage_name)} surname={qa(author.titlepage_name.split(".")[-1].strip())} role="editor"/>"""
+        if author.titlepage_name in ORG_LOOKUP:
+            # Author is an organization
+            abbrev, name = ORG_LOOKUP[author.titlepage_name]
+            if abbrev:
+                author_entry = f"""<author><organization abbrev={qa(abbrev)}>{esc(name)}</organization></author>"""
+            else:
+                author_entry = (
+                    f"""<author><organization>{esc(name)}</organization></author>"""
+                )
         else:
-            author_entry = f"""<author fullname={qa(author.titlepage_name)} surname={qa(author.titlepage_name.split(".")[-1].strip())}/>"""
+            try:
+                initials, surname = author.titlepage_name.split(maxsplit=1)
+                if author.is_editor:
+                    author_entry = f"""<author fullname={qa(author.titlepage_name)} initials={qa(initials)} surname={qa(surname)} role="editor"/>"""
+                else:
+                    author_entry = f"""<author fullname={qa(author.titlepage_name)} initials={qa(initials)} surname={qa(surname)}/>"""
+            except ValueError:
+                # Case where author has single name.
+                author_entry = f"""<author fullname={qa(author.titlepage_name)} />"""
         authors += author_entry
 
     for subseries in rfc.part_of():
