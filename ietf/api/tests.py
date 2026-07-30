@@ -1524,6 +1524,18 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
             self.assertIn(name, resource_list,
                         "Expected a REST API resource for %s, but didn't find one" % name)
 
+    def test_api_top_level_bad_accept_header(self):
+        """A malformed Accept header is rejected without reflecting its content
+
+        The response body is served as unescaped text/html, and this is an
+        unauthenticated GET endpoint, so nothing derived from the request may
+        appear in it.
+        """
+        payload = "<img src=x onerror=alert(1)>"
+        r = self.client.get("/api/v1/", headers={"accept": payload})
+        self.assertEqual(r.status_code, 400)
+        self.assertNotIn(payload, r.content.decode("utf-8"))
+
     def test_all_model_resources_exist(self):
         client = Client(Accept='application/json')
         r = client.get("/api/v1")

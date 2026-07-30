@@ -67,7 +67,10 @@ def top_level(request):
     try:
         desired_format = determine_format(request, serializer)
     except BadRequest as err:
-        return HttpResponseBadRequest(str(err))
+        # tastypie's message is a fixed string today, but don't reflect a dependency's
+        # exception text into an unescaped text/html body on an unauthenticated endpoint.
+        log.log("Bad request determining format for api top_level: %s" % err)
+        return HttpResponseBadRequest("Invalid Accept header")
 
     options = {}
 
