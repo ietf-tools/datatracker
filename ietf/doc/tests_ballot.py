@@ -276,7 +276,7 @@ def textarea_value(content, name):
     otherwise round-tripping a preformatted announcement through the form mangles
     its headers.
     """
-    value = PyQuery(content)('textarea[name=%s]' % name).text()
+    value = PyQuery(content)(f"textarea[name={name}]").text()
     return unescape(value.removeprefix("\n"))
 
 
@@ -320,28 +320,36 @@ class BallotWriteupsTests(TestCase):
         text = q("[name=last_call_text]").text()
         self.assertTrue("Subject: Last Call" in text)
 
-
     def test_last_call_text_reply_to(self):
         # an individual submission has no group list to reply to
-        draft = IndividualDraftFactory(ad=Person.objects.get(user__username='ad'),states=[('draft','active'),('draft-iesg','ad-eval')])
-        url = urlreverse('ietf.doc.views_ballot.lastcalltext', kwargs=dict(name=draft.name))
+        draft = IndividualDraftFactory(
+            ad=Person.objects.get(user__username="ad"),
+            states=[("draft", "active"), ("draft-iesg", "ad-eval")],
+        )
+        url = urlreverse(
+            "ietf.doc.views_ballot.lastcalltext", kwargs={"name": draft.name}
+        )
         login_testing_unauthorized(self, "secretary", url)
 
-        r = self.client.post(url, dict(regenerate_last_call_text="1"))
+        r = self.client.post(url, {"regenerate_last_call_text": "1"})
         self.assertEqual(r.status_code, 200)
         text = textarea_value(r.content, "last_call_text")
         self.assertIn("Reply-To: last-call@ietf.org\n", text)
 
         # a working group draft replies to the group list as well
-        draft = WgDraftFactory(ad=Person.objects.get(user__username='ad'),states=[('draft','active'),('draft-iesg','ad-eval')])
+        draft = WgDraftFactory(
+            ad=Person.objects.get(user__username="ad"),
+            states=[("draft", "active"), ("draft-iesg", "ad-eval")],
+        )
         self.assertTrue(draft.group.list_email)
-        url = urlreverse('ietf.doc.views_ballot.lastcalltext', kwargs=dict(name=draft.name))
+        url = urlreverse(
+            "ietf.doc.views_ballot.lastcalltext", kwargs={"name": draft.name}
+        )
 
-        r = self.client.post(url, dict(regenerate_last_call_text="1"))
+        r = self.client.post(url, {"regenerate_last_call_text": "1"})
         self.assertEqual(r.status_code, 200)
         text = textarea_value(r.content, "last_call_text")
-        self.assertIn("Reply-To: last-call@ietf.org, %s\n" % draft.group.list_email, text)
-
+        self.assertIn(f"Reply-To: last-call@ietf.org, {draft.group.list_email}\n", text)
 
     def test_request_last_call(self):
         ad = Person.objects.get(user__username="ad")
@@ -949,84 +957,127 @@ class MakeLastCallTests(TestCase):
 
     def test_make_last_call_reply_to(self):
         ad = Person.objects.get(user__username="ad")
-        draft = WgDraftFactory(group__acronym='mars',ad=ad,states=[('draft-iesg','lc-req')],intended_std_level_id='ps')
+        draft = WgDraftFactory(
+            group__acronym="mars",
+            ad=ad,
+            states=[("draft-iesg", "lc-req")],
+            intended_std_level_id="ps",
+        )
 
-        request = RequestFactory().get('/')
-        request.user = Person.objects.get(user__username='secretary').user
+        request = RequestFactory().get("/")
+        request.user = Person.objects.get(user__username="secretary").user
         e = generate_last_call_announcement(request, draft)
         self.assertIn("Reply-To: last-call@ietf.org, mars@ietf.org\n", e.text)
 
         # the secretariat may edit the announcement before it is issued
-        e.text = e.text.replace("Reply-To: last-call@ietf.org, mars@ietf.org",
-                                "Reply-To: last-call@ietf.org, mars@ietf.org, edited@example.com")
+        e.text = e.text.replace(
+            "Reply-To: last-call@ietf.org, mars@ietf.org",
+            "Reply-To: last-call@ietf.org, mars@ietf.org, edited@example.com",
+        )
         e.save()
 
-        url = urlreverse('ietf.doc.views_ballot.make_last_call', kwargs=dict(name=draft.name))
+        url = urlreverse(
+            "ietf.doc.views_ballot.make_last_call", kwargs={"name": draft.name}
+        )
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
 
         empty_outbox()
-        r = self.client.post(url,
-                             dict(last_call_sent_date=q('input[name=last_call_sent_date]')[0].get("value"),
-                                  last_call_expiration_date=q('input[name=last_call_expiration_date]')[0].get("value")
-                                  ))
+        r = self.client.post(
+            url,
+            {
+                "last_call_sent_date": q("input[name=last_call_sent_date]")[0].get(
+                    "value"
+                ),
+                "last_call_expiration_date": q("input[name=last_call_expiration_date]")[
+                    0
+                ].get("value"),
+            },
+        )
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), 2)
 
         # the edited Reply-To is parsed out of the announcement and set on the message
-        self.assertIsNotNone(outbox[-2].get('Reply-To'))
-        reply_to = [parseaddr(a)[1] for a in outbox[-2].get('Reply-To').split(',')]
-        self.assertCountEqual(reply_to, ['last-call@ietf.org', 'mars@ietf.org', 'edited@example.com'])
+        self.assertIsNotNone(outbox[-2].get("Reply-To"))
+        reply_to = [parseaddr(a)[1] for a in outbox[-2].get("Reply-To").split(",")]
+        self.assertCountEqual(
+            reply_to, ["last-call@ietf.org", "mars@ietf.org", "edited@example.com"]
+        )
 
         # ... but the IANA copy explicitly suppresses it
-        self.assertNotIn('mars@ietf.org', outbox[-1].get('Reply-To', ''))
+        self.assertNotIn("mars@ietf.org", outbox[-1].get("Reply-To", ""))
 
     def test_make_last_call_reply_to_via_form(self):
         ad = Person.objects.get(user__username="ad")
-        draft = WgDraftFactory(group__acronym='mars',ad=ad,states=[('draft-iesg','lc-req')],intended_std_level_id='ps')
+        draft = WgDraftFactory(
+            group__acronym="mars",
+            ad=ad,
+            states=[("draft-iesg", "lc-req")],
+            intended_std_level_id="ps",
+        )
 
-        writeup_url = urlreverse('ietf.doc.views_ballot.lastcalltext', kwargs=dict(name=draft.name))
+        writeup_url = urlreverse(
+            "ietf.doc.views_ballot.lastcalltext", kwargs={"name": draft.name}
+        )
         login_testing_unauthorized(self, "secretary", writeup_url)
 
-        r = self.client.post(writeup_url, dict(regenerate_last_call_text="1"))
+        r = self.client.post(writeup_url, {"regenerate_last_call_text": "1"})
         self.assertEqual(r.status_code, 200)
         text = textarea_value(r.content, "last_call_text")
         self.assertIn("Reply-To: last-call@ietf.org, mars@ietf.org\n", text)
 
         # the secretariat edits the announcement and saves it back through the form
-        edited = text.replace("Reply-To: last-call@ietf.org, mars@ietf.org",
-                              "Reply-To: last-call@ietf.org, mars@ietf.org, edited@example.com")
+        edited = text.replace(
+            "Reply-To: last-call@ietf.org, mars@ietf.org",
+            "Reply-To: last-call@ietf.org, mars@ietf.org, edited@example.com",
+        )
         self.assertNotEqual(edited, text)
-        r = self.client.post(writeup_url, dict(last_call_text=edited.replace("\n", "\r\n"),
-                                               save_last_call_text="1"))
+        r = self.client.post(
+            writeup_url,
+            {
+                "last_call_text": edited.replace("\n", "\r\n"),
+                "save_last_call_text": "1",
+            },
+        )
         self.assertEqual(r.status_code, 200)
-        self.assertFalse(PyQuery(r.content)('form .is-invalid'))
+        self.assertFalse(PyQuery(r.content)("form .is-invalid"))
         # the form round-trip leaves the announcement otherwise intact
         saved = draft.latest_event(WriteupDocEvent, type="changed_last_call_text")
         self.assertEqual(saved.text, edited)
 
-        url = urlreverse('ietf.doc.views_ballot.make_last_call', kwargs=dict(name=draft.name))
+        url = urlreverse(
+            "ietf.doc.views_ballot.make_last_call", kwargs={"name": draft.name}
+        )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
 
         empty_outbox()
-        r = self.client.post(url,
-                             dict(last_call_sent_date=q('input[name=last_call_sent_date]')[0].get("value"),
-                                  last_call_expiration_date=q('input[name=last_call_expiration_date]')[0].get("value")
-                                  ))
+        r = self.client.post(
+            url,
+            {
+                "last_call_sent_date": q("input[name=last_call_sent_date]")[0].get(
+                    "value"
+                ),
+                "last_call_expiration_date": q("input[name=last_call_expiration_date]")[
+                    0
+                ].get("value"),
+            },
+        )
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), 2)
 
         # the Reply-To saved through the form reaches the announcement
-        self.assertIsNotNone(outbox[-2].get('Reply-To'))
-        reply_to = [parseaddr(a)[1] for a in outbox[-2].get('Reply-To').split(',')]
-        self.assertCountEqual(reply_to, ['last-call@ietf.org', 'mars@ietf.org', 'edited@example.com'])
+        self.assertIsNotNone(outbox[-2].get("Reply-To"))
+        reply_to = [parseaddr(a)[1] for a in outbox[-2].get("Reply-To").split(",")]
+        self.assertCountEqual(
+            reply_to, ["last-call@ietf.org", "mars@ietf.org", "edited@example.com"]
+        )
         # the rest of the announcement survived the round-trip too
-        self.assertIn('ietf-announce@ietf.org', outbox[-2]['To'])
-        self.assertTrue(outbox[-2]['Subject'].startswith('Last Call:'))
+        self.assertIn("ietf-announce@ietf.org", outbox[-2]["To"])
+        self.assertTrue(outbox[-2]["Subject"].startswith("Last Call:"))
 
     def test_make_last_call_yang_document(self):
         yd = ReviewTeamFactory(acronym='yangdoctors')
