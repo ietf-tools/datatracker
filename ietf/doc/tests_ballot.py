@@ -11,6 +11,7 @@ from pyquery import PyQuery
 
 import debug                            # pyflakes:ignore
 
+from django.conf import settings
 from django.test import RequestFactory
 from django.utils.text import slugify
 from django.urls import reverse as urlreverse
@@ -321,11 +322,12 @@ class BallotWriteupsTests(TestCase):
         self.assertTrue("Subject: Last Call" in text)
 
     def test_last_call_text_reply_to(self):
-        # an individual submission has no group list to reply to
+        # an individual submission has no group list, so it uses the draft alias
         draft = IndividualDraftFactory(
             ad=Person.objects.get(user__username="ad"),
             states=[("draft", "active"), ("draft-iesg", "ad-eval")],
         )
+        self.assertFalse(draft.group.features.acts_like_wg)
         url = urlreverse(
             "ietf.doc.views_ballot.lastcalltext", kwargs={"name": draft.name}
         )
@@ -334,7 +336,10 @@ class BallotWriteupsTests(TestCase):
         r = self.client.post(url, {"regenerate_last_call_text": "1"})
         self.assertEqual(r.status_code, 200)
         text = textarea_value(r.content, "last_call_text")
-        self.assertIn("Reply-To: last-call@ietf.org\n", text)
+        self.assertIn(
+            f"Reply-To: last-call@ietf.org, {draft.name}@{settings.DRAFT_ALIAS_DOMAIN}\n",
+            text,
+        )
 
         # a working group draft replies to the group list as well
         draft = WgDraftFactory(

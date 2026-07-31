@@ -220,9 +220,12 @@ def generate_last_call_announcement(request, doc):
         if rel.is_downref() and not rel.is_approved_downref()
     ]
 
+    # documents with no group of their own get replies at the draft alias instead
     reply_to = ["last-call@ietf.org"]
     if doc.group and doc.group.features.acts_like_wg and doc.group.list_email:
         reply_to.append(doc.group.list_email)
+    else:
+        reply_to.append(f"{doc.name}@{settings.DRAFT_ALIAS_DOMAIN}")
 
     addrs = gather_address_lists("last_call_issued", doc=doc).as_strings()
     mail = render_to_string(
