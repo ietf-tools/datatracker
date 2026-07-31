@@ -327,11 +327,23 @@ class BallotWriteupsTests(TestCase):
             ad=Person.objects.get(user__username="ad"),
             states=[("draft", "active"), ("draft-iesg", "ad-eval")],
         )
-        self.assertFalse(draft.group.features.acts_like_wg)
+        self.assertEqual(draft.group.type_id, "individ")
         url = urlreverse(
             "ietf.doc.views_ballot.lastcalltext", kwargs={"name": draft.name}
         )
         login_testing_unauthorized(self, "secretary", url)
+
+        r = self.client.post(url, {"regenerate_last_call_text": "1"})
+        self.assertEqual(r.status_code, 200)
+        text = textarea_value(r.content, "last_call_text")
+        self.assertIn(
+            f"Reply-To: last-call@ietf.org, {draft.name}@{settings.DRAFT_ALIAS_DOMAIN}\n",
+            text,
+        )
+
+        # even if the individ group somehow has a list, the draft alias wins
+        draft.group.list_email = "none@ietf.org"
+        draft.group.save()
 
         r = self.client.post(url, {"regenerate_last_call_text": "1"})
         self.assertEqual(r.status_code, 200)
@@ -355,6 +367,18 @@ class BallotWriteupsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         text = textarea_value(r.content, "last_call_text")
         self.assertIn(f"Reply-To: last-call@ietf.org, {draft.group.list_email}\n", text)
+
+        # a group with no list of its own falls back to the draft alias
+        draft.group.list_email = ""
+        draft.group.save()
+
+        r = self.client.post(url, {"regenerate_last_call_text": "1"})
+        self.assertEqual(r.status_code, 200)
+        text = textarea_value(r.content, "last_call_text")
+        self.assertIn(
+            f"Reply-To: last-call@ietf.org, {draft.name}@{settings.DRAFT_ALIAS_DOMAIN}\n",
+            text,
+        )
 
     def test_request_last_call(self):
         ad = Person.objects.get(user__username="ad")
