@@ -1,7 +1,7 @@
 {% load ietf_filters %}{% load mail_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
 To: {{ to }}{% if cc %}
 CC: {{ cc }}{% endif %}
-Reply-To: last-call@ietf.org
+Reply-To: {{ reply_to }}
 Sender: <iesg-secretary@ietf.org>
 Subject: Last Call: {{ doc.file_tag }} ({{ doc.title|clean_whitespace }}) to {{ doc|std_level_prompt }}
 

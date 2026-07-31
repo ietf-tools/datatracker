@@ -211,6 +211,10 @@ def generate_last_call_announcement(request, doc):
 
     downrefs = [rel for rel in doc.relateddocument_set.all() if rel.is_downref() and not rel.is_approved_downref()]
 
+    reply_to = ["last-call@ietf.org"]
+    if doc.group and doc.group.features.acts_like_wg and doc.group.list_email:
+        reply_to.append(doc.group.list_email)
+
     addrs = gather_address_lists('last_call_issued',doc=doc).as_strings()
     mail = render_to_string("doc/mail/last_call_announcement.txt",
                             dict(doc=doc,
@@ -218,6 +222,7 @@ def generate_last_call_announcement(request, doc):
                                  expiration_date=expiration_date.strftime("%Y-%m-%d"), #.strftime("%B %-d, %Y"),
                                  to=addrs.to,
                                  cc=addrs.cc,
+                                 reply_to=", ".join(reply_to),
                                  group=group,
                                  docs=[ doc ],
                                  urls=[ settings.IDTRACKER_BASE_URL + doc.get_absolute_url() ],
