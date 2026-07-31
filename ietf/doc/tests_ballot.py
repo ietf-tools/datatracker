@@ -321,6 +321,23 @@ class BallotWriteupsTests(TestCase):
         text = q("[name=last_call_text]").text()
         self.assertTrue("Subject: Last Call" in text)
 
+    def _regenerate_last_call_text(self, draft):
+        url = urlreverse(
+            "ietf.doc.views_ballot.lastcalltext", kwargs={"name": draft.name}
+        )
+        r = self.client.post(url, {"regenerate_last_call_text": "1"})
+        self.assertEqual(r.status_code, 200)
+        return textarea_value(r.content, "last_call_text")
+
+    def _assertCopyAddress(self, text, address):
+        """The address the announcement replies to is the one it asks to be copied"""
+        self.assertIn(f"Reply-To: last-call@ietf.org, {address}\n", text)
+        self.assertIn(
+            "Please send substantive comments to the last-call@ietf.org mailing"
+            f" list, with {address} copied, no later than ",
+            unwrap(text),
+        )
+
     def test_last_call_text_reply_to(self):
         # an individual submission has no group list, so it uses the draft alias
         draft = IndividualDraftFactory(
@@ -328,56 +345,44 @@ class BallotWriteupsTests(TestCase):
             states=[("draft", "active"), ("draft-iesg", "ad-eval")],
         )
         self.assertEqual(draft.group.type_id, "individ")
-        url = urlreverse(
-            "ietf.doc.views_ballot.lastcalltext", kwargs={"name": draft.name}
+        doc_alias = f"{draft.name}@{settings.DRAFT_ALIAS_DOMAIN}"
+        login_testing_unauthorized(
+            self,
+            "secretary",
+            urlreverse(
+                "ietf.doc.views_ballot.lastcalltext", kwargs={"name": draft.name}
+            ),
         )
-        login_testing_unauthorized(self, "secretary", url)
 
-        r = self.client.post(url, {"regenerate_last_call_text": "1"})
-        self.assertEqual(r.status_code, 200)
-        text = textarea_value(r.content, "last_call_text")
+        text = self._regenerate_last_call_text(draft)
+        self._assertCopyAddress(text, doc_alias)
         self.assertIn(
-            f"Reply-To: last-call@ietf.org, {draft.name}@{settings.DRAFT_ALIAS_DOMAIN}\n",
-            text,
+            "The IESG plans to make a decision on this document in the coming weeks,"
+            " and hereby solicits last call comments.",
+            unwrap(text),
         )
 
         # even if the individ group somehow has a list, the draft alias wins
         draft.group.list_email = "none@ietf.org"
         draft.group.save()
+        self._assertCopyAddress(self._regenerate_last_call_text(draft), doc_alias)
 
-        r = self.client.post(url, {"regenerate_last_call_text": "1"})
-        self.assertEqual(r.status_code, 200)
-        text = textarea_value(r.content, "last_call_text")
-        self.assertIn(
-            f"Reply-To: last-call@ietf.org, {draft.name}@{settings.DRAFT_ALIAS_DOMAIN}\n",
-            text,
-        )
-
-        # a working group draft replies to the group list as well
+        # a working group draft asks for the group list to be copied instead
         draft = WgDraftFactory(
             ad=Person.objects.get(user__username="ad"),
             states=[("draft", "active"), ("draft-iesg", "ad-eval")],
         )
         self.assertTrue(draft.group.list_email)
-        url = urlreverse(
-            "ietf.doc.views_ballot.lastcalltext", kwargs={"name": draft.name}
+        self._assertCopyAddress(
+            self._regenerate_last_call_text(draft), draft.group.list_email
         )
-
-        r = self.client.post(url, {"regenerate_last_call_text": "1"})
-        self.assertEqual(r.status_code, 200)
-        text = textarea_value(r.content, "last_call_text")
-        self.assertIn(f"Reply-To: last-call@ietf.org, {draft.group.list_email}\n", text)
 
         # a group with no list of its own falls back to the draft alias
         draft.group.list_email = ""
         draft.group.save()
-
-        r = self.client.post(url, {"regenerate_last_call_text": "1"})
-        self.assertEqual(r.status_code, 200)
-        text = textarea_value(r.content, "last_call_text")
-        self.assertIn(
-            f"Reply-To: last-call@ietf.org, {draft.name}@{settings.DRAFT_ALIAS_DOMAIN}\n",
-            text,
+        self._assertCopyAddress(
+            self._regenerate_last_call_text(draft),
+            f"{draft.name}@{settings.DRAFT_ALIAS_DOMAIN}",
         )
 
     def test_request_last_call(self):
