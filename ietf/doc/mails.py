@@ -234,7 +234,6 @@ def generate_last_call_announcement(request, doc):
         "doc/mail/last_call_announcement.txt",
         {
             "doc": doc,
-            "doc_url": settings.IDTRACKER_BASE_URL + doc.get_absolute_url() + "ballot/",
             "expiration_date": expiration_date.strftime(
                 "%Y-%m-%d"
             ),  # .strftime("%B %-d, %Y"),
@@ -243,8 +242,7 @@ def generate_last_call_announcement(request, doc):
             "reply_to": ", ".join(reply_to),
             "copy_address": copy_address,
             "group": group,
-            "docs": [doc],
-            "urls": [settings.IDTRACKER_BASE_URL + doc.get_absolute_url()],
+            "url": settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
             "ipr_links": ipr_links,
             "downrefs": downrefs,
         },

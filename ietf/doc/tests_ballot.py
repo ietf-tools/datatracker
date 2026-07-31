@@ -338,6 +338,32 @@ class BallotWriteupsTests(TestCase):
             unwrap(text),
         )
 
+    def test_last_call_text_document_layout(self):
+        # ietf.utils.text.wordwrap joins a line onto the previous one when that one
+        # had to be wrapped and the two indents match, so the document lines have to
+        # stay indented to keep them off the end of the sentence introducing them
+        draft = WgDraftFactory(
+            ad=Person.objects.get(user__username="ad"),
+            states=[("draft", "active"), ("draft-iesg", "ad-eval")],
+            title="A short title",
+            intended_std_level_id="ps",
+        )
+        login_testing_unauthorized(
+            self,
+            "secretary",
+            urlreverse(
+                "ietf.doc.views_ballot.lastcalltext", kwargs={"name": draft.name}
+            ),
+        )
+
+        text = self._regenerate_last_call_text(draft)
+        self.assertIn(
+            "consider the following document:\n"
+            f"  'A short title'\n"
+            f"  {draft.file_tag()} as Proposed Standard\n",
+            text,
+        )
+
     def test_last_call_text_reply_to(self):
         # an individual submission has no group list, so it uses the draft alias
         draft = IndividualDraftFactory(
