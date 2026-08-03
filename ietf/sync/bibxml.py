@@ -142,7 +142,7 @@ def get_rfc_bibxml(rfc):
     for subseries in rfc.part_of():
         subseries_info += f"""<seriesInfo name="{subseries.type_id.upper()}" value="{subseries.name[3:]}"/>"""
 
-    return f"""<reference anchor="RFC{rfc_number}" target="{link}"><front><title>{esc(rfc.title)}</title>{date}{authors}<abstract><t>{esc(rfc.abstract)}</t></abstract></front>{subseries_info}<seriesInfo name="RFC" value="{rfc_number}"/><seriesInfo name="DOI" value="{rfc.doi}"/></reference>"""
+    return f"""<reference anchor="RFC{rfc_number}" target="{link}"><front><title>{esc(rfc.title)}</title>{authors}{date}<abstract><t>{esc(rfc.abstract)}</t></abstract></front>{subseries_info}<seriesInfo name="RFC" value="{rfc_number}"/><seriesInfo name="DOI" value="{rfc.doi}"/></reference>"""
 
 
 def get_bcp_bibxml(bcp_number):
@@ -188,7 +188,7 @@ def save_bibxml(bibxml, filename):
     pretty_bibxml = etree.tostring(
         etree.fromstring(bibxml),
         encoding="utf-8",
-        xml_declaration=True,
+        xml_declaration=False,
         pretty_print=4,
     )
     save_to_bucket(filename, pretty_bibxml)
