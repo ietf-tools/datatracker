@@ -49,7 +49,7 @@ jobs:
         fetch-tags: false
 
     - name: Setup Node.js environment
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@v7
       with:
         node-version: 18.x
 
