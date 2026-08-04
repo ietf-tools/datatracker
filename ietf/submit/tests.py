@@ -40,7 +40,7 @@ from ietf.meeting.models import Meeting
 from ietf.meeting.factories import MeetingFactory
 from ietf.name.models import DraftSubmissionStateName, FormalLanguageName
 from ietf.person.models import Person
-from ietf.person.factories import UserFactory, PersonFactory
+from ietf.person.factories import UserFactory, PersonFactory, EmailFactory
 from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactory
 from ietf.submit.forms import SubmissionBaseUploadForm, SubmissionAutoUploadForm
 from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
@@ -1872,10 +1872,8 @@ class SubmitTests(BaseSubmitTestCase):
         name = "draft-authorname-testing-bademail"
         rev = "00"
 
-        author = PersonFactory()
-        email = author.email_set.first()
-        email.address = '@bad.email'
-        email.save()
+        author = PersonFactory(default_emails=False)
+        EmailFactory(person=author, primary=True, address="@bad.email")
 
         status_url, _ = self.do_submission(name=name, rev=rev, author=author, formats=('xml',))
         r = self.client.get(status_url)

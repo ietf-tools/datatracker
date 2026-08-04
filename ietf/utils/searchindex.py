@@ -382,10 +382,10 @@ SEARCH_PRESETS = {
         "query_by_weights": "127,50,50,20,20,5,2,1"
     },
     "red-content": {
-        "collection": "docs",
-        "infix": "off,always,off,off,off",
-        "query_by": "rfc,filename,keywords,authors,content",
-        "query_by_weights": "127,50,20,5,1"
+      "collection": "docs",
+      "infix": "off,always,off,off,off,off,off,off,off",
+      "query_by": "rfc,filename,title,abstract,keywords,authors,group,area,content",
+      "query_by_weights": "127,50,50,20,20,5,2,1,1"
     },
 }
 
