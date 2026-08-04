@@ -11,7 +11,7 @@
             {{ doc.friendly_state|safe }}
         {% endif %}
         {% if doc|state:"draft-rfceditor" %}
-            : <a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ doc|state:"draft-rfceditor" }}</a>
+            : <a href="https://queue.rfc-editor.org/#{{ doc.name }}">{{ doc|state:"draft-rfceditor" }}</a>
         {% endif %}
         {{ doc|auth48_alert_badge }}
         {{ doc|state_age_colored }}

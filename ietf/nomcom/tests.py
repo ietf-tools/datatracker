@@ -34,6 +34,7 @@ from ietf.doc.factories import (
     RfcAuthorFactory,
     WgDraftFactory, WgRfcFactory,
 )
+from ietf.doc.models import RfcAuthor
 from ietf.group.factories import GroupFactory, GroupHistoryFactory, RoleFactory, RoleHistoryFactory
 from ietf.group.models import Group, Role
 from ietf.meeting.factories import MeetingFactory, AttendedFactory, RegistrationFactory
@@ -1190,8 +1191,8 @@ class ReminderTest(TestCase):
         today = datetime_today()
         t_minus_3 = today - datetime.timedelta(days=3)
         t_minus_4 = today - datetime.timedelta(days=4)
-        e1 = EmailFactory(address="nominee1@example.org", person=PersonFactory(name="Nominee 1"), origin='test')
-        e2 = EmailFactory(address="nominee2@example.org", person=PersonFactory(name="Nominee 2"), origin='test')
+        e1 = EmailFactory(address="nominee1@example.org", person__name="Nominee 1", origin='test', primary=True)
+        e2 = EmailFactory(address="nominee2@example.org", person__name="Nominee 2", origin='test', primary=True)
         n = make_nomineeposition(self.nomcom,e1.person,gen,None)
         np = n.nomineeposition_set.get(position=gen)
         np.time = t_minus_3
@@ -2535,19 +2536,6 @@ class EligibilityUnitTests(TestCase):
             people,  # does not include extra_person!
         )
 
-        # Now add an RfcAuthor for only one of the two authors to the RFC. This should
-        # remove the other author from the eligibility list because the DocumentAuthor
-        # records are no longer used.
-        RfcAuthorFactory(
-            document=rfc,
-            person=people[0],
-            titlepage_name="P. Zero",
-        )
-        self.assertCountEqual(
-            get_qualified_author_queryset(base_qs, now - 5 * one_year, now),
-            [people[0]],
-        )
-
 
 class rfc8713EligibilityTests(TestCase):
 
@@ -2875,7 +2863,9 @@ class rfc8989EligibilityTests(TestCase):
                 self.assertFalse(is_eligible(person,nomcom))
 
             self.assertEqual(set(list_eligible(nomcom=nomcom)),set(eligible))
-            Person.objects.filter(pk__in=[p.pk for p in eligible.union(ineligible)]).delete()
+            people_pks_to_delete = [p.pk for p in eligible.union(ineligible)]
+            RfcAuthor.objects.filter(person__pk__in=people_pks_to_delete).delete()
+            Person.objects.filter(pk__in=people_pks_to_delete).delete()
 
 class rfc9389EligibilityTests(TestCase):
 

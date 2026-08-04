@@ -55,7 +55,7 @@ from ietf.meeting.utils import (
     generate_proceedings_content,
     diff_meeting_schedules,
 )
-from ietf.meeting.utils import add_event_info_to_session_qs, participants_for_meeting
+from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.meeting.utils import create_recording, delete_recording, get_next_sequence, bluesheet_data
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose, generate_agenda_data
@@ -9440,20 +9440,32 @@ class ProceedingsTests(BaseMeetingTestCase):
         sequence = get_next_sequence(group,meeting,'recording')
         self.assertEqual(sequence,1)
 
-    def test_participants_for_meeting(self):
+    def test_nomcom_eligible_participants_for_meeting(self):
         m = MeetingFactory.create(type_id='ietf')
         areg = RegistrationFactory(meeting=m, checkedin=True, with_ticket={'attendance_type_id': 'onsite'})
         breg = RegistrationFactory(meeting=m, checkedin=False, with_ticket={'attendance_type_id': 'onsite'})
         creg = RegistrationFactory(meeting=m, with_ticket={'attendance_type_id': 'remote'})
         dreg = RegistrationFactory(meeting=m, with_ticket={'attendance_type_id': 'remote'})
         AttendedFactory(session__meeting=m, session__type_id='plenary', person=creg.person)
-        checked_in, attended = participants_for_meeting(m)
-        self.assertIn(areg.person.pk, checked_in)
-        self.assertNotIn(breg.person.pk, checked_in)
-        self.assertNotIn(areg.person.pk, attended)
-        self.assertNotIn(breg.person.pk, attended)
-        self.assertIn(creg.person.pk, attended)
-        self.assertNotIn(dreg.person.pk, attended)
+        onsite_pks, remote_pks = m.nomcom_eligible_participants()
+        self.assertIn(areg.person.pk, onsite_pks)
+        self.assertNotIn(breg.person.pk, onsite_pks)
+        self.assertNotIn(areg.person.pk, remote_pks)
+        self.assertNotIn(breg.person.pk, remote_pks)
+        self.assertIn(creg.person.pk, remote_pks)
+        self.assertNotIn(dreg.person.pk, remote_pks)
+
+    def test_nomcom_eligible_participants_remote_requires_session(self):
+        """Remote registration.attended=True without a qualifying session does not count (>= 110 path)"""
+        m = MeetingFactory.create(type_id='ietf', number='119')
+        # Remote with attended=True but no Attended record: should not be eligible
+        no_session_reg = RegistrationFactory(meeting=m, attended=True, with_ticket={'attendance_type_id': 'remote'})
+        # Remote with attended=True AND a qualifying Attended record: should be eligible
+        session_reg = RegistrationFactory(meeting=m, attended=True, with_ticket={'attendance_type_id': 'remote'})
+        AttendedFactory(session__meeting=m, session__type_id='plenary', person=session_reg.person)
+        onsite_pks, remote_pks = m.nomcom_eligible_participants()
+        self.assertNotIn(no_session_reg.person.pk, remote_pks)
+        self.assertIn(session_reg.person.pk, remote_pks)
 
     def test_session_attendance(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2023, 11, 4), number='118')

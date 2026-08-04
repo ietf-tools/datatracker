@@ -1973,6 +1973,7 @@ def issue_wg_lc(request, name):
                 doc=doc,
                 end_date=end_date,
                 wg_list=doc.group.list_email,
+                url=f"{settings.IETF_ID_ARCHIVE_URL}{doc.name}-{doc.rev}.txt",
                 settings=settings,
             ),
         )

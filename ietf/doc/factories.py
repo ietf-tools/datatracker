@@ -128,6 +128,13 @@ class RfcFactory(BaseDocumentFactory):
         else:
             obj.set_state(State.objects.get(type_id='rfc',slug='published'))
 
+    @factory.post_generation
+    def authors(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
+        # Override base class, creating RfcAuthor instead of DocumentAuthor
+        if create and extracted:
+            for person in extracted:
+                RfcAuthorFactory(document=obj, person=person)
+
 
 class IndividualDraftFactory(BaseDocumentFactory):
 

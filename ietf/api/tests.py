@@ -12,6 +12,7 @@ import sys
 from importlib import import_module
 from pathlib import Path
 from random import randrange
+from urllib.parse import urljoin
 
 from django.apps import apps
 from django.conf import settings
@@ -1562,6 +1563,36 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
                 self.fail(
                     f"serializer.to_etree raised ValueError on a string "
                     f"containing control character U+{ord(ch):04X}"
+                )
+
+    def test_post_detail_is_not_allowed(self):
+        """POST to a detail route returns 405
+        
+        Added because default TastyPie behavior is a 500 due to a NotImplemented
+        exception.
+        """
+        r = self.client.get("/api/v1", headers={"Accept": "application/json"})
+        self.assertValidJSONResponse(r)
+        resource_list = r.json()
+        for name in self.apps:
+            r = self.client.get(
+                resource_list[name]["list_endpoint"],
+                headers={"Accept": "application/json"},
+            )
+            self.assertValidJSONResponse(r)
+            app_resources = r.json()
+            model_list = apps.get_app_config(name).get_models()
+            for model in model_list:
+                model_name = model._meta.model_name
+                assert model_name
+                detail_url = urljoin(
+                    app_resources[model_name]["list_endpoint"], "some-id/"
+                )
+                r = self.client.post(detail_url)
+                self.assertEqual(
+                    r.status_code,
+                    405,
+                    f"POST to {name}.{model_name} detail should return 405 status",
                 )
 
 
