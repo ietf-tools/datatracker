@@ -75,7 +75,7 @@ jobs:
         path: geckodriver.log
 
     - name: Upload Coverage Results to Codecov
-      uses: codecov/codecov-action@v6
+      uses: codecov/codecov-action@v7
       with:
         disable_search: true
         files: coverage.xml
@@ -106,12 +106,12 @@ jobs:
 
     - uses: actions/setup-node@v6
       with:
-        node-version: '18'
+        node-version: '26'
 
     - name: Run all tests
       run: |
         echo "Installing dependencies..."
-        yarn
+        npm ci
         echo "Installing Playwright..."
         cd playwright
         mkdir test-results
@@ -171,7 +171,7 @@ jobs:
         HOME: ""
       run: |
         echo "Installing dependencies..."
-        yarn
+        npm ci
         echo "Installing Playwright..."
         cd playwright
         mkdir test-results

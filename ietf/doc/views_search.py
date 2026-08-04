@@ -260,6 +260,10 @@ def retrieve_search_results(form, all_types=False):
 
     docs=docs.distinct()
 
+    # order by time here to retain the most recent documents in case we
+    # find too many and have to chop the results list in prepare_document_table
+    docs = docs.order_by('-time')
+
     return docs
 
 
