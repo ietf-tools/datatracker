@@ -20,6 +20,7 @@ from .utils import (
 )
 from .views import generate_agenda_data
 from .utils import fetch_attendance_from_meetings, fix_missing_registrations
+from .utils import fix_mismatched_registrations
 
 
 @shared_task
@@ -252,3 +253,9 @@ def store_meeting_materials_as_blobs_task(
 def fix_missing_registrations_task():
     """One time task to fix missing meeting.Registrations"""
     fix_missing_registrations()
+
+
+@shared_task
+def fix_mismatched_registrations_task():
+    """One time task to fix mismatched meeting.Registrations"""
+    fix_mismatched_registrations()

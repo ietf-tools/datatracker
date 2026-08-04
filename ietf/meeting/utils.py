@@ -1947,5 +1947,121 @@ def fix_missing_registrations(meeting=None):
     return created, removed
 
 
+def fix_mismatched_registrations(meeting=None):
+    """Correct meeting.Registration records that disagree with their legacy rows.
+
+    For meetings 100 and later, legacy stats.MeetingRegistration records are
+    matched to a meeting.Registration on (meeting, email). The legacy table
+    stores one row per (attendee, reg_type, ticket_type), so a (meeting, email)
+    often has several legacy rows that were combined into a single Registration.
+    affiliation, attended and checkedin are OR-ed across those rows: if any
+    legacy row had the flag set (or an affiliation populated), the Registration
+    should reflect it. Because the new system is authoritative it may have more
+    set than the legacy rows, so this is one-directional - a value present in
+    legacy but missing on the Registration is a gap that this corrects in place:
+      - affiliation is filled from the legacy value if blank
+      - attended is set True if any legacy row was attended
+      - checkedin is set True if any legacy row was checked in
+
+    A legacy (meeting, email) with no matching Registration is a cancelled
+    registration and is skipped. Names may legitimately differ and are ignored.
+
+    If meeting (a meeting number) is given, only that meeting is checked;
+    otherwise all meetings numbered 100+ are checked.
+
+    Returns the number of Registrations corrected.
+    """
+    # import here to avoid a circular import with ietf.stats.models
+    from ietf.stats.models import MeetingRegistration
+
+    def norm(value):
+        return (value or "").strip().lower()
+
+    if meeting is not None:
+        meeting_ids = list(
+            Meeting.objects.filter(number=str(meeting)).values_list("id", flat=True)
+        )
+    else:
+        meeting_ids = [
+            m.pk
+            for m in Meeting.objects.filter(type="ietf")
+            if m.number.isdigit() and int(m.number) >= 100
+        ]
+
+    # Aggregate legacy rows keyed on (meeting, email): attended and checkedin are
+    # OR-ed (True if any row was); affiliation takes the first non-blank value.
+    # Rows with a blank email cannot be matched and are ignored.
+    legacy = {}
+    for meeting_id, email, affiliation, attended, checkedin in (
+        MeetingRegistration.objects.filter(meeting_id__in=meeting_ids).values_list(
+            "meeting_id", "email", "affiliation", "attended", "checkedin"
+        )
+    ):
+        key = (meeting_id, norm(email))
+        agg = legacy.get(key)
+        if agg is None:
+            agg = legacy[key] = {
+                "affiliation": "",
+                # raw (un-normalized) value, used when writing a fix back
+                "affiliation_raw": "",
+                "attended": False,
+                "checkedin": False,
+            }
+        agg["attended"] = agg["attended"] or attended
+        agg["checkedin"] = agg["checkedin"] or checkedin
+        if not agg["affiliation"]:
+            agg["affiliation"] = norm(affiliation)
+            agg["affiliation_raw"] = (affiliation or "").strip()
+
+    # Build a lookup of new Registrations keyed on (meeting, email). There is at
+    # most one Registration per (meeting, email).
+    new = {}
+    for pk, meeting_id, email, affiliation, attended, checkedin in (
+        Registration.objects.filter(meeting_id__in=meeting_ids).values_list(
+            "id", "meeting_id", "email", "affiliation", "attended", "checkedin"
+        )
+    ):
+        new[(meeting_id, norm(email))] = {
+            "id": pk,
+            "affiliation": norm(affiliation),
+            "attended": attended,
+            "checkedin": checkedin,
+        }
+
+    fixed = 0
+    for key, agg in sorted(legacy.items()):
+        meeting_id, email = key
+        rec = new.get(key)
+        if rec is None:
+            # No matching Registration: a cancelled registration - skip it.
+            continue
+
+        # affiliation / attended / checkedin are one-directional gap fills. The
+        # write uses the raw (un-normalized) legacy value; the normalized copy is
+        # only for the comparison.
+        changes = {}
+        if agg["affiliation"] and not rec["affiliation"]:
+            changes["affiliation"] = agg["affiliation_raw"]
+        if agg["attended"] and not rec["attended"]:
+            changes["attended"] = True
+        if agg["checkedin"] and not rec["checkedin"]:
+            changes["checkedin"] = True
+
+        if not changes:
+            continue
+        Registration.objects.filter(pk=rec["id"]).update(**changes)
+        fixed += 1
+        log(
+            "fix_mismatched_registrations corrected registration: "
+            "meeting={} email={!r} {}".format(
+                meeting_id,
+                email,
+                ", ".join("{}={!r}".format(k, v) for k, v in sorted(changes.items())),
+            )
+        )
+
+    return fixed
+
+
 def fetch_attendance_from_meetings(meetings):
     return [sync_registration_data(meeting) for meeting in meetings]
