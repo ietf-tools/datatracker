@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
     const btn_pref = {
         "sidebar": "on",
         "deftab": "docinfo",
-        "htmlconf": "html",
+        "htmlconf": "txthtml",
         "pagedeps": "reference",
         "reflinks": "refsection"
     };
