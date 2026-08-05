@@ -1096,13 +1096,11 @@ class CustomApiTests(TestCase):
         two_days_ago = now - datetime.timedelta(days=2)
         three_days_ago = now - datetime.timedelta(days=3)
         long_long_ago = now - datetime.timedelta(days=400)
-    
+
         # A recently published RFC with a known author...
         author = PersonFactory(name="Jane Q. Author")
         recent_rfc = WgRfcFactory(title="A Recently Published RFC")
-        recent_event = DocEventFactory(
-            doc=recent_rfc, type="published_rfc", time=two_days_ago
-        )
+        DocEventFactory(doc=recent_rfc, type="published_rfc", time=two_days_ago)
         RfcAuthorFactory(document=recent_rfc, person=author)
 
         # ...and an RFC published well outside the default window, which must be excluded.
@@ -1127,7 +1125,7 @@ class CustomApiTests(TestCase):
             row["rfc_number_and_title"],
             f"RFC {recent_rfc.rfc_number}: {recent_rfc.title}",
         )
-        self.assertEqual(row["published_date"], str(recent_event.time.date()))
+        self.assertEqual(row["published_date"], str(recent_rfc.pub_date()))
 
         # A narrow window excludes the recent RFC, too. First, using from-only
         r = self.client.get(
@@ -1211,7 +1209,6 @@ class CustomApiTests(TestCase):
             headers={"X-Api-Key": "valid-token"},
         )
         self.assertEqual(r.status_code, 400, "out-of-order from/to parameters")
-        
 
     @override_settings(
         APP_API_TOKENS={"ietf.api.views.ingest_email": "valid-token", "ietf.api.views.ingest_email_test": "test-token"}
