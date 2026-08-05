@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2025, All Rights Reserved
+# Copyright The IETF Trust 2009-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Portion Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
@@ -1036,7 +1036,7 @@ class IetfTestRunner(DiscoverRunner):
                 with tempfile.NamedTemporaryFile() as stdout:
                     subprocess.run(
                         [
-                            "yarn",
+                            "npx",
                             "html-validate",
                             "--formatter=json",
                             "--config=" + self.config_file[kind].name,
