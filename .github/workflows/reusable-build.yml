@@ -81,7 +81,7 @@ jobs:
         echo "Installing node packages..."
         npm ci
         echo "Packaging static assets..."
-        npm run build --base=https://static.ietf.org/dt/${{ inputs.buildVersion }}/
+        npm run build -- --base=https://static.ietf.org/dt/${{ inputs.buildVersion }}/
         npm run legacy:build
         echo "Setting version ${{ inputs.buildVersion }}..."
         sed -i -r -e "s|^__version__ += '.*'$|__version__ = '${{ inputs.buildVersion }}'|" ietf/__init__.py
