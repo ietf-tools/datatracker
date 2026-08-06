@@ -52,6 +52,7 @@ from ietf.person.models import Email, Person
 from ietf.person.utils import get_active_balloters
 from ietf.utils import log
 from ietf.utils.decorators import memoize
+from ietf.utils.text import decode_document_content
 from ietf.utils.validators import validate_no_control_chars
 from ietf.utils.mail import formataddr
 from ietf.utils.models import ForeignKey
@@ -156,12 +157,13 @@ class DocumentInfo(models.Model):
         default=list,
         max_length=1000,
         validators=[validate_doc_keywords],
+        blank=True,
     )
 
     @property
     def doi(self) -> str | None:
         if self.type_id == "rfc" and self.rfc_number is not None:
-            return f"{settings.IETF_DOI_PREFIX}/RFC{self.rfc_number:04d}"
+            return f"{settings.IETF_DOI_PREFIX}/RFC{self.rfc_number}"
         return None
 
     def file_extension(self):
@@ -341,6 +343,11 @@ class DocumentInfo(models.Model):
                 href = settings.IDTRACKER_BASE_URL + href
             setattr(self, cache_attr, href)
         return getattr(self, cache_attr)
+
+    def refresh_from_db(self, using=None, fields=None, **kwargs):
+        super().refresh_from_db(using=using, fields=fields, **kwargs)
+        self.state_cache = None
+        self._cached_state_slug = {}
 
     def set_state(self, state):
         """Switch state type implicit in state to state. This just
@@ -640,19 +647,7 @@ class DocumentInfo(models.Model):
         except IOError as e:
             log.log(f"Error reading text for {path}: {e}")
             return None
-        text = None
-        try:
-            text = raw.decode('utf-8')
-        except UnicodeDecodeError:
-            for back in range(1,4):
-                try:
-                    text = raw[:-back].decode('utf-8')
-                    break
-                except UnicodeDecodeError:
-                    pass
-            if text is None:
-                text = raw.decode('latin-1')
-        return text
+        return decode_document_content(raw)
 
     def text_or_error(self):
         return self.text() or "Error; cannot read '%s'"%self.get_base_name()
@@ -1285,19 +1280,21 @@ class Document(StorableMixin, DocumentInfo):
         s = s.first()
         return s
 
+    def pub_datetime(self):
+        """Get the publication datetime of this document"""
+        if self.type_id == "rfc":
+            event = self.latest_event(type='published_rfc')
+        else:
+            event = self.latest_event(type='new_revision')
+        return event.time.astimezone(RPC_TZINFO) if event else None
+
     def pub_date(self):
         """Get the publication date for this document
 
         This is the rfc publication date for RFCs, and the new-revision date for other documents.
         """
-        if self.type_id == "rfc":
-            # As of Sept 2022, in ietf.sync.rfceditor.update_docs_from_rfc_index() `published_rfc` events are
-            # created with a timestamp whose date *in the PST8PDT timezone* is the official publication date
-            # assigned by the RFC editor.
-            event = self.latest_event(type='published_rfc')
-        else:
-            event = self.latest_event(type='new_revision')
-        return event.time.astimezone(RPC_TZINFO).date() if event else None
+        pub_datetime = self.pub_datetime()
+        return None if pub_datetime is None else pub_datetime.date()
 
     def is_dochistory(self):
         return False
@@ -1551,6 +1548,7 @@ EVENT_TYPES = [
     ("rfc_editor_received_announcement", "Announcement was received by RFC Editor"),
     ("requested_publication", "Publication at RFC Editor requested"),
     ("sync_from_rfc_editor", "Received updated information from RFC Editor"),
+    ("changed_rpc_assignments", "Changed RPC queue assignments"),
 
     # review
     ("requested_review", "Requested review"),
@@ -1615,6 +1613,9 @@ class StateDocEvent(DocEvent):
 
 class ConsensusDocEvent(DocEvent):
     consensus = models.BooleanField(null=True, default=None)
+
+class RpcAssignmentDocEvent(DocEvent):
+    assignments = models.TextField(blank=True)
 
 # IESG events
 class BallotType(models.Model):

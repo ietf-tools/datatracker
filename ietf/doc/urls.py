@@ -99,6 +99,8 @@ urlpatterns = [
 
     url(r'^%(name)s(?:/%(rev)s)?/$' % settings.URL_REGEXPS, views_doc.document_main),
     url(r'^%(name)s(?:/%(rev)s)?/bibtex/$' % settings.URL_REGEXPS, views_doc.document_bibtex),
+    url(r'^rfc(?P<number>[0-9]+)/notprepped/$' , views_doc.rfcxml_notprepped),
+    url(r'^rfc(?P<number>[0-9]+)/notprepped-wrapper/$', views_doc.rfcxml_notprepped_wrapper),
     url(r'^%(name)s(?:/%(rev)s)?/idnits2-state/$' % settings.URL_REGEXPS, views_doc.idnits2_state),
     url(r'^bibxml3/reference.I-D.%(name)s(?:-%(rev)s)?.xml$' % settings.URL_REGEXPS, views_doc.document_bibxml_ref),
     url(r'^bibxml3/%(name)s(?:-%(rev)s)?.xml$' % settings.URL_REGEXPS, views_doc.document_bibxml),

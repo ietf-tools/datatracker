@@ -36,9 +36,9 @@ from weasyprint.urls import URLFetchingError
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, DocRelationshipName, RelatedDocument, State,
-    DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType,
-    EditedAuthorsDocEvent, StateType)
+from ietf.doc.models import (Document, DocRelationshipName, RelatedDocument, State,
+                             DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType,
+                             EditedAuthorsDocEvent, StateType, RfcAuthor)
 from ietf.doc.factories import (DocumentFactory, DocEventFactory, CharterFactory,
                                 ConflictReviewFactory, WgDraftFactory,
                                 IndividualDraftFactory, WgRfcFactory,
@@ -73,7 +73,7 @@ from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.utils.mail import get_payload_text, outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
-from ietf.utils.text import normalize_text
+from ietf.utils.text import normalize_text, texescape
 from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO, RPC_TZINFO
 from ietf.doc.utils_search import AD_WORKLOAD
 
@@ -1022,6 +1022,34 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertEqual(r.status_code, 302)
         draft = Document.objects.get(pk=draft.pk)
         self.assertEqual(draft.author_persons(), orig_authors + [new_auth_person])
+
+    def test_edit_authors_blocked_when_rfcauthors_exist(self):
+        """edit_authors returns 403 for all users when RfcAuthors exist"""
+        rfc = WgRfcFactory()
+        RfcAuthorFactory(document=rfc)
+        url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=rfc.name))
+
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+        r = self.client.post(url, {})
+        self.assertEqual(r.status_code, 403)
+
+    def test_document_main_hides_edit_authors_when_rfcauthors_exist(self):
+        """document_main does not offer edit link for authors when RfcAuthors exist"""
+        rfc = WgRfcFactory()
+        edit_authors_url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=rfc.name))
+
+        self.client.login(username='secretary', password='secretary+password')
+
+        r = self.client.get(urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=rfc.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, edit_authors_url)
+
+        RfcAuthorFactory(document=rfc)
+        r = self.client.get(urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=rfc.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, edit_authors_url)
 
     def make_edit_authors_post_data(self, basis, authors):
         """Helper to generate edit_authors POST data for a set of authors"""
@@ -2065,9 +2093,9 @@ class DocTestCase(TestCase):
         self.assertEqual(len(q("item")), 3)
         item = q("item")[0]
         media_content = item.findall("{http://search.yahoo.com/mrss/}content")
-        self.assertEqual(len(media_content), 3)
+        self.assertEqual(len(media_content), 2)
         types = set([m.attrib["type"] for m in media_content])
-        self.assertEqual(types, set(["text/plain", "text/html", "application/pdf"]))
+        self.assertEqual(types, set(["text/plain", "text/html"]))
 
     def test_state_help(self):
         url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type="draft-iesg"))
@@ -2105,9 +2133,11 @@ class DocTestCase(TestCase):
             doc = factory()
             url = urlreverse("ietf.doc.views_doc.document_bibtex", kwargs=dict(name=doc.name))
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 404)          
+            self.assertEqual(r.status_code, 404)       
+        authors = PersonFactory.create_batch(2)
         rfc = WgRfcFactory.create(
-            time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE))
+            time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE)),
+            authors=authors,
         )
         num = rfc.rfc_number
         DocEventFactory.create(
@@ -2124,7 +2154,12 @@ class DocTestCase(TestCase):
         self.assertEqual(entry["doi"], "10.17487/RFC%s" % num)
         self.assertEqual(entry["year"], "2010")
         self.assertEqual(entry["month"].lower()[0:3], "oct")
-        self.assertEqual(entry["url"], f"https://www.rfc-editor.ietf.org/info/rfc{num}")
+        self.assertEqual(entry["url"], f"https://www.rfc-editor.ietf.org/info/rfc{num}/")
+        escaped_author_names = [
+            texescape(ra.titlepage_name)
+            for ra in RfcAuthor.objects.filter(document=rfc)
+        ]
+        self.assertEqual(entry["author"], " and ".join(escaped_author_names))    
         #
         self.assertNotIn("day", entry)
     
@@ -2160,7 +2195,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry["year"], "1990")
         self.assertEqual(entry["month"].lower()[0:3], "apr")
         self.assertEqual(entry["day"], "1")
-        self.assertEqual(entry["url"], f"https://www.rfc-editor.ietf.org/info/rfc{num}")
+        self.assertEqual(entry["url"], f"https://www.rfc-editor.ietf.org/info/rfc{num}/")
     
         draft = IndividualDraftFactory.create()
         docname = "%s-%s" % (draft.name, draft.rev)

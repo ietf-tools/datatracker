@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2023, All Rights Reserved
+# Copyright The IETF Trust 2011-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -40,7 +40,7 @@ from ietf.meeting.models import Meeting
 from ietf.meeting.factories import MeetingFactory
 from ietf.name.models import DraftSubmissionStateName, FormalLanguageName
 from ietf.person.models import Person
-from ietf.person.factories import UserFactory, PersonFactory
+from ietf.person.factories import UserFactory, PersonFactory, EmailFactory
 from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactory
 from ietf.submit.forms import SubmissionBaseUploadForm, SubmissionAutoUploadForm
 from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
@@ -207,20 +207,24 @@ class ManualSubmissionTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn(
-            urlreverse(
-                "ietf.submit.views.submission_status", 
-                kwargs=dict(submission_id=submission.pk)
-            ),
-            q("#manual.submissions td a").attr("href")
+        # Validate that the basic submission status URL is on the manual post page
+        # _without_ an access token, even if logged in as various users.
+        expected_url = urlreverse(
+            "ietf.submit.views.submission_status", 
+            kwargs=dict(submission_id=submission.pk)
         )
-        self.assertIn(
-            submission.name,
-            q("#manual.submissions td a").text()
-        )
+        selected_elts = q("#manual.submissions td a")
+        self.assertEqual(expected_url, selected_elts.attr("href"))
+        self.assertIn(submission.name, selected_elts.text())
+        for username in ["plain", "secretary"]:
+            self.client.login(username=username, password=username + "+password")
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            selected_elts = q("#manual.submissions td a")
+            self.assertEqual(expected_url, selected_elts.attr("href"))
+            self.assertIn(submission.name, selected_elts.text())
 
-    def test_manualpost_cancel(self):
-        pass
 
 class SubmitTests(BaseSubmitTestCase):
     def setUp(self):
@@ -1868,10 +1872,8 @@ class SubmitTests(BaseSubmitTestCase):
         name = "draft-authorname-testing-bademail"
         rev = "00"
 
-        author = PersonFactory()
-        email = author.email_set.first()
-        email.address = '@bad.email'
-        email.save()
+        author = PersonFactory(default_emails=False)
+        EmailFactory(person=author, primary=True, address="@bad.email")
 
         status_url, _ = self.do_submission(name=name, rev=rev, author=author, formats=('xml',))
         r = self.client.get(status_url)

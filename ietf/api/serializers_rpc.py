@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2025, All Rights Reserved
+# Copyright The IETF Trust 2025-2026, All Rights Reserved
 import datetime
 from pathlib import Path
 from typing import Literal, Optional
@@ -8,7 +8,7 @@ from django.urls import reverse as urlreverse
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
-from rest_framework import serializers
+from rest_framework import fields, serializers
 
 from ietf.doc.expire import move_draft_files_to_archive
 from ietf.doc.models import (
@@ -20,13 +20,14 @@ from ietf.doc.models import (
     RfcAuthor,
 )
 from ietf.doc.serializers import RfcAuthorSerializer
+from ietf.doc.tasks import trigger_red_precomputer_task, update_rfc_searchindex_task
 from ietf.doc.utils import (
     default_consensus,
     prettify_std_name,
     update_action_holders,
     update_rfcauthors,
 )
-from ietf.group.models import Group
+from ietf.group.models import Group, Role
 from ietf.group.serializers import AreaSerializer
 from ietf.name.models import StreamName, StdLevelName
 from ietf.person.models import Person
@@ -96,6 +97,21 @@ class DraftWithAuthorsSerializer(serializers.ModelSerializer):
         fields = ["draft_name", "authors"]
 
 
+class WgChairSerializer(serializers.Serializer):
+    """Serialize a WG chair's name and email from a Role"""
+
+    name = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.CharField)
+    def get_name(self, role: Role) -> str:
+        return role.person.plain_name()
+
+    @extend_schema_field(serializers.EmailField)
+    def get_email(self, role: Role) -> str:
+        return role.email.email_address()
+
+
 class DocumentAuthorSerializer(serializers.ModelSerializer):
     """Serializer for a Person in a response"""
 
@@ -125,6 +141,7 @@ class FullDraftSerializer(serializers.ModelSerializer):
         source="shepherd.person", read_only=True
     )
     consensus = serializers.SerializerMethodField()
+    wg_chairs = serializers.SerializerMethodField()
 
     class Meta:
         model = Document
@@ -144,10 +161,20 @@ class FullDraftSerializer(serializers.ModelSerializer):
             "consensus",
             "shepherd",
             "ad",
+            "wg_chairs",
         ]
 
     def get_consensus(self, doc: Document) -> Optional[bool]:
         return default_consensus(doc)
+
+    @extend_schema_field(WgChairSerializer(many=True))
+    def get_wg_chairs(self, doc: Document):
+        if doc.group is None:
+            return []
+        chairs = doc.group.role_set.filter(name_id="chair").select_related(
+            "person", "email"
+        )
+        return WgChairSerializer(chairs, many=True).data
 
     def get_source_format(
         self, doc: Document
@@ -238,6 +265,23 @@ class SubseriesNameField(serializers.RegexField):
         super().__init__(regex, **kwargs)
 
 
+class RfcGroupRelatedField(serializers.SlugRelatedField):
+    """SlugRelatedField that translates None / "" to the acronym "none" """
+
+    def __init__(self, **kwargs):
+        super().__init__(
+            slug_field="acronym",
+            queryset=Group.objects.all(),
+            allow_null=True,
+            required=False,
+        )
+
+    def run_validation(self, data=fields.empty):
+        # Use the Group with acronym "none" when group is not specified 
+        if data is fields.empty or data is None or data == "":
+            data = "none"
+        return super().run_validation(data)
+
 
 class RfcPubSerializer(serializers.ModelSerializer):
     """Write-only serializer for RFC publication"""
@@ -252,9 +296,7 @@ class RfcPubSerializer(serializers.ModelSerializer):
 
     # fields on the RFC Document that need tweaking from ModelSerializer defaults
     rfc_number = serializers.IntegerField(min_value=1, required=True)
-    group = serializers.SlugRelatedField(
-        slug_field="acronym", queryset=Group.objects.all(), required=False
-    )
+    group = RfcGroupRelatedField()
     stream = serializers.PrimaryKeyRelatedField(
         queryset=StreamName.objects.filter(used=True)
     )
@@ -529,6 +571,18 @@ class EditableRfcSerializer(serializers.ModelSerializer):
         child=SubseriesNameField(required=False),
         write_only=True,
     )
+    updates = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        write_only=True,
+        help_text="List of RFC numbers this document updates."
+    )
+    obsoletes = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        write_only=True,
+        help_text="List of RFC numbers this document obsoletes."
+    )
 
     class Meta:
         model = Document
@@ -542,7 +596,27 @@ class EditableRfcSerializer(serializers.ModelSerializer):
             "std_level",
             "subseries",
             "keywords",
+            "updates",
+            "obsoletes",
         ]
+
+    def _validate_rfc_number_list(self, field_name, rfc_numbers):
+        """Raise ValidationError if any RFC numbers in the list don't exist."""
+        unknown = [
+            n for n in rfc_numbers
+            if not Document.objects.filter(rfc_number=n, type_id="rfc").exists()
+        ]
+        if unknown:
+            raise serializers.ValidationError(
+                {field_name: [f"Unknown RFC number: {n}" for n in unknown]}
+            )
+        return rfc_numbers
+
+    def validate_updates(self, value):
+        return self._validate_rfc_number_list("updates", value)
+
+    def validate_obsoletes(self, value):
+        return self._validate_rfc_number_list("obsoletes", value)
 
     def create(self, validated_data):
         raise RuntimeError("Cannot create with this serializer")
@@ -560,6 +634,8 @@ class EditableRfcSerializer(serializers.ModelSerializer):
         published = validated_data.pop("published", omitted)
         subseries = validated_data.pop("subseries", omitted)
         authors_data = validated_data.pop("rfcauthor_set", omitted)
+        updates = validated_data.pop("updates", omitted)
+        obsoletes = validated_data.pop("obsoletes", omitted)
 
         # Transaction to clean up if something fails
         with transaction.atomic():
@@ -631,6 +707,24 @@ class EditableRfcSerializer(serializers.ModelSerializer):
                                 )
                             )
                         )
+            if updates is not omitted:
+                RelatedDocument.objects.filter(
+                    source=rfc, relationship_id="updates"
+                ).exclude(target__rfc_number__in=updates).delete()
+                for rfc_num in updates:
+                    target = Document.objects.get(rfc_number=rfc_num, type_id="rfc")
+                    RelatedDocument.objects.get_or_create(
+                        source=rfc, relationship_id="updates", target=target
+                    )
+            if obsoletes is not omitted:
+                RelatedDocument.objects.filter(
+                    source=rfc, relationship_id="obs"
+                ).exclude(target__rfc_number__in=obsoletes).delete()
+                for rfc_num in obsoletes:
+                    target = Document.objects.get(rfc_number=rfc_num, type_id="rfc")
+                    RelatedDocument.objects.get_or_create(
+                        source=rfc, relationship_id="obs", target=target
+                    )
 
             # update subseries relations
             if subseries is not omitted:
@@ -682,6 +776,19 @@ class EditableRfcSerializer(serializers.ModelSerializer):
                 stale_subseries_relations.delete()
             if len(rfc_events) > 0:
                 rfc.save_with_history(rfc_events)
+        # Gather obs and updates in both directions as a title/author change to
+        # this doc affects the info rendering of all of the other RFCs
+        needs_updating = sorted(
+            [
+                d.rfc_number
+                for d in [rfc]
+                + rfc.related_that_doc(("obs", "updates"))
+                + rfc.related_that(("obs", "updates"))
+            ]
+        )
+        trigger_red_precomputer_task.delay(rfc_number_list=needs_updating)
+        # Update the search index also
+        update_rfc_searchindex_task.delay(rfc.rfc_number)
         return rfc
 
 
@@ -698,7 +805,7 @@ class RfcFileSerializer(serializers.Serializer):
     # works.
     allowed_extensions = (
         ".html",
-        ".json",
+        ".json",  # deprecated - accepted but ignored, datatracker generates its own
         ".notprepped.xml",
         ".pdf",
         ".txt",

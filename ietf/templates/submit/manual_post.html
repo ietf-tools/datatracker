@@ -1,5 +1,5 @@
 {% extends "submit/submit_base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2026, All Rights Reserved #}
 {% load origin static %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
@@ -27,17 +27,9 @@
             <tbody>
                 {% for s in manual %}
                     <tr>
-                        {% if user.is_authenticated %}
-                            <td>
-                                <a href="{% url "ietf.submit.views.submission_status" submission_id=s.pk access_token=s.access_token %}">
-                                    {{ s.name }}-{{ s.rev }}
-                                </a>
-                            </td>
-                        {% else %}
-                            <td>
-                                <a href="{% url "ietf.submit.views.submission_status" submission_id=s.pk %}">{{ s.name }}-{{ s.rev }}</a>
-                            </td>
-                        {% endif %}
+                        <td>
+                            <a href="{% url "ietf.submit.views.submission_status" submission_id=s.pk %}">{{ s.name }}-{{ s.rev }}</a>
+                        </td>
                         <td>{{ s.submission_date }}</td>
                         <td>
                             {% if s.passes_checks %}

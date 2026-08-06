@@ -115,8 +115,12 @@ try:
 except NameError:
     pass
 
-# Use InMemoryStorage for red bucket storage
+# Use InMemoryStorage for red bucket and r2-rfc storages
 STORAGES["red_bucket"] = {
     "BACKEND": "django.core.files.storage.InMemoryStorage",
     "OPTIONS": {"location": "red_bucket"},
+}
+STORAGES["r2-rfc"] = {
+    "BACKEND": "django.core.files.storage.InMemoryStorage",
+    "OPTIONS": {"location": "r2-rfc"},
 }

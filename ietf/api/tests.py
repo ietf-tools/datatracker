@@ -12,6 +12,7 @@ import sys
 from importlib import import_module
 from pathlib import Path
 from random import randrange
+from urllib.parse import urljoin, urlencode
 
 from django.apps import apps
 from django.conf import settings
@@ -29,7 +30,7 @@ import ietf
 from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils import get_unicode_document_content
 from ietf.doc.models import RelatedDocument, State
-from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory
+from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory, RfcAuthorFactory, DocEventFactory
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.models import Session, Registration
@@ -879,7 +880,7 @@ class CustomApiTests(TestCase):
         for lib in settings.ADVERTISE_VERSIONS:
             self.assertIn(lib, data['other'])
         self.assertEqual(data['dumptime'], "2022-08-31 07:10:01 +0000")
-        DumpInfo.objects.update(tz='PST8PDT')
+        DumpInfo.objects.update(tz='America/Los_Angeles')
         r = self.client.get(url)
         data = r.json()        
         self.assertEqual(data['dumptime'], "2022-08-31 07:10:01 -0700")
@@ -1069,6 +1070,145 @@ class CustomApiTests(TestCase):
             content_dict["addresses"],
             sorted(e.address for e in emails),
         )
+
+    @override_settings(
+        APP_API_TOKENS={"ietf.api.views.rfc_authors": ["valid-token"]}
+    )
+    def test_rfc_authors(self):
+        url = urlreverse("ietf.api.views.rfc_authors")
+        # auth and method checks
+        self.assertEqual(
+            self.client.get(url, headers={}).status_code, 403, "No api token, no access"
+        )
+        self.assertEqual(
+            self.client.get(url, headers={"X-Api-Key": "not-valid-token"}).status_code,
+            403,
+            "Bad api token, no access",
+        )
+        self.assertEqual(
+            self.client.post(url, headers={"X-Api-Key": "valid-token"}).status_code,
+            405,
+            "Bad method, no access",
+        )
+        # Timestamps of interest
+        now = timezone.now()
+        one_day_ago = now - datetime.timedelta(days=1)
+        two_days_ago = now - datetime.timedelta(days=2)
+        three_days_ago = now - datetime.timedelta(days=3)
+        long_long_ago = now - datetime.timedelta(days=400)
+
+        # A recently published RFC with a known author...
+        author = PersonFactory(name="Jane Q. Author")
+        recent_rfc = WgRfcFactory(title="A Recently Published RFC")
+        DocEventFactory(doc=recent_rfc, type="published_rfc", time=two_days_ago)
+        RfcAuthorFactory(document=recent_rfc, person=author)
+
+        # ...and an RFC published well outside the default window, which must be excluded.
+        old_rfc = WgRfcFactory(title="An Old RFC")
+        DocEventFactory(doc=old_rfc, type="published_rfc", time=long_long_ago)
+        RfcAuthorFactory(document=old_rfc)
+
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        rows = json.loads(r.content)
+
+        # Only the recent RFC's author appears, as a single aggregated object.
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row["name"], "Jane Q. Author")
+        self.assertEqual(row["email"], author.email().address)
+        self.assertEqual(row["rfc_number"], str(recent_rfc.rfc_number))
+        self.assertEqual(row["rfc_name"], recent_rfc.name)
+        self.assertEqual(row["rfc_title"], recent_rfc.title)
+        self.assertEqual(
+            row["rfc_number_and_title"],
+            f"RFC {recent_rfc.rfc_number}: {recent_rfc.title}",
+        )
+        self.assertEqual(row["published_date"], str(recent_rfc.pub_date()))
+
+        # A narrow window excludes the recent RFC, too. First, using from-only
+        r = self.client.get(
+            url + "?" + urlencode({"from": one_day_ago.isoformat()}),
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(json.loads(r.content), [])
+        # Second, using both from and to
+        r = self.client.get(
+            url
+            + "?"
+            + urlencode({"from": one_day_ago.isoformat(), "to": now.isoformat()}),
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(json.loads(r.content), [])
+        # Third, from and to, but on the other side of the recent event. This also
+        # confirms that the "to" side comparison is < and not <=.
+        r = self.client.get(
+            url
+            + "?"
+            + urlencode(
+                {"from": three_days_ago.isoformat(), "to": two_days_ago.isoformat()}
+            ),
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(json.loads(r.content), [])
+
+        # Make sure the "from" side is >= and not >.
+        r = self.client.get(
+            url
+            + "?"
+            + urlencode(
+                {"from": two_days_ago.isoformat(), "to": one_day_ago.isoformat()}
+            ),
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(json.loads(r.content)), 1)
+
+        # The testing parameter fakes the email domain while keeping the mailbox.
+        r = self.client.get(url + "?testing", headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        rows = json.loads(r.content)
+        self.assertEqual(len(rows), 1)
+        mailbox = author.email().address.split("@", 1)[0]
+        self.assertEqual(rows[0]["email"], f"{mailbox}@fake.example.com")
+        # Non-email fields are unaffected.
+        self.assertEqual(rows[0]["name"], "Jane Q. Author")
+
+        # If in test mode and testaddr parameters are present, records for those
+        # addresses should be returned with a fake RFC.
+        r = self.client.get(
+            url + "?testing&testaddr=fake@a.example.com&testaddr=phony@b.example.com",
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        rows = json.loads(r.content)
+        self.assertEqual(len(rows), 3)
+        fake_author_addr = author.email().address.split("@", 1)[0] + "@fake.example.com"
+        self.assertCountEqual(
+            [fake_author_addr, "fake@a.example.com", "phony@b.example.com"],
+            [r["email"] for r in rows],
+        )
+
+        # Can only use testaddr when testing is also present
+        r = self.client.get(
+            url + "?testaddr=fake.a.example.com", headers={"X-Api-Key": "valid-token"}
+        )
+        self.assertEqual(r.status_code, 400)
+
+        # Invalid to/from parameters are rejected.
+        r = self.client.get(url + "?from=garbage", headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 400, "bad from parameter")
+        r = self.client.get(url + "?to=garbage", headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 400, "bad to parameter")
+        r = self.client.get(
+            url + f"?from={two_days_ago.isoformat()}&to={three_days_ago.isoformat()}",
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 400, "out-of-order from/to parameters")
 
     @override_settings(
         APP_API_TOKENS={"ietf.api.views.ingest_email": "valid-token", "ietf.api.views.ingest_email_test": "test-token"}
@@ -1542,20 +1682,57 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
                     self.assertIn(model._meta.model_name, list(app_resources.keys()),
                         "There doesn't seem to be any API resource for model %s.models.%s"%(app.__name__,model.__name__,))
 
-    def test_serializer_to_etree_handles_nulls(self):
-        """Serializer to_etree() should handle a null character"""
+    def test_serializer_to_etree_handles_xml_invalid_control_chars(self):
+        """Serializer to_etree() must not raise ValueError for any XML-invalid control character."""
         serializer = Serializer()
+        # Ordinary strings and strings with valid whitespace must pass through unchanged.
         try:
-            serializer.to_etree("string with no nulls in it")
+            serializer.to_etree("string with no special chars")
+            serializer.to_etree("tab\there lf\nhere cr\rhere")
         except ValueError:
             self.fail("serializer.to_etree raised ValueError on an ordinary string")
-        try:
-            serializer.to_etree("string with a \x00 in it")
-        except ValueError:
-            self.fail(
-                "serializer.to_etree raised ValueError on a string "
-                "containing a null character"
+        # Every control character that XML 1.0 forbids must be escaped rather than
+        # causing a ValueError.  This is the class of characters that triggered the
+        # production exception (lxml.etree._utf8 rejects them all).
+        invalid_chars = [chr(c) for c in list(range(0x00, 0x09)) + [0x0b, 0x0c] + list(range(0x0e, 0x20))]
+        for ch in invalid_chars:
+            try:
+                serializer.to_etree(f"string with {ch!r} in it")
+            except ValueError:
+                self.fail(
+                    f"serializer.to_etree raised ValueError on a string "
+                    f"containing control character U+{ord(ch):04X}"
+                )
+
+    def test_post_detail_is_not_allowed(self):
+        """POST to a detail route returns 405
+        
+        Added because default TastyPie behavior is a 500 due to a NotImplemented
+        exception.
+        """
+        r = self.client.get("/api/v1", headers={"Accept": "application/json"})
+        self.assertValidJSONResponse(r)
+        resource_list = r.json()
+        for name in self.apps:
+            r = self.client.get(
+                resource_list[name]["list_endpoint"],
+                headers={"Accept": "application/json"},
             )
+            self.assertValidJSONResponse(r)
+            app_resources = r.json()
+            model_list = apps.get_app_config(name).get_models()
+            for model in model_list:
+                model_name = model._meta.model_name
+                assert model_name
+                detail_url = urljoin(
+                    app_resources[model_name]["list_endpoint"], "some-id/"
+                )
+                r = self.client.post(detail_url)
+                self.assertEqual(
+                    r.status_code,
+                    405,
+                    f"POST to {name}.{model_name} detail should return 405 status",
+                )
 
 
 class RfcdiffSupportTests(TestCase):

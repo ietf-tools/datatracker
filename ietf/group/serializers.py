@@ -20,7 +20,13 @@ class AreaDirectorSerializer(serializers.Serializer):
     Works with Email or Role
     """
 
+    name = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.CharField)
+    def get_name(self, instance: Email | Role):
+        person = getattr(instance, 'person', None)
+        return person.plain_name() if person else None
 
     @extend_schema_field(serializers.EmailField)
     def get_email(self, instance: Email | Role):

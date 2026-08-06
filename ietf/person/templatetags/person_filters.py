@@ -50,6 +50,7 @@ def person_link(person, **kwargs):
     title = kwargs.get("title", "")
     cls = kwargs.get("class", "")
     with_email = kwargs.get("with_email", True)
+    titlepage_name = kwargs.get("titlepage_name", None)
     if person is not None:
         plain_name = person.plain_name()
         name = (
@@ -61,6 +62,7 @@ def person_link(person, **kwargs):
         return {
             "name": name,
             "plain_name": plain_name,
+            "titlepage_name": titlepage_name,
             "email": email,
             "title": title,
             "class": cls,

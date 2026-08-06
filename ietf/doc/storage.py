@@ -114,7 +114,6 @@ class MetadataS3Storage(S3Storage):
 
 
 class StoredObjectBlobdbStorage(BlobdbStorage):
-    ietf_log_blob_timing = True
     warn_if_missing = True  # TODO-BLOBSTORE make this configurable (or remove it)
 
     def _save_stored_object(self, name, content) -> StoredObject:

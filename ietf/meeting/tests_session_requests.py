@@ -236,7 +236,7 @@ class SessionRequestTestCase(TestCase):
         self.assertRedirects(r, redirect_url)
 
         # Check whether updates were stored in the database
-        sessions = Session.objects.filter(meeting=meeting, group=mars)
+        sessions = Session.objects.filter(meeting=meeting, group=mars).order_by("id")
         self.assertEqual(len(sessions), 2)
         session = sessions[0]
         self.assertFalse(session.constraints().filter(name='time_relation'))

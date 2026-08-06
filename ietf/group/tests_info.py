@@ -27,7 +27,7 @@ from django.utils.html import escape
 
 from ietf.community.models import CommunityList
 from ietf.community.utils import reset_name_contains_index_for_rule
-from ietf.doc.factories import WgDraftFactory, RgDraftFactory, IndividualDraftFactory, CharterFactory, BallotDocEventFactory
+from ietf.doc.factories import WgDraftFactory, WgRfcFactory, RgDraftFactory, IndividualDraftFactory, CharterFactory, BallotDocEventFactory
 from ietf.doc.models import Document, DocEvent, State
 from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils_charter import charter_name_for_group
@@ -396,6 +396,7 @@ class GroupPagesTests(TestCase):
         draft7 = WgDraftFactory(group=group)
         draft7.set_state(State.objects.get(type='draft', slug='expired'))
         draft7.set_state(State.objects.get(type='draft-stream-%s' % draft7.stream_id, slug='dead')) # Expired WG draft, marked as dead
+        rfc = WgRfcFactory(group=group)
 
         clist = CommunityList.objects.get(group=group)
         related_docs_rule = clist.searchrule_set.get(rule_type='name_contains')
@@ -425,6 +426,12 @@ class GroupPagesTests(TestCase):
         r = self.client.get(url)
         q = PyQuery(r.content)
         self.assertTrue(any([draft2.name in x.attrib['href'] for x in q('table td a.track-untrack-doc')]))
+
+        # RFC rows must use the RFC number as the sort key so that numeric sort
+        # is not disrupted by the page-count text that precedes the name in the cell.
+        # Draft rows must use the document name.
+        self.assertTrue(q(f'td.doc[data-sort-number="{rfc.rfc_number}"]'))
+        self.assertTrue(q(f'td.doc[data-sort-number="{draft.name}"]'))
 
         # Let's also check the IRTF stream
         rg = GroupFactory(type_id='rg')
@@ -542,6 +549,25 @@ class GroupPagesTests(TestCase):
     
                 for username in list(set(interesting_users)-set(can_edit[group.type_id])):
                     verify_cannot_edit_group(url, group, username)
+
+    def test_group_about_team_parent(self):
+        """Team about page should show parent when parent is not an area"""
+        GroupFactory(type_id='team', parent=GroupFactory(type_id='area', acronym='gen'))
+        GroupFactory(type_id='team', parent=GroupFactory(type_id='ietf', acronym='iab'))
+        GroupFactory(type_id='team', parent=None)
+
+        for team in Group.objects.filter(type='team').select_related('parent'):
+            url = urlreverse('ietf.group.views.group_about', kwargs=dict(acronym=team.acronym))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            if team.parent and team.parent.type_id != 'area':
+                self.assertContains(r, 'Parent')
+                self.assertContains(r, team.parent.acronym)
+            elif team.parent and team.parent.type_id == 'area':
+                self.assertContains(r, team.parent.name)
+                self.assertNotContains(r, '>Parent<')
+            else:
+                self.assertNotContains(r, '>Parent<')
 
     def test_group_about_personnel(self):
         """Correct personnel should appear on the group About page"""

@@ -51,6 +51,13 @@ height: 100vh;
                         {{ group.parent.name }}
                         <a href="{% url "ietf.group.views.group_home" acronym=group.parent.acronym %}">({{ group.parent.acronym }})</a>
                     </td>
+                {% elif group.parent and group.type_id == "team" %}
+                    <th scope="row">Parent</th>
+                    <td class="edit"></td>
+                    <td>
+                        {{ group.parent.name }}
+                        <a href="{% url "ietf.group.views.group_home" acronym=group.parent.acronym %}">({{ group.parent.acronym }})</a>
+                    </td>
                 {% else %}
                     <td></td>
                     <td class="edit"></td>

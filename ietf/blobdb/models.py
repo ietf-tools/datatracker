@@ -1,14 +1,11 @@
-# Copyright The IETF Trust 2025, All Rights Reserved
-import json
-from functools import partial
+# Copyright The IETF Trust 2025-2026, All Rights Reserved
 from hashlib import sha384
 
 from django.db import models, transaction
 from django.utils import timezone
 
 from .apps import get_blobdb
-from .replication import replication_enabled
-from .tasks import pybob_the_blob_replicator_task
+from .utils import queue_for_replication
 
 
 class BlobQuerySet(models.QuerySet):
@@ -81,24 +78,8 @@ class Blob(models.Model):
             self._emit_blob_change_event(using=db)
         return retval
 
-    def _emit_blob_change_event(self, using=None):
-        if not replication_enabled(self.bucket):
-            return
-
-        # For now, fire a celery task we've arranged to guarantee in-order processing.
-        # Later becomes pushing an event onto a queue to a dedicated worker.
-        transaction.on_commit(
-            partial(
-                pybob_the_blob_replicator_task.delay,
-                json.dumps(
-                    {
-                        "name": self.name,
-                        "bucket": self.bucket,
-                    }
-                )
-            ),
-            using=using,
-        )
+    def _emit_blob_change_event(self, using: str | None=None):
+        queue_for_replication(self.bucket, self.name, using=using)
 
 
 class ResolvedMaterial(models.Model):

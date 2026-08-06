@@ -124,6 +124,15 @@
                 </i>
                 Referenced by
             </a>
+            {% if doc.rfc_number >= settings.FIRST_V3_RFC %}
+            <a class="btn btn-primary btn-sm"
+              href="{% url 'ietf.doc.views_doc.rfcxml_notprepped_wrapper' number=doc.rfc_number %}"
+              rel="nofollow">
+              <i class="bi bi-vector-pen">
+              </i>
+              Get editor source
+            </a>
+            {% endif %}
             <a class="btn btn-primary btn-sm"
                 href="https://mailarchive.ietf.org/arch/search?q=%22{{ doc.name }}%22"
                 rel="nofollow"
