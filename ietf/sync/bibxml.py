@@ -250,9 +250,9 @@ def recreate_rfcsubseries_bibxml():
         filename = f"bibxml-rfcsubseries/std{std_number}.xml"
         try:
             bibxml = get_std_bibxml(std_number)
+            save_bibxml(bibxml, filename)
         except BibXMLException as e:
             log(f"{e}")
-        save_bibxml(bibxml, filename)
 
     # FYIs
     fyis = (
@@ -270,6 +270,6 @@ def recreate_rfcsubseries_bibxml():
         filename = f"bibxml-rfcsubseries/fyi{fyi_number}.xml"
         try:
             bibxml = get_fyi_bibxml(fyi_number)
+            save_bibxml(bibxml, filename)
         except BibXMLException as e:
             log(f"{e}")
-        save_bibxml(bibxml, filename)
