@@ -95,6 +95,10 @@ ORG_LOOKUP = {
 }
 
 
+class BibXMLException(Exception):
+    pass
+
+
 def save_to_bucket(filename: str, content: str | bytes):
     bibxml_bucket = storages["bibxml_bucket"]
     bucket_path = str(Path(getattr(settings, "BIBXML_OUTPUT_PATH", "")) / filename)
@@ -151,6 +155,8 @@ def get_bcp_bibxml(bcp_number):
     bcp_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"bcp{bcp_number}")
     rfc_bibxml = ""
     rfcs = sorted(bcp.contains(), key=lambda x: x.rfc_number)
+    if not rfcs:
+        raise BibXMLException(f"No RFCs found for BCP {bcp_number}.")
     for rfc in rfcs:
         rfc_bibxml += get_rfc_bibxml(rfc)
 
@@ -163,6 +169,8 @@ def get_std_bibxml(std_number):
     std_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"std{std_number}")
     rfc_bibxml = ""
     rfcs = sorted(std.contains(), key=lambda x: x.rfc_number)
+    if not rfcs:
+        raise BibXMLException(f"No RFCs found for STD {std_number}.")
     for rfc in rfcs:
         rfc_bibxml += get_rfc_bibxml(rfc)
 
@@ -175,6 +183,8 @@ def get_fyi_bibxml(fyi_number):
     fyi_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"fyi{fyi_number}")
     rfc_bibxml = ""
     rfcs = sorted(fyi.contains(), key=lambda x: x.rfc_number)
+    if not rfcs:
+        raise BibXMLException(f"No RFCs found for FYI {fyi_number}.")
     for rfc in rfcs:
         rfc_bibxml += get_rfc_bibxml(rfc)
 
@@ -218,10 +228,12 @@ def recreate_rfcsubseries_bibxml():
         .values_list("number", flat=True)
     )
     for bcp_number in bcps:
-        filename = f"bibxml-rfcsubseries/bcp{bcp_number}.xml"
-        bibxml = get_bcp_bibxml(bcp_number)
-        save_bibxml(bibxml, filename)
-
+        try:
+            filename = f"bibxml-rfcsubseries/bcp{bcp_number}.xml"
+            bibxml = get_bcp_bibxml(bcp_number)
+            save_bibxml(bibxml, filename)
+        except BibXMLException as e:
+            log(f"{e}")
     # STDs
     stds = (
         Document.objects.filter(type_id="std")
@@ -236,7 +248,10 @@ def recreate_rfcsubseries_bibxml():
     )
     for std_number in stds:
         filename = f"bibxml-rfcsubseries/std{std_number}.xml"
-        bibxml = get_std_bibxml(std_number)
+        try:
+            bibxml = get_std_bibxml(std_number)
+        except BibXMLException as e:
+            log(f"{e}")
         save_bibxml(bibxml, filename)
 
     # FYIs
@@ -253,5 +268,8 @@ def recreate_rfcsubseries_bibxml():
     )
     for fyi_number in fyis:
         filename = f"bibxml-rfcsubseries/fyi{fyi_number}.xml"
-        bibxml = get_fyi_bibxml(fyi_number)
+        try:
+            bibxml = get_fyi_bibxml(fyi_number)
+        except BibXMLException as e:
+            log(f"{e}")
         save_bibxml(bibxml, filename)
