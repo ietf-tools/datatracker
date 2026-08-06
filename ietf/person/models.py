@@ -44,6 +44,26 @@ def name_character_validator(value):
         )
 
 
+def unused_person_uuid():
+    MAX_ATTEMPTS = 50  # ludicrously large
+    for _ in range(MAX_ATTEMPTS):
+        candidate = uuid.uuid4()
+        if not PersonUUID.objects.filter(uuid=candidate).exists():
+            return candidate
+    raise RuntimeError("Unable to generate unused UUID")
+
+
+class PersonUUID(models.Model):
+    """Surrogate key for a Person"""
+    uuid = models.UUIDField(primary_key=True, editable=False, default=unused_person_uuid)
+    person = models.ForeignKey(
+        "person.Person", related_name="uuids", on_delete=models.PROTECT
+    )
+
+    def __str__(self):
+        return str(self.uuid)
+
+
 class Person(models.Model):
     history = HistoricalRecords()
     user = OneToOneField(User, blank=True, null=True, on_delete=models.SET_NULL)
