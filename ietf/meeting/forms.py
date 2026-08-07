@@ -296,6 +296,13 @@ class InterimSessionModelForm(forms.ModelForm):
                 doc = self.instance.agenda()
                 content = doc.text_or_error()
                 self.initial['agenda'] = content
+            # Initialise remote_participation from the existing remote_instructions
+            # so that a no-op resubmit does not flip the session between modes.
+            existing_remote = self.instance.remote_instructions or ''
+            if hasattr(settings, 'MEETECHO_API_CONFIG') and 'meetecho' in existing_remote:
+                self.initial['remote_participation'] = 'meetecho'
+            else:
+                self.initial['remote_participation'] = 'manual'
 
         # set up remote participation choices
         choices = []
@@ -325,9 +332,13 @@ class InterimSessionModelForm(forms.ModelForm):
         return duration
 
     def clean(self):
-        if self.cleaned_data.get('remote_participation', None) == 'meetecho':
-            self.cleaned_data['remote_instructions'] = ''  # blank this out if we're creating a Meetecho conference
-        elif not self.cleaned_data['remote_instructions']:
+        # Preserve the existing remote_instructions across submits: the helper
+        # layer (create_interim_session_conferences) decides whether to
+        # overwrite it, and only does so on successful Meetecho creation.
+        # Blanking it here would destroy the URL before the helper even runs,
+        # leaving the session unrecoverable on any Meetecho failure.
+        if self.cleaned_data.get('remote_participation', None) != 'meetecho' \
+                and not self.cleaned_data.get('remote_instructions'):
             self.add_error('remote_instructions', 'This field is required')
         return self.cleaned_data
 
