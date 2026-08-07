@@ -1760,6 +1760,41 @@ class MilestoneTests(TestCase):
 
         self.assertEqual(group.charter.docevent_set.count(), events_before + 2) # 1 delete, 1 add
 
+    def test_reset_charter_milestones_bad_ids(self):
+        """A non-integer milestone id is rejected without echoing the submitted value
+
+        int() puts the offending value in its exception message and
+        HttpResponseBadRequest serves its content as unescaped text/html, so
+        reflecting the message would be an XSS vector.
+        """
+        m1, m2, group = self.create_test_milestones()
+
+        url = urlreverse('ietf.group.milestones.reset_charter_milestones', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+        login_testing_unauthorized(self, "secretary", url)
+
+        milestones_before = GroupMilestone.objects.count()
+        events_before = group.charter.docevent_set.count()
+
+        payload = '<img src=x onerror=alert(1)>'
+        for bad_id in (payload, 'not-a-number', '1.5'):
+            r = self.client.post(url, dict(milestone=[str(m1.pk), bad_id]))
+            self.assertEqual(r.status_code, 400)
+            content = r.content.decode('utf-8')
+            self.assertIn('error in list of ids', content)
+            self.assertNotIn(bad_id, content)
+            self.assertNotIn('invalid literal', content)
+
+        # an empty id is also rejected, without the exception detail
+        r = self.client.post(url, dict(milestone=[str(m1.pk), '']))
+        self.assertEqual(r.status_code, 400)
+        self.assertNotIn('invalid literal', r.content.decode('utf-8'))
+
+        # nothing was changed
+        self.assertEqual(GroupMilestone.objects.count(), milestones_before)
+        self.assertEqual(group.charter.docevent_set.count(), events_before)
+        self.assertEqual(GroupMilestone.objects.get(pk=m1.pk).state_id, m1.state_id)
+        self.assertEqual(GroupMilestone.objects.get(pk=m2.pk).state_id, m2.state_id)
+
     def test_edit_sort(self):
         group = GroupFactory(uses_milestone_dates=False)
         DatelessGroupMilestoneFactory(group=group,order=1)
