@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'path'
 import vue from '@vitejs/plugin-vue'
-import servePreviewAssets from './dev/vite-plugins/serve-preview-assets'
-import precompileLodashTemplates from './dev/vite-plugins/precompile-lodash-templates'
+import servePreviewAssets from './dev/vite-plugins/serve-preview-assets.js'
+import precompileLodashTemplates from './dev/vite-plugins/precompile-lodash-templates.js'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -54,9 +54,9 @@ export default defineConfig(({ mode }) => {
   }
   if (mode === 'test') {
     viteConfig.base = '/'
-    viteConfig.root = resolve(__dirname, 'client')
+    viteConfig.root = resolve(import.meta.dirname, 'client')
     viteConfig.build.outDir = 'dist'
-    viteConfig.build.rollupOptions.input.main = resolve(__dirname, 'client/index.html')
+    viteConfig.build.rollupOptions.input.main = resolve(import.meta.dirname, 'client/index.html')
     viteConfig.plugins.push(servePreviewAssets())
   }
   return viteConfig
