@@ -9,6 +9,43 @@ from ietf.doc.models import State, StateType, IESG_SUBSTATE_TAGS
 from ietf.name.models import DocRelationshipName,  DocTagName
 from ietf.doc.utils import get_tags_for_stream_id
 
+# Documentation of the values shown in the RFC Editor queue "Status" field. This
+# status is not a stored state; it is derived by the RFC Production Center's
+# publication queue from the active editor assignments, pending activities,
+# blocking reasons and IANA status of a document, and is rendered to match the
+# publication queue site (https://queue.rfc-editor.org/). Keep in sync with
+# ietf.sync.tasks.format_rpc_queue_status.
+RFC_EDITOR_QUEUE_STATUS_VALUES = [
+    ("In Progress (First Edit)",
+     "The document is being copyedited by the first editor."),
+    ("In Progress (Second Edit)",
+     "The document is getting a second review, focusing on complex issues and IANA "
+     "actions."),
+    ("In Final Review",
+     "Awaiting final approval(s) from authors and/or action holders."),
+    ("<activity> (e.g. “formatting”)",
+     "Another RPC activity is currently underway for the document; the activity is "
+     "shown by name (for example “formatting”). Reference checking and "
+     "publication are not shown as their own status."),
+    ("Awaiting <activity>",
+     "The document is in the queue waiting for the named activity to begin. Values "
+     "include “Awaiting Formatting”, “Awaiting Reference Checker”, "
+     "“Awaiting First editor”, “Awaiting Second editor”, "
+     "“Awaiting Final review editor”, and “Awaiting Publisher”."),
+    ("Awaiting Editor Assignment",
+     "The document is in the queue but nothing has been assigned to it yet."),
+    ("IANA hold",
+     "First editing is underway but is held pending completion of IANA actions. (This "
+     "is distinct from the “IANA Hold” blocking reason below.)"),
+    ("blocked: <reason>",
+     "Progress is blocked; one or more blocking reasons are listed after the colon. "
+     "The possible reasons are: Waiting for Action Holder, Stream Hold, External "
+     "Reference Hold, Author Input Required, IANA Hold, Reference Not Received, "
+     "Reference Not Received (2nd Generation), Reference Not Received (3rd Generation), "
+     "Reference: Second Edit Incomplete, Reference: Publish Incomplete, Final Approval "
+     "Pending, Tools Issue, and Manual Hold."),
+]
+
 def state_index(request):
     types = StateType.objects.all()
     names = [ type.slug for type in types ]
@@ -67,6 +104,22 @@ def state_help(request, type=None):
 
     states = State.objects.filter(used=True, type=state_type).order_by("order")
 
+    # The RFC Editor queue status is now driven by the RFC Production Center's
+    # publication queue rather than by the legacy draft-rfceditor states. The
+    # "in_progress"/"blocked" states back the queue-status display; the remaining
+    # states are legacy and only appear in the history of older documents.
+    queue_status_values = None
+    legacy_states_note = None
+    if state_type.slug == "draft-rfceditor":
+        states = states.exclude(slug__in=("in_progress", "blocked"))
+        queue_status_values = RFC_EDITOR_QUEUE_STATUS_VALUES
+        legacy_states_note = (
+            "These states predate the current RFC Editor publication queue and are "
+            "no longer assigned to documents. They are documented here because they "
+            "still appear in the change history of documents that were processed "
+            "before the queue integration."
+        )
+
     has_next_states = False
     for state in states:
         if state.next_states.all():
@@ -88,6 +141,8 @@ def state_help(request, type=None):
                                "states": states,
                                "has_next_states": has_next_states,
                                "tags": tags,
+                               "queue_status_values": queue_status_values,
+                               "legacy_states_note": legacy_states_note,
                            } )
 
 def relationship_help(request,subset=None):
