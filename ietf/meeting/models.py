@@ -10,10 +10,12 @@ import pytz
 import random
 import re
 import string
+import requests
 
 from collections import namedtuple
 from pathlib import Path
 from urllib.parse import urljoin
+from bs4 import BeautifulSoup
 
 import debug                            # pyflakes:ignore
 
@@ -1601,3 +1603,33 @@ class RegistrationTicket(models.Model):
 
     def __str__(self):
         return "{}:{}".format(self.attendance_type, self.ticket_type)
+
+class MeetingSurvey(models.Model):
+    """Extract IETF meeting survey URLs hosted on https://www.ietf.org/meeting/past"""
+    def get_meeting_survey_url(url):
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            meeting_survey_url = {}
+            
+            # find instances of survey links under '/media/documents/..' 
+            for link in soup.find_all('a', attrs={'href': re.compile("documents")}):
+                href = link.get('href')
+                meeting_links = href.split(",")
+                
+                for link in meeting_links:
+                    # find meeting number or name
+                    ietf_meeting = re.search(r"\/[a-zA-Z0-9_-]+[0-9]{1,3}", link)
+                    if ietf_meeting:
+                        # get meeting number
+                        meeting_number = re.search(r"[0-9]{1,3}", ietf_meeting.group(0))
+                        if meeting_number:
+                            # store scraped URLs in dictionary containing the meeting number and link for each survey available
+                            meeting_survey_url[meeting_number.group(0)] = 'https://www.ietf.org' + link
+                
+            return meeting_survey_url
+        
+        except Exception:
+            return None

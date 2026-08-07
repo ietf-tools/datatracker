@@ -72,6 +72,7 @@ from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, \
 from ..blobdb.models import ResolvedMaterial
 from ietf.meeting.models import ImportantDate, SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
 from ietf.meeting.models import Registration
+from ietf.meeting.models import MeetingSurvey
 from ietf.meeting.forms import ( CustomDurationField, SwapDaysForm, SwapTimeslotsForm, ImportMinutesForm,
                                  TimeSlotCreateForm, TimeSlotEditForm, SessionCancelForm, SessionEditForm )
 from ietf.meeting.helpers import get_person_by_email, get_schedule_by_name
@@ -4487,6 +4488,21 @@ def past(request):
     return render(request, 'meeting/past.html', {
                   'meetings': meetings,
                   })
+    
+def past_ietf(request):
+    '''List of past IETF plenary meetings'''
+    today = timezone.now()
+    ietf_meetings = data_for_meetings_overview(Meeting.objects.filter(type_id='ietf').filter(date__lte=today).order_by('-date'))
+    meeting_survey_urls = MeetingSurvey.get_meeting_survey_url("https://www.ietf.org/meeting/past/")
+    
+    for meeting in ietf_meetings:
+        if meeting_survey_urls is not None:
+            meeting.survey_url = meeting_survey_urls.get(meeting.number)
+        meeting.attendance = meeting.get_attendance()
+    
+    return render(request, 'meeting/past_ietf.html', {
+                'ietf_meetings': ietf_meetings,
+                })
 
 def upcoming(request):
     '''List of upcoming meetings'''
