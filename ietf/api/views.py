@@ -230,14 +230,6 @@ def version(request):
                     }),
                 content_type='application/json',
             )
-    
-
-@require_api_key
-@csrf_exempt
-def app_auth(request, app: Literal["authortools", "bibxml"]):
-    return HttpResponse(
-            json.dumps({'success': True}),
-            content_type='application/json')
 
 @requires_api_token
 @csrf_exempt
