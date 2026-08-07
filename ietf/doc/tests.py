@@ -38,7 +38,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import (Document, DocRelationshipName, RelatedDocument, State,
                              DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType,
-                             EditedAuthorsDocEvent, StateType, RfcAuthor)
+                             EditedAuthorsDocEvent, StateType, RfcAuthor, RpcAssignmentDocEvent)
 from ietf.doc.factories import (DocumentFactory, DocEventFactory, CharterFactory,
                                 ConflictReviewFactory, WgDraftFactory,
                                 IndividualDraftFactory, WgRfcFactory,
@@ -1688,6 +1688,28 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertEqual(r.status_code, 200)
         self.assertNotContains(r, 'Auth48 status')
 
+    def test_rfceditor_queue_status_shown(self):
+        """A queued draft shows its publication-queue Status in place of the state name."""
+        draft = IndividualDraftFactory()
+        event = StateDocEventFactory(doc=draft, state=('draft-rfceditor', 'in_progress'))
+        draft.set_state(event.state)
+        draft.save_with_history([event])
+        RpcAssignmentDocEvent.objects.create(
+            doc=draft,
+            rev=draft.rev,
+            by=Person.objects.get(name="(System)"),
+            type="changed_rpc_assignments",
+            assignments="In Progress (First Edit)",
+            desc="RPC status changed to In Progress (First Edit)",
+        )
+
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 200)
+        # The composite queue Status (which only comes from the RpcAssignmentDocEvent,
+        # not from the state name) is shown, confirming it replaces the raw state name.
+        self.assertContains(r, "In Progress (First Edit)")
+        self.assertContains(r, "Publication queue entry")
+
 
 class DocTestCase(TestCase):
     def test_status_change(self):
@@ -2102,6 +2124,23 @@ class DocTestCase(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, State.objects.get(type="draft-iesg", slug="lc").name)
+
+    def test_rfceditor_state_help_has_queue_status_and_legacy_sections(self):
+        url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type="draft-rfceditor"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        # New "Queue status" section describing the queue Status values.
+        self.assertContains(r, "Queue status")
+        self.assertContains(r, "In Progress (First Edit)")
+        # Legacy states are moved to their own section with the history note.
+        self.assertContains(r, "Legacy states")
+        self.assertContains(r, "appear in the change history")
+        self.assertContains(r, State.objects.get(type="draft-rfceditor", slug="auth48").name)
+        # The queue-backing states are not listed among the legacy states.
+        q = PyQuery(r.content)
+        legacy_ids = [row.get("id") for row in q("tbody tr")]
+        self.assertNotIn("in_progress", legacy_ids)
+        self.assertNotIn("blocked", legacy_ids)
 
     def test_document_nonietf_pubreq_button(self):
         doc = IndividualDraftFactory()
