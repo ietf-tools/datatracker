@@ -10,7 +10,18 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.person.models import (Person, Email, Alias, PersonalApiKey, PersonEvent, PersonApiKeyEvent, HistoricalPerson, HistoricalEmail, PersonExtResource) # type: ignore
+from ietf.person.models import (
+    Person,
+    Email,
+    Alias,
+    PersonalApiKey,
+    PersonEvent,
+    PersonApiKeyEvent,
+    HistoricalPerson,
+    HistoricalEmail,
+    PersonExtResource,
+    PersonUUID,
+)  # type: ignore
 
 
 from ietf.utils.resources import UserResource
@@ -34,6 +45,26 @@ class PersonResource(ModelResource):
             "user": ALL_WITH_RELATIONS,
         }
 api.person.register(PersonResource())
+
+
+class PersonUUIDResource(ModelResource):
+    person = ToOneField(PersonResource, "person")
+
+    class Meta:
+        cache = SimpleCache()
+        queryset = PersonUUID.objects.all()
+        serializer = api.Serializer()
+        # resource_name = 'personuuid'
+        ordering = ['uuid', ]  # noqa: RUF012
+        filtering = {  # noqa: RUF012
+            "uuid": ALL,
+            "primary": ALL,
+            "time": ALL,
+            "person": ALL_WITH_RELATIONS,
+        }
+
+
+api.person.register(PersonUUIDResource())
 
 class EmailResource(ModelResource):
     person           = ToOneField(PersonResource, 'person', null=True)

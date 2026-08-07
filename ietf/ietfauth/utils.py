@@ -341,6 +341,34 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
         dots = get_dots(self.user.person)
         return { 'dots': dots }
 
+    info_datatracker_uuid = (
+        "Datatracker person identifier",
+        (
+            "Access to the stable identifier the datatracker uses for you when "
+            "telling other systems who you are."
+        ),
+    )
+
+    def scope_datatracker_uuid(self):
+        # An empty string is dropped by ScopeClaims._clean_dic, so an inconsistent
+        # Person yields an absent claim rather than a bogus identifier.
+        return {"datatracker_uuid": str(self.user.person.primary_uuid or "")}
+
+    info_datatracker_prior_uuids = (
+        "Previous datatracker person identifiers",
+        (
+            "Access to identifiers the datatracker used for you in the past, as "
+            "well as the one it uses now."
+        ),
+    )
+
+    def scope_datatracker_prior_uuids(self):
+        # An empty list survives _clean_dic, so this claim is present-and-empty rather
+        # than absent for a Person that has never been merged.
+        return {
+            "datatracker_prior_uuids": [str(u) for u in self.user.person.prior_uuids]
+        }
+
     def scope_pronouns(self):
         return { 'pronouns': self.user.person.pronouns() }
 

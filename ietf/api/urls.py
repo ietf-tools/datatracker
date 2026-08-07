@@ -9,7 +9,9 @@ from django.views.generic import TemplateView
 from ietf import api
 from ietf.doc import views_ballot, api as doc_api
 from ietf.meeting import views as meeting_views
+from ietf.person import api_uuid as person_uuid_api
 from ietf.submit import views as submit_views
+import ietf.utils.converters  # noqa: F401  # pyflakes:ignore -- registers anycase_uuid
 from ietf.utils.urls import url
 
 from . import views as api_views
@@ -20,6 +22,20 @@ from .routers import PrefixedSimpleRouter
 # core_router = PrefixedSimpleRouter(name_prefix="ietf.api.core_api")  # core api router
 # core_router.register("email", person_api.EmailViewSet)
 # core_router.register("person", person_api.PersonViewSet)
+
+# Person identity API router. Register by-person-pk before uuid so the more specific
+# prefix is matched first.
+person_router = PrefixedSimpleRouter(
+    use_regex_path=False, name_prefix="ietf.api.person_api"
+)
+person_router.register(
+    "uuid/by-person-pk",
+    person_uuid_api.PersonUUIDByPersonPkViewSet,
+    basename="person-uuid-by-pk",
+)
+person_router.register(
+    "uuid", person_uuid_api.PersonUUIDViewSet, basename="person-uuid"
+)
 
 # todo more general name for this API?
 red_router = PrefixedSimpleRouter(name_prefix="ietf.api.red_api")  # red api router
@@ -86,6 +102,9 @@ urlpatterns = [
     url(r'^person/email/$', api_views.active_email_list),
     # Related Email listing
     url(r'^person/email/(?P<email>[^/\x00]+)/related/$', api_views.related_email_list),
+    # Person UUID resolution API. After the ^person/email/ routes above so those keep
+    # matching first.
+    path("person/", include(person_router.urls)),
     # Draft submission API
     url(r'^submit/?$', submit_views.api_submit_tombstone),
     # Draft upload API

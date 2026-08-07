@@ -7,11 +7,13 @@ import datetime
 from celery import shared_task
 
 from django.conf import settings
+from django.db.models import Count, Q
 from django.utils import timezone
 
 from ietf.utils import log
 from ietf.utils.mail import send_mail
-from .models import PersonalApiKey, PersonApiKeyEvent
+from .models import Person, PersonalApiKey, PersonApiKeyEvent
+from .utils import ensure_primary_uuid
 
 
 @shared_task
@@ -57,3 +59,58 @@ def purge_personal_api_key_events_task(keep_days):
     count = len(old_events)
     old_events.delete()
     log.log(f"Deleted {count} PersonApiKeyEvents older than {keep_since}")
+
+
+@shared_task
+def check_person_uuids_task(fix=False):
+    """Report - and optionally repair - Persons whose UUID set is inconsistent
+
+    Every Person is supposed to have exactly one primary UUID. Assignment is an explicit
+    assign_primary_uuid() call at each site that creates a Person, so a site added
+    without one leaves Persons that cannot be named to any external system. This finds
+    them.
+    """
+    broken = (
+        Person.objects.annotate(
+            uuid_count=Count("uuids", distinct=True),
+            primary_count=Count("uuids", filter=Q(uuids__primary=True), distinct=True),
+        )
+        .filter(primary_count=0)
+        .order_by("pk")
+    )
+
+    count = 0
+    for person in broken:
+        count += 1
+        problem = "no UUIDs at all" if person.uuid_count == 0 else "no primary UUID"
+        log.log(f"Person {person.pk} ({person.name}): {problem}")
+        if fix:
+            row = ensure_primary_uuid(person)
+            log.log(f"Person {person.pk}: primary UUID is now {row.uuid}")
+
+    if count == 0:
+        log.log("check_person_uuids: every Person has exactly one primary UUID")
+    else:
+        log.log(
+            f"check_person_uuids: {count} Person(s) "
+            f"{'repaired' if fix else 'need attention'}"
+        )
+    return count
+
+
+@shared_task
+def push_person_uuids_task(person_pk):
+    """Push a Person's UUID set to Authentik
+
+    Enqueued by ietf.person.utils.queue_person_uuid_push whenever the set changes. The
+    Authentik client does not exist yet, so for now this records the desired state that
+    will be pushed.
+    """
+    person = Person.objects.filter(pk=person_pk).first()
+    if person is None:
+        log.log(f"Not pushing UUIDs for Person {person_pk}: no such Person")
+        return
+    log.log(
+        f"Person {person_pk} UUIDs: primary={person.primary_uuid} "
+        f"prior={[str(u) for u in person.prior_uuids]}"
+    )

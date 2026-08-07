@@ -69,6 +69,7 @@ from ietf.ietfauth.utils import has_role, send_new_email_confirmation_request
 from ietf.name.models import ExtResourceName
 from ietf.nomcom.models import NomCom
 from ietf.person.models import Person, Email, Alias, PersonalApiKey, PERSON_API_KEY_VALUES
+from ietf.person.utils import assign_primary_uuid
 from ietf.review.models import ReviewerSettings, ReviewWish, ReviewAssignment
 from ietf.review.utils import unavailable_periods_to_list, get_default_filter_re
 from ietf.doc.fields import SearchableDocumentField
@@ -232,9 +233,9 @@ def confirm_account(request, auth):
             if not person:
                 name = form.cleaned_data["name"]
                 ascii = form.cleaned_data["ascii"]
-                person = Person.objects.create(user=user,
-                                               name=name,
-                                               ascii=ascii)
+
+                person = Person.objects.create(user=user, name=name, ascii=ascii)
+                assign_primary_uuid(person)
 
                 for name in set([ person.name, person.ascii, person.plain_name(), person.plain_ascii(), ]):
                     Alias.objects.create(person=person, name=name)

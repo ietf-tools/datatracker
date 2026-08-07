@@ -20,8 +20,10 @@ from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 
-from ietf.person.models import Person, Alias, Email, PersonalApiKey, PersonApiKeyEvent, PERSON_API_KEY_ENDPOINTS
+from ietf.person.models import Person, Alias, Email, PersonalApiKey, PersonApiKeyEvent, \
+    PERSON_API_KEY_ENDPOINTS, PersonUUID
 from ietf.person.name import normalize_name, unidecode_name
+from ietf.person.utils import assign_primary_uuid
 
 
 fake = faker.Factory.create()
@@ -64,6 +66,20 @@ class UserFactory(factory.django.DjangoModelFactory):
         obj.set_password( '%s+password' % obj.username ) # pylint: disable=no-value-for-parameter
         obj.save()
 
+
+class PersonUUIDFactory(factory.django.DjangoModelFactory):
+    """Create an extra, non-primary UUID for a Person
+
+    A Person's primary UUID comes from PersonFactory's assign_primary_uuid hook, not from
+    here - creating a second primary would violate the uniqueness constraint.
+    """
+    person = factory.SubFactory("ietf.person.factories.PersonFactory")
+    primary = False
+
+    class Meta:
+        model = PersonUUID
+
+
 class PersonFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Person
@@ -78,6 +94,11 @@ class PersonFactory(factory.django.DjangoModelFactory):
 
     class Params:
         with_bio = factory.Trait(biography = "\n\n".join(fake.paragraphs())) # type: ignore
+
+    @factory.post_generation
+    def primary_uuid(obj, create, extracted, **kwargs):  # pylint: disable=no-self-argument
+        if create:
+            assign_primary_uuid(obj)
 
     @factory.post_generation
     def default_aliases(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
