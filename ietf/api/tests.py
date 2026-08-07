@@ -12,7 +12,7 @@ import sys
 from importlib import import_module
 from pathlib import Path
 from random import randrange
-from urllib.parse import urljoin, urlencode
+from urllib.parse import quote, urlencode, urljoin
 
 from django.apps import apps
 from django.conf import settings
@@ -1662,6 +1662,81 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
         for name in self.apps:
             self.assertIn(name, resource_list,
                         "Expected a REST API resource for %s, but didn't find one" % name)
+
+    def _assert_filter_is_bad_request(self, querystring, leaked):
+        """Assert a filter the database rejects gives a 400 that leaks nothing
+
+        Only one such request per test method: this class runs each test inside a
+        transaction, and the failed statement aborts it, so a second query in the
+        same test raises InternalError. Production requests run in autocommit and
+        are unaffected - each is a single request that returns immediately.
+        """
+        r = self.client.get("/api/v1/doc/document/?format=json&limit=1&" + querystring)
+        self.assertEqual(r.status_code, 400, "Expected 400 for %s" % querystring)
+        body = r.content.decode("utf-8")
+        # the database quotes its own diagnostics - none of that should come back
+        self.assertNotIn("invalid regular expression", body)
+        self.assertNotIn(leaked, body)
+
+    def test_database_error_unbalanced_bracket(self):
+        """A filter value the database rejects is a bad request, not a 500
+
+        An invalid regex is only rejected once the query runs, below anything
+        tastypie can validate. See ietf.api.ModelResource.dispatch.
+        """
+        self._assert_filter_is_bad_request("name__regex=%5B", "brackets")
+
+    def test_database_error_unbalanced_paren(self):
+        self._assert_filter_is_bad_request("name__regex=%28", "parentheses")
+
+    def test_database_error_bad_quantifier(self):
+        self._assert_filter_is_bad_request("name__iregex=" + quote("a{2,1}"), "quantifier")
+
+    def test_valid_regex_filter_still_works(self):
+        for q in ("name__regex=^draft-", "name__iregex=^DRAFT-", "name__regex=(quic|tls)"):
+            r = self.client.get("/api/v1/doc/document/?format=json&limit=1&" + quote(q, safe="=&"))
+            self.assertEqual(r.status_code, 200, "Expected 200 for %s" % q)
+
+    def test_malformed_range_filter(self):
+        """A range filter without exactly two values is a bad request, not a 500
+
+        Django renders a range lookup as "BETWEEN %s AND %s" and indexes the value
+        without checking its length, so a wrong number of values raises IndexError
+        when the query is compiled - too late for tastypie to report it as anything
+        but a 500. See ietf.api.ModelResource.filter_value_to_python.
+
+        Note the test client sets SERVER_NAME to "testserver", which makes tastypie
+        re-raise unhandled exceptions rather than converting them to a 500, so a
+        regression here surfaces as an error rather than a wrong status code.
+        """
+        # The double-encoded comma from the request that broke in production: %252C
+        # decodes to the literal text "%2C", so the value never splits into two.
+        r = self.client.get(
+            "/api/v1/doc/document/?format=json&limit=1&rev__range=02%252C99&type__slug=draft"
+        )
+        self.assertEqual(r.status_code, 400)
+
+        # note "%252C" not "%2C" - the latter is just a comma once the URL is decoded
+        for bad in ("", "02", "02%252C99", "02,99,77", "true", "nil"):
+            r = self.client.get("/api/v1/doc/document/?format=json&limit=1&rev__range=" + bad)
+            self.assertEqual(r.status_code, 400, "Expected 400 for rev__range=%s" % bad)
+
+        # a well-formed range filter still works
+        r = self.client.get("/api/v1/doc/document/?format=json&limit=1&rev__range=00,99")
+        self.assertEqual(r.status_code, 200)
+        # ... on a datetime field too, and via repeated parameters
+        r = self.client.get(
+            "/api/v1/doc/document/?format=json&limit=1"
+            "&time__range=2020-01-01T00:00:00Z&time__range=2030-01-01T00:00:00Z"
+        )
+        self.assertEqual(r.status_code, 200)
+
+        # "in" filters accept any number of values, including one
+        r = self.client.get("/api/v1/doc/document/?format=json&limit=1&rev__in=00")
+        self.assertEqual(r.status_code, 200)
+        # but not a value that string_to_python() turns into a bool
+        r = self.client.get("/api/v1/doc/document/?format=json&limit=1&rev__in=true")
+        self.assertEqual(r.status_code, 400)
 
     def test_all_model_resources_exist(self):
         client = Client(Accept='application/json')
