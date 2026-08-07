@@ -53,7 +53,7 @@ n-modal(v-model:show='modalShown')
           tag='a'
           aria-label='Notepad'
           )
-          i.bi.bi-journal-text.me-2 
+          i.bi.bi-journal-text.me-2
           span Notepad
         n-button.float-end(
           ghost
@@ -412,7 +412,7 @@ async function fetchSessionMaterials () {
     }
   }
 
-  .n-card__content {
+  .n-card-content {
     @media screen and (max-width: $bs5-break-sm) {
       padding: 1em;
 

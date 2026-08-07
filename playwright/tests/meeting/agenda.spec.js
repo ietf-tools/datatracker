@@ -449,7 +449,7 @@ test.describe('past - desktop', () => {
     await navLocator.nth(1).click()
     await expect(navLocator.nth(1)).toHaveClass(/active/)
     await expect(navLocator.first()).not.toHaveClass(/active/)
-    const slideDecksLocator = page.locator('.agenda-eventdetails .detail-text .n-card__content > .list-group > .list-group-item')
+    const slideDecksLocator = page.locator('.agenda-eventdetails .detail-text .n-card-content > .list-group > .list-group-item')
     await expect(slideDecksLocator).toHaveCount(materialsInfo.slides.decks.length)
     for (let idx = 0; idx < materialsInfo.slides.decks.length; idx++) {
       await expect(slideDecksLocator.nth(idx)).toHaveAttribute('href', materialsInfo.slides.decks[idx].url)
@@ -511,7 +511,7 @@ test.describe('past - desktop', () => {
     await expect(page.locator('.agenda-eventdetails')).toBeVisible()
     // Slides Tab
     await page.locator('.agenda-eventdetails .detail-nav > a').nth(1).click()
-    await expect(page.locator('.agenda-eventdetails .detail-text .n-card__content')).toContainText('No slides submitted for this session.')
+    await expect(page.locator('.agenda-eventdetails .detail-text .n-card-content')).toContainText('No slides submitted for this session.')
     // Minutes Tab
     await page.locator('.agenda-eventdetails .detail-nav > a').nth(2).click()
     await expect(page.locator('.agenda-eventdetails .detail-text')).toContainText('No minutes submitted for this session.')
