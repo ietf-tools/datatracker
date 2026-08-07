@@ -62,12 +62,12 @@ def set_primary(modeladmin, request, queryset):
 
 
 class PersonUUIDAdmin(admin.ModelAdmin):
-    list_display = ["uuid", "person", "primary", "time"]
-    list_filter = ["primary"]
-    search_fields = ["uuid", "person__name"]
-    raw_id_fields = ["person"]
-    readonly_fields = ["uuid", "primary", "time"]
-    actions = [set_primary]
+    list_display = ["uuid", "person", "primary", "time"]  # noqa: RUF012
+    list_filter = ["primary"]  # noqa: RUF012
+    search_fields = ["uuid", "person__name"]  # noqa: RUF012
+    raw_id_fields = ["person"]  # noqa: RUF012
+    readonly_fields = ["uuid", "primary", "time"]  # noqa: RUF012
+    actions = [set_primary]  # noqa: RUF012
 admin.site.register(PersonUUID, PersonUUIDAdmin)
 
 
@@ -76,7 +76,7 @@ class PersonUUIDInline(SaferStackedInline):
     extra = 0
     # primary is changed through the PersonUUID admin's set_primary action, which demotes
     # the old primary first. Editing it here would trip the uniqueness constraint.
-    readonly_fields = ["uuid", "primary", "time"]
+    readonly_fields = ["uuid", "primary", "time"]  # noqa: RUF012
     can_delete = False
 
 

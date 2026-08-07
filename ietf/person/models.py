@@ -74,7 +74,7 @@ class PersonUUID(models.Model):
     time = models.DateTimeField(default=timezone.now, editable=False)
 
     class Meta:
-        constraints = [
+        constraints = [  # noqa: RUF012
             models.UniqueConstraint(
                 fields=["person"],
                 condition=models.Q(primary=True),
@@ -244,7 +244,9 @@ class Person(models.Model):
     def prior_uuids(self):
         """UUIDs that still resolve to this Person but are no longer primary"""
         return list(
-            self.uuids.filter(primary=False).order_by("time").values_list("uuid", flat=True)
+            self.uuids.filter(primary=False)
+            .order_by("time")
+            .values_list("uuid", flat=True)
         )
 
     def photo_name(self,thumb=False):

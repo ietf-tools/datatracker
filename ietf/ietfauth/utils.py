@@ -342,10 +342,12 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
         return { 'dots': dots }
 
     info_datatracker_uuid = (
-            "Datatracker person identifier",
-            "Access to the stable identifier the datatracker uses for you when telling "
-            "other systems who you are.",
-        )
+        "Datatracker person identifier",
+        (
+            "Access to the stable identifier the datatracker uses for you when "
+            "telling other systems who you are."
+        ),
+    )
 
     def scope_datatracker_uuid(self):
         # An empty string is dropped by ScopeClaims._clean_dic, so an inconsistent
@@ -353,10 +355,12 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
         return {"datatracker_uuid": str(self.user.person.primary_uuid or "")}
 
     info_datatracker_prior_uuids = (
-            "Previous datatracker person identifiers",
-            "Access to identifiers the datatracker used for you in the past, as well as "
-            "the one it uses now.",
-        )
+        "Previous datatracker person identifiers",
+        (
+            "Access to identifiers the datatracker used for you in the past, as "
+            "well as the one it uses now."
+        ),
+    )
 
     def scope_datatracker_prior_uuids(self):
         # An empty list survives _clean_dic, so this claim is present-and-empty rather

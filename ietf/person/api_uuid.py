@@ -5,6 +5,7 @@ Lets an authorized application ask about a Person UUID it holds and learn the Pe
 current identifier set. Responses carry identifiers only - no name, address or database
 key.
 """
+
 from drf_spectacular.utils import (
     OpenApiExample,
     PolymorphicProxySerializer,
@@ -33,7 +34,7 @@ def uuid_sets_for(person_ids):
         .values_list("person_id", "uuid", "primary")
     )
     for pid, value, is_primary in rows:
-        primary, priors = sets[pid]
+        _, priors = sets[pid]
         if is_primary:
             sets[pid] = (value, priors)
         else:
@@ -134,8 +135,8 @@ class PersonUUIDViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             "Resolve any UUID the datatracker has issued for a Person to that Person's "
             "current identifier set. A UUID that stopped being primary because of a "
             "merge still resolves, and the response carries the current primary. A 200 "
-            "whose primary_uuid differs from the requested uuid means \"same person, new "
-            "identifier\" - it is not an error.\n\n"
+            'whose primary_uuid differs from the requested uuid means "same person, new '
+            'identifier" - it is not an error.\n\n'
             "A 404 means no Person has this UUID. It does not distinguish a UUID the "
             "datatracker never issued from one it issued to a Person that has since been "
             "deleted, because deleting a Person deletes its UUIDs.\n\n"
@@ -172,9 +173,7 @@ class PersonUUIDViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         requested = list(dict.fromkeys(serializer.validated_data["uuids"]))
 
-        found = {
-            row.uuid: row for row in PersonUUID.objects.filter(uuid__in=requested)
-        }
+        found = {row.uuid: row for row in PersonUUID.objects.filter(uuid__in=requested)}
         sets = uuid_sets_for({row.person_id for row in found.values()})
 
         results = []

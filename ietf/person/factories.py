@@ -96,7 +96,7 @@ class PersonFactory(factory.django.DjangoModelFactory):
         with_bio = factory.Trait(biography = "\n\n".join(fake.paragraphs())) # type: ignore
 
     @factory.post_generation
-    def primary_uuid(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
+    def primary_uuid(obj, create, extracted, **kwargs):  # pylint: disable=no-self-argument
         if create:
             assign_primary_uuid(obj)
 

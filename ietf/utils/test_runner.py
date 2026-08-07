@@ -262,6 +262,7 @@ def check_base_data_person_uuids():
     otherwise go unnoticed until something asked for the Person's identifier.
     """
     from django.db.models import Count, Q
+
     from ietf.person.models import Person
 
     broken = list(

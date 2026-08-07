@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 from django.urls import path
 
-from ietf.person import views, ajax
-import ietf.utils.converters  # pyflakes:ignore -- registers the anycase_uuid converter
+import ietf.utils.converters  # noqa: F401  # pyflakes:ignore -- registers anycase_uuid
+from ietf.person import ajax, views
 from ietf.utils.urls import url
 
 urlpatterns = [

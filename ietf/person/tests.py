@@ -34,8 +34,12 @@ from ietf.nomcom.models import NomCom
 from ietf.nomcom.test_data import nomcom_test_data
 from ietf.nomcom.factories import NomComFactory, NomineeFactory, NominationFactory, FeedbackFactory, PositionFactory
 from ietf.nomcom.utils import make_nomineeposition_for_newperson
-from ietf.person.factories import (EmailFactory, PersonFactory, PersonApiKeyEventFactory,
-    PersonUUIDFactory)
+from ietf.person.factories import (
+    EmailFactory,
+    PersonFactory,
+    PersonApiKeyEventFactory,
+    PersonUUIDFactory,
+)
 from ietf.person.models import Person, Alias, PersonApiKeyEvent, PersonUUID
 from ietf.person.tasks import (purge_personal_api_key_events_task, push_person_uuids_task,
     check_person_uuids_task)
@@ -553,9 +557,11 @@ class PersonUUIDTests(TestCase):
         # ietf.ietfauth.views.confirm_account
         confirm_url = urlreverse(
             "ietf.ietfauth.views.confirm_account",
-            kwargs={"auth": django.core.signing.dumps(
-                "uuidtest@example.com", salt="create_account"
-            )},
+            kwargs={
+                "auth": django.core.signing.dumps(
+                    "uuidtest@example.com", salt="create_account"
+                )
+            },
         )
         self.client.post(
             confirm_url,
@@ -573,7 +579,10 @@ class PersonUUIDTests(TestCase):
         nomcom = NomComFactory(group__acronym="nomcom2021")
         position = PositionFactory(nomcom=nomcom)
         make_nomineeposition_for_newperson(
-            nomcom, "New Nominee", "newnominee@example.com", position,
+            nomcom,
+            "New Nominee",
+            "newnominee@example.com",
+            position,
             PersonFactory().email(),
         )
         nominee_person = Person.objects.get(name="New Nominee")
@@ -601,9 +610,8 @@ class PersonUUIDTests(TestCase):
 
     def test_only_one_primary_per_person(self):
         person = PersonFactory()
-        with self.assertRaises(IntegrityError):
-            with transaction.atomic():
-                PersonUUID.objects.create(person=person, primary=True)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            PersonUUID.objects.create(person=person, primary=True)
 
     def test_ensure_primary_uuid_promotes_earliest(self):
         person = PersonFactory()
@@ -724,10 +732,12 @@ class PersonUUIDTests(TestCase):
         self.assertIn("every Person has exactly one primary UUID", logged())
 
 
-@override_settings(APP_API_TOKENS={
-    "ietf.person.api_uuid": ["uuid-api-token"],
-    "ietf.person.api_uuid_by_pk": ["by-pk-token"],
-})
+@override_settings(
+    APP_API_TOKENS={
+        "ietf.person.api_uuid": ["uuid-api-token"],
+        "ietf.person.api_uuid_by_pk": ["by-pk-token"],
+    }
+)
 class PersonUUIDApiTests(TestCase):
     def retrieve_url(self, uuid_value):
         return urlreverse(
@@ -829,8 +839,14 @@ class PersonUUIDApiTests(TestCase):
         missing = uuid.uuid4()
         r = self.client.post(
             self.lookup_url,
-            {"uuids": [str(prior.uuid), str(person.primary_uuid), str(missing),
-                       str(prior.uuid)]},
+            {
+                "uuids": [
+                    str(prior.uuid),
+                    str(person.primary_uuid),
+                    str(missing),
+                    str(prior.uuid),
+                ]
+            },
             content_type="application/json",
             headers={"X-Api-Key": "uuid-api-token"},
         )
@@ -839,8 +855,9 @@ class PersonUUIDApiTests(TestCase):
         # One entry per distinct requested UUID, duplicates collapsed
         self.assertEqual(len(results), 3)
         by_uuid = {entry["uuid"]: entry for entry in results}
-        self.assertEqual(by_uuid[str(missing)], {"uuid": str(missing),
-                                                 "status": "unknown"})
+        self.assertEqual(
+            by_uuid[str(missing)], {"uuid": str(missing), "status": "unknown"}
+        )
         self.assertEqual(by_uuid[str(prior.uuid)]["status"], "resolved")
         self.assertFalse(by_uuid[str(prior.uuid)]["is_primary"])
         self.assertEqual(
@@ -868,12 +885,16 @@ class PersonUUIDApiTests(TestCase):
         self.assertEqual(len(small.captured_queries), len(large.captured_queries))
 
     def test_batch_rejects_bad_input(self):
-        for payload in ({"uuids": []},
-                        {"uuids": ["not-a-uuid"]},
-                        {"uuids": [str(uuid.uuid4()) for _ in range(501)]},
-                        {}):
+        for payload in (
+            {"uuids": []},
+            {"uuids": ["not-a-uuid"]},
+            {"uuids": [str(uuid.uuid4()) for _ in range(501)]},
+            {},
+        ):
             r = self.client.post(
-                self.lookup_url, payload, content_type="application/json",
+                self.lookup_url,
+                payload,
+                content_type="application/json",
                 headers={"X-Api-Key": "uuid-api-token"},
             )
             self.assertEqual(r.status_code, 400, payload)
@@ -904,7 +925,8 @@ class PersonUUIDApiTests(TestCase):
     def test_by_person_pk_has_its_own_token(self):
         person = PersonFactory()
         r = self.client.post(
-            self.by_pk_url, {"person_pks": [person.pk]},
+            self.by_pk_url,
+            {"person_pks": [person.pk]},
             content_type="application/json",
             headers={"X-Api-Key": "uuid-api-token"},
         )
@@ -912,7 +934,8 @@ class PersonUUIDApiTests(TestCase):
 
     def test_by_person_pk_rejects_over_cap(self):
         r = self.client.post(
-            self.by_pk_url, {"person_pks": list(range(501))},
+            self.by_pk_url,
+            {"person_pks": list(range(501))},
             content_type="application/json",
             headers={"X-Api-Key": "by-pk-token"},
         )

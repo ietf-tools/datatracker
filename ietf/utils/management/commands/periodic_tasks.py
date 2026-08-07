@@ -248,12 +248,12 @@ class Command(BaseCommand):
         PeriodicTask.objects.get_or_create(
             name="Check Person UUIDs",
             task="ietf.person.tasks.check_person_uuids_task",
-            kwargs=json.dumps(dict(fix=False)),
-            defaults=dict(
-                enabled=False,
-                crontab=self.crontabs["daily"],
-                description="Report Persons with no primary UUID",
-            ),
+            kwargs=json.dumps({"fix": False}),
+            defaults={
+                "enabled": False,
+                "crontab": self.crontabs["daily"],
+                "description": "Report Persons with no primary UUID",
+            },
         )
 
         PeriodicTask.objects.get_or_create(
