@@ -16,7 +16,7 @@
     "slugify": "1.6.9"
   },
   "devDependencies": {
-    "@playwright/test": "1.61.1",
-    "npm-check-updates": "22.2.9"
+    "@playwright/test": "1.62.1",
+    "npm-check-updates": "23.0.1"
   }
 }
