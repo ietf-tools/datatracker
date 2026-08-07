@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q
 from django.http import HttpResponse, Http404
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.utils import timezone
 
@@ -19,7 +19,12 @@ from ietf.ietfauth.utils import role_required
 from ietf.person.models import Email, Person
 from ietf.person.fields import select2_id_name_json
 from ietf.person.forms import MergeForm, MergeRequestForm
-from ietf.person.utils import handle_users, merge_persons, lookup_persons
+from ietf.person.utils import (
+    get_person_uuid_object,
+    handle_users,
+    lookup_persons,
+    merge_persons,
+)
 from ietf.utils.mail import send_mail_text
 
 
@@ -78,9 +83,19 @@ def profile(request, email_or_name):
 
 
 def profile_by_uuid(request, uuid):
-    person = get_object_or_404(Person, uuids=uuid)
+    person_uuid = get_person_uuid_object(uuid)
+    if person_uuid is None:
+        raise Http404("No such person identifier")
+    if not person_uuid.primary:
+        # Self-heal a link that predates a merge by sending it to the canonical address.
+        return redirect(
+            "ietf.person.views.profile_by_uuid",
+            uuid=person_uuid.person.primary_uuid,
+        )
     return render(
-        request, "person/profile.html", {"persons": [person], "today": timezone.now()}
+        request,
+        "person/profile.html",
+        {"persons": [person_uuid.person], "today": timezone.now()},
     )
 
 

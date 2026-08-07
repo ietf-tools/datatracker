@@ -9,14 +9,71 @@ import sys
 from django.contrib import admin
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 from django.db.models import Q
 from django.http import Http404
 
 import debug                            # pyflakes:ignore
 
-from ietf.person.models import Person, Alias, Email
+from ietf.person.models import Person, Alias, Email, PersonUUID
 from ietf.utils import log
 from ietf.utils.mail import send_mail
+
+
+def get_person_uuid_object(uuid_value):
+    """Look up a UUID currently issued for a Person
+
+    Returns the PersonUUID object, whose `person` is the Person it identifies and whose
+    `primary` says whether it is that Person's current identifier, or None if no such
+    UUID exists.
+    """
+    return PersonUUID.objects.select_related("person").filter(uuid=uuid_value).first()
+
+
+def queue_person_uuid_push(person):
+    """Enqueue an Authentik attribute push for this Person's UUID set
+
+    Called explicitly by every site that changes the set. Deferred to commit so a
+    rolled-back transaction never pushes state that does not exist, and so a push failure
+    can never fail the datatracker operation that triggered it.
+    """
+    from ietf.person.tasks import push_person_uuids_task  # avoid a circular import
+
+    person_pk = person.pk
+    transaction.on_commit(lambda: push_person_uuids_task.delay(person_pk=person_pk))
+
+
+def assign_primary_uuid(person):
+    """Give a newly created Person its primary UUID
+
+    Idempotent: returns the existing primary if the Person already has one, so a caller
+    that is unsure whether an earlier step already ran can call it safely.
+    """
+    existing = person.uuids.filter(primary=True).first()
+    if existing is not None:
+        return existing
+    row = PersonUUID.objects.create(person=person, primary=True)
+    queue_person_uuid_push(person)
+    return row
+
+
+def ensure_primary_uuid(person):
+    """Make sure a Person has exactly one primary UUID
+
+    Promotes the earliest existing UUID if there are any but none is primary, otherwise
+    creates one. Returns the primary PersonUUID.
+    """
+    existing = person.uuids.filter(primary=True).first()
+    if existing is not None:
+        return existing
+    oldest = person.uuids.order_by("time", "uuid").first()
+    if oldest is None:
+        return assign_primary_uuid(person)
+    oldest.primary = True
+    oldest.save(update_fields=["primary"])
+    queue_person_uuid_push(person)
+    return oldest
+
 
 def merge_persons(request, source, target, file=sys.stdout, verbose=False):
     changes = []
@@ -49,11 +106,17 @@ def merge_persons(request, source, target, file=sys.stdout, verbose=False):
     if reviewer_changes:
         changes.extend(reviewer_changes)
     merge_nominees(source, target)
+
+    # Move the source's UUIDs to the target, demoting the source's primary. The target's
+    # primary survives; the source's identifiers keep resolving, to the target. This runs
+    # before move_related_objects(), which would otherwise carry the UUIDs across still
+    # flagged primary and trip the one-primary-per-person constraint.
+    ensure_primary_uuid(target)
+    source.uuids.update(person=target, primary=False)
+    queue_person_uuid_push(target)
+
     move_related_objects(source, target, file=file, verbose=verbose)
     dedupe_aliases(target)
-
-    # move UUIDs
-    source.uuids.update(person=target)
 
     # copy other attributes
     for field in ('ascii','ascii_short', 'biography', 'photo', 'photo_thumb', 'name_from_draft'):
@@ -134,6 +197,10 @@ def move_related_objects(source, target, file, verbose=False):
         and f.auto_created and not f.concrete ]
     for related_object in related_objects:
         accessor = related_object.get_accessor_name()
+        if accessor == "uuids":
+            # PersonUUIDs move by their own rule - the source's primary has to be
+            # demoted on the way, or the target ends up with two. See merge_persons().
+            continue
         field_name = related_object.field.name
         queryset = getattr(source, accessor).all()
         if verbose:

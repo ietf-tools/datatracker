@@ -54,11 +54,33 @@ def unused_person_uuid():
 
 
 class PersonUUID(models.Model):
-    """Surrogate key for a Person"""
+    """Surrogate key for a Person
+
+    A Person has one or more UUIDs. Exactly one is primary: it is the identifier handed
+    to external systems. Merging Persons unions the sets and keeps a single primary, so a
+    UUID an external system holds keeps resolving to the surviving Person even after it
+    stops being primary.
+
+    Deleting a Person deletes its UUIDs. Their values return to the pool
+    unused_person_uuid() draws from, so a deleted UUID could in principle be issued again
+    to a different Person. That requires uuid4() to reproduce a specific 122-bit value,
+    so the risk is accepted.
+    """
     uuid = models.UUIDField(primary_key=True, editable=False, default=unused_person_uuid)
     person = models.ForeignKey(
-        "person.Person", related_name="uuids", on_delete=models.PROTECT
+        "person.Person", related_name="uuids", on_delete=models.CASCADE
     )
+    primary = models.BooleanField(default=False)
+    time = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["person"],
+                condition=models.Q(primary=True),
+                name="unique_primary_uuid_per_person",
+            ),
+        ]
 
     def __str__(self):
         return str(self.uuid)
@@ -211,6 +233,19 @@ class Person(models.Model):
     def full_name_as_key(self):
         # this is mostly a remnant from the old views, needed in the menu
         return self.plain_name().lower().replace(" ", ".")
+
+    @property
+    def primary_uuid(self):
+        """The UUID to hand to external systems, or None if data is inconsistent"""
+        row = self.uuids.filter(primary=True).first()
+        return row.uuid if row else None
+
+    @property
+    def prior_uuids(self):
+        """UUIDs that still resolve to this Person but are no longer primary"""
+        return list(
+            self.uuids.filter(primary=False).order_by("time").values_list("uuid", flat=True)
+        )
 
     def photo_name(self,thumb=False):
         hasher = Hashids(salt='Person photo name salt',min_length=5)

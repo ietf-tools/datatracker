@@ -2,13 +2,18 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
+import django.utils.timezone
 import ietf.person.models
 
 
 def forward(apps, schema_editor):
     Person = apps.get_model("person", "Person")
-    for person in Person.objects.all():
-        person.uuids.create(person=person)
+    PersonUUID = apps.get_model("person", "PersonUUID")
+    # uuid and time come from the field defaults
+    PersonUUID.objects.bulk_create(
+        [PersonUUID(person=person, primary=True) for person in Person.objects.all()],
+        batch_size=1000,
+    )
 
 
 def reverse(apps, schema_editor):
@@ -33,15 +38,30 @@ class Migration(migrations.Migration):
                         serialize=False,
                     ),
                 ),
+                ("primary", models.BooleanField(default=False)),
+                (
+                    "time",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, editable=False
+                    ),
+                ),
                 (
                     "person",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.PROTECT,
+                        on_delete=django.db.models.deletion.CASCADE,
                         related_name="uuids",
                         to="person.person",
                     ),
                 ),
             ],
+        ),
+        migrations.AddConstraint(
+            model_name="personuuid",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("primary", True)),
+                fields=("person",),
+                name="unique_primary_uuid_per_person",
+            ),
         ),
         migrations.RunPython(forward, reverse),
     ]

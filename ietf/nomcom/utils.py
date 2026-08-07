@@ -36,6 +36,7 @@ from ietf.utils.pipe import pipe
 from ietf.utils.mail import send_mail_text, send_mail, get_payload_text
 from ietf.utils.log import log
 from ietf.person.name import unidecode_name
+from ietf.person.utils import assign_primary_uuid
 from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
 
 import debug                            # pyflakes:ignore
@@ -421,6 +422,7 @@ def make_nomineeposition_for_newperson(nomcom, candidate_name, candidate_email, 
     person = Person.objects.create(name=candidate_name,
                                    ascii=unidecode_name(candidate_name),
                                    )
+    assign_primary_uuid(person)
     email.person = person
     email.save()
 

@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2009-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
+from django.urls import path
+
 from ietf.person import views, ajax
+import ietf.utils.converters  # pyflakes:ignore -- registers the anycase_uuid converter
 from ietf.utils.urls import url
 
 urlpatterns = [
@@ -9,7 +12,8 @@ urlpatterns = [
     url(r'^merge/send_request/?$', views.send_merge_request),
     url(r'^search/(?P<model_name>(person|email))/$', views.ajax_select2_search),
     url(r'^(?P<personid>[0-9]+)/email.json$', ajax.person_email_json),
-    url(r'^(?P<uuid>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$', views.profile_by_uuid),
+    path('<anycase_uuid:uuid>', views.profile_by_uuid,
+         name='ietf.person.views.profile_by_uuid'),
     url(r'^(?P<email_or_name>[^/]+)$', views.profile),
     url(r'^(?P<email_or_name>[^/]+)/photo/?$', views.photo),
 ]

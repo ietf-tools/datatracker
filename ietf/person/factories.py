@@ -23,6 +23,7 @@ import debug                            # pyflakes:ignore
 from ietf.person.models import Person, Alias, Email, PersonalApiKey, PersonApiKeyEvent, \
     PERSON_API_KEY_ENDPOINTS, PersonUUID
 from ietf.person.name import normalize_name, unidecode_name
+from ietf.person.utils import assign_primary_uuid
 
 
 fake = faker.Factory.create()
@@ -67,7 +68,13 @@ class UserFactory(factory.django.DjangoModelFactory):
 
 
 class PersonUUIDFactory(factory.django.DjangoModelFactory):
+    """Create an extra, non-primary UUID for a Person
+
+    A Person's primary UUID comes from PersonFactory's assign_primary_uuid hook, not from
+    here - creating a second primary would violate the uniqueness constraint.
+    """
     person = factory.SubFactory("ietf.person.factories.PersonFactory")
+    primary = False
 
     class Meta:
         model = PersonUUID
@@ -79,7 +86,6 @@ class PersonFactory(factory.django.DjangoModelFactory):
         skip_postgeneration_save = True
 
     user = factory.SubFactory(UserFactory)
-    uuid = factory.RelatedFactory("ietf.person.factories.PersonUUIDFactory", "person")
     name = factory.LazyAttribute(lambda p: normalize_name('%s %s'%(p.user.first_name, p.user.last_name)))
     # Some i18n names, e.g., "शिला के.सी." have a dot at the end that is also part of the ASCII, e.g., "Shilaa Kesii."
     # That trailing dot breaks extract_authors(). Avoid this issue by stripping the dot from the ASCII.
@@ -88,6 +94,11 @@ class PersonFactory(factory.django.DjangoModelFactory):
 
     class Params:
         with_bio = factory.Trait(biography = "\n\n".join(fake.paragraphs())) # type: ignore
+
+    @factory.post_generation
+    def primary_uuid(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
+        if create:
+            assign_primary_uuid(obj)
 
     @factory.post_generation
     def default_aliases(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
