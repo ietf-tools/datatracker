@@ -12,6 +12,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Q
 from django.http import Http404
+from kombu.exceptions import OperationalError as KombuOperationalError
 
 import debug                            # pyflakes:ignore
 
@@ -33,14 +34,28 @@ def get_person_uuid_object(uuid_value):
 def queue_person_uuid_push(person):
     """Enqueue an Authentik attribute push for this Person's UUID set
 
-    Called explicitly by every site that changes the set. Deferred to commit so a
-    rolled-back transaction never pushes state that does not exist, and so a push failure
-    can never fail the datatracker operation that triggered it.
+    Called explicitly by every site that changes the set for a Person that may already
+    have an Authentik account. Deferred to commit so a rolled-back transaction never
+    pushes state that does not exist.
+
+    Queueing is best-effort: an unreachable broker is logged and ignored rather than
+    failing the datatracker operation that changed the UUID set. The reconcile job is the
+    backstop for a push that never got queued, so retry=False keeps a missing broker from
+    stalling the caller.
     """
     from ietf.person.tasks import push_person_uuids_task  # avoid a circular import
 
     person_pk = person.pk
-    transaction.on_commit(lambda: push_person_uuids_task.delay(person_pk=person_pk))
+
+    def enqueue():
+        try:
+            push_person_uuids_task.apply_async(
+                kwargs={"person_pk": person_pk}, retry=False
+            )
+        except (KombuOperationalError, OSError) as err:
+            log.log(f"Could not queue UUID push for Person {person_pk}: {err}")
+
+    transaction.on_commit(enqueue)
 
 
 def assign_primary_uuid(person):
@@ -48,13 +63,15 @@ def assign_primary_uuid(person):
 
     Idempotent: returns the existing primary if the Person already has one, so a caller
     that is unsure whether an earlier step already ran can call it safely.
+
+    Deliberately does not queue an Authentik push. A Person that has just been created
+    has no Authentik account, so there would be nothing to push to; its UUID reaches
+    Authentik when the account is linked.
     """
     existing = person.uuids.filter(primary=True).first()
     if existing is not None:
         return existing
-    row = PersonUUID.objects.create(person=person, primary=True)
-    queue_person_uuid_push(person)
-    return row
+    return PersonUUID.objects.create(person=person, primary=True)
 
 
 def ensure_primary_uuid(person):
@@ -68,11 +85,14 @@ def ensure_primary_uuid(person):
         return existing
     oldest = person.uuids.order_by("time", "uuid").first()
     if oldest is None:
-        return assign_primary_uuid(person)
-    oldest.primary = True
-    oldest.save(update_fields=["primary"])
+        row = assign_primary_uuid(person)
+    else:
+        oldest.primary = True
+        oldest.save(update_fields=["primary"])
+        row = oldest
+    # Unlike a brand-new Person, this one already existed and may be linked.
     queue_person_uuid_push(person)
-    return oldest
+    return row
 
 
 def merge_persons(request, source, target, file=sys.stdout, verbose=False):

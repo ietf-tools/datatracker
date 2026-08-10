@@ -48,6 +48,7 @@ from ietf.person.utils import (merge_persons, determine_merge_order, send_merge_
     handle_reviewer_settings, get_dots, assign_primary_uuid, ensure_primary_uuid,
     get_person_uuid_object)
 from ietf.submit.utils import ensure_person_email_info_exists
+from kombu.exceptions import OperationalError as KombuOperationalError
 from ietf.review.models import ReviewerSettings
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox
@@ -677,16 +678,54 @@ class PersonUUIDTests(TestCase):
         self.assertEqual(target.uuids.filter(primary=True).count(), 1)
 
     @mock.patch("ietf.person.utils.transaction.on_commit", side_effect=lambda f: f())
-    @mock.patch("ietf.person.tasks.push_person_uuids_task.delay")
-    def test_push_is_dispatched_when_the_set_changes(self, mock_delay, mock_on_commit):
+    @mock.patch("ietf.person.tasks.push_person_uuids_task.apply_async")
+    def test_creating_a_person_does_not_push(self, mock_apply, mock_on_commit):
+        # A brand-new Person has no Authentik account, so there is nothing to push to.
         person = PersonFactory()
-        self.assertEqual(mock_delay.call_count, 1)
-        self.assertEqual(mock_delay.call_args.kwargs, {"person_pk": person.pk})
+        self.assertFalse(mock_apply.called)
 
-        mock_delay.reset_mock()
         person.name = person.name + " Jr"
         person.save()
-        self.assertFalse(mock_delay.called)  # an unrelated save pushes nothing
+        self.assertFalse(mock_apply.called)  # nor does an unrelated save
+
+    @mock.patch("ietf.person.utils.transaction.on_commit", side_effect=lambda f: f())
+    @mock.patch("ietf.person.tasks.push_person_uuids_task.apply_async")
+    def test_push_is_dispatched_when_the_set_changes(self, mock_apply, mock_on_commit):
+        secretariat_role = RoleFactory(group__acronym="secretariat", name_id="secr")
+        request = HttpRequest()
+        request.user = secretariat_role.person.user
+        source = PersonFactory()
+        target = PersonFactory()
+        mock_apply.reset_mock()
+
+        merge_persons(request, source, target, file=StringIO())
+        self.assertTrue(mock_apply.called)
+        self.assertEqual(
+            mock_apply.call_args.kwargs["kwargs"], {"person_pk": target.pk}
+        )
+        # Fire-and-forget: the reconcile job is the backstop, so a missing broker must
+        # not stall the merge.
+        self.assertFalse(mock_apply.call_args.kwargs["retry"])
+
+        # Promoting a primary for a Person that already existed does push
+        mock_apply.reset_mock()
+        other = PersonFactory()
+        other.uuids.update(primary=False)
+        ensure_primary_uuid(other)
+        self.assertEqual(mock_apply.call_args.kwargs["kwargs"], {"person_pk": other.pk})
+
+    @mock.patch("ietf.person.utils.transaction.on_commit", side_effect=lambda f: f())
+    @mock.patch("ietf.person.tasks.push_person_uuids_task.apply_async")
+    @mock.patch("ietf.person.utils.log.log")
+    def test_unreachable_broker_does_not_break_the_caller(
+        self, mock_log, mock_apply, mock_on_commit
+    ):
+        mock_apply.side_effect = KombuOperationalError("no broker here")
+        person = PersonFactory()
+        person.uuids.update(primary=False)
+        ensure_primary_uuid(person)  # must not raise
+        self.assertEqual(person.uuids.filter(primary=True).count(), 1)
+        self.assertIn("Could not queue UUID push", mock_log.call_args[0][0])
 
     @mock.patch("ietf.person.tasks.log.log")
     def test_push_person_uuids_task(self, mock_log):
