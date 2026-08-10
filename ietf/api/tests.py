@@ -879,7 +879,7 @@ class CustomApiTests(TestCase):
         for lib in settings.ADVERTISE_VERSIONS:
             self.assertIn(lib, data['other'])
         self.assertEqual(data['dumptime'], "2022-08-31 07:10:01 +0000")
-        DumpInfo.objects.update(tz='PST8PDT')
+        DumpInfo.objects.update(tz='America/Los_Angeles')
         r = self.client.get(url)
         data = r.json()        
         self.assertEqual(data['dumptime'], "2022-08-31 07:10:01 -0700")
