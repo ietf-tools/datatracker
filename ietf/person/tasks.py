@@ -69,19 +69,33 @@ def check_person_uuids_task(fix=False):
     assign_primary_uuid() call at each site that creates a Person, so a site added
     without one leaves Persons that cannot be named to any external system. This finds
     them.
+
+    Checks for exactly one rather than at least one. A partial unique constraint should
+    make more than one impossible, so finding one means something is grossly wrong with
+    the data and worth saying out loud - and this is the job that claims the condition
+    holds, so it may as well test it.
     """
     broken = (
         Person.objects.annotate(
             uuid_count=Count("uuids", distinct=True),
             primary_count=Count("uuids", filter=Q(uuids__primary=True), distinct=True),
         )
-        .filter(primary_count=0)
+        .exclude(primary_count=1)
         .order_by("pk")
     )
 
     count = 0
     for person in broken:
         count += 1
+        if person.primary_count > 1:
+            # ensure_primary_uuid() cannot resolve this - it would pick one of the
+            # primaries arbitrarily. Needs a human to decide which one survives.
+            log.log(
+                f"Person {person.pk} ({person.name}): {person.primary_count} primary "
+                f"UUIDs, which the unique constraint should have prevented - not "
+                f"repairing automatically"
+            )
+            continue
         problem = "no UUIDs at all" if person.uuid_count == 0 else "no primary UUID"
         log.log(f"Person {person.pk} ({person.name}): {problem}")
         if fix:

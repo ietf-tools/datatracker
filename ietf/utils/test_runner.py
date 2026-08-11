@@ -269,14 +269,14 @@ def check_base_data_person_uuids():
         Person.objects.annotate(
             primary_count=Count("uuids", filter=Q(uuids__primary=True), distinct=True)
         )
-        .filter(primary_count=0)
-        .values_list("pk", "name")[:10]
+        .exclude(primary_count=1)
+        .values_list("pk", "name", "primary_count")[:10]
     )
     if broken:
         raise RuntimeError(
-            "Base test data has Persons with no primary UUID - the code that created "
-            "them needs an assign_primary_uuid() call: "
-            + ", ".join(f"{pk} ({name})" for pk, name in broken)
+            "Base test data has Persons without exactly one primary UUID - a Person "
+            "with none needs an assign_primary_uuid() call where it is created: "
+            + ", ".join(f"{pk} ({name}): {n} primary" for pk, name, n in broken)
         )
 
 def safe_create_test_db(self, verbosity, *args, **kwargs):
