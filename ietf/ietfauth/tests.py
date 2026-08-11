@@ -41,7 +41,6 @@ from ietf.person.factories import (
     PersonalApiKeyFactory,
     PersonUUIDFactory,
 )
-from ietf.person.utils import assign_primary_uuid
 from ietf.person.models import Person, Email
 from ietf.person.tasks import send_apikey_usage_emails_task
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
@@ -664,8 +663,9 @@ class IetfAuthTests(TestCase):
         )
         user.set_password(VALID_PASSWORD)
         user.save()
-        p = Person.objects.create(name="Some One", ascii="Some One", user=user)
-        assign_primary_uuid(p)
+        p = PersonFactory(
+            user=user, name="Some One", ascii="Some One", default_emails=False
+        )
         Email.objects.create(address=user.username, person=p, origin=user.username)
 
         # log in
@@ -766,8 +766,9 @@ class IetfAuthTests(TestCase):
         )
         user.set_password(VALID_PASSWORD)
         user.save()
-        p = Person.objects.create(name="Some One", ascii="Some One", user=user)
-        assign_primary_uuid(p)
+        p = PersonFactory(
+            user=user, name="Some One", ascii="Some One", default_emails=False
+        )
         Email.objects.create(address=user.username, person=p, origin=user.username)
         Email.objects.create(
             address="othername@example.org", person=p, origin=user.username

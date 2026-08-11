@@ -135,12 +135,16 @@ class PersonTests(TestCase):
 
     def test_person_profile_by_uuid(self):
         person_a = PersonFactory(name="A Fine Person")
-        uuid_a = person_a.uuids.first()
-        url_a = urlreverse("ietf.person.views.profile_by_uuid", kwargs={"uuid": uuid_a.uuid})
+        url_a = urlreverse(
+            "ietf.person.views.profile_by_uuid",
+            kwargs={"uuid": person_a.primary_uuid},
+        )
 
         person_b = PersonFactory(name="Brilliant Person")
-        uuid_b = person_b.uuids.first()
-        url_b = urlreverse("ietf.person.views.profile_by_uuid", kwargs={"uuid": uuid_b.uuid})
+        url_b = urlreverse(
+            "ietf.person.views.profile_by_uuid",
+            kwargs={"uuid": person_b.primary_uuid},
+        )
 
         r = self.client.get(url_a)
         self.assertContains(r, person_a.name)
@@ -151,9 +155,7 @@ class PersonTests(TestCase):
         self.assertContains(r, person_b.name)
 
         # Move b's UUID to a as a prior UUID, as a merge would...
-        uuid_b.person = person_a
-        uuid_b.primary = False
-        uuid_b.save()
+        person_b.uuids.update(person=person_a, primary=False)
         # ... and the old address redirects to a's canonical one
         r = self.client.get(url_b)
         self.assertRedirects(r, url_a)
@@ -457,12 +459,12 @@ class PersonUtilsTests(TestCase):
         request = HttpRequest()
         request.user = user
         source = PersonFactory()
-        source.uuids.create()  # give them an extra
+        PersonUUIDFactory(person=source)  # give them an extra
         target = PersonFactory()
         mars = RoleFactory(name_id='chair',group__acronym='mars').group
         source_id = source.pk
-        source_uuids = set(source.uuids.values_list("uuid", flat=True))
-        target_uuids = set(target.uuids.values_list("uuid", flat=True))
+        source_uuids = {source.primary_uuid, *source.prior_uuids}
+        target_uuids = {target.primary_uuid, *target.prior_uuids}
         source_email = source.email_set.first()
         source_alias = source.alias_set.first()
         source_user = source.user
@@ -482,11 +484,11 @@ class PersonUtilsTests(TestCase):
         self.assertFalse(Person.objects.filter(id=source_id))
         self.assertFalse(source_user.is_active)
         self.assertEqual(
-            set(target.uuids.values_list("uuid", flat=True)),
+            {target.primary_uuid, *target.prior_uuids},
             source_uuids | target_uuids,
         )
         # The survivor keeps its own primary; the source's UUIDs become priors
-        self.assertEqual(target.uuids.filter(primary=True).count(), 1)
+        self.assertIsNotNone(target.primary_uuid)
         self.assertIn(target.primary_uuid, target_uuids)
         self.assertEqual(set(target.prior_uuids), source_uuids)
 
@@ -574,7 +576,8 @@ class PersonUUIDTests(TestCase):
             },
         )
         created = Person.objects.get(name="UUID Test")
-        self.assertEqual(created.uuids.filter(primary=True).count(), 1)
+        self.assertIsNotNone(created.primary_uuid)
+        self.assertEqual(created.prior_uuids, [])
 
         # ietf.nomcom.utils.make_nomineeposition_for_newperson
         nomcom = NomComFactory(group__acronym="nomcom2021")
@@ -587,20 +590,43 @@ class PersonUUIDTests(TestCase):
             PersonFactory().email(),
         )
         nominee_person = Person.objects.get(name="New Nominee")
-        self.assertEqual(nominee_person.uuids.filter(primary=True).count(), 1)
+        self.assertIsNotNone(nominee_person.primary_uuid)
+        self.assertEqual(nominee_person.prior_uuids, [])
 
         # ietf.submit.utils.ensure_person_email_info_exists
         ensure_person_email_info_exists(
             "Draft Author", "draftauthor@example.com", "draft-uuid-test"
         )
         author = Person.objects.get(name="Draft Author")
-        self.assertEqual(author.uuids.filter(primary=True).count(), 1)
+        self.assertIsNotNone(author.primary_uuid)
+        self.assertEqual(author.prior_uuids, [])
 
     def test_factory_assigns_a_primary(self):
         person = PersonFactory()
+        # Reads the rows directly: this is what proves the accessors below agree with
+        # the model, so it must not go through them
         self.assertEqual(person.uuids.filter(primary=True).count(), 1)
         self.assertIsNotNone(person.primary_uuid)
         self.assertEqual(person.prior_uuids, [])
+
+    def test_factory_can_skip_the_primary(self):
+        person = PersonFactory(primary_uuid=False)
+        self.assertEqual(person.uuids.count(), 0)
+        self.assertIsNone(person.primary_uuid)
+        self.assertEqual(person.prior_uuids, [])
+
+    def test_prior_uuids_holds_the_superseded_ones_in_order(self):
+        person = PersonFactory()
+        primary = person.primary_uuid
+        older = PersonUUIDFactory(
+            person=person, time=timezone.now() - datetime.timedelta(days=2)
+        )
+        newer = PersonUUIDFactory(
+            person=person, time=timezone.now() - datetime.timedelta(days=1)
+        )
+        # The primary is not in the prior list, and the priors are oldest-first
+        self.assertEqual(person.primary_uuid, primary)
+        self.assertEqual(person.prior_uuids, [older.uuid, newer.uuid])
 
     def test_assign_primary_uuid_is_idempotent(self):
         person = PersonFactory()
@@ -617,15 +643,14 @@ class PersonUUIDTests(TestCase):
     def test_ensure_primary_uuid_promotes_earliest(self):
         person = PersonFactory()
         oldest = person.uuids.get()
-        PersonUUID.objects.create(person=person, primary=False)
-        person.uuids.update(primary=False)
+        PersonUUIDFactory(person=person)
+        person.uuids.update(primary=False)  # deliberately inconsistent state
         promoted = ensure_primary_uuid(person)
         self.assertEqual(promoted.uuid, oldest.uuid)
         self.assertEqual(person.uuids.filter(primary=True).count(), 1)
 
     def test_ensure_primary_uuid_creates_when_none(self):
-        person = PersonFactory()
-        person.uuids.all().delete()
+        person = PersonFactory(primary_uuid=False)
         created = ensure_primary_uuid(person)
         self.assertTrue(created.primary)
         self.assertEqual(person.uuids.count(), 1)
@@ -643,7 +668,7 @@ class PersonUUIDTests(TestCase):
 
     def test_deleting_a_person_deletes_its_uuids(self):
         person = PersonFactory()
-        values = list(person.uuids.values_list("uuid", flat=True))
+        values = [person.primary_uuid, *person.prior_uuids]
         person.delete()
         self.assertEqual(PersonUUID.objects.filter(uuid__in=values).count(), 0)
         for value in values:
@@ -654,13 +679,13 @@ class PersonUUIDTests(TestCase):
         request = HttpRequest()
         request.user = secretariat_role.person.user
         a, b, c = PersonFactory.create_batch(3)
-        a_uuids = set(a.uuids.values_list("uuid", flat=True))
-        b_uuids = set(b.uuids.values_list("uuid", flat=True))
+        a_uuids = {a.primary_uuid, *a.prior_uuids}
+        b_uuids = {b.primary_uuid, *b.prior_uuids}
         c_primary = c.primary_uuid
         merge_persons(request, a, b, file=StringIO())
         merge_persons(request, b, c, file=StringIO())
         c.refresh_from_db()
-        self.assertEqual(c.uuids.filter(primary=True).count(), 1)
+        self.assertIsNotNone(c.primary_uuid)
         self.assertEqual(c.primary_uuid, c_primary)
         self.assertEqual(set(c.prior_uuids), a_uuids | b_uuids)
         for value in a_uuids | b_uuids:
@@ -672,10 +697,10 @@ class PersonUUIDTests(TestCase):
         request.user = secretariat_role.person.user
         source = PersonFactory()
         target = PersonFactory()
-        target.uuids.update(primary=False)
+        target.uuids.update(primary=False)  # deliberately inconsistent state
         merge_persons(request, source, target, file=StringIO())
         target.refresh_from_db()
-        self.assertEqual(target.uuids.filter(primary=True).count(), 1)
+        self.assertIsNotNone(target.primary_uuid)
 
     @mock.patch("ietf.person.utils.transaction.on_commit", side_effect=lambda f: f())
     @mock.patch("ietf.person.tasks.push_person_uuids_task.apply_async")
@@ -703,14 +728,14 @@ class PersonUUIDTests(TestCase):
         self.assertEqual(
             mock_apply.call_args.kwargs["kwargs"], {"person_pk": target.pk}
         )
-        # Fire-and-forget: the reconcile job is the backstop, so a missing broker must
-        # not stall the merge.
-        self.assertFalse(mock_apply.call_args.kwargs["retry"])
+        # Celery's default retry policy applies - short enough for the request path,
+        # and enough to ride out a broker blip. See queue_person_uuid_push().
+        self.assertNotIn("retry", mock_apply.call_args.kwargs)
 
         # Promoting a primary for a Person that already existed does push
         mock_apply.reset_mock()
         other = PersonFactory()
-        other.uuids.update(primary=False)
+        other.uuids.update(primary=False)  # deliberately inconsistent state
         ensure_primary_uuid(other)
         self.assertEqual(mock_apply.call_args.kwargs["kwargs"], {"person_pk": other.pk})
 
@@ -722,9 +747,9 @@ class PersonUUIDTests(TestCase):
     ):
         mock_apply.side_effect = KombuOperationalError("no broker here")
         person = PersonFactory()
-        person.uuids.update(primary=False)
+        person.uuids.update(primary=False)  # deliberately inconsistent state
         ensure_primary_uuid(person)  # must not raise
-        self.assertEqual(person.uuids.filter(primary=True).count(), 1)
+        self.assertIsNotNone(person.primary_uuid)
         self.assertIn("Could not queue UUID push", mock_log.call_args[0][0])
 
     @mock.patch("ietf.person.tasks.log.log")
@@ -743,10 +768,9 @@ class PersonUUIDTests(TestCase):
     @mock.patch("ietf.person.tasks.log.log")
     def test_check_person_uuids_task(self, mock_log):
         good = PersonFactory()
-        broken = PersonFactory()
-        broken.uuids.all().delete()
+        broken = PersonFactory(primary_uuid=False)
         demoted = PersonFactory()
-        demoted.uuids.update(primary=False)
+        demoted.uuids.update(primary=False)  # deliberately inconsistent state
 
         def logged():
             return "\n".join(call[0][0] for call in mock_log.call_args_list)
@@ -764,7 +788,7 @@ class PersonUUIDTests(TestCase):
         self.assertEqual(check_person_uuids_task(fix=True), 2)
         self.assertIn("2 Person(s) repaired", logged())
         for person in (broken, demoted):
-            self.assertEqual(person.uuids.filter(primary=True).count(), 1)
+            self.assertIsNotNone(person.primary_uuid)
 
         mock_log.reset_mock()
         self.assertEqual(check_person_uuids_task(), 0)

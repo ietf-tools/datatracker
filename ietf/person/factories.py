@@ -23,7 +23,6 @@ import debug                            # pyflakes:ignore
 from ietf.person.models import Person, Alias, Email, PersonalApiKey, PersonApiKeyEvent, \
     PERSON_API_KEY_ENDPOINTS, PersonUUID
 from ietf.person.name import normalize_name, unidecode_name
-from ietf.person.utils import assign_primary_uuid
 
 
 fake = faker.Factory.create()
@@ -68,10 +67,11 @@ class UserFactory(factory.django.DjangoModelFactory):
 
 
 class PersonUUIDFactory(factory.django.DjangoModelFactory):
-    """Create an extra, non-primary UUID for a Person
+    """A UUID for a Person
 
-    A Person's primary UUID comes from PersonFactory's assign_primary_uuid hook, not from
-    here - creating a second primary would violate the uniqueness constraint.
+    Defaults to a superseded, non-primary UUID, which is what a test asking for an extra
+    UUID wants. PersonFactory uses this with primary=True to make each Person's primary;
+    creating a second primary for the same Person violates a uniqueness constraint.
     """
     person = factory.SubFactory("ietf.person.factories.PersonFactory")
     primary = False
@@ -97,8 +97,13 @@ class PersonFactory(factory.django.DjangoModelFactory):
 
     @factory.post_generation
     def primary_uuid(obj, create, extracted, **kwargs):  # pylint: disable=no-self-argument
-        if create:
-            assign_primary_uuid(obj)
+        """Give the Person the primary UUID every Person is supposed to have
+
+        Pass primary_uuid=False for a Person with no UUIDs at all, which is otherwise
+        not reachable through any production path.
+        """
+        if create and extracted is not False:
+            PersonUUIDFactory(person=obj, primary=True)
 
     @factory.post_generation
     def default_aliases(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
