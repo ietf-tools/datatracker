@@ -5,6 +5,7 @@ import re
 import datetime
 import debug                            # pyflakes:ignore
 
+from collections import defaultdict
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -42,6 +43,119 @@ class wrap_value:
 
     def __repr__(self):
         return f"wrap_value({self.value!r})"
+
+
+# Relationships the document table renders for each row. RELATED_THAT holds the ones
+# read in the "documents pointing at this one" direction (Document.related_that),
+# RELATED_THAT_DOC the ones read in the "documents this one points at" direction
+# (Document.related_that_doc).
+RELATED_THAT = ("replaces", "contains")
+RELATED_THAT_DOC = ("became_rfc", "replaces")
+
+# Followed transitively to find the documents whose IPR disclosures count as related.
+IPR_RELATED = ("obs", "replaces")
+
+
+def fill_in_document_relations(docs, doc_dict, doc_ids):
+    """Seed each document's relation caches from two queries.
+
+    Document.related_that/related_that_doc otherwise run one query per document per
+    relationship, and the table reads several of them for every row (friendly_state,
+    part_of, replaces, became_rfc).
+    """
+    for d in docs:
+        d._cached_related_that = {name: [] for name in RELATED_THAT}
+        d._cached_related_that_doc = {name: [] for name in RELATED_THAT_DOC}
+
+    for rel in RelatedDocument.objects.filter(
+        target_id__in=doc_ids, relationship__in=RELATED_THAT
+    ).select_related("source"):
+        doc_dict[rel.target_id]._cached_related_that[rel.relationship_id].append(rel.source)
+
+    for rel in RelatedDocument.objects.filter(
+        source_id__in=doc_ids, relationship__in=RELATED_THAT_DOC
+    ).select_related("target"):
+        doc_dict[rel.source_id]._cached_related_that_doc[rel.relationship_id].append(rel.target)
+
+    for d in docs:
+        # related_that/related_that_doc deduplicate; match that.
+        for cache in (d._cached_related_that, d._cached_related_that_doc):
+            for name, related in cache.items():
+                cache[name] = list({r.pk: r for r in related}.values())
+        d._cached_became_rfc = next(iter(d._cached_related_that_doc["became_rfc"]), None)
+
+    # For each subseries document a row is part of, the table also reads what that
+    # subseries contains. Those documents are not in `docs`, so seed them here rather
+    # than leaving a query per subseries membership.
+    subseries = defaultdict(list)
+    for d in docs:
+        for sub in d._cached_related_that["contains"]:
+            subseries[sub.pk].append(sub)
+    if subseries:
+        contains = defaultdict(list)
+        for rel in RelatedDocument.objects.filter(
+            source_id__in=subseries, relationship_id="contains"
+        ).select_related("target"):
+            contains[rel.source_id].append(rel.target)
+        for pk, instances in subseries.items():
+            targets = list({r.pk: r for r in contains[pk]}.values())
+            for sub in instances:
+                sub._cached_related_that_doc = {"contains": targets}
+
+
+def fill_in_related_ipr(docs, doc_dict, doc_ids):
+    """Attach the related IPR disclosure ids to each document.
+
+    Document.related_ipr walks the obs/replaces graph with Document.all_relations_that_doc,
+    which issues a query per node it visits, per document. Here the graph is walked once
+    for the whole result set -- one query per level of depth -- and the disclosures are
+    fetched in a single query.
+    """
+    from ietf.ipr.models import IprDocRel
+
+    edges = defaultdict(set)
+    seen = set(doc_ids)
+    front = set(doc_ids)
+    while front:
+        next_front = set()
+        for source_id, target_id in RelatedDocument.objects.filter(
+            source_id__in=front, relationship__in=IPR_RELATED
+        ).values_list("source_id", "target_id"):
+            edges[source_id].add(target_id)
+            if target_id not in seen:
+                seen.add(target_id)
+                next_front.add(target_id)
+        front = next_front
+
+    def reachable_from(start):
+        """start plus every document it directly or indirectly obsoletes or replaces."""
+        found = {start}
+        stack = [start]
+        while stack:
+            for target_id in edges[stack.pop()]:
+                if target_id not in found:
+                    found.add(target_id)
+                    stack.append(target_id)
+        return found
+
+    reachable = {pk: reachable_from(pk) for pk in doc_ids}
+
+    disclosures = defaultdict(set)
+    involved = set().union(*reachable.values()) if reachable else set()
+    for document_id, disclosure_id in IprDocRel.objects.filter(
+        document_id__in=involved, disclosure__state__in=settings.PUBLISH_IPR_STATES
+    ).values_list("document_id", "disclosure_id"):
+        disclosures[document_id].add(disclosure_id)
+
+    for d in docs:
+        related = set()
+        for pk in reachable[d.pk]:
+            related |= disclosures[pk]
+        # Wrapped rather than assigned bare so that the attribute stays callable, like
+        # the Document.related_ipr method it shadows. Templates auto-call either way,
+        # but a bare list would turn doc.related_ipr() into a TypeError for any Python
+        # caller handed a prepared document.
+        d.related_ipr = wrap_value(sorted(related))
 
 
 def fill_in_telechat_date(docs, doc_dict=None, doc_ids=None):
@@ -110,6 +224,9 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         if not e.doc_id in seen:
             doc_dict[e.doc_id].ballot = e if e.type == 'created_ballot' else None
             seen.add(e.doc_id)
+
+    fill_in_document_relations(docs, doc_dict, doc_ids)
+    fill_in_related_ipr(docs, doc_dict, doc_ids)
 
     if not have_telechat_date:
         fill_in_telechat_date(docs, doc_dict, doc_ids)

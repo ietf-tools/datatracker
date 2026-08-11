@@ -608,12 +608,21 @@ class DocumentInfo(models.Model):
         return related
 
     def related_that(self, relationship):
+        # _cached_related_that is populated in bulk by callers that render many
+        # documents at once (see ietf.doc.utils_search.fill_in_document_relations);
+        # without it each document costs a query per relationship it displays.
+        cached = getattr(self, "_cached_related_that", None)
+        if cached is not None and relationship in cached:
+            return cached[relationship]
         return list(set([x.source for x in self.relations_that(relationship)]))
 
     def all_related_that(self, relationship, related=None):
         return list(set([x.source for x in self.all_relations_that(relationship)]))
 
     def related_that_doc(self, relationship):
+        cached = getattr(self, "_cached_related_that_doc", None)
+        if cached is not None and relationship in cached:
+            return cached[relationship]
         return list(set([x.target for x in self.relations_that_doc(relationship)]))
 
     def all_related_that_doc(self, relationship, related=None):
