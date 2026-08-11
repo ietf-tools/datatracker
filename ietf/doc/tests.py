@@ -61,7 +61,7 @@ from ietf.doc.utils import (
     get_doc_email_aliases,
 )
 from ietf.doc.views_doc import get_diff_revisions
-from ietf.doc.views_search import SearchForm, retrieve_search_results
+from ietf.doc.views_search import SearchForm, retrieve_search_results, _search_cache_key
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
@@ -269,6 +269,28 @@ class SearchTests(TestCase):
         from_clause = sql[sql.index(" FROM ") : sql.index(" WHERE ")]
         self.assertNotIn("JOIN", from_clause, f"main search query joins: {from_clause}")
         self.assertFalse(query.distinct, "distinct() over the full column list is expensive")
+
+    def test_search_cache_key(self):
+        def key(query):
+            form = SearchForm(QueryDict(query))
+            self.assertTrue(form.is_valid(), form.errors)
+            return _search_cache_key(form)
+
+        # A multi-valued field must not collapse to its last value -- these are
+        # different searches and must not share an entry.
+        self.assertNotEqual(
+            key("doctypes=charter&doctypes=statchg"), key("doctypes=statchg")
+        )
+        # ...but the order the values arrive in does not change the search
+        self.assertEqual(
+            key("doctypes=statchg&doctypes=charter"), key("doctypes=charter&doctypes=statchg")
+        )
+        # sort is applied on every request, so it must not split the cache
+        self.assertEqual(key("rfcs=on&sort=title"), key("rfcs=on&sort=-date"))
+        # equivalent spellings of a checkbox are one search
+        self.assertEqual(key("rfcs=on&name=foo"), key("rfcs=1&name=foo"))
+        # different searches stay apart
+        self.assertNotEqual(key("rfcs=on&name=foo"), key("rfcs=on&name=bar"))
 
     def test_search_for_name(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())

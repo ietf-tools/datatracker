@@ -47,7 +47,7 @@ from django import forms
 from django.conf import settings
 from django.core.cache import cache, caches
 from django.urls import reverse as urlreverse
-from django.db.models import Q
+from django.db.models import Model, Q, QuerySet
 from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect, QueryDict
 from django.shortcuts import render
 from django.utils import timezone
@@ -311,13 +311,33 @@ def retrieve_search_results(form, all_types=False):
     return docs
 
 
-def search(request):
-    def _get_cache_key(params):
-        fields = set(SearchForm.base_fields) - {'sort'}
-        kwargs = dict([(k, v) for (k, v) in list(params.items()) if k in fields])
-        key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True).encode('utf-8')).hexdigest()
-        return key
+def _search_cache_key(form):
+    """Cache key for a validated SearchForm.
 
+    Derived from cleaned_data rather than the raw query string. The raw parameters vary
+    in ways that do not change the search ("on" vs "1" for a checkbox), and
+    QueryDict.items() returns only the last value of a multi-valued field, so
+    ?doctypes=charter&doctypes=statchg and ?doctypes=statchg used to share a key and
+    serve each other's results.
+
+    'sort' is excluded deliberately: prepare_document_table applies the requested sort
+    on every request, so one entry serves every sort order.
+    """
+    def normalize(value):
+        if isinstance(value, QuerySet):         # ModelMultipleChoiceField, e.g. doctypes
+            return sorted(str(obj.pk) for obj in value)
+        if isinstance(value, Model):            # ModelChoiceField, e.g. area, state
+            return str(value.pk)
+        return value
+
+    kwargs = {k: normalize(v) for k, v in form.cleaned_data.items() if k != "sort"}
+    digest = hashlib.sha512(
+        json.dumps(kwargs, sort_keys=True, default=str).encode("utf-8")
+    ).hexdigest()
+    return "doc:document:search:" + digest
+
+
+def search(request):
     if request.GET:
         # backwards compatibility
         get_params = request.GET.copy()
@@ -332,7 +352,7 @@ def search(request):
         if not form.is_valid():
             return HttpResponseBadRequest("form not valid: %s" % form.errors)
 
-        cache_key = _get_cache_key(get_params)
+        cache_key = _search_cache_key(form)
         cached_val = cache.get(cache_key)
         if cached_val:
             [results, meta] = cached_val
