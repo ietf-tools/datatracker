@@ -53,7 +53,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.contrib.sites.models import Site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.urls import reverse as urlreverse
 from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
@@ -234,11 +234,14 @@ def confirm_account(request, auth):
                 name = form.cleaned_data["name"]
                 ascii = form.cleaned_data["ascii"]
 
-                person = Person.objects.create(user=user, name=name, ascii=ascii)
-                assign_primary_uuid(person)
+                # Atomic so a Person is never left without the primary UUID that
+                # external systems need to name them by.
+                with transaction.atomic():
+                    person = Person.objects.create(user=user, name=name, ascii=ascii)
+                    assign_primary_uuid(person)
 
-                for name in set([ person.name, person.ascii, person.plain_name(), person.plain_ascii(), ]):
-                    Alias.objects.create(person=person, name=name)
+                    for name in set([ person.name, person.ascii, person.plain_name(), person.plain_ascii(), ]):
+                        Alias.objects.create(person=person, name=name)
 
             if not email_obj:
                 email_obj = Email.objects.create(address=email, person=person, origin=user.username)

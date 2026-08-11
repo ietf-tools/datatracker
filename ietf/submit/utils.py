@@ -590,8 +590,11 @@ def ensure_person_email_info_exists(name, email, docname):
         person.name_from_draft = name
         log.assertion('isinstance(person.name, str)')
         person.ascii = unidecode_name(person.name)
-        person.save()
-        assign_primary_uuid(person)
+        # Atomic so a Person is never left without the primary UUID that external
+        # systems need to name them by.
+        with transaction.atomic():
+            person.save()
+            assign_primary_uuid(person)
     else:
         person.name_from_draft = name
 
