@@ -69,11 +69,15 @@ class BibXmlTests(TestCase):
             "<abstract><t>Defines the &lt;access&gt; identifier &amp; its use.</t>"
             "</abstract>",
         )
-        # an abstract that is empty or only whitespace has no paragraphs
+        # an abstract that is empty or only whitespace produces no element
         for empty in ["", "   ", "\n\n"]:
-            self.assertEqual(
-                get_abstract_bibxml(empty), "<abstract><t/></abstract>", f"{empty!r}"
-            )
+            self.assertEqual(get_abstract_bibxml(empty), "", f"{empty!r}")
+
+    def test_get_rfc_bibxml_without_abstract(self):
+        self.rfc.abstract = ""
+        bibxml = get_rfc_bibxml(self.rfc)
+        self.assertNotIn("<abstract>", bibxml)
+        self.assertIsNotNone(ElementTree.fromstring(bibxml))
 
     def test_get_rfc_bibxml_abstract(self):
         self.rfc.abstract = "First paragraph.  Still it.\n\n Second paragraph."

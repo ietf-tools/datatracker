@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 import re
-
 from pathlib import Path
 from urllib.parse import urljoin
 from xml.sax.saxutils import escape as esc
@@ -116,12 +115,15 @@ def get_abstract_bibxml(abstract):
     Abstracts as stored separate paragraphs with a blank line and sentences with
     two spaces. BibXML has no use for either: each paragraph becomes its own
     <t>, and the whitespace within a paragraph collapses to single spaces.
+
+    An RFC with no abstract gets no <abstract> element at all -- an empty one
+    would not be valid BibXML, which requires at least one <t>.
     """
     paragraphs = [
         " ".join(paragraph.split()) for paragraph in re.split(r"\n\s*\n", abstract)
     ]
     ts = "".join(f"<t>{esc(paragraph)}</t>" for paragraph in paragraphs if paragraph)
-    return f"""<abstract>{ts or "<t/>"}</abstract>"""
+    return f"""<abstract>{ts}</abstract>""" if ts else ""
 
 
 def get_rfc_bibxml(rfc):
