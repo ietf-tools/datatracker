@@ -120,6 +120,13 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
 
     # misc
     expirable_pks = expirable_drafts(Document.objects.filter(pk__in=doc_ids)).values_list('pk', flat=True)
+
+    # Look up review assignments for every draft at once. Calling this per document, as
+    # the loop below used to, repeats a breadth-first walk of the replaces graph and an
+    # assignment query for each row.
+    review_docs = [d for d in docs if d.type_id == "draft" and d.get_state_slug() != "rfc"]
+    review_assignments = review_assignments_to_list_for_docs(review_docs) if review_docs else {}
+
     for d in docs:
 
         if d.type_id == "rfc" and d.latest_event_cache["published_rfc"]:
@@ -152,7 +159,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
 
         if d.type_id == "draft" and d.get_state_slug() != "rfc":
             d.milestones = [ m for (t, s, v, m) in sorted(((m.time, m.state.slug, m.desc, m) for m in d.groupmilestone_set.all() if m.state_id == "active")) ]
-            d.review_assignments = review_assignments_to_list_for_docs([d]).get(d.name, [])
+            d.review_assignments = review_assignments.get(d.name, [])
 
         e = d.latest_event_cache.get('started_iesg_process', None)
         d.balloting_started = e.time if e else datetime.datetime.min
