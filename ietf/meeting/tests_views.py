@@ -18,7 +18,7 @@ from lxml.etree import tostring
 from icalendar import Calendar
 from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, urlsplit
+from urllib.parse import quote, urlparse, urlsplit
 from PIL import Image
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -1118,6 +1118,40 @@ class MeetingTests(BaseMeetingTestCase):
                 expected,
                 'Parsed "%s" incorrectly' % qstr,
             )
+
+        # Unrecognized parameters are ignored, not rejected. The ical views rely on this -
+        # they cannot report a parse error, so they cannot reflect one back to the client.
+        for qstr in (
+            'unknown=x',
+            'show=a&unknown=x',
+            '<img src=x onerror=alert(1)>=1',
+            'show=<img src=x onerror=alert(1)>',
+        ):
+            self.assertIsNotNone(
+                parse_agenda_filter_params(QueryDict(qstr)),
+                'Parsing "%s" should not fail' % qstr,
+            )
+
+    def test_ical_filter_params_are_not_reflected(self):
+        """A query string must never be echoed into an ical view's response
+
+        HttpResponseBadRequest serves text/html without escaping, so reflecting a
+        parameter name or value would be a reflected XSS on an unauthenticated GET.
+        """
+        meeting = make_meeting_test_data()
+        payload = '<img src=x onerror=alert(1)>'
+        for url in (
+            urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num': meeting.number}),
+            urlreverse('ietf.meeting.views.upcoming_ical'),
+        ):
+            for querystring in (
+                '?%s=1' % quote(payload),
+                '?show=%s' % quote(payload),
+                '?unknown=%s' % quote(payload),
+            ):
+                r = self.client.get(url + querystring)
+                self.assertEqual(r.status_code, 200, 'Expected %s%s to be accepted' % (url, querystring))
+                self.assertNotIn(payload, r.content.decode('utf-8'))
 
     def do_ical_filter_test(self, meeting, querystring, expected_session_summaries):
         url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number})

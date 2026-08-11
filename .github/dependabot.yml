@@ -24,19 +24,11 @@ updates:
     schedule:
       interval: "weekly"
     groups:
-      yarn:
-        patterns:
-          - "*"
-  - package-ecosystem: "npm"
-    directory: "/playwright"
-    schedule:
-      interval: "weekly"
-    groups:
       npm:
         patterns:
           - "*"
   - package-ecosystem: "npm"
-    directory: "/dev/coverage-action"
+    directory: "/playwright"
     schedule:
       interval: "weekly"
     groups:
