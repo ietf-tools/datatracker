@@ -39,9 +39,11 @@ def queue_person_uuid_push(person):
     pushes state that does not exist.
 
     Queueing is best-effort: an unreachable broker is logged and ignored rather than
-    failing the datatracker operation that changed the UUID set. The reconcile job is the
-    backstop for a push that never got queued, so retry=False keeps a missing broker from
-    stalling the caller.
+    failing the datatracker operation that changed the UUID set. Celery's default retry
+    policy applies - three attempts over well under a second, enough to ride out a blip
+    or a broker failover without meaningfully delaying the caller. An outright outage
+    still cannot fail the operation, and the reconcile job is the backstop for a push
+    that never got queued.
     """
     from ietf.person.tasks import push_person_uuids_task  # avoid a circular import
 
@@ -49,9 +51,7 @@ def queue_person_uuid_push(person):
 
     def enqueue():
         try:
-            push_person_uuids_task.apply_async(
-                kwargs={"person_pk": person_pk}, retry=False
-            )
+            push_person_uuids_task.apply_async(kwargs={"person_pk": person_pk})
         except (KombuOperationalError, OSError) as err:
             log.log(f"Could not queue UUID push for Person {person_pk}: {err}")
 
