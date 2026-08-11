@@ -8,12 +8,14 @@ import io
 import re
 from hashlib import sha384
 
+from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest
 import lxml
 import bibtexparser
 from unittest import mock
 import json
 import copy
+import pickle
 import random
 
 from http.cookies import SimpleCookie
@@ -29,7 +31,7 @@ from django.core.cache import cache
 from django.forms import Form
 from django.http import QueryDict
 from django.utils.html import escape
-from django.test import override_settings
+from django.test import override_settings, RequestFactory
 from django.utils import timezone
 from django.utils.text import slugify
 
@@ -50,7 +52,8 @@ from ietf.doc.factories import (DocumentFactory, DocEventFactory, CharterFactory
                                 BallotDocEventFactory, DocumentAuthorFactory,
                                 NewRevisionDocEventFactory,
                                 StatusChangeFactory, DocExtResourceFactory,
-                                RgDraftFactory, BcpFactory, RfcAuthorFactory)
+                                RgDraftFactory, BcpFactory, RfcAuthorFactory,
+                                TelechatDocEventFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import (
@@ -79,7 +82,7 @@ from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text, texescape
 from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO, RPC_TZINFO
-from ietf.doc.utils_search import AD_WORKLOAD
+from ietf.doc.utils_search import AD_WORKLOAD, fill_in_telechat_date, prepare_document_table
 
 
 class SearchTests(TestCase):
@@ -327,6 +330,64 @@ class SearchTests(TestCase):
                     rb'href="(/doc/[^"]+)"', r.content
                 )
                 self.assertEqual(rows(miss), rows(hit))
+
+    def test_prepared_documents_are_picklable(self):
+        """ietf.doc.views_search.recent_drafts pickles prepared documents into a cache.
+
+        In production the slowpages cache is file-based, so everything attached to a
+        document by prepare_document_table has to survive pickling. Dev and test both
+        use a dummy cache, which accepts anything without serializing it, so nothing
+        else in the suite would notice a regression here.
+        """
+        draft = WgDraftFactory(authors=[PersonFactory()], ad=PersonFactory(),
+                               shepherd=EmailFactory())
+        TelechatDocEventFactory(doc=draft)
+        WgRfcFactory()
+
+        request = RequestFactory().get("/doc/recent/")
+        request.user = AnonymousUser()
+        results, meta = prepare_document_table(request, Document.objects.all())
+        self.assertTrue(results)
+
+        restored, _ = pickle.loads(pickle.dumps([results, meta]))
+        for before, after in zip(results, restored):
+            self.assertEqual(after.telechat_date(), before.telechat_date())
+
+    def test_fill_in_telechat_date_matches_the_method(self):
+        """The precomputed value has to equal what Document.telechat_date() returns.
+
+        The IESG agenda views call fill_in_telechat_date() over a queryset and then
+        filter on doc.telechat_date(), so a mismatch silently drops documents off a
+        telechat agenda.
+        """
+        future = WgDraftFactory()
+        TelechatDocEventFactory(doc=future,
+                                telechat_date=timezone.now() + datetime.timedelta(days=14))
+        past = WgDraftFactory()
+        TelechatDocEventFactory(doc=past,
+                                telechat_date=timezone.now() - datetime.timedelta(days=14))
+        rescheduled = WgDraftFactory()
+        TelechatDocEventFactory(doc=rescheduled,
+                                telechat_date=timezone.now() - datetime.timedelta(days=7))
+        TelechatDocEventFactory(doc=rescheduled,
+                                telechat_date=timezone.now() + datetime.timedelta(days=7))
+        none_scheduled = WgDraftFactory()
+
+        expected = {
+            d.name: Document.objects.get(pk=d.pk).telechat_date()
+            for d in (future, past, rescheduled, none_scheduled)
+        }
+
+        docs = list(Document.objects.filter(
+            name__in=[d.name for d in (future, past, rescheduled, none_scheduled)]
+        ))
+        fill_in_telechat_date(docs)
+
+        for doc in docs:
+            self.assertEqual(doc.telechat_date(), expected[doc.name], doc.name)
+        # the two ends of the range, so the test would fail if everything came back None
+        self.assertIsNotNone(expected[future.name])
+        self.assertIsNone(expected[past.name])
 
     def test_search_for_name(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())

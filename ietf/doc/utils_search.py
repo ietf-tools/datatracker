@@ -17,8 +17,31 @@ from ietf.review.utils import review_assignments_to_list_for_docs
 from ietf.utils.timezone import date_today
 
 
-def wrap_value(v):
-    return lambda: v
+class wrap_value:
+    """Callable stand-in for a no-argument method whose value was computed in bulk.
+
+    Assigned over the method on the instance, so templates and code can keep calling
+    doc.telechat_date() without hitting the database. A class rather than a closure
+    because documents carrying one of these get pickled into the caches behind
+    ietf.doc.views_search.recent_drafts, and a lambda is not picklable.
+    """
+
+    def __init__(self, value):
+        self.value = value
+
+    def __call__(self):
+        return self.value
+
+    def __eq__(self, other):
+        return isinstance(other, wrap_value) and self.value == other.value
+
+    def __hash__(self):
+        # Defining __eq__ without this would set __hash__ to None and make instances
+        # unhashable, which a method they stand in for is not.
+        return hash(self.value)
+
+    def __repr__(self):
+        return f"wrap_value({self.value!r})"
 
 
 def fill_in_telechat_date(docs, doc_dict=None, doc_ids=None):
@@ -29,11 +52,18 @@ def fill_in_telechat_date(docs, doc_dict=None, doc_ids=None):
         doc_ids = list(doc_dict.keys())
 
     seen = set()
-    for e in TelechatDocEvent.objects.filter(doc__id__in=doc_ids, type="scheduled_for_telechat").order_by('-time'):
+    for e in TelechatDocEvent.objects.filter(doc__id__in=doc_ids, type="scheduled_for_telechat").order_by('-time', '-id'):
         if e.doc_id not in seen:
-            #d = doc_dict[e.doc_id]
-            #d.telechat_date = wrap_value(d.telechat_date(e))
+            d = doc_dict[e.doc_id]
+            # Shadow Document.telechat_date with a callable returning the precomputed
+            # value, so templates can keep calling doc.telechat_date without each row
+            # issuing its own latest_event() query.
+            d.telechat_date = wrap_value(d.telechat_date(e))
             seen.add(e.doc_id)
+
+    for pk, d in doc_dict.items():
+        if pk not in seen:
+            d.telechat_date = wrap_value(None)
 
 def fill_in_document_sessions(docs, doc_dict, doc_ids):
     today = date_today()
