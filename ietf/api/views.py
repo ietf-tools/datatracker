@@ -566,8 +566,12 @@ def role_holder_addresses(request):
 
 @requires_api_token
 @csrf_exempt
-def rfc_authors(request):
-    """Return authors of published RFCs as a JSON list of objects.
+def rfc_author_survey_recipients(request):
+    """Return recipients of the RFC Author Survey for RFCs in a time range
+
+    Returns the authors and (if present) document shepherd for RFCs as a JSON
+    structure. This is intended for generation of the post-publication Author
+    Survey and is not likely to be useful elsewhere.
 
     Finds authors by date, though this could be extended to other selection
     criteria in the future. Specify the range as ?from=<datetime>&to=<datetime>.
@@ -576,6 +580,11 @@ def rfc_authors(request):
 
     Each author appears once, with their RFC numbers, names, titles, and
     publication dates accumulated across every RFC they published in the window.
+    Authors have `"type": "author"` in their records.
+
+    If an RFC has a shepherd assigned to its originating draft, that shepherd is
+    included in the list of recipients alongside the authors. Shepherds have
+    `"type": "shepherd"` in their records.
 
     When the ?testing query parameter is supplied, each author's real email
     address is replaced with a fake one that keeps the original mailbox but uses
@@ -634,7 +643,7 @@ def rfc_authors(request):
         docevent__type="published_rfc",
         docevent__time__gte=time_range_start,
         docevent__time__lt=time_range_end,
-    ).distinct().select_related("shepherd__person")  # avoid a query per RFC when reading rfc.shepherd below
+    ).distinct()
 
     # Collect per-author data keyed by email so each author gets one row.
     # Values accumulate RFC numbers, names, titles, and dates across all RFCs.
@@ -654,20 +663,33 @@ def rfc_authors(request):
             for a in rfc.rfcauthor_set.select_related("person").order_by("order")
         ]
 
-        # The rfc Document doesn't always carry its own shepherd - it's often only set on
-        # the draft it came from. Fall back to the draft's shepherd in that case. came_from_draft()
-        # can return None (e.g. very old RFCs with no tracked originating draft), so guard for that.
-        draft = rfc.came_from_draft()
-        if rfc.shepherd_id or (draft and draft.shepherd_id):
-            shepherd_rfc = rfc if rfc.shepherd_id else draft
-
-            authors.append({
-                # shepherd.person should always be set (see assertion in views_doc.py), but
-                # fall back to None rather than crash if that invariant is ever violated.
-                "name": shepherd_rfc.shepherd.person.name if shepherd_rfc.shepherd.person else None,
-                "email": shepherd_rfc.shepherd_id,  # Email's primary key is the address itself
-                "type": "shepherd",
-            })
+        # As of Aug 2026, the rfc Document doesn't carry its own shepherd - it's only 
+        # set on the draft it came from. If the shepherd changes, the value on the draft
+        # will be kept up to date.
+        #
+        # came_from_draft() can return None (e.g. very old RFCs with no tracked
+        # originating draft, April 1 RFCs, and other special cases), so guard for that.
+        # Also, shepherd.person should always be set (see assertion in views_doc.py)
+        # but skip rather than crash if that invariant is ever violated.
+        originating_draft = rfc.came_from_draft()
+        if (
+            originating_draft 
+            and originating_draft.shepherd is not None
+            and originating_draft.shepherd.person is not None
+        ):
+            # Use email_address() to find an active address if this one is stale
+            shepherd_email = originating_draft.shepherd.email_address()
+            if shepherd_email is not None:
+                authors.append({
+                    "name": shepherd_email.person.name,
+                    "email": shepherd_email.address,
+                    "type": "shepherd",
+                })
+            else:
+                log.log(
+                    f"rfc_authors(): shepherd for {rfc.name}, has no active email "
+                    f"address, omitting shepherd"
+                )
 
         for author in authors:
             if not author["email"]:
