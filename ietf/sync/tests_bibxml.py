@@ -13,6 +13,7 @@ from ietf.doc.factories import (
     StdFactory,
 )
 from ietf.sync.bibxml import (
+    get_abstract_bibxml,
     get_bcp_bibxml,
     get_fyi_bibxml,
     get_rfc_bibxml,
@@ -47,6 +48,46 @@ class BibXmlTests(TestCase):
 
         # Create a FYI with non-April Fools RFC
         self.fyi = FyiFactory(contains=[self.rfc], name="fyi3")
+
+    def test_get_abstract_bibxml(self):
+        # sentences separated by two spaces collapse to one
+        self.assertEqual(
+            get_abstract_bibxml("First sentence.  Second sentence."),
+            "<abstract><t>First sentence. Second sentence.</t></abstract>",
+        )
+        # a blank line starts a new <t>, and line wrapping within one collapses
+        self.assertEqual(
+            get_abstract_bibxml(
+                "First paragraph, which\nwas wrapped.\n\n Second paragraph."
+            ),
+            "<abstract><t>First paragraph, which was wrapped.</t>"
+            "<t>Second paragraph.</t></abstract>",
+        )
+        # markup in the abstract is escaped, not emitted
+        self.assertEqual(
+            get_abstract_bibxml("Defines the <access> identifier & its use."),
+            "<abstract><t>Defines the &lt;access&gt; identifier &amp; its use.</t>"
+            "</abstract>",
+        )
+        # an abstract that is empty or only whitespace produces no element
+        for empty in ["", "   ", "\n\n"]:
+            self.assertEqual(get_abstract_bibxml(empty), "", f"{empty!r}")
+
+    def test_get_rfc_bibxml_without_abstract(self):
+        self.rfc.abstract = ""
+        bibxml = get_rfc_bibxml(self.rfc)
+        self.assertNotIn("<abstract>", bibxml)
+        self.assertIsNotNone(ElementTree.fromstring(bibxml))
+
+    def test_get_rfc_bibxml_abstract(self):
+        self.rfc.abstract = "First paragraph.  Still it.\n\n Second paragraph."
+        bibxml = get_rfc_bibxml(self.rfc)
+        self.assertIn(
+            "<abstract><t>First paragraph. Still it.</t>"
+            "<t>Second paragraph.</t></abstract>",
+            bibxml,
+        )
+        self.assertIsNotNone(ElementTree.fromstring(bibxml))
 
     def test_get_rfc_bibxml(self):
         bibxml = get_rfc_bibxml(self.rfc)

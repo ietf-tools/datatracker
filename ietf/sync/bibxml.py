@@ -1,4 +1,5 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
+import re
 from pathlib import Path
 from urllib.parse import urljoin
 from xml.sax.saxutils import escape as esc
@@ -112,6 +113,23 @@ def save_to_bucket(filename: str, content: str | bytes):
     log(f"Saved {bucket_path} in bibxml_bucket storage")
 
 
+def get_abstract_bibxml(abstract):
+    """Return BibXML abstract for the given abstract text
+
+    Abstracts as stored separate paragraphs with a blank line and sentences with
+    two spaces. BibXML has no use for either: each paragraph becomes its own
+    <t>, and the whitespace within a paragraph collapses to single spaces.
+
+    An RFC with no abstract gets no <abstract> element at all -- an empty one
+    would not be valid BibXML, which requires at least one <t>.
+    """
+    paragraphs = [
+        " ".join(paragraph.split()) for paragraph in re.split(r"\n\s*\n", abstract)
+    ]
+    ts = "".join(f"<t>{esc(paragraph)}</t>" for paragraph in paragraphs if paragraph)
+    return f"""<abstract>{ts}</abstract>""" if ts else ""
+
+
 def get_rfc_bibxml(rfc):
     """Return BibXML entry for the given rfc Document object"""
 
@@ -146,7 +164,7 @@ def get_rfc_bibxml(rfc):
     for subseries in rfc.part_of():
         subseries_info += f"""<seriesInfo name="{subseries.type_id.upper()}" value="{subseries.name[3:]}"/>"""
 
-    return f"""<reference anchor="RFC{rfc_number}" target="{link}"><front><title>{esc(rfc.title)}</title>{authors}{date}<abstract><t>{esc(rfc.abstract)}</t></abstract></front>{subseries_info}<seriesInfo name="RFC" value="{rfc_number}"/><seriesInfo name="DOI" value="{rfc.doi}"/></reference>"""
+    return f"""<reference anchor="RFC{rfc_number}" target="{link}"><front><title>{esc(rfc.title)}</title>{authors}{date}{get_abstract_bibxml(rfc.abstract)}</front>{subseries_info}<seriesInfo name="RFC" value="{rfc_number}"/><seriesInfo name="DOI" value="{rfc.doi}"/></reference>"""
 
 
 def get_bcp_bibxml(bcp_number):
