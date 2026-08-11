@@ -634,7 +634,7 @@ def rfc_authors(request):
         docevent__type="published_rfc",
         docevent__time__gte=time_range_start,
         docevent__time__lt=time_range_end,
-    ).distinct()
+    ).distinct().select_related("shepherd__person")  # avoid a query per RFC when reading rfc.shepherd below
 
     # Collect per-author data keyed by email so each author gets one row.
     # Values accumulate RFC numbers, names, titles, and dates across all RFCs.
@@ -649,9 +649,25 @@ def rfc_authors(request):
                 "email": a.person.email().address
                 if (a.person and a.person.email())
                 else None,
+                "type": "author",  # distinguishes authors from the shepherd entry added below
             }
             for a in rfc.rfcauthor_set.select_related("person").order_by("order")
         ]
+
+        # The rfc Document doesn't always carry its own shepherd - it's often only set on
+        # the draft it came from. Fall back to the draft's shepherd in that case. came_from_draft()
+        # can return None (e.g. very old RFCs with no tracked originating draft), so guard for that.
+        draft = rfc.came_from_draft()
+        if rfc.shepherd_id or (draft and draft.shepherd_id):
+            shepherd_rfc = rfc if rfc.shepherd_id else draft
+
+            authors.append({
+                # shepherd.person should always be set (see assertion in views_doc.py), but
+                # fall back to None rather than crash if that invariant is ever violated.
+                "name": shepherd_rfc.shepherd.person.name if shepherd_rfc.shepherd.person else None,
+                "email": shepherd_rfc.shepherd_id,  # Email's primary key is the address itself
+                "type": "shepherd",
+            })
 
         for author in authors:
             if not author["email"]:
@@ -667,6 +683,7 @@ def rfc_authors(request):
                 author_data[email] = {
                     "name": author["name"],
                     "email": email,
+                    "type": author["type"],
                     "rfc_numbers": [],
                     "rfc_names": [],
                     "rfc_titles": [],
@@ -684,6 +701,7 @@ def rfc_authors(request):
             author_data[email] = {
                 "name": f"Test Author {n + 1}",
                 "email": email,
+                "type": "author",  # matches the shape of real entries now that "type" is included below
                 "rfc_numbers": ["99999"],
                 "rfc_names": ["rfc99999"],
                 "rfc_titles": ["A Fake RFC for Testing"],
@@ -696,6 +714,7 @@ def rfc_authors(request):
             {
                 "name": entry["name"],
                 "email": entry["email"],
+                "type": entry["type"],  # "author" or "shepherd", surfaced in the API response
                 "rfc_number": ", ".join(entry["rfc_numbers"]),
                 "rfc_name": ", ".join(entry["rfc_names"]),
                 "rfc_title": ", ".join(entry["rfc_titles"]),
