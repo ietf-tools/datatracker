@@ -25,6 +25,7 @@ from zoneinfo import ZoneInfo
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django.forms import Form
+from django.http import QueryDict
 from django.utils.html import escape
 from django.test import override_settings
 from django.utils import timezone
@@ -60,6 +61,7 @@ from ietf.doc.utils import (
     get_doc_email_aliases,
 )
 from ietf.doc.views_doc import get_diff_revisions
+from ietf.doc.views_search import SearchForm, retrieve_search_results
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
@@ -188,6 +190,85 @@ class SearchTests(TestCase):
         r = self.client.get(base_url + f"?activedrafts=on&rfcs=on&name={draft.name}")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, rfc.title)
+
+    def test_search_by_author(self):
+        """The author search covers both DocumentAuthor and RfcAuthor"""
+        base_url = urlreverse('ietf.doc.views_search.search')
+
+        person = PersonFactory(name="Ford Prefect")
+        draft = WgDraftFactory(authors=[person])
+        rfc = WgRfcFactory()
+        RfcAuthorFactory(document=rfc, person=person, titlepage_name="F. Prefect")
+        # an RFC whose title page credits someone the datatracker has no Person for
+        anonymous_rfc = WgRfcFactory()
+        RfcAuthorFactory(document=anonymous_rfc, person=None, titlepage_name="Zaphod Beeblebrox")
+
+        def search(author):
+            r = self.client.get(base_url + f"?activedrafts=on&rfcs=on&by=author&author={author}")
+            self.assertEqual(r.status_code, 200)
+            return r
+
+        # by alias
+        r = search("Prefect")
+        self.assertContains(r, draft.title)
+        self.assertContains(r, rfc.title)
+        self.assertNotContains(r, anonymous_rfc.title)
+
+        # by email address
+        r = search(person.email().address)
+        self.assertContains(r, draft.title)
+        self.assertContains(r, rfc.title)
+
+        # by title page name only
+        r = search("Beeblebrox")
+        self.assertContains(r, anonymous_rfc.title)
+        self.assertNotContains(r, draft.title)
+
+    def test_search_results_are_not_duplicated(self):
+        """retrieve_search_results must match each document at most once.
+
+        It does not apply distinct(): doing so forces a sort over every selected column
+        (including abstract and, once prepare_document_table adds its select_related,
+        group description and person biography). Any filter that can match a document
+        twice has to be expressed as a subquery instead.
+        """
+        person = PersonFactory()
+        rfc = WgRfcFactory()
+        # several ways for one document to match one author search
+        RfcAuthorFactory(document=rfc, person=person)
+        RfcAuthorFactory(document=rfc, person=person)
+        EmailFactory(person=person)
+        draft = WgDraftFactory(authors=[person, person])
+        draft.set_state(State.objects.get(type="draft", slug="active"))
+
+        for query in (
+            f"activedrafts=on&olddrafts=on&rfcs=on&by=author&author={person.name}",
+            "activedrafts=on&olddrafts=on&rfcs=on",
+            f"activedrafts=on&rfcs=on&by=group&group={draft.group.acronym}",
+        ):
+            form = SearchForm(QueryDict(query))
+            self.assertTrue(form.is_valid(), form.errors)
+            pks = list(retrieve_search_results(form).values_list("pk", flat=True))
+            self.assertEqual(len(pks), len(set(pks)), f"duplicate rows for ?{query}")
+
+    def test_search_does_not_join_multivalued_relations(self):
+        """The main search query must not join any multi-valued relation.
+
+        ORing lookups across documentauthor, rfcauthor and targets_related into a single
+        filter() makes those paths cross-multiply. Against the production data set the
+        search this guards produced a 126M-row intermediate result to return 32
+        documents; the joins have to stay out of the outer query.
+        """
+        form = SearchForm(QueryDict("by=author&author=Beeblebrox&name=rfc&rfcs=on"))
+        self.assertTrue(form.is_valid(), form.errors)
+        query = retrieve_search_results(form).query
+
+        # Only the outer query matters: the relations are reached through subqueries,
+        # which do contain joins of their own but are each evaluated once.
+        sql = str(query)
+        from_clause = sql[sql.index(" FROM ") : sql.index(" WHERE ")]
+        self.assertNotIn("JOIN", from_clause, f"main search query joins: {from_clause}")
+        self.assertFalse(query.distinct, "distinct() over the full column list is expensive")
 
     def test_search_for_name(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())

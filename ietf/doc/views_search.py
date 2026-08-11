@@ -58,8 +58,8 @@ from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, DocHistory, State,
-    NewRevisionDocEvent, IESG_SUBSTATE_TAGS,
+from ietf.doc.models import ( Document, DocHistory, DocumentAuthor, RelatedDocument,
+    RfcAuthor, State, NewRevisionDocEvent, IESG_SUBSTATE_TAGS,
     IESG_BALLOT_ACTIVE_STATES, IESG_STATCHG_CONFLREV_ACTIVE_STATES,
     IESG_CHARTER_ACTIVE_STATES )
 from ietf.doc.fields import select2_id_doc_name_json
@@ -196,27 +196,38 @@ def retrieve_search_results(form, all_types=False):
                     Q(title__icontains=singlespace)            
                 ])        
 
+        # Matches against a related document are expressed as a subquery on pk rather
+        # than by following the multi-valued `targets_related` relation. A join here
+        # would cross-multiply with any other multi-valued relation ORed into the same
+        # filter (notably the author search below), and the intermediate result explodes.
+        def related_source_matches(relationship, **source_lookup):
+            return Q(
+                pk__in=RelatedDocument.objects.filter(
+                    relationship_id=relationship, **source_lookup
+                ).values("target_id")
+            )
+
         # Do a similar thing if the search is just for a subseries doc, like a bcp.
         if look_for.lower()[:3] in ["bcp", "fyi", "std"] and look_for[3:].strip().isdigit() and query["rfcs"]: # Also look for rfcs contained in the subseries.
             queries.extend([
-                Q(targets_related__source__name__icontains=look_for, targets_related__relationship_id="contains"),
-                Q(targets_related__source__title__icontains=look_for, targets_related__relationship_id="contains"),
+                related_source_matches("contains", source__name__icontains=look_for),
+                related_source_matches("contains", source__title__icontains=look_for),
             ])
             spaceless = look_for.lower()[:3]+look_for[3:].strip()
             if spaceless != look_for:
                 queries.extend([
-                    Q(targets_related__source__name__icontains=spaceless, targets_related__relationship_id="contains"),
-                    Q(targets_related__source__title__icontains=spaceless, targets_related__relationship_id="contains"),
+                    related_source_matches("contains", source__name__icontains=spaceless),
+                    related_source_matches("contains", source__title__icontains=spaceless),
                 ])
             singlespace = look_for.lower()[:3]+" "+look_for[3:].strip()
             if singlespace != look_for:
                 queries.extend([
-                    Q(targets_related__source__name__icontains=singlespace, targets_related__relationship_id="contains"),
-                    Q(targets_related__source__title__icontains=singlespace, targets_related__relationship_id="contains"),
+                    related_source_matches("contains", source__name__icontains=singlespace),
+                    related_source_matches("contains", source__title__icontains=singlespace),
                 ])
 
         if query["rfcs"]:
-            queries.extend([Q(targets_related__source__name__icontains=look_for, targets_related__relationship_id="became_rfc")])
+            queries.append(related_source_matches("became_rfc", source__name__icontains=look_for))
 
         combined_query = reduce(operator.or_, queries)
         docs = docs.filter(combined_query)
@@ -228,18 +239,41 @@ def retrieve_search_results(form, all_types=False):
     if query["olddrafts"]:
         allowed_draft_states.extend(['repl', 'expired', 'auth-rm', 'ietf-rm'])
 
-    docs = docs.filter(Q(states__slug__in=allowed_draft_states) |
-                       ~Q(type__slug='draft'))
+    if allowed_draft_states:
+        # Subquery rather than a join on `states`: a document has several state rows, so
+        # joining here duplicates every document that passes the ~Q(type__slug='draft')
+        # half of the OR, which is what forced the distinct() this function used to end
+        # with. See the comment before the return.
+        docs = docs.filter(
+            ~Q(type__slug='draft')
+            | Q(pk__in=Document.states.through.objects.filter(
+                state__slug__in=allowed_draft_states
+            ).values("document_id"))
+        )
+    elif all_types:
+        # No draft state is allowed, so no draft can match. Only the all_types path can
+        # still be holding drafts at this point -- when types drives the queryset above,
+        # "draft" is in it only if at least one draft state is allowed.
+        docs = docs.exclude(type__slug='draft')
 
     # radio choices
     by = query["by"]
     if by == "author":
+        # Resolve the name or address to people first and match documents against those
+        # people by primary key. Expressed as ORed joins, the documentauthor and
+        # rfcauthor paths (each reaching person -> alias and person -> email) cross-
+        # multiply into an enormous intermediate result.
+        author = query["author"]
+        person_ids = Person.objects.filter(
+            Q(alias__name__icontains=author) | Q(email__address__icontains=author)
+        ).values("pk")
         docs = docs.filter(
-            Q(documentauthor__person__alias__name__icontains=query["author"]) |
-            Q(documentauthor__person__email__address__icontains=query["author"]) |
-            Q(rfcauthor__person__alias__name__icontains=query["author"]) |
-            Q(rfcauthor__person__email__address__icontains=query["author"]) |
-            Q(rfcauthor__titlepage_name__icontains=query["author"])
+            Q(pk__in=DocumentAuthor.objects.filter(
+                person__in=person_ids
+            ).values("document_id"))
+            | Q(pk__in=RfcAuthor.objects.filter(
+                Q(person__in=person_ids) | Q(titlepage_name__icontains=author)
+            ).values("document_id"))
         )
     elif by == "group":
         docs = docs.filter(group__acronym__iexact=query["group"])
@@ -258,11 +292,21 @@ def retrieve_search_results(form, all_types=False):
     elif by == "stream":
         docs = docs.filter(stream=query["stream"])
 
-    docs=docs.distinct()
+    # No distinct() here: every filter above matches a document at most once. The
+    # multi-valued relations (documentauthor, rfcauthor, targets_related, states) are all
+    # reached through pk subqueries, and the remaining `states`/`tags` filters match a
+    # single specific row. A distinct() would be applied to the full column list -- which
+    # prepare_document_table then widens further with select_related() -- and force a sort
+    # over every selected column, including abstract, biography and group description.
+    # If a multi-valued join is ever added back above, restore the distinct() with it.
 
     # order by time here to retain the most recent documents in case we
-    # find too many and have to chop the results list in prepare_document_table
-    docs = docs.order_by('-time')
+    # find too many and have to chop the results list in prepare_document_table.
+    # `time` alone is not a total order -- documents sharing a timestamp to the second
+    # are common -- so tie-break on pk. Without it the set of documents kept by that
+    # truncation, and the order prepare_document_table's stable sort falls back to for
+    # equal sort keys, both vary from one execution to the next.
+    docs = docs.order_by('-time', 'pk')
 
     return docs
 
