@@ -14,6 +14,7 @@ from drf_spectacular.utils import (
 from rest_framework import mixins, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from ietf.person.models import Person, PersonUUID
 
@@ -196,17 +197,19 @@ class PersonUUIDViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 
 
 @extend_schema(tags=["person"])
-class PersonUUIDByPersonPkViewSet(viewsets.GenericViewSet):
+class PersonUUIDByPersonPkView(APIView):
     """Transitional pk-to-UUID conversion, for consumers migrating off Person.pk
 
     Batch-only on purpose: the one legitimate use is a single bulk conversion, and a
     convenient per-request lookup would become a permanent pk-to-UUID service. Its own
     api_key_endpoint so its tokens can be withdrawn without touching the resolution API.
+
+    A plain APIView rather than a ViewSet: nothing here is a resource, and routing a
+    lookup through a ViewSet meant calling it "create", which made the schema claim a 201
+    for a request that creates nothing and returns 200.
     """
 
     api_key_endpoint = "ietf.person.api_uuid_by_pk"
-    queryset = Person.objects.none()
-    serializer_class = PersonPkBatchRequestSerializer
 
     @extend_schema(
         deprecated=True,
@@ -227,7 +230,7 @@ class PersonUUIDByPersonPkViewSet(viewsets.GenericViewSet):
             "status."
         ),
         request=PersonPkBatchRequestSerializer,
-        responses=PersonPkBatchResponseSerializer,
+        responses={200: PersonPkBatchResponseSerializer},
         examples=[
             OpenApiExample(
                 "Two pks, one of them unknown",
@@ -251,10 +254,12 @@ class PersonUUIDByPersonPkViewSet(viewsets.GenericViewSet):
             )
         ],
     )
-    def create(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        requested = list(dict.fromkeys(serializer.validated_data["person_pks"]))
+    def post(self, request):
+        requested_serializer = PersonPkBatchRequestSerializer(data=request.data)
+        requested_serializer.is_valid(raise_exception=True)
+        requested = list(
+            dict.fromkeys(requested_serializer.validated_data["person_pks"])
+        )
 
         existing = set(
             Person.objects.filter(pk__in=requested).values_list("pk", flat=True)

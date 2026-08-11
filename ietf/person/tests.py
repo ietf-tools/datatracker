@@ -789,7 +789,7 @@ class PersonUUIDApiTests(TestCase):
 
     @property
     def by_pk_url(self):
-        return urlreverse("ietf.api.person_api.person-uuid-by-pk-list")
+        return urlreverse("ietf.api.person_api.person-uuid-by-pk")
 
     def test_requires_a_valid_api_key(self):
         person = PersonFactory()
@@ -1016,6 +1016,21 @@ class PersonUUIDApiTests(TestCase):
         self.assertEqual(by_pk["operationId"], "person_uuid_by_person_pk")
         self.assertTrue(by_pk["deprecated"])
         self.assertIn("PersonUUIDResolution", schema["components"]["schemas"])
+        # The declared success codes have to be the ones the views actually return -
+        # nothing here creates anything, so nothing may advertise a 201.
+        for path, method in (
+            ("/api/person/uuid/{uuid}/", "get"),
+            ("/api/person/uuid/lookup/", "post"),
+            ("/api/person/uuid/by-person-pk/", "post"),
+        ):
+            responses = paths[path][method]["responses"]
+            self.assertIn("200", responses, path)
+            self.assertNotIn("201", responses, path)
+        # Consumers switch on status, so it has to be a declared, required field
+        for component in ("PersonUUIDBatchEntry", "PersonPkBatchEntry"):
+            entry = schema["components"]["schemas"][component]
+            self.assertIn("status", entry["required"], component)
+            self.assertTrue(entry["properties"]["primary_uuid"]["nullable"], component)
 
 
 class TaskTests(TestCase):
