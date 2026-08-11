@@ -11,7 +11,6 @@ from ietf.doc import views_ballot, api as doc_api
 from ietf.meeting import views as meeting_views
 from ietf.person import api_uuid as person_uuid_api
 from ietf.submit import views as submit_views
-import ietf.utils.converters  # noqa: F401  # pyflakes:ignore -- registers anycase_uuid
 from ietf.utils.urls import url
 
 from . import views as api_views

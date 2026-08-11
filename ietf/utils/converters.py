@@ -1,11 +1,11 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 """URL path converters
 
-Importing this module registers the converters, so import it from any URLconf that names
-one.
+Registered in the root URLconf, not here - Django does not allow registering a converter
+twice, so a module-level register_converter() would break as soon as two URLconfs
+imported this module.
 """
 
-from django.urls import register_converter
 from django.urls.converters import UUIDConverter
 
 
@@ -19,6 +19,3 @@ class AnyCaseUUIDConverter(UUIDConverter):
     regex = (
         "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
     )
-
-
-register_converter(AnyCaseUUIDConverter, "anycase_uuid")
