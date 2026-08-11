@@ -242,10 +242,14 @@ class Person(models.Model):
 
     @property
     def prior_uuids(self):
-        """UUIDs that still resolve to this Person but are no longer primary"""
+        """UUIDs that still resolve to this Person but are no longer primary
+
+        Oldest first, breaking ties on the UUID itself so the order is deterministic -
+        a merge gives every UUID it moves the same timestamp.
+        """
         return list(
             self.uuids.filter(primary=False)
-            .order_by("time")
+            .order_by("time", "uuid")
             .values_list("uuid", flat=True)
         )
 

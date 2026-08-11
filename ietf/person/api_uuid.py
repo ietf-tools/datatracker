@@ -30,8 +30,8 @@ def uuid_sets_for(person_ids):
     """Map each person_id to its (primary_uuid, [prior_uuids]) in a single query
 
     Keeps the batch endpoints' query count independent of the batch size: reading
-    Person.primary_uuid and Person.prior_uuid per row would be two queries per Person.
-    Ordering matches those accessors.
+    Person.primary_uuid and Person.prior_uuids per row would be two queries per Person.
+    Ordering matches Person.prior_uuids.
     """
     sets = {pid: (None, []) for pid in person_ids}
     rows = (
