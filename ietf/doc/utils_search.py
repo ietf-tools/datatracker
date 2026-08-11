@@ -266,9 +266,20 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         for e in event_types:
             d.latest_event_cache[e] = None
 
-    for e in DocEvent.objects.filter(doc__id__in=doc_ids, type__in=event_types).order_by('time'):
+    # DISTINCT ON fetches only the newest event of each (doc, type) pair. Ordering
+    # ascending and letting later rows overwrite earlier ones pulls back every matching
+    # event, and a draft routinely has dozens of new_revision events.
+    for e in (DocEvent.objects
+              .filter(doc__id__in=doc_ids, type__in=event_types)
+              .order_by('doc_id', 'type', '-time', '-id')
+              .distinct('doc_id', 'type')):
         doc_dict[e.doc_id].latest_event_cache[e.type] = e
 
+    # Default to None so that ballot_icon finds the attribute for documents with no
+    # ballot event at all. Otherwise it falls back to doc.active_ballot(), which costs a
+    # query per such row.
+    for d in docs:
+        d.ballot = None
     seen = set()
     for e in BallotDocEvent.objects.filter(doc__id__in=doc_ids, type__in=('created_ballot', 'closed_ballot')).order_by('-time','-id'):
         if not e.doc_id in seen:
@@ -326,7 +337,9 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
             d.expirable = False
 
         if d.type_id == "draft" and d.get_state_slug() != "rfc":
-            d.milestones = [ m for (t, s, v, m) in sorted(((m.time, m.state.slug, m.desc, m) for m in d.groupmilestone_set.all() if m.state_id == "active")) ]
+            # m.state_id is the state slug; reading m.state.slug instead costs a query
+            # per milestone because the prefetch does not cover it.
+            d.milestones = [ m for (t, s, v, m) in sorted(((m.time, m.state_id, m.desc, m) for m in d.groupmilestone_set.all() if m.state_id == "active")) ]
             d.review_assignments = review_assignments.get(d.name, [])
 
         e = d.latest_event_cache.get('started_iesg_process', None)
@@ -352,7 +365,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         RelatedDocument.objects.filter(
             target__name__in=list(rfcs.values()),
             relationship__in=("obs", "updates"),
-        ).select_related("target")
+        ).select_related("target", "source")
     )
     # TODO - this likely reduces to something even simpler
     rel_rfcs = {
@@ -398,9 +411,14 @@ def prepare_document_table(request, docs, query=None, max_results=200, show_ad_a
     if not isinstance(docs, list):
         # evaluate and fill in attribute results immediately to decrease
         # the number of queries
-        docs = docs.select_related("ad", "std_level", "intended_std_level", "group", "stream", "shepherd", )
+        # "type" is here because fill_in_document_table_attributes renders it into
+        # search_heading for every non-draft row. "iprdocrel_set" is not: the table shows
+        # doc.related_ipr, which is precomputed in fill_in_document_table_attributes and
+        # never touches that relation.
+        docs = docs.select_related("ad", "std_level", "intended_std_level", "group", "stream",
+                                   "shepherd__person", "type", )
         docs = docs.prefetch_related("states__type", "tags", "groupmilestone_set__group", "reviewrequest_set__team",
-                                     "ad__email_set", "iprdocrel_set")
+                                     "ad__email_set", "documentactionholder_set__person__email_set")
         docs = docs[:max_results] # <- that is still a queryset, but with a LIMIT now
         docs = list(docs)
     else:
