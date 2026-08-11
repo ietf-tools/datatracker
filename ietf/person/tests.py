@@ -894,8 +894,16 @@ class PersonUUIDApiTests(TestCase):
         # One entry per distinct requested UUID, duplicates collapsed
         self.assertEqual(len(results), 3)
         by_uuid = {entry["uuid"]: entry for entry in results}
+        # Same shape as a resolved entry, with the identifiers nulled out
         self.assertEqual(
-            by_uuid[str(missing)], {"uuid": str(missing), "status": "unknown"}
+            by_uuid[str(missing)],
+            {
+                "uuid": str(missing),
+                "status": "unknown",
+                "is_primary": None,
+                "primary_uuid": None,
+                "prior_uuids": [],
+            },
         )
         self.assertEqual(by_uuid[str(prior.uuid)]["status"], "resolved")
         self.assertFalse(by_uuid[str(prior.uuid)]["is_primary"])
@@ -959,7 +967,15 @@ class PersonUUIDApiTests(TestCase):
                 "prior_uuids": [str(prior.uuid)],
             },
         )
-        self.assertEqual(results[1]["status"], "unknown")
+        self.assertEqual(
+            results[1],
+            {
+                "person_pk": person.pk + 10000,
+                "status": "unknown",
+                "primary_uuid": None,
+                "prior_uuids": [],
+            },
+        )
 
     def test_by_person_pk_has_its_own_token(self):
         person = PersonFactory()

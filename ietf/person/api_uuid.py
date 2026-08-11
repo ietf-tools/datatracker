@@ -8,8 +8,8 @@ key.
 
 from drf_spectacular.utils import (
     OpenApiExample,
-    PolymorphicProxySerializer,
     extend_schema,
+    extend_schema_view,
 )
 from rest_framework import mixins, serializers, viewsets
 from rest_framework.decorators import action
@@ -18,6 +18,11 @@ from rest_framework.response import Response
 from ietf.person.models import Person, PersonUUID
 
 MAX_BATCH = 500
+
+# A batch entry either resolved to a Person or it did not. Both outcomes use the same
+# entry shape, discriminated by this field, so a consumer switches on it instead of
+# inspecting which fields came back.
+ENTRY_STATUSES = ("resolved", "unknown")
 
 
 def uuid_sets_for(person_ids):
@@ -53,33 +58,31 @@ class PersonUUIDResolutionSerializer(serializers.Serializer):
     )
 
 
-class ResolvedEntrySerializer(PersonUUIDResolutionSerializer):
-    status = serializers.ChoiceField(choices=["resolved"], read_only=True)
-
-
-class UnknownEntrySerializer(serializers.Serializer):
-    uuid = serializers.UUIDField(read_only=True)
-    status = serializers.ChoiceField(choices=["unknown"], read_only=True)
-
-
 class PersonUUIDBatchRequestSerializer(serializers.Serializer):
     uuids = serializers.ListField(
         child=serializers.UUIDField(), allow_empty=False, max_length=MAX_BATCH
     )
 
 
+class PersonUUIDBatchEntrySerializer(serializers.Serializer):
+    """One requested UUID and, when it resolved, its Person's identifier set
+
+    Every field is always present. The identifier fields are null - prior_uuids empty -
+    when status is unknown.
+
+    Output only, and deliberately not read_only=True field by field: read_only implies
+    required=False, which would leave a generated client treating even status as optional.
+    """
+
+    uuid = serializers.UUIDField()
+    status = serializers.ChoiceField(choices=ENTRY_STATUSES)
+    is_primary = serializers.BooleanField(allow_null=True)
+    primary_uuid = serializers.UUIDField(allow_null=True)
+    prior_uuids = serializers.ListField(child=serializers.UUIDField())
+
+
 class PersonUUIDBatchResponseSerializer(serializers.Serializer):
-    results = serializers.ListField(
-        child=PolymorphicProxySerializer(
-            component_name="PersonUUIDBatchEntry",
-            serializers={
-                "resolved": ResolvedEntrySerializer,
-                "unknown": UnknownEntrySerializer,
-            },
-            resource_type_field_name="status",
-        ),
-        read_only=True,
-    )
+    results = PersonUUIDBatchEntrySerializer(many=True)
 
 
 class PersonPkBatchRequestSerializer(serializers.Serializer):
@@ -88,53 +91,32 @@ class PersonPkBatchRequestSerializer(serializers.Serializer):
     )
 
 
-class PersonPkResolvedEntrySerializer(serializers.Serializer):
-    person_pk = serializers.IntegerField(read_only=True)
-    status = serializers.ChoiceField(choices=["resolved"], read_only=True)
-    primary_uuid = serializers.UUIDField(read_only=True)
-    prior_uuids = serializers.ListField(child=serializers.UUIDField(), read_only=True)
+class PersonPkBatchEntrySerializer(serializers.Serializer):
+    """One requested Person.pk and, when it resolved, that Person's identifier set
 
+    Same one-shape-for-both-outcomes and output-only rules as
+    PersonUUIDBatchEntrySerializer.
+    """
 
-class PersonPkUnknownEntrySerializer(serializers.Serializer):
-    person_pk = serializers.IntegerField(read_only=True)
-    status = serializers.ChoiceField(choices=["unknown"], read_only=True)
+    person_pk = serializers.IntegerField()
+    status = serializers.ChoiceField(choices=ENTRY_STATUSES)
+    primary_uuid = serializers.UUIDField(allow_null=True)
+    prior_uuids = serializers.ListField(child=serializers.UUIDField())
 
 
 class PersonPkBatchResponseSerializer(serializers.Serializer):
-    results = serializers.ListField(
-        child=PolymorphicProxySerializer(
-            component_name="PersonPkBatchEntry",
-            serializers={
-                "resolved": PersonPkResolvedEntrySerializer,
-                "unknown": PersonPkUnknownEntrySerializer,
-            },
-            resource_type_field_name="status",
-        ),
-        read_only=True,
-    )
+    results = PersonPkBatchEntrySerializer(many=True)
 
 
-@extend_schema(
-    tags=["person"],
-    parameters=[],
-)
-class PersonUUIDViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    """Resolve Person UUIDs to their Person's current identifier set"""
-
-    api_key_endpoint = "ietf.person.api_uuid"
-    queryset = PersonUUID.objects.select_related("person")
-    serializer_class = PersonUUIDResolutionSerializer
-    lookup_field = "uuid"
-    lookup_url_kwarg = "uuid"
-    lookup_value_converter = "anycase_uuid"
-
-    @extend_schema(
+@extend_schema(tags=["person"])
+@extend_schema_view(
+    retrieve=extend_schema(
         operation_id="person_uuid_retrieve",
         summary="Resolve a Person UUID",
         description=(
             "Resolve any UUID the datatracker has issued for a Person to that Person's "
             "current identifier set. A UUID that stopped being primary because of a "
-            "merge still resolves, and the response carries the current primary. A 200 "
+            'merge still resolves, and the response carries the current primary. A 200 '
             'whose primary_uuid differs from the requested uuid means "same person, new '
             'identifier" - it is not an error.\n\n'
             "A 404 means no Person has this UUID. It does not distinguish a UUID the "
@@ -148,8 +130,16 @@ class PersonUUIDViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         ),
         responses=PersonUUIDResolutionSerializer,
     )
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
+)
+class PersonUUIDViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    """Resolve Person UUIDs to their Person's current identifier set"""
+
+    api_key_endpoint = "ietf.person.api_uuid"
+    queryset = PersonUUID.objects.select_related("person")
+    serializer_class = PersonUUIDResolutionSerializer
+    lookup_field = "uuid"
+    lookup_url_kwarg = "uuid"
+    lookup_value_converter = "anycase_uuid"
 
     @extend_schema(
         operation_id="person_uuid_lookup",
@@ -159,19 +149,19 @@ class PersonUUIDViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             "results entry per distinct requested UUID - no entry is ever omitted and no "
             "unresolvable UUID fails the request.\n\n"
             "Each entry carries a status of resolved or unknown, corresponding to the "
-            "200 and 404 outcomes of the single-UUID endpoint, and the entry's remaining "
-            "fields follow from it. Switch on status; do not infer the outcome from "
-            "which fields are present. Duplicate inputs produce one entry. Entry order "
-            "is not significant - match on uuid."
+            "200 and 404 outcomes of the single-UUID endpoint. Every entry has the same "
+            "fields either way, with the identifier fields null when status is unknown, "
+            "so switch on status rather than on which fields are present. Duplicate "
+            "inputs produce one entry. Entry order is not significant - match on uuid."
         ),
         request=PersonUUIDBatchRequestSerializer,
         responses=PersonUUIDBatchResponseSerializer,
     )
     @action(detail=False, methods=["post"])
     def lookup(self, request):
-        serializer = PersonUUIDBatchRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        requested = list(dict.fromkeys(serializer.validated_data["uuids"]))
+        requested_serializer = PersonUUIDBatchRequestSerializer(data=request.data)
+        requested_serializer.is_valid(raise_exception=True)
+        requested = list(dict.fromkeys(requested_serializer.validated_data["uuids"]))
 
         found = {row.uuid: row for row in PersonUUID.objects.filter(uuid__in=requested)}
         sets = uuid_sets_for({row.person_id for row in found.values()})
@@ -180,7 +170,15 @@ class PersonUUIDViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         for value in requested:
             row = found.get(value)
             if row is None:
-                results.append({"uuid": value, "status": "unknown"})
+                results.append(
+                    {
+                        "uuid": value,
+                        "status": "unknown",
+                        "is_primary": None,
+                        "primary_uuid": None,
+                        "prior_uuids": [],
+                    }
+                )
                 continue
             primary, priors = sets[row.person_id]
             results.append(
@@ -192,9 +190,9 @@ class PersonUUIDViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                     "prior_uuids": priors,
                 }
             )
-        # Rendered as plain dicts: PersonUUIDBatchResponseSerializer is an annotation
-        # helper (PolymorphicProxySerializer) and cannot serialize real responses.
-        return Response({"results": results})
+        return Response(
+            PersonUUIDBatchResponseSerializer({"results": results}).data
+        )
 
 
 @extend_schema(tags=["person"])
@@ -223,7 +221,10 @@ class PersonUUIDByPersonPkViewSet(viewsets.GenericViewSet):
             "which is why holding it is unsafe.\n\n"
             "Intended to be called once per consuming application, to migrate a table. "
             "Do not call it at request time and do not build anything that keeps "
-            "needing it."
+            "needing it.\n\n"
+            "One results entry per distinct requested pk, with the same fields either "
+            "way and the identifier fields null when status is unknown. Switch on "
+            "status."
         ),
         request=PersonPkBatchRequestSerializer,
         responses=PersonPkBatchResponseSerializer,
@@ -238,7 +239,12 @@ class PersonUUIDByPersonPkViewSet(viewsets.GenericViewSet):
                             "primary_uuid": "6f9a1c30-6c7e-4f0a-9a3f-2f1d0b8a4e11",
                             "prior_uuids": ["0b21f8d4-1a55-4c9e-8f77-9c2b4a6e3d02"],
                         },
-                        {"person_pk": 999999, "status": "unknown"},
+                        {
+                            "person_pk": 999999,
+                            "status": "unknown",
+                            "primary_uuid": None,
+                            "prior_uuids": [],
+                        },
                     ]
                 },
                 response_only=True,
@@ -258,7 +264,14 @@ class PersonUUIDByPersonPkViewSet(viewsets.GenericViewSet):
         results = []
         for pk in requested:
             if pk not in existing:
-                results.append({"person_pk": pk, "status": "unknown"})
+                results.append(
+                    {
+                        "person_pk": pk,
+                        "status": "unknown",
+                        "primary_uuid": None,
+                        "prior_uuids": [],
+                    }
+                )
                 continue
             primary, priors = sets[pk]
             results.append(
@@ -269,4 +282,4 @@ class PersonUUIDByPersonPkViewSet(viewsets.GenericViewSet):
                     "prior_uuids": priors,
                 }
             )
-        return Response({"results": results})  # see the note in lookup() above
+        return Response(PersonPkBatchResponseSerializer({"results": results}).data)

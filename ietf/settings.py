@@ -602,10 +602,6 @@ SPECTACULAR_SETTINGS = {
     ],
     # The following settings are needed for drf-standardized-errors
     "ENUM_NAME_OVERRIDES": {
-        # The person UUID API's batch entries are discriminated on a single-valued
-        # "status"; name the two sets so they do not collide with each other.
-        "ResolvedStatusEnum": [("resolved", "resolved")],
-        "UnknownStatusEnum": [("unknown", "unknown")],
         "ValidationErrorEnum": "drf_standardized_errors.openapi_serializers.ValidationErrorEnum.choices",
         "ClientErrorEnum": "drf_standardized_errors.openapi_serializers.ClientErrorEnum.choices",
         "ServerErrorEnum": "drf_standardized_errors.openapi_serializers.ServerErrorEnum.choices",
