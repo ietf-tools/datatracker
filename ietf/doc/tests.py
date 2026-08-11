@@ -28,10 +28,12 @@ from zoneinfo import ZoneInfo
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django.core.cache import cache
+from django.db import connection
 from django.forms import Form
 from django.http import QueryDict
 from django.utils.html import escape
 from django.test import override_settings, RequestFactory
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from django.utils.text import slugify
 
@@ -296,6 +298,46 @@ class SearchTests(TestCase):
         self.assertEqual(key("rfcs=on&name=foo"), key("rfcs=1&name=foo"))
         # different searches stay apart
         self.assertNotEqual(key("rfcs=on&name=foo"), key("rfcs=on&name=bar"))
+
+    def test_search_query_count_does_not_grow_with_results(self):
+        """Rendering the document table must not cost queries per row.
+
+        Every attribute the table shows is filled in for the whole result set at once,
+        so doubling the number of rows must not change the number of queries. A lookup
+        that slipped back into the per-row path shows up here as a count that grows.
+
+        Mind the blind spots: these documents have no IESG state, ballot, last call,
+        action holders, telechat or obsoleting RFCs, so the per-row work the columns
+        driven by those still do is not covered. Widen the fixtures rather than reading
+        a pass here as "the table does no per-row queries".
+        """
+        group = GroupFactory(type_id="wg")
+        url = urlreverse('ietf.doc.views_search.search') + (
+            f"?activedrafts=on&olddrafts=on&rfcs=on&by=group&group={group.acronym}"
+        )
+
+        def add_documents(count):
+            for _ in range(count):
+                WgDraftFactory(group=group, authors=[PersonFactory()], ad=PersonFactory(),
+                               shepherd=EmailFactory())
+                WgRfcFactory(group=group)
+
+        def count_queries():
+            with CaptureQueriesContext(connection) as context:
+                r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            return len(context.captured_queries)
+
+        add_documents(2)
+        baseline = count_queries()
+        add_documents(4)
+        doubled = count_queries()
+
+        # A per-row lookup would add at least one query for each of the 8 new documents.
+        self.assertLessEqual(
+            doubled, baseline + 2,
+            f"query count grew from {baseline} to {doubled} when the result set tripled",
+        )
 
     @override_settings(CACHES={"default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
