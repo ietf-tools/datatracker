@@ -1180,7 +1180,6 @@ class OpenIDConnectTests(TestCase):
                     "dots",
                     "pronouns",
                     "datatracker_uuid",
-                    "datatracker_prior_uuids",
                 ],
                 "nonce": session["nonce"],
                 "redirect_uri": redirect_uris[0],

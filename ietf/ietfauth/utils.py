@@ -342,31 +342,26 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
         return { 'dots': dots }
 
     info_datatracker_uuid = (
-        "Datatracker person identifier",
+        "Datatracker person identifiers",
         (
             "Access to the stable identifier the datatracker uses for you when "
-            "telling other systems who you are."
+            "telling other systems who you are, and to any identifiers it used for "
+            "you before they were superseded."
         ),
     )
 
     def scope_datatracker_uuid(self):
-        # An empty string is dropped by ScopeClaims._clean_dic, so an inconsistent
-        # Person yields an absent claim rather than a bogus identifier.
-        return {"datatracker_uuid": str(self.user.person.primary_uuid or "")}
-
-    info_datatracker_prior_uuids = (
-        "Previous datatracker person identifiers",
-        (
-            "Access to identifiers the datatracker used for you in the past, as "
-            "well as the one it uses now."
-        ),
-    )
-
-    def scope_datatracker_prior_uuids(self):
-        # An empty list survives _clean_dic, so this claim is present-and-empty rather
-        # than absent for a Person that has never been merged.
+        # One scope for both claims: there is no case for granting the current
+        # identifier without the superseded ones that resolve to it.
+        person = self.user.person
         return {
-            "datatracker_prior_uuids": [str(u) for u in self.user.person.prior_uuids]
+            # An empty string is dropped by ScopeClaims._clean_dic, so an inconsistent
+            # Person yields an absent claim rather than a bogus identifier.
+            "datatracker_uuid": str(person.primary_uuid or ""),
+            # An empty list survives _clean_dic, so this claim is present-and-empty
+            # rather than absent for a Person that has never been merged. It holds only
+            # superseded identifiers - the current one is datatracker_uuid.
+            "datatracker_prior_uuids": [str(u) for u in person.prior_uuids],
         }
 
     def scope_pronouns(self):
