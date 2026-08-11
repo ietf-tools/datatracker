@@ -320,8 +320,9 @@ def _search_cache_key(form):
     ?doctypes=charter&doctypes=statchg and ?doctypes=statchg used to share a key and
     serve each other's results.
 
-    'sort' is excluded deliberately: prepare_document_table applies the requested sort
-    on every request, so one entry serves every sort order.
+    'sort' is excluded deliberately: the cached value is the list of matching document
+    ids, and prepare_document_table applies the requested sort on every request, so one
+    entry serves every sort order.
     """
     def normalize(value):
         if isinstance(value, QuerySet):         # ModelMultipleChoiceField, e.g. doctypes
@@ -352,15 +353,31 @@ def search(request):
         if not form.is_valid():
             return HttpResponseBadRequest("form not valid: %s" % form.errors)
 
+        # Cache the ids of the matching documents, not the prepared Document objects.
+        # Pickling the prepared objects produced payloads over memcached's 1MB item
+        # limit for large result sets (measured at 1.28MB for 200 rows), which
+        # LenientMemcacheCache silently discards -- so the most expensive searches were
+        # never cached at all. It also meant a cached result carried the sort order it
+        # was first computed with, since 'sort' is not part of the key.
         cache_key = _search_cache_key(form)
-        cached_val = cache.get(cache_key)
-        if cached_val:
-            [results, meta] = cached_val
-        else:
+        cached_pks = cache.get(cache_key)
+        if cached_pks is None:
             results = retrieve_search_results(form)
             results, meta = prepare_document_table(request, results, get_params)
-            cache.set(cache_key, [results, meta]) # for settings.CACHE_MIDDLEWARE_SECONDS
+            cache.set(  # for settings.CACHE_MIDDLEWARE_SECONDS
+                cache_key, [doc.pk for doc in results]
+            )
             log(f"Search results computed for {get_params}")
+        else:
+            # Same ordering as retrieve_search_results, so a hit hands
+            # prepare_document_table the rows in the order the miss did. Its sort is
+            # stable and several sort keys tie heavily (ipr, status, ad), so an
+            # unordered pk__in here would reorder those pages between requests.
+            results, meta = prepare_document_table(
+                request,
+                Document.objects.filter(pk__in=cached_pks).order_by('-time', 'pk'),
+                get_params,
+            )
         meta['searching'] = True
     else:
         form = SearchForm()

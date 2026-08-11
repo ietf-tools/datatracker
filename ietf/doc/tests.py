@@ -5,6 +5,7 @@
 import os
 import datetime
 import io
+import re
 from hashlib import sha384
 
 from django.http import HttpRequest
@@ -24,6 +25,7 @@ from zoneinfo import ZoneInfo
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
+from django.core.cache import cache
 from django.forms import Form
 from django.http import QueryDict
 from django.utils.html import escape
@@ -291,6 +293,40 @@ class SearchTests(TestCase):
         self.assertEqual(key("rfcs=on&name=foo"), key("rfcs=1&name=foo"))
         # different searches stay apart
         self.assertNotEqual(key("rfcs=on&name=foo"), key("rfcs=on&name=bar"))
+
+    @override_settings(CACHES={"default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "test_search_cache_hit_preserves_row_order",
+    }})
+    def test_search_cache_hit_preserves_row_order(self):
+        """A cached search must render its rows in the same order as an uncached one.
+
+        The view caches document ids and re-prepares them on a hit, so the rows arrive
+        in whatever order the pk lookup returns. prepare_document_table sorts stably and
+        several sort keys tie heavily -- ipr, status and ad -- so without a total
+        ordering the same URL renders differently depending on whether it hit the cache.
+        Dev and test normally configure a dummy cache, hence the override.
+        """
+        group = GroupFactory(type_id="wg")
+        # Documents sharing a timestamp, which is what makes the ordering ambiguous.
+        shared_time = timezone.now() - datetime.timedelta(days=30)
+        for _ in range(6):
+            draft = WgDraftFactory(group=group, authors=[PersonFactory()])
+            Document.objects.filter(pk=draft.pk).update(time=shared_time)
+        base = urlreverse('ietf.doc.views_search.search')
+
+        for sort in ("ipr", "status", "ad", ""):
+            with self.subTest(sort=sort):
+                cache.clear()
+                url = f"{base}?activedrafts=on&rfcs=on&by=group&group={group.acronym}&sort={sort}"
+                miss = self.client.get(url)
+                hit = self.client.get(url)
+                self.assertEqual(miss.status_code, 200)
+                self.assertEqual(hit.status_code, 200)
+                rows = lambda r: re.findall(  # noqa: E731
+                    rb'href="(/doc/[^"]+)"', r.content
+                )
+                self.assertEqual(rows(miss), rows(hit))
 
     def test_search_for_name(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
