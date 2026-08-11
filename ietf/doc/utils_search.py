@@ -14,6 +14,7 @@ from ietf.doc.models import Document, RelatedDocument, DocEvent, TelechatDocEven
 from ietf.doc.expire import expirable_drafts
 from ietf.doc.utils import augment_docs_and_person_with_person_info
 from ietf.meeting.models import SessionPresentation, Meeting, Session
+from ietf.person.models import Alias
 from ietf.review.utils import review_assignments_to_list_for_docs
 from ietf.utils.timezone import date_today
 
@@ -158,6 +159,55 @@ def fill_in_related_ipr(docs, doc_dict, doc_ids):
         d.related_ipr = wrap_value(sorted(related))
 
 
+def fill_in_person_caches(docs):
+    """Seed the per-instance caches person_link and email_person_link read.
+
+    select_related hands every row its own Person instance, so Person.email() and
+    Person.has_alias_for_name() each cost a query per person the table names -- the AD,
+    the shepherd, and any action holders. The emails come from the prefetches set up in
+    prepare_document_table; the aliases need one query between all of them.
+    """
+    # People whose address the table renders via Person.email(). Their email_set is
+    # prefetched in prepare_document_table. Action holders are only read when the
+    # document has them enabled, which is the same condition the template applies -- so
+    # this costs nothing extra for callers that skipped the prefetch.
+    with_email = [d.ad for d in docs if d.ad_id]
+    for d in docs:
+        if d.action_holders_enabled():
+            with_email.extend(holder.person for holder in d.documentactionholder_set.all())
+    # The shepherd column renders the address it already holds, but still needs an alias.
+    shepherds = [d.shepherd.person for d in docs if d.shepherd_id and d.shepherd.person_id]
+
+    people = with_email + shepherds
+    if not people:
+        return
+
+    aliased = set(
+        Alias.objects.filter(person__in={p.pk for p in people}).values_list("person_id", "name")
+    )
+    for person in people:
+        person._cached_has_alias_for_name = (person.pk, person.name) in aliased
+
+    for person in with_email:
+        if hasattr(person, "_cached_email"):
+            continue
+        emails = list(person.email_set.all())
+        # Mirror Person.email(): a primary address if there is one -- lowest by address,
+        # which is the pk an unordered first() would have ordered by -- and otherwise
+        # the most recent active one. Email.address is a CICharField, so the database
+        # orders it case-insensitively; casefold the key to match.
+        primary = sorted((e for e in emails if e.primary), key=lambda e: e.address.lower())
+        if primary:
+            person._cached_email = primary[0]
+        else:
+            active = sorted(
+                (e for e in emails if e.active),
+                key=lambda e: (e.time, e.address.lower()),
+                reverse=True,
+            )
+            person._cached_email = active[0] if active else None
+
+
 def fill_in_telechat_date(docs, doc_dict=None, doc_ids=None):
     if doc_dict is None:
         doc_dict = dict((d.pk, d) for d in docs)
@@ -227,6 +277,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
 
     fill_in_document_relations(docs, doc_dict, doc_ids)
     fill_in_related_ipr(docs, doc_dict, doc_ids)
+    fill_in_person_caches(docs)
 
     if not have_telechat_date:
         fill_in_telechat_date(docs, doc_dict, doc_ids)
