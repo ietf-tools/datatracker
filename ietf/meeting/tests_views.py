@@ -7090,7 +7090,8 @@ class MaterialsTests(TestCase):
 
     def test_propose_session_slides(self):
         for type_id in ['ietf','interim']:
-            session = SessionFactory(meeting__type_id=type_id)
+            # create session in a meeting in the near future, not the past
+            session = SessionFactory(meeting__type_id=type_id, meeting__date=date_today() + datetime.timedelta(days=3))
             chair = RoleFactory(group=session.group,name_id='chair').person
             session.meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
             newperson = PersonFactory()
@@ -7291,7 +7292,8 @@ class MaterialsTests(TestCase):
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
     @patch("ietf.meeting.views.SlidesManager")
     def test_submit_and_approve_multiple_versions(self, mock_slides_manager_cls):
-        session = SessionFactory(meeting__type_id='ietf')
+        # create session in a meeting in the near future, not the past
+        session = SessionFactory(meeting__type_id='ietf', meeting__date=date_today() + datetime.timedelta(days=3))
         chair = RoleFactory(group=session.group,name_id='chair').person
         session.meeting.importantdate_set.create(name_id='revsub',date=date_today()+datetime.timedelta(days=20))
         newperson = PersonFactory()
