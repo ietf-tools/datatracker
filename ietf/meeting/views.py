@@ -2660,7 +2660,11 @@ def agenda_ical(request, num=None, acronym=None, session_id=None):
     try:
         filt_params = parse_agenda_filter_params(request.GET)
     except ValueError as e:
-        return HttpResponseBadRequest(str(e))
+        # Defensive only - parse_agenda_filter_params ignores unrecognized parameters and
+        # does not raise. Log the detail rather than reflecting it: the query string is
+        # attacker-controlled and HttpResponseBadRequest serves unescaped text/html.
+        log("Invalid agenda filter parameters in agenda_ical: %s" % e)
+        return HttpResponseBadRequest("Invalid agenda filter parameters")
 
     if meeting.type_id == "ietf":
         return agenda_ical_ietf(meeting, filt_params, acronym, session_id)
@@ -4578,8 +4582,10 @@ def upcoming_ical(request):
     try:
         filter_params = parse_agenda_filter_params(request.GET)
     except ValueError as e:
-        return HttpResponseBadRequest(str(e))
-        
+        # Defensive only - see the corresponding handler in agenda_ical.
+        log("Invalid agenda filter parameters in upcoming_ical: %s" % e)
+        return HttpResponseBadRequest("Invalid agenda filter parameters")
+
     today = datetime_today()
 
     # get meetings starting 7 days ago -- we'll filter out sessions in the past further down

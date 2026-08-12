@@ -38,7 +38,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import (Document, DocRelationshipName, RelatedDocument, State,
                              DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType,
-                             EditedAuthorsDocEvent, StateType, RfcAuthor)
+                             EditedAuthorsDocEvent, StateType, RfcAuthor, RpcAssignmentDocEvent)
 from ietf.doc.factories import (DocumentFactory, DocEventFactory, CharterFactory,
                                 ConflictReviewFactory, WgDraftFactory,
                                 IndividualDraftFactory, WgRfcFactory,
@@ -47,11 +47,13 @@ from ietf.doc.factories import (DocumentFactory, DocEventFactory, CharterFactory
                                 BallotDocEventFactory, DocumentAuthorFactory,
                                 NewRevisionDocEventFactory,
                                 StatusChangeFactory, DocExtResourceFactory,
-                                RgDraftFactory, BcpFactory, RfcAuthorFactory)
+                                RgDraftFactory, BcpFactory, StdFactory,
+                                FyiFactory, RfcAuthorFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import (
     create_ballot_if_not_open,
+    external_canonical_url,
     investigate_fragment,
     uppercase_std_abbreviated_name,
     DraftAliasGenerator,
@@ -1688,6 +1690,28 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertEqual(r.status_code, 200)
         self.assertNotContains(r, 'Auth48 status')
 
+    def test_rfceditor_queue_status_shown(self):
+        """A queued draft shows its publication-queue Status in place of the state name."""
+        draft = IndividualDraftFactory()
+        event = StateDocEventFactory(doc=draft, state=('draft-rfceditor', 'in_progress'))
+        draft.set_state(event.state)
+        draft.save_with_history([event])
+        RpcAssignmentDocEvent.objects.create(
+            doc=draft,
+            rev=draft.rev,
+            by=Person.objects.get(name="(System)"),
+            type="changed_rpc_assignments",
+            assignments="In Progress (First Edit)",
+            desc="RPC status changed to In Progress (First Edit)",
+        )
+
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 200)
+        # The composite queue Status (which only comes from the RpcAssignmentDocEvent,
+        # not from the state name) is shown, confirming it replaces the raw state name.
+        self.assertContains(r, "In Progress (First Edit)")
+        self.assertContains(r, "Publication queue entry")
+
 
 class DocTestCase(TestCase):
     def test_status_change(self):
@@ -2103,6 +2127,23 @@ class DocTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, State.objects.get(type="draft-iesg", slug="lc").name)
 
+    def test_rfceditor_state_help_has_queue_status_and_legacy_sections(self):
+        url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type="draft-rfceditor"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        # New "Queue status" section describing the queue Status values.
+        self.assertContains(r, "Queue status")
+        self.assertContains(r, "In Progress (First Edit)")
+        # Legacy states are moved to their own section with the history note.
+        self.assertContains(r, "Legacy states")
+        self.assertContains(r, "appear in the change history")
+        self.assertContains(r, State.objects.get(type="draft-rfceditor", slug="auth48").name)
+        # The queue-backing states are not listed among the legacy states.
+        q = PyQuery(r.content)
+        legacy_ids = [row.get("id") for row in q("tbody tr")]
+        self.assertNotIn("in_progress", legacy_ids)
+        self.assertNotIn("blocked", legacy_ids)
+
     def test_document_nonietf_pubreq_button(self):
         doc = IndividualDraftFactory()
 
@@ -2305,6 +2346,98 @@ class TemplateTagTest(TestCase):
         from ietf.doc.templatetags import ietf_filters
         failures, tests = doctest.testmod(ietf_filters)
         self.assertEqual(failures, 0)
+
+@override_settings(RFC_EDITOR_INFO_BASE_URL="https://www.rfc-editor.example.org/info/")
+class CanonicalUrlTests(TestCase):
+    """Tests of the rel=canonical link declared by document pages"""
+
+    def canonical_href(self, r):
+        """Extract the canonical href from a response, asserting that it is usable
+
+        An empty href resolves to the current URL and an href of "None" resolves to a
+        URL that does not exist - neither is visible when eyeballing a rendered page.
+        """
+        self.assertEqual(r.status_code, 200)
+        links = PyQuery(r.content)("link[rel='canonical']")
+        self.assertEqual(len(links), 1)
+        href = links.attr("href")
+        self.assertNotIn(href, ["", "None", None])
+        return href
+
+    def test_external_canonical_url(self):
+        for doc in [WgRfcFactory(), BcpFactory(), StdFactory(), FyiFactory()]:
+            self.assertEqual(
+                external_canonical_url(doc),
+                f"https://www.rfc-editor.example.org/info/{doc.name}/",
+                f"{doc.type_id} belongs to the RFC Editor",
+            )
+        for doc in [WgDraftFactory(), CharterFactory(), StatusChangeFactory()]:
+            self.assertIsNone(external_canonical_url(doc), f"{doc.type_id} is ours")
+
+    def test_rfc_pages_canonicalize_to_rfc_editor(self):
+        rfc = WgRfcFactory()
+        rfc.save_with_history([DocEventFactory(doc=rfc)])
+        (Path(settings.RFC_PATH) / rfc.get_base_name()).touch()
+        expected = f"https://www.rfc-editor.example.org/info/{rfc.name}/"
+
+        for viewname in [
+            "ietf.doc.views_doc.document_main",
+            "ietf.doc.views_doc.document_html",
+        ]:
+            url = urlreverse(viewname, kwargs=dict(name=rfc.name))
+            r = self.client.get(url)
+            self.assertEqual(self.canonical_href(r), expected, f"{url} canonical")
+
+    def test_draft_pages_canonicalize_to_datatracker(self):
+        draft = WgDraftFactory()
+        # an active draft's file is in both of these - see Document.get_file_path()
+        for dir in [settings.INTERNET_DRAFT_PATH, settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR]:
+            (Path(dir) / draft.get_base_name()).touch()
+
+        for viewname in [
+            "ietf.doc.views_doc.document_main",
+            "ietf.doc.views_doc.document_html",
+        ]:
+            url = urlreverse(viewname, kwargs=dict(name=draft.name))
+            r = self.client.get(url)
+            self.assertEqual(
+                self.canonical_href(r),
+                f"{settings.IDTRACKER_BASE_URL}{url}",
+                f"{url} canonical",
+            )
+
+    def test_subseries_pages_canonicalize_to_rfc_editor(self):
+        for doc in [BcpFactory(), StdFactory(), FyiFactory()]:
+            url = urlreverse(
+                "ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)
+            )
+            r = self.client.get(url)
+            self.assertEqual(
+                self.canonical_href(r),
+                f"https://www.rfc-editor.example.org/info/{doc.name}/",
+                f"{url} canonical",
+            )
+
+
+class SubseriesHtmlRedirectTests(TestCase):
+    """Tests of the /doc/html/ redirects for the bcp/std/fyi subseries
+
+    These patterns interpolate RFC_EDITOR_INFO_BASE_URL when the URLconf is imported,
+    so override_settings cannot reach them - build the expectation from the setting.
+    """
+
+    def test_subseries_html_redirects_to_rfc_editor(self):
+        for name in ["bcp1", "std2", "fyi3"]:
+            for suffix in ["", "/", ".txt", ".html"]:
+                url = f"/doc/html/{name}{suffix}"
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 302, url)
+                self.assertEqual(
+                    r["Location"],
+                    f"{settings.RFC_EDITOR_INFO_BASE_URL}{name}/",
+                    url,
+                )
+
 
 class ReferencesTest(TestCase):
 
