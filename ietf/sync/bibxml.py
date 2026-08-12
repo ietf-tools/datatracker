@@ -72,6 +72,10 @@ ORG_LOOKUP = {
     "End-to-End Services Task Force": (None, "End-to-End Services Task Force"),
     "Network Technical Advisory Group": (None, "Network Technical Advisory Group"),
     "Bolt Beranek": (None, "Bolt Beranek"),
+    "Bolt Beranek and Newman Laboratories": (
+        None,
+        "Bolt Beranek and Newman Laboratories",
+    ),
     "Newman Laboratories": (None, "Newman Laboratories"),
     "Gateway Algorithms and Data Structures Task Force": (
         None,
