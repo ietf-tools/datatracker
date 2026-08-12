@@ -20,7 +20,7 @@ ORG_LOOKUP = {
     "ISO": ("ISO", "International Organization for Standardization"),
     "IAB": ("IAB", "Internet Architecture Board"),
     "IESG": ("IESG", "Internet Engineering Steering Group"),
-    "IANA": ("IANA", "Internet Assigned Numbers Authority"),
+    "IANA": (None, "IANA"),
     "International Organization for Standardization": (
         "ISO",
         "International Organization for Standardization",
@@ -41,8 +41,8 @@ ORG_LOOKUP = {
     ),
     "IETF Secretariat": ("IETF", "IETF Secretariat"),
     "Internet Assigned Numbers Authority (IANA)": (
+        None,
         "IANA",
-        "Internet Assigned Numbers Authority (IANA)",
     ),
     "ESnet Site Coordinating Comittee (ESCC)": (
         "ESCC",
@@ -93,6 +93,8 @@ ORG_LOOKUP = {
     "IAB Advisory Committee": (None, "IAB Advisory Committee"),
     "ISOC Board of Trustees": (None, "ISOC Board of Trustees"),
     "RFC Editor, et al.": (None, "RFC Editor, et al."),
+    "North American Directory Forum": (None, "North American Directory Forum"),
+    "The North American Directory Forum": (None, "The North American Directory Forum"),
 }
 
 
