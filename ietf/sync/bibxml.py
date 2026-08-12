@@ -93,6 +93,8 @@ ORG_LOOKUP = {
     "IAB Advisory Committee": (None, "IAB Advisory Committee"),
     "ISOC Board of Trustees": (None, "ISOC Board of Trustees"),
     "RFC Editor, et al.": (None, "RFC Editor, et al."),
+    "North American Directory Forum": (None, "North American Directory Forum"),
+    "The North American Directory Forum": (None, "The North American Directory Forum"),
 }
 
 
