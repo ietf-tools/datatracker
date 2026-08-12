@@ -573,7 +573,7 @@ def rfc_author_survey_recipients(request):
     structure. This is intended for generation of the post-publication Author
     Survey and is not likely to be useful elsewhere.
 
-    Finds authors by date, though this could be extended to other selection
+    Finds RFCs by date, though this could be extended to other selection
     criteria in the future. Specify the range as ?from=<datetime>&to=<datetime>.
     Each <datetime> is an ISO-8601 timestamp, treated as UTC if it does not include
     time zone information. Defaults to `to`=now, `from`=14 days before `to`
@@ -584,7 +584,8 @@ def rfc_author_survey_recipients(request):
 
     If an RFC has a shepherd assigned to its originating draft, that shepherd is
     included in the list of recipients alongside the authors. Shepherds have
-    `"type": "shepherd"` in their records.
+    `"type": "shepherd"` in their records. If a shepherd is also an author, then
+    `"type": "author/shepherd"`.
 
     When the ?testing query parameter is supplied, each author's real email
     address is replaced with a fake one that keeps the original mailbox but uses
@@ -705,7 +706,7 @@ def rfc_author_survey_recipients(request):
                 recipient_data[email] = {
                     "name": recipient["name"],
                     "email": email,
-                    "type": recipient["type"],
+                    "types": set(),
                     "rfc_numbers": [],
                     "rfc_names": [],
                     "rfc_titles": [],
@@ -715,6 +716,7 @@ def rfc_author_survey_recipients(request):
             recipient_data[email]["rfc_names"].append(rfc.name)
             recipient_data[email]["rfc_titles"].append(rfc.title)
             recipient_data[email]["published_dates"].append(str(rfc.pub_date()))
+            recipient_data[email]["types"].add(recipient["type"])
 
     if testing:
         for n, email in enumerate(test_addresses):
@@ -732,11 +734,12 @@ def rfc_author_survey_recipients(request):
 
     rows = []
     for entry in recipient_data.values():
+        entry_type = "/".join(sorted(entry["types"]))
         rows.append(
             {
                 "name": entry["name"],
                 "email": entry["email"],
-                "type": entry["type"],  # "author" or "shepherd"
+                "type": entry_type,  # "author", "shepherd", or "author/shepherd"
                 "rfc_number": ", ".join(entry["rfc_numbers"]),
                 "rfc_name": ", ".join(entry["rfc_names"]),
                 "rfc_title": ", ".join(entry["rfc_titles"]),
