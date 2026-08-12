@@ -27,7 +27,7 @@ from ietf.doc.models import BallotDocEvent, Document
 from ietf.doc.models import ConsensusDocEvent
 from ietf.ietfauth.utils import can_request_rfc_publication as utils_can_request_rfc_publication
 from ietf.utils import log
-from ietf.doc.utils import prettify_std_name
+from ietf.doc.utils import external_canonical_url, prettify_std_name
 from ietf.utils.html import clean_html
 from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped, linkify
 from ietf.utils.validators import validate_url
@@ -139,6 +139,19 @@ def prettystdname(string, space=" "):
 def rfceditor_info_url(rfcnum : str):
     """Link to the RFC editor info page for an RFC"""
     return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f'rfc{rfcnum}/')
+
+@register.simple_tag(takes_context=True)
+def canonical_url(context, doc):
+    """Absolute URL to declare canonical for doc on the current page
+
+    Never returns None - an empty or "None" href would be a canonical pointing at a
+    URL that does not exist.
+    """
+    if not context.get("snapshot"):
+        external = external_canonical_url(doc)
+        if external:
+            return external
+    return urljoin(settings.IDTRACKER_BASE_URL, context["request"].path)
 
 
 def doc_name(name):

@@ -4,6 +4,9 @@
 {% load static %}
 {% load ietf_filters %}
 {% block title %}{{ doc.name|prettystdname }}{% endblock %}
+{% block pagehead %}
+  {% include "doc/canonical_link.html" %}
+{% endblock %}
 {% block content %}
   {% origin %}
   {{ top|safe }}
