@@ -244,8 +244,10 @@ class Person(models.Model):
     def prior_uuids(self):
         """UUIDs that still resolve to this Person but are no longer primary
 
-        Oldest first, breaking ties on the UUID itself so the order is deterministic -
-        a merge gives every UUID it moves the same timestamp.
+        Oldest first. Ties are broken on the UUID itself so the order is total rather
+        than left to the database, and so it matches uuid_sets_for() in
+        ietf.person.api_uuid. Nothing in the current code produces a tie: the timestamp
+        defaults per row and a merge moves UUIDs without rewriting it.
         """
         return list(
             self.uuids.filter(primary=False)
