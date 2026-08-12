@@ -644,7 +644,7 @@ def rfc_author_survey_recipients(request):
         docevent__type="published_rfc",
         docevent__time__gte=time_range_start,
         docevent__time__lt=time_range_end,
-    ).distinct()
+    ).order_by("rfc_number").distinct()
 
     # Collect per-author data keyed by email so each author gets one row.
     # Values accumulate RFC numbers, names, titles, and dates across all RFCs.
@@ -680,16 +680,17 @@ def rfc_author_survey_recipients(request):
         ):
             # Use email_address() to find an active address if this one is stale
             shepherd_email = originating_draft.shepherd.email_address()
+            shepherd = originating_draft.shepherd.person
             if shepherd_email is not None:
                 recipients.append({
-                    "name": shepherd_email.person.name,
-                    "email": shepherd_email.address,
+                    "name": shepherd.name,
+                    "email": shepherd_email,
                     "type": "shepherd",
                 })
             else:
                 log.log(
                     f"rfc_authors(): shepherd for {rfc.name}, has no active email "
-                    f"address, omitting shepherd"
+                    f"address, omitting shepherd ({shepherd.name})"
                 )
 
         for recipient in recipients:
@@ -725,7 +726,7 @@ def rfc_author_survey_recipients(request):
             recipient_data[email] = {
                 "name": f"Test Author {n + 1}",
                 "email": email,
-                "type": "author",
+                "types": {"author"},
                 "rfc_numbers": ["99999"],
                 "rfc_names": ["rfc99999"],
                 "rfc_titles": ["A Fake RFC for Testing"],
