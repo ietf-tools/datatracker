@@ -647,12 +647,12 @@ def rfc_author_survey_recipients(request):
 
     # Collect per-author data keyed by email so each author gets one row.
     # Values accumulate RFC numbers, names, titles, and dates across all RFCs.
-    author_data = {}
+    recipient_data = {}
 
     for rfc in rfcs:
         # RfcAuthor is the authoritative source for RFC authors. Documents of
         # type "rfc" always have an rfcauthor_set, so no fallback is needed.
-        authors = [
+        recipients = [
             {
                 "name": a.person.name if a.person else a.titlepage_name,
                 "email": a.person.email().address
@@ -680,7 +680,7 @@ def rfc_author_survey_recipients(request):
             # Use email_address() to find an active address if this one is stale
             shepherd_email = originating_draft.shepherd.email_address()
             if shepherd_email is not None:
-                authors.append({
+                recipients.append({
                     "name": shepherd_email.person.name,
                     "email": shepherd_email.address,
                     "type": "shepherd",
@@ -691,39 +691,39 @@ def rfc_author_survey_recipients(request):
                     f"address, omitting shepherd"
                 )
 
-        for author in authors:
-            if not author["email"]:
+        for recipient in recipients:
+            if not recipient["email"]:
                 continue
 
             if testing:
-                mailbox = author["email"].split("@", 1)[0]
+                mailbox = recipient["email"].split("@", 1)[0]
                 email = f"{mailbox}@fake.example.com"
             else:
-                email = author["email"]
+                email = recipient["email"]
 
-            if email not in author_data:
-                author_data[email] = {
-                    "name": author["name"],
+            if email not in recipient_data:
+                recipient_data[email] = {
+                    "name": recipient["name"],
                     "email": email,
-                    "type": author["type"],
+                    "type": recipient["type"],
                     "rfc_numbers": [],
                     "rfc_names": [],
                     "rfc_titles": [],
                     "published_dates": [],
                 }
-            author_data[email]["rfc_numbers"].append(str(rfc.rfc_number))
-            author_data[email]["rfc_names"].append(rfc.name)
-            author_data[email]["rfc_titles"].append(rfc.title)
-            author_data[email]["published_dates"].append(str(rfc.pub_date()))
+            recipient_data[email]["rfc_numbers"].append(str(rfc.rfc_number))
+            recipient_data[email]["rfc_names"].append(rfc.name)
+            recipient_data[email]["rfc_titles"].append(rfc.title)
+            recipient_data[email]["published_dates"].append(str(rfc.pub_date()))
 
     if testing:
         for n, email in enumerate(test_addresses):
-            if email in author_data:
+            if email in recipient_data:
                 continue  # author will already be included
-            author_data[email] = {
+            recipient_data[email] = {
                 "name": f"Test Author {n + 1}",
                 "email": email,
-                "type": "author",  # matches the shape of real entries now that "type" is included below
+                "type": "author",
                 "rfc_numbers": ["99999"],
                 "rfc_names": ["rfc99999"],
                 "rfc_titles": ["A Fake RFC for Testing"],
@@ -731,12 +731,12 @@ def rfc_author_survey_recipients(request):
             }
 
     rows = []
-    for entry in author_data.values():
+    for entry in recipient_data.values():
         rows.append(
             {
                 "name": entry["name"],
                 "email": entry["email"],
-                "type": entry["type"],  # "author" or "shepherd", surfaced in the API response
+                "type": entry["type"],  # "author" or "shepherd"
                 "rfc_number": ", ".join(entry["rfc_numbers"]),
                 "rfc_name": ", ".join(entry["rfc_names"]),
                 "rfc_title": ", ".join(entry["rfc_titles"]),
