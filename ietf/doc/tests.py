@@ -2419,6 +2419,26 @@ class CanonicalUrlTests(TestCase):
             )
 
 
+class SubseriesHtmlRedirectTests(TestCase):
+    """Tests of the /doc/html/ redirects for the bcp/std/fyi subseries
+
+    These patterns interpolate RFC_EDITOR_INFO_BASE_URL when the URLconf is imported,
+    so override_settings cannot reach them - build the expectation from the setting.
+    """
+
+    def test_subseries_html_redirects_to_rfc_editor(self):
+        for name in ["bcp1", "std2", "fyi3"]:
+            for suffix in ["", "/", ".txt", ".html"]:
+                url = f"/doc/html/{name}{suffix}"
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 302, url)
+                self.assertEqual(
+                    r["Location"],
+                    f"{settings.RFC_EDITOR_INFO_BASE_URL}{name}/",
+                    url,
+                )
+
+
 class ReferencesTest(TestCase):
 
     def test_references(self):
