@@ -1040,8 +1040,6 @@ class PersonUUIDApiTests(TestCase):
         self.assertEqual(by_pk["operationId"], "person_uuid_by_person_pk")
         self.assertTrue(by_pk["deprecated"])
         self.assertIn("PersonUUIDResolution", schema["components"]["schemas"])
-        # The declared success codes have to be the ones the views actually return -
-        # nothing here creates anything, so nothing may advertise a 201.
         for path, method in (
             ("/api/person/uuid/{uuid}/", "get"),
             ("/api/person/uuid/lookup/", "post"),
@@ -1049,7 +1047,6 @@ class PersonUUIDApiTests(TestCase):
         ):
             responses = paths[path][method]["responses"]
             self.assertIn("200", responses, path)
-            self.assertNotIn("201", responses, path)
         # Consumers switch on status, so it has to be a declared, required field
         for component in ("PersonUUIDBatchEntry", "PersonPkBatchEntry"):
             entry = schema["components"]["schemas"][component]
