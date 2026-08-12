@@ -590,13 +590,15 @@ def rfc_author_survey_recipients(request):
     When the ?testing query parameter is supplied, each author's real email
     address is replaced with a fake one that keeps the original mailbox but uses
     the "fake.example.com" domain, so the output can be shared without exposing
-    real addresses.
+    real addresses. 
     
     When the ?testing query parameter is supplied, one or more testaddr=ADDRESS query
     parameters can also be specified. The value of each parameter is an email
     address. When these parameters are present, the response data will include an
-    entry for each address as though it belonged to the author of a recently published
-    RFC.
+    entry for each address as though it belonged to an author or shepherd of a recently
+    published RFC. To specify the recipient type, append ";author", ";shepherd",
+    or ";author,shepherd" to the end of the email address. E.g.,
+    "?testing&testaddr=somebody@example.com;author,shepherd"
     """
     if request.method != "GET":
         return HttpResponse(status=405)
@@ -722,11 +724,21 @@ def rfc_author_survey_recipients(request):
     if testing:
         for n, email in enumerate(test_addresses):
             if email in recipient_data:
-                continue  # author will already be included
+                continue  # recipient will already be included
+            # see if a type list was included
+            if ";" in email:
+                email, types = email.rsplit(";", 1)
+                types = {type_.strip() for type_ in types.split(",")}
+                if len(types.difference({"author", "shepherd"})) != 0:
+                    return HttpResponseBadRequest(
+                        f"Invalid types for testaddr={email}"
+                    )
+            else:
+                types = {"author"}
             recipient_data[email] = {
                 "name": f"Test Author {n + 1}",
                 "email": email,
-                "types": {"author"},
+                "types": types,
                 "rfc_numbers": ["99999"],
                 "rfc_names": ["rfc99999"],
                 "rfc_titles": ["A Fake RFC for Testing"],

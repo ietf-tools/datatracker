@@ -1179,18 +1179,30 @@ class CustomApiTests(TestCase):
         self.assertEqual(rows[0]["name"], "Jane Q. Author")
 
         # If in test mode and testaddr parameters are present, records for those
-        # addresses should be returned with a fake RFC.
+        # addresses should be returned with a fake RFC. Also exercise specifying
+        # recipient type, including that author is the default.
         r = self.client.get(
-            url + "?testing&testaddr=fake@a.example.com&testaddr=phony@b.example.com",
+            url
+            + (
+                "?testing"
+                "&testaddr=fake@a.example.com"
+                "&testaddr=phony@b.example.com;shepherd"
+                "&testaddr=ersatz@c.example.com;shepherd,author"
+            ),
             headers={"X-Api-Key": "valid-token"},
         )
         self.assertEqual(r.status_code, 200)
         rows = json.loads(r.content)
-        self.assertEqual(len(rows), 3)
+        self.assertEqual(len(rows), 4)
         fake_author_addr = author.email().address.split("@", 1)[0] + "@fake.example.com"
         self.assertCountEqual(
-            [fake_author_addr, "fake@a.example.com", "phony@b.example.com"],
-            [r["email"] for r in rows],
+            [
+                (fake_author_addr, "author"),
+                ("fake@a.example.com", "author"),
+                ("phony@b.example.com", "shepherd"),
+                ("ersatz@c.example.com", "author/shepherd"),
+            ],
+            [(r["email"], r["type"]) for r in rows],
         )
 
         # Can only use testaddr when testing is also present
