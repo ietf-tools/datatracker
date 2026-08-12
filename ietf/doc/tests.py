@@ -47,11 +47,13 @@ from ietf.doc.factories import (DocumentFactory, DocEventFactory, CharterFactory
                                 BallotDocEventFactory, DocumentAuthorFactory,
                                 NewRevisionDocEventFactory,
                                 StatusChangeFactory, DocExtResourceFactory,
-                                RgDraftFactory, BcpFactory, RfcAuthorFactory)
+                                RgDraftFactory, BcpFactory, StdFactory,
+                                FyiFactory, RfcAuthorFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import (
     create_ballot_if_not_open,
+    external_canonical_url,
     investigate_fragment,
     uppercase_std_abbreviated_name,
     DraftAliasGenerator,
@@ -2344,6 +2346,98 @@ class TemplateTagTest(TestCase):
         from ietf.doc.templatetags import ietf_filters
         failures, tests = doctest.testmod(ietf_filters)
         self.assertEqual(failures, 0)
+
+@override_settings(RFC_EDITOR_INFO_BASE_URL="https://www.rfc-editor.example.org/info/")
+class CanonicalUrlTests(TestCase):
+    """Tests of the rel=canonical link declared by document pages"""
+
+    def canonical_href(self, r):
+        """Extract the canonical href from a response, asserting that it is usable
+
+        An empty href resolves to the current URL and an href of "None" resolves to a
+        URL that does not exist - neither is visible when eyeballing a rendered page.
+        """
+        self.assertEqual(r.status_code, 200)
+        links = PyQuery(r.content)("link[rel='canonical']")
+        self.assertEqual(len(links), 1)
+        href = links.attr("href")
+        self.assertNotIn(href, ["", "None", None])
+        return href
+
+    def test_external_canonical_url(self):
+        for doc in [WgRfcFactory(), BcpFactory(), StdFactory(), FyiFactory()]:
+            self.assertEqual(
+                external_canonical_url(doc),
+                f"https://www.rfc-editor.example.org/info/{doc.name}/",
+                f"{doc.type_id} belongs to the RFC Editor",
+            )
+        for doc in [WgDraftFactory(), CharterFactory(), StatusChangeFactory()]:
+            self.assertIsNone(external_canonical_url(doc), f"{doc.type_id} is ours")
+
+    def test_rfc_pages_canonicalize_to_rfc_editor(self):
+        rfc = WgRfcFactory()
+        rfc.save_with_history([DocEventFactory(doc=rfc)])
+        (Path(settings.RFC_PATH) / rfc.get_base_name()).touch()
+        expected = f"https://www.rfc-editor.example.org/info/{rfc.name}/"
+
+        for viewname in [
+            "ietf.doc.views_doc.document_main",
+            "ietf.doc.views_doc.document_html",
+        ]:
+            url = urlreverse(viewname, kwargs=dict(name=rfc.name))
+            r = self.client.get(url)
+            self.assertEqual(self.canonical_href(r), expected, f"{url} canonical")
+
+    def test_draft_pages_canonicalize_to_datatracker(self):
+        draft = WgDraftFactory()
+        # an active draft's file is in both of these - see Document.get_file_path()
+        for dir in [settings.INTERNET_DRAFT_PATH, settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR]:
+            (Path(dir) / draft.get_base_name()).touch()
+
+        for viewname in [
+            "ietf.doc.views_doc.document_main",
+            "ietf.doc.views_doc.document_html",
+        ]:
+            url = urlreverse(viewname, kwargs=dict(name=draft.name))
+            r = self.client.get(url)
+            self.assertEqual(
+                self.canonical_href(r),
+                f"{settings.IDTRACKER_BASE_URL}{url}",
+                f"{url} canonical",
+            )
+
+    def test_subseries_pages_canonicalize_to_rfc_editor(self):
+        for doc in [BcpFactory(), StdFactory(), FyiFactory()]:
+            url = urlreverse(
+                "ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)
+            )
+            r = self.client.get(url)
+            self.assertEqual(
+                self.canonical_href(r),
+                f"https://www.rfc-editor.example.org/info/{doc.name}/",
+                f"{url} canonical",
+            )
+
+
+class SubseriesHtmlRedirectTests(TestCase):
+    """Tests of the /doc/html/ redirects for the bcp/std/fyi subseries
+
+    These patterns interpolate RFC_EDITOR_INFO_BASE_URL when the URLconf is imported,
+    so override_settings cannot reach them - build the expectation from the setting.
+    """
+
+    def test_subseries_html_redirects_to_rfc_editor(self):
+        for name in ["bcp1", "std2", "fyi3"]:
+            for suffix in ["", "/", ".txt", ".html"]:
+                url = f"/doc/html/{name}{suffix}"
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 302, url)
+                self.assertEqual(
+                    r["Location"],
+                    f"{settings.RFC_EDITOR_INFO_BASE_URL}{name}/",
+                    url,
+                )
+
 
 class ReferencesTest(TestCase):
 
