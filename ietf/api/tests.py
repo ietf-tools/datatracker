@@ -1072,10 +1072,10 @@ class CustomApiTests(TestCase):
         )
 
     @override_settings(
-        APP_API_TOKENS={"ietf.api.views.rfc_authors": ["valid-token"]}
+        APP_API_TOKENS={"ietf.api.views.rfc_author_survey_recipients": ["valid-token"]}
     )
-    def test_rfc_authors(self):
-        url = urlreverse("ietf.api.views.rfc_authors")
+    def test_rfc_author_survey_recipients(self):
+        url = urlreverse("ietf.api.views.rfc_author_survey_recipients")
         # auth and method checks
         self.assertEqual(
             self.client.get(url, headers={}).status_code, 403, "No api token, no access"
@@ -1209,6 +1209,90 @@ class CustomApiTests(TestCase):
             headers={"X-Api-Key": "valid-token"},
         )
         self.assertEqual(r.status_code, 400, "out-of-order from/to parameters")
+
+    @override_settings(
+        APP_API_TOKENS={"ietf.api.views.rfc_author_survey_recipients": ["valid-token"]}
+    )
+    def test_rfc_author_survey_recipients_with_shepherd(self):
+        url = urlreverse("ietf.api.views.rfc_author_survey_recipients")
+        now = timezone.now()
+        one_day_ago = now - datetime.timedelta(days=1)
+        # A recently published RFC with a known author and shepherd
+        author = PersonFactory(name="Jane Q. Author")
+        recent_rfc = WgRfcFactory(title="A Recently Published RFC")
+        DocEventFactory(doc=recent_rfc, type="published_rfc", time=one_day_ago)
+        RfcAuthorFactory(document=recent_rfc, person=author)
+        shepherd_email = EmailFactory(person__name="Alicia Shepherd")
+        shepherd = shepherd_email.person
+        recent_rfc_draft = WgDraftFactory(shepherd_id=shepherd_email.pk)
+        recent_rfc_draft.relateddocument_set.create(
+            relationship_id="became_rfc", target=recent_rfc
+        )
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        rows = json.loads(r.content)
+        expected_rows = [
+            {
+                "name": shepherd.name,
+                "email": shepherd.email_address(),
+                "type": "shepherd",
+                "rfc_number": str(recent_rfc.rfc_number),
+                "rfc_name": recent_rfc.name,
+                "rfc_number_and_title": (
+                    f"RFC {recent_rfc.rfc_number}: {recent_rfc.title}"
+                ),
+                "rfc_title": recent_rfc.title,
+                "published_date": str(recent_rfc.pub_date()),
+            },
+            {
+                "name": author.name,
+                "email": author.email_address(),
+                "type": "author",
+                "rfc_number": str(recent_rfc.rfc_number),
+                "rfc_name": recent_rfc.name,
+                "rfc_title": recent_rfc.title,
+                "rfc_number_and_title": (
+                    f"RFC {recent_rfc.rfc_number}: {recent_rfc.title}"
+                ),
+                "published_date": str(recent_rfc.pub_date()),
+            },
+        ]
+        self.assertCountEqual(
+            rows,
+            expected_rows,
+        )
+
+        # Now give the shepherd an RFC as author
+        other_rfc = WgRfcFactory(title="Other Published RFC")
+        DocEventFactory(doc=other_rfc, type="published_rfc", time=one_day_ago)
+        RfcAuthorFactory(document=other_rfc, person=shepherd)
+
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        rows = json.loads(r.content)
+        # update expected rows
+        expected_rows[0]["type"] = "author/shepherd"
+        expected_rows[0]["rfc_number"] = (
+            f"{recent_rfc.rfc_number}, {other_rfc.rfc_number}"
+        )
+        expected_rows[0]["rfc_name"] = f"{recent_rfc.name}, {other_rfc.name}"
+        expected_rows[0]["rfc_title"] = f"{recent_rfc.title}, {other_rfc.title}"
+        expected_rows[0]["rfc_number_and_title"] = (
+            f"RFC {recent_rfc.rfc_number}: {recent_rfc.title}, "
+            f"RFC {other_rfc.rfc_number}: {other_rfc.title}"
+        )
+        expected_rows[0]["published_date"] = (
+            f"{recent_rfc.pub_date()}, {other_rfc.pub_date()}"
+        )
+        # and compare
+        self.assertCountEqual(
+            rows,
+            expected_rows,
+        )
+
+
 
     @override_settings(
         APP_API_TOKENS={"ietf.api.views.ingest_email": "valid-token", "ietf.api.views.ingest_email_test": "test-token"}
