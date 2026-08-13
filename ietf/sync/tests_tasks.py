@@ -182,7 +182,9 @@ class ProcessRpcQueueTaskTests(TestCase):
             RpcAssignmentDocEvent, type="changed_rpc_assignments"
         )
         self.assertIsNotNone(event)
-        self.assertEqual(event.assignments, "first_editor, second_editor")
+        self.assertEqual(
+            event.assignments, "In Progress (First Edit), In Progress (Second Edit)"
+        )
 
     def test_no_assignment_event_when_unchanged(self):
         """No new RpcAssignmentDocEvent when assignments match the last recorded ones."""
@@ -192,8 +194,8 @@ class ProcessRpcQueueTaskTests(TestCase):
             rev=draft.rev,
             by=self.system,
             type="changed_rpc_assignments",
-            assignments="first_editor",
-            desc="RPC status changed to first_editor",
+            assignments="In Progress (First Edit)",
+            desc="RPC status changed to In Progress (First Edit)",
         )
         events_before = RpcAssignmentDocEvent.objects.filter(doc=draft).count()
 
@@ -211,8 +213,8 @@ class ProcessRpcQueueTaskTests(TestCase):
             rev=draft.rev,
             by=self.system,
             type="changed_rpc_assignments",
-            assignments="first_editor",
-            desc="RPC status changed to first_editor",
+            assignments="In Progress (First Edit)",
+            desc="RPC status changed to In Progress (First Edit)",
         )
 
         tasks.process_rpc_queue_task([_make_entry(draft.name, roles=["second_editor"])])
@@ -220,7 +222,7 @@ class ProcessRpcQueueTaskTests(TestCase):
         event = draft.latest_event(
             RpcAssignmentDocEvent, type="changed_rpc_assignments"
         )
-        self.assertIn("from first_editor", event.desc)
+        self.assertIn("from In Progress (First Edit)", event.desc)
 
     def test_blocking_reasons_appended_to_assignments(self):
         """Blocking reason names are appended after ':' in the assignment string, sorted."""
@@ -257,7 +259,9 @@ class ProcessRpcQueueTaskTests(TestCase):
         event = draft.latest_event(
             RpcAssignmentDocEvent, type="changed_rpc_assignments"
         )
-        self.assertEqual(event.assignments, "first_editor, second_editor")
+        self.assertEqual(
+            event.assignments, "In Progress (First Edit), In Progress (Second Edit)"
+        )
 
     def test_empty_roles_uses_awaiting_editor_assignment(self):
         """Empty assignment_set records 'Awaiting Editor Assignment' rather than an empty string."""
@@ -384,8 +388,8 @@ class ProcessRpcQueueTaskTests(TestCase):
             rev=draft.rev,
             by=self.system,
             type="changed_rpc_assignments",
-            assignments="first_editor",
-            desc="RPC status changed to first_editor",
+            assignments="In Progress (First Edit)",
+            desc="RPC status changed to In Progress (First Edit)",
         )
 
         tasks.process_rpc_queue_task(
@@ -420,8 +424,8 @@ class ProcessRpcQueueTaskTests(TestCase):
             rev=draft.rev,
             by=self.system,
             type="changed_rpc_assignments",
-            assignments="first_editor",
-            desc="RPC status changed to first_editor",
+            assignments="In Progress (First Edit)",
+            desc="RPC status changed to In Progress (First Edit)",
         )
 
         tasks.process_rpc_queue_task([_make_entry(draft.name, roles=["first_editor"])])
@@ -475,6 +479,151 @@ class ProcessRpcQueueTaskTests(TestCase):
 
         draft = Document.objects.get(pk=draft.pk)
         self.assertIsNotNone(draft.get_state("draft-rfceditor"))
+
+
+class FormatRpcQueueStatusTests(TestCase):
+    """Unit tests for the queue "Status" renderer, mirroring the ietf-tools/queue site."""
+
+    def test_editor_roles_get_friendly_labels(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {"assignment_set": [{"role": "first_editor"}]}
+            ),
+            "In Progress (First Edit)",
+        )
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {"assignment_set": [{"role": "final_review_editor"}]}
+            ),
+            "In Final Review",
+        )
+
+    def test_roles_sorted_and_joined(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {"assignment_set": [{"role": "second_editor"}, {"role": "first_editor"}]}
+            ),
+            "In Progress (First Edit), In Progress (Second Edit)",
+        )
+
+    def test_ref_checker_and_publisher_hidden(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [
+                        {"role": "ref_checker"},
+                        {"role": "publisher"},
+                        {"role": "first_editor"},
+                    ]
+                }
+            ),
+            "In Progress (First Edit)",
+        )
+
+    def test_pending_activities_awaiting(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [],
+                    "pending_activities": [{"slug": "first_editor", "name": "First editor"}],
+                }
+            ),
+            "Awaiting First editor",
+        )
+
+    def test_pending_ref_checker_and_publisher_are_shown(self):
+        # ref_checker/publisher are hidden only as current-role badges, not as
+        # pending activities (matches the queue site).
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [],
+                    "pending_activities": [
+                        {"slug": "ref_checker", "name": "Reference Checker"},
+                        {"slug": "publisher", "name": "Publisher"},
+                    ],
+                }
+            ),
+            "Awaiting Publisher, Awaiting Reference Checker",
+        )
+
+    def test_pending_activity_skipped_when_already_assigned(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [{"role": "first_editor"}],
+                    "pending_activities": [{"slug": "first_editor", "name": "First editor"}],
+                }
+            ),
+            "In Progress (First Edit)",
+        )
+
+    def test_iana_hold(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [{"role": "first_editor"}],
+                    "iana_status": {"slug": "not_completed"},
+                }
+            ),
+            "IANA hold, In Progress (First Edit)",
+        )
+
+    def test_iana_hold_only_when_first_editor_present(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [{"role": "second_editor"}],
+                    "iana_status": {"slug": "not_completed"},
+                }
+            ),
+            "In Progress (Second Edit)",
+        )
+
+    def test_blocked_with_reasons_sorted(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [{"role": "blocked"}],
+                    "blocking_reasons": [
+                        {"reason": {"name": "Stream Hold"}},
+                        {"reason": {"name": "Manual Hold"}},
+                    ],
+                }
+            ),
+            "blocked: Manual Hold, Stream Hold",
+        )
+
+    def test_blocking_reason_special_case(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [{"role": "blocked"}],
+                    "blocking_reasons": [
+                        {"reason": {"name": "Reference: First Edit Incomplete"}}
+                    ],
+                }
+            ),
+            "blocked: Author Input Required",
+        )
+
+    def test_blocked_suppresses_pending_activities(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [{"role": "blocked"}],
+                    "pending_activities": [{"slug": "first_editor", "name": "First editor"}],
+                    "blocking_reasons": [],
+                }
+            ),
+            "blocked",
+        )
+
+    def test_empty_is_awaiting_editor_assignment(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status({"assignment_set": []}),
+            "Awaiting Editor Assignment",
+        )
 
 
 class UpdateErrataFromRfcEditorTaskTests(TestCase):
