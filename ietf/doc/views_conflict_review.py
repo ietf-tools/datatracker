@@ -14,6 +14,7 @@ from django.urls import reverse
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils.html import escape
+from django.db.models.functions import Collate
 
 import debug                            # pyflakes:ignore
 
@@ -404,8 +405,14 @@ class SimpleStartReviewForm(forms.Form):
     )
 
 class StartReviewForm(forms.Form):
-    ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active",role__group__type='area').order_by('name'), 
-                                label="Shepherding AD", empty_label="(None)", required=True)
+    ad = forms.ModelChoiceField(
+        Person.objects.filter(
+            role__name="ad", role__group__state="active", role__group__type="area"
+        ).order_by(Collate("name", settings.PREFERRED_COLLATION)),
+        label="Shepherding AD",
+        empty_label="(None)",
+        required=True,
+    )
     create_in_state = forms.ModelChoiceField(State.objects.filter(used=True, type="conflrev", slug__in=("needshep", "adrev")), empty_label=None, required=False)
     notify = forms.CharField(
         widget=forms.Textarea,
