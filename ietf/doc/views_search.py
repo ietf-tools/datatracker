@@ -41,20 +41,20 @@ import copy
 import operator
 
 from collections import defaultdict
+from django_stubs_ext import QuerySetAny
 from functools import reduce
 
 from django import forms
 from django.conf import settings
 from django.core.cache import cache, caches
 from django.urls import reverse as urlreverse
-from django.db.models import Model, Q, QuerySet
+from django.db.models import Model, Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect, QueryDict
 from django.shortcuts import render
 from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.cache import _generate_cache_key # type: ignore
 from django.utils.text import slugify
-
 
 import debug                            # pyflakes:ignore
 
@@ -325,7 +325,7 @@ def _search_cache_key(form):
     entry serves every sort order.
     """
     def normalize(value):
-        if isinstance(value, QuerySet):         # ModelMultipleChoiceField, e.g. doctypes
+        if isinstance(value, QuerySetAny):         # ModelMultipleChoiceField, e.g. doctypes
             return sorted(str(obj.pk) for obj in value)
         if isinstance(value, Model):            # ModelChoiceField, e.g. area, state
             return str(value.pk)
