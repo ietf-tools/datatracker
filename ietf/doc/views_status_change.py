@@ -485,8 +485,14 @@ class EditStatusChangeForm(forms.Form):
 class StartStatusChangeForm(forms.Form):
     document_name = forms.CharField(max_length=255, label="Document name", help_text="A descriptive name such as status-change-md2-to-historic is better than status-change-rfc1319.", required=True)
     title = forms.CharField(max_length=255, label="Title", required=True)
-    ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active",role__group__type='area').order_by(Collate('name', "en-US-x-icu")),
-                                label="Shepherding AD", empty_label="(None)", required=False)
+    ad = forms.ModelChoiceField(
+        Person.objects.filter(
+            role__name="ad", role__group__state="active", role__group__type="area"
+        ).order_by(Collate("name", settings.PREFERRED_COLLATION)),
+        label="Shepherding AD",
+        empty_label="(None)",
+        required=False,
+    )
     create_in_state = forms.ModelChoiceField(State.objects.filter(type="statchg", slug__in=("needshep", "adrev")), empty_label=None, required=False)
     notify = forms.CharField(
         widget=forms.Textarea,

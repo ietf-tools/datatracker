@@ -1132,7 +1132,7 @@ class AdForm(forms.Form):
             role__name__in=("ad", "pre-ad"),
             role__group__state="active",
             role__group__type="area",
-        ).order_by(Collate('name', "en-US-x-icu")),
+        ).order_by(Collate('name', settings.PREFERRED_COLLATION)),
         label="Shepherding AD",
         empty_label="(None)",
         required=False,
