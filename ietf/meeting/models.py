@@ -1244,7 +1244,10 @@ class Session(models.Model):
         return date_today(datetime.UTC) > self.meeting.get_submission_correction_date()
     
     def is_past(self):
-        return timezone.now() > self.official_timeslotassignment().timeslot.end_time()
+        timeslotassignment = self.official_timeslotassignment()
+        if timeslotassignment is None:
+            return False  # if it's not scheduled, it's not past
+        return timezone.now() > timeslotassignment.timeslot.end_time()
      
     def joint_with_groups_acronyms(self):
         return [group.acronym for group in self.joint_with_groups.all()]
