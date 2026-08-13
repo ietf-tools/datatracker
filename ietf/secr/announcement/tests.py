@@ -100,6 +100,7 @@ class SubmitAnnouncementCase(TestCase):
             "nomcom": nomcom.pk,
             "to": "Other...",
             "to_custom": "phil@example.com",
+            "cc": "lizz@example.com, no-brackets@example.com",
             "frm": "IETF Secretariat &lt;ietf-secretariat@ietf.org&gt;",
             "reply_to": "secretariat@ietf.org",
             "subject": "Test Subject",
@@ -112,7 +113,77 @@ class SubmitAnnouncementCase(TestCase):
         self.assertRedirects(response, url)
         self.assertEqual(len(outbox), 1)
         self.assertEqual(outbox[0]["subject"], "Test Subject")
-        self.assertEqual(outbox[0]["to"], "<phil@example.com>")
+        self.assertEqual(outbox[0]["to"], "<phil@example.com>, <lizz@example.com>, <no-brackets@example.com>")
         message = Message.objects.filter(by__user__username="secretary").last()
         self.assertEqual(message.subject, "Test Subject")
         self.assertTrue(nomcom in message.related_groups.all())
+    
+    def test_empty_submit(self):
+            "Submit Empty Email Fields"
+            nomcom_test_data()
+            empty_outbox()
+            url = reverse("ietf.secr.announcement.views.main")
+            nomcom = Group.objects.get(type="nomcom")
+            post_data = {
+                    "nomcom": nomcom.pk,
+                    "to": "Other...",
+                    "to_custom": "",
+                    "cc": "",
+                    "frm": "IETF Secretariat &lt;ietf-secretariat@ietf.org&gt;",
+                    "reply_to": "secretariat@ietf.org",
+                    "subject": "Test Subject",
+                    "body": "This is a test.",
+                }
+            self.client.login(username="secretary", password="secretary+password")
+            response = self.client.post(url, post_data)
+            self.assertNotContains(response, "Confirm Announcement")
+            self.assertEqual(len(outbox), 0)
+            
+    def test_invalid_submit(self):
+        "Invalid Submit"
+        nomcom_test_data()
+        empty_outbox()
+        url = reverse("ietf.secr.announcement.views.main")
+        nomcom = Group.objects.get(type="nomcom")
+        post_data = {
+                "nomcom": nomcom.pk,
+                "to": "Other...",
+                "to_custom": "phil@example.com",
+                "cc": "lizz@example.com, invalid_email@example",
+                "frm": "IETF Secretariat &lt;ietf-secretariat@ietf.org&gt;",
+                "reply_to": "secretariat@ietf.org",
+                "subject": "Test Subject",
+                "body": "This is a test.",
+            }
+        post_data_badlist_to = {
+                                "nomcom": nomcom.pk,
+                                "to": "Other...",
+                                "to_custom": "phil@example.com; test@example.com",
+                                "cc": "lizz@example.com, person@example.com",
+                                "frm": "IETF Secretariat &lt;ietf-secretariat@ietf.org&gt;",
+                                "reply_to": "secretariat@ietf.org",
+                                "subject": "Test Subject",
+                                "body": "This is a test.",
+                            }
+        post_data_badlist_cc = {
+                        "nomcom": nomcom.pk,
+                        "to": "Other...",
+                        "to_custom": "phil@example.com, test@example.com",
+                        "cc": "lizz@example.com; person@example.com",
+                        "frm": "IETF Secretariat &lt;ietf-secretariat@ietf.org&gt;",
+                        "reply_to": "secretariat@ietf.org",
+                        "subject": "Test Subject",
+                        "body": "This is a test.",
+                    }
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.post(url, post_data)
+        self.assertNotContains(response, "Confirm Announcement")
+        self.assertEqual(len(outbox), 0)
+        response = self.client.post(url, post_data_badlist_to)
+        self.assertNotContains(response, "Confirm Announcement")
+        self.assertEqual(len(outbox), 0)
+        response = self.client.post(url, post_data_badlist_cc)
+        self.assertNotContains(response, "Confirm Announcement")
+        self.assertEqual(len(outbox), 0)
+        
+        

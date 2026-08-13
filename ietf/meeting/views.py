@@ -1931,7 +1931,11 @@ def api_get_session_materials(request, session_id=None):
 
     minutes = session.minutes()
     slides_actions = []
-    if can_manage_session_materials(request.user, session.group, session) or not session.is_material_submission_cutoff():
+    if (
+        has_role(request.user, "Secretariat")
+        or (not session.is_material_submission_cutoff() and session.can_manage_materials(request.user))
+        or not session.is_past()
+    ):
         slides_actions.append(
             {
                 "label": "Upload slides",
@@ -2656,7 +2660,11 @@ def agenda_ical(request, num=None, acronym=None, session_id=None):
     try:
         filt_params = parse_agenda_filter_params(request.GET)
     except ValueError as e:
-        return HttpResponseBadRequest(str(e))
+        # Defensive only - parse_agenda_filter_params ignores unrecognized parameters and
+        # does not raise. Log the detail rather than reflecting it: the query string is
+        # attacker-controlled and HttpResponseBadRequest serves unescaped text/html.
+        log("Invalid agenda filter parameters in agenda_ical: %s" % e)
+        return HttpResponseBadRequest("Invalid agenda filter parameters")
 
     if meeting.type_id == "ietf":
         return agenda_ical_ietf(meeting, filt_params, acronym, session_id)
@@ -3544,6 +3552,12 @@ def upload_session_slides(request, session_id, num, name=None):
         permission_denied(
             request,
             "The materials cutoff for this session has passed. Contact the secretariat for further action.",
+        )
+
+    if session.is_past() and not can_manage:
+        permission_denied(
+            request,
+            "This meeting has already occurred. Contact a chair or the secretariat for further action.",
         )
 
     session_number = None
@@ -4568,8 +4582,10 @@ def upcoming_ical(request):
     try:
         filter_params = parse_agenda_filter_params(request.GET)
     except ValueError as e:
-        return HttpResponseBadRequest(str(e))
-        
+        # Defensive only - see the corresponding handler in agenda_ical.
+        log("Invalid agenda filter parameters in upcoming_ical: %s" % e)
+        return HttpResponseBadRequest("Invalid agenda filter parameters")
+
     today = datetime_today()
 
     # get meetings starting 7 days ago -- we'll filter out sessions in the past further down

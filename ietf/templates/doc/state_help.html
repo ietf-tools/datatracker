@@ -14,6 +14,37 @@
                href="{% static 'ietf/images/iesg-draft-state-diagram.png' %}">View diagram</a>
         </p>
     {% endif %}
+    {% if queue_status_values %}
+        <h2>Queue status</h2>
+        <p>
+            The RFC Editor state shown for a document in the publication queue is its
+            <strong>Status</strong> in the RFC Production Center's publication queue, matching
+            what is shown at
+            <a href="https://queue.rfc-editor.org/">the RFC Editor publication queue</a>.
+            This status is derived from the document's current editor assignments, pending
+            activities, blocking reasons and IANA status, so it can take the following forms.
+            (Processing labels such as <em>github</em>, <em>markdown</em> and
+            <em>Expedited</em> shown on the publication queue are not part of this status.)
+        </p>
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <tr>
+                    <th scope="col" data-sort="status">Status</th>
+                    <th scope="col" data-sort="description">Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for value, description in queue_status_values %}
+                    <tr>
+                        <th scope="row">{{ value }}</th>
+                        <td>{{ description }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <h2>Legacy states</h2>
+        <p>{{ legacy_states_note }}</p>
+    {% endif %}
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>

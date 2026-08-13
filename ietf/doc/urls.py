@@ -73,8 +73,9 @@ urlpatterns = [
     url(r'^stats/person/(?P<id>[0-9]+)/drafts/data/?$', views_stats.chart_data_person_drafts),
 
 # This block should really all be at the idealized docs.ietf.org service
-    url(r'^html/(?P<name>bcp[0-9]+?)(\.txt|\.html)?/?$', RedirectView.as_view(url=settings.RFC_EDITOR_INFO_BASE_URL+"%(name)s", permanent=False)), 
-    url(r'^html/(?P<name>std[0-9]+?)(\.txt|\.html)?/?$', RedirectView.as_view(url=settings.RFC_EDITOR_INFO_BASE_URL+"%(name)s", permanent=False)), 
+    url(r'^html/(?P<name>bcp[0-9]+?)(\.txt|\.html)?/?$', RedirectView.as_view(url=settings.RFC_EDITOR_INFO_BASE_URL+"%(name)s/", permanent=False)),
+    url(r'^html/(?P<name>std[0-9]+?)(\.txt|\.html)?/?$', RedirectView.as_view(url=settings.RFC_EDITOR_INFO_BASE_URL+"%(name)s/", permanent=False)),
+    url(r'^html/(?P<name>fyi[0-9]+?)(\.txt|\.html)?/?$', RedirectView.as_view(url=settings.RFC_EDITOR_INFO_BASE_URL+"%(name)s/", permanent=False)),
     url(r'^html/%(name)s(?:-(?P<rev>[0-9]{2}(-[0-9]{2})?))?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, views_doc.document_html),
 
     url(r'^id/%(name)s(?:-%(rev)s)?(?:\.(?P<ext>(txt|html|xml)))?/?$' % settings.URL_REGEXPS, views_doc.document_raw_id),

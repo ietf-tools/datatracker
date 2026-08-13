@@ -9,6 +9,7 @@ from ietf.utils.html import unescape
 from ietf.ietfauth.utils import has_role
 from ietf.message.models import Message, AnnouncementFrom
 from ietf.utils.fields import MultiEmailField
+from ietf.utils.mail import is_valid_email
 
 # ---------------------------------------------
 # Globals
@@ -152,6 +153,18 @@ class AnnounceForm(forms.ModelForm):
             return self.cleaned_data
         if data["to"] == "Other..." and not data["to_custom"]:
             raise forms.ValidationError('You must enter a "To" email address')
+        if data["to"] == "Other..." and data["to_custom"]:
+            addrlist = data["to_custom"]
+        else:
+            addrlist = [data["to"]]
+        if data["cc"]:
+            cc = [email.strip() for email in data["cc"].split(",") if email.strip()]
+            addrlist.extend(cc)
+        emails = [email.strip() for email in addrlist if email.strip()]
+        for email in emails:
+            if not is_valid_email(email):
+                raise forms.ValidationError("An exception occurred while trying to send email to '%s'" % email)
+            
         for k in [
             "to",
             "frm",

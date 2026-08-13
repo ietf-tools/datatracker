@@ -44,8 +44,10 @@ urlpatterns = [
     # --- Custom API endpoints, sorted alphabetically ---
     # Email alias information for drafts
     url(r'^doc/draft-aliases/$', api_views.draft_aliases),
-    # Authors of recently published RFCs, as CSV
-    url(r'^doc/rfc-authors/$', api_views.rfc_authors),
+    # Recipients for author survey for recently published RFCs
+    url(
+        r'^doc/rfc-author-survey-recipients/$', api_views.rfc_author_survey_recipients
+    ),
     # email ingestor
     url(r'email/$', api_views.ingest_email),
     # email ingestor

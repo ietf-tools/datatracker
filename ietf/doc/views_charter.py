@@ -20,6 +20,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.utils.encoding import force_str
 from django.utils.html import escape
+from django.db.models.functions import Collate
 
 import debug                            # pyflakes:ignore
 
@@ -305,8 +306,14 @@ def change_title(request, name, option=None):
                   ))
 
 class AdForm(forms.Form):
-    ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active", role__group__type="area").order_by('name'),
-                                label="Responsible AD", empty_label="(None)", required=True)
+    ad = forms.ModelChoiceField(
+        Person.objects.filter(
+            role__name="ad", role__group__state="active", role__group__type="area"
+        ).order_by(Collate("name", settings.PREFERRED_COLLATION)),
+        label="Responsible AD",
+        empty_label="(None)",
+        required=True,
+    )
 
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)

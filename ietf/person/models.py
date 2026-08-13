@@ -158,6 +158,15 @@ class Person(models.Model):
                 e = self.email_set.filter(active=True).order_by("-time").first()
             self._cached_email = e
         return self._cached_email
+    def has_alias_for_name(self):
+        """Is self.name recorded as one of this person's aliases?
+
+        Cached per instance so that callers rendering many people at once can seed it
+        in bulk instead of paying a query apiece.
+        """
+        if not hasattr(self, '_cached_has_alias_for_name'):
+            self._cached_has_alias_for_name = self.alias_set.filter(name=self.name).exists()
+        return self._cached_has_alias_for_name
     def email_allowing_inactive(self):
         if not hasattr(self, "_cached_email_allowing_inactive"):
             e = self.email()
@@ -254,6 +263,8 @@ class Person(models.Model):
         if self.ascii and self.name != self.ascii:
             if not self.ascii in [ a.name for a in self.alias_set.filter(name=self.ascii) ]:
                 self.alias_set.create(name=self.ascii)
+        # The aliases just changed; drop what has_alias_for_name() memoized about them.
+        self.__dict__.pop('_cached_has_alias_for_name', None)
 
     #this variable, if not None, may be used by url() to keep the sitefqdn.
     default_hostscheme = None

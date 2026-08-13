@@ -121,6 +121,14 @@ DATABASES = {
 }
 
 
+# Collation that we wish we were using. The production database is currently using
+# the C collation, which does not handle accented characters. Do not change this
+# without confirming that the production and dev databases support the new collation.
+# This setting and places we use it can go away if we switch the production database
+# collation. That requires creating and populating a new database, it cannot be done
+# on an existing one.
+PREFERRED_COLLATION = "en-US-x-icu"
+
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
 # although not all variations may be possible on all operating systems.
