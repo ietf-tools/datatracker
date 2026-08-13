@@ -7170,6 +7170,33 @@ class MaterialsTests(TestCase):
             self.assertEqual(len(q('.uploadslidelist p')), 0)
             self.client.logout()
 
+            # once the session is past, participants can no longer propose slides
+            timeslot = session.official_timeslotassignment().timeslot
+            timeslot.time = (
+                timezone.now() - timeslot.duration - datetime.timedelta(seconds=1)
+            )
+            timeslot.save()
+
+            self.client.login(
+                username=newperson.user.username,
+                password=newperson.user.username + "+password",
+            )
+            r = self.client.get(session_overview_url)
+            self.assertEqual(r.status_code,200)
+            q = PyQuery(r.content)
+            self.assertFalse(q('.proposeslides'))
+            r = self.client.get(upload_url)
+            self.assertEqual(r.status_code,403)
+            self.client.logout()
+
+            # but a chair still can
+            self.client.login(
+                username=chair.user.username, password=chair.user.username + "+password"
+            )
+            r = self.client.get(upload_url)
+            self.assertEqual(r.status_code,200)
+            self.client.logout()
+
     def test_disapprove_proposed_slides(self):
         submission = SlideSubmissionFactory()
         submission.session.meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
