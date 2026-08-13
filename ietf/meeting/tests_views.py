@@ -7626,6 +7626,33 @@ class ImportNotesTests(TestCase):
 
 
 class SessionTests(TestCase):
+    def test_is_past(self):
+        now = timezone.now()
+        delta_t = datetime.timedelta(minutes=1)  # long compared to test duration
+        duration = datetime.timedelta(minutes=30)
+        # Create an ongoing meeting
+        meeting = MeetingFactory(
+            type_id="ietf", date=date_today() - datetime.timedelta(days=1), days=7
+        )
+        # and schedule past and future sessions
+        past_session = SessionFactory(meeting=meeting, add_to_schedule=False)
+        # significant moment is the _end_ of the session
+        past_timeslot = TimeSlotFactory(
+            meeting=meeting, time=now - duration - delta_t, duration=duration
+        )
+        SchedTimeSessAssignment.objects.create(
+            timeslot=past_timeslot, session=past_session, schedule=meeting.schedule
+        )
+        future_session = SessionFactory(meeting=meeting, add_to_schedule=False)
+        future_timeslot = TimeSlotFactory(
+            meeting=meeting, time=now - duration + delta_t, duration=duration
+        )
+        SchedTimeSessAssignment.objects.create(
+            timeslot=future_timeslot, session=future_session, schedule=meeting.schedule
+        )
+        # and, finally, assert the expected behavior
+        self.assertTrue(past_session.is_past())
+        self.assertFalse(future_session.is_past())
 
     def test_get_summary_by_area(self):
         meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
