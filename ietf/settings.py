@@ -121,12 +121,20 @@ DATABASES = {
 }
 
 
+# Collation that we wish we were using. The production database is currently using
+# the C collation, which does not handle accented characters. Do not change this
+# without confirming that the production and dev databases support the new collation.
+# This setting and places we use it can go away if we switch the production database
+# collation. That requires creating and populating a new database, it cannot be done
+# on an existing one.
+PREFERRED_COLLATION = "en-US-x-icu"
+
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
 # although not all variations may be possible on all operating systems.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = 'PST8PDT'
+TIME_ZONE = 'America/Los_Angeles'
 
 # Language code for this installation. All choices can be found here:
 # http://www.w3.org/TR/REC-html40/struct/dirlang.html#langcodes
@@ -329,7 +337,8 @@ LOGGING = {
     "formatters": {
         "django.server": {
             "()": "django.utils.log.ServerFormatter",
-            "format": "[%(server_time)s] %(message)s",
+            "format": "[{server_time}] {message}",
+            "style": "{",
         },
         "plain": {
             "style": "{",
@@ -893,16 +902,13 @@ IANA_SYNC_PASSWORD = "secret"
 IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"
 IANA_SYNC_PROTOCOLS_URL = "https://www.iana.org/protocols/"
 
-RFC_EDITOR_SYNC_PASSWORD="secret"
-RFC_EDITOR_SYNC_NOTIFICATION_URL = "https://www.rfc-editor.org/parser/parser.php"
 RFC_EDITOR_GROUP_NOTIFICATION_EMAIL = "webmaster@rfc-editor.org"
-#RFC_EDITOR_GROUP_NOTIFICATION_URL = "https://www.rfc-editor.org/notification/group.php"
-RFC_EDITOR_QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
 RFC_EDITOR_INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
 RFC_EDITOR_ERRATA_JSON_URL = "https://www.rfc-editor.org/errata.json"
 RFC_EDITOR_INLINE_ERRATA_URL = "https://www.rfc-editor.org/rfc/inline-errata/rfc{rfc_number}.html"
 RFC_EDITOR_ERRATA_BASE_URL = "https://www.rfc-editor.org/errata/"
 RFC_EDITOR_INFO_BASE_URL = "https://www.rfc-editor.org/info/"
+RFC_EDITOR_QUEUE_SITE_BASE_URL = "https://queue.rfc-editor.org"
 
 
 # NomCom Tool settings
@@ -977,6 +983,10 @@ IDSUBMIT_FILE_TYPES = (
     'ps',
 )
 RFC_FILE_TYPES = IDSUBMIT_FILE_TYPES
+
+# Paths in the red bucket
+RFCINDEX_INPUT_PATH = "other/"
+RFCINDEX_OUTPUT_PATH = "other/"
 
 IDSUBMIT_MAX_DRAFT_SIZE =  {
     'txt':  2*1024*1024,  # Max size of txt draft file in bytes
@@ -1261,7 +1271,10 @@ CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/change-oidc-provider-field-sizes-228.patch',
     'patch/fix-oidc-access-token-post.patch',
     'patch/fix-jwkest-jwt-logging.patch',
-    'patch/django-cookie-delete-with-all-settings.patch',
+    # Patch includes old cookie-delete-with-all-settings and a backport of the fix
+    # to CVE-2026-35192 from Django 5.2. The patches conflict, so cannot be applied
+    # separately.
+    'patch/django-cookie-delete-settings-and-CVE-2026-35192.patch',
     'patch/tastypie-django22-fielderror-response.patch',
 ]
 if DEBUG:

@@ -48,9 +48,17 @@ def errata_url(rfc: Document):
     return urljoin(settings.RFC_EDITOR_ERRATA_BASE_URL + "/", f"rfc{rfc.rfc_number}")
 
 
+def red_bucket_input_path(filename: str) -> str:
+    return str(Path(settings.RFCINDEX_INPUT_PATH) / filename)
+
+
+def red_bucket_output_path(filename: str) -> str:
+    return str(Path(settings.RFCINDEX_OUTPUT_PATH) / filename)
+
+
 def save_to_red_bucket(filename: str, content: str | bytes):
     red_bucket = storages["red_bucket"]
-    bucket_path = str(Path(getattr(settings, "RFCINDEX_OUTPUT_PATH", "")) / filename)
+    bucket_path = red_bucket_output_path(filename)
     if getattr(settings, "RFCINDEX_DELETE_THEN_WRITE", True):
         # Django 4.2's FileSystemStorage does not support allow_overwrite.
         red_bucket.delete(bucket_path)
@@ -87,8 +95,7 @@ class UnusableRfcNumber:
 
 
 def get_unusable_rfc_numbers() -> list[UnusableRfcNumber]:
-    FILENAME = "unusable-rfc-numbers.json"
-    bucket_path = str(Path(getattr(settings, "RFCINDEX_INPUT_PATH", "")) / FILENAME)
+    bucket_path = red_bucket_input_path("unusable-rfc-numbers.json") 
     try:
         with storages["red_bucket"].open(bucket_path) as urn_file:
             records = json.load(urn_file)
@@ -115,8 +122,7 @@ def get_unusable_rfc_numbers() -> list[UnusableRfcNumber]:
 
 
 def get_april1_rfc_numbers() -> Container[int]:
-    FILENAME = "april-first-rfc-numbers.json"
-    bucket_path = str(Path(getattr(settings, "RFCINDEX_INPUT_PATH", "")) / FILENAME)
+    bucket_path = red_bucket_input_path("april-first-rfc-numbers.json")
     try:
         with storages["red_bucket"].open(bucket_path) as urn_file:
             records = json.load(urn_file)
@@ -139,8 +145,7 @@ def get_april1_rfc_numbers() -> Container[int]:
 
 
 def get_publication_std_levels() -> dict[int, StdLevelName]:
-    FILENAME = "publication-std-levels.json"
-    bucket_path = str(Path(getattr(settings, "RFCINDEX_INPUT_PATH", "")) / FILENAME)
+    bucket_path = red_bucket_input_path("publication-std-levels.json")
     values: dict[int, StdLevelName] = {}
     try:
         with storages["red_bucket"].open(bucket_path) as urn_file:

@@ -5,8 +5,10 @@ import re
 from itertools import batched
 from math import floor
 from typing import Iterable
+from urllib.parse import urljoin
 
 import httpx  # just for exceptions
+import requests
 import typesense
 import typesense.exceptions
 from django.conf import settings
@@ -25,7 +27,6 @@ RETRYABLE_ERROR_CLASSES = (
     typesense.exceptions.ServerError,
     typesense.exceptions.ServiceUnavailable,
 )
-
 
 DEFAULT_SETTINGS = {
     "TYPESENSE_API_URL": "",
@@ -63,8 +64,11 @@ def get_collection_name() -> str:
     return collection_name
 
 
-def _sanitize_text(content):
-    """Sanitize content or abstract text for search"""
+def _sanitize_text(content: str):
+    """Sanitize content text for search
+    
+    Aggressively simplifies whitespace, removes most punctuation
+    """
     # REs (with approximate names)
     RE_DOT_OR_BANG_SPACE = r"\. |! "  # -> " " (space)
     RE_COMMENT_OR_TOC_CRUD = r"<--|-->|--+|\+|\.\.+"  # -> ""
@@ -83,6 +87,18 @@ def _sanitize_text(content):
     return content.strip()
 
 
+def _sanitize_abstract(abstract: str):
+    """Sanitize abstract text for search
+    
+    Simplifies whitespace but mostly leaves text intact. Abstract text will be
+    displayed in search results, so a light touch is needed.
+    """
+    abstract = abstract.strip()
+    abstract = re.sub("\r\n|\n\r|\r", "\n", abstract)  # normalize on \n
+    abstract = "\n".join(line.strip() for line in abstract.split("\n"))  # strip by line
+    return abstract
+
+
 def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
     assert rfc.type_id == "rfc"
     assert rfc.rfc_number is not None
@@ -98,7 +114,10 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
         )
     subseries = subseries[0] if len(subseries) > 0 else None
     obsoleted_by = rfc.related_that("obs")
+    is_obsoleted = len(obsoleted_by) > 0
     updated_by = rfc.related_that("updates")
+    is_updated = len(updated_by) > 0
+    is_historic = rfc.std_level.slug == "hist"
 
     stored_txt = (
         StoredObject.objects.exclude_deleted()
@@ -119,7 +138,7 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
         "rfc": str(rfc.rfc_number),
         "filename": rfc.name,
         "title": rfc.title,
-        "abstract": _sanitize_text(rfc.abstract),
+        "abstract": _sanitize_abstract(rfc.abstract),
         "pages": rfc.pages,
         "keywords": keywords,
         "type": "rfc",
@@ -133,9 +152,9 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
             for rfc_author in rfc.rfcauthor_set.all()
         ],
         "flags": {
-            "hiddenDefault": False,
-            "obsoleted": len(obsoleted_by) > 0,
-            "updated": len(updated_by) > 0,
+            "hiddenDefault": is_obsoleted or is_historic,
+            "obsoleted": is_obsoleted,
+            "updated": is_updated,
         },
         "obsoletedBy": [str(doc.rfc_number) for doc in obsoleted_by],
         "updatedBy": [str(doc.rfc_number) for doc in updated_by],
@@ -144,7 +163,7 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
     if subseries is not None:
         ts_document["subseries"] = {
             "acronym": subseries.type.slug,
-            "number": int(subseries.name[len(subseries.type.slug) :]),
+            "number": int(subseries.name[len(subseries.type.slug):]),
             "total": len(subseries.contains()),
         }
     if rfc.group is not None:
@@ -152,6 +171,7 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
             "acronym": rfc.group.acronym,
             "name": rfc.group.name,
             "full": f"{rfc.group.acronym} - {rfc.group.name}",
+            "type": rfc.group.type.slug,
         }
     if (
         rfc.group.parent is not None
@@ -354,6 +374,21 @@ DOCS_SCHEMA = {
     ],
 }
 
+SEARCH_PRESETS = {
+    "red": {
+        "collection": "docs",
+        "infix": "off,always,off,off,off,off,off,off",
+        "query_by": "rfc,filename,title,abstract,keywords,authors,group,area",
+        "query_by_weights": "127,50,50,20,20,5,2,1"
+    },
+    "red-content": {
+      "collection": "docs",
+      "infix": "off,always,off,off,off,off,off,off,off",
+      "query_by": "rfc,filename,title,abstract,keywords,authors,group,area,content",
+      "query_by_weights": "127,50,50,20,20,5,2,1,1"
+    },
+}
+
 
 def create_collection():
     collection_name = get_collection_name()
@@ -370,3 +405,21 @@ def delete_collection():
         client.collections[collection_name].delete()
     except typesense.exceptions.ObjectNotFound:
         pass
+
+
+def upsert_presets():
+    # typesense-python does not support presets, so use requests
+    _settings = get_settings()
+    api_base = _settings["TYPESENSE_API_URL"]
+    api_key = _settings["TYPESENSE_API_KEY"]
+    for preset_name, payload in SEARCH_PRESETS.items():
+        log(f"Upserting '{preset_name}' preset")
+        response = requests.put(
+            urljoin(api_base, f"/presets/{preset_name}"),
+            json={"value": payload},
+            headers={
+                "X-TYPESENSE-API-KEY": api_key,
+            },
+            timeout=3,
+        )
+        response.raise_for_status()

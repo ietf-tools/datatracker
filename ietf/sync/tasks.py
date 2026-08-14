@@ -3,7 +3,6 @@
 # Celery task definitions
 #
 import datetime
-import io
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 import requests
@@ -13,16 +12,17 @@ from celery import shared_task
 from django.conf import settings
 from django.utils import timezone
 
-from ietf.doc.models import DocEvent, RelatedDocument
+from ietf.doc.models import DocEvent, DocTagName, Document, RelatedDocument, RpcAssignmentDocEvent, State
 from ietf.doc.tasks import rebuild_reference_relations_task
+from ietf.doc.utils import add_state_change_event, new_state_change_event, update_action_holders
+from ietf.person.models import Person
+from ietf.utils.mail import send_mail_text
 from ietf.sync import iana
-from ietf.sync import rfceditor
 from ietf.sync.errata import (
     errata_are_dirty,
     mark_errata_as_processed,
     update_errata_from_rfceditor,
 )
-from ietf.sync.rfceditor import MIN_QUEUE_RESULTS, parse_queue, update_drafts_from_queue
 from ietf.sync.rfcindex import (
     create_bcp_txt_index,
     create_fyi_txt_index,
@@ -31,94 +31,13 @@ from ietf.sync.rfcindex import (
     create_std_txt_index,
     rfcindex_is_dirty, mark_rfcindex_as_processed, mark_rfcindex_as_dirty,
 )
-from ietf.sync.utils import build_from_file_content, load_rfcs_into_blobdb, rsync_helper
+from ietf.sync.utils import (
+    build_from_file_content,
+    expand_rfc_number_range_list,
+    load_rfcs_into_blobdb,
+    rsync_helper,
+)
 from ietf.utils import log
-from ietf.utils.timezone import date_today
-
-
-@shared_task
-def rfc_editor_index_update_task(full_index=False):
-    """Update metadata from the RFC index
-
-    Default is to examine only changes in the past 365 days. Call with full_index=True to update
-    the full RFC index.
-
-    According to comments on the original script, a year's worth took about 20s on production as of
-    August 2022
-
-    The original rfc-editor-index-update script had a long-disabled provision for running the
-    rebuild_reference_relations scripts after the update. That has not been brought over
-    at all because it should be implemented as its own task if it is needed.
-    """
-    skip_date = None if full_index else date_today() - datetime.timedelta(days=365)
-    log.log(
-        "Updating document metadata from RFC index going back to {since}, from {url}".format(
-            since=skip_date if skip_date is not None else "the beginning",
-            url=settings.RFC_EDITOR_INDEX_URL,
-        )
-    )
-    try:
-        response = requests.get(
-            settings.RFC_EDITOR_INDEX_URL,
-            timeout=30,  # seconds
-        )
-    except requests.Timeout as exc:
-        log.log(f"GET request timed out retrieving RFC editor index: {exc}")
-        return  # failed
-    rfc_index_xml = response.text
-    index_data = rfceditor.parse_index(io.StringIO(rfc_index_xml))
-    try:
-        response = requests.get(
-            settings.RFC_EDITOR_ERRATA_JSON_URL,
-            timeout=30,  # seconds
-        )
-    except requests.Timeout as exc:
-        log.log(f"GET request timed out retrieving RFC editor errata: {exc}")
-        return  # failed
-    errata_data = response.json()
-    if len(index_data) < rfceditor.MIN_INDEX_RESULTS:
-        log.log("Not enough index entries, only %s" % len(index_data))
-        return  # failed
-    if len(errata_data) < rfceditor.MIN_ERRATA_RESULTS:
-        log.log("Not enough errata entries, only %s" % len(errata_data))
-        return  # failed
-    newly_published = set()
-    for rfc_number, changes, doc, rfc_published in rfceditor.update_docs_from_rfc_index(
-        index_data, errata_data, skip_older_than_date=skip_date
-    ):
-        for c in changes:
-            log.log("RFC%s, %s: %s" % (rfc_number, doc.name, c))
-        if rfc_published:
-            newly_published.add(rfc_number)
-    if len(newly_published) > 0:
-        rsync_rfcs_from_rfceditor_task.delay(list(newly_published))
-
-
-@shared_task
-def rfc_editor_queue_updates_task():
-    log.log(f"Updating RFC Editor queue states from {settings.RFC_EDITOR_QUEUE_URL}")
-    try:
-        response = requests.get(
-            settings.RFC_EDITOR_QUEUE_URL,
-            timeout=30,  # seconds
-        )
-    except requests.Timeout as exc:
-        log.log(f"GET request timed out retrieving RFC editor queue: {exc}")
-        return  # failed
-    drafts, warnings = parse_queue(io.StringIO(response.text))
-    for w in warnings:
-        log.log(f"Warning: {w}")
-
-    if len(drafts) < MIN_QUEUE_RESULTS:
-        log.log("Not enough results, only %s" % len(drafts))
-        return  # failed
-
-    changed, warnings = update_drafts_from_queue(drafts)
-    for w in warnings:
-        log.log(f"Warning: {w}")
-
-    for c in changed:
-        log.log(f"Updated {c}")
 
 
 @shared_task
@@ -299,9 +218,45 @@ def update_errata_from_rfceditor_task():
         # new_processed_time is the *start* of processing so that any changes after
         # this point will trigger another refresh
         new_processed_time = timezone.now()
-        update_errata_from_rfceditor()
+        changed_numbers = update_errata_from_rfceditor()
         mark_errata_as_processed(new_processed_time)
         mark_rfcindex_as_dirty()  # ensure any changes are reflected in the indexes
+        if changed_numbers:
+            update_rfc_json_task.delay(list(changed_numbers))
+
+@shared_task
+def update_rfc_json_by_range_list_task(ranges: str) -> None:
+    """Regenerate RFC JSON for the RFCs described by a range-list string
+
+    See expand_rfc_number_range_list() for the accepted format (e.g.
+    "[1,100,1000-1004]"). Invalid input is logged and otherwise ignored.
+    """
+    try:
+        rfc_numbers = expand_rfc_number_range_list(ranges)
+    except ValueError as e:
+        log.log(
+            f"update_rfc_json_by_range_list_task: ignoring invalid input "
+            f"'{ranges}': {e}"
+        )
+        return
+    if rfc_numbers:
+        update_rfc_json_task(rfc_numbers)
+
+@shared_task
+def update_rfc_json_task(rfc_numbers: list[int]) -> None:
+    from ietf.doc.utils_rfc_json import generate_rfc_json
+    from ietf.sync.rfcindex import get_publication_std_levels
+
+    try:
+        pub_levels = get_publication_std_levels()
+    except Exception as e:
+        log.log(f"update_rfc_json_task: failed to get publication std levels: {e}")
+        return
+    for rfc_number in rfc_numbers:
+        try:
+            generate_rfc_json(rfc_number, pub_levels=pub_levels)
+        except Exception as e:
+            log.log(f"update_rfc_json_task: failed for RFC {rfc_number}: {e}")
 
 
 @shared_task
@@ -342,3 +297,201 @@ def refresh_rfc_index_task():
             pass
 
         mark_rfcindex_as_processed(new_processed_time)
+
+
+# Human-readable labels for the RPC publication queue "Status", mirroring the
+# ietf-tools/queue website (website/app/utils/queue.ts, renderAssignmentsByRoles)
+# so the datatracker shows the same status text that appears at
+# https://queue.rfc-editor.org/. The queue "Status" is not a stored field; it is
+# derived from the active assignment roles, pending activities, blocking reasons
+# and IANA status carried in the purple pubq queue payload.
+RPC_QUEUE_ROLE_LABELS = {
+    "first_editor": "In Progress (First Edit)",
+    "second_editor": "In Progress (Second Edit)",
+    "final_review_editor": "In Final Review",
+}
+# Roles the queue site does not surface in the Status column.
+RPC_QUEUE_HIDDEN_ROLES = {"ref_checker", "publisher"}
+
+
+def _humanize_slug(slug):
+    return slug.replace("_", " ")
+
+
+def _rpc_role_label(role):
+    return RPC_QUEUE_ROLE_LABELS.get(role, _humanize_slug(role))
+
+
+def _rpc_blocking_reason_label(name):
+    # Special case mirrored from the queue site's humanFriendlyBlockingReason().
+    if name == "Reference: First Edit Incomplete":
+        return "Author Input Required"
+    return _humanize_slug(name)
+
+
+def format_rpc_queue_status(obj):
+    """Render the RPC publication queue "Status" for a single queue entry.
+
+    Mirrors renderAssignmentsByRoles() from the ietf-tools/queue website so the
+    datatracker presents the same status text. ``obj`` is one entry of the purple
+    pubq queue payload. Roles, pending activities and blocking reasons are sorted
+    so the result is stable (a change to the string is what triggers a new
+    RpcAssignmentDocEvent).
+    """
+    roles = {
+        a["role"] for a in (obj.get("assignment_set") or []) if a.get("role")
+    }
+    is_blocked = "blocked" in roles
+
+    parts = []
+
+    # IANA hold: iana_status "not_completed" while a first_editor is assigned.
+    iana_status = obj.get("iana_status") or {}
+    if iana_status.get("slug") == "not_completed" and "first_editor" in roles:
+        parts.append("IANA hold")
+
+    # Pending activities (only when not blocked): "Awaiting <role>", skipping any
+    # role that is already a current assignment. Note the queue site does NOT hide
+    # ref_checker/publisher here (only for current-role badges below), so e.g.
+    # "Awaiting Reference Checker" can appear.
+    if not is_blocked:
+        for activity in sorted(
+            obj.get("pending_activities") or [],
+            key=lambda a: (a.get("name") or a.get("slug") or ""),
+        ):
+            slug = activity.get("slug")
+            if not slug or slug in roles:
+                continue
+            parts.append(f"Awaiting {activity.get('name') or _humanize_slug(slug)}")
+
+    # Current assignment roles (ref_checker/publisher hidden). Blocking reason
+    # names are appended to the "blocked" role.
+    blocking_names = sorted(
+        _rpc_blocking_reason_label(br["reason"]["name"])
+        for br in (obj.get("blocking_reasons") or [])
+        if br.get("reason", {}).get("name")
+    )
+    for role in sorted(roles - RPC_QUEUE_HIDDEN_ROLES):
+        label = _rpc_role_label(role)
+        if role == "blocked" and blocking_names:
+            label += ": " + ", ".join(blocking_names)
+        parts.append(label)
+
+    if not parts:
+        return "Awaiting Editor Assignment"
+    return ", ".join(parts)
+
+
+@shared_task
+def process_rpc_queue_task(data: list):
+    in_progress_state = State.objects.get(
+        used=True, type="draft-rfceditor", slug="in_progress"
+    )
+    blocked_state = State.objects.get(used=True, type="draft-rfceditor", slug="blocked")
+    system = Person.objects.get(name="(System)")
+    iana_ref_tags = list(DocTagName.objects.filter(slug__in=["iana", "ref"]))
+
+    names = [obj["name"] for obj in data]
+    docs_in_db = {
+        d.name: d for d in Document.objects.filter(type="draft", name__in=names)
+    }
+
+    for obj in data:
+        name = obj["name"]
+        if name not in docs_in_db:
+            log.log(f"process_rpc_queue_task: unknown document {name}")
+            continue
+
+        d = docs_in_db[name]
+        events = []
+        prev_state = d.get_state("draft-rfceditor")
+
+        # Same check as ietf.sync.rfceditor.update_drafts_from_queue:
+        # if this document just arrived at the RFC Editor for the first time, record it.
+        if (
+            d.get_state_slug("draft-iesg") == "ann"
+            and not prev_state
+            and not d.latest_event(DocEvent, type="rfc_editor_received_announcement")
+        ):
+            e = DocEvent(
+                doc=d, rev=d.rev, by=system, type="rfc_editor_received_announcement"
+            )
+            e.desc = "Announcement was received by RFC Editor"
+            e.save()
+            send_mail_text(
+                None,
+                "iesg-secretary@ietf.org",
+                None,
+                "%s in RFC Editor queue" % d.name,
+                "The announcement for %s has been received by the RFC Editor." % d.name,
+            )
+            prev_iesg_state = State.objects.get(
+                used=True, type="draft-iesg", slug="ann"
+            )
+            next_iesg_state = State.objects.get(
+                used=True, type="draft-iesg", slug="rfcqueue"
+            )
+            d.set_state(next_iesg_state)
+            e = add_state_change_event(d, system, prev_iesg_state, next_iesg_state)
+            if e:
+                events.append(e)
+            e = update_action_holders(d, prev_iesg_state, next_iesg_state)
+            if e:
+                events.append(e)
+
+        is_blocked = any(a["role"] == "blocked" for a in obj.get("assignment_set", []))
+        next_state = blocked_state if is_blocked else in_progress_state
+
+        if prev_state != next_state:
+            d.set_state(next_state)
+            e = new_state_change_event(d, system, prev_state, next_state)
+            if e:
+                e.save()
+                events.append(e)
+
+        next_assignments = format_rpc_queue_status(obj)
+
+        prev_assignments_event = d.latest_event(
+            RpcAssignmentDocEvent, type="changed_rpc_assignments"
+        )
+        prev_assignments = (
+            prev_assignments_event.assignments if prev_assignments_event else None
+        )
+
+        if next_assignments != prev_assignments:
+            e = RpcAssignmentDocEvent(
+                doc=d,
+                rev=d.rev,
+                by=system,
+                type="changed_rpc_assignments",
+                assignments=next_assignments,
+            )
+            e.desc = f"RPC status changed to {next_assignments}"
+            if prev_assignments is not None and prev_assignments != "":
+                e.desc += f" from {prev_assignments}"
+            e.save()
+            events.append(e)
+
+        rfc_number = obj.get("rfc_number")
+        if obj.get("final_approval") and rfc_number:
+            d.documenturl_set.update_or_create(
+                tag_id="auth48",
+                defaults=dict(
+                    url=f"{settings.RFC_EDITOR_QUEUE_SITE_BASE_URL}/final-review/rfc{rfc_number}/"
+                ),
+            )
+        else:
+            d.documenturl_set.filter(tag_id="auth48").delete()
+
+        d.tags.remove(*iana_ref_tags)
+
+        if events:
+            d.save_with_history(events)
+
+    for d in (
+        Document.objects.exclude(name__in=names)
+        .filter(states__type="draft-rfceditor")
+        .distinct()
+    ):
+        d.tags.remove(*iana_ref_tags)
+        d.unset_state("draft-rfceditor")

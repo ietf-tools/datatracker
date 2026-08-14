@@ -107,7 +107,7 @@ from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments, bulk_
 from ietf.meeting.utils import preprocess_meeting_important_dates
 from ietf.meeting.utils import new_doc_for_session, write_doc_for_session
 from ietf.meeting.utils import get_activity_stats, post_process, create_recording, delete_recording
-from ietf.meeting.utils import participants_for_meeting, generate_bluesheet, bluesheet_data, save_bluesheet
+from ietf.meeting.utils import generate_bluesheet, bluesheet_data, save_bluesheet
 from ietf.message.utils import infer_message
 from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName, CountryName
 from ietf.utils import markdown
@@ -1931,7 +1931,11 @@ def api_get_session_materials(request, session_id=None):
 
     minutes = session.minutes()
     slides_actions = []
-    if can_manage_session_materials(request.user, session.group, session) or not session.is_material_submission_cutoff():
+    if (
+        has_role(request.user, "Secretariat")
+        or (not session.is_material_submission_cutoff() and session.can_manage_materials(request.user))
+        or not session.is_past()
+    ):
         slides_actions.append(
             {
                 "label": "Upload slides",
@@ -2656,7 +2660,11 @@ def agenda_ical(request, num=None, acronym=None, session_id=None):
     try:
         filt_params = parse_agenda_filter_params(request.GET)
     except ValueError as e:
-        return HttpResponseBadRequest(str(e))
+        # Defensive only - parse_agenda_filter_params ignores unrecognized parameters and
+        # does not raise. Log the detail rather than reflecting it: the query string is
+        # attacker-controlled and HttpResponseBadRequest serves unescaped text/html.
+        log("Invalid agenda filter parameters in agenda_ical: %s" % e)
+        return HttpResponseBadRequest("Invalid agenda filter parameters")
 
     if meeting.type_id == "ietf":
         return agenda_ical_ietf(meeting, filt_params, acronym, session_id)
@@ -3544,6 +3552,12 @@ def upload_session_slides(request, session_id, num, name=None):
         permission_denied(
             request,
             "The materials cutoff for this session has passed. Contact the secretariat for further action.",
+        )
+
+    if session.is_past() and not can_manage:
+        permission_denied(
+            request,
+            "This meeting has already occurred. Contact a chair or the secretariat for further action.",
         )
 
     session_number = None
@@ -4568,8 +4582,10 @@ def upcoming_ical(request):
     try:
         filter_params = parse_agenda_filter_params(request.GET)
     except ValueError as e:
-        return HttpResponseBadRequest(str(e))
-        
+        # Defensive only - see the corresponding handler in agenda_ical.
+        log("Invalid agenda filter parameters in upcoming_ical: %s" % e)
+        return HttpResponseBadRequest("Invalid agenda filter parameters")
+
     today = datetime_today()
 
     # get meetings starting 7 days ago -- we'll filter out sessions in the past further down
@@ -4816,16 +4832,25 @@ def proceedings_attendees(request, num=None):
     chart_data = None
 
     if int(meeting.number) >= 118:
-        checked_in, attended = participants_for_meeting(meeting)
-        regs = list(Registration.objects.onsite().filter(meeting__number=num, checkedin=True))
-        onsite_count = len(regs)
-        regs += [
-            reg
-            for reg in Registration.objects.remote().filter(meeting__number=num).select_related('person')
-            if reg.person.pk in attended and reg.person.pk not in checked_in
-        ]
-        remote_count = len(regs) - onsite_count
+        onsite, remote = meeting.get_attendees()
+        onsite_count = len(onsite)
+        remote_count = len(remote)
+        onsite_pks = frozenset(p.pk for p in onsite)
+        remote_pks = frozenset(p.pk for p in remote)
 
+        regs = [
+            reg
+            for reg in Registration.objects.onsite()
+            .filter(meeting__number=num)
+            .select_related("person")
+            if reg.person.pk in onsite_pks
+        ] + [
+            reg
+            for reg in Registration.objects.remote()
+            .filter(meeting__number=num)
+            .select_related("person")
+            if reg.person.pk in remote_pks
+        ]
         registrations = sorted(regs, key=lambda x: (x.last_name, x.first_name))
 
         country_codes = [r.country_code for r in registrations if r.country_code]

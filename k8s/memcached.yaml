@@ -36,6 +36,10 @@ spec:
             # memcached image sets up uid/gid 11211
             runAsUser: 11211
             runAsGroup: 11211
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
         # -----------------------------------------------------
         # Memcached Exporter for Prometheus
         # -----------------------------------------------------
@@ -54,6 +58,10 @@ spec:
             readOnlyRootFilesystem: true
             runAsUser: 65534  # nobody
             runAsGroup: 65534  # nobody
+          resources:
+            requests:
+              cpu: 10m
+              memory: 20Mi
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 30

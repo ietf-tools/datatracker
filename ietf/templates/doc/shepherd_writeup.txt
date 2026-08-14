@@ -1,4 +1,4 @@
-{# Keep in sync with https://github.com/ietf-chairs/chairs.ietf.org/blob/main/documents/qa-style-writeup-template.md #}{% if stream %}{% if stream == 'ietf' %}# Document Shepherd Write-Up{% if type != "individ" %} for Group Documents{% else %} for Individual Documents{% endif %}
+{# For more information see https://github.com/ietf/chairs.ietf.org/blob/main/documents/document-shepherding.md #}{% if stream %}{% if stream == 'ietf' %}# Document Shepherd Write-Up{% if type != "individ" %} for Group Documents{% else %} for Individual Documents{% endif %}
 
 *This version is dated 4 July 2022.*
 

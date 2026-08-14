@@ -1362,17 +1362,6 @@ def post_process(doc):
         doc.save_with_history([e])
 
 
-def participants_for_meeting(meeting):
-    """ Return a tuple (checked_in, attended)
-        checked_in = queryset of onsite, checkedin participants values_list('person')
-        attended = queryset of remote participants who attended a session values_list('person')
-    """
-    checked_in = meeting.registration_set.onsite().filter(checkedin=True).values_list('person', flat=True).distinct()
-    sessions = meeting.session_set.filter(Q(type='plenary') | Q(group__type__in=['wg', 'rg']))
-    attended = Attended.objects.filter(session__in=sessions).values_list('person', flat=True).distinct()
-    return (checked_in, attended)
-
-
 def generate_proceedings_content(meeting, force_refresh=False):
     """Render proceedings content for a meeting and update cache
     

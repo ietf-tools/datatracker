@@ -215,3 +215,27 @@ class EditableRfcSerializerTests(TestCase):
             mock_update_searchindex_task.delay.call_args,
             mock.call(rfc.rfc_number),
         )
+
+    def test_unknown_rfc_number_rejected(self):
+        """Unknown RFC numbers in updates/obsoletes should cause validation failure."""
+        from django.db.models import Max
+
+        rfc = WgRfcFactory()
+        unknown_rfc_number = (
+            Document.objects.filter(rfc_number__isnull=False).aggregate(
+                m=Max("rfc_number") + 1
+            )["m"]
+            or 10000
+        )
+
+        for field in ("updates", "obsoletes"):
+            serializer = EditableRfcSerializer(
+                partial=True,
+                instance=rfc,
+                data={field: [unknown_rfc_number]},
+            )
+            self.assertFalse(
+                serializer.is_valid(),
+                msg=f"{field} with unknown RFC number should be invalid",
+            )
+            self.assertIn(field, serializer.errors)

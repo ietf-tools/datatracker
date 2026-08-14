@@ -1,11 +1,12 @@
 # Copyright The IETF Trust 2023-2026, All Rights Reserved
 import os
 import shutil
+from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.conf import settings
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import mixins, parsers, serializers, viewsets, status
 from rest_framework.decorators import action
@@ -48,6 +49,7 @@ from ietf.doc.tasks import (
 )
 from ietf.person.models import Email, Person
 from ietf.sync.rfcindex import mark_rfcindex_as_dirty
+from ietf.sync.tasks import process_rpc_queue_task, update_rfc_json_task
 
 
 class Conflict(APIException):
@@ -296,6 +298,8 @@ class RfcViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
             desc="Metadata update from RFC Editor",
         )
         super().perform_update(serializer)
+        rfc_number = serializer.instance.rfc_number
+        transaction.on_commit(lambda: update_rfc_json_task.delay([rfc_number]))
 
     @action(detail=False, serializer_class=OriginalStreamSerializer)
     def rfc_original_stream(self, request):
@@ -456,6 +460,13 @@ class RfcPubNotificationView(DestinationHelperMixin, APIView):
         )
         rfc_number_list = sorted(set(rfc_number_list))
         signal_update_rfc_metadata_task.delay(rfc_number_list=rfc_number_list)
+        related_numbers = sorted(
+            {d.rfc_number for d in rfc.related_that_doc(("updates", "obs"))}
+        )
+        if related_numbers:
+            # Only update json for related rfcs. We can't generate json for _this_ rfc
+            # until we receive the files and know what formats we have.
+            transaction.on_commit(partial(update_rfc_json_task.delay, related_numbers))
         return Response(NotificationAckSerializer().data)
 
 
@@ -515,6 +526,10 @@ class RfcPubFilesView(DestinationHelperMixin, APIView):
             for upfile in uploaded_files:
                 uploaded_filename = Path(upfile.name)  # name supplied by request
                 uploaded_ext = "".join(uploaded_filename.suffixes)
+                # Ignore json files, which are deprecated. Remove this when purple no
+                # longer tries to send them.
+                if uploaded_ext == ".json":
+                    continue
                 tempfile_path = tmpfile_stem.with_suffix(uploaded_ext)
                 with tempfile_path.open("wb") as dest:
                     for chunk in upfile.chunks():
@@ -557,9 +572,10 @@ class RfcPubFilesView(DestinationHelperMixin, APIView):
         trigger_red_precomputer_task.delay(rfc_number_list=sorted(needs_updating))
         # Trigger search index update
         update_rfc_searchindex_task.delay(rfc.rfc_number)
-        # Trigger reference relation srebuild
+        # Trigger reference relations rebuild
         rebuild_reference_relations_task.delay(doc_names=[rfc.name])
-
+        # Build rfc json (json for related rfcs was updated in RfcPubNotificationView) 
+        transaction.on_commit(partial(update_rfc_json_task.delay, [rfc.rfc_number]))
         return Response(NotificationAckSerializer().data)
 
 
@@ -575,4 +591,25 @@ class RfcIndexView(APIView):
     )
     def post(self, request):
         mark_rfcindex_as_dirty()
+        return Response(status=202)
+
+
+class RpcQueueDataSerializer(serializers.Serializer):
+    data = serializers.JSONField()
+
+
+class ProcessRpcQueueView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
+
+    @extend_schema(
+        operation_id="process_rpc_queue",
+        summary="Process the provided RPC queue",
+        description="Schedules parsing the provided queue to update documents with change dqueue data",
+        responses={202: None},
+        request=RpcQueueDataSerializer,
+    )
+    def post(self, request):
+        serializer = RpcQueueDataSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        process_rpc_queue_task.delay(serializer.validated_data["data"])
         return Response(status=202)

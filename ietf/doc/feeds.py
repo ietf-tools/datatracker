@@ -234,14 +234,6 @@ class RfcFeed(Feed):
                             "is_format_of": self.item_link(item),
                         }
                     )
-            if item.rfc_number not in [571, 587]:
-                media_contents.append(
-                    {
-                        "url": f"https://www.rfc-editor.org/rfc/pdfrfc/{item.name}.txt.pdf",
-                        "media_type": "application/pdf",
-                        "is_format_of": self.item_link(item),
-                    }
-                )
         else:
             media_contents.append(
                 {

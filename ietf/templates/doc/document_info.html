@@ -97,7 +97,7 @@
         <td>
             {# Implementation that uses the current primary email for each author #}
             {% if doc.pk %}{% for author in doc.author_persons_or_names %}
-                {% if author.person %}{% person_link author.person %}{% else %}{{ author.titlepage_name }}{% endif %}{% if not forloop.last %},{% endif %}
+                {% if author.person %}{% person_link author.person titlepage_name=author.titlepage_name %}{% else %}{{ author.titlepage_name }}{% endif %}{% if not forloop.last %},{% endif %}
             {% endfor %}{% endif %}
             {% if document_html and not snapshot or document_html and doc.rev == latest_rev%}
                 <br>

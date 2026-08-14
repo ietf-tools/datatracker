@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from hashlib import sha384
 from pathlib import Path
 from typing import Iterator, Optional, Union, Iterable
+from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -807,6 +808,18 @@ def prettify_std_name(n, spacing=" "):
     else:
         return n
 
+def external_canonical_url(doc):
+    """Authoritative external URL for doc, or None if the datatracker is authoritative
+
+    The authoritative home of an RFC, and of a bcp/std/fyi subseries document, is the
+    RFC Editor's info page, so we point search engines there rather than at our own
+    rendering of the same thing. Documents of other types are ours.
+    """
+    if doc.type_id in ["rfc", "bcp", "std", "fyi"]:
+        # trailing slash matches the form the RFC Editor serves
+        return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f"{doc.name}/")
+    return None
+
 def default_consensus(doc):
     # if someone edits the consensus return that, otherwise
     # ietf stream => true and irtf stream => false
@@ -1273,9 +1286,6 @@ def build_file_urls(doc: Union[Document, DocHistory]):
                 continue
             label = "plain text" if t == "txt" else t
             file_urls.append((label, base + doc.name + "." + t))
-
-        if "pdf" not in found_types and "txt" in found_types:
-            file_urls.append(("pdf", base + "pdfrfc/" + doc.name + ".txt.pdf"))
 
         if "txt" in found_types:
             file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name))))

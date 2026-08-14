@@ -20,6 +20,8 @@ from django.template.loader import render_to_string
 from django.forms.utils import ErrorList
 from django.template.defaultfilters import pluralize
 from django.utils import timezone
+from django.db.models.functions import Collate
+
 
 import debug                            # pyflakes:ignore
 
@@ -1130,7 +1132,7 @@ class AdForm(forms.Form):
             role__name__in=("ad", "pre-ad"),
             role__group__state="active",
             role__group__type="area",
-        ).order_by('name'),
+        ).order_by(Collate('name', settings.PREFERRED_COLLATION)),
         label="Shepherding AD",
         empty_label="(None)",
         required=False,
@@ -1275,15 +1277,6 @@ def request_publication(request, name):
         form = PublicationForm(request.POST)
         if form.is_valid():
             events = []
-
-            # start by notifying the RFC Editor
-            import ietf.sync.rfceditor
-            response, error = ietf.sync.rfceditor.post_approved_draft(settings.RFC_EDITOR_SYNC_NOTIFICATION_URL, doc.name)
-            if error:
-                return render(request, 'doc/draft/rfceditor_post_approved_draft_failed.html',
-                                  dict(name=doc.name,
-                                       response=response,
-                                       error=error))
 
             m.subject = form.cleaned_data["subject"]
             m.body = form.cleaned_data["body"]
@@ -1982,6 +1975,7 @@ def issue_wg_lc(request, name):
                 doc=doc,
                 end_date=end_date,
                 wg_list=doc.group.list_email,
+                url=f"{settings.IETF_ID_ARCHIVE_URL}{doc.name}-{doc.rev}.txt",
                 settings=settings,
             ),
         )

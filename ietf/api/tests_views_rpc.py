@@ -224,6 +224,7 @@ class RpcApiTests(APITestCase):
         self.assertEqual(mock_kwargs["rfc_number_list"], expected_rfc_number_list)
 
     @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
+    @mock.patch("ietf.api.views_rpc.update_rfc_json_task")
     @mock.patch("ietf.api.views_rpc.rebuild_reference_relations_task")
     @mock.patch("ietf.api.views_rpc.update_rfc_searchindex_task")
     @mock.patch("ietf.api.views_rpc.trigger_red_precomputer_task")
@@ -232,6 +233,7 @@ class RpcApiTests(APITestCase):
         mock_trigger_red_task,
         mock_update_searchindex_task,
         mock_rebuild_relations,
+        mock_update_rfc_json,
     ):
         def _valid_post_data():
             """Generate a valid post data dict
@@ -292,7 +294,7 @@ class RpcApiTests(APITestCase):
                     ContentFile(b"", "myfile.txt"),
                     ContentFile(b"", "myfile.html"),
                     ContentFile(b"", "myfile.pdf"),
-                    ContentFile(b"", "myfile.json"),
+                    ContentFile(b"", "myfile.json"),  # deprecated!
                     ContentFile(b"", "myfile.notprepped.xml"),
                 ]
             },
@@ -346,18 +348,19 @@ class RpcApiTests(APITestCase):
 
         # valid post
         mock_trigger_red_task.delay.reset_mock()
-        r = self.client.post(
-            url,
-            _valid_post_data(),
-            format="multipart",
-            headers={"X-Api-Key": "valid-token"},
-        )
+        with self.captureOnCommitCallbacks(execute=True):
+            r = self.client.post(
+                url,
+                _valid_post_data(),
+                format="multipart",
+                headers={"X-Api-Key": "valid-token"},
+            )
         self.assertEqual(r.status_code, 200)
         self.assertEqual(
             mock_update_searchindex_task.delay.call_args,
             mock.call(rfc.rfc_number),
         )
-        for extension in ["xml", "txt", "html", "pdf", "json"]:
+        for extension in ["xml", "txt", "html", "pdf"]:  # no "json"!
             filename = f"{rfc.name}.{extension}"
             self.assertEqual(
                 (rfc_path / filename).read_text(),
@@ -389,6 +392,12 @@ class RpcApiTests(APITestCase):
             b"This is .notprepped.xml",
             ".notprepped.xml blob should contain the expected content",
         )
+        # special case for json (deprecated and should be ignored)
+        self.assertFalse((rfc_path / f"{rfc.name}.json").exists())
+        self.assertFalse(
+            Blob.objects.filter(bucket="rfc", name=f"json/{rfc.name}.json").exists()
+        )
+
         # Confirm that the red precomputer was triggered correctly
         self.assertTrue(mock_trigger_red_task.delay.called)
         _, mock_kwargs = mock_trigger_red_task.delay.call_args
@@ -404,6 +413,10 @@ class RpcApiTests(APITestCase):
         _, mock_kwargs = mock_rebuild_relations.delay.call_args
         self.assertIn("doc_names", mock_kwargs)
         self.assertEqual(mock_kwargs["doc_names"], [rfc.name])
+        # Confirm rfc JSON creation was triggered correctly
+        self.assertTrue(mock_update_rfc_json.delay.called)
+        mock_args, _ = mock_update_rfc_json.delay.call_args
+        self.assertEqual(mock_args[0], [rfc.rfc_number])
 
         # re-post with replace = False should now fail
         mock_update_searchindex_task.reset_mock()
@@ -477,3 +490,165 @@ class RpcApiTests(APITestCase):
             DestinationHelperMixin().blob_destination(filename),
             f"notprepped/{filename}",
         )
+
+    @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
+    @mock.patch("ietf.api.views_rpc.process_rpc_queue_task.delay")
+    def test_process_rpc_queue(self, mock_task_delay):
+        url = urlreverse("ietf.api.purple_api.process_rpc_queue")
+        queue_entries = [
+            {
+                "id": 9850,
+                "name": "draft-ietf-netmod-system-config",
+                "title": "System-defined Configuration",
+                "draft_url": "http://localhost:8000/doc/draft-ietf-netmod-system-config-20",
+                "disposition": "in_progress",
+                "external_deadline": None,
+                "labels": [],
+                "cluster": None,
+                "assignment_set": [
+                    {
+                        "id": 434,
+                        "rfc_to_be": 9850,
+                        "role": "first_editor",
+                        "state": "in_progress",
+                    }
+                ],
+                "actionholder_set": [],
+                "pending_activities": [],
+                "rfc_number": None,
+                "pages": 33,
+                "enqueued_at": "2026-01-26T12:00:00Z",
+                "final_approval": [],
+                "iana_status": {
+                    "slug": "completed",
+                    "name": "completed",
+                    "desc": "IANA has completed actions in draft",
+                },
+                "blocking_reasons": [],
+                "authors": [{"titlepage_name": "Q. Ma", "is_editor": True}],
+                "approval_log_message": [],
+                "stream": "ietf",
+                "group": "netmod",
+                "group_name": "Network Modeling",
+                "std_level": "ps",
+                "references": [],
+                "rev": "20",
+            }
+        ]
+        queue_data = {"data": queue_entries}
+
+        # no credentials
+        response = self.client.post(
+            url, data=queue_data, content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 403)
+        mock_task_delay.assert_not_called()
+
+        # invalid token
+        response = self.client.post(
+            url,
+            data=queue_data,
+            content_type="application/json",
+            headers={"X-Api-Key": "invalid-token"},
+        )
+        self.assertEqual(response.status_code, 403)
+        mock_task_delay.assert_not_called()
+
+        # valid token, wrong method
+        response = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(response.status_code, 405)
+        mock_task_delay.assert_not_called()
+
+        # valid token, missing "data" field
+        response = self.client.post(
+            url,
+            data={},
+            content_type="application/json",
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(response.status_code, 400)
+        mock_task_delay.assert_not_called()
+
+        # valid token, POST with data
+        response = self.client.post(
+            url,
+            data=queue_data,
+            content_type="application/json",
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(response.status_code, 202)
+        mock_task_delay.assert_called_once_with(queue_entries)
+
+    @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
+    @mock.patch("ietf.api.serializers_rpc.update_rfc_searchindex_task.delay")
+    @mock.patch("ietf.api.serializers_rpc.trigger_red_precomputer_task.delay")
+    @mock.patch("ietf.api.views_rpc.update_rfc_json_task.delay")
+    def test_rfc_patch_triggers_json_update(
+        self, mock_delay, mock_precompute_delay, mock_searchindex_delay
+    ):
+        """PATCHing RFC metadata dispatches update_rfc_json_task for that RFC."""
+        rfc = WgRfcFactory()
+        url = urlreverse(
+            "ietf.api.purple_api.rfc-detail", kwargs={"rfc_number": rfc.rfc_number}
+        )
+        patch_data = {"title": "Updated Title"}
+        with self.captureOnCommitCallbacks(execute=True):
+            r = self.client.patch(
+                url,
+                data=patch_data,
+                format="json",
+                headers={"X-Api-Key": "valid-token"},
+            )
+        self.assertEqual(r.status_code, 200)
+        mock_delay.assert_called_once_with([rfc.rfc_number])
+
+    @override_settings(APP_API_TOKENS={"ietf.api.views_rpc": ["valid-token"]})
+    @mock.patch("ietf.doc.tasks.signal_update_rfc_metadata_task.delay")
+    @mock.patch("ietf.api.views_rpc.update_rfc_json_task.delay")
+    def test_rfc_publish_triggers_related_json_update(
+        self, mock_json_delay, mock_signal_delay
+    ):
+        """Publishing an RFC that obsoletes/updates existing RFCs triggers JSON update for related RFCs only."""
+        url = urlreverse("ietf.api.purple_api.notify_rfc_published")
+        area = GroupFactory(type_id="area")
+        rfc_group = GroupFactory(type_id="wg")
+        draft = WgDraftFactory(group__parent=area, stream_id="ietf")
+        obsoletes = RfcFactory.create_batch(2)
+        updates = RfcFactory.create_batch(1)
+        unused_rfc_number = (
+            Document.objects.filter(rfc_number__isnull=False).aggregate(
+                unused_rfc_number=Max("rfc_number") + 1
+            )["unused_rfc_number"]
+            or 20000
+        )
+        post_data = {
+            "published": "2025-06-01T00:00:00Z",
+            "draft_name": draft.name,
+            "draft_rev": draft.rev,
+            "rfc_number": unused_rfc_number,
+            "title": "New RFC",
+            "authors": [],
+            "group": rfc_group.acronym,
+            "stream": "ietf",
+            "abstract": "Abstract.",
+            "pages": 10,
+            "std_level": "ps",
+            "obsoletes": [o.rfc_number for o in obsoletes],
+            "updates": [u.rfc_number for u in updates],
+            "subseries": [],
+        }
+        with self.captureOnCommitCallbacks(execute=True):
+            r = self.client.post(
+                url,
+                data=post_data,
+                format="json",
+                headers={"X-Api-Key": "valid-token"},
+            )
+        self.assertEqual(r.status_code, 200)
+
+        # JSON update fired only for related RFCs, not for the new RFC itself
+        expected_related = sorted(
+            {o.rfc_number for o in obsoletes} | {u.rfc_number for u in updates}
+        )
+        mock_json_delay.assert_called_once_with(expected_related)
+        self.assertNotIn(unused_rfc_number, mock_json_delay.call_args[0][0])

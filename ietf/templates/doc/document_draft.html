@@ -583,13 +583,13 @@
                         </th>
                         <th scope="row">
                             <a href="{% url "ietf.doc.views_help.state_help" type="draft-rfceditor" %}">
-                                RFC Editor state
+                                RFC Editor status
                             </a>
                         </th>
                         <td class="edit">
                         </td>
                         <td>
-                            {{ rfc_editor_state }}
+                            {{ rfc_editor_queue_status|default:rfc_editor_state }}
                         </td>
                     </tr>
                     <tr>
@@ -601,7 +601,7 @@
                         </td>
                         <td>
                             <div>
-                                <a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">
+                                <a href="https://queue.rfc-editor.org/#{{ doc.name }}">
                                     Publication queue entry
                                 </a>
                             </div>
@@ -666,17 +666,14 @@
                 </i>
                 Nits
             </a>
-            {% if user|has_role:"Area Director" %}
-            {# IDNITS3 is an experimental service, so only show it to Area Directors #}
              <a class="btn btn-primary btn-sm"
                href="{{ settings.IDNITS3_BASE_URL }}?url=https://www.ietf.org/archive/id/{{ doc.filename_with_rev }}"
                rel="nofollow"
                target="_blank">
                 <i class="bi bi-exclamation-diamond">
                 </i>
-                Nits-v3 (Experimental)
+                Nits v3
             </a>           
-            {% endif %}
             <a class="btn btn-primary btn-sm"
                href="https://mailarchive.ietf.org/arch/search/?q=%22{{ doc.name }}%22"
                rel="nofollow"

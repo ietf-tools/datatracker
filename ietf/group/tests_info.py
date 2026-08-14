@@ -27,7 +27,7 @@ from django.utils.html import escape
 
 from ietf.community.models import CommunityList
 from ietf.community.utils import reset_name_contains_index_for_rule
-from ietf.doc.factories import WgDraftFactory, RgDraftFactory, IndividualDraftFactory, CharterFactory, BallotDocEventFactory
+from ietf.doc.factories import WgDraftFactory, WgRfcFactory, RgDraftFactory, IndividualDraftFactory, CharterFactory, BallotDocEventFactory
 from ietf.doc.models import Document, DocEvent, State
 from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils_charter import charter_name_for_group
@@ -396,6 +396,7 @@ class GroupPagesTests(TestCase):
         draft7 = WgDraftFactory(group=group)
         draft7.set_state(State.objects.get(type='draft', slug='expired'))
         draft7.set_state(State.objects.get(type='draft-stream-%s' % draft7.stream_id, slug='dead')) # Expired WG draft, marked as dead
+        rfc = WgRfcFactory(group=group)
 
         clist = CommunityList.objects.get(group=group)
         related_docs_rule = clist.searchrule_set.get(rule_type='name_contains')
@@ -425,6 +426,12 @@ class GroupPagesTests(TestCase):
         r = self.client.get(url)
         q = PyQuery(r.content)
         self.assertTrue(any([draft2.name in x.attrib['href'] for x in q('table td a.track-untrack-doc')]))
+
+        # RFC rows must use the RFC number as the sort key so that numeric sort
+        # is not disrupted by the page-count text that precedes the name in the cell.
+        # Draft rows must use the document name.
+        self.assertTrue(q(f'td.doc[data-sort-number="{rfc.rfc_number}"]'))
+        self.assertTrue(q(f'td.doc[data-sort-number="{draft.name}"]'))
 
         # Let's also check the IRTF stream
         rg = GroupFactory(type_id='rg')
@@ -1752,6 +1759,41 @@ class MilestoneTests(TestCase):
         self.assertEqual(GroupMilestone.objects.filter(due=m1.due, desc=m1.desc, state="charter").count(), 1)
 
         self.assertEqual(group.charter.docevent_set.count(), events_before + 2) # 1 delete, 1 add
+
+    def test_reset_charter_milestones_bad_ids(self):
+        """A non-integer milestone id is rejected without echoing the submitted value
+
+        int() puts the offending value in its exception message and
+        HttpResponseBadRequest serves its content as unescaped text/html, so
+        reflecting the message would be an XSS vector.
+        """
+        m1, m2, group = self.create_test_milestones()
+
+        url = urlreverse('ietf.group.milestones.reset_charter_milestones', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+        login_testing_unauthorized(self, "secretary", url)
+
+        milestones_before = GroupMilestone.objects.count()
+        events_before = group.charter.docevent_set.count()
+
+        payload = '<img src=x onerror=alert(1)>'
+        for bad_id in (payload, 'not-a-number', '1.5'):
+            r = self.client.post(url, dict(milestone=[str(m1.pk), bad_id]))
+            self.assertEqual(r.status_code, 400)
+            content = r.content.decode('utf-8')
+            self.assertIn('error in list of ids', content)
+            self.assertNotIn(bad_id, content)
+            self.assertNotIn('invalid literal', content)
+
+        # an empty id is also rejected, without the exception detail
+        r = self.client.post(url, dict(milestone=[str(m1.pk), '']))
+        self.assertEqual(r.status_code, 400)
+        self.assertNotIn('invalid literal', r.content.decode('utf-8'))
+
+        # nothing was changed
+        self.assertEqual(GroupMilestone.objects.count(), milestones_before)
+        self.assertEqual(group.charter.docevent_set.count(), events_before)
+        self.assertEqual(GroupMilestone.objects.get(pk=m1.pk).state_id, m1.state_id)
+        self.assertEqual(GroupMilestone.objects.get(pk=m2.pk).state_id, m2.state_id)
 
     def test_edit_sort(self):
         group = GroupFactory(uses_milestone_dates=False)
