@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2024, All Rights Reserved
+# Copyright The IETF Trust 2009-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
@@ -43,9 +43,10 @@ from pathlib import Path
 
 from celery.result import AsyncResult
 from django.core.cache import caches
+from django.core.files.base import ContentFile
 from django.core.exceptions import PermissionDenied
 from django.db.models import Max
-from django.http import HttpResponse, Http404, HttpResponseBadRequest, JsonResponse
+from django.http import FileResponse, HttpResponse, Http404, HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
@@ -57,9 +58,9 @@ from django.contrib.staticfiles import finders
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocHistory, DocEvent, BallotDocEvent, BallotType,
-    ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
+    ConsensusDocEvent, NewRevisionDocEvent, StoredObject, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
-    RelatedDocument, RelatedDocHistory)
+    RelatedDocument, RelatedDocHistory, RpcAssignmentDocEvent)
 from ietf.doc.tasks import investigate_fragment_task
 from ietf.doc.utils import (augment_events_with_revision,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
@@ -79,19 +80,21 @@ from ietf.utils.history import find_history_active_at
 from ietf.doc.views_ballot import parse_ballot_edit_return_point
 from ietf.doc.forms import InvestigateForm, TelechatForm, NotifyForm, ActionHoldersForm, DocAuthorForm, DocAuthorChangeBasisForm
 from ietf.doc.mails import email_comment, email_remind_action_holders
+from ietf.doc.utils import last_ballot_doc_revision
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session, SessionPresentation
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions, add_event_info_to_session_qs
 from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs, review_requests_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
+from ietf.doc.storage_utils import retrieve_bytes
 from ietf.utils import markup_txt, log, markdown
 from ietf.utils.draft import get_status_from_draft_text
 from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
 from ietf.utils.timezone import date_today
-
+from ietf.utils.unicodenormalize import normalize_for_sorting
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -194,6 +197,22 @@ def interesting_doc_relations(doc):
 
     return interesting_relations_that, interesting_relations_that_doc
 
+
+def rfc_editor_queue_status(doc):
+    """Human-readable RPC publication queue "Status" for the document, or None.
+
+    While a document is in the RFC Editor queue (draft-rfceditor state
+    "in_progress" or "blocked"), this is the status text pushed by the RFC
+    Production Center, matching what the queue website shows. It is displayed in
+    place of the raw draft-rfceditor state name. Returns None for documents whose
+    draft-rfceditor state predates the queue integration (they fall back to the
+    state name).
+    """
+    if doc.get_state_slug("draft-rfceditor") not in ("in_progress", "blocked"):
+        return None
+    event = doc.latest_event(RpcAssignmentDocEvent, type="changed_rpc_assignments")
+    return event.assignments if event else None
+
 def document_main(request, name, rev=None, document_html=False):
 
     doc = get_object_or_404(Document.objects.select_related(), name=name)
@@ -255,7 +274,7 @@ def document_main(request, name, rev=None, document_html=False):
         interesting_relations_that, interesting_relations_that_doc = interesting_doc_relations(doc)
 
         can_edit = has_role(request.user, ("Area Director", "Secretariat"))
-        can_edit_authors = has_role(request.user, ("Secretariat"))
+        can_edit_authors = has_role(request.user, ("Secretariat")) and not doc.rfcauthor_set.exists()
 
         stream_slugs = StreamName.objects.values_list("slug", flat=True)
         # For some reason, AnonymousUser has __iter__, but is not iterable,
@@ -361,6 +380,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        has_errata=doc.pk and doc.tags.filter(slug="errata"), # doc.pk == None if using a fake_history_obj
                                        file_urls=file_urls,
                                        rfc_editor_state=doc.get_state("draft-rfceditor"),
+                                       rfc_editor_queue_status=rfc_editor_queue_status(doc),
                                        iana_review_state=doc.get_state("draft-iana-review"),
                                        iana_action_state=doc.get_state("draft-iana-action"),
                                        iana_experts_state=doc.get_state("draft-iana-experts"),
@@ -514,13 +534,17 @@ def document_main(request, name, rev=None, document_html=False):
         # remaining actions
         actions = []
 
-        if can_adopt_draft(request.user, doc) and not doc.get_state_slug() in ["rfc"] and not snapshot:
+        if can_adopt_draft(request.user, doc) and doc.get_state_slug() not in ["rfc"] and not snapshot:
+            target = urlreverse("ietf.doc.views_draft.adopt_draft", kwargs=dict(name=doc.name))
             if doc.group and doc.group.acronym != 'none': # individual submission
                 # already adopted in one group
                 button_text = "Switch adoption"
             else:
                 button_text = "Manage adoption"
-            actions.append((button_text, urlreverse('ietf.doc.views_draft.adopt_draft', kwargs=dict(name=doc.name))))
+                # can_adopt_draft currently returns False for Area Directors
+                if has_role(request.user, ["Secretariat", "WG Chair"]):
+                    target = urlreverse("ietf.doc.views_draft.ask_about_ietf_adoption_call", kwargs=dict(name=doc.name))
+            actions.append((button_text, target))
 
         if can_unadopt_draft(request.user, doc) and not doc.get_state_slug() in ["rfc"] and not snapshot:
             if doc.get_state_slug('draft-iesg') == 'idexists':
@@ -700,6 +724,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        iesg_state=iesg_state,
                                        iesg_state_summary=iesg_state_summary,
                                        rfc_editor_state=doc.get_state("draft-rfceditor"),
+                                       rfc_editor_queue_status=rfc_editor_queue_status(doc),
                                        rfc_editor_auth48_url=auth48_url,
                                        iana_review_state=doc.get_state("draft-iana-review"),
                                        iana_action_state=doc.get_state("draft-iana-action"),
@@ -1225,6 +1250,10 @@ def document_history(request, name):
             request.user, ("Area Director", "Secretariat", "IRTF Chair")
         )
 
+    # if the current user has balloted on this document, give them a revision hint
+    ballot_doc_rev = None
+    if request.user.is_authenticated:
+        ballot_doc_rev = last_ballot_doc_revision(doc, request.user.person)
 
     return render(
         request,
@@ -1235,6 +1264,7 @@ def document_history(request, name):
             "diff_revisions": diff_revisions,
             "events": events,
             "can_add_comment": can_add_comment,
+            "ballot_doc_rev": ballot_doc_rev,
         },
     )
 
@@ -1275,9 +1305,7 @@ def document_bibtex(request, name, rev=None):
                     break
 
     elif doc.type_id == "rfc":
-        # This needs to be replaced with a lookup, as the mapping may change
-        # over time.
-        doi = f"10.17487/RFC{doc.rfc_number:04d}"
+        doi = doc.doi
 
     if doc.is_dochistory():
         latest_event = doc.latest_event(type='new_revision', rev=rev)
@@ -1500,7 +1528,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
     position_groups = []
     for n in BallotPositionName.objects.filter(slug__in=[p.pos_id for p in positions]).order_by('order'):
         g = (n, [p for p in positions if p.pos_id == n.slug])
-        g[1].sort(key=lambda p: (p.is_old_pos, p.balloter.plain_name()))
+        g[1].sort(key=lambda p: (p.is_old_pos, normalize_for_sorting(p.balloter.plain_name())))
         if n.blocking:
             position_groups.insert(0, g)
         else:
@@ -1643,11 +1671,18 @@ def document_json(request, name, rev=None):
     data["state"] = extract_name(doc.get_state())
     data["intended_std_level"] = extract_name(doc.intended_std_level)
     data["std_level"] = extract_name(doc.std_level)
+    author_qs = (
+        doc.rfcauthor_set
+        if doc.type_id == "rfc" and doc.rfcauthor_set.exists()
+        else doc.documentauthor_set
+    ).select_related("person").prefetch_related("person__email_set").order_by("order")
     data["authors"] = [
-        dict(name=author.person.name,
-             email=author.email.address if author.email else None,
-             affiliation=author.affiliation)
-        for author in doc.documentauthor_set.all().select_related("person", "email").order_by("order")
+        {
+            "name": author.titlepage_name if hasattr(author, "titlepage_name") else author.person.name,
+            "email": author.email.address if author.email else None,
+            "affiliation": author.affiliation,
+        }
+        for author in author_qs
     ]
     data["shepherd"] = doc.shepherd.formatted_email() if doc.shepherd else None
     data["ad"] = doc.ad.role_email("ad").formatted_email() if doc.ad else None
@@ -1687,7 +1722,7 @@ def add_comment(request, name):
                 group__acronym=doc.group.acronym,
                 person__user=request.user)))
     else:
-        can_add_comment = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair"))
+        can_add_comment = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "RFC Editor"))
     if not can_add_comment:
         # The user is a chair or secretary, but not for this WG or RG
         permission_denied(request, "You need to be a chair or secretary of this group to add a comment.")
@@ -1825,12 +1860,15 @@ def edit_authors(request, name):
                 if fh in form.fields:
                     form.fields[fh].widget = forms.HiddenInput()
 
+    doc = get_object_or_404(Document, name=name)
+    if doc.rfcauthor_set.exists():
+        return HttpResponseForbidden("Contact the RFC Editor to change RFC Author information")
+
     AuthorFormSet = forms.formset_factory(DocAuthorForm,
                                           formset=_AuthorsBaseFormSet,
                                           can_delete=True,
                                           can_order=True,
                                           extra=0)
-    doc = get_object_or_404(Document, name=name)
     
     if request.method == 'POST':
         change_basis_form = DocAuthorChangeBasisForm(request.POST)
@@ -1931,9 +1969,9 @@ def edit_action_holders(request, name):
     role_ids = dict()  # maps role slug to list of Person IDs (assumed numeric in the JavaScript)
     extra_prefetch = []  # list of Person objects to prefetch for select2 field
 
-    if len(doc.authors()) > 0:
+    authors = doc.author_persons()
+    if len(authors) > 0:
         doc_role_labels.append(dict(slug='authors', label='Authors'))
-        authors = doc.authors()
         role_ids['authors'] = [p.pk for p in authors]
         extra_prefetch += authors
 
@@ -2341,3 +2379,29 @@ def investigate(request):
             "results": results,
         },
     )
+
+def rfcxml_notprepped(request, number):
+    number = int(number)
+    if number < settings.FIRST_V3_RFC:
+        raise Http404
+    rfc = Document.objects.filter(type="rfc", rfc_number=number).first()
+    if rfc is None:
+        raise Http404
+    name = f"notprepped/rfc{number}.notprepped.xml"
+    if not StoredObject.objects.filter(name=name).exists():
+        raise Http404
+    try:
+        bytes = retrieve_bytes("rfc", name)
+    except FileNotFoundError:
+        raise Http404
+    return FileResponse(ContentFile(bytes, name=f"rfc{number}.notprepped.xml"), as_attachment=True)
+
+
+def rfcxml_notprepped_wrapper(request, number):
+    number = int(number)
+    if number < settings.FIRST_V3_RFC:
+        raise Http404
+    rfc = Document.objects.filter(type="rfc", rfc_number=number).first()
+    if rfc is None:
+        raise Http404
+    return render(request, "doc/notprepped_wrapper.html", context={"rfc": rfc})

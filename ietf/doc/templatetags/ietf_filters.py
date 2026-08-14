@@ -27,7 +27,7 @@ from ietf.doc.models import BallotDocEvent, Document
 from ietf.doc.models import ConsensusDocEvent
 from ietf.ietfauth.utils import can_request_rfc_publication as utils_can_request_rfc_publication
 from ietf.utils import log
-from ietf.doc.utils import prettify_std_name
+from ietf.doc.utils import external_canonical_url, prettify_std_name
 from ietf.utils.html import clean_html
 from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped, linkify
 from ietf.utils.validators import validate_url
@@ -138,7 +138,20 @@ def prettystdname(string, space=" "):
 @register.filter
 def rfceditor_info_url(rfcnum : str):
     """Link to the RFC editor info page for an RFC"""
-    return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f'rfc{rfcnum}')
+    return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f'rfc{rfcnum}/')
+
+@register.simple_tag(takes_context=True)
+def canonical_url(context, doc):
+    """Absolute URL to declare canonical for doc on the current page
+
+    Never returns None - an empty or "None" href would be a canonical pointing at a
+    URL that does not exist.
+    """
+    if not context.get("snapshot"):
+        external = external_canonical_url(doc)
+        if external:
+            return external
+    return urljoin(settings.IDTRACKER_BASE_URL, context["request"].path)
 
 
 def doc_name(name):
@@ -285,7 +298,7 @@ def urlize_related_source_list(related, document_html=False):
                                                                       url=url)
         ))
     return links
-        
+
 @register.filter(name='urlize_related_target_list', is_safe=True, document_html=False)
 def urlize_related_target_list(related, document_html=False):
     """Convert a list of RelatedDocuments into list of links using the target document's canonical name"""
@@ -302,7 +315,7 @@ def urlize_related_target_list(related, document_html=False):
                                                                       url=url)
         ))
     return links
-        
+
 @register.filter(name='dashify')
 def dashify(string):
     """
@@ -480,6 +493,19 @@ def state(doc, slug):
         slug = "%s-stream-%s" % (doc.type_id, doc.stream_id)
     return doc.get_state(slug)
 
+
+@register.filter
+def is_unexpected_wg_state(doc):
+    """Returns a flag indicating whether the document has an unexpected wg state."""
+    if not doc.type_id == "draft":
+        return False
+
+    draft_iesg_state = doc.get_state("draft-iesg")
+    draft_stream_state = doc.get_state("draft-stream-ietf")
+
+    return draft_iesg_state.slug != "idexists" and draft_stream_state is not None and draft_stream_state.slug != "sub-pub"
+
+
 @register.filter
 def statehelp(state):
     "Output help icon with tooltip for state."
@@ -508,10 +534,52 @@ def plural(text, seq, arg='s'):
     else:
         return text + pluralize(len(seq), arg)
 
+
+# Translation table to escape ICS characters. The {} | {} construction builds up a dict
+# mapping characters to arbitrary-length strings or None. Values in later dicts override
+# earlier ones prior to conversion to a translation table, so excluding a char and then
+# mapping it to an escape sequence results in its being escaped, not dropped.
+rfc5545_text_escapes = str.maketrans(
+    # text       = *(TSAFE-CHAR / ":" / DQUOTE / ESCAPED-CHAR)
+    # TSAFE-CHAR = WSP / %x21 / %x23-2B / %x2D-39 / %x3C-5B /
+    #                    %x5D-7E / NON-US-ASCII
+    {chr(c): None for c in range(0x00, 0x20)}  # strip 0x00-0x20
+    | {
+        # ESCAPED-CHAR = ("\\" / "\;" / "\," / "\N" / "\n")
+        "\n": r"\n",
+        ";": r"\;",
+        ",": r"\,",
+        "\\": r"\\",  # rhs is two backslashes!
+        "\t": "\t",  # htab ok (0x09)
+        " ": " ",  # space ok (0x20)
+    }
+)
+
+
 @register.filter
 def ics_esc(text):
-    text = re.sub(r"([\n,;\\])", r"\\\1", text)
-    return text
+    """Escape a string to use in an iCalendar text context
+    
+    >>> ics_esc('simple')
+    'simple'
+    
+    For the next tests, it helps to know:
+      chr(0x09) = "\t"
+      chr(0x0a) = "\n"
+      chr(0x0d) = "\r"
+      chr(0x5c) = "\\"
+    
+    >>> ics_esc(f'strips{chr(0x0d)}out{chr(0x0d)}LFs')
+    'stripsoutLFs'
+    
+    
+    >>> ics_esc(f'escapes;and,and{chr(0x5c)}and{chr(0x0a)}')
+    'escapes\\\\;and\\\\,and\\\\\\\\and\\\\n'
+    
+    >>> ics_esc(f"keeps spaces : and{chr(0x09)}tabs")
+    'keeps spaces : and\\ttabs'
+    """
+    return text.translate(rfc5545_text_escapes)
 
 
 @register.simple_tag
@@ -544,7 +612,7 @@ def ics_date_time(dt, tzname):
         return f':{timestamp}Z'
     else:
         return f';TZID={ics_esc(tzname)}:{timestamp}'
-    
+
 @register.filter
 def next_day(value):
     return value + datetime.timedelta(days=1)
@@ -663,7 +731,7 @@ def rfcbis(s):
 @stringfilter
 def urlize(value):
     raise RuntimeError("Use linkify from textfilters instead of urlize")
-    
+
 @register.filter
 @stringfilter
 def charter_major_rev(rev):
@@ -962,3 +1030,61 @@ def is_in_stream(doc):
     elif stream == "editorial":
         return True
     return False
+
+
+@register.filter
+def is_doc_ietf_adoptable(doc):
+    return doc.stream_id is None or all(
+        [
+            doc.stream_id == "ietf",
+            doc.get_state_slug("draft-stream-ietf")
+            not in [
+                "c-adopt",
+                "adopt-wg",
+                "info",
+                "wg-doc",
+                "parked",
+                "dead",
+                "wg-lc",
+                "waiting-for-implementation",
+                "chair-w",
+                "writeupw",
+                "sub-pub",
+            ],
+            doc.get_state_slug("draft") != "rfc",
+            doc.became_rfc() is None,
+        ]
+    )
+
+
+@register.filter
+def can_issue_ietf_wg_lc(doc):
+    return all(
+        [
+            doc.stream_id == "ietf",
+            doc.get_state_slug("draft-stream-ietf")
+            not in ["wg-cand", "c-adopt", "wg-lc"],
+            doc.get_state_slug("draft") != "rfc",
+            doc.became_rfc() is None,
+        ]
+    )
+
+
+@register.filter
+def can_submit_to_iesg(doc):
+    return all(
+        [
+            doc.stream_id == "ietf",
+            doc.get_state_slug("draft-iesg") == "idexists",
+            doc.get_state_slug("draft-stream-ietf") not in ["wg-cand", "c-adopt"],
+        ]
+    )
+
+
+@register.filter
+def has_had_ietf_wg_lc(doc):
+    return (
+        doc.stream_id == "ietf"
+        and doc.docevent_set.filter(statedocevent__state__slug="wg-lc").exists()
+    )
+

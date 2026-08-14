@@ -1,5 +1,4 @@
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
-# -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2007-2025, All Rights Reserved
 
 
 # old meeting models can be found in ../proceedings/models.py
@@ -34,7 +33,7 @@ from ietf.group.utils import can_manage_materials
 from ietf.name.models import (
     MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName,
     ImportantDateName, TimerangeName, SlideSubmissionStatusName, ProceedingsMaterialTypeName,
-    SessionPurposeName,
+    SessionPurposeName, AttendanceTypeName, RegistrationTicketTypeName
 )
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
@@ -49,15 +48,20 @@ from ietf.utils.validators import (
 )
 from ietf.utils.fields import MissingOkImageField
 
-countries = list(pytz.country_names.items())
-countries.sort(key=lambda x: x[1])
+# Set up countries / timezones, including an empty choice for fields
+EMPTY_CHOICE = ("", "-" * 9)
+COUNTRIES = (EMPTY_CHOICE,) + tuple(
+    sorted(pytz.country_names.items(), key=lambda x: x[1])
+)
 
-timezones = []
-for name in pytz.common_timezones:
-    tzfn = os.path.join(settings.TZDATA_ICS_PATH, name + ".ics")
-    if not os.path.islink(tzfn):
-        timezones.append((name, name))
-timezones.sort()
+_tzdata_ics_path = Path(settings.TZDATA_ICS_PATH)
+TIMEZONES = (EMPTY_CHOICE,) + tuple(
+    sorted(
+        (name, name)
+        for name in pytz.common_timezones
+        if name != "GMT" and not (_tzdata_ics_path / f"{name}.ics").is_symlink()
+    )
+)
 
 
 class Meeting(models.Model):
@@ -72,11 +76,11 @@ class Meeting(models.Model):
     days = models.IntegerField(default=7, null=False, validators=[MinValueValidator(1)],
         help_text="The number of days the meeting lasts")
     city = models.CharField(blank=True, max_length=255)
-    country = models.CharField(blank=True, max_length=2, choices=countries)
+    country = models.CharField(blank=True, max_length=2, choices=COUNTRIES)
     # We can't derive time-zone from country, as there are some that have
     # more than one timezone, and the pytz module doesn't provide timezone
     # lookup information for all relevant city/country combinations.
-    time_zone = models.CharField(max_length=255, choices=timezones, default='UTC')
+    time_zone = models.CharField(max_length=255, choices=TIMEZONES, default='UTC')
     idsubmit_cutoff_day_offset_00 = models.IntegerField(blank=True,
         default=settings.IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_00,
         help_text = "The number of days before the meeting start date when the submission of -00 drafts will be closed.")
@@ -145,7 +149,7 @@ class Meeting(models.Model):
             cutoff_date = importantdate.date
         else:
             cutoff_date = self.date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
-        cutoff_time = datetime_from_date(cutoff_date, datetime.timezone.utc) + self.idsubmit_cutoff_time_utc
+        cutoff_time = datetime_from_date(cutoff_date, datetime.UTC) + self.idsubmit_cutoff_time_utc
         return cutoff_time
 
     def get_01_cutoff(self):
@@ -157,7 +161,7 @@ class Meeting(models.Model):
             cutoff_date = importantdate.date
         else:
             cutoff_date = self.date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
-        cutoff_time = datetime_from_date(cutoff_date, datetime.timezone.utc) + self.idsubmit_cutoff_time_utc
+        cutoff_time = datetime_from_date(cutoff_date, datetime.UTC) + self.idsubmit_cutoff_time_utc
         return cutoff_time
 
     def get_reopen_time(self):
@@ -232,45 +236,116 @@ class Meeting(models.Model):
             document__states__slug='active', document__states__type_id='procmaterials'
         ).order_by('type__order')
 
-    def get_attendance(self):
-        """Get the meeting attendance from the MeetingRegistrations
+    def get_attendees(self, sessions=None):
+        """Get the meeting attendees from the Registrations
 
-        Returns a NamedTuple with onsite and online attributes. Returns None if the record is unavailable
-        for this meeting.
+        Returns a pair of sets containing Person objects for persons attending
+        the meeting either onsite or online (remote). Returns None if the record
+        is unavailable for this meeting.
+
+        sessions: optional queryset of Sessions to restrict which Attended records
+            count toward attendance. Defaults to all sessions at this meeting.
+            Note: restricting sessions does not affect the registration-based path
+            (checkedin / attended flags), only the Attended-record path.
         """
         number = self.get_number()
         if number is None or number < 110:
             return None
-        Attendance = namedtuple('Attendance', 'onsite remote')
+
+        if sessions is None:
+            sessions = self.session_set.all()
 
         # MeetingRegistration.attended started conflating badge-pickup and session attendance before IETF 114.
         # We've separated session attendance off to ietf.meeting.Attended, but need to report attendance at older
         # meetings correctly.
-
-        attended_per_meetingregistration = (
-            Q(meetingregistration__meeting=self) & (
-                Q(meetingregistration__attended=True) |
-                Q(meetingregistration__checkedin=True)
+        #
+        # Looking up by registration and attendance records separately and joining in
+        # python is far faster than combining the Q objects in the query (~100x).
+        # Further optimization may be possible, but the queries are tricky...
+        attended_per_meeting_registration = Q(registration__meeting=self) & (
+            Q(registration__attended=True) | Q(registration__checkedin=True)
+        )
+        attendees_by_reg = set(
+            Person.objects.filter(attended_per_meeting_registration).values_list(
+                "pk", flat=True
             )
         )
-        attended_per_meeting_attended = (
-            Q(attended__session__meeting=self)
-            # Note that we are not filtering to plenary, wg, or rg sessions
-            # as we do for nomcom eligibility - if picking up a badge (see above)
-            # is good enough, just attending e.g. a training session is also good enough
-        )
-        attended = Person.objects.filter(
-            attended_per_meetingregistration | attended_per_meeting_attended
-        ).distinct()
 
-        onsite=set(attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='onsite'))
-        remote=set(attended.filter(meetingregistration__meeting=self, meetingregistration__reg_type='remote'))
+        attendees_by_att = set(
+            Person.objects.filter(attended__session__in=sessions).values_list(
+                "pk", flat=True
+            )
+        )
+
+        attendees = Person.objects.filter(pk__in=attendees_by_att | attendees_by_reg)
+        onsite = set(
+            attendees.filter(
+                registration__meeting=self,
+                registration__tickets__attendance_type__slug="onsite",
+            )
+        )
+        remote = set(
+            attendees.filter(
+                registration__meeting=self,
+                registration__tickets__attendance_type__slug="remote",
+            )
+        )
         remote.difference_update(onsite)
 
-        return Attendance(
-            onsite=len(onsite),
-            remote=len(remote)
+        return (onsite, remote)
+
+    def get_attendance(self):
+        """Get the meeting attendance from the Registrations
+
+        Returns a NamedTuple with onsite and remote attributes. Returns None if the record is unavailable
+        for this meeting.
+        """
+        attendees = self.get_attendees()
+        if attendees is None:
+            return None
+        Attendance = namedtuple("Attendance", "onsite remote")
+        onsite, remote = attendees
+        return Attendance(onsite=len(onsite), remote=len(remote))
+
+    def nomcom_eligible_participants(self):
+        """Return (onsite_pks, remote_pks) as frozensets for nomcom eligibility.
+
+        Onsite: has onsite ticket AND (checked in OR attended a qualifying session).
+        Remote: has remote ticket AND attended a qualifying plenary/wg/rg session.
+            The registration attended flag alone is not sufficient for remote.
+        """
+        sessions = self.session_set.filter(
+            Q(type="plenary") | Q(group__type__in=["wg", "rg"])
         )
+        attendees = self.get_attendees(sessions=sessions)
+        if attendees is None:
+            onsite_pks = frozenset(
+                self.registration_set.onsite()
+                .filter(checkedin=True)
+                .values_list("person", flat=True)
+                .distinct()
+            )
+            remote_pks = (
+                frozenset(
+                    Attended.objects.filter(session__in=sessions)
+                    .values_list("person", flat=True)
+                    .distinct()
+                )
+                - onsite_pks
+            )
+            return (onsite_pks, remote_pks)
+        onsite, remote = attendees
+        onsite_pks = frozenset(p.pk for p in onsite)
+        # Remote requires actual qualifying session attendance; the registration
+        # attended flag alone (used as a proxy before Attended records existed)
+        # is not sufficient.
+        session_attended_pks = frozenset(
+            Attended.objects.filter(session__in=sessions)
+                .values_list("person", flat=True)
+                .distinct()
+        )
+        remote_pks = frozenset(p.pk for p in remote) & session_attended_pks
+        return (onsite_pks, remote_pks)
 
     @property
     def proceedings_format_version(self):
@@ -530,7 +605,7 @@ class FloorPlan(models.Model):
     image   = models.ImageField(
         storage=BlobShadowFileSystemStorage(kind="floorplan"),
         upload_to=floorplan_path,
-        blank=True,
+        blank=False,
         default=None,
     )
     #
@@ -938,8 +1013,6 @@ class SessionPresentation(models.Model):
     def __str__(self):
         return u"%s -> %s-%s" % (self.session, self.document.name, self.rev)
 
-constraint_cache_uses = 0
-constraint_cache_initials = 0
 
 class SessionQuerySet(models.QuerySet):
     def with_current_status(self):
@@ -1168,8 +1241,14 @@ class Session(models.Model):
         return can_manage_materials(user,self.group)
 
     def is_material_submission_cutoff(self):
-        return date_today(datetime.timezone.utc) > self.meeting.get_submission_correction_date()
+        return date_today(datetime.UTC) > self.meeting.get_submission_correction_date()
     
+    def is_past(self):
+        timeslotassignment = self.official_timeslotassignment()
+        if timeslotassignment is None:
+            return False  # if it's not scheduled, it's not past
+        return timezone.now() > timeslotassignment.timeslot.end_time()
+     
     def joint_with_groups_acronyms(self):
         return [group.acronym for group in self.joint_with_groups.all()]
 
@@ -1385,7 +1464,7 @@ class SlideSubmission(models.Model):
     apply_to_all = models.BooleanField(default=False)
     submitter = ForeignKey(Person)
     status      = ForeignKey(SlideSubmissionStatusName, null=True, default='pending', on_delete=models.SET_NULL)
-    doc         = ForeignKey(Document, null=True, on_delete=models.SET_NULL)
+    doc         = ForeignKey(Document, blank=True, null=True, on_delete=models.SET_NULL)
 
     def staged_filepath(self):
         return os.path.join(settings.SLIDE_STAGING_PATH , self.filename)
@@ -1483,3 +1562,48 @@ class Attended(models.Model):
 
     def __str__(self):
         return f'{self.person} at {self.session}'
+
+
+class RegistrationManager(models.Manager):
+    def onsite(self):
+        return self.get_queryset().filter(tickets__attendance_type__slug='onsite')
+
+    def remote(self):
+        return self.get_queryset().filter(tickets__attendance_type__slug='remote').exclude(tickets__attendance_type__slug='onsite')
+
+class Registration(models.Model):
+    """Registration attendee records from the IETF registration system"""
+    meeting = ForeignKey(Meeting)
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    affiliation = models.CharField(blank=True, max_length=255)
+    country_code = models.CharField(max_length=2)        # ISO 3166
+    person = ForeignKey(Person, blank=True, null=True, on_delete=models.PROTECT)
+    email = models.EmailField(blank=True, null=True)
+    # attended was used prior to the introduction of the ietf.meeting.Attended model and is still used by
+    # Meeting.get_attendance() for older meetings. It should not be used except for dealing with legacy data.
+    attended = models.BooleanField(default=False)
+    # checkedin indicates that the badge was picked up
+    checkedin = models.BooleanField(default=False)
+
+    # custom manager
+    objects = RegistrationManager()
+
+    def __str__(self):
+        return "{} {}".format(self.first_name, self.last_name)
+
+    @property
+    def attendance_type(self):
+        if self.tickets.filter(attendance_type__slug='onsite').exists():
+            return 'onsite'
+        elif self.tickets.filter(attendance_type__slug='remote').exists():
+            return 'remote'
+        return None
+
+class RegistrationTicket(models.Model):
+    registration = ForeignKey(Registration, related_name='tickets')
+    attendance_type = ForeignKey(AttendanceTypeName, on_delete=models.PROTECT)
+    ticket_type = ForeignKey(RegistrationTicketTypeName, on_delete=models.PROTECT)
+
+    def __str__(self):
+        return "{}:{}".format(self.attendance_type, self.ticket_type)

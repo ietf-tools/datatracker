@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2023, All Rights Reserved
+# Copyright The IETF Trust 2009-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 # Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -53,12 +53,13 @@ urlpatterns = [
     url(r'^ad/?$', views_search.ad_workload),
     url(r'^ad/(?P<name>[^/]+)/?$', views_search.docs_for_ad),
     url(r'^ad2/(?P<name>[\w.-]+)/$', RedirectView.as_view(url='/doc/ad/%(name)s/', permanent=True)),
+    url(r'^for_iesg/?$', RedirectView.as_view(pattern_name='ietf.doc.views_search.docs_for_iesg', permanent=False)),
     url(r'^rfc-status-changes/?$', views_status_change.rfc_status_changes),
     url(r'^start-rfc-status-change/(?:%(name)s/)?$' % settings.URL_REGEXPS, views_status_change.start_rfc_status_change),
     url(r'^bof-requests/?$', views_bofreq.bof_requests),
     url(r'^bof-requests/new/$', views_bofreq.new_bof_request),
     url(r'^statement/new/$', views_statement.new_statement),
-    url(r'^iesg/?$', views_search.drafts_in_iesg_process),
+    url(r'^iesg/?$', views_search.docs_for_iesg),
     url(r'^email-aliases/?$', views_doc.email_aliases),
     url(r'^downref/?$', views_downref.downref_registry),
     url(r'^downref/add/?$', views_downref.downref_registry_add),
@@ -72,9 +73,10 @@ urlpatterns = [
     url(r'^stats/person/(?P<id>[0-9]+)/drafts/data/?$', views_stats.chart_data_person_drafts),
 
 # This block should really all be at the idealized docs.ietf.org service
-    url(r'^html/(?P<name>bcp[0-9]+?)(\.txt|\.html)?/?$', RedirectView.as_view(url=settings.RFC_EDITOR_INFO_BASE_URL+"%(name)s", permanent=False)), 
-    url(r'^html/(?P<name>std[0-9]+?)(\.txt|\.html)?/?$', RedirectView.as_view(url=settings.RFC_EDITOR_INFO_BASE_URL+"%(name)s", permanent=False)), 
-    url(r'^html/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, views_doc.document_html),
+    url(r'^html/(?P<name>bcp[0-9]+?)(\.txt|\.html)?/?$', RedirectView.as_view(url=settings.RFC_EDITOR_INFO_BASE_URL+"%(name)s/", permanent=False)),
+    url(r'^html/(?P<name>std[0-9]+?)(\.txt|\.html)?/?$', RedirectView.as_view(url=settings.RFC_EDITOR_INFO_BASE_URL+"%(name)s/", permanent=False)),
+    url(r'^html/(?P<name>fyi[0-9]+?)(\.txt|\.html)?/?$', RedirectView.as_view(url=settings.RFC_EDITOR_INFO_BASE_URL+"%(name)s/", permanent=False)),
+    url(r'^html/%(name)s(?:-(?P<rev>[0-9]{2}(-[0-9]{2})?))?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, views_doc.document_html),
 
     url(r'^id/%(name)s(?:-%(rev)s)?(?:\.(?P<ext>(txt|html|xml)))?/?$' % settings.URL_REGEXPS, views_doc.document_raw_id),
     url(r'^pdf/%(name)s(?:-%(rev)s)?(?:\.(?P<ext>[a-z]+))?/?$' % settings.URL_REGEXPS, views_doc.document_pdfized),
@@ -92,10 +94,14 @@ urlpatterns = [
     url(r'^ballots/irsg/$', views_ballot.irsg_ballot_status),
     url(r'^ballots/rsab/$', views_ballot.rsab_ballot_status),
 
+    url(r'^build-position-email/$', views_ballot.ajax_build_position_email),
+
     url(r'^(?P<type_id>(bcp|std|fyi))/?$', views_search.index_subseries),
 
     url(r'^%(name)s(?:/%(rev)s)?/$' % settings.URL_REGEXPS, views_doc.document_main),
     url(r'^%(name)s(?:/%(rev)s)?/bibtex/$' % settings.URL_REGEXPS, views_doc.document_bibtex),
+    url(r'^rfc(?P<number>[0-9]+)/notprepped/$' , views_doc.rfcxml_notprepped),
+    url(r'^rfc(?P<number>[0-9]+)/notprepped-wrapper/$', views_doc.rfcxml_notprepped_wrapper),
     url(r'^%(name)s(?:/%(rev)s)?/idnits2-state/$' % settings.URL_REGEXPS, views_doc.idnits2_state),
     url(r'^bibxml3/reference.I-D.%(name)s(?:-%(rev)s)?.xml$' % settings.URL_REGEXPS, views_doc.document_bibxml_ref),
     url(r'^bibxml3/%(name)s(?:-%(rev)s)?.xml$' % settings.URL_REGEXPS, views_doc.document_bibxml),
@@ -110,7 +116,6 @@ urlpatterns = [
     url(r'^%(name)s/ballot/rsab/$' % settings.URL_REGEXPS, views_doc.document_rsab_ballot),
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/$' % settings.URL_REGEXPS, views_doc.document_ballot),
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/position/$' % settings.URL_REGEXPS, views_ballot.edit_position),
-    url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/emailposition/$' % settings.URL_REGEXPS, views_ballot.send_ballot_comment),
     url(r'^%(name)s/(?:%(rev)s/)?doc.json$' % settings.URL_REGEXPS, views_doc.document_json),
     url(r'^%(name)s/ballotpopup/(?P<ballot_id>[0-9]+)/$' % settings.URL_REGEXPS, views_doc.ballot_popup),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/reviewrequest/', include("ietf.doc.urls_review")),
@@ -123,6 +128,7 @@ urlpatterns = [
     url(r'^%(name)s/edit/info/$' % settings.URL_REGEXPS, views_draft.edit_info),
     url(r'^%(name)s/edit/requestresurrect/$' % settings.URL_REGEXPS, views_draft.request_resurrect),
     url(r'^%(name)s/edit/submit-to-iesg/$' % settings.URL_REGEXPS, views_draft.to_iesg),
+    url(r'^%(name)s/edit/issue-wg-lc/$' % settings.URL_REGEXPS, views_draft.issue_wg_lc),
     url(r'^%(name)s/edit/resurrect/$' % settings.URL_REGEXPS, views_draft.resurrect),
     url(r'^%(name)s/edit/addcomment/$' % settings.URL_REGEXPS, views_doc.add_comment),
 
@@ -141,9 +147,14 @@ urlpatterns = [
     url(r'^%(name)s/edit/shepherdemail/$' % settings.URL_REGEXPS, views_draft.change_shepherd_email),
     url(r'^%(name)s/edit/shepherdwriteup/$' % settings.URL_REGEXPS, views_draft.edit_shepherd_writeup),
     url(r'^%(name)s/edit/requestpublication/$' % settings.URL_REGEXPS, views_draft.request_publication),
+    url(r'^%(name)s/edit/ask-about-ietf-adoption/$' % settings.URL_REGEXPS, views_draft.ask_about_ietf_adoption_call),
     url(r'^%(name)s/edit/adopt/$' % settings.URL_REGEXPS, views_draft.adopt_draft),
+    url(r'^%(name)s/edit/issue-wg-call-for-adoption/%(acronym)s/$' % settings.URL_REGEXPS, views_draft.issue_wg_call_for_adoption),
+
     url(r'^%(name)s/edit/release/$' % settings.URL_REGEXPS, views_draft.release_draft),
     url(r'^%(name)s/edit/state/(?P<state_type>draft-stream-[a-z]+)/$' % settings.URL_REGEXPS, views_draft.change_stream_state),
+    url(r'^%(name)s/edit/wg-action-helpers/$' % settings.URL_REGEXPS, views_draft.offer_wg_action_helpers),
+    url(r'^%(name)s/edit/state/statement/$' % settings.URL_REGEXPS, views_statement.change_statement_state),
 
     url(r'^%(name)s/edit/clearballot/(?P<ballot_type_slug>[\w-]+)/$' % settings.URL_REGEXPS, views_ballot.clear_ballot),
     url(r'^%(name)s/edit/deferballot/$' % settings.URL_REGEXPS, views_ballot.defer_ballot),

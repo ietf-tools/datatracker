@@ -141,7 +141,7 @@ export const useAgendaStore = defineStore('agenda', {
           meetingNumber = meetingData.meetingNumber
         }
 
-        const resp = await fetch(`/api/meeting/${meetingNumber}/agenda-data`, { credentials: 'omit' })
+        const resp = await fetch(`/api/meeting/${meetingNumber}/agenda-data`)
         if (!resp.ok) {
           throw new Error(resp.statusText)
         }
@@ -229,6 +229,28 @@ export const useAgendaStore = defineStore('agenda', {
       }
 
       return lastEvent.id || null
+    },
+    findNowEventId () {
+      const currentEventId = this.findCurrentEventId()
+      
+      if (currentEventId) {
+        return currentEventId
+      }
+
+      // if there isn't a current event then instead find the next event
+
+      const current = (this.nowDebugDiff ? DateTime.local().minus(this.nowDebugDiff) : DateTime.local()).setZone(this.timezone)
+
+      // -> Find next event after current time
+      let nextEventId = undefined
+      for(const sh of this.scheduleAdjusted) {
+        if (sh.adjustedStart > current) {
+          nextEventId = sh.id
+          break
+        }
+      }
+
+      return nextEventId || null
     },
     hideLoadingScreen () {
       // -> Hide loading screen

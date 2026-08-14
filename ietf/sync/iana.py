@@ -66,8 +66,8 @@ def update_rfc_log_from_protocol_page(rfc_names, rfc_must_published_later_than):
     
 
 def fetch_changes_json(url, start, end):
-    url += "?start=%s&end=%s" % (urlquote(start.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")),
-                                 urlquote(end.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")))
+    url += "?start=%s&end=%s" % (urlquote(start.astimezone(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S")),
+                                 urlquote(end.astimezone(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S")))
     # HTTP basic auth
     username = "ietfsync"
     password = settings.IANA_SYNC_PASSWORD
@@ -161,7 +161,7 @@ def update_history_with_changes(changes, send_email=True):
 
     for c in changes:
         docname = c['doc']
-        timestamp = datetime.datetime.strptime(c["time"], "%Y-%m-%d %H:%M:%S",).replace(tzinfo=datetime.timezone.utc)
+        timestamp = datetime.datetime.strptime(c["time"], "%Y-%m-%d %H:%M:%S",).replace(tzinfo=datetime.UTC)
 
         if c['type'] in ("iana_state", "iana_review"):
             if c['type'] == "iana_state":
@@ -247,7 +247,7 @@ def parse_review_email(text):
         review_time = parsedate_to_datetime(msg["Date"])
         # parsedate_to_datetime() may return a naive timezone - treat as UTC
         if review_time.tzinfo is None or review_time.tzinfo.utcoffset(review_time) is None:
-            review_time = review_time.replace(tzinfo=datetime.timezone.utc)
+            review_time = review_time.replace(tzinfo=datetime.UTC)
 
     # by
     by = None

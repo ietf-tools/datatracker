@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2023, All Rights Reserved
+# Copyright The IETF Trust 2007-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 import datetime
@@ -20,12 +20,12 @@ from ietf.meeting.forms import duration_string
 from ietf.meeting.helpers import make_materials_directories, populate_important_dates
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot, SchedTimeSessAssignment, Schedule, SchedulingEvent
 from ietf.meeting.utils import add_event_info_to_session_qs
+from ietf.meeting.views_session_request import get_initial_session
 from ietf.name.models import SessionStatusName
 from ietf.group.models import Group, GroupEvent
 from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm, MeetingSelectForm,
     MeetingRoomForm, MiscSessionForm, TimeSlotForm, RegularSessionEditForm,
     MeetingRoomOptionsForm )
-from ietf.secr.sreq.views import get_initial_session
 from ietf.secr.utils.meeting import get_session, get_timeslot
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.timezone import make_aware

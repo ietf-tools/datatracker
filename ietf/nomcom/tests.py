@@ -1,10 +1,9 @@
-# Copyright The IETF Trust 2012-2023, All Rights Reserved
-# -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2012-2025, All Rights Reserved
 
 
 import datetime
 import io
-import mock
+from unittest import mock
 import random
 import shutil
 
@@ -27,11 +26,19 @@ import debug                            # pyflakes:ignore
 from ietf.api.views import EmailIngestionError
 from ietf.dbtemplate.factories import DBTemplateFactory
 from ietf.dbtemplate.models import DBTemplate
-from ietf.doc.factories import DocEventFactory, WgDocumentAuthorFactory, \
-                               NewRevisionDocEventFactory, DocumentAuthorFactory
+from ietf.doc.factories import (
+    DocEventFactory,
+    WgDocumentAuthorFactory,
+    NewRevisionDocEventFactory,
+    DocumentAuthorFactory,
+    RfcAuthorFactory,
+    WgDraftFactory, WgRfcFactory,
+)
+from ietf.doc.models import RfcAuthor
 from ietf.group.factories import GroupFactory, GroupHistoryFactory, RoleFactory, RoleHistoryFactory
 from ietf.group.models import Group, Role
-from ietf.meeting.factories import MeetingFactory, AttendedFactory
+from ietf.meeting.factories import MeetingFactory, AttendedFactory, RegistrationFactory
+from ietf.meeting.models import Registration
 from ietf.message.models import Message
 from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comments, \
                                   COMMUNITY_USER, CHAIR_USER, \
@@ -44,14 +51,22 @@ from ietf.nomcom.factories import NomComFactory, FeedbackFactory, TopicFactory, 
                                   nomcom_kwargs_for_year, provide_private_key_to_test_client, \
                                   key
 from ietf.nomcom.tasks import send_nomcom_reminders_task
-from ietf.nomcom.utils import get_nomcom_by_year, make_nomineeposition, \
-                              get_hash_nominee_position, is_eligible, list_eligible, \
-                              get_eligibility_date, suggest_affiliation, ingest_feedback_email, \
-                              decorate_volunteers_with_qualifications, send_reminders, _is_time_to_send_reminder
+from ietf.nomcom.utils import (
+    get_nomcom_by_year,
+    make_nomineeposition,
+    get_hash_nominee_position,
+    is_eligible,
+    list_eligible,
+    get_eligibility_date,
+    suggest_affiliation,
+    ingest_feedback_email,
+    decorate_volunteers_with_qualifications,
+    send_reminders,
+    _is_time_to_send_reminder,
+    get_qualified_author_queryset,
+)
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import Email, Person
-from ietf.stats.models import MeetingRegistration
-from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 from ietf.utils.timezone import date_today, datetime_today, datetime_from_date, DEADLINE_TZINFO
@@ -1176,8 +1191,8 @@ class ReminderTest(TestCase):
         today = datetime_today()
         t_minus_3 = today - datetime.timedelta(days=3)
         t_minus_4 = today - datetime.timedelta(days=4)
-        e1 = EmailFactory(address="nominee1@example.org", person=PersonFactory(name="Nominee 1"), origin='test')
-        e2 = EmailFactory(address="nominee2@example.org", person=PersonFactory(name="Nominee 2"), origin='test')
+        e1 = EmailFactory(address="nominee1@example.org", person__name="Nominee 1", origin='test', primary=True)
+        e2 = EmailFactory(address="nominee2@example.org", person__name="Nominee 2", origin='test', primary=True)
         n = make_nomineeposition(self.nomcom,e1.person,gen,None)
         np = n.nomineeposition_set.get(position=gen)
         np.time = t_minus_3
@@ -1626,6 +1641,20 @@ class FeedbackLastSeenTests(TestCase):
         q = PyQuery(response.content)
         self.assertEqual( len(q('.text-bg-success')), 0 )
 
+    def test_feedback_index_sort_keys(self):
+        url = reverse('ietf.nomcom.views.view_feedback', kwargs={'year': self.nc.year()})
+        login_testing_unauthorized(self, self.member.user.username, url)
+        provide_private_key_to_test_client(self)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        # Feedback count cells must carry a numeric data-sort-number so that
+        # a "New" badge appearing before the count doesn't corrupt the sort key.
+        sort_cells = q('td[data-sort-number]')
+        self.assertTrue(len(sort_cells) > 0)
+        for cell in sort_cells.items():
+            self.assertRegex(cell.attr('data-sort-number'), r'^\d+$')
+
 class NewActiveNomComTests(TestCase):
 
     def setUp(self):
@@ -2061,7 +2090,15 @@ Junk body for testing
                 if not ' ' in ascii:
                     continue
                 first_name, last_name = ascii.rsplit(None, 1)
-                MeetingRegistration.objects.create(meeting=meeting, first_name=first_name, last_name=last_name, person=person, country_code='WO', email=email, attended=True)
+                RegistrationFactory(
+                    meeting=meeting,
+                    first_name=first_name,
+                    last_name=last_name,
+                    person=person,
+                    country_code='WO',
+                    email=email,
+                    attended=True
+                )
         for view in ('public_eligible','private_eligible'):
             url = reverse(f'ietf.nomcom.views.{view}',kwargs={'year':self.nc.year()})
             for username in (self.chair.user.username,'secretary'):
@@ -2084,7 +2121,7 @@ Junk body for testing
         for number in range(meeting_start, meeting_start+8):
             m = MeetingFactory.create(type_id='ietf', number=number)
             for p in people:
-                m.meetingregistration_set.create(person=p, reg_type="onsite", checkedin=True, attended=True)
+                RegistrationFactory(meeting=m, person=p, checkedin=True, attended=True)
         for p in people:
             self.nc.volunteer_set.create(person=p,affiliation='something')
         for view in ('public_volunteers','private_volunteers'):
@@ -2109,10 +2146,6 @@ Junk body for testing
         response = self.client.get(url)
         self.assertContains(response, people[-1].plain_name(), status_code=200)
         self.assertNotContains(response, unqualified_person.plain_name())
-
-
-
-
 
 class NomComIndexTests(TestCase):
     def setUp(self):
@@ -2437,6 +2470,72 @@ class EligibilityUnitTests(TestCase):
         NomComFactory(group__acronym=f'nomcom{this_year}', first_call_for_volunteers=datetime.date(this_year,5,6))
         self.assertEqual(get_eligibility_date(),datetime.date(this_year,5,6))
 
+    def test_get_qualified_author_queryset(self):
+        """get_qualified_author_queryset implements the eligiblity rules correctly
+
+        This is not an exhaustive test of corner cases. Overlaps considerably with
+        rfc8989EligibilityTests.test_elig_by_author().
+        """
+        people = PersonFactory.create_batch(2)
+        extra_person = PersonFactory()
+        base_qs = Person.objects.filter(pk__in=[person.pk for person in people])
+        now = datetime.datetime.now(tz=datetime.UTC)
+        one_year = datetime.timedelta(days=365)
+
+        # Authors with no qualifying drafts
+        self.assertCountEqual(
+            get_qualified_author_queryset(base_qs, now - 5 * one_year, now), []
+        )
+
+        # Authors with one qualifying draft
+        approved_draft = WgDraftFactory(authors=people, states=[("draft", "active")])
+        DocEventFactory(
+            type="iesg_approved",
+            doc=approved_draft,
+            time=now - 4 * one_year,
+        )
+        self.assertCountEqual(
+            get_qualified_author_queryset(base_qs, now - 5 * one_year, now), []
+        )
+
+        # Create a draft that was published into an RFC. Give it an extra author who
+        # should not be eligible.
+        published_draft = WgDraftFactory(authors=people, states=[("draft", "rfc")])
+        DocEventFactory(
+            type="iesg_approved",
+            doc=published_draft,
+            time=now - 5.5 * one_year,  # < 6 years ago
+        )
+        rfc = WgRfcFactory(
+            authors=people + [extra_person],
+            group=published_draft.group,
+        )
+        DocEventFactory(
+            type="published_rfc",
+            doc=rfc,
+            time=now - 0.5 * one_year,  # < 1 year ago
+        )
+        # Period 6 years ago to 1 year ago - authors are eligible due to the
+        # iesg-approved draft in this window
+        self.assertCountEqual(
+            get_qualified_author_queryset(base_qs, now - 6 * one_year, now - one_year),
+            people,
+        )
+
+        # Period 5 years ago to now - authors are eligible due to the RFC publication
+        self.assertCountEqual(
+            get_qualified_author_queryset(base_qs, now - 5 * one_year, now),
+            people,
+        )
+        
+        # Use the extra_person to check that a single doc can't count both as an
+        # RFC _and_ an approved draft. Use an eligibility interval that includes both
+        # the approval and the RFC publication
+        self.assertCountEqual(
+            get_qualified_author_queryset(base_qs, now - 6 * one_year, now),
+            people,  # does not include extra_person!
+        )
+
 
 class rfc8713EligibilityTests(TestCase):
 
@@ -2460,7 +2559,7 @@ class rfc8713EligibilityTests(TestCase):
             for combo in combinations(meetings,combo_len):
                 p = PersonFactory()
                 for m in combo:
-                    MeetingRegistrationFactory(person=p, meeting=m, attended=True)
+                    RegistrationFactory(person=p, meeting=m, attended=True)
                 if combo_len<3:
                     self.ineligible_people.append(p)
                 else:
@@ -2470,7 +2569,7 @@ class rfc8713EligibilityTests(TestCase):
         def ineligible_person_with_role(**kwargs):
             p = RoleFactory(**kwargs).person
             for m in meetings:
-                MeetingRegistrationFactory(person=p, meeting=m, attended=True)
+                RegistrationFactory(person=p, meeting=m, attended=True)
             self.ineligible_people.append(p)
         for group in ['isocbot', 'ietf-trust', 'llc-board', 'iab']:
             for role in ['member', 'chair']:
@@ -2485,8 +2584,7 @@ class rfc8713EligibilityTests(TestCase):
         self.other_date = datetime.date(2009,5,1)
         self.other_people = PersonFactory.create_batch(1)
         for date in (datetime.date(2009,3,1), datetime.date(2008,11,1), datetime.date(2008,7,1)):
-            MeetingRegistrationFactory(person=self.other_people[0],meeting__date=date, meeting__type_id='ietf', attended=True)
-
+            RegistrationFactory(person=self.other_people[0], meeting__date=date, meeting__type_id='ietf', attended=True)
 
     def test_is_person_eligible(self):
         for person in self.eligible_people:
@@ -2530,7 +2628,7 @@ class rfc8788EligibilityTests(TestCase):
             for combo in combinations(meetings,combo_len):
                 p = PersonFactory()
                 for m in combo:
-                    MeetingRegistrationFactory(person=p, meeting=m, attended=True)
+                    RegistrationFactory(person=p, meeting=m, attended=True)
                 if combo_len<3:
                     self.ineligible_people.append(p)
                 else:
@@ -2578,7 +2676,7 @@ class rfc8989EligibilityTests(TestCase):
                 for combo in combinations(prev_five,combo_len):
                     p = PersonFactory()
                     for m in combo:
-                        MeetingRegistrationFactory(person=p, meeting=m, attended=True) # not checkedin because this forces looking at older meetings
+                        RegistrationFactory(person=p, meeting=m, attended=True) # not checkedin because this forces looking at older meetings
                         AttendedFactory(session__meeting=m, session__type_id='plenary',person=p)
                     if combo_len<3:
                         ineligible_people.append(p)
@@ -2593,8 +2691,9 @@ class rfc8989EligibilityTests(TestCase):
             for person in ineligible_people:
                 self.assertFalse(is_eligible(person,nomcom))
 
-            Person.objects.filter(pk__in=[p.pk for p in eligible_people+ineligible_people]).delete()
-
+            people = Person.objects.filter(pk__in=[p.pk for p in eligible_people + ineligible_people])
+            Registration.objects.filter(person__in=people).delete()
+            people.delete()
 
     def test_elig_by_office_active_groups(self):
 
@@ -2721,33 +2820,41 @@ class rfc8989EligibilityTests(TestCase):
             ineligible = set()
 
             p = PersonFactory()
-            ineligible.add(p)
+            ineligible.add(p)  # no RFCs or iesg-approved drafts
+            p = PersonFactory()
+            doc = WgRfcFactory(authors=[p])
+            DocEventFactory(type='published_rfc', doc=doc, time=middle_date)
+            ineligible.add(p)  # only one RFC
 
             p = PersonFactory()
-            da = WgDocumentAuthorFactory(person=p)
-            DocEventFactory(type='published_rfc',doc=da.document,time=middle_date)
-            ineligible.add(p)
-
-            p = PersonFactory()
-            da = WgDocumentAuthorFactory(person=p)
+            da = WgDocumentAuthorFactory(
+                person=p,
+                document__states=[("draft", "active"), ("draft-rfceditor", "ref")],
+            )
             DocEventFactory(type='iesg_approved',doc=da.document,time=last_date)
-            da = WgDocumentAuthorFactory(person=p)
-            DocEventFactory(type='published_rfc',doc=da.document,time=first_date)
-            eligible.add(p)
+            doc = WgRfcFactory(authors=[p])
+            DocEventFactory(type='published_rfc', doc=doc, time=first_date)
+            eligible.add(p)  # one RFC and one iesg-approved draft
 
             p = PersonFactory()
-            da = WgDocumentAuthorFactory(person=p)
+            da = WgDocumentAuthorFactory(
+                person=p,
+                document__states=[("draft", "active"), ("draft-rfceditor", "ref")],
+            )
             DocEventFactory(type='iesg_approved',doc=da.document,time=middle_date)
-            da = WgDocumentAuthorFactory(person=p)
-            DocEventFactory(type='published_rfc',doc=da.document,time=day_before_first_date)
-            ineligible.add(p)
+            doc = WgRfcFactory(authors=[p])
+            DocEventFactory(type='published_rfc', doc=doc, time=day_before_first_date)
+            ineligible.add(p)  # RFC is out of the eligibility window
 
             p = PersonFactory()
-            da = WgDocumentAuthorFactory(person=p)
+            da = WgDocumentAuthorFactory(
+                person=p,
+                document__states=[("draft", "active"), ("draft-rfceditor", "ref")],
+            )
             DocEventFactory(type='iesg_approved',doc=da.document,time=day_after_last_date)
-            da = WgDocumentAuthorFactory(person=p)
-            DocEventFactory(type='published_rfc',doc=da.document,time=middle_date)
-            ineligible.add(p)
+            doc = WgRfcFactory(authors=[p])
+            DocEventFactory(type='published_rfc', doc=doc, time=middle_date)
+            ineligible.add(p)  # iesg approval is outside the eligibility window
 
             for person in eligible:
                 self.assertTrue(is_eligible(person,nomcom))
@@ -2756,7 +2863,9 @@ class rfc8989EligibilityTests(TestCase):
                 self.assertFalse(is_eligible(person,nomcom))
 
             self.assertEqual(set(list_eligible(nomcom=nomcom)),set(eligible))
-            Person.objects.filter(pk__in=[p.pk for p in eligible.union(ineligible)]).delete()
+            people_pks_to_delete = [p.pk for p in eligible.union(ineligible)]
+            RfcAuthor.objects.filter(person__pk__in=people_pks_to_delete).delete()
+            Person.objects.filter(pk__in=people_pks_to_delete).delete()
 
 class rfc9389EligibilityTests(TestCase):
 
@@ -2778,7 +2887,7 @@ class rfc9389EligibilityTests(TestCase):
     def test_registration_is_not_enough(self):
         p = PersonFactory()
         for meeting in self.meetings:
-            MeetingRegistrationFactory(person=p, meeting=meeting, checkedin=False)
+            RegistrationFactory(person=p, meeting=meeting, checkedin=False)
         self.assertFalse(is_eligible(p, self.nomcom))
 
     def test_elig_by_meetings(self):
@@ -2795,7 +2904,7 @@ class rfc9389EligibilityTests(TestCase):
                 for method in attendance_methods:
                     p = PersonFactory()
                     for meeting in combo:
-                        MeetingRegistrationFactory(person=p, meeting=meeting, reg_type='onsite', checkedin=(method in ('checkedin', 'both')))
+                        RegistrationFactory(person=p, meeting=meeting, checkedin=(method in ('checkedin', 'both')))
                         if method in ('session', 'both'):
                             AttendedFactory(session__meeting=meeting, session__type_id='plenary',person=p)
                         if combo_len<3:
@@ -2828,7 +2937,7 @@ class VolunteerTests(TestCase):
         self.assertContains(r, 'NomCom is not accepting volunteers at this time', status_code=200)
         nomcom.is_accepting_volunteers = True
         nomcom.save()
-        MeetingRegistrationFactory(person=person, affiliation='mtg_affiliation', checkedin=True)
+        RegistrationFactory(person=person, affiliation='mtg_affiliation', checkedin=True)
         r = self.client.get(url)
         self.assertContains(r, 'Volunteer for NomCom', status_code=200)
         self.assertContains(r, 'mtg_affiliation')
@@ -2875,15 +2984,38 @@ class VolunteerTests(TestCase):
 
     def test_suggest_affiliation(self):
         person = PersonFactory()
-        self.assertEqual(suggest_affiliation(person), '')
-        da = DocumentAuthorFactory(person=person,affiliation='auth_affil')
+        self.assertEqual(suggest_affiliation(person), "")
+        rfc_da = DocumentAuthorFactory(
+            person=person,
+            document__type_id="rfc",
+            affiliation="",
+        )
+        rfc = rfc_da.document
+        DocEventFactory(doc=rfc, type="published_rfc")
+        self.assertEqual(suggest_affiliation(person), "")
+
+        rfc_da.affiliation = "rfc_da_affil"
+        rfc_da.save()
+        self.assertEqual(suggest_affiliation(person), "rfc_da_affil")
+
+        rfc_ra = RfcAuthorFactory(person=person, document=rfc, affiliation="")
+        self.assertEqual(suggest_affiliation(person), "")
+
+        rfc_ra.affiliation = "rfc_ra_affil"
+        rfc_ra.save()
+        self.assertEqual(suggest_affiliation(person), "rfc_ra_affil")
+
+        da = DocumentAuthorFactory(person=person, affiliation="auth_affil")
         NewRevisionDocEventFactory(doc=da.document)
-        self.assertEqual(suggest_affiliation(person), 'auth_affil')
+        self.assertEqual(suggest_affiliation(person), "auth_affil")
+
         nc = NomComFactory()
-        nc.volunteer_set.create(person=person,affiliation='volunteer_affil')
-        self.assertEqual(suggest_affiliation(person), 'volunteer_affil')
-        MeetingRegistrationFactory(person=person, affiliation='meeting_affil')
-        self.assertEqual(suggest_affiliation(person), 'meeting_affil')
+        nc.volunteer_set.create(person=person, affiliation="volunteer_affil")
+        self.assertEqual(suggest_affiliation(person), "volunteer_affil")
+
+        RegistrationFactory(person=person, affiliation="meeting_affil")
+        self.assertEqual(suggest_affiliation(person), "meeting_affil")
+
 
 class VolunteerDecoratorUnitTests(TestCase):
     def test_decorate_volunteers_with_qualifications(self):
@@ -2900,7 +3032,7 @@ class VolunteerDecoratorUnitTests(TestCase):
             ('106', datetime.date(2019, 11, 16)),
         ]]
         for m in meetings:
-            MeetingRegistrationFactory(meeting=m, person=meeting_person, attended=True)
+            RegistrationFactory(meeting=m, person=meeting_person, attended=True)
             AttendedFactory(session__meeting=m, session__type_id='plenary', person=meeting_person)
         nomcom.volunteer_set.create(person=meeting_person)
 
@@ -2919,15 +3051,15 @@ class VolunteerDecoratorUnitTests(TestCase):
 
         author_person = PersonFactory()
         for i in range(2):
-            da = WgDocumentAuthorFactory(person=author_person)
+            doc = WgRfcFactory(authors=[author_person])
             DocEventFactory(
                 type='published_rfc',
-                doc=da.document,
+                doc=doc,
                 time=datetime.datetime(
                     elig_date.year - 3,
                     elig_date.month,
                     28 if elig_date.month == 2 and elig_date.day == 29 else elig_date.day,
-                    tzinfo=datetime.timezone.utc,
+                    tzinfo=datetime.UTC,
                 )
             )
         nomcom.volunteer_set.create(person=author_person)

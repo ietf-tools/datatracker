@@ -15,21 +15,9 @@ from django.utils.encoding import force_bytes
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.test_runner import set_coverage_checking
 from ietf.person.models import Person, PersonalApiKey, PersonApiKeyEvent
 from ietf.utils import log
 
-def skip_coverage(f):
-    @wraps(f)
-    def _wrapper(*args, **kwargs):
-        if settings.TEST_CODE_COVERAGE_CHECKER:
-            set_coverage_checking(False)
-            result = f(*args, **kwargs)
-            set_coverage_checking(True)
-            return result
-        else:
-            return  f(*args, **kwargs)
-    return _wrapper
 
 def person_required(f):
     @wraps(f)
@@ -48,7 +36,7 @@ def require_api_key(f):
     @wraps(f)
     def _wrapper(request, *args, **kwargs):
         def err(code, text):
-            return HttpResponse(text, status=code, content_type='text/plain')
+            return HttpResponse(text, status=code, content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}")
         # Check method and get hash
         if request.method == 'POST':
             hash = request.POST.get('apikey')

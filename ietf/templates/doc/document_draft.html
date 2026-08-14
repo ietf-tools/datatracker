@@ -63,7 +63,12 @@
                     <td class="edit">
                         {% if doc.stream and can_edit_stream_info and doc.stream.slug != "legacy" and not snapshot %}
                             <a class="btn btn-primary btn-sm"
-                               href="{% url 'ietf.doc.views_draft.change_stream_state' name=doc.name state_type=stream_state_type_slug %}">
+                               {% if doc|is_doc_ietf_adoptable or doc|can_issue_ietf_wg_lc or doc|can_submit_to_iesg %}
+                                 href="{% url 'ietf.doc.views_draft.offer_wg_action_helpers' name=doc.name %}"
+                               {% else %}
+                                 href="{% url 'ietf.doc.views_draft.change_stream_state' name=doc.name state_type=stream_state_type_slug %}"
+                               {% endif %}
+                            >
                                 Edit
                             </a>
                         {% endif %}
@@ -578,13 +583,13 @@
                         </th>
                         <th scope="row">
                             <a href="{% url "ietf.doc.views_help.state_help" type="draft-rfceditor" %}">
-                                RFC Editor state
+                                RFC Editor status
                             </a>
                         </th>
                         <td class="edit">
                         </td>
                         <td>
-                            {{ rfc_editor_state }}
+                            {{ rfc_editor_queue_status|default:rfc_editor_state }}
                         </td>
                     </tr>
                     <tr>
@@ -596,7 +601,7 @@
                         </td>
                         <td>
                             <div>
-                                <a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">
+                                <a href="https://queue.rfc-editor.org/#{{ doc.name }}">
                                     Publication queue entry
                                 </a>
                             </div>
@@ -661,6 +666,14 @@
                 </i>
                 Nits
             </a>
+             <a class="btn btn-primary btn-sm"
+               href="{{ settings.IDNITS3_BASE_URL }}?url=https://www.ietf.org/archive/id/{{ doc.filename_with_rev }}"
+               rel="nofollow"
+               target="_blank">
+                <i class="bi bi-exclamation-diamond">
+                </i>
+                Nits v3
+            </a>           
             <a class="btn btn-primary btn-sm"
                href="https://mailarchive.ietf.org/arch/search/?q=%22{{ doc.name }}%22"
                rel="nofollow"

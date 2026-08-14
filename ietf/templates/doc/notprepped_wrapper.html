@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2026, All Rights Reserved #}
+{% load origin %}
+{% block title %}RFC {{ rfc.rfc_number }} — Not-prepped XML{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>RFC {{ rfc.rfc_number }} — Not-prepped XML</h1>
+    <p>
+        The <em>not-prepped</em> XML 
+        is the RFC XML v3 source for an RFC at the moment in the publication process
+        just before the prep tool was used to expand default
+        values, generate section numbers, resolve cross-references, and embed
+        boilerplate.  
+    </p><p>   
+        It is useful for authors who want to begin a new draft based on
+        the RFC's text, such as when creating a bis-draft, and for tools that process 
+        author-facing RFC XML.
+    </p>
+    <p>
+        <a class="btn btn-primary"
+           href="{% url 'ietf.doc.views_doc.rfcxml_notprepped' number=rfc.rfc_number %}">
+            <i class="bi bi-download"></i>
+            Download not-prepped XML for RFC {{ rfc.rfc_number }}
+        </a>
+    </p>
+{% endblock %}

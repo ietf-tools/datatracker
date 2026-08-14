@@ -4,3 +4,29 @@
 $dp-cell-focus-background-color: $dropdown-link-hover-bg !default;
 
 @import "vanillajs-datepicker/sass/datepicker-bs5";
+
+[data-bs-theme="dark"] .datepicker-picker {
+    .datepicker-header, 
+    .datepicker-controls .btn,
+    .datepicker-main,
+    .datepicker-footer {
+        background-color: $gray-800;
+    }
+
+    .datepicker-cell:hover {
+        background-color: $gray-700;
+    }
+
+    .datepicker-cell.day.focused {
+        background-color: $gray-600;
+    }
+
+     .datepicker-cell.day.selected.focused {
+        background-color: $blue;
+    }
+
+     .datepicker-controls .btn:hover {
+        background-color:$gray-700;
+        color: $gray-400;
+     }
+}

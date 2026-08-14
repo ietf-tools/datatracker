@@ -1,7 +1,8 @@
-# Copyright The IETF Trust 2010-2023, All Rights Reserved
+# Copyright The IETF Trust 2010-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
+from collections import namedtuple
 import datetime
 import logging
 import os
@@ -11,6 +12,9 @@ import rfc2html
 
 from io import BufferedReader
 from pathlib import Path
+
+from django.core.exceptions import ValidationError
+from django.db.models import Q
 from lxml import etree
 from typing import Optional, Protocol, TYPE_CHECKING, Union
 from weasyprint import HTML as wpHTML
@@ -20,7 +24,11 @@ from django.db import models
 from django.core import checks
 from django.core.files.base import File
 from django.core.cache import caches
-from django.core.validators import URLValidator, RegexValidator
+from django.core.validators import (
+    URLValidator,
+    RegexValidator,
+    ProhibitNullCharactersValidator,
+)
 from django.urls import reverse as urlreverse
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
@@ -44,6 +52,7 @@ from ietf.person.models import Email, Person
 from ietf.person.utils import get_active_balloters
 from ietf.utils import log
 from ietf.utils.decorators import memoize
+from ietf.utils.text import decode_document_content
 from ietf.utils.validators import validate_no_control_chars
 from ietf.utils.mail import formataddr
 from ietf.utils.models import ForeignKey
@@ -102,12 +111,27 @@ IESG_CHARTER_ACTIVE_STATES = ("intrev", "extrev", "iesgrev")
 IESG_STATCHG_CONFLREV_ACTIVE_STATES = ("iesgeval", "defer")
 IESG_SUBSTATE_TAGS = ('ad-f-up', 'need-rev', 'extpty')
 
+
+def validate_doc_keywords(value):
+    if (
+        not isinstance(value, list | tuple | set) 
+        or not all(isinstance(elt, str) for elt in value)
+    ):
+        raise ValidationError("Value must be an array of strings")
+
+
 class DocumentInfo(models.Model):
     """Any kind of document.  Draft, RFC, Charter, IPR Statement, Liaison Statement"""
     time = models.DateTimeField(default=timezone.now) # should probably have auto_now=True
 
     type = ForeignKey(DocTypeName, blank=True, null=True) # Draft, Agenda, Minutes, Charter, Discuss, Guideline, Email, Review, Issue, Wiki, External ...
-    title = models.CharField(max_length=255, validators=[validate_no_control_chars, ])
+    title = models.CharField(
+        max_length=255,
+        validators=[
+            ProhibitNullCharactersValidator(),
+            validate_no_control_chars,
+        ],
+    )
 
     states = models.ManyToManyField(State, blank=True) # plain state (Active/Expired/...), IESG state, stream state
     tags = models.ManyToManyField(DocTagName, blank=True) # Revised ID Needed, ExternalParty, AD Followup, ...
@@ -129,6 +153,18 @@ class DocumentInfo(models.Model):
     uploaded_filename = models.TextField(blank=True)
     note = models.TextField(blank=True)
     rfc_number = models.PositiveIntegerField(blank=True, null=True)  # only valid for type="rfc"
+    keywords = models.JSONField(
+        default=list,
+        max_length=1000,
+        validators=[validate_doc_keywords],
+        blank=True,
+    )
+
+    @property
+    def doi(self) -> str | None:
+        if self.type_id == "rfc" and self.rfc_number is not None:
+            return f"{settings.IETF_DOI_PREFIX}/RFC{self.rfc_number}"
+        return None
 
     def file_extension(self):
         if not hasattr(self, '_cached_extension'):
@@ -228,14 +264,14 @@ class DocumentInfo(models.Model):
         return revisions
 
     def get_href(self, meeting=None):
-        return self._get_ref(meeting=meeting,meeting_doc_refs=settings.MEETING_DOC_HREFS)
+        return self._get_ref(meeting=meeting, versioned=True)
 
 
     def get_versionless_href(self, meeting=None):
-        return self._get_ref(meeting=meeting,meeting_doc_refs=settings.MEETING_DOC_GREFS)
+        return self._get_ref(meeting=meeting, versioned=False)
 
 
-    def _get_ref(self, meeting=None, meeting_doc_refs=settings.MEETING_DOC_HREFS):
+    def _get_ref(self, meeting=None, versioned=True):
         """
         Returns an url to the document text.  This differs from .get_absolute_url(),
         which returns an url to the datatracker page for the document.   
@@ -244,12 +280,16 @@ class DocumentInfo(models.Model):
         # the earlier resolution order, but there's at the moment one single
         # instance which matches this (with correct results), so we won't
         # break things all over the place.
-        if not hasattr(self, '_cached_href'):
+        cache_attr = "_cached_href" if versioned else "_cached_versionless_href"
+        if not hasattr(self, cache_attr):
             validator = URLValidator()
             if self.external_url and self.external_url.split(':')[0] in validator.schemes:
                 validator(self.external_url)
                 return self.external_url
 
+            meeting_doc_refs = (
+                settings.MEETING_DOC_HREFS if versioned else settings.MEETING_DOC_GREFS
+            )
             if self.type_id in settings.DOC_HREFS and self.type_id in meeting_doc_refs:
                 if self.meeting_related():
                     self.is_meeting_related = True
@@ -301,8 +341,13 @@ class DocumentInfo(models.Model):
 
             if href.startswith('/'):
                 href = settings.IDTRACKER_BASE_URL + href
-            self._cached_href = href
-        return self._cached_href
+            setattr(self, cache_attr, href)
+        return getattr(self, cache_attr)
+
+    def refresh_from_db(self, using=None, fields=None, **kwargs):
+        super().refresh_from_db(using=using, fields=fields, **kwargs)
+        self.state_cache = None
+        self._cached_state_slug = {}
 
     def set_state(self, state):
         """Switch state type implicit in state to state. This just
@@ -407,18 +452,62 @@ class DocumentInfo(models.Model):
         else:
             return state.name
 
+    def author_names(self):
+        """Author names as a list of strings"""
+        names = []
+        if self.type_id == "rfc" and self.rfcauthor_set.exists():
+            for author in self.rfcauthor_set.select_related("person"):
+                if author.person:
+                    names.append(author.person.name)
+                else:
+                    # titlepage_name cannot be blank
+                    names.append(author.titlepage_name)
+        else:
+            names = [
+                author.person.name
+                for author in self.documentauthor_set.select_related("person")
+            ]
+        return names
+
+    def author_persons_or_names(self):
+        """Authors as a list of named tuples with person and/or titlepage_name"""
+        Author = namedtuple("Author", "person titlepage_name")
+        persons_or_names = []
+        if self.type_id=="rfc" and self.rfcauthor_set.exists():
+            for author in self.rfcauthor_set.select_related("person"):
+                persons_or_names.append(Author(person=author.person, titlepage_name=author.titlepage_name))
+        else:
+            for author in self.documentauthor_set.select_related("person"):
+                persons_or_names.append(Author(person=author.person, titlepage_name=""))
+        return persons_or_names
+
+    def author_persons(self):
+        """Authors as a list of Persons
+        
+        Omits any RfcAuthors with a null person field.
+        """
+        if self.type_id == "rfc" and self.rfcauthor_set.exists():
+            authors_qs = self.rfcauthor_set.filter(person__isnull=False)
+        else:
+            authors_qs = self.documentauthor_set.all()
+        return [a.person for a in authors_qs.select_related("person")]
+
     def author_list(self):
+        """List of author emails"""
+        if self.type_id == "rfc" and self.rfcauthor_set.exists():
+            author_qs = self.rfcauthor_set.select_related("person").order_by("order")
+        else:
+            author_qs = self.documentauthor_set.select_related("email").order_by(
+                "order"
+            )
         best_addresses = []
-        for author in self.documentauthor_set.all():
+        for author in author_qs:
             if author.email:
                 if author.email.active or not author.email.person:
                     best_addresses.append(author.email.address)
                 else:
                     best_addresses.append(author.email.person.email_address())
         return ", ".join(best_addresses)
-
-    def authors(self):
-        return [ a.person for a in self.documentauthor_set.all() ]
 
     # This, and several other ballot related functions here, assume that there is only one active ballot for a document at any point in time.
     # If that assumption is violated, they will only expose the most recently created ballot
@@ -519,12 +608,21 @@ class DocumentInfo(models.Model):
         return related
 
     def related_that(self, relationship):
+        # _cached_related_that is populated in bulk by callers that render many
+        # documents at once (see ietf.doc.utils_search.fill_in_document_relations);
+        # without it each document costs a query per relationship it displays.
+        cached = getattr(self, "_cached_related_that", None)
+        if cached is not None and relationship in cached:
+            return cached[relationship]
         return list(set([x.source for x in self.relations_that(relationship)]))
 
     def all_related_that(self, relationship, related=None):
         return list(set([x.source for x in self.all_relations_that(relationship)]))
 
     def related_that_doc(self, relationship):
+        cached = getattr(self, "_cached_related_that_doc", None)
+        if cached is not None and relationship in cached:
+            return cached[relationship]
         return list(set([x.target for x in self.relations_that_doc(relationship)]))
 
     def all_related_that_doc(self, relationship, related=None):
@@ -558,19 +656,7 @@ class DocumentInfo(models.Model):
         except IOError as e:
             log.log(f"Error reading text for {path}: {e}")
             return None
-        text = None
-        try:
-            text = raw.decode('utf-8')
-        except UnicodeDecodeError:
-            for back in range(1,4):
-                try:
-                    text = raw[:-back].decode('utf-8')
-                    break
-                except UnicodeDecodeError:
-                    pass
-            if text is None:
-                text = raw.decode('latin-1')
-        return text
+        return decode_document_content(raw)
 
     def text_or_error(self):
         return self.text() or "Error; cannot read '%s'"%self.get_base_name()
@@ -721,7 +807,14 @@ class DocumentInfo(models.Model):
         if self.type_id == "rfc" and self.came_from_draft():
             refs_to |= self.came_from_draft().referenced_by_rfcs()
         return refs_to
-    
+
+    def sent_to_rfc_editor_event(self):
+        if self.stream_id == "ietf":
+            return self.docevent_set.filter(type="iesg_approved").order_by("-time").first()
+        elif self.stream_id in ["editorial", "iab", "irtf", "ise"]:
+            return self.docevent_set.filter(type="requested_publication").order_by("-time").first()
+        else:
+            return None
     class Meta:
         abstract = True
 
@@ -845,6 +938,54 @@ class RelatedDocument(models.Model):
 
         return False
 
+class RfcAuthor(models.Model):
+    """Captures the authors of an RFC as represented on the RFC title page.
+
+    This deviates from DocumentAuthor in that it does not get moved into the DocHistory
+    hierarchy as documents are saved. It will attempt to preserve email, country, and affiliation
+    from the DocumentAuthor objects associated with the draft leading to this RFC (which
+    may be wrong if the author moves or changes affiliation while the document is in the
+    queue).
+
+    It does not, at this time, attempt to capture the authors from anything _but_ the title
+    page. The datatracker may know more about such authors based on information from the draft
+    leading to the RFC, and future work may take that into account.
+
+    Once doc.rfcauthor_set.exists() for a doc of type `rfc`, doc.documentauthor_set should be 
+    ignored.
+    """
+
+    document = ForeignKey(
+        "Document",
+        on_delete=models.CASCADE,
+        limit_choices_to={"type_id": "rfc"},  # only affects ModelForms (e.g., admin)
+    )
+    titlepage_name = models.CharField(max_length=128, blank=False)
+    is_editor = models.BooleanField(default=False)
+    person = ForeignKey(Person, null=True, blank=True, on_delete=models.PROTECT)
+    affiliation = models.CharField(max_length=100, blank=True, help_text="Organization/company used by author for submission")
+    country = models.CharField(max_length=255, blank=True, help_text="Country used by author for submission")
+    order = models.IntegerField(default=1)
+
+    def __str__(self):
+        return u"%s %s (%s)" % (self.document.name, self.person, self.order)
+
+    class Meta:
+        ordering=["document", "order"]
+        indexes=[
+            models.Index(fields=["document", "order"])
+        ]
+
+    @property
+    def email(self) -> Email | None:
+        return self.person.email() if self.person else None
+    
+    def format_for_titlepage(self):
+        if self.is_editor:
+            return f"{self.titlepage_name}, Ed."
+        return self.titlepage_name
+
+
 class DocumentAuthorInfo(models.Model):
     person = ForeignKey(Person)
     # email should only be null for some historic documents
@@ -894,7 +1035,7 @@ class DocumentActionHolder(models.Model):
     def role_for_doc(self):
         """Brief string description of this person's relationship to the doc"""
         roles = []
-        if self.person in self.document.authors():
+        if self.person in self.document.author_persons():
             roles.append('Author')
         if self.person == self.document.ad:
             roles.append('Responsible AD')
@@ -913,13 +1054,25 @@ class DocumentActionHolder(models.Model):
             roles.append('Action Holder')
         return ', '.join(roles) 
 
+# N.B., at least a couple dozen documents exist that do not satisfy this validator
 validate_docname = RegexValidator(
     r'^[-a-z0-9]+$',
     "Provide a valid document name consisting of lowercase letters, numbers and hyphens.",
     'invalid'
 )
 
+
+SUBSERIES_DOC_TYPE_IDS = ("bcp", "fyi", "std")
+
+
+class DocumentQuerySet(models.QuerySet):
+    def subseries_docs(self):
+        return self.filter(type_id__in=SUBSERIES_DOC_TYPE_IDS)
+
+
 class Document(StorableMixin, DocumentInfo):
+    objects = DocumentQuerySet.as_manager()
+
     name = models.CharField(max_length=255, validators=[validate_docname,], unique=True)           # immutable
     
     action_holders = models.ManyToManyField(Person, through=DocumentActionHolder, blank=True)
@@ -1025,6 +1178,22 @@ class Document(StorableMixin, DocumentInfo):
         e = self.latest_event(ReviewRequestDocEvent, type="closed_review_request", review_request=review_req)
         return e.time if e and e.time else None
 
+    @property
+    def area(self) -> Group | None:
+        """Get area for document, if one exists
+        
+        None for non-IETF-stream documents. N.b., this is stricter than Group.area() and
+        uses different logic from Document.area_acronym().
+        """
+        if self.stream_id != "ietf":
+            return None
+        if self.group is None:
+            return None
+        parent = self.group.parent
+        if parent.type_id == "area":
+            return parent
+        return None
+
     def area_acronym(self):
         g = self.group
         if g:
@@ -1120,19 +1289,21 @@ class Document(StorableMixin, DocumentInfo):
         s = s.first()
         return s
 
+    def pub_datetime(self):
+        """Get the publication datetime of this document"""
+        if self.type_id == "rfc":
+            event = self.latest_event(type='published_rfc')
+        else:
+            event = self.latest_event(type='new_revision')
+        return event.time.astimezone(RPC_TZINFO) if event else None
+
     def pub_date(self):
         """Get the publication date for this document
 
         This is the rfc publication date for RFCs, and the new-revision date for other documents.
         """
-        if self.type_id == "rfc":
-            # As of Sept 2022, in ietf.sync.rfceditor.update_docs_from_rfc_index() `published_rfc` events are
-            # created with a timestamp whose date *in the PST8PDT timezone* is the official publication date
-            # assigned by the RFC editor.
-            event = self.latest_event(type='published_rfc')
-        else:
-            event = self.latest_event(type='new_revision')
-        return event.time.astimezone(RPC_TZINFO).date() if event else None
+        pub_datetime = self.pub_datetime()
+        return None if pub_datetime is None else pub_datetime.date()
 
     def is_dochistory(self):
         return False
@@ -1157,7 +1328,7 @@ class Document(StorableMixin, DocumentInfo):
             elif rev_events.exists():
                 time = rev_events.first().time
             else:
-                time = datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
+                time = datetime.datetime.fromtimestamp(0, datetime.UTC)
             dh = DocHistory(name=self.name, rev=rev, doc=self, time=time, type=self.type, title=self.title,
                              stream=self.stream, group=self.group)
 
@@ -1167,6 +1338,32 @@ class Document(StorableMixin, DocumentInfo):
         """Is the action holder list active for this document?"""
         iesg_state = self.get_state('draft-iesg')
         return iesg_state and iesg_state.slug != 'idexists'
+
+    def formats(self):
+        """List of file formats available
+        
+        Only implemented for RFCs. Relies on StoredObject.
+        """
+        if self.type_id != "rfc":
+            raise RuntimeError("Only allowed for type=rfc")
+
+        # StoredObject.doc_rev can be null or "" to represent no rev. Match either
+        # of these when self.rev is "" (always expected to be the case for RFCs)
+        rev_q = Q(doc_rev=self.rev)
+        if self.rev == "":
+            rev_q |= Q(doc_rev__isnull=True)
+        return [
+            {
+                "fmt": Path(object_name).parts[0],
+                "name": object_name,
+            }
+            for object_name in StoredObject.objects.filter(
+                rev_q,
+                store="rfc",
+                doc_name=self.name,
+            ).values_list("name", flat=True)
+        ]
+
 
 class DocumentURL(models.Model):
     doc  = ForeignKey(Document)
@@ -1360,6 +1557,7 @@ EVENT_TYPES = [
     ("rfc_editor_received_announcement", "Announcement was received by RFC Editor"),
     ("requested_publication", "Publication at RFC Editor requested"),
     ("sync_from_rfc_editor", "Received updated information from RFC Editor"),
+    ("changed_rpc_assignments", "Changed RPC queue assignments"),
 
     # review
     ("requested_review", "Requested review"),
@@ -1424,6 +1622,9 @@ class StateDocEvent(DocEvent):
 
 class ConsensusDocEvent(DocEvent):
     consensus = models.BooleanField(null=True, default=None)
+
+class RpcAssignmentDocEvent(DocEvent):
+    assignments = models.TextField(blank=True)
 
 # IESG events
 class BallotType(models.Model):
@@ -1580,6 +1781,11 @@ class EditedAuthorsDocEvent(DocEvent):
     """
     basis = models.CharField(help_text="What is the source or reasoning for the changes to the author list",max_length=255)
 
+
+class EditedRfcAuthorsDocEvent(DocEvent):
+    """Change to the RfcAuthor list for a document"""
+
+
 class BofreqEditorDocEvent(DocEvent):
     """ Capture the proponents of a BOF Request."""
     editors = models.ManyToManyField('person.Person', blank=True)
@@ -1588,8 +1794,16 @@ class BofreqResponsibleDocEvent(DocEvent):
     """ Capture the responsible leadership (IAB and IESG members) for a BOF Request """
     responsible = models.ManyToManyField('person.Person', blank=True)
 
+
+class StoredObjectQuerySet(models.QuerySet):
+    def exclude_deleted(self):
+        return self.filter(deleted__isnull=True)
+
+
 class StoredObject(models.Model):
     """Hold metadata about objects placed in object storage"""
+
+    objects = StoredObjectQuerySet.as_manager() 
 
     store = models.CharField(max_length=256)
     name = models.CharField(max_length=1024, null=False, blank=False) # N.B. the 1024 limit on name comes from S3
@@ -1615,3 +1829,6 @@ class StoredObject(models.Model):
         indexes = [
             models.Index(fields=["doc_name", "doc_rev"]),
         ]
+
+    def __str__(self):
+        return f"{self.store}:{self.name}"

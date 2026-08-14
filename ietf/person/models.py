@@ -4,7 +4,6 @@
 
 import email.utils
 import email.header
-import jsonfield
 import uuid
 
 from hashids import Hashids
@@ -57,7 +56,7 @@ class Person(models.Model):
     ascii = models.CharField("Full Name (ASCII)", max_length=255, help_text="Name as rendered in ASCII (Latin, unaccented) characters.", validators=[name_character_validator])
     # The short ascii-form of the name.  Also in alias table if non-null
     ascii_short = models.CharField("Abbreviated Name (ASCII)", max_length=32, null=True, blank=True, help_text="Example: A. Nonymous.  Fill in this with initials and surname only if taking the initials and surname of the ASCII name above produces an incorrect initials-only form. (Blank is OK).", validators=[name_character_validator])
-    pronouns_selectable = jsonfield.JSONCharField("Pronouns", max_length=120, blank=True, null=True, default=list )
+    pronouns_selectable = models.JSONField("Pronouns", max_length=120, blank=True, null=True, default=list )
     pronouns_freetext = models.CharField(" ", max_length=30, null=True, blank=True, help_text="Optionally provide your personal pronouns. These will be displayed on your public profile page and alongside your name in Meetecho and, in future, other systems. Select any number of the checkboxes OR provide a custom string up to 30 characters.")
     biography = models.TextField(blank=True, help_text="Short biography for use on leadership pages. Use plain text or reStructuredText markup.")
     photo = models.ImageField(
@@ -88,7 +87,7 @@ class Person(models.Model):
         else:
             prefix, first, middle, last, suffix = self.ascii_parts()
             return (first and first[0]+"." or "")+(middle or "")+" "+last+(suffix and " "+suffix or "")
-    def plain_name(self):
+    def plain_name(self) -> str:
         if not hasattr(self, '_cached_plain_name'):
             if self.plain:
                 self._cached_plain_name = self.plain
@@ -159,6 +158,15 @@ class Person(models.Model):
                 e = self.email_set.filter(active=True).order_by("-time").first()
             self._cached_email = e
         return self._cached_email
+    def has_alias_for_name(self):
+        """Is self.name recorded as one of this person's aliases?
+
+        Cached per instance so that callers rendering many people at once can seed it
+        in bulk instead of paying a query apiece.
+        """
+        if not hasattr(self, '_cached_has_alias_for_name'):
+            self._cached_has_alias_for_name = self.alias_set.filter(name=self.name).exists()
+        return self._cached_has_alias_for_name
     def email_allowing_inactive(self):
         if not hasattr(self, "_cached_email_allowing_inactive"):
             e = self.email()
@@ -204,7 +212,10 @@ class Person(models.Model):
 
     def rfcs(self):
         from ietf.doc.models import Document
-        rfcs = list(Document.objects.filter(documentauthor__person=self, type='rfc'))
+        # When RfcAuthors are populated, this may over-return if an author is dropped
+        # from the author list between the final draft and the published RFC. Should
+        # ignore DocumentAuthors when an RfcAuthor exists for a draft.
+        rfcs = list(Document.objects.filter(type="rfc").filter(models.Q(documentauthor__person=self)|models.Q(rfcauthor__person=self)).distinct())
         rfcs.sort(key=lambda d: d.name )
         return rfcs
 
@@ -252,6 +263,8 @@ class Person(models.Model):
         if self.ascii and self.name != self.ascii:
             if not self.ascii in [ a.name for a in self.alias_set.filter(name=self.ascii) ]:
                 self.alias_set.create(name=self.ascii)
+        # The aliases just changed; drop what has_alias_for_name() memoized about them.
+        self.__dict__.pop('_cached_has_alias_for_name', None)
 
     #this variable, if not None, may be used by url() to keep the sitefqdn.
     default_hostscheme = None
@@ -267,11 +280,16 @@ class Person(models.Model):
     def cdn_photo_url(self, size=80):
         if self.photo:
             if settings.SERVE_CDN_PHOTOS:
+                if settings.SERVER_MODE != "production":
+                    original_media_dir = settings.MEDIA_URL
+                    settings.MEDIA_URL = "https://www.ietf.org/lib/dt/media/"
                 source_url = self.photo.url
                 if source_url.startswith(settings.IETF_HOST_URL):
                     source_url = source_url[len(settings.IETF_HOST_URL):]
                 elif source_url.startswith('/'):
                     source_url = source_url[1:]
+                if settings.SERVER_MODE != "production":
+                    settings.MEDIA_URL = original_media_dir
                 return f'{settings.IETF_HOST_URL}cdn-cgi/image/fit=scale-down,width={size},height={size}/{source_url}'
             else:
                 datatracker_photo_path = urlreverse('ietf.person.views.photo', kwargs={'email_or_name': self.email()})

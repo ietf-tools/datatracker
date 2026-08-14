@@ -1,20 +1,29 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2021, All Rights Reserved #}
+{# Copyright The IETF Trust 2021-2026, All Rights Reserved #}
 {% load origin django_bootstrap5 static textfilters %}
 {% block title %}Start a new BOF Request{% endblock %}
 {% block content %}
     {% origin %}
     <h1>Start a new BOF Request</h1>
     <p>
-        The IAB will also attempt to provide BoF Shepherds as described in their document on the subject only on request from the IESG. If you feel that your BoF would benefit from an IAB BoF Shepherd, please discuss this with your Area Director.
+        BoF proponents are strongly encouraged to review the following sources before submitting requests:
+    </p>
+    <ul>
+        <li>Process: <a href="https://www.rfc-editor.org/rfc/rfc2418.html#section-2.4">RFC 2418 Section 2.4</a></li>
+        <li>Considerations for having a successful BoF: <a href="https://www.rfc-editor.org/rfc/rfc5434.html">RFC 5434</a></li>
+    </ul>
+    <p>
+        The IAB will also attempt to provide BoF Shepherds as described in their document on the subject only on request from the IESG. 
+        If you feel that your BoF would benefit from an IAB BoF Shepherd, please discuss this with your Area Director.
     </p>
     <p>
-        Choose a short descriptive title for your request. Take time to choose a good initial title - it will be used to make the filename for your request's content. The title can be changed later, but the filename will not change.
+        Choose a short descriptive title for your request. Take time to choose a good initial title - it will be used to make the filename for your request's content.
+        The title can be changed later, but the filename will not change.
     </p>
     <p>
         For example, a request with a title of "A new important bit" will be saved as <code>bofreq-{{ user.person.last_name|xslugify|slice:"64" }}-a-new-important-bit-00.md</code>.
     </p>
-    <p>All the items in the template MUST be filed in.</p>
+    <p>All the items in the template <strong>MUST</strong> be filed in.</p>
     <form class="upload-content form-horizontal"
           method="post"
           enctype="multipart/form-data">

@@ -12,7 +12,7 @@ from django.db.models import Q
 from ietf.doc.storage_utils import store_str
 from ietf.meeting.models import (Attended, Meeting, Session, SchedulingEvent, Schedule,
     TimeSlot, SessionPresentation, FloorPlan, Room, SlideSubmission, Constraint,
-    MeetingHost, ProceedingsMaterial)
+    MeetingHost, ProceedingsMaterial, Registration, RegistrationTicket)
 from ietf.name.models import (ConstraintName, SessionStatusName, ProceedingsMaterialTypeName,
                               TimerangeName, SessionPurposeName)
 from ietf.doc.factories import ProceedingsMaterialDocFactory
@@ -318,3 +318,48 @@ class AttendedFactory(factory.django.DjangoModelFactory):
 
     session = factory.SubFactory(SessionFactory)
     person = factory.SubFactory(PersonFactory)
+
+
+class RegistrationFactory(factory.django.DjangoModelFactory):
+    """
+    This will create an associated onsite week_pass ticket by default.
+    Methods of calling:
+
+    RegistrationFactory()                   create a ticket with defaults, onsite
+    RegistrationFactory(with_ticket=True)   same as above
+    RegistrationFactory(with_ticket={'attendance_type_id': 'remote'})   creates ticket with overrides
+    RegistrationFactory(with_ticket=False)  does not create a ticket
+    """
+    class Meta:
+        model = Registration
+        skip_postgeneration_save = True
+
+    meeting = factory.SubFactory(MeetingFactory)
+    person = factory.SubFactory(PersonFactory)
+    email = factory.LazyAttribute(lambda obj: obj.person.email())
+    first_name = factory.LazyAttribute(lambda obj: obj.person.first_name())
+    last_name = factory.LazyAttribute(lambda obj: obj.person.last_name())
+    affiliation = factory.Faker('company')
+    country_code = factory.Faker('country_code')
+    attended = False
+    checkedin = False
+
+    @factory.post_generation
+    def with_ticket(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted is False:
+            # Explicitly disable ticket creation
+            return
+        ticket_kwargs = extracted if isinstance(extracted, dict) else {}
+        RegistrationTicketFactory(registration=self, **ticket_kwargs)
+
+
+class RegistrationTicketFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = RegistrationTicket
+        skip_postgeneration_save = True
+
+    registration = factory.SubFactory(RegistrationFactory)
+    attendance_type_id = factory.LazyAttribute(lambda _: 'onsite')
+    ticket_type_id = factory.LazyAttribute(lambda _: 'week_pass')

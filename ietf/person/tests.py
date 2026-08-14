@@ -1,15 +1,14 @@
-# Copyright The IETF Trust 2014-2022, All Rights Reserved
+# Copyright The IETF Trust 2014-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 import datetime
 import json
-import mock
+from unittest import mock
 
 from io import StringIO, BytesIO
 from PIL import Image
 from pyquery import PyQuery
-
 
 from django.core.exceptions import ValidationError
 from django.http import HttpRequest
@@ -23,6 +22,7 @@ import debug                            # pyflakes:ignore
 from ietf.community.models import CommunityList
 from ietf.group.factories import RoleFactory
 from ietf.group.models import Group
+from ietf.message.models import Message
 from ietf.nomcom.models import NomCom
 from ietf.nomcom.test_data import nomcom_test_data
 from ietf.nomcom.factories import NomComFactory, NomineeFactory, NominationFactory, FeedbackFactory, PositionFactory
@@ -78,7 +78,9 @@ class PersonTests(TestCase):
 
     def test_default_email(self):
         person = PersonFactory()
-        primary = EmailFactory(person=person, primary=True, active=True)
+        primary = person.email_set.get()
+        self.assertEqual(primary.primary, True)
+        self.assertEqual(primary.active, True)
         EmailFactory(person=person, primary=False, active=True)
         EmailFactory(person=person, primary=False, active=False)
         self.assertTrue(primary.address in person.formatted_email())
@@ -208,13 +210,13 @@ class PersonTests(TestCase):
     def test_merge_with_params(self):
         p1 = get_person_no_user()
         p2 = PersonFactory()
-        url = urlreverse("ietf.person.views.merge") + "?source={}&target={}".format(p1.pk, p2.pk)
+        url = urlreverse("ietf.person.views.merge_submit") + "?source={}&target={}".format(p1.pk, p2.pk)
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertContains(r, 'retaining login', status_code=200)
 
     def test_merge_with_params_bad_id(self):
-        url = urlreverse("ietf.person.views.merge") + "?source=1000&target=2000"
+        url = urlreverse("ietf.person.views.merge_submit") + "?source=1000&target=2000"
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertContains(r, 'ID does not exist', status_code=200)
@@ -222,7 +224,7 @@ class PersonTests(TestCase):
     def test_merge_post(self):
         p1 = get_person_no_user()
         p2 = PersonFactory()
-        url = urlreverse("ietf.person.views.merge")
+        url = urlreverse("ietf.person.views.merge_submit")
         expected_url = urlreverse("ietf.secr.rolodex.views.view", kwargs={'id': p2.pk})
         login_testing_unauthorized(self, "secretary", url)
         data = {'source': p1.pk, 'target': p2.pk}
@@ -358,7 +360,7 @@ class PersonUtilsTests(TestCase):
         source = PersonFactory()
         target = PersonFactory()
         extra = get_extra_primary(source, target)
-        self.assertTrue(extra == list(source.email_set.filter(primary=True)))
+        self.assertEqual(set(extra), set(source.email_set.filter(primary=True)))
 
     def test_dedupe_aliases(self):
         person = PersonFactory()
@@ -450,6 +452,30 @@ class PersonUtilsTests(TestCase):
         self.assertEqual(get_dots(ncmember),['nomcom'])
         ncchair = RoleFactory(group__acronym='nomcom2020',group__type_id='nomcom',name_id='chair').person
         self.assertEqual(get_dots(ncchair),['nomcom'])
+
+    def test_send_merge_request(self):
+        empty_outbox()
+        message_count_before = Message.objects.count()
+        source = PersonFactory()
+        target = PersonFactory()
+        url = urlreverse('ietf.person.views.send_merge_request')
+        url = url + f'?source={source.pk}&target={target.pk}'
+        login_testing_unauthorized(self, 'secretary', url)
+        r = self.client.get(url)
+        initial = r.context['form'].initial
+        subject = 'Action requested: Merging possible duplicate IETF Datatracker accounts'
+        self.assertEqual(initial['to'], ', '.join([source.user.username, target.user.username]))
+        self.assertEqual(initial['subject'], subject)
+        self.assertEqual(initial['reply_to'], 'support@ietf.org')
+        self.assertEqual(r.status_code, 200)
+        r = self.client.post(url, data=initial)
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(len(outbox), 1)
+        self.assertIn(source.user.username, outbox[0]['To'])
+        message_count_after = Message.objects.count()
+        message = Message.objects.last()
+        self.assertEqual(message_count_after, message_count_before + 1)
+        self.assertIn(source.user.username, message.to)
 
 
 class TaskTests(TestCase):

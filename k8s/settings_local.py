@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
+# Copyright The IETF Trust 2007-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 from base64 import b64decode
@@ -7,24 +7,23 @@ import json
 
 from ietf import __release_hash__
 from ietf.settings import *  # pyflakes:ignore
-from ietf.settings import STORAGES, MORE_STORAGE_NAMES, BLOBSTORAGE_CONNECT_TIMEOUT, BLOBSTORAGE_READ_TIMEOUT, BLOBSTORAGE_MAX_ATTEMPTS
+from ietf.settings import (
+    STORAGES,
+    ARTIFACT_STORAGE_NAMES,
+    BLOBSTORAGE_CONNECT_TIMEOUT,
+    BLOBSTORAGE_READ_TIMEOUT,
+    BLOBSTORAGE_MAX_ATTEMPTS,
+)
 import botocore.config
 
 
 def _multiline_to_list(s):
-    """Helper to split at newlines and conver to list"""
+    """Helper to split at newlines and convert to list"""
     return [item.strip() for item in s.split("\n")]
 
 
 # Default to "development". Production _must_ set DATATRACKER_SERVER_MODE="production" in the env!
 SERVER_MODE = os.environ.get("DATATRACKER_SERVER_MODE", "development")
-
-# Use X-Forwarded-Proto to determine request.is_secure(). This relies on CloudFlare overwriting the
-# value of the header if an incoming request sets it, which it does:
-# https://developers.cloudflare.com/fundamentals/reference/http-request-headers/#x-forwarded-proto
-# See also, especially the warnings:
-# https://docs.djangoproject.com/en/dev/ref/settings/#secure-proxy-ssl-header
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Secrets
 _SECRET_KEY = os.environ.get("DATATRACKER_DJANGO_SECRET_KEY", None)
@@ -44,12 +43,6 @@ if _IANA_SYNC_PASSWORD is not None:
     IANA_SYNC_PASSWORD = _IANA_SYNC_PASSWORD
 else:
     raise RuntimeError("DATATRACKER_IANA_SYNC_PASSWORD must be set")
-
-_RFC_EDITOR_SYNC_PASSWORD = os.environ.get("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD", None)
-if _RFC_EDITOR_SYNC_PASSWORD is not None:
-    RFC_EDITOR_SYNC_PASSWORD = os.environ.get("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD")
-else:
-    raise RuntimeError("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD must be set")
 
 _YOUTUBE_API_KEY = os.environ.get("DATATRACKER_YOUTUBE_API_KEY", None)
 if _YOUTUBE_API_KEY is not None:
@@ -81,6 +74,22 @@ if _API_PRIVATE_KEY_PEM_B64 is not None:
 else:
     raise RuntimeError("DATATRACKER_API_PRIVATE_KEY_PEM_B64 must be set")
 
+_RED_PRECOMPUTER_TRIGGER_RETRY_DELAY = os.environ.get(
+    "DATATRACKER_RED_PRECOMPUTER_TRIGGER_RETRY_DELAY", None
+)
+if _RED_PRECOMPUTER_TRIGGER_RETRY_DELAY is not None:
+    RED_PRECOMPUTER_TRIGGER_RETRY_DELAY = _RED_PRECOMPUTER_TRIGGER_RETRY_DELAY
+_RED_PRECOMPUTER_TRIGGER_MAX_RETRIES = os.environ.get(
+    "DATATRACKER_RED_PRECOMPUTER_TRIGGER_MAX_RETRIES", None
+)
+if _RED_PRECOMPUTER_TRIGGER_MAX_RETRIES is not None:
+    RED_PRECOMPUTER_TRIGGER_MAX_RETRIES = _RED_PRECOMPUTER_TRIGGER_MAX_RETRIES
+_TRIGGER_RED_PRECOMPUTE_MULTIPLE_URL = os.environ.get(
+    "DATATRACKER_TRIGGER_RED_PRECOMPUTE_MULTIPLE_URL", None
+)
+if _TRIGGER_RED_PRECOMPUTE_MULTIPLE_URL is not None:
+    TRIGGER_RED_PRECOMPUTE_MULTIPLE_URL = _TRIGGER_RED_PRECOMPUTE_MULTIPLE_URL
+
 # Set DEBUG if DATATRACKER_DEBUG env var is the word "true"
 DEBUG = os.environ.get("DATATRACKER_DEBUG", "false").lower() == "true"
 
@@ -99,19 +108,33 @@ DATABASES = {
         "PASSWORD": os.environ.get("DATATRACKER_DB_PASS", ""),
         "OPTIONS": json.loads(os.environ.get("DATATRACKER_DB_OPTS_JSON", "{}")),
     },
+    "blobdb": {
+        "HOST": os.environ.get("BLOBDB_DB_HOST", "blobdb"),
+        "PORT": os.environ.get("BLOBDB_DB_PORT", "5432"),
+        "NAME": os.environ.get("BLOBDB_DB_NAME", "blob"),
+        "ENGINE": "django.db.backends.postgresql",
+        "USER": os.environ.get("BLOBDB_DB_USER", "django"),
+        "PASSWORD": os.environ.get("BLOBDB_DB_PASS", ""),
+        "OPTIONS": json.loads(os.environ.get("BLOBDB_DB_OPTS_JSON", "{}")),
+    },
 }
+
+DATABASE_ROUTERS = ["ietf.blobdb.routers.BlobdbStorageRouter"]
+BLOBDB_DATABASE = "blobdb"
 
 # Configure persistent connections. A setting of 0 is Django's default.
 _conn_max_age = os.environ.get("DATATRACKER_DB_CONN_MAX_AGE", "0")
-# A string "none" means unlimited age.
-DATABASES["default"]["CONN_MAX_AGE"] = (
-    None if _conn_max_age.lower() == "none" else int(_conn_max_age)
-)
+for dbname in ["default", "blobdb"]:
+    # A string "none" means unlimited age.
+    DATABASES[dbname]["CONN_MAX_AGE"] = (
+        None if _conn_max_age.lower() == "none" else int(_conn_max_age)
+    )
 # Enable connection health checks if DATATRACKER_DB_CONN_HEALTH_CHECK is the string "true"
 _conn_health_checks = bool(
     os.environ.get("DATATRACKER_DB_CONN_HEALTH_CHECKS", "false").lower() == "true"
 )
-DATABASES["default"]["CONN_HEALTH_CHECKS"] = _conn_health_checks
+for dbname in ["default", "blobdb"]:
+    DATABASES[dbname]["CONN_HEALTH_CHECKS"] = _conn_health_checks
 
 # DATATRACKER_ADMINS is a newline-delimited list of addresses parseable by email.utils.parseaddr
 _admins_str = os.environ.get("DATATRACKER_ADMINS", None)
@@ -126,14 +149,26 @@ USING_DEBUG_EMAIL_SERVER = (
 EMAIL_HOST = os.environ.get("DATATRACKER_EMAIL_HOST", "localhost")
 EMAIL_PORT = int(os.environ.get("DATATRACKER_EMAIL_PORT", "2025"))
 
+_broker_url = os.environ.get("DATATRACKER_BROKER_URL", None)
 _celery_password = os.environ.get("CELERY_PASSWORD", None)
-if _celery_password is None:
-    raise RuntimeError("CELERY_PASSWORD must be set")
-CELERY_BROKER_URL = "amqp://datatracker:{password}@{host}/{queue}".format(
-    host=os.environ.get("RABBITMQ_HOSTNAME", "dt-rabbitmq"),
-    password=_celery_password,
-    queue=os.environ.get("RABBITMQ_QUEUE", "dt"),
+if _broker_url is not None:
+    CELERY_BROKER_URL = _broker_url
+elif _celery_password is not None:
+    CELERY_BROKER_URL = "amqp://datatracker:{password}@{host}/{queue}".format(
+        host=os.environ.get("RABBITMQ_HOSTNAME", "dt-rabbitmq"),
+        password=_celery_password,
+        queue=os.environ.get("RABBITMQ_QUEUE", "dt"),
+    )
+else:
+    raise RuntimeError("DATATRACKER_BROKER_URL or CELERY_PASSWORD must be set")
+
+# mailarchive API key
+_mailing_list_archive_api_key = os.environ.get(
+    "DATATRACKER_MAILING_LIST_ARCHIVE_API_KEY", None
 )
+if _mailing_list_archive_api_key is None:
+    raise RuntimeError("DATATRACKER_MAILING_LIST_ARCHIVE_API_KEY must be set")
+MAILING_LIST_ARCHIVE_API_KEY = _mailing_list_archive_api_key
 
 IANA_SYNC_USERNAME = "ietfsync"
 IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"
@@ -145,6 +180,21 @@ _registration_api_key = os.environ.get("DATATRACKER_REGISTRATION_API_KEY", None)
 if _registration_api_key is None:
     raise RuntimeError("DATATRACKER_REGISTRATION_API_KEY must be set")
 STATS_REGISTRATION_ATTENDEES_JSON_URL = f"https://registration.ietf.org/{{number}}/attendees/?apikey={_registration_api_key}"
+
+# Registration Participants API config - key must be set, but the URL can be left
+# to the default in settings.py
+_registration_participants_api_key = os.environ.get(
+    "DATATRACKER_REGISTRATION_PARTICIPANTS_API_KEY", None
+)
+if _registration_participants_api_key is None:
+    raise RuntimeError("DATATRACKER_REGISTRATION_PARTICIPANTS_API_KEY must be set")
+REGISTRATION_PARTICIPANTS_API_KEY = _registration_participants_api_key
+
+_registration_participants_api_url = os.environ.get(
+    "DATATRACKER_REGISTRATION_PARTICIPANTS_API_URL", None
+)
+if _registration_participants_api_url is not None:
+    REGISTRATION_PARTICIPANTS_API_URL = _registration_participants_api_url
 
 # FIRST_CUTOFF_DAYS = 12
 # SECOND_CUTOFF_DAYS = 12
@@ -167,13 +217,22 @@ if _MEETECHO_CLIENT_ID is not None and _MEETECHO_CLIENT_SECRET is not None:
         "client_id": _MEETECHO_CLIENT_ID,
         "client_secret": _MEETECHO_CLIENT_SECRET,
         "request_timeout": 3.01,  # python-requests doc recommend slightly > a multiple of 3 seconds
+        "slides_notify_time": int(
+            os.environ.get("DATATRACKER_MEETECHO_SLIDES_NOTIFY_TIME_MINUTES", "15")
+        ),
     }
 else:
     raise RuntimeError(
         "DATATRACKER_MEETECHO_CLIENT_ID and DATATRACKER_MEETECHO_CLIENT_SECRET must be set"
     )
 
-# For APP_API_TOKENS, ccept either base64-encoded JSON or raw JSON, but not both
+# For APP_API_TOKENS, accept either base64-encoded JSON or raw JSON, but not both.
+# To decode / pretty-print the encoded form, run:
+#    base64 -d | jq .
+# paste the encoded secret into stdin. Copy/paste that into an editor you trust not
+# to leave a copy lying around. When done editing, copy/paste the final JSON through
+#    jq -c | base64
+# and copy/paste the output into the secret store.
 if "DATATRACKER_APP_API_TOKENS_JSON_B64" in os.environ:
     if "DATATRACKER_APP_API_TOKENS_JSON" in os.environ:
         raise RuntimeError(
@@ -192,8 +251,19 @@ else:
 
 EMAIL_COPY_TO = ""
 
-# Until we teach the datatracker to look beyond cloudflare for this check
-IDSUBMIT_MAX_DAILY_SAME_SUBMITTER = 5000
+# I-D Submission settings
+
+# Until we teach the datatracker to look beyond cloudflare for this check, it needs
+# to be very large. 5000 has been working without complaint.
+IDSUBMIT_MAX_DAILY_SAME_SUBMITTER = int(
+    os.environ.get("DATATRACKER_IDSUBMIT_MAX_DAILY_SAME_SUBMITTER", "5000")
+)
+
+# Default is 20 minutes. Allow override via environment.
+if "DATATRACKER_IDSUBMIT_MAX_VALIDATION_TIME" in os.environ:
+    IDSUBMIT_MAX_VALIDATION_TIME = datetime.timedelta(
+        minutes=int(os.environ.get("DATATRACKER_IDSUBMIT_MAX_VALIDATION_TIME"))
+    )
 
 # Leave DATATRACKER_MATOMO_SITE_ID unset to disable Matomo reporting
 if "DATATRACKER_MATOMO_SITE_ID" in os.environ:
@@ -240,7 +310,9 @@ PHOTOS_DIRNAME = "photo"
 PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
 
 # Normally only set for debug, but needed until we have a real FS
-DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, "static/dist-neue/manifest.json")
+DJANGO_VITE["default"]["manifest_path"] = os.path.join(
+    BASE_DIR, "static/dist-neue/manifest.json"
+)
 
 # Binaries that are different in the docker image
 DE_GFM_BINARY = "/usr/local/bin/de-gfm"
@@ -257,6 +329,27 @@ CACHES = {
         "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
         "VERSION": __version__,
         "KEY_PREFIX": "ietf:dt",
+        # Key function is default except with sha384-encoded key
+        "KEY_FUNCTION": lambda key, key_prefix, version: (
+            f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+        ),
+    },
+    "agenda": {
+        "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+        "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+        # No release-specific VERSION setting.
+        "KEY_PREFIX": "ietf:dt:agenda",
+        # Key function is default except with sha384-encoded key
+        "KEY_FUNCTION": lambda key, key_prefix, version: (
+            f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+        ),
+    },
+    "proceedings": {
+        "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+        "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+        # No release-specific VERSION setting.
+        "KEY_PREFIX": "ietf:dt:proceedings",
+        # Key function is default except with sha384-encoded key
         "KEY_FUNCTION": lambda key, key_prefix, version: (
             f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
         ),
@@ -302,7 +395,7 @@ if _csrf_trusted_origins_str is not None:
 # Console logs as JSON instead of plain when running in k8s
 LOGGING["handlers"]["console"]["formatter"] = "json"
 
-# Configure storages for the blob store
+# Configure storages for the replica blob store
 _blob_store_endpoint_url = os.environ.get("DATATRACKER_BLOB_STORE_ENDPOINT_URL")
 _blob_store_access_key = os.environ.get("DATATRACKER_BLOB_STORE_ACCESS_KEY")
 _blob_store_secret_key = os.environ.get("DATATRACKER_BLOB_STORE_SECRET_KEY")
@@ -311,9 +404,8 @@ if None in (_blob_store_endpoint_url, _blob_store_access_key, _blob_store_secret
         "All of DATATRACKER_BLOB_STORE_ENDPOINT_URL, DATATRACKER_BLOB_STORE_ACCESS_KEY, "
         "and DATATRACKER_BLOB_STORE_SECRET_KEY must be set"
     )
-_blob_store_bucket_prefix = os.environ.get(
-    "DATATRACKER_BLOB_STORE_BUCKET_PREFIX", ""
-)
+_blob_store_bucket_prefix = os.environ.get("DATATRACKER_BLOB_STORE_BUCKET_PREFIX", "")
+_blob_store_bucket_suffix = os.environ.get("DATATRACKER_BLOB_STORE_BUCKET_SUFFIX", "")
 _blob_store_enable_profiling = (
     os.environ.get("DATATRACKER_BLOB_STORE_ENABLE_PROFILING", "false").lower() == "true"
 )
@@ -321,26 +413,122 @@ _blob_store_max_attempts = int(
     os.environ.get("DATATRACKER_BLOB_STORE_MAX_ATTEMPTS", BLOBSTORAGE_MAX_ATTEMPTS)
 )
 _blob_store_connect_timeout = float(
-    os.environ.get("DATATRACKER_BLOB_STORE_CONNECT_TIMEOUT", BLOBSTORAGE_CONNECT_TIMEOUT)
+    os.environ.get(
+        "DATATRACKER_BLOB_STORE_CONNECT_TIMEOUT", BLOBSTORAGE_CONNECT_TIMEOUT
+    )
 )
 _blob_store_read_timeout = float(
     os.environ.get("DATATRACKER_BLOB_STORE_READ_TIMEOUT", BLOBSTORAGE_READ_TIMEOUT)
 )
-for storage_name in MORE_STORAGE_NAMES:
-    STORAGES[storage_name] = {
-        "BACKEND": "ietf.doc.storage_backends.CustomS3Storage",
+
+for storagename in ARTIFACT_STORAGE_NAMES:
+    if storagename in ["staging"]:
+        continue
+    replica_storagename = f"r2-{storagename}"
+    adjusted_bucket_name = (
+        _blob_store_bucket_prefix + storagename + _blob_store_bucket_suffix
+    ).strip()
+    STORAGES[replica_storagename] = {
+        "BACKEND": "ietf.doc.storage.MetadataS3Storage",
         "OPTIONS": dict(
             endpoint_url=_blob_store_endpoint_url,
             access_key=_blob_store_access_key,
             secret_key=_blob_store_secret_key,
             security_token=None,
             client_config=botocore.config.Config(
+                request_checksum_calculation="when_required",
+                response_checksum_validation="when_required",
                 signature_version="s3v4",
                 connect_timeout=_blob_store_connect_timeout,
                 read_timeout=_blob_store_read_timeout,
                 retries={"total_max_attempts": _blob_store_max_attempts},
             ),
-            bucket_name=f"{_blob_store_bucket_prefix}{storage_name}".strip(),
+            verify=False,
+            bucket_name=adjusted_bucket_name,
             ietf_log_blob_timing=_blob_store_enable_profiling,
         ),
     }
+
+# Configure storage for the red bucket - assume it uses the same credentials as
+# other blobs
+_red_bucket_name = os.environ.get("DATATRACKER_BLOB_STORE_RED_BUCKET_NAME", "").strip()
+if _red_bucket_name == "":
+    raise RuntimeError("DATATRACKER_BLOB_STORE_RED_BUCKET_NAME must be set")
+
+STORAGES["red_bucket"] = {
+    "BACKEND": "storages.backends.s3.S3Storage",
+    "OPTIONS": dict(
+        endpoint_url=_blob_store_endpoint_url,
+        access_key=_blob_store_access_key,
+        secret_key=_blob_store_secret_key,
+        security_token=None,
+        client_config=botocore.config.Config(
+            request_checksum_calculation="when_required",
+            response_checksum_validation="when_required",
+            signature_version="s3v4",
+            connect_timeout=_blob_store_connect_timeout,
+            read_timeout=_blob_store_read_timeout,
+            retries={"total_max_attempts": _blob_store_max_attempts},
+        ),
+        verify=False,
+        bucket_name=_red_bucket_name,
+    ),
+}
+RFCINDEX_DELETE_THEN_WRITE = False  # S3Storage allows file_overwrite by default
+if "DATATRACKER_RFCINDEX_OUTPUT_PATH" in os.environ:
+    RFCINDEX_OUTPUT_PATH = os.environ.get("DATATRACKER_RFCINDEX_OUTPUT_PATH")
+if "DATATRACKER_RFCINDEX_INPUT_PATH" in os.environ:
+    RFCINDEX_INPUT_PATH = os.environ.get("DATATRACKER_RFCINDEX_INPUT_PATH")
+
+# Configure the blobdb app for artifact storage
+_blobdb_replication_enabled = (
+    os.environ.get("DATATRACKER_BLOBDB_REPLICATION_ENABLED", "true").lower() == "true"
+)
+_blobdb_replication_verbose_logging = (
+    os.environ.get("DATATRACKER_BLOBDB_REPLICATION_VERBOSE_LOGGING", "false").lower()
+    == "true"
+)
+
+BLOBDB_REPLICATION = {
+    "ENABLED": _blobdb_replication_enabled,
+    "DEST_STORAGE_PATTERN": "r2-{bucket}",
+    "INCLUDE_BUCKETS": ARTIFACT_STORAGE_NAMES,
+    "EXCLUDE_BUCKETS": ["staging"],
+    "VERBOSE_LOGGING": _blobdb_replication_verbose_logging,
+}
+
+# Optionally disable password strength enforcement at login (on by default)
+PASSWORD_POLICY_ENFORCE_AT_LOGIN = (
+    os.environ.get("DATATRACKER_ENFORCE_PW_POLICY", "true").lower() != "false"
+)
+
+# Typesense search indexing
+SEARCHINDEX_CONFIG = {
+    "TYPESENSE_API_URL": os.environ.get("DATATRACKER_TYPESENSE_API_URL", ""),
+    "TYPESENSE_API_KEY": os.environ.get("DATATRACKER_TYPESENSE_API_KEY", ""),
+    "TASK_RETRY_DELAY": int(
+        os.environ.get("DATATRACKER_SEARCHINDEX_TASK_RETRY_DELAY", "10")
+    ),
+    "TASK_MAX_RETRIES": int(
+        os.environ.get("DATATRACKER_SEARCHINDEX_TASK_MAX_RETRIES", "12")
+    ),
+}
+
+# Errata system api configuration
+ERRATA_METADATA_NOTIFICATION_API_KEY = os.environ.get(
+    "DATATRACKER_ERRATA_METADATA_NOTIFICATION_API_KEY", None
+)
+if ERRATA_METADATA_NOTIFICATION_API_KEY is not None:
+    ERRATA_METADATA_NOTIFICATION_URL = os.environ.get(
+        "DATATRACKER_ERRATA_METADATA_NOTIFICATION_URL", None
+    )
+    if ERRATA_METADATA_NOTIFICATION_URL is None:
+        raise RuntimeError(
+            "DATATRACKER_ERRATA_METADATA_NOTIFICATION_URL must be set if "
+            "DATATRACKER_ERRATA_METADATA_NOTIFICATION_API_KEY is provided"
+        )
+
+# name (with path) of errata.json in the red bucket
+ERRATA_JSON_BLOB_NAME = os.environ.get(
+    "DATATRACKER_ERRATA_JSON_BLOB_NAME", "other/errata.json"
+)

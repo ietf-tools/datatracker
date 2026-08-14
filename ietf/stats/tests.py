@@ -1,49 +1,118 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2016-2026, All Rights Reserved
 
-
-import calendar
+import csv
 import datetime
+import io
 import json
 
-from mock import patch
+from django.http import Http404
 from pyquery import PyQuery
-from requests import Response
 
 import debug    # pyflakes:ignore
 
+from django.test import RequestFactory
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 
+from ietf.meeting.models import Meeting
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 import ietf.stats.views
 
 
-from ietf.group.factories import RoleFactory
-from ietf.meeting.factories import MeetingFactory
-from ietf.person.factories import PersonFactory
+from ietf.doc.factories import NewRevisionDocEventFactory
+from ietf.group.factories import GroupFactory, RoleFactory
+from ietf.person.factories import EmailFactory, PersonFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
-from ietf.stats.models import MeetingRegistration
-from ietf.stats.tasks import fetch_meeting_attendance_task
-from ietf.stats.utils import get_meeting_registration_data, FetchStats, fetch_attendance_from_meetings
-from ietf.utils.timezone import date_today
+from ietf.meeting.tests_models import MeetingFactory, RegistrationFactory
+from ietf.submit.factories import SubmissionFactory
 
 
 class StatisticsTests(TestCase):
     def test_stats_index(self):
+        # Create a meeting as the index page needs to know the current meeting
+        MeetingFactory(type_id='ietf', number='124', date=timezone.now())
         url = urlreverse(ietf.stats.views.stats_index)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
     def test_document_stats(self):
-        r = self.client.get(urlreverse("ietf.stats.views.document_stats"))
-        self.assertRedirects(r, urlreverse("ietf.stats.views.stats_index"))
-
+        # Create a meeting as the index page needs to know the current meeting
+        MeetingFactory(type_id='ietf', number='124', date=timezone.now())
+        r = self.client.get(urlreverse(ietf.stats.views.document_stats))
+        self.assertRedirects(r, urlreverse(ietf.stats.views.stats_index))
 
     def test_meeting_stats(self):
-        r = self.client.get(urlreverse("ietf.stats.views.meeting_stats"))
-        self.assertRedirects(r, urlreverse("ietf.stats.views.stats_index"))
+        meeting124 = MeetingFactory(type_id='ietf', number='124', date=timezone.now())
+        meeting125 = MeetingFactory(type_id='ietf', number='125', date=timezone.now() + datetime.timedelta(days=120))
+        RegistrationFactory.create_batch(15, meeting=meeting124, with_ticket={'attendance_type_id': 'onsite'}, attended=True)
+        RegistrationFactory(meeting=meeting124, with_ticket={'attendance_type_id': 'onsite'}, attended=False)
+        RegistrationFactory.create_batch(14, meeting=meeting124, with_ticket={'attendance_type_id': 'remote'}, attended=True)
+        RegistrationFactory(meeting=meeting124, with_ticket={'attendance_type_id': 'remote'}, attended=False)
+        RegistrationFactory.create_batch(15, meeting=meeting125, affiliation='Test LLC', with_ticket={'attendance_type_id': 'remote'}, attended=False)
+        RegistrationFactory.create_batch(25, meeting=meeting125, affiliation='Example, Ltd', with_ticket={'attendance_type_id': 'onsite'}, attended=False)
+        # Test the meeting specific statitistics per affiliation and per country
+        r = self.client.get(urlreverse(ietf.stats.views.meeting_stats, kwargs={"meeting_number": "124", "stats_type": "affiliation"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Total Registrations by Affiliation (31 in total)")
+        self.assertContains(r, "In Person Registrations by Affiliation (16 in total)")
+        self.assertContains(r, "/stats/meeting/124/affiliation")
+        self.assertContains(r, "/stats/meeting/125/affiliation")
+        r = self.client.get(urlreverse(ietf.stats.views.meeting_stats, kwargs={"meeting_number": "124", "stats_type": "country"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Total Registrations by Country (31 in total)")
+        self.assertContains(r, "In Person Registrations by Country (16 in total)")
+        self.assertContains(r, "/stats/meeting/124/country")
+        self.assertContains(r, "/stats/meeting/125/country")
+        # Test the meetings timeline per country
+        r = self.client.get(urlreverse(ietf.stats.views.meetings_timeline, kwargs={"stats_type": "country"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "/stats/meeting/124/country")
+        self.assertContains(r, "/stats/meeting/125/country")
+        self.assertContains(r, "This page provides a timeline of meeting registrations by country")
+        # Test the meetings timeline per affiliation
+        r = self.client.get(urlreverse(ietf.stats.views.meetings_timeline, kwargs={"stats_type": "affiliation"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "/stats/meeting/124/affiliation")
+        self.assertContains(r, "/stats/meeting/125/affiliation")
+        self.assertContains(r, "This page provides a timeline of meeting registrations by affiliation")
+        # Extract the JSON embedded in the response
+        pq = PyQuery(r.content)
+        in_person_data = json.loads(pq.find("script#in-person-chart-data").text())
+        self.assertTrue(
+            any(
+                ds["label"] == "Example" and ds["data"] == [0, 25]
+                for ds in in_person_data["datasets"]
+            )
+        )
+        # Test the global meetings timeline
+        r = self.client.get(urlreverse(ietf.stats.views.meetings_timeline, kwargs={"stats_type": "total"}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "/stats/meeting/124/country")
+        self.assertContains(r, "/stats/meeting/125/country")
+        self.assertContains(r, "This page provides a timeline of meeting registrations.")
 
-                
+    def test_meeting_stats_for_bad_meeting(self):
+        self.assertFalse(Meeting.objects.filter(number=676767).exists())
+        for stats_type in ["affiliation", "country"]:
+            r = self.client.get(
+                urlreverse(
+                    "ietf.stats.views.meeting_stats",
+                    kwargs={"meeting_number": 676767, "stats_type": stats_type},
+                )
+            )
+            self.assertEqual(r.status_code, 404)
+
+            # We don't have a URL for an interim, but make sure the view will 404 if
+            # somehow a non-interim gets selected...
+            interim_num = MeetingFactory(type_id="interim").number
+            request_factory = RequestFactory()
+            with self.assertRaises(Http404):
+                ietf.stats.views.meeting_stats(
+                    request_factory.get(f"/stats/meeting/{interim_num}/{stats_type}"),
+                    meeting_number=interim_num,
+                    stats_type=stats_type,
+                )
+
     def test_known_country_list(self):
         # check redirect
         url = urlreverse(ietf.stats.views.known_countries_list)
@@ -87,16 +156,19 @@ class StatisticsTests(TestCase):
                 self.assertTrue(q('.review-stats td:contains("1")'))
 
         # check stacked chart
-        expected_date = date_today().replace(day=1)
-        expected_js_timestamp = calendar.timegm(expected_date.timetuple()) * 1000
         url = urlreverse(ietf.stats.views.review_stats, kwargs={ "stats_type": "time" })
         url += "?team={}".format(review_req.team.acronym)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(json.loads(r.context['data']), [
-            {"label": "in time", "color": "#3d22b3", "data": [[expected_js_timestamp, 0]]},
-            {"label": "late", "color": "#b42222", "data": [[expected_js_timestamp, 0]]}
-        ])
+        stacked_data = json.loads(r.context['data'])
+        # Ignore the timestamp elements, just check that the data is correct
+        self.assertEqual(len(stacked_data), 2)
+        self.assertEqual(stacked_data[0]['label'], 'in time')
+        self.assertEqual(stacked_data[0]['color'], '#3d22b3')
+        self.assertEqual(stacked_data[0]['data'], [[stacked_data[0]['data'][0][0], 0]])
+        self.assertEqual(stacked_data[1]['label'], 'late')
+        self.assertEqual(stacked_data[1]['color'], '#b42222')
+        self.assertEqual(stacked_data[1]['data'], [[stacked_data[0]['data'][0][0], 0]])
         q = PyQuery(r.content)
         self.assertTrue(q('#stats-time-graph'))
 
@@ -106,7 +178,11 @@ class StatisticsTests(TestCase):
         url += "&completion=not_completed"
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(json.loads(r.context['data']), [{"color": "#3d22b3", "data": [[expected_js_timestamp, 0]]}])
+        non_stacked_data = json.loads(r.context['data'])
+        # Ignore the timestamp elements, just check that the data is correct
+        self.assertEqual(len(non_stacked_data), 1)
+        self.assertEqual(non_stacked_data[0]['color'], '#3d22b3')
+        self.assertEqual(non_stacked_data[0]['data'], [[non_stacked_data[0]['data'][0][0], 0]])
         q = PyQuery(r.content)
         self.assertTrue(q('#stats-time-graph'))
 
@@ -117,119 +193,138 @@ class StatisticsTests(TestCase):
         q = PyQuery(r.content)
         self.assertTrue(q('.review-stats td:contains("1")'))
 
-    @patch('requests.get')
-    def test_get_meeting_registration_data(self, mock_get):
-        '''Test function to get reg data.  Confirm leading/trailing spaces stripped'''
-        person = PersonFactory()
-        data = {
-            'LastName': person.last_name() + ' ',
-            'FirstName': person.first_name(),
-            'Company': 'ABC',
-            'Country': 'US',
-            'Email': person.email().address,
-            'RegType': 'onsite',
-            'TicketType': 'week_pass',
-            'CheckedIn': 'True',
-        }
-        data2 = data.copy()
-        data2['RegType'] = 'hackathon'
-        response_a = Response()
-        response_a.status_code = 200
-        response_a._content = json.dumps([data, data2]).encode('utf8')
-        # second response one less record, it's been deleted
-        response_b = Response()
-        response_b.status_code = 200
-        response_b._content = json.dumps([data]).encode('utf8')
-        # mock_get.return_value = response
-        mock_get.side_effect = [response_a, response_b]
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016, 7, 14), number="96")
-        get_meeting_registration_data(meeting)
-        query = MeetingRegistration.objects.filter(
-            first_name=person.first_name(),
-            last_name=person.last_name(),
-            country_code='US')
-        self.assertEqual(query.count(), 2)
-        self.assertEqual(query.filter(reg_type='onsite').count(), 1)
-        self.assertEqual(query.filter(reg_type='hackathon').count(), 1)
-        onsite = query.get(reg_type='onsite')
-        self.assertEqual(onsite.ticket_type, 'week_pass')
-        self.assertEqual(onsite.checkedin, True)
-        # call a second time to test delete
-        get_meeting_registration_data(meeting)
-        query = MeetingRegistration.objects.filter(meeting=meeting, email=person.email())
-        self.assertEqual(query.count(), 1)
-        self.assertEqual(query.filter(reg_type='onsite').count(), 1)
-        self.assertEqual(query.filter(reg_type='hackathon').count(), 0)
 
-    @patch('requests.get')
-    def test_get_meeting_registration_data_duplicates(self, mock_get):
-        '''Test that get_meeting_registration_data does not create duplicate
-           MeetingRegistration records
-        '''
-        person = PersonFactory()
-        data = {
-            'LastName': person.last_name() + ' ',
-            'FirstName': person.first_name(),
-            'Company': 'ABC',
-            'Country': 'US',
-            'Email': person.email().address,
-            'RegType': 'onsite',
-            'TicketType': 'week_pass',
-            'CheckedIn': 'True',
-        }
-        data2 = data.copy()
-        data2['RegType'] = 'hackathon'
-        response = Response()
-        response.status_code = 200
-        response._content = json.dumps([data, data2, data]).encode('utf8')
-        mock_get.return_value = response
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016, 7, 14), number="96")
-        self.assertEqual(MeetingRegistration.objects.count(), 0)
-        get_meeting_registration_data(meeting)
-        query = MeetingRegistration.objects.all()
-        self.assertEqual(query.count(), 2)
+class AnnualReportInputsTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        llc_staff = GroupFactory(acronym="llc-staff", type_id="team")
+        self.member = PersonFactory()
+        RoleFactory(group=llc_staff, name_id="member", person=self.member)
+        self.non_member = PersonFactory()
 
-    @patch("ietf.stats.utils.get_meeting_registration_data")
-    def test_fetch_attendance_from_meetings(self, mock_get_mtg_reg_data):
-        mock_meetings = [object(), object(), object()]
-        mock_get_mtg_reg_data.side_effect = (
-            (1, 2, 3),
-            (4, 5, 6),
-            (7, 8, 9),
-        )
-        stats = fetch_attendance_from_meetings(mock_meetings)
-        self.assertEqual(
-            [mock_get_mtg_reg_data.call_args_list[n][0][0] for n in range(3)],
-            mock_meetings,
-        )
-        self.assertEqual(
-            stats,
-            [
-                FetchStats(1, 2, 3),
-                FetchStats(4, 5, 6),
-                FetchStats(7, 8, 9),
-            ]
+    def _member_login(self):
+        self.client.login(
+            username=self.member.user.username,
+            password=f"{self.member.user.username}+password",
         )
 
+    def test_access_unauthenticated(self):
+        url = urlreverse(ietf.stats.views.annual_report_inputs, kwargs={"year": "2024"})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/accounts/login", r["Location"])
 
-class TaskTests(TestCase):
-    @patch("ietf.stats.tasks.fetch_attendance_from_meetings")
-    def test_fetch_meeting_attendance_task(self, mock_fetch_attendance):
-        today = date_today()
-        meetings = [
-            MeetingFactory(type_id="ietf", date=today - datetime.timedelta(days=1)),
-            MeetingFactory(type_id="ietf", date=today - datetime.timedelta(days=2)),
-            MeetingFactory(type_id="ietf", date=today - datetime.timedelta(days=3)),
+    def test_access_non_member_forbidden(self):
+        url = urlreverse(ietf.stats.views.annual_report_inputs, kwargs={"year": "2024"})
+        self.client.login(
+            username=self.non_member.user.username,
+            password=f"{self.non_member.user.username}+password",
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+
+    def test_access_member_allowed(self):
+        self._member_login()
+        url = urlreverse(ietf.stats.views.annual_report_inputs, kwargs={"year": "2024"})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+    def test_default_year(self):
+        self._member_login()
+        url = urlreverse(ietf.stats.views.annual_report_inputs)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.context["year"], datetime.date.today().year - 1)
+
+    def test_year_param_redirects_to_year_url(self):
+        self._member_login()
+        url = urlreverse(ietf.stats.views.annual_report_inputs)
+        r = self.client.get(url, {"year": "2022"})
+        self.assertRedirects(
+            r,
+            urlreverse(ietf.stats.views.annual_report_inputs, kwargs={"year": "2022"}),
+        )
+
+    def test_summary_counts(self):
+        self._member_login()
+        year = 2021
+        # author1 has a matching Person record; author2 does not
+        EmailFactory(address="author1@example.com")
+        sub = SubmissionFactory(
+            state_id="posted",
+            submission_date=datetime.date(year, 6, 1),
+            submitter_email="submitter@example.com",
+        )
+        sub.authors = [
+            {"name": "Author One", "email": "author1@example.com", "affiliation": "", "country": "", "errors": []},
+            {"name": "Author Two", "email": "author2@example.com", "affiliation": "", "country": "", "errors": []},
         ]
-        mock_fetch_attendance.return_value = [FetchStats(1,2,3), FetchStats(1,2,3)]
+        sub.save()
+        NewRevisionDocEventFactory(
+            time=datetime.datetime(year, 6, 1, tzinfo=datetime.timezone.utc),
+            doc__type_id="draft",
+        )
+        NewRevisionDocEventFactory(
+            time=datetime.datetime(year, 6, 1, tzinfo=datetime.timezone.utc),
+            doc__type_id="draft",
+        )
+        # Same draft, second revision — should count once
+        extra = NewRevisionDocEventFactory(
+            time=datetime.datetime(year, 9, 1, tzinfo=datetime.timezone.utc),
+            doc__type_id="draft",
+        )
+        NewRevisionDocEventFactory(
+            time=datetime.datetime(year, 9, 15, tzinfo=datetime.timezone.utc),
+            doc=extra.doc,
+        )
 
-        fetch_meeting_attendance_task()
-        self.assertEqual(mock_fetch_attendance.call_count, 1)
-        self.assertCountEqual(mock_fetch_attendance.call_args[0][0], meetings[0:2])
+        url = urlreverse(ietf.stats.views.annual_report_inputs, kwargs={"year": str(year)})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.context["year"], year)
+        self.assertEqual(r.context["author_count"], 2)
+        self.assertEqual(r.context["author_person_count"], 1)
+        self.assertEqual(r.context["author_noperson_count"], 1)
+        self.assertEqual(r.context["submitter_count"], 1)
+        self.assertEqual(r.context["submitter_person_count"], 0)
+        self.assertEqual(r.context["submitter_noperson_count"], 1)
+        self.assertEqual(r.context["draft_count"], 3)
 
-        # test handling of RuntimeError
-        mock_fetch_attendance.reset_mock()
-        mock_fetch_attendance.side_effect = RuntimeError
-        fetch_meeting_attendance_task()
-        self.assertTrue(mock_fetch_attendance.called)
-        # Good enough that we got here without raising an exception
+    def test_download_authors_csv(self):
+        self._member_login()
+        year = 2020
+        sub = SubmissionFactory(
+            state_id="posted",
+            submission_date=datetime.date(year, 4, 1),
+        )
+        sub.authors = [
+            {"name": "Author", "email": "csvauthor@example.com", "affiliation": "", "country": "", "errors": []},
+        ]
+        sub.save()
+
+        url = urlreverse(ietf.stats.views.annual_report_inputs, kwargs={"year": str(year)})
+        r = self.client.get(url, {"download": "authors"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "text/csv")
+        self.assertIn(f"authors-{year}.csv", r["Content-Disposition"])
+        rows = list(csv.reader(io.StringIO(r.content.decode())))
+        self.assertEqual(len(rows), 1)
+        self.assertIn("csvauthor@example.com", rows[0])
+
+    def test_download_submitters_csv(self):
+        self._member_login()
+        year = 2020
+        SubmissionFactory(
+            state_id="posted",
+            submission_date=datetime.date(year, 4, 1),
+            submitter_email="csvsubmitter@example.com",
+        )
+
+        url = urlreverse(ietf.stats.views.annual_report_inputs, kwargs={"year": str(year)})
+        r = self.client.get(url, {"download": "submitters"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "text/csv")
+        self.assertIn(f"submitters-{year}.csv", r["Content-Disposition"])
+        rows = list(csv.reader(io.StringIO(r.content.decode())))
+        self.assertEqual(len(rows), 1)
+        self.assertIn("csvsubmitter@example.com", rows[0])

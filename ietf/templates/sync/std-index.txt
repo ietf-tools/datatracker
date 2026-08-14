@@ -1,0 +1,51 @@
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                             STD INDEX
+                           -------------
+
+(CREATED ON: {{created_on}}.)
+
+This file contains citations for all STDs in numeric order.  Each
+STD represents a single Internet Standard technical specification,
+composed of one or more RFCs with Internet Standard status.
+
+STD citations appear in this format:
+
+   [STD#]     Internet Standard #,
+              <STD URL>.
+              At the time of writing, this STD comprises the following:
+
+              Author 1, Author 2, "Title of the RFC", STD #, RFC №,
+              DOI DOI string, Issue date,
+              <RFC URL>.
+
+For example:
+
+   [STD6]     Internet Standard 6,
+              <https://www.rfc-editor.org/info/std6>.
+              At the time of writing, this STD comprises the following:
+
+              J. Postel, "User Datagram Protocol", STD 6, RFC 768,
+              DOI 10.17487/RFC0768, August 1980,
+              <https://www.rfc-editor.org/info/rfc768>.
+
+Key to fields:
+
+# is the STD number.
+
+№ is the RFC number.
+
+STDs and other RFCs may be obtained from https://www.rfc-editor.org.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                                STD INDEX
+                                ---------
+   
+
+
+{% for std in stds %}{{std|safe}}
+
+{% endfor %}

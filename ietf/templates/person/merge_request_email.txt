@@ -1,0 +1,23 @@
+Hello,
+
+We have identified multiple IETF Datatracker accounts that may represent a single person:
+
+https://datatracker.ietf.org/person/{{ source_account }}
+
+and 
+
+https://datatracker.ietf.org/person/{{ target_account }}
+
+If this is so then it is important that we merge the accounts.
+
+This email is being sent to the primary emails associated with each Datatracker account.
+
+Please respond to this message individually from the email account(s) you control so we can take the appropriate action.
+
+If these should be merged, please identify which account you would like to keep the login credentials from.
+
+If you are associated with but no longer have access to one of the email accounts, then please let us know and we will follow up to determine how to proceed.
+
+
+{{ sender_name }}
+IETF Support

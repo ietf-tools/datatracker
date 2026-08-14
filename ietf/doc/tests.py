@@ -5,14 +5,17 @@
 import os
 import datetime
 import io
+import re
 from hashlib import sha384
 
+from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest
 import lxml
 import bibtexparser
-import mock
+from unittest import mock
 import json
 import copy
+import pickle
 import random
 
 from http.cookies import SimpleCookie
@@ -24,9 +27,13 @@ from zoneinfo import ZoneInfo
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
+from django.core.cache import cache
+from django.db import connection
 from django.forms import Form
+from django.http import QueryDict
 from django.utils.html import escape
-from django.test import override_settings
+from django.test import override_settings, RequestFactory
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from django.utils.text import slugify
 
@@ -36,18 +43,25 @@ from weasyprint.urls import URLFetchingError
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, DocRelationshipName, RelatedDocument, State,
-    DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType,
-    EditedAuthorsDocEvent, StateType)
-from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactory,
-    ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
-    IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
-    BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
-    StatusChangeFactory, DocExtResourceFactory, RgDraftFactory, BcpFactory)
+from ietf.doc.models import (Document, DocRelationshipName, RelatedDocument, State,
+                             DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType,
+                             EditedAuthorsDocEvent, StateType, RfcAuthor, RpcAssignmentDocEvent)
+from ietf.doc.factories import (DocumentFactory, DocEventFactory, CharterFactory,
+                                ConflictReviewFactory, WgDraftFactory,
+                                IndividualDraftFactory, WgRfcFactory,
+                                IndividualRfcFactory, StateDocEventFactory,
+                                BallotPositionDocEventFactory,
+                                BallotDocEventFactory, DocumentAuthorFactory,
+                                NewRevisionDocEventFactory,
+                                StatusChangeFactory, DocExtResourceFactory,
+                                RgDraftFactory, BcpFactory, StdFactory,
+                                FyiFactory, RfcAuthorFactory,
+                                TelechatDocEventFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import (
     create_ballot_if_not_open,
+    external_canonical_url,
     investigate_fragment,
     uppercase_std_abbreviated_name,
     DraftAliasGenerator,
@@ -56,6 +70,7 @@ from ietf.doc.utils import (
     get_doc_email_aliases,
 )
 from ietf.doc.views_doc import get_diff_revisions
+from ietf.doc.views_search import SearchForm, retrieve_search_results, _search_cache_key
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
@@ -66,12 +81,12 @@ from ietf.meeting.factories import ( MeetingFactory, SessionFactory, SessionPres
 from ietf.name.models import SessionStatusName, BallotPositionName, DocTypeName, RoleName
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory, EmailFactory
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.mail import get_payload_text, outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
-from ietf.utils.text import normalize_text
+from ietf.utils.text import normalize_text, texescape
 from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO, RPC_TZINFO
-from ietf.doc.utils_search import AD_WORKLOAD
+from ietf.doc.utils_search import AD_WORKLOAD, fill_in_telechat_date, prepare_document_table
 
 
 class SearchTests(TestCase):
@@ -184,6 +199,239 @@ class SearchTests(TestCase):
         r = self.client.get(base_url + f"?activedrafts=on&rfcs=on&name={draft.name}")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, rfc.title)
+
+    def test_search_by_author(self):
+        """The author search covers both DocumentAuthor and RfcAuthor"""
+        base_url = urlreverse('ietf.doc.views_search.search')
+
+        person = PersonFactory(name="Ford Prefect")
+        draft = WgDraftFactory(authors=[person])
+        rfc = WgRfcFactory()
+        RfcAuthorFactory(document=rfc, person=person, titlepage_name="F. Prefect")
+        # an RFC whose title page credits someone the datatracker has no Person for
+        anonymous_rfc = WgRfcFactory()
+        RfcAuthorFactory(document=anonymous_rfc, person=None, titlepage_name="Zaphod Beeblebrox")
+
+        def search(author):
+            r = self.client.get(base_url + f"?activedrafts=on&rfcs=on&by=author&author={author}")
+            self.assertEqual(r.status_code, 200)
+            return r
+
+        # by alias
+        r = search("Prefect")
+        self.assertContains(r, draft.title)
+        self.assertContains(r, rfc.title)
+        self.assertNotContains(r, anonymous_rfc.title)
+
+        # by email address
+        r = search(person.email().address)
+        self.assertContains(r, draft.title)
+        self.assertContains(r, rfc.title)
+
+        # by title page name only
+        r = search("Beeblebrox")
+        self.assertContains(r, anonymous_rfc.title)
+        self.assertNotContains(r, draft.title)
+
+    def test_search_results_are_not_duplicated(self):
+        """retrieve_search_results must match each document at most once.
+
+        It does not apply distinct(): doing so forces a sort over every selected column
+        (including abstract and, once prepare_document_table adds its select_related,
+        group description and person biography). Any filter that can match a document
+        twice has to be expressed as a subquery instead.
+        """
+        person = PersonFactory()
+        rfc = WgRfcFactory()
+        # several ways for one document to match one author search
+        RfcAuthorFactory(document=rfc, person=person)
+        RfcAuthorFactory(document=rfc, person=person)
+        EmailFactory(person=person)
+        draft = WgDraftFactory(authors=[person, person])
+        draft.set_state(State.objects.get(type="draft", slug="active"))
+
+        for query in (
+            f"activedrafts=on&olddrafts=on&rfcs=on&by=author&author={person.name}",
+            "activedrafts=on&olddrafts=on&rfcs=on",
+            f"activedrafts=on&rfcs=on&by=group&group={draft.group.acronym}",
+        ):
+            form = SearchForm(QueryDict(query))
+            self.assertTrue(form.is_valid(), form.errors)
+            pks = list(retrieve_search_results(form).values_list("pk", flat=True))
+            self.assertEqual(len(pks), len(set(pks)), f"duplicate rows for ?{query}")
+
+    def test_search_does_not_join_multivalued_relations(self):
+        """The main search query must not join any multi-valued relation.
+
+        ORing lookups across documentauthor, rfcauthor and targets_related into a single
+        filter() makes those paths cross-multiply. Against the production data set the
+        search this guards produced a 126M-row intermediate result to return 32
+        documents; the joins have to stay out of the outer query.
+        """
+        form = SearchForm(QueryDict("by=author&author=Beeblebrox&name=rfc&rfcs=on"))
+        self.assertTrue(form.is_valid(), form.errors)
+        query = retrieve_search_results(form).query
+
+        # Only the outer query matters: the relations are reached through subqueries,
+        # which do contain joins of their own but are each evaluated once.
+        sql = str(query)
+        from_clause = sql[sql.index(" FROM ") : sql.index(" WHERE ")]
+        self.assertNotIn("JOIN", from_clause, f"main search query joins: {from_clause}")
+        self.assertFalse(query.distinct, "distinct() over the full column list is expensive")
+
+    def test_search_cache_key(self):
+        def key(query):
+            form = SearchForm(QueryDict(query))
+            self.assertTrue(form.is_valid(), form.errors)
+            return _search_cache_key(form)
+
+        # A multi-valued field must not collapse to its last value -- these are
+        # different searches and must not share an entry.
+        self.assertNotEqual(
+            key("doctypes=charter&doctypes=statchg"), key("doctypes=statchg")
+        )
+        # ...but the order the values arrive in does not change the search
+        self.assertEqual(
+            key("doctypes=statchg&doctypes=charter"), key("doctypes=charter&doctypes=statchg")
+        )
+        # sort is applied on every request, so it must not split the cache
+        self.assertEqual(key("rfcs=on&sort=title"), key("rfcs=on&sort=-date"))
+        # equivalent spellings of a checkbox are one search
+        self.assertEqual(key("rfcs=on&name=foo"), key("rfcs=1&name=foo"))
+        # different searches stay apart
+        self.assertNotEqual(key("rfcs=on&name=foo"), key("rfcs=on&name=bar"))
+
+    def test_search_query_count_does_not_grow_with_results(self):
+        """Rendering the document table must not cost queries per row.
+
+        Every attribute the table shows is filled in for the whole result set at once,
+        so doubling the number of rows must not change the number of queries. A lookup
+        that slipped back into the per-row path shows up here as a count that grows.
+
+        Mind the blind spots: these documents have no IESG state, ballot, last call,
+        action holders, telechat or obsoleting RFCs, so the per-row work the columns
+        driven by those still do is not covered. Widen the fixtures rather than reading
+        a pass here as "the table does no per-row queries".
+        """
+        group = GroupFactory(type_id="wg")
+        url = urlreverse('ietf.doc.views_search.search') + (
+            f"?activedrafts=on&olddrafts=on&rfcs=on&by=group&group={group.acronym}"
+        )
+
+        def add_documents(count):
+            for _ in range(count):
+                WgDraftFactory(group=group, authors=[PersonFactory()], ad=PersonFactory(),
+                               shepherd=EmailFactory())
+                WgRfcFactory(group=group)
+
+        def count_queries():
+            with CaptureQueriesContext(connection) as context:
+                r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            return len(context.captured_queries)
+
+        add_documents(2)
+        baseline = count_queries()
+        add_documents(4)
+        doubled = count_queries()
+
+        # A per-row lookup would add at least one query for each of the 8 new documents.
+        self.assertLessEqual(
+            doubled, baseline + 2,
+            f"query count grew from {baseline} to {doubled} when the result set tripled",
+        )
+
+    @override_settings(CACHES={"default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "test_search_cache_hit_preserves_row_order",
+    }})
+    def test_search_cache_hit_preserves_row_order(self):
+        """A cached search must render its rows in the same order as an uncached one.
+
+        The view caches document ids and re-prepares them on a hit, so the rows arrive
+        in whatever order the pk lookup returns. prepare_document_table sorts stably and
+        several sort keys tie heavily -- ipr, status and ad -- so without a total
+        ordering the same URL renders differently depending on whether it hit the cache.
+        Dev and test normally configure a dummy cache, hence the override.
+        """
+        group = GroupFactory(type_id="wg")
+        # Documents sharing a timestamp, which is what makes the ordering ambiguous.
+        shared_time = timezone.now() - datetime.timedelta(days=30)
+        for _ in range(6):
+            draft = WgDraftFactory(group=group, authors=[PersonFactory()])
+            Document.objects.filter(pk=draft.pk).update(time=shared_time)
+        base = urlreverse('ietf.doc.views_search.search')
+
+        for sort in ("ipr", "status", "ad", ""):
+            with self.subTest(sort=sort):
+                cache.clear()
+                url = f"{base}?activedrafts=on&rfcs=on&by=group&group={group.acronym}&sort={sort}"
+                miss = self.client.get(url)
+                hit = self.client.get(url)
+                self.assertEqual(miss.status_code, 200)
+                self.assertEqual(hit.status_code, 200)
+                rows = lambda r: re.findall(  # noqa: E731
+                    rb'href="(/doc/[^"]+)"', r.content
+                )
+                self.assertEqual(rows(miss), rows(hit))
+
+    def test_prepared_documents_are_picklable(self):
+        """ietf.doc.views_search.recent_drafts pickles prepared documents into a cache.
+
+        In production the slowpages cache is file-based, so everything attached to a
+        document by prepare_document_table has to survive pickling. Dev and test both
+        use a dummy cache, which accepts anything without serializing it, so nothing
+        else in the suite would notice a regression here.
+        """
+        draft = WgDraftFactory(authors=[PersonFactory()], ad=PersonFactory(),
+                               shepherd=EmailFactory())
+        TelechatDocEventFactory(doc=draft)
+        WgRfcFactory()
+
+        request = RequestFactory().get("/doc/recent/")
+        request.user = AnonymousUser()
+        results, meta = prepare_document_table(request, Document.objects.all())
+        self.assertTrue(results)
+
+        restored, _ = pickle.loads(pickle.dumps([results, meta]))
+        for before, after in zip(results, restored):
+            self.assertEqual(after.telechat_date(), before.telechat_date())
+
+    def test_fill_in_telechat_date_matches_the_method(self):
+        """The precomputed value has to equal what Document.telechat_date() returns.
+
+        The IESG agenda views call fill_in_telechat_date() over a queryset and then
+        filter on doc.telechat_date(), so a mismatch silently drops documents off a
+        telechat agenda.
+        """
+        future = WgDraftFactory()
+        TelechatDocEventFactory(doc=future,
+                                telechat_date=timezone.now() + datetime.timedelta(days=14))
+        past = WgDraftFactory()
+        TelechatDocEventFactory(doc=past,
+                                telechat_date=timezone.now() - datetime.timedelta(days=14))
+        rescheduled = WgDraftFactory()
+        TelechatDocEventFactory(doc=rescheduled,
+                                telechat_date=timezone.now() - datetime.timedelta(days=7))
+        TelechatDocEventFactory(doc=rescheduled,
+                                telechat_date=timezone.now() + datetime.timedelta(days=7))
+        none_scheduled = WgDraftFactory()
+
+        expected = {
+            d.name: Document.objects.get(pk=d.pk).telechat_date()
+            for d in (future, past, rescheduled, none_scheduled)
+        }
+
+        docs = list(Document.objects.filter(
+            name__in=[d.name for d in (future, past, rescheduled, none_scheduled)]
+        ))
+        fill_in_telechat_date(docs)
+
+        for doc in docs:
+            self.assertEqual(doc.telechat_date(), expected[doc.name], doc.name)
+        # the two ends of the range, so the test would fail if everything came back None
+        self.assertIsNotNone(expected[future.name])
+        self.assertIsNone(expected[past.name])
 
     def test_search_for_name(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
@@ -403,6 +651,30 @@ class SearchTests(TestCase):
         self.assertContains(r, discuss_other.doc.name)
         self.assertContains(r, block_other.doc.name)
 
+    def test_docs_for_iesg(self):
+        ad1 = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person
+        ad2 = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person
+
+        draft = IndividualDraftFactory(ad=ad1)
+        draft.action_holders.set([PersonFactory()])
+        draft.set_state(State.objects.get(type='draft-iesg', slug='lc'))
+        rfc = IndividualRfcFactory(ad=ad2)
+        conflrev = DocumentFactory(type_id='conflrev',ad=ad1)
+        conflrev.set_state(State.objects.get(type='conflrev', slug='iesgeval'))
+        statchg = DocumentFactory(type_id='statchg',ad=ad2)
+        statchg.set_state(State.objects.get(type='statchg', slug='iesgeval'))
+        charter = CharterFactory(name='charter-ietf-ames',ad=ad1)
+        charter.set_state(State.objects.get(type='charter', slug='iesgrev'))
+
+        r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_iesg'))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, draft.name)
+        self.assertContains(r, escape(draft.action_holders.first().name))
+        self.assertNotContains(r, rfc.name)
+        self.assertContains(r, conflrev.name)
+        self.assertContains(r, statchg.name)
+        self.assertContains(r, charter.name)
+
     def test_auth48_doc_for_ad(self):
         """Docs in AUTH48 state should have a decoration"""
         ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
@@ -425,17 +697,6 @@ class SearchTests(TestCase):
         self.assertContains(r, draft.title)
         self.assertContains(r, escape(draft.action_holders.first().name))
 
-    def test_in_iesg_process(self):
-        doc_in_process = IndividualDraftFactory()
-        doc_in_process.action_holders.set([PersonFactory()])
-        doc_in_process.set_state(State.objects.get(type='draft-iesg', slug='lc'))
-        doc_not_in_process = IndividualDraftFactory()
-        r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_iesg_process'))
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, doc_in_process.title)
-        self.assertContains(r, escape(doc_in_process.action_holders.first().name))
-        self.assertNotContains(r, doc_not_in_process.title)
-        
     def test_indexes(self):
         draft = IndividualDraftFactory()
         rfc = WgRfcFactory()
@@ -966,7 +1227,7 @@ Man                    Expires September 22, 2015               [Page 3]
         # Relevant users not authorized to edit authors
         unauthorized_usernames = [
             'plain',
-            *[author.user.username for author in draft.authors()],
+            *[author.user.username for author in draft.author_persons()],
             draft.group.get_chair().person.user.username,
             'ad'
         ]
@@ -981,7 +1242,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.client.logout()
 
         # Try to add an author via POST - still only the secretary should be able to do this.
-        orig_authors = draft.authors()
+        orig_authors = draft.author_persons()
         post_data = self.make_edit_authors_post_data(
             basis='permission test',
             authors=draft.documentauthor_set.all(),
@@ -999,12 +1260,40 @@ Man                    Expires September 22, 2015               [Page 3]
         for username in unauthorized_usernames:
             login_testing_unauthorized(self, username, url, method='post', request_kwargs=dict(data=post_data))
             draft = Document.objects.get(pk=draft.pk)
-            self.assertEqual(draft.authors(), orig_authors)  # ensure draft author list was not modified
+            self.assertEqual(draft.author_persons(), orig_authors)  # ensure draft author list was not modified
         login_testing_unauthorized(self, 'secretary', url, method='post', request_kwargs=dict(data=post_data))
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 302)
         draft = Document.objects.get(pk=draft.pk)
-        self.assertEqual(draft.authors(), orig_authors + [new_auth_person])
+        self.assertEqual(draft.author_persons(), orig_authors + [new_auth_person])
+
+    def test_edit_authors_blocked_when_rfcauthors_exist(self):
+        """edit_authors returns 403 for all users when RfcAuthors exist"""
+        rfc = WgRfcFactory()
+        RfcAuthorFactory(document=rfc)
+        url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=rfc.name))
+
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+        r = self.client.post(url, {})
+        self.assertEqual(r.status_code, 403)
+
+    def test_document_main_hides_edit_authors_when_rfcauthors_exist(self):
+        """document_main does not offer edit link for authors when RfcAuthors exist"""
+        rfc = WgRfcFactory()
+        edit_authors_url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=rfc.name))
+
+        self.client.login(username='secretary', password='secretary+password')
+
+        r = self.client.get(urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=rfc.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, edit_authors_url)
+
+        RfcAuthorFactory(document=rfc)
+        r = self.client.get(urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=rfc.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, edit_authors_url)
 
     def make_edit_authors_post_data(self, basis, authors):
         """Helper to generate edit_authors POST data for a set of authors"""
@@ -1352,8 +1641,8 @@ Man                    Expires September 22, 2015               [Page 3]
             basis=change_reason
         )
 
-        old_address = draft.authors()[0].email()
-        new_email = EmailFactory(person=draft.authors()[0], address=f'changed-{old_address}')
+        old_address = draft.author_persons()[0].email()
+        new_email = EmailFactory(person=draft.author_persons()[0], address=f'changed-{old_address}')
         post_data['author-0-email'] = new_email.address
         post_data['author-1-affiliation'] = 'University of Nowhere'
         post_data['author-2-country'] = 'Chile'
@@ -1386,17 +1675,17 @@ Man                    Expires September 22, 2015               [Page 3]
         country_event = change_events.filter(desc__icontains='changed country').first()
 
         self.assertIsNotNone(email_event)
-        self.assertIn(draft.authors()[0].name, email_event.desc)
+        self.assertIn(draft.author_persons()[0].name, email_event.desc)
         self.assertIn(before[0]['email'], email_event.desc)
         self.assertIn(after[0]['email'], email_event.desc)
 
         self.assertIsNotNone(affiliation_event)
-        self.assertIn(draft.authors()[1].name, affiliation_event.desc)
+        self.assertIn(draft.author_persons()[1].name, affiliation_event.desc)
         self.assertIn(before[1]['affiliation'], affiliation_event.desc)
         self.assertIn(after[1]['affiliation'], affiliation_event.desc)
 
         self.assertIsNotNone(country_event)
-        self.assertIn(draft.authors()[2].name, country_event.desc)
+        self.assertIn(draft.author_persons()[2].name, country_event.desc)
         self.assertIn(before[2]['country'], country_event.desc)
         self.assertIn(after[2]['country'], country_event.desc)
 
@@ -1643,6 +1932,28 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertEqual(r.status_code, 200)
         self.assertNotContains(r, 'Auth48 status')
 
+    def test_rfceditor_queue_status_shown(self):
+        """A queued draft shows its publication-queue Status in place of the state name."""
+        draft = IndividualDraftFactory()
+        event = StateDocEventFactory(doc=draft, state=('draft-rfceditor', 'in_progress'))
+        draft.set_state(event.state)
+        draft.save_with_history([event])
+        RpcAssignmentDocEvent.objects.create(
+            doc=draft,
+            rev=draft.rev,
+            by=Person.objects.get(name="(System)"),
+            type="changed_rpc_assignments",
+            assignments="In Progress (First Edit)",
+            desc="RPC status changed to In Progress (First Edit)",
+        )
+
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 200)
+        # The composite queue Status (which only comes from the RpcAssignmentDocEvent,
+        # not from the state name) is shown, confirming it replaces the raw state name.
+        self.assertContains(r, "In Progress (First Edit)")
+        self.assertContains(r, "Publication queue entry")
+
 
 class DocTestCase(TestCase):
     def test_status_change(self):
@@ -1850,13 +2161,63 @@ class DocTestCase(TestCase):
 
     def test_document_json(self):
         doc = IndividualDraftFactory()
-
+        author = DocumentAuthorFactory(document=doc)
+        
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_json", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
         data = r.json()
-        self.assertEqual(doc.name, data['name'])
-        self.assertEqual(doc.pages,data['pages'])
+        self.assertEqual(data["name"], doc.name)
+        self.assertEqual(data["pages"], doc.pages)
+        self.assertEqual(
+            data["authors"],
+            [
+                {
+                    "name": author.person.name,
+                    "email": author.email.address,
+                    "affiliation": author.affiliation,
+                }
+            ]
+        )
 
+    def test_document_json_rfc(self):
+        doc = IndividualRfcFactory()
+        old_style_author = DocumentAuthorFactory(document=doc)
+        url = urlreverse("ietf.doc.views_doc.document_json", kwargs=dict(name=doc.name))
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertEqual(data["name"], doc.name)
+        self.assertEqual(data["pages"], doc.pages)
+        self.assertEqual(
+            data["authors"],
+            [
+                {
+                    "name": old_style_author.person.name,
+                    "email": old_style_author.email.address,
+                    "affiliation": old_style_author.affiliation,
+                }
+            ]
+        )
+    
+        new_style_author = RfcAuthorFactory(document=doc)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertEqual(data["name"], doc.name)
+        self.assertEqual(data["pages"], doc.pages)
+        self.assertEqual(
+            data["authors"],
+            [
+                {
+                    "name": new_style_author.titlepage_name,
+                    "email": new_style_author.email.address,
+                    "affiliation": new_style_author.affiliation,
+                }
+            ]
+        )
+
+    
     def test_writeup(self):
         doc = IndividualDraftFactory(states = [('draft','active'),('draft-iesg','iesg-eva')],)
 
@@ -1998,15 +2359,32 @@ class DocTestCase(TestCase):
         self.assertEqual(len(q("item")), 3)
         item = q("item")[0]
         media_content = item.findall("{http://search.yahoo.com/mrss/}content")
-        self.assertEqual(len(media_content), 3)
+        self.assertEqual(len(media_content), 2)
         types = set([m.attrib["type"] for m in media_content])
-        self.assertEqual(types, set(["text/plain", "text/html", "application/pdf"]))
+        self.assertEqual(types, set(["text/plain", "text/html"]))
 
     def test_state_help(self):
         url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type="draft-iesg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, State.objects.get(type="draft-iesg", slug="lc").name)
+
+    def test_rfceditor_state_help_has_queue_status_and_legacy_sections(self):
+        url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type="draft-rfceditor"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        # New "Queue status" section describing the queue Status values.
+        self.assertContains(r, "Queue status")
+        self.assertContains(r, "In Progress (First Edit)")
+        # Legacy states are moved to their own section with the history note.
+        self.assertContains(r, "Legacy states")
+        self.assertContains(r, "appear in the change history")
+        self.assertContains(r, State.objects.get(type="draft-rfceditor", slug="auth48").name)
+        # The queue-backing states are not listed among the legacy states.
+        q = PyQuery(r.content)
+        legacy_ids = [row.get("id") for row in q("tbody tr")]
+        self.assertNotIn("in_progress", legacy_ids)
+        self.assertNotIn("blocked", legacy_ids)
 
     def test_document_nonietf_pubreq_button(self):
         doc = IndividualDraftFactory()
@@ -2038,9 +2416,11 @@ class DocTestCase(TestCase):
             doc = factory()
             url = urlreverse("ietf.doc.views_doc.document_bibtex", kwargs=dict(name=doc.name))
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 404)          
+            self.assertEqual(r.status_code, 404)       
+        authors = PersonFactory.create_batch(2)
         rfc = WgRfcFactory.create(
-            time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE))
+            time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE)),
+            authors=authors,
         )
         num = rfc.rfc_number
         DocEventFactory.create(
@@ -2057,7 +2437,12 @@ class DocTestCase(TestCase):
         self.assertEqual(entry["doi"], "10.17487/RFC%s" % num)
         self.assertEqual(entry["year"], "2010")
         self.assertEqual(entry["month"].lower()[0:3], "oct")
-        self.assertEqual(entry["url"], f"https://www.rfc-editor.ietf.org/info/rfc{num}")
+        self.assertEqual(entry["url"], f"https://www.rfc-editor.ietf.org/info/rfc{num}/")
+        escaped_author_names = [
+            texescape(ra.titlepage_name)
+            for ra in RfcAuthor.objects.filter(document=rfc)
+        ]
+        self.assertEqual(entry["author"], " and ".join(escaped_author_names))    
         #
         self.assertNotIn("day", entry)
     
@@ -2093,7 +2478,7 @@ class DocTestCase(TestCase):
         self.assertEqual(entry["year"], "1990")
         self.assertEqual(entry["month"].lower()[0:3], "apr")
         self.assertEqual(entry["day"], "1")
-        self.assertEqual(entry["url"], f"https://www.rfc-editor.ietf.org/info/rfc{num}")
+        self.assertEqual(entry["url"], f"https://www.rfc-editor.ietf.org/info/rfc{num}/")
     
         draft = IndividualDraftFactory.create()
         docname = "%s-%s" % (draft.name, draft.rev)
@@ -2148,20 +2533,19 @@ class DocTestCase(TestCase):
 
 class AddCommentTestCase(TestCase):
     def test_add_comment(self):
-        draft = WgDraftFactory(name='draft-ietf-mars-test',group__acronym='mars')
-        url = urlreverse('ietf.doc.views_doc.add_comment', kwargs=dict(name=draft.name))
+        draft = WgDraftFactory(name="draft-ietf-mars-test", group__acronym="mars")
+        url = urlreverse("ietf.doc.views_doc.add_comment", kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(unicontent(r))
-        self.assertEqual(len(q('form textarea[name=comment]')), 1)
+        self.assertEqual(len(q("form textarea[name=comment]")), 1)
 
-        # request resurrect
         events_before = draft.docevent_set.count()
         mailbox_before = len(outbox)
-        
+
         r = self.client.post(url, dict(comment="This is a test."))
         self.assertEqual(r.status_code, 302)
 
@@ -2169,9 +2553,9 @@ class AddCommentTestCase(TestCase):
         self.assertEqual("This is a test.", draft.latest_event().desc)
         self.assertEqual("added_comment", draft.latest_event().type)
         self.assertEqual(len(outbox), mailbox_before + 1)
-        self.assertIn("Comment added", outbox[-1]['Subject'])
-        self.assertIn(draft.name, outbox[-1]['Subject'])
-        self.assertIn('draft-ietf-mars-test@', outbox[-1]['To'])
+        self.assertIn("Comment added", outbox[-1]["Subject"])
+        self.assertIn(draft.name, outbox[-1]["Subject"])
+        self.assertIn("draft-ietf-mars-test@", outbox[-1]["To"])
 
         # Make sure we can also do it as IANA
         self.client.login(username="iana", password="iana+password")
@@ -2180,7 +2564,22 @@ class AddCommentTestCase(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(unicontent(r))
-        self.assertEqual(len(q('form textarea[name=comment]')), 1)
+        self.assertEqual(len(q("form textarea[name=comment]")), 1)
+
+        empty_outbox()
+        rfc = WgRfcFactory()
+        self.client.login(username="rfc", password="rfc+password")
+        url = urlreverse("ietf.doc.views_doc.add_comment", kwargs=dict(name=rfc.name))
+        r = self.client.post(
+            url, dict(comment="This is an RFC Editor comment on an RFC.")
+        )
+        self.assertEqual(r.status_code, 302)
+
+        self.assertEqual(
+            "This is an RFC Editor comment on an RFC.", rfc.latest_event().desc
+        )
+        self.assertEqual(len(outbox), 1)
+        self.assertIn("This is an RFC Editor comment on an RFC.", get_payload_text(outbox[0]))
 
 
 class TemplateTagTest(TestCase):
@@ -2189,6 +2588,98 @@ class TemplateTagTest(TestCase):
         from ietf.doc.templatetags import ietf_filters
         failures, tests = doctest.testmod(ietf_filters)
         self.assertEqual(failures, 0)
+
+@override_settings(RFC_EDITOR_INFO_BASE_URL="https://www.rfc-editor.example.org/info/")
+class CanonicalUrlTests(TestCase):
+    """Tests of the rel=canonical link declared by document pages"""
+
+    def canonical_href(self, r):
+        """Extract the canonical href from a response, asserting that it is usable
+
+        An empty href resolves to the current URL and an href of "None" resolves to a
+        URL that does not exist - neither is visible when eyeballing a rendered page.
+        """
+        self.assertEqual(r.status_code, 200)
+        links = PyQuery(r.content)("link[rel='canonical']")
+        self.assertEqual(len(links), 1)
+        href = links.attr("href")
+        self.assertNotIn(href, ["", "None", None])
+        return href
+
+    def test_external_canonical_url(self):
+        for doc in [WgRfcFactory(), BcpFactory(), StdFactory(), FyiFactory()]:
+            self.assertEqual(
+                external_canonical_url(doc),
+                f"https://www.rfc-editor.example.org/info/{doc.name}/",
+                f"{doc.type_id} belongs to the RFC Editor",
+            )
+        for doc in [WgDraftFactory(), CharterFactory(), StatusChangeFactory()]:
+            self.assertIsNone(external_canonical_url(doc), f"{doc.type_id} is ours")
+
+    def test_rfc_pages_canonicalize_to_rfc_editor(self):
+        rfc = WgRfcFactory()
+        rfc.save_with_history([DocEventFactory(doc=rfc)])
+        (Path(settings.RFC_PATH) / rfc.get_base_name()).touch()
+        expected = f"https://www.rfc-editor.example.org/info/{rfc.name}/"
+
+        for viewname in [
+            "ietf.doc.views_doc.document_main",
+            "ietf.doc.views_doc.document_html",
+        ]:
+            url = urlreverse(viewname, kwargs=dict(name=rfc.name))
+            r = self.client.get(url)
+            self.assertEqual(self.canonical_href(r), expected, f"{url} canonical")
+
+    def test_draft_pages_canonicalize_to_datatracker(self):
+        draft = WgDraftFactory()
+        # an active draft's file is in both of these - see Document.get_file_path()
+        for dir in [settings.INTERNET_DRAFT_PATH, settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR]:
+            (Path(dir) / draft.get_base_name()).touch()
+
+        for viewname in [
+            "ietf.doc.views_doc.document_main",
+            "ietf.doc.views_doc.document_html",
+        ]:
+            url = urlreverse(viewname, kwargs=dict(name=draft.name))
+            r = self.client.get(url)
+            self.assertEqual(
+                self.canonical_href(r),
+                f"{settings.IDTRACKER_BASE_URL}{url}",
+                f"{url} canonical",
+            )
+
+    def test_subseries_pages_canonicalize_to_rfc_editor(self):
+        for doc in [BcpFactory(), StdFactory(), FyiFactory()]:
+            url = urlreverse(
+                "ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)
+            )
+            r = self.client.get(url)
+            self.assertEqual(
+                self.canonical_href(r),
+                f"https://www.rfc-editor.example.org/info/{doc.name}/",
+                f"{url} canonical",
+            )
+
+
+class SubseriesHtmlRedirectTests(TestCase):
+    """Tests of the /doc/html/ redirects for the bcp/std/fyi subseries
+
+    These patterns interpolate RFC_EDITOR_INFO_BASE_URL when the URLconf is imported,
+    so override_settings cannot reach them - build the expectation from the setting.
+    """
+
+    def test_subseries_html_redirects_to_rfc_editor(self):
+        for name in ["bcp1", "std2", "fyi3"]:
+            for suffix in ["", "/", ".txt", ".html"]:
+                url = f"/doc/html/{name}{suffix}"
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 302, url)
+                self.assertEqual(
+                    r["Location"],
+                    f"{settings.RFC_EDITOR_INFO_BASE_URL}{name}/",
+                    url,
+                )
+
 
 class ReferencesTest(TestCase):
 

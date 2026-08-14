@@ -60,6 +60,12 @@ _bleach_linker = bleach.Linker(
 
 
 def linkify(text):
+    """Convert URL-ish substrings into HTML links
+    
+    This does no sanitization whatsoever. Caller must sanitize the input or output as
+    contextually appropriate. Do not call `mark_safe()` on the output if the input is
+    user-provided unless it has been sanitized or escaped.
+    """
     return _bleach_linker.linkify(text)
 
 
@@ -257,3 +263,21 @@ def parse_unicode(text):
     else:
         text = decoded_string
     return text
+
+
+def decode_document_content(content: bytes) -> str:
+    """Decode document contents as utf-8 or latin1
+    
+    Method was developed in DocumentInfo.text() where it gave acceptable results
+    for existing documents / RFCs.
+    """
+    try:
+        return content.decode("utf-8")
+    except UnicodeDecodeError:
+        pass
+    for back in range(1, 4):
+        try:
+            return content[:-back].decode("utf-8")
+        except UnicodeDecodeError:
+            pass
+    return content.decode("latin-1")  # everything is legal in latin-1

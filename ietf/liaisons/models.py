@@ -7,13 +7,14 @@ from django.urls import reverse as urlreverse
 from django.db import models
 from django.utils.text import slugify
 
-from ietf.person.models import Email, Person
+from ietf.person.models import Person
 from ietf.name.models import (LiaisonStatementPurposeName, LiaisonStatementState,
                               LiaisonStatementEventTypeName, LiaisonStatementTagName,
                               DocRelationshipName)
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.utils.models import ForeignKey
+from ietf.utils.validators import validate_mailbox_address
 
 # maps (previous state id, new state id) to event type id
 STATE_EVENT_MAPPING = {
@@ -29,11 +30,16 @@ STATE_EVENT_MAPPING = {
 class LiaisonStatement(models.Model):
     title = models.CharField(max_length=255)
     from_groups = models.ManyToManyField(Group, blank=True, related_name='liaisonstatement_from_set')
-    from_contact = ForeignKey(Email, blank=True, null=True)
+    from_contact = models.CharField(
+        blank=True,
+        max_length=512,
+        help_text="Address of the formal sender of the statement",
+        validators=(validate_mailbox_address,)
+    )
     to_groups = models.ManyToManyField(Group, blank=True, related_name='liaisonstatement_to_set')
     to_contacts = models.CharField(max_length=2000, help_text="Contacts at recipient group")
 
-    response_contacts = models.CharField(blank=True, max_length=255, help_text="Where to send a response") # RFC4053
+    response_contacts = models.TextField(blank=True, max_length=1024, help_text="Where to send a response") # RFC4053
     technical_contacts = models.CharField(blank=True, max_length=255, help_text="Who to contact for clarification") # RFC4053
     action_holder_contacts = models.CharField(blank=True, max_length=255, help_text="Who makes sure action is completed")  # incoming only?
     cc_contacts = models.TextField(blank=True)
@@ -85,7 +91,7 @@ class LiaisonStatement(models.Model):
         if self.from_groups.count():
             frm = ', '.join([i.acronym or i.name for i in self.from_groups.all()])
         else:
-            frm = self.from_contact.person.name
+            frm = self.from_contact
         if self.to_groups.count():
             to = ', '.join([i.acronym or i.name for i in self.to_groups.all()])
         else:

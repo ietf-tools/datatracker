@@ -1,11 +1,16 @@
-# Copyright The IETF Trust 2014-2020, All Rights Reserved
+# Copyright The IETF Trust 2014-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
+
+import json
+import debug # pyflakes:ignore
 
 from textwrap import dedent
 
+from django.core import serializers
+
 from ietf.ipr.mail import process_response_email, UndeliverableIprResponseError
 
-import debug                            # pyflakes:ignore
+from ietf.ipr.models import IprDocRel
 
 def get_genitive(name):
     """Return the genitive form of name"""
@@ -85,3 +90,18 @@ def ingest_response_email(message: bytes):
             email_original_message=message,
             email_attach_traceback=True,
         ) from err
+
+def json_dump_disclosure(disclosure):
+    objs = set()
+    objs.add(disclosure)
+    objs.add(disclosure.iprdisclosurebase_ptr)
+    objs.add(disclosure.by)
+    objs.update(IprDocRel.objects.filter(disclosure=disclosure))
+    objs.update(disclosure.iprevent_set.all())
+    objs.update([i.by for i in disclosure.iprevent_set.all()])
+    objs.update([i.message for i in disclosure.iprevent_set.all() if i.message ])
+    objs.update([i.message.by for i in disclosure.iprevent_set.all() if i.message ])
+    objs.update([i.in_reply_to for i in disclosure.iprevent_set.all() if i.in_reply_to ])
+    objs.update([i.in_reply_to.by for i in disclosure.iprevent_set.all() if i.in_reply_to ])
+    objs = sorted(list(objs),key=lambda o:o.__class__.__name__)
+    return json.dumps(json.loads(serializers.serialize("json",objs)),indent=4)

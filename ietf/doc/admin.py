@@ -1,10 +1,12 @@
-# Copyright The IETF Trust 2010-2021, All Rights Reserved
+# Copyright The IETF Trust 2010-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 from django.contrib import admin
 from django.db import models
 from django import forms
+from django.db.models import QuerySet
+from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document, RelatedDocHistory,
     DocHistoryAuthor, DocHistory, DocReminder, DocEvent, NewRevisionDocEvent,
@@ -12,32 +14,37 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
     ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
-    BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject )
+    BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject, RfcAuthor,
+    EditedRfcAuthorsDocEvent, RpcAssignmentDocEvent)
 
+from ietf.utils.admin import SaferTabularInline
 from ietf.utils.validators import validate_external_resource_value
+from .storage_utils import force_replication
+from .utils import replicate_stored_objects_for_document
+
 
 class StateTypeAdmin(admin.ModelAdmin):
     list_display = ["slug", "label"]
 admin.site.register(StateType, StateTypeAdmin)
 
 class StateAdmin(admin.ModelAdmin):
-    list_display = ["slug", "type", 'name', 'order', 'desc']
-    list_filter = ["type", ]
+    list_display = ["slug", "type", 'name', 'order', 'desc', "used"]
+    list_filter = ["type", "used"]
     search_fields = ["slug", "type__label", "type__slug", "name", "desc"]
     filter_horizontal = ["next_states"]
 admin.site.register(State, StateAdmin)
 
-class DocAuthorInline(admin.TabularInline):
+class DocAuthorInline(SaferTabularInline):
     model = DocumentAuthor
     raw_id_fields = ['person', 'email']
     extra = 1
 
-class DocActionHolderInline(admin.TabularInline):
+class DocActionHolderInline(SaferTabularInline):
     model = DocumentActionHolder
     raw_id_fields = ['person']
     extra = 1
 
-class RelatedDocumentInline(admin.TabularInline):
+class RelatedDocumentInline(SaferTabularInline):
     model = RelatedDocument
     fk_name= 'source'
     def this(self, instance):
@@ -47,7 +54,7 @@ class RelatedDocumentInline(admin.TabularInline):
     raw_id_fields = ['target']
     extra = 1
 
-class AdditionalUrlInLine(admin.TabularInline):
+class AdditionalUrlInLine(SaferTabularInline):
     model = DocumentURL
     fields = ['tag','desc','url',]
     extra = 1
@@ -70,7 +77,9 @@ class DocumentAuthorAdmin(admin.ModelAdmin):
     search_fields = ['document__name', 'person__name', 'email__address', 'affiliation', 'country']
     raw_id_fields = ["document", "person", "email"]
 admin.site.register(DocumentAuthor, DocumentAuthorAdmin)
-    
+
+
+
 class DocumentAdmin(admin.ModelAdmin):
     list_display = ['name', 'rev', 'group', 'pages', 'intended_std_level', 'author_list', 'time']
     search_fields = ['name']
@@ -78,6 +87,7 @@ class DocumentAdmin(admin.ModelAdmin):
     raw_id_fields = ['group', 'shepherd', 'ad']
     inlines = [DocAuthorInline, DocActionHolderInline, RelatedDocumentInline, AdditionalUrlInLine]
     form = DocumentForm
+    actions = ["replicate_stored_objects"]
 
     def save_model(self, request, obj, form, change):
         e = DocEvent.objects.create(
@@ -91,6 +101,22 @@ class DocumentAdmin(admin.ModelAdmin):
 
     def state(self, instance):
         return self.get_state()
+
+    @admin.action(description="Replicate related blobs")
+    def replicate_stored_objects(self, request, queryset: QuerySet[Document]):
+        doc_count = 0
+        stored_obj_count = 0
+        for doc in queryset.all():
+            doc_count += 1
+            if isinstance(doc, Document):
+                stored_obj_count += replicate_stored_objects_for_document(doc)
+        self.message_user(
+            request,
+            (
+                f"Queued replication of a total of {stored_obj_count} StoredObject(s) "
+                f"for {doc_count} Document(s)"
+            )
+        )
 
 admin.site.register(Document, DocumentAdmin)
 
@@ -172,6 +198,7 @@ admin.site.register(LastCallDocEvent, DocEventAdmin)
 admin.site.register(TelechatDocEvent, DocEventAdmin)
 admin.site.register(InitialReviewDocEvent, DocEventAdmin)
 admin.site.register(EditedAuthorsDocEvent, DocEventAdmin)
+admin.site.register(EditedRfcAuthorsDocEvent, DocEventAdmin)
 admin.site.register(IanaExpertDocEvent, DocEventAdmin)
 
 class BallotPositionDocEventAdmin(DocEventAdmin):
@@ -202,6 +229,10 @@ class SubmissionDocEventAdmin(DocEventAdmin):
     raw_id_fields = DocEventAdmin.raw_id_fields + ["submission"]
 admin.site.register(SubmissionDocEvent, SubmissionDocEventAdmin)
 
+class RpcAssignmentDocEventAdmin(DocEventAdmin):
+    search_fields = DocEventAdmin.search_fields + ["assignments"]
+admin.site.register(RpcAssignmentDocEvent, RpcAssignmentDocEventAdmin)
+
 class DocumentUrlAdmin(admin.ModelAdmin):
     list_display = ['id', 'doc', 'tag', 'url', 'desc', ]
     search_fields = ['doc__name', 'url', ]
@@ -220,7 +251,39 @@ class DocExtResourceAdmin(admin.ModelAdmin):
 admin.site.register(DocExtResource, DocExtResourceAdmin)
 
 class StoredObjectAdmin(admin.ModelAdmin):
-    list_display = ['store', 'name', 'modified', 'deleted']
-    list_filter = ['deleted']
-    search_fields = ['store', 'name', 'doc_name', 'doc_rev', 'deleted']
+    list_display = ['store', 'name', 'doc_name', 'modified', 'is_deleted']
+    list_filter = [
+        'store',
+        ('modified', DateRangeQuickSelectListFilterBuilder()),
+        ('deleted', DateRangeQuickSelectListFilterBuilder()),
+    ]
+    search_fields = ['name', 'doc_name', 'doc_rev']
+    list_display_links = ['name']
+    actions = ["replicate_stored_object"]
+
+    @admin.display(boolean=True, description="Deleted?", ordering="deleted")
+    def is_deleted(self, instance):
+        return instance.deleted is not None
+
+    @admin.action(description="Replicate related blobs")
+    def replicate_stored_object(self, request, queryset: QuerySet[StoredObject]):
+        stored_obj_count = 0
+        for stored_object in queryset.all():
+            if isinstance(stored_object, StoredObject):
+                force_replication(kind=stored_object.store, name=stored_object.name)
+                stored_obj_count += 1
+        self.message_user(
+            request,
+            f"Queued replication of a total of {stored_obj_count} StoredObject(s)",
+        )
+
+
 admin.site.register(StoredObject, StoredObjectAdmin)
+
+class RfcAuthorAdmin(admin.ModelAdmin):
+    # the email field in the list_display/readonly_fields works through a @property
+    list_display = ['id', 'document', 'titlepage_name', 'person', 'email', 'affiliation', 'country', 'order']
+    search_fields = ['document__name', 'titlepage_name', 'person__name', 'person__email__address', 'affiliation', 'country']
+    raw_id_fields = ["document", "person"]
+    readonly_fields = ["email"]
+admin.site.register(RfcAuthor, RfcAuthorAdmin)

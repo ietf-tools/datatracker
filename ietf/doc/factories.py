@@ -14,7 +14,7 @@ from django.utils import timezone
 
 from ietf.doc.models import ( Document, DocEvent, NewRevisionDocEvent, State, DocumentAuthor,
     StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType, IRSGBallotDocEvent, TelechatDocEvent,
-    DocumentActionHolder, BofreqEditorDocEvent, BofreqResponsibleDocEvent, DocExtResource )
+    DocumentActionHolder, BofreqEditorDocEvent, BofreqResponsibleDocEvent, DocExtResource, RfcAuthor )
 from ietf.group.models import Group
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import RoleFactory
@@ -127,6 +127,13 @@ class RfcFactory(BaseDocumentFactory):
                 obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
         else:
             obj.set_state(State.objects.get(type_id='rfc',slug='published'))
+
+    @factory.post_generation
+    def authors(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
+        # Override base class, creating RfcAuthor instead of DocumentAuthor
+        if create and extracted:
+            for person in extracted:
+                RfcAuthorFactory(document=obj, person=person)
 
 
 class IndividualDraftFactory(BaseDocumentFactory):
@@ -311,6 +318,12 @@ class NewRevisionDocEventFactory(DocEventFactory):
     def desc(self):
          return 'New version available %s-%s'%(self.doc.name,self.rev)
 
+class PublishedRfcDocEventFactory(DocEventFactory):
+    class Meta:
+        model = DocEvent
+    type = "published_rfc"
+    doc = factory.SubFactory(WgRfcFactory)
+
 class StateDocEventFactory(DocEventFactory):
     class Meta:
         model = StateDocEvent
@@ -381,6 +394,18 @@ class DocumentAuthorFactory(factory.django.DjangoModelFactory):
     affiliation = factory.Faker('company')
     country = factory.Faker('country')
     order = factory.LazyAttribute(lambda o: o.document.documentauthor_set.count() + 1)
+
+class RfcAuthorFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = RfcAuthor
+
+    document = factory.SubFactory(DocumentFactory)
+    titlepage_name = factory.LazyAttribute(
+        lambda obj: " ".join([obj.person.initials(), obj.person.last_name()])
+    )
+    person = factory.SubFactory('ietf.person.factories.PersonFactory')
+    affiliation = factory.Faker('company')
+    order = factory.LazyAttribute(lambda o: o.document.rfcauthor_set.count() + 1)
 
 class WgDocumentAuthorFactory(DocumentAuthorFactory):
     document = factory.SubFactory(WgDraftFactory)

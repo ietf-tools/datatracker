@@ -17,16 +17,6 @@ spec:
       labels:
         app: beat
     spec:
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                      - datatracker
-              topologyKey: "kubernetes.io/hostname"
       securityContext:
         runAsNonRoot: true
       containers:
@@ -36,10 +26,6 @@ spec:
         - name: beat
           image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
           imagePullPolicy: Always
-          ports:
-            - containerPort: 8000
-              name: http
-              protocol: TCP
           volumeMounts:
             - name: dt-vol
               mountPath: /a
@@ -62,6 +48,10 @@ spec:
             readOnlyRootFilesystem: true
             runAsUser: 1000
             runAsGroup: 1000
+          resources:
+            requests:
+              cpu: 100m
+              memory: 250Mi
       volumes:
         # To be overridden with the actual shared volume
         - name: dt-vol
@@ -73,4 +63,4 @@ spec:
             name: files-cfgmap
       dnsPolicy: ClusterFirst
       restartPolicy: Always
-      terminationGracePeriodSeconds: 600
+      terminationGracePeriodSeconds: 10

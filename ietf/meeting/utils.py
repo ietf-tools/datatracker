@@ -2,8 +2,12 @@
 # -*- coding: utf-8 -*-
 import datetime
 import itertools
+from contextlib import suppress
+from dataclasses import dataclass
+
+import jsonschema
 import os
-from hashlib import sha384
+import requests
 
 import pytz
 import subprocess
@@ -15,6 +19,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.cache import caches
 from django.core.files.base import ContentFile
+from django.db import IntegrityError
 from django.db.models import OuterRef, Subquery, TextField, Q, Value, Max
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
@@ -24,16 +29,33 @@ from django.utils.encoding import smart_str
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.doc.storage_utils import store_bytes, store_str
-from ietf.meeting.models import (Session, SchedulingEvent, TimeSlot,
-    Constraint, SchedTimeSessAssignment, SessionPresentation, Attended)
-from ietf.doc.models import Document, State, NewRevisionDocEvent, StateDocEvent
+from ietf.doc.storage_utils import store_bytes, store_str, AlreadyExistsError
+from ietf.meeting.models import (
+    Session,
+    SchedulingEvent,
+    TimeSlot,
+    Constraint,
+    SchedTimeSessAssignment,
+    SessionPresentation,
+    Attended,
+    Registration,
+    Meeting,
+    RegistrationTicket,
+)
+from ietf.blobdb.models import ResolvedMaterial
+from ietf.doc.models import (
+    Document,
+    State,
+    NewRevisionDocEvent,
+    StateDocEvent,
+    StoredObject,
+)
 from ietf.doc.models import DocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import SessionStatusName, ConstraintName, DocTypeName
 from ietf.person.models import Person
-from ietf.stats.models import MeetingRegistration
+from ietf.utils import markdown
 from ietf.utils.html import clean_html
 from ietf.utils.log import log
 from ietf.utils.timezone import date_today
@@ -159,7 +181,7 @@ def bluesheet_data(session):
         .annotate(
             affiliation=Coalesce(
                 Subquery(
-                    MeetingRegistration.objects.filter(
+                    Registration.objects.filter(
                         Q(meeting=session.meeting),
                         Q(person=OuterRef("person")) | Q(email=OuterRef("person__email")),
                     ).values("affiliation")[:1]
@@ -218,6 +240,7 @@ def save_bluesheet(request, session, file, encoding='utf-8'):
     save_error = handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=encoding)
     if not save_error:
         doc.save_with_history([e])
+        resolve_uploaded_material(meeting=session.meeting, doc=doc)
     return save_error
 
 
@@ -830,6 +853,342 @@ def write_doc_for_session(session, type_id, filename, contents):
     store_str(type_id, filename.name, contents)
     return None
 
+
+@dataclass
+class BlobSpec:
+    bucket: str
+    name: str
+
+
+def resolve_one_material(
+    doc: Document, rev: str | None, ext: str | None
+) -> BlobSpec | None:
+    if doc.type_id is None:
+        log(f"Cannot resolve a doc with no type: {doc.name}")
+        return None
+
+    # Get the Document's base name. It may or may not have an extension.
+    if rev is None:
+        basename = Path(doc.get_base_name())
+    else:
+        basename = Path(f"{doc.name}-{int(rev):02d}")
+
+    # If the document's file exists, the blob is _always_ named with this stem,
+    # even if it's different from the original.
+    blob_stem = Path(f"{doc.name}-{rev or doc.rev}")
+
+    # If we have an extension, either from the URL or the Document's base name, look up
+    # the blob or file or return 404. N.b. the suffix check needs adjustment to handle
+    # a bare "." extension when we reach py3.14.
+    if ext or basename.suffix != "": 
+        if ext:
+            blob_name = str(blob_stem.with_suffix(ext))
+        else:
+            blob_name = str(blob_stem.with_suffix(basename.suffix))
+
+        # See if we have a stored object under that name
+        preferred_blob = (
+            StoredObject.objects.exclude_deleted()
+            .filter(store=doc.type_id, name=blob_name)
+            .first()
+        )
+        if preferred_blob is not None:
+            return BlobSpec(
+                bucket=preferred_blob.store,
+                name=preferred_blob.name,
+            )
+        # No stored object, fall back to the file system.
+        filename = Path(doc.get_file_path()) / basename  # use basename for file
+        if filename.is_file():
+            return BlobSpec(
+                bucket=doc.type_id,
+                name=str(blob_stem.with_suffix(filename.suffix)),
+            )
+        else:
+            return None
+
+    # No extension has been specified so far, so look one up.
+    matching_stored_objects = (
+        StoredObject.objects.exclude_deleted()
+        .filter(
+            store=doc.type_id,
+            name__startswith=f"{blob_stem}.",  # anchor to end with trailing "."
+        )
+        .order_by("name")
+    )  # orders by suffix
+    blob_ext_choices = {
+        Path(stored_obj.name).suffix: stored_obj
+        for stored_obj in matching_stored_objects
+    }
+
+    # Short-circuit to return pdf if present
+    if ".pdf" in blob_ext_choices:
+        pdf_blob = blob_ext_choices[".pdf"]
+        return BlobSpec(
+            bucket=pdf_blob.store,
+            name=str(blob_stem.with_suffix(".pdf")),
+        )
+
+    # Now look for files
+    filename = Path(doc.get_file_path()) / basename
+    file_ext_choices = {
+        # Construct a map from suffix to full filename
+        fn.suffix: fn.name
+        for fn in sorted(filename.parent.glob(filename.stem + ".*"))
+    }
+
+    # Short-circuit to return pdf if we have the file
+    if ".pdf" in file_ext_choices:
+        return BlobSpec(
+            bucket=doc.type_id,
+            name=str(blob_stem.with_suffix(".pdf")),
+        )
+
+    all_exts = set(blob_ext_choices.keys()).union(file_ext_choices.keys())
+    if len(all_exts) > 0:
+        preferred_ext = sorted(all_exts)[0]
+        if preferred_ext in blob_ext_choices:
+            preferred_blob = blob_ext_choices[preferred_ext]
+            return BlobSpec(
+                bucket=preferred_blob.store,
+                name=preferred_blob.name,
+            )
+        else:
+            return BlobSpec(
+                bucket=doc.type_id,
+                name=str(blob_stem.with_suffix(preferred_ext)),
+            )
+
+    return None
+
+
+def resolve_materials_for_one_meeting(meeting: Meeting):
+    start_time = timezone.now()
+    meeting_documents = (
+        Document.objects.filter(
+            type_id__in=settings.MATERIALS_TYPES_SERVED_BY_WORKER
+        ).filter(
+            Q(session__meeting=meeting) | Q(proceedingsmaterial__meeting=meeting)
+        )
+    ).distinct()
+    
+    resolved = []
+    for doc in meeting_documents:
+        # request by doc name with no rev
+        blob = resolve_one_material(doc, rev=None, ext=None)
+        if blob is not None:
+            resolved.append(
+                ResolvedMaterial(
+                    name=doc.name,
+                    meeting_number=meeting.number,
+                    bucket=blob.bucket,
+                    blob=blob.name,
+                )
+            )
+        # request by doc name + rev
+        blob = resolve_one_material(doc, rev=doc.rev, ext=None)
+        if blob is not None:
+            resolved.append(
+                ResolvedMaterial(
+                    name=f"{doc.name}-{doc.rev:02}",
+                    meeting_number=meeting.number,
+                    bucket=blob.bucket,
+                    blob=blob.name,
+                )
+            )
+        # for other revisions, only need request by doc name + rev
+        other_revisions = doc.revisions_by_newrevisionevent()
+        other_revisions.remove(doc.rev)
+        for rev in other_revisions:
+            blob = resolve_one_material(doc, rev=rev, ext=None)
+            if blob is not None:
+                resolved.append(
+                    ResolvedMaterial(
+                        name=f"{doc.name}-{rev:02}",
+                        meeting_number=meeting.number,
+                        bucket=blob.bucket,
+                        blob=blob.name,
+                    )
+                )
+    ResolvedMaterial.objects.bulk_create(
+        resolved,
+        update_conflicts=True,
+        unique_fields=["name", "meeting_number"],
+        update_fields=["bucket", "blob"],
+    )
+    # Warn if any files were updated during the above process
+    last_update = meeting_documents.aggregate(Max("time"))["time__max"]
+    if last_update and last_update > start_time:
+        log(
+            f"Warning: materials for meeting {meeting.number} "
+            "changed during ResolvedMaterial update"
+        )
+
+def resolve_uploaded_material(meeting: Meeting, doc: Document):
+    resolved: list[ResolvedMaterial] = []
+    remove = ResolvedMaterial.objects.none()
+    blob = resolve_one_material(doc, rev=None, ext=None)
+    if blob is None:
+        # Versionless file does not exist. Remove the versionless ResolvedMaterial
+        # if it existed. This is to avoid leaving behind a stale link to a replaced
+        # version. This comes up e.g. if a ProceedingsMaterial is changed from having
+        # an uploaded file to being an external URL.
+        remove = ResolvedMaterial.objects.filter(
+            name=doc.name, meeting_number=meeting.number
+        )
+    else:
+        resolved.append(
+            ResolvedMaterial(
+                name=doc.name,
+                meeting_number=meeting.number,
+                bucket=blob.bucket,
+                blob=blob.name,
+            )
+        )
+    # request by doc name + rev
+    blob = resolve_one_material(doc, rev=doc.rev, ext=None)
+    if blob is not None:
+        resolved.append(
+            ResolvedMaterial(
+                name=f"{doc.name}-{doc.rev:02}",
+                meeting_number=meeting.number,
+                bucket=blob.bucket,
+                blob=blob.name,
+            )
+        )
+    # Create the new record(s) 
+    ResolvedMaterial.objects.bulk_create(
+        resolved,
+        update_conflicts=True,
+        unique_fields=["name", "meeting_number"],
+        update_fields=["bucket", "blob"],
+    )
+    # and remove one if necessary (will be a none() queryset if not)
+    remove.delete()
+
+
+def store_blob_for_one_material_file(doc: Document, rev: str, filepath: Path):
+    if not settings.ENABLE_BLOBSTORAGE:
+        raise RuntimeError("Cannot store blobs: ENABLE_BLOBSTORAGE is False")
+
+    bucket = doc.type_id
+    if bucket not in settings.MATERIALS_TYPES_SERVED_BY_WORKER:
+        raise ValueError(f"Bucket {bucket} not found for doc {doc.name}.")
+    blob_stem = f"{doc.name}-{rev}"
+    suffix = filepath.suffix  # includes leading "."
+
+    # Store the file
+    try:
+        file_bytes = filepath.read_bytes()
+    except Exception as err:
+        log(f"Failed to read {filepath}: {err}")
+        raise
+    with suppress(AlreadyExistsError):
+        store_bytes(
+            kind=bucket,
+            name= blob_stem + suffix,
+            content=file_bytes,
+            mtime=datetime.datetime.fromtimestamp(
+                filepath.stat().st_mtime,
+                tz=datetime.UTC,
+            ),
+            allow_overwrite=False,
+            doc_name=doc.name,
+            doc_rev=rev,
+        )
+
+    # Special case: pre-render markdown into HTML as .md.html
+    if suffix == ".md":
+        try:
+            markdown_source = file_bytes.decode("utf-8")
+        except UnicodeDecodeError as err:
+            log(f"Unable to decode {filepath} as UTF-8, treating as latin-1: {err}")
+            markdown_source = file_bytes.decode("latin-1")
+        # render the markdown
+        try:
+            html = render_to_string(
+                "minimal.html",
+                {
+                    "content": markdown.markdown(markdown_source),
+                    "title": blob_stem,
+                    "static_ietf_org": settings.STATIC_IETF_ORG,
+                },
+            )
+        except Exception as err:
+            log(f"Failed to render markdown for {filepath}: {err}")
+        else:
+            # Don't overwrite, but don't fail if the blob exists
+            with suppress(AlreadyExistsError):
+                store_str(
+                    kind=bucket,
+                    name=blob_stem + ".md.html",
+                    content=html,
+                    allow_overwrite=False,
+                    doc_name=doc.name,
+                    doc_rev=rev,
+                    content_type="text/html;charset=utf-8",
+                )
+
+
+def store_blobs_for_one_material_doc(doc: Document):
+    """Ensure that all files related to a materials Document are in the blob store"""
+    if doc.type_id not in settings.MATERIALS_TYPES_SERVED_BY_WORKER:
+        log(f"This method does not handle docs of type {doc.name}")
+        return
+
+    # Store files for current Document / rev
+    file_path = Path(doc.get_file_path())
+    base_name = Path(doc.get_base_name())
+    # .stem would remove directories, so use .with_suffix("")
+    base_name_stem = str(base_name.with_suffix(""))
+    if base_name_stem.endswith(".") and base_name.suffix == "":
+        # In Python 3.14, a trailing "." is a valid suffix, but in prior versions
+        # it is left as part of the stem. The suffix check ensures that either way,
+        # only a single "." will be removed.
+        base_name_stem = base_name_stem[:-1]
+    # Add any we find without the rev
+    for file_to_store in file_path.glob(base_name_stem + ".*"):
+        if not (file_to_store.is_file()):
+            continue
+        try:
+            store_blob_for_one_material_file(doc, doc.rev, file_to_store)
+        except Exception as err:
+            log(
+                f"Failed to store blob for {doc} rev {doc.rev} "
+                f"from {file_to_store}: {err}"
+            )
+
+    # Get other revisions
+    for rev in doc.revisions_by_newrevisionevent():
+        if rev == doc.rev:
+            continue  # already handled this
+
+        # Add some that have the rev
+        for file_to_store in file_path.glob(doc.name + f"-{rev}.*"):
+            if not file_to_store.is_file():
+                continue
+            try:
+                store_blob_for_one_material_file(doc, rev, file_to_store)
+            except Exception as err:
+                log(
+                    f"Failed to store blob for {doc} rev {rev} "
+                    f"from {file_to_store}: {err}"
+                )
+
+
+def store_blobs_for_one_meeting(meeting: Meeting):
+    meeting_documents = (
+        Document.objects.filter(
+            type_id__in=settings.MATERIALS_TYPES_SERVED_BY_WORKER
+        ).filter(
+            Q(session__meeting=meeting) | Q(proceedingsmaterial__meeting=meeting)
+        )
+    ).distinct()
+
+    for doc in meeting_documents:
+        store_blobs_for_one_material_doc(doc)
+
+
 def create_recording(session, url, title=None, user=None):
     '''
     Creates the Document type=recording, setting external_url and creating
@@ -946,13 +1305,14 @@ def get_activity_stats(sdate, edate):
     data['ffw_update_count'] = ffw_update_count
     data['ffw_update_percent'] = ffw_update_percent
 
-    rfcs = events.filter(type='published_rfc')
-    data['rfcs'] = rfcs.select_related('doc').select_related('doc__group').select_related('doc__intended_std_level')
+    rfcs_events = DocEvent.objects.filter(doc__type='rfc', time__gte=sdatetime, time__lt=edatetime)
+    rfcs = rfcs_events.filter(type='published_rfc')
+    data['rfcs'] = rfcs.select_related('doc').select_related('doc__group').select_related('doc__std_level')
 
-    data['counts'] = {'std': rfcs.filter(doc__intended_std_level__in=('ps', 'ds', 'std')).count(),
-                      'bcp': rfcs.filter(doc__intended_std_level='bcp').count(),
-                      'exp': rfcs.filter(doc__intended_std_level='exp').count(),
-                      'inf': rfcs.filter(doc__intended_std_level='inf').count()}
+    data['counts'] = {'std': rfcs.filter(doc__std_level__in=('ps', 'ds', 'std')).count(),
+                      'bcp': rfcs.filter(doc__std_level='bcp').count(),
+                      'exp': rfcs.filter(doc__std_level='exp').count(),
+                      'inf': rfcs.filter(doc__std_level='inf').count()}
 
     data['new_groups'] = Group.objects.filter(
         type='wg',
@@ -1002,29 +1362,53 @@ def post_process(doc):
         doc.save_with_history([e])
 
 
-def participants_for_meeting(meeting):
-    """ Return a tuple (checked_in, attended)
-        checked_in = queryset of onsite, checkedin participants values_list('person')
-        attended = queryset of remote participants who attended a session values_list('person')
-    """
-    checked_in = meeting.meetingregistration_set.filter(reg_type='onsite', checkedin=True).values_list('person', flat=True).distinct()
-    sessions = meeting.session_set.filter(Q(type='plenary') | Q(group__type__in=['wg', 'rg']))
-    attended = Attended.objects.filter(session__in=sessions).values_list('person', flat=True).distinct()
-    return (checked_in, attended)
-
-
 def generate_proceedings_content(meeting, force_refresh=False):
     """Render proceedings content for a meeting and update cache
     
+    Caches its value for 25 hours to ensure that the cache never expires if
+    we recompute the value daily.
+
     :meeting: meeting whose proceedings should be rendered
     :force_refresh: true to force regeneration and cache refresh
     """
-    cache = caches["default"]
-    cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
-    # Include proceedings_final in the bare_key so we'll always reflect that accurately, even at the cost of
-    # a recomputation in the view
-    bare_key = f"proceedings.{meeting.number}.{cache_version}.final={meeting.proceedings_final}"
-    cache_key = sha384(bare_key.encode("utf8")).hexdigest()
+    cache = caches["proceedings"]
+    key_components = [
+        "proceedings",
+        str(meeting.number),
+    ]
+    if meeting.proceedings_final:
+        # Freeze the cache key once proceedings are finalized. Further changes will
+        # not be picked up until the cache expires or is refreshed by the
+        # proceedings_content_refresh_task()
+        key_components.append("final")
+    else:
+        # Build a cache key that changes when materials are modified. For all but drafts,
+        # use the last modification time of the document. Exclude drafts from this because
+        # revisions long after the meeting ends will otherwise show up as changes and
+        # incorrectly invalidate the cache. Instead, include an ordered list of the
+        # drafts linked to the meeting so adding or removing drafts will trigger a
+        # recalculation. The list is long but that doesn't matter because we hash it into
+        # a fixed-length key.
+        meeting_docs = Document.objects.filter(session__meeting__number=meeting.number)
+        last_materials_update = (
+            meeting_docs.exclude(type_id="draft")
+            .filter(session__meeting__number=meeting.number)
+            .aggregate(Max("time"))["time__max"]
+        )
+        draft_names = (
+            meeting_docs
+            .filter(type_id="draft")
+            .order_by("name")
+            .values_list("name", flat=True)
+        )
+        key_components += [
+            last_materials_update.isoformat() if last_materials_update else "-",
+            ",".join(draft_names),
+        ]
+
+    # Key is potentially long, but the "proceedings" cache hashes it to a fixed
+    # length. If that changes, hash it separately here first.
+    cache_key = ".".join(key_components)
     if not force_refresh:
         cached_content = cache.get(cache_key, None)
         if cached_content is not None:
@@ -1098,7 +1482,7 @@ def generate_proceedings_content(meeting, force_refresh=False):
     cache.set(
         cache_key,
         rendered_content,
-        timeout=86400,  # one day, in seconds
+        timeout=3600 + 86400,  # one day + one hour, in seconds
     )
     return rendered_content
 
@@ -1177,3 +1561,296 @@ def organize_proceedings_sessions(sessions):
             else:
                 not_meeting_groups.append(entry)
     return meeting_groups, not_meeting_groups
+
+
+import_registration_json_validator = jsonschema.Draft202012Validator(
+    schema={
+        "type": "object",
+        "properties": {
+            "objects": {
+                "type": "object",
+                "patternProperties": {
+                    # Email address as key (simplified pattern or just allow any key)
+                    ".*": {
+                        "type": "object",
+                        "properties": {
+                            "first_name": {"type": "string"},
+                            "last_name": {"type": "string"},
+                            "email": {"type": "string", "format": "email"},
+                            "affiliation": {"type": "string"},
+                            "country_code": {"type": "string", "minLength": 2, "maxLength": 2},
+                            "meeting": {"type": "string"},
+                            "checkedin": {"type": "boolean"},
+                            "cancelled": {"type": "boolean"},
+                            "is_nomcom_volunteer": {"type": "boolean"},
+                            "tickets": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "attendance_type": {"type": "string"},
+                                        "ticket_type": {"type": "string"}
+                                    },
+                                    "required": ["attendance_type", "ticket_type"]
+                                }
+                            }
+                        },
+                        "required": [
+                            "first_name", "last_name", "email",
+                            "country_code", "meeting", 'affiliation',
+                            "checkedin", "is_nomcom_volunteer", "tickets",
+                            "cancelled",
+                        ]
+                    }
+                },
+                "additionalProperties": False
+            }
+        },
+        "required": ["objects"]
+    }
+)
+
+
+def get_registration_data(meeting):
+    '''Retrieve data from registation system for meeting'''
+    url = settings.REGISTRATION_PARTICIPANTS_API_URL
+    key = settings.REGISTRATION_PARTICIPANTS_API_KEY
+    params = {'meeting': meeting.number, 'apikey': key}
+    try:
+        response = requests.get(url, params=params, timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
+    except requests.Timeout as e:
+        log(f'GET request timed out for [{url}]: {e}')
+        raise Exception("Timeout retrieving data from registration API") from e
+    if response.status_code == 200:
+        try:
+            decoded = response.json()
+        except ValueError as e:
+            raise ValueError(f'Could not decode response from registration API: {e}')
+    else:
+        raise Exception(f'Bad response from registration API: {response.status_code}, {response.content[:64]}')
+
+    # validate registration data
+    import_registration_json_validator.validate(decoded)
+    return decoded
+
+
+def sync_registration_data(meeting):
+    """"Sync meeting.Registration with registration system.
+
+    Registration records are created in realtime as people register for a
+    meeting. This function serves as an audit / reconciliation. Most records are
+    expected to already exist. The function has been optimized with this in mind.
+
+    - Creates new registrations if they don't exist
+    - Updates existing registrations if fields differ
+    - Updates tickets as needed
+    - Deletes registrations that exist in the database but not in the JSON data
+
+    Returns:
+        dict: Summary of changes made (created, updated, deleted counts)
+    """
+    reg_data = get_registration_data(meeting)
+
+    # Get the meeting ID from the first registration, the API only deals with one meeting at a time
+    first_email = next(iter(reg_data['objects']))
+    meeting_number = reg_data['objects'][first_email]['meeting']
+    try:
+        Meeting.objects.get(number=meeting_number)
+    except Meeting.DoesNotExist:
+        raise Exception(f'meeting does not exist {meeting_number}')
+
+    # Get all existing registrations for this meeting
+    existing_registrations = meeting.registration_set.all()
+    existing_emails = set(reg.email for reg in existing_registrations if reg.email)
+
+    # Track changes for reporting
+    stats = {
+        'created': 0,
+        'updated': 0,
+        'deleted': 0,
+        'processed': 0,
+    }
+
+    # Process registrations from reg_data
+    reg_emails = set()
+    for email, data in reg_data['objects'].items():
+        stats['processed'] += 1
+        reg_emails.add(email)
+
+        # Process this registration
+        _, action_taken = process_single_registration(data, meeting)
+
+        # Update stats
+        if action_taken == 'created':
+            stats['created'] += 1
+        elif action_taken == 'updated':
+            stats['updated'] += 1
+
+    # Delete registrations that exist in the DB but not in registration data, they've been cancelled
+    emails_to_delete = existing_emails - reg_emails
+    if emails_to_delete:
+        log(f"sync_reg: emails marked for deletion: {emails_to_delete}")
+        result = Registration.objects.filter(
+            email__in=emails_to_delete,
+            meeting=meeting
+        ).delete()
+        if 'meeting.Registration' in result[1]:
+            deleted_count = result[1]['meeting.Registration']
+        else:
+            deleted_count = 0
+        stats['deleted'] = deleted_count
+    # set meeting.attendees
+    count = Registration.objects.onsite().filter(meeting=meeting, checkedin=True).count()
+    if meeting.attendees != count:
+        meeting.attendees = count
+        meeting.save()
+
+    return stats
+
+
+def process_single_registration(reg_data, meeting):
+    """
+    Process a single registration record - create, update, or leave unchanged as needed.
+
+    Args:
+        reg_data (dict): Registration data
+        meeting (obj): The IETF meeting
+
+    Returns:
+        tuple: (registration, action_taken)
+            - registration: Registration object
+            - action_taken: String indicating 'created', 'updated', or None
+    """
+    # import here to avoid circular imports
+    from ietf.nomcom.models import Volunteer, NomCom
+
+    action_taken = None
+    fields_updated = False
+    tickets_modified = False
+
+    # handle deleted
+    # should not see cancelled records during nightly sync but can see
+    # them from realtime notifications
+    if reg_data['cancelled']:
+        try:
+            registration = Registration.objects.get(meeting=meeting, email=reg_data['email'])
+        except Registration.DoesNotExist:
+            return (None, None)
+        for ticket in reg_data['tickets']:
+            target = registration.tickets.filter(
+                attendance_type__slug=ticket['attendance_type'],
+                ticket_type__slug=ticket['ticket_type']).first()
+            if target:
+                target.delete()
+        if registration.tickets.count() == 0:
+            registration.delete()
+        log(f"sync_reg: cancelled registration {reg_data['email']}")
+        return (None, 'deleted')
+
+    person = Person.objects.filter(email__address=reg_data['email']).first()
+    if not person:
+        log(f"ERROR: meeting registration email unknown {reg_data['email']}")
+
+    registration, created = Registration.objects.get_or_create(
+        email=reg_data['email'],
+        meeting=meeting,
+        defaults={
+            'first_name': reg_data['first_name'],
+            'last_name': reg_data['last_name'],
+            'person': person,
+            'affiliation': reg_data['affiliation'],
+            'country_code': reg_data['country_code'],
+            'checkedin': reg_data['checkedin'],
+        }
+    )
+
+    # If not created, check if we need to update
+    if not created:
+        for field in ['first_name', 'last_name', 'affiliation', 'country_code', 'checkedin']:
+            if getattr(registration, field) != reg_data[field]:
+                log(f"sync_reg: found update {reg_data['email']}, {field} different, data from reg: {reg_data}")
+                setattr(registration, field, reg_data[field])
+                fields_updated = True
+
+    if fields_updated:
+        registration.save()
+
+    # Process tickets - handle counting properly for multiple same-type tickets
+    # Build count dictionaries for existing and new tickets
+    existing_ticket_counts = {}
+    for ticket in registration.tickets.all():
+        key = (ticket.attendance_type.slug, ticket.ticket_type.slug)
+        existing_ticket_counts[key] = existing_ticket_counts.get(key, 0) + 1
+
+    # Get new tickets from reg_data and count them
+    reg_data_ticket_counts = {}
+    for ticket_data in reg_data.get('tickets', []):
+        key = (ticket_data['attendance_type'], ticket_data['ticket_type'])
+        reg_data_ticket_counts[key] = reg_data_ticket_counts.get(key, 0) + 1
+
+    # Calculate tickets to add and remove
+    all_ticket_types = set(existing_ticket_counts.keys()) | set(reg_data_ticket_counts.keys())
+
+    for ticket_type in all_ticket_types:
+        existing_count = existing_ticket_counts.get(ticket_type, 0)
+        new_count = reg_data_ticket_counts.get(ticket_type, 0)
+
+        # Delete excess tickets
+        if existing_count > new_count:
+            tickets_to_delete = existing_count - new_count
+            # Get all tickets of this type
+            matching_tickets = registration.tickets.filter(
+                attendance_type__slug=ticket_type[0],
+                ticket_type__slug=ticket_type[1]
+            ).order_by('id')  # Use a consistent order for deterministic deletion
+
+            # Delete the required number
+            log(f"sync_reg: deleting {tickets_to_delete} of {ticket_type[0]}:{ticket_type[1]} of {reg_data['email']}")
+            for ticket in matching_tickets[:tickets_to_delete]:
+                ticket.delete()
+            tickets_modified = True
+
+        # Add missing tickets
+        elif new_count > existing_count:
+            tickets_to_add = new_count - existing_count
+
+            # Create the new tickets
+            log(f"sync_reg: adding {tickets_to_add} of {ticket_type[0]}:{ticket_type[1]} of {reg_data['email']}")
+            for _ in range(tickets_to_add):
+                try:
+                    RegistrationTicket.objects.create(
+                        registration=registration,
+                        attendance_type_id=ticket_type[0],
+                        ticket_type_id=ticket_type[1],
+                    )
+                    tickets_modified = True
+                except IntegrityError as e:
+                    log(f"Error adding RegistrationTicket {e}")
+    # handle nomcom volunteer
+    if reg_data['is_nomcom_volunteer'] and person:
+        try:
+            nomcom = NomCom.objects.get(is_accepting_volunteers=True)
+        except (NomCom.DoesNotExist, NomCom.MultipleObjectsReturned):
+            nomcom = None
+        if nomcom:
+            Volunteer.objects.get_or_create(
+                nomcom=nomcom,
+                person=person,
+                defaults={
+                    "affiliation": reg_data["affiliation"],
+                    "origin": "registration"
+                }
+            )
+
+    # set action_taken
+    if created:
+        log(f"sync_reg: created record. {reg_data['email']}")
+        action_taken = 'created'
+    elif fields_updated or tickets_modified:
+        action_taken = 'updated'
+
+    return registration, action_taken
+
+
+def fetch_attendance_from_meetings(meetings):
+    return [sync_registration_data(meeting) for meeting in meetings]

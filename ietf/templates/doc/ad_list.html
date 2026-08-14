@@ -8,15 +8,19 @@
 {% endblock %}
 {% block morecss %}
     table .border-bottom { border-bottom-color: var(--highcharts-neutral-color-80) !important; }
-    .highcharts-container .highcharts-axis-labels { font-size: .7rem; }
+    .highcharts-container .highcharts-axis-labels { 
+        font-size: .7rem; 
+        fill: var(--bs-body-color)
+    }
     .highcharts-container .highcharts-graph { stroke-width: 2.5; }
     .highcharts-container .highcharts-color-0 {
-        fill: var(--bs-primary);
+        fill: var(--bs-body-color);
         stroke: var(--bs-primary);
     }
     .highcharts-container .highcharts-data-label text {
         font-size: 1rem;
         font-weight: inherit;
+        fill: var(--bs-body-color)
     }
 {% endblock %}
 {% block title %}IESG Dashboard{% endblock %}
@@ -29,6 +33,10 @@
         are only shown to logged-in Area Directors.
     </div>
     {% endif %}
+    <p>
+        <a class="btn btn-primary" href="{% url 'ietf.doc.views_search.docs_for_iesg' %}">Documents in IESG Processing</a>
+        <a class="btn btn-primary" href="{% url 'ietf.iesg.views.working_groups' %}">IESG view of Working Groups</a>
+    </p>
     {% for dt in metadata %}
         <h2 class="mt-5" id="{{ dt.type.0 }}">{{ dt.type.1 }} State Counts</h2>
         <table class="table table-sm table-striped table-bordered tablesorter navskip">

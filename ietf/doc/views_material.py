@@ -22,6 +22,7 @@ from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.utils import add_state_change_event, check_common_doc_name_rules
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
+from ietf.meeting.utils import resolve_uploaded_material
 from ietf.utils import log
 from ietf.utils.decorators import ignore_view_kwargs
 from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
@@ -179,6 +180,9 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                             "There was an error creating a hardlink at %s pointing to %s: %s"
                             % (ftp_filepath, filepath, ex)
                         )
+                else:
+                    for meeting in set([s.meeting for s in doc.session_set.all()]):
+                        resolve_uploaded_material(meeting=meeting, doc=doc)
 
             if prev_rev != doc.rev:
                 e = NewRevisionDocEvent(type="new_revision", doc=doc, rev=doc.rev)

@@ -1,13 +1,17 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+import email
+import email.utils
+import re
+import smtplib
 
-import re, email
-
+from django.db.models import QuerySet
 from django.utils import timezone
 from django.utils.encoding import force_str
 
-from ietf.utils.mail import send_mail_text, send_mail_mime
+from ietf.utils import log
+from ietf.utils.mail import send_mail_text, send_mail_mime, send_mail_message
 from ietf.message.models import Message
 
 first_dot_on_line_re = re.compile(r'^\.', re.MULTILINE)
@@ -58,3 +62,29 @@ def send_scheduled_message_from_send_queue(queue_item):
 
     queue_item.message.sent = queue_item.sent_at
     queue_item.message.save()
+
+
+def retry_send_messages(messages: QuerySet[Message], resend=False):
+    """Attempt delivery of Messages"""
+    if not resend:
+        # only include sent messages on explicit request
+        for already_sent in messages.filter(sent__isnull=False):
+            assert already_sent.sent is not None  # appease mypy type checking
+            log.log(
+                f"retry_send_messages: skipping {already_sent.pk} "
+                f"(already sent {already_sent.sent.isoformat(timespec='milliseconds')})"
+            )
+        messages = messages.filter(sent__isnull=True)
+    for msg in messages:
+        to = ",".join(a[1] for a in email.utils.getaddresses([msg.to]))
+        try:
+            send_mail_message(None, msg)
+            log.log(
+                f'retry_send_messages: '
+                f'sent {msg.pk} {msg.frm} -> {to} "{msg.subject.strip()}"'
+            )
+        except smtplib.SMTPException as e:
+            log.log(
+                f'retry_send_messages: '
+                f'Failure {e}:  {msg.pk}  {msg.frm} -> {to}  "{msg.subject.strip()}"'
+            )

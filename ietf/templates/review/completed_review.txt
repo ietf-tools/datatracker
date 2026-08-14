@@ -1,7 +1,9 @@
 {% load ietf_filters %}{% autoescape off %}{% filter maybewordwrap:80 %}{% if assignment.state_id == "part-completed" %}
 Review is partially done. Another assignment may be needed to complete it.
 
-{% endif %}Reviewer: {{ assignment.reviewer.person }}
+{% endif %}Document: {{ assignment.review_request.doc.name }}
+Title: {{ assignment.review_request.doc.title }}
+Reviewer: {{ assignment.reviewer.person }}
 Review result: {{ assignment.result.name }}
 
 {{ content }}

@@ -1,16 +1,18 @@
 # Copyright The IETF Trust 2015-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 import base64
+import copy
 import datetime
 import json
 import html
-import mock
+from unittest import mock
 import os
 import sys
 
 from importlib import import_module
 from pathlib import Path
 from random import randrange
+from urllib.parse import quote, urlencode, urljoin
 
 from django.apps import apps
 from django.conf import settings
@@ -28,19 +30,19 @@ import ietf
 from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils import get_unicode_document_content
 from ietf.doc.models import RelatedDocument, State
-from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory
+from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory, RfcAuthorFactory, DocEventFactory
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
-from ietf.meeting.models import Session
+from ietf.meeting.models import Session, Registration
 from ietf.nomcom.models import Volunteer
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
 from ietf.person.factories import PersonFactory, random_faker, EmailFactory, PersonalApiKeyFactory
 from ietf.person.models import Email, User
-from ietf.stats.models import MeetingRegistration
 from ietf.utils.mail import empty_outbox, outbox, get_payload_text
 from ietf.utils.models import DumpInfo
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, reload_db_objects
 
+from . import Serializer
 from .ietf_utils import is_valid_token, requires_api_token
 from .views import EmailIngestionError
 
@@ -49,6 +51,7 @@ OMITTED_APPS = (
     'ietf.secr.proceedings',
     'ietf.ipr',
     'ietf.status',
+    'ietf.blobdb',
 )
 
 class CustomApiTests(TestCase):
@@ -460,12 +463,12 @@ class CustomApiTests(TestCase):
         self.assertTrue(session.attended_set.filter(person=recman).exists())
         self.assertEqual(
             session.attended_set.get(person=recman).time,
-            datetime.datetime(2023, 9, 3, 12, 34, 56, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2023, 9, 3, 12, 34, 56, tzinfo=datetime.UTC),
         )
         self.assertTrue(session.attended_set.filter(person=otherperson).exists())
         self.assertEqual(
             session.attended_set.get(person=otherperson).time,
-            datetime.datetime(2023, 9, 3, 3, 0, 19, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2023, 9, 3, 3, 0, 19, tzinfo=datetime.UTC),
         )
 
     def test_api_upload_polls_and_chatlog(self):
@@ -703,100 +706,146 @@ class CustomApiTests(TestCase):
         self.assertEqual(data['ascii'], robot.ascii)
         self.assertEqual(data['user']['email'], robot.user.email)
 
-    def test_api_new_meeting_registration(self):
+    @override_settings(APP_API_TOKENS={"ietf.api.views.api_new_meeting_registration_v2": ["valid-token"]})
+    def test_api_new_meeting_registration_v2(self):
         meeting = MeetingFactory(type_id='ietf')
-        reg = {
-            'apikey': 'invalid',
+        person = PersonFactory()
+        reg_detail = {
+            'email': person.email().address,
+            'first_name': person.first_name(),
+            'last_name': person.last_name(),
+            'meeting': meeting.number,
             'affiliation': "Alguma Corporação",
             'country_code': 'PT',
-            'email': 'foo@example.pt',
-            'first_name': 'Foo',
-            'last_name': 'Bar',
-            'meeting': meeting.number,
-            'reg_type': 'hackathon',
-            'ticket_type': '',
-            'checkedin': 'False',
-            'is_nomcom_volunteer': 'False',
+            'checkedin': False,
+            'is_nomcom_volunteer': False,
+            'cancelled': False,
+            'tickets': [{'attendance_type': 'onsite', 'ticket_type': 'week_pass'}],
         }
-        url = urlreverse('ietf.api.views.api_new_meeting_registration')
-        r = self.client.post(url, reg)
-        self.assertContains(r, 'Invalid apikey', status_code=403)
-        oidcp = PersonFactory(user__is_staff=True)
-        # Make sure 'oidcp' has an acceptable role
-        RoleFactory(name_id='robot', person=oidcp, email=oidcp.email(), group__acronym='secretariat')
-        key = PersonalApiKeyFactory(person=oidcp, endpoint=url)
-        reg['apikey'] = key.hash()
+        reg_data = {'objects': {reg_detail['email']: reg_detail}}
+        url = urlreverse('ietf.api.views.api_new_meeting_registration_v2')
+        #
+        # Test invalid key
+        r = self.client.post(url, data=json.dumps(reg_data), content_type='application/json', headers={"X-Api-Key": "invalid-token"})
+        self.assertEqual(r.status_code, 403)
+        #
+        # Test invalid data
+        bad_reg_data = copy.deepcopy(reg_data)
+        del bad_reg_data['objects'][reg_detail['email']]['email']
+        r = self.client.post(url, data=json.dumps(bad_reg_data), content_type='application/json', headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 400)
         #
         # Test valid POST
-        # FIXME: sometimes, there seems to be something in the outbox?
-        old_len = len(outbox)
-        r = self.client.post(url, reg)
-        self.assertContains(r, "Accepted, New registration, Email sent", status_code=202)
-        #
-        # Check outgoing mail
-        self.assertEqual(len(outbox), old_len + 1)
-        body = get_payload_text(outbox[-1])
-        self.assertIn(reg['email'], outbox[-1]['To'] )
-        self.assertIn(reg['email'], body)
-        self.assertIn('account creation request', body)
+        r = self.client.post(url, data=json.dumps(reg_data), content_type='application/json', headers={"X-Api-Key": "valid-token"})
+        self.assertContains(r, "Success", status_code=202)
         #
         # Check record
-        obj = MeetingRegistration.objects.get(email=reg['email'], meeting__number=reg['meeting'])
-        for key in ['affiliation', 'country_code', 'first_name', 'last_name', 'person', 'reg_type', 'ticket_type', 'checkedin']:
-            self.assertEqual(getattr(obj, key), False if key=='checkedin' else reg.get(key) , "Bad data for field '%s'" % key)
+        objects = Registration.objects.filter(email=reg_detail['email'], meeting__number=reg_detail['meeting'])
+        self.assertEqual(objects.count(), 1)
+        obj = objects[0]
+        for key in ['affiliation', 'country_code', 'first_name', 'last_name', 'checkedin']:
+            self.assertEqual(getattr(obj, key), False if key == 'checkedin' else reg_detail.get(key), f"Bad data for field {key}")
+        self.assertEqual(obj.tickets.count(), 1)
+        ticket = obj.tickets.first()
+        self.assertEqual(ticket.ticket_type.slug, reg_detail['tickets'][0]['ticket_type'])
+        self.assertEqual(ticket.attendance_type.slug, reg_detail['tickets'][0]['attendance_type'])
+        self.assertEqual(obj.person, person)
         #
-        # Test with existing user
-        person = PersonFactory()
-        reg['email'] = person.email().address
-        reg['first_name'] = person.first_name()
-        reg['last_name'] = person.last_name()
-        #
-        r = self.client.post(url, reg)
-        self.assertContains(r, "Accepted, New registration", status_code=202)
-        #
-        # There should be no new outgoing mail
-        self.assertEqual(len(outbox), old_len + 1)
-        #
-        # Test multiple reg types
-        reg['reg_type'] = 'remote'
-        reg['ticket_type'] = 'full_week_pass'
-        r = self.client.post(url, reg)
-        self.assertContains(r, "Accepted, New registration", status_code=202)
-        objs = MeetingRegistration.objects.filter(email=reg['email'], meeting__number=reg['meeting'])
-        self.assertEqual(len(objs), 2)
-        self.assertEqual(objs.filter(reg_type='hackathon').count(), 1)
-        self.assertEqual(objs.filter(reg_type='remote', ticket_type='full_week_pass').count(), 1)
-        self.assertEqual(len(outbox), old_len + 1)
-        #
-        # Test incomplete POST
-        drop_fields = ['affiliation', 'first_name', 'reg_type']
-        for field in drop_fields:
-            del reg[field]
-        r = self.client.post(url, reg)        
-        self.assertContains(r, 'Missing parameters:', status_code=400)
-        err, fields = r.content.decode().split(':', 1)
-        missing_fields = [f.strip() for f in fields.split(',')]
-        self.assertEqual(set(missing_fields), set(drop_fields))
-
-    def test_api_new_meeting_registration_nomcom_volunteer(self):
-        '''Test that Volunteer is created if is_nomcom_volunteer=True
-           is submitted to API
-        '''
-        meeting = MeetingFactory(type_id='ietf')
-        reg = {
-            'apikey': 'invalid',
+        # Test update (switch to remote)
+        reg_detail = {
             'affiliation': "Alguma Corporação",
             'country_code': 'PT',
+            'email': person.email().address,
+            'first_name': person.first_name(),
+            'last_name': person.last_name(),
             'meeting': meeting.number,
-            'reg_type': 'onsite',
-            'ticket_type': '',
-            'checkedin': 'False',
-            'is_nomcom_volunteer': 'False',
+            'checkedin': False,
+            'is_nomcom_volunteer': False,
+            'cancelled': False,
+            'tickets': [{'attendance_type': 'remote', 'ticket_type': 'week_pass'}],
         }
+        reg_data = {'objects': {reg_detail['email']: reg_detail}}
+        r = self.client.post(url, data=json.dumps(reg_data), content_type='application/json', headers={"X-Api-Key": "valid-token"})
+        self.assertContains(r, "Success", status_code=202)
+        objects = Registration.objects.filter(email=reg_detail['email'], meeting__number=reg_detail['meeting'])
+        self.assertEqual(objects.count(), 1)
+        obj = objects[0]
+        self.assertEqual(obj.tickets.count(), 1)
+        ticket = obj.tickets.first()
+        self.assertEqual(ticket.ticket_type.slug, reg_detail['tickets'][0]['ticket_type'])
+        self.assertEqual(ticket.attendance_type.slug, reg_detail['tickets'][0]['attendance_type'])
+        #
+        # Test multiple
+        reg_detail = {
+            'affiliation': "Alguma Corporação",
+            'country_code': 'PT',
+            'email': person.email().address,
+            'first_name': person.first_name(),
+            'last_name': person.last_name(),
+            'meeting': meeting.number,
+            'checkedin': False,
+            'is_nomcom_volunteer': False,
+            'cancelled': False,
+            'tickets': [
+                {'attendance_type': 'onsite', 'ticket_type': 'one_day'},
+                {'attendance_type': 'remote', 'ticket_type': 'week_pass'},
+            ],
+        }
+        reg_data = {'objects': {reg_detail['email']: reg_detail}}
+        r = self.client.post(url, data=json.dumps(reg_data), content_type='application/json', headers={"X-Api-Key": "valid-token"})
+        self.assertContains(r, "Success", status_code=202)
+        objects = Registration.objects.filter(email=reg_detail['email'], meeting__number=reg_detail['meeting'])
+        self.assertEqual(objects.count(), 1)
+        obj = objects[0]
+        self.assertEqual(obj.tickets.count(), 2)
+        self.assertEqual(obj.tickets.filter(attendance_type__slug='onsite').count(), 1)
+        self.assertEqual(obj.tickets.filter(attendance_type__slug='remote').count(), 1)
+
+    @override_settings(APP_API_TOKENS={"ietf.api.views.api_new_meeting_registration_v2": ["valid-token"]})
+    def test_api_new_meeting_registration_v2_cancelled(self):
+        meeting = MeetingFactory(type_id='ietf')
         person = PersonFactory()
-        reg['email'] = person.email().address
-        reg['first_name'] = person.first_name()
-        reg['last_name'] = person.last_name()
+        reg_detail = {
+            'affiliation': "Acme",
+            'country_code': 'US',
+            'email': person.email().address,
+            'first_name': person.first_name(),
+            'last_name': person.last_name(),
+            'meeting': meeting.number,
+            'checkedin': False,
+            'is_nomcom_volunteer': False,
+            'cancelled': False,
+            'tickets': [{'attendance_type': 'onsite', 'ticket_type': 'week_pass'}],
+        }
+        reg_data = {'objects': {reg_detail['email']: reg_detail}}
+        url = urlreverse('ietf.api.views.api_new_meeting_registration_v2')
+        self.assertEqual(Registration.objects.count(), 0)
+        r = self.client.post(url, data=json.dumps(reg_data), content_type='application/json', headers={"X-Api-Key": "valid-token"})
+        self.assertContains(r, "Success", status_code=202)
+        self.assertEqual(Registration.objects.count(), 1)
+        reg_detail['cancelled'] = True
+        r = self.client.post(url, data=json.dumps(reg_data), content_type='application/json', headers={"X-Api-Key": "valid-token"})
+        self.assertContains(r, "Success", status_code=202)
+        self.assertEqual(Registration.objects.count(), 0)
+
+    @override_settings(APP_API_TOKENS={"ietf.api.views.api_new_meeting_registration_v2": ["valid-token"]})
+    def test_api_new_meeting_registration_v2_nomcom(self):
+        meeting = MeetingFactory(type_id='ietf')
+        person = PersonFactory()
+        reg_detail = {
+            'affiliation': "Acme",
+            'country_code': 'US',
+            'email': person.email().address,
+            'first_name': person.first_name(),
+            'last_name': person.last_name(),
+            'meeting': meeting.number,
+            'checkedin': False,
+            'is_nomcom_volunteer': False,
+            'cancelled': False,
+            'tickets': [{'attendance_type': 'onsite', 'ticket_type': 'week_pass'}],
+        }
+        reg_data = {'objects': {reg_detail['email']: reg_detail}}
+        url = urlreverse('ietf.api.views.api_new_meeting_registration_v2')
         now = datetime.datetime.now()
         if now.month > 10:
             year = now.year + 1
@@ -804,23 +853,17 @@ class CustomApiTests(TestCase):
             year = now.year
         # create appropriate group and nomcom objects
         nomcom = NomComFactory.create(is_accepting_volunteers=True, **nomcom_kwargs_for_year(year))
-        url = urlreverse('ietf.api.views.api_new_meeting_registration')
-        oidcp = PersonFactory(user__is_staff=True)
-        # Make sure 'oidcp' has an acceptable role
-        RoleFactory(name_id='robot', person=oidcp, email=oidcp.email(), group__acronym='secretariat')
-        key = PersonalApiKeyFactory(person=oidcp, endpoint=url)
-        reg['apikey'] = key.hash()
 
         # first test is_nomcom_volunteer False
-        r = self.client.post(url, reg)
-        self.assertContains(r, "Accepted, New registration", status_code=202)
+        r = self.client.post(url, data=json.dumps(reg_data), content_type='application/json', headers={"X-Api-Key": "valid-token"})
+        self.assertContains(r, "Success", status_code=202)
         # assert no Volunteers exists
         self.assertEqual(Volunteer.objects.count(), 0)
 
         # test is_nomcom_volunteer True
-        reg['is_nomcom_volunteer'] = 'True'
-        r = self.client.post(url, reg)
-        self.assertContains(r, "Accepted, Updated registration", status_code=202)
+        reg_detail['is_nomcom_volunteer'] = True
+        r = self.client.post(url, data=json.dumps(reg_data), content_type='application/json', headers={"X-Api-Key": "valid-token"})
+        self.assertContains(r, "Success", status_code=202)
         # assert Volunteer exists
         self.assertEqual(Volunteer.objects.count(), 1)
         volunteer = Volunteer.objects.last()
@@ -829,7 +872,7 @@ class CustomApiTests(TestCase):
         self.assertEqual(volunteer.origin, 'registration')
 
     def test_api_version(self):
-        DumpInfo.objects.create(date=timezone.datetime(2022,8,31,7,10,1,tzinfo=datetime.timezone.utc), host='testapi.example.com',tz='UTC')
+        DumpInfo.objects.create(date=timezone.datetime(2022,8,31,7,10,1,tzinfo=datetime.UTC), host='testapi.example.com',tz='UTC')
         url = urlreverse('ietf.api.views.version')
         r = self.client.get(url)
         data = r.json()
@@ -837,7 +880,7 @@ class CustomApiTests(TestCase):
         for lib in settings.ADVERTISE_VERSIONS:
             self.assertIn(lib, data['other'])
         self.assertEqual(data['dumptime'], "2022-08-31 07:10:01 +0000")
-        DumpInfo.objects.update(tz='PST8PDT')
+        DumpInfo.objects.update(tz='America/Los_Angeles')
         r = self.client.get(url)
         data = r.json()        
         self.assertEqual(data['dumptime'], "2022-08-31 07:10:01 -0700")
@@ -973,6 +1016,39 @@ class CustomApiTests(TestCase):
         self.assertCountEqual(result.keys(), ["addresses"])
         self.assertCountEqual(result["addresses"], Email.objects.filter(active=True).values_list("address", flat=True))
 
+    @override_settings(APP_API_TOKENS={"ietf.api.views.related_email_list": ["valid-token"]})
+    def test_related_email_list(self):
+        joe = EmailFactory(address='joe@work.com')
+        EmailFactory(address='joe@home.com', person=joe.person)
+        EmailFactory(address='jòe@spain.com', person=joe.person)
+        url = urlreverse("ietf.api.views.related_email_list", kwargs={'email': 'joe@home.com'})
+        # no api key
+        r = self.client.get(url, headers={})
+        self.assertEqual(r.status_code, 403)
+        # invalid api key
+        r = self.client.get(url, headers={"X-Api-Key": "not-the-valid-token"})
+        self.assertEqual(r.status_code, 403)
+        # wrong method
+        r = self.client.post(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 405)
+        # valid
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        result = json.loads(r.content)
+        self.assertCountEqual(result.keys(), ["addresses"])
+        self.assertCountEqual(result["addresses"], joe.person.email_set.values_list("address", flat=True))
+        # non-ascii
+        non_ascii_url = urlreverse("ietf.api.views.related_email_list", kwargs={'email': 'jòe@spain.com'})
+        r = self.client.get(non_ascii_url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        result = json.loads(r.content)
+        self.assertTrue('joe@home.com' in result["addresses"])
+        # email not found
+        not_found_url = urlreverse("ietf.api.views.related_email_list", kwargs={'email': 'nobody@nowhere.com'})
+        r = self.client.get(not_found_url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 404)
+
     @override_settings(APP_API_TOKENS={"ietf.api.views.role_holder_addresses": ["valid-token"]})
     def test_role_holder_addresses(self):
         url = urlreverse("ietf.api.views.role_holder_addresses")
@@ -994,6 +1070,241 @@ class CustomApiTests(TestCase):
             content_dict["addresses"],
             sorted(e.address for e in emails),
         )
+
+    @override_settings(
+        APP_API_TOKENS={"ietf.api.views.rfc_author_survey_recipients": ["valid-token"]}
+    )
+    def test_rfc_author_survey_recipients(self):
+        url = urlreverse("ietf.api.views.rfc_author_survey_recipients")
+        # auth and method checks
+        self.assertEqual(
+            self.client.get(url, headers={}).status_code, 403, "No api token, no access"
+        )
+        self.assertEqual(
+            self.client.get(url, headers={"X-Api-Key": "not-valid-token"}).status_code,
+            403,
+            "Bad api token, no access",
+        )
+        self.assertEqual(
+            self.client.post(url, headers={"X-Api-Key": "valid-token"}).status_code,
+            405,
+            "Bad method, no access",
+        )
+        # Timestamps of interest
+        now = timezone.now()
+        one_day_ago = now - datetime.timedelta(days=1)
+        two_days_ago = now - datetime.timedelta(days=2)
+        three_days_ago = now - datetime.timedelta(days=3)
+        long_long_ago = now - datetime.timedelta(days=400)
+
+        # A recently published RFC with a known author...
+        author = PersonFactory(name="Jane Q. Author")
+        recent_rfc = WgRfcFactory(title="A Recently Published RFC")
+        DocEventFactory(doc=recent_rfc, type="published_rfc", time=two_days_ago)
+        RfcAuthorFactory(document=recent_rfc, person=author)
+
+        # ...and an RFC published well outside the default window, which must be excluded.
+        old_rfc = WgRfcFactory(title="An Old RFC")
+        DocEventFactory(doc=old_rfc, type="published_rfc", time=long_long_ago)
+        RfcAuthorFactory(document=old_rfc)
+
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        rows = json.loads(r.content)
+
+        # Only the recent RFC's author appears, as a single aggregated object.
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row["name"], "Jane Q. Author")
+        self.assertEqual(row["email"], author.email().address)
+        self.assertEqual(row["rfc_number"], str(recent_rfc.rfc_number))
+        self.assertEqual(row["rfc_name"], recent_rfc.name)
+        self.assertEqual(row["rfc_title"], recent_rfc.title)
+        self.assertEqual(
+            row["rfc_number_and_title"],
+            f"RFC {recent_rfc.rfc_number}: {recent_rfc.title}",
+        )
+        self.assertEqual(row["published_date"], str(recent_rfc.pub_date()))
+
+        # A narrow window excludes the recent RFC, too. First, using from-only
+        r = self.client.get(
+            url + "?" + urlencode({"from": one_day_ago.isoformat()}),
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(json.loads(r.content), [])
+        # Second, using both from and to
+        r = self.client.get(
+            url
+            + "?"
+            + urlencode({"from": one_day_ago.isoformat(), "to": now.isoformat()}),
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(json.loads(r.content), [])
+        # Third, from and to, but on the other side of the recent event. This also
+        # confirms that the "to" side comparison is < and not <=.
+        r = self.client.get(
+            url
+            + "?"
+            + urlencode(
+                {"from": three_days_ago.isoformat(), "to": two_days_ago.isoformat()}
+            ),
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(json.loads(r.content), [])
+
+        # Make sure the "from" side is >= and not >.
+        r = self.client.get(
+            url
+            + "?"
+            + urlencode(
+                {"from": two_days_ago.isoformat(), "to": one_day_ago.isoformat()}
+            ),
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(json.loads(r.content)), 1)
+
+        # The testing parameter fakes the email domain while keeping the mailbox.
+        r = self.client.get(url + "?testing", headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        rows = json.loads(r.content)
+        self.assertEqual(len(rows), 1)
+        mailbox = author.email().address.split("@", 1)[0]
+        self.assertEqual(rows[0]["email"], f"{mailbox}@fake.example.com")
+        # Non-email fields are unaffected.
+        self.assertEqual(rows[0]["name"], "Jane Q. Author")
+
+        # If in test mode and testaddr parameters are present, records for those
+        # addresses should be returned with a fake RFC. Also exercise specifying
+        # recipient type, including that author is the default.
+        r = self.client.get(
+            url
+            + (
+                "?testing"
+                "&testaddr=fake@a.example.com"
+                "&testaddr=phony@b.example.com;shepherd"
+                "&testaddr=ersatz@c.example.com;shepherd,author"
+            ),
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        rows = json.loads(r.content)
+        self.assertEqual(len(rows), 4)
+        fake_author_addr = author.email().address.split("@", 1)[0] + "@fake.example.com"
+        self.assertCountEqual(
+            [
+                (fake_author_addr, "author"),
+                ("fake@a.example.com", "author"),
+                ("phony@b.example.com", "shepherd"),
+                ("ersatz@c.example.com", "author/shepherd"),
+            ],
+            [(r["email"], r["type"]) for r in rows],
+        )
+
+        # Can only use testaddr when testing is also present
+        r = self.client.get(
+            url + "?testaddr=fake.a.example.com", headers={"X-Api-Key": "valid-token"}
+        )
+        self.assertEqual(r.status_code, 400)
+
+        # Invalid to/from parameters are rejected.
+        r = self.client.get(url + "?from=garbage", headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 400, "bad from parameter")
+        r = self.client.get(url + "?to=garbage", headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 400, "bad to parameter")
+        r = self.client.get(
+            url + f"?from={two_days_ago.isoformat()}&to={three_days_ago.isoformat()}",
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 400, "out-of-order from/to parameters")
+
+    @override_settings(
+        APP_API_TOKENS={"ietf.api.views.rfc_author_survey_recipients": ["valid-token"]}
+    )
+    def test_rfc_author_survey_recipients_with_shepherd(self):
+        url = urlreverse("ietf.api.views.rfc_author_survey_recipients")
+        now = timezone.now()
+        one_day_ago = now - datetime.timedelta(days=1)
+        # A recently published RFC with a known author and shepherd
+        author = PersonFactory(name="Jane Q. Author")
+        recent_rfc = WgRfcFactory(title="A Recently Published RFC")
+        DocEventFactory(doc=recent_rfc, type="published_rfc", time=one_day_ago)
+        RfcAuthorFactory(document=recent_rfc, person=author)
+        shepherd_email = EmailFactory(person__name="Alicia Shepherd")
+        shepherd = shepherd_email.person
+        recent_rfc_draft = WgDraftFactory(shepherd_id=shepherd_email.pk)
+        recent_rfc_draft.relateddocument_set.create(
+            relationship_id="became_rfc", target=recent_rfc
+        )
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        rows = json.loads(r.content)
+        expected_rows = [
+            {
+                "name": shepherd.name,
+                "email": shepherd.email_address(),
+                "type": "shepherd",
+                "rfc_number": str(recent_rfc.rfc_number),
+                "rfc_name": recent_rfc.name,
+                "rfc_number_and_title": (
+                    f"RFC {recent_rfc.rfc_number}: {recent_rfc.title}"
+                ),
+                "rfc_title": recent_rfc.title,
+                "published_date": str(recent_rfc.pub_date()),
+            },
+            {
+                "name": author.name,
+                "email": author.email_address(),
+                "type": "author",
+                "rfc_number": str(recent_rfc.rfc_number),
+                "rfc_name": recent_rfc.name,
+                "rfc_title": recent_rfc.title,
+                "rfc_number_and_title": (
+                    f"RFC {recent_rfc.rfc_number}: {recent_rfc.title}"
+                ),
+                "published_date": str(recent_rfc.pub_date()),
+            },
+        ]
+        self.assertCountEqual(
+            rows,
+            expected_rows,
+        )
+
+        # Now give the shepherd an RFC as author
+        other_rfc = WgRfcFactory(title="Other Published RFC")
+        DocEventFactory(doc=other_rfc, type="published_rfc", time=one_day_ago)
+        RfcAuthorFactory(document=other_rfc, person=shepherd)
+
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        rows = json.loads(r.content)
+        # update expected rows
+        expected_rows[0]["type"] = "author/shepherd"
+        expected_rows[0]["rfc_number"] = (
+            f"{recent_rfc.rfc_number}, {other_rfc.rfc_number}"
+        )
+        expected_rows[0]["rfc_name"] = f"{recent_rfc.name}, {other_rfc.name}"
+        expected_rows[0]["rfc_title"] = f"{recent_rfc.title}, {other_rfc.title}"
+        expected_rows[0]["rfc_number_and_title"] = (
+            f"RFC {recent_rfc.rfc_number}: {recent_rfc.title}, "
+            f"RFC {other_rfc.rfc_number}: {other_rfc.title}"
+        )
+        expected_rows[0]["published_date"] = (
+            f"{recent_rfc.pub_date()}, {other_rfc.pub_date()}"
+        )
+        # and compare
+        self.assertCountEqual(
+            rows,
+            expected_rows,
+        )
+
+
 
     @override_settings(
         APP_API_TOKENS={"ietf.api.views.ingest_email": "valid-token", "ietf.api.views.ingest_email_test": "test-token"}
@@ -1382,7 +1693,7 @@ class DirectAuthApiTests(TestCase):
             data = self.response_data(r)
             self.assertEqual(data["result"], "failure")
             self.assertEqual(data["reason"], "invalid post")
-        
+
         bad = dict(authtoken=self.valid_token, username=self.valid_person.user.username, password=self.valid_password)
         r = self.client.post(self.url, bad)
         self.assertEqual(r.status_code, 200)
@@ -1390,8 +1701,9 @@ class DirectAuthApiTests(TestCase):
         self.assertEqual(data["result"], "failure")
         self.assertEqual(data["reason"], "invalid post")       
 
+    @override_settings()
     def test_notokenstore(self):
-        self.assertFalse(hasattr(settings, "APP_API_TOKENS"))
+        del settings.APP_API_TOKENS  # only affects overridden copy of settings!
         r = self.client.post(self.url,self.valid_body_with_good_password)
         self.assertEqual(r.status_code, 200)
         data = self.response_data(r)
@@ -1421,7 +1733,7 @@ class DirectAuthApiTests(TestCase):
         data = self.response_data(r)
         self.assertEqual(data["result"], "success")
 
-class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
+class TastypieApiTests(ResourceTestCaseMixin, TestCase):
     def __init__(self, *args, **kwargs):
         self.apps = {}
         for app_name in settings.INSTALLED_APPS:
@@ -1431,7 +1743,7 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
                 models_path = os.path.join(os.path.dirname(app.__file__), "models.py")
                 if os.path.exists(models_path):
                     self.apps[name] = app_name
-        super(TastypieApiTestCase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def test_api_top_level(self):
         client = Client(Accept='application/json')
@@ -1440,12 +1752,99 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
         resource_list = r.json()
 
         for name in self.apps:
-            if not name in self.apps:
+            if not name in resource_list:
                 sys.stderr.write("Expected a REST API resource for %s, but didn't find one\n" % name)
 
         for name in self.apps:
             self.assertIn(name, resource_list,
                         "Expected a REST API resource for %s, but didn't find one" % name)
+
+    def test_api_top_level_bad_accept_header(self):
+        """A malformed Accept header is rejected without reflecting its content
+
+        The response body is served as unescaped text/html, and this is an
+        unauthenticated GET endpoint, so nothing derived from the request may
+        appear in it.
+        """
+        payload = "<img src=x onerror=alert(1)>"
+        r = self.client.get("/api/v1/", headers={"accept": payload})
+        self.assertEqual(r.status_code, 400)
+        self.assertNotIn(payload, r.content.decode("utf-8"))
+
+    def _assert_filter_is_bad_request(self, querystring, leaked):
+        """Assert a filter the database rejects gives a 400 that leaks nothing
+
+        Only one such request per test method: this class runs each test inside a
+        transaction, and the failed statement aborts it, so a second query in the
+        same test raises InternalError. Production requests run in autocommit and
+        are unaffected - each is a single request that returns immediately.
+        """
+        r = self.client.get("/api/v1/doc/document/?format=json&limit=1&" + querystring)
+        self.assertEqual(r.status_code, 400, "Expected 400 for %s" % querystring)
+        body = r.content.decode("utf-8")
+        # the database quotes its own diagnostics - none of that should come back
+        self.assertNotIn("invalid regular expression", body)
+        self.assertNotIn(leaked, body)
+
+    def test_database_error_unbalanced_bracket(self):
+        """A filter value the database rejects is a bad request, not a 500
+
+        An invalid regex is only rejected once the query runs, below anything
+        tastypie can validate. See ietf.api.ModelResource.dispatch.
+        """
+        self._assert_filter_is_bad_request("name__regex=%5B", "brackets")
+
+    def test_database_error_unbalanced_paren(self):
+        self._assert_filter_is_bad_request("name__regex=%28", "parentheses")
+
+    def test_database_error_bad_quantifier(self):
+        self._assert_filter_is_bad_request("name__iregex=" + quote("a{2,1}"), "quantifier")
+
+    def test_valid_regex_filter_still_works(self):
+        for q in ("name__regex=^draft-", "name__iregex=^DRAFT-", "name__regex=(quic|tls)"):
+            r = self.client.get("/api/v1/doc/document/?format=json&limit=1&" + quote(q, safe="=&"))
+            self.assertEqual(r.status_code, 200, "Expected 200 for %s" % q)
+
+    def test_malformed_range_filter(self):
+        """A range filter without exactly two values is a bad request, not a 500
+
+        Django renders a range lookup as "BETWEEN %s AND %s" and indexes the value
+        without checking its length, so a wrong number of values raises IndexError
+        when the query is compiled - too late for tastypie to report it as anything
+        but a 500. See ietf.api.ModelResource.filter_value_to_python.
+
+        Note the test client sets SERVER_NAME to "testserver", which makes tastypie
+        re-raise unhandled exceptions rather than converting them to a 500, so a
+        regression here surfaces as an error rather than a wrong status code.
+        """
+        # The double-encoded comma from the request that broke in production: %252C
+        # decodes to the literal text "%2C", so the value never splits into two.
+        r = self.client.get(
+            "/api/v1/doc/document/?format=json&limit=1&rev__range=02%252C99&type__slug=draft"
+        )
+        self.assertEqual(r.status_code, 400)
+
+        # note "%252C" not "%2C" - the latter is just a comma once the URL is decoded
+        for bad in ("", "02", "02%252C99", "02,99,77", "true", "nil"):
+            r = self.client.get("/api/v1/doc/document/?format=json&limit=1&rev__range=" + bad)
+            self.assertEqual(r.status_code, 400, "Expected 400 for rev__range=%s" % bad)
+
+        # a well-formed range filter still works
+        r = self.client.get("/api/v1/doc/document/?format=json&limit=1&rev__range=00,99")
+        self.assertEqual(r.status_code, 200)
+        # ... on a datetime field too, and via repeated parameters
+        r = self.client.get(
+            "/api/v1/doc/document/?format=json&limit=1"
+            "&time__range=2020-01-01T00:00:00Z&time__range=2030-01-01T00:00:00Z"
+        )
+        self.assertEqual(r.status_code, 200)
+
+        # "in" filters accept any number of values, including one
+        r = self.client.get("/api/v1/doc/document/?format=json&limit=1&rev__in=00")
+        self.assertEqual(r.status_code, 200)
+        # but not a value that string_to_python() turns into a bool
+        r = self.client.get("/api/v1/doc/document/?format=json&limit=1&rev__in=true")
+        self.assertEqual(r.status_code, 400)
 
     def test_all_model_resources_exist(self):
         client = Client(Accept='application/json')
@@ -1465,6 +1864,58 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
                     #print("There doesn't seem to be any resource for model %s.models.%s"%(app.__name__,model.__name__,))
                     self.assertIn(model._meta.model_name, list(app_resources.keys()),
                         "There doesn't seem to be any API resource for model %s.models.%s"%(app.__name__,model.__name__,))
+
+    def test_serializer_to_etree_handles_xml_invalid_control_chars(self):
+        """Serializer to_etree() must not raise ValueError for any XML-invalid control character."""
+        serializer = Serializer()
+        # Ordinary strings and strings with valid whitespace must pass through unchanged.
+        try:
+            serializer.to_etree("string with no special chars")
+            serializer.to_etree("tab\there lf\nhere cr\rhere")
+        except ValueError:
+            self.fail("serializer.to_etree raised ValueError on an ordinary string")
+        # Every control character that XML 1.0 forbids must be escaped rather than
+        # causing a ValueError.  This is the class of characters that triggered the
+        # production exception (lxml.etree._utf8 rejects them all).
+        invalid_chars = [chr(c) for c in list(range(0x00, 0x09)) + [0x0b, 0x0c] + list(range(0x0e, 0x20))]
+        for ch in invalid_chars:
+            try:
+                serializer.to_etree(f"string with {ch!r} in it")
+            except ValueError:
+                self.fail(
+                    f"serializer.to_etree raised ValueError on a string "
+                    f"containing control character U+{ord(ch):04X}"
+                )
+
+    def test_post_detail_is_not_allowed(self):
+        """POST to a detail route returns 405
+        
+        Added because default TastyPie behavior is a 500 due to a NotImplemented
+        exception.
+        """
+        r = self.client.get("/api/v1", headers={"Accept": "application/json"})
+        self.assertValidJSONResponse(r)
+        resource_list = r.json()
+        for name in self.apps:
+            r = self.client.get(
+                resource_list[name]["list_endpoint"],
+                headers={"Accept": "application/json"},
+            )
+            self.assertValidJSONResponse(r)
+            app_resources = r.json()
+            model_list = apps.get_app_config(name).get_models()
+            for model in model_list:
+                model_name = model._meta.model_name
+                assert model_name
+                detail_url = urljoin(
+                    app_resources[model_name]["list_endpoint"], "some-id/"
+                )
+                r = self.client.post(detail_url)
+                self.assertEqual(
+                    r.status_code,
+                    405,
+                    f"POST to {name}.{model_name} detail should return 405 status",
+                )
 
 
 class RfcdiffSupportTests(TestCase):

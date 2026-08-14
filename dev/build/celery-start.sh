@@ -5,10 +5,29 @@
 echo "Running Datatracker checks..."
 ./ietf/manage.py check
 
-if ! ietf/manage.py migrate --check ; then
+# Check whether the blobdb database exists - inspectdb will return a false
+# status if not.
+if ietf/manage.py inspectdb --database blobdb > /dev/null 2>&1; then
+    HAVE_BLOBDB="yes"
+fi
+
+migrations_applied_for () {
+    local DATABASE=${1:-default}
+    ietf/manage.py migrate --check --database "$DATABASE"
+}
+
+migrations_all_applied () {
+    if [[ "$HAVE_BLOBDB" == "yes" ]]; then
+        migrations_applied_for default && migrations_applied_for blobdb
+    else
+        migrations_applied_for default
+    fi
+}
+
+if ! migrations_all_applied; then
     echo "Unapplied migrations found, waiting to start..."
     sleep 5
-    while ! ietf/manage.py migrate --check ; do
+    while ! migrations_all_applied ; do 
         echo "... still waiting for migrations..."
         sleep 5
     done

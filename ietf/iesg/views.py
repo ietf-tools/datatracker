@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Portion Copyright (C) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
@@ -59,15 +59,17 @@ import debug               # pyflakes:ignore
 from ietf.doc.models import Document, State, LastCallDocEvent, ConsensusDocEvent, DocEvent, IESG_BALLOT_ACTIVE_STATES
 from ietf.doc.utils import update_telechat, augment_events_with_revision
 from ietf.group.models import GroupMilestone, Role
+from ietf.group.utils import construct_group_menu_context, get_group_or_404
 from ietf.iesg.agenda import agenda_data, agenda_sections, fill_in_agenda_docs, get_agenda_date
 from ietf.iesg.models import TelechatDate, TelechatAgendaContent
-from ietf.iesg.utils import telechat_page_count
+from ietf.iesg.utils import get_wg_dashboard_info, telechat_page_count
 from ietf.ietfauth.utils import has_role, role_required, user_is_person
 from ietf.name.models import TelechatAgendaSectionName
 from ietf.person.models import Person
 from ietf.meeting.utils import get_activity_stats
 from ietf.doc.utils_search import fill_in_document_table_attributes, fill_in_telechat_date
 from ietf.utils.timezone import date_today, datetime_from_date
+from ietf.utils.unicodenormalize import normalize_for_sorting
 
 def review_decisions(request, year=None):
     events = DocEvent.objects.filter(type__in=("iesg_disapproved", "iesg_approved"))
@@ -88,20 +90,22 @@ def review_decisions(request, year=None):
     #doc_levels = ["exp", "inf"]
 
     timeframe = "%s" % year if year else "the past 6 months"
+    group_type = None
+    group = get_group_or_404("iesg", group_type)
 
     return render(request, 'iesg/review_decisions.html',
-                              dict(events=events,
-                                   years=years,
-                                   year=year,
-                                   timeframe=timeframe),
-                              )
+            construct_group_menu_context(request, group, "decisions", group_type, {
+                    "events": events,
+                    "years": years,
+                    "year": year,
+                    "timeframe": timeframe}))
 
 def agenda_json(request, date=None):
     data = agenda_data(date)
 
     res = {
         "telechat-date": str(data["date"]),
-        "as-of": str(datetime.datetime.utcnow()),
+        "as-of": str(datetime.datetime.now(datetime.UTC)),
         "page-counts": telechat_page_count(date=get_agenda_date(date))._asdict(),
         "sections": {},
         }
@@ -221,7 +225,7 @@ def agenda_txt(request, date=None):
             "date": data["date"],
             "sections": sorted(data["sections"].items(), key=lambda x:[int(p) for p in x[0].split('.')]),
             "domain": Site.objects.get_current().domain,
-            }, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
+            }, content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}")
 
 @role_required('Area Director', 'Secretariat')
 def agenda_moderator_package(request, date=None):
@@ -277,14 +281,23 @@ def agenda_moderator_package(request, date=None):
 @role_required('Area Director', 'Secretariat')
 def agenda_package(request, date=None):
     data = agenda_data(date)
-    return render(request, "iesg/agenda_package.txt", {
+    return render(
+        request,
+        "iesg/agenda_package.txt",
+        {
             "date": data["date"],
             "sections": sorted(data["sections"].items()),
             "roll_call": data["sections"]["1.1"]["text"],
             "minutes": data["sections"]["1.3"]["text"],
-            "management_items": [(num, section) for num, section in data["sections"].items() if "6" < num < "7"],
+            "management_items": [
+                (num, section)
+                for num, section in data["sections"].items()
+                if "6" < num < "7"
+            ],
             "domain": Site.objects.get_current().domain,
-            }, content_type='text/plain')
+        },
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 
 def agenda_documents_txt(request):
@@ -315,7 +328,10 @@ def agenda_documents_txt(request):
             d.rev,
             )
         rows.append("\t".join(row))
-    return HttpResponse("\n".join(rows), content_type='text/plain')
+    return HttpResponse(
+        "\n".join(rows),
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 class RescheduleForm(forms.Form):
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
@@ -535,7 +551,7 @@ def milestones_needing_review(request):
             )
 
     return render(request, 'iesg/milestones_needing_review.html',
-                  dict(ads=sorted(ad_list, key=lambda ad: ad.plain_name()),))
+                  dict(ads=sorted(ad_list, key=lambda ad: normalize_for_sorting(ad.plain_name())),))
 
 def photos(request):
     roles = sorted(Role.objects.filter(group__type='area', group__state='active', name_id='ad'),key=lambda x: "" if x.group.acronym=="gen" else x.group.acronym)
@@ -610,4 +626,26 @@ def telechat_agenda_content_manage(request):
 @role_required("Secretariat", "IAB Chair", "Area Director")
 def telechat_agenda_content_view(request, section):
     content = get_object_or_404(TelechatAgendaContent, section__slug=section, section__used=True)
-    return HttpResponse(content=content.text, content_type="text/plain")
+    return HttpResponse(
+        content=content.text,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
+
+def working_groups(request):
+ 
+    area_summary, area_totals, ad_summary, noad_summary, ad_totals, noad_totals, totals, wg_summary = get_wg_dashboard_info()
+
+    group_type = None
+    group = get_group_or_404("iesg", group_type)
+
+    return render(request, 'iesg/working_groups.html',
+            construct_group_menu_context(request, group, "working groups", group_type, {
+                "area_summary": area_summary,
+                "area_totals": area_totals,
+                "ad_summary": ad_summary,
+                "noad_summary": noad_summary,
+                "ad_totals": ad_totals,
+                "noad_totals": noad_totals,
+                "totals": totals,
+                "wg_summary": wg_summary,
+            }))

@@ -1,14 +1,28 @@
 # Datatracker Development in Docker
 
+- [Getting started](#getting-started)
+- [Using Visual Studio Code](#using-visual-studio-code)
+    - [Initial Setup](#initial-setup)
+    - [Subsequent Launch](#subsequent-launch)
+    - [Usage](#usage)
+- [Using Other Editors / Generic](#using-other-editors--generic)
+    - [Exit Environment](#exit-environment)
+    - [Accessing PostgreSQL Port](#accessing-postgresql-port)
+- [Clean and Rebuild DB from latest image](#clean-and-rebuild-db-from-latest-image)
+- [Clean all](#clean-all)
+- [Updating an older environment](#updating-an-older-environment)
+- [Notes / Troubleshooting](#notes--troubleshooting)
+
 ## Getting started
 
 1. [Set up Docker](https://docs.docker.com/get-started/) on your preferred platform. On Windows, it is highly recommended to use the [WSL 2 *(Windows Subsystem for Linux)*](https://docs.docker.com/desktop/windows/wsl/) backend.
 
+> [!IMPORTANT]  
 > See the [IETF Tools Windows Dev guide](https://github.com/ietf-tools/.github/blob/main/docs/windows-dev.md) on how to get started when using Windows.
 
 2. On Linux, you must [install Docker Compose manually](https://docs.docker.com/compose/install/linux/#install-the-plugin-manually) and not install Docker Desktop. On Mac and Windows install Docker Desktop which already includes Docker Compose.
 
-2. If you have a copy of the datatracker code checked out already, simply `cd` to the top-level directory.
+3. If you have a copy of the datatracker code checked out already, simply `cd` to the top-level directory.
 
    If not, check out a datatracker branch as usual. We'll check out `main` below, but you can use any branch:
 
@@ -18,7 +32,7 @@
     git checkout main
     ```
 
-3. Follow the instructions for your preferred editor:
+4. Follow the instructions for your preferred editor:
     - [Visual Studio Code](#using-visual-studio-code)
     - [Other Editors / Generic](#using-other-editors--generic)
 
@@ -122,7 +136,14 @@ docker compose down
 
 to terminate the containers.
 
-### Clean and Rebuild DB from latest image
+### Accessing PostgreSQL Port
+
+The port is exposed but not automatically mapped to `5432` to avoid potential conflicts with the host. To get the mapped port, run the command *(from the project `/docker` directory)*:
+```sh
+docker compose port db 5432
+```
+
+## Clean and Rebuild DB from latest image
 
 To delete the active DB container, its volume and get the latest image / DB dump, simply run the following command:
 
@@ -140,7 +161,7 @@ docker compose pull db
 docker compose build --no-cache db
 ```
 
-### Clean all
+## Clean all
 
 To delete all containers for this project, its associated images and purge any remaining dangling images, simply run the following command:
 
@@ -156,17 +177,20 @@ On Windows:
 docker compose down -v --rmi all
 docker image prune
 ```
-### Updating an older environment
+
+## Updating an older environment
 
 If you already have a clone, such as from a previous codesprint, and are updating that clone, before starting the datatracker from the updated image:
-* rm ietf/settings_local.py   # The startup script will put a new one, appropriate to the current release, in place
-* Execute the `Clean all` sequence above.
+1. `rm ietf/settings_local.py` *(The startup script will put a new one, appropriate to the current release, in place)*
+1. Execute the [Clean all](#clean-all) sequence above.
 
-### Accessing PostgreSQL Port
+If the dev environment fails to start, even after running the [Clean all](#clean-all) sequence above, you can fully purge all docker cache, containers, images and volumes by running the command below.
 
-The port is exposed but not automatically mapped to `5432` to avoid potential conflicts with the host. To get the mapped port, run the command *(from the project `/docker` directory)*:
+> [!CAUTION]
+> Note that this will delete everything docker-related, including non-datatracker docker resources you might have.
+
 ```sh
-docker compose port db 5432
+docker system prune -a --volumes
 ```
 
 ## Notes / Troubleshooting
@@ -188,7 +212,6 @@ The content of the source files will be copied into the target `.ics` files. Mak
 ### Missing assets in the data folder
 
 Because including all assets in the image would significantly increase the file size, they are not included by default. You can however fetch them by running the **Fetch assets via rsync** task in VS Code or run manually the script `docker/scripts/app-rsync-extras.sh`
-
 
 ### Linux file permissions leaking to the host system
 

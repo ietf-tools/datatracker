@@ -1,12 +1,11 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 import datetime
 import json
 import re
-
-import jsonfield
+from email.utils import parseaddr
 
 import debug                            # pyflakes:ignore
 
@@ -17,6 +16,7 @@ from django.db import models # pyflakes:ignore
 from django.core.validators import ProhibitNullCharactersValidator, validate_email
 from django.core.exceptions import ValidationError
 from django.utils.dateparse import parse_duration
+
 
 class MultiEmailField(forms.Field):
     def to_python(self, value):
@@ -39,6 +39,25 @@ class MultiEmailField(forms.Field):
 
         for email in value:
             validate_email(email)
+
+
+def validate_name_addr_email(value):
+    "Validate name-addr style email address"
+    name, addr = parseaddr(value)
+    if not addr:
+        raise ValidationError("Invalid email format.")
+    try:
+        validate_email(addr)  # validate the actual address part
+    except ValidationError:
+        raise ValidationError("Invalid email address.")
+
+
+class NameAddrEmailField(forms.CharField):
+    def validate(self, value):
+        "Check if value consists only of valid emails."
+        super().validate(value)
+        validate_name_addr_email(value)
+
 
 def yyyymmdd_to_strftime_format(fmt):
     translation_table = sorted([
@@ -328,8 +347,21 @@ class SearchableField(forms.MultipleChoiceField):
         return super().has_changed(initial, data)
 
 
-class IETFJSONField(jsonfield.fields.forms.JSONField):
-    def __init__(self, *args, empty_values=jsonfield.fields.forms.JSONField.empty_values,
+class IETFJSONField(forms.JSONField):  # pragma: no cover
+    # Deprecated - use EmptyAwareJSONField instead
+    def __init__(self, *args, empty_values=forms.JSONField.empty_values,
+                 accepted_empty_values=None, **kwargs):
+        if accepted_empty_values is None:
+            accepted_empty_values = []
+        self.empty_values = [x
+                             for x in empty_values
+                             if x not in accepted_empty_values]
+
+        super().__init__(*args, **kwargs)
+
+
+class EmptyAwareJSONField(forms.JSONField):
+    def __init__(self, *args, empty_values=forms.JSONField.empty_values,
                  accepted_empty_values=None, **kwargs):
         if accepted_empty_values is None:
             accepted_empty_values = []

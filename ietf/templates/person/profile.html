@@ -50,7 +50,11 @@
                 <tbody>
                     {% for role in person.role_set.all|active_roles %}
                         <tr>
-                            <td>{{ role.name.name }}</td>
+                            <td>{{ role.name.name }}
+                                {% if role.name.name == 'Reviewer' %}
+                                 (<a href="{% url 'ietf.group.views.review_requests_history' acronym=role.group.acronym %}?reviewer_email={{ role.email.address }}&since=1y">See reviews</a>)
+                                {% endif %}
+                            </td>
                             <td>
                                 <a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.name }}</a>
                                 (<a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.acronym }}</a>)

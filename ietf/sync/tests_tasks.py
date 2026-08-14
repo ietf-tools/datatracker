@@ -1,0 +1,704 @@
+# Copyright The IETF Trust 2026, All Rights Reserved
+
+import mock
+from django.test.utils import override_settings
+
+from ietf.doc.factories import WgDraftFactory
+from ietf.doc.models import (
+    DocEvent,
+    DocTagName,
+    Document,
+    DocumentURL,
+    RpcAssignmentDocEvent,
+    State,
+)
+from ietf.person.models import Person
+from ietf.sync import tasks
+from ietf.utils.mail import outbox
+from ietf.utils.test_utils import TestCase
+
+
+def _make_entry(
+    doc_name, roles=None, blocking_reasons=None, rfc_number=None, final_approval=None
+):
+    return {
+        "name": doc_name,
+        "assignment_set": [{"role": r, "state": "in_progress"} for r in (roles or [])],
+        "blocking_reasons": blocking_reasons or [],
+        "rfc_number": rfc_number,
+        "final_approval": final_approval or [],
+    }
+
+
+class ProcessRpcQueueTaskTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.system = Person.objects.get(name="(System)")
+
+    # --- Unknown document --------------------------------------------------------
+
+    def test_unknown_document_is_skipped(self):
+        """Entries with unknown doc names are logged and skipped without raising."""
+        tasks.process_rpc_queue_task([_make_entry("draft-does-not-exist")])
+        self.assertFalse(Document.objects.filter(name="draft-does-not-exist").exists())
+
+    # --- First-arrival announcement ----------------------------------------------
+
+    def test_first_arrival_fires_announcement(self):
+        """Fires rfc_editor_received_announcement and email on first arrival."""
+        draft = WgDraftFactory(states=[("draft-iesg", "ann")])
+        mailbox_before = len(outbox)
+
+        tasks.process_rpc_queue_task([_make_entry(draft.name, roles=["first_editor"])])
+
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertEqual(draft.get_state_slug("draft-iesg"), "rfcqueue")
+        self.assertTrue(
+            draft.docevent_set.filter(type="rfc_editor_received_announcement").exists()
+        )
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertIn("RFC Editor queue", outbox[-1]["Subject"])
+        self.assertIn("iesg-secretary@ietf.org", outbox[-1]["To"])
+
+    def test_first_arrival_skipped_if_rfceditor_state_exists(self):
+        """No announcement when doc already has a draft-rfceditor state."""
+        draft = WgDraftFactory(states=[("draft-iesg", "ann")])
+        draft.set_state(
+            State.objects.get(used=True, type="draft-rfceditor", slug="in_progress")
+        )
+        mailbox_before = len(outbox)
+
+        tasks.process_rpc_queue_task([_make_entry(draft.name, roles=["first_editor"])])
+
+        self.assertFalse(
+            draft.docevent_set.filter(type="rfc_editor_received_announcement").exists()
+        )
+        self.assertEqual(len(outbox), mailbox_before)
+
+    def test_first_arrival_skipped_if_announcement_event_exists(self):
+        """No duplicate announcement when rfc_editor_received_announcement already exists."""
+        draft = WgDraftFactory(states=[("draft-iesg", "ann")])
+        DocEvent.objects.create(
+            doc=draft,
+            rev=draft.rev,
+            by=self.system,
+            type="rfc_editor_received_announcement",
+            desc="Announcement was received by RFC Editor",
+        )
+        mailbox_before = len(outbox)
+
+        tasks.process_rpc_queue_task([_make_entry(draft.name)])
+
+        self.assertEqual(
+            draft.docevent_set.filter(type="rfc_editor_received_announcement").count(),
+            1,
+        )
+        self.assertEqual(len(outbox), mailbox_before)
+
+    def test_first_arrival_skipped_if_not_ann_iesg_state(self):
+        """No announcement when IESG state is not 'ann'."""
+        draft = WgDraftFactory(states=[("draft-iesg", "rfcqueue")])
+        mailbox_before = len(outbox)
+
+        tasks.process_rpc_queue_task([_make_entry(draft.name, roles=["first_editor"])])
+
+        self.assertFalse(
+            draft.docevent_set.filter(type="rfc_editor_received_announcement").exists()
+        )
+        self.assertEqual(len(outbox), mailbox_before)
+
+    # --- draft-rfceditor state transitions ---------------------------------------
+
+    def test_sets_in_progress_state(self):
+        """Non-blocked assignment results in in_progress draft-rfceditor state."""
+        draft = WgDraftFactory()
+
+        tasks.process_rpc_queue_task([_make_entry(draft.name, roles=["first_editor"])])
+
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertEqual(draft.get_state_slug("draft-rfceditor"), "in_progress")
+
+    def test_sets_blocked_state(self):
+        """Assignment with role='blocked' results in blocked draft-rfceditor state."""
+        draft = WgDraftFactory()
+
+        tasks.process_rpc_queue_task(
+            [
+                {
+                    "name": draft.name,
+                    "assignment_set": [{"role": "blocked", "state": "in_progress"}],
+                    "blocking_reasons": [],
+                    "rfc_number": None,
+                    "final_approval": [],
+                }
+            ]
+        )
+
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertEqual(draft.get_state_slug("draft-rfceditor"), "blocked")
+
+    def test_no_state_change_event_when_state_unchanged(self):
+        """No state-change DocEvent created when draft-rfceditor state is already correct."""
+        draft = WgDraftFactory(states=[("draft-rfceditor", "in_progress")])
+        events_before = draft.docevent_set.filter(type="changed_state").count()
+
+        tasks.process_rpc_queue_task([_make_entry(draft.name, roles=["first_editor"])])
+
+        self.assertEqual(
+            draft.docevent_set.filter(type="changed_state").count(), events_before
+        )
+
+    def test_state_change_event_created_on_transition(self):
+        """State-change DocEvent is created when draft-rfceditor state changes."""
+        draft = WgDraftFactory(states=[("draft-rfceditor", "in_progress")])
+
+        tasks.process_rpc_queue_task(
+            [
+                {
+                    "name": draft.name,
+                    "assignment_set": [{"role": "blocked", "state": "in_progress"}],
+                    "blocking_reasons": [],
+                    "rfc_number": None,
+                    "final_approval": [],
+                }
+            ]
+        )
+
+        self.assertTrue(draft.docevent_set.filter(type="changed_state").exists())
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertEqual(draft.get_state_slug("draft-rfceditor"), "blocked")
+
+    # --- RpcAssignmentDocEvent ---------------------------------------------------
+
+    def test_creates_assignment_event_on_first_update(self):
+        """Creates RpcAssignmentDocEvent when no prior event exists."""
+        draft = WgDraftFactory()
+
+        tasks.process_rpc_queue_task(
+            [_make_entry(draft.name, roles=["first_editor", "second_editor"])]
+        )
+
+        event = draft.latest_event(
+            RpcAssignmentDocEvent, type="changed_rpc_assignments"
+        )
+        self.assertIsNotNone(event)
+        self.assertEqual(
+            event.assignments, "In Progress (First Edit), In Progress (Second Edit)"
+        )
+
+    def test_no_assignment_event_when_unchanged(self):
+        """No new RpcAssignmentDocEvent when assignments match the last recorded ones."""
+        draft = WgDraftFactory()
+        RpcAssignmentDocEvent.objects.create(
+            doc=draft,
+            rev=draft.rev,
+            by=self.system,
+            type="changed_rpc_assignments",
+            assignments="In Progress (First Edit)",
+            desc="RPC status changed to In Progress (First Edit)",
+        )
+        events_before = RpcAssignmentDocEvent.objects.filter(doc=draft).count()
+
+        tasks.process_rpc_queue_task([_make_entry(draft.name, roles=["first_editor"])])
+
+        self.assertEqual(
+            RpcAssignmentDocEvent.objects.filter(doc=draft).count(), events_before
+        )
+
+    def test_assignment_desc_includes_previous_assignments(self):
+        """Assignment event desc includes previous assignments when they exist."""
+        draft = WgDraftFactory()
+        RpcAssignmentDocEvent.objects.create(
+            doc=draft,
+            rev=draft.rev,
+            by=self.system,
+            type="changed_rpc_assignments",
+            assignments="In Progress (First Edit)",
+            desc="RPC status changed to In Progress (First Edit)",
+        )
+
+        tasks.process_rpc_queue_task([_make_entry(draft.name, roles=["second_editor"])])
+
+        event = draft.latest_event(
+            RpcAssignmentDocEvent, type="changed_rpc_assignments"
+        )
+        self.assertIn("from In Progress (First Edit)", event.desc)
+
+    def test_blocking_reasons_appended_to_assignments(self):
+        """Blocking reason names are appended after ':' in the assignment string, sorted."""
+        draft = WgDraftFactory()
+
+        tasks.process_rpc_queue_task(
+            [
+                {
+                    "name": draft.name,
+                    "assignment_set": [{"role": "blocked", "state": "in_progress"}],
+                    "blocking_reasons": [
+                        {"reason": {"name": "missing reference"}},
+                    ],
+                    "rfc_number": None,
+                    "final_approval": [],
+                }
+            ]
+        )
+
+        event = draft.latest_event(
+            RpcAssignmentDocEvent, type="changed_rpc_assignments"
+        )
+        self.assertIsNotNone(event)
+        self.assertEqual(event.assignments, "blocked: missing reference")
+
+    def test_roles_sorted_in_assignment_string(self):
+        """Roles are sorted alphabetically in the assignment string."""
+        draft = WgDraftFactory()
+
+        tasks.process_rpc_queue_task(
+            [_make_entry(draft.name, roles=["second_editor", "first_editor"])]
+        )
+
+        event = draft.latest_event(
+            RpcAssignmentDocEvent, type="changed_rpc_assignments"
+        )
+        self.assertEqual(
+            event.assignments, "In Progress (First Edit), In Progress (Second Edit)"
+        )
+
+    def test_empty_roles_uses_awaiting_editor_assignment(self):
+        """Empty assignment_set records 'Awaiting Editor Assignment' rather than an empty string."""
+        draft = WgDraftFactory()
+
+        tasks.process_rpc_queue_task([_make_entry(draft.name)])
+
+        event = draft.latest_event(
+            RpcAssignmentDocEvent, type="changed_rpc_assignments"
+        )
+        self.assertIsNotNone(event)
+        self.assertEqual(event.assignments, "Awaiting Editor Assignment")
+
+    # --- DocumentURL (auth48) handling -------------------------------------------
+
+    @override_settings(RFC_EDITOR_QUEUE_SITE_BASE_URL="https://queue.example.com")
+    def test_auth48_url_created_on_final_approval(self):
+        """auth48 DocumentURL is created when final_approval is truthy and rfc_number is set."""
+        draft = WgDraftFactory()
+
+        tasks.process_rpc_queue_task(
+            [
+                {
+                    "name": draft.name,
+                    "assignment_set": [
+                        {"role": "first_editor", "state": "in_progress"}
+                    ],
+                    "blocking_reasons": [],
+                    "rfc_number": 9999,
+                    "final_approval": [{"approved": True}],
+                }
+            ]
+        )
+
+        url_obj = draft.documenturl_set.filter(tag_id="auth48").first()
+        self.assertIsNotNone(url_obj)
+        self.assertEqual(url_obj.url, "https://queue.example.com/final-review/rfc9999/")
+
+    @override_settings(RFC_EDITOR_QUEUE_SITE_BASE_URL="https://queue.example.com")
+    def test_auth48_url_not_created_without_rfc_number(self):
+        """No auth48 URL created when rfc_number is None even if final_approval is set."""
+        draft = WgDraftFactory()
+
+        tasks.process_rpc_queue_task(
+            [
+                {
+                    "name": draft.name,
+                    "assignment_set": [
+                        {"role": "first_editor", "state": "in_progress"}
+                    ],
+                    "blocking_reasons": [],
+                    "rfc_number": None,
+                    "final_approval": [{"approved": True}],
+                }
+            ]
+        )
+
+        self.assertFalse(draft.documenturl_set.filter(tag_id="auth48").exists())
+
+    @override_settings(RFC_EDITOR_QUEUE_SITE_BASE_URL="https://queue.example.com")
+    def test_auth48_url_deleted_when_final_approval_cleared(self):
+        """Existing auth48 URL is deleted whenever final_approval is empty, regardless of whether assignments changed."""
+        draft = WgDraftFactory()
+        DocumentURL.objects.create(
+            doc=draft,
+            tag_id="auth48",
+            url="https://queue.example.com/final-review/rfc9999/",
+        )
+        RpcAssignmentDocEvent.objects.create(
+            doc=draft,
+            rev=draft.rev,
+            by=self.system,
+            type="changed_rpc_assignments",
+            assignments="old_editor",
+            desc="RPC status changed to old_editor",
+        )
+
+        tasks.process_rpc_queue_task([_make_entry(draft.name, roles=["first_editor"])])
+
+        self.assertFalse(draft.documenturl_set.filter(tag_id="auth48").exists())
+
+    @override_settings(RFC_EDITOR_QUEUE_SITE_BASE_URL="https://queue.example.com")
+    def test_auth48_url_updated_when_rfc_number_changes(self):
+        """auth48 URL is updated whenever final_approval and rfc_number are set, regardless of whether assignments changed."""
+        draft = WgDraftFactory()
+        DocumentURL.objects.create(
+            doc=draft,
+            tag_id="auth48",
+            url="https://queue.example.com/final-review/rfc8888/",
+        )
+        RpcAssignmentDocEvent.objects.create(
+            doc=draft,
+            rev=draft.rev,
+            by=self.system,
+            type="changed_rpc_assignments",
+            assignments="old_editor",
+            desc="RPC status changed to old_editor",
+        )
+
+        tasks.process_rpc_queue_task(
+            [
+                {
+                    "name": draft.name,
+                    "assignment_set": [
+                        {"role": "first_editor", "state": "in_progress"}
+                    ],
+                    "blocking_reasons": [],
+                    "rfc_number": 9999,
+                    "final_approval": [{"approved": True}],
+                }
+            ]
+        )
+
+        url_obj = draft.documenturl_set.filter(tag_id="auth48").first()
+        self.assertIsNotNone(url_obj)
+        self.assertEqual(url_obj.url, "https://queue.example.com/final-review/rfc9999/")
+
+    @override_settings(RFC_EDITOR_QUEUE_SITE_BASE_URL="https://queue.example.com")
+    def test_auth48_url_created_when_assignments_unchanged(self):
+        """auth48 URL is created even when assignments have not changed."""
+        draft = WgDraftFactory()
+        RpcAssignmentDocEvent.objects.create(
+            doc=draft,
+            rev=draft.rev,
+            by=self.system,
+            type="changed_rpc_assignments",
+            assignments="In Progress (First Edit)",
+            desc="RPC status changed to In Progress (First Edit)",
+        )
+
+        tasks.process_rpc_queue_task(
+            [
+                {
+                    "name": draft.name,
+                    "assignment_set": [
+                        {"role": "first_editor", "state": "in_progress"}
+                    ],
+                    "blocking_reasons": [],
+                    "rfc_number": 9999,
+                    "final_approval": [{"approved": True}],
+                }
+            ]
+        )
+
+        url_obj = draft.documenturl_set.filter(tag_id="auth48").first()
+        self.assertIsNotNone(url_obj)
+        self.assertEqual(url_obj.url, "https://queue.example.com/final-review/rfc9999/")
+
+    @override_settings(RFC_EDITOR_QUEUE_SITE_BASE_URL="https://queue.example.com")
+    def test_auth48_url_deleted_when_assignments_unchanged(self):
+        """Existing auth48 URL is deleted even when assignments have not changed."""
+        draft = WgDraftFactory()
+        DocumentURL.objects.create(
+            doc=draft,
+            tag_id="auth48",
+            url="https://queue.example.com/final-review/rfc9999/",
+        )
+        RpcAssignmentDocEvent.objects.create(
+            doc=draft,
+            rev=draft.rev,
+            by=self.system,
+            type="changed_rpc_assignments",
+            assignments="In Progress (First Edit)",
+            desc="RPC status changed to In Progress (First Edit)",
+        )
+
+        tasks.process_rpc_queue_task([_make_entry(draft.name, roles=["first_editor"])])
+
+        self.assertFalse(draft.documenturl_set.filter(tag_id="auth48").exists())
+
+    # --- Tag handling ------------------------------------------------------------
+
+    def test_removes_iana_and_ref_tags_from_queued_docs(self):
+        """iana and ref tags are removed from documents in the queue."""
+        iana_tag = DocTagName.objects.get(slug="iana")
+        ref_tag = DocTagName.objects.get(slug="ref")
+        draft = WgDraftFactory()
+        draft.tags.add(iana_tag, ref_tag)
+
+        tasks.process_rpc_queue_task([_make_entry(draft.name)])
+
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertNotIn(iana_tag, draft.tags.all())
+        self.assertNotIn(ref_tag, draft.tags.all())
+
+    # --- Cleanup of docs no longer in queue --------------------------------------
+
+    def test_unsets_rfceditor_state_for_docs_not_in_queue(self):
+        """Documents with draft-rfceditor state but absent from the queue have that state cleared."""
+        draft = WgDraftFactory(states=[("draft-rfceditor", "in_progress")])
+
+        tasks.process_rpc_queue_task([])
+
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertIsNone(draft.get_state("draft-rfceditor"))
+
+    def test_removes_tags_from_docs_not_in_queue(self):
+        """iana and ref tags are removed from docs with rfceditor state not in the queue."""
+        iana_tag = DocTagName.objects.get(slug="iana")
+        ref_tag = DocTagName.objects.get(slug="ref")
+        draft = WgDraftFactory(states=[("draft-rfceditor", "in_progress")])
+        draft.tags.add(iana_tag, ref_tag)
+
+        tasks.process_rpc_queue_task([])
+
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertNotIn(iana_tag, draft.tags.all())
+        self.assertNotIn(ref_tag, draft.tags.all())
+
+    def test_docs_in_queue_retain_rfceditor_state(self):
+        """Documents present in the queue keep their draft-rfceditor state."""
+        draft = WgDraftFactory(states=[("draft-rfceditor", "in_progress")])
+
+        tasks.process_rpc_queue_task([_make_entry(draft.name, roles=["first_editor"])])
+
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertIsNotNone(draft.get_state("draft-rfceditor"))
+
+
+class FormatRpcQueueStatusTests(TestCase):
+    """Unit tests for the queue "Status" renderer, mirroring the ietf-tools/queue site."""
+
+    def test_editor_roles_get_friendly_labels(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {"assignment_set": [{"role": "first_editor"}]}
+            ),
+            "In Progress (First Edit)",
+        )
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {"assignment_set": [{"role": "final_review_editor"}]}
+            ),
+            "In Final Review",
+        )
+
+    def test_roles_sorted_and_joined(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {"assignment_set": [{"role": "second_editor"}, {"role": "first_editor"}]}
+            ),
+            "In Progress (First Edit), In Progress (Second Edit)",
+        )
+
+    def test_ref_checker_and_publisher_hidden(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [
+                        {"role": "ref_checker"},
+                        {"role": "publisher"},
+                        {"role": "first_editor"},
+                    ]
+                }
+            ),
+            "In Progress (First Edit)",
+        )
+
+    def test_pending_activities_awaiting(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [],
+                    "pending_activities": [{"slug": "first_editor", "name": "First editor"}],
+                }
+            ),
+            "Awaiting First editor",
+        )
+
+    def test_pending_ref_checker_and_publisher_are_shown(self):
+        # ref_checker/publisher are hidden only as current-role badges, not as
+        # pending activities (matches the queue site).
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [],
+                    "pending_activities": [
+                        {"slug": "ref_checker", "name": "Reference Checker"},
+                        {"slug": "publisher", "name": "Publisher"},
+                    ],
+                }
+            ),
+            "Awaiting Publisher, Awaiting Reference Checker",
+        )
+
+    def test_pending_activity_skipped_when_already_assigned(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [{"role": "first_editor"}],
+                    "pending_activities": [{"slug": "first_editor", "name": "First editor"}],
+                }
+            ),
+            "In Progress (First Edit)",
+        )
+
+    def test_iana_hold(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [{"role": "first_editor"}],
+                    "iana_status": {"slug": "not_completed"},
+                }
+            ),
+            "IANA hold, In Progress (First Edit)",
+        )
+
+    def test_iana_hold_only_when_first_editor_present(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [{"role": "second_editor"}],
+                    "iana_status": {"slug": "not_completed"},
+                }
+            ),
+            "In Progress (Second Edit)",
+        )
+
+    def test_blocked_with_reasons_sorted(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [{"role": "blocked"}],
+                    "blocking_reasons": [
+                        {"reason": {"name": "Stream Hold"}},
+                        {"reason": {"name": "Manual Hold"}},
+                    ],
+                }
+            ),
+            "blocked: Manual Hold, Stream Hold",
+        )
+
+    def test_blocking_reason_special_case(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [{"role": "blocked"}],
+                    "blocking_reasons": [
+                        {"reason": {"name": "Reference: First Edit Incomplete"}}
+                    ],
+                }
+            ),
+            "blocked: Author Input Required",
+        )
+
+    def test_blocked_suppresses_pending_activities(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status(
+                {
+                    "assignment_set": [{"role": "blocked"}],
+                    "pending_activities": [{"slug": "first_editor", "name": "First editor"}],
+                    "blocking_reasons": [],
+                }
+            ),
+            "blocked",
+        )
+
+    def test_empty_is_awaiting_editor_assignment(self):
+        self.assertEqual(
+            tasks.format_rpc_queue_status({"assignment_set": []}),
+            "Awaiting Editor Assignment",
+        )
+
+
+class UpdateErrataFromRfcEditorTaskTests(TestCase):
+    @mock.patch("ietf.sync.tasks.update_rfc_json_task.delay")
+    @mock.patch("ietf.sync.tasks.update_errata_from_rfceditor")
+    @mock.patch("ietf.sync.tasks.mark_rfcindex_as_dirty")
+    @mock.patch("ietf.sync.tasks.mark_errata_as_processed")
+    @mock.patch("ietf.sync.tasks.errata_are_dirty")
+    def test_no_update_when_not_dirty(
+        self,
+        mock_dirty,
+        mock_mark_processed,
+        mock_mark_index,
+        mock_update,
+        mock_json_delay,
+    ):
+        """When errata are not dirty nothing runs."""
+        mock_dirty.return_value = False
+        tasks.update_errata_from_rfceditor_task()
+        mock_update.assert_not_called()
+        mock_json_delay.assert_not_called()
+
+    @mock.patch("ietf.sync.tasks.update_rfc_json_task.delay")
+    @mock.patch("ietf.sync.tasks.update_errata_from_rfceditor")
+    @mock.patch("ietf.sync.tasks.mark_rfcindex_as_dirty")
+    @mock.patch("ietf.sync.tasks.mark_errata_as_processed")
+    @mock.patch("ietf.sync.tasks.errata_are_dirty")
+    def test_json_task_called_for_changed_rfcs(
+        self,
+        mock_dirty,
+        mock_mark_processed,
+        mock_mark_index,
+        mock_update,
+        mock_json_delay,
+    ):
+        """update_rfc_json_task is dispatched with the changed RFC numbers."""
+        mock_dirty.return_value = True
+        mock_update.return_value = {3261, 9000}
+        tasks.update_errata_from_rfceditor_task()
+        mock_json_delay.assert_called_once()
+        called_numbers = mock_json_delay.call_args[0][0]
+        self.assertCountEqual(called_numbers, [3261, 9000])
+
+    @mock.patch("ietf.sync.tasks.update_rfc_json_task.delay")
+    @mock.patch("ietf.sync.tasks.update_errata_from_rfceditor")
+    @mock.patch("ietf.sync.tasks.mark_rfcindex_as_dirty")
+    @mock.patch("ietf.sync.tasks.mark_errata_as_processed")
+    @mock.patch("ietf.sync.tasks.errata_are_dirty")
+    def test_json_task_not_called_when_no_changes(
+        self,
+        mock_dirty,
+        mock_mark_processed,
+        mock_mark_index,
+        mock_update,
+        mock_json_delay,
+    ):
+        """update_rfc_json_task is not dispatched when no errata tags changed."""
+        mock_dirty.return_value = True
+        mock_update.return_value = set()
+        tasks.update_errata_from_rfceditor_task()
+        mock_json_delay.assert_not_called()
+
+
+class UpdateRfcJsonByRangeListTaskTests(TestCase):
+    @mock.patch("ietf.sync.tasks.update_rfc_json_task")
+    def test_expands_range_list_and_calls_update(self, mock_update):
+        tasks.update_rfc_json_by_range_list_task("[1,100,1000-1004]")
+        mock_update.assert_called_once_with([1, 100, 1000, 1001, 1002, 1003])
+
+    @mock.patch("ietf.sync.tasks.update_rfc_json_task")
+    def test_invalid_input_is_ignored(self, mock_update):
+        tasks.update_rfc_json_by_range_list_task("[5-3]")
+        mock_update.assert_not_called()
+
+    @mock.patch("ietf.sync.tasks.update_rfc_json_task")
+    def test_empty_input_does_not_call_update(self, mock_update):
+        tasks.update_rfc_json_by_range_list_task("[]")
+        mock_update.assert_not_called()

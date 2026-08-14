@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2022, All Rights Reserved
+# Copyright The IETF Trust 2022-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 import datetime
 import io
@@ -7,12 +7,27 @@ import xml2rfc
 
 import debug  # pyflakes: ignore
 
-from contextlib import ExitStack
+from contextlib import contextmanager
 from lxml.etree import XMLSyntaxError
 from xml2rfc.util.date import augment_date, extract_date
 from ietf.utils.timezone import date_today
 
 from .draft import Draft
+
+
+@contextmanager
+def capture_xml2rfc_output():
+    orig_write_out = xml2rfc.log.write_out
+    orig_write_err = xml2rfc.log.write_err
+    parser_out = io.StringIO()
+    parser_err = io.StringIO()
+    xml2rfc.log.write_out = parser_out
+    xml2rfc.log.write_err = parser_err
+    try:
+        yield {"stdout": parser_out, "stderr": parser_err}
+    finally:
+        xml2rfc.log.write_out = orig_write_out
+        xml2rfc.log.write_err = orig_write_err
 
 
 class XMLDraft(Draft):
@@ -38,27 +53,18 @@ class XMLDraft(Draft):
         Converts to xml2rfc v3 schema, then returns the root of the v3 tree and the original
         xml version.
         """
-        orig_write_out = xml2rfc.log.write_out
-        orig_write_err = xml2rfc.log.write_err
-        parser_out = io.StringIO()
-        parser_err = io.StringIO()
 
-        with ExitStack() as stack:
-            @stack.callback
-            def cleanup():  # called when context exited, even if there's an exception
-                xml2rfc.log.write_out = orig_write_out
-                xml2rfc.log.write_err = orig_write_err
-
-            xml2rfc.log.write_out = parser_out
-            xml2rfc.log.write_err = parser_err
-
+        with capture_xml2rfc_output() as parser_logs:
             parser = xml2rfc.XmlRfcParser(filename, quiet=True)
             try:
                 tree = parser.parse()
             except XMLSyntaxError:
                 raise InvalidXMLError()
             except Exception as e:
-                raise XMLParseError(parser_out.getvalue(), parser_err.getvalue()) from e
+                raise XMLParseError(
+                    parser_logs["stdout"].getvalue(),
+                    parser_logs["stderr"].getvalue(),
+                ) from e
 
             xml_version = tree.getroot().get('version', '2')
             if xml_version == '2':
@@ -95,6 +101,17 @@ class XMLDraft(Draft):
         if label in series and maybe_number.isdigit():
             number = int(maybe_number)
             return f"{label}{number}"
+
+        target = ref.get("target")
+        if isinstance(target, str):
+            target = target.lower()
+            if target.startswith("https://datatracker.ietf.org/doc/"):
+                # len("https://datatracker.ietf.org/doc/")==33
+                m = re.match(r"^(draft-[a-z0-9-]*[a-z0-9])([/-]\d{2})?/?$",target[33:])
+                if m:
+                    name = m.group(1)
+                    return name
+
 
         # if we couldn't find a match so far, try the seriesInfo
         series_query = " or ".join(f"@name='{x.upper()}'" for x in series)
@@ -141,16 +158,38 @@ class XMLDraft(Draft):
         return revmatch.group('filename'), revmatch.group('rev')
 
     def get_title(self):
-        return self.xmlroot.findtext('front/title').strip()
+        title_text = self.xmlroot.findtext('front/title')
+        return "" if title_text is None else title_text.strip()
 
     @staticmethod
     def parse_creation_date(date_elt):
         if date_elt is None:
             return None
+
         today = date_today()
-        # ths mimics handling of date elements in the xml2rfc text/html writers
-        year, month, day = extract_date(date_elt, today)
-        year, month, day = augment_date(year, month, day, today)
+
+        # Outright reject non-numeric year / day (xml2rfc's extract_date does not do this)
+        # (n.b., "year" can be non-numeric in a <reference> section per RFC 7991)
+        year = date_elt.get("year")
+        day = date_elt.get("day")
+        non_numeric_year = year and not year.isdigit()
+        non_numeric_day = day and not day.isdigit()
+        if non_numeric_day or non_numeric_year:
+            raise InvalidMetadataError(
+                "Unable to parse the <date> element in the <front> section: "
+                "year and day must be numeric values if specified."
+            )
+
+        try:
+            # ths mimics handling of date elements in the xml2rfc text/html writers
+            year, month, day = extract_date(date_elt, today)
+            year, month, day = augment_date(year, month, day, today)
+        except Exception as err:
+            # Give a generic error if anything goes wrong so far...
+            raise InvalidMetadataError(
+                "Unable to parse the <date> element in the <front> section."
+            ) from err
+
         if not day:
             # Must choose a day for a datetime.date. Per RFC 7991 sect 2.17, we use
             # today's date if it is consistent with the rest of the date. Otherwise,
@@ -159,9 +198,12 @@ class XMLDraft(Draft):
                 day = today.day
             else:
                 day = 15
+
         try:
             creation_date = datetime.date(year, month, day)
         except Exception:
+            # If everything went well, we should have had a valid datetime, but we didn't.
+            # The parsing _worked_ but not in a way that we can go forward with.
             raise InvalidMetadataError(
                 "The <date> element in the <front> section specified an incomplete date "
                 "that was not consistent with today's date. If you specify only a year, "
@@ -202,6 +244,12 @@ class XMLDraft(Draft):
         # Use fullname attribute, if present
         fullname = author_elt.attrib.get("fullname", "").strip()
         if fullname:
+            # If any 8bit chars in the fullname, try to append the author's
+            # name in ascii.
+            if any([x >= 0x80 for x in fullname.encode('utf8')]):
+                asciifullname = author_elt.attrib.get("asciiFullname", "").strip()
+                if asciifullname:
+                    fullname = fullname + ' (' + asciifullname + ')'
             return fullname
         surname = author_elt.attrib.get("surname", "").strip()
         initials = author_elt.attrib.get("initials", "").strip()

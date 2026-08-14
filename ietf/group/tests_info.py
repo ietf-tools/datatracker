@@ -6,7 +6,7 @@ import calendar
 import datetime
 import io
 import bleach
-import mock
+from unittest import mock
 
 from unittest.mock import call, patch
 from pathlib import Path
@@ -27,7 +27,7 @@ from django.utils.html import escape
 
 from ietf.community.models import CommunityList
 from ietf.community.utils import reset_name_contains_index_for_rule
-from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, CharterFactory, BallotDocEventFactory
+from ietf.doc.factories import WgDraftFactory, WgRfcFactory, RgDraftFactory, IndividualDraftFactory, CharterFactory, BallotDocEventFactory
 from ietf.doc.models import Document, DocEvent, State
 from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils_charter import charter_name_for_group
@@ -396,6 +396,7 @@ class GroupPagesTests(TestCase):
         draft7 = WgDraftFactory(group=group)
         draft7.set_state(State.objects.get(type='draft', slug='expired'))
         draft7.set_state(State.objects.get(type='draft-stream-%s' % draft7.stream_id, slug='dead')) # Expired WG draft, marked as dead
+        rfc = WgRfcFactory(group=group)
 
         clist = CommunityList.objects.get(group=group)
         related_docs_rule = clist.searchrule_set.get(rule_type='name_contains')
@@ -413,6 +414,7 @@ class GroupPagesTests(TestCase):
             self.assertContains(r, draft3.name)
             for ah in draft3.action_holders.all():
                 self.assertContains(r, escape(ah.name))
+            self.assertContains(r, "Active with the IESG Internet-Draft") # draft3 is pub-req hence should have such a divider
             self.assertContains(r, 'for 173 days', count=1)  # the old_dah should be tagged
             self.assertContains(r, draft4.name)
             self.assertNotContains(r, draft5.name)
@@ -424,6 +426,31 @@ class GroupPagesTests(TestCase):
         r = self.client.get(url)
         q = PyQuery(r.content)
         self.assertTrue(any([draft2.name in x.attrib['href'] for x in q('table td a.track-untrack-doc')]))
+
+        # RFC rows must use the RFC number as the sort key so that numeric sort
+        # is not disrupted by the page-count text that precedes the name in the cell.
+        # Draft rows must use the document name.
+        self.assertTrue(q(f'td.doc[data-sort-number="{rfc.rfc_number}"]'))
+        self.assertTrue(q(f'td.doc[data-sort-number="{draft.name}"]'))
+
+        # Let's also check the IRTF stream
+        rg = GroupFactory(type_id='rg')
+        setup_default_community_list_for_group(rg)
+        rgDraft = RgDraftFactory(group=rg)
+        rgDraft4 = RgDraftFactory(group=rg)
+        rgDraft4.set_state(State.objects.get(slug='irsg-w'))
+        rgDraft7 = RgDraftFactory(group=rg)
+        rgDraft7.set_state(State.objects.get(type='draft-stream-%s' % rgDraft7.stream_id, slug='dead'))
+        for url in group_urlreverse_list(rg, 'ietf.group.views.group_documents'):
+            with self.settings(DOC_ACTION_HOLDER_MAX_AGE_DAYS=20):
+                r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            self.assertContains(r, rgDraft.name)
+            self.assertContains(r, rg.name)
+            self.assertContains(r, rg.acronym)
+            self.assertNotContains(r, draft3.name) # As draft3 is a WG draft, it should not be listed here
+            self.assertContains(r, rgDraft4.name)
+            self.assertNotContains(r, rgDraft7.name)
 
         # test the txt version too while we're at it
         for url in group_urlreverse_list(group, 'ietf.group.views.group_documents_txt'):
@@ -522,6 +549,25 @@ class GroupPagesTests(TestCase):
     
                 for username in list(set(interesting_users)-set(can_edit[group.type_id])):
                     verify_cannot_edit_group(url, group, username)
+
+    def test_group_about_team_parent(self):
+        """Team about page should show parent when parent is not an area"""
+        GroupFactory(type_id='team', parent=GroupFactory(type_id='area', acronym='gen'))
+        GroupFactory(type_id='team', parent=GroupFactory(type_id='ietf', acronym='iab'))
+        GroupFactory(type_id='team', parent=None)
+
+        for team in Group.objects.filter(type='team').select_related('parent'):
+            url = urlreverse('ietf.group.views.group_about', kwargs=dict(acronym=team.acronym))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            if team.parent and team.parent.type_id != 'area':
+                self.assertContains(r, 'Parent')
+                self.assertContains(r, team.parent.acronym)
+            elif team.parent and team.parent.type_id == 'area':
+                self.assertContains(r, team.parent.name)
+                self.assertNotContains(r, '>Parent<')
+            else:
+                self.assertNotContains(r, '>Parent<')
 
     def test_group_about_personnel(self):
         """Correct personnel should appear on the group About page"""
@@ -1713,6 +1759,41 @@ class MilestoneTests(TestCase):
         self.assertEqual(GroupMilestone.objects.filter(due=m1.due, desc=m1.desc, state="charter").count(), 1)
 
         self.assertEqual(group.charter.docevent_set.count(), events_before + 2) # 1 delete, 1 add
+
+    def test_reset_charter_milestones_bad_ids(self):
+        """A non-integer milestone id is rejected without echoing the submitted value
+
+        int() puts the offending value in its exception message and
+        HttpResponseBadRequest serves its content as unescaped text/html, so
+        reflecting the message would be an XSS vector.
+        """
+        m1, m2, group = self.create_test_milestones()
+
+        url = urlreverse('ietf.group.milestones.reset_charter_milestones', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+        login_testing_unauthorized(self, "secretary", url)
+
+        milestones_before = GroupMilestone.objects.count()
+        events_before = group.charter.docevent_set.count()
+
+        payload = '<img src=x onerror=alert(1)>'
+        for bad_id in (payload, 'not-a-number', '1.5'):
+            r = self.client.post(url, dict(milestone=[str(m1.pk), bad_id]))
+            self.assertEqual(r.status_code, 400)
+            content = r.content.decode('utf-8')
+            self.assertIn('error in list of ids', content)
+            self.assertNotIn(bad_id, content)
+            self.assertNotIn('invalid literal', content)
+
+        # an empty id is also rejected, without the exception detail
+        r = self.client.post(url, dict(milestone=[str(m1.pk), '']))
+        self.assertEqual(r.status_code, 400)
+        self.assertNotIn('invalid literal', r.content.decode('utf-8'))
+
+        # nothing was changed
+        self.assertEqual(GroupMilestone.objects.count(), milestones_before)
+        self.assertEqual(group.charter.docevent_set.count(), events_before)
+        self.assertEqual(GroupMilestone.objects.get(pk=m1.pk).state_id, m1.state_id)
+        self.assertEqual(GroupMilestone.objects.get(pk=m2.pk).state_id, m2.state_id)
 
     def test_edit_sort(self):
         group = GroupFactory(uses_milestone_dates=False)

@@ -1,0 +1,22 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
+{% extends "base.html" %}
+{% load origin %}
+{% load django_bootstrap5 %}
+{% block title %}Change state for {{ statement }}{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        Change state
+        <br>
+        <small class="text-body-secondary">{{ statement }}</small>
+    </h1>
+    <form class="mt-3" method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <a class="btn btn-secondary float-end"
+           href="{{ statement.get_absolute_url }}">
+            Back
+        </a>
+    </form>
+{% endblock %}

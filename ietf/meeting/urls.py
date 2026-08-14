@@ -1,10 +1,10 @@
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
+# Copyright The IETF Trust 2007-2025, All Rights Reserved
 
 from django.conf import settings
 from django.urls import include
 from django.views.generic import RedirectView
 
-from ietf.meeting import views, views_proceedings
+from ietf.meeting import views, views_proceedings, views_session_request
 from ietf.utils.urls import url
 
 class AgendaRedirectView(RedirectView):
@@ -15,6 +15,7 @@ class AgendaRedirectView(RedirectView):
 
 safe_for_all_meeting_types = [
     url(r'^session/(?P<acronym>[-a-z0-9]+)/?$',  views.session_details),
+    url(r'^session/(?P<acronym>[-a-z0-9]+)/send_slide_notifications$',  views.notify_meetecho_of_all_slides),
     url(r'^session/(?P<session_id>\d+)/drafts$',  views.add_session_drafts),
     url(r'^session/(?P<session_id>\d+)/recordings$', views.add_session_recordings),
     url(r'^session/(?P<session_id>\d+)/attendance$', views.session_attendance),
@@ -30,7 +31,7 @@ safe_for_all_meeting_types = [
     url(r'^session/(?P<session_id>\d+)/doc/%(name)s/remove$' % settings.URL_REGEXPS, views.remove_sessionpresentation),
     url(r'^session/(?P<session_id>\d+)\.ics$',    views.agenda_ical),
     url(r'^sessions/(?P<acronym>[-a-z0-9]+)\.ics$', views.agenda_ical),
-    url(r'^slidesubmission/(?P<slidesubmission_id>\d+)$', views.approve_proposed_slides)
+    url(r'^slidesubmission/(?P<slidesubmission_id>\d+)$', views.approve_proposed_slides),
 ]
 
 
@@ -64,7 +65,7 @@ type_ietf_only_patterns = [
 type_interim_patterns = [
     url(r'^agenda/(?P<acronym>[A-Za-z0-9-]+)-drafts.pdf$', views.session_draft_pdf),
     url(r'^agenda/(?P<acronym>[A-Za-z0-9-]+)-drafts.tgz$', views.session_draft_tarfile),
-    url(r'^materials/%(document)s(?P<ext>\.[a-z0-9]+)$' % settings.URL_REGEXPS, views.materials_document),
+    url(r'^materials/%(document)s(?P<ext>\.[A-Za-z0-9]+)$' % settings.URL_REGEXPS, views.materials_document),
     url(r'^materials/%(document)s/?$' % settings.URL_REGEXPS, views.materials_document),
     url(r'^agenda.json$', views.agenda_json)
 ]
@@ -85,7 +86,7 @@ type_ietf_only_patterns_id_optional = [
     url(r'^week-view(?:.html)?/?$', AgendaRedirectView.as_view(pattern_name='agenda', permanent=True)),
     url(r'^materials(?:.html)?/?$', views.materials),
     url(r'^request_minutes/?$', views.request_minutes),
-    url(r'^materials/%(document)s(?P<ext>\.[a-z0-9]+)?/?$' % settings.URL_REGEXPS, views.materials_document),
+    url(r'^materials/%(document)s(?P<ext>\.[A-Za-z0-9]+)?/?$' % settings.URL_REGEXPS, views.materials_document),
     url(r'^session/?$', views.materials_editable_groups),
     url(r'^proceedings(?:.html)?/?$', views.proceedings),
     url(r'^proceedings(?:.html)?/finalize/?$', views.finalize_proceedings),
@@ -108,6 +109,8 @@ type_ietf_only_patterns_id_optional = [
     url(r'^important-dates.(?P<output_format>ics)$', views.important_dates),
     url(r'^proceedings/meetinghosts/edit/', views_proceedings.edit_meetinghosts),
     url(r'^proceedings/meetinghosts/(?P<host_id>\d+)/logo/$', views_proceedings.meetinghost_logo),
+    url(r'^session/request/%(acronym)s/edit/$' % settings.URL_REGEXPS, views_session_request.edit_request),
+    url(r'^session/request/%(acronym)s/view/$' % settings.URL_REGEXPS, views_session_request.view_request),
 ]
 
 urlpatterns = [
@@ -127,6 +130,13 @@ urlpatterns = [
     url(r'^upcoming/?$', views.upcoming),
     url(r'^upcoming\.ics/?$', views.upcoming_ical),
     url(r'^upcoming\.json/?$', views.upcoming_json),
+    url(r'^session/request/$', views_session_request.list_view),
+    url(r'^session/request/%(acronym)s/new/$' % settings.URL_REGEXPS, views_session_request.new_request),
+    url(r'^session/request/%(acronym)s/approve/$' % settings.URL_REGEXPS, views_session_request.approve_request),
+    url(r'^session/request/%(acronym)s/no_session/$' % settings.URL_REGEXPS, views_session_request.no_session),
+    url(r'^session/request/%(acronym)s/cancel/$' % settings.URL_REGEXPS, views_session_request.cancel_request),
+    url(r'^session/request/%(acronym)s/confirm/$' % settings.URL_REGEXPS, views_session_request.confirm),
+    url(r'^session/request/status/$', views_session_request.status),
     url(r'^session/(?P<session_id>\d+)/agenda_materials$', views.session_materials),
     url(r'^session/(?P<session_id>\d+)/cancel/?', views.cancel_session),
     url(r'^session/(?P<session_id>\d+)/edit/?', views.edit_session),
@@ -140,4 +150,3 @@ urlpatterns = [
     url(r'^(?P<num>\d+)/', include(safe_for_all_meeting_types)),
     url(r'^(?P<num>interim-[a-z0-9-]+)/', include(safe_for_all_meeting_types)),
 ]
-

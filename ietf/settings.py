@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
+# Copyright The IETF Trust 2007-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -9,26 +9,42 @@
 import os
 import sys
 import datetime
+import pathlib
 import warnings
 from hashlib import sha384
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
+from django.http import UnreadablePostError
 
+# DeprecationWarnings are suppressed by default, enable them
 warnings.simplefilter("always", DeprecationWarning)
-warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API")
-warnings.filterwarnings("ignore", "Log out via GET requests is deprecated")  # happens in oidc_provider
-warnings.filterwarnings("ignore", module="tastypie", message="The django.utils.datetime_safe module is deprecated.")
-warnings.filterwarnings("ignore", module="oidc_provider", message="The django.utils.timezone.utc alias is deprecated.")
+
+# Warnings that must be resolved for Django 5.x
+warnings.filterwarnings("ignore", "Log out via GET requests is deprecated")  # caused by oidc_provider
+warnings.filterwarnings("ignore", message="The django.utils.timezone.utc alias is deprecated.", module="oidc_provider")
+warnings.filterwarnings("ignore", message="The django.utils.datetime_safe module is deprecated.", module="tastypie")
 warnings.filterwarnings("ignore", message="The USE_DEPRECATED_PYTZ setting,")  # https://github.com/ietf-tools/datatracker/issues/5635
+warnings.filterwarnings("ignore", message="The is_dst argument to make_aware\\(\\)")  # caused by django-filters when USE_DEPRECATED_PYTZ is true 
 warnings.filterwarnings("ignore", message="The USE_L10N setting is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5648
 warnings.filterwarnings("ignore", message="django.contrib.auth.hashers.CryptPasswordHasher is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5663
-warnings.filterwarnings("ignore", message="'urllib3\\[secure\\]' extra is deprecated")
-warnings.filterwarnings("ignore", message="The logout\\(\\) view is superseded by")
-warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
-warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated", module="bleach")
-warnings.filterwarnings("ignore", message="HTTPResponse.getheader\\(\\) is deprecated", module='selenium.webdriver')
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.abspath(BASE_DIR + "/.."))
+# Other DeprecationWarnings
+warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API", module="pyang.plugin")
+warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
+warnings.filterwarnings("ignore", message="currentThread\\(\\) is deprecated", module="coverage.pytracer")
+warnings.filterwarnings("ignore", message="co_lnotab is deprecated", module="coverage.parser")
+warnings.filterwarnings("ignore", message="datetime.datetime.utcnow\\(\\) is deprecated", module="botocore.auth")
+warnings.filterwarnings("ignore", message="datetime.datetime.utcnow\\(\\) is deprecated", module="oic.utils.time_util")
+warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="oic.utils.time_util")
+warnings.filterwarnings("ignore", message="datetime.datetime.utcfromtimestamp\\(\\) is deprecated", module="pytz.tzinfo")
+warnings.filterwarnings("ignore", message="'instantiateVariableFont' is deprecated", module="weasyprint")
+
+
+base_path = pathlib.Path(__file__).resolve().parent
+BASE_DIR = str(base_path)
+
+project_path = base_path.parent
+PROJECT_DIR = str(project_path)  
+sys.path.append(PROJECT_DIR)
 
 from ietf import __version__
 import debug
@@ -61,6 +77,26 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.CryptPasswordHasher',
 ]
 
+
+PASSWORD_POLICY_MIN_LENGTH = 12
+PASSWORD_POLICY_ENFORCE_AT_LOGIN = False  # should turn this on for prod
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {
+            "min_length": PASSWORD_POLICY_MIN_LENGTH,
+        }
+    },
+    {
+        "NAME": "ietf.ietfauth.password_validation.StrongPasswordValidator",
+    },
+]
+# In dev environments, settings_local overrides the password validators. Save
+# a handle to the original value so settings_test can restore it so tests match
+# production.
+ORIG_AUTH_PASSWORD_VALIDATORS = AUTH_PASSWORD_VALIDATORS
+
 ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", "127.0.0.1", "localhost", ]
 
 # Server name of the tools server
@@ -85,12 +121,20 @@ DATABASES = {
 }
 
 
+# Collation that we wish we were using. The production database is currently using
+# the C collation, which does not handle accented characters. Do not change this
+# without confirming that the production and dev databases support the new collation.
+# This setting and places we use it can go away if we switch the production database
+# collation. That requires creating and populating a new database, it cannot be done
+# on an existing one.
+PREFERRED_COLLATION = "en-US-x-icu"
+
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
 # although not all variations may be possible on all operating systems.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = 'PST8PDT'
+TIME_ZONE = 'America/Los_Angeles'
 
 # Language code for this installation. All choices can be found here:
 # http://www.w3.org/TR/REC-html40/struct/dirlang.html#langcodes
@@ -185,162 +229,131 @@ STATIC_IETF_ORG_INTERNAL = STATIC_IETF_ORG
 
 ENABLE_BLOBSTORAGE = True
 
-BLOBSTORAGE_MAX_ATTEMPTS = 1
-BLOBSTORAGE_CONNECT_TIMEOUT = 2
-BLOBSTORAGE_READ_TIMEOUT = 2
+# "standard" retry mode is used, which does exponential backoff with a base factor of 2
+# and a cap of 20. 
+BLOBSTORAGE_MAX_ATTEMPTS = 5  # boto3 default is 3 (for "standard" retry mode)
+BLOBSTORAGE_CONNECT_TIMEOUT = 10  # seconds; boto3 default is 60
+BLOBSTORAGE_READ_TIMEOUT = 10  # seconds; boto3 default is 60
+
+# Caching for agenda data in seconds
+AGENDA_CACHE_TIMEOUT_DEFAULT = 8 * 24 * 60 * 60  # 8 days
+AGENDA_CACHE_TIMEOUT_CURRENT_MEETING = 6 * 60  # 6 minutes
+
 
 WSGI_APPLICATION = "ietf.wsgi.application"
 
 AUTHENTICATION_BACKENDS = ( 'ietf.ietfauth.backends.CaseInsensitiveModelBackend', )
 
-FILE_UPLOAD_PERMISSIONS = 0o644          
+FILE_UPLOAD_PERMISSIONS = 0o644
 
-# ------------------------------------------------------------------------
-# Django/Python Logging Framework Modifications
+FIRST_V3_RFC = 8650
 
-# Filter out "Invalid HTTP_HOST" emails
-# Based on http://www.tiwoc.de/blog/2013/03/django-prevent-email-notification-on-suspiciousoperation/
-from django.core.exceptions import SuspiciousOperation
-def skip_suspicious_operations(record):
-    if record.exc_info:
-        exc_value = record.exc_info[1]
-        if isinstance(exc_value, SuspiciousOperation):
-            return False
-    return True
 
-# Filter out UreadablePostError:
-from django.http import UnreadablePostError
+#
+# Logging config
+#
+
+# Callback to filter out UnreadablePostError:
 def skip_unreadable_post(record):
     if record.exc_info:
-        exc_type, exc_value = record.exc_info[:2] # pylint: disable=unused-variable
+        exc_type, exc_value = record.exc_info[:2]  # pylint: disable=unused-variable
         if isinstance(exc_value, UnreadablePostError):
             return False
     return True
 
-# Copied from DEFAULT_LOGGING as of Django 1.10.5 on 22 Feb 2017, and modified
-# to incorporate html logging, invalid http_host filtering, and more.
-# Changes from the default has comments.
-
-# The Python logging flow is as follows:
-# (see https://docs.python.org/2.7/howto/logging.html#logging-flow)
-#
-#   Init: get a Logger: logger = logging.getLogger(name)
-#
-#   Logging call, e.g. logger.error(level, msg, *args, exc_info=(...), extra={...})
-#   --> Logger (discard if level too low for this logger)
-#       (create log record from level, msg, args, exc_info, extra)
-#       --> Filters (discard if any filter attach to logger rejects record)
-#           --> Handlers (discard if level too low for handler)
-#               --> Filters (discard if any filter attached to handler rejects record)
-#                   --> Formatter (format log record and emit)
-#
-
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    #
-    'loggers': {
-        'django': {
-            'handlers': ['console', 'mail_admins'],
-            'level': 'INFO',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "loggers": {
+        "celery": {
+            "handlers": ["console"],
+            "level": "INFO",
         },
-        'django.request': {
-            'handlers': ['console'],
-            'level': 'ERROR',
+        "datatracker": {
+            "handlers": ["console"],
+            "level": "INFO",
         },
-        'django.server': {
-            'handlers': ['django.server'],
-            'level': 'INFO',
+        "django": {
+            "handlers": ["console", "mail_admins"],
+            "level": "INFO",
         },
-        'django.security': {
-            'handlers': ['console', ],
-            'level': 'INFO',
+        "django.request": {"level": "ERROR"},  # only log 5xx, ignore 4xx
+        "django.security": {
+            # SuspiciousOperation errors - log to console only
+            "handlers": ["console"],
+            "propagate": False,  # no further handling please
         },
-        'oidc_provider': {
-            'handlers': ['console', ],
-            'level': 'DEBUG',
+        "django.server": {
+            # Only used by Django's runserver development server
+            "handlers": ["django.server"],
+            "level": "INFO",
         },
-        'datatracker': {
-            'handlers': ['console'],
-            'level': 'INFO',
-        },
-        'celery': {
-            'handlers': ['console'],
-            'level': 'INFO',
+        "oidc_provider": {
+            "handlers": ["console"],
+            "level": "DEBUG",
         },
     },
-    #
-    # No logger filters
-    #
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'plain',
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "plain",
         },
-        'debug_console': {
-            # Active only when DEBUG=True
-            'level': 'DEBUG',
-            'filters': ['require_debug_true'],
-            'class': 'logging.StreamHandler',
-            'formatter': 'plain',
+        "debug_console": {
+            "level": "DEBUG",
+            "filters": ["require_debug_true"],
+            "class": "logging.StreamHandler",
+            "formatter": "plain",
         },
-        'django.server': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'django.server',
+        "django.server": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "django.server",
         },
-        'mail_admins': {
-            'level': 'ERROR',
-            'filters': [
-                'require_debug_false',
-                'skip_suspicious_operations', # custom
-                'skip_unreadable_posts', # custom
+        "mail_admins": {
+            "level": "ERROR",
+            "filters": [
+                "require_debug_false",
+                "skip_unreadable_posts",
             ],
-            'class': 'django.utils.log.AdminEmailHandler',
-            'include_html': True,       # non-default
-        }
+            "class": "django.utils.log.AdminEmailHandler",
+            "include_html": True,
+        },
     },
-    #
     # All these are used by handlers
-    'filters': {
-        'require_debug_false': {
-            '()': 'django.utils.log.RequireDebugFalse',
+    "filters": {
+        "require_debug_false": {
+            "()": "django.utils.log.RequireDebugFalse",
         },
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
-        },
-        # custom filter, function defined above:
-        'skip_suspicious_operations': {
-            '()': 'django.utils.log.CallbackFilter',
-            'callback': skip_suspicious_operations,
+        "require_debug_true": {
+            "()": "django.utils.log.RequireDebugTrue",
         },
         # custom filter, function defined above:
-        'skip_unreadable_posts': {
-            '()': 'django.utils.log.CallbackFilter',
-            'callback': skip_unreadable_post,
+        "skip_unreadable_posts": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": skip_unreadable_post,
         },
     },
-    # And finally the formatters
-    'formatters': {
-        'django.server': {
-            '()': 'django.utils.log.ServerFormatter',
-            'format': '[%(server_time)s] %(message)s',
+    "formatters": {
+        "django.server": {
+            "()": "django.utils.log.ServerFormatter",
+            "format": "[{server_time}] {message}",
+            "style": "{",
         },
-        'plain': {
-            'style': '{',
-            'format': '{levelname}: {name}:{lineno}: {message}',
+        "plain": {
+            "style": "{",
+            "format": "{levelname}: {name}:{lineno}: {message}",
         },
-        'json' : {
+        "json": {
             "class": "ietf.utils.jsonlogger.DatatrackerJsonFormatter",
             "style": "{",
-            "format": "{asctime}{levelname}{message}{name}{pathname}{lineno}{funcName}{process}",
-        }
+            "format": (
+                "{asctime}{levelname}{message}{name}{pathname}{lineno}{funcName}"
+                "{process}{status_code}"
+            ),
+        },
     },
 }
-
-# End logging
-# ------------------------------------------------------------------------
 
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
@@ -375,6 +388,7 @@ TEMPLATES = [
         ],
         'OPTIONS': {
             'context_processors': [
+                'ietf.context_processors.traceparent_id',
                 'django.contrib.auth.context_processors.auth',
                 'django.template.context_processors.debug',     # makes 'sql_queries' available in templates
                 'django.template.context_processors.i18n',
@@ -407,12 +421,14 @@ if DEBUG:
 
 
 MIDDLEWARE = [
+    "ietf.middleware.add_otel_traceparent_header",
     "django.middleware.csrf.CsrfViewMiddleware",
     "corsheaders.middleware.CorsMiddleware", # see docs on CORS_REPLACE_HTTPS_REFERER before using it
     "django.middleware.common.CommonMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "ietf.middleware.is_authenticated_header_middleware",
     "django.middleware.http.ConditionalGetMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
     # comment in this to get logging of SQL insert and update statements:
@@ -420,23 +436,23 @@ MIDDLEWARE = [
     "ietf.middleware.SMTPExceptionMiddleware",
     "ietf.middleware.Utf8ExceptionMiddleware",
     "ietf.middleware.redirect_trailing_period_middleware",
-    "django_referrer_policy.middleware.ReferrerPolicyMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    #"csp.middleware.CSPMiddleware",
     "ietf.middleware.unicode_nfkc_normalization_middleware",
-    "ietf.middleware.is_authenticated_header_middleware",
 ]
 
 ROOT_URLCONF = 'ietf.urls'
 
-DJANGO_VITE_ASSETS_PATH = os.path.join(BASE_DIR, 'static/dist-neue')
+# Configure django_vite
+DJANGO_VITE: dict = {"default": {}}
 if DEBUG:
-    DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, 'static/dist-neue/manifest.json')
+    DJANGO_VITE["default"]["manifest_path"] = os.path.join(
+        BASE_DIR, 'static/dist-neue/manifest.json'
+    )
 
 # Additional locations of static files (in addition to each app's static/ dir)
 STATICFILES_DIRS = (
-    DJANGO_VITE_ASSETS_PATH,
+    os.path.join(BASE_DIR, "static/dist-neue"),  # for django_vite
     os.path.join(BASE_DIR, 'static/dist'),
     os.path.join(BASE_DIR, 'secr/static/dist'),
 )
@@ -461,15 +477,18 @@ INSTALLED_APPS = [
     'django_celery_results',
     'corsheaders',
     'django_markup',
+    'django_filters',
     'oidc_provider',
     'drf_spectacular',
     'drf_standardized_errors',
     'rest_framework',
+    'rangefilter',
     'simple_history',
     'tastypie',
     'widget_tweaks',
     # IETF apps
     'ietf.api',
+    'ietf.blobdb',
     'ietf.community',
     'ietf.dbtemplate',
     'ietf.doc',
@@ -498,7 +517,6 @@ INSTALLED_APPS = [
     'ietf.secr.announcement',
     'ietf.secr.meetings',
     'ietf.secr.rolodex',
-    'ietf.secr.sreq',
     'ietf.secr.telechat',
 ]
 
@@ -538,8 +556,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_METHODS = ( 'GET', 'OPTIONS', )
 CORS_URLS_REGEX = r'^(/api/.*|.*\.json|.*/json/?)$'
 
-# Setting for django_referrer_policy.middleware.ReferrerPolicyMiddleware
-REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # django.middleware.security.SecurityMiddleware 
 SECURE_BROWSER_XSS_FILTER       = True
@@ -552,6 +568,7 @@ SECURE_HSTS_SECONDS             = 3600
 #SECURE_SSL_REDIRECT             = True
 # Relax the COOP policy to allow Meetecho authentication pop-up
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "unsafe-none"
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 # Override this in your settings_local with the IP addresses relevant for you:
 INTERNAL_IPS = (
@@ -634,12 +651,8 @@ DRF_STANDARDIZED_ERRORS = {
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
 RFCDIFF_BASE_URL = "https://author-tools.ietf.org/iddiff"
 IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
+IDNITS3_BASE_URL = "https://author-tools.ietf.org/idnits3/results"
 IDNITS_SERVICE_URL = "https://author-tools.ietf.org/idnits"
-
-# Content security policy configuration (django-csp)
-# (In current production, the Content-Security-Policy header is completely set by nginx configuration, but
-#  we try to keep this in sync to avoid confusion)
-CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", f"data: {IDTRACKER_BASE_URL} http://ietf.org/ https://www.ietf.org/ https://analytics.ietf.org/ https://static.ietf.org")
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
@@ -679,6 +692,7 @@ TEST_CODE_COVERAGE_EXCLUDE_FILES = [
     "ietf/utils/patch.py",
     "ietf/utils/test_data.py",
     "ietf/utils/jstest.py",
+    "ietf/utils/coverage.py",
 ]
 
 # These are code line regex patterns
@@ -692,12 +706,15 @@ TEST_CODE_COVERAGE_EXCLUDE_LINES = [
 ]
 
 # These are filename globs.  They are used by test_parse_templates() and
-# get_template_paths()
+# get_template_paths(). Globs are applied via pathlib.Path().match, using
+# the path to the template from the project root.
 TEST_TEMPLATE_IGNORE = [
-    ".*",                             # dot-files
-    "*~",                             # tilde temp-files
-    "#*",                             # files beginning with a hashmark
-    "500.html"                        # isn't loaded by regular loader, but checked by test_500_page()
+    ".*",  # dot-files
+    "*~",  # tilde temp-files
+    "#*",  # files beginning with a hashmark
+    "500.html",  # isn't loaded by regular loader, but checked by test_500_page()
+    "ietf/templates/admin/meeting/RegistrationTicket/change_list.html",
+    "ietf/templates/admin/meeting/Registration/change_list.html",
 ]
 
 TEST_COVERAGE_MAIN_FILE = os.path.join(BASE_DIR, "../release-coverage.json")
@@ -705,8 +722,8 @@ TEST_COVERAGE_LATEST_FILE = os.path.join(BASE_DIR, "../latest-coverage.json")
 
 TEST_CODE_COVERAGE_CHECKER = None
 if SERVER_MODE != 'production':
-    import coverage
-    TEST_CODE_COVERAGE_CHECKER = coverage.Coverage(source=[ BASE_DIR ], cover_pylib=False, omit=TEST_CODE_COVERAGE_EXCLUDE_FILES)
+    from ietf.utils.coverage import CoverageManager
+    TEST_CODE_COVERAGE_CHECKER = CoverageManager()
 
 TEST_CODE_COVERAGE_REPORT_PATH = "coverage/"
 TEST_CODE_COVERAGE_REPORT_URL = os.path.join(STATIC_URL, TEST_CODE_COVERAGE_REPORT_PATH, "index.html")
@@ -747,32 +764,57 @@ STORAGES: dict[str, Any] = {
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 
-# settings_local will need to configure storages for these names
-MORE_STORAGE_NAMES: list[str] = [
+# Storages for artifacts stored as blobs
+ARTIFACT_STORAGE_NAMES: list[str] = [
+    "active-draft",
+    "agenda",
+    "bibxml-ids",
+    "bluesheets",
     "bofreq",
     "charter",
+    "chatlog",
     "conflrev",
-    "active-draft",
     "draft",
-    "slides",
+    "floorplan",
+    "indexes",
+    "liai-att",
+    "meetinghostlogo",
     "minutes",
+    "narrativeminutes",
+    "photo",
+    "polls",
+    "procmaterials",
+    "review",
+    "rfc",
+    "slides",
+    "staging",
+    "statchg",
+    "statement",
+]
+for storagename in ARTIFACT_STORAGE_NAMES:
+    STORAGES[storagename] = {
+        "BACKEND": "ietf.doc.storage.StoredObjectBlobdbStorage",
+        "OPTIONS": {"bucket_name": storagename},
+    }
+
+# Buckets / doc types of meeting materials the CF worker is allowed to serve. This
+# differs from the list in Session.meeting_related() by the omission of "recording"
+MATERIALS_TYPES_SERVED_BY_WORKER = [
     "agenda",
     "bluesheets",
-    "procmaterials",
-    "narrativeminutes",
-    "statement",
-    "statchg",
-    "liai-att",
     "chatlog",
+    "minutes",
+    "narrativeminutes",
     "polls",
-    "staging",
-    "bibxml-ids",
-    "indexes",
-    "floorplan",
-    "meetinghostlogo",
-    "photo",
-    "review",
+    "procmaterials",
+    "slides",
 ]
+
+# Other storages
+STORAGES["red_bucket"] = {
+    "BACKEND": "django.core.files.storage.InMemoryStorage",
+    "OPTIONS": {"location": "red_bucket"},
+}
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
@@ -807,6 +849,8 @@ DOCUMENT_FORMAT_ALLOWLIST = ["txt", "ps", "pdf", "xml", "html", ]
 # Mailing list info URL for lists hosted on the IETF servers
 MAILING_LIST_INFO_URL = "https://mailman3.%(domain)s/mailman3/lists/%(list_addr)s.%(domain)s"
 MAILING_LIST_ARCHIVE_URL = "https://mailarchive.ietf.org"
+MAILING_LIST_ARCHIVE_SEARCH_URL = "https://mailarchive.ietf.org/api/v1/message/search/"
+MAILING_LIST_ARCHIVE_API_KEY = "changeme"
 
 # Liaison Statement Tool settings (one is used in DOC_HREFS below)
 LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <statements@' + IETF_DOMAIN + '>'
@@ -858,16 +902,14 @@ IANA_SYNC_PASSWORD = "secret"
 IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"
 IANA_SYNC_PROTOCOLS_URL = "https://www.iana.org/protocols/"
 
-RFC_EDITOR_SYNC_PASSWORD="secret"
-RFC_EDITOR_SYNC_NOTIFICATION_URL = "https://www.rfc-editor.org/parser/parser.php"
 RFC_EDITOR_GROUP_NOTIFICATION_EMAIL = "webmaster@rfc-editor.org"
-#RFC_EDITOR_GROUP_NOTIFICATION_URL = "https://www.rfc-editor.org/notification/group.php"
-RFC_EDITOR_QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
 RFC_EDITOR_INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
 RFC_EDITOR_ERRATA_JSON_URL = "https://www.rfc-editor.org/errata.json"
-RFC_EDITOR_ERRATA_URL = "https://www.rfc-editor.org/errata_search.php?rfc={rfc_number}"
 RFC_EDITOR_INLINE_ERRATA_URL = "https://www.rfc-editor.org/rfc/inline-errata/rfc{rfc_number}.html"
+RFC_EDITOR_ERRATA_BASE_URL = "https://www.rfc-editor.org/errata/"
 RFC_EDITOR_INFO_BASE_URL = "https://www.rfc-editor.org/info/"
+RFC_EDITOR_QUEUE_SITE_BASE_URL = "https://queue.rfc-editor.org"
+
 
 # NomCom Tool settings
 ROLODEX_URL = ""
@@ -941,6 +983,10 @@ IDSUBMIT_FILE_TYPES = (
     'ps',
 )
 RFC_FILE_TYPES = IDSUBMIT_FILE_TYPES
+
+# Paths in the red bucket
+RFCINDEX_INPUT_PATH = "other/"
+RFCINDEX_OUTPUT_PATH = "other/"
 
 IDSUBMIT_MAX_DRAFT_SIZE =  {
     'txt':  2*1024*1024,  # Max size of txt draft file in bytes
@@ -1102,10 +1148,17 @@ TZDATA_ICS_PATH = BASE_DIR + '/../vzic/zoneinfo/'
 
 DATATRACKER_MAX_UPLOAD_SIZE = 40960000
 PPT2PDF_COMMAND = [
-    "/usr/bin/soffice", "--headless", "--convert-to", "pdf:writer_globaldocument_pdf_Export", "--outdir"
+    "/usr/bin/soffice",
+    "--headless", # no GUI
+    "--safe-mode", # use a new libreoffice profile every time (ensures no reliance on accumulated profile config)
+    "--norestore", # don't attempt to restore files after a previous crash (ensures that one crash won't block future conversions until UI intervention)
+    "--convert-to", "pdf:writer_globaldocument_pdf_Export",
+    "--outdir"
 ]
 
-STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/'
+REGISTRATION_PARTICIPANTS_API_URL = 'https://registration.ietf.org/api/v1/participants-dt/'
+REGISTRATION_PARTICIPANTS_API_KEY = 'changeme'
+
 PROCEEDINGS_VERSION_CHANGES = [
     0,   # version 1
     97,  # version 2: meeting 97 and later (was number was NEW_PROCEEDINGS_START)
@@ -1218,7 +1271,10 @@ CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/change-oidc-provider-field-sizes-228.patch',
     'patch/fix-oidc-access-token-post.patch',
     'patch/fix-jwkest-jwt-logging.patch',
-    'patch/django-cookie-delete-with-all-settings.patch',
+    # Patch includes old cookie-delete-with-all-settings and a backport of the fix
+    # to CVE-2026-35192 from Django 5.2. The patches conflict, so cannot be applied
+    # separately.
+    'patch/django-cookie-delete-settings-and-CVE-2026-35192.patch',
     'patch/tastypie-django22-fielderror-response.patch',
 ]
 if DEBUG:
@@ -1228,7 +1284,7 @@ if DEBUG:
     except ImportError:
         pass
 
-STATS_NAMES_LIMIT = 25
+STATS_TIMELINE_CACHE_TIMEOUT = 86400
 
 UTILS_MEETING_CONFERENCE_DOMAINS = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', 'gather.town', ]
 UTILS_TEST_RANDOM_STATE_FILE = '.factoryboy_random_state'
@@ -1260,6 +1316,7 @@ CELERY_TIMEZONE = 'UTC'
 CELERY_BROKER_URL = 'amqp://mq/'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
+CELERY_BEAT_CRON_STARTING_DEADLINE = 1800  # seconds after a missed deadline before abandoning a cron task
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # the default, but setting it squelches a warning
 # Use a result backend so we can chain tasks. This uses the rpc backend, see
 # https://docs.celeryq.dev/en/stable/userguide/tasks.html#rpc-result-backend-rabbitmq-qpid
@@ -1269,6 +1326,9 @@ CELERY_RESULT_BACKEND = 'django-cache'  # use a Django cache for results
 CELERY_CACHE_BACKEND = 'celery-results'  # which Django cache to use
 CELERY_RESULT_EXPIRES = datetime.timedelta(minutes=5)  # how long are results valid? (Default is 1 day)
 CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled for a task
+CELERY_TASK_ROUTES = {
+    "ietf.blobdb.tasks.pybob_the_blob_replicator_task": {"queue": "blobdb"}
+}
 
 # Meetecho API setup: Uncomment this and provide real credentials to enable
 # Meetecho conference creation for interim session requests
@@ -1289,6 +1349,11 @@ MEETECHO_ONSITE_TOOL_URL = "https://meetings.conf.meetecho.com/onsite{session.me
 MEETECHO_VIDEO_STREAM_URL = "https://meetings.conf.meetecho.com/ietf{session.meeting.number}/?session={session.pk}"
 MEETECHO_AUDIO_STREAM_URL = "https://mp3.conf.meetecho.com/ietf{session.meeting.number}/{session.pk}.m3u"
 MEETECHO_SESSION_RECORDING_URL = "https://meetecho-player.ietf.org/playout/?session={session_label}"
+
+# Errata system api configuration
+# settings should provide
+# ERRATA_METADATA_NOTIFICATION_URL
+# ERRATA_METADATA_NOTIFICATION_API_KEY
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
@@ -1319,6 +1384,27 @@ if "CACHES" not in locals():
                 "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
                 "VERSION": __version__,
                 "KEY_PREFIX": "ietf:dt",
+                # Key function is default except with sha384-encoded key
+                "KEY_FUNCTION": lambda key, key_prefix, version: (
+                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+                ),
+            },
+            "agenda": {
+                "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+                # No release-specific VERSION setting.
+                "KEY_PREFIX": "ietf:dt:agenda",
+                # Key function is default except with sha384-encoded key
+                "KEY_FUNCTION": lambda key, key_prefix, version: (
+                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+                ),
+            },
+            "proceedings": {
+                "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+                # No release-specific VERSION setting.
+                "KEY_PREFIX": "ietf:dt:proceedings",
+                # Key function is default except with sha384-encoded key
                 "KEY_FUNCTION": lambda key, key_prefix, version: (
                     f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
                 ),
@@ -1365,6 +1451,28 @@ if "CACHES" not in locals():
                 #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
                 "VERSION": __version__,
                 "KEY_PREFIX": "ietf:dt",
+            },
+            "agenda": {
+                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+                # "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+                # "LOCATION": "127.0.0.1:11211",
+                # No release-specific VERSION setting.
+                "KEY_PREFIX": "ietf:dt:agenda",
+                # Key function is default except with sha384-encoded key
+                "KEY_FUNCTION": lambda key, key_prefix, version: (
+                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+                ),
+            },
+            "proceedings": {
+                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+                # "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+                # "LOCATION": "127.0.0.1:11211",
+                # No release-specific VERSION setting.
+                "KEY_PREFIX": "ietf:dt:proceedings",
+                # Key function is default except with sha384-encoded key
+                "KEY_FUNCTION": lambda key, key_prefix, version: (
+                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+                ),
             },
             "sessions": {
                 "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
@@ -1421,11 +1529,17 @@ if SERVER_MODE != 'production':
         NOMCOM_APP_SECRET = b'\x9b\xdas1\xec\xd5\xa0SI~\xcb\xd4\xf5t\x99\xc4i\xd7\x9f\x0b\xa9\xe8\xfeY\x80$\x1e\x12tN:\x84'
 
     ALLOWED_HOSTS = ['*',]
-    
+
     try:
         # see https://github.com/omarish/django-cprofile-middleware
-        import django_cprofile_middleware # pyflakes:ignore
-        MIDDLEWARE = MIDDLEWARE + ['django_cprofile_middleware.middleware.ProfilerMiddleware', ]
+        import django_cprofile_middleware  # pyflakes:ignore
+
+        MIDDLEWARE = MIDDLEWARE + [
+            "django_cprofile_middleware.middleware.ProfilerMiddleware",
+        ]
+        DJANGO_CPROFILE_MIDDLEWARE_REQUIRE_STAFF = (
+            False  # Do not use this setting for a public site!
+        )
     except ImportError:
         pass
 
@@ -1438,3 +1552,5 @@ if SERVER_MODE != 'production':
 
 
 YOUTUBE_DOMAINS = ['www.youtube.com', 'youtube.com', 'youtu.be', 'm.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com']
+
+IETF_DOI_PREFIX = "10.17487"

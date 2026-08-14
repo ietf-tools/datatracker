@@ -46,6 +46,11 @@ $bootstrap-icons-font-src: url("npm:bootstrap-icons/font/fonts/bootstrap-icons.w
 url("npm:bootstrap-icons/font/fonts/bootstrap-icons.woff") format("woff");
 @import "bootstrap-icons/font/bootstrap-icons";
 
+// Disable contextual alternates (calt)
+body {
+  font-feature-settings: "calt" off;
+}
+
 // Leave room for fixed-top navbar...
 body.navbar-offset {
     padding-top: 60px;
@@ -229,7 +234,7 @@ th,
 .group-menu .dropdown-menu {
     height: auto;
     width: auto;
-    max-height: 35em;
+    max-height: 95vh;
     overflow-x: hidden;
     overflow-y: auto;
 }
@@ -510,23 +515,23 @@ td.position-empty {
     tr.position-notready-row,
     tr.position-discuss-row,
     tr.position-block-row {
-        background-color: shade-color($color-discuss, 85%);
+        background-color: shade-color($color-discuss, 65%);
     }
 
     tr.position-yes-row {
-        background-color: shade-color($color-yes, 75%);
+        background-color: shade-color($color-yes, 65%);
     }
 
     tr.position-noobj-row {
-        background-color: shade-color($color-noobj, 75%);
+        background-color: shade-color($color-noobj, 65%);
     }
 
     tr.position-abstain-row {
-        background-color: shade-color($color-abstain, 85%);
+        background-color: shade-color($color-abstain, 65%);
     }
 
     tr.position-recuse-row {
-        background-color: shade-color($color-recuse, 85%);
+        background-color: shade-color($color-recuse, 65%);
     }
 }
 
@@ -1215,4 +1220,21 @@ iframe.status {
 
 .overflow-shadows--bottom-only {
     box-shadow: inset 0px -21px 18px -20px var(--bs-body-color);
+}
+
+#navbar-doc-search-wrapper {
+    position: relative;
+}
+
+#navbar-doc-search-results {
+    max-height: 400px;
+    overflow-y: auto;
+    min-width: auto;
+    left: 0;
+    right: 0;
+
+    .dropdown-item {
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
 }

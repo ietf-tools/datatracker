@@ -72,8 +72,10 @@ def docs_matching_community_list_rule(rule):
         return docs.filter(group=rule.group_id)
     elif rule.rule_type.startswith("state_"):
         return docs
-    elif rule.rule_type in ["author", "author_rfc"]:
+    elif rule.rule_type == "author": 
         return docs.filter(documentauthor__person=rule.person)
+    elif rule.rule_type == "author_rfc":
+        return docs.filter(Q(rfcauthor__person=rule.person)|Q(rfcauthor__isnull=True,documentauthor__person=rule.person))
     elif rule.rule_type == "ad":
         return docs.filter(ad=rule.person)
     elif rule.rule_type == "shepherd":
@@ -122,9 +124,16 @@ def community_list_rules_matching_doc(doc):
 
     # author rules
     if doc.type_id == "rfc":
+        has_rfcauthors = doc.rfcauthor_set.exists()
         rules |= SearchRule.objects.filter(
             rule_type="author_rfc",
-            person__in=list(Person.objects.filter(documentauthor__document=doc)),
+            person__in=list(
+                Person.objects.filter(
+                    Q(rfcauthor__document=doc)
+                    if has_rfcauthors
+                    else Q(documentauthor__document=doc)
+                )
+            ),
         )
     else:
         rules |= SearchRule.objects.filter(

@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2019-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 import datetime
-import mock
+from unittest import mock
 import debug # pyflakes:ignore
 
 from pyquery import PyQuery

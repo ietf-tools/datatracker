@@ -12,12 +12,12 @@ from django.utils import timezone
 # require code changes.
 #
 # Default time zone for deadlines / expiration dates.
-DEADLINE_TZINFO = ZoneInfo('PST8PDT')
+DEADLINE_TZINFO = ZoneInfo('America/Los_Angeles')
 
 # Time zone for dates from the RPC. This value is baked into the timestamps on DocEvents
-# of type="published_rfc" - see Document.pub_date() and ietf.sync.refceditor.update_docs_from_rfc_index()
+# of type="published_rfc" - see Document.pub_date() and the rfc publication workflow
 # for more information about how that works.
-RPC_TZINFO = ZoneInfo('PST8PDT')
+RPC_TZINFO = ZoneInfo('America/Los_Angeles')
 
 
 def _tzinfo(tz: Union[str, datetime.tzinfo, None]):
@@ -26,7 +26,7 @@ def _tzinfo(tz: Union[str, datetime.tzinfo, None]):
     Accepts a tzinfo or string containing a timezone name. Defaults to UTC if tz is None.
     """
     if tz is None:
-        return datetime.timezone.utc
+        return datetime.UTC
     elif isinstance(tz, datetime.tzinfo):
         return tz
     else:

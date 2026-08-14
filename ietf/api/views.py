@@ -1,5 +1,4 @@
-# Copyright The IETF Trust 2017-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2017-2026, All Rights Reserved
 
 import base64
 import binascii
@@ -16,11 +15,10 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
-from django.core.validators import validate_email
-from django.http import HttpResponse, Http404, JsonResponse
+from django.http import HttpResponse, Http404, JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.gzip import gzip_page
@@ -40,16 +38,15 @@ import ietf
 from ietf.api import _api_list
 from ietf.api.ietf_utils import is_valid_token, requires_api_token
 from ietf.api.serializer import JsonExportMixin
+from ietf.doc.models import Document
 from ietf.doc.utils import DraftAliasGenerator, fuzzy_find_documents
 from ietf.group.utils import GroupAliasGenerator, role_holder_emails
 from ietf.ietfauth.utils import role_required
-from ietf.ietfauth.views import send_account_creation_email
 from ietf.ipr.utils import ingest_response_email as ipr_ingest_response_email
 from ietf.meeting.models import Meeting
-from ietf.nomcom.models import Volunteer, NomCom
+from ietf.meeting.utils import import_registration_json_validator, process_single_registration
 from ietf.nomcom.utils import ingest_feedback_email as nomcom_ingest_feedback_email
 from ietf.person.models import Person, Email
-from ietf.stats.models import MeetingRegistration
 from ietf.sync.iana import ingest_review_email as iana_ingest_review_email
 from ietf.utils import log
 from ietf.utils.decorators import require_api_key
@@ -68,7 +65,13 @@ def top_level(request):
         }
 
     serializer = Serializer()
-    desired_format = determine_format(request, serializer)
+    try:
+        desired_format = determine_format(request, serializer)
+    except BadRequest as err:
+        # tastypie's message is a fixed string today, but don't reflect a dependency's
+        # exception text into an unescaped text/html body on an unauthenticated endpoint.
+        log.log("Bad request determining format for api top_level: %s" % err)
+        return HttpResponseBadRequest("Invalid Accept header")
 
     options = {}
 
@@ -76,10 +79,12 @@ def top_level(request):
         callback = request.GET.get('callback', 'callback')
 
         if not is_valid_jsonp_callback_value(callback):
-            raise BadRequest('JSONP callback name is invalid.')
+            return HttpResponseBadRequest("JSONP callback name is invalid")
 
         options['callback'] = callback
 
+    # This might raise UnsupportedFormat, but that indicates a real server misconfiguration
+    # so let it bubble up unhandled and trigger a 500 / email to admins.
     serialized = serializer.serialize(available_resources, desired_format, options)
     return HttpResponse(content=serialized, content_type=build_content_type(desired_format))
 
@@ -96,7 +101,7 @@ class PersonalInformationExportView(DetailView, JsonExportMixin):
 
     def get(self, request):
         person = get_object_or_404(self.model, user=request.user)
-        expand = ['searchrule', 'documentauthor', 'ad_document_set', 'ad_dochistory_set', 'docevent',
+        expand = ['searchrule', 'documentauthor', 'rfcauthor', 'ad_document_set', 'ad_dochistory_set', 'docevent',
             'ballotpositiondocevent', 'deletedevent', 'email_set', 'groupevent', 'role', 'rolehistory', 'iprdisclosurebase',
             'iprevent', 'liaisonstatementevent', 'allowlisted', 'schedule', 'constraint', 'schedulingevent', 'message',
             'sendqueue', 'nominee', 'topicfeedbacklastseen', 'alias', 'email', 'apikeys', 'personevent',
@@ -113,7 +118,11 @@ class ApiV2PersonExportView(DetailView, JsonExportMixin):
     model = Person
 
     def err(self, code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     def post(self, request):
         querydict = request.POST.copy()
@@ -145,95 +154,61 @@ class ApiV2PersonExportView(DetailView, JsonExportMixin):
 #     else:
 #         return HttpResponse(status=405)
 
-@require_api_key
-@role_required('Robot')
-@csrf_exempt
-def api_new_meeting_registration(request):
-    '''REST API to notify the datatracker about a new meeting registration'''
-    def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
-    required_fields = [ 'meeting', 'first_name', 'last_name', 'affiliation', 'country_code',
-                        'email', 'reg_type', 'ticket_type', 'checkedin', 'is_nomcom_volunteer']
-    fields = required_fields + []
-    if request.method == 'POST':
-        # parameters:
-        #   apikey:
-        #   meeting
-        #   name
-        #   email
-        #   reg_type (In Person, Remote, Hackathon Only)
-        #   ticket_type (full_week, one_day, student)
-        #   
-        data = {'attended': False, }
-        missing_fields = []
-        for item in fields:
-            value = request.POST.get(item, None)
-            if value is None and item in required_fields:
-                missing_fields.append(item)
-            data[item] = value
-        if missing_fields:
-            return err(400, "Missing parameters: %s" % ', '.join(missing_fields))
-        number = data['meeting']
-        try:
-            meeting = Meeting.objects.get(number=number)
-        except Meeting.DoesNotExist:
-            return err(400, "Invalid meeting value: '%s'" % (number, ))
-        reg_type = data['reg_type']
-        email = data['email']
-        try:
-            validate_email(email)
-        except ValidationError:
-            return err(400, "Invalid email value: '%s'" % (email, ))
-        if request.POST.get('cancelled', 'false') == 'true':
-            MeetingRegistration.objects.filter(
-                meeting_id=meeting.pk,
-                email=email,
-                reg_type=reg_type).delete()
-            return HttpResponse('OK', status=200, content_type='text/plain')
-        else:
-            object, created = MeetingRegistration.objects.get_or_create(
-                meeting_id=meeting.pk,
-                email=email,
-                reg_type=reg_type)
-            try:
-                # Update attributes
-                for key in set(data.keys())-set(['attended', 'apikey', 'meeting', 'email']):
-                    if key == 'checkedin':
-                        new = bool(data.get(key).lower() == 'true')
-                    else:
-                        new = data.get(key)
-                    setattr(object, key, new)
-                person = Person.objects.filter(email__address=email)
-                if person.exists():
-                    object.person = person.first()
-                object.save()
-            except ValueError as e:
-                return err(400, "Unexpected POST data: %s" % e)
-            response = "Accepted, New registration" if created else "Accepted, Updated registration"
-            if User.objects.filter(username__iexact=email).exists() or Email.objects.filter(address=email).exists():
-                pass
-            else:
-                send_account_creation_email(request, email)
-                response += ", Email sent"
 
-            # handle nomcom volunteer
-            if request.POST.get('is_nomcom_volunteer', 'false').lower() == 'true' and object.person:
-                try:
-                    nomcom = NomCom.objects.get(is_accepting_volunteers=True)
-                except (NomCom.DoesNotExist, NomCom.MultipleObjectsReturned):
-                    nomcom = None
-                if nomcom:
-                    Volunteer.objects.get_or_create(
-                        nomcom=nomcom,
-                        person=object.person,
-                        defaults={
-                            "affiliation": data["affiliation"],
-                            "origin": "registration"
-                        }
-                    )
-            return HttpResponse(response, status=202, content_type='text/plain')
-    else:
-        return HttpResponse(status=405)
+@requires_api_token
+@csrf_exempt
+def api_new_meeting_registration_v2(request):
+    '''REST API to notify the datatracker about a new meeting registration'''
+    def _http_err(code, text):
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
+
+    def _api_response(result):
+        return JsonResponse(data={"result": result})
+
+    if request.method != "POST":
+        return _http_err(405, "Method not allowed")
+
+    if request.content_type != "application/json":
+        return _http_err(415, "Content-Type must be application/json")
+
+    # Validate
+    try:
+        payload = json.loads(request.body)
+        import_registration_json_validator.validate(payload)
+    except json.decoder.JSONDecodeError as err:
+        return _http_err(400, f"JSON parse error at line {err.lineno} col {err.colno}: {err.msg}")
+    except jsonschema.exceptions.ValidationError as err:
+        return _http_err(400, f"JSON schema error at {err.json_path}: {err.message}")
+    except Exception:
+        return _http_err(400, "Invalid request format")
+
+    # Get the meeting ID from the first registration, the API only deals with one meeting at a time
+    first_email = next(iter(payload['objects']))
+    meeting_number = payload['objects'][first_email]['meeting']
+    try:
+        meeting = Meeting.objects.get(number=meeting_number)
+    except Meeting.DoesNotExist:
+        return _http_err(400, f"Invalid meeting value: {meeting_number}")
+
+    # confirm email exists
+    try:
+        Email.objects.get(address=first_email)
+    except Email.DoesNotExist:
+        return _http_err(400, f"Unknown email: {first_email}")
+
+    reg_data = payload['objects'][first_email]
+
+    process_single_registration(reg_data, meeting)
+
+    return HttpResponse(
+        'Success',
+        status=202,
+        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+    )
 
 
 def version(request):
@@ -546,6 +521,35 @@ def active_email_list(request):
 
 
 @requires_api_token
+@csrf_exempt
+def related_email_list(request, email):
+    """Given an email address, returns all other email addresses known
+    to Datatracker, via Person object
+    """
+    def _http_err(code, text):
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
+
+    if request.method == "GET":
+        try:
+            email_obj = Email.objects.get(address=email)
+        except Email.DoesNotExist:
+            return _http_err(404, "Email not found")
+        person = email_obj.person
+        if not person:
+            return JsonResponse({"addresses": []})
+        return JsonResponse(
+            {
+                "addresses": list(person.email_set.values_list("address", flat=True)),
+            }
+        )
+    return HttpResponse(status=405)
+
+
+@requires_api_token
 def role_holder_addresses(request):
     if request.method == "GET":
         return JsonResponse(
@@ -558,6 +562,209 @@ def role_holder_addresses(request):
             }
         )
     return HttpResponse(status=405)
+
+
+@requires_api_token
+@csrf_exempt
+def rfc_author_survey_recipients(request):
+    """Return recipients of the RFC Author Survey for RFCs in a time range
+
+    Returns the authors and (if present) document shepherd for RFCs as a JSON
+    structure. This is intended for generation of the post-publication Author
+    Survey and is not likely to be useful elsewhere.
+
+    Finds RFCs by date, though this could be extended to other selection
+    criteria in the future. Specify the range as ?from=<datetime>&to=<datetime>.
+    Each <datetime> is an ISO-8601 timestamp, treated as UTC if it does not include
+    time zone information. Defaults to `to`=now, `from`=14 days before `to`
+
+    Each author appears once, with their RFC numbers, names, titles, and
+    publication dates accumulated across every RFC they published in the window.
+    Authors have `"type": "author"` in their records.
+
+    If an RFC has a shepherd assigned to its originating draft, that shepherd is
+    included in the list of recipients alongside the authors. Shepherds have
+    `"type": "shepherd"` in their records. If a shepherd is also an author, then
+    `"type": "author/shepherd"`.
+
+    When the ?testing query parameter is supplied, each author's real email
+    address is replaced with a fake one that keeps the original mailbox but uses
+    the "fake.example.com" domain, so the output can be shared without exposing
+    real addresses. 
+    
+    When the ?testing query parameter is supplied, one or more testaddr=ADDRESS query
+    parameters can also be specified. The value of each parameter is an email
+    address. When these parameters are present, the response data will include an
+    entry for each address as though it belonged to an author or shepherd of a recently
+    published RFC. To specify the recipient type, append ";author", ";shepherd",
+    or ";author,shepherd" to the end of the email address. E.g.,
+    "?testing&testaddr=somebody@example.com;author,shepherd"
+    """
+    if request.method != "GET":
+        return HttpResponse(status=405)
+
+    # Test mode parameters
+    testing = "testing" in request.GET
+    test_addresses = request.GET.getlist("testaddr", [])
+    if len(test_addresses) > 0:
+        if not testing:
+            return HttpResponseBadRequest(
+                "Must include the testing parameter when using testaddr"
+            )
+
+    # filter parameters
+    to_param = request.GET.get("to")
+    if to_param is None:
+        # Did not receive a to parameter. Default to now().
+        time_range_end = datetime.datetime.now(datetime.UTC)
+    else:
+        # Did receive a to parameter. Parse it.
+        try:
+            time_range_end = datetime.datetime.fromisoformat(to_param)
+        except ValueError:
+            return HttpResponseBadRequest("Invalid to parameter")
+        if time_range_end.tzinfo is None:
+            time_range_end = time_range_end.replace(tzinfo=datetime.UTC)
+
+    from_param = request.GET.get("from")
+    if from_param is None:
+        # Did not receive a from parameter. Default to 14 days before end time.
+        time_range_start = time_range_end - datetime.timedelta(days=14)
+    else:
+        # Did receive a from parameter. Parse it.
+        try:
+            time_range_start = datetime.datetime.fromisoformat(from_param)
+        except ValueError:
+            return HttpResponseBadRequest("Invalid from parameter")
+        if time_range_start.tzinfo is None:
+            time_range_start = time_range_start.replace(tzinfo=datetime.UTC)
+    if time_range_start > time_range_end:
+        return HttpResponseBadRequest("Invalid time range, from is later than to")
+
+    rfcs = Document.objects.filter(
+        type_id="rfc",
+        docevent__type="published_rfc",
+        docevent__time__gte=time_range_start,
+        docevent__time__lt=time_range_end,
+    ).order_by("rfc_number").distinct()
+
+    # Collect per-author data keyed by email so each author gets one row.
+    # Values accumulate RFC numbers, names, titles, and dates across all RFCs.
+    recipient_data = {}
+
+    for rfc in rfcs:
+        # RfcAuthor is the authoritative source for RFC authors. Documents of
+        # type "rfc" always have an rfcauthor_set, so no fallback is needed.
+        recipients = [
+            {
+                "name": a.person.name if a.person else a.titlepage_name,
+                "email": a.person.email().address
+                if (a.person and a.person.email())
+                else None,
+                "type": "author",  # distinguishes authors from the shepherd entry added below
+            }
+            for a in rfc.rfcauthor_set.select_related("person").order_by("order")
+        ]
+
+        # As of Aug 2026, the rfc Document doesn't carry its own shepherd - it's only 
+        # set on the draft it came from. If the shepherd changes, the value on the draft
+        # will be kept up to date.
+        #
+        # came_from_draft() can return None (e.g. very old RFCs with no tracked
+        # originating draft, April 1 RFCs, and other special cases), so guard for that.
+        # Also, shepherd.person should always be set (see assertion in views_doc.py)
+        # but skip rather than crash if that invariant is ever violated.
+        originating_draft = rfc.came_from_draft()
+        if (
+            originating_draft 
+            and originating_draft.shepherd is not None
+            and originating_draft.shepherd.person is not None
+        ):
+            # Use email_address() to find an active address if this one is stale
+            shepherd_email = originating_draft.shepherd.email_address()
+            shepherd = originating_draft.shepherd.person
+            if shepherd_email is not None:
+                recipients.append({
+                    "name": shepherd.name,
+                    "email": shepherd_email,
+                    "type": "shepherd",
+                })
+            else:
+                log.log(
+                    f"rfc_authors(): shepherd for {rfc.name}, has no active email "
+                    f"address, omitting shepherd ({shepherd.name})"
+                )
+
+        for recipient in recipients:
+            if not recipient["email"]:
+                continue
+
+            if testing:
+                mailbox = recipient["email"].split("@", 1)[0]
+                email = f"{mailbox}@fake.example.com"
+            else:
+                email = recipient["email"]
+
+            if email not in recipient_data:
+                recipient_data[email] = {
+                    "name": recipient["name"],
+                    "email": email,
+                    "types": set(),
+                    "rfc_numbers": [],
+                    "rfc_names": [],
+                    "rfc_titles": [],
+                    "published_dates": [],
+                }
+            recipient_data[email]["rfc_numbers"].append(str(rfc.rfc_number))
+            recipient_data[email]["rfc_names"].append(rfc.name)
+            recipient_data[email]["rfc_titles"].append(rfc.title)
+            recipient_data[email]["published_dates"].append(str(rfc.pub_date()))
+            recipient_data[email]["types"].add(recipient["type"])
+
+    if testing:
+        for n, email in enumerate(test_addresses):
+            if email in recipient_data:
+                continue  # recipient will already be included
+            # see if a type list was included
+            if ";" in email:
+                email, types = email.rsplit(";", 1)
+                types = {type_.strip() for type_ in types.split(",")}
+                if len(types.difference({"author", "shepherd"})) != 0:
+                    return HttpResponseBadRequest(
+                        f"Invalid types for testaddr={email}"
+                    )
+            else:
+                types = {"author"}
+            recipient_data[email] = {
+                "name": f"Test Author {n + 1}",
+                "email": email,
+                "types": types,
+                "rfc_numbers": ["99999"],
+                "rfc_names": ["rfc99999"],
+                "rfc_titles": ["A Fake RFC for Testing"],
+                "published_dates": [str(timezone.now().date())],
+            }
+
+    rows = []
+    for entry in recipient_data.values():
+        entry_type = "/".join(sorted(entry["types"]))
+        rows.append(
+            {
+                "name": entry["name"],
+                "email": entry["email"],
+                "type": entry_type,  # "author", "shepherd", or "author/shepherd"
+                "rfc_number": ", ".join(entry["rfc_numbers"]),
+                "rfc_name": ", ".join(entry["rfc_names"]),
+                "rfc_title": ", ".join(entry["rfc_titles"]),
+                "rfc_number_and_title": ", ".join(
+                    f"RFC {num}: {title}"
+                    for num, title in zip(entry["rfc_numbers"], entry["rfc_titles"])
+                ),
+                "published_date": ", ".join(entry["published_dates"]),
+            }
+        )
+
+    return JsonResponse(rows, safe=False)
 
 
 _response_email_json_validator = jsonschema.Draft202012Validator(
@@ -653,7 +860,11 @@ def ingest_email_handler(request, test_mode=False):
     """
 
     def _http_err(code, text):
-        return HttpResponse(text, status=code, content_type="text/plain")
+        return HttpResponse(
+            text,
+            status=code,
+            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
+        )
 
     def _api_response(result):
         return JsonResponse(data={"result": result})

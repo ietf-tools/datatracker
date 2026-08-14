@@ -38,6 +38,7 @@ import tempfile
 import re
 import email
 import html5lib
+import rest_framework.test
 import requests_mock
 import shutil
 import sys
@@ -312,3 +313,11 @@ class TestCase(django.test.TestCase):
             shutil.rmtree(dir)
         self.requests_mock.stop()
         super().tearDown()
+
+
+class APITestCase(TestCase):
+    """Test case that uses rest_framework's APIClient
+    
+    This is equivalent to rest_framework.test.APITestCase, but picks up our 
+    """
+    client_class = rest_framework.test.APIClient

@@ -13,6 +13,7 @@ from ietf.doc.factories import (WgDraftFactory, IndividualRfcFactory, CharterFac
     IndividualDraftFactory, ConflictReviewFactory)
 from ietf.doc.models import BallotDocEvent, BallotType, BallotPositionDocEvent, State, Document
 from ietf.doc.utils import update_telechat, create_ballot_if_not_open
+from ietf.meeting.factories import MeetingFactory
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import date_today, datetime_today
 from ietf.iesg.models import TelechatDate
@@ -24,6 +25,26 @@ SECR_USER='secretary'
 
 def augment_data():
     TelechatDate.objects.create(date=date_today())
+
+class SecrUrlTests(TestCase):
+    def test_urls(self):
+        MeetingFactory(type_id='ietf', date=date_today())
+
+        # check public options
+        response = self.client.get("/secr/")
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        links = q('div.secr-menu a')
+        self.assertEqual(len(links), 1)
+        self.assertEqual(PyQuery(links[0]).text(), 'Announcements')
+
+        # check secretariat only options
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get("/secr/")
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        links = q('div.secr-menu a')
+        self.assertEqual(len(links), 4)
 
 class SecrTelechatTestCase(TestCase):
     def test_main(self):
@@ -235,7 +256,7 @@ class SecrTelechatTestCase(TestCase):
         self.assertEqual(response.status_code,302)
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state('draft-iesg').slug,'defer')
-        self.assertCountEqual(draft.action_holders.all(), [draft.ad] + draft.authors())
+        self.assertCountEqual(draft.action_holders.all(), [draft.ad] + draft.author_persons())
         self.assertEqual(draft.docevent_set.filter(type='changed_action_holders').count(), 1)
 
         # Removing need-rev should remove authors
@@ -252,7 +273,7 @@ class SecrTelechatTestCase(TestCase):
 
         # Setting to approved should remove all action holders
         # noinspection DjangoOrm
-        draft.action_holders.add(*(draft.authors()))  # add() with through model ok in Django 2.2+
+        draft.action_holders.add(*(draft.author_persons()))  # add() with through model ok in Django 2.2+
         response = self.client.post(url,{
             'submit': 'update_state',
             'state': State.objects.get(type_id='draft-iesg', slug='approved').pk,

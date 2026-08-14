@@ -58,7 +58,7 @@ from ietf.utils.draft import PlaintextDraft
 from ietf.utils.mail import is_valid_email
 from ietf.utils.text import parse_unicode, normalize_text
 from ietf.utils.timezone import date_today
-from ietf.utils.xmldraft import InvalidMetadataError, XMLDraft
+from ietf.utils.xmldraft import InvalidMetadataError, XMLDraft, capture_xml2rfc_output
 from ietf.person.name import unidecode_name
 
 
@@ -395,10 +395,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
 
     log.log(f"{submission.name}: updated state and info")
 
-    trouble = rebuild_reference_relations(draft, find_submission_filenames(draft))
-    if trouble:
-        log.log('Rebuild_reference_relations trouble: %s'%trouble)
-    log.log(f"{submission.name}: rebuilt reference relations")
+    rebuild_reference_relations(draft, find_submission_filenames(draft))
     
     if draft.stream_id == "ietf" and draft.group.type_id == "wg" and draft.rev == "00":
         # automatically set state "WG Document"
@@ -926,105 +923,101 @@ def render_missing_formats(submission):
     If a txt file already exists, leaves it in place. Overwrites an existing html file
     if there is one.
     """
-    # Capture stdio/stdout from xml2rfc
-    xml2rfc_stdout = io.StringIO()
-    xml2rfc_stderr = io.StringIO()
-    xml2rfc.log.write_out = xml2rfc_stdout
-    xml2rfc.log.write_err = xml2rfc_stderr
-    xml_path = staging_path(submission.name, submission.rev, '.xml')
-    parser = xml2rfc.XmlRfcParser(str(xml_path), quiet=True)
-    try:
-        # --- Parse the xml ---
-        xmltree = parser.parse(remove_comments=False)
-    except Exception as err:
-        raise XmlRfcError(
-            "Error parsing XML",
-            xml2rfc_stdout=xml2rfc_stdout.getvalue(),
-            xml2rfc_stderr=xml2rfc_stderr.getvalue(),
-        ) from err
-    # If we have v2, run it through v2v3. Keep track of the submitted version, though.
-    xmlroot = xmltree.getroot()
-    xml_version = xmlroot.get('version', '2')
-    if xml_version == '2':
-        v2v3 = xml2rfc.V2v3XmlWriter(xmltree)
+    with capture_xml2rfc_output() as xml2rfc_logs:
+        xml_path = staging_path(submission.name, submission.rev, '.xml')
+        parser = xml2rfc.XmlRfcParser(str(xml_path), quiet=True)
         try:
-            xmltree.tree = v2v3.convert2to3()
+            # --- Parse the xml ---
+            xmltree = parser.parse(remove_comments=False)
         except Exception as err:
             raise XmlRfcError(
-                "Error converting v2 XML to v3",
-                xml2rfc_stdout=xml2rfc_stdout.getvalue(),
-                xml2rfc_stderr=xml2rfc_stderr.getvalue(),
+                "Error parsing XML",
+                xml2rfc_stdout=xml2rfc_logs["stdout"].getvalue(),
+                xml2rfc_stderr=xml2rfc_logs["stderr"].getvalue(),
             ) from err
-
-    # --- Prep the xml ---
-    today = date_today()
-    prep = xml2rfc.PrepToolWriter(xmltree, quiet=True, liberal=True, keep_pis=[xml2rfc.V3_PI_TARGET])
-    prep.options.accept_prepped = True
-    prep.options.date = today
-    try:
-        xmltree.tree = prep.prep()
-    except RfcWriterError:
-        raise XmlRfcError(
-            f"Error during xml2rfc prep: {prep.errors}",
-            xml2rfc_stdout=xml2rfc_stdout.getvalue(),
-            xml2rfc_stderr=xml2rfc_stderr.getvalue(),
-        )
-    except Exception as err:
-        raise XmlRfcError(
-            "Unexpected error during xml2rfc prep",
-            xml2rfc_stdout=xml2rfc_stdout.getvalue(),
-            xml2rfc_stderr=xml2rfc_stderr.getvalue(),
-        ) from err
-
-    # --- Convert to txt ---
-    txt_path = staging_path(submission.name, submission.rev, '.txt')
-    if not txt_path.exists():
-        writer = xml2rfc.TextWriter(xmltree, quiet=True)
-        writer.options.accept_prepped = True
+        # If we have v2, run it through v2v3. Keep track of the submitted version, though.
+        xmlroot = xmltree.getroot()
+        xml_version = xmlroot.get('version', '2')
+        if xml_version == '2':
+            v2v3 = xml2rfc.V2v3XmlWriter(xmltree)
+            try:
+                xmltree.tree = v2v3.convert2to3()
+            except Exception as err:
+                raise XmlRfcError(
+                    "Error converting v2 XML to v3",
+                    xml2rfc_stdout=xml2rfc_logs["stdout"].getvalue(),
+                    xml2rfc_stderr=xml2rfc_logs["stderr"].getvalue(),
+                ) from err
+    
+        # --- Prep the xml ---
+        today = date_today()
+        prep = xml2rfc.PrepToolWriter(xmltree, quiet=True, liberal=True, keep_pis=[xml2rfc.V3_PI_TARGET])
+        prep.options.accept_prepped = True
+        prep.options.date = today
+        try:
+            xmltree.tree = prep.prep()
+        except RfcWriterError:
+            raise XmlRfcError(
+                f"Error during xml2rfc prep: {prep.errors}",
+                xml2rfc_stdout=xml2rfc_logs["stdout"].getvalue(),
+                xml2rfc_stderr=xml2rfc_logs["stderr"].getvalue(),
+            )
+        except Exception as err:
+            raise XmlRfcError(
+                "Unexpected error during xml2rfc prep",
+                xml2rfc_stdout=xml2rfc_logs["stdout"].getvalue(),
+                xml2rfc_stderr=xml2rfc_logs["stderr"].getvalue(),
+            ) from err
+    
+        # --- Convert to txt ---
+        txt_path = staging_path(submission.name, submission.rev, '.txt')
+        if not txt_path.exists():
+            writer = xml2rfc.TextWriter(xmltree, quiet=True)
+            writer.options.accept_prepped = True
+            writer.options.date = today
+            try:
+                writer.write(txt_path)
+            except Exception as err:
+                raise XmlRfcError(
+                    "Error generating text format from XML",
+                    xml2rfc_stdout=xml2rfc_logs["stdout"].getvalue(),
+                    xml2rfc_stderr=xml2rfc_logs["stderr"].getvalue(),
+                ) from err
+            log.log(
+                'In %s: xml2rfc %s generated %s from %s (version %s)' % (
+                    str(xml_path.parent),
+                    xml2rfc.__version__,
+                    txt_path.name,
+                    xml_path.name,
+                    xml_version,
+                )
+            )
+            # When the blobstores become autoritative - the guard at the
+            # containing if statement needs to be based on the store
+            with Path(txt_path).open("rb") as f:
+                store_file("staging", f"{submission.name}-{submission.rev}.txt", f)
+    
+        # --- Convert to html ---
+        html_path = staging_path(submission.name, submission.rev, '.html')
+        writer = xml2rfc.HtmlWriter(xmltree, quiet=True)
         writer.options.date = today
         try:
-            writer.write(txt_path)
+            writer.write(str(html_path))
         except Exception as err:
             raise XmlRfcError(
-                "Error generating text format from XML",
-            xml2rfc_stdout=xml2rfc_stdout.getvalue(),
-            xml2rfc_stderr=xml2rfc_stderr.getvalue(),
+                "Error generating HTML format from XML",
+                xml2rfc_stdout=xml2rfc_logs["stdout"].getvalue(),
+                xml2rfc_stderr=xml2rfc_logs["stderr"].getvalue(),
             ) from err
         log.log(
             'In %s: xml2rfc %s generated %s from %s (version %s)' % (
                 str(xml_path.parent),
                 xml2rfc.__version__,
-                txt_path.name,
+                html_path.name,
                 xml_path.name,
                 xml_version,
             )
         )
-        # When the blobstores become autoritative - the guard at the
-        # containing if statement needs to be based on the store
-        with Path(txt_path).open("rb") as f:
-            store_file("staging", f"{submission.name}-{submission.rev}.txt", f)
-
-    # --- Convert to html ---
-    html_path = staging_path(submission.name, submission.rev, '.html')
-    writer = xml2rfc.HtmlWriter(xmltree, quiet=True)
-    writer.options.date = today
-    try:
-        writer.write(str(html_path))
-    except Exception as err:
-        raise XmlRfcError(
-            "Error generating HTML format from XML",
-            xml2rfc_stdout=xml2rfc_stdout.getvalue(),
-            xml2rfc_stderr=xml2rfc_stderr.getvalue(),
-        ) from err
-    log.log(
-        'In %s: xml2rfc %s generated %s from %s (version %s)' % (
-            str(xml_path.parent),
-            xml2rfc.__version__,
-            html_path.name,
-            xml_path.name,
-            xml_version,
-        )
-    )
     with Path(html_path).open("rb") as f:
         store_file("staging", f"{submission.name}-{submission.rev}.html", f)
 
@@ -1272,7 +1265,7 @@ def process_submission_text(filename, revision):
     if title:
         title = _normalize_title(title)
 
-    # Translation taable drops \r, \n, <, >.
+    # Translation table drops \r, \n, <, >.
     trans_table = str.maketrans("", "", "\r\n<>")
     authors = [
         {
@@ -1619,6 +1612,4 @@ def populate_yang_model_dirs():
             log.log(f"Error processing {item.name}: {e}")
 
     ftp_moddir = Path(settings.FTP_DIR) / "yang" / "draftmod/"
-    if not moddir.endswith("/"):
-        moddir += "/"
-    subprocess.call(("/usr/bin/rsync", "-aq", "--delete", moddir, ftp_moddir))
+    subprocess.call(("/usr/bin/rsync", "-aq", "--delete", f"{moddir}/", str(ftp_moddir)))

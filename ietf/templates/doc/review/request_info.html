@@ -74,13 +74,13 @@
                 <td>{% person_link review_req.requested_by %}</td>
             </tr>
         {% endif %}
-        {% if review_req.doc.authors %}
+        {% if review_req.doc.author_persons_or_names %}
             <tr>
                 <td></td>
                 <th scope="row">Authors</th>
                 <td>
-                    {% for author in review_req.doc.authors %}
-                        {% person_link author %}{% if not forloop.last %},{% endif %}
+                    {% for person, tp_name in review_req.doc.author_persons_or_names %}
+                        {% if person %}{% person_link person %}{% else %}<span>{{ tp_name }}</span>{% endif %}{% if not forloop.last %},{% endif %}
                     {% endfor %}
                 </td>
             </tr>
@@ -96,7 +96,7 @@
                 </td>
             </tr>
         {% endif %}
-        {% if doc.time %}
+        {% if review_req.doc.time %}
             <tr>
                 <th scope="row">
                 </th>
@@ -104,7 +104,10 @@
                     I-D last updated
                 </th>
                 <td>
-                    {{ doc.time|date:"Y-m-d" }}
+                    {{ review_req.doc.time|date:"Y-m-d" }}
+                    {% if review_req.doc.pub_date %}
+                        <span class="text-body-secondary">(Latest revision {{ review_req.doc.pub_date|date:"Y-m-d" }})</span>
+                    {% endif %}
                 </td>
             </tr>
         {% endif %}

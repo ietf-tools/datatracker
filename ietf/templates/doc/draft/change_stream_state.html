@@ -1,7 +1,6 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
-{% load django_bootstrap5 %}
+{# Copyright The IETF Trust 2015-2025, All Rights Reserved #}
+{% load django_bootstrap5 ietf_filters origin %}
 {% block title %}Change {{ state_type.label }} for {{ doc }}{% endblock %}
 {% block content %}
     {% origin %}
@@ -14,12 +13,10 @@
         <a class="my-3 btn btn-info"
            href="{% url 'ietf.doc.views_help.state_help' type=state_type.slug %}">Help on states</a>
         <p>
-            <b>Move document to {{ next_states|pluralize:"to one of" }} the recommended next state{{ next_states|pluralize }}:</b>
+            <b>Move document to {{ next_states|pluralize:"one of" }} the recommended next state{{ next_states|pluralize }}:</b>
         </p>
         {% for state in next_states %}
-            {% if state.slug == 'sub-pub' %}
-                <a type="button" class="btn btn-primary next-state" href="{% url 'ietf.doc.views_draft.to_iesg' name=doc.name %}">{{ state.name }}</a>
-            {% else %}
+            {% if state.slug != 'sub-pub' and state.slug != "wg-lc" %}
                 <button type="button" class="btn btn-primary next-state" data-state="{{ state.pk }}">{{ state.name }}</button>
             {% endif %}
         {% endfor %}
@@ -28,7 +25,13 @@
         {% csrf_token %}
         {% bootstrap_form form %}
         <button type="submit" class="btn btn-primary">Submit</button>
-        <a class="btn btn-secondary float-end" href="{{ doc.get_absolute_url }}">Back</a>
+        <a class="btn btn-secondary float-end"
+          {% if doc|can_issue_ietf_wg_lc or doc|can_submit_to_iesg %}
+            href="{% url 'ietf.doc.views_draft.offer_wg_action_helpers' name=doc.name %}"
+          {% else %} 
+            href="{{ doc.get_absolute_url }}"
+          {% endif %}
+        >Back</a>
     </form>
 {% endblock %}
 {% block js %}

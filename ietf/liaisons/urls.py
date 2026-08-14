@@ -26,8 +26,8 @@ urlpatterns += [
     url(r'^(?P<object_id>\d+)/$', views.liaison_detail),
     url(r'^(?P<object_id>\d+)/addcomment/$', views.add_comment),
     url(r'^(?P<object_id>\d+)/edit/$', views.liaison_edit),
-    url(r'^(?P<object_id>\d+)/edit-attachment/(?P<doc_id>[A-Za-z0-9._+-]+)$', views.liaison_edit_attachment),
-    url(r'^(?P<object_id>\d+)/delete-attachment/(?P<attach_id>[A-Za-z0-9._+-]+)$', views.liaison_delete_attachment),
+    url(r'^(?P<object_id>\d+)/edit-attachment/(?P<doc_id>[0-9]+)$', views.liaison_edit_attachment),
+    url(r'^(?P<object_id>\d+)/delete-attachment/(?P<attach_id>[0-9]+)$', views.liaison_delete_attachment),
     url(r'^(?P<object_id>\d+)/history/$', views.liaison_history),
     url(r'^(?P<object_id>\d+)/reply/$', views.liaison_reply),
     url(r'^(?P<object_id>\d+)/resend/$', views.liaison_resend),
@@ -37,4 +37,5 @@ urlpatterns += [
     url(r'^add/$', views.redirect_add),
     url(r'^for_approval/$', views.redirect_for_approval),
     url(r'^for_approval/(?P<object_id>\d+)/$', views.redirect_for_approval),
+    url(r"^list_other_sdo/$", views.list_other_sdo),
 ]

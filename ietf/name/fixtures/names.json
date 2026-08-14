@@ -650,7 +650,7 @@
   },
   {
     "fields": {
-      "desc": "<a href=\"https://www.rfc-editor.org/rfc/rfc6174.html#section-4.2.1\" target=\"_blank\">4.2.1. Call for Adoption by WG Issued</a>\r\n\r\n The \"Call for Adoption by WG Issued\" state should be used to indicate when an I-D is being considered for adoption by an IETF WG. An I-D that is in this state is actively being considered for adoption and has not yet achieved consensus, preference, or selection in the WG.\r\n\r\n This state may be used to describe an I-D that someone has asked a WG to consider for adoption, if the WG Chair has agreed with the request. This state may also be used to identify an I-D that a WG Chair asked an author to write specifically for consideration as a candidate WG item [WGDTSPEC], and/or an I-D that is listed as a 'candidate draft' in the WG's charter.\r\n\r\n Under normal conditions, it should not be possible for an I-D to be in the \"Call for Adoption by WG Issued\" state in more than one working group at the same time. This said, it is not uncommon for authors to \"shop\" their I-Ds to more than one WG at a time, with the hope of getting their documents adopted somewhere.\r\n\r\n After this state is implemented in the Datatracker, an I-D that is in the \"Call for Adoption by WG Issued\" state will not be able to be \"shopped\" to any other WG without the consent of the WG Chairs and the responsible ADs impacted by the shopping.\r\n\r\n Note that Figure 1 includes an arc leading from this state to outside of the WG state machine. This illustrates that some I-Ds that are considered do not get adopted as WG drafts. An I-D that is not adopted as a WG draft will transition out of the WG state machine and revert back to having no stream-specific state; however, the status change history log of the I-D will record that the I-D was previously in the \"Call for Adoption by WG Issued\" state.",
+      "desc": "A call for adoption of the individual submission document has been issued by the Working Group (WG) chairs.  This call is still running but the WG has not yet reached consensus for adoption.",
       "name": "Call For Adoption By WG Issued",
       "next_states": [
         36,
@@ -666,7 +666,7 @@
   },
   {
     "fields": {
-      "desc": "<a href=\"https://www.rfc-editor.org/rfc/rfc6174.html#section-4.2.2\" target=\"_blank\">4.2.2. Adopted by a WG</a>\r\n\r\n The \"Adopted by a WG\" state describes an individual submission I-D that an IETF WG has agreed to adopt as one of its WG drafts.\r\n\r\n WG Chairs who use this state will be able to clearly indicate when their WGs adopt individual submission I-Ds. This will facilitate the Datatracker's ability to correctly capture \"Replaces\" information for WG drafts and correct \"Replaced by\" information for individual submission I-Ds that have been replaced by WG drafts.\r\n\r\n This state is needed because the Datatracker uses the filename of an I-D as a key to search its database for status information about the I-D, and because the filename of a WG I-D is supposed to be different from the filename of an individual submission I-D. The filename of an individual submission I-D will typically be formatted as 'draft-author-wgname-topic-nn'.\r\n\r\n The filename of a WG document is supposed to be formatted as 'draft- ietf-wgname-topic-nn'.\r\n\r\n An individual I-D that is adopted by a WG may take weeks or months to be resubmitted by the author as a new (version-00) WG draft. If the \"Adopted by a WG\" state is not used, the Datatracker has no way to determine that an I-D has been adopted until a new version of the I-D is submitted to the WG by the author and until the I-D is approved for posting by a WG Chair.",
+      "desc": "The individual submission document has been adopted by the Working Group (WG), but some administrative matter still needs to be completed (e.g., a WG document replacing this document with the typical naming convention of 'draft-ietf-wgname-topic-nn' has not yet been submitted).",
       "name": "Adopted by a WG",
       "next_states": [
         38
@@ -681,7 +681,7 @@
   },
   {
     "fields": {
-      "desc": "<a href=\"https://www.rfc-editor.org/rfc/rfc6174.html#section-4.2.3\" target=\"_blank\">4.2.3. Adopted for WG Info Only</a>\r\n\r\n The \"Adopted for WG Info Only\" state describes a document that contains useful information for the WG that adopted it, but the document is not intended to be published as an RFC. The WG will not actively develop the contents of the I-D or progress it for publication as an RFC. The only purpose of the I-D is to provide information for internal use by the WG.",
+      "desc": "The document is adopted by the Working Group (WG) for its internal use.  The WG has decided that it will not pursue publication of it as an RFC.",
       "name": "Adopted for WG Info Only",
       "next_states": [],
       "order": 3,
@@ -694,7 +694,7 @@
   },
   {
     "fields": {
-      "desc": "<a href=\"https://www.rfc-editor.org/rfc/rfc6174.html#section-4.2.4\" target=\"_blank\">4.2.4. WG Document</a>\r\n\r\n The \"WG Document\" state describes an I-D that has been adopted by an IETF WG and is being actively developed.\r\n\r\n A WG Chair may transition an I-D into the \"WG Document\" state at any time as long as the I-D is not being considered or developed in any other WG.\r\n\r\n Alternatively, WG Chairs may rely upon new functionality to be added to the Datatracker to automatically move version-00 drafts into the \"WG Document\" state as described in Section 4.1.\r\n\r\n Under normal conditions, it should not be possible for an I-D to be in the \"WG Document\" state in more than one WG at a time. This said, I-Ds may be transferred from one WG to another with the consent of the WG Chairs and the responsible ADs.",
+      "desc": "The document has been identified as a Working Group (WG) document and is under development per Section 7.2 of RFC2418.",
       "name": "WG Document",
       "next_states": [
         39,
@@ -712,7 +712,7 @@
   },
   {
     "fields": {
-      "desc": "<a href=\"https://www.rfc-editor.org/rfc/rfc6174.html#section-4.2.5\" target=\"_blank\">4.2.5. Parked WG Document</a>\r\n\r\n A \"Parked WG Document\" is an I-D that has lost its author or editor, is waiting for another document to be written or for a review to be completed, or cannot be progressed by the working group for some other reason.\r\n\r\n Some of the annotation tags described in Section 4.3 may be used in conjunction with this state to indicate why an I-D has been parked, and/or what may need to happen for the I-D to be un-parked.\r\n\r\n Parking a WG draft will not prevent it from expiring; however, this state can be used to indicate why the I-D has stopped progressing in the WG.\r\n\r\n A \"Parked WG Document\" that is not expired may be transferred from one WG to another with the consent of the WG Chairs and the responsible ADs.",
+      "desc": "The Working Group (WG) document is in a temporary state where it will not be actively developed.  The reason for the pause is explained via a datatracker comments section.",
       "name": "Parked WG Document",
       "next_states": [
         38
@@ -727,7 +727,7 @@
   },
   {
     "fields": {
-      "desc": "<a href=\"https://www.rfc-editor.org/rfc/rfc6174.html#section-4.2.6\" target=\"_blank\">4.2.6. Dead WG Document</a>\r\n\r\n A \"Dead WG Document\" is an I-D that has been abandoned. Note that 'Dead' is not always a final state for a WG I-D. If consensus is subsequently achieved, a \"Dead WG Document\" may be resurrected. A \"Dead WG Document\" that is not resurrected will eventually expire.\r\n\r\n Note that an I-D that is declared to be \"Dead\" in one WG and that is not expired may be transferred to a non-dead state in another WG with the consent of the WG Chairs and the responsible ADs.",
+      "desc": "The Working Group (WG) document has been abandoned by the WG.  No further development is planned in this WG.  A decision to resume work on this document and move it out of this state is possible.",
       "name": "Dead WG Document",
       "next_states": [
         38
@@ -742,7 +742,7 @@
   },
   {
     "fields": {
-      "desc": "<a href=\"https://www.rfc-editor.org/rfc/rfc6174.html#section-4.2.7\" target=\"_blank\">4.2.7. In WG Last Call</a>\r\n\r\n A document \"In WG Last Call\" is an I-D for which a WG Last Call (WGLC) has been issued and is in progress.\r\n\r\n Note that conducting a WGLC is an optional part of the IETF WG process, per Section 7.4 of RFC 2418 [RFC2418].\r\n\r\n If a WG Chair decides to conduct a WGLC on an I-D, the \"In WG Last Call\" state can be used to track the progress of the WGLC. The Chair may configure the Datatracker to send a WGLC message to one or more mailing lists when the Chair moves the I-D into this state. The WG Chair may also be able to select a different set of mailing lists for a different document undergoing a WGLC; some documents may deserve coordination with other WGs.\r\n\r\n A WG I-D in this state should remain \"In WG Last Call\" until the WG Chair moves it to another state. The WG Chair may configure the Datatracker to send an e-mail after a specified period of time to remind or 'nudge' the Chair to conclude the WGLC and to determine the next state for the document.\r\n\r\n It is possible for one WGLC to lead into another WGLC for the same document. For example, an I-D that completed a WGLC as an \"Informational\" document may need another WGLC if a decision is taken to convert the I-D into a Standards Track document.",
+      "desc": "The Working Group (WG) document is currently subject to an active WG Last Call (WGLC) review per Section 7.4 of RFC2418.",
       "name": "In WG Last Call",
       "next_states": [
         38,
@@ -759,7 +759,7 @@
   },
   {
     "fields": {
-      "desc": "<a href=\"https://www.rfc-editor.org/rfc/rfc6174.html#section-4.2.8\" target=\"_blank\">4.2.8. Waiting for WG Chair Go-Ahead</a>\r\n\r\n A WG Chair may wish to place an I-D that receives a lot of comments during a WGLC into the \"Waiting for WG Chair Go-Ahead\" state. This state describes an I-D that has undergone a WGLC; however, the Chair is not yet ready to call consensus on the document.\r\n\r\n If comments from the WGLC need to be responded to, or a revision to the I-D is needed, the Chair may place an I-D into this state until all of the WGLC comments are adequately addressed and the (possibly revised) document is in the I-D repository.",
+      "desc": "The Working Group (WG) document has completed Working Group Last Call (WGLC), but the WG chairs are not yet ready to call consensus on the document. The reasons for this may include comments from the WGLC need to be responded to, or a revision to the document is needed.",
       "name": "Waiting for WG Chair Go-Ahead",
       "next_states": [
         41,
@@ -775,7 +775,7 @@
   },
   {
     "fields": {
-      "desc": "<a href=\"https://www.rfc-editor.org/rfc/rfc6174.html#section-4.2.9\" target=\"_blank\">4.2.9. WG Consensus: Waiting for Writeup</a>\r\n\r\n A document in the \"WG Consensus: Waiting for Writeup\" state has essentially completed its development within the working group, and is nearly ready to be sent to the IESG for publication. The last thing to be done is the preparation of a protocol writeup by a Document Shepherd. The IESG requires that a document shepherd writeup be completed before publication of the I-D is requested. The IETF document shepherding process and the role of a WG Document Shepherd is described in RFC 4858 [RFC4858]\r\n\r\n A WG Chair may call consensus on an I-D without a formal WGLC and transition an I-D that was in the \"WG Document\" state directly into this state.\r\n\r\n The name of this state includes the words \"Waiting for Writeup\" because a good document shepherd writeup takes time to prepare.",
+      "desc": "The Working Group (WG) document has consensus to proceed to publication.  However, the document is waiting for a document shepherd write-up per RFC4858.",
       "name": "WG Consensus: Waiting for Write-Up",
       "next_states": [
         44
@@ -790,7 +790,7 @@
   },
   {
     "fields": {
-      "desc": "<a href=\"https://www.rfc-editor.org/rfc/rfc6174.html#section-4.2.10\" target=\"_blank\">4.2.10. Submitted to IESG for Publication</a>\r\n\r\n This state describes a WG document that has been submitted to the IESG for publication and that has not been sent back to the working group for revision.\r\n\r\n An I-D in this state may be under review by the IESG, it may have been approved and be in the RFC Editor's queue, or it may have been published as an RFC. Other possibilities exist too. The document may be \"Dead\" (in the IESG state machine) or in a \"Do Not Publish\" state.",
+      "desc": "The Working Group (WG) document has been submitted to the Internet Engineering Steering Group (IESG) for evaluation and publication per Section 7.4 of RFC2418.  See the “IESG State” or “RFC Editor State” for further details on the state of the document.",
       "name": "Submitted to IESG for Publication",
       "next_states": [
         38
@@ -2020,7 +2020,7 @@
   },
   {
     "fields": {
-      "desc": "The document has been marked as a candidate for WG adoption by the WG Chair.  This state can be used before a call for adoption is issued (and the document is put in the \"Call For Adoption By WG Issued\" state), to indicate that the document is in the queue for a call for adoption, even if none has been issued yet.",
+      "desc": "The individual submission document has been marked by the Working Group (WG) chairs as a candidate for adoption by the WG, but no adoption call has been started.",
       "name": "Candidate for WG Adoption",
       "next_states": [
         35
@@ -2152,7 +2152,7 @@
   },
   {
     "fields": {
-      "desc": "In some areas, it can be desirable to wait for multiple interoperable implementations before progressing a draft to be an RFC, and in some WGs this is required.  This state should be entered after WG Last Call has completed.",
+      "desc": "The progression of this Working Group (WG) document towards publication is paused as it awaits implementation. The process governing the approach to implementations is WG-specific.",
       "name": "Waiting for Implementation",
       "next_states": [],
       "order": 8,
@@ -2165,7 +2165,7 @@
   },
   {
     "fields": {
-      "desc": "Held by WG, see document history for details.",
+      "desc": "Held by Working Group (WG) chairs for administrative reasons.  See document history for details.",
       "name": "Held by WG",
       "next_states": [],
       "order": 9,
@@ -2628,7 +2628,59 @@
       "used": true
     },
     "model": "doc.state",
+    "pk": 181
+  },
+  {
+    "fields": {
+      "desc": "The statement has been marked historic",
+      "name": "Historic",
+      "next_states": [],
+      "order": 0,
+      "slug": "historic",
+      "type": "statement",
+      "used": false
+    },
+    "model": "doc.state",
     "pk": 182
+  },
+  {
+    "fields": {
+      "desc": "The statement is no longer active",
+      "name": "Inactive",
+      "next_states": [],
+      "order": 0,
+      "slug": "inactive",
+      "type": "statement",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 183
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "In Progress",
+      "next_states": [],
+      "order": 0,
+      "slug": "in_progress",
+      "type": "draft-rfceditor",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 216
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Blocked",
+      "next_states": [],
+      "order": 0,
+      "slug": "blocked",
+      "type": "draft-rfceditor",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 217
   },
   {
     "fields": {
@@ -2872,7 +2924,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "special",
       "agenda_type": "ietf",
       "create_wiki": true,
@@ -2880,10 +2934,24 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"matman\",\n    \"ad\",\n    \"chair\",\n    \"lead\",\n    \"delegate\"\n]",
-      "docman_roles": "[\n    \"chair\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[\n    \"chair\",\n    \"lead\",\n    \"delegate\"\n]",
+      "default_used_roles": [
+        "matman",
+        "ad",
+        "chair",
+        "lead",
+        "delegate"
+      ],
+      "docman_roles": [
+        "chair"
+      ],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [
+        "chair",
+        "lead",
+        "delegate"
+      ],
       "has_chartering_process": false,
       "has_default_chat": true,
       "has_documents": false,
@@ -2893,15 +2961,29 @@
       "has_reviews": false,
       "has_session_materials": true,
       "is_schedulable": true,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"chair\",\n    \"lead\",\n    \"delegate\",\n    \"matman\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "chair",
+        "lead",
+        "delegate",
+        "matman"
+      ],
       "need_parent": false,
       "parent_types": [
         "ietf"
       ],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\",\n    \"lead\",\n    \"delegate\",\n    \"matman\"\n]",
-      "session_purposes": "[\n    \"presentation\"\n]",
+      "role_order": [
+        "chair",
+        "lead",
+        "delegate",
+        "matman"
+      ],
+      "session_purposes": [
+        "presentation"
+      ],
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -2911,7 +2993,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "heading",
       "agenda_type": "ietf",
       "create_wiki": false,
@@ -2919,10 +3003,19 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"member\",\n    \"chair\"\n]",
-      "docman_roles": "[\n    \"chair\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[\n    \"chair\"\n]",
+      "default_used_roles": [
+        "member",
+        "chair"
+      ],
+      "docman_roles": [
+        "chair"
+      ],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [
+        "chair"
+      ],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": false,
@@ -2932,13 +3025,22 @@
       "has_reviews": false,
       "has_session_materials": false,
       "is_schedulable": true,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"chair\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "chair"
+      ],
       "need_parent": false,
       "parent_types": [],
       "req_subm_approval": false,
-      "role_order": "[\n    \"chair\"\n]",
-      "session_purposes": "[\n    \"closed_meeting\",\n    \"officehours\"\n]",
+      "role_order": [
+        "chair"
+      ],
+      "session_purposes": [
+        "closed_meeting",
+        "officehours"
+      ],
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -2948,7 +3050,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": true,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": true,
@@ -2956,10 +3060,26 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"ad\",\n    \"chair\",\n    \"secr\",\n    \"delegate\"\n]",
-      "docman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\",\n    \"Area Director\"\n]",
-      "groupman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\"\n]",
+      "default_used_roles": [
+        "ad",
+        "chair",
+        "secr",
+        "delegate"
+      ],
+      "docman_roles": [
+        "chair",
+        "delegate",
+        "secr"
+      ],
+      "groupman_authroles": [
+        "Secretariat",
+        "Area Director"
+      ],
+      "groupman_roles": [
+        "ad",
+        "chair",
+        "delegate"
+      ],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": true,
@@ -2969,16 +3089,28 @@
       "has_reviews": false,
       "has_session_materials": true,
       "is_schedulable": true,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "ad",
+        "chair",
+        "delegate",
+        "secr"
+      ],
       "need_parent": false,
       "parent_types": [
         "area",
         "ietf"
       ],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
-      "session_purposes": "[\n    \"regular\"\n]",
+      "role_order": [
+        "chair",
+        "secr"
+      ],
+      "session_purposes": [
+        "regular"
+      ],
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -2988,7 +3120,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"ad\"\n]",
+      "admin_roles": [
+        "ad"
+      ],
       "agenda_filter_type": "heading",
       "agenda_type": "ietf",
       "create_wiki": true,
@@ -2996,10 +3130,22 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"ad\",\n    \"liaison_contact\",\n    \"liaison_cc_contact\"\n]",
-      "docman_roles": "[\n    \"ad\",\n    \"delegate\",\n    \"secr\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[\n    \"ad\"\n]",
+      "default_used_roles": [
+        "ad",
+        "liaison_contact",
+        "liaison_cc_contact"
+      ],
+      "docman_roles": [
+        "ad",
+        "delegate",
+        "secr"
+      ],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [
+        "ad"
+      ],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": false,
@@ -3009,15 +3155,27 @@
       "has_reviews": false,
       "has_session_materials": false,
       "is_schedulable": false,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "ad",
+        "chair",
+        "delegate",
+        "secr"
+      ],
       "need_parent": true,
       "parent_types": [
         "ietf"
       ],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
-      "session_purposes": "[\n    \"regular\"\n]",
+      "role_order": [
+        "chair",
+        "secr"
+      ],
+      "session_purposes": [
+        "regular"
+      ],
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3027,7 +3185,10 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\",\n    \"secr\"\n]",
+      "admin_roles": [
+        "chair",
+        "secr"
+      ],
       "agenda_filter_type": "special",
       "agenda_type": "ad",
       "create_wiki": true,
@@ -3035,10 +3196,25 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"ad\",\n    \"chair\",\n    \"reviewer\",\n    \"secr\",\n    \"delegate\"\n]",
-      "docman_roles": "[\n    \"chair\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[\n    \"ad\",\n    \"secr\",\n    \"delegate\",\n    \"chair\"\n]",
+      "default_used_roles": [
+        "ad",
+        "chair",
+        "reviewer",
+        "secr",
+        "delegate"
+      ],
+      "docman_roles": [
+        "chair"
+      ],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [
+        "ad",
+        "secr",
+        "delegate",
+        "chair"
+      ],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": false,
@@ -3048,15 +3224,31 @@
       "has_reviews": false,
       "has_session_materials": true,
       "is_schedulable": false,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "ad",
+        "chair",
+        "delegate",
+        "secr"
+      ],
       "need_parent": true,
       "parent_types": [
         "area"
       ],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
-      "session_purposes": "[\n    \"open_meeting\",\n    \"presentation\",\n    \"regular\",\n    \"social\",\n    \"tutorial\"\n]",
+      "role_order": [
+        "chair",
+        "secr"
+      ],
+      "session_purposes": [
+        "open_meeting",
+        "presentation",
+        "regular",
+        "social",
+        "tutorial"
+      ],
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3066,7 +3258,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": false,
@@ -3074,10 +3268,19 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"chair\",\n    \"member\"\n]",
-      "docman_roles": "[\n    \"chair\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[\n    \"chair\"\n]",
+      "default_used_roles": [
+        "chair",
+        "member"
+      ],
+      "docman_roles": [
+        "chair"
+      ],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [
+        "chair"
+      ],
       "has_chartering_process": false,
       "has_default_chat": true,
       "has_documents": false,
@@ -3087,13 +3290,23 @@
       "has_reviews": false,
       "has_session_materials": true,
       "is_schedulable": true,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"chair\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "chair"
+      ],
       "need_parent": false,
       "parent_types": [],
       "req_subm_approval": false,
-      "role_order": "[\n    \"chair\",\n    \"member\"\n]",
-      "session_purposes": "[\n    \"officehours\",\n    \"regular\"\n]",
+      "role_order": [
+        "chair",
+        "member"
+      ],
+      "session_purposes": [
+        "officehours",
+        "regular"
+      ],
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -3103,7 +3316,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": true,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": false,
@@ -3111,10 +3326,18 @@
       "customize_workflow": true,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_documents",
-      "default_used_roles": "[\n    \"chair\"\n]",
-      "docman_roles": "[\n    \"chair\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[\n    \"chair\"\n]",
+      "default_used_roles": [
+        "chair"
+      ],
+      "docman_roles": [
+        "chair"
+      ],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [
+        "chair"
+      ],
       "has_chartering_process": false,
       "has_default_chat": true,
       "has_documents": true,
@@ -3124,15 +3347,23 @@
       "has_reviews": false,
       "has_session_materials": true,
       "is_schedulable": true,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"chair\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "chair"
+      ],
       "need_parent": false,
       "parent_types": [
         "rfcedtyp"
       ],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\"\n]",
-      "session_purposes": "[\n    \"regular\"\n]",
+      "role_order": [
+        "chair"
+      ],
+      "session_purposes": [
+        "regular"
+      ],
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -3142,7 +3373,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": false,
@@ -3150,10 +3383,16 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"chair\"\n]",
-      "docman_roles": "[\n    \"chair\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[]",
+      "default_used_roles": [
+        "chair"
+      ],
+      "docman_roles": [
+        "chair"
+      ],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": false,
@@ -3163,15 +3402,26 @@
       "has_reviews": false,
       "has_session_materials": false,
       "is_schedulable": false,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "chair",
+        "delegate"
+      ],
       "need_parent": false,
       "parent_types": [
         "ietf"
       ],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
-      "session_purposes": "[\n    \"closed_meeting\",\n    \"regular\"\n]",
+      "role_order": [
+        "chair",
+        "secr"
+      ],
+      "session_purposes": [
+        "closed_meeting",
+        "regular"
+      ],
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -3181,7 +3431,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"lead\"\n]",
+      "admin_roles": [
+        "lead"
+      ],
       "agenda_filter_type": "none",
       "agenda_type": "ad",
       "create_wiki": false,
@@ -3189,10 +3441,27 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"member\",\n    \"chair\",\n    \"lead\",\n    \"delegate\"\n]",
-      "docman_roles": "[\n    \"lead\",\n    \"chair\",\n    \"secr\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\",\n    \"IAB\"\n]",
-      "groupman_roles": "[\n    \"lead\",\n    \"chair\",\n    \"secr\",\n    \"delegate\"\n]",
+      "default_used_roles": [
+        "member",
+        "chair",
+        "lead",
+        "delegate"
+      ],
+      "docman_roles": [
+        "lead",
+        "chair",
+        "secr"
+      ],
+      "groupman_authroles": [
+        "Secretariat",
+        "IAB"
+      ],
+      "groupman_roles": [
+        "lead",
+        "chair",
+        "secr",
+        "delegate"
+      ],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": true,
@@ -3202,15 +3471,29 @@
       "has_reviews": false,
       "has_session_materials": false,
       "is_schedulable": false,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"lead\",\n    \"chair\",\n    \"secr\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "lead",
+        "chair",
+        "secr"
+      ],
       "need_parent": false,
       "parent_types": [
         "ietf"
       ],
       "req_subm_approval": false,
-      "role_order": "[\n    \"lead\",\n    \"chair\",\n    \"secr\"\n]",
-      "session_purposes": "[\n    \"closed_meeting\",\n    \"officehours\",\n    \"open_meeting\"\n]",
+      "role_order": [
+        "lead",
+        "chair",
+        "secr"
+      ],
+      "session_purposes": [
+        "closed_meeting",
+        "officehours",
+        "open_meeting"
+      ],
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3220,7 +3503,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "none",
       "agenda_type": "ietf",
       "create_wiki": false,
@@ -3228,10 +3513,20 @@
       "customize_workflow": false,
       "default_parent": "iab",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[]",
-      "docman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[\n    \"ad\",\n    \"chair\"\n]",
+      "default_used_roles": [],
+      "docman_roles": [
+        "ad",
+        "chair",
+        "delegate",
+        "secr"
+      ],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [
+        "ad",
+        "chair"
+      ],
       "has_chartering_process": false,
       "has_default_chat": true,
       "has_documents": true,
@@ -3241,15 +3536,26 @@
       "has_reviews": false,
       "has_session_materials": true,
       "is_schedulable": false,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "ad",
+        "chair",
+        "delegate",
+        "secr"
+      ],
       "need_parent": true,
       "parent_types": [
         "ietf"
       ],
       "req_subm_approval": false,
-      "role_order": "[\n    \"chair\",\n    \"secr\",\n    \"member\"\n]",
-      "session_purposes": "\"[\\\"regular\\\"]\"",
+      "role_order": [
+        "chair",
+        "secr",
+        "member"
+      ],
+      "session_purposes": "[\"regular\"]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3259,7 +3565,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "none",
       "agenda_type": "ietf",
       "create_wiki": false,
@@ -3267,10 +3575,18 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"auth\"\n]",
-      "docman_roles": "[\n    \"chair\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[\n    \"chair\"\n]",
+      "default_used_roles": [
+        "auth"
+      ],
+      "docman_roles": [
+        "chair"
+      ],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [
+        "chair"
+      ],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": false,
@@ -3280,13 +3596,21 @@
       "has_reviews": false,
       "has_session_materials": false,
       "is_schedulable": false,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"chair\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "chair"
+      ],
       "need_parent": false,
       "parent_types": [],
       "req_subm_approval": false,
-      "role_order": "[\n    \"chair\"\n]",
-      "session_purposes": "[\n    \"officehours\"\n]",
+      "role_order": [
+        "chair"
+      ],
+      "session_purposes": [
+        "officehours"
+      ],
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3296,7 +3620,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "none",
       "agenda_type": "ad",
       "create_wiki": false,
@@ -3304,10 +3630,19 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"delegate\"\n]",
-      "docman_roles": "[\n    \"chair\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
+      "default_used_roles": [
+        "delegate"
+      ],
+      "docman_roles": [
+        "chair"
+      ],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [
+        "chair",
+        "delegate"
+      ],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": false,
@@ -3317,13 +3652,24 @@
       "has_reviews": false,
       "has_session_materials": false,
       "is_schedulable": false,
-      "material_types": "\"[]\"",
-      "matman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"member\"\n]",
+      "material_types": "[]",
+      "matman_roles": [
+        "chair",
+        "delegate",
+        "member"
+      ],
       "need_parent": false,
       "parent_types": [],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\",\n    \"delegate\",\n    \"member\"\n]",
-      "session_purposes": "[\n    \"closed_meeting\",\n    \"open_meeting\"\n]",
+      "role_order": [
+        "chair",
+        "delegate",
+        "member"
+      ],
+      "session_purposes": [
+        "closed_meeting",
+        "open_meeting"
+      ],
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3333,7 +3679,10 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\",\n    \"lead\"\n]",
+      "admin_roles": [
+        "chair",
+        "lead"
+      ],
       "agenda_filter_type": "heading",
       "agenda_type": "ietf",
       "create_wiki": false,
@@ -3341,10 +3690,26 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"ad\",\n    \"member\",\n    \"comdir\",\n    \"delegate\",\n    \"execdir\",\n    \"recman\",\n    \"secr\",\n    \"trac-editor\",\n    \"trac-admin\",\n    \"chair\"\n]",
-      "docman_roles": "[\n    \"chair\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
+      "default_used_roles": [
+        "ad",
+        "member",
+        "comdir",
+        "delegate",
+        "execdir",
+        "recman",
+        "secr",
+        "chair"
+      ],
+      "docman_roles": [
+        "chair"
+      ],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [
+        "chair",
+        "delegate"
+      ],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": false,
@@ -3354,15 +3719,29 @@
       "has_reviews": false,
       "has_session_materials": true,
       "is_schedulable": false,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "chair",
+        "delegate"
+      ],
       "need_parent": false,
       "parent_types": [
         "ietf"
       ],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
-      "session_purposes": "[\n    \"admin\",\n    \"plenary\",\n    \"presentation\",\n    \"social\",\n    \"officehours\"\n]",
+      "role_order": [
+        "chair",
+        "secr"
+      ],
+      "session_purposes": [
+        "admin",
+        "plenary",
+        "presentation",
+        "social",
+        "officehours"
+      ],
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3372,7 +3751,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "none",
       "agenda_type": "ad",
       "create_wiki": false,
@@ -3380,10 +3761,16 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"ad\"\n]",
-      "docman_roles": "[\n    \"auth\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[]",
+      "default_used_roles": [
+        "ad"
+      ],
+      "docman_roles": [
+        "auth"
+      ],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": false,
@@ -3393,15 +3780,20 @@
       "has_reviews": false,
       "has_session_materials": false,
       "is_schedulable": false,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [],
       "need_parent": true,
       "parent_types": [
         "area"
       ],
       "req_subm_approval": false,
-      "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
-      "session_purposes": "[]",
+      "role_order": [
+        "chair",
+        "secr"
+      ],
+      "session_purposes": [],
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3411,7 +3803,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "heading",
       "agenda_type": "ietf",
       "create_wiki": false,
@@ -3419,10 +3813,20 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"member\",\n    \"atlarge\",\n    \"chair\",\n    \"delegate\"\n]",
-      "docman_roles": "[]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
+      "default_used_roles": [
+        "member",
+        "atlarge",
+        "chair",
+        "delegate"
+      ],
+      "docman_roles": [],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [
+        "chair",
+        "delegate"
+      ],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": false,
@@ -3432,15 +3836,24 @@
       "has_reviews": false,
       "has_session_materials": false,
       "is_schedulable": false,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "chair",
+        "delegate",
+        "secr"
+      ],
       "need_parent": false,
       "parent_types": [
         "irtf"
       ],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
-      "session_purposes": "[]",
+      "role_order": [
+        "chair",
+        "secr"
+      ],
+      "session_purposes": [],
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3450,7 +3863,10 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\",\n    \"lead\"\n]",
+      "admin_roles": [
+        "chair",
+        "lead"
+      ],
       "agenda_filter_type": "heading",
       "agenda_type": "ietf",
       "create_wiki": false,
@@ -3458,10 +3874,20 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
-      "docman_roles": "[\n    \"chair\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
+      "default_used_roles": [
+        "chair",
+        "delegate"
+      ],
+      "docman_roles": [
+        "chair"
+      ],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [
+        "chair",
+        "delegate"
+      ],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": true,
@@ -3471,13 +3897,24 @@
       "has_reviews": false,
       "has_session_materials": false,
       "is_schedulable": true,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "chair",
+        "delegate"
+      ],
       "need_parent": false,
       "parent_types": [],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\",\n    \"delegate\"\n]",
-      "session_purposes": "[\n    \"officehours\",\n    \"regular\"\n]",
+      "role_order": [
+        "chair",
+        "delegate"
+      ],
+      "session_purposes": [
+        "officehours",
+        "regular"
+      ],
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -3487,7 +3924,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "none",
       "agenda_type": null,
       "create_wiki": false,
@@ -3495,10 +3934,17 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"chair\",\n    \"ceo\"\n]",
-      "docman_roles": "[]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[\n    \"chair\"\n]",
+      "default_used_roles": [
+        "chair",
+        "ceo"
+      ],
+      "docman_roles": [],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [
+        "chair"
+      ],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": false,
@@ -3508,15 +3954,27 @@
       "has_reviews": false,
       "has_session_materials": false,
       "is_schedulable": false,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"chair\",\n    \"secr\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "chair",
+        "secr"
+      ],
       "need_parent": false,
       "parent_types": [
         "isoc"
       ],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
-      "session_purposes": "[\n    \"officehours\",\n    \"open_meeting\",\n    \"presentation\"\n]",
+      "role_order": [
+        "chair",
+        "secr"
+      ],
+      "session_purposes": [
+        "officehours",
+        "open_meeting",
+        "presentation"
+      ],
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3526,7 +3984,10 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\",\n    \"advisor\"\n]",
+      "admin_roles": [
+        "chair",
+        "advisor"
+      ],
       "agenda_filter_type": "none",
       "agenda_type": "side",
       "create_wiki": true,
@@ -3534,10 +3995,23 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"member\",\n    \"advisor\",\n    \"liaison\",\n    \"chair\",\n    \"techadv\"\n]",
-      "docman_roles": "[\n    \"chair\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[\n    \"chair\",\n    \"advisor\"\n]",
+      "default_used_roles": [
+        "member",
+        "advisor",
+        "liaison",
+        "chair",
+        "techadv"
+      ],
+      "docman_roles": [
+        "chair"
+      ],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [
+        "chair",
+        "advisor"
+      ],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": false,
@@ -3547,15 +4021,26 @@
       "has_reviews": false,
       "has_session_materials": false,
       "is_schedulable": false,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"chair\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "chair"
+      ],
       "need_parent": false,
       "parent_types": [
         "area"
       ],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\",\n    \"member\",\n    \"advisor\"\n]",
-      "session_purposes": "[\n    \"closed_meeting\",\n    \"officehours\"\n]",
+      "role_order": [
+        "chair",
+        "member",
+        "advisor"
+      ],
+      "session_purposes": [
+        "closed_meeting",
+        "officehours"
+      ],
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3565,7 +4050,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"lead\"\n]",
+      "admin_roles": [
+        "lead"
+      ],
       "agenda_filter_type": "normal",
       "agenda_type": "ad",
       "create_wiki": false,
@@ -3573,10 +4060,27 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"member\",\n    \"chair\",\n    \"lead\",\n    \"delegate\"\n]",
-      "docman_roles": "[\n    \"lead\",\n    \"chair\",\n    \"secr\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\",\n    \"IAB\"\n]",
-      "groupman_roles": "[\n    \"lead\",\n    \"chair\",\n    \"secr\",\n    \"delegate\"\n]",
+      "default_used_roles": [
+        "member",
+        "chair",
+        "lead",
+        "delegate"
+      ],
+      "docman_roles": [
+        "lead",
+        "chair",
+        "secr"
+      ],
+      "groupman_authroles": [
+        "Secretariat",
+        "IAB"
+      ],
+      "groupman_roles": [
+        "lead",
+        "chair",
+        "secr",
+        "delegate"
+      ],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": true,
@@ -3586,15 +4090,28 @@
       "has_reviews": false,
       "has_session_materials": true,
       "is_schedulable": false,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"lead\",\n    \"chair\",\n    \"secr\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "lead",
+        "chair",
+        "secr"
+      ],
       "need_parent": false,
       "parent_types": [
         "ietf"
       ],
       "req_subm_approval": false,
-      "role_order": "[\n    \"lead\",\n    \"chair\",\n    \"secr\"\n]",
-      "session_purposes": "[\n    \"regular\",\n    \"tutorial\"\n]",
+      "role_order": [
+        "lead",
+        "chair",
+        "secr"
+      ],
+      "session_purposes": [
+        "regular",
+        "tutorial"
+      ],
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3604,7 +4121,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": true,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": true,
@@ -3612,10 +4131,24 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"chair\",\n    \"secr\",\n    \"delegate\"\n]",
-      "docman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\",\n    \"IRTF Chair\"\n]",
-      "groupman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
+      "default_used_roles": [
+        "chair",
+        "secr",
+        "delegate"
+      ],
+      "docman_roles": [
+        "chair",
+        "delegate",
+        "secr"
+      ],
+      "groupman_authroles": [
+        "Secretariat",
+        "IRTF Chair"
+      ],
+      "groupman_roles": [
+        "chair",
+        "delegate"
+      ],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": true,
@@ -3625,15 +4158,26 @@
       "has_reviews": false,
       "has_session_materials": true,
       "is_schedulable": true,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "chair",
+        "delegate",
+        "secr"
+      ],
       "need_parent": false,
       "parent_types": [
         "irtf"
       ],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
-      "session_purposes": "[\n    \"regular\"\n]",
+      "role_order": [
+        "chair",
+        "secr"
+      ],
+      "session_purposes": [
+        "regular"
+      ],
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -3643,7 +4187,10 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\",\n    \"secr\"\n]",
+      "admin_roles": [
+        "chair",
+        "secr"
+      ],
       "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": true,
@@ -3651,10 +4198,24 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.review_requests",
-      "default_used_roles": "[\n    \"ad\",\n    \"chair\",\n    \"reviewer\",\n    \"secr\",\n    \"delegate\"\n]",
-      "docman_roles": "[\n    \"secr\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[\n    \"ad\",\n    \"secr\",\n    \"delegate\"\n]",
+      "default_used_roles": [
+        "ad",
+        "chair",
+        "reviewer",
+        "secr",
+        "delegate"
+      ],
+      "docman_roles": [
+        "secr"
+      ],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [
+        "ad",
+        "secr",
+        "delegate"
+      ],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": false,
@@ -3664,15 +4225,26 @@
       "has_reviews": true,
       "has_session_materials": true,
       "is_schedulable": false,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"ad\",\n    \"secr\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "ad",
+        "secr"
+      ],
       "need_parent": true,
       "parent_types": [
         "area"
       ],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
-      "session_purposes": "[\n    \"open_meeting\",\n    \"social\"\n]",
+      "role_order": [
+        "chair",
+        "secr"
+      ],
+      "session_purposes": [
+        "open_meeting",
+        "social"
+      ],
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3682,7 +4254,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": false,
@@ -3690,10 +4264,19 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"auth\",\n    \"chair\"\n]",
-      "docman_roles": "[\n    \"chair\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[\n    \"chair\"\n]",
+      "default_used_roles": [
+        "auth",
+        "chair"
+      ],
+      "docman_roles": [
+        "chair"
+      ],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [
+        "chair"
+      ],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": false,
@@ -3703,13 +4286,23 @@
       "has_reviews": false,
       "has_session_materials": false,
       "is_schedulable": false,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"chair\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "chair"
+      ],
       "need_parent": false,
       "parent_types": [],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
-      "session_purposes": "[\n    \"officehours\",\n    \"regular\"\n]",
+      "role_order": [
+        "chair",
+        "secr"
+      ],
+      "session_purposes": [
+        "officehours",
+        "regular"
+      ],
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3719,7 +4312,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": true,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": true,
@@ -3727,10 +4322,25 @@
       "customize_workflow": true,
       "default_parent": "irtf",
       "default_tab": "ietf.group.views.group_documents",
-      "default_used_roles": "[\n    \"chair\",\n    \"techadv\",\n    \"secr\",\n    \"delegate\"\n]",
-      "docman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\",\n    \"IRTF Chair\"\n]",
-      "groupman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
+      "default_used_roles": [
+        "chair",
+        "techadv",
+        "secr",
+        "delegate"
+      ],
+      "docman_roles": [
+        "chair",
+        "delegate",
+        "secr"
+      ],
+      "groupman_authroles": [
+        "Secretariat",
+        "IRTF Chair"
+      ],
+      "groupman_roles": [
+        "chair",
+        "delegate"
+      ],
       "has_chartering_process": true,
       "has_default_chat": true,
       "has_documents": true,
@@ -3740,15 +4350,27 @@
       "has_reviews": false,
       "has_session_materials": true,
       "is_schedulable": true,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "chair",
+        "delegate",
+        "secr"
+      ],
       "need_parent": true,
       "parent_types": [
         "irtf"
       ],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
-      "session_purposes": "[\n    \"regular\"\n]",
+      "role_order": [
+        "chair",
+        "delegate",
+        "secr"
+      ],
+      "session_purposes": [
+        "regular"
+      ],
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -3758,7 +4380,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "none",
       "agenda_type": null,
       "create_wiki": false,
@@ -3766,10 +4390,23 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"liaiman\",\n    \"ceo\",\n    \"coord\",\n    \"auth\",\n    \"chair\",\n    \"liaison_contact\",\n    \"liaison_cc_contact\"\n]",
-      "docman_roles": "[\n    \"liaiman\",\n    \"matman\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
-      "groupman_roles": "[]",
+      "default_used_roles": [
+        "liaiman",
+        "ceo",
+        "coord",
+        "auth",
+        "chair",
+        "liaison_contact",
+        "liaison_cc_contact"
+      ],
+      "docman_roles": [
+        "liaiman",
+        "matman"
+      ],
+      "groupman_authroles": [
+        "Secretariat"
+      ],
+      "groupman_roles": [],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": false,
@@ -3779,16 +4416,20 @@
       "has_reviews": false,
       "has_session_materials": false,
       "is_schedulable": false,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [],
       "need_parent": false,
       "parent_types": [
         "area",
         "sdo"
       ],
       "req_subm_approval": true,
-      "role_order": "[\n    \"liaiman\"\n]",
-      "session_purposes": "[]",
+      "role_order": [
+        "liaiman"
+      ],
+      "session_purposes": [],
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3798,7 +4439,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "special",
       "agenda_type": "ietf",
       "create_wiki": true,
@@ -3806,10 +4449,28 @@
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"ad\",\n    \"member\",\n    \"delegate\",\n    \"secr\",\n    \"liaison\",\n    \"atlarge\",\n    \"chair\",\n    \"matman\",\n    \"techadv\"\n]",
-      "docman_roles": "[\n    \"chair\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\",\n    \"Area Director\"\n]",
-      "groupman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
+      "default_used_roles": [
+        "ad",
+        "member",
+        "delegate",
+        "secr",
+        "liaison",
+        "atlarge",
+        "chair",
+        "matman",
+        "techadv"
+      ],
+      "docman_roles": [
+        "chair"
+      ],
+      "groupman_authroles": [
+        "Secretariat",
+        "Area Director"
+      ],
+      "groupman_roles": [
+        "chair",
+        "delegate"
+      ],
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": false,
@@ -3819,15 +4480,30 @@
       "has_reviews": false,
       "has_session_materials": true,
       "is_schedulable": true,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"chair\",\n    \"matman\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "chair",
+        "matman"
+      ],
       "need_parent": false,
       "parent_types": [
         "area"
       ],
       "req_subm_approval": false,
-      "role_order": "[\n    \"chair\",\n    \"member\",\n    \"matman\"\n]",
-      "session_purposes": "[\n    \"coding\",\n    \"presentation\",\n    \"social\",\n    \"tutorial\"\n]",
+      "role_order": [
+        "chair",
+        "member",
+        "matman"
+      ],
+      "session_purposes": [
+        "coding",
+        "open_meeting",
+        "presentation",
+        "social",
+        "tutorial"
+      ],
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -3837,7 +4513,9 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": true,
-      "admin_roles": "[\n    \"chair\"\n]",
+      "admin_roles": [
+        "chair"
+      ],
       "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": true,
@@ -3845,10 +4523,32 @@
       "customize_workflow": true,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_documents",
-      "default_used_roles": "[\n    \"ad\",\n    \"editor\",\n    \"delegate\",\n    \"secr\",\n    \"chair\",\n    \"matman\",\n    \"techadv\",\n    \"liaison_contact\",\n    \"liaison_cc_contact\"\n]",
-      "docman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\",\n    \"Area Director\"\n]",
-      "groupman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "default_used_roles": [
+        "ad",
+        "editor",
+        "delegate",
+        "secr",
+        "chair",
+        "matman",
+        "techadv",
+        "liaison_contact",
+        "liaison_cc_contact"
+      ],
+      "docman_roles": [
+        "chair",
+        "delegate",
+        "secr"
+      ],
+      "groupman_authroles": [
+        "Secretariat",
+        "Area Director"
+      ],
+      "groupman_roles": [
+        "ad",
+        "chair",
+        "delegate",
+        "secr"
+      ],
       "has_chartering_process": true,
       "has_default_chat": true,
       "has_documents": true,
@@ -3858,15 +4558,28 @@
       "has_reviews": false,
       "has_session_materials": true,
       "is_schedulable": true,
-      "material_types": "[\n    \"slides\"\n]",
-      "matman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "material_types": [
+        "slides"
+      ],
+      "matman_roles": [
+        "ad",
+        "chair",
+        "delegate",
+        "secr"
+      ],
       "need_parent": false,
       "parent_types": [
         "area"
       ],
       "req_subm_approval": true,
-      "role_order": "[\n    \"chair\",\n    \"secr\",\n    \"delegate\"\n]",
-      "session_purposes": "[\n    \"regular\"\n]",
+      "role_order": [
+        "chair",
+        "secr",
+        "delegate"
+      ],
+      "session_purposes": [
+        "regular"
+      ],
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -4446,6 +5159,34 @@
   {
     "fields": {
       "cc": [],
+      "desc": "Recipients when a working group call for adoption is issued",
+      "to": [
+        "doc_authors",
+        "doc_group_chairs",
+        "doc_group_mail_list",
+        "doc_shepherd"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "doc_wg_call_for_adoption_issued"
+  },
+  {
+    "fields": {
+      "cc": [],
+      "desc": "Recipients when a working group last call is issued",
+      "to": [
+        "doc_authors",
+        "doc_group_chairs",
+        "doc_group_mail_list",
+        "doc_shepherd"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "doc_wg_last_call_issued"
+  },
+  {
+    "fields": {
+      "cc": [],
       "desc": "Recipients when a comment is added to a group's history",
       "to": [
         "group_chairs",
@@ -4819,13 +5560,30 @@
         "liaison_response_contacts",
         "liaison_technical_contacts"
       ],
-      "desc": "Recipient for a message when a new liaison statement is posted",
+      "desc": "Recipients for a message when a new incoming liaison statement is posted",
       "to": [
         "liaison_to_contacts"
       ]
     },
     "model": "mailtrigger.mailtrigger",
-    "pk": "liaison_statement_posted"
+    "pk": "liaison_statement_posted_incoming"
+  },
+  {
+    "fields": {
+      "cc": [
+        "liaison_cc",
+        "liaison_coordinators",
+        "liaison_from_contact",
+        "liaison_response_contacts",
+        "liaison_technical_contacts"
+      ],
+      "desc": "Recipients for a message when a new outgoing liaison statement is posted",
+      "to": [
+        "liaison_to_contacts"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "liaison_statement_posted_outgoing"
   },
   {
     "fields": {
@@ -5083,6 +5841,20 @@
     },
     "model": "mailtrigger.mailtrigger",
     "pk": "review_completed_artart_telechat"
+  },
+  {
+    "fields": {
+      "cc": [
+        "review_doc_all_parties",
+        "review_doc_group_mail_list"
+      ],
+      "desc": "Recipients when a bgpdir Early review is completed",
+      "to": [
+        "review_team_mail_list"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "review_completed_bgpdir_early"
   },
   {
     "fields": {
@@ -5391,6 +6163,50 @@
     },
     "model": "mailtrigger.mailtrigger",
     "pk": "review_completed_opsdir_telechat"
+  },
+  {
+    "fields": {
+      "cc": [
+        "review_doc_all_parties",
+        "review_doc_group_mail_list"
+      ],
+      "desc": "Recipients when a perfmetrdir Early review is completed",
+      "to": [
+        "review_team_mail_list"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "review_completed_perfmetrdir_early"
+  },
+  {
+    "fields": {
+      "cc": [
+        "ietf_last_call",
+        "review_doc_all_parties",
+        "review_doc_group_mail_list"
+      ],
+      "desc": "Recipients when a perfmetrdir IETF Last Call review is completed",
+      "to": [
+        "review_team_mail_list"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "review_completed_perfmetrdir_lc"
+  },
+  {
+    "fields": {
+      "cc": [
+        "ietf_last_call",
+        "review_doc_all_parties",
+        "review_doc_group_mail_list"
+      ],
+      "desc": "Recipients when a perfmetrdir Telechat review is completed",
+      "to": [
+        "review_team_mail_list"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "review_completed_perfmetrdir_telechat"
   },
   {
     "fields": {
@@ -6339,6 +7155,14 @@
   },
   {
     "fields": {
+      "desc": "Email address of the formal sender of the statement",
+      "template": "{{liaison.from_contact}}"
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "liaison_from_contact"
+  },
+  {
+    "fields": {
       "desc": "The assigned liaison manager for an external group ",
       "template": null
     },
@@ -6826,6 +7650,66 @@
     },
     "model": "name.appealartifacttypename",
     "pk": "response"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "ANRW Onsite",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.attendancetypename",
+    "pk": "anrw_onsite"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Hackathon Onsite",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.attendancetypename",
+    "pk": "hackathon_onsite"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Hackathon Remote",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.attendancetypename",
+    "pk": "hackathon_remote"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Onsite",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.attendancetypename",
+    "pk": "onsite"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Remote",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.attendancetypename",
+    "pk": "remote"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Unknown",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.attendancetypename",
+    "pk": "unknown"
   },
   {
     "fields": {
@@ -11272,6 +12156,17 @@
   },
   {
     "fields": {
+      "desc": "ORCID",
+      "name": "ORCID",
+      "order": 0,
+      "type": "url",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "orcid"
+  },
+  {
+    "fields": {
       "desc": "Related Implementations",
       "name": "Related Implementations",
       "order": 0,
@@ -12879,6 +13774,86 @@
   },
   {
     "fields": {
+      "desc": "",
+      "name": "ANRW Combo",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.registrationtickettypename",
+    "pk": "anrw_combo"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "ANRW Only",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.registrationtickettypename",
+    "pk": "anrw_only"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Hackathon Combo",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.registrationtickettypename",
+    "pk": "hackathon_combo"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Hackathon Only",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.registrationtickettypename",
+    "pk": "hackathon_only"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "One Day",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.registrationtickettypename",
+    "pk": "one_day"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Student",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.registrationtickettypename",
+    "pk": "student"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Unknown",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.registrationtickettypename",
+    "pk": "unknown"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Week Pass",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.registrationtickettypename",
+    "pk": "week_pass"
+  },
+  {
+    "fields": {
       "desc": "The reviewer has accepted the assignment",
       "name": "Accepted",
       "order": 0,
@@ -13120,6 +14095,16 @@
   {
     "fields": {
       "desc": "",
+      "name": "Clarification Needed",
+      "order": 10,
+      "used": true
+    },
+    "model": "name.reviewresultname",
+    "pk": "clarification-needed"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Has Issues",
       "order": 2,
       "used": true
@@ -13210,7 +14195,7 @@
   {
     "fields": {
       "desc": "",
-      "name": "Last Call",
+      "name": "IETF Last Call",
       "order": 2,
       "used": true
     },
@@ -13422,7 +14407,7 @@
       "desc": "",
       "name": "Liaison CC Contact",
       "order": 9,
-      "used": true
+      "used": false
     },
     "model": "name.rolename",
     "pk": "liaison_cc_contact"
@@ -13432,10 +14417,20 @@
       "desc": "",
       "name": "Liaison Contact",
       "order": 8,
-      "used": true
+      "used": false
     },
     "model": "name.rolename",
     "pk": "liaison_contact"
+  },
+  {
+    "fields": {
+      "desc": "Coordinates liaison handling for the IAB",
+      "name": "Liaison Coordinator",
+      "order": 14,
+      "used": true
+    },
+    "model": "name.rolename",
+    "pk": "liaison_coordinator"
   },
   {
     "fields": {
@@ -13522,7 +14517,7 @@
       "desc": "Assigned permission TRAC_ADMIN in datatracker-managed Trac Wiki instances",
       "name": "Trac Admin",
       "order": 0,
-      "used": true
+      "used": false
     },
     "model": "name.rolename",
     "pk": "trac-admin"
@@ -13532,7 +14527,7 @@
       "desc": "Provides log-in permission to restricted Trac instances.  Used by the generate_apache_perms management command, called from ../../scripts/Cron-runner",
       "name": "Trac Editor",
       "order": 0,
-      "used": true
+      "used": false
     },
     "model": "name.rolename",
     "pk": "trac-editor"
@@ -13673,7 +14668,10 @@
       "name": "Administrative",
       "on_agenda": true,
       "order": 5,
-      "timeslot_types": "[\n    \"other\",\n    \"reg\"\n]",
+      "timeslot_types": [
+        "other",
+        "reg"
+      ],
       "used": true
     },
     "model": "name.sessionpurposename",
@@ -13685,7 +14683,10 @@
       "name": "Closed meeting",
       "on_agenda": false,
       "order": 10,
-      "timeslot_types": "[\n    \"other\",\n    \"regular\"\n]",
+      "timeslot_types": [
+        "other",
+        "regular"
+      ],
       "used": true
     },
     "model": "name.sessionpurposename",
@@ -13697,7 +14698,9 @@
       "name": "Coding",
       "on_agenda": true,
       "order": 4,
-      "timeslot_types": "[\n    \"other\"\n]",
+      "timeslot_types": [
+        "other"
+      ],
       "used": true
     },
     "model": "name.sessionpurposename",
@@ -13709,7 +14712,7 @@
       "name": "None",
       "on_agenda": true,
       "order": 0,
-      "timeslot_types": "[]",
+      "timeslot_types": [],
       "used": false
     },
     "model": "name.sessionpurposename",
@@ -13721,7 +14724,9 @@
       "name": "Office hours",
       "on_agenda": true,
       "order": 3,
-      "timeslot_types": "[\n    \"other\"\n]",
+      "timeslot_types": [
+        "other"
+      ],
       "used": true
     },
     "model": "name.sessionpurposename",
@@ -13733,7 +14738,9 @@
       "name": "Open meeting",
       "on_agenda": true,
       "order": 9,
-      "timeslot_types": "[\n    \"other\"\n]",
+      "timeslot_types": [
+        "other"
+      ],
       "used": true
     },
     "model": "name.sessionpurposename",
@@ -13745,7 +14752,9 @@
       "name": "Plenary",
       "on_agenda": true,
       "order": 7,
-      "timeslot_types": "[\n    \"plenary\"\n]",
+      "timeslot_types": [
+        "plenary"
+      ],
       "used": true
     },
     "model": "name.sessionpurposename",
@@ -13757,7 +14766,10 @@
       "name": "Presentation",
       "on_agenda": true,
       "order": 8,
-      "timeslot_types": "[\n    \"other\",\n    \"regular\"\n]",
+      "timeslot_types": [
+        "other",
+        "regular"
+      ],
       "used": true
     },
     "model": "name.sessionpurposename",
@@ -13769,7 +14781,9 @@
       "name": "Regular",
       "on_agenda": true,
       "order": 1,
-      "timeslot_types": "[\n    \"regular\"\n]",
+      "timeslot_types": [
+        "regular"
+      ],
       "used": true
     },
     "model": "name.sessionpurposename",
@@ -13781,7 +14795,10 @@
       "name": "Social",
       "on_agenda": true,
       "order": 6,
-      "timeslot_types": "[\n    \"break\",\n    \"other\"\n]",
+      "timeslot_types": [
+        "break",
+        "other"
+      ],
       "used": true
     },
     "model": "name.sessionpurposename",
@@ -13793,7 +14810,9 @@
       "name": "Tutorial",
       "on_agenda": true,
       "order": 2,
-      "timeslot_types": "[\n    \"other\"\n]",
+      "timeslot_types": [
+        "other"
+      ],
       "used": true
     },
     "model": "name.sessionpurposename",
@@ -16802,5 +17821,13 @@
     },
     "model": "stats.countryalias",
     "pk": 303
+  },
+  {
+    "fields": {
+      "alias": "czechia",
+      "country": "CZ"
+    },
+    "model": "stats.countryalias",
+    "pk": 304
   }
 ]

@@ -105,10 +105,11 @@
             "command": "/usr/local/bin/python",
             "args": [
                 "-m",
-                "smtpd",
+                "aiosmtpd",
                 "-n",
                 "-c",
-                "DebuggingServer",
+                "ietf.utils.aiosmtpd.DevDebuggingHandler",
+                "-l",
                 "localhost:2025"
             ],
             "presentation": {

@@ -1,42 +1,48 @@
-{# Copyright The IETF Trust 2007-2020, All Rights Reserved #}
+{# Copyright The IETF Trust 2007-2025, All Rights Reserved #}
+{% load django_bootstrap5 %}
+
 <div class="session-details-form my-3" data-prefix="{{ form.prefix }}">
     {% if hidden %}
         {{ form.name.as_hidden }}{{ form.purpose.as_hidden }}{{ form.type.as_hidden }}{{ form.requested_duration.as_hidden }}
         {{ form.has_onsite_tool.as_hidden }}
     {% else %}
-    <table>
-        <tbody>
         {% comment %}
         The form-group class is used by session_details_form.js to identify the correct element
         to hide the name / purpose / type fields when not needed. This is a bootstrap class - the
         secr app does not use it, so this (and the hidden class, also needed by session_details_form.js)
         are defined in edit.html and new.html as a kludge to make this work.
         {% endcomment %}
-      <tr class="form-group">
-                <th scope="row">{{ form.name.label_tag }}</th>
-                <td>{{ form.name }}{{ form.purpose.errors }}</td>
-            </tr>
-      <tr class="form-group">
-                <th scope="row">{{ form.purpose.label_tag }}</th>
-                <td>
-            {{ form.purpose }} <div class="form-group">{{ form.type }}</div>
-                    {{ form.purpose.errors }}{{ form.type.errors }}
-                </td>
-            </tr>
-            <tr>
-                <th scope="row">{{ form.requested_duration.label_tag }}</th>
-                <td>{{ form.requested_duration }}{{ form.requested_duration.errors }}</td>
-            </tr>
-            {% if not hide_onsite_tool_prompt %}
-            <tr>
-                <th scope="row">{{ form.has_onsite_tool.label_tag }}</th>
-                <td>{{ form.has_onsite_tool }}{{ form.has_onsite_tool.errors }}</td>
-            </tr>
-            {% endif %}
-            </tbody>
-        </table>
-        {% if hide_onsite_tool_prompt %}{{ form.has_onsite_tool.as_hidden }}{% endif %}
+
+        <div class="form-group">
+            {% bootstrap_field form.name layout="horizontal" %}
+        </div>
+
+        <div class="form-group">
+            <div class="row mb-3 g-3">
+                <label class="col-md-2 fw-bold col-form-label" for="{{ form.purpose.id_for_label }}">Purpose</label>
+                <div class="col-md-5">{{ form.purpose }}</div>
+                <div class="col-md-5 form-group">{{ form.type }}</div>
+                {{ form.purpose.errors }}{{ form.type.errors }}
+            </div>
+        </div>
+
+        {% bootstrap_field form.requested_duration layout="horizontal" %}
+        {% if not hide_onsite_tool_prompt %}
+            {% bootstrap_field form.has_onsite_tool layout="horizontal" %}
+        {% endif %}
+        
+        {% if hide_onsite_tool_prompt %}
+            {{ form.has_onsite_tool.as_hidden }}
+        {% endif %}
     {% endif %}
+
     {# hidden fields included whether or not the whole form is hidden #}
-    {{ form.attendees.as_hidden }}{{ form.comments.as_hidden }}{{ form.id.as_hidden }}{{ form.on_agenda.as_hidden }}{{ form.DELETE.as_hidden }}{{ form.remote_instructions.as_hidden }}{{ form.short.as_hidden }}{{ form.agenda_note.as_hidden }}
+    {{ form.attendees.as_hidden }}
+    {{ form.comments.as_hidden }}
+    {{ form.id.as_hidden }}
+    {{ form.on_agenda.as_hidden }}
+    {{ form.DELETE.as_hidden }}
+    {{ form.remote_instructions.as_hidden }}
+    {{ form.short.as_hidden }}
+    {{ form.agenda_note.as_hidden }}
 </div>

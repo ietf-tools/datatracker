@@ -1,0 +1,10 @@
+{% extends "admin/change_list.html" %}
+
+{% block search %}
+  {{ block.super }} {# This includes the original search form #}
+  {% if cl.search_fields %} {# Only show if search is enabled for the model #}
+    <p class="search-help-text" style="font-size: 0.85em; color: #666; margin-top: 5px;">
+      Hint: Search by: {{ cl.search_fields|join:", "|capfirst }}.
+    </p>
+  {% endif %}
+{% endblock %}

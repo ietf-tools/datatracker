@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2022, All Rights Reserved
+# Copyright The IETF Trust 2013-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -137,6 +137,10 @@ def has_role(user, role_names, *args, **kwargs):
                 group__type="sdo",
                 group__state="active",
             ),
+            "Liaison Coordinator": Q(
+                name="liaison_coordinator",
+                group__acronym="iab",
+            ),
             "Authorized Individual": Q(
                 name="auth",
                 group__type="sdo",
@@ -159,6 +163,7 @@ def has_role(user, role_names, *args, **kwargs):
                 | Q(name="atlarge", group__acronym="irsg")
             ),
             "RSAB Member": Q(name="member", group__acronym="rsab"),
+            "LLC Staff": Q(name="member", group__acronym="llc-staff"),
             "Robot": Q(name="robot", group__acronym="secretariat"),
         }
 
@@ -207,9 +212,9 @@ def role_required(*role_names):
 
 # specific permissions
 
+
 def is_authorized_in_doc_stream(user, doc):
-    """Return whether user is authorized to perform stream duties on
-    document."""
+    """Is user authorized to perform stream duties on doc?"""
     if has_role(user, ["Secretariat"]):
         return True
 
@@ -283,7 +288,7 @@ def is_individual_draft_author(user, doc):
     if not hasattr(user, 'person'):
         return False
 
-    if user.person in doc.authors():
+    if user.person in doc.author_persons():
         return True
 
     return False
@@ -346,13 +351,14 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
         )
 
     def scope_registration(self):
+        # import here to avoid circular imports
         from ietf.meeting.helpers import get_current_ietf_meeting
-        from ietf.stats.models import MeetingRegistration
+        from ietf.meeting.models import Registration
         meeting = get_current_ietf_meeting()
         person = self.user.person
         email_list = person.email_set.values_list('address')
         q = Q(person=person, meeting=meeting) | Q(email__in=email_list, meeting=meeting)
-        regs = MeetingRegistration.objects.filter(q).distinct()
+        regs = Registration.objects.filter(q).distinct()
         for reg in regs:
             if not reg.person_id:
                 reg.person = person
@@ -363,19 +369,20 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
             ticket_types = set([])
             reg_types = set([])
             for reg in regs:
-                ticket_types.add(reg.ticket_type)
-                reg_types.add(reg.reg_type)
+                for ticket in reg.tickets.all():
+                    ticket_types.add(ticket.ticket_type.slug)
+                    reg_types.add(ticket.attendance_type.slug)
             info = {
-                'meeting':      meeting.number,
+                'meeting': meeting.number,
                 # full_week, one_day, student:
-                'ticket_type':  ' '.join(ticket_types),
+                'ticket_type': ' '.join(ticket_types),
                 # onsite, remote, hackathon_onsite, hackathon_remote:
-                'reg_type':     ' '.join(reg_types),
-                'affiliation':  ([ reg.affiliation for reg in regs if reg.affiliation ] or [''])[0],
+                'reg_type': ' '.join(reg_types),
+                'affiliation': ([reg.affiliation for reg in regs if reg.affiliation] or [''])[0],
             }
 
         return info
-            
+
 def can_request_rfc_publication(user, doc):
     """Answers whether this user has an appropriate role to send this document to the RFC Editor for publication as an RFC.
 

@@ -98,7 +98,7 @@ class APITests(TestCase):
         api_response = api.schedule_meeting(
             wg_token='my-token',
             room_id=18,
-            start_time=datetime.datetime(2021, 9, 14, 10, 0, 0, tzinfo=datetime.timezone.utc),
+            start_time=datetime.datetime(2021, 9, 14, 10, 0, 0, tzinfo=datetime.UTC),
             duration=datetime.timedelta(minutes=130),
             description='interim-2021-wgname-01',
             extrainfo='message for staff',
@@ -127,7 +127,7 @@ class APITests(TestCase):
         )
         # same time in different time zones
         for start_time in [
-            datetime.datetime(2021, 9, 14, 10, 0, 0, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2021, 9, 14, 10, 0, 0, tzinfo=datetime.UTC),
             datetime.datetime(2021, 9, 14, 7, 0, 0, tzinfo=ZoneInfo('America/Halifax')),
             datetime.datetime(2021, 9, 14, 13, 0, 0, tzinfo=ZoneInfo('Europe/Kiev')),
             datetime.datetime(2021, 9, 14, 5, 0, 0, tzinfo=ZoneInfo('Pacific/Easter')),
@@ -198,7 +198,7 @@ class APITests(TestCase):
                     '3d55bce0-535e-4ba8-bb8e-734911cf3c32': {
                         'room': {
                             'id': 18,
-                            'start_time': datetime.datetime(2021, 9, 14, 10, 0, 0, tzinfo=datetime.timezone.utc),
+                            'start_time': datetime.datetime(2021, 9, 14, 10, 0, 0, tzinfo=datetime.UTC),
                             'duration': datetime.timedelta(minutes=130),
                             'description': 'interim-2021-wgname-01',
                         },
@@ -208,7 +208,7 @@ class APITests(TestCase):
                     'e68e96d4-d38f-475b-9073-ecab46ca96a5': {
                         'room': {
                             'id': 23,
-                            'start_time': datetime.datetime(2021, 9, 15, 14, 30, 0, tzinfo=datetime.timezone.utc),
+                            'start_time': datetime.datetime(2021, 9, 15, 14, 30, 0, tzinfo=datetime.UTC),
                             'duration': datetime.timedelta(minutes=30),
                             'description': 'interim-2021-wgname-02',
                         },
@@ -386,7 +386,7 @@ class APITests(TestCase):
 
     def test_time_serialization(self):
         """Time de/serialization should be consistent"""
-        time = timezone.now().astimezone(datetime.timezone.utc).replace(microsecond=0)  # cut off to 0 microseconds
+        time = timezone.now().astimezone(datetime.UTC).replace(microsecond=0)  # cut off to 0 microseconds
         api = MeetechoAPI(API_BASE, CLIENT_ID, CLIENT_SECRET)
         self.assertEqual(api._deserialize_time(api._serialize_time(time)), time)
 
@@ -400,7 +400,7 @@ class ConferenceManagerTests(TestCase):
                 'session-1-uuid': {
                     'room': {
                         'id': 1,
-                        'start_time': datetime.datetime(2022,2,4,1,2,3, tzinfo=datetime.timezone.utc),
+                        'start_time': datetime.datetime(2022,2,4,1,2,3, tzinfo=datetime.UTC),
                         'duration': datetime.timedelta(minutes=45),
                         'description': 'some-description',
                     },
@@ -410,7 +410,7 @@ class ConferenceManagerTests(TestCase):
                 'session-2-uuid': {
                     'room': {
                         'id': 2,
-                        'start_time': datetime.datetime(2022,2,5,4,5,6, tzinfo=datetime.timezone.utc),
+                        'start_time': datetime.datetime(2022,2,5,4,5,6, tzinfo=datetime.UTC),
                         'duration': datetime.timedelta(minutes=90),
                         'description': 'another-description',
                     },
@@ -427,7 +427,7 @@ class ConferenceManagerTests(TestCase):
                     id=1,
                     public_id='session-1-uuid',
                     description='some-description',
-                    start_time=datetime.datetime(2022, 2, 4, 1, 2, 3, tzinfo=datetime.timezone.utc),
+                    start_time=datetime.datetime(2022, 2, 4, 1, 2, 3, tzinfo=datetime.UTC),
                     duration=datetime.timedelta(minutes=45),
                     url='https://example.com/some/url',
                     deletion_token='delete-me',
@@ -437,7 +437,7 @@ class ConferenceManagerTests(TestCase):
                     id=2,
                     public_id='session-2-uuid',
                     description='another-description',
-                    start_time=datetime.datetime(2022, 2, 5, 4, 5, 6, tzinfo=datetime.timezone.utc),
+                    start_time=datetime.datetime(2022, 2, 5, 4, 5, 6, tzinfo=datetime.UTC),
                     duration=datetime.timedelta(minutes=90),
                     url='https://example.com/another/url',
                     deletion_token='delete-me-too',
@@ -453,7 +453,7 @@ class ConferenceManagerTests(TestCase):
                 'session-1-uuid': {
                     'room': {
                         'id': 1,
-                        'start_time': datetime.datetime(2022,2,4,1,2,3, tzinfo=datetime.timezone.utc),
+                        'start_time': datetime.datetime(2022,2,4,1,2,3, tzinfo=datetime.UTC),
                         'duration': datetime.timedelta(minutes=45),
                         'description': 'some-description',
                     },
@@ -472,7 +472,7 @@ class ConferenceManagerTests(TestCase):
                 id=1,
                 public_id='session-1-uuid',
                 description='some-description',
-                start_time=datetime.datetime(2022,2,4,1,2,3, tzinfo=datetime.timezone.utc),
+                start_time=datetime.datetime(2022,2,4,1,2,3, tzinfo=datetime.UTC),
                 duration=datetime.timedelta(minutes=45),
                 url='https://example.com/some/url',
                 deletion_token='delete-me',
@@ -488,7 +488,7 @@ class ConferenceManagerTests(TestCase):
                 'session-1-uuid': {
                     'room': {
                         'id': 1,  # value should match session_id param to cm.create() below 
-                        'start_time': datetime.datetime(2022,2,4,1,2,3, tzinfo=datetime.timezone.utc),
+                        'start_time': datetime.datetime(2022,2,4,1,2,3, tzinfo=datetime.UTC),
                         'duration': datetime.timedelta(minutes=45),
                         'description': 'some-description',
                     },
@@ -506,7 +506,7 @@ class ConferenceManagerTests(TestCase):
                 id=1,
                 public_id='session-1-uuid',
                 description='some-description',
-                start_time=datetime.datetime(2022,2,4,1,2,3, tzinfo=datetime.timezone.utc),
+                start_time=datetime.datetime(2022,2,4,1,2,3, tzinfo=datetime.UTC),
                 duration=datetime.timedelta(minutes=45),
                 url='https://example.com/some/url',
                 deletion_token='delete-me',
@@ -547,7 +547,8 @@ class SlidesManagerTests(TestCase):
         sm = SlidesManager(settings.MEETECHO_API_CONFIG)
         session = SessionFactory()
         slides_doc = DocumentFactory(type_id="slides")
-        sm.add(session, slides_doc, 13)
+        retval = sm.add(session, slides_doc, 13)
+        self.assertIs(retval, True)
         self.assertTrue(mock_wg_token.called)
         self.assertTrue(mock_add.called)
         self.assertEqual(
@@ -565,6 +566,14 @@ class SlidesManagerTests(TestCase):
             ),
         )
 
+        # Test return value when no update is sent. Really ought to do a more
+        # careful test of the _should_send_update() method.
+        sm = SlidesManager(
+            settings.MEETECHO_API_CONFIG | {"slides_notify_time": None}
+        )
+        retval = sm.add(session, slides_doc, 14)
+        self.assertIs(retval, False)
+
     @patch("ietf.utils.meetecho.MeetechoAPI.update_slide_decks")
     @patch("ietf.utils.meetecho.MeetechoAPI.delete_slide_deck")
     def test_delete(self, mock_delete, mock_update, mock_wg_token):
@@ -580,7 +589,8 @@ class SlidesManagerTests(TestCase):
             sm.delete(session, slides_doc)  # can't remove slides still attached to the session
         self.assertFalse(any([mock_wg_token.called, mock_delete.called, mock_update.called]))
 
-        sm.delete(session, removed_slides_doc)
+        retval = sm.delete(session, removed_slides_doc)
+        self.assertIs(retval, True)
         self.assertTrue(mock_wg_token.called)
         self.assertTrue(mock_delete.called)
         self.assertEqual(
@@ -609,9 +619,18 @@ class SlidesManagerTests(TestCase):
         
         # Delete the other session and check that we don't make the update call
         slides.delete()
-        sm.delete(session, slides_doc)
+        retval = sm.delete(session, slides_doc)
+        self.assertIs(retval, True)
         self.assertTrue(mock_delete.called)
         self.assertFalse(mock_update.called)
+        
+        # Test return value when no update is sent. Really ought to do a more
+        # careful test of the _should_send_update() method.
+        sm = SlidesManager(
+            settings.MEETECHO_API_CONFIG | {"slides_notify_time": None}
+        )
+        retval = sm.delete(session, slides_doc)
+        self.assertIs(retval, False)
 
     @patch("ietf.utils.meetecho.MeetechoAPI.delete_slide_deck")
     @patch("ietf.utils.meetecho.MeetechoAPI.add_slide_deck")
@@ -619,7 +638,8 @@ class SlidesManagerTests(TestCase):
         sm = SlidesManager(settings.MEETECHO_API_CONFIG)
         slides = SessionPresentationFactory(document__type_id="slides", order=23)
         slides_doc = slides.document
-        sm.revise(slides.session, slides.document)
+        retval = sm.revise(slides.session, slides_doc)
+        self.assertIs(retval, True)
         self.assertTrue(mock_wg_token.called)
         self.assertTrue(mock_delete.called)
         self.assertEqual(
@@ -642,13 +662,22 @@ class SlidesManagerTests(TestCase):
             ),
         )
 
+        # Test return value when no update is sent. Really ought to do a more
+        # careful test of the _should_send_update() method.
+        sm = SlidesManager(
+            settings.MEETECHO_API_CONFIG | {"slides_notify_time": None}
+        )
+        retval = sm.revise(slides.session, slides_doc)
+        self.assertIs(retval, False)
+
 
     @patch("ietf.utils.meetecho.MeetechoAPI.update_slide_decks")
     def test_send_update(self, mock_send_update, mock_wg_token):
         sm = SlidesManager(settings.MEETECHO_API_CONFIG)
         slides = SessionPresentationFactory(document__type_id="slides")
         SessionPresentationFactory(session=slides.session, document__type_id="agenda")
-        sm.send_update(slides.session)
+        retval = sm.send_update(slides.session)
+        self.assertIs(retval, True)
         self.assertTrue(mock_wg_token.called)
         self.assertTrue(mock_send_update.called)
         self.assertEqual(
@@ -667,3 +696,11 @@ class SlidesManagerTests(TestCase):
                 ]
             )
         )
+
+        # Test return value when no update is sent. Really ought to do a more
+        # careful test of the _should_send_update() method.
+        sm = SlidesManager(
+            settings.MEETECHO_API_CONFIG | {"slides_notify_time": None}
+        )
+        retval = sm.send_update(slides.session)
+        self.assertIs(retval, False)

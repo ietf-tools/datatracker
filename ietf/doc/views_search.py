@@ -41,13 +41,14 @@ import copy
 import operator
 
 from collections import defaultdict
+from django_stubs_ext import QuerySetAny
 from functools import reduce
 
 from django import forms
 from django.conf import settings
 from django.core.cache import cache, caches
 from django.urls import reverse as urlreverse
-from django.db.models import Q
+from django.db.models import Model, Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect, QueryDict
 from django.shortcuts import render
 from django.utils import timezone
@@ -55,11 +56,10 @@ from django.utils.html import strip_tags
 from django.utils.cache import _generate_cache_key # type: ignore
 from django.utils.text import slugify
 
-
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, DocHistory, State,
-    LastCallDocEvent, NewRevisionDocEvent, IESG_SUBSTATE_TAGS,
+from ietf.doc.models import ( Document, DocHistory, DocumentAuthor, RelatedDocument,
+    RfcAuthor, State, NewRevisionDocEvent, IESG_SUBSTATE_TAGS,
     IESG_BALLOT_ACTIVE_STATES, IESG_STATCHG_CONFLREV_ACTIVE_STATES,
     IESG_CHARTER_ACTIVE_STATES )
 from ietf.doc.fields import select2_id_doc_name_json
@@ -74,7 +74,7 @@ from ietf.utils.fields import ModelMultipleChoiceField
 from ietf.utils.log import log
 from ietf.doc.utils_search import prepare_document_table, doc_type, doc_state, doc_type_name, AD_WORKLOAD
 from ietf.ietfauth.utils import has_role
-
+from ietf.utils.unicodenormalize import normalize_for_sorting
 
 class SearchForm(forms.Form):
     name = forms.CharField(required=False)
@@ -196,30 +196,41 @@ def retrieve_search_results(form, all_types=False):
                     Q(title__icontains=singlespace)            
                 ])        
 
+        # Matches against a related document are expressed as a subquery on pk rather
+        # than by following the multi-valued `targets_related` relation. A join here
+        # would cross-multiply with any other multi-valued relation ORed into the same
+        # filter (notably the author search below), and the intermediate result explodes.
+        def related_source_matches(relationship, **source_lookup):
+            return Q(
+                pk__in=RelatedDocument.objects.filter(
+                    relationship_id=relationship, **source_lookup
+                ).values("target_id")
+            )
+
         # Do a similar thing if the search is just for a subseries doc, like a bcp.
         if look_for.lower()[:3] in ["bcp", "fyi", "std"] and look_for[3:].strip().isdigit() and query["rfcs"]: # Also look for rfcs contained in the subseries.
             queries.extend([
-                Q(targets_related__source__name__icontains=look_for, targets_related__relationship_id="contains"),
-                Q(targets_related__source__title__icontains=look_for, targets_related__relationship_id="contains"),
+                related_source_matches("contains", source__name__icontains=look_for),
+                related_source_matches("contains", source__title__icontains=look_for),
             ])
             spaceless = look_for.lower()[:3]+look_for[3:].strip()
             if spaceless != look_for:
                 queries.extend([
-                    Q(targets_related__source__name__icontains=spaceless, targets_related__relationship_id="contains"),
-                    Q(targets_related__source__title__icontains=spaceless, targets_related__relationship_id="contains"),
+                    related_source_matches("contains", source__name__icontains=spaceless),
+                    related_source_matches("contains", source__title__icontains=spaceless),
                 ])
             singlespace = look_for.lower()[:3]+" "+look_for[3:].strip()
             if singlespace != look_for:
                 queries.extend([
-                    Q(targets_related__source__name__icontains=singlespace, targets_related__relationship_id="contains"),
-                    Q(targets_related__source__title__icontains=singlespace, targets_related__relationship_id="contains"),
+                    related_source_matches("contains", source__name__icontains=singlespace),
+                    related_source_matches("contains", source__title__icontains=singlespace),
                 ])
 
         if query["rfcs"]:
-            queries.extend([Q(targets_related__source__name__icontains=look_for, targets_related__relationship_id="became_rfc")])
+            queries.append(related_source_matches("became_rfc", source__name__icontains=look_for))
 
         combined_query = reduce(operator.or_, queries)
-        docs = docs.filter(combined_query).distinct()
+        docs = docs.filter(combined_query)
 
     # rfc/active/old check buttons
     allowed_draft_states = []
@@ -228,21 +239,47 @@ def retrieve_search_results(form, all_types=False):
     if query["olddrafts"]:
         allowed_draft_states.extend(['repl', 'expired', 'auth-rm', 'ietf-rm'])
 
-    docs = docs.filter(Q(states__slug__in=allowed_draft_states) |
-                       ~Q(type__slug='draft')).distinct()
+    if allowed_draft_states:
+        # Subquery rather than a join on `states`: a document has several state rows, so
+        # joining here duplicates every document that passes the ~Q(type__slug='draft')
+        # half of the OR, which is what forced the distinct() this function used to end
+        # with. See the comment before the return.
+        docs = docs.filter(
+            ~Q(type__slug='draft')
+            | Q(pk__in=Document.states.through.objects.filter(
+                state__slug__in=allowed_draft_states
+            ).values("document_id"))
+        )
+    elif all_types:
+        # No draft state is allowed, so no draft can match. Only the all_types path can
+        # still be holding drafts at this point -- when types drives the queryset above,
+        # "draft" is in it only if at least one draft state is allowed.
+        docs = docs.exclude(type__slug='draft')
 
     # radio choices
     by = query["by"]
     if by == "author":
+        # Resolve the name or address to people first and match documents against those
+        # people by primary key. Expressed as ORed joins, the documentauthor and
+        # rfcauthor paths (each reaching person -> alias and person -> email) cross-
+        # multiply into an enormous intermediate result.
+        author = query["author"]
+        person_ids = Person.objects.filter(
+            Q(alias__name__icontains=author) | Q(email__address__icontains=author)
+        ).values("pk")
         docs = docs.filter(
-            Q(documentauthor__person__alias__name__icontains=query["author"]) |
-            Q(documentauthor__person__email__address__icontains=query["author"])
+            Q(pk__in=DocumentAuthor.objects.filter(
+                person__in=person_ids
+            ).values("document_id"))
+            | Q(pk__in=RfcAuthor.objects.filter(
+                Q(person__in=person_ids) | Q(titlepage_name__icontains=author)
+            ).values("document_id"))
         )
     elif by == "group":
         docs = docs.filter(group__acronym__iexact=query["group"])
     elif by == "area":
         docs = docs.filter(Q(group__type="wg", group__parent=query["area"]) |
-                           Q(group=query["area"])).distinct()
+                           Q(group=query["area"]))
     elif by == "ad":
         docs = docs.filter(ad=query["ad"])
     elif by == "state":
@@ -255,16 +292,53 @@ def retrieve_search_results(form, all_types=False):
     elif by == "stream":
         docs = docs.filter(stream=query["stream"])
 
+    # No distinct() here: every filter above matches a document at most once. The
+    # multi-valued relations (documentauthor, rfcauthor, targets_related, states) are all
+    # reached through pk subqueries, and the remaining `states`/`tags` filters match a
+    # single specific row. A distinct() would be applied to the full column list -- which
+    # prepare_document_table then widens further with select_related() -- and force a sort
+    # over every selected column, including abstract, biography and group description.
+    # If a multi-valued join is ever added back above, restore the distinct() with it.
+
+    # order by time here to retain the most recent documents in case we
+    # find too many and have to chop the results list in prepare_document_table.
+    # `time` alone is not a total order -- documents sharing a timestamp to the second
+    # are common -- so tie-break on pk. Without it the set of documents kept by that
+    # truncation, and the order prepare_document_table's stable sort falls back to for
+    # equal sort keys, both vary from one execution to the next.
+    docs = docs.order_by('-time', 'pk')
+
     return docs
 
 
-def search(request):
-    def _get_cache_key(params):
-        fields = set(SearchForm.base_fields) - {'sort'}
-        kwargs = dict([(k, v) for (k, v) in list(params.items()) if k in fields])
-        key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True).encode('utf-8')).hexdigest()
-        return key
+def _search_cache_key(form):
+    """Cache key for a validated SearchForm.
 
+    Derived from cleaned_data rather than the raw query string. The raw parameters vary
+    in ways that do not change the search ("on" vs "1" for a checkbox), and
+    QueryDict.items() returns only the last value of a multi-valued field, so
+    ?doctypes=charter&doctypes=statchg and ?doctypes=statchg used to share a key and
+    serve each other's results.
+
+    'sort' is excluded deliberately: the cached value is the list of matching document
+    ids, and prepare_document_table applies the requested sort on every request, so one
+    entry serves every sort order.
+    """
+    def normalize(value):
+        if isinstance(value, QuerySetAny):         # ModelMultipleChoiceField, e.g. doctypes
+            return sorted(str(obj.pk) for obj in value)
+        if isinstance(value, Model):            # ModelChoiceField, e.g. area, state
+            return str(value.pk)
+        return value
+
+    kwargs = {k: normalize(v) for k, v in form.cleaned_data.items() if k != "sort"}
+    digest = hashlib.sha512(
+        json.dumps(kwargs, sort_keys=True, default=str).encode("utf-8")
+    ).hexdigest()
+    return "doc:document:search:" + digest
+
+
+def search(request):
     if request.GET:
         # backwards compatibility
         get_params = request.GET.copy()
@@ -279,15 +353,31 @@ def search(request):
         if not form.is_valid():
             return HttpResponseBadRequest("form not valid: %s" % form.errors)
 
-        cache_key = _get_cache_key(get_params)
-        cached_val = cache.get(cache_key)
-        if cached_val:
-            [results, meta] = cached_val
-        else:
+        # Cache the ids of the matching documents, not the prepared Document objects.
+        # Pickling the prepared objects produced payloads over memcached's 1MB item
+        # limit for large result sets (measured at 1.28MB for 200 rows), which
+        # LenientMemcacheCache silently discards -- so the most expensive searches were
+        # never cached at all. It also meant a cached result carried the sort order it
+        # was first computed with, since 'sort' is not part of the key.
+        cache_key = _search_cache_key(form)
+        cached_pks = cache.get(cache_key)
+        if cached_pks is None:
             results = retrieve_search_results(form)
             results, meta = prepare_document_table(request, results, get_params)
-            cache.set(cache_key, [results, meta]) # for settings.CACHE_MIDDLEWARE_SECONDS
+            cache.set(  # for settings.CACHE_MIDDLEWARE_SECONDS
+                cache_key, [doc.pk for doc in results]
+            )
             log(f"Search results computed for {get_params}")
+        else:
+            # Same ordering as retrieve_search_results, so a hit hands
+            # prepare_document_table the rows in the order the miss did. Its sort is
+            # stable and several sort keys tie heavily (ipr, status, ad), so an
+            # unordered pk__in here would reorder those pages between requests.
+            results, meta = prepare_document_table(
+                request,
+                Document.objects.filter(pk__in=cached_pks).order_by('-time', 'pk'),
+                get_params,
+            )
         meta['searching'] = True
     else:
         form = SearchForm()
@@ -480,6 +570,7 @@ def ad_workload(request):
     ).distinct():
         if p in get_active_ads():
             ads.append(p)
+    ads.sort(key=lambda p: normalize_for_sorting(p.plain_name()))
 
     bucket_template = {
         dt: {state: [[] for _ in range(days)] for state in STATE_SLUGS[dt].values()}
@@ -665,6 +756,7 @@ def docs_for_ad(request, name):
                 r.get_state_slug("draft-iesg") == "dead"
                 or r.get_state_slug("draft") == "repl"
                 or r.get_state_slug("draft") == "rfc"
+                or (r.get_state_slug("draft") == "expired" and r.get_state_slug("draft-iesg") == "idexists")
             )
         )
     ]
@@ -752,6 +844,90 @@ def docs_for_ad(request, name):
     )
 
 
+def docs_for_iesg(request):
+    def sort_key(doc):
+        dt = doc_type(doc)
+        dt_key = list(AD_WORKLOAD.keys()).index(dt)
+        ds = doc_state(doc)
+        ds_key = AD_WORKLOAD[dt].index(ds) if ds in AD_WORKLOAD[dt] else 99
+        return dt_key * 100 + ds_key
+
+    results, meta = prepare_document_table(
+        request,
+        Document.objects.filter(
+            ad__in=Person.objects.filter(
+                Q(
+                    role__name__in=("pre-ad", "ad"),
+                    role__group__type="area",
+                    role__group__state="active",
+                )
+            )
+        ).exclude(
+            type_id="rfc",
+        ).exclude(
+            type_id="draft",
+            states__type="draft", 
+            states__slug__in=["repl", "rfc"],
+        ).exclude(
+            type_id="draft",
+            states__type="draft-iesg",
+            states__slug__in=["idexists", "rfcqueue"],
+        ).exclude(
+            type_id="conflrev",
+            states__type="conflrev",
+            states__slug__in=["appr-noprob-sent", "appr-reqnopub-sent", "withdraw", "dead"],
+        ).exclude(
+            type_id="statchg",
+            states__type="statchg",
+            states__slug__in=["appr-sent", "dead"],
+        ).exclude(
+            type_id="charter",
+            states__type="charter",
+            states__slug__in=["notrev", "infrev", "approved", "replaced"],
+        ),
+        max_results=1000,
+        show_ad_and_shepherd=True,
+    )
+    results.sort(key=lambda d: sort_key(d))
+
+    # filter out some results
+    results = [
+        r
+        for r in results
+        if not (
+            r.type_id == "charter"
+            and (
+                r.group.state_id == "abandon"
+                or r.get_state_slug("charter") == "replaced"
+            )
+        )
+        and not (
+            r.type_id == "draft"
+            and (
+                r.get_state_slug("draft-iesg") == "dead"
+                or r.get_state_slug("draft") == "repl"
+                or r.get_state_slug("draft") == "rfc"
+            )
+        )
+    ]
+
+    _calculate_state_name = get_state_name_calculator()
+    for d in results:
+        dt = d.type.slug
+        d.search_heading = _calculate_state_name(dt, doc_state(d))
+        if d.search_heading != "RFC":
+            d.search_heading += f" {doc_type_name(dt)}"
+
+    return render(
+        request,
+        "doc/drafts_for_iesg.html",
+        {
+            "docs": results,
+            "meta": meta,
+        },
+    )
+
+
 def drafts_in_last_call(request):
     lc_state = State.objects.get(type="draft-iesg", slug="lc").pk
     form = SearchForm({'by':'state','state': lc_state, 'rfcs':'on', 'activedrafts':'on'})
@@ -763,31 +939,6 @@ def drafts_in_last_call(request):
     return render(request, 'doc/drafts_in_last_call.html', {
         'form':form, 'docs':results, 'meta':meta, 'pages':pages
     })
-
-def drafts_in_iesg_process(request):
-    states = State.objects.filter(type="draft-iesg").exclude(slug__in=('idexists', 'pub', 'dead', 'rfcqueue'))
-    title = "Documents in IESG process"
-
-    grouped_docs = []
-
-    for s in states.order_by("order"):
-        docs = Document.objects.filter(type="draft", states=s).distinct().order_by("time").select_related("ad", "group", "group__parent")
-        if docs:
-            if s.slug == "lc":
-                for d in docs:
-                    e = d.latest_event(LastCallDocEvent, type="sent_last_call")
-                    # If we don't have an event, use an arbitrary date in the past (but not datetime.datetime.min,
-                    # which causes problems with timezone conversions)
-                    d.lc_expires = e.expires if e else datetime.datetime(1950, 1, 1)
-                docs = list(docs)
-                docs.sort(key=lambda d: d.lc_expires)
-
-            grouped_docs.append((s, docs))
-
-    return render(request, 'doc/drafts_in_iesg_process.html', {
-            "grouped_docs": grouped_docs,
-            "title": title,
-            })
 
 def recent_drafts(request, days=7):
     slowcache = caches['slowpages']

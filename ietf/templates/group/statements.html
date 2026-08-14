@@ -12,8 +12,8 @@
     {% if request.user|has_role:"Secretariat" %}
     <div class="buttonlist">
         <a id="start_button"
-           class="btn btn-primary"
-           href="{% url 'ietf.doc.views_statement.new_statement' %}">
+        class="btn btn-primary"
+        href="{% url 'ietf.doc.views_statement.new_statement' %}">
             Start New Statement
         </a>
     </div>
@@ -25,16 +25,25 @@
                 <th scope="col" data-sort="statement">Statement</th>
             </tr>
         </thead>
+{% regroup statements by status as grouped_statements %}
+{% for statement_group in grouped_statements %}
         <tbody>
-            {% for statement in statements %}
+            <tr class="table-info">
+                <th scope="col" colspan="2">
+                {{ statement_group.grouper|title }} {{"Statement"|plural:statement_group.list }} ({{ statement_group.list|length }} {{"hit"|plural:statement_group.list }})
+                </th>
+            </tr>
+        </tbody>
+        <tbody>
+        {% for statement in statement_group.list %}
             <tr>
                 <td title="{{ statement.published|date:'Y-m-d H:i:s O' }}">{{ statement.published|date:"Y-m-d" }}</td>
                 <td><a href="{% url 'ietf.doc.views_doc.document_main' name=statement.name %}">{{statement.title}}</a>
-                    {% if statement.status == "replaced" %}<span class="badge rounded-pill text-bg-warning">Replaced</span>{% endif %}
                 </td>
             </tr>
-            {% endfor %}
+        {% endfor %}   
         </tbody>
+{% endfor %}
     </table>
 {% endblock %}
 {% block js %}

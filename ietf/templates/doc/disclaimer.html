@@ -3,9 +3,15 @@
 {% load ietf_filters %}
 {% origin %}
 {% if doc.type_id == "rfc" %}
-    {% if doc.stream.slug != "ietf" and doc.std_level.slug|default:"unk" not in "bcp,ds,ps,std"|split:"," %}
+    {% if doc.stream.slug != "ietf" and doc.stream.desc != "Legacy" and doc.std_level.slug|default:"unk" not in "bcp,ds,ps,std"|split:"," %}
         <div class="alert alert-warning {% if document_html %}small p-2 mt-2{% endif %}" role="alert">
             This RFC was published on the {{ doc.stream.desc }} stream.
+            This RFC is <strong>not endorsed by the IETF</strong> and has <strong>no formal standing</strong> in the
+            <a href="{% url 'ietf.doc.views_doc.document_main' name='rfc2026' %}">IETF standards process</a>.
+        </div>
+    {% elif doc.stream.slug != "ietf" and doc.stream.desc == "Legacy" and doc.std_level.slug|default:"unk" not in "bcp,ds,ps,std"|split:"," %}	
+        <div class="alert alert-warning {% if document_html %}small p-2 mt-2{% endif %}" role="alert">
+            This RFC is labeled as "{{ doc.stream.desc }}"; it was published before a formal source was recorded.
             This RFC is <strong>not endorsed by the IETF</strong> and has <strong>no formal standing</strong> in the
             <a href="{% url 'ietf.doc.views_doc.document_main' name='rfc2026' %}">IETF standards process</a>.
         </div>

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2020, All Rights Reserved
+# Copyright The IETF Trust 2009-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Portion Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
@@ -48,18 +48,16 @@ import pathlib
 import subprocess
 import tempfile
 import copy
+from contextlib import contextmanager
+
 import boto3
 import botocore.config
 import factory.random
 import urllib3
 import warnings
+
+from typing import Callable, Optional
 from urllib.parse import urlencode
-
-from fnmatch import fnmatch
-
-from coverage.report import Reporter
-from coverage.results import Numbers
-from coverage.misc import NotPython
 
 import django
 from django.conf import settings
@@ -72,7 +70,7 @@ from django.template import TemplateDoesNotExist
 from django.template.loaders.filesystem import Loader as BaseLoader
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
-from django.urls import URLResolver # type: ignore
+from django.urls import URLResolver, resolve, Resolver404  # type: ignore
 from django.template.backends.django import DjangoTemplates
 from django.template.backends.django import Template  # type: ignore[attr-defined]
 from django.utils import timezone
@@ -84,22 +82,46 @@ debug.debug = True
 import ietf
 import ietf.utils.mail
 from ietf.utils.management.commands import pyflakes
-from ietf.utils.test_smtpserver import SMTPTestServerDriver
+from ietf.utils.aiosmtpd import SMTPTestServerDriver
 from ietf.utils.test_utils import TestCase
 
 from mypy_boto3_s3.service_resource import Bucket
 
 
-loaded_templates = set()
-visited_urls = set()
-test_database_name = None
-old_destroy = None
-old_create = None
+class UrlCoverageWarning(UserWarning):
+    """Warning category for URL coverage-related warnings"""
+    # URLs for which we don't expect patterns to match
+    IGNORE_URLS = (
+        "/_doesnotexist/",
+        "/sitemap.xml.",
+    )
 
-template_coverage_collection = None
-code_coverage_collection = None
-url_coverage_collection = None
+
+class UninterestingPatternWarning(UrlCoverageWarning):
+    """Warning category for unexpected URL match patterns
+    
+    These are common, caused by tests that hit a URL that is not selected for
+    coverage checking. The warning is in place to help with a putative future 
+    review of whether we're selecting the right patterns to check for coverage. 
+    """
+    pass
+
+
+# Configure warnings for reasonable output quantity
+warnings.simplefilter("once", UrlCoverageWarning)
+warnings.simplefilter("ignore", UninterestingPatternWarning)
+
+
+loaded_templates: set[str] = set()
+visited_urls: set[str] = set()
+test_database_name: Optional[str] = None
+old_destroy: Optional[Callable] = None
+old_create: Optional[Callable] = None
+
+template_coverage_collection = False
+url_coverage_collection = False
 validation_settings = {"validate_html": None, "validate_html_harder": None, "show_logging": False}
+
 
 def start_vnu_server(port=8888):
     "Start a vnu validation server on the indicated port"
@@ -230,10 +252,12 @@ def load_and_run_fixtures(verbosity):
             fn()
 
 def safe_create_test_db(self, verbosity, *args, **kwargs):
-    global test_database_name, old_create
+    if old_create is None:
+        raise RuntimeError("old_create has not been set, cannot proceed")
     keepdb = kwargs.get('keepdb', False)
     if not keepdb:
         print("     Creating test database...")
+    global test_database_name
     test_database_name = old_create(self, 0, *args, **kwargs)
 
     if settings.GLOBAL_TEST_FIXTURES:
@@ -243,8 +267,9 @@ def safe_create_test_db(self, verbosity, *args, **kwargs):
     return test_database_name
 
 def safe_destroy_test_db(*args, **kwargs):
+    if old_destroy is None:
+        raise RuntimeError("old_destroy has not been set, cannot proceed")
     sys.stdout.write('\n')
-    global test_database_name, old_destroy
     keepdb = kwargs.get('keepdb', False)
     if not keepdb:
         if settings.DATABASES["default"]["NAME"] != test_database_name:
@@ -263,7 +288,14 @@ class PyFlakesTestCase(TestCase):
         path = os.path.join(settings.BASE_DIR)
         warnings = []
         warnings = pyflakes.checkPaths([path], verbosity=0)
-        self.assertEqual([], [str(w) for w in warnings])
+
+        # Filter out warnings about unused global variables
+        filtered_warnings = [
+            w for w in warnings
+            if not re.search(r"`global \w+` is unused: name is never assigned in scope", str(w))
+        ]
+
+        self.assertEqual([], [str(w) for w in filtered_warnings])
 
 class MyPyTest(TestCase):
 
@@ -351,15 +383,13 @@ class TemplateCoverageLoader(BaseLoader):
     is_usable = True
 
     def get_template(self, template_name, skip=None):
-        global template_coverage_collection, loaded_templates
-        if template_coverage_collection == True:
+        if template_coverage_collection:
             loaded_templates.add(str(template_name))
         raise TemplateDoesNotExist(template_name)
 
 def record_urls_middleware(get_response):
     def record_urls(request):
-        global url_coverage_collection, visited_urls
-        if url_coverage_collection == True:
+        if url_coverage_collection:
             visited_urls.add(request.path)
         return get_response(request)
     return record_urls
@@ -405,8 +435,9 @@ def get_url_patterns(module, apps=None):
             res.append((str(item.pattern), item))
     return res
 
+
 _all_templates = None
-def get_template_paths(apps=None):
+def get_template_paths(apps=None) -> list[str]:
     global _all_templates
     if not _all_templates:
         # TODO: Add app templates to the full list, if we are using
@@ -415,24 +446,29 @@ def get_template_paths(apps=None):
         templatepaths = settings.TEMPLATES[0]['DIRS']
         for templatepath in templatepaths:
             for dirpath, dirs, files in os.walk(templatepath):
-                if ".svn" in dirs:
-                    dirs.remove(".svn")
-                relative_path = dirpath[len(templatepath)+1:]
-                for file in files:
-                    ignore = False
-                    for pattern in settings.TEST_TEMPLATE_IGNORE:
-                        if fnmatch(file, pattern):
-                            ignore = True
-                            break
-                    if ignore:
-                        continue
-                    if relative_path != "":
-                        file = os.path.join(relative_path, file)
-                    templates.add(file)
-        if apps:
-            templates = [ t for t in templates if t.split(os.path.sep)[0] in apps ]
-        _all_templates = templates
+                # glob against path from PROJECT_DIR
+                project_path = pathlib.Path(
+                    dirpath.removeprefix(settings.PROJECT_DIR).lstrip("/") 
+                )
+                # label entries with name relative to templatepath
+                relative_path = pathlib.Path(
+                    dirpath.removeprefix(templatepath).lstrip("/")
+                )
+                if (
+                    apps 
+                    and len(relative_path.parts) > 0
+                    and relative_path.parts[0] not in apps
+                ):
+                    continue  # skip uninteresting apps
+                for filename in files:
+                    file_path = project_path / filename
+                    if not any(
+                        file_path.match(pat) for pat in settings.TEST_TEMPLATE_IGNORE
+                    ):
+                        templates.add(relative_path / filename)
+        _all_templates = [str(t) for t in templates]
     return _all_templates
+
 
 def save_test_results(failures, test_labels):
     # Record the test result in a file, in order to be able to check the
@@ -449,50 +485,29 @@ def save_test_results(failures, test_labels):
             tfile.write("%s OK\n" % (timestr, ))
     tfile.close()
 
-def set_coverage_checking(flag=True):
+
+def set_template_coverage(flag):
     global template_coverage_collection
-    global code_coverage_collection
+    orig = template_coverage_collection
+    template_coverage_collection = flag
+    return orig
+
+
+def set_url_coverage(flag):
     global url_coverage_collection
-    if settings.SERVER_MODE == 'test':
-        if flag:
-            settings.TEST_CODE_COVERAGE_CHECKER.collector.resume()
-            template_coverage_collection = True
-            code_coverage_collection = True
-            url_coverage_collection = True
-        else:
-            settings.TEST_CODE_COVERAGE_CHECKER.collector.pause()
-            template_coverage_collection = False
-            code_coverage_collection = False
-            url_coverage_collection = False
+    orig = url_coverage_collection
+    url_coverage_collection = flag
+    return orig
 
-class CoverageReporter(Reporter):
-    def report(self):
-        self.find_file_reporters(None)
 
-        total = Numbers()
-        result = {"coverage": 0.0, "covered": {}, "format": 5, }
-        for fr in self.file_reporters:
-            try:
-                analysis = self.coverage._analyze(fr)
-                nums = analysis.numbers
-                missing_nums = sorted(analysis.missing)
-                with io.open(analysis.filename, encoding='utf-8') as file:
-                    lines = file.read().splitlines()
-                missing_lines = [ lines[l-1] for l in missing_nums ]
-                result["covered"][fr.relative_filename()] = (nums.n_statements, nums.pc_covered/100.0, missing_nums, missing_lines)
-                total += nums
-            except KeyboardInterrupt:                   # pragma: not covered
-                raise
-            except Exception:
-                report_it = not self.config.ignore_errors
-                if report_it:
-                    typ, msg = sys.exc_info()[:2]
-                    if typ is NotPython and not fr.should_be_python():
-                        report_it = False
-                if report_it:
-                    raise
-        result["coverage"] = total.pc_covered/100.0
-        return result
+@contextmanager
+def disable_coverage():
+    """Context manager/decorator that disables template/url coverage"""
+    orig_template = set_template_coverage(False)
+    orig_url = set_url_coverage(False)
+    yield
+    set_template_coverage(orig_template)
+    set_url_coverage(orig_url)
 
 
 class CoverageTest(unittest.TestCase):
@@ -525,7 +540,6 @@ class CoverageTest(unittest.TestCase):
                             ( test, test_coverage*100, latest_coverage_version, master_coverage*100, ))
 
     def template_coverage_test(self):
-        global loaded_templates
         if self.runner.check_coverage:
             apps = [ app.split('.')[-1] for app in self.runner.test_apps ]
             all = get_template_paths(apps)
@@ -560,44 +574,62 @@ class CoverageTest(unittest.TestCase):
                         )
                         or pattern.callback == django.views.static.serve)
 
-            patterns = [(regex, re.compile(regex, re.U), obj) for regex, obj in url_patterns
-                        if not ignore_pattern(regex, obj)]
+            patterns ={
+                regex: obj
+                for regex, obj in url_patterns
+                if not ignore_pattern(regex, obj)
+            }
 
             covered = set()
             for url in visited_urls:
-                for regex, compiled, obj in patterns:
-                    if regex not in covered and compiled.match(url[1:]): # strip leading /
-                        covered.add(regex)
-                        break
+                try:
+                    resolved = resolve(url)  # let Django resolve the URL for us
+                except Resolver404:
+                    if url not in UrlCoverageWarning.IGNORE_URLS:
+                        warnings.warn(
+                            f"Unable to resolve visited URL {url}", UrlCoverageWarning
+                        )
+                    continue
+                if resolved.route not in patterns:
+                    warnings.warn(
+                        f"WARNING: url resolved to an unexpected pattern (url='{url}', "
+                        f"resolved to r'{resolved.route}'",
+                        UninterestingPatternWarning,
+                    )
+                    continue
+                covered.add(resolved.route)
 
             self.runner.coverage_data["url"] = {
-                "coverage": 1.0*len(covered)/len(patterns),
-                "covered": dict( (k, (o.lookup_str, k in covered)) for k,p,o in patterns ),
+                "coverage": 1.0 * len(covered) / len(patterns),
+                "covered": dict(
+                    (k, (o.lookup_str, k in covered)) for k, o in patterns.items()
+                ),
                 "format": 4,
-                }
+            }
 
             self.report_test_result("url")
         else:
             self.skipTest("Coverage switched off with --skip-coverage")
 
     def code_coverage_test(self):
-        if self.runner.check_coverage:
-            include = [ os.path.join(path, '*') for path in self.runner.test_paths ]
-            checker = self.runner.code_coverage_checker
-            checker.stop()
+        if (
+            self.runner.check_coverage
+            and settings.TEST_CODE_COVERAGE_CHECKER is not None
+        ):
+            coverage_manager = settings.TEST_CODE_COVERAGE_CHECKER
+            coverage_manager.stop()
             # Save to the .coverage file
-            checker.save()
+            coverage_manager.save()
             # Apply the configured and requested omit and include data
-            checker.config.from_args(ignore_errors=None, omit=settings.TEST_CODE_COVERAGE_EXCLUDE_FILES,
-                include=include, file=None)
-            for pattern in settings.TEST_CODE_COVERAGE_EXCLUDE_LINES:
-                checker.exclude(pattern)
             # Maybe output an HTML report
             if self.runner.run_full_test_suite and self.runner.html_report:
-                checker.html_report(directory=settings.TEST_CODE_COVERAGE_REPORT_DIR)
-            # In any case, build a dictionary with per-file data for this run
-            reporter = CoverageReporter(checker, checker.config)
-            self.runner.coverage_data["code"] = reporter.report()
+                coverage_manager.checker.html_report(
+                    directory=settings.TEST_CODE_COVERAGE_REPORT_DIR
+                )
+            # Generate the output report data
+            self.runner.coverage_data["code"] = coverage_manager.report(
+                include=[str(pathlib.Path(p) / "*") for p in self.runner.test_paths]
+            )
             self.report_test_result("code")
         else:
             self.skipTest("Coverage switched off with --skip-coverage")
@@ -753,7 +785,6 @@ class IetfTestRunner(DiscoverRunner):
         self.show_logging = show_logging
         self.rerun = rerun
         self.test_labels = None
-        global validation_settings
         validation_settings["validate_html"] = self if validate_html else None
         validation_settings["validate_html_harder"] = self if validate_html and validate_html_harder else None
         validation_settings["show_logging"] = show_logging
@@ -776,9 +807,6 @@ class IetfTestRunner(DiscoverRunner):
         self.blobstoremanager = TestBlobstoreManager() if manage_blobstore else None
 
     def setup_test_environment(self, **kwargs):
-        global template_coverage_collection
-        global url_coverage_collection
-
         ietf.utils.mail.test_mode = True
         ietf.utils.mail.SMTP_ADDR['ip4'] = '127.0.0.1'
         ietf.utils.mail.SMTP_ADDR['port'] = 2025
@@ -815,22 +843,11 @@ class IetfTestRunner(DiscoverRunner):
                     "covered": {},
                     "format": 1,
                 },
-                "migration": {
-                    "present": {},
-                    "format": 3,
-                }
             }
 
             settings.TEMPLATES[0]['OPTIONS']['loaders'] = ('ietf.utils.test_runner.TemplateCoverageLoader',) + settings.TEMPLATES[0]['OPTIONS']['loaders']
 
             settings.MIDDLEWARE = ('ietf.utils.test_runner.record_urls_middleware',) + tuple(settings.MIDDLEWARE)
-
-            self.code_coverage_checker = settings.TEST_CODE_COVERAGE_CHECKER
-            if not self.code_coverage_checker._started:
-                sys.stderr.write(" **  Warning: In %s: Expected the coverage checker to have\n"
-                                 "       been started already, but it wasn't. Doing so now.  Coverage numbers\n"
-                                 "       will be off, though.\n" % __name__)
-                self.code_coverage_checker.start()
 
         if settings.SITE_ID != 1:
             print("     Changing SITE_ID to '1' during testing.")
@@ -859,7 +876,7 @@ class IetfTestRunner(DiscoverRunner):
             try:
                 # remember the value so ietf.utils.mail.send_smtp() will use the same
                 ietf.utils.mail.SMTP_ADDR['port'] = base + offset
-                self.smtpd_driver = SMTPTestServerDriver((ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port']),None)
+                self.smtpd_driver = SMTPTestServerDriver(ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port'], None)
                 self.smtpd_driver.start()
                 print(("     Running an SMTP test server on %(ip4)s:%(port)s to catch outgoing email." % ietf.utils.mail.SMTP_ADDR))
                 break
@@ -1019,7 +1036,7 @@ class IetfTestRunner(DiscoverRunner):
                 with tempfile.NamedTemporaryFile() as stdout:
                     subprocess.run(
                         [
-                            "yarn",
+                            "npx",
                             "html-validate",
                             "--formatter=json",
                             "--config=" + self.config_file[kind].name,
@@ -1131,9 +1148,8 @@ class IetfTestRunner(DiscoverRunner):
                 ),
             ]
         if self.check_coverage:
-            global template_coverage_collection, code_coverage_collection, url_coverage_collection
+            global template_coverage_collection, url_coverage_collection
             template_coverage_collection = True
-            code_coverage_collection = True
             url_coverage_collection = True
             tests += [
                 PyFlakesTestCase(test_runner=self, methodName='pyflakes_test'),
@@ -1217,37 +1233,6 @@ class IetfTestRunner(DiscoverRunner):
 
         return failures
 
-class IetfLiveServerTestCase(StaticLiveServerTestCase):
-    @classmethod
-    def setUpClass(cls):
-        set_coverage_checking(False)
-        super(IetfLiveServerTestCase, cls).setUpClass()
-
-    def setUp(self):
-        super(IetfLiveServerTestCase, self).setUp()
-        # LiveServerTestCase uses TransactionTestCase which seems to
-        # somehow interfere with the fixture loading process in
-        # IetfTestRunner when running multiple tests (the first test
-        # is fine, in the next ones the fixtures have been wiped) -
-        # this is no doubt solvable somehow, but until then we simply
-        # recreate them here
-        from ietf.person.models import Person
-        if not Person.objects.exists():
-            load_and_run_fixtures(verbosity=0)
-        self.replaced_settings = dict()
-        if hasattr(settings, 'IDTRACKER_BASE_URL'):
-            self.replaced_settings['IDTRACKER_BASE_URL'] = settings.IDTRACKER_BASE_URL
-            settings.IDTRACKER_BASE_URL = self.live_server_url
-
-    @classmethod
-    def tearDownClass(cls):
-        super(IetfLiveServerTestCase, cls).tearDownClass()
-        set_coverage_checking(True)
-
-    def tearDown(self):
-        for k, v in self.replaced_settings.items():
-            setattr(settings, k, v)
-        super().tearDown()
 
 class TestBlobstoreManager():
     # N.B. buckets and blobstore are intentional Class-level attributes
@@ -1258,13 +1243,17 @@ class TestBlobstoreManager():
         aws_access_key_id="minio_root",
         aws_secret_access_key="minio_pass",
         aws_session_token=None,
-        config = botocore.config.Config(signature_version="s3v4"),
+        config = botocore.config.Config(
+            request_checksum_calculation="when_required",
+            response_checksum_validation="when_required",
+            signature_version="s3v4",
+        ),
         #config=botocore.config.Config(signature_version=botocore.UNSIGNED),
         verify=False
     )
 
     def createTestBlobstores(self):
-        for storagename in settings.MORE_STORAGE_NAMES:
+        for storagename in settings.ARTIFACT_STORAGE_NAMES:
             bucketname = f"test-{storagename}"
             try:
                 bucket = self.blobstore.create_bucket(Bucket=bucketname)

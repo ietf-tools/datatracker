@@ -1,0 +1,47 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
+{% load ams_filters %}{# keep this in sync with sessions_request_view_formset.html #}
+{% for sess in session_set %}
+<div class="row mb-3">
+    <div class="col-md-2 fw-bold">
+        Session {{ forloop.counter }}
+    </div>
+    <div class="col">
+        <div class="row mb-2">
+            <div class="col-sm-2 fw-bold">Length</div>
+            <div class="col">{{ sess.requested_duration.total_seconds|display_duration }}</div>
+        </div>
+        {% if sess.name %}
+            <div class="row mb-2">
+                <div class="col-sm-2 fw-bold">Name</div>
+                <div class="col">{{ sess.name }}</div>
+            </div>
+        {% endif %}
+        {% if sess.purpose.slug != 'regular' %}
+            <div class="row mb-2">
+                <div class="col-sm-2 fw-bold">Purpose</div>
+                <div class="col">
+                    {{ sess.purpose }}
+                    {% if sess.purpose.timeslot_types|length > 1 %}({{ sess.type }}){% endif %}
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-sm-2 fw-bold">Onsite tool?</div>
+                <div class="col">{{ sess.has_onsite_tool|yesno }}</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if group.features.acts_like_wg and forloop.counter == 2 and not is_virtual %}
+<div class="row mb-3">
+    <div class="col-md-2 fw-bold">
+        Time between sessions
+    </div>
+    <div class="col">
+        {% if session.session_time_relation_display %}{{ session.session_time_relation_display }}{% else %}No
+    preference{% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% endfor %}

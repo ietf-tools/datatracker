@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2025, All Rights Reserved
 from django.shortcuts import render, get_object_or_404
 
 from ietf.message.models import Message

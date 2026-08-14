@@ -276,7 +276,7 @@ def active_drafts_index_by_group(extra_values=()):
     groups = [g for g in groups_dict.values() if hasattr(g, "active_drafts")]
     groups.sort(key=lambda g: g.acronym)
 
-    fallback_time = datetime.datetime(1950, 1, 1, tzinfo=datetime.timezone.utc)
+    fallback_time = datetime.datetime(1950, 1, 1, tzinfo=datetime.UTC)
     for g in groups:
         g.active_drafts.sort(key=lambda d: d.get("initial_rev_time", fallback_time))
 
@@ -302,6 +302,6 @@ def id_index_txt(with_abstracts=False):
 
     return render_to_string("idindex/id_index.txt", {
             'groups': groups,
-            'time': timezone.now().astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z"),
+            'time': timezone.now().astimezone(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S %Z"),
             'with_abstracts': with_abstracts,
             })

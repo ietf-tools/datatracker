@@ -609,6 +609,9 @@ module.exports = {
             startDateTime: curDay.set({ hour: 17, minute: 30 }),
             duration: '2h',
             type: 'plenary',
+            showAgenda: true,
+            hasAgenda: true,
+            hasRecordings: true,
             ...findAreaGroup('ietf-plenary', categories[2])
           }, floors))
         }

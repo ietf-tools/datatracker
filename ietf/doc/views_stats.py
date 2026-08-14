@@ -18,7 +18,7 @@ from ietf.person.models import Person
 from ietf.utils.timezone import date_today
 
 
-epochday = datetime.datetime.utcfromtimestamp(0).date().toordinal()
+epochday = datetime.datetime.fromtimestamp(0, datetime.UTC).date().toordinal()
 
 
 def dt(s):
@@ -35,13 +35,13 @@ def model_to_timeline_data(model, field='time', **kwargs):
     assert field in [ f.name for f in model._meta.get_fields() ]
 
     objects = ( model.objects.filter(**kwargs)
-                                .annotate(date=TruncDate(field, tzinfo=datetime.timezone.utc))
+                                .annotate(date=TruncDate(field, tzinfo=datetime.UTC))
                                 .order_by('date')
                                 .values('date')
                                 .annotate(count=Count('id')))
     if objects.exists():
         obj_list = list(objects)
-        today = date_today(datetime.timezone.utc)
+        today = date_today(datetime.UTC)
         if not obj_list[-1]['date'] == today:
             obj_list += [ {'date': today, 'count': 0} ]
         data = [ ((e['date'].toordinal()-epochday)*1000*60*60*24, e['count']) for e in obj_list ]

@@ -159,4 +159,18 @@ onMounted(() => {
     }
   }
 }
+
+[data-bs-theme="dark"] .chatlog {
+  .n-timeline-item-content__title {
+    color: #d63384 !important;
+  }
+  
+  .n-timeline-item-content__content {
+    color: #fff !important;
+  }
+
+  .n-timeline-item-content__meta {
+    color: #0569ffd9 !important;
+  }
+}
 </style>

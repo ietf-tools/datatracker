@@ -1,0 +1,52 @@
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                             FYI INDEX
+                           -------------
+
+(CREATED ON: {{created_on}}.)
+
+This file contains citations for all FYIs in numeric order.  The FYIs
+(For Your Information) documents form a sub-series of the RFC series,
+specifically those documents that may be of particular interest
+to Internet users.  The corresponding RFCs have status INFORMATIONAL.
+
+FYI citations appear in this format:
+
+   [FYI#]     For Your Information #,
+              <FYI URL>.
+              At the time of writing, this FYI comprises the following:
+
+              Author 1, Author 2, "Title of the RFC", FYI #, RFC №,
+              DOI DOI string, Issue date,
+              <RFC URL>.
+
+For example:
+
+   [FYI8]     For Your Information 8,
+              <https://www.rfc-editor.org/info/fyi8>.
+              At the time of writing, this FYI comprises the following:
+
+              B. Fraser, "Site Security Handbook", FYI 8, RFC 2196,
+              DOI 10.17487/RFC2196, September 1997,
+              <https://www.rfc-editor.org/info/rfc2196>.
+
+Key to fields:
+
+# is the FYI number.
+
+№ is the RFC number.
+
+FYIs and other RFCs may be obtained from https://www.rfc-editor.org.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                                FYI INDEX
+                                ---------
+   
+
+
+{% for fyi in fyis %}{{fyi|safe}}
+
+{% endfor %}

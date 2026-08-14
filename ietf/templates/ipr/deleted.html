@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015-2023, All Rights Reserved #}
+{% load ietf_filters origin %}
+{% block title %}Removed IPR Disclosure{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>Removed IPR disclosure</h1>
+    <p class="alert alert-info my-3">
+        {{ removed.reason }}
+    </p>
+    {% if user|has_role:"Secretariat" and ipr.exists %}
+    <p class="alert alert-warn my-3" id="deletion_warning">
+        This disclosure has not yet been deleted and parts of its content is available through, e.g, the history view and the /api/v1 views.
+    </p>
+    {% endif %}
+    {% endblock %}
