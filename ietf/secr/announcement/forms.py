@@ -146,25 +146,31 @@ class AnnounceForm(forms.ModelForm):
             for key in list(self.fields.keys()):
                 self.fields[key].widget = forms.HiddenInput()
 
+    def clean_cc(self):
+        cc_data = self.cleaned_data["cc"]
+        cc = [addr.strip() for addr in cc_data.split(",") if addr.strip()]
+        errors = [
+            forms.ValidationError(
+                "Invalid address: %(addr)s", "invalid_cc", {"addr": addr}
+            )
+            for addr in cc
+            if not is_valid_email(addr)
+        ]
+        if errors:
+            raise forms.ValidationError(errors)
+        return cc_data
+
     def clean(self):
         super(AnnounceForm, self).clean()
         data = self.cleaned_data
         if self.errors:
             return self.cleaned_data
-        if data["to"] == "Other..." and not data["to_custom"]:
-            raise forms.ValidationError('You must enter a "To" email address')
-        if data["to"] == "Other..." and data["to_custom"]:
-            addrlist = data["to_custom"]
-        else:
-            addrlist = [data["to"]]
-        if data["cc"]:
-            cc = [email.strip() for email in data["cc"].split(",") if email.strip()]
-            addrlist.extend(cc)
-        emails = [email.strip() for email in addrlist if email.strip()]
-        for email in emails:
-            if not is_valid_email(email):
-                raise forms.ValidationError("An exception occurred while trying to send email to '%s'" % email)
-            
+
+        if data.get("to") == "Other..." and data.get("to_custom", []) == []:
+            self.add_error(
+                None, forms.ValidationError('Must specify a "To" address', "empty_to")
+            )
+
         for k in [
             "to",
             "frm",
