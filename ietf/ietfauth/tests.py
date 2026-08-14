@@ -34,7 +34,13 @@ from ietf.group.models import Group, Role, RoleName
 from ietf.ietfauth.utils import has_role
 from ietf.meeting.factories import MeetingFactory, RegistrationFactory, RegistrationTicketFactory
 from ietf.nomcom.factories import NomComFactory
-from ietf.person.factories import PersonFactory, EmailFactory, UserFactory, PersonalApiKeyFactory
+from ietf.person.factories import (
+    PersonFactory,
+    EmailFactory,
+    UserFactory,
+    PersonalApiKeyFactory,
+    PersonUUIDFactory,
+)
 from ietf.person.models import Person, Email
 from ietf.person.tasks import send_apikey_usage_emails_task
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
@@ -657,7 +663,9 @@ class IetfAuthTests(TestCase):
         )
         user.set_password(VALID_PASSWORD)
         user.save()
-        p = Person.objects.create(name="Some One", ascii="Some One", user=user)
+        p = PersonFactory(
+            user=user, name="Some One", ascii="Some One", default_emails=False
+        )
         Email.objects.create(address=user.username, person=p, origin=user.username)
 
         # log in
@@ -758,7 +766,9 @@ class IetfAuthTests(TestCase):
         )
         user.set_password(VALID_PASSWORD)
         user.save()
-        p = Person.objects.create(name="Some One", ascii="Some One", user=user)
+        p = PersonFactory(
+            user=user, name="Some One", ascii="Some One", default_emails=False
+        )
         Email.objects.create(address=user.username, person=p, origin=user.username)
         Email.objects.create(
             address="othername@example.org", person=p, origin=user.username
@@ -1162,7 +1172,16 @@ class OpenIDConnectTests(TestCase):
             session["nonce"] = rndstr()
             args = {
                 "response_type": "code",
-                "scope": ['openid', 'profile', 'email', 'roles', 'registration', 'dots', 'pronouns' ],
+                "scope": [
+                    "openid",
+                    "profile",
+                    "email",
+                    "roles",
+                    "registration",
+                    "dots",
+                    "pronouns",
+                    "datatracker_uuid",
+                ],
                 "nonce": session["nonce"],
                 "redirect_uri": redirect_uris[0],
                 "state": session["state"]
@@ -1207,6 +1226,10 @@ class OpenIDConnectTests(TestCase):
                 self.assertIn(key, access_token_info)
             for key in ['iss', 'sub', 'aud', 'exp', 'iat', 'auth_time', 'nonce', 'at_hash']:
                 self.assertIn(key, access_token_info['id_token'])
+            # Custom claims are served from userinfo, not the id_token. This guards
+            # against an accidental OIDC_IDTOKEN_INCLUDE_CLAIMS flip.
+            for key in ["datatracker_uuid", "datatracker_prior_uuids"]:
+                self.assertNotIn(key, access_token_info["id_token"])
 
             # Get userinfo, check keys present, most common scenario
             userinfo = client.do_user_info_request(state=params["state"], scope=args['scope'])
@@ -1218,6 +1241,18 @@ class OpenIDConnectTests(TestCase):
             self.assertNotIn('hackathon_onsite', set(userinfo['reg_type'].split()))
             self.assertIn(active_group.acronym, [i[1] for i in userinfo['roles']])
             self.assertNotIn(closed_group.acronym, [i[1] for i in userinfo['roles']])
+            self.assertEqual(userinfo['datatracker_uuid'], str(person.primary_uuid))
+            # Present and empty, not absent, for a Person that has never been merged
+            self.assertIn("datatracker_prior_uuids", userinfo)
+            self.assertEqual(userinfo["datatracker_prior_uuids"], [])
+
+            # A UUID absorbed by a merge shows up in the prior list
+            absorbed = PersonUUIDFactory(person=person)
+            userinfo = client.do_user_info_request(
+                state=params["state"], scope=args["scope"]
+            )
+            self.assertEqual(userinfo["datatracker_uuid"], str(person.primary_uuid))
+            self.assertEqual(userinfo["datatracker_prior_uuids"], [str(absorbed.uuid)])
 
             # Create a registration, with only email, no person (rare if at all)
             reg_person.delete()
