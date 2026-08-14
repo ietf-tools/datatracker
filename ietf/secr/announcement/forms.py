@@ -165,7 +165,12 @@ class AnnounceForm(forms.ModelForm):
         data = self.cleaned_data
         if self.errors:
             return self.cleaned_data
-                
+
+        if data.get("to") == "Other..." and data.get("to_custom", []) == []:
+            self.add_error(
+                None, forms.ValidationError('Must specify a "To" address', "empty_to")
+            )
+
         for k in [
             "to",
             "frm",
