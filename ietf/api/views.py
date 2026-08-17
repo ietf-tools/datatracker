@@ -90,8 +90,6 @@ def top_level(request):
 
 def api_help(request):
     key = JWK()
-    # import just public part here, for display in info page
-    key.import_from_pem(settings.API_PUBLIC_KEY_PEM)
     return render(request, "api/index.html", {'key': key, 'settings':settings, })
     
 
