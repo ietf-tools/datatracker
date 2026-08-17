@@ -10,7 +10,8 @@ from zoneinfo import ZoneInfo
 
 from django.conf import settings
 
-from ietf.doc.models import Document, RelatedDocument, DocEvent, TelechatDocEvent, BallotDocEvent, DocTypeName
+from ietf.doc.models import (Document, RelatedDocument, DocEvent, TelechatDocEvent, BallotDocEvent,
+    DocTypeName, RpcAssignmentDocEvent)
 from ietf.doc.expire import expirable_drafts
 from ietf.doc.utils import augment_docs_and_person_with_person_info
 from ietf.meeting.models import SessionPresentation, Meeting, Session
@@ -159,6 +160,34 @@ def fill_in_related_ipr(docs, doc_dict, doc_ids):
         d.related_ipr = wrap_value(sorted(related))
 
 
+def fill_in_rfc_editor_queue_status(docs, doc_dict, doc_ids):
+    """Attach each document's RFC Editor publication queue status.
+
+    The status column shows it for every document sitting in the RFC Editor queue, and
+    Document.rfc_editor_queue_status() costs a query per such row to find the latest
+    RpcAssignmentDocEvent. Here they take one query between them.
+    """
+    queued_ids = [
+        d.pk
+        for d in docs
+        if d.get_state_slug("draft-rfceditor") in ("in_progress", "blocked")
+    ]
+    # Wrapped rather than assigned bare so the attribute stays callable, like the
+    # Document.rfc_editor_queue_status method it shadows.
+    for d in docs:
+        d.rfc_editor_queue_status = wrap_value(None)
+    if not queued_ids:
+        return
+
+    # DISTINCT ON fetches only the newest event per document; a document that has moved
+    # through the queue has one for every status it has held.
+    for e in (RpcAssignmentDocEvent.objects
+              .filter(doc_id__in=queued_ids, type="changed_rpc_assignments")
+              .order_by("doc_id", "-time", "-id")
+              .distinct("doc_id")):
+        doc_dict[e.doc_id].rfc_editor_queue_status = wrap_value(e.assignments)
+
+
 def fill_in_person_caches(docs):
     """Seed the per-instance caches person_link and email_person_link read.
 
@@ -288,6 +317,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
 
     fill_in_document_relations(docs, doc_dict, doc_ids)
     fill_in_related_ipr(docs, doc_dict, doc_ids)
+    fill_in_rfc_editor_queue_status(docs, doc_dict, doc_ids)
     fill_in_person_caches(docs)
 
     if not have_telechat_date:
