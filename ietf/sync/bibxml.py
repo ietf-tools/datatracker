@@ -98,6 +98,15 @@ ORG_LOOKUP = {
 }
 
 
+CHUNK = r"(?:[A-Z]|\([A-Z]+\))+"
+PARENY = r"[A-Z]*(?:\([A-Z]+\)[A-Z]*)+"
+DOTTED = rf"(?:{CHUNK}-)*{CHUNK}\."
+BARE = rf"(?:{PARENY}|[A-Z]+)(?=[-\s])"
+INITIAL = rf"(?:{DOTTED}|{BARE})"
+
+NAME_RE = re.compile(rf"^\s*(?P<initials>(?:{INITIAL}[-\s]*)*)(?P<surname>.*?)\s*$")
+
+
 class BibXMLException(Exception):
     pass
 
@@ -153,11 +162,16 @@ def get_rfc_bibxml(rfc):
                 )
         else:
             try:
-                initials, surname = author.titlepage_name.split(maxsplit=1)
+                name_parts = NAME_RE.match(author.titlepage_name)
+                initials = name_parts["initials"].strip()
+                surname = name_parts["surname"]
+                initials_attr = ""
+                if initials:
+                    initials_attr = f"initials={qa(initials)}"
                 if author.is_editor:
-                    author_entry = f"""<author fullname={qa(author.titlepage_name)} initials={qa(initials)} surname={qa(surname)} role="editor"/>"""
+                    author_entry = f"""<author fullname={qa(author.titlepage_name)} {initials_attr} surname={qa(surname)} role="editor"/>"""
                 else:
-                    author_entry = f"""<author fullname={qa(author.titlepage_name)} initials={qa(initials)} surname={qa(surname)}/>"""
+                    author_entry = f"""<author fullname={qa(author.titlepage_name)} {initials_attr} surname={qa(surname)}/>"""
             except ValueError:
                 # Case where author has single name.
                 author_entry = f"""<author fullname={qa(author.titlepage_name)} />"""
