@@ -166,6 +166,11 @@ def fill_in_rfc_editor_queue_status(docs, doc_dict, doc_ids):
     The status column shows it for every document sitting in the RFC Editor queue, and
     Document.rfc_editor_queue_status() costs a query per such row to find the latest
     RpcAssignmentDocEvent. Here they take one query between them.
+
+    Finding which documents are queued reads each document's states, which this assumes
+    is free -- either prefetched by the caller, as prepare_document_table() does, or
+    already cached on the instances by an earlier get_state(). Absent both, that read
+    costs a query per document, which is the sort of per-row cost this exists to avoid.
     """
     queued_ids = [
         d.pk
