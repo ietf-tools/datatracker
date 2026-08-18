@@ -121,6 +121,14 @@ DATABASES = {
 }
 
 
+# Collation that we wish we were using. The production database is currently using
+# the C collation, which does not handle accented characters. Do not change this
+# without confirming that the production and dev databases support the new collation.
+# This setting and places we use it can go away if we switch the production database
+# collation. That requires creating and populating a new database, it cannot be done
+# on an existing one.
+PREFERRED_COLLATION = "en-US-x-icu"
+
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
 # although not all variations may be possible on all operating systems.
@@ -1285,22 +1293,6 @@ STATS_TIMELINE_CACHE_TIMEOUT = 86400
 UTILS_MEETING_CONFERENCE_DOMAINS = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', 'gather.town', ]
 UTILS_TEST_RANDOM_STATE_FILE = '.factoryboy_random_state'
 UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS = 30
-
-
-API_KEY_TYPE="ES256"                    # EC / P=256
-API_PUBLIC_KEY_PEM = b"""
------BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqVojsaofDJScuMJN+tshumyNM5ME
-garzVPqkVovmF6yE7IJ/dv4FcV+QKCtJ/rOS8e36Y8ZAEVYuukhes0yZ1w==
------END PUBLIC KEY-----
-"""
-API_PRIVATE_KEY_PEM = b"""
------BEGIN PRIVATE KEY-----
-MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgoI6LJkopKq8XrHi9
-QqGQvE4A83TFYjqLz+8gULYecsqhRANCAASpWiOxqh8MlJy4wk362yG6bI0zkwSB
-qvNU+qRWi+YXrITsgn92/gVxX5AoK0n+s5Lx7fpjxkARVi66SF6zTJnX
------END PRIVATE KEY-----
-"""
 
 
 # Default timeout for HTTP requests via the requests library

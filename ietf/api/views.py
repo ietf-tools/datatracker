@@ -90,8 +90,6 @@ def top_level(request):
 
 def api_help(request):
     key = JWK()
-    # import just public part here, for display in info page
-    key.import_from_pem(settings.API_PUBLIC_KEY_PEM)
     return render(request, "api/index.html", {'key': key, 'settings':settings, })
     
 
@@ -566,27 +564,39 @@ def role_holder_addresses(request):
 
 @requires_api_token
 @csrf_exempt
-def rfc_authors(request):
-    """Return authors of published RFCs as a JSON list of objects.
+def rfc_author_survey_recipients(request):
+    """Return recipients of the RFC Author Survey for RFCs in a time range
 
-    Finds authors by date, though this could be extended to other selection
+    Returns the authors and (if present) document shepherd for RFCs as a JSON
+    structure. This is intended for generation of the post-publication Author
+    Survey and is not likely to be useful elsewhere.
+
+    Finds RFCs by date, though this could be extended to other selection
     criteria in the future. Specify the range as ?from=<datetime>&to=<datetime>.
     Each <datetime> is an ISO-8601 timestamp, treated as UTC if it does not include
     time zone information. Defaults to `to`=now, `from`=14 days before `to`
 
     Each author appears once, with their RFC numbers, names, titles, and
     publication dates accumulated across every RFC they published in the window.
+    Authors have `"type": "author"` in their records.
+
+    If an RFC has a shepherd assigned to its originating draft, that shepherd is
+    included in the list of recipients alongside the authors. Shepherds have
+    `"type": "shepherd"` in their records. If a shepherd is also an author, then
+    `"type": "author/shepherd"`.
 
     When the ?testing query parameter is supplied, each author's real email
     address is replaced with a fake one that keeps the original mailbox but uses
     the "fake.example.com" domain, so the output can be shared without exposing
-    real addresses.
+    real addresses. 
     
     When the ?testing query parameter is supplied, one or more testaddr=ADDRESS query
     parameters can also be specified. The value of each parameter is an email
     address. When these parameters are present, the response data will include an
-    entry for each address as though it belonged to the author of a recently published
-    RFC.
+    entry for each address as though it belonged to an author or shepherd of a recently
+    published RFC. To specify the recipient type, append ";author", ";shepherd",
+    or ";author,shepherd" to the end of the email address. E.g.,
+    "?testing&testaddr=somebody@example.com;author,shepherd"
     """
     if request.method != "GET":
         return HttpResponse(status=405)
@@ -634,56 +644,99 @@ def rfc_authors(request):
         docevent__type="published_rfc",
         docevent__time__gte=time_range_start,
         docevent__time__lt=time_range_end,
-    ).distinct()
+    ).order_by("rfc_number").distinct()
 
     # Collect per-author data keyed by email so each author gets one row.
     # Values accumulate RFC numbers, names, titles, and dates across all RFCs.
-    author_data = {}
+    recipient_data = {}
 
     for rfc in rfcs:
         # RfcAuthor is the authoritative source for RFC authors. Documents of
         # type "rfc" always have an rfcauthor_set, so no fallback is needed.
-        authors = [
+        recipients = [
             {
                 "name": a.person.name if a.person else a.titlepage_name,
                 "email": a.person.email().address
                 if (a.person and a.person.email())
                 else None,
+                "type": "author",  # distinguishes authors from the shepherd entry added below
             }
             for a in rfc.rfcauthor_set.select_related("person").order_by("order")
         ]
 
-        for author in authors:
-            if not author["email"]:
+        # As of Aug 2026, the rfc Document doesn't carry its own shepherd - it's only 
+        # set on the draft it came from. If the shepherd changes, the value on the draft
+        # will be kept up to date.
+        #
+        # came_from_draft() can return None (e.g. very old RFCs with no tracked
+        # originating draft, April 1 RFCs, and other special cases), so guard for that.
+        # Also, shepherd.person should always be set (see assertion in views_doc.py)
+        # but skip rather than crash if that invariant is ever violated.
+        originating_draft = rfc.came_from_draft()
+        if (
+            originating_draft 
+            and originating_draft.shepherd is not None
+            and originating_draft.shepherd.person is not None
+        ):
+            # Use email_address() to find an active address if this one is stale
+            shepherd_email = originating_draft.shepherd.email_address()
+            shepherd = originating_draft.shepherd.person
+            if shepherd_email is not None:
+                recipients.append({
+                    "name": shepherd.name,
+                    "email": shepherd_email,
+                    "type": "shepherd",
+                })
+            else:
+                log.log(
+                    f"rfc_authors(): shepherd for {rfc.name}, has no active email "
+                    f"address, omitting shepherd ({shepherd.name})"
+                )
+
+        for recipient in recipients:
+            if not recipient["email"]:
                 continue
 
             if testing:
-                mailbox = author["email"].split("@", 1)[0]
+                mailbox = recipient["email"].split("@", 1)[0]
                 email = f"{mailbox}@fake.example.com"
             else:
-                email = author["email"]
+                email = recipient["email"]
 
-            if email not in author_data:
-                author_data[email] = {
-                    "name": author["name"],
+            if email not in recipient_data:
+                recipient_data[email] = {
+                    "name": recipient["name"],
                     "email": email,
+                    "types": set(),
                     "rfc_numbers": [],
                     "rfc_names": [],
                     "rfc_titles": [],
                     "published_dates": [],
                 }
-            author_data[email]["rfc_numbers"].append(str(rfc.rfc_number))
-            author_data[email]["rfc_names"].append(rfc.name)
-            author_data[email]["rfc_titles"].append(rfc.title)
-            author_data[email]["published_dates"].append(str(rfc.pub_date()))
+            recipient_data[email]["rfc_numbers"].append(str(rfc.rfc_number))
+            recipient_data[email]["rfc_names"].append(rfc.name)
+            recipient_data[email]["rfc_titles"].append(rfc.title)
+            recipient_data[email]["published_dates"].append(str(rfc.pub_date()))
+            recipient_data[email]["types"].add(recipient["type"])
 
     if testing:
         for n, email in enumerate(test_addresses):
-            if email in author_data:
-                continue  # author will already be included
-            author_data[email] = {
+            if email in recipient_data:
+                continue  # recipient will already be included
+            # see if a type list was included
+            if ";" in email:
+                email, types = email.rsplit(";", 1)
+                types = {type_.strip() for type_ in types.split(",")}
+                if len(types.difference({"author", "shepherd"})) != 0:
+                    return HttpResponseBadRequest(
+                        f"Invalid types for testaddr={email}"
+                    )
+            else:
+                types = {"author"}
+            recipient_data[email] = {
                 "name": f"Test Author {n + 1}",
                 "email": email,
+                "types": types,
                 "rfc_numbers": ["99999"],
                 "rfc_names": ["rfc99999"],
                 "rfc_titles": ["A Fake RFC for Testing"],
@@ -691,11 +744,13 @@ def rfc_authors(request):
             }
 
     rows = []
-    for entry in author_data.values():
+    for entry in recipient_data.values():
+        entry_type = "/".join(sorted(entry["types"]))
         rows.append(
             {
                 "name": entry["name"],
                 "email": entry["email"],
+                "type": entry_type,  # "author", "shepherd", or "author/shepherd"
                 "rfc_number": ", ".join(entry["rfc_numbers"]),
                 "rfc_name": ", ".join(entry["rfc_names"]),
                 "rfc_title": ", ".join(entry["rfc_titles"]),
