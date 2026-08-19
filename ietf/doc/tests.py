@@ -652,6 +652,38 @@ class SearchTests(TestCase):
         self.assertContains(r, discuss_other.doc.name)
         self.assertContains(r, block_other.doc.name)
 
+    def test_ad_workload_shows_rpc_decisions_pending(self):
+        """The IESG dashboard shows who the RPC is currently waiting on"""
+        # As in test_ad_workload: start from a known set of ADs with names that
+        # slugify predictably, since ad_list.html builds element ids from them.
+        Role.objects.filter(name_id="ad").delete()
+        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active',
+                         person__name='Example Areadirector').person
+        idle_ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active',
+                              person__name='Other Areadirector').person
+        RpcActionHolderOpenEntryFactory(person=ad)
+        RpcActionHolderOpenEntryFactory(person=ad)
+
+        url = urlreverse('ietf.doc.views_search.ad_workload')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'RPC decisions pending')
+        q = PyQuery(r.content)
+        rows = q('#rpc-pending').next('p').next('table').find('tbody tr')
+        self.assertEqual(len(rows), 1, 'only ADs with something pending get a row')
+        self.assertIn(ad.plain_name(), rows.text())
+        self.assertNotIn(idle_ad.plain_name(), rows.text())
+        self.assertIn('2', rows.text())
+
+    def test_ad_workload_without_rpc_decisions_pending(self):
+        """The section is absent when the RPC is waiting on nobody"""
+        Role.objects.filter(name_id="ad").delete()
+        RoleFactory(name_id='ad', group__type_id='area', group__state_id='active',
+                    person__name='Example Areadirector')
+        r = self.client.get(urlreverse('ietf.doc.views_search.ad_workload'))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, 'RPC decisions pending')
+
     def test_docs_for_ad_shows_rpc_action_holders(self):
         """An AD sees the decisions the RPC is waiting on them for"""
         ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person

@@ -48,7 +48,7 @@ from django import forms
 from django.conf import settings
 from django.core.cache import cache, caches
 from django.urls import reverse as urlreverse
-from django.db.models import Model, Q
+from django.db.models import Count, Model, Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect, QueryDict
 from django.shortcuts import render
 from django.utils import timezone
@@ -707,10 +707,28 @@ def ad_workload(request):
         for dt in AD_WORKLOAD
     }
 
+    # Current state, not a trend: the open entries the RPC pushes are a
+    # snapshot, so there is no history to bucket the way the tables above do.
+    rpc_pending_counts = dict(
+        RpcActionHolderOpenEntry.objects.filter(person__in=ads)
+        .values_list("person")
+        .annotate(Count("id"))
+    )
+    rpc_pending = [
+        {"ad": ad, "count": rpc_pending_counts[ad.pk]}
+        for ad in ads
+        if rpc_pending_counts.get(ad.pk)
+    ]
+
     return render(
         request,
         "doc/ad_list.html",
-        {"metadata": metadata, "data": data, "delta": days},
+        {
+            "metadata": metadata,
+            "data": data,
+            "delta": days,
+            "rpc_pending": rpc_pending,
+        },
     )
 
 

@@ -37,6 +37,29 @@
         <a class="btn btn-primary" href="{% url 'ietf.doc.views_search.docs_for_iesg' %}">Documents in IESG Processing</a>
         <a class="btn btn-primary" href="{% url 'ietf.iesg.views.working_groups' %}">IESG view of Working Groups</a>
     </p>
+    {% if rpc_pending %}
+        <h2 class="mt-5" id="rpc-pending">RPC decisions pending</h2>
+        <p class="text-body-secondary">
+            Documents in the RFC Editor queue for which the RPC is currently waiting on a
+            decision from an Area Director. Current state, not a {{ delta }}-day trend.
+        </p>
+        <table class="table table-sm table-striped table-bordered tablesorter navskip">
+            <thead class="wrap-anywhere">
+                <tr>
+                    <th scope="col" data-sort="name">Area Director</th>
+                    <th scope="col" data-sort="num">Decisions pending</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rpc_pending %}
+                    <tr>
+                        <td><a href="{{ row.ad.dashboard }}">{{ row.ad.plain_name }}</a></td>
+                        <td>{{ row.count }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
     {% for dt in metadata %}
         <h2 class="mt-5" id="{{ dt.type.0 }}">{{ dt.type.1 }} State Counts</h2>
         <table class="table table-sm table-striped table-bordered tablesorter navskip">
