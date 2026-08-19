@@ -62,6 +62,7 @@ from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import (
     create_ballot_if_not_open,
+    save_document_in_history,
     external_canonical_url,
     investigate_fragment,
     uppercase_std_abbreviated_name,
@@ -1027,7 +1028,8 @@ Man                    Expires September 22, 2015               [Page 3]
     def test_document_draft_rpc_action_holders(self):
         """A draft in the RFC Editor queue shows who the RPC is waiting on"""
         draft = WgDraftFactory(states=[('draft-iesg', 'rfcqueue'),
-                                       ('draft-rfceditor', 'in_progress')])
+                                       ('draft-rfceditor', 'in_progress')],
+                               rev='00')
         holder = PersonFactory()
         RpcActionHolderOpenEntryFactory(
             document=draft, person=holder, comment='Confirm the change in section 4.2'
@@ -1049,6 +1051,20 @@ Man                    Expires September 22, 2015               [Page 3]
         self.client.login(username=holder.user.username,
                           password=holder.user.username + '+password')
         self.assertContains(self.client.get(url), 'Confirm the change in section 4.2')
+
+        # An earlier revision is a snapshot of the past and reports none of it.
+        # The snapshot is taken while the draft is in the queue, so its own
+        # RFC Editor state is set and that block of the page does render.
+        save_document_in_history(draft)
+        draft.rev = '01'
+        draft.save()
+        snapshot_url = urlreverse('ietf.doc.views_doc.document_main',
+                                  kwargs=dict(name=draft.name, rev='00'))
+        r = self.client.get(snapshot_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'RFC Editor status')  # the block is there ...
+        self.assertNotContains(r, escape(holder.name))  # ... without the holders
+        self.assertNotContains(r, 'Confirm the change in section 4.2')
 
     def test_document_draft(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',rev='01', create_revisions=range(0,2))

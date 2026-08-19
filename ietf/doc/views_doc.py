@@ -220,11 +220,9 @@ def rpc_action_holders(doc):
     body, or by the RPC tool's own placeholder person, is not something to show
     here - the queue status already reports that the RPC is waiting on someone.
     """
-    # Matched by name: doc is a DocHistory when viewing an older revision, and
-    # the entries the RPC sends are always about the document itself.
     return list(
         RpcActionHolderOpenEntry.objects.filter(
-            document__name=doc.name, person__isnull=False
+            document=doc, person__isnull=False
         ).select_related("person").order_by("since_when")
     )
 
@@ -645,9 +643,6 @@ def document_main(request, name, rev=None, document_html=False):
         exp_comment = doc.latest_event(IanaExpertDocEvent,type="comment")
         iana_experts_comment = exp_comment and exp_comment.desc
 
-        # Actions the RPC is waiting on, while the document is in its queue
-        doc_rpc_action_holders = rpc_action_holders(doc)
-
         # See if we should show an Auth48 URL
         auth48_url = None  # stays None unless we are in the auth48 state
         if doc.get_state_slug('draft-rfceditor') == 'auth48':
@@ -682,6 +677,12 @@ def document_main(request, name, rev=None, document_html=False):
                     css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
                     if html:
                         css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
+
+        # Actions the RPC is waiting on, while the document is in its queue.
+        # Computed here because this is the first point where snapshot is final:
+        # the entries describe the document as it stands now, so a view of an
+        # earlier revision must not report them.
+        doc_rpc_action_holders = [] if snapshot else rpc_action_holders(doc)
 
         return render(request, "doc/document_draft.html" if document_html is False else "doc/document_html.html",
                                   dict(doc=doc,
