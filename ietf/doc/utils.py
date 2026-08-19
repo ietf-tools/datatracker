@@ -456,6 +456,20 @@ def add_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_t
     return e
 
 
+def can_see_rpc_action_holder_comments(user, entries):
+    """Can this user see what the RPC asked an action holder for?
+
+    Who holds an action and since when is public, but the request itself is
+    not: it is shown to the IESG, the Secretariat and the RPC, and to whoever
+    is being asked for the decision.
+    """
+    if has_role(user, ["Area Director", "Secretariat", "RFC Editor"]):
+        return True
+    if not (user.is_authenticated and hasattr(user, "person")):
+        return False
+    return any(entry.person_id == user.person.pk for entry in entries)
+
+
 def add_action_holder_change_event(doc, by, prev_set, reason=None):
     set_changed = False
     if doc.documentactionholder_set.exclude(person__in=prev_set).exists():

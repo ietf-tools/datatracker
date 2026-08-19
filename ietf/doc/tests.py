@@ -56,6 +56,7 @@ from ietf.doc.factories import (DocumentFactory, DocEventFactory, CharterFactory
                                 StatusChangeFactory, DocExtResourceFactory,
                                 RgDraftFactory, BcpFactory, StdFactory,
                                 FyiFactory, RfcAuthorFactory,
+                                RpcActionHolderOpenEntryFactory,
                                 TelechatDocEventFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
@@ -650,6 +651,52 @@ class SearchTests(TestCase):
 
         self.assertContains(r, discuss_other.doc.name)
         self.assertContains(r, block_other.doc.name)
+
+    def test_docs_for_ad_shows_rpc_action_holders(self):
+        """An AD sees the decisions the RPC is waiting on them for"""
+        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
+        other_ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
+        entry = RpcActionHolderOpenEntryFactory(
+            person=ad, comment='Confirm the change in section 4.2', rfc_number=9850
+        )
+        other_entry = RpcActionHolderOpenEntryFactory(person=other_ad)
+
+        url = urlreverse('ietf.doc.views_search.docs_for_ad',
+                         kwargs=dict(name=ad.full_name_as_key()))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'RPC decisions pending')
+        self.assertContains(r, entry.document.name)
+        self.assertNotContains(r, other_entry.document.name)
+        # the queue site final review page for this document
+        self.assertContains(r, f'{settings.RFC_EDITOR_QUEUE_SITE_BASE_URL}/final-review/rfc9850/')
+        # the request itself is not public
+        self.assertNotContains(r, 'Confirm the change in section 4.2')
+
+        # ... but the AD being asked can see it, as can the secretariat
+        self.client.login(username=ad.user.username, password=ad.user.username + '+password')
+        self.assertContains(self.client.get(url), 'Confirm the change in section 4.2')
+        self.client.logout()
+        self.client.login(username='secretary', password='secretary+password')
+        self.assertContains(self.client.get(url), 'Confirm the change in section 4.2')
+
+    def test_docs_for_ad_without_rpc_action_holders(self):
+        """The section is absent when the RPC is waiting on nothing"""
+        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
+        r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad',
+                                       kwargs=dict(name=ad.full_name_as_key())))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, 'RPC decisions pending')
+
+    def test_docs_for_ad_rpc_action_holder_without_rfc_number(self):
+        """A document with no rfc number yet has no final review page to link"""
+        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
+        RpcActionHolderOpenEntryFactory(person=ad, rfc_number=None)
+        r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad',
+                                       kwargs=dict(name=ad.full_name_as_key())))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'RPC decisions pending')
+        self.assertNotContains(r, '/final-review/')
 
     def test_docs_for_iesg(self):
         ad1 = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person

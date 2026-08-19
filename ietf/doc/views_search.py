@@ -59,11 +59,15 @@ from django.utils.text import slugify
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocHistory, DocumentAuthor, RelatedDocument,
-    RfcAuthor, State, NewRevisionDocEvent, IESG_SUBSTATE_TAGS,
+    RfcAuthor, RpcActionHolderOpenEntry, State, NewRevisionDocEvent, IESG_SUBSTATE_TAGS,
     IESG_BALLOT_ACTIVE_STATES, IESG_STATCHG_CONFLREV_ACTIVE_STATES,
     IESG_CHARTER_ACTIVE_STATES )
 from ietf.doc.fields import select2_id_doc_name_json
-from ietf.doc.utils import augment_events_with_revision, needed_ballot_positions
+from ietf.doc.utils import (
+    augment_events_with_revision,
+    can_see_rpc_action_holder_comments,
+    needed_ballot_positions,
+)
 from ietf.group.models import Group
 from ietf.idindex.index import active_drafts_index_by_group
 from ietf.name.models import DocTagName, DocTypeName, StreamName
@@ -831,6 +835,13 @@ def docs_for_ad(request, name):
             if re.search(r"\bNeeds\s+\d+", iesg_ballot_summary):
                 not_balloted_docs.append(doc)
 
+    # Actions the RPC is waiting on this AD for, from the publication queue.
+    rpc_action_holders = list(
+        RpcActionHolderOpenEntry.objects.filter(person=ad)
+        .select_related("document")
+        .order_by("since_when")
+    )
+
     return render(
         request,
         "doc/drafts_for_ad.html",
@@ -840,6 +851,10 @@ def docs_for_ad(request, name):
             "ad": ad,
             "blocked_docs": blocked_docs,
             "not_balloted_docs": not_balloted_docs,
+            "rpc_action_holders": rpc_action_holders,
+            "can_see_rpc_action_holder_comments": can_see_rpc_action_holder_comments(
+                request.user, rpc_action_holders
+            ),
         },
     )
 
