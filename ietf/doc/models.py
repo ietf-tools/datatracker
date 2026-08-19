@@ -1626,6 +1626,77 @@ class ConsensusDocEvent(DocEvent):
 class RpcAssignmentDocEvent(DocEvent):
     assignments = models.TextField(blank=True)
 
+
+class RpcActionHolderOpenEntry(models.Model):
+    """Open action holder entry from the RFC Production Center
+
+    A read-only capture of the RPC tool's open ActionHolder entries, held here
+    so the datatracker can query them efficiently - who is the RPC waiting on,
+    and for which documents. The RPC tool owns the entries. It sends the full
+    set for every document in the publication queue on each push to
+    /api/purple/queue/process/, and ietf.sync.tasks.process_rpc_queue_task
+    reconciles this table against that push. Nothing else writes it, there is no
+    editing UI, and any local change is discarded by the next push.
+
+    Only open entries are kept: an entry the RPC has completed is dropped at
+    ingest, and rows disappear when their document leaves the publication queue.
+    Every row present is therefore one the RPC is still waiting on, so readers
+    do not need to filter.
+
+    Not to be confused with DocumentActionHolder, which is the datatracker's own
+    action holder list for documents in IESG processing.
+    """
+
+    purple_id = models.PositiveIntegerField(
+        unique=True, help_text="ID of the ActionHolder in the RPC tool"
+    )
+    document = ForeignKey(Document)
+    # Null when a body rather than a person holds the action, when the RPC tool
+    # sent its system person as a placeholder, or when it named a person the
+    # datatracker cannot resolve. Never the "(System)" person.
+    person = ForeignKey(Person, blank=True, null=True)
+    body = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        help_text="Name of the body holding the action, if it is not a person",
+    )
+    display_name = models.CharField(max_length=255, blank=True, default="")
+    comment = models.TextField(blank=True)
+    # Belongs to the document rather than to the action holder, and is null
+    # until the RPC assigns it. Used to build the final review link.
+    rfc_number = models.PositiveIntegerField(blank=True, null=True)
+    # Only the date components of since_when / deadline are significant - the
+    # RPC tool customarily sets the time to 12:00 UTC.
+    since_when = models.DateTimeField()
+    deadline = models.DateTimeField(blank=True, null=True)
+    time_captured = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return "%s: open action held by %s" % (self.document.name, self.name())
+
+    def name(self):
+        """Best available label for whoever holds this action"""
+        if self.body:
+            return self.body
+        if self.person:
+            return self.person.plain_name()
+        return self.display_name
+
+    def final_review_url(self):
+        """Link to the queue site final review page, if there is one
+
+        A document can have an action holder before the RPC assigns it an RFC
+        number, and there is no final review page until it does.
+        """
+        if self.rfc_number is None:
+            return None
+        return "%s/final-review/rfc%d/" % (
+            settings.RFC_EDITOR_QUEUE_SITE_BASE_URL,
+            self.rfc_number,
+        )
+
+
 # IESG events
 class BallotType(models.Model):
     doc_type = ForeignKey(DocTypeName, blank=True, null=True)
