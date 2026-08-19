@@ -60,9 +60,9 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, DocHistory, DocEvent, BallotDocEvent, BallotType,
     ConsensusDocEvent, NewRevisionDocEvent, StoredObject, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
-    RelatedDocument, RelatedDocHistory, RpcAssignmentDocEvent)
+    RelatedDocument, RelatedDocHistory, RpcActionHolderOpenEntry, RpcAssignmentDocEvent)
 from ietf.doc.tasks import investigate_fragment_task
-from ietf.doc.utils import (augment_events_with_revision,
+from ietf.doc.utils import (augment_events_with_revision, can_see_rpc_action_holder_comments,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
@@ -212,6 +212,22 @@ def rfc_editor_queue_status(doc):
         return None
     event = doc.latest_event(RpcAssignmentDocEvent, type="changed_rpc_assignments")
     return event.assignments if event else None
+
+def rpc_action_holders(doc):
+    """Open action holder entries the RPC has for this document
+
+    Only entries naming a person the datatracker knows: an action held by a
+    body, or by the RPC tool's own placeholder person, is not something to show
+    here - the queue status already reports that the RPC is waiting on someone.
+    """
+    # Matched by name: doc is a DocHistory when viewing an older revision, and
+    # the entries the RPC sends are always about the document itself.
+    return list(
+        RpcActionHolderOpenEntry.objects.filter(
+            document__name=doc.name, person__isnull=False
+        ).select_related("person").order_by("since_when")
+    )
+
 
 def document_main(request, name, rev=None, document_html=False):
 
@@ -629,6 +645,9 @@ def document_main(request, name, rev=None, document_html=False):
         exp_comment = doc.latest_event(IanaExpertDocEvent,type="comment")
         iana_experts_comment = exp_comment and exp_comment.desc
 
+        # Actions the RPC is waiting on, while the document is in its queue
+        doc_rpc_action_holders = rpc_action_holders(doc)
+
         # See if we should show an Auth48 URL
         auth48_url = None  # stays None unless we are in the auth48 state
         if doc.get_state_slug('draft-rfceditor') == 'auth48':
@@ -726,6 +745,9 @@ def document_main(request, name, rev=None, document_html=False):
                                        rfc_editor_state=doc.get_state("draft-rfceditor"),
                                        rfc_editor_queue_status=rfc_editor_queue_status(doc),
                                        rfc_editor_auth48_url=auth48_url,
+                                       rpc_action_holders=doc_rpc_action_holders,
+                                       can_see_rpc_action_holder_comments=can_see_rpc_action_holder_comments(
+                                           request.user, doc_rpc_action_holders),
                                        iana_review_state=doc.get_state("draft-iana-review"),
                                        iana_action_state=doc.get_state("draft-iana-action"),
                                        iana_experts_state=doc.get_state("draft-iana-experts"),

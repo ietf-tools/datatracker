@@ -1024,6 +1024,32 @@ Man                    Expires September 22, 2015               [Page 3]
             with (Path(dir) / 'draft-ietf-mars-test-01.txt').open('w') as f:
                 f.write(self.draft_text)
 
+    def test_document_draft_rpc_action_holders(self):
+        """A draft in the RFC Editor queue shows who the RPC is waiting on"""
+        draft = WgDraftFactory(states=[('draft-iesg', 'rfcqueue'),
+                                       ('draft-rfceditor', 'in_progress')])
+        holder = PersonFactory()
+        RpcActionHolderOpenEntryFactory(
+            document=draft, person=holder, comment='Confirm the change in section 4.2'
+        )
+        # An action held by a body is not shown here - the queue status covers it
+        RpcActionHolderOpenEntryFactory(
+            document=draft, person=None, body='Registry Of Xyzzy',
+            display_name='Registry Of Xyzzy'
+        )
+        url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=draft.name))
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, escape(holder.name))
+        self.assertNotContains(r, 'Registry Of Xyzzy')
+        self.assertNotContains(r, 'Confirm the change in section 4.2')
+
+        # the person being asked can see the request even though they are not an AD
+        self.client.login(username=holder.user.username,
+                          password=holder.user.username + '+password')
+        self.assertContains(self.client.get(url), 'Confirm the change in section 4.2')
+
     def test_document_draft(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',rev='01', create_revisions=range(0,2))
 

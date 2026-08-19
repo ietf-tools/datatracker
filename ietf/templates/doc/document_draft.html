@@ -592,6 +592,27 @@
                             {{ rfc_editor_queue_status|default:rfc_editor_state }}
                         </td>
                     </tr>
+                    {% if rpc_action_holders %}
+                        <tr>
+                            <td></td>
+                            <th scope="row">
+                                Action Holders
+                            </th>
+                            <td class="edit">
+                            </td>
+                            <td>
+                                {% for entry in rpc_action_holders %}
+                                    <div>
+                                        {% person_link entry.person %}
+                                        since {{ entry.since_when|date:"Y-m-d" }}
+                                        {% if can_see_rpc_action_holder_comments and entry.comment %}
+                                            <div class="text-body-secondary">{{ entry.comment }}</div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                    {% endif %}
                     <tr>
                         <td></td>
                         <th scope="row">
