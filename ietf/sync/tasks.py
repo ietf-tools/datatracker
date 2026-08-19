@@ -11,8 +11,17 @@ from celery import shared_task
 
 from django.conf import settings
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 
-from ietf.doc.models import DocEvent, DocTagName, Document, RelatedDocument, RpcAssignmentDocEvent, State
+from ietf.doc.models import (
+    DocEvent,
+    DocTagName,
+    Document,
+    RelatedDocument,
+    RpcActionHolderOpenEntry,
+    RpcAssignmentDocEvent,
+    State,
+)
 from ietf.doc.tasks import rebuild_reference_relations_task
 from ietf.doc.utils import add_state_change_event, new_state_change_event, update_action_holders
 from ietf.person.models import Person
@@ -382,6 +391,73 @@ def format_rpc_queue_status(obj):
     return ", ".join(parts)
 
 
+# The datatracker's "(System)" person. The RPC tool substitutes a placeholder
+# person of its own whenever no real person was named, and sends that person's
+# datatracker id - so an action holder must never be associated with this pk.
+# Which pk the RPC tool uses is configurable at its end, hence the separate
+# check against the "(System)" person the datatracker actually has.
+SYSTEM_PERSON_ID = 1
+
+
+def _rpc_action_holder_person(holder, system_person):
+    """Resolve the datatracker Person for one action holder, if there is one
+
+    Returns None whenever the entry does not name a person the datatracker can
+    act on. The RPC tool substitutes its system person when no real person was
+    named, and that placeholder must never become an action holder here. Do not
+    use "body" to make this decision - the RPC tool's edit path can set or clear
+    "body" without touching the person, so it is unreliable in both directions.
+    """
+    person_id = (holder.get("person") or {}).get("person_id")
+    if person_id in (SYSTEM_PERSON_ID, system_person.pk):
+        return None
+    if holder.get("body"):
+        return None  # a body holds the action, not a person
+    person = Person.objects.filter(pk=person_id).first()
+    if person is None:
+        log.log(
+            f"process_rpc_queue_task: unknown action holder person {person_id}"
+        )
+        return None
+    if person == system_person or person.pk == SYSTEM_PERSON_ID:
+        return None
+    return person
+
+
+def _sync_rpc_action_holders(doc, holders, rfc_number, system_person):
+    """Reconcile the open action holder entries for one document"""
+    open_purple_ids = []
+    for holder in holders:
+        if holder.get("completed") is not None:
+            # The RPC tool reports completed action holders as well as open
+            # ones. This is the only place the datatracker sees a completion
+            # happen; capturing it as a DocEvent is a follow-on project.
+            continue
+        RpcActionHolderOpenEntry.objects.update_or_create(
+            purple_id=holder["id"],
+            defaults=dict(
+                document=doc,
+                person=_rpc_action_holder_person(holder, system_person),
+                body=holder.get("body") or "",
+                display_name=holder.get("display_name") or "",
+                comment=holder.get("comment") or "",
+                rfc_number=rfc_number,
+                since_when=parse_datetime(holder["since_when"]),
+                deadline=(
+                    parse_datetime(holder["deadline"])
+                    if holder.get("deadline")
+                    else None
+                ),
+            ),
+        )
+        open_purple_ids.append(holder["id"])
+    # Anything else we were holding for this document has been completed or
+    # removed at the RPC tool.
+    RpcActionHolderOpenEntry.objects.filter(document=doc).exclude(
+        purple_id__in=open_purple_ids
+    ).delete()
+
+
 @shared_task
 def process_rpc_queue_task(data: list):
     in_progress_state = State.objects.get(
@@ -485,6 +561,10 @@ def process_rpc_queue_task(data: list):
 
         d.tags.remove(*iana_ref_tags)
 
+        _sync_rpc_action_holders(
+            d, obj.get("actionholder_set") or [], rfc_number, system
+        )
+
         if events:
             d.save_with_history(events)
 
@@ -495,3 +575,4 @@ def process_rpc_queue_task(data: list):
     ):
         d.tags.remove(*iana_ref_tags)
         d.unset_state("draft-rfceditor")
+        RpcActionHolderOpenEntry.objects.filter(document=d).delete()
