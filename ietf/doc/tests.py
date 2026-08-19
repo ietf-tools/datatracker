@@ -703,14 +703,10 @@ class SearchTests(TestCase):
         self.assertNotContains(r, other_entry.document.name)
         # the queue site final review page for this document
         self.assertContains(r, f'{settings.RFC_EDITOR_QUEUE_SITE_BASE_URL}/final-review/rfc9850/')
-        # the request itself is not public
-        self.assertNotContains(r, 'Confirm the change in section 4.2')
+        # the request is shown here to everyone, including the anonymous user
+        self.assertContains(r, 'Confirm the change in section 4.2')
 
-        # ... but the AD being asked can see it, as can the secretariat
         self.client.login(username=ad.user.username, password=ad.user.username + '+password')
-        self.assertContains(self.client.get(url), 'Confirm the change in section 4.2')
-        self.client.logout()
-        self.client.login(username='secretary', password='secretary+password')
         self.assertContains(self.client.get(url), 'Confirm the change in section 4.2')
 
     def test_docs_for_ad_without_rpc_action_holders(self):

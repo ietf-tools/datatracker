@@ -65,7 +65,6 @@ from ietf.doc.models import ( Document, DocHistory, DocumentAuthor, RelatedDocum
 from ietf.doc.fields import select2_id_doc_name_json
 from ietf.doc.utils import (
     augment_events_with_revision,
-    can_see_rpc_action_holder_comments,
     needed_ballot_positions,
 )
 from ietf.group.models import Group
@@ -870,9 +869,6 @@ def docs_for_ad(request, name):
             "blocked_docs": blocked_docs,
             "not_balloted_docs": not_balloted_docs,
             "rpc_action_holders": rpc_action_holders,
-            "can_see_rpc_action_holder_comments": can_see_rpc_action_holder_comments(
-                request.user, rpc_action_holders
-            ),
         },
     )
 

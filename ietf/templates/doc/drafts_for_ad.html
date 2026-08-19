@@ -89,9 +89,7 @@
                     <th scope="col" data-sort="queue">Queue entry</th>
                     <th scope="col" data-sort="since">Waiting since</th>
                     <th scope="col" data-sort="deadline">Deadline</th>
-                    {% if can_see_rpc_action_holder_comments %}
-                        <th scope="col" data-sort="request">Request</th>
-                    {% endif %}
+                    <th scope="col" data-sort="request">Request</th>
                 </tr>
             </thead>
             <tbody>
@@ -113,9 +111,7 @@
                                 <span class="text-body-secondary">(None)</span>
                             {% endif %}
                         </td>
-                        {% if can_see_rpc_action_holder_comments %}
-                            <td>{{ entry.comment }}</td>
-                        {% endif %}
+                        <td>{{ entry.comment }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
