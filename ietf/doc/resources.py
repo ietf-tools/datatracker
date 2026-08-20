@@ -19,7 +19,7 @@ from ietf.doc.models import (BallotType, DeletedEvent, StateType, State, Documen
     ReviewRequestDocEvent, ReviewAssignmentDocEvent, EditedAuthorsDocEvent, DocumentURL,
     IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
     BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject, RfcAuthor,
-    EditedRfcAuthorsDocEvent, RpcAssignmentDocEvent)
+    EditedRfcAuthorsDocEvent, RpcAssignmentDocEvent, RpcActionHolderOpenEntry)
 
 from ietf.name.resources import BallotPositionNameResource, DocTypeNameResource
 class BallotTypeResource(ModelResource):
@@ -941,3 +941,29 @@ class RpcAssignmentDocEventResource(ModelResource):
             "docevent_ptr": ALL_WITH_RELATIONS,
         }
 api.doc.register(RpcAssignmentDocEventResource())
+
+
+from ietf.person.resources import PersonResource
+class RpcActionHolderOpenEntryResource(ModelResource):
+    document         = ToOneField(DocumentResource, 'document')
+    person           = ToOneField(PersonResource, 'person', null=True)
+    class Meta:
+        queryset = RpcActionHolderOpenEntry.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'rpcactionholderopenentry'
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "purple_id": ALL,
+            "body": ALL,
+            "display_name": ALL,
+            "comment": ALL,
+            "rfc_number": ALL,
+            "since_when": ALL,
+            "deadline": ALL,
+            "time_captured": ALL,
+            "document": ALL_WITH_RELATIONS,
+            "person": ALL_WITH_RELATIONS,
+        }
+api.doc.register(RpcActionHolderOpenEntryResource())
