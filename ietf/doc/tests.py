@@ -655,8 +655,8 @@ class SearchTests(TestCase):
 
     def test_ad_workload_shows_rpc_decisions_pending(self):
         """The IESG dashboard shows who the RPC is currently waiting on"""
-        # As in test_ad_workload: start from a known set of ADs with names that
-        # slugify predictably, since ad_list.html builds element ids from them.
+        # ad_list.html builds element ids from AD names, so start from a known
+        # set of ADs whose names slugify predictably.
         Role.objects.filter(name_id="ad").delete()
         ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active',
                          person__name='Example Areadirector').person

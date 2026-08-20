@@ -430,8 +430,8 @@ def _sync_rpc_action_holders(doc, holders, rfc_number, system_person):
     for holder in holders:
         if holder.get("completed") is not None:
             # The RPC tool reports completed action holders as well as open
-            # ones. This is the only place the datatracker sees a completion
-            # happen; capturing it as a DocEvent is a follow-on project.
+            # ones. Only open ones are kept here, so this line is the only
+            # place the datatracker sees a completion happen.
             continue
         RpcActionHolderOpenEntry.objects.update_or_create(
             purple_id=holder["id"],

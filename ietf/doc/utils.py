@@ -460,10 +460,10 @@ def can_see_rpc_action_holder_comments(user, entries):
     """Can this user be shown what the RPC asked an action holder for?
 
     True for the IESG, the Secretariat and the RPC, and for whoever is being
-    asked for the decision. This keeps internal RPC prose off the document
-    page, which is not where most readers are looking for it - it is not
-    protecting the text, which the queue site already publishes on its
-    final-review pages. The AD document list shows it to everyone.
+    asked for the decision. This gates the document page only - the AD document
+    list shows the request to everyone. It is a display choice rather than a
+    confidentiality boundary: the queue site publishes the same text on its
+    public final-review pages.
     """
     if has_role(user, ["Area Director", "Secretariat", "RFC Editor"]):
         return True

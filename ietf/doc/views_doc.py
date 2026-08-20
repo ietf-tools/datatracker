@@ -679,9 +679,8 @@ def document_main(request, name, rev=None, document_html=False):
                         css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
 
         # Actions the RPC is waiting on, while the document is in its queue.
-        # Computed here because this is the first point where snapshot is final:
-        # the entries describe the document as it stands now, so a view of an
-        # earlier revision must not report them.
+        # The entries describe the document as it stands now, so a view of an
+        # earlier revision has none.
         doc_rpc_action_holders = [] if snapshot else rpc_action_holders(doc)
 
         return render(request, "doc/document_draft.html" if document_html is False else "doc/document_html.html",
