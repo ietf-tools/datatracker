@@ -86,7 +86,8 @@ from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text, texescape
 from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO, RPC_TZINFO
-from ietf.doc.utils_search import AD_WORKLOAD, fill_in_telechat_date, prepare_document_table
+from ietf.doc.utils_search import (AD_WORKLOAD, fill_in_rfc_editor_queue_status,
+    fill_in_telechat_date, prepare_document_table)
 
 
 class SearchTests(TestCase):
@@ -308,21 +309,38 @@ class SearchTests(TestCase):
         so doubling the number of rows must not change the number of queries. A lookup
         that slipped back into the per-row path shows up here as a count that grows.
 
-        Mind the blind spots: these documents have no IESG state, ballot, last call,
-        action holders, telechat or obsoleting RFCs, so the per-row work the columns
-        driven by those still do is not covered. Widen the fixtures rather than reading
-        a pass here as "the table does no per-row queries".
+        Mind the blind spots: these documents have no ballot, last call, action holders,
+        telechat, obsoleting RFCs, or IESG state under way, so the per-row work the
+        columns driven by those still do is not covered -- state_age_colored and the
+        action holder list each still cost a query for a document being processed by the
+        IESG. Widen the fixtures rather than reading a pass here as "the table does no
+        per-row queries".
         """
         group = GroupFactory(type_id="wg")
         url = urlreverse('ietf.doc.views_search.search') + (
             f"?activedrafts=on&olddrafts=on&rfcs=on&by=group&group={group.acronym}"
         )
+        system = Person.objects.get(name="(System)")
 
         def add_documents(count):
             for _ in range(count):
                 WgDraftFactory(group=group, authors=[PersonFactory()], ad=PersonFactory(),
                                shepherd=EmailFactory())
                 WgRfcFactory(group=group)
+                # A draft in the RFC Editor queue, whose row also shows the queue status.
+                # Not one the IESG is processing, to keep the blind spots above out of
+                # the count.
+                queued = WgDraftFactory(
+                    group=group,
+                    states=[("draft", "active"), ("draft-iesg", "idexists"),
+                            ("draft-rfceditor", "in_progress")],
+                )
+                RpcAssignmentDocEvent.objects.create(
+                    doc=queued, rev=queued.rev, by=system,
+                    type="changed_rpc_assignments",
+                    assignments="In Progress (First Edit)",
+                    desc="RPC status changed to In Progress (First Edit)",
+                )
 
         def count_queries():
             with CaptureQueriesContext(connection) as context:
@@ -335,7 +353,7 @@ class SearchTests(TestCase):
         add_documents(4)
         doubled = count_queries()
 
-        # A per-row lookup would add at least one query for each of the 8 new documents.
+        # A per-row lookup would add at least one query for each of the 12 new documents.
         self.assertLessEqual(
             doubled, baseline + 2,
             f"query count grew from {baseline} to {doubled} when the result set tripled",
@@ -387,6 +405,15 @@ class SearchTests(TestCase):
                                shepherd=EmailFactory())
         TelechatDocEventFactory(doc=draft)
         WgRfcFactory()
+        queued = WgDraftFactory(
+            states=[("draft", "active"), ("draft-iesg", "rfcqueue"),
+                    ("draft-rfceditor", "in_progress")],
+        )
+        RpcAssignmentDocEvent.objects.create(
+            doc=queued, rev=queued.rev, by=Person.objects.get(name="(System)"),
+            type="changed_rpc_assignments", assignments="In Progress (First Edit)",
+            desc="RPC status changed to In Progress (First Edit)",
+        )
 
         request = RequestFactory().get("/doc/recent/")
         request.user = AnonymousUser()
@@ -396,6 +423,9 @@ class SearchTests(TestCase):
         restored, _ = pickle.loads(pickle.dumps([results, meta]))
         for before, after in zip(results, restored):
             self.assertEqual(after.telechat_date(), before.telechat_date())
+            self.assertEqual(
+                after.rfc_editor_queue_status(), before.rfc_editor_queue_status()
+            )
 
     def test_fill_in_telechat_date_matches_the_method(self):
         """The precomputed value has to equal what Document.telechat_date() returns.
@@ -432,6 +462,49 @@ class SearchTests(TestCase):
         # the two ends of the range, so the test would fail if everything came back None
         self.assertIsNotNone(expected[future.name])
         self.assertIsNone(expected[past.name])
+
+    def test_fill_in_rfc_editor_queue_status_matches_the_method(self):
+        """The precomputed value has to equal what Document.rfc_editor_queue_status() returns.
+
+        The document page renders the method and the document tables render the
+        precomputed value, so a mismatch shows the same document two different statuses.
+        """
+        system = Person.objects.get(name="(System)")
+
+        def queued(state_slug, *statuses):
+            doc = WgDraftFactory(
+                states=[("draft", "active"), ("draft-iesg", "rfcqueue"),
+                        ("draft-rfceditor", state_slug)],
+            )
+            for status in statuses:
+                RpcAssignmentDocEvent.objects.create(
+                    doc=doc, rev=doc.rev, by=system, type="changed_rpc_assignments",
+                    assignments=status, desc=f"RPC status changed to {status}",
+                )
+            return doc
+
+        in_progress = queued("in_progress", "In Progress (First Edit)")
+        # A document that has moved on has an event for every status it has held.
+        moved_on = queued("in_progress", "Awaiting First editor", "In Final Review")
+        blocked = queued("blocked", "blocked: Manual Hold")
+        # No queue status: a state from before the queue integration, and no state at all.
+        legacy = queued("rfc-edit", "In Progress (First Edit)")
+        not_queued = WgDraftFactory()
+
+        fixtures = (in_progress, moved_on, blocked, legacy, not_queued)
+        expected = {
+            d.name: Document.objects.get(pk=d.pk).rfc_editor_queue_status()
+            for d in fixtures
+        }
+        self.assertEqual(expected[moved_on.name], "In Final Review")
+        self.assertIsNone(expected[legacy.name])
+
+        docs = list(Document.objects.filter(name__in=[d.name for d in fixtures]))
+        doc_dict = {d.pk: d for d in docs}
+        fill_in_rfc_editor_queue_status(docs, doc_dict, list(doc_dict))
+
+        for doc in docs:
+            self.assertEqual(doc.rfc_editor_queue_status(), expected[doc.name], doc.name)
 
     def test_search_for_name(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
@@ -687,6 +760,90 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
         self.assertContains(r, 'title="AUTH48"')  # title attribute of AUTH48 badge in auth48_alert_badge filter
+
+    def _status_column_text(self, draft):
+        r = self.client.get(
+            urlreverse("ietf.doc.views_search.search")
+            + f"?activedrafts=on&olddrafts=on&rfcs=on&name={draft.name}"
+        )
+        self.assertEqual(r.status_code, 200)
+        return PyQuery(r.content)("td.status").text()
+
+    def test_search_labels_the_iesg_state_of_a_queued_draft(self):
+        """The RFC Ed Queue state is labeled as the IESG's, because the row also shows
+        the RFC Editor's own status. Other states are left to speak for themselves.
+        """
+        queued = IndividualDraftFactory(
+            states=[("draft", "active"), ("draft-iesg", "rfcqueue"),
+                    ("draft-rfceditor", "in_progress")]
+        )
+        queue_state_name = queued.get_state("draft-iesg").name
+        self.assertIn(f"IESG: {queue_state_name}", self._status_column_text(queued))
+        # The document page has a row labeled "IESG state" already, so the value there
+        # is the bare state name.
+        r = self.client.get(
+            urlreverse("ietf.doc.views_doc.document_main",
+                       kwargs=dict(name=queued.name))
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, queue_state_name)
+        self.assertNotContains(r, f"IESG: {queue_state_name}")
+
+        for slug, states in (
+            ("iesg-eva", [("draft", "active"), ("draft-iesg", "iesg-eva")]),
+            ("idexists", [("draft", "active"), ("draft-iesg", "idexists")]),
+            ("expired", [("draft", "expired"), ("draft-iesg", "idexists")]),
+        ):
+            with self.subTest(slug=slug):
+                draft = IndividualDraftFactory(states=states)
+                self.assertNotIn("IESG: ", self._status_column_text(draft))
+
+        # friendly_state labels this one itself; it must not be labeled twice.
+        dead = IndividualDraftFactory(
+            states=[("draft", "active"), ("draft-iesg", "dead")]
+        )
+        self.assertIn("I-D Exists (IESG: Dead)", self._status_column_text(dead))
+
+    def test_search_shows_rfc_editor_queue_status(self):
+        """A queued draft's row shows the publication queue Status, as its document page does.
+
+        The status column carries two state machines at once, so each state is labeled
+        with the body it belongs to.
+        """
+        draft = IndividualDraftFactory(
+            states=[
+                ("draft", "active"),
+                ("draft-iesg", "rfcqueue"),
+                ("draft-rfceditor", "in_progress"),
+            ]
+        )
+        RpcAssignmentDocEvent.objects.create(
+            doc=draft,
+            rev=draft.rev,
+            by=Person.objects.get(name="(System)"),
+            type="changed_rpc_assignments",
+            assignments="In Progress (First Edit)",
+            desc="RPC status changed to In Progress (First Edit)",
+        )
+        status = self._status_column_text(draft)
+        self.assertIn(f"IESG: {draft.get_state('draft-iesg').name}", status)
+        self.assertIn("RFC Editor: In Progress (First Edit)", status)
+
+    def test_search_falls_back_to_rfc_editor_state_name(self):
+        """A document with no queue status shows its draft-rfceditor state name.
+
+        Documents that went through the RFC Editor before the publication queue
+        integration have a draft-rfceditor state but no RpcAssignmentDocEvent.
+        """
+        draft = IndividualDraftFactory(
+            states=[
+                ("draft", "active"),
+                ("draft-iesg", "rfcqueue"),
+                ("draft-rfceditor", "rfc-edit"),
+            ]
+        )
+        status = self._status_column_text(draft)
+        self.assertIn(f"RFC Editor: {draft.get_state('draft-rfceditor').name}", status)
 
     def test_drafts_in_last_call(self):
         draft = IndividualDraftFactory(pages=1)
