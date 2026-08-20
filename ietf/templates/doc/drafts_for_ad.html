@@ -99,16 +99,12 @@
                         <td>
                             {% if entry.final_review_url %}
                                 <a href="{{ entry.final_review_url }}">Final review</a>
-                            {% else %}
-                                <span class="text-body-secondary">(No RFC number yet)</span>
                             {% endif %}
                         </td>
                         <td>{{ entry.since_when|date:"Y-m-d" }}</td>
                         <td>
                             {% if entry.deadline %}
                                 {{ entry.deadline|date:"Y-m-d" }}
-                            {% else %}
-                                <span class="text-body-secondary">(None)</span>
                             {% endif %}
                         </td>
                         <td>{{ entry.comment }}</td>

@@ -62,7 +62,7 @@ from ietf.doc.models import ( Document, DocHistory, DocEvent, BallotDocEvent, Ba
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
     RelatedDocument, RelatedDocHistory, RpcActionHolderOpenEntry, RpcAssignmentDocEvent)
 from ietf.doc.tasks import investigate_fragment_task
-from ietf.doc.utils import (augment_events_with_revision, can_see_rpc_action_holder_comments,
+from ietf.doc.utils import (augment_events_with_revision, show_rpc_action_holder_comments,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
@@ -746,7 +746,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        rfc_editor_queue_status=rfc_editor_queue_status(doc),
                                        rfc_editor_auth48_url=auth48_url,
                                        rpc_action_holders=doc_rpc_action_holders,
-                                       can_see_rpc_action_holder_comments=can_see_rpc_action_holder_comments(
+                                       show_rpc_action_holder_comments=show_rpc_action_holder_comments(
                                            request.user, doc_rpc_action_holders),
                                        iana_review_state=doc.get_state("draft-iana-review"),
                                        iana_action_state=doc.get_state("draft-iana-action"),

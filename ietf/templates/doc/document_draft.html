@@ -605,7 +605,7 @@
                                     <div>
                                         {% person_link entry.person %}
                                         since {{ entry.since_when|date:"Y-m-d" }}
-                                        {% if can_see_rpc_action_holder_comments and entry.comment %}
+                                        {% if show_rpc_action_holder_comments and entry.comment %}
                                             <div class="text-body-secondary">{{ entry.comment }}</div>
                                         {% endif %}
                                     </div>

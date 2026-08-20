@@ -419,8 +419,6 @@ def _rpc_action_holder_person(holder, system_person):
             f"process_rpc_queue_task: unknown action holder person {person_id}"
         )
         return None
-    if person == system_person or person.pk == SYSTEM_PERSON_ID:
-        return None
     return person
 
 

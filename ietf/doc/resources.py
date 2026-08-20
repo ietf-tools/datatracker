@@ -943,7 +943,6 @@ class RpcAssignmentDocEventResource(ModelResource):
 api.doc.register(RpcAssignmentDocEventResource())
 
 
-from ietf.person.resources import PersonResource
 class RpcActionHolderOpenEntryResource(ModelResource):
     document         = ToOneField(DocumentResource, 'document')
     person           = ToOneField(PersonResource, 'person', null=True)

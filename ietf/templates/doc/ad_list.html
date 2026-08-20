@@ -8,8 +8,8 @@
 {% endblock %}
 {% block morecss %}
     table .border-bottom { border-bottom-color: var(--highcharts-neutral-color-80) !important; }
-    .highcharts-container .highcharts-axis-labels { 
-        font-size: .7rem; 
+    .highcharts-container .highcharts-axis-labels {
+        font-size: .7rem;
         fill: var(--bs-body-color)
     }
     .highcharts-container .highcharts-graph { stroke-width: 2.5; }
@@ -41,7 +41,7 @@
         <h2 class="mt-5" id="rpc-pending">RPC decisions pending</h2>
         <p class="text-body-secondary">
             Documents in the RFC Editor queue for which the RPC is currently waiting on a
-            decision from an Area Director. Current state, not a {{ delta }}-day trend.
+            decision from an Area Director.
         </p>
         <table class="table table-sm table-striped table-bordered tablesorter navskip">
             <thead class="wrap-anywhere">
@@ -68,7 +68,7 @@
                     <th scope="col" data-sort="name">Area Director</th>
                     {% if dt.type.1 == "Internet-Draft" %}
                         <th scope="col" data-sort="pre-pubreq">Pre pubreq</th>
-                    {% endif %}                    
+                    {% endif %}
                     {% for state, state_name in dt.states %}
                         <th scope="col" class="col-1" data-sort="{{ state }}-num"
                         >
@@ -95,7 +95,7 @@
                             >
                                 {{ ad.pre_pubreq }}
                             </td>
-                        {% endif %}            
+                        {% endif %}
                         {% for state, state_name in dt.states %}
                         <td class="col-1 align-bottom"
                             id="{{ dt.type.0 }}-{{ ad|slugify }}-{{ state }}">
@@ -224,7 +224,7 @@
                 const sums = Array.from(table.querySelectorAll("[data-sum]")).reduce((
                     sumsAccumulator,
                     cell
-                ) => {                    
+                ) => {
                     const key = cell.dataset.sum
                     const value = safeParseFloat(cell.textContent)
                     if(key && !isNaN(value)) {

@@ -456,14 +456,16 @@ def add_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_t
     return e
 
 
-def can_see_rpc_action_holder_comments(user, entries):
-    """Can this user be shown what the RPC asked an action holder for?
+def show_rpc_action_holder_comments(user, entries):
+    """Should this user be shown the RPC's requests to these action holders?
 
-    True for the IESG, the Secretariat and the RPC, and for whoever is being
-    asked for the decision. This gates the document page only - the AD document
-    list shows the request to everyone. It is a display choice rather than a
-    confidentiality boundary: the queue site publishes the same text on its
-    public final-review pages.
+    Controls whether a view renders the comment the RPC attached to an action
+    holder. Only the document main page views ask: they show it to the IESG, the
+    Secretariat and the RPC, and to whoever is being asked for the decision.
+    Views that do not call this show the comments to everyone, as the AD
+    document list does. The text is not confidential either way - the queue site
+    publishes it on its public final-review pages - so this is a choice about
+    what belongs on a given page.
     """
     if has_role(user, ["Area Director", "Secretariat", "RFC Editor"]):
         return True
