@@ -19,7 +19,12 @@ from ietf.ietfauth.utils import role_required
 from ietf.person.models import Email, Person
 from ietf.person.fields import select2_id_name_json
 from ietf.person.forms import MergeForm, MergeRequestForm
-from ietf.person.utils import handle_users, merge_persons, lookup_persons
+from ietf.person.utils import (
+    get_person_uuid_object,
+    handle_users,
+    lookup_persons,
+    merge_persons,
+)
 from ietf.utils.mail import send_mail_text
 
 
@@ -75,6 +80,23 @@ def ajax_select2_search(request, model_name):
 def profile(request, email_or_name):
     persons = lookup_persons(email_or_name)
     return render(request, 'person/profile.html', {'persons': persons, 'today': timezone.now()})
+
+
+def profile_by_uuid(request, uuid):
+    person_uuid = get_person_uuid_object(uuid)
+    if person_uuid is None:
+        raise Http404("No such person identifier")
+    if not person_uuid.primary:
+        # Self-heal a link that predates a merge by sending it to the canonical address.
+        return redirect(
+            "ietf.person.views.profile_by_uuid",
+            uuid=person_uuid.person.primary_uuid,
+        )
+    return render(
+        request,
+        "person/profile.html",
+        {"persons": [person_uuid.person], "today": timezone.now()},
+    )
 
 
 def photo(request, email_or_name):

@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 
+import datetime
 import mock
 from django.test.utils import override_settings
 
@@ -9,9 +10,11 @@ from ietf.doc.models import (
     DocTagName,
     Document,
     DocumentURL,
+    RpcActionHolderOpenEntry,
     RpcAssignmentDocEvent,
     State,
 )
+from ietf.person.factories import PersonFactory
 from ietf.person.models import Person
 from ietf.sync import tasks
 from ietf.utils.mail import outbox
@@ -19,7 +22,12 @@ from ietf.utils.test_utils import TestCase
 
 
 def _make_entry(
-    doc_name, roles=None, blocking_reasons=None, rfc_number=None, final_approval=None
+    doc_name,
+    roles=None,
+    blocking_reasons=None,
+    rfc_number=None,
+    final_approval=None,
+    action_holders=None,
 ):
     return {
         "name": doc_name,
@@ -27,6 +35,23 @@ def _make_entry(
         "blocking_reasons": blocking_reasons or [],
         "rfc_number": rfc_number,
         "final_approval": final_approval or [],
+        "actionholder_set": action_holders or [],
+    }
+
+
+def _make_action_holder(
+    purple_id=1, person_id=None, body="", completed=None, deadline=None, comment=""
+):
+    """Build one actionholder_set element as the RPC tool sends it"""
+    return {
+        "id": purple_id,
+        "person": {"person_id": person_id, "name": "Anybody"},
+        "display_name": body or "Anybody",
+        "deadline": deadline,
+        "since_when": "2026-08-11T12:00:00Z",
+        "completed": completed,
+        "comment": comment,
+        "body": body,
     }
 
 
@@ -479,6 +504,136 @@ class ProcessRpcQueueTaskTests(TestCase):
 
         draft = Document.objects.get(pk=draft.pk)
         self.assertIsNotNone(draft.get_state("draft-rfceditor"))
+
+
+class RpcActionHolderSyncTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.draft = WgDraftFactory(states=[("draft-iesg", "rfcqueue")])
+        self.person = PersonFactory()
+
+    def _sync(self, *holders, rfc_number=None):
+        tasks.process_rpc_queue_task(
+            [
+                _make_entry(
+                    self.draft.name,
+                    roles=["first_editor"],
+                    rfc_number=rfc_number,
+                    action_holders=list(holders),
+                )
+            ]
+        )
+        return RpcActionHolderOpenEntry.objects.filter(document=self.draft)
+
+    def test_person_holder_is_stored(self):
+        """An action holder naming a person is kept, with that person."""
+        entries = self._sync(
+            _make_action_holder(
+                purple_id=17,
+                person_id=self.person.pk,
+                comment="Please confirm the change in section 4.2.",
+                deadline="2026-09-01T12:00:00Z",
+            )
+        )
+        self.assertEqual(entries.count(), 1)
+        entry = entries.first()
+        self.assertEqual(entry.purple_id, 17)
+        self.assertEqual(entry.person, self.person)
+        self.assertEqual(entry.body, "")
+        self.assertEqual(entry.comment, "Please confirm the change in section 4.2.")
+        self.assertEqual(entry.since_when.date(), datetime.date(2026, 8, 11))
+        self.assertEqual(entry.deadline.date(), datetime.date(2026, 9, 1))
+
+    def test_body_holder_is_stored_without_a_person(self):
+        """An action held by a body is kept, but belongs to nobody."""
+        entries = self._sync(_make_action_holder(person_id=self.person.pk, body="IANA"))
+        self.assertEqual(entries.count(), 1)
+        self.assertIsNone(entries.first().person)
+        self.assertEqual(entries.first().body, "IANA")
+
+    def test_system_person_id_is_never_an_action_holder(self):
+        """The RPC tool's placeholder person never becomes an action holder.
+
+        It arrives both with and without a body set - the RPC tool's edit path
+        can clear the body without changing the person - so the person id alone
+        has to be enough to reject it.
+        """
+        for body in ("IANA", ""):
+            RpcActionHolderOpenEntry.objects.all().delete()
+            entries = self._sync(
+                _make_action_holder(person_id=tasks.SYSTEM_PERSON_ID, body=body)
+            )
+            self.assertEqual(entries.count(), 1, f"body={body!r}")
+            self.assertIsNone(entries.first().person, f"body={body!r}")
+
+    def test_person_resolving_to_system_is_never_an_action_holder(self):
+        """A person id that resolves to (System) is rejected on its own merits."""
+        system = Person.objects.get(name="(System)")
+        entries = self._sync(_make_action_holder(person_id=system.pk))
+        self.assertEqual(entries.count(), 1)
+        self.assertIsNone(entries.first().person)
+
+    def test_unknown_person_is_stored_without_a_person(self):
+        """An unresolvable person is logged, and the entry kept and legible."""
+        entries = self._sync(_make_action_holder(person_id=99999999))
+        self.assertEqual(entries.count(), 1)
+        self.assertIsNone(entries.first().person)
+        self.assertEqual(entries.first().display_name, "Anybody")
+
+    def test_completed_holder_is_not_stored(self):
+        """A completed action holder is dropped rather than kept."""
+        entries = self._sync(
+            _make_action_holder(
+                person_id=self.person.pk, completed="2026-08-14T12:00:00Z"
+            )
+        )
+        self.assertEqual(entries.count(), 0)
+
+    def test_completion_removes_a_stored_entry(self):
+        """An entry the RPC tool completes stops being held."""
+        self._sync(_make_action_holder(purple_id=17, person_id=self.person.pk))
+        entries = self._sync(
+            _make_action_holder(
+                purple_id=17,
+                person_id=self.person.pk,
+                completed="2026-08-14T12:00:00Z",
+            )
+        )
+        self.assertEqual(entries.count(), 0)
+
+    def test_entry_dropped_from_the_payload_is_removed(self):
+        """An entry the RPC tool deletes stops being held."""
+        self._sync(_make_action_holder(purple_id=17, person_id=self.person.pk))
+        self.assertEqual(self._sync().count(), 0)
+
+    def test_entries_are_removed_when_the_document_leaves_the_queue(self):
+        """Nothing is held for a document the RPC tool no longer reports."""
+        self._sync(_make_action_holder(person_id=self.person.pk))
+        tasks.process_rpc_queue_task([])
+        self.assertFalse(RpcActionHolderOpenEntry.objects.exists())
+
+    def test_rfc_number_comes_from_the_queue_entry(self):
+        """The rfc number is captured from the entry, not the action holder."""
+        entries = self._sync(
+            _make_action_holder(person_id=self.person.pk), rfc_number=9850
+        )
+        self.assertEqual(entries.first().rfc_number, 9850)
+
+    def test_rfc_number_is_null_before_one_is_assigned(self):
+        """A document can hold an action before it has an rfc number."""
+        entries = self._sync(_make_action_holder(person_id=self.person.pk))
+        self.assertIsNone(entries.first().rfc_number)
+
+    def test_existing_entry_is_updated_in_place(self):
+        """A second push updates the entry it already holds."""
+        self._sync(_make_action_holder(purple_id=17, person_id=self.person.pk))
+        entries = self._sync(
+            _make_action_holder(
+                purple_id=17, person_id=self.person.pk, comment="Now with a comment"
+            )
+        )
+        self.assertEqual(entries.count(), 1)
+        self.assertEqual(entries.first().comment, "Now with a comment")
 
 
 class FormatRpcQueueStatusTests(TestCase):
