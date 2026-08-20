@@ -456,6 +456,24 @@ def add_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_t
     return e
 
 
+def show_rpc_action_holder_comments(user, entries):
+    """Should this user be shown the RPC's requests to these action holders?
+
+    Controls whether a view renders the comment the RPC attached to an action
+    holder. Only the document main page views ask: they show it to the IESG, the
+    Secretariat and the RPC, and to whoever is being asked for the decision.
+    Views that do not call this show the comments to everyone, as the AD
+    document list does. The text is not confidential either way - the queue site
+    publishes it on its public final-review pages - so this is a choice about
+    what belongs on a given page.
+    """
+    if has_role(user, ["Area Director", "Secretariat", "RFC Editor"]):
+        return True
+    if not (user.is_authenticated and hasattr(user, "person")):
+        return False
+    return any(entry.person_id == user.person.pk for entry in entries)
+
+
 def add_action_holder_change_event(doc, by, prev_set, reason=None):
     set_changed = False
     if doc.documentactionholder_set.exclude(person__in=prev_set).exists():

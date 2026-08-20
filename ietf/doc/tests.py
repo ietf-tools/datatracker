@@ -56,11 +56,13 @@ from ietf.doc.factories import (DocumentFactory, DocEventFactory, CharterFactory
                                 StatusChangeFactory, DocExtResourceFactory,
                                 RgDraftFactory, BcpFactory, StdFactory,
                                 FyiFactory, RfcAuthorFactory,
+                                RpcActionHolderOpenEntryFactory,
                                 TelechatDocEventFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import (
     create_ballot_if_not_open,
+    save_document_in_history,
     external_canonical_url,
     investigate_fragment,
     uppercase_std_abbreviated_name,
@@ -724,6 +726,80 @@ class SearchTests(TestCase):
         self.assertContains(r, discuss_other.doc.name)
         self.assertContains(r, block_other.doc.name)
 
+    def test_ad_workload_shows_rpc_decisions_pending(self):
+        """The IESG dashboard shows who the RPC is currently waiting on"""
+        # ad_list.html builds element ids from AD names, so start from a known
+        # set of ADs whose names slugify predictably.
+        Role.objects.filter(name_id="ad").delete()
+        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active',
+                         person__name='Example Areadirector').person
+        idle_ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active',
+                              person__name='Other Areadirector').person
+        RpcActionHolderOpenEntryFactory(person=ad)
+        RpcActionHolderOpenEntryFactory(person=ad)
+
+        url = urlreverse('ietf.doc.views_search.ad_workload')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'RPC decisions pending')
+        q = PyQuery(r.content)
+        rows = q('#rpc-pending').next('p').next('table').find('tbody tr')
+        self.assertEqual(len(rows), 1, 'only ADs with something pending get a row')
+        self.assertIn(ad.plain_name(), rows.text())
+        self.assertNotIn(idle_ad.plain_name(), rows.text())
+        self.assertIn('2', rows.text())
+
+    def test_ad_workload_without_rpc_decisions_pending(self):
+        """The section is absent when the RPC is waiting on nobody"""
+        Role.objects.filter(name_id="ad").delete()
+        RoleFactory(name_id='ad', group__type_id='area', group__state_id='active',
+                    person__name='Example Areadirector')
+        r = self.client.get(urlreverse('ietf.doc.views_search.ad_workload'))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, 'RPC decisions pending')
+
+    def test_docs_for_ad_shows_rpc_action_holders(self):
+        """An AD sees the decisions the RPC is waiting on them for"""
+        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
+        other_ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
+        entry = RpcActionHolderOpenEntryFactory(
+            person=ad, comment='Confirm the change in section 4.2', rfc_number=9850
+        )
+        other_entry = RpcActionHolderOpenEntryFactory(person=other_ad)
+
+        url = urlreverse('ietf.doc.views_search.docs_for_ad',
+                         kwargs=dict(name=ad.full_name_as_key()))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'RPC decisions pending')
+        self.assertContains(r, entry.document.name)
+        self.assertNotContains(r, other_entry.document.name)
+        # the queue site final review page for this document
+        self.assertContains(r, f'{settings.RFC_EDITOR_QUEUE_SITE_BASE_URL}/final-review/rfc9850/')
+        # the request is shown here to everyone, including the anonymous user
+        self.assertContains(r, 'Confirm the change in section 4.2')
+
+        self.client.login(username=ad.user.username, password=ad.user.username + '+password')
+        self.assertContains(self.client.get(url), 'Confirm the change in section 4.2')
+
+    def test_docs_for_ad_without_rpc_action_holders(self):
+        """The section is absent when the RPC is waiting on nothing"""
+        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
+        r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad',
+                                       kwargs=dict(name=ad.full_name_as_key())))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, 'RPC decisions pending')
+
+    def test_docs_for_ad_rpc_action_holder_without_rfc_number(self):
+        """A document with no rfc number yet has no final review page to link"""
+        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
+        RpcActionHolderOpenEntryFactory(person=ad, rfc_number=None)
+        r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad',
+                                       kwargs=dict(name=ad.full_name_as_key())))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'RPC decisions pending')
+        self.assertNotContains(r, '/final-review/')
+
     def test_docs_for_iesg(self):
         ad1 = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person
         ad2 = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person
@@ -1101,6 +1177,47 @@ Man                    Expires September 22, 2015               [Page 3]
         for dir in [settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, settings.INTERNET_DRAFT_PATH]:
             with (Path(dir) / 'draft-ietf-mars-test-01.txt').open('w') as f:
                 f.write(self.draft_text)
+
+    def test_document_draft_rpc_action_holders(self):
+        """A draft in the RFC Editor queue shows who the RPC is waiting on"""
+        draft = WgDraftFactory(states=[('draft-iesg', 'rfcqueue'),
+                                       ('draft-rfceditor', 'in_progress')],
+                               rev='00')
+        holder = PersonFactory()
+        RpcActionHolderOpenEntryFactory(
+            document=draft, person=holder, comment='Confirm the change in section 4.2'
+        )
+        # An action held by a body is not shown here - the queue status covers it
+        RpcActionHolderOpenEntryFactory(
+            document=draft, person=None, body='Registry Of Xyzzy',
+            display_name='Registry Of Xyzzy'
+        )
+        url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=draft.name))
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, escape(holder.name))
+        self.assertNotContains(r, 'Registry Of Xyzzy')
+        self.assertNotContains(r, 'Confirm the change in section 4.2')
+
+        # the person being asked can see the request even though they are not an AD
+        self.client.login(username=holder.user.username,
+                          password=holder.user.username + '+password')
+        self.assertContains(self.client.get(url), 'Confirm the change in section 4.2')
+
+        # An earlier revision is a snapshot of the past and reports none of it.
+        # The snapshot is taken while the draft is in the queue, so its own
+        # RFC Editor state is set and that block of the page does render.
+        save_document_in_history(draft)
+        draft.rev = '01'
+        draft.save()
+        snapshot_url = urlreverse('ietf.doc.views_doc.document_main',
+                                  kwargs=dict(name=draft.name, rev='00'))
+        r = self.client.get(snapshot_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'RFC Editor status')  # the block is there ...
+        self.assertNotContains(r, escape(holder.name))  # ... without the holders
+        self.assertNotContains(r, 'Confirm the change in section 4.2')
 
     def test_document_draft(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',rev='01', create_revisions=range(0,2))
