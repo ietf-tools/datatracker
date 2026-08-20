@@ -6,7 +6,7 @@ from django.contrib import admin
 from django.contrib.sitemaps import views as sitemap_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.http import HttpResponse
-from django.urls import include, path
+from django.urls import include, path, register_converter
 from django.views import static as static_view
 from django.views.generic import TemplateView
 from django.views.defaults import server_error
@@ -17,7 +17,14 @@ from ietf.doc import views_search
 from ietf.group.urls import group_urls, grouptype_urls, stream_urls
 from ietf.ipr.sitemaps import IPRMap
 from ietf.liaisons.sitemaps import LiaisonMap
+from ietf.utils.converters import AnyCaseUUIDConverter
 from ietf.utils.urls import url
+
+
+# Register path converters here, in the root URLconf, before urlpatterns names any of
+# them. Django refuses to register a converter twice, so registering at the point of
+# definition would make importing that module from two URLconfs an error.
+register_converter(AnyCaseUUIDConverter, "anycase_uuid")
 
 
 # sometimes, this code gets called more than once, which is an
