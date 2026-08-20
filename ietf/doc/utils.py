@@ -457,11 +457,13 @@ def add_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_t
 
 
 def can_see_rpc_action_holder_comments(user, entries):
-    """Can this user see what the RPC asked an action holder for?
+    """Can this user be shown what the RPC asked an action holder for?
 
-    Who holds an action and since when is public, but the request itself is
-    not: it is shown to the IESG, the Secretariat and the RPC, and to whoever
-    is being asked for the decision.
+    True for the IESG, the Secretariat and the RPC, and for whoever is being
+    asked for the decision. This keeps internal RPC prose off the document
+    page, which is not where most readers are looking for it - it is not
+    protecting the text, which the queue site already publishes on its
+    final-review pages. The AD document list shows it to everyone.
     """
     if has_role(user, ["Area Director", "Secretariat", "RFC Editor"]):
         return True
