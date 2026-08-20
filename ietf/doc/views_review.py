@@ -249,7 +249,8 @@ def review_request(request, name, request_id):
     if review_req.doc.group:
         wg_chairs = [role.person for role in review_req.doc.group.role_set.filter(name__slug='chair')]
 
-    iesg_state_summary = review_req.doc.friendly_state()
+    # Rendered in a row of its own labeled "IESG document state", so not labeled again here.
+    iesg_state_summary = review_req.doc.friendly_state(label_iesg_state=False)
 
     history = list(review_req.history.all()) 
     history += itertools.chain(*[list(r.history.all()) for r in review_req.reviewassignment_set.all()])

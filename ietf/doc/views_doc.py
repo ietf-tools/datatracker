@@ -394,7 +394,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        has_errata=doc.pk and doc.tags.filter(slug="errata"), # doc.pk == None if using a fake_history_obj
                                        file_urls=file_urls,
                                        rfc_editor_state=doc.get_state("draft-rfceditor"),
-                                       rfc_editor_queue_status=rfc_editor_queue_status(doc),
+                                       rfc_editor_queue_status=doc.rfc_editor_queue_status(),
                                        iana_review_state=doc.get_state("draft-iana-review"),
                                        iana_action_state=doc.get_state("draft-iana-action"),
                                        iana_experts_state=doc.get_state("draft-iana-experts"),
@@ -420,7 +420,8 @@ def document_main(request, name, rev=None, document_html=False):
         if isinstance(doc, Document):
             log.assertion('iesg_state', note="A document's 'draft-iesg' state should never be unset'.  Failed for %s"%doc.name)
         iesg_state_slug = iesg_state.slug if iesg_state else None
-        iesg_state_summary = doc.friendly_state()
+        # Rendered in a row of its own labeled "IESG state", so not labeled again here.
+        iesg_state_summary = doc.friendly_state(label_iesg_state=False)
         irsg_state = doc.get_state("draft-stream-irtf")
 
         can_edit = has_role(request.user, ("Area Director", "Secretariat"))
@@ -743,7 +744,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        iesg_state=iesg_state,
                                        iesg_state_summary=iesg_state_summary,
                                        rfc_editor_state=doc.get_state("draft-rfceditor"),
-                                       rfc_editor_queue_status=rfc_editor_queue_status(doc),
+                                       rfc_editor_queue_status=doc.rfc_editor_queue_status(),
                                        rfc_editor_auth48_url=auth48_url,
                                        rpc_action_holders=doc_rpc_action_holders,
                                        show_rpc_action_holder_comments=show_rpc_action_holder_comments(

@@ -401,8 +401,33 @@ class DocumentInfo(models.Model):
             self._cached_state_slug[state_type] = s.slug if s else None
         return self._cached_state_slug[state_type]
 
-    def friendly_state(self):
-        """ Return a concise text description of the document's current state."""
+    def rfc_editor_queue_status(self):
+        """Human-readable RPC publication queue "Status" for the document, or None.
+
+        While a document is in the RFC Editor queue (draft-rfceditor state
+        "in_progress" or "blocked"), this is the status text pushed by the RFC
+        Production Center, matching what the queue website shows. Displays of the RFC
+        Editor state show it in place of the state name. It is None for a document whose
+        draft-rfceditor state predates the queue integration, which leaves those displays
+        showing the state name itself.
+
+        Costs a query per call. Tables rendering many documents replace this with a
+        precomputed value; see ietf.doc.utils_search.fill_in_rfc_editor_queue_status.
+        """
+        if self.get_state_slug("draft-rfceditor") not in ("in_progress", "blocked"):
+            return None
+        event = self.latest_event(RpcAssignmentDocEvent, type="changed_rpc_assignments")
+        return event.assignments if event else None
+
+    def friendly_state(self, label_iesg_state=True):
+        """ Return a concise text description of the document's current state.
+
+        For a draft in the RFC Editor queue that description is "IESG: RFC Ed Queue",
+        labeled because displays of it sit next to the RFC Editor's own status for the
+        document. Every other state stands on its own and is returned unlabeled. Callers
+        rendering the description somewhere already labeled as the IESG's pass
+        label_iesg_state=False.
+        """
         state = self.get_state()
         if not state:
             return "Unknown state"
@@ -440,7 +465,11 @@ class DocumentInfo(models.Model):
                         e = self.latest_event(LastCallDocEvent, type="sent_last_call")
                         if e:
                             return iesg_state_summary + " (ends %s)" % e.expires.astimezone(DEADLINE_TZINFO).date().isoformat()
-    
+                    elif label_iesg_state and iesg_state.slug == "rfcqueue":
+                        # The only state whose displays sit next to the RFC Editor's own
+                        # status for the document, where a bare state name is ambiguous.
+                        return "IESG: %s" % iesg_state_summary
+
                     return iesg_state_summary
                 else:
                     return "I-D Exists"

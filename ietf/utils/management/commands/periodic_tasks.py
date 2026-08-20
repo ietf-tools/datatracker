@@ -246,6 +246,17 @@ class Command(BaseCommand):
         )
 
         PeriodicTask.objects.get_or_create(
+            name="Check Person UUIDs",
+            task="ietf.person.tasks.check_person_uuids_task",
+            kwargs=json.dumps({"fix": False}),
+            defaults={
+                "enabled": False,
+                "crontab": self.crontabs["daily"],
+                "description": "Report Persons with no primary UUID",
+            },
+        )
+
+        PeriodicTask.objects.get_or_create(
             name="Run Yang model checks",
             task="ietf.submit.tasks.run_yang_model_checks_task",
             defaults=dict(
