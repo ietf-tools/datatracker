@@ -19,7 +19,8 @@ import debug                            # pyflakes:ignore
 
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-from django.db.models import Max, Subquery, OuterRef, TextField, Value, Q
+from django.db.models import Max, Subquery, OuterRef, TextField, Value, Q, Case, Exists, \
+    When
 from django.db.models.functions import Coalesce
 from django.conf import settings
 from django.urls import reverse as urlreverse
@@ -1564,12 +1565,40 @@ class Attended(models.Model):
         return f'{self.person} at {self.session}'
 
 
-class RegistrationManager(models.Manager):
+class RegistrationQuerySet(models.QuerySet):
+    def with_attendance_type(self):
+        """Annotate to accelerate the attendance_type property for a queryset
+        
+        n.b., this only pays attention to onsite vs remote attendance types
+        """
+        tickets = RegistrationTicket.objects.filter(registration=OuterRef("pk"))
+        return self.annotate(
+            _attendance_type=Case(
+                When(
+                    Exists(tickets.filter(attendance_type__slug="onsite")),
+                    then=Value("onsite"),
+                ),
+                When(
+                    Exists(tickets.filter(attendance_type__slug="remote")),
+                    then=Value("remote"),
+                ),
+                default=Value(None),
+                output_field=models.CharField(null=True),
+            )
+        )
+
+
+class RegistrationManager(models.Manager.from_queryset(RegistrationQuerySet)):
     def onsite(self):
-        return self.get_queryset().filter(tickets__attendance_type__slug='onsite')
+        return self.get_queryset().filter(tickets__attendance_type__slug="onsite")
 
     def remote(self):
-        return self.get_queryset().filter(tickets__attendance_type__slug='remote').exclude(tickets__attendance_type__slug='onsite')
+        return (
+            self.get_queryset()
+            .filter(tickets__attendance_type__slug="remote")
+            .exclude(tickets__attendance_type__slug="onsite")
+        )
+
 
 class Registration(models.Model):
     """Registration attendee records from the IETF registration system"""
@@ -1594,6 +1623,8 @@ class Registration(models.Model):
 
     @property
     def attendance_type(self):
+        if hasattr(self, "_attendance_type"):
+            return self._attendance_type  # added via with_attendance_type() on qs
         if self.tickets.filter(attendance_type__slug='onsite').exists():
             return 'onsite'
         elif self.tickets.filter(attendance_type__slug='remote').exists():
