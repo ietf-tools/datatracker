@@ -3,7 +3,6 @@
 
 import csv
 import datetime
-from encodings.aliases import aliases
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
