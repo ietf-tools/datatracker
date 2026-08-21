@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function displayChart (id, data) {
         const ctx = document.getElementById(id).getContext('2d') ;
-        chart = new Chart(ctx, {
+        let chart = new Chart(ctx, {
             type: 'bar',
             data: data,
             options: {
@@ -113,5 +113,5 @@ document.addEventListener('DOMContentLoaded', () => {
         return chart;
     }
 
-    const documentsChart = displayChart('documentsChart', chartData) ;
+    displayChart('documentsChart', chartData) ;
 })
