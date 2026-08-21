@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load origin %}
+{% load ietf_filters static %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        {% block title %}Used Affiliations in IETF Drafts{% endblock %}
+    </h1>
+    <p>
+        In case you think an affiliation mapping is wrong from the list, you can
+        <a href="mailto:{{ settings.SECRETARIAT_ACTION_EMAIL }}">file a ticket</a>.
+    </p>    
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th scope="col" data-sort="name">Affiliation in IETF Drafts</th>
+                <th scope="col" data-sort="author_count">Number of Occurrences</th>
+                <th scope="col" data-sort="canonical">Canonicalised Affiliation</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in affiliations %}
+                <tr>
+                    <td>{{ a.affiliation }}</td>
+                    <td>{{ a.author_count }}</td>
+                    <td>{{ a.canonical }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endblock %}
+    {% block js %}
+        <script src="{% static "ietf/js/list.js" %}"></script>
+    {% endblock %}

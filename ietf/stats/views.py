@@ -3,14 +3,18 @@
 
 import csv
 import datetime
+from encodings.aliases import aliases
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse as urlreverse
+from django.db.models import Count
 
 from ietf.ietfauth.utils import role_required
 from ietf.meeting.helpers import get_current_ietf_meeting_num
 from ietf.name.models import CountryName
+from ietf.doc.models import DocumentAuthor
+from ietf.stats.utils import get_aliased_affiliations
 
 
 def stats_index(request):
@@ -18,6 +22,37 @@ def stats_index(request):
     current_meeting = get_current_ietf_meeting_num()
     return render(request, "stats/index.html", {
         "current_meeting": current_meeting,
+    })
+
+def used_affiliations_list(request):
+    """Render a list of used affiliations in the DocAuthor model with their aliases."""
+    qs = (
+        DocumentAuthor.objects
+        .filter(document__type_id="draft")
+        .values('affiliation')
+        .annotate(author_count=Count("person", distinct=True))
+    )
+
+    affiliations = []
+    for row in qs:
+        affiliation = row['affiliation']
+        author_count = row['author_count']
+        aliases_map = get_aliased_affiliations([affiliation])
+        if affiliation in aliases_map:
+            if aliases_map[affiliation] != affiliation:
+                canonical = aliases_map[affiliation]
+            else:
+                canonical = '' # affiliation is already canonical
+        else:
+            canonical = '' # Nothing was found, affiliation is assumed to be canonical
+        affiliations.append({
+            "affiliation": affiliation,
+            "author_count": author_count,
+            "canonical": canonical,
+        })
+
+    return render(request, "stats/used_affiliations_list.html", {
+        "affiliations": affiliations,
     })
 
 def known_countries_list(request):
