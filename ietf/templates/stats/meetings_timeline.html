@@ -6,7 +6,7 @@
     {{ total_chart_data|json_script:"total-chart-data" }}
     {{ in_person_chart_data|json_script:"in-person-chart-data" }}
     {{ stats_type|json_script:"stats-type-data" }}
-    <script src="{% static 'ietf/js/meeting_timeline.js' %}"></script>
+    <script src="{% static 'ietf/js/stats_meeting_timeline.js' %}"></script>
 {% endblock %}
 {% block content %}
     {% origin %}

@@ -5,7 +5,7 @@
 {% block js %}
     {{ chart_data|json_script:"chart_data" }}
     {{ objects|json_script:"objects" }}
-    <script src="{% static 'ietf/js/document_total.js' %}"></script>
+    <script src="{% static 'ietf/js/stats_document_total.js' %}"></script>
 {% endblock %}
 {% block content %}
     {% origin %}

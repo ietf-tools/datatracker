@@ -4,7 +4,7 @@
 {% load ietf_filters static django_bootstrap5 %}
 {% block js %}
     {{ chart_data|json_script:"chart_data" }}
-    <script src="{% static 'ietf/js/document_timeline.js' %}"></script>
+    <script src="{% static 'ietf/js/stats_document_timeline.js' %}"></script>
 {% endblock %}
 {% block content %}
     {% origin %}

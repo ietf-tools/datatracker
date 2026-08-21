@@ -5,7 +5,7 @@
 {% block js %}
     {{ total_chart_data|json_script:"total-chart-data" }}
     {{ in_person_chart_data|json_script:"in-person-chart-data" }}
-    <script src="{% static 'ietf/js/meeting_stats.js' %}"></script>
+    <script src="{% static 'ietf/js/stats_meeting.js' %}"></script>
 {% endblock %}
 {% block content %}
     {% origin %}
