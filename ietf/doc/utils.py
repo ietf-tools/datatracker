@@ -21,7 +21,7 @@ from zoneinfo import ZoneInfo
 from django.conf import settings
 from django.contrib import messages
 from django.core.cache import caches
-from django.db.models import OuterRef
+from django.db.models import Max, OuterRef
 from django.forms import ValidationError
 from django.http import Http404
 from django.template.loader import render_to_string
@@ -1386,8 +1386,6 @@ def update_doc_extresources(doc, new_resources, by):
 
 def generate_idnits2_rfc_status():
 
-    blob=['N']*10000
-
     symbols={
         'ps': 'P',
         'inf': 'I',
@@ -1399,10 +1397,17 @@ def generate_idnits2_rfc_status():
         'unkn': 'U',
     }
 
-    rfcs = Document.objects.filter(type_id='rfc')
+    rfcs = Document.objects.filter(type_id='rfc').exclude(rfc_number=None)
+
+    # One character per RFC number, indexed by that number, so the array has to reach the
+    # highest RFC published. The floor keeps the fixed offsets in the workarounds below in
+    # range when only a few RFCs exist, as is the case under test.
+    highest = rfcs.aggregate(Max('rfc_number'))['rfc_number__max'] or 0
+    blob=['N']*max(highest, 6312)
+
     for rfc in rfcs:
         offset = int(rfc.rfc_number)-1
-        blob[offset] = symbols[rfc.std_level_id]
+        blob[offset] = symbols.get(rfc.std_level_id, 'U')
         if rfc.related_that('obs'):
             blob[offset] = 'O'
 
@@ -1421,6 +1426,17 @@ def generate_idnits2_rfc_status():
 
     # RFC200 is an old RFC List by Number
     blob[200 -1] = 'O' 
+
+    # !! Do not remove: idnits2 rejects this entire file if RFC16 is not 'O' !!
+    #
+    # This deliberately contradicts both the datatracker and the RFC Editor, which
+    # record RFC16 as updated rather than obsoleted. idnits2 validates its download
+    # of this file by matching the first 64 characters against a literal pattern that
+    # asserts 'O' here, inherited from a tools.ietf.org curation that disagreed with
+    # the RFC Editor. A mismatch makes idnits2 discard the file as corrupt and fall
+    # back to whatever stale copy it has, silently performing no RFC status checks at
+    # all. Removing this line therefore breaks every idnits2 client, not just RFC16.
+    blob[16 - 1] = 'O'
 
     # End Workarounds
 
