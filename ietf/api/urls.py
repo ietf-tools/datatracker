@@ -8,6 +8,7 @@ from django.views.generic import TemplateView
 
 from ietf import api
 from ietf.doc import views_ballot, api as doc_api
+from ietf.meeting import api as meeting_api
 from ietf.meeting import views as meeting_views
 from ietf.submit import views as submit_views
 from ietf.utils.urls import url
@@ -71,6 +72,7 @@ urlpatterns = [
     url(r'^meeting/(?P<num>[A-Za-z0-9._+-]+)/agenda-data$', meeting_views.api_get_agenda_data),
     # Meeting session materials
     url(r'^meeting/session/(?P<session_id>[A-Za-z0-9._+-]+)/materials$', meeting_views.api_get_session_materials),
+    url(r'^meeting/registration/attended/(?P<email>[^/\x00]+)/?$', meeting_api.MeetingsAttendedByEmail.as_view()),
     # Let MeetEcho upload bluesheets
     url(r'^notify/meeting/bluesheet/?$', meeting_views.api_upload_bluesheet),
     # Let MeetEcho tell us about session attendees
