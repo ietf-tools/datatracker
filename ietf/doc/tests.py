@@ -3648,8 +3648,23 @@ class Idnits2SupportTests(TestCase):
     def test_generate_idnits2_rfc_status(self):
         for slug in ('bcp', 'ds', 'exp', 'hist', 'inf', 'std', 'ps', 'unkn'):
             WgRfcFactory(std_level_id=slug)
+        WgRfcFactory(rfc_number=10001, std_level_id='ps')
+        WgRfcFactory(rfc_number=10002, std_level_id=None)
         blob = generate_idnits2_rfc_status().replace("\n", "")
         self.assertEqual(blob[6312-1], "O")
+        # idnits2 discards the whole file if this is not "O" - see generate_idnits2_rfc_status
+        self.assertEqual(blob[16-1], "O")
+        self.assertEqual(blob[10001-1], "P")
+        self.assertEqual(blob[10002-1], "U")
+
+    def test_generate_idnits2_rfc_status_low_numbers_only(self):
+        # The workarounds write fixed offsets, so the blob has to reach 6312 even when
+        # no RFC does.
+        WgRfcFactory(rfc_number=1001, std_level_id="ps")
+        blob = generate_idnits2_rfc_status().replace("\n", "")
+        self.assertEqual(blob[6312-1], "O")
+        self.assertEqual(blob[200-1], "O")
+        self.assertEqual(blob[16-1], "O")
 
     def test_rfc_status(self):
         url = urlreverse('ietf.doc.views_doc.idnits2_rfc_status')
