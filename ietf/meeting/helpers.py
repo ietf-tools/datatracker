@@ -1082,10 +1082,11 @@ def sessions_post_save(request, forms):
             form.save_agenda()
 
         try:
-            create_interim_session_conferences(
+            create_interim_session_conferences([
                 form.instance for form in forms
                 if form.cleaned_data.get('remote_participation', None) == 'meetecho'
-            )
+                and _needs_meetecho_refresh(form)
+            ])
         except RuntimeError:
             messages.warning(
                 request,
@@ -1095,11 +1096,30 @@ def sessions_post_save(request, forms):
             )
 
 
+# Form fields that, when changed, require a Meetecho conference to be
+# (re)created because they alter the scheduled time or duration.
+_MEETECHO_TIMING_FIELDS = frozenset(('date', 'time', 'requested_duration', 'end_time'))
+
+
+def _needs_meetecho_refresh(form):
+    """Does this session's Meetecho conference need to be (re)created?
+
+    If the session already has a Meetecho URL and no timing-related field
+    changed, we leave the existing conference alone — recreating it would
+    orphan the old one and is unnecessary.
+    """
+    existing = form.instance.remote_instructions or ''
+    if 'meetecho' not in existing:
+        return True  # no Meetecho conference yet (empty or manual URL)
+    return bool(_MEETECHO_TIMING_FIELDS.intersection(form.changed_data))
+
+
 def create_interim_session_conferences(sessions):
     error_occurred = False
     if hasattr(settings, 'MEETECHO_API_CONFIG'):  # do nothing if not configured
         meetecho_manager = meetecho.ConferenceManager(settings.MEETECHO_API_CONFIG)
         for session in sessions:
+            previous_url = session.remote_instructions or ''
             ts = session.official_timeslotassignment().timeslot
             try:
                 confs = meetecho_manager.create(
@@ -1116,7 +1136,23 @@ def create_interim_session_conferences(sessions):
             if len(confs) == 1:
                 session.remote_instructions = confs[0].url
                 session.save()
+                # Best-effort: clean up the conference we just replaced so it
+                # doesn't get left orphaned on the Meetecho side. Failures here
+                # must not undo the successful recreate.
+                if previous_url and 'meetecho' in previous_url and previous_url != confs[0].url:
+                    try:
+                        for conference in meetecho_manager.fetch(session.group):
+                            if conference.url == previous_url:
+                                conference.delete()
+                                break
+                    except Exception as err:
+                        log.log(
+                            f'Exception deleting old Meetecho conference {previous_url} '
+                            f'for {session}: {err}'
+                        )
             else:
+                # Leave session.remote_instructions alone: preserving the
+                # previous URL is the whole point of the failure path.
                 error_occurred = True
     if error_occurred:
         raise RuntimeError('error creating meetecho conferences')
