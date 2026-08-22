@@ -303,12 +303,6 @@ class StatisticsTests(TestCase):
                 for ds in chart_data["datasets"]
             ),
         )
-        self.assertTrue(
-            any(
-                ds["label"] == "Other" and ds["data"] == [0, 0]
-                for ds in chart_data["datasets"]
-            ),
-        )
 
         # Test#6 the authors specific statistics: for all WG drafts about the country
         r = self.client.get(

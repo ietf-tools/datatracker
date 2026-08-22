@@ -302,9 +302,13 @@ def get_authors_timeline_data_for_documents(doc_type: str = "all", group_by: str
     )[:top_n]
     non_top_groups = documents_totals.keys() - set(top_groups)
     other_totals: dict[int, int] = defaultdict(int)
+    other_bin_is_empty = True
     for y in years_list:
         for g in non_top_groups:
-            other_totals[y] += int(data_map[y].get(g, 0))
+            count = int(data_map[y].get(g, 0))
+            other_totals[y] += count
+            if count > 0:
+                other_bin_is_empty = False
 
     # ── Step 4: Build Chart.js datasets ──
 
@@ -326,18 +330,19 @@ def get_authors_timeline_data_for_documents(doc_type: str = "all", group_by: str
         })
 
     # -- Step 4.bis handle the other --
-    datasets.append({
-        "label": "Other",
-        "data": [other_totals.get(year, 0) for year in years_list],
-        "borderColor": "black",
-        "fill": False,
-        "tension": 0.0,
-        "pointColor": "black",
-        "pointBackgroundColor": "black",
-        "pointRadius": 4,
-        "pointHoverRadius": 6,
-        "borderWidth": 2,
-    })
+    if not other_bin_is_empty:
+        datasets.append({
+            "label": "Other",
+            "data": [other_totals.get(year, 0) for year in years_list],
+            "borderColor": "black",
+            "fill": False,
+            "tension": 0.0,
+            "pointColor": "black",
+            "pointBackgroundColor": "black",
+            "pointRadius": 4,
+            "pointHoverRadius": 6,
+            "borderWidth": 2,
+        })
 
     return years_list, datasets
 

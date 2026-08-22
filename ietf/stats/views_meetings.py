@@ -64,21 +64,23 @@ def _build_timeline_datasets(
             dataset["backgroundColor"] = color + "99"
         datasets.append(dataset)
 
-    # Add "Other" category
-    datasets.append({
-        "label": "Other",
-        "data": [other_totals.get(m, 0) for m in sorted_meetings],
-        "borderColor": "black",
-        "fill": bool(include_background_color),
-        "tension": 0.0 if include_background_color else 0.3,
-        "pointColor": "black",
-        "pointBackgroundColor": "black",
-        "pointRadius": 4,
-        "pointHoverRadius": 6,
-        "borderWidth": 2,
-    })
+    # Add "Other" category, only if it has any non-zero value
+    if any(other_totals.get(m, 0) for m in sorted_meetings):
+        datasets.append({
+            "label": "Other",
+            "data": [other_totals.get(m, 0) for m in sorted_meetings],
+            "borderColor": "black",
+            "fill": bool(include_background_color),
+            "tension": 0.0 if include_background_color else 0.3,
+            "pointColor": "black",
+            "pointBackgroundColor": "black",
+            "pointRadius": 4,
+            "pointHoverRadius": 6,
+            "borderWidth": 2,
+        })
+
     if include_background_color:
-        datasets[-1]["backgroundColor"] = "#00000099"
+            datasets[-1]["backgroundColor"] = "#00000099"
 
     return datasets
 
