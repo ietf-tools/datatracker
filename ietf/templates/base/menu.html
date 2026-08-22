@@ -465,10 +465,23 @@
                 </li>
             {% endif %}
             {% if user|has_role:"LLC Staff" %}
+                {% if flavor == 'top' %}<li><hr class="dropdown-divider"></li>{% endif %}
                 <li>
                     <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
                        href="{% url "ietf.stats.views.annual_report_inputs" %}">
                         Annual report inputs
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
+                       href="{% url "ietf.stats.views.known_countries_list" %}">
+                        Known countries
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
+                       href="{% url "ietf.stats.views.used_affiliations_list" %}">
+                        Used affiliations
                     </a>
                 </li>
             {% endif %}
