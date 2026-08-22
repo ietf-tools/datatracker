@@ -377,6 +377,19 @@ class StatisticsTests(TestCase):
         # Let's check whether USA has indeed 1
         self.assertTrue(chart_data["datasets"][0]["data"][individual_index] == 1)
 
+        # Test#10 Check the used affiliations list view
+        r = self.client.get(urlreverse(ietf.stats.views.used_affiliations_list))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Used Affiliations in IETF Drafts")
+        self.assertTrue(
+            any(
+                [cell.text for cell in row.findall("td")]
+                == ["CISCO corp.", "1", "Cisco"]
+                for row in PyQuery(r.content)("tr")
+            )
+        )
+        
+
     def test_meeting_stats(self):
         meeting124 = MeetingFactory(type_id="ietf", number="124", date=timezone.now())
         meeting125 = MeetingFactory(
