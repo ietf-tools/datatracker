@@ -5,13 +5,14 @@ from typing import Any
 
 from django.conf import settings
 from django.core.cache import cache
-from django.db.models import Count
+from django.db.models import Count, DateTimeField, OuterRef, Subquery
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse as urlreverse
 
-from ietf.doc.models import Document
+from ietf.doc.models import DocEvent, Document
 from ietf.stats.utils import check_top_n_choice, color_from_hash, get_top_n_choices
+from ietf.utils.timezone import RPC_TZINFO
 
 
 def get_total_data_for_documents(
@@ -79,7 +80,7 @@ def documents_total(request: Any, doc_type: str = "rfc", stats_type: str = "leve
 
     """
     # Query parameters (from ?key=value)
-    top_n = int(request.GET.get("top", "10"))
+    top_n = int(request.GET.get("top", "20"))
     # Check the top-n value against the allowed choices
     if not check_top_n_choice(top_n):
         return render(request,
@@ -140,7 +141,7 @@ def get_timeline_data_for_documents(
     """Get timeline data for documents grouped by field over years.
 
     Args:
-        doc_type: Document type filter ('rfc', 'draft', 'all').
+        doc_type: Document type filter ('rfc', 'draft').
         group_by: Field to group by (e.g., 'stream__name', 'group__name').
         top_n: Number of top groups to display.
 
@@ -159,7 +160,21 @@ def get_timeline_data_for_documents(
     if result is not None:
         years_set, documents_totals, data_map = result
     else:
-        queryset = Document.objects.filter(type_id=doc_type)
+        # Fetch each document's publication event time in the same query rather
+        # than triggering a separate query per row via Document.pub_date().
+        event_type = "published_rfc" if doc_type == "rfc" else "new_revision"
+        pub_datetime_subquery = Subquery(
+            DocEvent.objects
+            .filter(doc=OuterRef("pk"), type=event_type)
+            .order_by("-time", "-id")
+            .values("time")[:1],
+            output_field=DateTimeField(),
+        )
+        queryset = (
+            Document.objects
+            .filter(type_id=doc_type)
+            .annotate(pub_datetime=pub_datetime_subquery)
+        )
 
         # ── Step 1: Collect all years and document totals ──
         years_set_temp: set[int] = set()
@@ -167,9 +182,9 @@ def get_timeline_data_for_documents(
         data_map = defaultdict(dict)  # {year: {group: count}}
 
         for row in queryset:
-            if not row.pub_date():
+            if row.pub_datetime is None:
                 continue
-            year = row.pub_date().year
+            year = row.pub_datetime.astimezone(RPC_TZINFO).year
             if group_by == "stream__name":
                 group = row.stream.name if row.stream else "Unspecified"
             elif group_by == "group__name":
@@ -251,7 +266,7 @@ def documents_timeline(request: Any, doc_type: str = "rfc", stats_type: str = "l
 
     """
     # Query parameters (from ?key=value)
-    top_n = int(request.GET.get("top", "10"))
+    top_n = int(request.GET.get("top", "20"))
     # Check the top-n value against the allowed choices
     if not check_top_n_choice(top_n):
         return render(request,

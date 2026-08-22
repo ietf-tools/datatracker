@@ -4,12 +4,12 @@ from collections import Counter, defaultdict
 
 from django.conf import settings
 from django.core.cache import cache
-from django.db.models import Count, Q
+from django.db.models import Count, DateTimeField, OuterRef, Q, Subquery
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse as urlreverse
 
-from ietf.doc.models import DocumentAuthor, RfcAuthor
+from ietf.doc.models import DocEvent, DocumentAuthor, RfcAuthor
 from ietf.stats.utils import (
     check_top_n_choice,
     color_from_hash,
@@ -17,6 +17,7 @@ from ietf.stats.utils import (
     get_aliased_countries,
     get_top_n_choices,
 )
+from ietf.utils.timezone import RPC_TZINFO
 
 
 def get_authors_total_data_for_documents(doc_type: str = "all",
@@ -135,10 +136,7 @@ def authors_total(request: HttpRequest, doc_type: str = "all",
 
     """
     # Query parameters (from ?key=value)
-    try:
-        top_n = max(1, min(int(request.GET.get("top", "10")), 100))
-    except ValueError:
-        top_n = 10
+    top_n = int(request.GET.get("top", "20"))
     # Check the top-n value against the allowed choices
     if not check_top_n_choice(top_n):
         return render(request,
@@ -200,10 +198,30 @@ def get_authors_timeline_data_for_documents(doc_type: str = "all", group_by: str
     if result is not None:
         years_list, documents_totals, data_map = result
     else:
+        # Fetch each document's publication event time in the same query rather
+        # than triggering a separate query per row via Document.pub_date().
+        new_revision_time = None
+        published_rfc_time = None
+        if (doc_type in ("draft", "wg-draft")) or (doc_type == "all"):
+            new_revision_time = Subquery(
+                DocEvent.objects
+                .filter(doc=OuterRef("document_id"), type="new_revision")
+                .order_by("-time", "-id")
+                .values("time")[:1],
+                output_field=DateTimeField(),
+            )
+        if (doc_type == "rfc") or (doc_type == "all"):
+            published_rfc_time = Subquery(
+                DocEvent.objects
+                .filter(doc=OuterRef("document_id"), type="published_rfc")
+                .order_by("-time", "-id")
+                .values("time")[:1],
+                output_field=DateTimeField(),
+            )
+
         # Build a dynamic query set filter to get country/affiliation using the appropriate model based on doc_type.
         # RfcAuthor  for RFC
         # DocumentAuthor for other documents (i.e., drafts)
-
         # Using distinct=True in Count to avoid double counting authors who may have multiple entries in the database
         draft_queryset = None
         rfc_queryset = None
@@ -214,22 +232,22 @@ def get_authors_timeline_data_for_documents(doc_type: str = "all", group_by: str
             draft_queryset = (
                 DocumentAuthor.objects
                 .filter(filters)
-                .select_related("document")
+                .annotate(pub_datetime=new_revision_time)
             )
         elif doc_type == "rfc":
             rfc_queryset = (
                 RfcAuthor.objects
-                .select_related("document")
+                .annotate(pub_datetime=published_rfc_time)
             )
         else:
             draft_queryset = (
                 DocumentAuthor.objects
                 .filter(document__type_id="draft")
-                .select_related("document")
+                .annotate(pub_datetime=new_revision_time)
             )
             rfc_queryset = (
                 RfcAuthor.objects
-                .select_related("document")
+                .annotate(pub_datetime=published_rfc_time)
             )
 
     # ── Step 1: Collect all authors publication dates ──
@@ -239,15 +257,15 @@ def get_authors_timeline_data_for_documents(doc_type: str = "all", group_by: str
         year_group_list = []
         if draft_queryset is not None:
             year_group_list += [
-                (row.document.pub_date().year, getattr(row, group_by))
+                (row.pub_datetime.astimezone(RPC_TZINFO).year, getattr(row, group_by))
                 for row in draft_queryset
-                if row.document.pub_date() is not None
+                if row.pub_datetime is not None
             ]
         if rfc_queryset is not None:
             year_group_list += [
-                (row.document.pub_date().year, getattr(row, group_by))
+                (row.pub_datetime.astimezone(RPC_TZINFO).year, getattr(row, group_by))
                 for row in rfc_queryset
-                if row.document.pub_date() is not None
+                if row.pub_datetime is not None
             ]
 
         if group_by == "affiliation":
@@ -337,10 +355,7 @@ def authors_timeline(request: HttpRequest, doc_type: str = "all", stats_type: st
 
     """
     # Query parameters (from ?key=value)
-    try:
-        top_n = max(1, min(int(request.GET.get("top", "20")), 100))
-    except ValueError:
-        top_n = 20
+    top_n = int(request.GET.get("top", "20"))
     # Check the top-n value against the allowed choices
     if not check_top_n_choice(top_n):
         return render(request,
