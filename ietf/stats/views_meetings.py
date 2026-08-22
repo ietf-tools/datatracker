@@ -151,7 +151,6 @@ def get_affiliation_data_for_meetings(attendance_type: str | None = None,
         )
 
         # Count per canonicalized affiliation
-        organization: dict[str, int] = {}
         meetings_set: set[str] = set()
         org_totals: dict[str, int] = defaultdict(int)
         data_map: dict[str, dict[str, int]] = defaultdict(dict)  # {org: {meeting: count}}
@@ -163,7 +162,6 @@ def get_affiliation_data_for_meetings(attendance_type: str | None = None,
                 affiliation = "Unspecified"
             else:
                 affiliation = alias_map.get(reg["affiliation"], reg["affiliation"])
-            organization[affiliation] = organization.get(affiliation, 0) + 1
             org_totals[affiliation] = org_totals.get(affiliation, 0) + 1
             data_map[affiliation][meeting] = data_map[affiliation].get(meeting, 0) + 1
 
@@ -341,7 +339,10 @@ def meetings_timeline(request: Any, stats_type: str = "country") -> Any:
 
     """
     # Query parameters (from ?key=value)
-    top_n = int(request.GET.get("top", "20"))
+    try:
+        top_n = int(request.GET.get("top", "20"))
+    except ValueError:
+        top_n = 20
     # Check the top-n value against the allowed choices
     if not check_top_n_choice(top_n):
         return render(request,
@@ -526,7 +527,10 @@ def meeting_stats(request: Any, meeting_number: str | None = None, stats_type: s
     )
 
     # Query parameters (from ?key=value)
-    top_n = int(request.GET.get("top", "20"))
+    try:
+        top_n = int(request.GET.get("top", "20"))
+    except ValueError:
+        top_n = 20
     # Check the top-n value against the allowed choices
     if not check_top_n_choice(top_n):
         return render(request, "stats/error.html", {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"})

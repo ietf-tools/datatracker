@@ -14,6 +14,9 @@ from django.utils import timezone
 from pyquery import PyQuery
 
 import ietf.stats.views
+import ietf.stats.views_authors
+import ietf.stats.views_documents
+import ietf.stats.views_meetings
 from ietf.doc.factories import (
     DocEventFactory,
     DocumentAuthorFactory,
@@ -61,6 +64,9 @@ class StatisticsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "There was an error in your request")
         self.assertContains(r, "Invalid top_n choice: 3")
+        r = self.client.get(url + "?top=eric")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "There was an error in your request")
 
     def test_document_stats(self):
         timeNow = timezone.now()
@@ -496,7 +502,7 @@ class StatisticsTests(TestCase):
                 ietf.stats.views_meetings.meeting_stats,
                 kwargs={"meeting_number": "125", "stats_type": "affiliation"},
             )
-            + "?download=total&top_n=5"
+            + "?download=total&top=5"
         )
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r["Content-Type"], "text/csv")

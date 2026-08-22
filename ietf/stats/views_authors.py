@@ -136,7 +136,10 @@ def authors_total(request: HttpRequest, doc_type: str = "all",
 
     """
     # Query parameters (from ?key=value)
-    top_n = int(request.GET.get("top", "20"))
+    try:
+        top_n = int(request.GET.get("top", "20"))
+    except ValueError:
+        top_n = 20
     # Check the top-n value against the allowed choices
     if not check_top_n_choice(top_n):
         return render(request,
@@ -360,7 +363,10 @@ def authors_timeline(request: HttpRequest, doc_type: str = "all", stats_type: st
 
     """
     # Query parameters (from ?key=value)
-    top_n = int(request.GET.get("top", "20"))
+    try:
+        top_n = int(request.GET.get("top", "20"))
+    except ValueError:
+        top_n = 20
     # Check the top-n value against the allowed choices
     if not check_top_n_choice(top_n):
         return render(request,

@@ -2,7 +2,7 @@
 
 from django.db import migrations, models
 
-INITIAL_MAIN_NAMES = ['Adibe', 'Agilent', 'Akamai', 'Alcatel', 'Alcatel-Lucent', 'Alibaba', 'Amazon', 'Apple', 'Arista', 'Aruba', 'AT&T', 'Avaya', 
+INITIAL_MAIN_NAMES = ['Adobe', 'Agilent', 'Akamai', 'Alcatel', 'Alcatel-Lucent', 'Alibaba', 'Amazon', 'Apple', 'Arista', 'Aruba', 'AT&T', 'Avaya', 
     'BBN', 'Bell Labs', 'Boeing', 'Broadcom', 'Brocade', 'BT', 'Bunyip', 'Cabletron', 
     'CERNET', 'Check Point', 'Ciena', 'Cisco', 'Comcast', 'DEC', 'Dell', 'Ericsson', 'EMC', 
     'F5', 'Fastmail', 'France Telecom', 'Fraunhofer', 'Fujitsu', 
