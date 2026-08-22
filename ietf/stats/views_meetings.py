@@ -130,21 +130,23 @@ def get_affiliation_data_for_meetings(attendance_type: str | None = None,
         Tuple of (sorted_meetings, datasets) for Chart.js.
 
     """
-    cache_key = f"stats:get_affiliation_data_for_meetings:{attendance_type}-{top_n}"
-    sorted_meetings, datasets = cache.get(cache_key, (None, None))
-    if (sorted_meetings, datasets) == (None, None):
+    cache_key = f"stats:get_affiliation_data_for_meetings:{attendance_type}"
+    sorted_meetings, sorted_orgs = cache.get(cache_key, (None, None))
+    if (sorted_meetings, sorted_orgs) == (None, None):
 
         # Get registration status details
         if attendance_type:
             base_registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
         else:
             base_registrations = Registration.objects.all()
-        registrations = base_registrations.values("affiliation", "meeting__number")
+        registrations = list(
+            base_registrations.values("affiliation", "meeting__number")
+        )
 
         # Prepare affiliation data, applying canonicalization and aliasing
-        alias_map = get_aliased_affiliations(affiliation
-                                             for affiliation
-                                             in registrations.values_list("affiliation", flat=True))
+        alias_map = get_aliased_affiliations(
+            registration["affiliation"] for registration in registrations
+        )
 
         # Count per canonicalized affiliation
         organization: dict[str, int] = {}
@@ -167,25 +169,26 @@ def get_affiliation_data_for_meetings(attendance_type: str | None = None,
         sorted_meetings = sorted(meetings_set, key=lambda x: int(x))
 
         # ── Step 3: Get top N countries ──
-        top_orgs = sorted(
+        sorted_orgs = sorted(
             org_totals.keys(),
             key=lambda c: org_totals[c],
             reverse=True,
-        )[:top_n]
-        non_top_orgs = set(org_totals.keys()) - set(top_orgs)
-        other_totals: dict[str, int] = defaultdict(int)
-        for m in sorted_meetings:
-            other_totals[m] = 0
-            for c in non_top_orgs:
-                other_totals[m] += int(data_map[c].get(m, 0))
-
-        # ── Step 4: Build Chart.js datasets ──
-        datasets = _build_timeline_datasets(top_orgs, data_map, sorted_meetings, other_totals)
+        )
         cache.set(
             cache_key,
-            (sorted_meetings, datasets),
+            (sorted_meetings, sorted_orgs),
             settings.STATS_TIMELINE_CACHE_TIMEOUT,
         )
+    top_orgs = sorted_orgs[:top_n]
+    non_top_orgs = set(org_totals.keys()) - set(top_orgs)
+    other_totals: dict[str, int] = defaultdict(int)
+    for m in sorted_meetings:
+        other_totals[m] = 0
+        for c in non_top_orgs:
+            other_totals[m] += int(data_map[c].get(m, 0))
+
+    # ── Step 4: Build Chart.js datasets ──
+    datasets = _build_timeline_datasets(top_orgs, data_map, sorted_meetings, other_totals)
 
     return sorted_meetings, datasets
 
@@ -201,9 +204,9 @@ def get_country_data_for_meetings(attendance_type: str | None = None,
         Tuple of (sorted_meetings, datasets) for Chart.js.
 
     """
-    cache_key = f"stats:get_country_data_for_meetings:{attendance_type}-{top_n}"
-    sorted_meetings, datasets = cache.get(cache_key, (None, None))
-    if (sorted_meetings, datasets) == (None, None):
+    cache_key = f"stats:get_country_data_for_meetings:{attendance_type}"
+    sorted_meetings, sorted_countries = cache.get(cache_key, (None, None))
+    if (sorted_meetings, sorted_countries) == (None, None):
         # Get registration status counts, aggregated by country_code
         if attendance_type:
             base_registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
@@ -219,9 +222,8 @@ def get_country_data_for_meetings(attendance_type: str | None = None,
             .order_by("meeting__number")  # chronological order
         )
 
-        # Prepare country affiliation data, applying canonicalization and aliasing
+        # Prepare country data, applying canonicalization and aliasing
         # Mainly used to conver 2-letter country code into a full name
-        # Could possible use Country directly
         alias_map = get_aliased_countries(country_code
                                           for country_code
                                           in queryset.values_list("country_code", flat=True))
@@ -244,27 +246,29 @@ def get_country_data_for_meetings(attendance_type: str | None = None,
         sorted_meetings = sorted(meetings_set, key=lambda x: int(x))
 
         # ── Step 3: Get top N countries ──
-        top_countries = sorted(
+        sorted_countries = sorted(
             country_totals.keys(),
             key=lambda c: country_totals[c],
             reverse=True,
-        )[:top_n]
-
-        # -- Step 3.bis do the 'other' category --
-        non_top_countries = set(country_totals.keys()) - set(top_countries)
-        other_totals: dict[str, int] = defaultdict(int)
-        for m in sorted_meetings:
-            other_totals[m] = 0
-            for c in non_top_countries:
-                other_totals[m] += int(data_map[c].get(m, 0))
-
-        # ── Step 4: Build Chart.js datasets ──
-        datasets = _build_timeline_datasets(top_countries, data_map, sorted_meetings, other_totals)
+        )
         cache.set(
             cache_key,
-            (sorted_meetings, datasets),
+            (sorted_meetings, sorted_countries),
             settings.STATS_TIMELINE_CACHE_TIMEOUT,
         )
+        
+    top_countries = sorted_countries[:top_n]
+
+    # -- Step 3.bis do the 'other' category --
+    non_top_countries = set(country_totals.keys()) - set(top_countries)
+    other_totals: dict[str, int] = defaultdict(int)
+    for m in sorted_meetings:
+        other_totals[m] = 0
+        for c in non_top_countries:
+            other_totals[m] += int(data_map[c].get(m, 0))
+
+    # ── Step 4: Build Chart.js datasets ──
+    datasets = _build_timeline_datasets(top_countries, data_map, sorted_meetings, other_totals)
 
     return sorted_meetings, datasets
 
