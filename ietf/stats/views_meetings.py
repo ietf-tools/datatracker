@@ -256,7 +256,7 @@ def get_country_data_for_meetings(attendance_type: str | None = None,
             (sorted_meetings, sorted_countries),
             settings.STATS_TIMELINE_CACHE_TIMEOUT,
         )
-        
+
     top_countries = sorted_countries[:top_n]
 
     # -- Step 3.bis do the 'other' category --
@@ -339,10 +339,7 @@ def meetings_timeline(request: Any, stats_type: str = "country") -> Any:
 
     """
     # Query parameters (from ?key=value)
-    try:
-        top_n = max(1, min(int(request.GET.get("top", "20")), 100))
-    except ValueError:
-        top_n = 20
+    top_n = int(request.GET.get("top", "20"))
     # Check the top-n value against the allowed choices
     if not check_top_n_choice(top_n):
         return render(request,
@@ -527,10 +524,7 @@ def meeting_stats(request: Any, meeting_number: str | None = None, stats_type: s
     )
 
     # Query parameters (from ?key=value)
-    try:
-        top_n = max(1, min(int(request.GET.get("top", "20")), 100))
-    except ValueError:
-        top_n = 20
+    top_n = int(request.GET.get("top", "20"))
     # Check the top-n value against the allowed choices
     if not check_top_n_choice(top_n):
         return render(request, "stats/error.html", {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"})
