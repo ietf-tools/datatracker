@@ -164,7 +164,7 @@ def get_affiliation_data_for_meetings(attendance_type: str | None = None,
             data_map[affiliation][meeting] = data_map[affiliation].get(meeting, 0) + 1
 
         # ── Step 2: Sort meetings numerically rather than alphabetically  ──
-        sorted_meetings = sorted(meetings_set, key=lambda x: int(x) if x.isdigit() else x)
+        sorted_meetings = sorted(meetings_set, key=lambda x: int(x))
 
         # ── Step 3: Get top N countries ──
         top_orgs = sorted(
@@ -238,10 +238,10 @@ def get_country_data_for_meetings(attendance_type: str | None = None,
 
             meetings_set.add(meeting)
             country_totals[country] += count
-            data_map[country][meeting] = count
+            data_map[country][meeting] = data_map[country].get(meeting, 0) + count
 
         # ── Step 2: Sort meetings numerically rather than alphabetically  ──
-        sorted_meetings = sorted(meetings_set, key=lambda x: int(x) if x.isdigit() else x)
+        sorted_meetings = sorted(meetings_set, key=lambda x: int(x))
 
         # ── Step 3: Get top N countries ──
         top_countries = sorted(
@@ -311,7 +311,7 @@ def get_data_for_meetings(top_n: int = 20) -> tuple[list[str], list[dict[str, An
             data_map[ticket][meeting] = count
 
         # ── Step 2: Sort meetings numerically rather than alphabetically  ──
-        sorted_meetings = sorted(meetings_set, key=lambda x: int(x) if x.isdigit() else x)
+        sorted_meetings = sorted(meetings_set, key=lambda x: int(x))
         ticket_types = tickets_totals.keys()
 
         # ── Step 4: Build Chart.js datasets ──

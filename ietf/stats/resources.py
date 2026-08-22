@@ -21,7 +21,6 @@ class CountryAliasResource(ModelResource):
         queryset = CountryAlias.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'countryalias'
         ordering = ['id', ]
         filtering = { 
             "id": ALL,
@@ -35,7 +34,6 @@ class AffiliationIgnoredEndingResource(ModelResource):
         queryset = AffiliationIgnoredEnding.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'affiliationignoredending'
         ordering = ['id', ]
         filtering = { 
             "id": ALL,
@@ -48,11 +46,11 @@ class AffiliationAliasResource(ModelResource):
         queryset = AffiliationAlias.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'affiliationalias'
         ordering = ['id', ]
         filtering = { 
             "id": ALL,
-            "main_name": ALL,
+            "alias": ALL,
+            "name": ALL,
         }
 api.stats.register(AffiliationAliasResource())
 
@@ -61,12 +59,10 @@ class AffiliationMainNameResource(ModelResource):
         queryset = AffiliationMainName.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'affiliationalias'
         ordering = ['id', ]
         filtering = { 
             "id": ALL,
-            "alias": ALL,
-            "name": ALL,
+            "main_name": ALL,
         }
 api.stats.register(AffiliationMainNameResource())
 

@@ -22,7 +22,7 @@ def get_total_data_for_documents(
     """Get aggregated document statistics grouped by the specified field.
 
     Args:
-        doc_type: Document type filter ('rfc', 'draft', 'all', 'wg-draft').
+        doc_type: Document type filter ('rfc', 'draft').
         group_by: Field to group by (e.g., 'stream__name', 'group__name').
         top_n: Number of top groups to display.
 
@@ -30,18 +30,9 @@ def get_total_data_for_documents(
         Chart.js compatible data dictionary with labels and datasets.
 
     """
-    # Build a dynamic query set filter
-    filters = Q()
-    if doc_type == "all":
-        filters &= Q(type_id__in=["draft", "rfc"])
-    elif doc_type == "wg-draft":
-        filters &= Q(type_id="draft")
-        filters &= Q(document__group__type_id="wg")
-    else:
-        filters &= Q(type_id=doc_type)
     queryset = (
         Document.objects
-        .filter(filters)
+        .filter(type_id=doc_type)
         .values(group_by)
         .annotate(document_count=Count("id", distinct=True))
         .order_by("-document_count")
@@ -88,10 +79,7 @@ def documents_total(request: Any, doc_type: str = "rfc", stats_type: str = "leve
 
     """
     # Query parameters (from ?key=value)
-    try:
-        top_n = max(1, min(int(request.GET.get("top", "10")), 100))
-    except (ValueError, TypeError):
-        top_n = 10
+    top_n = int(request.GET.get("top", "10"))
     # Check the top-n value against the allowed choices
     if not check_top_n_choice(top_n):
         return render(request,
@@ -171,10 +159,7 @@ def get_timeline_data_for_documents(
     if result is not None:
         years_set, documents_totals, data_map = result
     else:
-        if doc_type != "all":  # Filter by specific document type
-            queryset = Document.objects.filter(type_id=doc_type)
-        else: # doc_type == 'all', include both drafts and RFCs (and this option is no more used in urls.py though)
-            queryset = Document.objects.filter(type_id__in=["draft", "rfc"])
+        queryset = Document.objects.filter(type_id=doc_type)
 
         # ── Step 1: Collect all years and document totals ──
         years_set_temp: set[int] = set()
@@ -266,10 +251,7 @@ def documents_timeline(request: Any, doc_type: str = "rfc", stats_type: str = "l
 
     """
     # Query parameters (from ?key=value)
-    try:
-        top_n = max(1, min(int(request.GET.get("top", "10")), 100))
-    except (ValueError, TypeError):
-        top_n = 10
+    top_n = int(request.GET.get("top", "10"))
     # Check the top-n value against the allowed choices
     if not check_top_n_choice(top_n):
         return render(request,
@@ -318,6 +300,8 @@ def documents_timeline(request: Any, doc_type: str = "rfc", stats_type: str = "l
         "objects": "documents",
         "possible_docs_types": possible_docs_types,
         "possible_stats_types": possible_stats_types,
+        "timeline_url": urlreverse(documents_timeline,
+                                   kwargs={"doc_type": doc_type, "stats_type": stats_type}),
         "total_url": urlreverse(documents_total,
                                 kwargs={"doc_type": doc_type, "stats_type": stats_type}),
         "doc_type": doc_type,

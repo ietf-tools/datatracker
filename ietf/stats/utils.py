@@ -28,7 +28,7 @@ colors = [
 
 def color_from_hash(s):
     if s == 'Unspecified':
-        return "#B0B0B0 "
+        return "#B0B0B0"
     if s == 'Other':
         return "#E0E0E0"
     full_hash = hashlib.md5(s.encode('utf-8')).digest()

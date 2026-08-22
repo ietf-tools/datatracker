@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2016-2026, All Rights Reserved
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 from django.conf import settings
 from django.core.cache import cache
@@ -50,30 +50,39 @@ def get_authors_total_data_for_documents(doc_type: str = "all",
             .values(group_by)
             .annotate(author_count=Count("person", distinct=True))
         )
+        group_count_set = [
+            (row.get(group_by), row.get("author_count", 0))
+            for row in queryset
+        ]
     elif doc_type == "rfc":
         queryset = (
             RfcAuthor.objects
             .values(group_by)
             .annotate(author_count=Count("person", distinct=True))
         )
+        group_count_set = [
+            (row.get(group_by), row.get("author_count", 0))
+            for row in queryset
+        ]
     else:
+        # Cannot using COUNT() and then UNION else a draft/rfc author will be double counted.
         draft_queryset = (
             DocumentAuthor.objects
             .filter(document__type_id="draft")
-            .values(group_by)
-            .annotate(author_count=Count("person", distinct=True))
+            .values_list("person_id", group_by)
+            .distinct()
         )
         rfc_queryset = (
             RfcAuthor.objects
-            .values(group_by)
-            .annotate(author_count=Count("person", distinct=True))
+            .values_list("person_id", group_by)
+            .distinct()
         )
-        queryset = draft_queryset.union(rfc_queryset, all=True)
 
-    group_count_set = [
-        (row.get(group_by), row.get("author_count", 0))
-        for row in queryset
-    ]
+        author_groups = set(draft_queryset) | set(rfc_queryset)
+        group_count_set = list(Counter(
+            group for _, group in author_groups
+        ).items())
+
 
     if group_by == "affiliation":
         alias_map = get_aliased_affiliations(group for group, _ in group_count_set)

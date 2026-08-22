@@ -115,7 +115,7 @@ def backward(apps, schema_editor):
         AffiliationIgnoredEnding.objects.filter(ending=ending).delete()
 
     CountryAlias = apps.get_model('stats', 'CountryAlias')
-    aliases_to_remove = [alias for alias, _ in NEW_COUNTRY_ALIASES]
+    aliases_to_remove = [entry['alias'] for entry in NEW_COUNTRY_ALIASES]
     CountryAlias.objects.filter(alias__in=aliases_to_remove).delete()
 
 class Migration(migrations.Migration):
