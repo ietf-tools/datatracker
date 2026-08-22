@@ -5,7 +5,7 @@
 {% block js %}
     {{ total_chart_data|json_script:"total-chart-data" }}
     {{ in_person_chart_data|json_script:"in-person-chart-data" }}
-    <script src="{% static 'ietf/js/meeting_stats.js' %}"></script>
+    <script src="{% static 'ietf/js/stats_meeting.js' %}"></script>
 {% endblock %}
 {% block content %}
     {% origin %}
@@ -22,7 +22,7 @@
                             {% if slug == stats_type %}
                                 active
                             {% endif %}"
-                    href="{{ url }}">{{ label }}</a>
+                    href="{{ url }}?top={{ top_n }}">{{ label }}</a>
             {% endfor %}
         </div>
         <label class="fw-bold col-sm-1 col-form-label">Meeting:</label>
@@ -32,27 +32,56 @@
                             {% if num == meeting_number %}
                                 active
                             {% endif %}"
-                    href="{{ url }}">{{ num }}</a>
+                    href="{{ url }}?top={{ top_n }}">{{ num }}</a>
             {% endfor %}
         </div>
+        <form method="GET">
+            <label class="fw-bold col-sm-2 col-form-label">Categories to display:
+                <select class="col-sm-2" name="top" onchange="this.form.submit()">
+                    {% for choice in top_n_choices %}
+                        <option value="{{ choice }}" {% if choice|stringformat:"s" == top_n|stringformat:"s" %}selected{% endif %}>{{ choice }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <button class="visually-hidden" type="submit">Submit</button>
+        </form>
     </div>
     <p>
         This page provides a visual representation of the total registrations for IETF-{{ meeting_number }} by {{ stats_type }}. 
-        Only categories having more than {{ minimum_required }} registrations are displayed separately,
+        Only the top-{{ top_n }} {{ stats_type }} registrations are displayed separately,
         else they are grouped under "Other".
     </p>
     <div class="row">
         <div class="col-md-6 col-sm-12">
-        <h2>Total Registrations by {{ stats_type|title }} ({{ total_total}} in total)</h2>
+        <h2>
+            Total Registrations by {{ stats_type|title }} ({{ total_total}} in total)
+            <a href="{% url 'ietf.stats.views_meetings.meeting_stats' meeting_number=meeting_number stats_type=stats_type %}?top={{ top_n }}&download=total" class="btn btn-outline-primary" 
+                download="{{ stats_type }}-total-{{ meeting_number }}.csv" aria-label="Download CSV">
+                <i class="bi bi-filetype-csv" aria-hidden="true" title="Download CSV file"></i>
+            </a>
+        </h2>
         <div class="chart-wrapper col-10">
             <canvas id="totalRegistrationChart" aria-label="Total Registration Pie Chart" role="img"></canvas>
         </div>
         </div><!-- col -->
         <div class="col-md-6 col-sm-12">
-        <h2>In Person Registrations by {{ stats_type|title }} ({{ in_person_total}} in total)</h2>
+        <h2>
+            In Person Registrations by {{ stats_type|title }} ({{ in_person_total}} in total)
+            <a href="{% url 'ietf.stats.views_meetings.meeting_stats' meeting_number=meeting_number stats_type=stats_type %}?top={{ top_n }}&download=in_person" class="btn btn-outline-primary" 
+                download="{{ stats_type }}-in_person-{{ meeting_number }}.csv" aria-label="Download CSV">
+                <i class="bi bi-filetype-csv" aria-hidden="true" title="Download CSV file"></i>
+            </a>
+        </h2>
         <div class="chart-wrapper col-10">
             <canvas id="inPersonRegistrationChart" aria-label="In Person Registration Pie Chart" role="img"></canvas>
         </div>
         </div><!-- col -->
     </div><!-- row -->
+    <div class="row">
+        <p class="text-body-secondary text-end">
+            Hover over a slice to see the count and percentage of total registrations.
+            Click on a legend at the bottom to hide it and rescale the graph; click again to show it. 
+            Click on <i class="bi bi-filetype-csv" aria-hidden="true" title="Download CSV file"></i> to download the data as a CSV file.
+        </p>
+    </div><!-- row-->
 {% endblock %}

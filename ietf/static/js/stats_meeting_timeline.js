@@ -53,8 +53,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                     zoom: {
                         zoom: {
-                            wheel: { enabled: true },      // scroll to zoom
-                            pinch: { enabled: true },      // pinch on mobile
+                            wheel: {
+                                enabled: true,
+                                modifierKey: 'alt'   // Alt + scroll wheel to zoom
+                            },      // scroll to zoom
+                            pinch: {
+                                enabled: true,
+                                modifierKey: 'alt'
+                            },      // pinch on mobile
                             drag: {                        // drag to select range 
                                 enabled: true,
                                 modifierKey: 'alt'
@@ -63,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         },
                         pan: {
                             enabled: true,
+                            modifierKey: 'alt', 
                             mode: 'xy',                     // pan X-axis and Y-axis
                         },
                     },
