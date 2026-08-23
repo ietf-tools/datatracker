@@ -57,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             },      // scroll to zoom
                             pinch: { 
                                 enabled: true 
-
                             },      // pinch on mobile
                             drag: {                        // drag to select range 
                                 enabled: true,

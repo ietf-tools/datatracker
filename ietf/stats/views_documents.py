@@ -42,7 +42,7 @@ def get_total_data_for_documents(
     # Convert queryset to dictionary, aggregating by group
     group_count_dict: dict[str, int] = {}
     for group, count in queryset.values_list(group_by, "document_count"):
-        if not group or group == "":
+        if not group:
             group = "Unspecified"
         group_count_dict[group] = group_count_dict.get(group, 0) + count
 

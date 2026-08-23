@@ -58,7 +58,7 @@
     <div class="row">
         <div class="col-md-12">
             <h2>Total Registrations by {{ stats_type|title }}
-                <a href="{% url 'ietf.stats.views_meetings.meetings_timeline' stats_type=stats_type %}?top={{ top_n }}&download=total" class="btn btn-outline-primary" 
+                <a href="{% url 'ietf.stats.views_meetings.meetings_timeline' stats_type=stats_type %}?top={{ top_n }}&amp;download=total" class="btn btn-outline-primary" 
                 download="{{ stats_type }}-total-all.csv" aria-label="Download CSV">
                 <i class="bi bi-filetype-csv" aria-hidden="true" title="Download CSV file"></i>
                 </a>
@@ -70,7 +70,7 @@
         {% if stats_type != 'reg_type' %}
         <div class="col-md-12">
             <h2>In Person Registrations by {{ stats_type|title }}
-                <a href="{% url 'ietf.stats.views_meetings.meetings_timeline' stats_type=stats_type %}?top={{ top_n }}&download=in_person" class="btn btn-outline-primary" 
+                <a href="{% url 'ietf.stats.views_meetings.meetings_timeline' stats_type=stats_type %}?top={{ top_n }}&amp;download=in_person" class="btn btn-outline-primary" 
                 download="{{ stats_type }}-in_person-all.csv" aria-label="Download CSV">
                 <i class="bi bi-filetype-csv" aria-hidden="true" title="Download CSV file"></i>
                 </a>

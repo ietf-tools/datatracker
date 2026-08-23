@@ -31,7 +31,7 @@ def color_from_hash(s):
         return "#B0B0B0"
     if s == 'Other':
         return "#E0E0E0"
-    full_hash = hashlib.md5(s.encode('utf-8')).digest()
+    full_hash = hashlib.md5(s.encode('utf-8'), usedforsecurity=False).digest()
     hash = int.from_bytes(full_hash[:2])
     return colors[hash % len(colors)]
 

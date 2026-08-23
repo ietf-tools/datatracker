@@ -10,7 +10,7 @@ class AffiliationIgnoredEndingFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = AffiliationIgnoredEnding
 
-    ending = ''
+    ending = 'Inc\\.?'
 
 
 class AffiliationMainNameFactory(factory.django.DjangoModelFactory):
