@@ -45,7 +45,9 @@ def get_meeting_stats_type_choices(view, stats_type: str, meeting_number: str | 
 def get_meeting_number_choices(stats_type: str, meeting_number: str | int, current_meeting: int) -> list[tuple[str | int, str]]:
     """Build the meeting navigation choices for timeline and detail pages."""
     is_timeline = isinstance(meeting_number, str) and meeting_number == "All"
-    base = [("All", urlreverse(meetings_timeline, kwargs={"stats_type": stats_type}))]
+    base: list[tuple[str | int, str]] = [
+        ("All", urlreverse(meetings_timeline, kwargs={"stats_type": stats_type})),
+    ]
     if is_timeline:
         return base + [
             (int(current_meeting)-1, urlreverse(meeting_stats, kwargs={"meeting_number": int(current_meeting)-1, "stats_type": stats_type})),
@@ -53,7 +55,7 @@ def get_meeting_number_choices(stats_type: str, meeting_number: str | int, curre
             (int(current_meeting)+1, urlreverse(meeting_stats, kwargs={"meeting_number": int(current_meeting)+1, "stats_type": stats_type})),
         ]
 
-    choices = [
+    choices: list[tuple[str | int, str]] = [
         ("All", urlreverse(meetings_timeline, kwargs={"stats_type": stats_type})),
     ]
     if int(meeting_number) > FIRST_MEETING_WITH_REGISTRATION_DATA:
