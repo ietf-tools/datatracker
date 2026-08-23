@@ -135,5 +135,10 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'affiliation main names',
             },
         ),
+        migrations.AlterField(
+            model_name='affiliationignoredending',
+            name='ending',
+            field=models.CharField(help_text='Records that ending will be matched case-insensitive and should be stripped from the affiliation for statistical purposes.', max_length=255),
+        ),
         migrations.RunPython(forward, backward),
     ]
