@@ -40,8 +40,23 @@ top_n_choices = [5, 10, 20, 50, 100]
 def get_top_n_choices():
     return top_n_choices
 
-def check_top_n_choice(n):
-    return n in top_n_choices
+def get_valid_top_n(request):
+    """Return a valid top-N value or the corresponding error response."""
+    from django.shortcuts import render
+
+    try:
+        top_n = int(request.GET.get("top", "20"))
+    except ValueError:
+        top_n = 20
+
+    if top_n not in top_n_choices:
+        return 0, render(
+            request,
+            "stats/error.html",
+            {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"},
+        )
+
+    return top_n, None
     
 def compile_affiliation_ending_stripping_regexp():
     parts = []

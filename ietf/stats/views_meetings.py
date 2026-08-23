@@ -14,15 +14,56 @@ from django.urls import reverse as urlreverse
 from ietf.meeting.helpers import get_current_ietf_meeting_num
 from ietf.meeting.models import Meeting, Registration
 from ietf.stats.utils import (
-    check_top_n_choice,
     color_from_hash,
     get_aliased_affiliations,
     get_aliased_countries,
     get_top_n_choices,
+    get_valid_top_n,
 )
 
 # Constants
 FIRST_MEETING_WITH_REGISTRATION_DATA = 72
+
+
+def get_meeting_stats_type_choices(view, stats_type: str, meeting_number: str | None = None) -> list[tuple[str, str, str]]:
+    """Build the stats-type navigation choices for meeting views."""
+    kwargs = {"stats_type": stats_type}
+    if meeting_number is not None:
+        kwargs["meeting_number"] = meeting_number
+
+    choices = [
+        ("affiliation", "Per affiliation", urlreverse(view, kwargs={**kwargs, "stats_type": "affiliation"})),
+        ("country", "Per country", urlreverse(view, kwargs={**kwargs, "stats_type": "country"})),
+    ]
+    if view is meetings_timeline:
+        choices.append(
+            ("reg_type", "Registration type", urlreverse(view, kwargs={"stats_type": "reg_type"})),
+        )
+    return choices
+
+
+def get_meeting_number_choices(stats_type: str, meeting_number: str | int, current_meeting: int) -> list[tuple[str | int, str]]:
+    """Build the meeting navigation choices for timeline and detail pages."""
+    is_timeline = isinstance(meeting_number, str) and meeting_number == "All"
+    base = [("All", urlreverse(meetings_timeline, kwargs={"stats_type": stats_type}))]
+    if is_timeline:
+        return base + [
+            (int(current_meeting)-1, urlreverse(meeting_stats, kwargs={"meeting_number": int(current_meeting)-1, "stats_type": stats_type})),
+            (int(current_meeting), urlreverse(meeting_stats, kwargs={"meeting_number": int(current_meeting), "stats_type": stats_type})),
+            (int(current_meeting)+1, urlreverse(meeting_stats, kwargs={"meeting_number": int(current_meeting)+1, "stats_type": stats_type})),
+        ]
+
+    choices = [
+        ("All", urlreverse(meetings_timeline, kwargs={"stats_type": stats_type})),
+    ]
+    if int(meeting_number) > FIRST_MEETING_WITH_REGISTRATION_DATA:
+        choices.append(
+            (int(meeting_number)-1, urlreverse(meeting_stats, kwargs={"meeting_number": int(meeting_number)-1, "stats_type": stats_type})),
+        )
+    choices.append((meeting_number, urlreverse(meeting_stats, kwargs={"meeting_number": meeting_number, "stats_type": stats_type})))
+    if int(meeting_number) <= int(current_meeting):
+        choices.append((int(meeting_number)+1, urlreverse(meeting_stats, kwargs={"meeting_number": int(meeting_number)+1, "stats_type": stats_type})))
+    return choices
 
 
 def _build_timeline_datasets(
@@ -338,16 +379,9 @@ def meetings_timeline(request: Any, stats_type: str = "country") -> Any:
         Rendered response for the meetings timeline template.
 
     """
-    # Query parameters (from ?key=value)
-    try:
-        top_n = int(request.GET.get("top", "20"))
-    except ValueError:
-        top_n = 20
-    # Check the top-n value against the allowed choices
-    if not check_top_n_choice(top_n):
-        return render(request,
-                      "stats/error.html",
-                      {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"})
+    top_n, error_response = get_valid_top_n(request)
+    if error_response is not None:
+        return error_response
 
     if stats_type == "reg_type":
         total_labels, total_data_sets = get_data_for_meetings(top_n=top_n)
@@ -399,30 +433,11 @@ def meetings_timeline(request: Any, stats_type: str = "country") -> Any:
             "datasets": in_person_data_sets,
         }
 
-    # Prepare the list of choice buttons for the template
-    possible_stats_types = [
-        ("affiliation", "Per affiliation", urlreverse(meetings_timeline,
-                                                      kwargs={"stats_type": "affiliation"})),
-        ("country", "Per country", urlreverse(meetings_timeline,
-                                              kwargs={"stats_type": "country"})),
-        ("reg_type", "Registration type", urlreverse(meetings_timeline,
-                                      kwargs={"stats_type": "reg_type"})),
-    ]
+    possible_stats_types = get_meeting_stats_type_choices(meetings_timeline, stats_type)
 
     current_meeting = get_current_ietf_meeting_num()
-    if stats_type == "reg_type":
-        possible_stats_type = "country"
-    else:
-        possible_stats_type = stats_type
-
-    possible_meeting_numbers: list[tuple[str | int, str]] = [
-        ("All", urlreverse(meetings_timeline, kwargs={"stats_type": stats_type})),
-        (int(current_meeting)-1, urlreverse(meeting_stats,
-                                            kwargs={"meeting_number": int(current_meeting)-1, "stats_type": possible_stats_type})),
-        (int(current_meeting), urlreverse(meeting_stats,
-                                          kwargs={"meeting_number": int(current_meeting), "stats_type": possible_stats_type})),
-        (int(current_meeting)+1, urlreverse(meeting_stats,
-                                            kwargs={"meeting_number": int(current_meeting)+1, "stats_type": possible_stats_type}))]
+    possible_stats_type = "country" if stats_type == "reg_type" else stats_type
+    possible_meeting_numbers = get_meeting_number_choices(possible_stats_type, "All", current_meeting)
 
     return render(request, "stats/meetings_timeline.html", {
         "top_n": top_n,
@@ -526,14 +541,9 @@ def meeting_stats(request: Any, meeting_number: str | None = None, stats_type: s
         Meeting.objects.filter(type_id="ietf"), number=meeting_number,
     )
 
-    # Query parameters (from ?key=value)
-    try:
-        top_n = int(request.GET.get("top", "20"))
-    except ValueError:
-        top_n = 20
-    # Check the top-n value against the allowed choices
-    if not check_top_n_choice(top_n):
-        return render(request, "stats/error.html", {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"})
+    top_n, error_response = get_valid_top_n(request)
+    if error_response is not None:
+        return error_response
 
     if stats_type == "affiliation":
         total_labels, total_data, total_total = get_affiliation_data_for_meeting(meeting_number, top_n=top_n)
@@ -587,25 +597,8 @@ def meeting_stats(request: Any, meeting_number: str | None = None, stats_type: s
         }],
     }
 
-    # Prepare the list of choice buttons for the template
-    possible_stats_types = [
-        ("affiliation", "Per affiliation", urlreverse(meeting_stats,
-                                                      kwargs={"meeting_number": meeting_number, "stats_type": "affiliation"})),
-        ("country", "Per country", urlreverse(meeting_stats,
-                                              kwargs={"meeting_number": meeting_number, "stats_type": "country"})),
-    ]
-
-    # Prepare the list of meeting number buttons for the template
-    possible_meeting_numbers: list[tuple[str | int, str]] = [("All", urlreverse(meetings_timeline,
-                                                                                kwargs={"stats_type": stats_type}))]
-    if int(meeting_number) > FIRST_MEETING_WITH_REGISTRATION_DATA:
-        possible_meeting_numbers.append((int(meeting_number)-1, urlreverse(meeting_stats,
-                                                                           kwargs={"meeting_number": int(meeting_number)-1, "stats_type": stats_type})))
-    possible_meeting_numbers.append((meeting_number, urlreverse(meeting_stats,
-                                                                kwargs={"meeting_number": meeting_number, "stats_type": stats_type})))
-    if int(meeting_number) <= int(current_meeting_number): # Allow current meeting +1
-        possible_meeting_numbers.append((int(meeting_number)+1, urlreverse(meeting_stats,
-                                                                           kwargs={"meeting_number": int(meeting_number)+1, "stats_type": stats_type})))
+    possible_stats_types = get_meeting_stats_type_choices(meeting_stats, stats_type, meeting_number)
+    possible_meeting_numbers = get_meeting_number_choices(stats_type, meeting_number, int(current_meeting_number))
 
     return render(request, "stats/meeting_stats.html", {
         "meeting_number": meeting_number,

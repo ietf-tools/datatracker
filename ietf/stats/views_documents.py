@@ -11,8 +11,33 @@ from django.shortcuts import render
 from django.urls import reverse as urlreverse
 
 from ietf.doc.models import DocEvent, Document
-from ietf.stats.utils import check_top_n_choice, color_from_hash, get_top_n_choices
+from ietf.stats.utils import color_from_hash, get_top_n_choices, get_valid_top_n
 from ietf.utils.timezone import RPC_TZINFO
+
+
+def _get_document_type_choices(view, doc_type: str, stats_type: str) -> list[tuple[str, str, str]]:
+    """Build the document-type navigation choices for a stats view."""
+    return [
+        ("draft", "Drafts", urlreverse(view, kwargs={"doc_type": "draft", "stats_type": stats_type})),
+        ("rfc", "RFCs", urlreverse(view, kwargs={"doc_type": "rfc", "stats_type": stats_type})),
+    ]
+
+
+def _get_stats_type_choices(view, doc_type: str, stats_type: str) -> list[tuple[str, str, str]]:
+    """Build the stats-type navigation choices for a stats view."""
+    possible_stats_types = [
+        ("stream", "Streams", urlreverse(view, kwargs={"doc_type": doc_type, "stats_type": "stream"})),
+        ("wg", "Working Groups", urlreverse(view, kwargs={"doc_type": doc_type, "stats_type": "wg"})),
+    ]
+    if doc_type == "draft":
+        possible_stats_types.append(
+            ("level", "Intended Status", urlreverse(view, kwargs={"doc_type": doc_type, "stats_type": "level"})),
+        )
+    elif doc_type == "rfc":
+        possible_stats_types.append(
+            ("level", "Category", urlreverse(view, kwargs={"doc_type": doc_type, "stats_type": "level"})),
+        )
+    return possible_stats_types
 
 
 def get_total_data_for_documents(
@@ -79,17 +104,9 @@ def documents_total(request: Any, doc_type: str = "rfc", stats_type: str = "leve
         Rendered response for the documents_total template.
 
     """
-    # Query parameters (from ?key=value)
-    try:
-        top_n = int(request.GET.get("top", "20"))
-    except ValueError:
-        top_n = 20
-    # Check the top-n value against the allowed choices
-    if not check_top_n_choice(top_n):
-        return render(request,
-                      "stats/error.html",
-                      {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"})
-
+    top_n, error_response = get_valid_top_n(request)
+    if error_response is not None:
+        return error_response
 
     if stats_type == "stream":
         chart_data = get_total_data_for_documents(doc_type, "stream__name", top_n)
@@ -102,26 +119,8 @@ def documents_total(request: Any, doc_type: str = "rfc", stats_type: str = "leve
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
-    # Prepare the list of choice buttons for the template
-    possible_docs_types = [
-        ("draft", "Drafts", urlreverse(documents_total,
-                                       kwargs={"doc_type": "draft", "stats_type": stats_type})),
-        ("rfc", "RFCs", urlreverse(documents_total,
-                                   kwargs={"doc_type": "rfc", "stats_type": stats_type})),
-    ]
-
-    possible_stats_types = [
-        ("stream", "Streams", urlreverse(documents_total,
-                                         kwargs={"doc_type": doc_type, "stats_type": "stream"})),
-        ("wg", "Working Groups", urlreverse(documents_total,
-                                            kwargs={"doc_type": doc_type, "stats_type": "wg"})),
-    ]
-    if doc_type == "draft":
-        possible_stats_types.append(("level", "Intended Status", urlreverse(documents_total,
-                                                                            kwargs={"doc_type": doc_type, "stats_type": "level"})))
-    elif doc_type == "rfc":
-        possible_stats_types.append(("level", "Category", urlreverse(documents_total,
-                                                                     kwargs={"doc_type": doc_type, "stats_type": "level"})))
+    possible_docs_types = _get_document_type_choices(documents_total, doc_type, stats_type)
+    possible_stats_types = _get_stats_type_choices(documents_total, doc_type, stats_type)
 
     return render(request, "stats/documents_total.html", {
         "top_n": top_n,
@@ -268,16 +267,9 @@ def documents_timeline(request: Any, doc_type: str = "rfc", stats_type: str = "l
         Rendered response for the documents timeline template.
 
     """
-    # Query parameters (from ?key=value)
-    try:
-        top_n = int(request.GET.get("top", "20"))
-    except ValueError:
-        top_n = 20
-    # Check the top-n value against the allowed choices
-    if not check_top_n_choice(top_n):
-        return render(request,
-                      "stats/error.html",
-                      {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"})
+    top_n, error_response = get_valid_top_n(request)
+    if error_response is not None:
+        return error_response
 
     if stats_type == "stream":
         total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "stream__name", top_n)
@@ -295,25 +287,8 @@ def documents_timeline(request: Any, doc_type: str = "rfc", stats_type: str = "l
         "datasets": total_data_sets,
     }
 
-    # Prepare the list of choice buttons for the template
-    possible_docs_types = [
-        ("draft", "Drafts", urlreverse(documents_timeline,
-                                       kwargs={"doc_type": "draft", "stats_type": stats_type})),
-        ("rfc", "RFC", urlreverse(documents_timeline,
-                                  kwargs={"doc_type": "rfc", "stats_type": stats_type})),
-    ]
-    possible_stats_types = [
-        ("stream", "Streams", urlreverse(documents_timeline,
-                                         kwargs={"doc_type": doc_type, "stats_type": "stream"})),
-        ("wg", "Working Groups", urlreverse(documents_timeline,
-                                            kwargs={"doc_type": doc_type, "stats_type": "wg"})),
-    ]
-    if doc_type == "draft":
-        possible_stats_types.append(("level", "Intended Status", urlreverse(documents_timeline,
-                                                                    kwargs={"doc_type": doc_type, "stats_type": "level"})))
-    elif doc_type == "rfc":
-        possible_stats_types.append(("level", "Category", urlreverse(documents_timeline,
-                                                                     kwargs={"doc_type": doc_type, "stats_type": "level"})))
+    possible_docs_types = _get_document_type_choices(documents_timeline, doc_type, stats_type)
+    possible_stats_types = _get_stats_type_choices(documents_timeline, doc_type, stats_type)
 
     return render(request, "stats/documents_timeline.html", {
         "top_n": top_n,
