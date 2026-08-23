@@ -185,7 +185,7 @@
                href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number %}">
                 Upload new slides
             </a>
-        {% elif request.user.is_authenticated and not session.is_material_submission_cutoff %}
+        {% elif request.user.is_authenticated and not session.is_past %}
             <a class="btn btn-primary proposeslides"
                href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number %}">
                 Propose slides

@@ -15,12 +15,13 @@ from dataclasses import dataclass
 from hashlib import sha384
 from pathlib import Path
 from typing import Iterator, Optional, Union, Iterable
+from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib import messages
 from django.core.cache import caches
-from django.db.models import OuterRef
+from django.db.models import Max, OuterRef
 from django.forms import ValidationError
 from django.http import Http404
 from django.template.loader import render_to_string
@@ -455,6 +456,24 @@ def add_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_t
     return e
 
 
+def show_rpc_action_holder_comments(user, entries):
+    """Should this user be shown the RPC's requests to these action holders?
+
+    Controls whether a view renders the comment the RPC attached to an action
+    holder. Only the document main page views ask: they show it to the IESG, the
+    Secretariat and the RPC, and to whoever is being asked for the decision.
+    Views that do not call this show the comments to everyone, as the AD
+    document list does. The text is not confidential either way - the queue site
+    publishes it on its public final-review pages - so this is a choice about
+    what belongs on a given page.
+    """
+    if has_role(user, ["Area Director", "Secretariat", "RFC Editor"]):
+        return True
+    if not (user.is_authenticated and hasattr(user, "person")):
+        return False
+    return any(entry.person_id == user.person.pk for entry in entries)
+
+
 def add_action_holder_change_event(doc, by, prev_set, reason=None):
     set_changed = False
     if doc.documentactionholder_set.exclude(person__in=prev_set).exists():
@@ -806,6 +825,18 @@ def prettify_std_name(n, spacing=" "):
         return n[:3].upper() + spacing + n[3:]
     else:
         return n
+
+def external_canonical_url(doc):
+    """Authoritative external URL for doc, or None if the datatracker is authoritative
+
+    The authoritative home of an RFC, and of a bcp/std/fyi subseries document, is the
+    RFC Editor's info page, so we point search engines there rather than at our own
+    rendering of the same thing. Documents of other types are ours.
+    """
+    if doc.type_id in ["rfc", "bcp", "std", "fyi"]:
+        # trailing slash matches the form the RFC Editor serves
+        return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f"{doc.name}/")
+    return None
 
 def default_consensus(doc):
     # if someone edits the consensus return that, otherwise
@@ -1355,8 +1386,6 @@ def update_doc_extresources(doc, new_resources, by):
 
 def generate_idnits2_rfc_status():
 
-    blob=['N']*10000
-
     symbols={
         'ps': 'P',
         'inf': 'I',
@@ -1368,10 +1397,17 @@ def generate_idnits2_rfc_status():
         'unkn': 'U',
     }
 
-    rfcs = Document.objects.filter(type_id='rfc')
+    rfcs = Document.objects.filter(type_id='rfc').exclude(rfc_number=None)
+
+    # One character per RFC number, indexed by that number, so the array has to reach the
+    # highest RFC published. The floor keeps the fixed offsets in the workarounds below in
+    # range when only a few RFCs exist, as is the case under test.
+    highest = rfcs.aggregate(Max('rfc_number'))['rfc_number__max'] or 0
+    blob=['N']*max(highest, 6312)
+
     for rfc in rfcs:
         offset = int(rfc.rfc_number)-1
-        blob[offset] = symbols[rfc.std_level_id]
+        blob[offset] = symbols.get(rfc.std_level_id, 'U')
         if rfc.related_that('obs'):
             blob[offset] = 'O'
 
@@ -1390,6 +1426,17 @@ def generate_idnits2_rfc_status():
 
     # RFC200 is an old RFC List by Number
     blob[200 -1] = 'O' 
+
+    # !! Do not remove: idnits2 rejects this entire file if RFC16 is not 'O' !!
+    #
+    # This deliberately contradicts both the datatracker and the RFC Editor, which
+    # record RFC16 as updated rather than obsoleted. idnits2 validates its download
+    # of this file by matching the first 64 characters against a literal pattern that
+    # asserts 'O' here, inherited from a tools.ietf.org curation that disagreed with
+    # the RFC Editor. A mismatch makes idnits2 discard the file as corrupt and fall
+    # back to whatever stale copy it has, silently performing no RFC status checks at
+    # all. Removing this line therefore breaks every idnits2 client, not just RFC16.
+    blob[16 - 1] = 'O'
 
     # End Workarounds
 

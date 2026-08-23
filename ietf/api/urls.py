@@ -9,6 +9,7 @@ from django.views.generic import TemplateView
 from ietf import api
 from ietf.doc import views_ballot, api as doc_api
 from ietf.meeting import views as meeting_views
+from ietf.person import api_uuid as person_uuid_api
 from ietf.submit import views as submit_views
 from ietf.utils.urls import url
 
@@ -20,6 +21,14 @@ from .routers import PrefixedSimpleRouter
 # core_router = PrefixedSimpleRouter(name_prefix="ietf.api.core_api")  # core api router
 # core_router.register("email", person_api.EmailViewSet)
 # core_router.register("person", person_api.PersonViewSet)
+
+# Person identity API router
+person_router = PrefixedSimpleRouter(
+    use_regex_path=False, name_prefix="ietf.api.person_api"
+)
+person_router.register(
+    "uuid", person_uuid_api.PersonUUIDViewSet, basename="person-uuid"
+)
 
 # todo more general name for this API?
 red_router = PrefixedSimpleRouter(name_prefix="ietf.api.red_api")  # red api router
@@ -44,6 +53,10 @@ urlpatterns = [
     # --- Custom API endpoints, sorted alphabetically ---
     # Email alias information for drafts
     url(r'^doc/draft-aliases/$', api_views.draft_aliases),
+    # Recipients for author survey for recently published RFCs
+    url(
+        r'^doc/rfc-author-survey-recipients/$', api_views.rfc_author_survey_recipients
+    ),
     # email ingestor
     url(r'email/$', api_views.ingest_email),
     # email ingestor
@@ -84,6 +97,16 @@ urlpatterns = [
     url(r'^person/email/$', api_views.active_email_list),
     # Related Email listing
     url(r'^person/email/(?P<email>[^/\x00]+)/related/$', api_views.related_email_list),
+    # Transitional pk-to-UUID conversion. Before the router include below so it wins
+    # over the router's uuid/ routes.
+    path(
+        "person/uuid/by-person-pk/",
+        person_uuid_api.PersonUUIDByPersonPkView.as_view(),
+        name="ietf.api.person_api.person-uuid-by-pk",
+    ),
+    # Person UUID resolution API. After the ^person/email/ routes above so those keep
+    # matching first.
+    path("person/", include(person_router.urls)),
     # Draft submission API
     url(r'^submit/?$', submit_views.api_submit_tombstone),
     # Draft upload API

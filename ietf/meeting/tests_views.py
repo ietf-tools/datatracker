@@ -18,7 +18,7 @@ from lxml.etree import tostring
 from icalendar import Calendar
 from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, urlsplit
+from urllib.parse import quote, urlparse, urlsplit
 from PIL import Image
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -1118,6 +1118,40 @@ class MeetingTests(BaseMeetingTestCase):
                 expected,
                 'Parsed "%s" incorrectly' % qstr,
             )
+
+        # Unrecognized parameters are ignored, not rejected. The ical views rely on this -
+        # they cannot report a parse error, so they cannot reflect one back to the client.
+        for qstr in (
+            'unknown=x',
+            'show=a&unknown=x',
+            '<img src=x onerror=alert(1)>=1',
+            'show=<img src=x onerror=alert(1)>',
+        ):
+            self.assertIsNotNone(
+                parse_agenda_filter_params(QueryDict(qstr)),
+                'Parsing "%s" should not fail' % qstr,
+            )
+
+    def test_ical_filter_params_are_not_reflected(self):
+        """A query string must never be echoed into an ical view's response
+
+        HttpResponseBadRequest serves text/html without escaping, so reflecting a
+        parameter name or value would be a reflected XSS on an unauthenticated GET.
+        """
+        meeting = make_meeting_test_data()
+        payload = '<img src=x onerror=alert(1)>'
+        for url in (
+            urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num': meeting.number}),
+            urlreverse('ietf.meeting.views.upcoming_ical'),
+        ):
+            for querystring in (
+                '?%s=1' % quote(payload),
+                '?show=%s' % quote(payload),
+                '?unknown=%s' % quote(payload),
+            ):
+                r = self.client.get(url + querystring)
+                self.assertEqual(r.status_code, 200, 'Expected %s%s to be accepted' % (url, querystring))
+                self.assertNotIn(payload, r.content.decode('utf-8'))
 
     def do_ical_filter_test(self, meeting, querystring, expected_session_summaries):
         url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number})
@@ -7056,7 +7090,8 @@ class MaterialsTests(TestCase):
 
     def test_propose_session_slides(self):
         for type_id in ['ietf','interim']:
-            session = SessionFactory(meeting__type_id=type_id)
+            # create session in a meeting in the near future, not the past
+            session = SessionFactory(meeting__type_id=type_id, meeting__date=date_today() + datetime.timedelta(days=3))
             chair = RoleFactory(group=session.group,name_id='chair').person
             session.meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
             newperson = PersonFactory()
@@ -7133,6 +7168,33 @@ class MaterialsTests(TestCase):
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertEqual(len(q('.uploadslidelist p')), 0)
+            self.client.logout()
+
+            # once the session is past, participants can no longer propose slides
+            timeslot = session.official_timeslotassignment().timeslot
+            timeslot.time = (
+                timezone.now() - timeslot.duration - datetime.timedelta(seconds=1)
+            )
+            timeslot.save()
+
+            self.client.login(
+                username=newperson.user.username,
+                password=newperson.user.username + "+password",
+            )
+            r = self.client.get(session_overview_url)
+            self.assertEqual(r.status_code,200)
+            q = PyQuery(r.content)
+            self.assertFalse(q('.proposeslides'))
+            r = self.client.get(upload_url)
+            self.assertEqual(r.status_code,403)
+            self.client.logout()
+
+            # but a chair still can
+            self.client.login(
+                username=chair.user.username, password=chair.user.username + "+password"
+            )
+            r = self.client.get(upload_url)
+            self.assertEqual(r.status_code,200)
             self.client.logout()
 
     def test_disapprove_proposed_slides(self):
@@ -7257,7 +7319,8 @@ class MaterialsTests(TestCase):
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
     @patch("ietf.meeting.views.SlidesManager")
     def test_submit_and_approve_multiple_versions(self, mock_slides_manager_cls):
-        session = SessionFactory(meeting__type_id='ietf')
+        # create session in a meeting in the near future, not the past
+        session = SessionFactory(meeting__type_id='ietf', meeting__date=date_today() + datetime.timedelta(days=3))
         chair = RoleFactory(group=session.group,name_id='chair').person
         session.meeting.importantdate_set.create(name_id='revsub',date=date_today()+datetime.timedelta(days=20))
         newperson = PersonFactory()
@@ -7590,6 +7653,41 @@ class ImportNotesTests(TestCase):
 
 
 class SessionTests(TestCase):
+    def test_is_past(self):
+        now = timezone.now()
+        delta_t = datetime.timedelta(minutes=1)  # long compared to test duration
+        duration = datetime.timedelta(minutes=30)
+        
+        for type_id in ["ietf", "interim"]:
+            # Create an ongoing meeting. The date of the meeting is not really important,
+            # and it's not realistic for an interim, but it gets the job done.
+            meeting = MeetingFactory(
+                type_id=type_id, date=date_today() - datetime.timedelta(days=1), days=7
+            )
+            # and schedule past and future sessions
+            past_session = SessionFactory(meeting=meeting, add_to_schedule=False)
+            # significant moment is the _end_ of the session
+            past_timeslot = TimeSlotFactory(
+                meeting=meeting, time=now - duration - delta_t, duration=duration
+            )
+            SchedTimeSessAssignment.objects.create(
+                timeslot=past_timeslot, session=past_session, schedule=meeting.schedule
+            )
+            future_session = SessionFactory(meeting=meeting, add_to_schedule=False)
+            future_timeslot = TimeSlotFactory(
+                meeting=meeting, time=now - duration + delta_t, duration=duration
+            )
+            SchedTimeSessAssignment.objects.create(
+                timeslot=future_timeslot, session=future_session, schedule=meeting.schedule
+            )
+            # Unscheduled sessions are arbitrarily declared not to be past
+            unscheduled_session = SessionFactory(meeting=meeting, add_to_schedule=False)
+            # and, finally, assert the expected behavior
+            self.assertTrue(past_session.is_past())
+            self.assertFalse(future_session.is_past())
+            self.assertFalse(unscheduled_session.is_past())
+
+        
 
     def test_get_summary_by_area(self):
         meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))

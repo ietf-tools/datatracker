@@ -99,7 +99,7 @@ jobs:
   tests:
     name: Run Tests
     uses: ./.github/workflows/reusable-tests.yml
-    if: ${{ inputs.skipTests == 'false' }}
+    if: ${{ !inputs.skipTests }}
     needs: [prepare]
     secrets: inherit
     with:

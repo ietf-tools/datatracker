@@ -53,11 +53,7 @@ def person_link(person, **kwargs):
     titlepage_name = kwargs.get("titlepage_name", None)
     if person is not None:
         plain_name = person.plain_name()
-        name = (
-            person.name
-            if person.alias_set.filter(name=person.name).exists()
-            else plain_name
-        )
+        name = person.name if person.has_alias_for_name() else plain_name
         email = person.email_address()
         return {
             "name": name,
@@ -78,11 +74,7 @@ def email_person_link(email, **kwargs):
     cls = kwargs.get("class", "")
     with_email = kwargs.get("with_email", True)
     plain_name = email.person.plain_name()
-    name = (
-        email.person.name
-        if email.person.alias_set.filter(name=email.person.name).exists()
-        else plain_name
-    )
+    name = email.person.name if email.person.has_alias_for_name() else plain_name
     email = email.address
     return {
         "name": name,

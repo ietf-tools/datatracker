@@ -383,7 +383,9 @@ def agenda_documents(request):
     docs_by_date = dict((d, []) for d in dates)
     docs = Document.objects.filter(docevent__telechatdocevent__telechat_date__in=dates).distinct()
     docs = docs.select_related("ad", "std_level", "intended_std_level", "group", "stream", "shepherd", )
-    # No prefetch-related -- turns out not to be worth it
+    # The states and tags the status column of every row reads, each of which otherwise
+    # costs a query per document.
+    docs = docs.prefetch_related("states__type", "tags")
 
     fill_in_telechat_date(docs)
     for doc in docs:

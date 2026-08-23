@@ -14,7 +14,8 @@ from django.utils import timezone
 
 from ietf.doc.models import ( Document, DocEvent, NewRevisionDocEvent, State, DocumentAuthor,
     StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType, IRSGBallotDocEvent, TelechatDocEvent,
-    DocumentActionHolder, BofreqEditorDocEvent, BofreqResponsibleDocEvent, DocExtResource, RfcAuthor )
+    DocumentActionHolder, BofreqEditorDocEvent, BofreqResponsibleDocEvent, DocExtResource, RfcAuthor,
+    RpcActionHolderOpenEntry )
 from ietf.group.models import Group
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import RoleFactory
@@ -383,6 +384,17 @@ class DocumentActionHolderFactory(factory.django.DjangoModelFactory):
         
     document = factory.SubFactory(WgDraftFactory)
     person = factory.SubFactory('ietf.person.factories.PersonFactory')
+
+class RpcActionHolderOpenEntryFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = RpcActionHolderOpenEntry
+
+    purple_id = factory.Sequence(lambda n: n + 1)
+    document = factory.SubFactory(WgDraftFactory)
+    person = factory.SubFactory('ietf.person.factories.PersonFactory')
+    display_name = factory.LazyAttribute(lambda o: o.person.plain_name() if o.person else '')
+    comment = factory.Faker('sentence')
+    since_when = factory.LazyFunction(timezone.now)
 
 class DocumentAuthorFactory(factory.django.DjangoModelFactory):
     class Meta:
