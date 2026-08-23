@@ -159,7 +159,7 @@ class SecrTelechatTestCase(TestCase):
 
     def test_bash(self):
         today = date_today()
-	TelechatDate.objects.filter(date=today).delete()  # Clean up first
+        TelechatDate.objects.filter(date=today).delete()  # Clean up first
         TelechatDate.objects.create(date=today)
         url = reverse('ietf.secr.telechat.views.bash',kwargs={'date':today.strftime('%Y-%m-%d')})
         self.client.login(username="secretary", password="secretary+password")
