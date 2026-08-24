@@ -1567,6 +1567,15 @@ class Attended(models.Model):
 
 
 class RegistrationQuerySet(models.QuerySet):
+    def onsite(self):
+        return self.filter(tickets__attendance_type__slug="onsite")
+
+    def remote(self):
+        return (
+            self.filter(tickets__attendance_type__slug="remote")
+            .exclude(tickets__attendance_type__slug="onsite")
+        )
+
     def with_plenary_ticket_details(self):
         """Annotate with ticket details
 
@@ -1583,20 +1592,10 @@ class RegistrationQuerySet(models.QuerySet):
         )
 
 
-class RegistrationManager(models.Manager.from_queryset(RegistrationQuerySet)):
-    def onsite(self):
-        return self.get_queryset().filter(tickets__attendance_type__slug="onsite")
-
-    def remote(self):
-        return (
-            self.get_queryset()
-            .filter(tickets__attendance_type__slug="remote")
-            .exclude(tickets__attendance_type__slug="onsite")
-        )
-
-
 class Registration(models.Model):
     """Registration attendee records from the IETF registration system"""
+    objects = RegistrationQuerySet.as_manager()  # custom manager
+
     meeting = ForeignKey(Meeting)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
@@ -1609,9 +1608,6 @@ class Registration(models.Model):
     attended = models.BooleanField(default=False)
     # checkedin indicates that the badge was picked up
     checkedin = models.BooleanField(default=False)
-
-    # custom manager
-    objects = RegistrationManager()
 
     def __str__(self):
         return "{} {}".format(self.first_name, self.last_name)
