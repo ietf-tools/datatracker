@@ -17,8 +17,8 @@ from ietf.meeting.factories import (
     AttendedFactory,
     SessionPresentationFactory,
 )
-from ietf.meeting.factories import RegistrationFactory
-from ietf.meeting.models import Session
+from ietf.meeting.factories import RegistrationFactory, RegistrationTicketFactory
+from ietf.meeting.models import Registration, RegistrationTicket, Session
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import date_today, datetime_today
 
@@ -253,7 +253,7 @@ class SessionTests(TestCase):
 
     def test_chat_room_name(self):
         session = SessionFactory(group__acronym="xyzzy")
-        self.assertEqual(session.chat_room_name(), "xyzzy") 
+        self.assertEqual(session.chat_room_name(), "xyzzy")
         session.type_id = "plenary"
         self.assertEqual(session.chat_room_name(), "plenary")
         session.chat_room = "fnord"
@@ -322,4 +322,173 @@ class SessionTests(TestCase):
         self.assertEqual(
             f"IETF-ACRO-{session_time:%Y%m%d-%H%M}",  # n.b., time in label is UTC
             session._session_recording_url_label(),
+        )
+
+
+class RegistrationTests(TestCase):
+    # A ticket counts toward the plenary meeting only if both its attendance type
+    # and its ticket type are applicable. Applicable tickets are ranked by
+    # attendance type (onsite, then remote), then by ticket type (student,
+    # week_pass, one_day, then unknown), then by pk.
+    #
+    # Each case is a label, the tickets to create as (attendance_type_id,
+    # ticket_type_id) pairs, and the expected plenary_attendance_type and
+    # plenary_ticket_type.
+    PLENARY_TICKET_CASES = [
+        ("no tickets at all", [], None, None),
+        ("a single plenary ticket", [("onsite", "week_pass")], "onsite", "week_pass"),
+        (
+            "onsite outranks remote",
+            [("remote", "week_pass"), ("onsite", "week_pass")],
+            "onsite",
+            "week_pass",
+        ),
+        (
+            "attendance type outranks ticket type",
+            [("remote", "student"), ("onsite", "one_day")],
+            "onsite",
+            "one_day",
+        ),
+        (
+            "student outranks one_day",
+            [("onsite", "one_day"), ("onsite", "student")],
+            "onsite",
+            "student",
+        ),
+        (
+            "unknown ticket type ranks last",
+            [("onsite", "unknown"), ("onsite", "one_day")],
+            "onsite",
+            "one_day",
+        ),
+        (
+            "non-plenary attendance type is ignored",
+            [("hackathon_onsite", "hackathon_only")],
+            None,
+            None,
+        ),
+        (
+            "non-plenary ticket type disqualifies its ticket entirely",
+            [("onsite", "hackathon_combo"), ("remote", "week_pass")],
+            "remote",
+            "week_pass",
+        ),
+        (
+            "unknown is a plenary ticket type but not an attendance type",
+            [("unknown", "week_pass")],
+            None,
+            None,
+        ),
+    ]
+
+    def setUp(self):
+        super().setUp()
+        self.meeting = MeetingFactory(type_id="ietf")
+
+    def create_registration(self, tickets):
+        """Create a Registration with the given (attendance, ticket) type pairs"""
+        registration = RegistrationFactory(meeting=self.meeting, with_ticket=False)
+        for attendance_type_id, ticket_type_id in tickets:
+            RegistrationTicketFactory(
+                registration=registration,
+                attendance_type_id=attendance_type_id,
+                ticket_type_id=ticket_type_id,
+            )
+        return registration
+
+    def test_plenary_ticket_details(self):
+        """The plenary_* properties report the most representative ticket"""
+        for label, tickets, attendance_type, ticket_type in self.PLENARY_TICKET_CASES:
+            with self.subTest(label):
+                registration = self.create_registration(tickets)
+                # refetch so the properties cannot see state left by the factories
+                registration = Registration.objects.get(pk=registration.pk)
+                self.assertEqual(registration.plenary_attendance_type, attendance_type)
+                self.assertEqual(registration.plenary_ticket_type, ticket_type)
+
+    def test_plenary_ticket_details_annotated(self):
+        """The annotations agree with the properties
+
+        The properties return the annotations when they are present, so the two
+        must rank tickets identically.
+        """
+        for label, tickets, attendance_type, ticket_type in self.PLENARY_TICKET_CASES:
+            with self.subTest(label):
+                registration = self.create_registration(tickets)
+                annotated = Registration.objects.with_plenary_ticket_details().get(
+                    pk=registration.pk
+                )
+                self.assertEqual(annotated._attendance_type, attendance_type)
+                self.assertEqual(annotated._ticket_type, ticket_type)
+                self.assertEqual(annotated.plenary_attendance_type, attendance_type)
+                self.assertEqual(annotated.plenary_ticket_type, ticket_type)
+
+    def test_plenary_ticket_details_tie_break(self):
+        """Tickets that rank equally are resolved by pk
+
+        The annotations cannot distinguish these tickets - they expose only the
+        chosen ticket's type slugs, which are identical when tickets tie.
+        """
+        registration = self.create_registration(
+            [("onsite", "week_pass"), ("onsite", "week_pass")]
+        )
+        first, second = registration.tickets.order_by("pk")
+        self.assertEqual(
+            list(registration.tickets.order_by_most_representative()), [first, second]
+        )
+        self.assertEqual(
+            Registration.objects.get(pk=registration.pk)._plenary_ticket, first
+        )
+
+    def test_plenary_ticket_details_query_counts(self):
+        """The annotation replaces the per-registration ticket queries"""
+        for tickets in [
+            [("onsite", "week_pass")],
+            [("remote", "student")],
+            [("hackathon_onsite", "hackathon_only")],
+        ]:
+            self.create_registration(tickets)
+        expected = [("onsite", "week_pass"), ("remote", "student"), (None, None)]
+
+        annotated = Registration.objects.with_plenary_ticket_details().order_by("pk")
+        with self.assertNumQueries(1):
+            self.assertEqual(
+                [(r.plenary_attendance_type, r.plenary_ticket_type) for r in annotated],
+                expected,
+            )
+
+        # Without the annotation, one query for the registrations plus one per
+        # registration. Both properties share the _plenary_ticket cache, so
+        # reading them together does not double the count.
+        plain = Registration.objects.order_by("pk")
+        with self.assertNumQueries(4):
+            self.assertEqual(
+                [(r.plenary_attendance_type, r.plenary_ticket_type) for r in plain],
+                expected,
+            )
+
+    def test_order_by_most_representative(self):
+        """Non-plenary tickets are dropped and the rest are ranked"""
+        registration = self.create_registration(
+            [
+                ("remote", "one_day"),
+                ("hackathon_onsite", "hackathon_only"),
+                ("onsite", "unknown"),
+                ("onsite", "student"),
+                ("remote", "week_pass"),
+                ("unknown", "week_pass"),
+            ]
+        )
+        tickets = {
+            (ticket.attendance_type_id, ticket.ticket_type_id): ticket
+            for ticket in registration.tickets.all()
+        }
+        self.assertEqual(
+            list(RegistrationTicket.objects.order_by_most_representative()),
+            [
+                tickets[("onsite", "student")],
+                tickets[("onsite", "unknown")],
+                tickets[("remote", "week_pass")],
+                tickets[("remote", "one_day")],
+            ],
         )
