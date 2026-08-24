@@ -23,11 +23,11 @@ class MeetingsAttendedByEmail(generics.RetrieveAPIView):
     def get_object(self):
         person = super().get_object()
         assert isinstance(person, Person)
-        person.attended_registrations = self._meetings_attended_by_person(person)
+        person.attended_registrations = self._attended_registrations(person)
         return person
 
     @staticmethod
-    def _meetings_attended_by_person(person: Person):
+    def _attended_registrations(person: Person):
         meetings_with_data = (
             Meeting.objects.filter(type="ietf")
             .annotate(number_as_int=Cast("number", output_field=IntegerField()))
@@ -45,7 +45,13 @@ class MeetingsAttendedByEmail(generics.RetrieveAPIView):
         return sorted(
             [
                 reg
-                for reg in person.registration_set.select_related("meeting")
+                for reg in (
+                    person.registration_set.filter(
+                        meeting_id__in=meetings_with_data
+                    ).with_plenary_ticket_details().select_related(
+                        "meeting"
+                    )
+                )
                 if (
                     reg.attended
                     or reg.checkedin
