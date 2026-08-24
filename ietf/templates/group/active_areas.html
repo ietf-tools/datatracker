@@ -69,7 +69,7 @@
         </h2>
         {% if area.description %}
             <p>
-                {{ area.description|urlize_ietf_docs|linkify|safe }}
+                {{ area.description|urlize_ietf_docs|urlize|safe }}
             </p>
         {% endif %}
         {% include "group/group_stats_modal.html" with group=area only %}

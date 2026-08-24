@@ -30,7 +30,7 @@
         {% if doc.note %}
             <div class="row">
                 <div class="col-3 text-end fw-bold">Note</div>
-                <div class="col">{{ doc.note|urlize_ietf_docs|linkify|linebreaksbr }}</div>
+                <div class="col">{{ doc.note|urlize_ietf_docs|urlize|linebreaksbr }}</div>
             </div>
         {% endif %}
         <div class="row">

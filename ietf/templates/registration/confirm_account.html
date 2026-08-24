@@ -13,7 +13,7 @@
     {% if success %}
         <h1>Account creation successful</h1>
         <p class="alert alert-success my-3">
-            Your account with login {{ email|linkify }} has been created, using the password you have selected.
+            Your account with login {{ email|urlize }} has been created, using the password you have selected.
         </p>
         <a
            class="btn btn-primary"
@@ -22,7 +22,7 @@
     {% else %}
         <h1>Complete account creation</h1>
         <p class="alert alert-info my-3">
-            In order to complete the setup of your account with login {{ email|linkify }}, please provide the following information:
+            In order to complete the setup of your account with login {{ email|urlize }}, please provide the following information:
         </p>
         <form method="post">
             {% csrf_token %}

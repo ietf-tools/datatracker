@@ -285,7 +285,7 @@ height: 100vh;
                         {% endif %}
                     </td>
                     <td>
-                        {{ group.list_email|linkify }}
+                        {{ group.list_email|urlize }}
                     </td>
                 </tr>
                 {% if group.list_subscribe %}
@@ -304,7 +304,7 @@ height: 100vh;
                         {% endif %}
                     </td>
                     <td>
-                        {{ group.list_subscribe|linkify }}
+                        {{ group.list_subscribe|urlize }}
                     </td>
                 </tr>
                 {% endif %}
@@ -323,7 +323,7 @@ height: 100vh;
                         {% endif %}
                     </td>
                     <td>
-                        {{ group.list_archive|linkify }}
+                        {{ group.list_archive|urlize }}
                     </td>
                 </tr>
             </tbody>

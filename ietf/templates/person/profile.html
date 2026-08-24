@@ -34,7 +34,7 @@
             {% if person.photo %}
                 <div class="float-end ms-3 mb-3">{% include "person/photo.html" with person=person %}</div>
             {% endif %}
-            {{ person.biography|apply_markup:"restructuredtext"|urlize_ietf_docs|linkify }}
+            {{ person.biography|apply_markup:"restructuredtext"|urlize_ietf_docs|urlize }}
         </div>
         {% if person.role_set.exists %}
             <h2 class="mt-5" id="roles-{{ forloop.counter }}">Roles</h2>
@@ -85,7 +85,7 @@
                             <td>
                                 <span title="{{ extres.name.name }}">{% firstof extres.display_name extres.name.name %}</span>
                             </td>
-                            <td>{{ extres.value|linkify }}</td>
+                            <td>{{ extres.value|urlize }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>

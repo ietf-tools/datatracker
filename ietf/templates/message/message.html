@@ -15,26 +15,26 @@
             From:
         </dt>
         <dd class="col-sm-11">
-            {{ message.frm|linkify }}
+            {{ message.frm|urlize }}
         </dd>
         <dt class="col-sm-1">
             To:
         </dt>
         <dd class="col-sm-11">
-            {{ message.to|linkify }}
+            {{ message.to|urlize }}
         </dd>
         <dt class="col-sm-1">
             Date:
         </dt>
         <dd class="col-sm-11">
-            {{ message.time|date:"F j, Y"|linkify }}
+            {{ message.time|date:"F j, Y"|urlize }}
         </dd>
         <dt class="col-sm-1">
             Subject:
         </dt>
         <dd class="col-sm-11">
-            {{ message.subject|linkify }}
+            {{ message.subject|urlize }}
         </dd>
     </dl>
-    <pre>{{ message.body|urlize_ietf_docs|linkify }}</pre>
+    <pre>{{ message.body|urlize_ietf_docs|urlize }}</pre>
 {% endblock %}

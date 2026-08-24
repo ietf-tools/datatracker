@@ -207,7 +207,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if session.comments %}{{ session.comments|urlize_ietf_docs|linkify|linebreaksbr }}{% endif %}
+                            {% if session.comments %}{{ session.comments|urlize_ietf_docs|urlize|linebreaksbr }}{% endif %}
                         </td>
                     </tr>
                 {% if forloop.last %}</tbody>{% endif %}

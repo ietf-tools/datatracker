@@ -68,18 +68,18 @@
                 <tr>
                     <th scope="row">Mailing list</th>
                     <th scope="row">Address</th>
-                    <td>{{ group.list_email|linkify }}</td>
+                    <td>{{ group.list_email|urlize }}</td>
                 </tr>
                 <tr>
                     <td></td>
                     <th scope="row">To subscribe</th>
-                    <td>{{ group.list_subscribe|linkify }}</td>
+                    <td>{{ group.list_subscribe|urlize }}</td>
                 </tr>
                 <tr>
                     <td></td>
                     <th scope="row">Archive</th>
                     <td>
-                        {{ group.list_archive|linkify }}
+                        {{ group.list_archive|urlize }}
                     </td>
                 </tr>
             </tbody>

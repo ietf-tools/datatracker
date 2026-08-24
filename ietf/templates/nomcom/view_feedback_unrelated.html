@@ -34,7 +34,7 @@
                             From
                         </dt>
                         <dd class="col-sm-10">
-                            {{ feedback.author|formatted_email|default:"Anonymous"|linkify }}
+                            {{ feedback.author|formatted_email|default:"Anonymous"|urlize }}
                         </dd>
                         <dt class="col-sm-2">
                             Date

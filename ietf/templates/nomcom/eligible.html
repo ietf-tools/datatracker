@@ -29,7 +29,7 @@
                         <td>{% person_link p %}</td>
                         <td>
                             {% for e in p.email_set.all %}
-                                {{ e.address|linkify }}{% if not forloop.last %},{% endif %}
+                                {{ e.address|urlize }}{% if not forloop.last %},{% endif %}
                             {% endfor %}
                         </td>
                     </tr>

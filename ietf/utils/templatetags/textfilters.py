@@ -6,8 +6,7 @@ import re
 
 from django import template
 from django.conf import settings
-from django.template.defaultfilters import stringfilter, urlize
-from django.utils.safestring import mark_safe
+from django.template.defaultfilters import stringfilter
 
 import debug                            # pyflakes:ignore
 
@@ -71,13 +70,6 @@ def texescape_filter(value):
     "A TeX escape filter"
     return texescape(value)
     
-@register.filter(needs_autoescape=True)
-@stringfilter
-def linkify(value, autoescape=True):
-    value = urlize(value, autoescape=True)
-    text = mark_safe(value)
-    return text
-
 @register.filter
 @stringfilter
 def first_url(value):

@@ -128,7 +128,7 @@
                                             <i class="bi bi-people"></i>
                                         </a>
                                     {% endif %}
-                                    {{ pres.session.remote_instructions|linkify }}
+                                    {{ pres.session.remote_instructions|urlize }}
                                     {% if not forloop.last %}<br>{% endif %}
                                 {% endfor %}
                             {% else %}
@@ -163,7 +163,7 @@
                 {% if content_is_html %}
                     {{ content|sanitize|safe }}
                 {% else %}
-                    <pre>{{ content|maybewordwrap|urlize_ietf_docs|linkify }}</pre>
+                    <pre>{{ content|maybewordwrap|urlize_ietf_docs|urlize }}</pre>
                 {% endif %}
             {% else %}
                 Not available as plain text.

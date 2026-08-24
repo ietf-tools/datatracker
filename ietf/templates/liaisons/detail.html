@@ -42,31 +42,31 @@
         {% if liaison.to_contacts %}
             <tr>
                 <th scope="row">To Contacts</th>
-                <td>{{ liaison.to_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
+                <td>{{ liaison.to_contacts|urlize|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         {% if liaison.cc_contacts %}
             <tr>
                 <th scope="row">Cc</th>
-                <td>{{ liaison.cc_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
+                <td>{{ liaison.cc_contacts|urlize|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         {% if liaison.response_contacts %}
             <tr>
                 <th scope="row">Response Contact</th>
-                <td>{{ liaison.response_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
+                <td>{{ liaison.response_contacts|urlize|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         {% if liaison.technical_contacts %}
             <tr>
                 <th scope="row">Technical Contact</th>
-                <td>{{ liaison.technical_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
+                <td>{{ liaison.technical_contacts|urlize|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         {% if liaison.action_holder_contacts %}
             <tr>
                 <th scope="row">Action Holder Contacts</th>
-                <td>{{ liaison.action_holder_contacts|linkify|make_one_per_line|safe|linebreaksbr }}</td>
+                <td>{{ liaison.action_holder_contacts|urlize|make_one_per_line|safe|linebreaksbr }}</td>
             </tr>
         {% endif %}
         <tr>
@@ -203,7 +203,7 @@
                     Body
                 </th>
                 <td>
-                    <pre>{{ liaison.body|maybewordwrap:"80"|urlize_ietf_docs|linkify }}</pre>
+                    <pre>{{ liaison.body|maybewordwrap:"80"|urlize_ietf_docs|urlize }}</pre>
                 </td>
             </tr>
         {% endif %}
