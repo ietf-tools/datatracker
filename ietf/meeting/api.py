@@ -1,5 +1,5 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
-from django.db.models import IntegerField, Q
+from django.db.models import IntegerField
 from django.db.models.functions import Cast
 from rest_framework import generics
 

@@ -1568,9 +1568,17 @@ class Attended(models.Model):
 
 class RegistrationQuerySet(models.QuerySet):
     def onsite(self):
+        """Only registrations with at least one `onsite` ticket
+        
+        Includes any ticket type. In particular, may be a hackathon-only registration.
+        """
         return self.filter(tickets__attendance_type__slug="onsite")
 
     def remote(self):
+        """Only registrations with no `onsite` and at least one `remote` ticket
+
+        Includes any ticket type. In particular, may be a hackathon-only registration.
+        """
         return (
             self.filter(tickets__attendance_type__slug="remote")
             .exclude(tickets__attendance_type__slug="onsite")
