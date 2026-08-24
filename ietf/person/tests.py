@@ -27,6 +27,7 @@ import yaml
 import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList
+from ietf.doc.factories import WgDraftFactory, WgRfcFactory
 from ietf.group.factories import RoleFactory
 from ietf.group.models import Group
 from ietf.message.models import Message
@@ -124,6 +125,61 @@ class PersonTests(TestCase):
         photo_url = q("div.bio-text img").attr("src")
         r = self.client.get(photo_url)
         self.assertEqual(r.status_code, 200)
+
+    def test_person_profile_query_count(self):
+        """The page's cost must not scale with how much a person has written"""
+
+        def profile_queries(rfcs, active, expired):
+            person = PersonFactory()
+            RoleFactory(person=person, name_id="chair")
+            WgRfcFactory.create_batch(rfcs, authors=[person])
+            WgDraftFactory.create_batch(active, authors=[person])
+            WgDraftFactory.create_batch(
+                expired, authors=[person], states=[("draft", "expired")]
+            )
+            url = urlreverse(
+                "ietf.person.views.profile",
+                kwargs={"email_or_name": person.plain_name()},
+            )
+            with CaptureQueriesContext(connection) as context:
+                r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            return len(context.captured_queries)
+
+        few = profile_queries(1, 1, 1)
+        many = profile_queries(6, 4, 5)
+        self.assertEqual(
+            many,
+            few,
+            f"{many} queries for 15 documents vs {few} for 3 - a query per row crept in",
+        )
+
+    @override_settings(
+        CACHES={
+            "default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"},
+            "slowpages": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                "LOCATION": "test-person-profile",
+            },
+        }
+    )
+    def test_person_profile_sections_cached(self):
+        person = PersonFactory()
+        WgRfcFactory(authors=[person])
+        WgDraftFactory(authors=[person])
+        url = urlreverse(
+            "ietf.person.views.profile", kwargs={"email_or_name": person.plain_name()}
+        )
+
+        first = self.client.get(url)
+        self.assertEqual(first.status_code, 200)
+        with CaptureQueriesContext(connection) as context:
+            second = self.client.get(url)
+        self.assertEqual(second.status_code, 200)
+        # The cached section is HTML, not text to be escaped again.
+        self.assertEqual(first.content, second.content)
+        self.assertContains(second, person.name)
+        self.assertLess(len(context.captured_queries), 5)
 
     def test_person_profile_without_email(self):
         person = PersonFactory(name="foobar@example.com")
