@@ -18,7 +18,7 @@ class MeetingsAttendedByEmail(generics.RetrieveAPIView):
     lookup_field = "email__address"
     lookup_url_kwarg = "email"
     serializer_class = PersonAttendedMeetingsSerializer
-    api_key_endpoint = "ietf.meeting.api.meetings_attended_by_email"
+    api_key_endpoint = "ietf.api.meeting.registration.attended"
 
     def get_object(self):
         person = super().get_object()
