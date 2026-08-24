@@ -4,20 +4,20 @@
 {% load markup_tags %}
 {% load static %}
 {% load ietf_filters textfilters %}
-{% load group_filters %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
     <link rel="stylesheet" href="{% static "ietf/css/highcharts.css" %}">
 {% endblock %}
-{% block title %}Profile for {{ persons.0 }}{% endblock %}
+{% block title %}Profile for {{ profiles.0.person }}{% endblock %}
 {% block content %}
     {% origin %}
-    {% if persons|length > 1 %}
+    {% if profiles|length > 1 %}
         <p class="alert alert-warning my-3">
             More than one person with this name has been found.  Showing all.
         </p>
     {% endif %}
-    {% for person in persons %}
+    {% for profile in profiles %}
+        {% with person=profile.person %}
         {% if not forloop.first %}<hr>{% endif %}
         <h1>
             {{ person.name }}
@@ -36,9 +36,9 @@
             {% endif %}
             {{ person.biography|apply_markup:"restructuredtext"|urlize_ietf_docs|linkify }}
         </div>
-        {% if person.role_set.exists %}
+        {% if profile.has_roles %}
             <h2 class="mt-5" id="roles-{{ forloop.counter }}">Roles</h2>
-            {% if person.role_set.all|active_roles %}
+            {% if profile.roles %}
             <table class="table table-sm table-striped tablesorter">
                 <thead>
                     <tr>
@@ -48,7 +48,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for role in person.role_set.all|active_roles %}
+                    {% for role in profile.roles %}
                         <tr>
                             <td>{{ role.name.name }}
                                 {% if role.name.name == 'Reviewer' %}
@@ -70,7 +70,7 @@
                 <p>{{ person.first_name }} has no active roles as of {{ today|date:"Y-m-d" }}.</p>
             {% endif %}
         {% endif %}
-        {% if person.personextresource_set.exists %}
+        {% if profile.ext_resources %}
             <h2 class="mt-5" id="extresources-{{ forloop.counter }}">External Resources</h2>
             <table class="table table-sm table-striped tablesorter">
                 <thead>
@@ -80,7 +80,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for extres in person.personextresource_set.all %}
+                    {% for extres in profile.ext_resources %}
                         <tr>
                             <td>
                                 <span title="{{ extres.name.name }}">{% firstof extres.display_name extres.name.name %}</span>
@@ -92,9 +92,9 @@
             </table>
         {% endif %}
         <h2 class="mt-5" id="rfcs-{{ forloop.counter }}">
-            RFCs <small class="text-body-secondary">({{ person.rfcs|length }})</small>
+            RFCs <small class="text-body-secondary">({{ profile.rfcs|length }})</small>
         </h2>
-        {% if person.rfcs %}
+        {% if profile.rfcs %}
             <table class="table table-sm table-striped tablesorter">
                 <thead>
                     <tr>
@@ -105,23 +105,21 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for doc in person.rfcs  %}
+                    {% for row in profile.rfcs %}
                         <tr>
                             <td>
-                                <a class="text-nowrap" href="{{ doc.get_absolute_url }}">RFC {{ doc.rfc_number }}</a>
+                                <a class="text-nowrap" href="{{ row.doc.get_absolute_url }}">RFC {{ row.doc.rfc_number }}</a>
                             </td>
-                            <td data-sort-number="{{ doc.pub_date|date:"U" }}">{{ doc.pub_date|date:"b Y"|title }}</td>
-                            <td>{{ doc.title|urlize_ietf_docs }}</td>
+                            <td data-sort-number="{{ row.pub_date|date:"U" }}">{{ row.pub_date|date:"b Y"|title }}</td>
+                            <td>{{ row.doc.title|urlize_ietf_docs }}</td>
                             <td class="text-end">
-                                {% with doc.referenced_by_rfcs_as_rfc_or_draft.count as refbycount %}
-                                    {% if refbycount %}
-                                        <a class="text-end"
-                                           href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.name %}"
-                                           rel="nofollow">
-                                            {{ refbycount }} RFC{{ refbycount|pluralize }}
-                                        </a>
-                                    {% endif %}
-                                {% endwith %}
+                                {% if row.referenced_by %}
+                                    <a class="text-end"
+                                       href="{% url 'ietf.doc.views_doc.document_referenced_by' row.doc.name %}"
+                                       rel="nofollow">
+                                        {{ row.referenced_by }} RFC{{ row.referenced_by|pluralize }}
+                                    </a>
+                                {% endif %}
                             </td>
                         </tr>
                     {% endfor %}
@@ -131,11 +129,11 @@
             {{ person.first_name }} has no RFCs as of {{ today|date:"Y-m-d" }}.
         {% endif %}
         <h2 class="mt-5" id="drafts-{{ forloop.counter }}">
-            Active Internet-Drafts <small class="text-body-secondary">({{ person.active_drafts|length }})</small>
+            Active Internet-Drafts <small class="text-body-secondary">({{ profile.active_drafts|length }})</small>
         </h2>
-        {% if person.active_drafts.exists %}
+        {% if profile.active_drafts %}
             <ul>
-                {% for doc in person.active_drafts %}
+                {% for doc in profile.active_drafts %}
                     <li>
                         <a href="{{ doc.get_absolute_url }}">{{ doc.name }}</a>
                     </li>
@@ -145,31 +143,30 @@
             {{ person.first_name }} has no active Internet-Drafts as of {{ today|date:"Y-m-d" }}.
         {% endif %}
         <h2 class="mt-5">
-            Expired Internet-Drafts <small class="text-body-secondary">({{ person.expired_drafts|length }})</small>
+            Expired Internet-Drafts <small class="text-body-secondary">({{ profile.expired_drafts|length }})</small>
         </h2>
-        {% if person.expired_drafts.exists %}
+        {% if profile.expired_drafts %}
             <ul>
-                {% for doc in person.expired_drafts %}
-                    {% if not doc.replaced_by %}
-                        <li>
-                            <a href="{{ doc.get_absolute_url }}">
-                                {{ doc.name }}
-                            </a>
-                        </li>
-                    {% endif %}
+                {% for doc in profile.expired_drafts %}
+                    <li>
+                        <a href="{{ doc.get_absolute_url }}">
+                            {{ doc.name }}
+                        </a>
+                    </li>
                 {% endfor %}
             </ul>
             (Excluding replaced Internet-Drafts.)
         {% else %}
             {{ person.first_name }} has no expired Internet-Drafts as of {{ today|date:"Y-m-d" }}.
         {% endif %}
-        {% if person.has_drafts %}
+        {% if profile.has_drafts %}
             <h2 class="mt-5">
                 Internet-Draft Activity
             </h2>
             <div id="chart-{{ forloop.counter }}">
             </div>
         {% endif %}
+        {% endwith %}
     {% endfor %}
 {% endblock %}
 {% block js %}
@@ -177,13 +174,13 @@
     <script src="{% static 'ietf/js/highstock.js' %}"></script>
     <script>
         $(function () {
-            {% for person in persons %}
-                {% if person.has_drafts %}
-                    $.getJSON('{% url "ietf.doc.views_stats.chart_conf_person_drafts" id=person.id %}', function (conf) {
+            {% for profile in profiles %}
+                {% if profile.has_drafts %}
+                    $.getJSON('{% url "ietf.doc.views_stats.chart_conf_person_drafts" id=profile.person.id %}', function (conf) {
                         // Create the chart
                         chart = Highcharts.stockChart('chart-{{ forloop.counter }}', conf);
                         chart.showLoading();
-                        $.getJSON('{% url "ietf.doc.views_stats.chart_data_person_drafts" id=person.id %}', function (data) {
+                        $.getJSON('{% url "ietf.doc.views_stats.chart_data_person_drafts" id=profile.person.id %}', function (data) {
                             chart.series[0].setData(data);
                             chart.hideLoading();
                         });
