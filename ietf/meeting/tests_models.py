@@ -19,6 +19,7 @@ from ietf.meeting.factories import (
 )
 from ietf.meeting.factories import RegistrationFactory, RegistrationTicketFactory
 from ietf.meeting.models import Registration, RegistrationTicket, Session
+from ietf.name.models import RegistrationTicketTypeName, AttendanceTypeName
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import date_today, datetime_today
 
@@ -326,6 +327,49 @@ class SessionTests(TestCase):
 
 
 class RegistrationTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.meeting = MeetingFactory(type_id="ietf")
+
+    def create_registration(self, tickets):
+        """Create a Registration with the given (attendance, ticket) type pairs"""
+        registration = RegistrationFactory(meeting=self.meeting, with_ticket=False)
+        for attendance_type_id, ticket_type_id in tickets:
+            RegistrationTicketFactory(
+                registration=registration,
+                attendance_type_id=attendance_type_id,
+                ticket_type_id=ticket_type_id,
+            )
+        return registration
+
+    def test_onsite(self):
+        expected_onsite_pks = [
+            self.create_registration([("onsite", ticket_type.pk)]).pk
+            for ticket_type in RegistrationTicketTypeName.objects.filter(used=True)
+        ]
+
+        for attendance_type in AttendanceTypeName.objects.filter(used=True):
+            if attendance_type.pk == "onsite":
+                continue  # we already have one
+        self.assertCountEqual(
+            Registration.objects.onsite().values_list("pk", flat=True),
+            expected_onsite_pks,
+        )
+
+    def test_remote(self):
+        expected_remote_pks = [
+            self.create_registration([("remote", ticket_type.pk)]).pk
+            for ticket_type in RegistrationTicketTypeName.objects.filter(used=True)
+        ]
+
+        for attendance_type in AttendanceTypeName.objects.filter(used=True):
+            if attendance_type.pk == "onsite":
+                continue  # we already have one
+        self.assertCountEqual(
+            Registration.objects.remote().values_list("pk", flat=True),
+            expected_remote_pks,
+        )
+
     # A ticket counts toward the plenary meeting only if both its attendance type
     # and its ticket type are applicable. Applicable tickets are ranked by
     # attendance type (onsite, then remote), then by ticket type (student,
@@ -380,21 +424,6 @@ class RegistrationTests(TestCase):
             None,
         ),
     ]
-
-    def setUp(self):
-        super().setUp()
-        self.meeting = MeetingFactory(type_id="ietf")
-
-    def create_registration(self, tickets):
-        """Create a Registration with the given (attendance, ticket) type pairs"""
-        registration = RegistrationFactory(meeting=self.meeting, with_ticket=False)
-        for attendance_type_id, ticket_type_id in tickets:
-            RegistrationTicketFactory(
-                registration=registration,
-                attendance_type_id=attendance_type_id,
-                ticket_type_id=ticket_type_id,
-            )
-        return registration
 
     def test_plenary_ticket_details(self):
         """The plenary_* properties report the most representative ticket"""
