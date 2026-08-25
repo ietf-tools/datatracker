@@ -138,28 +138,28 @@ def documents_total(request: Any, doc_type: str = "rfc", stats_type: str = "leve
 
 def get_timeline_data_for_documents(
     doc_type: str = "rfc",
-    group_by: str = "stream__name",
+    group_by: str = "stream",
     top_n: int = 10,
 ) -> tuple[list[int], list[dict[str, Any]]]:
     """Get timeline data for documents grouped by field over years.
 
     Args:
         doc_type: Document type filter ('rfc', 'draft').
-        group_by: Field to group by (e.g., 'stream__name', 'group__name').
+        group_by: Field to group by (e.g., 'stream', 'group', 'intended_std_level_id').
         top_n: Number of top groups to display.
 
     Returns:
         Tuple of (sorted_years, datasets) for Chart.js timeline chart.
 
     """
-    cache_key = f"stats:get_timeline_data_for_documents:{doc_type}-{group_by}"
-    result = cache.get(cache_key, None)
 
     # Initialize variables with proper types
     years_set: list[int]
     documents_totals: dict[str, int]
     data_map: dict[int, dict[str, int]]
 
+    cache_key = f"stats:get_timeline_data_for_documents:{doc_type}-{group_by}"
+    result = cache.get(cache_key, None)
     if result is not None:
         years_set, documents_totals, data_map = result
     else:
@@ -176,6 +176,7 @@ def get_timeline_data_for_documents(
         queryset = (
             Document.objects
             .filter(type_id=doc_type)
+            .select_related("stream", "group")
             .annotate(pub_datetime=pub_datetime_subquery)
         )
 
@@ -188,9 +189,9 @@ def get_timeline_data_for_documents(
             if row.pub_datetime is None:
                 continue
             year = row.pub_datetime.astimezone(RPC_TZINFO).year
-            if group_by == "stream__name":
+            if group_by == "stream":
                 group = row.stream.name if row.stream else "Unspecified"
-            elif group_by == "group__name":
+            elif group_by == "group":
                 group = row.group.name if row.group else "Unspecified"
             else:
                 group = getattr(row, group_by, None)
@@ -274,13 +275,13 @@ def documents_timeline(request: Any, doc_type: str = "rfc", stats_type: str = "l
         return error_response
 
     if stats_type == "stream":
-        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "stream__name", top_n)
+        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "stream", top_n)
     elif stats_type == "level" and doc_type == "draft":
         total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "intended_std_level_id", top_n)
     elif stats_type == "level" and doc_type == "rfc":
         total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "std_level_id", top_n)
     elif stats_type == "wg":
-        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "group__name", top_n)
+        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "group", top_n)
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
