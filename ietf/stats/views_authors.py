@@ -176,6 +176,7 @@ def authors_total(request: HttpRequest, doc_type: str = "all",
 
     """
     top_n, error_response = get_valid_top_n(request)
+
     if error_response is not None:
         return error_response
 
@@ -385,6 +386,7 @@ def authors_timeline(request: HttpRequest, doc_type: str = "all", stats_type: st
 
     """
     top_n, error_response = get_valid_top_n(request)
+
     if error_response is not None:
         return error_response
 

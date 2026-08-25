@@ -47,7 +47,11 @@ def get_valid_top_n(request):
     try:
         top_n = int(request.GET.get("top", "20"))
     except ValueError:
-        top_n = 20
+        return 0, render(
+            request,
+            "stats/error.html",
+            {"message": f"Invalid top_n choice: {request.GET.get('top')}. Valid choices are: {get_top_n_choices()}"},
+        )
 
     if top_n not in top_n_choices:
         return 0, render(

@@ -58,7 +58,7 @@ class StatisticsTests(TestCase):
     def test_invalid_top_n(self):
         url = urlreverse(
             ietf.stats.views_authors.authors_timeline,
-            kwargs={"doc_type": "rfc", "stats_type": "country"},
+            kwargs={"doc_type": "draft", "stats_type": "country"},
         )
         r = self.client.get(url + "?top=3")
         self.assertEqual(r.status_code, 200)

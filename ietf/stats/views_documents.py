@@ -105,6 +105,7 @@ def documents_total(request: Any, doc_type: str = "rfc", stats_type: str = "leve
 
     """
     top_n, error_response = get_valid_top_n(request)
+
     if error_response is not None:
         return error_response
 
@@ -268,6 +269,7 @@ def documents_timeline(request: Any, doc_type: str = "rfc", stats_type: str = "l
 
     """
     top_n, error_response = get_valid_top_n(request)
+
     if error_response is not None:
         return error_response
 
