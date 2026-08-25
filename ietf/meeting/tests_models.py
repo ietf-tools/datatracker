@@ -347,10 +347,12 @@ class RegistrationTests(TestCase):
             self.create_registration([("onsite", ticket_type.pk)]).pk
             for ticket_type in RegistrationTicketTypeName.objects.filter(used=True)
         ]
-
         for attendance_type in AttendanceTypeName.objects.filter(used=True):
             if attendance_type.pk == "onsite":
                 continue  # we already have one
+            for ticket_type in RegistrationTicketTypeName.objects.filter(used=True):
+                self.create_registration([(attendance_type.pk, ticket_type.pk)])
+
         self.assertCountEqual(
             Registration.objects.onsite().values_list("pk", flat=True),
             expected_onsite_pks,
@@ -361,13 +363,42 @@ class RegistrationTests(TestCase):
             self.create_registration([("remote", ticket_type.pk)]).pk
             for ticket_type in RegistrationTicketTypeName.objects.filter(used=True)
         ]
-
         for attendance_type in AttendanceTypeName.objects.filter(used=True):
-            if attendance_type.pk == "onsite":
+            if attendance_type.pk == "remote":
                 continue  # we already have one
+            for ticket_type in RegistrationTicketTypeName.objects.filter(used=True):
+                self.create_registration([(attendance_type.pk, ticket_type.pk)])
+
         self.assertCountEqual(
             Registration.objects.remote().values_list("pk", flat=True),
             expected_remote_pks,
+        )
+
+    def test_onsite_or_remote(self):
+        expected_onsite_pks = [
+            self.create_registration([("onsite", ticket_type.pk)]).pk
+            for ticket_type in RegistrationTicketTypeName.objects.filter(used=True)
+        ]
+        expected_remote_pks = [
+            self.create_registration([("remote", ticket_type.pk)]).pk
+            for ticket_type in RegistrationTicketTypeName.objects.filter(used=True)
+        ]
+        for attendance_type in AttendanceTypeName.objects.filter(used=True):
+            if attendance_type.pk in ["onsite", "remote"]:
+                continue  # we already have one
+            for ticket_type in RegistrationTicketTypeName.objects.filter(used=True):
+                self.create_registration([(attendance_type.pk, ticket_type.pk)])
+        # create a remote ticket for an onsite registration to probe whether this
+        # leads to duplicate records
+        RegistrationTicketFactory(
+            # arbitrary registration
+            registration=(Registration.objects.get(pk=expected_onsite_pks[0])),
+            attendance_type_id="remote",
+            ticket_type_id="week_pass",
+        )
+        self.assertCountEqual(
+            Registration.objects.onsite_or_remote().values_list("pk", flat=True),
+            expected_onsite_pks + expected_remote_pks,
         )
 
     # A ticket counts toward the plenary meeting only if both its attendance type
