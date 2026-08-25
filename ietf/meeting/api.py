@@ -46,11 +46,10 @@ class MeetingsAttendedByEmail(generics.RetrieveAPIView):
             [
                 reg
                 for reg in (
-                    person.registration_set.with_plenary_ticket_details().filter(
-                        meeting_id__in=meetings_with_data
-                    ).select_related(
-                        "meeting"
-                    )
+                    person.registration_set.onsite_or_remote()
+                    .with_plenary_ticket_details()
+                    .filter(meeting_id__in=meetings_with_data)
+                    .select_related("meeting")
                 )
                 if (
                     reg.attended

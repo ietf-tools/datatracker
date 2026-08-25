@@ -1584,6 +1584,13 @@ class RegistrationQuerySet(models.QuerySet):
             .exclude(tickets__attendance_type__slug="onsite")
         )
 
+    def onsite_or_remote(self):
+        """Registrations that were onsite or remote
+        
+        I.e., was a registration for the plenary meeting, not e.g. hackathon-only.
+        """
+        return self.filter(tickets__attendance_type__slug__in=["onsite", "remote"])
+
     def with_plenary_ticket_details(self):
         """Annotate with ticket details
 
