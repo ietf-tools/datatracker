@@ -44,6 +44,18 @@ from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 
 
 class StatisticsTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        llc_staff = GroupFactory(acronym="llc-staff", type_id="team")
+        self.member = PersonFactory()
+        RoleFactory(group=llc_staff, name_id="member", person=self.member)
+
+    def _member_login(self):
+        self.client.login(
+            username=self.member.user.username,
+            password=f"{self.member.user.username}+password",
+        )
+
     def test_stats_index(self):
         # Create a meeting as the index page needs to know the current meeting
         MeetingFactory(type_id="ietf", number="124", date=timezone.now())
@@ -281,6 +293,7 @@ class StatisticsTests(TestCase):
                 ds["label"] == country and ds["data"] == [1, 1]
                 for ds in chart_data["datasets"]
             ),
+            msg=f"Country '{country}' not found in chart data labels: {chart_data['datasets']}",
         )
 
         # Test#5 the authors specific statistics: for all all rfcs about the affiliation
@@ -377,10 +390,15 @@ class StatisticsTests(TestCase):
         # Let's check whether USA has indeed 1
         self.assertTrue(chart_data["datasets"][0]["data"][individual_index] == 1)
 
-        # Test#10 Check the used affiliations list view
+        # Test#10 Check the used affiliations list view w/o being logged in, which should redirect to the login page
+        r = self.client.get(urlreverse(ietf.stats.views.used_affiliations_list))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/accounts/login", r["Location"])
+
+        # Test#10-bis, check the used affiliations list view while being logged in as a non-LLC staff member, which should return 403
+        self._member_login()
         r = self.client.get(urlreverse(ietf.stats.views.used_affiliations_list))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Used Affiliations in IETF Drafts")
         self.assertTrue(
             any(
                 [cell.text for cell in row.findall("td")]
@@ -388,7 +406,6 @@ class StatisticsTests(TestCase):
                 for row in PyQuery(r.content)("tr")
             )
         )
-        
 
     def test_meeting_stats(self):
         meeting124 = MeetingFactory(type_id="ietf", number="124", date=timezone.now())
@@ -562,14 +579,35 @@ class StatisticsTests(TestCase):
                     stats_type=stats_type,
                 )
 
-    def test_known_country_list(self):
-        # check redirect
-        url = urlreverse(ietf.stats.views.known_countries_list)
+class KnownCountriesTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        llc_staff = GroupFactory(acronym="llc-staff", type_id="team")
+        self.member = PersonFactory()
+        RoleFactory(group=llc_staff, name_id="member", person=self.member)
+        self.non_member = PersonFactory()
 
+    def _member_login(self):
+        self.client.login(
+            username=self.member.user.username,
+            password=f"{self.member.user.username}+password",
+        )
+
+    def test_access_unauthenticated(self):
+        url = urlreverse(ietf.stats.views.known_countries_list)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/accounts/login", r["Location"])
+
+
+    def test_known_countries_list(self):
+        url = urlreverse(ietf.stats.views.known_countries_list)
+        self._member_login()
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "United States")
 
+class ReviewStatsTests(TestCase):
     def test_review_stats(self):
         reviewer = PersonFactory()
         review_req = ReviewRequestFactory(state_id="assigned")

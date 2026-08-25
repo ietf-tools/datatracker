@@ -23,6 +23,7 @@ def stats_index(request):
         "current_meeting": current_meeting,
     })
 
+@role_required("LLC Staff")
 def used_affiliations_list(request):
     """Render a list of used affiliations in the DocAuthor model with their aliases."""
     qs = (
@@ -54,6 +55,7 @@ def used_affiliations_list(request):
         "affiliations": affiliations,
     })
 
+@role_required("LLC Staff")
 def known_countries_list(request):
     """Render a list of known countries with their aliases."""
     countries = CountryName.objects.prefetch_related("countryalias_set")
