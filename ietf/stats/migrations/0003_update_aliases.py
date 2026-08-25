@@ -36,7 +36,7 @@ ADDITIONAL_AFFILIATION_ALIASES = [
     {'alias': 'Individual', 'name': 'Independent'},
     {'alias': 'Individual Contributor', 'name': 'Independent'},
     {'alias': 'Internet Systems Consortium', 'name': 'ISC'},
-    {'alias': 'Johns Hopkins University ', 'name': 'JHU'},
+    {'alias': 'Johns Hopkins University', 'name': 'JHU'},
     {'alias': 'National Institute of Standards and Technology', 'name': 'US-NIST'},
     {'alias': 'NIST', 'name': 'US-NIST'},
     {'alias': 'Person', 'name': 'Independent'},
@@ -48,7 +48,7 @@ ADDITIONAL_AFFILIATION_ALIASES = [
 
 ADDITIONAL_IGNORE_ENDINGS = [
     'ab\\.?', 'ag\\.?', 'corp\\.?', 'corporation\\.?', 'corportation\\.?', 'international pte ltd\\.?',  'limited\\.?', 
-    'l.l.c\\.?',
+    'l\\.l\\.c\\.?',
     'private limited\\.?', 'pty ltd\\.?',
     'pvt ltd\\.?', 's\\.a\\.s\\.?', 's\\.a\\.r\\.l\\.?', 's\\.p\\.a\\.?'
 ]
