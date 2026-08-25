@@ -119,8 +119,7 @@ def _build_timeline_datasets(
             "pointHoverRadius": 6,
             "borderWidth": 2,
         })
-
-    if include_background_color:
+        if include_background_color:
             datasets[-1]["backgroundColor"] = "#00000099"
 
     return datasets

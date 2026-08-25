@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chartData = JSON.parse(document.getElementById('chart_data').textContent) ;
     const objects = JSON.parse(document.getElementById('objects').textContent) ;
 
-    function refreshChart() {
+    function refreshChart(chart) {
         // On first call, snapshot the original data onto the chart instance itself
         if (!chart._originalData) {
             chart._originalData = {
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const idx = elements[0].index;
                         const label = chart.data.labels[idx];
                         hidden.add(label);
-                        refreshChart();
+                        refreshChart(chart);
                     }
                 },
                 responsive: true,
@@ -87,15 +87,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                     zoom: {
                         zoom: {
-                            wheel: { 
+                            wheel: {
                                 enabled: true,
                                 modifierKey: 'alt'   // Alt + scroll wheel to zoom
                             },      // scroll to zoom
-                            pinch: { 
-                                enabled: true 
+                            pinch: {
+                                enabled: true
 
                             },      // pinch on mobile
-                            drag: {                        // drag to select range 
+                            drag: {                        // drag to select range
                                 enabled: true,
                                 modifierKey: 'alt'
                             },
