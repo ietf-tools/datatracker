@@ -6,7 +6,8 @@ import csv
 
 from django.conf import settings
 from django.core.cache import cache
-from django.db.models import Count
+from django.db.models import Count, IntegerField
+from django.db.models.functions import Cast
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse as urlreverse
@@ -42,29 +43,26 @@ def get_meeting_stats_type_choices(view, stats_type: str, meeting_number: str | 
     return choices
 
 
-def get_meeting_number_choices(stats_type: str, meeting_number: str | int, current_meeting: int) -> list[tuple[str | int, str]]:
+def get_meeting_number_choices(stats_type: str, displayed_meeting: str | int, current_meeting: int) -> list[tuple[str | int, str]]:
     """Build the meeting navigation choices for timeline and detail pages."""
-    is_timeline = isinstance(meeting_number, str) and meeting_number == "All"
-    base: list[tuple[str | int, str]] = [
-        ("All", urlreverse(meetings_timeline, kwargs={"stats_type": stats_type})),
-    ]
-    if is_timeline:
-        return base + [
-            (int(current_meeting)-1, urlreverse(meeting_stats, kwargs={"meeting_number": int(current_meeting)-1, "stats_type": stats_type})),
-            (int(current_meeting), urlreverse(meeting_stats, kwargs={"meeting_number": int(current_meeting), "stats_type": stats_type})),
-            (int(current_meeting)+1, urlreverse(meeting_stats, kwargs={"meeting_number": int(current_meeting)+1, "stats_type": stats_type})),
-        ]
 
+    if isinstance(displayed_meeting, str) and displayed_meeting == "All":
+        middle_meeting = int(current_meeting)
+    else:
+        middle_meeting = int(displayed_meeting)
     choices: list[tuple[str | int, str]] = [
         ("All", urlreverse(meetings_timeline, kwargs={"stats_type": stats_type})),
     ]
-    if int(meeting_number) > FIRST_MEETING_WITH_REGISTRATION_DATA:
-        choices.append(
-            (int(meeting_number)-1, urlreverse(meeting_stats, kwargs={"meeting_number": int(meeting_number)-1, "stats_type": stats_type})),
-        )
-    choices.append((meeting_number, urlreverse(meeting_stats, kwargs={"meeting_number": meeting_number, "stats_type": stats_type})))
-    if int(meeting_number) <= int(current_meeting):
-        choices.append((int(meeting_number)+1, urlreverse(meeting_stats, kwargs={"meeting_number": int(meeting_number)+1, "stats_type": stats_type})))
+    meetings = Meeting.objects.filter(type_id="ietf").annotate(
+        number_as_int=Cast("number", IntegerField()),
+    ).filter(
+        number_as_int__range=(middle_meeting - 1, middle_meeting + 1),
+    ).order_by("number_as_int")
+    for meeting in meetings:
+        if meeting.number_as_int >= FIRST_MEETING_WITH_REGISTRATION_DATA:
+            choices.append(
+                (int(meeting.number), urlreverse(meeting_stats, kwargs={"meeting_number": meeting.number, "stats_type": stats_type})),
+            )
     return choices
 
 
@@ -382,6 +380,7 @@ def meetings_timeline(request: Any, stats_type: str = "country") -> Any:
 
     """
     top_n, error_response = get_valid_top_n(request)
+
     if error_response is not None:
         return error_response
 
@@ -544,6 +543,7 @@ def meeting_stats(request: Any, meeting_number: str | None = None, stats_type: s
     )
 
     top_n, error_response = get_valid_top_n(request)
+
     if error_response is not None:
         return error_response
 
