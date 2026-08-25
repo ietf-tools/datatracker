@@ -25,7 +25,6 @@ warnings.filterwarnings("ignore", message="The django.utils.datetime_safe module
 warnings.filterwarnings("ignore", message="The USE_DEPRECATED_PYTZ setting,")  # https://github.com/ietf-tools/datatracker/issues/5635
 warnings.filterwarnings("ignore", message="The is_dst argument to make_aware\\(\\)")  # caused by django-filters when USE_DEPRECATED_PYTZ is true 
 warnings.filterwarnings("ignore", message="The USE_L10N setting is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5648
-warnings.filterwarnings("ignore", message="django.contrib.auth.hashers.CryptPasswordHasher is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5663
 
 # Other DeprecationWarnings
 warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API", module="pyang.plugin")
@@ -70,11 +69,10 @@ ADMINS = [
 BUG_REPORT_EMAIL = "tools-help@ietf.org"
 
 PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.Argon2PasswordHasher',
-    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
-    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
-    'django.contrib.auth.hashers.SHA1PasswordHasher',
-    'django.contrib.auth.hashers.CryptPasswordHasher',
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.SHA1PasswordHasher",
 ]
 
 
