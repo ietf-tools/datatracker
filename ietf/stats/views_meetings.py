@@ -192,8 +192,8 @@ def get_affiliation_data_for_meetings(attendance_type: str | None = None,
 
         # Count per canonicalized affiliation
         meetings_set: set[str] = set()
-        org_totals: dict[str, int] = defaultdict(int)
-        data_map: dict[str, dict[str, int]] = defaultdict(dict)  # {org: {meeting: count}}
+        org_totals = defaultdict(int)
+        data_map = defaultdict(dict)  # {org: {meeting: count}}
 
         for reg in registrations:
             meeting = reg["meeting__number"]
