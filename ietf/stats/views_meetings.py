@@ -174,8 +174,8 @@ def get_affiliation_data_for_meetings(attendance_type: str | None = None,
 
     """
     cache_key = f"stats:get_affiliation_data_for_meetings:{attendance_type}"
-    sorted_meetings, sorted_orgs = cache.get(cache_key, (None, None))
-    if (sorted_meetings, sorted_orgs) == (None, None):
+    sorted_meetings, sorted_orgs, org_totals, data_map = cache.get(cache_key, (None, None, None, None))
+    if (sorted_meetings, sorted_orgs, org_totals, data_map) == (None, None, None, None):
 
         # Get registration status details
         if attendance_type:
@@ -217,7 +217,7 @@ def get_affiliation_data_for_meetings(attendance_type: str | None = None,
         )
         cache.set(
             cache_key,
-            (sorted_meetings, sorted_orgs),
+            (sorted_meetings, sorted_orgs, org_totals, data_map),
             settings.STATS_TIMELINE_CACHE_TIMEOUT,
         )
     top_orgs = sorted_orgs[:top_n]
