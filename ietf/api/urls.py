@@ -72,7 +72,7 @@ urlpatterns = [
     url(r'^meeting/(?P<num>[A-Za-z0-9._+-]+)/agenda-data$', meeting_views.api_get_agenda_data),
     # Meeting session materials
     url(r'^meeting/session/(?P<session_id>[A-Za-z0-9._+-]+)/materials$', meeting_views.api_get_session_materials),
-    url(r'^meeting/registration/attended/(?P<email>[^/\x00]+)/?$', meeting_api.MeetingsAttendedByEmail.as_view()),
+    url(r'^meeting/registration/attended/(?P<email>[^/\x00]+)/?$', meeting_api.MeetingsAttendedByEmail.as_view(), name="ietf.api.meeting.registration.attended"),
     # Let MeetEcho upload bluesheets
     url(r'^notify/meeting/bluesheet/?$', meeting_views.api_upload_bluesheet),
     # Let MeetEcho tell us about session attendees
