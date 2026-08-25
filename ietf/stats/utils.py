@@ -97,14 +97,13 @@ def get_aliased_affiliations(affiliations):
 
     known_aliases = { alias.lower(): name for alias, name in AffiliationAlias.objects.values_list("alias", "name") }
     # Let's prepare a dict for things like "Google Inc." or "Google Analytics"-> "Google" 
-    # by adding a space to the end of the main name 
+    # by adding a single space to the end of the main name 
     # so we only match it at the beginning of the affiliation and not in the middle of it, e.g. "Google Analytics" will match "Google" 
     # but neither "My Google Analytics" nor "GoogleIsGreat" will match "Google"
-    affiliation_main_names = [(main_name.lower() + ' ', main_name) for main_name in AffiliationMainName.objects.values_list("main_name", flat=True)]
+    affiliation_main_names = [(main_name.strip(" ").lower() + ' ', main_name) for main_name in AffiliationMainName.objects.values_list("main_name", flat=True)]
 
     for affiliation in affiliations:
         original_affiliation = affiliation
-        affiliation_plus_space = affiliation + " " # to match main names with a space added to the end of them
 
         # check aliases from Aliases DB
         name = known_aliases.get(affiliation.lower())
@@ -118,13 +117,14 @@ def get_aliased_affiliations(affiliations):
             affiliation = name
             res[original_affiliation] = affiliation
 
-        # check again aliases from Aliases DB ???
+        # check again aliases from Aliases DB after stripping the ending
         name = known_aliases.get(affiliation.lower())
         if name is not None:
             affiliation = name
             res[original_affiliation] = affiliation
 
         # check aliases from Main Names DB 
+        affiliation_plus_space = affiliation.strip(" ") + " " # to match main names with a single space added to the end of them
         name = next((original for lower, original in affiliation_main_names if affiliation.lower().startswith(lower) or affiliation_plus_space.lower().startswith(lower)), None)
         if name is not None:
             affiliation = name
