@@ -190,13 +190,13 @@ class StatisticsTests(TestCase):
         self.assertTrue(chart_data["labels"] == [year1960, yearNow])
         self.assertTrue(
             any(
-                ds["label"] == "inf" and ds["data"] == [0, 1]
+                ds["label"] == "Informational" and ds["data"] == [0, 1]
                 for ds in chart_data["datasets"]
             ),
         )
         self.assertTrue(
             any(
-                ds["label"] == "bcp" and ds["data"] == [2, 0]
+                ds["label"] == "Best Current Practice" and ds["data"] == [2, 0]
                 for ds in chart_data["datasets"]
             ),
         )
