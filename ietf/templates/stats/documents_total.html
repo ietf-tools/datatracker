@@ -54,7 +54,7 @@
         </form>
     </div>
     <p>
-        This page provides the top-{{ top_n }} {{ stats_type }} for IETF {{ doc_type|upper }} {{ objects}}. 
+        This page provides the top-{{ top_n }} {{ stats_type }} for IETF {{ doc_type|upper }} {{ objects}}.
         Only the top-{{ top_n }} categories are listed, the remaining ones are aggregated into 'Other'.
         {% if objects == 'authors' %}
             Note: authors are counted only once no matter how many documents they have authored.
@@ -64,13 +64,13 @@
         <div class="col-md-12">
             <h2>{{ doc_type|title }} {{ objects|title }} by {{ stats_type|title }}</h2>
         <div class="chart-wrapper col-10">
-            <canvas id="documentsChart" aria-label="Authors Total" role="img"></canvas>
+            <canvas id="documentsChart" aria-label="{{ objects|title }} Total" role="img"></canvas>
         </div>
         </div><!-- col -->
     </div><!-- row -->
     <div class="row">
         <p class="text-body-secondary text-end">
-            Click on a bar to hide it and rescale the graph. 
+            Click on a bar to hide it and rescale the graph.
         </p>
     </div><!-- row-->
 {% endblock %}

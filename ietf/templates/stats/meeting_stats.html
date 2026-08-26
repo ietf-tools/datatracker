@@ -47,7 +47,7 @@
         </form>
     </div>
     <p>
-        This page provides a visual representation of the total registrations for IETF-{{ meeting_number }} by {{ stats_type }}. 
+        This page provides a visual representation of the total registrations for IETF-{{ meeting_number }} by {{ stats_type }}.
         Only the top-{{ top_n }} {{ stats_type }} registrations are displayed separately,
         else they are grouped under "Other".
     </p>
@@ -55,7 +55,7 @@
         <div class="col-md-6 col-sm-12">
         <h2>
             Total Registrations by {{ stats_type|title }} ({{ total_total}} in total)
-            <a href="{% url 'ietf.stats.views_meetings.meeting_stats' meeting_number=meeting_number stats_type=stats_type %}?top={{ top_n }}&download=total" class="btn btn-outline-primary" 
+            <a href="{% url 'ietf.stats.views_meetings.meeting_stats' meeting_number=meeting_number stats_type=stats_type %}?top={{ top_n }}&amp;download=total" class="btn btn-outline-primary"
                 download="{{ stats_type }}-total-{{ meeting_number }}.csv" aria-label="Download CSV">
                 <i class="bi bi-filetype-csv" aria-hidden="true" title="Download CSV file"></i>
             </a>
@@ -67,7 +67,7 @@
         <div class="col-md-6 col-sm-12">
         <h2>
             In Person Registrations by {{ stats_type|title }} ({{ in_person_total}} in total)
-            <a href="{% url 'ietf.stats.views_meetings.meeting_stats' meeting_number=meeting_number stats_type=stats_type %}?top={{ top_n }}&download=in_person" class="btn btn-outline-primary" 
+            <a href="{% url 'ietf.stats.views_meetings.meeting_stats' meeting_number=meeting_number stats_type=stats_type %}?top={{ top_n }}&amp;download=in_person" class="btn btn-outline-primary"
                 download="{{ stats_type }}-in_person-{{ meeting_number }}.csv" aria-label="Download CSV">
                 <i class="bi bi-filetype-csv" aria-hidden="true" title="Download CSV file"></i>
             </a>
@@ -80,7 +80,7 @@
     <div class="row">
         <p class="text-body-secondary text-end">
             Hover over a slice to see the count and percentage of total registrations.
-            Click on a legend at the bottom to hide it and rescale the graph; click again to show it. 
+            Click on a legend at the bottom to hide it and rescale the graph; click again to show it.
             Click on <i class="bi bi-filetype-csv" aria-hidden="true" title="Download CSV file"></i> to download the data as a CSV file.
         </p>
     </div><!-- row-->

@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Safely parse JSON data injected from Django view ──
     const chartData = JSON.parse(document.getElementById('chart_data').textContent) ;
+    const objects = JSON.parse(document.getElementById('objects').textContent) ;
     const stackedLines = false ;
 
     function displayChart (id, data) {
@@ -45,20 +46,20 @@ document.addEventListener('DOMContentLoaded', () => {
                                 return `${items[0].label}`;
                             },
                             label: function(context) {
-                                return ` ${context.dataset.label}: ${context.parsed.y} documents`;
+                                return ` ${context.dataset.label}: ${context.parsed.y} ${objects}`;
                             }
                         }
                     },
                     zoom: {
                         zoom: {
-                            wheel: { 
+                            wheel: {
                                 enabled: true,
                                 modifierKey: 'alt'   // Alt + scroll wheel to zoom
                             },      // scroll to zoom
-                            pinch: { 
-                                enabled: true 
+                            pinch: {
+                                enabled: true
                             },      // pinch on mobile
-                            drag: {                        // drag to select range 
+                            drag: {                        // drag to select range
                                 enabled: true,
                                 modifierKey: 'alt'
                             },
