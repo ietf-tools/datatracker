@@ -100,7 +100,12 @@ def get_aliased_affiliations(affiliations):
     # by adding a single space to the end of the main name 
     # so we only match it at the beginning of the affiliation and not in the middle of it, e.g. "Google Analytics" will match "Google" 
     # but neither "My Google Analytics" nor "GoogleIsGreat" will match "Google"
-    affiliation_main_names = [(main_name.strip(" ").lower() + ' ', main_name) for main_name in AffiliationMainName.objects.values_list("main_name", flat=True)]
+    # sort longest-first so that when one main name is a prefix of another, the more specific (longer) one wins
+    affiliation_main_names = sorted(
+        ((main_name.strip(" ").lower() + ' ', main_name) for main_name in AffiliationMainName.objects.values_list("main_name", flat=True)),
+        key=lambda pair: len(pair[0]),
+        reverse=True,
+    )
 
     for affiliation in affiliations:
         original_affiliation = affiliation
