@@ -112,9 +112,9 @@ def documents_total(request: Any, doc_type: str = "rfc", stats_type: str = "leve
     if stats_type == "stream":
         chart_data = get_total_data_for_documents(doc_type, "stream__name", top_n)
     elif stats_type == "level" and doc_type == "draft":
-        chart_data = get_total_data_for_documents(doc_type, "intended_std_level_id", top_n)
+        chart_data = get_total_data_for_documents(doc_type, "intended_std_level__name", top_n)
     elif stats_type == "level" and doc_type == "rfc":
-        chart_data = get_total_data_for_documents(doc_type, "std_level_id", top_n)
+        chart_data = get_total_data_for_documents(doc_type, "std_level__name", top_n)
     elif stats_type == "wg":
         chart_data = get_total_data_for_documents(doc_type, "group__name", top_n)
     else:
@@ -145,7 +145,7 @@ def get_timeline_data_for_documents(
 
     Args:
         doc_type: Document type filter ('rfc', 'draft').
-        group_by: Field to group by (e.g., 'stream', 'group', 'intended_std_level_id').
+        group_by: Field to group by (e.g., 'stream', 'group', 'intended_std_level').
         top_n: Number of top groups to display.
 
     Returns:
@@ -176,7 +176,7 @@ def get_timeline_data_for_documents(
         queryset = (
             Document.objects
             .filter(type_id=doc_type)
-            .select_related("stream", "group")
+            .select_related(group_by)
             .annotate(pub_datetime=pub_datetime_subquery)
         )
 
@@ -193,6 +193,10 @@ def get_timeline_data_for_documents(
                 group = row.stream.name if row.stream else "Unspecified"
             elif group_by == "group":
                 group = row.group.name if row.group else "Unspecified"
+            elif group_by == "intended_std_level":
+                group = row.intended_std_level.name if row.intended_std_level else "Unspecified"
+            elif group_by == "std_level":
+                group = row.std_level.name if row.std_level else "Unspecified"
             else:
                 group = getattr(row, group_by, None)
                 if not group:
@@ -277,9 +281,9 @@ def documents_timeline(request: Any, doc_type: str = "rfc", stats_type: str = "l
     if stats_type == "stream":
         total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "stream", top_n)
     elif stats_type == "level" and doc_type == "draft":
-        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "intended_std_level_id", top_n)
+        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "intended_std_level", top_n)
     elif stats_type == "level" and doc_type == "rfc":
-        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "std_level_id", top_n)
+        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "std_level", top_n)
     elif stats_type == "wg":
         total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "group", top_n)
     else:
