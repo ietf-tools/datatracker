@@ -4110,15 +4110,29 @@ def delete_schedule(request, num, owner, name):
 # Interim Views
 # -------------------------------------------------
 def interim_announce(request):
-    '''View which shows interim meeting requests awaiting announcement'''
-    meetings = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='scheda')
-    menu_entries = get_interim_menu_entries(request)
-    selected_menu_entry = 'announce'
+    """View which shows interim meeting requests awaiting announcement"""
+    # Ignore meetings older than this - gives people time to notice that a meeting was
+    # left as "scheda" and complain before the meeting falls off the visible list.
+    MAX_LOOKBACK = datetime.timedelta(days=28)
 
-    return render(request, "meeting/interim_announce.html", {
-        'menu_entries': menu_entries,
-        'selected_menu_entry': selected_menu_entry,
-        'meetings': meetings})
+    meetings = data_for_meetings_overview(
+        Meeting.objects.filter(
+            type="interim", date__gte=date_today() - MAX_LOOKBACK
+        ).order_by("date"),
+        interim_status="scheda",
+    )
+    menu_entries = get_interim_menu_entries(request)
+    selected_menu_entry = "announce"
+
+    return render(
+        request,
+        "meeting/interim_announce.html",
+        {
+            "menu_entries": menu_entries,
+            "selected_menu_entry": selected_menu_entry,
+            "meetings": meetings,
+        },
+    )
 
 
 @role_required('Secretariat',)
@@ -4173,21 +4187,34 @@ def interim_skip_announcement(request, number):
 
 
 def interim_pending(request):
+    """View which shows interim meeting requests pending approval"""
+    # Ignore meetings older than this - gives people time to notice that a meeting was
+    # left as "apprw" and complain before the meeting falls off the visible list.
+    MAX_LOOKBACK = datetime.timedelta(days=28)
 
-    '''View which shows interim meeting requests pending approval'''
-    meetings = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='apprw')
+    meetings = data_for_meetings_overview(
+        Meeting.objects.filter(
+            type="interim", date__gte=date_today() - MAX_LOOKBACK
+        ).order_by("date"),
+        interim_status="apprw",
+    )
 
     menu_entries = get_interim_menu_entries(request)
-    selected_menu_entry = 'pending'
+    selected_menu_entry = "pending"
 
     for meeting in meetings:
         if can_approve_interim_request(meeting, request.user):
             meeting.can_approve = True
 
-    return render(request, "meeting/interim_pending.html", {
-        'menu_entries': menu_entries,
-        'selected_menu_entry': selected_menu_entry,
-        'meetings': meetings})
+    return render(
+        request,
+        "meeting/interim_pending.html",
+        {
+            "menu_entries": menu_entries,
+            "selected_menu_entry": selected_menu_entry,
+            "meetings": meetings,
+        },
+    )
 
 
 @login_required
