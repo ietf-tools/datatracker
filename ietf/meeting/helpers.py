@@ -1,7 +1,4 @@
 # Copyright The IETF Trust 2013-2026, All Rights Reserved
-# -*- coding: utf-8 -*-
-
-
 from collections import defaultdict
 import datetime
 import io
@@ -34,6 +31,14 @@ from ietf.utils import log, meetecho
 from ietf.utils.mail import send_mail
 from ietf.utils.pipe import pipe
 from ietf.utils.text import xslugify
+from ietf.utils.timezone import date_today
+
+# Ignore meetings older than this when querying for pending interims. It's expected that
+# every interim should be out of the pending (apprw / scheda) states well before the
+# scheduled date. Look back a few weeks so that a meeting that is somehow left in a
+# pending state does not fall off the interface until people have had time to notice.
+#
+PENDING_INTERIM_MAX_LOOKBACK = datetime.timedelta(days=28)
 
 
 def get_meeting(num=None, type_in=('ietf',), days=28):
@@ -863,14 +868,17 @@ def has_pending_interim(acronym):
     one pending interim meeting request or a to-be-announced interim request.
     '''
     rv = False
-    pending = data_for_meetings_overview(Meeting.objects.filter(type='interim'), interim_status='apprw')
+    possible_meetings = Meeting.objects.filter(
+        type='interim', date__gte=date_today() - PENDING_INTERIM_MAX_LOOKBACK
+    )
+    pending = data_for_meetings_overview(possible_meetings, interim_status='apprw')
     for m in pending:
         if m.responsible_group.acronym == acronym:
             rv = True
             break
 
     if not rv:
-        to_be_announced = data_for_meetings_overview(Meeting.objects.filter(type='interim'), interim_status='scheda')
+        to_be_announced = data_for_meetings_overview(possible_meetings, interim_status='scheda')
         for m in to_be_announced:
             if m.responsible_group.acronym == acronym:
                 rv = True
