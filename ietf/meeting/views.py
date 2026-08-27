@@ -4838,19 +4838,14 @@ def proceedings_attendees(request, num=None):
         onsite_pks = frozenset(p.pk for p in onsite)
         remote_pks = frozenset(p.pk for p in remote)
 
+        regs_to_consider = (
+            Registration.objects.filter(meeting__number=num)
+            .with_plenary_ticket_details()
+            .select_related("person")
+        )
         regs = [
-            reg
-            for reg in Registration.objects.onsite()
-            .filter(meeting__number=num)
-            .select_related("person")
-            if reg.person.pk in onsite_pks
-        ] + [
-            reg
-            for reg in Registration.objects.remote()
-            .filter(meeting__number=num)
-            .select_related("person")
-            if reg.person.pk in remote_pks
-        ]
+            reg for reg in regs_to_consider.onsite() if reg.person.pk in onsite_pks
+        ] + [reg for reg in regs_to_consider.remote() if reg.person.pk in remote_pks]
         registrations = sorted(regs, key=lambda x: (x.last_name, x.first_name))
 
         country_codes = [r.country_code for r in registrations if r.country_code]
