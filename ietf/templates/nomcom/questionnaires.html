@@ -21,7 +21,7 @@
         {% for position in positions %}
             <div role="tabpanel" class="tab-pane {% if forloop.first %} active{% endif %}"
                  id="{{ position.name|slugify }}">
-                {{ position.get_questionnaire|urlize_ietf_docs|linkify|linebreaks }}
+                {{ position.get_questionnaire|urlize_ietf_docs|urlize|linebreaks }}
             </div>
         {% endfor %}
     </div>

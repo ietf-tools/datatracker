@@ -17,7 +17,7 @@
         </h2>
         {% for name, text, url in writeups %}
             {% if name %}<h3 class="mt-5">{{ name }}</h3>{% endif %}
-            {% if text %}<pre class="border p-3 my-3">{{ text|urlize_ietf_docs|linkify }}</pre>{% endif %}
+            {% if text %}<pre class="border p-3 my-3">{{ text|urlize_ietf_docs|urlize }}</pre>{% endif %}
             {% if can_edit %}
                 <p>
                     <a href="{{ url }}" class="btn btn-primary">
