@@ -187,7 +187,7 @@ class StatisticsTests(TestCase):
         # Extract the JSON embedded in the response
         pq = PyQuery(r.content)
         chart_data = json.loads(pq.find("script#chart_data").text())
-        self.assertTrue(chart_data["labels"] == [year1960, yearNow])
+        self.assertEqual(chart_data["labels"], [year1960, yearNow])
         self.assertTrue(
             any(
                 ds["label"] == "Informational" and ds["data"] == [0, 1]
@@ -213,7 +213,7 @@ class StatisticsTests(TestCase):
         # Extract the JSON embedded in the response
         pq = PyQuery(r.content)
         chart_data = json.loads(pq.find("script#chart_data").text())
-        self.assertTrue(chart_data["labels"] == [year1960, yearNow])
+        self.assertEqual(chart_data["labels"], [year1960, yearNow])
         self.assertTrue(
             any(
                 ds["label"] == group1.name and ds["data"] == [2, 0]
@@ -233,8 +233,8 @@ class StatisticsTests(TestCase):
         # Extract the JSON embedded in the response
         pq = PyQuery(r.content)
         chart_data = json.loads(pq.find("script#chart_data").text())
-        self.assertTrue(
-            chart_data["labels"] == [year1960, yearNow],
+        self.assertEqual(
+            chart_data["labels"], [year1960, yearNow],
             msg=f"Labels ({chart_data['labels']}) for years do not match expected values=[{year1960}, {yearNow}]",
         )
         self.assertTrue(
@@ -272,8 +272,8 @@ class StatisticsTests(TestCase):
         # Extract the JSON embedded in the response
         pq = PyQuery(r.content)
         chart_data = json.loads(pq.find("script#chart_data").text())
-        self.assertTrue(
-            chart_data["labels"] == [year1960, yearNow],
+        self.assertEqual(
+            chart_data["labels"], [year1960, yearNow],
             msg=f"Labels ({chart_data['labels']}) for years do not match expected values=[{year1960}, {yearNow}]",
         )
         self.assertTrue(
@@ -308,7 +308,7 @@ class StatisticsTests(TestCase):
         # Extract the JSON embedded in the response
         pq = PyQuery(r.content)
         chart_data = json.loads(pq.find("script#chart_data").text())
-        self.assertTrue(chart_data["labels"] == [year1960, yearNow])
+        self.assertEqual(chart_data["labels"], [year1960, yearNow])
         self.assertTrue(
             any(
                 ds["label"].casefold() == affiliation.casefold()
@@ -335,7 +335,7 @@ class StatisticsTests(TestCase):
         # Extract the JSON embedded in the response
         pq = PyQuery(r.content)
         chart_data = json.loads(pq.find("script#chart_data").text())
-        self.assertTrue(chart_data["labels"] == [year1960, yearNow])
+        self.assertEqual(chart_data["labels"], [year1960, yearNow])
         # Test sometimes failing below with the factory country name being different from the country name in the chart data,
         # even though they should be the same country.
         # Using casefold to make the comparison more robust, as the country names in the chart data are title-cased
@@ -371,7 +371,7 @@ class StatisticsTests(TestCase):
         self.assertTrue(country in chart_data["labels"])
         USA_index = chart_data["labels"].index("United States of America")
         # Let's check whether USA has indeed 1
-        self.assertTrue(chart_data["datasets"][0]["data"][USA_index] == 1)
+        self.assertEqual(chart_data["datasets"][0]["data"][USA_index], 1)
 
         # Test#8 the documents specific statistics global
         r = self.client.get(
@@ -388,7 +388,7 @@ class StatisticsTests(TestCase):
         self.assertTrue(group1.name in chart_data["labels"])
         individual_index = chart_data["labels"].index("Individual submissions")
         # Let's check whether USA has indeed 1
-        self.assertTrue(chart_data["datasets"][0]["data"][individual_index] == 1)
+        self.assertEqual(chart_data["datasets"][0]["data"][individual_index], 1)
 
         # Test#10 Check the used affiliations list view w/o being logged in, which should redirect to the login page
         r = self.client.get(urlreverse(ietf.stats.views.used_affiliations_list))
