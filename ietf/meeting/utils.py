@@ -388,7 +388,11 @@ def data_for_meetings_overview(meetings, interim_status=None):
             if not m.type_id == 'interim' or not all(s.current_status in ['apprw', 'scheda', 'canceledpa'] for s in m.sessions)
         ]
 
-    ietf_group = Group.objects.get(acronym='ietf')
+    ietf_group = (
+        Group.objects.get(acronym="ietf")
+        if any(m.type_id != "interim" for m in meetings)
+        else None
+    )
 
     # set some useful attributes
     for m in meetings:
