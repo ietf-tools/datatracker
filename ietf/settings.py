@@ -886,6 +886,10 @@ HTMLIZER_CACHE_TIME = 60*60*24*14       # 14 days
 PDFIZER_CACHE_TIME = HTMLIZER_CACHE_TIME
 PDFIZER_URL_PREFIX = IDTRACKER_BASE_URL+"/doc/pdf"
 
+# How long a rendered person profile section is served from the slowpages cache.
+# This is how stale a profile's roles and documents can be.
+PERSON_PROFILE_CACHE_SECONDS = 60*15    # 15 minutes
+
 # Email settings
 IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
 AUDIO_IMPORT_EMAIL = ['ietf@meetecho.com']
