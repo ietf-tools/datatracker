@@ -546,7 +546,7 @@ class StatisticsTests(TestCase):
                 ietf.stats.views_meetings.meetings_timeline,
                 kwargs={"stats_type": "affiliation"},
             )
-            + "?download=total&top_n=5"
+            + "?download=total&top=5"
         )
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r["Content-Type"], "text/csv")
@@ -578,6 +578,65 @@ class StatisticsTests(TestCase):
                     meeting_number=interim_num,
                     stats_type=stats_type,
                 )
+
+
+class LegacyUrlRedirectTests(TestCase):
+    """The old /stats/document/... and /stats/meeting/... URLs should permanently
+    redirect to their new /stats/documents/... and /stats/meetings/... equivalents."""
+
+    def test_document_timeline_redirect(self):
+        for doc_type in ["draft", "rfc"]:
+            for stats_type in ["level", "stream", "wg"]:
+                old_url = f"/stats/document/{doc_type}/{stats_type}/"
+                new_url = urlreverse(
+                    ietf.stats.views_documents.documents_timeline,
+                    kwargs={"doc_type": doc_type, "stats_type": stats_type},
+                )
+                r = self.client.get(old_url)
+                self.assertRedirects(
+                    r, new_url, status_code=301, fetch_redirect_response=False
+                )
+
+    def test_meeting_timeline_redirect(self):
+        new_url = urlreverse(ietf.stats.views_meetings.meetings_timeline)
+        r = self.client.get("/stats/meeting/")
+        self.assertRedirects(
+            r, new_url, status_code=301, fetch_redirect_response=False
+        )
+
+        for stats_type in ["affiliation", "country"]:
+            new_url = urlreverse(
+                ietf.stats.views_meetings.meetings_timeline,
+                kwargs={"stats_type": stats_type},
+            )
+            r = self.client.get(f"/stats/meeting/{stats_type}/")
+            self.assertRedirects(
+                r, new_url, status_code=301, fetch_redirect_response=False
+            )
+
+        # "total" was renamed to "reg_type"
+        new_url = urlreverse(
+            ietf.stats.views_meetings.meetings_timeline,
+            kwargs={"stats_type": "reg_type"},
+        )
+        r = self.client.get("/stats/meeting/total/")
+        self.assertRedirects(
+            r, new_url, status_code=301, fetch_redirect_response=False
+        )
+
+    def test_meeting_stats_redirect(self):
+        meeting = MeetingFactory(type_id="ietf")
+        for stats_type in ["affiliation", "country"]:
+            old_url = f"/stats/meeting/{meeting.number}/{stats_type}/"
+            new_url = urlreverse(
+                ietf.stats.views_meetings.meeting_stats,
+                kwargs={"meeting_number": meeting.number, "stats_type": stats_type},
+            )
+            r = self.client.get(old_url)
+            self.assertRedirects(
+                r, new_url, status_code=301, fetch_redirect_response=False
+            )
+
 
 class KnownCountriesTests(TestCase):
     def setUp(self):
