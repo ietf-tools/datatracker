@@ -352,19 +352,21 @@ def data_for_meetings_overview(meetings, interim_status=None):
     interim menu)."""
 
     # filter
-    if interim_status == 'apprw':
-        session_status_condition = Q(current_status='apprw')
-    elif interim_status == 'scheda':
-        session_status_condition = Q(current_status='scheda')
+    if interim_status == "apprw":
+        session_status_condition = Q(current_status="apprw")
+    elif interim_status == "scheda":
+        session_status_condition = Q(current_status="scheda")
     else:
-        session_status_condition = ~Q(current_status__in=['apprw', 'scheda', 'canceledpa'])
+        session_status_condition = ~Q(
+            current_status__in=["apprw", "scheda", "canceledpa"]
+        )
 
     meetings = meetings.filter(
-        ~Q(type_id='interim')
+        ~Q(type_id="interim")
         | Exists(
-            Session.objects.filter(
-                meeting=OuterRef('pk')
-            ).with_current_status().filter(session_status_condition)
+            Session.objects.filter(meeting=OuterRef("pk"))
+            .with_current_status()
+            .filter(session_status_condition)
         )
     )
 
@@ -372,14 +374,14 @@ def data_for_meetings_overview(meetings, interim_status=None):
     for m in meetings:
         m.sessions = []
 
-    sessions = Session.objects.filter(
-        meeting__in=meetings,
-        meeting__type_id='interim',
-    ).order_by(
-        'meeting', 'pk'
-    ).with_current_status(
-    ).select_related(
-        'group', 'group__parent'
+    sessions = (
+        Session.objects.filter(
+            meeting__in=meetings,
+            meeting__type_id="interim",
+        )
+        .order_by("meeting", "pk")
+        .with_current_status()
+        .select_related("group", "group__parent")
     )
 
     meeting_dict = {m.pk: m for m in meetings}
@@ -395,8 +397,14 @@ def data_for_meetings_overview(meetings, interim_status=None):
     # set some useful attributes
     for m in meetings:
         m.end = m.date + datetime.timedelta(days=m.days)
-        m.responsible_group = (m.sessions[0].group if m.sessions else None) if m.type_id == 'interim' else ietf_group
-        m.interim_meeting_cancelled = m.type_id == 'interim' and all(s.current_status == 'canceled' for s in m.sessions)
+        m.responsible_group = (
+            (m.sessions[0].group if m.sessions else None)
+            if m.type_id == "interim"
+            else ietf_group
+        )
+        m.interim_meeting_cancelled = m.type_id == "interim" and all(
+            s.current_status == "canceled" for s in m.sessions
+        )
 
     return meetings
 

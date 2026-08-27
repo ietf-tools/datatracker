@@ -4111,7 +4111,14 @@ def delete_schedule(request, num, owner, name):
 # -------------------------------------------------
 def interim_announce(request):
     '''View which shows interim meeting requests awaiting announcement'''
-    meetings = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='scheda')
+    MAX_LOOKBACK = datetime.timedelta(days=365)  # ignore meetings older than this
+
+    meetings = data_for_meetings_overview(
+        Meeting.objects.filter(
+            type='interim', date__gte=date_today() - MAX_LOOKBACK
+        ).order_by('date'),
+        interim_status='scheda',
+    )
     menu_entries = get_interim_menu_entries(request)
     selected_menu_entry = 'announce'
 
@@ -4175,7 +4182,14 @@ def interim_skip_announcement(request, number):
 def interim_pending(request):
 
     '''View which shows interim meeting requests pending approval'''
-    meetings = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='apprw')
+    MAX_LOOKBACK = datetime.timedelta(days=365)  # ignore meetings older than this
+
+    meetings = data_for_meetings_overview(
+        Meeting.objects.filter(
+            type='interim', date__gte=date_today() - MAX_LOOKBACK
+        ).order_by('date'),
+        interim_status='apprw',
+    )
 
     menu_entries = get_interim_menu_entries(request)
     selected_menu_entry = 'pending'
