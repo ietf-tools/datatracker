@@ -32,8 +32,6 @@ from ietf.utils.timezone import RPC_TZINFO
 
 REFERENCE_RELATIONSHIPS = ("refnorm", "refinfo", "refunk", "refold")
 
-PROFILE_CACHE_SECONDS = 900
-
 
 def ajax_select2_search(request, model_name):
     if model_name == "email":
@@ -208,7 +206,7 @@ def profile_sections(persons, today):
                 "person/profile_body.html", {"profile": profile, "today": today}
             ),
         }
-        slowpages.set(keys[person.pk], section, PROFILE_CACHE_SECONDS)
+        slowpages.set(keys[person.pk], section, settings.PERSON_PROFILE_CACHE_SECONDS)
         sections[keys[person.pk]] = section
 
     return [sections[keys[person.pk]] for person in persons]
