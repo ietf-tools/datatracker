@@ -356,7 +356,8 @@ def data_for_meetings_overview(meetings, interim_status=None):
         m.sessions = []
 
     sessions = Session.objects.filter(
-        meeting__in=meetings
+        meeting__in=meetings,
+        meeting__type_id='interim',
     ).order_by(
         'meeting', 'pk'
     ).with_current_status(
