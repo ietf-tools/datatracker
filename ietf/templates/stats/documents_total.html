@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% load origin %}
-{% origin %}
 {% load ietf_filters static django_bootstrap5 %}
 {% block js %}
     {{ chart_data|json_script:"chart_data" }}
