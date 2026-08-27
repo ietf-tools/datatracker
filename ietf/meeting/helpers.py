@@ -863,22 +863,25 @@ def is_interim_meeting_approved(meeting):
 
 
 def has_pending_interim(acronym):
-    '''
+    """Check whether group identified by acronym has a pending interim
+    
     This function takes a group acronym and returns True if that group has at least
     one pending interim meeting request or a to-be-announced interim request.
-    '''
+    """
     rv = False
     possible_meetings = Meeting.objects.filter(
-        type='interim', date__gte=date_today() - PENDING_INTERIM_MAX_LOOKBACK
+        type="interim", date__gte=date_today() - PENDING_INTERIM_MAX_LOOKBACK
     )
-    pending = data_for_meetings_overview(possible_meetings, interim_status='apprw')
+    pending = data_for_meetings_overview(possible_meetings, interim_status="apprw")
     for m in pending:
         if m.responsible_group.acronym == acronym:
             rv = True
             break
 
     if not rv:
-        to_be_announced = data_for_meetings_overview(possible_meetings, interim_status='scheda')
+        to_be_announced = data_for_meetings_overview(
+            possible_meetings, interim_status="scheda"
+        )
         for m in to_be_announced:
             if m.responsible_group.acronym == acronym:
                 rv = True
