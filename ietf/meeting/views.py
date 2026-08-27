@@ -149,6 +149,7 @@ from ietf.meeting.helpers import (
     send_interim_approval_request,
     send_interim_announcement_request,
     sessions_post_cancel,
+    PENDING_INTERIM_MAX_LOOKBACK,
 )
 from ietf.meeting.utils import (
     condition_slide_order,
@@ -4185,13 +4186,9 @@ def delete_schedule(request, num, owner, name):
 # -------------------------------------------------
 def interim_announce(request):
     """View which shows interim meeting requests awaiting announcement"""
-    # Ignore meetings older than this - gives people time to notice that a meeting was
-    # left as "scheda" and complain before the meeting falls off the visible list.
-    MAX_LOOKBACK = datetime.timedelta(days=28)
-
     meetings = data_for_meetings_overview(
         Meeting.objects.filter(
-            type="interim", date__gte=date_today() - MAX_LOOKBACK
+            type="interim", date__gte=date_today() - PENDING_INTERIM_MAX_LOOKBACK
         ).order_by("date"),
         interim_status="scheda",
     )
@@ -4262,13 +4259,9 @@ def interim_skip_announcement(request, number):
 
 def interim_pending(request):
     """View which shows interim meeting requests pending approval"""
-    # Ignore meetings older than this - gives people time to notice that a meeting was
-    # left as "apprw" and complain before the meeting falls off the visible list.
-    MAX_LOOKBACK = datetime.timedelta(days=28)
-
     meetings = data_for_meetings_overview(
         Meeting.objects.filter(
-            type="interim", date__gte=date_today() - MAX_LOOKBACK
+            type="interim", date__gte=date_today() - PENDING_INTERIM_MAX_LOOKBACK
         ).order_by("date"),
         interim_status="apprw",
     )
