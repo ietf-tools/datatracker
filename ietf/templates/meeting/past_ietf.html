@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2026, All Rights Reserved #}
+{% load origin %}
+{% block morecss %} dt {font-size: 1.75em; margin-top:0.85em;} {% endblock %}
+{% load ietf_filters static %}
+{% load cache %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
+{% block title %}Past Plenary Meetings{% endblock %}
+{% block content %}
+    {% cache 3600 pastmeetings %}
+    {% origin %}
+    <h1>Past Plenary Meetings</h1>
+    {% if ietf_meetings %}
+        <dl>
+            {% for meeting in ietf_meetings %}
+            <dt>IETF-{{ meeting.number }}</dt>
+            <dd>{{meeting.date }}, {{meeting.city}}, {{meeting.country}}</dd>
+            <dd>
+                {% if meeting.attendance.onsite > 0 %}
+                    {{ meeting.attendance.onsite }} onsite participant{{ meeting.attendance.onsite|pluralize }}{% if meeting.attendance.remote > 0 %},{% endif %}
+                {% endif %}
+                {% if meeting.attendance.remote > 0 %}{{ meeting.attendance.remote }} online participant{{ meeting.attendance.remote|pluralize }}{% endif %}
+            </dd>
+            <dd>
+                {% with hosts=meeting.meetinghosts.all %}
+                    {% if hosts.exists %}
+                        Hosted by:
+                        {% for host in hosts%}
+                            {{ host.name }}
+                            {% if not forloop.last %} &amp; {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </dd>
+            <dd>
+                <a href="{% url 'ietf.meeting.views.proceedings' num=meeting.number %}">Proceedings<a/>
+            </dd>
+            <dd>
+                {% if meeting.survey_url %}
+                    <a href="{{ meeting.survey_url }}">Survey Results</a>
+                {% else %}
+                    {% if meeting.get_number == 120 %}
+                        <a href="https://ietf.co1.qualtrics.com/results/public/aWV0Zi1VUl8zT3laRG9JQWxidUkxZ0otNjZjMzQwNWI4ZjhlYTQwMDA4Nzg5MjNi#/pages/Page_1fe9399e-cacb-4063-af49-ee1340c57993">Survey Results</a>
+                    {% endif %}
+                {% endif %}
+            </dd>
+            {% endfor %}
+        </dl>
+    {% endif %}
+    {% endcache %}
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
+{% endblock %}
