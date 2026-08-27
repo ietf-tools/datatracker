@@ -4111,7 +4111,9 @@ def delete_schedule(request, num, owner, name):
 # -------------------------------------------------
 def interim_announce(request):
     '''View which shows interim meeting requests awaiting announcement'''
-    MAX_LOOKBACK = datetime.timedelta(days=365)  # ignore meetings older than this
+    # Ignore meetings older than this - gives people time to notice that a meeting was
+    # left as "scheda" and complain before the meeting falls off the visible list.
+    MAX_LOOKBACK = datetime.timedelta(days=28)
 
     meetings = data_for_meetings_overview(
         Meeting.objects.filter(
@@ -4182,7 +4184,9 @@ def interim_skip_announcement(request, number):
 def interim_pending(request):
 
     '''View which shows interim meeting requests pending approval'''
-    MAX_LOOKBACK = datetime.timedelta(days=365)  # ignore meetings older than this
+    # Ignore meetings older than this - gives people time to notice that a meeting was
+    # left as "apprw" and complain before the meeting falls off the visible list.
+    MAX_LOOKBACK = datetime.timedelta(days=28)
 
     meetings = data_for_meetings_overview(
         Meeting.objects.filter(
