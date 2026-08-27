@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2022, All Rights Reserved
+# Copyright The IETF Trust 2013-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -28,7 +28,7 @@ from ietf.liaisons.utils import get_person_for_user
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.person.models  import Person
 from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment, ImportantDate, SchedulingEvent, Session
-from ietf.meeting.utils import session_requested_by, add_event_info_to_session_qs
+from ietf.meeting.utils import session_requested_by, add_event_info_to_session_qs, data_for_meetings_overview
 from ietf.name.models import ImportantDateName, SessionPurposeName
 from ietf.utils import log, meetecho
 from ietf.utils.mail import send_mail
@@ -773,6 +773,7 @@ def can_edit_interim_request(meeting, user):
 def can_request_interim_meeting(user):
     return can_manage_some_groups(user)
 
+
 def can_view_interim_request(meeting, user):
     '''Returns True if the user can see the pending interim request in the pending interim view'''
     if meeting.type.slug != 'interim':
@@ -855,6 +856,29 @@ def get_earliest_session_date(formset):
 def is_interim_meeting_approved(meeting):
     return add_event_info_to_session_qs(meeting.session_set.all()).first().current_status == 'apprw'
 
+
+def has_pending_interim(acronym):
+    '''
+    This function takes a group acronym and returns True if that group has at least
+    one pending interim meeting request or a to-be-announced interim request.
+    '''
+    rv = False
+    pending = data_for_meetings_overview(Meeting.objects.filter(type='interim'), interim_status='apprw')
+    for m in pending:
+        if m.responsible_group.acronym == acronym:
+            rv = True
+            break
+
+    if not rv:
+        to_be_announced = data_for_meetings_overview(Meeting.objects.filter(type='interim'), interim_status='scheda')
+        for m in to_be_announced:
+            if m.responsible_group.acronym == acronym:
+                rv = True
+                break
+
+    return rv
+
+
 def get_next_interim_number(acronym,date):
     '''
     This function takes a group acronym and date object and returns the next number
@@ -868,6 +892,7 @@ def get_next_interim_number(acronym,date):
     else:
         serial = 0
     return "%s%02d" % (base, serial+1)
+
 
 def get_next_agenda_name(meeting):
     """Returns the next name to use for an agenda document for *meeting*"""
@@ -941,6 +966,7 @@ def send_interim_approval_request(meetings):
               context,
               cc=cc_list)
 
+
 def send_interim_approval(user, meeting):
     """Send an email to chairs and whoever initiated the action that resulted in approval that an interim is approved"""
     first_session = meeting.session_set.first()
@@ -961,6 +987,7 @@ def send_interim_approval(user, meeting):
               context,
               cc=cc_list)
 
+
 def send_interim_announcement_request(meeting):
     """Sends an email to the secretariat that an interim meeting is ready for 
     announcement, includes the link to send the official announcement"""
@@ -980,6 +1007,7 @@ def send_interim_announcement_request(meeting):
               template,
               context,
               cc_list)
+
 
 def send_interim_meeting_cancellation_notice(meeting):
     """Sends an email that a scheduled interim meeting has been cancelled."""
@@ -1182,11 +1210,13 @@ def update_interim_session_assignment(form):
             session=session,
             schedule=meeting.schedule)
 
+
 def populate_important_dates(meeting):
     assert ImportantDate.objects.filter(meeting=meeting).exists() is False
     assert meeting.type_id=='ietf'
     for datename in ImportantDateName.objects.filter(used=True):
         ImportantDate.objects.create(meeting=meeting,name=datename,date=meeting.date+datetime.timedelta(days=datename.default_offset_days))
+
 
 def update_important_dates(meeting):
     assert meeting.type_id=='ietf'
