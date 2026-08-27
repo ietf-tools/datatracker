@@ -50,7 +50,7 @@
             </tbody>
         </table>
         {% else %}
-            <p>{{ person.first_name }} has no active roles as of {{ today|date:"Y-m-d" }}.</p>
+            <p>{{ person.first_name }} does not currently have any active roles.</p>
         {% endif %}
     {% endif %}
     {% if profile.ext_resources %}
@@ -109,7 +109,7 @@
             </tbody>
         </table>
     {% else %}
-        {{ person.first_name }} has no RFCs as of {{ today|date:"Y-m-d" }}.
+        {{ person.first_name }} has no RFCs.
     {% endif %}
     <h2 class="mt-5" id="drafts-{{ person.pk }}">
         Active Internet-Drafts <small class="text-body-secondary">({{ profile.active_drafts|length }})</small>
@@ -123,7 +123,7 @@
             {% endfor %}
         </ul>
     {% else %}
-        {{ person.first_name }} has no active Internet-Drafts as of {{ today|date:"Y-m-d" }}.
+        {{ person.first_name }} has no active Internet-Drafts.
     {% endif %}
     <h2 class="mt-5">
         Expired Internet-Drafts <small class="text-body-secondary">({{ profile.expired_drafts|length }})</small>
@@ -140,7 +140,7 @@
         </ul>
         (Excluding replaced Internet-Drafts.)
     {% else %}
-        {{ person.first_name }} has no expired Internet-Drafts as of {{ today|date:"Y-m-d" }}.
+        {{ person.first_name }} has no expired Internet-Drafts.
     {% endif %}
     {% if profile.has_drafts %}
         <h2 class="mt-5">

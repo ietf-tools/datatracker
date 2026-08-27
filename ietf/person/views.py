@@ -12,7 +12,6 @@ from django.db.models import Count, Q
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
-from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -180,19 +179,16 @@ def profile_data(persons):
     return profiles
 
 
-def profile_sections(persons, today):
+def profile_sections(persons):
     """Render each person's part of the profile page
 
     The rendered sections are cached, so a repeat view of a profile - including the
     revalidation a conditional request makes - costs neither the queries nor the
-    render. They are keyed on the date because they report what a person's roles and
-    drafts are "as of" today.
+    render. Nothing in a section is tied to the moment it was rendered, so how stale
+    one can be is entirely PERSON_PROFILE_CACHE_SECONDS.
     """
     slowpages = caches["slowpages"]
-    keys = {
-        person.pk: f"person:profile:{person.pk}:{timezone.localdate(today)}"
-        for person in persons
-    }
+    keys = {person.pk: f"person:profile:{person.pk}" for person in persons}
     sections = slowpages.get_many(list(keys.values()))
 
     uncached = [person for person in persons if keys[person.pk] not in sections]
@@ -202,9 +198,7 @@ def profile_sections(persons, today):
             "id": person.pk,
             "name": str(person),
             "has_drafts": profile["has_drafts"],
-            "html": render_to_string(
-                "person/profile_body.html", {"profile": profile, "today": today}
-            ),
+            "html": render_to_string("person/profile_body.html", {"profile": profile}),
         }
         slowpages.set(keys[person.pk], section, settings.PERSON_PROFILE_CACHE_SECONDS)
         sections[keys[person.pk]] = section
@@ -214,11 +208,8 @@ def profile_sections(persons, today):
 
 def profile(request, email_or_name):
     persons = lookup_persons(email_or_name)
-    today = timezone.now()
     return render(
-        request,
-        "person/profile.html",
-        {"sections": profile_sections(persons, today), "today": today},
+        request, "person/profile.html", {"sections": profile_sections(persons)}
     )
 
 
@@ -232,14 +223,10 @@ def profile_by_uuid(request, uuid):
             "ietf.person.views.profile_by_uuid",
             uuid=person_uuid.person.primary_uuid,
         )
-    today = timezone.now()
     return render(
         request,
         "person/profile.html",
-        {
-            "sections": profile_sections([person_uuid.person], today),
-            "today": today,
-        },
+        {"sections": profile_sections([person_uuid.person])},
     )
 
 
