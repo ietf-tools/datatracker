@@ -364,6 +364,12 @@ CACHES = {
     },
 }
 
+_person_profile_cache_seconds = os.environ.get(
+    "DATATRACKER_PERSON_PROFILE_CACHE_SECONDS", None
+)
+if _person_profile_cache_seconds is not None:
+    PERSON_PROFILE_CACHE_SECONDS = int(_person_profile_cache_seconds)
+
 _csrf_trusted_origins_str = os.environ.get("DATATRACKER_CSRF_TRUSTED_ORIGINS")
 if _csrf_trusted_origins_str is not None:
     CSRF_TRUSTED_ORIGINS = _multiline_to_list(_csrf_trusted_origins_str)

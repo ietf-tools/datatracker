@@ -6,6 +6,8 @@
 import datetime
 import io
 import os
+from functools import cached_property
+
 import pytz
 import random
 import re
@@ -19,7 +21,7 @@ import debug                            # pyflakes:ignore
 
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-from django.db.models import Max, Subquery, OuterRef, TextField, Value, Q
+from django.db.models import Max, Subquery, OuterRef, TextField, Value, Q, Case, When
 from django.db.models.functions import Coalesce
 from django.conf import settings
 from django.urls import reverse as urlreverse
@@ -1564,15 +1566,53 @@ class Attended(models.Model):
         return f'{self.person} at {self.session}'
 
 
-class RegistrationManager(models.Manager):
+class RegistrationQuerySet(models.QuerySet):
     def onsite(self):
-        return self.get_queryset().filter(tickets__attendance_type__slug='onsite')
+        """Only registrations with at least one `onsite` ticket
+        
+        Includes any ticket type. In particular, may be a hackathon-only registration.
+        """
+        return self.filter(tickets__attendance_type__slug="onsite")
 
     def remote(self):
-        return self.get_queryset().filter(tickets__attendance_type__slug='remote').exclude(tickets__attendance_type__slug='onsite')
+        """Only registrations with no `onsite` and at least one `remote` ticket
+
+        Includes any ticket type. In particular, may be a hackathon-only registration.
+        """
+        return (
+            self.filter(tickets__attendance_type__slug="remote")
+            .exclude(tickets__attendance_type__slug="onsite")
+        )
+
+    def onsite_or_remote(self):
+        """Registrations that were onsite or remote
+        
+        I.e., was a registration for the plenary meeting, not e.g. hackathon-only.
+        """
+        return self.filter(
+            tickets__attendance_type__slug__in=["onsite", "remote"]
+        ).distinct()
+
+    def with_plenary_ticket_details(self):
+        """Annotate with ticket details
+
+        Adds private annotations accessible via @properties
+        """
+        most_representative = RegistrationTicket.objects.filter(
+            registration=OuterRef("pk")
+        ).order_by_most_representative()
+        return self.annotate(
+            _attendance_type=Subquery(
+                most_representative.values("attendance_type")[:1]
+            ),
+            _ticket_type=Subquery(most_representative.values("ticket_type")[:1]),
+        )
+
 
 class Registration(models.Model):
     """Registration attendee records from the IETF registration system"""
+    objects = RegistrationQuerySet.as_manager()  # custom manager
+
     meeting = ForeignKey(Meeting)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
@@ -1586,21 +1626,74 @@ class Registration(models.Model):
     # checkedin indicates that the badge was picked up
     checkedin = models.BooleanField(default=False)
 
-    # custom manager
-    objects = RegistrationManager()
-
     def __str__(self):
         return "{} {}".format(self.first_name, self.last_name)
 
+    @cached_property
+    def _plenary_ticket(self):
+        return self.tickets.order_by_most_representative().first()
+
     @property
-    def attendance_type(self):
-        if self.tickets.filter(attendance_type__slug='onsite').exists():
-            return 'onsite'
-        elif self.tickets.filter(attendance_type__slug='remote').exists():
-            return 'remote'
-        return None
+    def plenary_attendance_type(self):
+        """Attendance type for the plenary meeting
+
+        Attendance type for the plenary meeting. Ignores hackathon/anrw or any other
+        types of registration that are tracked through tickets.
+        """
+        if hasattr(self, "_attendance_type"):
+            return self._attendance_type  # added via with_plenary_ticket_details()
+        return (
+            self._plenary_ticket.attendance_type_id if self._plenary_ticket else None
+        )
+
+    @property
+    def plenary_ticket_type(self):
+        """Ticket type for the plenary meeting
+
+        Ticket type for the plenary meeting. Ignores hackathon/anrw or any other types
+        of registration that are tracked through tickets.
+        """
+        if hasattr(self, "_ticket_type"):
+            return self._ticket_type  # added via with_plenary_ticket_details()
+        return (
+            self._plenary_ticket.ticket_type_id if self._plenary_ticket else None
+        )
+
+
+class RegistrationTicketQuerySet(models.QuerySet):
+    def order_by_most_representative(self):
+        """Order-by clause for representative tickets for plenary attendance
+        
+        Filters out tickets not applicable to the plenary IETF meeting
+        """
+        # ordered lists of interesting types
+        interesting_attendance_types = ["onsite", "remote"]
+        interesting_ticket_types = ["student", "week_pass", "one_day", "unknown"]
+        case_ranking_attendance_types = Case(
+            *[
+                When(attendance_type=att_type, then=index)
+                for index, att_type in enumerate(interesting_attendance_types)
+            ]
+        )
+        case_ranking_ticket_types = Case(
+            *[
+                When(ticket_type=tkt_type, then=index)
+                for index, tkt_type in enumerate(interesting_ticket_types)
+            ]
+        )
+        return self.filter(
+            attendance_type__in=interesting_attendance_types,
+            ticket_type__in=interesting_ticket_types,
+        ).order_by(
+            case_ranking_attendance_types,
+            case_ranking_ticket_types,
+            "pk",  # deterministic tie-break
+        )
+
 
 class RegistrationTicket(models.Model):
+    objects = RegistrationTicketQuerySet.as_manager()  # custom manager
+
     registration = ForeignKey(Registration, related_name='tickets')
     attendance_type = ForeignKey(AttendanceTypeName, on_delete=models.PROTECT)
     ticket_type = ForeignKey(RegistrationTicketTypeName, on_delete=models.PROTECT)

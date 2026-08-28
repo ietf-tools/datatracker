@@ -25,7 +25,6 @@ warnings.filterwarnings("ignore", message="The django.utils.datetime_safe module
 warnings.filterwarnings("ignore", message="The USE_DEPRECATED_PYTZ setting,")  # https://github.com/ietf-tools/datatracker/issues/5635
 warnings.filterwarnings("ignore", message="The is_dst argument to make_aware\\(\\)")  # caused by django-filters when USE_DEPRECATED_PYTZ is true 
 warnings.filterwarnings("ignore", message="The USE_L10N setting is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5648
-warnings.filterwarnings("ignore", message="django.contrib.auth.hashers.CryptPasswordHasher is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5663
 
 # Other DeprecationWarnings
 warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API", module="pyang.plugin")
@@ -70,11 +69,10 @@ ADMINS = [
 BUG_REPORT_EMAIL = "tools-help@ietf.org"
 
 PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.Argon2PasswordHasher',
-    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
-    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
-    'django.contrib.auth.hashers.SHA1PasswordHasher',
-    'django.contrib.auth.hashers.CryptPasswordHasher',
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.SHA1PasswordHasher",
 ]
 
 
@@ -887,6 +885,10 @@ HTMLIZER_URL_PREFIX = "/doc/html"
 HTMLIZER_CACHE_TIME = 60*60*24*14       # 14 days
 PDFIZER_CACHE_TIME = HTMLIZER_CACHE_TIME
 PDFIZER_URL_PREFIX = IDTRACKER_BASE_URL+"/doc/pdf"
+
+# How long a rendered person profile section is served from the slowpages cache.
+# This is how stale a profile's roles and documents can be.
+PERSON_PROFILE_CACHE_SECONDS = 60*15    # 15 minutes
 
 # Email settings
 IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
