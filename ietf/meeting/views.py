@@ -1,6 +1,4 @@
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
-# -*- coding: utf-8 -*-
-
+# Copyright The IETF Trust 2007-2026, All Rights Reserved
 
 import csv
 import datetime
@@ -20,6 +18,7 @@ from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
 from functools import partialmethod
 import jsonschema
+from icalendar import Calendar, Event
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit, urlparse
 from tempfile import mkstemp
@@ -30,10 +29,18 @@ from django import forms
 from django.core.cache import caches
 from django.core.files.storage import storages
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import (HttpResponse, HttpResponseRedirect, HttpResponseForbidden,
-                         HttpResponseNotFound, Http404, HttpResponseBadRequest,
-                         JsonResponse, HttpResponseGone, HttpResponseNotAllowed,
-                         FileResponse)
+from django.http import (
+    HttpResponse,
+    HttpResponseRedirect,
+    HttpResponseForbidden,
+    HttpResponseNotFound,
+    Http404,
+    HttpResponseBadRequest,
+    JsonResponse,
+    HttpResponseGone,
+    HttpResponseNotAllowed,
+    FileResponse,
+)
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -55,6 +62,7 @@ from rest_framework.status import HTTP_404_NOT_FOUND
 
 import debug                            # pyflakes:ignore
 
+from ietf.api.ietf_utils import requires_api_token
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent
 from ietf.doc.storage_utils import (
@@ -62,54 +70,130 @@ from ietf.doc.storage_utils import (
     retrieve_bytes,
     store_file,
 )
+from ietf.doc.templatetags.ietf_filters import absurl
 from ietf.group.models import Group
-from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
+from ietf.group.utils import (
+    can_manage_session_materials,
+    can_manage_some_groups,
+    can_manage_group,
+)
 from ietf.person.models import Person, User
 from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, \
-    SessionPresentation, TimeSlot, SlideSubmission, Attended
-from ..blobdb.models import ResolvedMaterial
-from ietf.meeting.models import ImportantDate, SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
-from ietf.meeting.models import Registration
-from ietf.meeting.forms import ( CustomDurationField, SwapDaysForm, SwapTimeslotsForm, ImportMinutesForm,
-                                 TimeSlotCreateForm, TimeSlotEditForm, SessionCancelForm, SessionEditForm )
-from ietf.meeting.helpers import get_person_by_email, get_schedule_by_name
-from ietf.meeting.helpers import get_meeting, get_ietf_meeting, get_current_ietf_meeting_num
-from ietf.meeting.helpers import get_schedule, schedule_permissions
-from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
-from ietf.meeting.helpers import AgendaFilterOrganizer, AgendaKeywordTagger
-from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session_date
-from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
-from ietf.meeting.helpers import can_edit_interim_request
-from ietf.meeting.helpers import can_request_interim_meeting, get_announcement_initial
-from ietf.meeting.helpers import sessions_post_save, is_interim_meeting_approved
-from ietf.meeting.helpers import send_interim_meeting_cancellation_notice, send_interim_session_cancellation_notice
-from ietf.meeting.helpers import send_interim_approval
-from ietf.meeting.helpers import send_interim_approval_request
-from ietf.meeting.helpers import send_interim_announcement_request, sessions_post_cancel
+from ietf.meeting.models import (
+    Meeting,
+    Session,
+    Schedule,
+    FloorPlan,
+    SessionPresentation,
+    TimeSlot,
+    SlideSubmission,
+    Attended,
+)
+from ietf.blobdb.models import ResolvedMaterial
+from ietf.blobdb.storage import BlobdbStorage, BlobFile
+from ietf.meeting.models import (
+    ImportantDate,
+    SessionStatusName,
+    SchedulingEvent,
+    SchedTimeSessAssignment,
+    Room,
+    TimeSlotTypeName,
+    Registration,
+)
+from ietf.meeting.forms import (
+    CustomDurationField,
+    SwapDaysForm,
+    SwapTimeslotsForm,
+    ImportMinutesForm,
+    TimeSlotCreateForm,
+    TimeSlotEditForm,
+    SessionCancelForm,
+    SessionEditForm,
+    InterimMeetingModelForm,
+    InterimAnnounceForm,
+    InterimSessionModelForm,
+    InterimCancelForm,
+    InterimSessionInlineFormSet,
+    RequestMinutesForm,
+    UploadAgendaForm,
+    UploadBlueSheetForm,
+    UploadMinutesForm,
+    UploadSlidesForm,
+    UploadNarrativeMinutesForm,
+)
+from ietf.meeting.helpers import (
+    get_person_by_email,
+    get_schedule_by_name,
+    get_meeting,
+    get_ietf_meeting,
+    get_current_ietf_meeting_num,
+    get_schedule,
+    schedule_permissions,
+    preprocess_assignments_for_agenda,
+    read_agenda_file,
+    AgendaFilterOrganizer,
+    AgendaKeywordTagger,
+    convert_draft_to_pdf,
+    get_earliest_session_date,
+    can_view_interim_request,
+    can_approve_interim_request,
+    can_edit_interim_request,
+    can_request_interim_meeting,
+    get_announcement_initial,
+    sessions_post_save,
+    is_interim_meeting_approved,
+    send_interim_meeting_cancellation_notice,
+    send_interim_session_cancellation_notice,
+    send_interim_approval,
+    send_interim_approval_request,
+    send_interim_announcement_request,
+    sessions_post_cancel,
+    PENDING_INTERIM_MAX_LOOKBACK,
+)
 from ietf.meeting.utils import (
     condition_slide_order,
     finalize,
     generate_proceedings_content,
     organize_proceedings_sessions,
     resolve_uploaded_material,
-    sort_accept_tuple, store_blobs_for_one_material_doc,
+    sort_accept_tuple,
+    store_blobs_for_one_material_doc,
 )
-from ietf.meeting.utils import add_event_info_to_session_qs
-from ietf.meeting.utils import session_time_for_sorting
-from ietf.meeting.utils import session_requested_by, SaveMaterialsError
-from ietf.meeting.utils import current_session_status, get_meeting_sessions, SessionNotScheduledError
-from ietf.meeting.utils import data_for_meetings_overview, handle_upload_file, save_session_minutes_revision
-from ietf.meeting.utils import preprocess_constraints_for_meeting_schedule_editor
-from ietf.meeting.utils import diff_meeting_schedules, prefetch_schedule_diff_objects
-from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments, bulk_create_timeslots
-from ietf.meeting.utils import preprocess_meeting_important_dates
-from ietf.meeting.utils import new_doc_for_session, write_doc_for_session
-from ietf.meeting.utils import get_activity_stats, post_process, create_recording, delete_recording
-from ietf.meeting.utils import generate_bluesheet, bluesheet_data, save_bluesheet
+from ietf.meeting.utils import (
+    add_event_info_to_session_qs,
+    session_time_for_sorting,
+    session_requested_by,
+    SaveMaterialsError,
+    current_session_status,
+    get_meeting_sessions,
+    SessionNotScheduledError,
+    data_for_meetings_overview,
+    handle_upload_file,
+    save_session_minutes_revision,
+    preprocess_constraints_for_meeting_schedule_editor,
+    diff_meeting_schedules,
+    prefetch_schedule_diff_objects,
+    swap_meeting_schedule_timeslot_assignments,
+    bulk_create_timeslots,
+    preprocess_meeting_important_dates,
+    new_doc_for_session,
+    write_doc_for_session,
+    get_activity_stats,
+    post_process,
+    create_recording,
+    delete_recording,
+    generate_bluesheet,
+    bluesheet_data,
+    save_bluesheet,
+)
 from ietf.message.utils import infer_message
-from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName, CountryName
+from ietf.name.models import (
+    SlideSubmissionStatusName,
+    ProceedingsMaterialTypeName,
+    SessionPurposeName,
+    CountryName,
+)
 from ietf.utils import markdown
 from ietf.utils.decorators import require_api_key
 from ietf.utils.hedgedoc import Note, NoteError
@@ -124,15 +208,6 @@ from ietf.utils.text import xslugify
 from ietf.utils.timezone import datetime_today, date_today
 from ietf.settings import YOUTUBE_DOMAINS
 
-from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
-    InterimCancelForm, InterimSessionInlineFormSet, RequestMinutesForm,
-    UploadAgendaForm, UploadBlueSheetForm, UploadMinutesForm, UploadSlidesForm,
-    UploadNarrativeMinutesForm)
-
-from icalendar import Calendar, Event
-from ietf.doc.templatetags.ietf_filters import absurl
-from ..api.ietf_utils import requires_api_token
-from ..blobdb.storage import BlobdbStorage, BlobFile
 
 request_summary_exclude_group_types = ['team']
 
@@ -4111,13 +4186,9 @@ def delete_schedule(request, num, owner, name):
 # -------------------------------------------------
 def interim_announce(request):
     """View which shows interim meeting requests awaiting announcement"""
-    # Ignore meetings older than this - gives people time to notice that a meeting was
-    # left as "scheda" and complain before the meeting falls off the visible list.
-    MAX_LOOKBACK = datetime.timedelta(days=28)
-
     meetings = data_for_meetings_overview(
         Meeting.objects.filter(
-            type="interim", date__gte=date_today() - MAX_LOOKBACK
+            type="interim", date__gte=date_today() - PENDING_INTERIM_MAX_LOOKBACK
         ).order_by("date"),
         interim_status="scheda",
     )
@@ -4188,13 +4259,9 @@ def interim_skip_announcement(request, number):
 
 def interim_pending(request):
     """View which shows interim meeting requests pending approval"""
-    # Ignore meetings older than this - gives people time to notice that a meeting was
-    # left as "apprw" and complain before the meeting falls off the visible list.
-    MAX_LOOKBACK = datetime.timedelta(days=28)
-
     meetings = data_for_meetings_overview(
         Meeting.objects.filter(
-            type="interim", date__gte=date_today() - MAX_LOOKBACK
+            type="interim", date__gte=date_today() - PENDING_INTERIM_MAX_LOOKBACK
         ).order_by("date"),
         interim_status="apprw",
     )
