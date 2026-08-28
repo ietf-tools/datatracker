@@ -248,7 +248,6 @@ def get_authors_timeline_data_for_documents(doc_type: str = "all", group_by: str
         # Build a dynamic query set filter to get country/affiliation using the appropriate model based on doc_type.
         # RfcAuthor  for RFC
         # DocumentAuthor for other documents (i.e., drafts)
-        # Using distinct=True in Count to avoid double counting authors who may have multiple entries in the database
         draft_queryset = None
         rfc_queryset = None
         if doc_type in ("draft", "wg-draft"):
