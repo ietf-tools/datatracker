@@ -8,10 +8,23 @@ from typing import Callable, Optional, Union
 from django.conf import settings
 from django.http import HttpResponseForbidden
 
+from .models import AppApiToken, KnownApiEndpoint
+
 
 def is_valid_token(endpoint, token):
-    # This is where we would consider integration with vault
-    # Settings implementation for now.
+    known_endpoint = KnownApiEndpoint.objects.filter(name=endpoint).first()
+    if known_endpoint and not known_endpoint.enabled:
+        return False  # endpoint is disabled
+
+    # Model-based tokens
+    if AppApiToken.objects.filter(
+        endpoints=endpoint,
+        token=token,
+        enabled=True,
+    ).exists():
+        return True
+
+    # Settings-based tokens
     if hasattr(settings, "APP_API_TOKENS"):
         token_store = settings.APP_API_TOKENS
         if endpoint in token_store:
