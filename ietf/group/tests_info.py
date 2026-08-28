@@ -2167,7 +2167,12 @@ class PendingInterimMeetingTests(TestCase):
     def test_pending_approval_interim_shows_warning(self):
         """An interim awaiting approval (apprw) triggers the warning."""
         group = GroupFactory.create(type_id='wg')
-        SessionFactory.create(meeting__type_id='interim', group=group, status_id='apprw')
+        SessionFactory.create(
+            meeting__type_id="interim",
+            meeting__date=date_today() + datetime.timedelta(days=30),
+            group=group,
+            status_id="apprw",
+        )
         q = self._meetings_page(group)
         warning = q('#pending_warning')
         self.assertTrue(warning)
@@ -2182,14 +2187,24 @@ class PendingInterimMeetingTests(TestCase):
     def test_to_be_announced_interim_shows_warning(self):
         """An approved-but-unannounced interim (scheda) triggers the warning."""
         group = GroupFactory.create(type_id='wg')
-        SessionFactory.create(meeting__type_id='interim', group=group, status_id='scheda')
+        SessionFactory.create(
+            meeting__type_id="interim",
+            meeting__date=date_today() + datetime.timedelta(days=30),
+            group=group,
+            status_id="scheda",
+        )
         q = self._meetings_page(group)
         self.assertTrue(q('#pending_warning'))
 
     def test_scheduled_interim_shows_no_warning(self):
         """A fully scheduled interim (sched) does not trigger the warning."""
         group = GroupFactory.create(type_id='wg')
-        SessionFactory.create(meeting__type_id='interim', group=group, status_id='sched')
+        SessionFactory.create(
+            meeting__type_id='interim',
+            meeting__date=date_today() + datetime.timedelta(days=30),
+            group=group,
+            status_id='sched',
+        )
         q = self._meetings_page(group)
         self.assertFalse(q('#pending_warning'))
 
@@ -2203,7 +2218,12 @@ class PendingInterimMeetingTests(TestCase):
         """A pending interim belonging to another group must not warn on this group."""
         group = GroupFactory.create(type_id='wg')
         other = GroupFactory.create(type_id='wg')
-        SessionFactory.create(meeting__type_id='interim', group=other, status_id='apprw')
+        SessionFactory.create(
+            meeting__type_id='interim',
+            meeting__date=date_today() + datetime.timedelta(days=30),
+            group=other,
+            status_id='apprw',
+        )
         q = self._meetings_page(group)
         self.assertFalse(q('#pending_warning'))
 
