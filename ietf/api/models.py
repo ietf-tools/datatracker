@@ -20,7 +20,7 @@ def _generate_token():
 
 
 class AppApiToken(models.Model):
-    endpoints = models.ManyToManyField("api.KnownApiEndpoint")
+    endpoints = models.ManyToManyField("api.KnownApiEndpoint", related_name="tokens")
     token = models.CharField(
         max_length=1000,
         unique=True,
@@ -50,7 +50,7 @@ class KnownApiEndpoint(models.Model):
     API endpoint names are generated dynamically from view names or explicit tags on
     class-based views and we do not have a registry. This model tracks the endpoint
     names that have had a token assigned.
-    
+
     Disabling an endpoint here disables access to it by any API key.
     """
 

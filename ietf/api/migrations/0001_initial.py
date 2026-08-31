@@ -80,7 +80,12 @@ class Migration(migrations.Migration):
                         help_text="Is bearer of this token allowed access?",
                     ),
                 ),
-                ("endpoints", models.ManyToManyField(to="api.knownapiendpoint")),
+                (
+                    "endpoints",
+                    models.ManyToManyField(
+                        related_name="tokens", to="api.knownapiendpoint"
+                    ),
+                ),
             ],
             options={
                 "verbose_name": "API token",
