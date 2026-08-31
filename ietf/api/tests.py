@@ -47,6 +47,7 @@ from .ietf_utils import is_valid_token, requires_api_token
 from .views import EmailIngestionError
 
 OMITTED_APPS = (
+    'ietf.api',
     'ietf.secr.meetings',
     'ietf.secr.proceedings',
     'ietf.ipr',
