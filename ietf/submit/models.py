@@ -145,6 +145,16 @@ class SubmissionCheck(models.Model):
         return self.warnings != '[]'
     def has_errors(self):
         return self.errors != '[]'
+    @property
+    def is_advisory(self):
+        """Is this a check whose result cannot prevent a submission?"""
+        return bool(isinstance(self.items, dict) and self.items.get("advisory"))
+    @property
+    def would_block_in_future(self):
+        """Would this advisory check have blocked the submission if it were required?"""
+        return bool(
+            isinstance(self.items, dict) and self.items.get("would_block_in_future")
+        )
 
 class SubmissionEvent(models.Model):
     submission = ForeignKey(Submission)

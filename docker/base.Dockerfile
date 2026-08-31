@@ -119,7 +119,16 @@ RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \
     update-locale LC_ALL en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 
-# Install idnits
+# Install idnits3.  Its npm package installs a CLI named "idnits", which would
+# collide with the idnits2 script installed below, so replace the link npm makes
+# with one named "idnits3".  idnits2 is installed afterwards so that it owns
+# /usr/local/bin/idnits whatever npm's global prefix turns out to be.
+RUN npm install -g @ietf-tools/idnits@3.1.0 && \
+    rm -f "$(npm prefix -g)/bin/idnits" && \
+    ln -s "$(npm root -g)/@ietf-tools/idnits/cli.js" /usr/local/bin/idnits3 && \
+    idnits3 --version
+
+# Install idnits2
 ADD https://raw.githubusercontent.com/ietf-tools/idnits-mirror/main/idnits /usr/local/bin/
 RUN chmod +rx /usr/local/bin/idnits
 

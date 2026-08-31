@@ -24,6 +24,7 @@ BLOBDB_REPLICATION = {
 }
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
+IDSUBMIT_IDNITS3_BINARY = "/usr/local/bin/idnits3"
 IDSUBMIT_STAGING_PATH = "/assets/www6s/staging/"
 
 AGENDA_PATH = '/assets/www6s/proceedings/'
