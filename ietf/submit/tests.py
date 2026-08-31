@@ -3683,8 +3683,9 @@ class Idnits3CheckerTests(TestCase):
     def test_real_idnits3(self):
         """The real idnits3 produces output this checker can make sense of"""
         if not os.path.exists(settings.IDSUBMIT_IDNITS3_BINARY):
-            # idnits3 arrives with the base image, which lags a change to
-            # docker/base.Dockerfile by one merge to main
+            # idnits3 is installed into the datatracker and celery images, and
+            # into the CI test container by dev/tests/prepare.sh - but it is not
+            # in the base image, so a bare base container will not have it
             self.skipTest(f"idnits3 is not installed at {settings.IDSUBMIT_IDNITS3_BINARY}")
         name = "draft-somebody-test-idnits3-00"
         text, __ = submission_file_contents(name, None, "test_submission.txt")
