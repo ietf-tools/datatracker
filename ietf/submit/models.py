@@ -140,10 +140,9 @@ class SubmissionCheck(models.Model):
     symbol = models.CharField(max_length=64, default="")
 
     def __str__(self):
-        return "%s submission check: %s: %s" % (
-            self.checker,
-            "Passed" if self.passed else "Failed",
-            self.message[:48] + "...",
+        return (
+            f"{self.checker} submission check: "
+            f"{'Passed' if self.passed else 'Failed'}: {self.message[:48]}..."
         )
 
     @property
