@@ -1876,25 +1876,47 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
         except ValueError:
             self.fail("serializer.to_etree raised ValueError on an ordinary string")
         # Every control character that XML 1.0 forbids must be escaped rather than
-        # causing a ValueError.  This is the class of characters that triggered the
-        # production exception (lxml.etree._utf8 rejects them all).
-        invalid_chars = [
-            chr(c)
-            for c in chain(
-                range(0x00, 0x09),
-                [0x0B, 0x0C],
-                range(0x0E, 0x20),
-                range(0xD800, 0xDFFF),
-                [0xFFFE, 0xFFFF],
-            )
+        # causing a ValueError. These should be replaced by a Unicode picture char.
+        control_chars = [
+            chr(c) for c in chain(range(0x00, 0x09), [0x0B, 0x0C], range(0x0E, 0x20))
         ]
-        for ch in invalid_chars:
+        for ch in control_chars:
             try:
-                serializer.to_etree(f"string with {ch!r} in it")
+                elt = serializer.to_etree(f"string with {str(ch)} in it")
             except ValueError:
                 self.fail(
                     f"serializer.to_etree raised ValueError on a string "
                     f"containing control character U+{ord(ch):04X}"
+                )
+            else:
+                self.assertIn(
+                    chr(0x2400 + ord(ch)),
+                    elt.text,
+                    (
+                        f"character U+{ord(ch):04X} not replaced with "
+                        f"Unicode control picture character"
+                    ),
+                )
+
+        # Unicode surrogate ranges and non-characters are not permitted in XML 1.0
+        # either. These should be replaced by the Unicode replacement character.
+        invalid_chars = [chr(c) for c in chain(range(0xD800, 0xDFFF), [0xFFFE, 0xFFFF])]
+        for ch in invalid_chars:
+            try:
+                elt = serializer.to_etree(f"string with {str(ch)} in it")
+            except ValueError:
+                self.fail(
+                    f"serializer.to_etree raised ValueError on a string "
+                    f"containing invalid character U+{ord(ch):04X}"
+                )
+            else:
+                self.assertIn(
+                    chr(0xFFFD),
+                    elt.text,
+                    (
+                        f"character U+{ord(ch):04X} not replaced with "
+                        f"Unicode replacement char"
+                     ),
                 )
 
     def test_post_detail_is_not_allowed(self):
