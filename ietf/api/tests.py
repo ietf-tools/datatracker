@@ -5,6 +5,7 @@ import copy
 import datetime
 import json
 import html
+from itertools import chain
 from unittest import mock
 import os
 import sys
@@ -1877,7 +1878,16 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
         # Every control character that XML 1.0 forbids must be escaped rather than
         # causing a ValueError.  This is the class of characters that triggered the
         # production exception (lxml.etree._utf8 rejects them all).
-        invalid_chars = [chr(c) for c in list(range(0x00, 0x09)) + [0x0b, 0x0c] + list(range(0x0e, 0x20))]
+        invalid_chars = [
+            chr(c)
+            for c in chain(
+                range(0x00, 0x09),
+                [0x0B, 0x0C],
+                range(0x0E, 0x20),
+                range(0xD800, 0xDFFF),
+                [0xFFFE, 0xFFFF],
+            )
+        ]
         for ch in invalid_chars:
             try:
                 serializer.to_etree(f"string with {ch!r} in it")
