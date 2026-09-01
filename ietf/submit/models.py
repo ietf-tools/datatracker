@@ -130,21 +130,27 @@ class Submission(models.Model):
 
 class SubmissionCheck(models.Model):
     time = models.DateTimeField(default=timezone.now)
-    submission = ForeignKey(Submission, related_name='checks')
+    submission = ForeignKey(Submission, related_name="checks")
     checker = models.CharField(max_length=256, blank=True)
     passed = models.BooleanField(null=True, default=False)
     message = models.TextField(null=True, blank=True)
     errors = models.IntegerField(null=True, blank=True, default=None)
     warnings = models.IntegerField(null=True, blank=True, default=None)
     items = models.JSONField(null=True, blank=True, default=dict)
-    symbol = models.CharField(max_length=64, default='')
-    #
+    symbol = models.CharField(max_length=64, default="")
+
     def __str__(self):
-        return "%s submission check: %s: %s" % (self.checker, 'Passed' if self.passed else 'Failed', self.message[:48]+'...')
+        return "%s submission check: %s: %s" % (
+            self.checker,
+            "Passed" if self.passed else "Failed",
+            self.message[:48] + "...",
+        )
+
     @property
     def is_advisory(self):
         """Is this a check whose result cannot prevent a submission?"""
         return bool(isinstance(self.items, dict) and self.items.get("advisory"))
+
     @property
     def would_block_in_future(self):
         """Would this advisory check have blocked the submission if it were required?"""
