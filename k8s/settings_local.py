@@ -293,6 +293,7 @@ DJANGO_VITE["default"]["manifest_path"] = os.path.join(
 # Binaries that are different in the docker image
 DE_GFM_BINARY = "/usr/local/bin/de-gfm"
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
+IDSUBMIT_IDNITS3_BINARY = "/usr/local/bin/idnits3"
 
 # Duplicating production cache from settings.py and using it whether we're in production mode or not
 MEMCACHED_HOST = os.environ.get("DT_MEMCACHED_SERVICE_HOST", "127.0.0.1")

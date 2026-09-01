@@ -954,6 +954,11 @@ IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 IDSUBMIT_STAGING_PATH = '/a/www/www6s/staging/'
 IDSUBMIT_STAGING_URL = '//www.ietf.org/staging/'
 IDSUBMIT_IDNITS_BINARY = '/a/www/ietf-datatracker/scripts/idnits'
+IDSUBMIT_IDNITS3_BINARY = '/usr/local/bin/idnits3'
+# Set True to skip the idnits3 checks that need to fetch remote documents
+IDSUBMIT_IDNITS3_OFFLINE = False
+# Seconds to allow an idnits3 run before giving up on it
+IDSUBMIT_IDNITS3_TIMEOUT = 300
 SUBMIT_PYANG_COMMAND = 'pyang --verbose --ietf -p {libs} {model}'
 SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -p {tmplib} -p {rfclib} -p {draftlib} -p {ianalib} -p {cataloglib} {model} -i'
 
@@ -967,6 +972,7 @@ SUBMIT_YANG_CATALOG_CHECKER_URL = "https://yangcatalog.org/yangvalidator/api/v1/
 
 IDSUBMIT_CHECKER_CLASSES = (
     "ietf.submit.checkers.DraftIdnitsChecker",
+    "ietf.submit.checkers.DraftIdnits3Checker",
     "ietf.submit.checkers.DraftYangChecker",
 #    "ietf.submit.checkers.DraftYangvalidatorChecker",    
 )

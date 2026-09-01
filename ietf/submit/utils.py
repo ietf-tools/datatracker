@@ -829,10 +829,16 @@ def apply_checker(checker, submission, file_name):
                                 message=message, errors=errors, warnings=warnings, items=info,
                                 symbol=checker.symbol)
         check.save()
-    # ordered list of methods to try
+    # ordered list of methods to try - skip formats that were not submitted or
+    # generated, so that (e.g.) a checker that prefers XML still runs on the
+    # text of a submission that has no XML
     for method in ("check_fragment_xml", "check_file_xml", "check_fragment_txt", "check_file_txt", ):
         ext = method[-3:]
-        if hasattr(checker, method) and ext in file_name:
+        if (
+            hasattr(checker, method)
+            and ext in file_name
+            and os.path.exists(file_name[ext])
+        ):
             apply_check(submission, checker, method, file_name[ext])
             break
 
