@@ -141,10 +141,6 @@ class SubmissionCheck(models.Model):
     #
     def __str__(self):
         return "%s submission check: %s: %s" % (self.checker, 'Passed' if self.passed else 'Failed', self.message[:48]+'...')
-    def has_warnings(self):
-        return self.warnings != '[]'
-    def has_errors(self):
-        return self.errors != '[]'
     @property
     def is_advisory(self):
         """Is this a check whose result cannot prevent a submission?"""
