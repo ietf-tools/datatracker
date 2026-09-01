@@ -142,7 +142,7 @@ class SubmissionCheck(models.Model):
     def __str__(self):
         return (
             f"{self.checker} submission check: "
-            f"{'Passed' if self.passed else 'Failed'}: {self.message[:48]}..."
+            f"{'Passed' if self.passed else 'Failed'}: {(self.message or '')[:48]}..."
         )
 
     @property
