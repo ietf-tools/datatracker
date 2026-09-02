@@ -3,13 +3,12 @@
 # Celery task definitions
 #
 import datetime
-import io
-from itertools import batched
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-
 import requests
+
 from celery import shared_task
+
 from django.conf import settings
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -28,7 +27,6 @@ from ietf.doc.utils import add_state_change_event, new_state_change_event, updat
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_text
 from ietf.sync import iana
-from ietf.sync.bibxml import recreate_rfc_bibxml
 from ietf.sync.errata import (
     errata_are_dirty,
     mark_errata_as_processed,
@@ -40,9 +38,7 @@ from ietf.sync.rfcindex import (
     create_rfc_txt_index,
     create_rfc_xml_index,
     create_std_txt_index,
-    rfcindex_is_dirty,
-    mark_rfcindex_as_processed,
-    mark_rfcindex_as_dirty,
+    rfcindex_is_dirty, mark_rfcindex_as_processed, mark_rfcindex_as_dirty,
 )
 from ietf.sync.utils import (
     build_from_file_content,
@@ -123,6 +119,13 @@ def iana_protocols_update_task():
         return
 
     rfc_numbers = iana.parse_protocol_page(response.text)
+
+    def batched(l, n):
+        """Split list l up in batches of max size n.
+
+        For Python 3.12 or later, replace this with itertools.batched()
+        """
+        return (l[i : i + n] for i in range(0, len(l), n))
 
     for batch in batched(rfc_numbers, 100):
         updated = iana.update_rfc_log_from_protocol_page(
@@ -571,8 +574,3 @@ def process_rpc_queue_task(data: list):
         d.tags.remove(*iana_ref_tags)
         d.unset_state("draft-rfceditor")
         RpcActionHolderOpenEntry.objects.filter(document=d).delete()
-
-
-@shared_task
-def recreate_rfc_bibxml_task():
-    recreate_rfc_bibxml()
