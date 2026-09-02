@@ -1,4 +1,4 @@
-FROM ghcr.io/ietf-tools/datatracker-app-base:20260804T1752
+FROM ghcr.io/ietf-tools/datatracker-app-base:20260827T1454
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -24,6 +24,14 @@ RUN pip3 --disable-pip-version-check --no-cache-dir install -r requirements.txt 
     echo '# empty' > ietf/settings_local.py && \
     ietf/manage.py patch_libraries && \
     rm -f ietf/settings_local.py
+
+# Install idnits3.  The version is pinned here and in the other container
+# definitions - grep for @ietf-tools/idnits to bump them together.
+# It goes in its own npm prefix so that it can never disturb the idnits2 script
+# at /usr/local/bin/idnits that comes from the base image.
+RUN npm install -g --prefix /usr/local/idnits3 @ietf-tools/idnits@3.1.0 && \
+    ln -sf /usr/local/idnits3/bin/idnits /usr/local/bin/idnits3 && \
+    idnits3 --version
 
 RUN chmod +x start.sh && \
     chmod +x datatracker-start.sh && \

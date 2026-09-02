@@ -4,34 +4,52 @@
 
 import datetime
 import json
+import uuid
 from unittest import mock
 
 from io import StringIO, BytesIO
 from PIL import Image
 from pyquery import PyQuery
 
+import django.core.signing
 from django.core.exceptions import ValidationError
+from django.db import connection, transaction
+from django.db.utils import IntegrityError
 from django.http import HttpRequest
 from django.test import override_settings
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse as urlreverse
 from django.utils import timezone
 from django.utils.encoding import iri_to_uri
 
+import yaml
+
 import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList
+from ietf.doc.factories import WgDraftFactory, WgRfcFactory
 from ietf.group.factories import RoleFactory
 from ietf.group.models import Group
 from ietf.message.models import Message
 from ietf.nomcom.models import NomCom
 from ietf.nomcom.test_data import nomcom_test_data
 from ietf.nomcom.factories import NomComFactory, NomineeFactory, NominationFactory, FeedbackFactory, PositionFactory
-from ietf.person.factories import EmailFactory, PersonFactory, PersonApiKeyEventFactory
-from ietf.person.models import Person, Alias, PersonApiKeyEvent
-from ietf.person.tasks import purge_personal_api_key_events_task
+from ietf.nomcom.utils import make_nomineeposition_for_newperson
+from ietf.person.factories import (
+    EmailFactory,
+    PersonFactory,
+    PersonApiKeyEventFactory,
+    PersonUUIDFactory,
+)
+from ietf.person.models import Person, Alias, PersonApiKeyEvent, PersonUUID
+from ietf.person.tasks import (purge_personal_api_key_events_task, push_person_uuids_task,
+    check_person_uuids_task)
 from ietf.person.utils import (merge_persons, determine_merge_order, send_merge_notification,
     handle_users, get_extra_primary, dedupe_aliases, move_related_objects, merge_nominees,
-    handle_reviewer_settings, get_dots)
+    handle_reviewer_settings, get_dots, assign_primary_uuid, ensure_primary_uuid,
+    get_person_uuid_object)
+from ietf.submit.utils import ensure_person_email_info_exists
+from kombu.exceptions import OperationalError as KombuOperationalError
 from ietf.review.models import ReviewerSettings
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox
@@ -108,6 +126,61 @@ class PersonTests(TestCase):
         r = self.client.get(photo_url)
         self.assertEqual(r.status_code, 200)
 
+    def test_person_profile_query_count(self):
+        """The page's cost must not scale with how much a person has written"""
+
+        def profile_queries(rfcs, active, expired):
+            person = PersonFactory()
+            RoleFactory(person=person, name_id="chair")
+            WgRfcFactory.create_batch(rfcs, authors=[person])
+            WgDraftFactory.create_batch(active, authors=[person])
+            WgDraftFactory.create_batch(
+                expired, authors=[person], states=[("draft", "expired")]
+            )
+            url = urlreverse(
+                "ietf.person.views.profile",
+                kwargs={"email_or_name": person.plain_name()},
+            )
+            with CaptureQueriesContext(connection) as context:
+                r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            return len(context.captured_queries)
+
+        few = profile_queries(1, 1, 1)
+        many = profile_queries(6, 4, 5)
+        self.assertEqual(
+            many,
+            few,
+            f"{many} queries for 15 documents vs {few} for 3 - a query per row crept in",
+        )
+
+    @override_settings(
+        CACHES={
+            "default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"},
+            "slowpages": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                "LOCATION": "test-person-profile",
+            },
+        }
+    )
+    def test_person_profile_sections_cached(self):
+        person = PersonFactory()
+        WgRfcFactory(authors=[person])
+        WgDraftFactory(authors=[person])
+        url = urlreverse(
+            "ietf.person.views.profile", kwargs={"email_or_name": person.plain_name()}
+        )
+
+        first = self.client.get(url)
+        self.assertEqual(first.status_code, 200)
+        with CaptureQueriesContext(connection) as context:
+            second = self.client.get(url)
+        self.assertEqual(second.status_code, 200)
+        # The cached section is HTML, not text to be escaped again.
+        self.assertEqual(first.content, second.content)
+        self.assertContains(second, person.name)
+        self.assertLess(len(context.captured_queries), 5)
+
     def test_person_profile_without_email(self):
         person = PersonFactory(name="foobar@example.com")
         # delete Email record
@@ -115,6 +188,54 @@ class PersonTests(TestCase):
         url = urlreverse("ietf.person.views.profile", kwargs={ "email_or_name": person.plain_name()})
         r = self.client.get(url)
         self.assertContains(r, person.name, status_code=200)
+
+    def test_person_profile_by_uuid(self):
+        person_a = PersonFactory(name="A Fine Person")
+        url_a = urlreverse(
+            "ietf.person.views.profile_by_uuid",
+            kwargs={"uuid": person_a.primary_uuid},
+        )
+
+        person_b = PersonFactory(name="Brilliant Person")
+        url_b = urlreverse(
+            "ietf.person.views.profile_by_uuid",
+            kwargs={"uuid": person_b.primary_uuid},
+        )
+
+        r = self.client.get(url_a)
+        self.assertContains(r, person_a.name)
+        self.assertNotContains(r, person_b.name)
+
+        r = self.client.get(url_b)
+        self.assertNotContains(r, person_a.name)
+        self.assertContains(r, person_b.name)
+
+        # Move b's UUID to a as a prior UUID, as a merge would...
+        person_b.uuids.update(person=person_a, primary=False)
+        # ... and the old address redirects to a's canonical one
+        r = self.client.get(url_b)
+        self.assertRedirects(r, url_a)
+        r = self.client.get(url_b, follow=True)
+        self.assertContains(r, person_a.name)
+        self.assertNotContains(r, person_b.name)
+
+    def test_person_profile_by_uuid_upper_case(self):
+        person = PersonFactory()
+        uuid_value = person.primary_uuid
+        url = urlreverse(
+            "ietf.person.views.profile_by_uuid", kwargs={"uuid": uuid_value}
+        )
+        upper = url.replace(str(uuid_value), str(uuid_value).upper())
+        self.assertNotEqual(url, upper)
+        r = self.client.get(upper)
+        self.assertContains(r, person.name, status_code=200)
+
+    def test_person_profile_by_uuid_unknown(self):
+        url = urlreverse(
+            "ietf.person.views.profile_by_uuid", kwargs={"uuid": uuid.uuid4()}
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
 
     def test_case_insensitive(self):
         # Case insensitive seach
@@ -394,9 +515,12 @@ class PersonUtilsTests(TestCase):
         request = HttpRequest()
         request.user = user
         source = PersonFactory()
+        PersonUUIDFactory(person=source)  # give them an extra
         target = PersonFactory()
         mars = RoleFactory(name_id='chair',group__acronym='mars').group
         source_id = source.pk
+        source_uuids = {source.primary_uuid, *source.prior_uuids}
+        target_uuids = {target.primary_uuid, *target.prior_uuids}
         source_email = source.email_set.first()
         source_alias = source.alias_set.first()
         source_user = source.user
@@ -415,6 +539,14 @@ class PersonUtilsTests(TestCase):
         self.assertIn(nomination, target.nomination_set.all())
         self.assertFalse(Person.objects.filter(id=source_id))
         self.assertFalse(source_user.is_active)
+        self.assertEqual(
+            {target.primary_uuid, *target.prior_uuids},
+            source_uuids | target_uuids,
+        )
+        # The survivor keeps its own primary; the source's UUIDs become priors
+        self.assertIsNotNone(target.primary_uuid)
+        self.assertIn(target.primary_uuid, target_uuids)
+        self.assertEqual(set(target.prior_uuids), source_uuids)
 
     def test_merge_persons_reviewer_settings(self):
         secretariat_role = RoleFactory(group__acronym='secretariat', name_id='secr')
@@ -476,6 +608,506 @@ class PersonUtilsTests(TestCase):
         message = Message.objects.last()
         self.assertEqual(message_count_after, message_count_before + 1)
         self.assertIn(source.user.username, message.to)
+
+
+class PersonUUIDTests(TestCase):
+    def test_every_creation_path_assigns_a_primary(self):
+        """Each production route that creates a Person gives it one primary UUID"""
+        # ietf.ietfauth.views.confirm_account
+        confirm_url = urlreverse(
+            "ietf.ietfauth.views.confirm_account",
+            kwargs={
+                "auth": django.core.signing.dumps(
+                    "uuidtest@example.com", salt="create_account"
+                )
+            },
+        )
+        self.client.post(
+            confirm_url,
+            {
+                "name": "UUID Test",
+                "ascii": "UUID Test",
+                "password": "secret+password",
+                "password_confirmation": "secret+password",
+            },
+        )
+        created = Person.objects.get(name="UUID Test")
+        self.assertIsNotNone(created.primary_uuid)
+        self.assertEqual(created.prior_uuids, [])
+
+        # ietf.nomcom.utils.make_nomineeposition_for_newperson
+        nomcom = NomComFactory(group__acronym="nomcom2021")
+        position = PositionFactory(nomcom=nomcom)
+        make_nomineeposition_for_newperson(
+            nomcom,
+            "New Nominee",
+            "newnominee@example.com",
+            position,
+            PersonFactory().email(),
+        )
+        nominee_person = Person.objects.get(name="New Nominee")
+        self.assertIsNotNone(nominee_person.primary_uuid)
+        self.assertEqual(nominee_person.prior_uuids, [])
+
+        # ietf.submit.utils.ensure_person_email_info_exists
+        ensure_person_email_info_exists(
+            "Draft Author", "draftauthor@example.com", "draft-uuid-test"
+        )
+        author = Person.objects.get(name="Draft Author")
+        self.assertIsNotNone(author.primary_uuid)
+        self.assertEqual(author.prior_uuids, [])
+
+    def test_factory_assigns_a_primary(self):
+        person = PersonFactory()
+        # Reads the rows directly: this is what proves the accessors below agree with
+        # the model, so it must not go through them
+        self.assertEqual(person.uuids.filter(primary=True).count(), 1)
+        self.assertIsNotNone(person.primary_uuid)
+        self.assertEqual(person.prior_uuids, [])
+
+    def test_factory_can_skip_the_primary(self):
+        person = PersonFactory(primary_uuid=False)
+        self.assertEqual(person.uuids.count(), 0)
+        self.assertIsNone(person.primary_uuid)
+        self.assertEqual(person.prior_uuids, [])
+
+    def test_prior_uuids_holds_the_superseded_ones_in_order(self):
+        person = PersonFactory()
+        primary = person.primary_uuid
+        older = PersonUUIDFactory(
+            person=person, time=timezone.now() - datetime.timedelta(days=2)
+        )
+        newer = PersonUUIDFactory(
+            person=person, time=timezone.now() - datetime.timedelta(days=1)
+        )
+        # The primary is not in the prior list, and the priors are oldest-first
+        self.assertEqual(person.primary_uuid, primary)
+        self.assertEqual(person.prior_uuids, [older.uuid, newer.uuid])
+
+    def test_assign_primary_uuid_is_idempotent(self):
+        person = PersonFactory()
+        first = person.primary_uuid
+        assign_primary_uuid(person)
+        self.assertEqual(person.uuids.count(), 1)
+        self.assertEqual(person.primary_uuid, first)
+
+    def test_only_one_primary_per_person(self):
+        person = PersonFactory()
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            PersonUUID.objects.create(person=person, primary=True)
+
+    def test_ensure_primary_uuid_promotes_earliest(self):
+        person = PersonFactory()
+        oldest = person.uuids.get()
+        PersonUUIDFactory(person=person)
+        person.uuids.update(primary=False)  # deliberately inconsistent state
+        promoted = ensure_primary_uuid(person)
+        self.assertEqual(promoted.uuid, oldest.uuid)
+        self.assertEqual(person.uuids.filter(primary=True).count(), 1)
+
+    def test_ensure_primary_uuid_creates_when_none(self):
+        person = PersonFactory(primary_uuid=False)
+        created = ensure_primary_uuid(person)
+        self.assertTrue(created.primary)
+        self.assertEqual(person.uuids.count(), 1)
+
+    def test_get_person_uuid_object(self):
+        person = PersonFactory()
+        prior = PersonUUIDFactory(person=person)
+        self.assertIsNone(get_person_uuid_object(uuid.uuid4()))
+        primary_obj = get_person_uuid_object(person.primary_uuid)
+        self.assertEqual(primary_obj.person, person)
+        self.assertTrue(primary_obj.primary)
+        prior_obj = get_person_uuid_object(prior.uuid)
+        self.assertEqual(prior_obj.person, person)
+        self.assertFalse(prior_obj.primary)
+
+    def test_deleting_a_person_deletes_its_uuids(self):
+        person = PersonFactory()
+        values = [person.primary_uuid, *person.prior_uuids]
+        person.delete()
+        self.assertEqual(PersonUUID.objects.filter(uuid__in=values).count(), 0)
+        for value in values:
+            self.assertIsNone(get_person_uuid_object(value))
+
+    def test_merge_chain_keeps_one_primary(self):
+        secretariat_role = RoleFactory(group__acronym="secretariat", name_id="secr")
+        request = HttpRequest()
+        request.user = secretariat_role.person.user
+        a, b, c = PersonFactory.create_batch(3)
+        a_uuids = {a.primary_uuid, *a.prior_uuids}
+        b_uuids = {b.primary_uuid, *b.prior_uuids}
+        c_primary = c.primary_uuid
+        merge_persons(request, a, b, file=StringIO())
+        merge_persons(request, b, c, file=StringIO())
+        c.refresh_from_db()
+        self.assertIsNotNone(c.primary_uuid)
+        self.assertEqual(c.primary_uuid, c_primary)
+        self.assertEqual(set(c.prior_uuids), a_uuids | b_uuids)
+        for value in a_uuids | b_uuids:
+            self.assertEqual(get_person_uuid_object(value).person, c)
+
+    def test_merge_promotes_a_primary_for_a_target_without_one(self):
+        secretariat_role = RoleFactory(group__acronym="secretariat", name_id="secr")
+        request = HttpRequest()
+        request.user = secretariat_role.person.user
+        source = PersonFactory()
+        target = PersonFactory()
+        target.uuids.update(primary=False)  # deliberately inconsistent state
+        merge_persons(request, source, target, file=StringIO())
+        target.refresh_from_db()
+        self.assertIsNotNone(target.primary_uuid)
+
+    @mock.patch("ietf.person.utils.transaction.on_commit", side_effect=lambda f: f())
+    @mock.patch("ietf.person.tasks.push_person_uuids_task.apply_async")
+    def test_creating_a_person_does_not_push(self, mock_apply, mock_on_commit):
+        # A brand-new Person has no Authentik account, so there is nothing to push to.
+        person = PersonFactory()
+        self.assertFalse(mock_apply.called)
+
+        person.name = person.name + " Jr"
+        person.save()
+        self.assertFalse(mock_apply.called)  # nor does an unrelated save
+
+    @mock.patch("ietf.person.utils.transaction.on_commit", side_effect=lambda f: f())
+    @mock.patch("ietf.person.tasks.push_person_uuids_task.apply_async")
+    def test_push_is_dispatched_when_the_set_changes(self, mock_apply, mock_on_commit):
+        secretariat_role = RoleFactory(group__acronym="secretariat", name_id="secr")
+        request = HttpRequest()
+        request.user = secretariat_role.person.user
+        source = PersonFactory()
+        target = PersonFactory()
+        mock_apply.reset_mock()
+
+        merge_persons(request, source, target, file=StringIO())
+        self.assertTrue(mock_apply.called)
+        self.assertEqual(
+            mock_apply.call_args.kwargs["kwargs"], {"person_pk": target.pk}
+        )
+        # Celery's default retry policy applies - short enough for the request path,
+        # and enough to ride out a broker blip. See queue_person_uuid_push().
+        self.assertNotIn("retry", mock_apply.call_args.kwargs)
+
+        # Promoting a primary for a Person that already existed does push
+        mock_apply.reset_mock()
+        other = PersonFactory()
+        other.uuids.update(primary=False)  # deliberately inconsistent state
+        ensure_primary_uuid(other)
+        self.assertEqual(mock_apply.call_args.kwargs["kwargs"], {"person_pk": other.pk})
+
+    @mock.patch("ietf.person.utils.transaction.on_commit", side_effect=lambda f: f())
+    @mock.patch("ietf.person.tasks.push_person_uuids_task.apply_async")
+    @mock.patch("ietf.person.utils.log.log")
+    def test_unreachable_broker_does_not_break_the_caller(
+        self, mock_log, mock_apply, mock_on_commit
+    ):
+        mock_apply.side_effect = KombuOperationalError("no broker here")
+        person = PersonFactory()
+        person.uuids.update(primary=False)  # deliberately inconsistent state
+        ensure_primary_uuid(person)  # must not raise
+        self.assertIsNotNone(person.primary_uuid)
+        self.assertIn("Could not queue UUID push", mock_log.call_args[0][0])
+
+    @mock.patch("ietf.person.tasks.log.log")
+    def test_push_person_uuids_task(self, mock_log):
+        person = PersonFactory()
+        prior = PersonUUIDFactory(person=person)
+        push_person_uuids_task(person_pk=person.pk)
+        message = mock_log.call_args[0][0]
+        self.assertIn(str(person.primary_uuid), message)
+        self.assertIn(str(prior.uuid), message)
+
+        mock_log.reset_mock()
+        push_person_uuids_task(person_pk=person.pk + 10000)
+        self.assertIn("no such Person", mock_log.call_args[0][0])
+
+    @mock.patch("ietf.person.tasks.log.log")
+    def test_check_person_uuids_task(self, mock_log):
+        good = PersonFactory()
+        broken = PersonFactory(primary_uuid=False)
+        demoted = PersonFactory()
+        demoted.uuids.update(primary=False)  # deliberately inconsistent state
+
+        def logged():
+            return "\n".join(call[0][0] for call in mock_log.call_args_list)
+
+        self.assertEqual(check_person_uuids_task(), 2)
+        report = logged()
+        self.assertIn(f"Person {broken.pk}", report)
+        self.assertIn("no UUIDs at all", report)
+        self.assertIn(f"Person {demoted.pk}", report)
+        self.assertIn("no primary UUID", report)
+        self.assertNotIn(f"Person {good.pk} ", report)
+        self.assertIn("2 Person(s) need attention", report)
+
+        mock_log.reset_mock()
+        self.assertEqual(check_person_uuids_task(fix=True), 2)
+        self.assertIn("2 Person(s) repaired", logged())
+        for person in (broken, demoted):
+            self.assertIsNotNone(person.primary_uuid)
+
+        mock_log.reset_mock()
+        self.assertEqual(check_person_uuids_task(), 0)
+        self.assertIn("every Person has exactly one primary UUID", logged())
+
+
+@override_settings(
+    APP_API_TOKENS={
+        "ietf.person.api_uuid": ["uuid-api-token"],
+        "ietf.person.api_uuid_by_pk": ["by-pk-token"],
+    }
+)
+class PersonUUIDApiTests(TestCase):
+    def retrieve_url(self, uuid_value):
+        return urlreverse(
+            "ietf.api.person_api.person-uuid-detail", kwargs={"uuid": uuid_value}
+        )
+
+    @property
+    def lookup_url(self):
+        return urlreverse("ietf.api.person_api.person-uuid-lookup")
+
+    @property
+    def by_pk_url(self):
+        return urlreverse("ietf.api.person_api.person-uuid-by-pk")
+
+    def test_requires_a_valid_api_key(self):
+        person = PersonFactory()
+        url = self.retrieve_url(person.primary_uuid)
+        self.assertEqual(self.client.get(url).status_code, 403)
+        self.assertEqual(
+            self.client.get(url, headers={"X-Api-Key": "nope"}).status_code, 403
+        )
+        self.assertEqual(
+            self.client.get(url, headers={"X-Api-Key": "by-pk-token"}).status_code, 403
+        )
+        self.assertEqual(
+            self.client.get(url, headers={"X-Api-Key": "uuid-api-token"}).status_code,
+            200,
+        )
+
+    def test_retrieve_primary(self):
+        person = PersonFactory()
+        r = self.client.get(
+            self.retrieve_url(person.primary_uuid),
+            headers={"X-Api-Key": "uuid-api-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(
+            r.json(),
+            {
+                "uuid": str(person.primary_uuid),
+                "is_primary": True,
+                "primary_uuid": str(person.primary_uuid),
+                "prior_uuids": [],
+            },
+        )
+
+    def test_retrieve_superseded(self):
+        person = PersonFactory()
+        prior = PersonUUIDFactory(person=person)
+        r = self.client.get(
+            self.retrieve_url(prior.uuid), headers={"X-Api-Key": "uuid-api-token"}
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(
+            r.json(),
+            {
+                "uuid": str(prior.uuid),
+                "is_primary": False,
+                "primary_uuid": str(person.primary_uuid),
+                "prior_uuids": [str(prior.uuid)],
+            },
+        )
+
+    def test_response_carries_identifiers_only(self):
+        person = PersonFactory()
+        r = self.client.get(
+            self.retrieve_url(person.primary_uuid),
+            headers={"X-Api-Key": "uuid-api-token"},
+        )
+        self.assertEqual(
+            set(r.json().keys()),
+            {"uuid", "is_primary", "primary_uuid", "prior_uuids"},
+        )
+
+    def test_retrieve_unknown(self):
+        r = self.client.get(
+            self.retrieve_url(uuid.uuid4()), headers={"X-Api-Key": "uuid-api-token"}
+        )
+        self.assertEqual(r.status_code, 404)
+
+    def test_retrieve_upper_case(self):
+        person = PersonFactory()
+        url = self.retrieve_url(person.primary_uuid)
+        upper = url.replace(str(person.primary_uuid), str(person.primary_uuid).upper())
+        self.assertNotEqual(url, upper)
+        r = self.client.get(upper, headers={"X-Api-Key": "uuid-api-token"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["uuid"], str(person.primary_uuid))
+
+    def test_retrieve_malformed(self):
+        r = self.client.get(
+            "/api/person/uuid/not-a-uuid/", headers={"X-Api-Key": "uuid-api-token"}
+        )
+        self.assertEqual(r.status_code, 404)
+
+    def test_batch(self):
+        person = PersonFactory()
+        prior = PersonUUIDFactory(person=person)
+        missing = uuid.uuid4()
+        r = self.client.post(
+            self.lookup_url,
+            {
+                "uuids": [
+                    str(prior.uuid),
+                    str(person.primary_uuid),
+                    str(missing),
+                    str(prior.uuid),
+                ]
+            },
+            content_type="application/json",
+            headers={"X-Api-Key": "uuid-api-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        results = r.json()["results"]
+        # One entry per distinct requested UUID, duplicates collapsed
+        self.assertEqual(len(results), 3)
+        by_uuid = {entry["uuid"]: entry for entry in results}
+        # Same shape as a resolved entry, with the identifiers nulled out
+        self.assertEqual(
+            by_uuid[str(missing)],
+            {
+                "uuid": str(missing),
+                "status": "unknown",
+                "is_primary": None,
+                "primary_uuid": None,
+                "prior_uuids": [],
+            },
+        )
+        self.assertEqual(by_uuid[str(prior.uuid)]["status"], "resolved")
+        self.assertFalse(by_uuid[str(prior.uuid)]["is_primary"])
+        self.assertEqual(
+            by_uuid[str(prior.uuid)]["primary_uuid"], str(person.primary_uuid)
+        )
+        self.assertTrue(by_uuid[str(person.primary_uuid)]["is_primary"])
+
+    def test_batch_query_count_is_independent_of_size(self):
+        people = PersonFactory.create_batch(6)
+        # Resolve the UUIDs up front so the capture below sees only the API's queries
+        values = [str(p.primary_uuid) for p in people]
+
+        def post(subset):
+            return self.client.post(
+                self.lookup_url,
+                {"uuids": subset},
+                content_type="application/json",
+                headers={"X-Api-Key": "uuid-api-token"},
+            )
+
+        with CaptureQueriesContext(connection) as small:
+            self.assertEqual(post(values[:2]).status_code, 200)
+        with CaptureQueriesContext(connection) as large:
+            self.assertEqual(post(values).status_code, 200)
+        self.assertEqual(len(small.captured_queries), len(large.captured_queries))
+
+    def test_batch_rejects_bad_input(self):
+        for payload in (
+            {"uuids": []},
+            {"uuids": ["not-a-uuid"]},
+            {"uuids": [str(uuid.uuid4()) for _ in range(501)]},
+            {},
+        ):
+            r = self.client.post(
+                self.lookup_url,
+                payload,
+                content_type="application/json",
+                headers={"X-Api-Key": "uuid-api-token"},
+            )
+            self.assertEqual(r.status_code, 400, payload)
+
+    def test_by_person_pk(self):
+        person = PersonFactory()
+        prior = PersonUUIDFactory(person=person)
+        r = self.client.post(
+            self.by_pk_url,
+            {"person_pks": [person.pk, person.pk + 10000]},
+            content_type="application/json",
+            headers={"X-Api-Key": "by-pk-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        results = r.json()["results"]
+        self.assertEqual(len(results), 2)
+        self.assertEqual(
+            results[0],
+            {
+                "person_pk": person.pk,
+                "status": "resolved",
+                "primary_uuid": str(person.primary_uuid),
+                "prior_uuids": [str(prior.uuid)],
+            },
+        )
+        self.assertEqual(
+            results[1],
+            {
+                "person_pk": person.pk + 10000,
+                "status": "unknown",
+                "primary_uuid": None,
+                "prior_uuids": [],
+            },
+        )
+
+    def test_by_person_pk_has_its_own_token(self):
+        person = PersonFactory()
+        r = self.client.post(
+            self.by_pk_url,
+            {"person_pks": [person.pk]},
+            content_type="application/json",
+            headers={"X-Api-Key": "uuid-api-token"},
+        )
+        self.assertEqual(r.status_code, 403)
+
+    def test_by_person_pk_rejects_over_cap(self):
+        r = self.client.post(
+            self.by_pk_url,
+            {"person_pks": list(range(501))},
+            content_type="application/json",
+            headers={"X-Api-Key": "by-pk-token"},
+        )
+        self.assertEqual(r.status_code, 400)
+
+    def test_schema(self):
+        r = self.client.get("/api/schema/")
+        self.assertEqual(r.status_code, 200)
+        schema = yaml.safe_load(r.content)
+        paths = schema["paths"]
+        self.assertIn("/api/person/uuid/{uuid}/", paths)
+        self.assertIn("/api/person/uuid/lookup/", paths)
+        self.assertIn("/api/person/uuid/by-person-pk/", paths)
+        self.assertEqual(
+            paths["/api/person/uuid/{uuid}/"]["get"]["operationId"],
+            "person_uuid_retrieve",
+        )
+        self.assertEqual(
+            paths["/api/person/uuid/lookup/"]["post"]["operationId"],
+            "person_uuid_lookup",
+        )
+        by_pk = paths["/api/person/uuid/by-person-pk/"]["post"]
+        self.assertEqual(by_pk["operationId"], "person_uuid_by_person_pk")
+        self.assertTrue(by_pk["deprecated"])
+        self.assertIn("PersonUUIDResolution", schema["components"]["schemas"])
+        for path, method in (
+            ("/api/person/uuid/{uuid}/", "get"),
+            ("/api/person/uuid/lookup/", "post"),
+            ("/api/person/uuid/by-person-pk/", "post"),
+        ):
+            responses = paths[path][method]["responses"]
+            self.assertIn("200", responses, path)
+        # Consumers switch on status, so it has to be a declared, required field
+        for component in ("PersonUUIDBatchEntry", "PersonPkBatchEntry"):
+            entry = schema["components"]["schemas"][component]
+            self.assertIn("status", entry["required"], component)
+            self.assertTrue(entry["properties"]["primary_uuid"]["nullable"], component)
 
 
 class TaskTests(TestCase):

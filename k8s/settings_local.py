@@ -293,6 +293,7 @@ DJANGO_VITE["default"]["manifest_path"] = os.path.join(
 # Binaries that are different in the docker image
 DE_GFM_BINARY = "/usr/local/bin/de-gfm"
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
+IDSUBMIT_IDNITS3_BINARY = "/usr/local/bin/idnits3"
 
 # Duplicating production cache from settings.py and using it whether we're in production mode or not
 MEMCACHED_HOST = os.environ.get("DT_MEMCACHED_SERVICE_HOST", "127.0.0.1")
@@ -363,6 +364,12 @@ CACHES = {
         "KEY_PREFIX": "ietf:celery",
     },
 }
+
+_person_profile_cache_seconds = os.environ.get(
+    "DATATRACKER_PERSON_PROFILE_CACHE_SECONDS", None
+)
+if _person_profile_cache_seconds is not None:
+    PERSON_PROFILE_CACHE_SECONDS = int(_person_profile_cache_seconds)
 
 _csrf_trusted_origins_str = os.environ.get("DATATRACKER_CSRF_TRUSTED_ORIGINS")
 if _csrf_trusted_origins_str is not None:

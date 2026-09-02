@@ -56,11 +56,13 @@ from ietf.doc.factories import (DocumentFactory, DocEventFactory, CharterFactory
                                 StatusChangeFactory, DocExtResourceFactory,
                                 RgDraftFactory, BcpFactory, StdFactory,
                                 FyiFactory, RfcAuthorFactory,
+                                RpcActionHolderOpenEntryFactory,
                                 TelechatDocEventFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import (
     create_ballot_if_not_open,
+    save_document_in_history,
     external_canonical_url,
     investigate_fragment,
     uppercase_std_abbreviated_name,
@@ -86,7 +88,8 @@ from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text, texescape
 from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO, RPC_TZINFO
-from ietf.doc.utils_search import AD_WORKLOAD, fill_in_telechat_date, prepare_document_table
+from ietf.doc.utils_search import (AD_WORKLOAD, fill_in_rfc_editor_queue_status,
+    fill_in_telechat_date, prepare_document_table)
 
 
 class SearchTests(TestCase):
@@ -308,21 +311,38 @@ class SearchTests(TestCase):
         so doubling the number of rows must not change the number of queries. A lookup
         that slipped back into the per-row path shows up here as a count that grows.
 
-        Mind the blind spots: these documents have no IESG state, ballot, last call,
-        action holders, telechat or obsoleting RFCs, so the per-row work the columns
-        driven by those still do is not covered. Widen the fixtures rather than reading
-        a pass here as "the table does no per-row queries".
+        Mind the blind spots: these documents have no ballot, last call, action holders,
+        telechat, obsoleting RFCs, or IESG state under way, so the per-row work the
+        columns driven by those still do is not covered -- state_age_colored and the
+        action holder list each still cost a query for a document being processed by the
+        IESG. Widen the fixtures rather than reading a pass here as "the table does no
+        per-row queries".
         """
         group = GroupFactory(type_id="wg")
         url = urlreverse('ietf.doc.views_search.search') + (
             f"?activedrafts=on&olddrafts=on&rfcs=on&by=group&group={group.acronym}"
         )
+        system = Person.objects.get(name="(System)")
 
         def add_documents(count):
             for _ in range(count):
                 WgDraftFactory(group=group, authors=[PersonFactory()], ad=PersonFactory(),
                                shepherd=EmailFactory())
                 WgRfcFactory(group=group)
+                # A draft in the RFC Editor queue, whose row also shows the queue status.
+                # Not one the IESG is processing, to keep the blind spots above out of
+                # the count.
+                queued = WgDraftFactory(
+                    group=group,
+                    states=[("draft", "active"), ("draft-iesg", "idexists"),
+                            ("draft-rfceditor", "in_progress")],
+                )
+                RpcAssignmentDocEvent.objects.create(
+                    doc=queued, rev=queued.rev, by=system,
+                    type="changed_rpc_assignments",
+                    assignments="In Progress (First Edit)",
+                    desc="RPC status changed to In Progress (First Edit)",
+                )
 
         def count_queries():
             with CaptureQueriesContext(connection) as context:
@@ -335,7 +355,7 @@ class SearchTests(TestCase):
         add_documents(4)
         doubled = count_queries()
 
-        # A per-row lookup would add at least one query for each of the 8 new documents.
+        # A per-row lookup would add at least one query for each of the 12 new documents.
         self.assertLessEqual(
             doubled, baseline + 2,
             f"query count grew from {baseline} to {doubled} when the result set tripled",
@@ -387,6 +407,15 @@ class SearchTests(TestCase):
                                shepherd=EmailFactory())
         TelechatDocEventFactory(doc=draft)
         WgRfcFactory()
+        queued = WgDraftFactory(
+            states=[("draft", "active"), ("draft-iesg", "rfcqueue"),
+                    ("draft-rfceditor", "in_progress")],
+        )
+        RpcAssignmentDocEvent.objects.create(
+            doc=queued, rev=queued.rev, by=Person.objects.get(name="(System)"),
+            type="changed_rpc_assignments", assignments="In Progress (First Edit)",
+            desc="RPC status changed to In Progress (First Edit)",
+        )
 
         request = RequestFactory().get("/doc/recent/")
         request.user = AnonymousUser()
@@ -396,6 +425,9 @@ class SearchTests(TestCase):
         restored, _ = pickle.loads(pickle.dumps([results, meta]))
         for before, after in zip(results, restored):
             self.assertEqual(after.telechat_date(), before.telechat_date())
+            self.assertEqual(
+                after.rfc_editor_queue_status(), before.rfc_editor_queue_status()
+            )
 
     def test_fill_in_telechat_date_matches_the_method(self):
         """The precomputed value has to equal what Document.telechat_date() returns.
@@ -432,6 +464,49 @@ class SearchTests(TestCase):
         # the two ends of the range, so the test would fail if everything came back None
         self.assertIsNotNone(expected[future.name])
         self.assertIsNone(expected[past.name])
+
+    def test_fill_in_rfc_editor_queue_status_matches_the_method(self):
+        """The precomputed value has to equal what Document.rfc_editor_queue_status() returns.
+
+        The document page renders the method and the document tables render the
+        precomputed value, so a mismatch shows the same document two different statuses.
+        """
+        system = Person.objects.get(name="(System)")
+
+        def queued(state_slug, *statuses):
+            doc = WgDraftFactory(
+                states=[("draft", "active"), ("draft-iesg", "rfcqueue"),
+                        ("draft-rfceditor", state_slug)],
+            )
+            for status in statuses:
+                RpcAssignmentDocEvent.objects.create(
+                    doc=doc, rev=doc.rev, by=system, type="changed_rpc_assignments",
+                    assignments=status, desc=f"RPC status changed to {status}",
+                )
+            return doc
+
+        in_progress = queued("in_progress", "In Progress (First Edit)")
+        # A document that has moved on has an event for every status it has held.
+        moved_on = queued("in_progress", "Awaiting First editor", "In Final Review")
+        blocked = queued("blocked", "blocked: Manual Hold")
+        # No queue status: a state from before the queue integration, and no state at all.
+        legacy = queued("rfc-edit", "In Progress (First Edit)")
+        not_queued = WgDraftFactory()
+
+        fixtures = (in_progress, moved_on, blocked, legacy, not_queued)
+        expected = {
+            d.name: Document.objects.get(pk=d.pk).rfc_editor_queue_status()
+            for d in fixtures
+        }
+        self.assertEqual(expected[moved_on.name], "In Final Review")
+        self.assertIsNone(expected[legacy.name])
+
+        docs = list(Document.objects.filter(name__in=[d.name for d in fixtures]))
+        doc_dict = {d.pk: d for d in docs}
+        fill_in_rfc_editor_queue_status(docs, doc_dict, list(doc_dict))
+
+        for doc in docs:
+            self.assertEqual(doc.rfc_editor_queue_status(), expected[doc.name], doc.name)
 
     def test_search_for_name(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
@@ -651,6 +726,80 @@ class SearchTests(TestCase):
         self.assertContains(r, discuss_other.doc.name)
         self.assertContains(r, block_other.doc.name)
 
+    def test_ad_workload_shows_rpc_decisions_pending(self):
+        """The IESG dashboard shows who the RPC is currently waiting on"""
+        # ad_list.html builds element ids from AD names, so start from a known
+        # set of ADs whose names slugify predictably.
+        Role.objects.filter(name_id="ad").delete()
+        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active',
+                         person__name='Example Areadirector').person
+        idle_ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active',
+                              person__name='Other Areadirector').person
+        RpcActionHolderOpenEntryFactory(person=ad)
+        RpcActionHolderOpenEntryFactory(person=ad)
+
+        url = urlreverse('ietf.doc.views_search.ad_workload')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'RPC decisions pending')
+        q = PyQuery(r.content)
+        rows = q('#rpc-pending').next('p').next('table').find('tbody tr')
+        self.assertEqual(len(rows), 1, 'only ADs with something pending get a row')
+        self.assertIn(ad.plain_name(), rows.text())
+        self.assertNotIn(idle_ad.plain_name(), rows.text())
+        self.assertIn('2', rows.text())
+
+    def test_ad_workload_without_rpc_decisions_pending(self):
+        """The section is absent when the RPC is waiting on nobody"""
+        Role.objects.filter(name_id="ad").delete()
+        RoleFactory(name_id='ad', group__type_id='area', group__state_id='active',
+                    person__name='Example Areadirector')
+        r = self.client.get(urlreverse('ietf.doc.views_search.ad_workload'))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, 'RPC decisions pending')
+
+    def test_docs_for_ad_shows_rpc_action_holders(self):
+        """An AD sees the decisions the RPC is waiting on them for"""
+        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
+        other_ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
+        entry = RpcActionHolderOpenEntryFactory(
+            person=ad, comment='Confirm the change in section 4.2', rfc_number=9850
+        )
+        other_entry = RpcActionHolderOpenEntryFactory(person=other_ad)
+
+        url = urlreverse('ietf.doc.views_search.docs_for_ad',
+                         kwargs=dict(name=ad.full_name_as_key()))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'RPC decisions pending')
+        self.assertContains(r, entry.document.name)
+        self.assertNotContains(r, other_entry.document.name)
+        # the queue site final review page for this document
+        self.assertContains(r, f'{settings.RFC_EDITOR_QUEUE_SITE_BASE_URL}/final-review/rfc9850/')
+        # the request is shown here to everyone, including the anonymous user
+        self.assertContains(r, 'Confirm the change in section 4.2')
+
+        self.client.login(username=ad.user.username, password=ad.user.username + '+password')
+        self.assertContains(self.client.get(url), 'Confirm the change in section 4.2')
+
+    def test_docs_for_ad_without_rpc_action_holders(self):
+        """The section is absent when the RPC is waiting on nothing"""
+        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
+        r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad',
+                                       kwargs=dict(name=ad.full_name_as_key())))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, 'RPC decisions pending')
+
+    def test_docs_for_ad_rpc_action_holder_without_rfc_number(self):
+        """A document with no rfc number yet has no final review page to link"""
+        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
+        RpcActionHolderOpenEntryFactory(person=ad, rfc_number=None)
+        r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad',
+                                       kwargs=dict(name=ad.full_name_as_key())))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'RPC decisions pending')
+        self.assertNotContains(r, '/final-review/')
+
     def test_docs_for_iesg(self):
         ad1 = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person
         ad2 = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person
@@ -687,6 +836,90 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
         self.assertContains(r, 'title="AUTH48"')  # title attribute of AUTH48 badge in auth48_alert_badge filter
+
+    def _status_column_text(self, draft):
+        r = self.client.get(
+            urlreverse("ietf.doc.views_search.search")
+            + f"?activedrafts=on&olddrafts=on&rfcs=on&name={draft.name}"
+        )
+        self.assertEqual(r.status_code, 200)
+        return PyQuery(r.content)("td.status").text()
+
+    def test_search_labels_the_iesg_state_of_a_queued_draft(self):
+        """The RFC Ed Queue state is labeled as the IESG's, because the row also shows
+        the RFC Editor's own status. Other states are left to speak for themselves.
+        """
+        queued = IndividualDraftFactory(
+            states=[("draft", "active"), ("draft-iesg", "rfcqueue"),
+                    ("draft-rfceditor", "in_progress")]
+        )
+        queue_state_name = queued.get_state("draft-iesg").name
+        self.assertIn(f"IESG: {queue_state_name}", self._status_column_text(queued))
+        # The document page has a row labeled "IESG state" already, so the value there
+        # is the bare state name.
+        r = self.client.get(
+            urlreverse("ietf.doc.views_doc.document_main",
+                       kwargs=dict(name=queued.name))
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, queue_state_name)
+        self.assertNotContains(r, f"IESG: {queue_state_name}")
+
+        for slug, states in (
+            ("iesg-eva", [("draft", "active"), ("draft-iesg", "iesg-eva")]),
+            ("idexists", [("draft", "active"), ("draft-iesg", "idexists")]),
+            ("expired", [("draft", "expired"), ("draft-iesg", "idexists")]),
+        ):
+            with self.subTest(slug=slug):
+                draft = IndividualDraftFactory(states=states)
+                self.assertNotIn("IESG: ", self._status_column_text(draft))
+
+        # friendly_state labels this one itself; it must not be labeled twice.
+        dead = IndividualDraftFactory(
+            states=[("draft", "active"), ("draft-iesg", "dead")]
+        )
+        self.assertIn("I-D Exists (IESG: Dead)", self._status_column_text(dead))
+
+    def test_search_shows_rfc_editor_queue_status(self):
+        """A queued draft's row shows the publication queue Status, as its document page does.
+
+        The status column carries two state machines at once, so each state is labeled
+        with the body it belongs to.
+        """
+        draft = IndividualDraftFactory(
+            states=[
+                ("draft", "active"),
+                ("draft-iesg", "rfcqueue"),
+                ("draft-rfceditor", "in_progress"),
+            ]
+        )
+        RpcAssignmentDocEvent.objects.create(
+            doc=draft,
+            rev=draft.rev,
+            by=Person.objects.get(name="(System)"),
+            type="changed_rpc_assignments",
+            assignments="In Progress (First Edit)",
+            desc="RPC status changed to In Progress (First Edit)",
+        )
+        status = self._status_column_text(draft)
+        self.assertIn(f"IESG: {draft.get_state('draft-iesg').name}", status)
+        self.assertIn("RFC Editor: In Progress (First Edit)", status)
+
+    def test_search_falls_back_to_rfc_editor_state_name(self):
+        """A document with no queue status shows its draft-rfceditor state name.
+
+        Documents that went through the RFC Editor before the publication queue
+        integration have a draft-rfceditor state but no RpcAssignmentDocEvent.
+        """
+        draft = IndividualDraftFactory(
+            states=[
+                ("draft", "active"),
+                ("draft-iesg", "rfcqueue"),
+                ("draft-rfceditor", "rfc-edit"),
+            ]
+        )
+        status = self._status_column_text(draft)
+        self.assertIn(f"RFC Editor: {draft.get_state('draft-rfceditor').name}", status)
 
     def test_drafts_in_last_call(self):
         draft = IndividualDraftFactory(pages=1)
@@ -944,6 +1177,47 @@ Man                    Expires September 22, 2015               [Page 3]
         for dir in [settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, settings.INTERNET_DRAFT_PATH]:
             with (Path(dir) / 'draft-ietf-mars-test-01.txt').open('w') as f:
                 f.write(self.draft_text)
+
+    def test_document_draft_rpc_action_holders(self):
+        """A draft in the RFC Editor queue shows who the RPC is waiting on"""
+        draft = WgDraftFactory(states=[('draft-iesg', 'rfcqueue'),
+                                       ('draft-rfceditor', 'in_progress')],
+                               rev='00')
+        holder = PersonFactory()
+        RpcActionHolderOpenEntryFactory(
+            document=draft, person=holder, comment='Confirm the change in section 4.2'
+        )
+        # An action held by a body is not shown here - the queue status covers it
+        RpcActionHolderOpenEntryFactory(
+            document=draft, person=None, body='Registry Of Xyzzy',
+            display_name='Registry Of Xyzzy'
+        )
+        url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=draft.name))
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, escape(holder.name))
+        self.assertNotContains(r, 'Registry Of Xyzzy')
+        self.assertNotContains(r, 'Confirm the change in section 4.2')
+
+        # the person being asked can see the request even though they are not an AD
+        self.client.login(username=holder.user.username,
+                          password=holder.user.username + '+password')
+        self.assertContains(self.client.get(url), 'Confirm the change in section 4.2')
+
+        # An earlier revision is a snapshot of the past and reports none of it.
+        # The snapshot is taken while the draft is in the queue, so its own
+        # RFC Editor state is set and that block of the page does render.
+        save_document_in_history(draft)
+        draft.rev = '01'
+        draft.save()
+        snapshot_url = urlreverse('ietf.doc.views_doc.document_main',
+                                  kwargs=dict(name=draft.name, rev='00'))
+        r = self.client.get(snapshot_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'RFC Editor status')  # the block is there ...
+        self.assertNotContains(r, escape(holder.name))  # ... without the holders
+        self.assertNotContains(r, 'Confirm the change in section 4.2')
 
     def test_document_draft(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',rev='01', create_revisions=range(0,2))
@@ -3374,8 +3648,23 @@ class Idnits2SupportTests(TestCase):
     def test_generate_idnits2_rfc_status(self):
         for slug in ('bcp', 'ds', 'exp', 'hist', 'inf', 'std', 'ps', 'unkn'):
             WgRfcFactory(std_level_id=slug)
+        WgRfcFactory(rfc_number=10001, std_level_id='ps')
+        WgRfcFactory(rfc_number=10002, std_level_id=None)
         blob = generate_idnits2_rfc_status().replace("\n", "")
         self.assertEqual(blob[6312-1], "O")
+        # idnits2 discards the whole file if this is not "O" - see generate_idnits2_rfc_status
+        self.assertEqual(blob[16-1], "O")
+        self.assertEqual(blob[10001-1], "P")
+        self.assertEqual(blob[10002-1], "U")
+
+    def test_generate_idnits2_rfc_status_low_numbers_only(self):
+        # The workarounds write fixed offsets, so the blob has to reach 6312 even when
+        # no RFC does.
+        WgRfcFactory(rfc_number=1001, std_level_id="ps")
+        blob = generate_idnits2_rfc_status().replace("\n", "")
+        self.assertEqual(blob[6312-1], "O")
+        self.assertEqual(blob[200-1], "O")
+        self.assertEqual(blob[16-1], "O")
 
     def test_rfc_status(self):
         url = urlreverse('ietf.doc.views_doc.idnits2_rfc_status')

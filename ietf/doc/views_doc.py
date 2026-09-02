@@ -60,9 +60,9 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, DocHistory, DocEvent, BallotDocEvent, BallotType,
     ConsensusDocEvent, NewRevisionDocEvent, StoredObject, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
-    RelatedDocument, RelatedDocHistory, RpcAssignmentDocEvent)
+    RelatedDocument, RelatedDocHistory, RpcActionHolderOpenEntry, RpcAssignmentDocEvent)
 from ietf.doc.tasks import investigate_fragment_task
-from ietf.doc.utils import (augment_events_with_revision,
+from ietf.doc.utils import (augment_events_with_revision, show_rpc_action_holder_comments,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
@@ -212,6 +212,20 @@ def rfc_editor_queue_status(doc):
         return None
     event = doc.latest_event(RpcAssignmentDocEvent, type="changed_rpc_assignments")
     return event.assignments if event else None
+
+def rpc_action_holders(doc):
+    """Open action holder entries the RPC has for this document
+
+    Only entries naming a person the datatracker knows: an action held by a
+    body, or by the RPC tool's own placeholder person, is not something to show
+    here - the queue status already reports that the RPC is waiting on someone.
+    """
+    return list(
+        RpcActionHolderOpenEntry.objects.filter(
+            document=doc, person__isnull=False
+        ).select_related("person").order_by("since_when")
+    )
+
 
 def document_main(request, name, rev=None, document_html=False):
 
@@ -380,7 +394,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        has_errata=doc.pk and doc.tags.filter(slug="errata"), # doc.pk == None if using a fake_history_obj
                                        file_urls=file_urls,
                                        rfc_editor_state=doc.get_state("draft-rfceditor"),
-                                       rfc_editor_queue_status=rfc_editor_queue_status(doc),
+                                       rfc_editor_queue_status=doc.rfc_editor_queue_status(),
                                        iana_review_state=doc.get_state("draft-iana-review"),
                                        iana_action_state=doc.get_state("draft-iana-action"),
                                        iana_experts_state=doc.get_state("draft-iana-experts"),
@@ -406,7 +420,8 @@ def document_main(request, name, rev=None, document_html=False):
         if isinstance(doc, Document):
             log.assertion('iesg_state', note="A document's 'draft-iesg' state should never be unset'.  Failed for %s"%doc.name)
         iesg_state_slug = iesg_state.slug if iesg_state else None
-        iesg_state_summary = doc.friendly_state()
+        # Rendered in a row of its own labeled "IESG state", so not labeled again here.
+        iesg_state_summary = doc.friendly_state(label_iesg_state=False)
         irsg_state = doc.get_state("draft-stream-irtf")
 
         can_edit = has_role(request.user, ("Area Director", "Secretariat"))
@@ -664,6 +679,11 @@ def document_main(request, name, rev=None, document_html=False):
                     if html:
                         css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
 
+        # Actions the RPC is waiting on, while the document is in its queue.
+        # The entries describe the document as it stands now, so a view of an
+        # earlier revision has none.
+        doc_rpc_action_holders = [] if snapshot else rpc_action_holders(doc)
+
         return render(request, "doc/document_draft.html" if document_html is False else "doc/document_html.html",
                                   dict(doc=doc,
                                        document_html=document_html,
@@ -724,8 +744,11 @@ def document_main(request, name, rev=None, document_html=False):
                                        iesg_state=iesg_state,
                                        iesg_state_summary=iesg_state_summary,
                                        rfc_editor_state=doc.get_state("draft-rfceditor"),
-                                       rfc_editor_queue_status=rfc_editor_queue_status(doc),
+                                       rfc_editor_queue_status=doc.rfc_editor_queue_status(),
                                        rfc_editor_auth48_url=auth48_url,
+                                       rpc_action_holders=doc_rpc_action_holders,
+                                       show_rpc_action_holder_comments=show_rpc_action_holder_comments(
+                                           request.user, doc_rpc_action_holders),
                                        iana_review_state=doc.get_state("draft-iana-review"),
                                        iana_action_state=doc.get_state("draft-iana-action"),
                                        iana_experts_state=doc.get_state("draft-iana-experts"),

@@ -60,6 +60,7 @@ from ietf.utils.text import parse_unicode, normalize_text
 from ietf.utils.timezone import date_today
 from ietf.utils.xmldraft import InvalidMetadataError, XMLDraft, capture_xml2rfc_output
 from ietf.person.name import unidecode_name
+from ietf.person.utils import assign_primary_uuid
 
 
 def validate_submission(submission):
@@ -589,7 +590,11 @@ def ensure_person_email_info_exists(name, email, docname):
         person.name_from_draft = name
         log.assertion('isinstance(person.name, str)')
         person.ascii = unidecode_name(person.name)
-        person.save()
+        # Atomic so a Person is never left without the primary UUID that external
+        # systems need to name them by.
+        with transaction.atomic():
+            person.save()
+            assign_primary_uuid(person)
     else:
         person.name_from_draft = name
 
@@ -824,10 +829,16 @@ def apply_checker(checker, submission, file_name):
                                 message=message, errors=errors, warnings=warnings, items=info,
                                 symbol=checker.symbol)
         check.save()
-    # ordered list of methods to try
+    # ordered list of methods to try - skip formats that were not submitted or
+    # generated, so that (e.g.) a checker that prefers XML still runs on the
+    # text of a submission that has no XML
     for method in ("check_fragment_xml", "check_file_xml", "check_fragment_txt", "check_file_txt", ):
         ext = method[-3:]
-        if hasattr(checker, method) and ext in file_name:
+        if (
+            hasattr(checker, method)
+            and ext in file_name
+            and os.path.exists(file_name[ext])
+        ):
             apply_check(submission, checker, method, file_name[ext])
             break
 

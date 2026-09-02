@@ -25,7 +25,6 @@ warnings.filterwarnings("ignore", message="The django.utils.datetime_safe module
 warnings.filterwarnings("ignore", message="The USE_DEPRECATED_PYTZ setting,")  # https://github.com/ietf-tools/datatracker/issues/5635
 warnings.filterwarnings("ignore", message="The is_dst argument to make_aware\\(\\)")  # caused by django-filters when USE_DEPRECATED_PYTZ is true 
 warnings.filterwarnings("ignore", message="The USE_L10N setting is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5648
-warnings.filterwarnings("ignore", message="django.contrib.auth.hashers.CryptPasswordHasher is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5663
 
 # Other DeprecationWarnings
 warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API", module="pyang.plugin")
@@ -70,11 +69,10 @@ ADMINS = [
 BUG_REPORT_EMAIL = "tools-help@ietf.org"
 
 PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.Argon2PasswordHasher',
-    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
-    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
-    'django.contrib.auth.hashers.SHA1PasswordHasher',
-    'django.contrib.auth.hashers.CryptPasswordHasher',
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.SHA1PasswordHasher",
 ]
 
 
@@ -892,6 +890,10 @@ HTMLIZER_CACHE_TIME = 60*60*24*14       # 14 days
 PDFIZER_CACHE_TIME = HTMLIZER_CACHE_TIME
 PDFIZER_URL_PREFIX = IDTRACKER_BASE_URL+"/doc/pdf"
 
+# How long a rendered person profile section is served from the slowpages cache.
+# This is how stale a profile's roles and documents can be.
+PERSON_PROFILE_CACHE_SECONDS = 60*15    # 15 minutes
+
 # Email settings
 IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
 AUDIO_IMPORT_EMAIL = ['ietf@meetecho.com']
@@ -956,6 +958,11 @@ IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 IDSUBMIT_STAGING_PATH = '/a/www/www6s/staging/'
 IDSUBMIT_STAGING_URL = '//www.ietf.org/staging/'
 IDSUBMIT_IDNITS_BINARY = '/a/www/ietf-datatracker/scripts/idnits'
+IDSUBMIT_IDNITS3_BINARY = '/usr/local/bin/idnits3'
+# Set True to skip the idnits3 checks that need to fetch remote documents
+IDSUBMIT_IDNITS3_OFFLINE = False
+# Seconds to allow an idnits3 run before giving up on it
+IDSUBMIT_IDNITS3_TIMEOUT = 300
 SUBMIT_PYANG_COMMAND = 'pyang --verbose --ietf -p {libs} {model}'
 SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -p {tmplib} -p {rfclib} -p {draftlib} -p {ianalib} -p {cataloglib} {model} -i'
 
@@ -969,6 +976,7 @@ SUBMIT_YANG_CATALOG_CHECKER_URL = "https://yangcatalog.org/yangvalidator/api/v1/
 
 IDSUBMIT_CHECKER_CLASSES = (
     "ietf.submit.checkers.DraftIdnitsChecker",
+    "ietf.submit.checkers.DraftIdnits3Checker",
     "ietf.submit.checkers.DraftYangChecker",
 #    "ietf.submit.checkers.DraftYangvalidatorChecker",    
 )

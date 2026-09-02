@@ -48,7 +48,7 @@ from django import forms
 from django.conf import settings
 from django.core.cache import cache, caches
 from django.urls import reverse as urlreverse
-from django.db.models import Model, Q
+from django.db.models import Count, Model, Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect, QueryDict
 from django.shortcuts import render
 from django.utils import timezone
@@ -59,11 +59,14 @@ from django.utils.text import slugify
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocHistory, DocumentAuthor, RelatedDocument,
-    RfcAuthor, State, NewRevisionDocEvent, IESG_SUBSTATE_TAGS,
+    RfcAuthor, RpcActionHolderOpenEntry, State, NewRevisionDocEvent, IESG_SUBSTATE_TAGS,
     IESG_BALLOT_ACTIVE_STATES, IESG_STATCHG_CONFLREV_ACTIVE_STATES,
     IESG_CHARTER_ACTIVE_STATES )
 from ietf.doc.fields import select2_id_doc_name_json
-from ietf.doc.utils import augment_events_with_revision, needed_ballot_positions
+from ietf.doc.utils import (
+    augment_events_with_revision,
+    needed_ballot_positions,
+)
 from ietf.group.models import Group
 from ietf.idindex.index import active_drafts_index_by_group
 from ietf.name.models import DocTagName, DocTypeName, StreamName
@@ -703,10 +706,28 @@ def ad_workload(request):
         for dt in AD_WORKLOAD
     }
 
+    # Current state, not a trend: the open entries the RPC pushes are a
+    # snapshot, so there is no history to bucket the way the tables above do.
+    rpc_pending_counts = dict(
+        RpcActionHolderOpenEntry.objects.filter(person__in=ads)
+        .values_list("person")
+        .annotate(Count("id"))
+    )
+    rpc_pending = [
+        {"ad": ad, "count": rpc_pending_counts[ad.pk]}
+        for ad in ads
+        if rpc_pending_counts.get(ad.pk)
+    ]
+
     return render(
         request,
         "doc/ad_list.html",
-        {"metadata": metadata, "data": data, "delta": days},
+        {
+            "metadata": metadata,
+            "data": data,
+            "delta": days,
+            "rpc_pending": rpc_pending,
+        },
     )
 
 
@@ -831,6 +852,13 @@ def docs_for_ad(request, name):
             if re.search(r"\bNeeds\s+\d+", iesg_ballot_summary):
                 not_balloted_docs.append(doc)
 
+    # Actions the RPC is waiting on this AD for, from the publication queue.
+    rpc_action_holders = list(
+        RpcActionHolderOpenEntry.objects.filter(person=ad)
+        .select_related("document")
+        .order_by("since_when")
+    )
+
     return render(
         request,
         "doc/drafts_for_ad.html",
@@ -840,6 +868,7 @@ def docs_for_ad(request, name):
             "ad": ad,
             "blocked_docs": blocked_docs,
             "not_balloted_docs": not_balloted_docs,
+            "rpc_action_holders": rpc_action_holders,
         },
     )
 

@@ -20,7 +20,7 @@ from django.contrib import messages
 from django.core.cache import caches
 from django.core.files.base import ContentFile
 from django.db import IntegrityError
-from django.db.models import OuterRef, Subquery, TextField, Q, Value, Max
+from django.db.models import Exists, OuterRef, Subquery, TextField, Q, Value, Max
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -351,49 +351,60 @@ def data_for_meetings_overview(meetings, interim_status=None):
     """Return filtered meetings with sessions and group hierarchy (for the
     interim menu)."""
 
+    # filter
+    if interim_status == "apprw":
+        session_status_condition = Q(current_status="apprw")
+    elif interim_status == "scheda":
+        session_status_condition = Q(current_status="scheda")
+    else:
+        session_status_condition = ~Q(
+            current_status__in=["apprw", "scheda", "canceledpa"]
+        )
+
+    meetings = meetings.filter(
+        ~Q(type_id="interim")
+        | Exists(
+            Session.objects.filter(meeting=OuterRef("pk"))
+            .with_current_status()
+            .filter(session_status_condition)
+        )
+    )
+
     # extract sessions
     for m in meetings:
         m.sessions = []
 
-    sessions = Session.objects.filter(
-        meeting__in=meetings
-    ).order_by(
-        'meeting', 'pk'
-    ).with_current_status(
-    ).select_related(
-        'group', 'group__parent'
+    sessions = (
+        Session.objects.filter(
+            meeting__in=meetings,
+            meeting__type_id="interim",
+        )
+        .order_by("meeting", "pk")
+        .with_current_status()
+        .select_related("group", "group__parent")
     )
 
     meeting_dict = {m.pk: m for m in meetings}
     for s in sessions.iterator():
         meeting_dict[s.meeting_id].sessions.append(s)
 
-    # filter
-    if interim_status == 'apprw':
-        meetings = [
-            m for m in meetings
-            if not m.type_id == 'interim' or any(s.current_status == 'apprw' for s in m.sessions)
-        ]
-
-    elif interim_status == 'scheda':
-        meetings = [
-            m for m in meetings
-            if not m.type_id == 'interim' or any(s.current_status == 'scheda' for s in m.sessions)
-        ]
-
-    else:
-        meetings = [
-            m for m in meetings
-            if not m.type_id == 'interim' or not all(s.current_status in ['apprw', 'scheda', 'canceledpa'] for s in m.sessions)
-        ]
-
-    ietf_group = Group.objects.get(acronym='ietf')
+    ietf_group = (
+        Group.objects.get(acronym="ietf")
+        if any(m.type_id != "interim" for m in meetings)
+        else None
+    )
 
     # set some useful attributes
     for m in meetings:
         m.end = m.date + datetime.timedelta(days=m.days)
-        m.responsible_group = (m.sessions[0].group if m.sessions else None) if m.type_id == 'interim' else ietf_group
-        m.interim_meeting_cancelled = m.type_id == 'interim' and all(s.current_status == 'canceled' for s in m.sessions)
+        m.responsible_group = (
+            (m.sessions[0].group if m.sessions else None)
+            if m.type_id == "interim"
+            else ietf_group
+        )
+        m.interim_meeting_cancelled = m.type_id == "interim" and all(
+            s.current_status == "canceled" for s in m.sessions
+        )
 
     return meetings
 

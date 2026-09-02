@@ -24,6 +24,7 @@ BLOBDB_REPLICATION = {
 }
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
+IDSUBMIT_IDNITS3_BINARY = "/usr/local/bin/idnits3"
 IDSUBMIT_STAGING_PATH = "/assets/www6s/staging/"
 
 AGENDA_PATH = '/assets/www6s/proceedings/'
@@ -115,6 +116,8 @@ for storagename in ARTIFACT_STORAGE_NAMES:
 APP_API_TOKENS = {
     "ietf.api.red_api" : ["devtoken", "redtoken"],  # Not a real secret
     "ietf.api.views_rpc" : ["devtoken"],  # Not a real secret
+    "ietf.person.api_uuid" : ["devtoken"],  # Not a real secret
+    "ietf.person.api_uuid_by_pk" : ["devtoken"],  # Not a real secret
 }
 
 # Errata system api configuration
