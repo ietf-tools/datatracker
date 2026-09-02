@@ -1,3 +1,31 @@
+FROM debian:trixie AS builder
+
+# Update to the desired release tag
+ARG LIBYANG_TAG=v5.8.6
+
+# Build-time dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        cmake \
+        build-essential \
+        pkg-config \
+        ca-certificates \
+        libpcre2-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+RUN git clone --branch ${LIBYANG_TAG} --depth 1 \
+    https://github.com/CESNET/libyang.git libyang
+
+WORKDIR /src/libyang/build
+RUN cmake \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/opt/libyang \
+        -DBUILD_SHARED_LIBS=ON \
+        .. \
+    && make -j"$(nproc)" \
+    && make install
+
 FROM python:3.12-trixie
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
@@ -8,6 +36,13 @@ ENV NODE_MAJOR=26
 RUN apt-get update \
     && apt-get -qy upgrade \
     && apt-get -y install --no-install-recommends dialog 2>&1
+
+COPY --from=builder /opt/libyang /opt/libyang
+
+RUN echo /opt/libyang/lib > /etc/ld.so.conf.d/libyang.conf \
+    && ldconfig \
+    && ln -s /opt/libyang/bin/yanglint  /usr/bin/yanglint \
+    && ln -s /opt/libyang/bin/yangre    /usr/bin/yangre
 
 # Add Node.js Source
 RUN apt-get install -y --no-install-recommends ca-certificates curl gnupg \
@@ -59,7 +94,6 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 	libmagic-dev \
 	libmariadb-dev \
 	libmemcached-tools \
-	libyang3-tools \
 	locales \
 	make \
 	mariadb-client \
