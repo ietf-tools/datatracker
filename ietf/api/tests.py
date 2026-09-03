@@ -887,31 +887,6 @@ class CustomApiTests(TestCase):
         self.assertEqual(data['dumptime'], "2022-08-31 07:10:01 -0700")
 
 
-    def test_api_appauth(self):
-        for app in ["authortools", "bibxml"]:
-            url = urlreverse('ietf.api.views.app_auth', kwargs={"app": app})
-            person = PersonFactory()
-            apikey = PersonalApiKeyFactory(endpoint=url, person=person)
-    
-            self.client.login(username=person.user.username,password=f'{person.user.username}+password')
-            self.client.logout()
-    
-            # error cases
-            # missing apikey
-            r = self.client.post(url, {})
-            self.assertContains(r, 'Missing apikey parameter', status_code=400)
-    
-            # invalid apikey
-            r = self.client.post(url, {'apikey': 'foobar'})
-            self.assertContains(r, 'Invalid apikey', status_code=403)
-    
-            # working case
-            r = self.client.post(url, {'apikey': apikey.hash()})
-            self.assertEqual(r.status_code, 200)
-            jsondata = r.json()
-            self.assertEqual(jsondata['success'], True)
-            self.client.logout()
-
     @override_settings(APP_API_TOKENS={"ietf.api.views.nfs_metrics": ["valid-token"]})
     def test_api_nfs_metrics(self):
         url = urlreverse("ietf.api.views.nfs_metrics")

@@ -117,8 +117,6 @@ urlpatterns = [
     url(r'^submission/(?P<submission_id>[0-9]+)/status/?', submit_views.api_submission_status),
     # Datatracker version
     url(r'^version/?$', api_views.version),
-    # Application authentication API key
-    url(r'^appauth/(?P<app>authortools|bibxml)$', api_views.app_auth),
     # NFS metrics endpoint
     url(r'^metrics/nfs/?$', api_views.nfs_metrics),
     # latest versions
