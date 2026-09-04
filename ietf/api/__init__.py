@@ -266,7 +266,8 @@ class ToOneField(tastypie.fields.ToOneField):
 # Replace each with its Unicode control picture (U+2400 + codepoint) so the
 # substitution is lossless and the result is valid XML.
 _XML_INVALID_CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
-
+# XML 1.0 also forbids the surrogate blocks and non-chars \ufffe and \uffff 
+_XML_INVALID_UNICODE_RE = re.compile(r"[\ud800-\udfff\ufffe\uffff]")
 
 class Serializer(tastypie.serializers.Serializer):
     OPTION_ESCAPE_XML_INVALID = "datatracker-escape-xml-invalid"
@@ -290,6 +291,8 @@ class Serializer(tastypie.serializers.Serializer):
             simple_data = _XML_INVALID_CTRL_RE.sub(
                 lambda m: chr(ord(m.group()) + 0x2400), simple_data
             )
+            # Replace outright invalid unicode chars with the replacement char
+            simple_data = _XML_INVALID_UNICODE_RE.sub("\uFFFD", simple_data)
         return simple_data
 
     def to_etree(self, data, options=None, name=None, depth=0):
