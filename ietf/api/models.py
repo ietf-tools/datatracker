@@ -9,17 +9,6 @@ from django.db import models
 DEFAULT_TOKEN_LENGTH = 40  # bytes of randomness (actual token is longer due to base64)
 
 
-def _generate_token() -> str:
-    """Generate a default API token"""
-    tries = 50  # implausibly large number of collisions
-    while tries > 0:
-        new_token = secrets.token_urlsafe(DEFAULT_TOKEN_LENGTH)
-        new_hash = AppApiToken.hash(new_token)
-        if not AppApiToken.objects.filter(token=new_hash).exists():
-            return new_token
-        tries = tries - 1
-    # never expected to reach this
-    raise RuntimeError("Unable to generate a unique API token")
 
 
 class AppApiToken(models.Model):
@@ -27,7 +16,6 @@ class AppApiToken(models.Model):
     token = models.CharField(
         max_length=128,
         unique=True,
-        default=_generate_token,
         help_text="API token",
     )
     client = models.CharField(
@@ -46,7 +34,7 @@ class AppApiToken(models.Model):
     def __str__(self) -> str:
         return f"AppApiToken for {self.client}"
 
-    def set_token(self, raw_token: bytes):
+    def set_token(self, raw_token: str):
         self.token = self.hash(raw_token)
 
     @staticmethod
@@ -59,6 +47,19 @@ class AppApiToken(models.Model):
         """
         salt = getattr(settings, "APP_API_TOKEN_SALT_BYTES", b"5a1+Y&+45t`/")
         return hashlib.sha384(salt + token.encode()).hexdigest()
+
+    @classmethod
+    def generate_token(cls) -> str:
+        """Generate a default API token"""
+        tries = 50  # implausibly large number of collisions
+        while tries > 0:
+            new_token = secrets.token_urlsafe(DEFAULT_TOKEN_LENGTH)
+            new_hash = AppApiToken.hash(new_token)
+            if not AppApiToken.objects.filter(token=new_hash).exists():
+                return new_token
+            tries = tries - 1
+        # never expected to reach this
+        raise RuntimeError("Unable to generate a unique API token")
 
 
 class KnownApiEndpoint(models.Model):

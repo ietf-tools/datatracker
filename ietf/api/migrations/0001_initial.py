@@ -53,7 +53,6 @@ class Migration(migrations.Migration):
                 (
                     "token",
                     models.CharField(
-                        default=ietf.api.models._generate_token,
                         help_text="API token",
                         max_length=128,
                         unique=True,

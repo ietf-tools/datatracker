@@ -52,12 +52,13 @@ class AppApiTokenAdmin(admin.ModelAdmin):
     fields = ["client", "description", "enabled", "new_token"]
     exclude = ["endpoints"]
 
-    def save_model(self, request, obj, form, change):
+    def save_model(self, request, obj: AppApiToken, form, change):
         new_token = form.cleaned_data["new_token"]
         if new_token or not change:
-            # obj.token already holds the model-generated default when new_token is
-            # blank on creation - see AppApiToken._generate_token().
-            new_token = new_token or obj.token
+            # Not change => this is a new instance. Give it a default if a token
+            # was not specified.
+            if not new_token:
+                new_token = AppApiToken.generate_token()
             obj.set_token(new_token)
         try:
             # Nested atomic() is a savepoint, so a collision here only rolls back
