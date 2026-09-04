@@ -1,4 +1,5 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
+import datetime
 import json
 from pathlib import Path
 from unittest.mock import PropertyMock, patch
@@ -14,8 +15,8 @@ from ietf.meeting.factories import (
     RegistrationFactory,
     SessionFactory,
 )
-from ietf.meeting.models import Registration, Session
-from ietf.person.factories import EmailFactory, PersonFactory
+from ietf.meeting.models import Attended, Registration, Session
+from ietf.person.factories import EmailFactory, PersonFactory, PersonUUIDFactory
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
 
@@ -176,7 +177,14 @@ TOKEN = "valid-token"
 
 SESSION_DATA_TOKENS = {
     f"ietf.api.meeting.session.{name}": TOKEN
-    for name in ["video_url", "recording_name", "bluesheet", "chatlog", "polls"]
+    for name in [
+        "video_url",
+        "recording_name",
+        "bluesheet",
+        "attendees",
+        "chatlog",
+        "polls",
+    ]
 }
 
 
@@ -224,6 +232,7 @@ class SessionDataApiTests(TestCase):
             "video_url": {"url": "https://example.com/v"},
             "recording_name": {"name": "a-name"},
             "bluesheet": {"bluesheet": []},
+            "attendees": {"attendees": []},
             "chatlog": {"chatlog": []},
             "polls": {"polls": []},
         }
@@ -268,6 +277,7 @@ class SessionDataApiTests(TestCase):
         for name, payload in [
             ("recording_name", {}),
             ("video_url", {"url": "not a url"}),
+            ("attendees", {"attendees": [{"person_uuid": "not-a-uuid"}]}),
             ("chatlog", {"chatlog": "not a list"}),
             ("polls", {"polls": [1, 2, 3]}),
         ]:
@@ -427,3 +437,117 @@ class SessionDataApiTests(TestCase):
             session=self.unscheduled_session(),
         )
         self.assertEqual(r.status_code, 400)
+
+    # --- attendees ---
+
+    def attend(self, entries, session=None):
+        return self.post("attendees", {"attendees": entries}, session=session)
+
+    @staticmethod
+    def attendee(person_uuid, join_time="2024-02-21T18:00:00Z"):
+        return {"person_uuid": str(person_uuid), "join_time": join_time}
+
+    def test_records_attendees_by_uuid(self):
+        people = PersonFactory.create_batch(2)
+        r = self.attend(
+            [
+                self.attendee(people[0].primary_uuid, "2024-02-21T18:00:00Z"),
+                self.attendee(people[1].primary_uuid, "2024-02-21T18:00:01Z"),
+            ]
+        )
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertCountEqual(
+            self.session.attended_set.values_list("person", flat=True),
+            [p.pk for p in people],
+        )
+        self.assertEqual(
+            self.session.attended_set.get(person=people[0]).time,
+            datetime.datetime(2024, 2, 21, 18, 0, 0, tzinfo=datetime.UTC),
+        )
+
+    def test_records_attendee_by_superseded_uuid(self):
+        person = PersonFactory()
+        prior = PersonUUIDFactory(person=person, primary=False)
+        r = self.attend([self.attendee(prior.uuid)])
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertTrue(self.session.attended_set.filter(person=person).exists())
+
+    def test_unknown_attendee_uuid_records_nothing(self):
+        """An unresolvable UUID rejects the whole request"""
+        person = PersonFactory()
+        unknown = "6f9a1c30-6c7e-4f0a-9a3f-2f1d0b8a4e11"
+        r = self.attend(
+            [
+                self.attendee(person.primary_uuid),
+                self.attendee(unknown, "2024-02-21T18:00:01Z"),
+            ]
+        )
+        self.assertEqual(r.status_code, 400)
+        errors = r.json()["errors"]
+        self.assertEqual([e["attr"] for e in errors], ["person_uuid"])
+        self.assertEqual([e["detail"] for e in errors], [unknown])
+        self.assertFalse(self.session.attended_set.exists())
+
+    def test_reports_each_unknown_uuid_once(self):
+        unknown = "6f9a1c30-6c7e-4f0a-9a3f-2f1d0b8a4e11"
+        r = self.attend(
+            [
+                self.attendee(unknown),
+                self.attendee(unknown, "2024-02-21T18:00:01Z"),
+            ]
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual([e["detail"] for e in r.json()["errors"]], [unknown])
+
+    def test_rejects_join_time_without_an_offset(self):
+        """A naive join_time is refused rather than read in the server's timezone"""
+        person = PersonFactory()
+        r = self.attend([self.attendee(person.primary_uuid, "2024-02-21T18:00:00")])
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(
+            [e["attr"] for e in r.json()["errors"]], ["attendees.0.join_time"]
+        )
+        self.assertFalse(self.session.attended_set.exists())
+
+    def test_repeated_attendee_push_keeps_first_join_time(self):
+        person = PersonFactory()
+        for join_time in ["2024-02-21T18:00:00Z", "2024-02-21T19:00:00Z"]:
+            r = self.attend([self.attendee(person.primary_uuid, join_time)])
+            self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual(Attended.objects.filter(session=self.session).count(), 1)
+        self.assertEqual(
+            self.session.attended_set.get(person=person).time,
+            datetime.datetime(2024, 2, 21, 18, 0, 0, tzinfo=datetime.UTC),
+        )
+
+    def test_interim_attendees_generate_bluesheet(self):
+        interim = MeetingFactory(type_id="interim")
+        session = SessionFactory(group__type_id="wg", meeting=interim)
+        person = PersonFactory()
+        r = self.attend([self.attendee(person.primary_uuid)], session=session)
+        self.assertEqual(r.status_code, 200, r.content)
+        doc = session.presentations.get(document__type_id="bluesheets").document
+        self.assertEqual(doc.docevent_set.first().by, self.system)
+        self.assertIn(
+            person.plain_name(),
+            get_unicode_document_content(
+                doc.name,
+                Path(interim.get_materials_path()) / "bluesheets" / doc.uploaded_filename,
+            ),
+        )
+
+    def test_failed_bluesheet_leaves_no_attendees(self):
+        """The Attended rows and the interim bluesheet succeed or fail together"""
+        session = self.unscheduled_session(MeetingFactory(type_id="interim"))
+        person = PersonFactory()
+        r = self.attend([self.attendee(person.primary_uuid)], session=session)
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(session.attended_set.exists())
+
+    def test_ietf_attendees_do_not_generate_bluesheet(self):
+        person = PersonFactory()
+        self.attend([self.attendee(person.primary_uuid)])
+        self.assertFalse(
+            Document.objects.filter(type_id="bluesheets").exists(),
+            "bluesheets for an IETF meeting are generated at finalization",
+        )

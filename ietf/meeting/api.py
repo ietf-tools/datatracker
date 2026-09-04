@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 from django.core.files.base import ContentFile
+from django.db import transaction
 from django.db.models import IntegerField
 from django.db.models.functions import Cast
 from django.template.loader import render_to_string
@@ -9,9 +10,10 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ietf.meeting.models import Meeting, Session
+from ietf.meeting.models import Attended, Meeting, Session
 from ietf.meeting.serializers import (
     PersonAttendedMeetingsSerializer,
+    SessionAttendeesSerializer,
     SessionBluesheetSerializer,
     SessionChatlogSerializer,
     SessionPollsSerializer,
@@ -20,11 +22,12 @@ from ietf.meeting.serializers import (
     SessionVideoUrlSerializer,
 )
 from ietf.meeting.utils import (
+    generate_bluesheet,
     save_bluesheet,
     save_session_json_doc,
     save_session_video_url,
 )
-from ietf.person.models import Person
+from ietf.person.models import Person, PersonUUID
 
 
 class MeetingsAttendedByEmail(generics.RetrieveAPIView):
@@ -184,6 +187,72 @@ class SessionBluesheetView(SessionDataView):
                 Person.objects.get(name="(System)"),
             ),
         )
+
+
+class SessionAttendeesView(SessionDataView):
+    api_key_endpoint = "ietf.api.meeting.session.attendees"
+    request_serializer_class = SessionAttendeesSerializer
+
+    @extend_schema(
+        operation_id="meeting_session_add_attendees",
+        summary="Record attendees for a session",
+        description=(
+            "Records an Attended row per attendee. An attendee already recorded for the "
+            "session keeps their existing join time.\n\n"
+            "Each attendee is identified by any UUID the datatracker has issued them, so "
+            "a UUID superseded by a merge still resolves. If any UUID fails to resolve "
+            "the whole request is rejected and nothing is recorded.\n\n"
+            "join_time must carry an explicit UTC offset.\n\n"
+            "For an interim meeting this also regenerates the session's bluesheet."
+        ),
+        request=SessionAttendeesSerializer,
+        responses={200: SessionUpdatedSerializer},
+    )
+    def post(self, request, session_id):
+        session = self.get_session(session_id)
+        attendees = self.validated(request)["attendees"]
+
+        person_by_uuid = {
+            row.uuid: row.person
+            for row in PersonUUID.objects.filter(
+                uuid__in=[a["person_uuid"] for a in attendees]
+            ).select_related("person")
+        }
+        unresolved = sorted(
+            {
+                str(a["person_uuid"])
+                for a in attendees
+                if a["person_uuid"] not in person_by_uuid
+            }
+        )
+        if unresolved:
+            # All-or-nothing: a partial success leaves the caller unable to tell which
+            # rows landed. TODO: investigate reporting per-attendee outcomes, as the
+            # ietf.person.api_uuid batch endpoints do.
+            raise serializers.ValidationError({"person_uuid": unresolved})
+
+        # One transaction so a bluesheet failure does not leave the Attended rows
+        # behind. Anything the bluesheet step wrote to disk is not rolled back.
+        with transaction.atomic():
+            # ignore_conflicts because attendees are pushed repeatedly as a session runs
+            Attended.objects.bulk_create(
+                [
+                    Attended(
+                        session=session,
+                        person=person_by_uuid[a["person_uuid"]],
+                        time=a["join_time"],
+                    )
+                    for a in attendees
+                ],
+                ignore_conflicts=True,
+            )
+
+            save_error = None
+            if session.meeting.type_id == "interim":
+                save_error = generate_bluesheet(
+                    request, session, Person.objects.get(name="(System)")
+                )
+            return self.applied(session, save_error)
 
 
 class SessionChatlogView(SessionDataView):

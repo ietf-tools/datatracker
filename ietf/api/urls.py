@@ -99,6 +99,11 @@ urlpatterns = [
         name="ietf.api.meeting.session.bluesheet",
     ),
     path(
+        "meeting/session/<int:session_id>/attendees/",
+        meeting_api.SessionAttendeesView.as_view(),
+        name="ietf.api.meeting.session.attendees",
+    ),
+    path(
         "meeting/session/<int:session_id>/chatlog/",
         meeting_api.SessionChatlogView.as_view(),
         name="ietf.api.meeting.session.chatlog",
