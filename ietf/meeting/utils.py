@@ -215,6 +215,8 @@ def save_bluesheet(request, session, file, by, encoding='utf-8'):
     else:
         ota = session.official_timeslotassignment()
         sess_time = ota and ota.timeslot.time
+        if sess_time is None:
+            return "Could not find official timeslot for session"
 
         if session.meeting.type_id=='ietf':
             name = 'bluesheets-%s-%s-%s' % (session.meeting.number, 
