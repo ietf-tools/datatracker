@@ -3323,7 +3323,7 @@ def upload_session_bluesheets(request, session_id, num):
                 )
 
 
-            save_error = save_bluesheet(request, session, file, encoding=form.file_encoding[file.name])
+            save_error = save_bluesheet(request, session, file, request.user.person, encoding=form.file_encoding[file.name])
             if save_error:
                 form.add_error(None, save_error)
             else:
@@ -5296,7 +5296,7 @@ def api_add_session_attendees(request):
             Attended.objects.bulk_create(to_create, ignore_conflicts=True)
 
     if session.meeting.type_id == "interim":
-        save_error = generate_bluesheet(request, session)
+        save_error = generate_bluesheet(request, session, request.user.person)
         if save_error:
             return err(400, save_error)
 
@@ -5460,7 +5460,7 @@ def api_upload_bluesheet(request):
     with open(name, "w") as file:
         file.write(text)
     with open(name, "br") as file:
-        save_err = save_bluesheet(request, session, file)
+        save_err = save_bluesheet(request, session, file, request.user.person)
     if save_err:
         return err(400, save_err)
     return HttpResponse(

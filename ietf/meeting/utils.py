@@ -202,7 +202,7 @@ def bluesheet_data(session):
     ]
 
 
-def save_bluesheet(request, session, file, encoding='utf-8'):
+def save_bluesheet(request, session, file, by, encoding='utf-8'):
     bluesheet_sp = session.presentations.filter(document__type='bluesheets').first()
     _, ext = os.path.splitext(file.name)
 
@@ -236,7 +236,7 @@ def save_bluesheet(request, session, file, encoding='utf-8'):
         session.presentations.create(document=doc,rev='00')
     filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
     doc.uploaded_filename = filename
-    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
+    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=by, type='new_revision', desc='New revision available: %s'%doc.rev)
     save_error = handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=encoding)
     if not save_error:
         doc.save_with_history([e])
@@ -244,7 +244,7 @@ def save_bluesheet(request, session, file, encoding='utf-8'):
     return save_error
 
 
-def generate_bluesheet(request, session):
+def generate_bluesheet(request, session, by):
     data = bluesheet_data(session)
     if not data:
         return
@@ -252,7 +252,7 @@ def generate_bluesheet(request, session):
             'session': session,
             'data': data,
         })
-    return save_bluesheet(request, session, ContentFile(text.encode("utf-8"), name="unusednamepartsothereisanextension.txt"))
+    return save_bluesheet(request, session, ContentFile(text.encode("utf-8"), name="unusednamepartsothereisanextension.txt"), by)
 
 
 def finalize(request, meeting):
@@ -274,7 +274,7 @@ def finalize(request, meeting):
 
         # Don't try to generate a bluesheet if it's before we had Attended records.
         if int(meeting.number) >= 108:
-            save_error = generate_bluesheet(request, session)
+            save_error = generate_bluesheet(request, session, request.user.person)
             if save_error:
                 messages.error(request, save_error)
     
