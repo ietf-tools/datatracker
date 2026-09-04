@@ -177,8 +177,6 @@ from ietf.meeting.utils import (
     swap_meeting_schedule_timeslot_assignments,
     bulk_create_timeslots,
     preprocess_meeting_important_dates,
-    new_doc_for_session,
-    write_doc_for_session,
     get_activity_stats,
     post_process,
     create_recording,
@@ -186,6 +184,8 @@ from ietf.meeting.utils import (
     generate_bluesheet,
     bluesheet_data,
     save_bluesheet,
+    save_session_json_doc,
+    save_session_video_url,
 )
 from ietf.message.utils import infer_message
 from ietf.name.models import (
@@ -5104,18 +5104,9 @@ def api_set_session_video_url(request):
     except ValidationError:
         return err(400, f"Invalid url value: '{incoming_url}'")
 
-    recordings = [(r.name, r.title, r) for r in session.recordings() if 'video' in r.title.lower()]
-    if recordings:
-        r = recordings[-1][-1]
-        if r.external_url != incoming_url:
-            e = DocEvent.objects.create(doc=r, rev=r.rev, type="added_comment", by=request.user.person,
-                                        desc="External url changed from %s to %s" % (r.external_url, incoming_url))
-            r.external_url = incoming_url
-            r.save_with_history([e])
-    else:
-        time = session.official_timeslotassignment().timeslot.time
-        title = 'Video recording for %s on %s at %s' % (session.group.acronym, time.date(), time.time())
-        create_recording(session, incoming_url, title=title, user=request.user.person)
+    save_error = save_session_video_url(session, incoming_url, request.user.person)
+    if save_error:
+        return err(400, save_error)
     return HttpResponse(
         "Done",
         status=200,
@@ -5334,22 +5325,11 @@ def api_upload_chatlog(request):
     session = Session.objects.filter(pk=session_id).first()
     if not session:
         return err(400, "Invalid session")
-    chatlog_sp = session.presentations.filter(document__type='chatlog').first()
-    if chatlog_sp:
-        doc = chatlog_sp.document
-        doc.rev = f"{(int(doc.rev)+1):02d}"
-        chatlog_sp.rev = doc.rev
-        chatlog_sp.save()
-    else:
-        doc = new_doc_for_session('chatlog', session)
-        if doc is None:
-            return err(400, "Could not find official timeslot for session")
-    filename = f"{doc.name}-{doc.rev}.json"
-    doc.uploaded_filename = filename
-    write_doc_for_session(session, 'chatlog', filename, json.dumps(apidata['chatlog']))
-    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
-    doc.save_with_history([e])
-    resolve_uploaded_material(meeting=session.meeting, doc=doc)
+    save_error = save_session_json_doc(
+        session, 'chatlog', apidata['chatlog'], request.user.person
+    )
+    if save_error:
+        return err(400, save_error)
     return HttpResponse(
         "Done",
         status=200,
@@ -5383,22 +5363,11 @@ def api_upload_polls(request):
     session = Session.objects.filter(pk=session_id).first()
     if not session:
         return err(400, "Invalid session")
-    polls_sp = session.presentations.filter(document__type='polls').first()
-    if polls_sp:
-        doc = polls_sp.document
-        doc.rev = f"{(int(doc.rev)+1):02d}"
-        polls_sp.rev = doc.rev
-        polls_sp.save()
-    else:
-        doc = new_doc_for_session('polls', session)
-        if doc is None:
-            return err(400, "Could not find official timeslot for session")
-    filename = f"{doc.name}-{doc.rev}.json"
-    doc.uploaded_filename = filename
-    write_doc_for_session(session, 'polls', filename, json.dumps(apidata['polls']))
-    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
-    doc.save_with_history([e])
-    resolve_uploaded_material(meeting=session.meeting, doc=doc)
+    save_error = save_session_json_doc(
+        session, 'polls', apidata['polls'], request.user.person
+    )
+    if save_error:
+        return err(400, save_error)
     return HttpResponse(
         "Done",
         status=200,
