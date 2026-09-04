@@ -7,8 +7,7 @@ from django.db import models
 
 
 DEFAULT_TOKEN_LENGTH = 40  # bytes of randomness (actual token is longer due to base64)
-
-
+MIN_TOKEN_LENGTH = 20
 
 
 class AppApiToken(models.Model):
@@ -35,6 +34,8 @@ class AppApiToken(models.Model):
         return f"AppApiToken for {self.client}"
 
     def set_token(self, raw_token: str):
+        if len(raw_token) < MIN_TOKEN_LENGTH:
+            raise ValueError(f"Token must be at least {MIN_TOKEN_LENGTH} characters")
         self.token = self.hash(raw_token)
 
     @staticmethod
@@ -47,6 +48,18 @@ class AppApiToken(models.Model):
         """
         salt = getattr(settings, "APP_API_TOKEN_SALT_BYTES", b"5a1+Y&+45t`/")
         return hashlib.sha384(salt + token.encode()).hexdigest()
+
+    def validate_new_token(self, token: str):
+        if len(token) < MIN_TOKEN_LENGTH:
+            raise ValueError(
+                f"Token is too short, must be at least {MIN_TOKEN_LENGTH} characters."
+            )
+        if (
+            AppApiToken.objects.filter(token=AppApiToken.hash(token))
+            .exclude(pk=self.pk)
+            .exists()
+        ):
+            raise ValueError("Token already exists.")
 
     @classmethod
     def generate_token(cls) -> str:

@@ -32,14 +32,10 @@ class AppApiTokenForm(forms.ModelForm):
     def clean_new_token(self):
         new_token = self.cleaned_data["new_token"]
         if new_token:
-            token_hash = AppApiToken.hash(new_token)
-            existing = AppApiToken.objects.filter(token=token_hash)
-            if self.instance.pk:
-                existing = existing.exclude(pk=self.instance.pk)
-            if existing.exists():
-                raise forms.ValidationError(
-                    "This token value is already in use. Enter a different value."
-                )
+            try:
+                self.instance.validate_new_token(new_token)
+            except ValueError as err:
+                raise forms.ValidationError(f"{str(err)} Enter a different value.")
         return new_token
 
 
