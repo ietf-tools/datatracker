@@ -113,6 +113,12 @@ urlpatterns = [
         meeting_api.SessionPollsView.as_view(),
         name="ietf.api.meeting.session.polls",
     ),
+    # Before the email-keyed route below so "by-uuid" is never read as an address.
+    path(
+        "meeting/registration/attended/by-uuid/<anycase_uuid:uuid>/",
+        meeting_api.MeetingsAttendedByUuid.as_view(),
+        name="ietf.api.meeting.registration.attended_by_uuid",
+    ),
     url(r'^meeting/registration/attended/(?P<email>[^/\x00]+)/?$', meeting_api.MeetingsAttendedByEmail.as_view(), name="ietf.api.meeting.registration.attended"),
     # Let MeetEcho upload bluesheets
     url(r'^notify/meeting/bluesheet/?$', meeting_views.api_upload_bluesheet),

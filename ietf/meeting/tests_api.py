@@ -188,6 +188,64 @@ SESSION_DATA_TOKENS = {
 }
 
 
+@override_settings(
+    APP_API_TOKENS={"ietf.api.meeting.registration.attended_by_uuid": TOKEN}
+)
+class MeetingsAttendedByUuidTests(TestCase):
+    VIEWNAME = "ietf.api.meeting.registration.attended_by_uuid"
+
+    def setUp(self):
+        super().setUp()
+        self.person = PersonFactory()
+
+    def get(self, uuid, token=TOKEN):
+        url = urlreverse(self.VIEWNAME, kwargs={"uuid": str(uuid)})
+        return self.client.get(url, headers={"X-Api-Key": token})
+
+    def test_endpoint_is_plumbed(self):
+        url = urlreverse(self.VIEWNAME, kwargs={"uuid": str(self.person.primary_uuid)})
+        self.assertEqual(self.client.get(url).status_code, 403, "should require api key")
+        r = self.client.get(url, headers={"X-Api-Key": "invalid-token"})
+        self.assertEqual(r.status_code, 403, "should require valid api key")
+
+        r = self.get(self.person.primary_uuid)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), {"attended": []})
+
+    def test_unknown_uuid_is_404(self):
+        self.assertEqual(
+            self.get("6f9a1c30-6c7e-4f0a-9a3f-2f1d0b8a4e11").status_code, 404
+        )
+
+    def test_matches_the_email_keyed_endpoint(self):
+        meeting = MeetingFactory(type_id="ietf", number="118", populate_schedule=False)
+        RegistrationFactory(meeting=meeting, person=self.person, attended=True)
+
+        by_uuid = self.get(self.person.primary_uuid).json()
+        with override_settings(
+            APP_API_TOKENS={"ietf.api.meeting.registration.attended": TOKEN}
+        ):
+            by_email = self.client.get(
+                urlreverse(
+                    "ietf.api.meeting.registration.attended",
+                    kwargs={"email": self.person.email_address()},
+                ),
+                headers={"X-Api-Key": TOKEN},
+            )
+        self.assertEqual([e["meeting"] for e in by_uuid["attended"]], ["118"])
+        self.assertEqual(by_uuid, by_email.json())
+
+    def test_superseded_uuid_resolves(self):
+        """A UUID that stopped being primary because of a merge still resolves"""
+        meeting = MeetingFactory(type_id="ietf", number="118", populate_schedule=False)
+        RegistrationFactory(meeting=meeting, person=self.person, attended=True)
+        prior = PersonUUIDFactory(person=self.person, primary=False)
+
+        r = self.get(prior.uuid)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual([e["meeting"] for e in r.json()["attended"]], ["118"])
+
+
 @override_settings(APP_API_TOKENS=SESSION_DATA_TOKENS)
 class SessionDataApiTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [

@@ -3,8 +3,9 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import IntegerField
 from django.db.models.functions import Cast
+from django.http import Http404
 from django.template.loader import render_to_string
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, serializers, status
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
@@ -28,6 +29,37 @@ from ietf.meeting.utils import (
     save_session_video_url,
 )
 from ietf.person.models import Person, PersonUUID
+from ietf.person.utils import get_person_uuid_object
+
+
+def attended_registrations(person: Person):
+    meetings_with_data = (
+        Meeting.objects.filter(type="ietf")
+        .annotate(number_as_int=Cast("number", output_field=IntegerField()))
+        .exclude(number_as_int__lt=110)
+        .values_list("pk")
+    )
+    has_attended_record = (
+        person.attended_set.filter(
+            session__meeting_id__in=meetings_with_data,
+            session__meeting__type="ietf",
+        )
+        .values_list("session__meeting__id", flat=True)
+        .distinct()
+    )
+    return sorted(
+        [
+            reg
+            for reg in (
+                person.registration_set.onsite_or_remote()
+                .with_plenary_ticket_details()
+                .filter(meeting_id__in=meetings_with_data)
+                .select_related("meeting")
+            )
+            if (reg.attended or reg.checkedin or reg.meeting_id in has_attended_record)
+        ],
+        key=lambda reg: reg.meeting.date,
+    )
 
 
 class MeetingsAttendedByEmail(generics.RetrieveAPIView):
@@ -45,42 +77,43 @@ class MeetingsAttendedByEmail(generics.RetrieveAPIView):
     def get_object(self):
         person = super().get_object()
         assert isinstance(person, Person)
-        person.attended_registrations = self._attended_registrations(person)
+        person.attended_registrations = attended_registrations(person)
         return person
 
-    @staticmethod
-    def _attended_registrations(person: Person):
-        meetings_with_data = (
-            Meeting.objects.filter(type="ietf")
-            .annotate(number_as_int=Cast("number", output_field=IntegerField()))
-            .exclude(number_as_int__lt=110)
-            .values_list("pk")
-        )
-        has_attended_record = (
-            person.attended_set.filter(
-                session__meeting_id__in=meetings_with_data,
-                session__meeting__type="ietf",
-            )
-            .values_list("session__meeting__id", flat=True)
-            .distinct()
-        )
-        return sorted(
-            [
-                reg
-                for reg in (
-                    person.registration_set.onsite_or_remote()
-                    .with_plenary_ticket_details()
-                    .filter(meeting_id__in=meetings_with_data)
-                    .select_related("meeting")
-                )
-                if (
-                    reg.attended
-                    or reg.checkedin
-                    or reg.meeting_id in has_attended_record
-                )
-            ],
-            key=lambda reg: reg.meeting.date,
-        )
+
+@extend_schema(tags=["meeting"])
+@extend_schema_view(
+    get=extend_schema(
+        operation_id="meeting_registration_attended_by_uuid",
+        summary="List the IETF meetings a person attended",
+        description=(
+            "Lists the person's attended IETF meeting registrations from IETF 110 "
+            "onwards, which is where these records took their modern form.\n\n"
+            "Accepts any UUID the datatracker has issued for the person, so a UUID that "
+            "stopped being primary because of a merge still resolves. A 404 means no "
+            "person has this UUID."
+        ),
+        responses={200: PersonAttendedMeetingsSerializer},
+    )
+)
+class MeetingsAttendedByUuid(generics.RetrieveAPIView):
+    """List meetings attended by a person identified by Person UUID
+
+    The UUID-keyed counterpart of MeetingsAttendedByEmail. An email address identifies a
+    person only until they stop using it; a UUID the datatracker issued always resolves.
+    """
+
+    queryset = Person.objects.all()
+    serializer_class = PersonAttendedMeetingsSerializer
+    api_key_endpoint = "ietf.api.meeting.registration.attended_by_uuid"
+
+    def get_object(self):
+        person_uuid = get_person_uuid_object(self.kwargs["uuid"])
+        if person_uuid is None:
+            raise Http404("No such person identifier")
+        person = person_uuid.person
+        person.attended_registrations = attended_registrations(person)
+        return person
 
 
 @extend_schema(tags=["meeting"])
