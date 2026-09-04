@@ -1,16 +1,23 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
+import datetime
+import json
+from pathlib import Path
 from unittest.mock import PropertyMock, patch
 
 from django.test import override_settings
 from django.urls import reverse as urlreverse
 
+from ietf.doc.models import Document
+from ietf.doc.utils import get_unicode_document_content
 from ietf.meeting.factories import (
     AttendedFactory,
     MeetingFactory,
     RegistrationFactory,
+    SessionFactory,
 )
-from ietf.meeting.models import Registration
-from ietf.person.factories import EmailFactory, PersonFactory
+from ietf.meeting.models import Attended, Registration, Session
+from ietf.person.factories import EmailFactory, PersonFactory, PersonUUIDFactory
+from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
 
 
@@ -164,3 +171,441 @@ class MeetingsAttendedByEmailTests(TestCase):
         attended = self.attended_for()
         self.assertEqual([entry["meeting"] for entry in attended], ["118"])
         self.assertEqual({entry["attendance_type"] for entry in attended}, {"onsite"})
+
+
+TOKEN = "valid-token"
+
+SESSION_DATA_TOKENS = {
+    f"ietf.api.meeting.session.{name}": TOKEN
+    for name in [
+        "video_url",
+        "recording_name",
+        "bluesheet",
+        "attendees",
+        "chatlog",
+        "polls",
+    ]
+}
+
+
+@override_settings(
+    APP_API_TOKENS={"ietf.api.meeting.registration.attended_by_uuid": TOKEN}
+)
+class MeetingsAttendedByUuidTests(TestCase):
+    VIEWNAME = "ietf.api.meeting.registration.attended_by_uuid"
+
+    def setUp(self):
+        super().setUp()
+        self.person = PersonFactory()
+
+    def get(self, uuid, token=TOKEN):
+        url = urlreverse(self.VIEWNAME, kwargs={"uuid": str(uuid)})
+        return self.client.get(url, headers={"X-Api-Key": token})
+
+    def test_endpoint_is_plumbed(self):
+        url = urlreverse(self.VIEWNAME, kwargs={"uuid": str(self.person.primary_uuid)})
+        self.assertEqual(self.client.get(url).status_code, 403, "should require api key")
+        r = self.client.get(url, headers={"X-Api-Key": "invalid-token"})
+        self.assertEqual(r.status_code, 403, "should require valid api key")
+
+        r = self.get(self.person.primary_uuid)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), {"attended": []})
+
+    def test_unknown_uuid_is_404(self):
+        self.assertEqual(
+            self.get("6f9a1c30-6c7e-4f0a-9a3f-2f1d0b8a4e11").status_code, 404
+        )
+
+    def test_matches_the_email_keyed_endpoint(self):
+        meeting = MeetingFactory(type_id="ietf", number="118", populate_schedule=False)
+        RegistrationFactory(meeting=meeting, person=self.person, attended=True)
+
+        by_uuid = self.get(self.person.primary_uuid).json()
+        with override_settings(
+            APP_API_TOKENS={"ietf.api.meeting.registration.attended": TOKEN}
+        ):
+            by_email = self.client.get(
+                urlreverse(
+                    "ietf.api.meeting.registration.attended",
+                    kwargs={"email": self.person.email_address()},
+                ),
+                headers={"X-Api-Key": TOKEN},
+            )
+        self.assertEqual([e["meeting"] for e in by_uuid["attended"]], ["118"])
+        self.assertEqual(by_uuid, by_email.json())
+
+    def test_superseded_uuid_resolves(self):
+        """A UUID that stopped being primary because of a merge still resolves"""
+        meeting = MeetingFactory(type_id="ietf", number="118", populate_schedule=False)
+        RegistrationFactory(meeting=meeting, person=self.person, attended=True)
+        prior = PersonUUIDFactory(person=self.person, primary=False)
+
+        r = self.get(prior.uuid)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual([e["meeting"] for e in r.json()["attended"]], ["118"])
+
+
+@override_settings(APP_API_TOKENS=SESSION_DATA_TOKENS)
+class SessionDataApiTests(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [
+        "AGENDA_PATH"
+    ]
+
+    def setUp(self):
+        super().setUp()
+        self.meeting = MeetingFactory(type_id="ietf")
+        self.session = SessionFactory(group__type_id="wg", meeting=self.meeting)
+        self.system = Person.objects.get(name="(System)")
+
+    def url(self, name, session=None):
+        return urlreverse(
+            f"ietf.api.meeting.session.{name}",
+            kwargs={"session_id": (session or self.session).pk},
+        )
+
+    def post(self, name, payload, token=TOKEN, session=None):
+        return self.client.post(
+            self.url(name, session=session),
+            data=json.dumps(payload),
+            content_type="application/json",
+            headers={"X-Api-Key": token},
+        )
+
+    def unscheduled_session(self, meeting=None):
+        return SessionFactory(
+            group__type_id="wg",
+            meeting=meeting or self.meeting,
+            add_to_schedule=False,
+        )
+
+    def materials(self, type_id, doc):
+        path = Path(self.meeting.get_materials_path()) / type_id / doc.uploaded_filename
+        return get_unicode_document_content(doc.name, path)
+
+    # --- plumbing, shared by every endpoint in this group ---
+
+    def test_endpoints_are_plumbed(self):
+        payloads = {
+            "video_url": {"url": "https://example.com/v"},
+            "recording_name": {"name": "a-name"},
+            "bluesheet": {"bluesheet": []},
+            "attendees": {"attendees": []},
+            "chatlog": {"chatlog": []},
+            "polls": {"polls": []},
+        }
+        for name, payload in payloads.items():
+            with self.subTest(endpoint=name):
+                r = self.client.post(
+                    self.url(name),
+                    data=json.dumps(payload),
+                    content_type="application/json",
+                )
+                self.assertEqual(r.status_code, 403, "should require api key")
+
+                r = self.post(name, payload, token="invalid-token")
+                self.assertEqual(r.status_code, 403, "should require valid api key")
+
+                r = self.post(name, payload)
+                self.assertEqual(r.status_code, 200, r.content)
+                self.assertEqual(r.json(), {"session_id": self.session.pk})
+
+                self.assertEqual(
+                    self.client.get(
+                        self.url(name), headers={"X-Api-Key": TOKEN}
+                    ).status_code,
+                    405,
+                    "should not accept GET",
+                )
+
+    def test_unknown_session_is_404(self):
+        missing = Session.objects.order_by("-pk").first().pk + 1
+        r = self.client.post(
+            urlreverse(
+                "ietf.api.meeting.session.recording_name",
+                kwargs={"session_id": missing},
+            ),
+            data=json.dumps({"name": "a-name"}),
+            content_type="application/json",
+            headers={"X-Api-Key": TOKEN},
+        )
+        self.assertEqual(r.status_code, 404)
+
+    def test_malformed_payload_is_400(self):
+        for name, payload in [
+            ("recording_name", {}),
+            ("video_url", {"url": "not a url"}),
+            ("attendees", {"attendees": [{"person_uuid": "not-a-uuid"}]}),
+            ("chatlog", {"chatlog": "not a list"}),
+            ("polls", {"polls": [1, 2, 3]}),
+        ]:
+            with self.subTest(endpoint=name):
+                self.assertEqual(self.post(name, payload).status_code, 400)
+
+    # --- recording name ---
+
+    def test_sets_recording_name(self):
+        self.post("recording_name", {"name": "the-recording"})
+        self.session.refresh_from_db()
+        self.assertEqual(self.session.meetecho_recording_name, "the-recording")
+
+    def test_rejects_recording_name_the_column_cannot_hold(self):
+        r = self.post("recording_name", {"name": "x" * 65})
+        self.assertEqual(r.status_code, 400)
+        self.session.refresh_from_db()
+        self.assertEqual(self.session.meetecho_recording_name, "")
+
+    # --- video url ---
+
+    def test_creates_video_recording(self):
+        self.post("video_url", {"url": "https://example.com/first"})
+        recordings = [
+            d for d in self.session.recordings() if "video" in d.title.lower()
+        ]
+        self.assertEqual(len(recordings), 1)
+        self.assertEqual(recordings[0].external_url, "https://example.com/first")
+        self.assertEqual(
+            recordings[0].docevent_set.first().by,
+            self.system,
+            "events are attributed to the (System) person",
+        )
+
+    def test_updates_existing_video_recording(self):
+        self.post("video_url", {"url": "https://example.com/first"})
+        self.post("video_url", {"url": "https://example.com/second"})
+        recordings = [
+            d for d in self.session.recordings() if "video" in d.title.lower()
+        ]
+        self.assertEqual(len(recordings), 1, "no second recording document")
+        self.assertEqual(recordings[0].external_url, "https://example.com/second")
+        self.assertTrue(
+            recordings[0]
+            .docevent_set.filter(type="added_comment", by=self.system)
+            .exists()
+        )
+
+    def test_rejects_video_url_the_column_cannot_hold(self):
+        """An over-long URL is refused before any document or event is written"""
+        r = self.post("video_url", {"url": "https://example.com/" + "a" * 250})
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(self.session.recordings())
+
+    def test_rejects_video_url_update_the_column_cannot_hold(self):
+        """The update path refuses it too, leaving the recording and its history alone"""
+        self.post("video_url", {"url": "https://example.com/first"})
+        doc = self.session.recordings()[0]
+        events_before = doc.docevent_set.count()
+
+        r = self.post("video_url", {"url": "https://example.com/" + "a" * 250})
+        self.assertEqual(r.status_code, 400)
+        doc.refresh_from_db()
+        self.assertEqual(doc.external_url, "https://example.com/first")
+        self.assertEqual(doc.docevent_set.count(), events_before)
+
+    def test_video_url_without_official_timeslot_is_400(self):
+        r = self.post(
+            "video_url",
+            {"url": "https://example.com/v"},
+            session=self.unscheduled_session(),
+        )
+        self.assertEqual(r.status_code, 400)
+
+    # --- bluesheet ---
+
+    def test_uploads_bluesheet(self):
+        r = self.post(
+            "bluesheet",
+            {
+                "bluesheet": [
+                    {"name": "Some Body", "affiliation": "Some Organization"},
+                    {"name": "Another Body", "affiliation": ""},
+                ]
+            },
+        )
+        self.assertEqual(r.status_code, 200, r.content)
+        doc = self.session.presentations.get(document__type_id="bluesheets").document
+        self.assertEqual(doc.rev, "00")
+        content = self.materials("bluesheets", doc)
+        self.assertIn("Some Body", content)
+        self.assertIn("Some Organization", content)
+        self.assertIn("Another Body", content)
+        self.assertEqual(doc.docevent_set.first().by, self.system)
+
+    def test_bluesheet_upload_bumps_revision(self):
+        self.post("bluesheet", {"bluesheet": [{"name": "Some Body"}]})
+        self.post("bluesheet", {"bluesheet": [{"name": "Another Body"}]})
+        doc = self.session.presentations.get(document__type_id="bluesheets").document
+        self.assertEqual(doc.rev, "01")
+        self.assertIn("Another Body", self.materials("bluesheets", doc))
+
+    def test_bluesheet_without_official_timeslot_is_400(self):
+        r = self.post(
+            "bluesheet",
+            {"bluesheet": [{"name": "Some Body"}]},
+            session=self.unscheduled_session(),
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(Document.objects.filter(type_id="bluesheets").exists())
+
+    # --- chatlog and polls ---
+
+    def test_uploads_chatlog(self):
+        chatlog = [
+            {
+                "author": "Some Body",
+                "text": "<p>a remark</p>",
+                "time": "2022-07-28T19:26:16Z",
+            }
+        ]
+        r = self.post("chatlog", {"chatlog": chatlog})
+        self.assertEqual(r.status_code, 200, r.content)
+        doc = self.session.presentations.get(document__type_id="chatlog").document
+        self.assertEqual(json.loads(self.materials("chatlog", doc)), chatlog)
+        self.assertEqual(doc.docevent_set.first().by, self.system)
+
+    def test_uploads_polls(self):
+        polls = [
+            {
+                "start_time": "2022-07-28T19:19:54Z",
+                "end_time": "2022-07-28T19:20:23Z",
+                "text": "Are you willing to review the documents?",
+                "raise_hand": 57,
+                "do_not_raise_hand": 11,
+            }
+        ]
+        r = self.post("polls", {"polls": polls})
+        self.assertEqual(r.status_code, 200, r.content)
+        doc = self.session.presentations.get(document__type_id="polls").document
+        self.assertEqual(json.loads(self.materials("polls", doc)), polls)
+
+    def test_chatlog_upload_bumps_revision(self):
+        self.post("chatlog", {"chatlog": [{"author": "A", "text": "one"}]})
+        self.post("chatlog", {"chatlog": [{"author": "A", "text": "two"}]})
+        doc = self.session.presentations.get(document__type_id="chatlog").document
+        self.assertEqual(doc.rev, "01")
+        self.assertEqual(
+            json.loads(self.materials("chatlog", doc)),
+            [{"author": "A", "text": "two"}],
+        )
+
+    def test_chatlog_without_official_timeslot_is_400(self):
+        r = self.post(
+            "chatlog",
+            {"chatlog": []},
+            session=self.unscheduled_session(),
+        )
+        self.assertEqual(r.status_code, 400)
+
+    # --- attendees ---
+
+    def attend(self, entries, session=None):
+        return self.post("attendees", {"attendees": entries}, session=session)
+
+    @staticmethod
+    def attendee(person_uuid, join_time="2024-02-21T18:00:00Z"):
+        return {"person_uuid": str(person_uuid), "join_time": join_time}
+
+    def test_records_attendees_by_uuid(self):
+        people = PersonFactory.create_batch(2)
+        r = self.attend(
+            [
+                self.attendee(people[0].primary_uuid, "2024-02-21T18:00:00Z"),
+                self.attendee(people[1].primary_uuid, "2024-02-21T18:00:01Z"),
+            ]
+        )
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertCountEqual(
+            self.session.attended_set.values_list("person", flat=True),
+            [p.pk for p in people],
+        )
+        self.assertEqual(
+            self.session.attended_set.get(person=people[0]).time,
+            datetime.datetime(2024, 2, 21, 18, 0, 0, tzinfo=datetime.UTC),
+        )
+
+    def test_records_attendee_by_superseded_uuid(self):
+        person = PersonFactory()
+        prior = PersonUUIDFactory(person=person, primary=False)
+        r = self.attend([self.attendee(prior.uuid)])
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertTrue(self.session.attended_set.filter(person=person).exists())
+
+    def test_unknown_attendee_uuid_records_nothing(self):
+        """An unresolvable UUID rejects the whole request"""
+        person = PersonFactory()
+        unknown = "6f9a1c30-6c7e-4f0a-9a3f-2f1d0b8a4e11"
+        r = self.attend(
+            [
+                self.attendee(person.primary_uuid),
+                self.attendee(unknown, "2024-02-21T18:00:01Z"),
+            ]
+        )
+        self.assertEqual(r.status_code, 400)
+        errors = r.json()["errors"]
+        self.assertEqual([e["attr"] for e in errors], ["person_uuid"])
+        self.assertEqual([e["detail"] for e in errors], [unknown])
+        self.assertFalse(self.session.attended_set.exists())
+
+    def test_reports_each_unknown_uuid_once(self):
+        unknown = "6f9a1c30-6c7e-4f0a-9a3f-2f1d0b8a4e11"
+        r = self.attend(
+            [
+                self.attendee(unknown),
+                self.attendee(unknown, "2024-02-21T18:00:01Z"),
+            ]
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual([e["detail"] for e in r.json()["errors"]], [unknown])
+
+    def test_rejects_join_time_without_an_offset(self):
+        """A naive join_time is refused rather than read in the server's timezone"""
+        person = PersonFactory()
+        r = self.attend([self.attendee(person.primary_uuid, "2024-02-21T18:00:00")])
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(
+            [e["attr"] for e in r.json()["errors"]], ["attendees.0.join_time"]
+        )
+        self.assertFalse(self.session.attended_set.exists())
+
+    def test_repeated_attendee_push_keeps_first_join_time(self):
+        person = PersonFactory()
+        for join_time in ["2024-02-21T18:00:00Z", "2024-02-21T19:00:00Z"]:
+            r = self.attend([self.attendee(person.primary_uuid, join_time)])
+            self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual(Attended.objects.filter(session=self.session).count(), 1)
+        self.assertEqual(
+            self.session.attended_set.get(person=person).time,
+            datetime.datetime(2024, 2, 21, 18, 0, 0, tzinfo=datetime.UTC),
+        )
+
+    def test_interim_attendees_generate_bluesheet(self):
+        interim = MeetingFactory(type_id="interim")
+        session = SessionFactory(group__type_id="wg", meeting=interim)
+        person = PersonFactory()
+        r = self.attend([self.attendee(person.primary_uuid)], session=session)
+        self.assertEqual(r.status_code, 200, r.content)
+        doc = session.presentations.get(document__type_id="bluesheets").document
+        self.assertEqual(doc.docevent_set.first().by, self.system)
+        self.assertIn(
+            person.plain_name(),
+            get_unicode_document_content(
+                doc.name,
+                Path(interim.get_materials_path()) / "bluesheets" / doc.uploaded_filename,
+            ),
+        )
+
+    def test_failed_bluesheet_leaves_no_attendees(self):
+        """The Attended rows and the interim bluesheet succeed or fail together"""
+        session = self.unscheduled_session(MeetingFactory(type_id="interim"))
+        person = PersonFactory()
+        r = self.attend([self.attendee(person.primary_uuid)], session=session)
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(session.attended_set.exists())
+
+    def test_ietf_attendees_do_not_generate_bluesheet(self):
+        person = PersonFactory()
+        self.attend([self.attendee(person.primary_uuid)])
+        self.assertFalse(
+            Document.objects.filter(type_id="bluesheets").exists(),
+            "bluesheets for an IETF meeting are generated at finalization",
+        )

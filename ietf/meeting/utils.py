@@ -5,6 +5,7 @@ import itertools
 from contextlib import suppress
 from dataclasses import dataclass
 
+import json
 import jsonschema
 import os
 import requests
@@ -202,7 +203,7 @@ def bluesheet_data(session):
     ]
 
 
-def save_bluesheet(request, session, file, encoding='utf-8'):
+def save_bluesheet(request, session, file, by, encoding='utf-8'):
     bluesheet_sp = session.presentations.filter(document__type='bluesheets').first()
     _, ext = os.path.splitext(file.name)
 
@@ -214,6 +215,8 @@ def save_bluesheet(request, session, file, encoding='utf-8'):
     else:
         ota = session.official_timeslotassignment()
         sess_time = ota and ota.timeslot.time
+        if sess_time is None:
+            return "Could not find official timeslot for session"
 
         if session.meeting.type_id=='ietf':
             name = 'bluesheets-%s-%s-%s' % (session.meeting.number, 
@@ -236,7 +239,7 @@ def save_bluesheet(request, session, file, encoding='utf-8'):
         session.presentations.create(document=doc,rev='00')
     filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
     doc.uploaded_filename = filename
-    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
+    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=by, type='new_revision', desc='New revision available: %s'%doc.rev)
     save_error = handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=encoding)
     if not save_error:
         doc.save_with_history([e])
@@ -244,7 +247,7 @@ def save_bluesheet(request, session, file, encoding='utf-8'):
     return save_error
 
 
-def generate_bluesheet(request, session):
+def generate_bluesheet(request, session, by):
     data = bluesheet_data(session)
     if not data:
         return
@@ -252,7 +255,7 @@ def generate_bluesheet(request, session):
             'session': session,
             'data': data,
         })
-    return save_bluesheet(request, session, ContentFile(text.encode("utf-8"), name="unusednamepartsothereisanextension.txt"))
+    return save_bluesheet(request, session, ContentFile(text.encode("utf-8"), name="unusednamepartsothereisanextension.txt"), by)
 
 
 def finalize(request, meeting):
@@ -274,7 +277,7 @@ def finalize(request, meeting):
 
         # Don't try to generate a bluesheet if it's before we had Attended records.
         if int(meeting.number) >= 108:
-            save_error = generate_bluesheet(request, session)
+            save_error = generate_bluesheet(request, session, request.user.person)
             if save_error:
                 messages.error(request, save_error)
     
@@ -854,6 +857,37 @@ def new_doc_for_session(type_id, session):
     session.presentations.create(document=doc,rev='00')
     return doc
 
+
+def save_session_json_doc(session, type_id, data, by):
+    """Store a chatlog or polls upload as a new revision of the session's document
+
+    Returns an error message, or None on success.
+    """
+    presentation = session.presentations.filter(document__type=type_id).first()
+    if presentation:
+        doc = presentation.document
+        doc.rev = f"{(int(doc.rev)+1):02d}"
+        presentation.rev = doc.rev
+        presentation.save()
+    else:
+        doc = new_doc_for_session(type_id, session)
+        if doc is None:
+            return "Could not find official timeslot for session"
+    filename = f"{doc.name}-{doc.rev}.json"
+    doc.uploaded_filename = filename
+    write_doc_for_session(session, type_id, filename, json.dumps(data))
+    e = NewRevisionDocEvent.objects.create(
+        doc=doc,
+        rev=doc.rev,
+        by=by,
+        type="new_revision",
+        desc="New revision available: %s" % doc.rev,
+    )
+    doc.save_with_history([e])
+    resolve_uploaded_material(meeting=session.meeting, doc=doc)
+    return None
+
+
 # TODO-BLOBSTORE - consider adding doc to this signature and factoring away type_id
 def write_doc_for_session(session, type_id, filename, contents):
     filename = Path(filename)
@@ -1198,6 +1232,39 @@ def store_blobs_for_one_meeting(meeting: Meeting):
 
     for doc in meeting_documents:
         store_blobs_for_one_material_doc(doc)
+
+
+def save_session_video_url(session, url, by):
+    """Point the session's video recording at url
+
+    Updates the newest existing video recording, or creates one. Returns an error
+    message, or None on success.
+    """
+    recordings = [r for r in session.recordings() if "video" in r.title.lower()]
+    if recordings:
+        doc = recordings[-1]
+        if doc.external_url != url:
+            e = DocEvent.objects.create(
+                doc=doc,
+                rev=doc.rev,
+                type="added_comment",
+                by=by,
+                desc="External url changed from %s to %s" % (doc.external_url, url),
+            )
+            doc.external_url = url
+            doc.save_with_history([e])
+        return None
+    ota = session.official_timeslotassignment()
+    if ota is None:
+        return "Could not find official timeslot for session"
+    time = ota.timeslot.time
+    title = "Video recording for %s on %s at %s" % (
+        session.group.acronym,
+        time.date(),
+        time.time(),
+    )
+    create_recording(session, url, title=title, user=by)
+    return None
 
 
 def create_recording(session, url, title=None, user=None):
