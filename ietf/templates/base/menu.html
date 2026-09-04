@@ -441,29 +441,48 @@
         <ul class="dropdown-menu">
             <li>
                 <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
-                   href="{% url 'ietf.stats.views.document_stats' %}">
-                    I-Ds/RFCs
+                   href="{% url 'ietf.stats.views_authors.authors_total' doc_type='rfc' stats_type='affiliation' %}">
+                    Authors
+                </a>
+            </li>            
+            <li>
+                <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
+                   href="{% url 'ietf.stats.views_documents.documents_total' doc_type='rfc' stats_type='level' %}">
+                    Documents
                 </a>
             </li>
             <li>
                 <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
-                   href="{% url 'ietf.stats.views.meetings_timeline' %}">
+                   href="{% url 'ietf.stats.views_meetings.meetings_timeline' %}">
                     Meetings
                 </a>
             </li>
             {% if user and user.is_authenticated %}
                 <li>
                     <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
-                       href="{% url "ietf.stats.views.review_stats" %}">
+                       href="{% url "ietf.stats.views_reviews.review_stats" %}">
                         Reviews
                     </a>
                 </li>
             {% endif %}
             {% if user|has_role:"LLC Staff" %}
+                {% if flavor == 'top' %}<li><hr class="dropdown-divider"></li>{% endif %}
                 <li>
                     <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
                        href="{% url "ietf.stats.views.annual_report_inputs" %}">
                         Annual report inputs
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
+                       href="{% url "ietf.stats.views.known_countries_list" %}">
+                        Known countries
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
+                       href="{% url "ietf.stats.views.used_affiliations_list" %}">
+                        Used affiliations
                     </a>
                 </li>
             {% endif %}
