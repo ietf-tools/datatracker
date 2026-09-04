@@ -81,6 +81,33 @@ urlpatterns = [
     url(r'^meeting/(?P<num>[A-Za-z0-9._+-]+)/agenda-data$', meeting_views.api_get_agenda_data),
     # Meeting session materials
     url(r'^meeting/session/(?P<session_id>[A-Za-z0-9._+-]+)/materials$', meeting_views.api_get_session_materials),
+    # Session data pushed by the conference system. api-key authenticated
+    # counterparts of the personal-api-key endpoints above.
+    path(
+        "meeting/session/<int:session_id>/video-url/",
+        meeting_api.SessionVideoUrlView.as_view(),
+        name="ietf.api.meeting.session.video_url",
+    ),
+    path(
+        "meeting/session/<int:session_id>/recording-name/",
+        meeting_api.SessionRecordingNameView.as_view(),
+        name="ietf.api.meeting.session.recording_name",
+    ),
+    path(
+        "meeting/session/<int:session_id>/bluesheet/",
+        meeting_api.SessionBluesheetView.as_view(),
+        name="ietf.api.meeting.session.bluesheet",
+    ),
+    path(
+        "meeting/session/<int:session_id>/chatlog/",
+        meeting_api.SessionChatlogView.as_view(),
+        name="ietf.api.meeting.session.chatlog",
+    ),
+    path(
+        "meeting/session/<int:session_id>/polls/",
+        meeting_api.SessionPollsView.as_view(),
+        name="ietf.api.meeting.session.polls",
+    ),
     url(r'^meeting/registration/attended/(?P<email>[^/\x00]+)/?$', meeting_api.MeetingsAttendedByEmail.as_view(), name="ietf.api.meeting.registration.attended"),
     # Let MeetEcho upload bluesheets
     url(r'^notify/meeting/bluesheet/?$', meeting_views.api_upload_bluesheet),

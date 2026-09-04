@@ -1,16 +1,22 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
+import json
+from pathlib import Path
 from unittest.mock import PropertyMock, patch
 
 from django.test import override_settings
 from django.urls import reverse as urlreverse
 
+from ietf.doc.models import Document
+from ietf.doc.utils import get_unicode_document_content
 from ietf.meeting.factories import (
     AttendedFactory,
     MeetingFactory,
     RegistrationFactory,
+    SessionFactory,
 )
-from ietf.meeting.models import Registration
+from ietf.meeting.models import Registration, Session
 from ietf.person.factories import EmailFactory, PersonFactory
+from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
 
 
@@ -164,3 +170,260 @@ class MeetingsAttendedByEmailTests(TestCase):
         attended = self.attended_for()
         self.assertEqual([entry["meeting"] for entry in attended], ["118"])
         self.assertEqual({entry["attendance_type"] for entry in attended}, {"onsite"})
+
+
+TOKEN = "valid-token"
+
+SESSION_DATA_TOKENS = {
+    f"ietf.api.meeting.session.{name}": TOKEN
+    for name in ["video_url", "recording_name", "bluesheet", "chatlog", "polls"]
+}
+
+
+@override_settings(APP_API_TOKENS=SESSION_DATA_TOKENS)
+class SessionDataApiTests(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [
+        "AGENDA_PATH"
+    ]
+
+    def setUp(self):
+        super().setUp()
+        self.meeting = MeetingFactory(type_id="ietf")
+        self.session = SessionFactory(group__type_id="wg", meeting=self.meeting)
+        self.system = Person.objects.get(name="(System)")
+
+    def url(self, name, session=None):
+        return urlreverse(
+            f"ietf.api.meeting.session.{name}",
+            kwargs={"session_id": (session or self.session).pk},
+        )
+
+    def post(self, name, payload, token=TOKEN, session=None):
+        return self.client.post(
+            self.url(name, session=session),
+            data=json.dumps(payload),
+            content_type="application/json",
+            headers={"X-Api-Key": token},
+        )
+
+    def unscheduled_session(self, meeting=None):
+        return SessionFactory(
+            group__type_id="wg",
+            meeting=meeting or self.meeting,
+            add_to_schedule=False,
+        )
+
+    def materials(self, type_id, doc):
+        path = Path(self.meeting.get_materials_path()) / type_id / doc.uploaded_filename
+        return get_unicode_document_content(doc.name, path)
+
+    # --- plumbing, shared by every endpoint in this group ---
+
+    def test_endpoints_are_plumbed(self):
+        payloads = {
+            "video_url": {"url": "https://example.com/v"},
+            "recording_name": {"name": "a-name"},
+            "bluesheet": {"bluesheet": []},
+            "chatlog": {"chatlog": []},
+            "polls": {"polls": []},
+        }
+        for name, payload in payloads.items():
+            with self.subTest(endpoint=name):
+                r = self.client.post(
+                    self.url(name),
+                    data=json.dumps(payload),
+                    content_type="application/json",
+                )
+                self.assertEqual(r.status_code, 403, "should require api key")
+
+                r = self.post(name, payload, token="invalid-token")
+                self.assertEqual(r.status_code, 403, "should require valid api key")
+
+                r = self.post(name, payload)
+                self.assertEqual(r.status_code, 200, r.content)
+                self.assertEqual(r.json(), {"session_id": self.session.pk})
+
+                self.assertEqual(
+                    self.client.get(
+                        self.url(name), headers={"X-Api-Key": TOKEN}
+                    ).status_code,
+                    405,
+                    "should not accept GET",
+                )
+
+    def test_unknown_session_is_404(self):
+        missing = Session.objects.order_by("-pk").first().pk + 1
+        r = self.client.post(
+            urlreverse(
+                "ietf.api.meeting.session.recording_name",
+                kwargs={"session_id": missing},
+            ),
+            data=json.dumps({"name": "a-name"}),
+            content_type="application/json",
+            headers={"X-Api-Key": TOKEN},
+        )
+        self.assertEqual(r.status_code, 404)
+
+    def test_malformed_payload_is_400(self):
+        for name, payload in [
+            ("recording_name", {}),
+            ("video_url", {"url": "not a url"}),
+            ("chatlog", {"chatlog": "not a list"}),
+            ("polls", {"polls": [1, 2, 3]}),
+        ]:
+            with self.subTest(endpoint=name):
+                self.assertEqual(self.post(name, payload).status_code, 400)
+
+    # --- recording name ---
+
+    def test_sets_recording_name(self):
+        self.post("recording_name", {"name": "the-recording"})
+        self.session.refresh_from_db()
+        self.assertEqual(self.session.meetecho_recording_name, "the-recording")
+
+    def test_rejects_recording_name_the_column_cannot_hold(self):
+        r = self.post("recording_name", {"name": "x" * 65})
+        self.assertEqual(r.status_code, 400)
+        self.session.refresh_from_db()
+        self.assertEqual(self.session.meetecho_recording_name, "")
+
+    # --- video url ---
+
+    def test_creates_video_recording(self):
+        self.post("video_url", {"url": "https://example.com/first"})
+        recordings = [
+            d for d in self.session.recordings() if "video" in d.title.lower()
+        ]
+        self.assertEqual(len(recordings), 1)
+        self.assertEqual(recordings[0].external_url, "https://example.com/first")
+        self.assertEqual(
+            recordings[0].docevent_set.first().by,
+            self.system,
+            "events are attributed to the (System) person",
+        )
+
+    def test_updates_existing_video_recording(self):
+        self.post("video_url", {"url": "https://example.com/first"})
+        self.post("video_url", {"url": "https://example.com/second"})
+        recordings = [
+            d for d in self.session.recordings() if "video" in d.title.lower()
+        ]
+        self.assertEqual(len(recordings), 1, "no second recording document")
+        self.assertEqual(recordings[0].external_url, "https://example.com/second")
+        self.assertTrue(
+            recordings[0]
+            .docevent_set.filter(type="added_comment", by=self.system)
+            .exists()
+        )
+
+    def test_rejects_video_url_the_column_cannot_hold(self):
+        """An over-long URL is refused before any document or event is written"""
+        r = self.post("video_url", {"url": "https://example.com/" + "a" * 250})
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(self.session.recordings())
+
+    def test_rejects_video_url_update_the_column_cannot_hold(self):
+        """The update path refuses it too, leaving the recording and its history alone"""
+        self.post("video_url", {"url": "https://example.com/first"})
+        doc = self.session.recordings()[0]
+        events_before = doc.docevent_set.count()
+
+        r = self.post("video_url", {"url": "https://example.com/" + "a" * 250})
+        self.assertEqual(r.status_code, 400)
+        doc.refresh_from_db()
+        self.assertEqual(doc.external_url, "https://example.com/first")
+        self.assertEqual(doc.docevent_set.count(), events_before)
+
+    def test_video_url_without_official_timeslot_is_400(self):
+        r = self.post(
+            "video_url",
+            {"url": "https://example.com/v"},
+            session=self.unscheduled_session(),
+        )
+        self.assertEqual(r.status_code, 400)
+
+    # --- bluesheet ---
+
+    def test_uploads_bluesheet(self):
+        r = self.post(
+            "bluesheet",
+            {
+                "bluesheet": [
+                    {"name": "Some Body", "affiliation": "Some Organization"},
+                    {"name": "Another Body", "affiliation": ""},
+                ]
+            },
+        )
+        self.assertEqual(r.status_code, 200, r.content)
+        doc = self.session.presentations.get(document__type_id="bluesheets").document
+        self.assertEqual(doc.rev, "00")
+        content = self.materials("bluesheets", doc)
+        self.assertIn("Some Body", content)
+        self.assertIn("Some Organization", content)
+        self.assertIn("Another Body", content)
+        self.assertEqual(doc.docevent_set.first().by, self.system)
+
+    def test_bluesheet_upload_bumps_revision(self):
+        self.post("bluesheet", {"bluesheet": [{"name": "Some Body"}]})
+        self.post("bluesheet", {"bluesheet": [{"name": "Another Body"}]})
+        doc = self.session.presentations.get(document__type_id="bluesheets").document
+        self.assertEqual(doc.rev, "01")
+        self.assertIn("Another Body", self.materials("bluesheets", doc))
+
+    def test_bluesheet_without_official_timeslot_is_400(self):
+        r = self.post(
+            "bluesheet",
+            {"bluesheet": [{"name": "Some Body"}]},
+            session=self.unscheduled_session(),
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(Document.objects.filter(type_id="bluesheets").exists())
+
+    # --- chatlog and polls ---
+
+    def test_uploads_chatlog(self):
+        chatlog = [
+            {
+                "author": "Some Body",
+                "text": "<p>a remark</p>",
+                "time": "2022-07-28T19:26:16Z",
+            }
+        ]
+        r = self.post("chatlog", {"chatlog": chatlog})
+        self.assertEqual(r.status_code, 200, r.content)
+        doc = self.session.presentations.get(document__type_id="chatlog").document
+        self.assertEqual(json.loads(self.materials("chatlog", doc)), chatlog)
+        self.assertEqual(doc.docevent_set.first().by, self.system)
+
+    def test_uploads_polls(self):
+        polls = [
+            {
+                "start_time": "2022-07-28T19:19:54Z",
+                "end_time": "2022-07-28T19:20:23Z",
+                "text": "Are you willing to review the documents?",
+                "raise_hand": 57,
+                "do_not_raise_hand": 11,
+            }
+        ]
+        r = self.post("polls", {"polls": polls})
+        self.assertEqual(r.status_code, 200, r.content)
+        doc = self.session.presentations.get(document__type_id="polls").document
+        self.assertEqual(json.loads(self.materials("polls", doc)), polls)
+
+    def test_chatlog_upload_bumps_revision(self):
+        self.post("chatlog", {"chatlog": [{"author": "A", "text": "one"}]})
+        self.post("chatlog", {"chatlog": [{"author": "A", "text": "two"}]})
+        doc = self.session.presentations.get(document__type_id="chatlog").document
+        self.assertEqual(doc.rev, "01")
+        self.assertEqual(
+            json.loads(self.materials("chatlog", doc)),
+            [{"author": "A", "text": "two"}],
+        )
+
+    def test_chatlog_without_official_timeslot_is_400(self):
+        r = self.post(
+            "chatlog",
+            {"chatlog": []},
+            session=self.unscheduled_session(),
+        )
+        self.assertEqual(r.status_code, 400)
