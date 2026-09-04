@@ -18,6 +18,7 @@ class AppApiTokenForm(forms.ModelForm):
     # save_model() below.
     new_token = forms.CharField(
         required=False,
+        widget=forms.TextInput(attrs={"size": "60"}),
         help_text=(
             "Enter a value to set a new token. Leave blank to keep the current "
             "token (when editing) or auto-generate one (when creating)."
@@ -52,6 +53,9 @@ class AppApiTokenAdmin(admin.ModelAdmin):
     fields = ["client", "description", "enabled", "new_token"]
     exclude = ["endpoints"]
 
+    class Media:
+        js = ["ietf/js/api/admin-token-copy.js"]
+
     def save_model(self, request, obj: AppApiToken, form, change):
         new_token = form.cleaned_data["new_token"]
         if new_token or not change:
@@ -80,12 +84,10 @@ class AppApiTokenAdmin(admin.ModelAdmin):
                 request,
                 format_html(
                     "New API token (this will not be shown again): "
-                    '<input type="text" readonly value="{}" id="new-token-value" '
-                    'onclick="this.select()" style="width: 30em">  '
-                    '<button type="button" onclick="'
-                    "var el=document.getElementById('new-token-value'); "
-                    "el.select(); navigator.clipboard.writeText(el.value);"
-                    '">Copy to clipboard</button>',
+                    '<span class="copy-token">'
+                    '<input type="text" readonly size="60" value="{}">  '
+                    '<button type="button" class="button">Copy to clipboard</button>'
+                    "</span>",
                     new_token,
                 ),
                 level=messages.WARNING,
