@@ -1,0 +1,141 @@
+#!/usr/bin/env perl
+# Copyright The IETF Trust 2024. All Rights Reserved.
+
+use strict;
+use warnings;
+use POSIX qw/strftime/;
+use Getopt::Std;
+
+# Number of errors found; exit status
+my $ERRORS = 0;
+
+# Convenience variables, for the copyright year regexp patterns.
+my $this_year  = strftime("%Y", localtime);
+my $some_year  = "[12][0-9][0-9][0-9]";
+my $year_range = "(${some_year})(-${some_year})?";
+my $copyright  = "Copyright The IETF Trust *${year_range}";
+
+# Things to skip
+my @skiplist = (
+    "\.zip",
+    "vzic/",
+    "patches/",
+    "\.gitignore",
+    "\.json"
+);
+
+# Getopt settings.
+our($opt_h, $opt_f, $opt_v, $opt_c, $opt_l, $opt_m);
+
+sub
+usage()
+{
+    my $retcode = pop();
+
+    print STDERR "Options:\n";
+    print STDERR "    -h   This help message\n";
+    print STDERR "    -f   Read filenames from argv\n";
+    print STDERR "    -v   List files as processed\n";
+    print STDERR "    -c   Modify files that should be changed\n";
+    print STDERR "         (Does not do a git commit)\n";
+    print STDERR "    -l   List files that need to be changed\n";
+    print STDERR "    -m   List files missing copyright\n";
+    exit $retcode;
+}
+
+
+##  Get list of files changed during this year.
+sub
+collect_files
+{
+    # Get last commit of the of the previous year/
+    my $FIRST=`git rev-list -1 --before=$this_year-01-01 HEAD`;
+    chop $FIRST;
+
+    # Get every file changed since then, ignoring deleted files.
+    open(my $FH, "-|", "git diff-tree -r --name-status $FIRST..HEAD")
+        || die "Can't open diff-tree, $!";
+    my @FILES = ();
+    my @FIELDS;
+    while ( <$FH> ) {
+        @FIELDS = split();
+        next if $FIELDS[0] =~ /D/;        # ignore deleted files
+        push(@FILES, $FIELDS[1]);
+    }
+    close($FH) || die "Can't close diff-tree";
+    return @FILES;
+}
+
+##  Process file, notice if copyright is missing or outdated.
+sub
+process()
+{
+    my $NAME = pop();
+    my $NEW = "";
+    my $found = 0;
+    my $changed = 0;
+    my $SAVE;
+
+    print "# Processing $NAME\n" if defined $opt_v;
+
+    # ignore ZIP files
+    foreach my $pat ( @skiplist ) {
+        return if $NAME =~ /$pat/;
+    }
+
+    # Read the file, copying to $NEW and changing copyright
+    # along the way.
+    open my $FH, '<', $NAME || die "Can't open $NAME, $!";
+    while ( <$FH> ) {
+        $SAVE = $_;
+        if ( /$copyright/io ) {
+            $found = 1;
+            $SAVE =~ s|${year_range}|$1-${this_year}|;
+            $SAVE =~ s|(${some_year})-$1|$1|;
+            $changed = 1 if $SAVE ne $_;
+        }
+        $NEW .= $SAVE;
+    }
+    close($FH) || die "Can't close $NAME, $!";
+
+    # Copyright missing?
+    if ( defined $opt_m ) {
+        print "$NAME\n" if ! $found;
+        $ERRORS++;
+        return;
+    }
+
+    # Unchanged file?
+    return if ! $changed;
+
+    if ( defined $opt_l ) {
+        print "$NAME\n";
+        $ERRORS++;
+    } else {
+        # Write the new file
+        open my $FH, '>', $NAME || die "Can't close-write $NAME, $!";
+        print $FH $NEW;
+        close($FH) || die "Can't close-write $NAME, $!";
+    }
+}
+
+##  Parse JCL.
+getopts('hfvclm') || &usage(1);
+&usage(0) if $opt_h;
+if ( defined($opt_m) + defined($opt_l) + defined($opt_c) != 1 ) {
+    print STDERR "Must have exactly one of m/l/c options\n";
+    exit 1;
+}
+
+##  Do the work.
+my @FILES = ();
+if ( defined($opt_f) ) {
+    @FILES = @ARGV;
+} else {
+    @FILES = &collect_files();
+}
+
+foreach my $F ( @FILES ) {
+    &process($F);
+}
+exit $ERRORS;
