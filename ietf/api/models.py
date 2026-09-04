@@ -1,18 +1,21 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
+import hashlib
 import secrets
 
+from django.conf import settings
 from django.db import models
 
 
 DEFAULT_TOKEN_LENGTH = 40  # bytes of randomness (actual token is longer due to base64)
 
 
-def _generate_token():
+def _generate_token() -> str:
     """Generate a default API token"""
     tries = 50  # implausibly large number of collisions
     while tries > 0:
         new_token = secrets.token_urlsafe(DEFAULT_TOKEN_LENGTH)
-        if not AppApiToken.objects.filter(token=new_token).exists():
+        new_hash = AppApiToken.hash(new_token)
+        if not AppApiToken.objects.filter(token=new_hash).exists():
             return new_token
         tries = tries - 1
     # never expected to reach this
@@ -22,10 +25,10 @@ def _generate_token():
 class AppApiToken(models.Model):
     endpoints = models.ManyToManyField("api.KnownApiEndpoint", related_name="tokens")
     token = models.CharField(
-        max_length=1000,
+        max_length=128,
         unique=True,
         default=_generate_token,
-        help_text="API token value",
+        help_text="API token",
     )
     client = models.CharField(
         max_length=255, help_text="Brief description of client using the token"
@@ -42,6 +45,20 @@ class AppApiToken(models.Model):
 
     def __str__(self) -> str:
         return f"AppApiToken for {self.client}"
+
+    def set_token(self, raw_token: bytes):
+        self.token = self.hash(raw_token)
+
+    @staticmethod
+    def hash(token: str):
+        """Hash a token for storage / comparison
+
+        Salts the value as a precaution. Tokens will generally be long, high-entropy
+        byte strings that are not vulnerable to rainbow table attacks, but this will
+        provide some insurance if someone ill-advisedly adds a simple token.
+        """
+        salt = getattr(settings, "APP_API_TOKEN_SALT_BYTES", b"5a1+Y&+45t`/")
+        return hashlib.sha384(salt + token.encode()).hexdigest()
 
 
 class KnownApiEndpoint(models.Model):

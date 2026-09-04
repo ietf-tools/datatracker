@@ -17,7 +17,9 @@ def is_valid_token(endpoint, token):
     token_prefetch = Prefetch(
         "tokens",
         to_attr="matching_tokens",
-        queryset=AppApiToken.objects.filter(token=token, enabled=True),
+        queryset=AppApiToken.objects.filter(
+            token=AppApiToken.hash(token), enabled=True
+        ),
     )
     # Look up the endpoint along with matching tokens
     known_endpoint = (
