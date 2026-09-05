@@ -6,17 +6,46 @@ from functools import wraps
 from typing import Callable, Optional, Union
 
 from django.conf import settings
+from django.db.models import Prefetch
 from django.http import HttpResponseForbidden
+
+from .models import AppApiToken, KnownApiEndpoint
 
 
 def is_valid_token(endpoint, token):
-    # This is where we would consider integration with vault
-    # Settings implementation for now.
+    if token is None or token == "":
+        return False
+
+    # Prefetch enabled, matching tokens as a list "matching_tokens"
+    token_prefetch = Prefetch(
+        "tokens",
+        to_attr="matching_tokens",
+        queryset=AppApiToken.objects.filter(
+            token=AppApiToken.hash(token), enabled=True
+        ),
+    )
+    # Look up the endpoint along with matching tokens
+    known_endpoint = (
+        KnownApiEndpoint.objects.filter(name=endpoint)
+        .prefetch_related(token_prefetch)
+        .first()
+    )
+    if known_endpoint:
+        # Endpoint has a model - if it's disabled, deny all access
+        if not known_endpoint.enabled:
+            return False  # endpoint is disabled
+        # It's enabled - allow access if a matching, enabled token exists, otherwise
+        # fall through to check settings-based tokens
+        if len(known_endpoint.matching_tokens) > 0:
+            return True
+
+    # Settings-based tokens
     if hasattr(settings, "APP_API_TOKENS"):
         token_store = settings.APP_API_TOKENS
         if endpoint in token_store:
             endpoint_tokens = token_store[endpoint]
-            # Be sure endpoints is a list or tuple so we don't accidentally use substring matching!
+            # Be sure endpoints is a list or tuple so we don't accidentally use
+            # substring matching!
             if not isinstance(endpoint_tokens, (list, tuple)):
                 endpoint_tokens = [endpoint_tokens]
             if token in endpoint_tokens:
