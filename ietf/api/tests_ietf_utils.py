@@ -101,7 +101,8 @@ class ModelBackedTokenTests(TestCase):
 
     def test_is_valid_token(self):
         self.assertTrue(
-            is_valid_token("ietf.api.foobar", self.raw_token), "valid token was rejected"
+            is_valid_token("ietf.api.foobar", self.raw_token),
+            "valid token was rejected",
         )
         self.assertFalse(
             is_valid_token("ietf.api.foobar", "an-invalid-token"),
