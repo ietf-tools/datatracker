@@ -13,6 +13,9 @@ from .models import AppApiToken, KnownApiEndpoint
 
 
 def is_valid_token(endpoint, token):
+    if token is None or token == "":
+        return False
+
     # Prefetch enabled, matching tokens as a list "matching_tokens"
     token_prefetch = Prefetch(
         "tokens",
