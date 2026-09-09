@@ -148,37 +148,36 @@
         <h3 class="mt-4">Slides</h3>
         <table class="table table-sm table-striped slides"
                id="slides_{{ session.pk }}">
-            {% if session.filtered_slides %}
-                <tbody data-session="{{ session.pk }}"
-                       data-add-to-session="{% url 'ietf.meeting.views.ajax_add_slides_to_session' session_id=session.pk num=session.meeting.number %}"
-                       data-remove-from-session="{% url 'ietf.meeting.views.ajax_remove_slides_from_session' session_id=session.pk num=session.meeting.number %}"
-                       data-reorder-in-session="{% url 'ietf.meeting.views.ajax_reorder_slides_in_session' session_id=session.pk num=session.meeting.number %}">
-                    {% for pres in session.filtered_slides %}
-                        <tr data-name="{{ pres.document.name }}" {% if can_manage_materials %} class="draggable" {% endif %}>
-                            {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
-                            {% if can_manage_materials %}
-                                <td>
-                                    <i class="bi bi-grip-vertical drag-handle" title="Drag to reorder"></i>
-                                </td>
-                            {% endif %}
+            {# The tbody is rendered even when there are no slides, so that it can be a drag-and-drop target. #}
+            <tbody data-session="{{ session.pk }}"
+                   data-add-to-session="{% url 'ietf.meeting.views.ajax_add_slides_to_session' session_id=session.pk num=session.meeting.number %}"
+                   data-remove-from-session="{% url 'ietf.meeting.views.ajax_remove_slides_from_session' session_id=session.pk num=session.meeting.number %}"
+                   data-reorder-in-session="{% url 'ietf.meeting.views.ajax_reorder_slides_in_session' session_id=session.pk num=session.meeting.number %}">
+                {% for pres in session.filtered_slides %}
+                    <tr data-name="{{ pres.document.name }}" {% if can_manage_materials %} class="draggable" {% endif %}>
+                        {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
+                        {% if can_manage_materials %}
                             <td>
-                                {% if can_manage_materials %}
-                                    <a class="btn btn-primary btn-sm float-end ms-1"
-                                       href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number name=pres.document.name %}">
-                                        Upload revision
-                                    </a>
-                                    <a class="btn btn-danger btn-sm float-end ms-1"
-                                       href="{% url 'ietf.meeting.views.remove_sessionpresentation' session_id=session.pk num=session.meeting.number name=pres.document.name %}">
-                                        Remove
-                                    </a>
-                                {% endif %}
-                                <a href="{{ pres.document.get_href }}">{{ pres.document.title }}</a>
-                                <a href="{{ url }}">({{ pres.document.name }})</a>
+                                <i class="bi bi-grip-vertical drag-handle" title="Drag to reorder, or to move to another session"></i>
                             </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            {% endif %}
+                        {% endif %}
+                        <td>
+                            {% if can_manage_materials %}
+                                <a class="btn btn-primary btn-sm float-end ms-1"
+                                   href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number name=pres.document.name %}">
+                                    Upload revision
+                                </a>
+                                <a class="btn btn-danger btn-sm float-end ms-1"
+                                   href="{% url 'ietf.meeting.views.remove_sessionpresentation' session_id=session.pk num=session.meeting.number name=pres.document.name %}">
+                                    Remove
+                                </a>
+                            {% endif %}
+                            <a href="{{ pres.document.get_href }}">{{ pres.document.title }}</a>
+                            <a href="{{ url }}">({{ pres.document.name }})</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
         </table>
         {% if can_manage_materials %}
             <a class="btn btn-primary uploadslides"
@@ -192,7 +191,7 @@
             </a>
         {% endif %}
 
-    {% if can_manage_materials %}<div class="form-text">Drag-and-drop to reorder slides</div>{% endif %}
+    {% if can_manage_materials %}<div class="form-text">Drag-and-drop to reorder slides, or to move them to another session of this group</div>{% endif %}
     <h3 class="mt-4">Internet-Drafts</h3>
     <table class="table table-sm table-striped">
         {% if session.filtered_drafts %}
