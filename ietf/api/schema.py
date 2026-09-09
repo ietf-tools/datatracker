@@ -18,3 +18,20 @@ class ApiKeyAuthenticationScheme(OpenApiAuthenticationExtension):
             "name": "X-Api-Key",
             "in": "header",
         }
+
+
+class BearerTokenAuthenticationScheme(OpenApiAuthenticationExtension):
+    """Authentication scheme extension for the BearerTokenAuthentication
+
+    Used by drf-spectacular when rendering the OpenAPI schema
+    """
+    target_class = "ietf.api.authentication.BearerTokenAuthentication"
+    name = "tokenAuth"
+
+    def get_security_definition(self, auto_schema):
+        return {
+            "type": "apiKey",
+            "description": "Shared secret as 'Token <secret>' in the Authorization header",
+            "name": "Authorization",
+            "in": "header",
+        }

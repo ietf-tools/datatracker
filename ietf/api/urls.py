@@ -8,6 +8,7 @@ from django.views.generic import TemplateView
 
 from ietf import api
 from ietf.doc import views_ballot, api as doc_api
+from ietf.ietfauth import api_migration
 from ietf.meeting import api as meeting_api
 from ietf.meeting import views as meeting_views
 from ietf.person import api_uuid as person_uuid_api
@@ -52,6 +53,12 @@ urlpatterns = [
     path("schema/", SpectacularAPIView.as_view()),
     #
     # --- Custom API endpoints, sorted alphabetically ---
+    # Account migration, for the account app's backend only
+    path(
+        "accounts/migration/verify/",
+        api_migration.VerifyView.as_view(),
+        name="ietf.api.migration_api.verify",
+    ),
     # Email alias information for drafts
     url(r'^doc/draft-aliases/$', api_views.draft_aliases),
     # Recipients for author survey for recently published RFCs
