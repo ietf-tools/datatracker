@@ -55,6 +55,11 @@ urlpatterns = [
     # --- Custom API endpoints, sorted alphabetically ---
     # Account migration, for the account app's backend only
     path(
+        "accounts/migration/claim-email/",
+        api_migration.ClaimEmailView.as_view(),
+        name="ietf.api.migration_api.claim-email",
+    ),
+    path(
         "accounts/migration/verify/",
         api_migration.VerifyView.as_view(),
         name="ietf.api.migration_api.verify",

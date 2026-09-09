@@ -13,17 +13,24 @@ from urllib.parse import urljoin
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import exceptions, serializers, status
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.validators import validate_email
+from django.db import transaction
 
 from ietf.api.authentication import ApiKeyAuthentication, BearerTokenAuthentication
-from ietf.person.models import Email, ExternalIdentity, Person
+from ietf.person.models import Email, ExternalIdentity, Person, PersonUUID
 from ietf.utils import log
 
 GITHUB_USERNAME_SLUG = "github_username"
+
+# Recorded on Emails this API creates, so a support question about where an address came
+# from has an answer that names the flow rather than a person.
+CLAIM_ORIGIN = "account migration"
 
 
 class VerificationFailed(exceptions.APIException):
@@ -215,6 +222,132 @@ class VerifyView(APIView):
                     "legacy_sub": str(person.user.pk),
                     "last_login": person.user.last_login,
                     "already_linked": is_linked(person),
+                }
+            ).data
+        )
+
+
+class AddressBelongsToAnotherPerson(exceptions.APIException):
+    """The address is another Person's
+
+    Distinct from every other claim-email/ failure because it is the one the flow can act
+    on: offer a different address, or route the person to support, who may find this is a
+    Person merge rather than a mistake. An Email is never moved between Persons.
+    """
+
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = "That address belongs to a different person."
+    default_code = "address_belongs_to_another_person"
+
+
+class AddressHasNoOwner(exceptions.APIException):
+    """The address exists but no Person owns it
+
+    Refused rather than adopted. These rows come from places that record an address
+    without establishing who is behind it - draft submissions, roles - and history points
+    through them. Handing one to whoever proved a password would attribute that history on
+    no evidence, and the endpoint cannot tell the true owner from a namesake. Support
+    establishes ownership; enrollment does not.
+    """
+
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = "That address is not attached to any person."
+    default_code = "address_has_no_owner"
+
+
+def person_for_uuid(person_uuid):
+    """The Person any UUID the datatracker has issued belongs to
+
+    Resolves prior UUIDs as well as the primary, so a caller holding a UUID from before a
+    merge still reaches the surviving Person.
+    """
+    return get_object_or_404(
+        PersonUUID.objects.select_related("person"), uuid=person_uuid
+    ).person
+
+
+class ClaimEmailRequestSerializer(serializers.Serializer):
+    person_uuid = serializers.UUIDField()
+    address = serializers.CharField(max_length=64, validators=[validate_email])
+
+
+@extend_schema(tags=["migration"])
+class ClaimEmailView(APIView):
+    """Attach an address to a Person, so enrollment can use it"""
+
+    api_key_endpoint = "ietf.ietfauth.api_migration.claim_email"
+    # See VerifyView on why both header shapes are accepted.
+    authentication_classes = [ApiKeyAuthentication, BearerTokenAuthentication]  # noqa: RUF012
+
+    @extend_schema(
+        operation_id="account_migration_claim_email",
+        summary="Give a Person an address, or reactivate one it already has",
+        description=(
+            "Make an address usable by the Person enrolling, whether it is new to the "
+            "datatracker, already theirs, or theirs but inactive. Idempotent: calling it "
+            "again with the same arguments succeeds and changes nothing.\n\n"
+            "person_uuid may be any UUID the datatracker has issued for the Person, not "
+            "only the current primary. An unknown one is a 404.\n\n"
+            "Two failures are worth handling separately, both 409, told apart by their "
+            "error code. address_belongs_to_another_person means the address is someone "
+            "else's; it is never moved, so offer another address or send the person to "
+            "support, who may find the two Persons should be merged. "
+            "address_has_no_owner means the datatracker knows the address but has never "
+            "established who is behind it - support establishes that, not enrollment.\n\n"
+            "The response describes the address as it now stands. It does not make the "
+            "address primary - which address is primary is the person's own profile "
+            "choice and is not changed here."
+        ),
+        request=ClaimEmailRequestSerializer,
+        responses={
+            200: MigrationEmailSerializer,
+            404: None,
+            409: None,
+        },
+    )
+    @transaction.atomic
+    def post(self, request):
+        request_serializer = ClaimEmailRequestSerializer(data=request.data)
+        request_serializer.is_valid(raise_exception=True)
+        person_uuid = request_serializer.validated_data["person_uuid"]
+        address = request_serializer.validated_data["address"]
+
+        person = person_for_uuid(person_uuid)
+        email = Email.objects.filter(address__iexact=address).first()
+        if email is None:
+            email = Email.objects.create(
+                address=address, person=person, origin=CLAIM_ORIGIN
+            )
+            outcome = "created"
+        elif email.person_id is None:
+            log.log(
+                f"account migration: claim-email/ refused {address!r} for "
+                f"Person {person_uuid}, owned by no Person"
+            )
+            raise AddressHasNoOwner()
+        elif email.person_id != person.pk:
+            log.log(
+                f"account migration: claim-email/ refused {address!r} for "
+                f"Person {person_uuid}, held by another Person"
+            )
+            raise AddressBelongsToAnotherPerson()
+        elif not email.active:
+            email.active = True
+            email.save()
+            outcome = "reactivated"
+        else:
+            outcome = "unchanged"
+
+        log.log(
+            f"account migration: claim-email/ {outcome} {address!r} "
+            f"for Person {person_uuid}"
+        )
+        return Response(
+            MigrationEmailSerializer(
+                {
+                    "address": email.address,
+                    "primary": email.primary,
+                    "active": email.active,
                 }
             ).data
         )

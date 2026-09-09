@@ -1,6 +1,8 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 """Tests for the account migration API"""
 
+import uuid
+
 from django.test import override_settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
@@ -12,11 +14,13 @@ from ietf.person.factories import (
     EmailFactory,
     ExternalIdentityFactory,
     PersonFactory,
+    PersonUUIDFactory,
     UserFactory,
 )
-from ietf.person.models import ExternalIdentity, PersonExtResource
+from ietf.person.models import Email, ExternalIdentity, PersonExtResource
 from ietf.utils.test_utils import APITestCase
 
+CLAIM_TOKEN = "claim-email-token"
 VERIFY_TOKEN = "verify-token"
 
 
@@ -208,3 +212,146 @@ class VerifyTests(APITestCase):
             headers={"X-Api-Key": VERIFY_TOKEN},
         )
         self.assertEqual(r.status_code, 400)
+
+
+@override_settings(
+    APP_API_TOKENS={"ietf.ietfauth.api_migration.claim_email": [CLAIM_TOKEN]}
+)
+class ClaimEmailTests(APITestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = urlreverse("ietf.api.migration_api.claim-email")
+        self.person = PersonFactory()
+
+    def claim(self, address, person_uuid=None, token=CLAIM_TOKEN):
+        return self.client.post(
+            self.url,
+            {
+                "person_uuid": str(
+                    self.person.primary_uuid if person_uuid is None else person_uuid
+                ),
+                "address": address,
+            },
+            format="json",
+            headers={"X-Api-Key": token},
+        )
+
+    def orphaned_addresses(self):
+        return set(Email.objects.filter(person=None).values_list("address", flat=True))
+
+    def unowned_email(self):
+        return Email.objects.create(
+            address="orphan@example.com",
+            person=None,
+            active=False,
+            origin="author: some-draft",
+        )
+
+    def test_requires_a_valid_api_key(self):
+        self.assertEqual(self.claim("new@example.com", token="nope").status_code, 403)
+        self.assertEqual(self.claim("new@example.com").status_code, 200)
+
+    def test_creates_an_unknown_address(self):
+        r = self.claim("new@example.com")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(
+            r.json(), {"address": "new@example.com", "primary": False, "active": True}
+        )
+        email = self.person.email_set.get(address="new@example.com")
+        self.assertEqual(email.origin, "account migration")
+
+    def test_reactivates_an_inactive_address(self):
+        inactive = EmailFactory(person=self.person, active=False)
+        r = self.claim(inactive.address)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.json()["active"])
+        inactive.refresh_from_db()
+        self.assertTrue(inactive.active)
+
+    def test_is_idempotent(self):
+        for _ in range(2):
+            r = self.claim("new@example.com")
+            self.assertEqual(r.status_code, 200)
+        self.assertEqual(
+            self.person.email_set.filter(address="new@example.com").count(), 1
+        )
+
+    def test_leaves_an_existing_address_alone(self):
+        existing = self.person.email_set.get()
+        existing.primary = True
+        existing.save()
+        r = self.claim(existing.address)
+        self.assertEqual(
+            r.json(), {"address": existing.address, "primary": True, "active": True}
+        )
+
+    def test_does_not_change_which_address_is_primary(self):
+        primary = self.person.email_set.get()
+        primary.primary = True
+        primary.save()
+        self.claim("new@example.com")
+        self.assertEqual(
+            list(self.person.email_set.filter(primary=True).values_list("address", flat=True)),
+            [primary.address],
+        )
+
+    def test_refuses_another_persons_address(self):
+        other = PersonFactory()
+        address = other.email_set.get().address
+        r = self.claim(address)
+        self.assertEqual(r.status_code, 409)
+        self.assertEqual(
+            r.json()["errors"][0]["code"], "address_belongs_to_another_person"
+        )
+        self.assertEqual(Email.objects.get(address=address).person, other)
+
+    def test_refuses_an_unowned_address(self):
+        orphan = self.unowned_email()
+        r = self.claim(orphan.address)
+        self.assertEqual(r.status_code, 409)
+        self.assertEqual(r.json()["errors"][0]["code"], "address_has_no_owner")
+        orphan.refresh_from_db()
+        self.assertIsNone(orphan.person)
+        self.assertFalse(orphan.active)
+
+    def test_never_creates_an_email_without_a_person(self):
+        """Including the failing paths - a 4xx must not leave a row behind
+
+        Email.person is nullable because history points at addresses whose owner was
+        never established, but nothing here may add to that population.
+        """
+        other = PersonFactory()
+        unowned = self.unowned_email()
+        before = self.orphaned_addresses()
+        for address, person_uuid in (
+            ("new@example.com", None),
+            (self.person.email_set.get().address, None),
+            (other.email_set.get().address, None),
+            (unowned.address, None),
+            ("unknown-person@example.com", uuid.uuid4()),
+            ("not-an-address", None),
+        ):
+            self.claim(address, person_uuid=person_uuid)
+        self.assertEqual(self.orphaned_addresses() - before, set())
+
+    def test_matches_an_address_case_insensitively(self):
+        existing = self.person.email_set.get()
+        r = self.claim(existing.address.upper())
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(self.person.email_set.count(), 1)
+
+    def test_resolves_a_prior_person_uuid(self):
+        prior = PersonUUIDFactory(person=self.person)
+        r = self.claim("new@example.com", person_uuid=prior.uuid)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(self.person.email_set.filter(address="new@example.com").exists())
+
+    def test_unknown_person_uuid(self):
+        r = self.claim("new@example.com", person_uuid=uuid.uuid4())
+        self.assertEqual(r.status_code, 404)
+        self.assertFalse(Email.objects.filter(address="new@example.com").exists())
+
+    def test_rejects_a_malformed_address(self):
+        r = self.claim("not-an-address")
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(Email.objects.filter(address="not-an-address").exists())
