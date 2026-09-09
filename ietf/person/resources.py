@@ -21,6 +21,7 @@ from ietf.person.models import (  # type: ignore
     HistoricalEmail,
     PersonExtResource,
     PersonUUID,
+    ExternalIdentity,
 )
 
 
@@ -65,6 +66,34 @@ class PersonUUIDResource(ModelResource):
 
 
 api.person.register(PersonUUIDResource())
+
+
+class ExternalIdentityResource(ModelResource):
+    person = ToOneField(PersonResource, "person")
+
+    class Meta:
+        cache = SimpleCache()
+        queryset = ExternalIdentity.objects.all()
+        serializer = api.Serializer()
+        # resource_name = 'externalidentity'
+        ordering = ['id', ]  # noqa: RUF012
+        filtering = {  # noqa: RUF012
+            "id": ALL,
+            "issuer": ALL,
+            "sub": ALL,
+            "ak_uuid": ALL,
+            "ak_pk": ALL,
+            "username": ALL,
+            "state": ALL,
+            "linked_by": ALL,
+            "ak_active": ALL,
+            "time": ALL,
+            "person": ALL_WITH_RELATIONS,
+        }
+
+
+api.person.register(ExternalIdentityResource())
+
 
 class EmailResource(ModelResource):
     person           = ToOneField(PersonResource, 'person', null=True)

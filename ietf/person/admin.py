@@ -6,8 +6,8 @@ from django import forms
 from django.contrib import messages
 from django.db import transaction
 
-from ietf.person.models import Email, Alias, Person, PersonalApiKey, PersonEvent, \
-    PersonApiKeyEvent, PersonExtResource, PersonUUID
+from ietf.person.models import Email, Alias, ExternalIdentity, Person, PersonalApiKey, \
+    PersonEvent, PersonApiKeyEvent, PersonExtResource, PersonUUID
 from ietf.person.name import name_parts
 from ietf.person.utils import queue_person_uuid_push
 
@@ -78,6 +78,14 @@ class PersonUUIDInline(SaferStackedInline):
     # the old primary first. Editing it here would trip the uniqueness constraint.
     readonly_fields = ["uuid", "primary", "time"]  # noqa: RUF012
     can_delete = False
+
+
+class ExternalIdentityAdmin(admin.ModelAdmin):
+    list_display = ["username", "person", "issuer", "state", "linked_by", "ak_active", "time"]  # noqa: RUF012
+    list_filter = ["state", "linked_by", "ak_active"]  # noqa: RUF012
+    search_fields = ["username", "sub", "ak_uuid", "person__name"]  # noqa: RUF012
+    raw_id_fields = ["person"]  # noqa: RUF012
+admin.site.register(ExternalIdentity, ExternalIdentityAdmin)
 
 
 class PersonAdmin(simple_history.admin.SimpleHistoryAdmin):

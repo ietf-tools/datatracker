@@ -86,6 +86,69 @@ class PersonUUID(models.Model):
         return str(self.uuid)
 
 
+class ExternalIdentity(models.Model):
+    """A Person's account at an external identity provider
+
+    The three identifiers are not interchangeable. `sub` is the OIDC subject the provider
+    issues for the datatracker's own application, and is what a login presents. `ak_uuid`
+    is the provider's own key for the account, and is what inbound pushes and
+    reconciliation match on; it survives a `sub` that has to be re-derived. `username` is
+    provider-owned and changes, so it is for display and support only, never a lookup key.
+
+    `sub` is null until a first login supplies it: nothing outside the provider's token
+    issuance can compute it, so a row created at enrollment or by an operator is completed
+    later, matched on `ak_uuid`. Postgres allows repeated nulls in the unique constraint,
+    so pending rows do not collide.
+
+    Superseded rows are kept rather than deleted so a login from an account that was
+    merged away is recognised and explained instead of silently creating a duplicate.
+    """
+
+    class State(models.TextChoices):
+        ACTIVE = "active"
+        SUPERSEDED = "superseded"
+
+    class LinkedBy(models.TextChoices):
+        PASSWORD = "password"
+        EMAIL = "email"
+        OPERATOR = "operator"
+        NEW_ACCOUNT = "new_account"
+
+    person = models.ForeignKey(
+        "person.Person", related_name="external_identities", on_delete=models.CASCADE
+    )
+    issuer = models.CharField(max_length=255)
+    sub = models.CharField(max_length=255, null=True, blank=True)
+    ak_uuid = models.UUIDField()
+    ak_pk = models.IntegerField(null=True, blank=True)
+    username = models.CharField(max_length=255)
+    state = models.CharField(
+        max_length=16, choices=State.choices, default=State.ACTIVE
+    )
+    linked_by = models.CharField(max_length=16, choices=LinkedBy.choices)
+    ak_active = models.BooleanField(default=True)
+    time = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [  # noqa: RUF012
+            models.UniqueConstraint(
+                fields=["issuer", "sub"], name="unique_external_sub_per_issuer"
+            ),
+            models.UniqueConstraint(
+                fields=["issuer", "ak_uuid"], name="unique_external_uuid_per_issuer"
+            ),
+            models.UniqueConstraint(
+                fields=["person"],
+                condition=models.Q(state="active"),
+                name="unique_active_external_identity_per_person",
+            ),
+        ]
+        verbose_name_plural = "external identities"
+
+    def __str__(self):
+        return f"{self.username} at {self.issuer}"
+
+
 class Person(models.Model):
     history = HistoricalRecords()
     user = OneToOneField(User, blank=True, null=True, on_delete=models.SET_NULL)

@@ -20,8 +20,8 @@ from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 
-from ietf.person.models import Person, Alias, Email, PersonalApiKey, PersonApiKeyEvent, \
-    PERSON_API_KEY_ENDPOINTS, PersonUUID
+from ietf.person.models import Person, Alias, Email, ExternalIdentity, PersonalApiKey, \
+    PersonApiKeyEvent, PERSON_API_KEY_ENDPOINTS, PersonUUID
 from ietf.person.name import normalize_name, unidecode_name
 
 
@@ -170,6 +170,24 @@ def fake_email_address(n):
         if count >= 10:
             raise RuntimeError("Failed generating a fake email address to fit in Email.address(max_length=%s)"%address_field.max_lenth)
     return address
+
+class ExternalIdentityFactory(factory.django.DjangoModelFactory):
+    """A Person's link to an account at an external identity provider
+
+    Defaults to the enrollment shape: linked by password, with no `sub` yet because only
+    a login can supply one.
+    """
+    class Meta:
+        model = ExternalIdentity
+
+    person = factory.SubFactory(PersonFactory)
+    issuer = "https://auth.example.com/application/o/datatracker/"
+    sub = None
+    ak_uuid = factory.Faker("uuid4")
+    ak_pk = factory.Sequence(lambda n: n + 1)
+    username = factory.LazyAttribute(lambda obj: obj.person.email_address())
+    linked_by = ExternalIdentity.LinkedBy.PASSWORD
+
 
 class EmailFactory(factory.django.DjangoModelFactory):
     class Meta:

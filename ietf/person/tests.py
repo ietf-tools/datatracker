@@ -37,11 +37,13 @@ from ietf.nomcom.factories import NomComFactory, NomineeFactory, NominationFacto
 from ietf.nomcom.utils import make_nomineeposition_for_newperson
 from ietf.person.factories import (
     EmailFactory,
+    ExternalIdentityFactory,
     PersonFactory,
     PersonApiKeyEventFactory,
     PersonUUIDFactory,
 )
-from ietf.person.models import Person, Alias, PersonApiKeyEvent, PersonUUID
+from ietf.person.models import (Person, Alias, ExternalIdentity, PersonApiKeyEvent,
+    PersonUUID)
 from ietf.person.tasks import (purge_personal_api_key_events_task, push_person_uuids_task,
     check_person_uuids_task)
 from ietf.person.utils import (merge_persons, determine_merge_order, send_merge_notification,
@@ -608,6 +610,37 @@ class PersonUtilsTests(TestCase):
         message = Message.objects.last()
         self.assertEqual(message_count_after, message_count_before + 1)
         self.assertIn(source.user.username, message.to)
+
+
+class ExternalIdentityTests(TestCase):
+    def test_only_one_active_identity_per_person(self):
+        person = PersonFactory()
+        ExternalIdentityFactory(person=person)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            ExternalIdentityFactory(person=person)
+
+    def test_superseded_identities_may_accumulate(self):
+        person = PersonFactory()
+        ExternalIdentityFactory(person=person)
+        for _ in range(2):
+            ExternalIdentityFactory(
+                person=person, state=ExternalIdentity.State.SUPERSEDED
+            )
+        self.assertEqual(person.external_identities.count(), 3)
+
+    def test_pending_subs_do_not_collide(self):
+        issuer = "https://auth.example.com/application/o/datatracker/"
+        for _ in range(2):
+            ExternalIdentityFactory(issuer=issuer, sub=None)
+        self.assertEqual(
+            ExternalIdentity.objects.filter(issuer=issuer, sub=None).count(), 2
+        )
+
+    def test_sub_is_unique_within_an_issuer(self):
+        first = ExternalIdentityFactory(sub="abc123")
+        ExternalIdentityFactory(issuer="https://other.example.com/", sub="abc123")
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            ExternalIdentityFactory(issuer=first.issuer, sub="abc123")
 
 
 class PersonUUIDTests(TestCase):
