@@ -557,15 +557,15 @@ class SessionDataApiTests(TestCase):
         self.assertEqual(r.status_code, 400)
         self.assertEqual([e["detail"] for e in r.json()["errors"]], [unknown])
 
-    def test_rejects_join_time_without_an_offset(self):
-        """A naive join_time is refused rather than read in the server's timezone"""
+    def test_join_time_without_an_offset_is_read_as_utc(self):
+        """A naive join_time is UTC, not the server's timezone"""
         person = PersonFactory()
         r = self.attend([self.attendee(person.primary_uuid, "2024-02-21T18:00:00")])
-        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.status_code, 200, r.content)
         self.assertEqual(
-            [e["attr"] for e in r.json()["errors"]], ["attendees.0.join_time"]
+            self.session.attended_set.get(person=person).time,
+            datetime.datetime(2024, 2, 21, 18, 0, 0, tzinfo=datetime.UTC),
         )
-        self.assertFalse(self.session.attended_set.exists())
 
     def test_repeated_attendee_push_keeps_first_join_time(self):
         person = PersonFactory()

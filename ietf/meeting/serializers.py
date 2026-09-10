@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
+import datetime
 
-from django.utils import timezone
 from rest_framework import serializers
 
 from ietf.meeting.models import Registration
@@ -58,28 +58,13 @@ class SessionBluesheetSerializer(serializers.Serializer):
     bluesheet = BluesheetEntrySerializer(many=True, allow_empty=True)
 
 
-class AwareDateTimeField(serializers.DateTimeField):
-    """DateTimeField that requires an explicit UTC offset
-
-    DateTimeField makes a naive value aware in the process timezone, which silently
-    shifts a timestamp the caller meant as UTC.
-    """
-
-    default_error_messages = {  # noqa: RUF012
-        "naive": "Datetime must include a UTC offset.",
-    }
-
-    def enforce_timezone(self, value):
-        if timezone.is_naive(value):
-            self.fail("naive")
-        return super().enforce_timezone(value)
-
-
 class SessionAttendeeSerializer(serializers.Serializer):
     """One session attendee, identified by any UUID the datatracker issued them"""
 
     person_uuid = serializers.UUIDField()
-    join_time = AwareDateTimeField()
+    # default_timezone so a value with no offset is read as UTC rather than in the
+    # process timezone, matching the other DRF datetime fields in the API
+    join_time = serializers.DateTimeField(default_timezone=datetime.UTC)
 
 
 class SessionAttendeesSerializer(serializers.Serializer):
