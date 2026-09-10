@@ -6,10 +6,9 @@ from django.db.models.functions import Cast
 from django.http import Http404
 from django.template.loader import render_to_string
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import generics, serializers, status
-from rest_framework.generics import get_object_or_404
+from rest_framework import generics, serializers, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from ietf.meeting.models import Attended, Meeting, Session
 from ietf.meeting.serializers import (
@@ -117,8 +116,8 @@ class MeetingsAttendedByUuid(generics.RetrieveAPIView):
 
 
 @extend_schema(tags=["meeting"])
-class SessionDataView(APIView):
-    """Base for the endpoints that push data about one session
+class SessionDataViewSet(viewsets.GenericViewSet):
+    """Endpoints that push data about one session
 
     The session is addressed by its pk. Only person references use UUIDs.
 
@@ -126,13 +125,29 @@ class SessionDataView(APIView):
     person; document events are authored by the (System) Person.
     """
 
-    request_serializer_class: type
+    queryset = Session.objects.all()
 
-    def get_session(self, session_id):
-        return get_object_or_404(Session, pk=session_id)
+    # One token per action, so any single capability can be withdrawn on its own.
+    # A property rather than a class attribute because the action is only known per
+    # request; self.action is set before permissions are checked.
+    @property
+    def api_key_endpoint(self):
+        return f"ietf.api.meeting.session.{self.action}"
+
+    serializer_classes = {  # noqa: RUF012
+        "video_url": SessionVideoUrlSerializer,
+        "recording_name": SessionRecordingNameSerializer,
+        "bluesheet": SessionBluesheetSerializer,
+        "attendees": SessionAttendeesSerializer,
+        "chatlog": SessionChatlogSerializer,
+        "polls": SessionPollsSerializer,
+    }
+
+    def get_serializer_class(self):
+        return self.serializer_classes[self.action]
 
     def validated(self, request):
-        serializer = self.request_serializer_class(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         return serializer.validated_data
 
@@ -144,11 +159,6 @@ class SessionDataView(APIView):
             status=status.HTTP_200_OK,
         )
 
-
-class SessionVideoUrlView(SessionDataView):
-    api_key_endpoint = "ietf.api.meeting.session.video_url"
-    request_serializer_class = SessionVideoUrlSerializer
-
     @extend_schema(
         operation_id="meeting_session_set_video_url",
         summary="Set a session's video recording URL",
@@ -159,8 +169,9 @@ class SessionVideoUrlView(SessionDataView):
         request=SessionVideoUrlSerializer,
         responses={200: SessionUpdatedSerializer},
     )
-    def post(self, request, session_id):
-        session = self.get_session(session_id)
+    @action(detail=True, methods=["post"], url_path="video-url")
+    def video_url(self, request, pk=None):
+        session = self.get_object()
         data = self.validated(request)
         return self.applied(
             session,
@@ -169,11 +180,6 @@ class SessionVideoUrlView(SessionDataView):
             ),
         )
 
-
-class SessionRecordingNameView(SessionDataView):
-    api_key_endpoint = "ietf.api.meeting.session.recording_name"
-    request_serializer_class = SessionRecordingNameSerializer
-
     @extend_schema(
         operation_id="meeting_session_set_recording_name",
         summary="Set the name of a session's recording",
@@ -181,17 +187,13 @@ class SessionRecordingNameView(SessionDataView):
         request=SessionRecordingNameSerializer,
         responses={200: SessionUpdatedSerializer},
     )
-    def post(self, request, session_id):
-        session = self.get_session(session_id)
+    @action(detail=True, methods=["post"], url_path="recording-name")
+    def recording_name(self, request, pk=None):
+        session = self.get_object()
         data = self.validated(request)
         session.meetecho_recording_name = data["name"]
         session.save()
         return self.applied(session)
-
-
-class SessionBluesheetView(SessionDataView):
-    api_key_endpoint = "ietf.api.meeting.session.bluesheet"
-    request_serializer_class = SessionBluesheetSerializer
 
     @extend_schema(
         operation_id="meeting_session_upload_bluesheet",
@@ -204,8 +206,9 @@ class SessionBluesheetView(SessionDataView):
         request=SessionBluesheetSerializer,
         responses={200: SessionUpdatedSerializer},
     )
-    def post(self, request, session_id):
-        session = self.get_session(session_id)
+    @action(detail=True, methods=["post"])
+    def bluesheet(self, request, pk=None):
+        session = self.get_object()
         data = self.validated(request)
         text = render_to_string(
             "meeting/bluesheet.txt",
@@ -220,11 +223,6 @@ class SessionBluesheetView(SessionDataView):
                 Person.objects.get(name="(System)"),
             ),
         )
-
-
-class SessionAttendeesView(SessionDataView):
-    api_key_endpoint = "ietf.api.meeting.session.attendees"
-    request_serializer_class = SessionAttendeesSerializer
 
     @extend_schema(
         operation_id="meeting_session_add_attendees",
@@ -241,8 +239,9 @@ class SessionAttendeesView(SessionDataView):
         request=SessionAttendeesSerializer,
         responses={200: SessionUpdatedSerializer},
     )
-    def post(self, request, session_id):
-        session = self.get_session(session_id)
+    @action(detail=True, methods=["post"])
+    def attendees(self, request, pk=None):
+        session = self.get_object()
         attendees = self.validated(request)["attendees"]
 
         person_by_uuid = {
@@ -287,11 +286,6 @@ class SessionAttendeesView(SessionDataView):
                 )
             return self.applied(session, save_error)
 
-
-class SessionChatlogView(SessionDataView):
-    api_key_endpoint = "ietf.api.meeting.session.chatlog"
-    request_serializer_class = SessionChatlogSerializer
-
     @extend_schema(
         operation_id="meeting_session_upload_chatlog",
         summary="Upload a session's chat log",
@@ -303,8 +297,9 @@ class SessionChatlogView(SessionDataView):
         request=SessionChatlogSerializer,
         responses={200: SessionUpdatedSerializer},
     )
-    def post(self, request, session_id):
-        session = self.get_session(session_id)
+    @action(detail=True, methods=["post"])
+    def chatlog(self, request, pk=None):
+        session = self.get_object()
         data = self.validated(request)
         return self.applied(
             session,
@@ -316,11 +311,6 @@ class SessionChatlogView(SessionDataView):
             ),
         )
 
-
-class SessionPollsView(SessionDataView):
-    api_key_endpoint = "ietf.api.meeting.session.polls"
-    request_serializer_class = SessionPollsSerializer
-
     @extend_schema(
         operation_id="meeting_session_upload_polls",
         summary="Upload a session's polls",
@@ -331,8 +321,9 @@ class SessionPollsView(SessionDataView):
         request=SessionPollsSerializer,
         responses={200: SessionUpdatedSerializer},
     )
-    def post(self, request, session_id):
-        session = self.get_session(session_id)
+    @action(detail=True, methods=["post"])
+    def polls(self, request, pk=None):
+        session = self.get_object()
         data = self.validated(request)
         return self.applied(
             session,

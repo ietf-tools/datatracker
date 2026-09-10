@@ -259,9 +259,10 @@ class SessionDataApiTests(TestCase):
         self.system = Person.objects.get(name="(System)")
 
     def url(self, name, session=None):
+        # action names are underscored; the router's route names are hyphenated
         return urlreverse(
-            f"ietf.api.meeting.session.{name}",
-            kwargs={"session_id": (session or self.session).pk},
+            f"ietf.api.meeting.session-{name.replace('_', '-')}",
+            kwargs={"pk": (session or self.session).pk},
         )
 
     def post(self, name, payload, token=TOKEN, session=None):
@@ -310,11 +311,13 @@ class SessionDataApiTests(TestCase):
                 self.assertEqual(r.status_code, 200, r.content)
                 self.assertEqual(r.json(), {"session_id": self.session.pk})
 
+                # 403, not 405: the router maps only POST, so an unmapped method
+                # leaves self.action None and the per-action token check fails first
                 self.assertEqual(
                     self.client.get(
                         self.url(name), headers={"X-Api-Key": TOKEN}
                     ).status_code,
-                    405,
+                    403,
                     "should not accept GET",
                 )
 
@@ -322,8 +325,8 @@ class SessionDataApiTests(TestCase):
         missing = Session.objects.order_by("-pk").first().pk + 1
         r = self.client.post(
             urlreverse(
-                "ietf.api.meeting.session.recording_name",
-                kwargs={"session_id": missing},
+                "ietf.api.meeting.session-recording-name",
+                kwargs={"pk": missing},
             ),
             data=json.dumps({"name": "a-name"}),
             content_type="application/json",
