@@ -22,6 +22,7 @@ from ietf.meeting.serializers import (
     SessionVideoUrlSerializer,
 )
 from ietf.meeting.utils import (
+    SaveMaterialsError,
     generate_bluesheet,
     save_bluesheet,
     save_session_json_doc,
@@ -151,9 +152,13 @@ class SessionDataViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         return serializer.validated_data
 
-    def applied(self, session, save_error=None):
-        if save_error:
-            raise serializers.ValidationError({"detail": save_error})
+    def handle_exception(self, exc):
+        # A helper that could not store what was pushed is a bad request, not a 500
+        if isinstance(exc, SaveMaterialsError):
+            exc = serializers.ValidationError({"detail": str(exc)})
+        return super().handle_exception(exc)
+
+    def applied(self, session):
         return Response(
             SessionUpdatedSerializer({"session_id": session.pk}).data,
             status=status.HTTP_200_OK,
@@ -173,12 +178,10 @@ class SessionDataViewSet(viewsets.GenericViewSet):
     def video_url(self, request, pk=None):
         session = self.get_object()
         data = self.validated(request)
-        return self.applied(
-            session,
-            save_session_video_url(
-                session, data["url"], Person.objects.get(name="(System)")
-            ),
+        save_session_video_url(
+            session, data["url"], Person.objects.get(name="(System)")
         )
+        return self.applied(session)
 
     @extend_schema(
         operation_id="meeting_session_set_recording_name",
@@ -214,15 +217,13 @@ class SessionDataViewSet(viewsets.GenericViewSet):
             "meeting/bluesheet.txt",
             {"data": data["bluesheet"], "session": session},
         )
-        return self.applied(
+        save_bluesheet(
+            request,
             session,
-            save_bluesheet(
-                request,
-                session,
-                ContentFile(text.encode("utf-8"), name="bluesheet.txt"),
-                Person.objects.get(name="(System)"),
-            ),
+            ContentFile(text.encode("utf-8"), name="bluesheet.txt"),
+            Person.objects.get(name="(System)"),
         )
+        return self.applied(session)
 
     @extend_schema(
         operation_id="meeting_session_add_attendees",
@@ -279,12 +280,11 @@ class SessionDataViewSet(viewsets.GenericViewSet):
                 ignore_conflicts=True,
             )
 
-            save_error = None
             if session.meeting.type_id == "interim":
-                save_error = generate_bluesheet(
+                generate_bluesheet(
                     request, session, Person.objects.get(name="(System)")
                 )
-            return self.applied(session, save_error)
+            return self.applied(session)
 
     @extend_schema(
         operation_id="meeting_session_upload_chatlog",
@@ -301,15 +301,10 @@ class SessionDataViewSet(viewsets.GenericViewSet):
     def chatlog(self, request, pk=None):
         session = self.get_object()
         data = self.validated(request)
-        return self.applied(
-            session,
-            save_session_json_doc(
-                session,
-                "chatlog",
-                data["chatlog"],
-                Person.objects.get(name="(System)"),
-            ),
+        save_session_json_doc(
+            session, "chatlog", data["chatlog"], Person.objects.get(name="(System)")
         )
+        return self.applied(session)
 
     @extend_schema(
         operation_id="meeting_session_upload_polls",
@@ -325,9 +320,7 @@ class SessionDataViewSet(viewsets.GenericViewSet):
     def polls(self, request, pk=None):
         session = self.get_object()
         data = self.validated(request)
-        return self.applied(
-            session,
-            save_session_json_doc(
-                session, "polls", data["polls"], Person.objects.get(name="(System)")
-            ),
+        save_session_json_doc(
+            session, "polls", data["polls"], Person.objects.get(name="(System)")
         )
+        return self.applied(session)

@@ -3323,9 +3323,10 @@ def upload_session_bluesheets(request, session_id, num):
                 )
 
 
-            save_error = save_bluesheet(request, session, file, request.user.person, encoding=form.file_encoding[file.name])
-            if save_error:
-                form.add_error(None, save_error)
+            try:
+                save_bluesheet(request, session, file, request.user.person, encoding=form.file_encoding[file.name])
+            except SaveMaterialsError as err:
+                form.add_error(None, str(err))
             else:
                 messages.success(request, 'Successfully uploaded bluesheets.')
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
@@ -3589,9 +3590,10 @@ def upload_session_agenda(request, session_id, num):
                 encoding=form.file_encoding[file.name]
             except AttributeError:
                 encoding=None
-            save_error = handle_upload_file(file, filename, session.meeting, 'agenda', request=request, encoding=encoding)
-            if save_error:
-                form.add_error(None, save_error)
+            try:
+                handle_upload_file(file, filename, session.meeting, 'agenda', request=request, encoding=encoding)
+            except SaveMaterialsError as err:
+                form.add_error(None, str(err))
             else:
                 doc.save_with_history([e])
                 resolve_uploaded_material(meeting=session.meeting, doc=doc)
@@ -3771,16 +3773,19 @@ def upload_session_slides(request, session_id, num, name=None):
                 rev=doc.rev,
             )
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
-            save_error = handle_upload_file(
-                file,
-                filename,
-                session.meeting,
-                "slides",
-                request=request,
-                encoding=form.file_encoding[file.name],
-            )
-            if save_error:
-                form.add_error(None, save_error)
+            save_failed = False
+            try:
+                handle_upload_file(
+                    file,
+                    filename,
+                    session.meeting,
+                    "slides",
+                    request=request,
+                    encoding=form.file_encoding[file.name],
+                )
+            except SaveMaterialsError as err:
+                form.add_error(None, str(err))
+                save_failed = True
             else:
                 doc.save_with_history([e])
                 post_process(doc)
@@ -3801,7 +3806,7 @@ def upload_session_slides(request, session_id, num, name=None):
                     except MeetechoAPIError as err:
                         log(f"Error in SlidesManager.revise(): {err}")
 
-            if not save_error:
+            if not save_failed:
                 messages.success(
                     request,
                     f"Successfully uploaded slides as revision {doc.rev} of {doc.name}.",
@@ -5104,9 +5109,10 @@ def api_set_session_video_url(request):
     except ValidationError:
         return err(400, f"Invalid url value: '{incoming_url}'")
 
-    save_error = save_session_video_url(session, incoming_url, request.user.person)
-    if save_error:
-        return err(400, save_error)
+    try:
+        save_session_video_url(session, incoming_url, request.user.person)
+    except SaveMaterialsError as save_err:
+        return err(400, str(save_err))
     return HttpResponse(
         "Done",
         status=200,
@@ -5287,9 +5293,10 @@ def api_add_session_attendees(request):
             Attended.objects.bulk_create(to_create, ignore_conflicts=True)
 
     if session.meeting.type_id == "interim":
-        save_error = generate_bluesheet(request, session, request.user.person)
-        if save_error:
-            return err(400, save_error)
+        try:
+            generate_bluesheet(request, session, request.user.person)
+        except SaveMaterialsError as save_err:
+            return err(400, str(save_err))
 
     return HttpResponse(
         "Done",
@@ -5325,11 +5332,12 @@ def api_upload_chatlog(request):
     session = Session.objects.filter(pk=session_id).first()
     if not session:
         return err(400, "Invalid session")
-    save_error = save_session_json_doc(
-        session, 'chatlog', apidata['chatlog'], request.user.person
-    )
-    if save_error:
-        return err(400, save_error)
+    try:
+        save_session_json_doc(
+            session, 'chatlog', apidata['chatlog'], request.user.person
+        )
+    except SaveMaterialsError as save_err:
+        return err(400, str(save_err))
     return HttpResponse(
         "Done",
         status=200,
@@ -5363,11 +5371,12 @@ def api_upload_polls(request):
     session = Session.objects.filter(pk=session_id).first()
     if not session:
         return err(400, "Invalid session")
-    save_error = save_session_json_doc(
-        session, 'polls', apidata['polls'], request.user.person
-    )
-    if save_error:
-        return err(400, save_error)
+    try:
+        save_session_json_doc(
+            session, 'polls', apidata['polls'], request.user.person
+        )
+    except SaveMaterialsError as save_err:
+        return err(400, str(save_err))
     return HttpResponse(
         "Done",
         status=200,
@@ -5428,10 +5437,11 @@ def api_upload_bluesheet(request):
     os.close(fd)
     with open(name, "w") as file:
         file.write(text)
-    with open(name, "br") as file:
-        save_err = save_bluesheet(request, session, file, request.user.person)
-    if save_err:
-        return err(400, save_err)
+    try:
+        with open(name, "br") as file:
+            save_bluesheet(request, session, file, request.user.person)
+    except SaveMaterialsError as save_err:
+        return err(400, str(save_err))
     return HttpResponse(
         "Done",
         status=200,
