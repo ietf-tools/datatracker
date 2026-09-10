@@ -133,6 +133,45 @@ class InterimSessionModelFormTests(TestCase):
             session.official_timeslotassignment().timeslot.local_start_time().strftime('%H:%M'),
         )
 
+    @override_settings(MEETECHO_API_CONFIG={})
+    def test_edit_preserves_existing_meetecho_remote_instructions(self):
+        """Editing an existing Meetecho-backed interim must not blank the stored
+        remote_instructions URL. Regression test for #10689: previously
+        clean() unconditionally set remote_instructions='' whenever
+        remote_participation=='meetecho', so if the subsequent Meetecho API
+        call failed (or even when it succeeded, it would orphan the existing
+        conference) the session was left with an empty URL.
+        """
+        existing_url = 'https://meetings.conf.meetecho.com/interim/?session=35206'
+        session = SessionFactory(
+            meeting__type_id='interim',
+            meeting__time_zone='America/Halifax',
+            remote_instructions=existing_url,
+        )
+        ts = session.official_timeslotassignment().timeslot
+        local_start = ts.local_start_time()
+        form_data = {
+            'date': local_start.date().strftime('%Y-%m-%d'),
+            'time': local_start.time().strftime('%H:%M'),
+            'requested_duration': '01:00',
+            'end_time': '',
+            'remote_participation': 'meetecho',
+            'remote_instructions': existing_url,
+            'agenda': 'new agenda content',
+            'agenda_note': '',
+        }
+        form = InterimSessionModelForm(data=form_data, instance=session)
+        self.assertTrue(
+            form.is_valid(),
+            f'form should validate, got errors: {form.errors!r}',
+        )
+        self.assertEqual(
+            form.cleaned_data['remote_instructions'],
+            existing_url,
+            'editing a Meetecho-backed interim must not blank the existing '
+            'remote_instructions URL (issue #10689)',
+        )
+
 
 class InterimMeetingModelFormTests(TestCase):
     def test_enforces_authroles(self):
