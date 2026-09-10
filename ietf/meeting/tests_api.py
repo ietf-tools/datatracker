@@ -55,7 +55,15 @@ class MeetingsAttendedByEmailTests(TestCase):
         # valid request
         r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
         self.assertEqual(r.status_code, 200, "should accept valid api key")
-        self.assertEqual(r.json(), {"attended": []})
+        self.assertEqual(
+            r.json(),
+            {
+                "first_name": self.person.first_name(),
+                "last_name": self.person.last_name(),
+                "email": self.person.email_address(),
+                "attended": [],
+            },
+        )
 
         # nonexistent person
         self.person.email_set.update(person=None)  # detach email
@@ -150,6 +158,21 @@ class MeetingsAttendedByEmailTests(TestCase):
         self.assertEqual([entry["meeting"] for entry in by_secondary], ["118"])
         self.assertEqual(by_secondary, self.attended_for())
 
+    def test_reports_person_name_and_email(self):
+        """The person's name parts and primary email accompany the attendance list"""
+        person = PersonFactory(name="Cornelia Zira")
+        secondary_email = EmailFactory(person=person)
+
+        for email in [person.email_address(), secondary_email.address]:
+            url = urlreverse(self.VIEWNAME, kwargs={"email": email})
+            r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+            self.assertEqual(r.status_code, 200)
+            payload = r.json()
+            self.assertEqual(payload["first_name"], "Cornelia")
+            self.assertEqual(payload["last_name"], "Zira")
+            # the person's primary address, not the one they were looked up by
+            self.assertEqual(payload["email"], person.email_address())
+
     def test_excludes_non_plenary_registrations(self):
         """Registrations without an onsite or remote plenary ticket are not reported"""
         RegistrationFactory(
@@ -210,12 +233,32 @@ class MeetingsAttendedByUuidTests(TestCase):
 
         r = self.get(self.person.primary_uuid)
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json(), {"attended": []})
+        self.assertEqual(
+            r.json(),
+            {
+                "first_name": self.person.first_name(),
+                "last_name": self.person.last_name(),
+                "email": self.person.email_address(),
+                "attended": [],
+            },
+        )
 
     def test_unknown_uuid_is_404(self):
         self.assertEqual(
             self.get("6f9a1c30-6c7e-4f0a-9a3f-2f1d0b8a4e11").status_code, 404
         )
+
+    def test_person_without_email_reports_blank(self):
+        """A person with no email address is reported with a blank one
+
+        Only reachable through this endpoint - the email-keyed one needs an address to
+        look the person up by.
+        """
+        self.person.email_set.update(person=None)  # detach email
+
+        r = self.get(self.person.primary_uuid)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["email"], "")
 
     def test_matches_the_email_keyed_endpoint(self):
         meeting = MeetingFactory(type_id="ietf", number="118", populate_schedule=False)

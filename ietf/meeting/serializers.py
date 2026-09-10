@@ -26,6 +26,9 @@ class AttendedMeetingSerializer(serializers.ModelSerializer):
 
 
 class PersonAttendedMeetingsSerializer(serializers.Serializer):
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    email = serializers.EmailField(source="email_address")
     attended = AttendedMeetingSerializer(source="attended_registrations", many=True)
 
 
