@@ -1,0 +1,313 @@
+# Copyright The IETF Trust 2016-2026, All Rights Reserved
+
+from collections import defaultdict
+from typing import Any
+
+from django.conf import settings
+from django.core.cache import cache
+from django.db.models import Count, DateTimeField, OuterRef, Subquery
+from django.http import HttpResponseRedirect
+from django.shortcuts import render
+from django.urls import reverse as urlreverse
+
+from ietf.doc.models import DocEvent, Document
+from ietf.stats.utils import color_from_hash, get_top_n_choices, get_valid_top_n
+from ietf.utils.timezone import RPC_TZINFO
+
+
+def _get_document_type_choices(view, doc_type: str, stats_type: str) -> list[tuple[str, str, str]]:
+    """Build the document-type navigation choices for a stats view."""
+    return [
+        ("draft", "Drafts", urlreverse(view, kwargs={"doc_type": "draft", "stats_type": stats_type})),
+        ("rfc", "RFCs", urlreverse(view, kwargs={"doc_type": "rfc", "stats_type": stats_type})),
+    ]
+
+
+def _get_stats_type_choices(view, doc_type: str, stats_type: str) -> list[tuple[str, str, str]]:
+    """Build the stats-type navigation choices for a stats view."""
+    possible_stats_types = [
+        ("stream", "Streams", urlreverse(view, kwargs={"doc_type": doc_type, "stats_type": "stream"})),
+        ("wg", "Working Groups", urlreverse(view, kwargs={"doc_type": doc_type, "stats_type": "wg"})),
+    ]
+    if doc_type == "draft":
+        possible_stats_types.append(
+            ("level", "Intended Status", urlreverse(view, kwargs={"doc_type": doc_type, "stats_type": "level"})),
+        )
+    elif doc_type == "rfc":
+        possible_stats_types.append(
+            ("level", "Category", urlreverse(view, kwargs={"doc_type": doc_type, "stats_type": "level"})),
+        )
+    return possible_stats_types
+
+
+def get_total_data_for_documents(
+    doc_type: str = "rfc",
+    group_by: str = "level",
+    top_n: int = 20,
+) -> dict[str, Any]:
+    """Get aggregated document statistics grouped by the specified field.
+
+    Args:
+        doc_type: Document type filter ('rfc', 'draft').
+        group_by: Field to group by (e.g., 'stream__name', 'group__name').
+        top_n: Number of top groups to display.
+
+    Returns:
+        Chart.js compatible data dictionary with labels and datasets.
+
+    """
+    queryset = (
+        Document.objects
+        .filter(type_id=doc_type)
+        .values(group_by)
+        .annotate(document_count=Count("id", distinct=True))
+        .order_by("-document_count")
+    )
+
+    # Convert queryset to dictionary, aggregating by group
+    group_count_dict: dict[str, int] = {}
+    for group, count in queryset.values_list(group_by, "document_count"):
+        if not group:
+            group = "Unspecified"
+        group_count_dict[group] = group_count_dict.get(group, 0) + count
+
+    sorted_groups = sorted(group_count_dict.items(), key=lambda x: x[1], reverse=True)
+    top_groups = sorted_groups[:top_n]
+    other_count = sum(count for _, count in sorted_groups[top_n:])
+    if other_count > 0:
+        top_groups.append(("Other", other_count))
+
+    labels: tuple[str, ...] = tuple(label for label, _ in top_groups)
+    data: tuple[int, ...] = tuple(count for _, count in top_groups)
+    chart_data: dict[str, Any] = {
+        "labels": labels,
+        "datasets": [{
+            "data": data,
+            "backgroundColor": [color_from_hash(label)
+                                if label else "#202020"
+                                for label in labels],
+            "borderColor": "black",
+            "borderWidth": 1,
+        }],
+    }
+    return chart_data
+
+def documents_total(request: Any, doc_type: str = "rfc", stats_type: str = "level") -> Any:
+    """Render document statistics page with pie chart aggregations.
+
+    Args:
+        request: The HTTP request object.
+        doc_type: Type of documents to display.
+        stats_type: Field to aggregate by.
+
+    Returns:
+        Rendered response for the documents_total template.
+
+    """
+    top_n, error_response = get_valid_top_n(request)
+
+    if error_response is not None:
+        return error_response
+
+    if stats_type == "stream":
+        chart_data = get_total_data_for_documents(doc_type, "stream__name", top_n)
+    elif stats_type == "level" and doc_type == "draft":
+        chart_data = get_total_data_for_documents(doc_type, "intended_std_level__name", top_n)
+    elif stats_type == "level" and doc_type == "rfc":
+        chart_data = get_total_data_for_documents(doc_type, "std_level__name", top_n)
+    elif stats_type == "wg":
+        chart_data = get_total_data_for_documents(doc_type, "group__name", top_n)
+    else:
+        return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
+
+    possible_docs_types = _get_document_type_choices(documents_total, doc_type, stats_type)
+    possible_stats_types = _get_stats_type_choices(documents_total, doc_type, stats_type)
+
+    return render(request, "stats/documents_total.html", {
+        "top_n": top_n,
+        "top_n_choices": get_top_n_choices(),
+        "objects": "documents",
+        "possible_docs_types": possible_docs_types,
+        "possible_stats_types": possible_stats_types,
+        "timeline_url": urlreverse(documents_timeline, kwargs={"doc_type": doc_type, "stats_type": stats_type}),
+        "total_url": urlreverse(documents_total, kwargs={"doc_type": doc_type, "stats_type": stats_type}),
+        "doc_type": doc_type,
+        "stats_type": stats_type,
+        "chart_data": chart_data,
+    })
+
+def get_timeline_data_for_documents(
+    doc_type: str = "rfc",
+    group_by: str = "stream",
+    top_n: int = 10,
+) -> tuple[list[int], list[dict[str, Any]]]:
+    """Get timeline data for documents grouped by field over years.
+
+    Args:
+        doc_type: Document type filter ('rfc', 'draft').
+        group_by: Field to group by (e.g., 'stream', 'group', 'intended_std_level').
+        top_n: Number of top groups to display.
+
+    Returns:
+        Tuple of (sorted_years, datasets) for Chart.js timeline chart.
+
+    """
+
+    # Initialize variables with proper types
+    years_set: list[int]
+    documents_totals: dict[str, int]
+    data_map: dict[int, dict[str, int]]
+
+    cache_key = f"stats:get_timeline_data_for_documents:{doc_type}-{group_by}"
+    result = cache.get(cache_key, None)
+    if result is not None:
+        years_set, documents_totals, data_map = result
+    else:
+        # Fetch each document's publication event time in the same query rather
+        # than triggering a separate query per row via Document.pub_date().
+        event_type = "published_rfc" if doc_type == "rfc" else "new_revision"
+        pub_datetime_subquery = Subquery(
+            DocEvent.objects
+            .filter(doc=OuterRef("pk"), type=event_type)
+            .order_by("-time", "-id")
+            .values("time")[:1],
+            output_field=DateTimeField(),
+        )
+        queryset = (
+            Document.objects
+            .filter(type_id=doc_type)
+            .select_related(group_by)
+            .annotate(pub_datetime=pub_datetime_subquery)
+        )
+
+        # ── Step 1: Collect all years and document totals ──
+        years_set_temp: set[int] = set()
+        documents_totals = defaultdict(int)
+        data_map = defaultdict(dict)  # {year: {group: count}}
+
+        for row in queryset:
+            if row.pub_datetime is None:
+                continue
+            year = row.pub_datetime.astimezone(RPC_TZINFO).year
+            if group_by == "stream":
+                group = row.stream.name if row.stream else "Unspecified"
+            elif group_by == "group":
+                group = row.group.name if row.group else "Unspecified"
+            elif group_by == "intended_std_level":
+                group = row.intended_std_level.name if row.intended_std_level else "Unspecified"
+            elif group_by == "std_level":
+                group = row.std_level.name if row.std_level else "Unspecified"
+            else:
+                group = getattr(row, group_by, None)
+                if not group:
+                    group = "Unspecified"
+            years_set_temp.add(year)
+            documents_totals[group] += 1
+            data_map[year][group] = data_map[year].get(group, 0) + 1
+
+        # ── Step 2: Sort years numerically ──
+        years_set = sorted(years_set_temp)
+        cache.set(
+            cache_key,
+            (years_set, documents_totals, data_map),
+            settings.STATS_TIMELINE_CACHE_TIMEOUT,
+        )
+
+    top_groups = sorted(
+        documents_totals.keys(),
+        key=lambda c: documents_totals[c],
+        reverse=True,
+    )[:top_n]
+    non_top_groups = set(documents_totals.keys()) - set(top_groups)
+    other_totals: dict[int, int] = defaultdict(int)
+    other_bin_is_empty = True
+    for y in years_set:
+        for g in non_top_groups:
+            count = int(data_map[y].get(g, 0))
+            other_totals[y] += count
+            if count > 0:
+                other_bin_is_empty = False
+
+    # ── Step 3: Build Chart.js datasets ──
+    datasets: list[dict[str, Any]] = []
+    for group in top_groups:
+        color = color_from_hash(group)
+        datasets.append({
+            "label": group,
+            "data": [data_map[year].get(group, 0) for year in years_set],
+            "borderColor": color,
+            "backgroundColor": color + "99",  # 60% opacity fill
+            "fill": False,
+            "tension": 0.0,
+            "pointColor": color,
+            "pointBackgroundColor": color,
+            "pointRadius": 4,
+            "pointHoverRadius": 6,
+            "borderWidth": 2,
+        })
+
+    if not other_bin_is_empty:
+        datasets.append({
+            "label": "Other",
+            "data": [other_totals.get(year, 0) for year in years_set],
+            "borderColor": "black",
+            "fill": False,
+            "tension": 0.0,
+            "pointColor": "black",
+            "pointBackgroundColor": "black",
+            "pointRadius": 4,
+            "pointHoverRadius": 6,
+            "borderWidth": 2,
+        })
+    return years_set, datasets
+
+def documents_timeline(request: Any, doc_type: str = "rfc", stats_type: str = "level") -> Any:
+    """Render the documents timeline page with document statistics over time.
+
+    Args:
+        request: The HTTP request object.
+        doc_type: Type of documents to display.
+        stats_type: Field to aggregate by.
+
+    Returns:
+        Rendered response for the documents timeline template.
+
+    """
+    top_n, error_response = get_valid_top_n(request)
+
+    if error_response is not None:
+        return error_response
+
+    if stats_type == "stream":
+        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "stream", top_n)
+    elif stats_type == "level" and doc_type == "draft":
+        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "intended_std_level", top_n)
+    elif stats_type == "level" and doc_type == "rfc":
+        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "std_level", top_n)
+    elif stats_type == "wg":
+        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "group", top_n)
+    else:
+        return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
+
+    chart_data = {
+        "labels": total_labels,
+        "datasets": total_data_sets,
+    }
+
+    possible_docs_types = _get_document_type_choices(documents_timeline, doc_type, stats_type)
+    possible_stats_types = _get_stats_type_choices(documents_timeline, doc_type, stats_type)
+
+    return render(request, "stats/documents_timeline.html", {
+        "top_n": top_n,
+        "top_n_choices": get_top_n_choices(),
+        "objects": "documents",
+        "possible_docs_types": possible_docs_types,
+        "possible_stats_types": possible_stats_types,
+        "timeline_url": urlreverse(documents_timeline,
+                                   kwargs={"doc_type": doc_type, "stats_type": stats_type}),
+        "total_url": urlreverse(documents_total,
+                                kwargs={"doc_type": doc_type, "stats_type": stats_type}),
+        "doc_type": doc_type,
+        "stats_type": stats_type,
+        "chart_data": chart_data,
+    })
