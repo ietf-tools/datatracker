@@ -233,7 +233,7 @@ class SessionDataViewSet(viewsets.GenericViewSet):
             "Each attendee is identified by any UUID the datatracker has issued them, so "
             "a UUID superseded by a merge still resolves. If any UUID fails to resolve "
             "the whole request is rejected and nothing is recorded.\n\n"
-            "A join_time with no UTC offset is read as UTC.\n\n"
+            "join_time must carry an explicit UTC offset.\n\n"
             "For an interim meeting this also regenerates the session's bluesheet."
         ),
         request=SessionAttendeesSerializer,

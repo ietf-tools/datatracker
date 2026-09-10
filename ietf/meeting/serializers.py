@@ -1,9 +1,9 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
-import datetime
 
 from rest_framework import serializers
 
 from ietf.meeting.models import Registration
+from ietf.utils.rest_framework.fields import AwareDateTimeField
 
 
 class AttendedMeetingSerializer(serializers.ModelSerializer):
@@ -62,9 +62,7 @@ class SessionAttendeeSerializer(serializers.Serializer):
     """One session attendee, identified by any UUID the datatracker issued them"""
 
     person_uuid = serializers.UUIDField()
-    # default_timezone so a value with no offset is read as UTC rather than in the
-    # process timezone, matching the other DRF datetime fields in the API
-    join_time = serializers.DateTimeField(default_timezone=datetime.UTC)
+    join_time = AwareDateTimeField()
 
 
 class SessionAttendeesSerializer(serializers.Serializer):
