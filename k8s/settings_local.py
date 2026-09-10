@@ -125,6 +125,17 @@ USING_DEBUG_EMAIL_SERVER = (
 EMAIL_HOST = os.environ.get("DATATRACKER_EMAIL_HOST", "localhost")
 EMAIL_PORT = int(os.environ.get("DATATRACKER_EMAIL_PORT", "2025"))
 
+_email_host_user = os.environ.get("DATATRACKER_EMAIL_HOST_USER", None)
+_email_host_password = os.environ.get("DATATRACKER_EMAIL_HOST_PASSWORD", None)
+if _email_host_user is not None or _email_host_password is not None:
+    if _email_host_user is None or _email_host_password is None:
+        raise RuntimeError(
+            "DATATRACKER_EMAIL_HOST_USER and ..._PASSWORD must BOTH or NEITHER be set"
+        )
+    EMAIL_HOST_USER = _email_host_user
+    EMAIL_HOST_PASSWORD = _email_host_password
+    EMAIL_USE_TLS = True
+
 _broker_url = os.environ.get("DATATRACKER_BROKER_URL", None)
 _celery_password = os.environ.get("CELERY_PASSWORD", None)
 if _broker_url is not None:
