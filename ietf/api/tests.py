@@ -564,6 +564,62 @@ class CustomApiTests(TestCase):
                 json.loads(content)
             )
 
+    def test_legacy_session_data_endpoints_report_a_missing_timeslot(self):
+        """A session with no official timeslot is a 400 with the reason, not a 500
+
+        Pins the responses of the personal-API-key endpoints so the internal error
+        convention can change underneath them without changing what callers see.
+        """
+        recmanrole = RoleFactory(group__type_id="ietf", name_id="recman")
+        recmanrole.person.user.last_login = timezone.now()
+        recmanrole.person.user.save()
+        session = SessionFactory(
+            group__type_id="wg",
+            meeting=MeetingFactory(type_id="ietf"),
+            add_to_schedule=False,
+        )
+
+        cases = [
+            (
+                "ietf.meeting.views.api_set_session_video_url",
+                lambda key: {
+                    "apikey": key,
+                    "session_id": session.pk,
+                    "url": "https://example.com/v",
+                },
+            ),
+            (
+                "ietf.meeting.views.api_upload_bluesheet",
+                lambda key: {
+                    "apikey": key,
+                    "session_id": session.pk,
+                    "bluesheet": json.dumps([{"name": "A", "affiliation": "B"}]),
+                },
+            ),
+            (
+                "ietf.meeting.views.api_upload_chatlog",
+                lambda key: {
+                    "apikey": key,
+                    "apidata": json.dumps({"session_id": session.pk, "chatlog": []}),
+                },
+            ),
+            (
+                "ietf.meeting.views.api_upload_polls",
+                lambda key: {
+                    "apikey": key,
+                    "apidata": json.dumps({"session_id": session.pk, "polls": []}),
+                },
+            ),
+        ]
+        for viewname, payload in cases:
+            with self.subTest(view=viewname):
+                url = urlreverse(viewname)
+                apikey = PersonalApiKeyFactory(endpoint=url, person=recmanrole.person)
+                r = self.client.post(url, payload(apikey.hash()))
+                self.assertContains(
+                    r, "Could not find official timeslot for session", status_code=400
+                )
+
     def test_api_upload_bluesheet(self):
         url = urlreverse("ietf.meeting.views.api_upload_bluesheet")
         recmanrole = RoleFactory(group__type_id="ietf", name_id="recman")
