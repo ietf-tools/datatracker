@@ -10,7 +10,33 @@ DEFAULT_TOKEN_LENGTH = 40  # bytes of randomness (actual token is longer due to 
 MIN_TOKEN_LENGTH = 20
 
 
+class AppApiTokenQuerySet(models.QuerySet):
+    def as_hashed_token_dict(self):
+        """Collapse a queryset into a dict for use with is_valid_token tooling
+        
+        Structure of return value is:
+            {
+                "endpoint_a": [<list of hashed tokens>],
+                "endpoint_b": [<list of hashed tokens>],
+            }
+        """
+        enabled_tokens = self.filter(enabled=True).prefetch_related(
+            models.Prefetch(
+                "endpoints",
+                to_attr="enabled_endpoints",
+                queryset=KnownApiEndpoint.objects.filter(enabled=True),
+            )
+        )
+        hashed_token_dict = {}
+        for token in enabled_tokens:
+            for endpoint in token.enabled_endpoints:
+                hashed_token_dict.setdefault(endpoint.name, []).append(token.token)
+        return hashed_token_dict
+
+
 class AppApiToken(models.Model):
+    objects = AppApiTokenQuerySet.as_manager()
+
     endpoints = models.ManyToManyField("api.KnownApiEndpoint", related_name="tokens")
     token = models.CharField(
         max_length=128,

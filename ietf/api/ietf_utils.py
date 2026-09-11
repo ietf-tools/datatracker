@@ -16,28 +16,10 @@ def is_valid_token(endpoint, token):
     if token is None or token == "":
         return False
 
-    # Prefetch enabled, matching tokens as a list "matching_tokens"
-    token_prefetch = Prefetch(
-        "tokens",
-        to_attr="matching_tokens",
-        queryset=AppApiToken.objects.filter(
-            token=AppApiToken.hash(token), enabled=True
-        ),
-    )
-    # Look up the endpoint along with matching tokens
-    known_endpoint = (
-        KnownApiEndpoint.objects.filter(name=endpoint)
-        .prefetch_related(token_prefetch)
-        .first()
-    )
-    if known_endpoint:
-        # Endpoint has a model - if it's disabled, deny all access
-        if not known_endpoint.enabled:
-            return False  # endpoint is disabled
-        # It's enabled - allow access if a matching, enabled token exists, otherwise
-        # fall through to check settings-based tokens
-        if len(known_endpoint.matching_tokens) > 0:
-            return True
+    hashed_token_store = AppApiToken.objects.as_hashed_token_dict()
+    hashed_token = AppApiToken.hash(token)
+    if endpoint in hashed_token_store and hashed_token in hashed_token_store[endpoint]:
+        return True
 
     # Settings-based tokens
     if hasattr(settings, "APP_API_TOKENS"):
