@@ -5,6 +5,7 @@ import itertools
 from contextlib import suppress
 from dataclasses import dataclass
 
+import json
 import jsonschema
 import os
 import requests
@@ -59,6 +60,11 @@ from ietf.utils import markdown
 from ietf.utils.html import clean_html
 from ietf.utils.log import log
 from ietf.utils.timezone import date_today
+
+
+class SaveMaterialsError(Exception):
+    """Indicates failure saving session materials"""
+    pass
 
 
 def session_time_for_sorting(session, use_meeting_date):
@@ -202,7 +208,11 @@ def bluesheet_data(session):
     ]
 
 
-def save_bluesheet(request, session, file, encoding='utf-8'):
+def save_bluesheet(request, session, file, by, encoding='utf-8'):
+    """Store a bluesheet upload as a new revision of the session's document
+
+    Raises SaveMaterialsError if it cannot be saved.
+    """
     bluesheet_sp = session.presentations.filter(document__type='bluesheets').first()
     _, ext = os.path.splitext(file.name)
 
@@ -214,6 +224,8 @@ def save_bluesheet(request, session, file, encoding='utf-8'):
     else:
         ota = session.official_timeslotassignment()
         sess_time = ota and ota.timeslot.time
+        if sess_time is None:
+            raise SaveMaterialsError("Could not find official timeslot for session")
 
         if session.meeting.type_id=='ietf':
             name = 'bluesheets-%s-%s-%s' % (session.meeting.number, 
@@ -236,15 +248,18 @@ def save_bluesheet(request, session, file, encoding='utf-8'):
         session.presentations.create(document=doc,rev='00')
     filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
     doc.uploaded_filename = filename
-    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
-    save_error = handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=encoding)
-    if not save_error:
-        doc.save_with_history([e])
-        resolve_uploaded_material(meeting=session.meeting, doc=doc)
-    return save_error
+    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=by, type='new_revision', desc='New revision available: %s'%doc.rev)
+    handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=encoding)
+    doc.save_with_history([e])
+    resolve_uploaded_material(meeting=session.meeting, doc=doc)
 
 
-def generate_bluesheet(request, session):
+def generate_bluesheet(request, session, by):
+    """Render the session's attendance into a new bluesheet revision
+
+    Does nothing if the session has no attendance recorded. Raises
+    SaveMaterialsError if the bluesheet cannot be saved.
+    """
     data = bluesheet_data(session)
     if not data:
         return
@@ -252,7 +267,7 @@ def generate_bluesheet(request, session):
             'session': session,
             'data': data,
         })
-    return save_bluesheet(request, session, ContentFile(text.encode("utf-8"), name="unusednamepartsothereisanextension.txt"))
+    save_bluesheet(request, session, ContentFile(text.encode("utf-8"), name="unusednamepartsothereisanextension.txt"), by)
 
 
 def finalize(request, meeting):
@@ -274,9 +289,10 @@ def finalize(request, meeting):
 
         # Don't try to generate a bluesheet if it's before we had Attended records.
         if int(meeting.number) >= 108:
-            save_error = generate_bluesheet(request, session)
-            if save_error:
-                messages.error(request, save_error)
+            try:
+                generate_bluesheet(request, session, request.user.person)
+            except SaveMaterialsError as err:
+                messages.error(request, str(err))
     
     create_proceedings_templates(meeting)
     meeting.proceedings_final = True
@@ -679,11 +695,6 @@ class SessionNotScheduledError(Exception):
     pass
 
 
-class SaveMaterialsError(Exception):
-    """Indicates failure saving session materials"""
-    pass
-
-
 def save_session_minutes_revision(session, file, ext, request, encoding=None, apply_to_all=False, narrative=False):
     """Creates or updates session minutes records
 
@@ -752,7 +763,7 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
     )
 
     # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
-    save_error = handle_upload_file(
+    handle_upload_file(
         file=file,
         filename=doc.uploaded_filename,
         meeting=session.meeting,
@@ -760,10 +771,7 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
         request=request,
         encoding=encoding,
     )
-    if save_error:
-        raise SaveMaterialsError(save_error)
-    else:
-        doc.save_with_history([e])
+    doc.save_with_history([e])
 
 
 def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=None):
@@ -771,6 +779,8 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
 
     This function takes a _binary mode_ file object, a filename and a meeting object and subdir as string.
     It saves the file to the appropriate directory, get_materials_path() + subdir.
+
+    Raises SaveMaterialsError if the file cannot be saved.
     """
     filename = Path(filename)
 
@@ -794,7 +804,7 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
                 try:
                     text = text.decode(encoding)
                 except LookupError as e:
-                    return (
+                    raise SaveMaterialsError(
                         f"Failure trying to save '{filename}': "
                         f"Could not identify the file encoding, got '{str(e)[:120]}'. "
                         f"Hint: Try to upload as UTF-8."
@@ -803,7 +813,10 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
                 try:
                     text = smart_str(text)
                 except UnicodeDecodeError as e:
-                    return "Failure trying to save '%s'. Hint: Try to upload as UTF-8: %s..." % (filename, str(e)[:120])
+                    raise SaveMaterialsError(
+                        "Failure trying to save '%s'. Hint: Try to upload as UTF-8: %s..."
+                        % (filename, str(e)[:120])
+                    )
             # Whole file sanitization; add back what's missing from a complete
             # document (sanitize will remove these).
             clean = clean_html(text)
@@ -829,7 +842,6 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
             # TODO-BLOBSTORE: See above question about refactoring
             store_bytes(subdir, filename.name, b"".join(chunks))
 
-    return None
 
 def new_doc_for_session(type_id, session):
     typename = DocTypeName.objects.get(slug=type_id)
@@ -853,6 +865,36 @@ def new_doc_for_session(type_id, session):
     doc.states.add(State.objects.get(type_id=type_id, slug='active'))
     session.presentations.create(document=doc,rev='00')
     return doc
+
+
+def save_session_json_doc(session, type_id, data, by):
+    """Store a chatlog or polls upload as a new revision of the session's document
+
+    Raises SaveMaterialsError if it cannot be stored.
+    """
+    presentation = session.presentations.filter(document__type=type_id).first()
+    if presentation:
+        doc = presentation.document
+        doc.rev = f"{(int(doc.rev)+1):02d}"
+        presentation.rev = doc.rev
+        presentation.save()
+    else:
+        doc = new_doc_for_session(type_id, session)
+        if doc is None:
+            raise SaveMaterialsError("Could not find official timeslot for session")
+    filename = f"{doc.name}-{doc.rev}.json"
+    doc.uploaded_filename = filename
+    write_doc_for_session(session, type_id, filename, json.dumps(data))
+    e = NewRevisionDocEvent.objects.create(
+        doc=doc,
+        rev=doc.rev,
+        by=by,
+        type="new_revision",
+        desc="New revision available: %s" % doc.rev,
+    )
+    doc.save_with_history([e])
+    resolve_uploaded_material(meeting=session.meeting, doc=doc)
+
 
 # TODO-BLOBSTORE - consider adding doc to this signature and factoring away type_id
 def write_doc_for_session(session, type_id, filename, contents):
@@ -1198,6 +1240,38 @@ def store_blobs_for_one_meeting(meeting: Meeting):
 
     for doc in meeting_documents:
         store_blobs_for_one_material_doc(doc)
+
+
+def save_session_video_url(session, url, by):
+    """Point the session's video recording at url
+
+    Updates the newest existing video recording, or creates one. Raises
+    SaveMaterialsError if there is no timeslot to name a new recording after.
+    """
+    recordings = [r for r in session.recordings() if "video" in r.title.lower()]
+    if recordings:
+        doc = recordings[-1]
+        if doc.external_url != url:
+            e = DocEvent.objects.create(
+                doc=doc,
+                rev=doc.rev,
+                type="added_comment",
+                by=by,
+                desc="External url changed from %s to %s" % (doc.external_url, url),
+            )
+            doc.external_url = url
+            doc.save_with_history([e])
+        return
+    ota = session.official_timeslotassignment()
+    if ota is None:
+        raise SaveMaterialsError("Could not find official timeslot for session")
+    time = ota.timeslot.time
+    title = "Video recording for %s on %s at %s" % (
+        session.group.acronym,
+        time.date(),
+        time.time(),
+    )
+    create_recording(session, url, title=title, user=by)
 
 
 def create_recording(session, url, title=None, user=None):

@@ -4595,6 +4595,52 @@ class SessionDetailsTests(TestCase):
         self.assertTrue(all([x in unicontent(r) for x in ('slides','agenda','minutes','draft')]))
         self.assertNotContains(r, 'deleted')
 
+    def test_session_details_slides_drag_and_drop_markup(self):
+        """Every slides table is a drag-and-drop target with the attributes the JS reads
+
+        session_details.js takes the document name of a dragged deck from the row's
+        data-name attribute and the endpoints to post to from the tbody's data-* URLs.
+        A session with no slides yet still needs a tbody, or there is nothing to drop
+        a deck onto. See ietf-tools/datatracker#7144.
+        """
+        chair_role = RoleFactory(name_id='chair', group__type_id='wg', group__state_id='active')
+        group = chair_role.group
+        meeting = MeetingFactory(type_id='ietf', date=date_today() + datetime.timedelta(days=90))
+        session = SessionFactory(meeting=meeting, group=group, status_id='sched')
+        empty_session = SessionFactory(meeting=meeting, group=group, status_id='sched')
+        slides = SessionPresentationFactory(session=session, document__type_id='slides').document
+
+        username = chair_role.person.user.username
+        self.client.login(username=username, password=username + '+password')
+        url = urlreverse('ietf.meeting.views.session_details',
+                         kwargs=dict(num=meeting.number, acronym=group.acronym))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        for sess in (session, empty_session):
+            tbody = q('table#slides_%d > tbody' % sess.pk)
+            self.assertEqual(len(tbody), 1,
+                             'Session %d has no slides tbody to drop onto' % sess.pk)
+            self.assertEqual(tbody.attr('data-session'), str(sess.pk))
+            for attribute, view_name in (
+                ('data-add-to-session', 'ietf.meeting.views.ajax_add_slides_to_session'),
+                ('data-remove-from-session', 'ietf.meeting.views.ajax_remove_slides_from_session'),
+                ('data-reorder-in-session', 'ietf.meeting.views.ajax_reorder_slides_in_session'),
+            ):
+                self.assertEqual(
+                    tbody.attr(attribute),
+                    urlreverse(view_name, kwargs=dict(session_id=sess.pk, num=meeting.number)),
+                    'Wrong %s on session %d' % (attribute, sess.pk),
+                )
+
+        rows = q('table#slides_%d > tbody > tr' % session.pk)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows.attr('data-name'), slides.name,
+                         'Slide rows must carry the document name in data-name')
+        self.assertIn('draggable', rows.attr('class'))
+        self.assertEqual(len(q('table#slides_%d > tbody > tr' % empty_session.pk)), 0)
+
     def test_session_details_has_import_minutes_buttons(self):
         group = GroupFactory.create(
             type_id='wg',
