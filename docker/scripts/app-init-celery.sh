@@ -4,7 +4,7 @@
 #
 #   CELERY_APP - name of application to pass to celery (defaults to ietf)
 #
-#   CELERY_ROLE - 'worker' or 'beat' (defaults to 'worker')
+#   CELERY_ROLE - 'worker', 'beat', or 'flower' (defaults to 'worker')
 #
 #   CELERY_UID - numeric uid for the celery worker process
 #
