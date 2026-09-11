@@ -4,6 +4,7 @@ from django.contrib import admin, messages
 from django.db import IntegrityError, transaction
 from django.utils.html import format_html
 
+from ietf.api.ietf_utils import cached_hashed_token_store
 from ietf.api.models import AppApiToken, KnownApiEndpoint
 
 
@@ -75,6 +76,7 @@ class AppApiTokenAdmin(admin.ModelAdmin):
                 level=messages.ERROR,
             )
             raise
+        cached_hashed_token_store(force_update=True)  # update the cache
         if new_token:
             self.message_user(
                 request,
@@ -94,3 +96,7 @@ class AppApiTokenAdmin(admin.ModelAdmin):
 class KnownApiEndpointAdmin(admin.ModelAdmin):
     list_display = ["name", "enabled"]
     search_fields = ["name"]
+
+    def save_model(self, request, obj: KnownApiEndpoint, form, change):
+        super().save_model(request, obj, form, change)
+        cached_hashed_token_store(force_update=True)  # update the cache
