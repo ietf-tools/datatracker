@@ -6,17 +6,27 @@ from functools import wraps
 from typing import Callable, Optional, Union
 
 from django.conf import settings
-from django.db.models import Prefetch
+from django.core.cache import caches
 from django.http import HttpResponseForbidden
 
-from .models import AppApiToken, KnownApiEndpoint
+from .models import AppApiToken
+
+
+def cached_hashed_token_store(force_update=False):
+    cache = caches["default"]
+    cache_key = "ietf.api.ietf_utils.cached_hashed_token_store"
+    cached_value = None if force_update else cache.get(cache_key)
+    if cached_value is None:
+        cached_value = AppApiToken.objects.as_hashed_token_dict()
+        cache.set(cache_key, cached_value, 86400)
+    return cached_value
 
 
 def is_valid_token(endpoint, token):
     if token is None or token == "":
         return False
 
-    hashed_token_store = AppApiToken.objects.as_hashed_token_dict()
+    hashed_token_store = cached_hashed_token_store()
     hashed_token = AppApiToken.hash(token)
     if endpoint in hashed_token_store and hashed_token in hashed_token_store[endpoint]:
         return True
