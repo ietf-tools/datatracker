@@ -708,23 +708,65 @@ class EditableRfcSerializer(serializers.ModelSerializer):
                             )
                         )
             if updates is not omitted:
-                RelatedDocument.objects.filter(
+                stale_updates = RelatedDocument.objects.filter(
                     source=rfc, relationship_id="updates"
-                ).exclude(target__rfc_number__in=updates).delete()
+                ).exclude(target__rfc_number__in=updates)
+                for stale in stale_updates:
+                    rfc_events.append(
+                        DocEvent.objects.create(
+                            doc=rfc,
+                            rev=rfc.rev,
+                            type="sync_from_rfc_editor",
+                            by=system_person,
+                            desc=f"Removed updates relationship to {prettify_std_name(stale.target.name)}",
+                        )
+                    )
+                stale_updates.delete()
                 for rfc_num in updates:
                     target = Document.objects.get(rfc_number=rfc_num, type_id="rfc")
-                    RelatedDocument.objects.get_or_create(
+                    _, created = RelatedDocument.objects.get_or_create(
                         source=rfc, relationship_id="updates", target=target
                     )
+                    if created:
+                        rfc_events.append(
+                            DocEvent.objects.create(
+                                doc=rfc,
+                                rev=rfc.rev,
+                                type="sync_from_rfc_editor",
+                                by=system_person,
+                                desc=f"Added updates relationship to {prettify_std_name(target.name)}",
+                            )
+                        )
             if obsoletes is not omitted:
-                RelatedDocument.objects.filter(
+                stale_obsoletes = RelatedDocument.objects.filter(
                     source=rfc, relationship_id="obs"
-                ).exclude(target__rfc_number__in=obsoletes).delete()
+                ).exclude(target__rfc_number__in=obsoletes)
+                for stale in stale_obsoletes:
+                    rfc_events.append(
+                        DocEvent.objects.create(
+                            doc=rfc,
+                            rev=rfc.rev,
+                            type="sync_from_rfc_editor",
+                            by=system_person,
+                            desc=f"Removed obsoletes relationship to {prettify_std_name(stale.target.name)}",
+                        )
+                    )
+                stale_obsoletes.delete()
                 for rfc_num in obsoletes:
                     target = Document.objects.get(rfc_number=rfc_num, type_id="rfc")
-                    RelatedDocument.objects.get_or_create(
+                    _, created = RelatedDocument.objects.get_or_create(
                         source=rfc, relationship_id="obs", target=target
                     )
+                    if created:
+                        rfc_events.append(
+                            DocEvent.objects.create(
+                                doc=rfc,
+                                rev=rfc.rev,
+                                type="sync_from_rfc_editor",
+                                by=system_person,
+                                desc=f"Added obsoletes relationship to {prettify_std_name(target.name)}",
+                            )
+                        )
 
             # update subseries relations
             if subseries is not omitted:
