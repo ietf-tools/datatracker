@@ -121,7 +121,7 @@ jobs:
     steps:      
     - name: Notify on Slack (Success)
       if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
-      uses: slackapi/slack-github-action@v3
+      uses: slackapi/slack-github-action@v4
       with:
         token: ${{ secrets.SLACK_GH_BOT }}
         method: chat.postMessage
@@ -136,7 +136,7 @@ jobs:
                   value: "Completed"
     - name: Notify on Slack (Failure)
       if: ${{ contains(join(needs.*.result, ','), 'failure') }}
-      uses: slackapi/slack-github-action@v3
+      uses: slackapi/slack-github-action@v4
       with:
         token: ${{ secrets.SLACK_GH_BOT }}
         method: chat.postMessage
