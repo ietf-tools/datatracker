@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 
 from django.db import migrations, models
-import ietf.api.models
 
 
 class Migration(migrations.Migration):
