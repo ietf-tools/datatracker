@@ -20,7 +20,7 @@ from django.conf import settings
 from django.http import HttpResponseForbidden
 from django.test import Client, RequestFactory
 from django.test.utils import override_settings
-from django.urls import reverse as urlreverse
+from django.urls import Resolver404, resolve, reverse as urlreverse
 from django.utils import timezone
 
 from tastypie.test import ResourceTestCaseMixin
@@ -43,11 +43,12 @@ from ietf.utils.mail import empty_outbox, outbox, get_payload_text
 from ietf.utils.models import DumpInfo
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, reload_db_objects
 
-from . import Serializer
+from . import OMITTED_APPS_APIS, Serializer
 from .ietf_utils import is_valid_token, requires_api_token
 from .views import EmailIngestionError
 
 OMITTED_APPS = (
+    'ietf.api',
     'ietf.secr.meetings',
     'ietf.secr.proceedings',
     'ietf.ipr',
@@ -1815,6 +1816,23 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
         for name in self.apps:
             self.assertIn(name, resource_list,
                         "Expected a REST API resource for %s, but didn't find one" % name)
+
+    def test_omitted_apps_have_no_v1_api(self):
+        """Apps in OMITTED_APPS_APIS have no v1 API"""
+        client = Client(Accept="application/json")
+        resource_list = client.get("/api/v1/").json()
+        for app_name in OMITTED_APPS_APIS:
+            # api name is derived from the app name as in api.populate_api_list()
+            name = app_name.split(".", 1)[-1]
+            self.assertNotIn(
+                name,
+                resource_list,
+                "Found a REST API resource for %s, but expected none" % name,
+            )
+            with self.assertRaises(
+                Resolver404, msg=f"Expected no API endpoint for {name}"
+            ):
+                resolve(f"/api/v1/{name}/")
 
     def test_api_top_level_bad_accept_header(self):
         """A malformed Accept header is rejected without reflecting its content
