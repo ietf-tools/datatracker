@@ -108,7 +108,8 @@ class KnownApiEndpoint(models.Model):
     class-based views and we do not have a registry. This model tracks the endpoint
     names that have had a token assigned.
 
-    Disabling an endpoint here disables access to it by any API key.
+    Disabling an endpoint here does not disable access configured through Django
+    settings.
     """
 
     name = models.CharField(max_length=1000, help_text="API endpoint name")
