@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 import re
+from unittest import mock
 
 from django.contrib.auth.models import User
 from django.urls import reverse as urlreverse
@@ -148,3 +149,24 @@ class AppApiTokenAdminTests(TestCase):
         self.assertEqual(
             AppApiToken.objects.count(), 1, "a rejected token was created anyway"
         )
+
+    def test_save_model_updates_token_cache(self):
+        """Saving changes through the admin must update the hashed token cache"""
+        with mock.patch("ietf.api.admin.cached_hashed_token_store") as mocked:
+            self.client.post(self.add_url, self.post_data())
+            self.assertIn(
+                mock.call(force_update=True),
+                mocked.call_args_list,
+                "AppApiTokenAdmin did not refresh the token cache",
+            )
+
+            mocked.reset_mock()  # isolate the assertion below to this second save
+            self.client.post(
+                urlreverse("admin:api_knownapiendpoint_add"),
+                {"name": "ietf.api.foobar", "enabled": "on"},
+            )
+            self.assertIn(
+                mock.call(force_update=True),
+                mocked.call_args_list,
+                "KnownApiEndpointAdmin did not refresh the token cache",
+            )

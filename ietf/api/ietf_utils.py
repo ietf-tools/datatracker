@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2023, All Rights Reserved
+# Copyright The IETF Trust 2023-2026, All Rights Reserved
 
 # This is not utils.py because Tastypie implicitly consumes ietf.api.utils.
 # See ietf.api.__init__.py for details.
