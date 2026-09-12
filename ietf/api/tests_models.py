@@ -2,7 +2,7 @@
 
 from django.test.utils import override_settings
 
-from ietf.api.models import MIN_TOKEN_LENGTH, AppApiToken
+from ietf.api.models import MIN_TOKEN_LENGTH, AppApiToken, KnownApiEndpoint
 from ietf.utils.test_utils import TestCase
 
 
@@ -60,5 +60,65 @@ class AppApiTokenTests(TestCase):
 
     def test_generate_token(self):
         raw_token = AppApiToken.generate_token()
-        self.assertGreaterEqual(len(raw_token), MIN_TOKEN_LENGTH, "generated token is too short")
-        self.assertNotEqual(raw_token, AppApiToken.generate_token(), "generated the same token twice")
+        self.assertGreaterEqual(
+            len(raw_token), MIN_TOKEN_LENGTH, "generated token is too short"
+        )
+        self.assertNotEqual(
+            raw_token, AppApiToken.generate_token(), "generated the same token twice"
+        )
+
+    def make_token(self, client, raw_token, endpoints, enabled=True):
+        token = AppApiToken(client=client, enabled=enabled)
+        token.set_token(raw_token)
+        token.save()
+        token.endpoints.set(endpoints)
+        return token
+
+    def test_as_hashed_token_dict(self):
+        enabled_endpoint = KnownApiEndpoint.objects.create(name="ietf.api.enabled")
+        shared_endpoint = KnownApiEndpoint.objects.create(name="ietf.api.shared")
+        disabled_endpoint = KnownApiEndpoint.objects.create(
+            name="ietf.api.disabled", enabled=False
+        )
+
+        raw_tokens = {
+            name: f"{name}-token-" + "a" * MIN_TOKEN_LENGTH
+            for name in ["first", "second", "disabled", "unlinked"]
+        }
+        self.make_token(
+            "first client",
+            raw_tokens["first"],
+            [enabled_endpoint, shared_endpoint, disabled_endpoint],
+        )
+        self.make_token("second client", raw_tokens["second"], [shared_endpoint])
+        self.make_token(
+            "disabled client",
+            raw_tokens["disabled"],
+            [enabled_endpoint],
+            enabled=False,
+        )
+        self.make_token("unlinked client", raw_tokens["unlinked"], [])
+
+        # the endpoints are prefetched, so the query count does not grow with the
+        # number of tokens
+        with self.assertNumQueries(2):
+            token_dict = AppApiToken.objects.as_hashed_token_dict()
+
+        self.assertCountEqual(
+            token_dict.keys(),
+            [enabled_endpoint.name, shared_endpoint.name],
+            "unexpected set of endpoints in the token dict",
+        )
+        self.assertCountEqual(
+            token_dict[enabled_endpoint.name],
+            [AppApiToken.hash(raw_tokens["first"])],
+            "disabled token appeared in the token dict",
+        )
+        self.assertCountEqual(
+            token_dict[shared_endpoint.name],
+            [
+                AppApiToken.hash(raw_tokens["first"]),
+                AppApiToken.hash(raw_tokens["second"]),
+            ],
+            "endpoint did not collect every token that reaches it",
+        )

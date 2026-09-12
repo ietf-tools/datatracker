@@ -1,10 +1,17 @@
 # Copyright The IETF Trust 2025-2026, All Rights Reserved
 
+from unittest import mock
+
+from django.core.cache.backends.base import BaseCache
 from django.test import RequestFactory
 from django.test.utils import override_settings
 
-from ietf.api.ietf_utils import is_valid_token, requires_api_token
-from ietf.api.models import MIN_TOKEN_LENGTH, AppApiToken, KnownApiEndpoint
+from ietf.api.ietf_utils import (
+    cached_hashed_token_store,
+    is_valid_token,
+    requires_api_token,
+)
+from ietf.api.models import AppApiToken
 from ietf.utils.test_utils import TestCase
 
 
@@ -87,17 +94,82 @@ class IetfUtilsTests(TestCase):
         self.assertEqual(result.status_code, 403)
 
 
-class ModelBackedTokenTests(TestCase):
+class CachedHashedTokenStoreTests(TestCase):
     def setUp(self):
         super().setUp()
-        self.raw_token = "a-valid-token-" + "a" * MIN_TOKEN_LENGTH
-        self.token = AppApiToken(client="test client")
-        self.token.set_token(self.raw_token)
-        self.token.save()
-        self.endpoint = KnownApiEndpoint.objects.create(name="ietf.api.foobar")
-        # the token is deliberately not linked to other_endpoint
-        self.other_endpoint = KnownApiEndpoint.objects.create(name="ietf.api.other")
-        self.token.endpoints.add(self.endpoint)
+        # Mock the cache so we control it. Use autospec to ensure we don't mask
+        # calling errors that would not work with an actual Cache class.
+        self.cache = mock.create_autospec(BaseCache, instance=True)
+        cache_patcher = mock.patch(
+            "ietf.api.ietf_utils.caches", {"default": self.cache}
+        )
+        cache_patcher.start()
+        self.addCleanup(cache_patcher.stop)
+
+        model_patcher = mock.patch("ietf.api.ietf_utils.AppApiToken")
+        mocked_model = model_patcher.start()
+        self.addCleanup(model_patcher.stop)
+        self.built_store = {"ietf.api.foobar": ["a-hashed-token"]}
+        self.builder = mocked_model.objects.as_hashed_token_dict
+        self.builder.return_value = self.built_store
+
+        self.cached_store = {"ietf.api.cached": ["a-different-hashed-token"]}
+
+    def test_cold_cache_builds_and_stores(self):
+        self.cache.get.return_value = None
+        self.assertEqual(
+            cached_hashed_token_store(), self.built_store, "the store was not returned"
+        )
+        self.assertEqual(self.builder.call_count, 1, "the store was not built")
+        self.assertEqual(
+            self.cache.set.call_args.args[0],
+            self.cache.get.call_args.args[0],
+            "the store was cached under a different key than it is read from",
+        )
+        self.assertEqual(
+            self.cache.set.call_args.args[1],
+            self.built_store,
+            "the store was not cached",
+        )
+
+    def test_warm_cache_returns_cached_value(self):
+        self.cache.get.return_value = self.cached_store
+        self.assertEqual(
+            cached_hashed_token_store(),
+            self.cached_store,
+            "the cached store was not returned",
+        )
+        # building the store is the only database access this method makes
+        self.assertEqual(self.builder.call_count, 0, "a warm cache rebuilt the store")
+        self.assertEqual(self.cache.set.call_count, 0, "a warm cache was written again")
+
+    def test_force_update_rebuilds(self):
+        self.cache.get.return_value = self.cached_store
+        self.assertEqual(
+            cached_hashed_token_store(force_update=True),
+            self.built_store,
+            "the cached store was returned instead of a rebuilt one",
+        )
+        self.assertEqual(self.cache.get.call_count, 0, "the cache was consulted anyway")
+        self.assertEqual(self.builder.call_count, 1, "the store was not rebuilt")
+        self.assertEqual(
+            self.cache.set.call_args.args[1],
+            self.built_store,
+            "the rebuilt store was not cached",
+        )
+
+
+class IsValidTokenTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.raw_token = "a-valid-token"
+        # only ietf.api.foobar has a model-backed token
+        self.store = {"ietf.api.foobar": [AppApiToken.hash(self.raw_token)]}
+        store_patcher = mock.patch(
+            "ietf.api.ietf_utils.cached_hashed_token_store", return_value=self.store
+        )
+        self.mocked_store = store_patcher.start()
+        self.addCleanup(store_patcher.stop)
 
     def test_is_valid_token(self):
         self.assertTrue(
@@ -110,57 +182,33 @@ class ModelBackedTokenTests(TestCase):
         )
         self.assertFalse(
             is_valid_token("ietf.api.other", self.raw_token),
-            "token was accepted for an endpoint it is not linked to",
+            "token was accepted for an endpoint it does not cover",
         )
 
-        self.token.enabled = False
-        self.token.save()
-        self.assertFalse(
-            is_valid_token("ietf.api.foobar", self.raw_token),
-            "disabled token was accepted",
+        self.mocked_store.reset_mock()
+        self.assertFalse(is_valid_token("ietf.api.foobar", None), "null token accepted")
+        self.assertFalse(is_valid_token("ietf.api.foobar", ""), "empty token accepted")
+        self.assertEqual(
+            self.mocked_store.call_count, 0, "an empty token reached the token store"
         )
 
-        self.token.enabled = True
-        self.token.save()
-        self.endpoint.enabled = False
-        self.endpoint.save()
-        self.assertFalse(
-            is_valid_token("ietf.api.foobar", self.raw_token),
-            "disabled endpoint accepted a valid token",
+    @override_settings(APP_API_TOKENS={"ietf.api.disabled": ["a-settings-token"]})
+    def test_disabled_endpoint_does_not_block_settings_token(self):
+        """Settings-based access does not depend on the state of a KnownApiEndpoint
+
+        A disabled endpoint is absent from the token store, which denies its
+        model-backed tokens but intentionally leaves settings-based tokens alone.
+        """
+        self.assertTrue(
+            is_valid_token("ietf.api.disabled", "a-settings-token"),
+            "settings-based token was refused for an endpoint missing from the store",
         )
 
-    @override_settings(APP_API_TOKENS={"ietf.api.foobar": ["a-settings-token"]})
-    def test_disabled_endpoint_denies_settings_token(self):
-        """A disabled endpoint denies access, it does not fall through to settings"""
-        self.endpoint.enabled = False
-        self.endpoint.save()
-        self.assertFalse(
-            is_valid_token("ietf.api.foobar", "a-settings-token"),
-            "disabled endpoint honored a settings-based token",
-        )
-
-    @override_settings(
-        APP_API_TOKENS={
-            "ietf.api.other": ["a-settings-token"],
-            "ietf.api.unknown": ["a-settings-token"],
-        }
-    )
-    def test_falls_through_to_settings(self):
-        # an endpoint with a model costs two queries, one for the endpoint and one
-        # for the prefetch of its matching tokens
-        with self.assertNumQueries(2):
-            self.assertTrue(
-                is_valid_token("ietf.api.other", "a-settings-token"),
-                "enabled endpoint with no matching token ignored settings",
-            )
-        # nothing to prefetch against when the endpoint has no model
-        with self.assertNumQueries(1):
-            self.assertTrue(
-                is_valid_token("ietf.api.unknown", "a-settings-token"),
-                "endpoint with no model ignored settings",
-            )
-        with self.assertNumQueries(2):
-            self.assertFalse(
-                is_valid_token("ietf.api.other", "an-invalid-token"),
-                "invalid token was accepted",
-            )
+    @override_settings(APP_API_TOKENS={"ietf.api.settings": ["a-settings-token"]})
+    def test_makes_no_database_queries(self):
+        # the results are asserted so that the query count cannot be satisfied by
+        # calls that short-circuit before doing the work
+        with self.assertNumQueries(0):
+            self.assertTrue(is_valid_token("ietf.api.foobar", self.raw_token))
+            self.assertFalse(is_valid_token("ietf.api.foobar", "an-invalid-token"))
+            self.assertTrue(is_valid_token("ietf.api.settings", "a-settings-token"))
