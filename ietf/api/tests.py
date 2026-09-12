@@ -20,7 +20,7 @@ from django.conf import settings
 from django.http import HttpResponseForbidden
 from django.test import Client, RequestFactory
 from django.test.utils import override_settings
-from django.urls import reverse as urlreverse
+from django.urls import Resolver404, resolve, reverse as urlreverse
 from django.utils import timezone
 
 from tastypie.test import ResourceTestCaseMixin
@@ -1818,21 +1818,21 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
                         "Expected a REST API resource for %s, but didn't find one" % name)
 
     def test_omitted_apps_have_no_v1_api(self):
-        """Apps in OMITTED_APPS_APIS have no v1 API
-
-        These apps hold data that must not be reachable through the public API,
-        such as the hashed values of the API tokens themselves.
-        """
-        client = Client(Accept='application/json')
+        """Apps in OMITTED_APPS_APIS have no v1 API"""
+        client = Client(Accept="application/json")
         resource_list = client.get("/api/v1/").json()
         for app_name in OMITTED_APPS_APIS:
             # api name is derived from the app name as in api.populate_api_list()
             name = app_name.split(".", 1)[-1]
-            self.assertNotIn(name, resource_list,
-                             "Found a REST API resource for %s, but expected none" % name)
-            r = client.get("/api/v1/%s/" % name)
-            self.assertEqual(r.status_code, 404,
-                             "Expected no API endpoint for %s" % name)
+            self.assertNotIn(
+                name,
+                resource_list,
+                "Found a REST API resource for %s, but expected none" % name,
+            )
+            with self.assertRaises(
+                Resolver404, msg=f"Expected no API endpoint for {name}"
+            ):
+                resolve(f"/api/v1/{name}/")
 
     def test_api_top_level_bad_accept_header(self):
         """A malformed Accept header is rejected without reflecting its content
