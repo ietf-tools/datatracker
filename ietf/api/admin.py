@@ -91,6 +91,16 @@ class AppApiTokenAdmin(admin.ModelAdmin):
                 level=messages.WARNING,
             )
 
+    def get_search_results(self, request, queryset, search_term):
+        # call the standard search on search_fields
+        standard_search_qs, _ = super().get_search_results(
+            request, queryset, search_term
+        )
+        # also search for the token
+        hashed_search_term = AppApiToken.hash(search_term.strip())
+        matching_token_qs = queryset.filter(token=hashed_search_term)
+        return standard_search_qs | matching_token_qs, True
+
 
 @admin.register(KnownApiEndpoint)
 class KnownApiEndpointAdmin(admin.ModelAdmin):

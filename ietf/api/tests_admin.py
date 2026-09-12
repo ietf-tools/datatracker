@@ -40,8 +40,12 @@ class AppApiTokenAdminTests(TestCase):
         )
         return match.group(1) if match else None
 
-    def create_token(self, raw_token="an-existing-token-" + "a" * MIN_TOKEN_LENGTH):
-        token = AppApiToken(client="existing client")
+    def create_token(
+        self,
+        raw_token="an-existing-token-" + "a" * MIN_TOKEN_LENGTH,
+        client="existing client",
+    ):
+        token = AppApiToken(client=client)
         token.set_token(raw_token)
         token.save()
         return token
@@ -170,3 +174,35 @@ class AppApiTokenAdminTests(TestCase):
                 mocked.call_args_list,
                 "KnownApiEndpointAdmin did not refresh the token cache",
             )
+
+    def test_search_by_token_value(self):
+        raw_token = "a-searchable-token-" + "a" * MIN_TOKEN_LENGTH
+        token = self.create_token(raw_token, client="searchable client")
+        other_token = self.create_token(
+            "another-token-" + "a" * MIN_TOKEN_LENGTH, client="other client"
+        )
+        url = urlreverse("admin:api_appapitoken_changelist")
+
+        def search(term):
+            r = self.client.get(url, {"q": term})
+            self.assertEqual(r.status_code, 200)
+            return r.context["cl"].queryset
+
+        self.assertCountEqual(
+            search(raw_token), [token], "search did not match the raw token value"
+        )
+        self.assertCountEqual(
+            search(f"  {raw_token}  "),
+            [token],
+            "search did not match a token value with surrounding whitespace",
+        )
+        self.assertCountEqual(
+            search("other client"),
+            [other_token],
+            "search no longer matches the ordinary search fields",
+        )
+        self.assertCountEqual(
+            search("neither-a-token-nor-a-client"),
+            [],
+            "search matched something it should not have",
+        )
