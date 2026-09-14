@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2023, All Rights Reserved
+# Copyright The IETF Trust 2011-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -1283,19 +1283,11 @@ class IndividualInfoFormsTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('form textarea[id=id_resources]')),1)
 
-        badlines = (
-            'github_repo https://github3.com/some/repo',
-            'github_org https://github.com/not/an_org',
-            'github_notify  badaddr',
-            'website /not/a/good/url',
-            'notavalidtag blahblahblah',
-        )
-
-        for line in badlines:
-            r = self.client.post(url, dict(resources=line, submit="1"))
-            self.assertEqual(r.status_code, 200)
-            q = PyQuery(r.content)
-            self.assertTrue(q('.invalid-feedback'))
+        # ExtResourceForm validation is covered in ietf.doc.tests_forms
+        r = self.client.post(url, dict(resources='webpage /not/a/good/url', submit="1"))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('.invalid-feedback'))
 
         goodlines = """
             github_repo https://github.com/some/repo Some display text
