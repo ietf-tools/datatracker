@@ -91,26 +91,35 @@ def authenticate_person(identifier, password):
 
     Applies CaseInsensitiveModelBackend's semantics to User.username and extends them to
     the Person's Email addresses, because the address is what people know they have. Runs
-    a password hash even when nothing matched, so an unknown identifier and a wrong
-    password take comparable time.
+    a password hash when no account matched, so an unknown identifier and a wrong password
+    take comparable time.
 
-    An identifier matching more than one User proves nothing about which one the caller
-    meant, so it is refused rather than resolved arbitrarily.
+    An identifier that could mean more than one Person proves nothing about which of them
+    the caller meant, so it is refused rather than resolved arbitrarily. That covers two
+    Users whose usernames differ only in case, and a username belonging to one Person
+    while the same string is an address belonging to another - which the password cannot
+    settle, since it proves only that the caller holds one of the two accounts.
     """
     candidates = list(User.objects.filter(username__iexact=identifier)[:2])
     if len(candidates) > 1:
         return None
     user = candidates[0] if candidates else None
+    # Email.address is a case-insensitive primary key, so this matches at most one row.
+    email = Email.objects.filter(address__iexact=identifier).first()
+    # An Email with no Person names nobody, so it cannot disagree with the username.
+    addressee = email.person if email else None
+
     if user is None:
-        # Email.address is a case-insensitive primary key, so this matches at most one row.
-        email = Email.objects.filter(address__iexact=identifier).first()
-        user = email.person.user if email and email.person else None
+        user = addressee.user if addressee else None
+    person = Person.objects.filter(user=user).first() if user else None
+    if addressee is not None and person is not None and addressee != person:
+        return None
     if user is None:
         User().set_password(password)
         return None
     if not (user.check_password(password) and user.is_active):
         return None
-    return Person.objects.filter(user=user).first()
+    return person
 
 
 def portrait_url(person):

@@ -205,6 +205,31 @@ class VerifyTests(APITestCase):
         UserFactory(username=self.person.user.username.upper())
         self.assertEqual(self.verify().status_code, 401)
 
+    def test_a_username_and_another_persons_address_is_refused(self):
+        """One string naming two Persons is not resolved by proving one of the passwords"""
+        other = PersonFactory()
+        shared = EmailFactory(person=other).address
+        claimant = PersonFactory(user__username=shared)
+        self.assertNotEqual(claimant, other, "Test is broken")
+
+        r = self.verify(
+            identifier=shared, password=f"{claimant.user.username}+password"
+        )
+        self.assertEqual(r.status_code, 401)
+
+    def test_a_username_and_an_unowned_address_still_verifies(self):
+        """An Email with no Person names nobody, so there is nothing to be ambiguous with"""
+        claimant = PersonFactory(user__username="orphan@example.com")
+        Email.objects.create(
+            address="orphan@example.com", person=None, origin="author: some-draft"
+        )
+        r = self.verify(
+            identifier="orphan@example.com",
+            password=f"{claimant.user.username}+password",
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["person_uuid"], str(claimant.primary_uuid))
+
     def test_plaintext_password_is_refused(self):
         r = self.client.post(
             self.url,
