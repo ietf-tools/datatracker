@@ -24,7 +24,6 @@ from django.core.validators import validate_email
 from django.views.decorators.debug import sensitive_variables
 from django.db import IntegrityError, transaction
 
-from ietf.api.authentication import ApiKeyAuthentication, BearerTokenAuthentication
 from ietf.person.models import Email, Person, PersonUUID
 from ietf.utils import log
 
@@ -190,9 +189,6 @@ class VerifyView(APIView):
     """Prove a datatracker password and get back the Person behind it"""
 
     api_key_endpoint = "ietf.ietfauth.api_migration.verify"
-    # The account app's legacy client sends Authorization: Token; X-Api-Key is what the
-    # rest of this API uses. Both carry an APP_API_TOKENS token for the endpoint above.
-    authentication_classes = [ApiKeyAuthentication, BearerTokenAuthentication]  # noqa: RUF012
 
     @extend_schema(
         operation_id="account_migration_verify",
@@ -343,8 +339,6 @@ class ClaimEmailView(APIView):
     """Attach an address to a Person, so enrollment can use it"""
 
     api_key_endpoint = "ietf.ietfauth.api_migration.claim_email"
-    # See VerifyView on why both header shapes are accepted.
-    authentication_classes = [ApiKeyAuthentication, BearerTokenAuthentication]  # noqa: RUF012
 
     @extend_schema(
         operation_id="account_migration_claim_email",

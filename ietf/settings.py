@@ -576,8 +576,8 @@ INTERNAL_IPS = (
 )
 
 # Tracebacks mailed to ADMINS carry request.META and every frame local. The default
-# filter does not recognise the Authorization header, which the account migration API
-# accepts a shared secret in.
+# filter does not recognise the Authorization header, which the OIDC provider takes
+# client credentials and bearer access tokens in.
 DEFAULT_EXCEPTION_REPORTER_FILTER = (
     "ietf.utils.exception_filter.AuthorizationAwareReporterFilter"
 )

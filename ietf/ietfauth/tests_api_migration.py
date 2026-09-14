@@ -8,7 +8,7 @@ from unittest import mock
 
 from cryptography.fernet import Fernet
 
-from django.test import RequestFactory, override_settings
+from django.test import override_settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
 
@@ -82,22 +82,13 @@ class VerifyTests(APITestCase):
             200,
         )
 
-    def test_accepts_the_account_app_token_header(self):
+    def test_a_token_in_the_authorization_header_is_not_accepted(self):
         self.assertEqual(
             self.client.post(
                 self.url,
                 self.body(),
                 format="json",
                 headers={"Authorization": f"Token {VERIFY_TOKEN}"},
-            ).status_code,
-            200,
-        )
-        self.assertEqual(
-            self.client.post(
-                self.url,
-                self.body(),
-                format="json",
-                headers={"Authorization": "Token nope"},
             ).status_code,
             403,
         )
@@ -296,17 +287,6 @@ class VerifyTests(APITestCase):
             all(v == cleansed for v in reported["authenticate_person"].values())
         )
         self.assertEqual(reported["sensitive_variables_wrapper"]["func_args"], cleansed)
-
-    def test_a_traceback_cannot_carry_the_api_token(self):
-        """Django's own filter matches X-Api-Key through 'KEY' but nothing in Authorization"""
-        request = RequestFactory().post(
-            self.url, headers={"Authorization": f"Token {VERIFY_TOKEN}"}
-        )
-        meta = AuthorizationAwareReporterFilter().get_safe_request_meta(request)
-        self.assertEqual(
-            meta["HTTP_AUTHORIZATION"],
-            AuthorizationAwareReporterFilter.cleansed_substitute,
-        )
 
     def test_malformed_request(self):
         r = self.client.post(
