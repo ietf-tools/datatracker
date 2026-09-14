@@ -92,13 +92,15 @@ class ExtResourceFormTests(TestCase):
         form = ExtResourceForm(
             extresource_form_class=DocExtResourceForm,
             data=dict(
-                resources="""
-            github_repo https://github.com/some/repo Some display text
-            github_org https://github.com/totally_some_org
-            github_username githubuser
-            webpage http://example.com/http/is/fine
-            keymaster keymaster@example.org (Group Rooter)
-        """
+                resources=(
+                    "\n"
+                    "      github_repo https://github.com/some/repo Some display text\n"
+                    "      github_org https://github.com/totally_some_org\n"
+                    "      github_username githubuser\n"
+                    "      webpage http://example.com/http/is/fine\n"
+                    "      keymaster keymaster@example.org (Group Rooter)\n"
+                    ""
+                )
             ),
         )
         self.assertTrue(form.is_valid(), form.errors)
