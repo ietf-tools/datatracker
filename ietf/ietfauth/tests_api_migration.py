@@ -124,6 +124,30 @@ class VerifyTests(APITestCase):
             r = self.verify(identifier=identifier)
             self.assertEqual(r.status_code, 200, identifier)
 
+    def test_an_inactive_address_is_a_valid_identifier(self):
+        """Expected: the flow has to recognise an inactive address the person types
+
+        Distinct from an inactive User, which is refused. Email.active says the address
+        stopped being used - often because mail to it bounced - not that the account
+        behind it is closed, and claim-email/ reactivates exactly these.
+        """
+        inactive = EmailFactory(person=self.person, active=False)
+        r = self.verify(identifier=inactive.address)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["person_uuid"], str(self.person.primary_uuid))
+
+    def test_an_inactive_user_is_always_refused(self):
+        """However the account was reached: a closed account cannot enroll"""
+        self.person.user.is_active = False
+        self.person.user.save()
+        inactive_address = EmailFactory(person=self.person, active=False).address
+        for identifier in (
+            self.person.user.username,
+            self.person.email_set.filter(active=True).first().address,
+            inactive_address,
+        ):
+            self.assertEqual(self.verify(identifier=identifier).status_code, 401, identifier)
+
     def test_response_carries_no_username_or_password_material(self):
         payload = self.verify().json()
         self.assertEqual(
