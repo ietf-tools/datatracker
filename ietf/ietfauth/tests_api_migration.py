@@ -196,6 +196,15 @@ class VerifyTests(APITestCase):
         self.assertIsNotNone(payload["last_login"])
         self.assertIsNone(payload["portrait_url"])
 
+    def test_github_username_is_deterministic(self):
+        """Nothing stops two of them, so the one returned must not be the database's choice"""
+        name = ExtResourceName.objects.get(slug="github_username")
+        for value in ("zzz-second", "aaa-first"):
+            PersonExtResource.objects.create(
+                person=self.person, name=name, value=value
+            )
+        self.assertEqual(self.verify().json()["github_username"], "aaa-first")
+
     def test_portrait_url_is_absolute(self):
         person = PersonFactory(with_bio=True)
         self.assertTrue(person.photo, "Test is broken")
@@ -532,3 +541,66 @@ class ClaimEmailTests(APITestCase):
         self.assertEqual(
             r.json()["errors"][0]["code"], "address_belongs_to_another_person"
         )
+
+
+@override_settings(
+    APP_API_TOKENS={
+        "ietf.ietfauth.api_migration.verify": [VERIFY_TOKEN],
+        "ietf.ietfauth.api_migration.claim_email": [CLAIM_TOKEN],
+    },
+    ACCOUNT_MIGRATION_PASSWORD_KEY=PASSWORD_KEY,
+)
+class TokenScopeTests(APITestCase):
+    """Each endpoint's token opens only that endpoint
+
+    Every other test class configures one token, so none of them would notice one
+    endpoint honouring another's. Per-endpoint api_key_endpoint names exist so a token
+    can be withdrawn on its own, which only means anything if this holds.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.person = PersonFactory()
+        self.verify_url = urlreverse("ietf.api.migration_api.verify")
+        self.claim_url = urlreverse("ietf.api.migration_api.claim-email")
+        self.verify_body = {
+            "username_or_email": self.person.user.username,
+            "encrypted_password": seal(f"{self.person.user.username}+password"),
+        }
+        self.claim_body = {
+            "person_uuid": str(self.person.primary_uuid),
+            "address": "new@example.com",
+        }
+
+    def post(self, url, body, token):
+        return self.client.post(
+            url, body, format="json", headers={"X-Api-Key": token}
+        )
+
+    def test_each_token_opens_only_its_own_endpoint(self):
+        self.assertEqual(
+            self.post(self.verify_url, self.verify_body, VERIFY_TOKEN).status_code, 200
+        )
+        self.assertEqual(
+            self.post(self.claim_url, self.claim_body, CLAIM_TOKEN).status_code, 200
+        )
+        self.assertEqual(
+            self.post(self.verify_url, self.verify_body, CLAIM_TOKEN).status_code, 403
+        )
+        self.assertEqual(
+            self.post(self.claim_url, self.claim_body, VERIFY_TOKEN).status_code, 403
+        )
+
+    def test_a_logged_in_session_is_not_enough(self):
+        """SessionAuthentication is in the DRF defaults, so it reaches these endpoints"""
+        self.assertTrue(
+            self.client.login(
+                username=self.person.user.username,
+                password=f"{self.person.user.username}+password",
+            ),
+            "Test is broken",
+        )
+        for url, body in ((self.verify_url, self.verify_body), (self.claim_url, self.claim_body)):
+            self.assertEqual(
+                self.client.post(url, body, format="json").status_code, 403, url
+            )

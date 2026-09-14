@@ -134,8 +134,16 @@ def portrait_url(person):
 
 
 def github_username(person):
+    """The Person's GitHub username, or None
+
+    Ordered because nothing stops a Person having more than one: the profile editor takes
+    external resources as free text and validates each line's tag and value without
+    checking that a tag appears once. Picking by value at least makes the choice
+    repeatable rather than leaving it to the database.
+    """
     return (
         person.personextresource_set.filter(name_id=GITHUB_USERNAME_SLUG)
+        .order_by("value")
         .values_list("value", flat=True)
         .first()
     )
