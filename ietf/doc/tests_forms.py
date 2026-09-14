@@ -1,71 +1,50 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 """Tests of forms in the Doc application"""
 
-from django.core.exceptions import ValidationError
+from unittest import mock
 
-from ietf.doc.forms import ExtResourceForm, SingleExtResourceForm
+from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
+
+from ietf.doc.forms import DocExtResourceForm, ExtResourceForm
 from ietf.doc.models import DocExtResource
 from ietf.name.models import ExtResourceName, ExtResourceTypeName
-from ietf.submit.models import SubmissionExtResource
 from ietf.utils.test_utils import TestCase
 from ietf.utils.validators import validate_external_resource_value
 
 
-class SingleExtResourceFormTests(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
-        ExtResourceName.objects.create(
-            slug="keymaster", name="Keymaster", type_id="email"
-        )
+class DocExtResourceFormTests(TestCase):
+    def test_value_validated_by_name_type(self):
+        """Value validation is delegated to validate_external_resource_value()"""
+        with mock.patch(
+            "ietf.doc.models.validate_external_resource_value",
+            wraps=validate_external_resource_value,
+        ) as validate:
+            form = DocExtResourceForm(
+                data=dict(name="webpage", value="https://example.com/a/page")
+            )
+            self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(validate.call_count, 1)
 
-    def test_valid_by_type(self):
-        for name, value in (
-            ("webpage", "https://example.com/a/page"),
-            ("github_username", "githubuser"),
-            ("keymaster", "keymaster@example.org"),
-            ("github_org", "https://github.com/some_org"),
-            ("github_repo", "https://github.com/some/repo"),
-            ("jabber_room", "xmpp:mars@jabber.example.com"),
-        ):
-            form = SingleExtResourceForm(
-                data=dict(name=name, value=value, display_name="")
-            )
-            self.assertTrue(
-                form.is_valid(), f"{name} {value} should be valid: {form.errors}"
-            )
-            self.assertEqual(form.instance.name_id, name)
-            self.assertEqual(form.instance.value, value)
-
-    def test_invalid_by_type(self):
-        for name, value in (
-            ("webpage", "/not/a/good/url"),
-            ("github_repo", "https://github3.com/some/repo"),
-            ("github_org", "https://github.com/not/an_org"),
-            ("jabber_room", "https://jabber.example.com/mars"),
-            ("keymaster", "not-an-email"),
-        ):
-            form = SingleExtResourceForm(
-                data=dict(name=name, value=value, display_name="")
-            )
-            self.assertFalse(form.is_valid(), f"{name} {value} should not be valid")
+    def test_invalid_value(self):
+        """A ValidationError from the model is reported as a form error"""
+        form = DocExtResourceForm(data=dict(name="webpage", value="/not/a/good/url"))
+        self.assertFalse(form.is_valid())
+        self.assertIn(NON_FIELD_ERRORS, form.errors)
 
     def test_unknown_tag(self):
-        form = SingleExtResourceForm(
-            data=dict(name="notavalidtag", value="blahblahblah")
-        )
+        form = DocExtResourceForm(data=dict(name="notavalidtag", value="blahblahblah"))
         self.assertFalse(form.is_valid())
         self.assertIn("webpage", str(form.errors["name"]))
 
     def test_value_length_limit(self):
         """Model field limits are enforced as form errors, not database errors"""
         too_long = "https://example.com/" + "x" * 2083
-        form = SingleExtResourceForm(data=dict(name="webpage", value=too_long))
+        form = DocExtResourceForm(data=dict(name="webpage", value=too_long))
         self.assertFalse(form.is_valid())
         self.assertIn("value", form.errors)
 
     def test_display_name_length_limit(self):
-        form = SingleExtResourceForm(
+        form = DocExtResourceForm(
             data=dict(
                 name="webpage", value="https://example.com/", display_name="x" * 256
             )
@@ -74,29 +53,23 @@ class SingleExtResourceFormTests(TestCase):
         self.assertIn("display_name", form.errors)
 
     def test_value_required(self):
-        form = SingleExtResourceForm(data=dict(name="webpage", value=""))
+        form = DocExtResourceForm(data=dict(name="webpage", value=""))
         self.assertFalse(form.is_valid())
         self.assertIn("value", form.errors)
 
     def test_display_name_optional(self):
-        form = SingleExtResourceForm(
+        form = DocExtResourceForm(
             data=dict(name="webpage", value="https://example.com/")
         )
         self.assertTrue(form.is_valid())
         self.assertEqual(form.instance.display_name, "")
 
-    def test_instance_determines_model(self):
-        """The instance passed in, not Meta.model, decides what is built"""
-        data = dict(name="webpage", value="https://example.com/")
-
-        form = SingleExtResourceForm(data=data)
+    def test_builds_unsaved_instance(self):
+        form = DocExtResourceForm(
+            data=dict(name="webpage", value="https://example.com/")
+        )
         self.assertTrue(form.is_valid())
         self.assertIsInstance(form.instance, DocExtResource)
-        self.assertIsNone(form.instance.pk)
-
-        form = SingleExtResourceForm(data=data, instance=SubmissionExtResource())
-        self.assertTrue(form.is_valid())
-        self.assertIsInstance(form.instance, SubmissionExtResource)
         self.assertIsNone(form.instance.pk)
 
 
@@ -109,12 +82,15 @@ class ExtResourceFormTests(TestCase):
         )
 
     def test_empty(self):
-        form = ExtResourceForm(data=dict(resources=""))
+        form = ExtResourceForm(
+            data=dict(resources=""), extresource_form_class=DocExtResourceForm
+        )
         self.assertTrue(form.is_valid())
         self.assertEqual(form.cleaned_data["resources"], [])
 
     def test_multiple_lines(self):
         form = ExtResourceForm(
+            extresource_form_class=DocExtResourceForm,
             data=dict(
                 resources="""
             github_repo https://github.com/some/repo Some display text
@@ -123,7 +99,7 @@ class ExtResourceFormTests(TestCase):
             webpage http://example.com/http/is/fine
             keymaster keymaster@example.org (Group Rooter)
         """
-            )
+            ),
         )
         self.assertTrue(form.is_valid(), form.errors)
         resources = form.cleaned_data["resources"]
@@ -139,12 +115,15 @@ class ExtResourceFormTests(TestCase):
         self.assertEqual(resources[4].display_name, "Group Rooter")
 
     def test_too_few_fields(self):
-        form = ExtResourceForm(data=dict(resources="webpage"))
+        form = ExtResourceForm(
+            data=dict(resources="webpage"), extresource_form_class=DocExtResourceForm
+        )
         self.assertFalse(form.is_valid())
         self.assertIn("Too few fields", str(form.errors["resources"]))
 
     def test_errors_are_rolled_up_per_line(self):
         form = ExtResourceForm(
+            extresource_form_class=DocExtResourceForm,
             data=dict(
                 resources="\n".join(
                     [
@@ -152,7 +131,7 @@ class ExtResourceFormTests(TestCase):
                         "notavalidtag blahblahblah",
                     ]
                 )
-            )
+            ),
         )
         self.assertFalse(form.is_valid())
         errors = form.errors["resources"]
@@ -162,6 +141,7 @@ class ExtResourceFormTests(TestCase):
 
     def test_one_bad_line_invalidates_the_form(self):
         form = ExtResourceForm(
+            extresource_form_class=DocExtResourceForm,
             data=dict(
                 resources="\n".join(
                     [
@@ -169,20 +149,10 @@ class ExtResourceFormTests(TestCase):
                         "webpage /not/a/good/url",
                     ]
                 )
-            )
+            ),
         )
         self.assertFalse(form.is_valid())
         self.assertEqual(len(form.errors["resources"]), 1)
-
-    def test_extresource_model(self):
-        form = ExtResourceForm(
-            data=dict(resources="webpage https://example.com/a/page"),
-            extresource_model=SubmissionExtResource,
-        )
-        self.assertTrue(form.is_valid(), form.errors)
-        resource = form.cleaned_data["resources"][0]
-        self.assertIsInstance(resource, SubmissionExtResource)
-        self.assertIsNone(resource.pk)
 
     def test_initial_round_trip(self):
         resources = [
@@ -193,10 +163,13 @@ class ExtResourceFormTests(TestCase):
                 display_name="Some display text",
             ),
         ]
-        initial = ExtResourceForm(initial=dict(resources=resources)).initial[
-            "resources"
-        ]
-        form = ExtResourceForm(data=dict(resources=initial))
+        initial = ExtResourceForm(
+            initial=dict(resources=resources),
+            extresource_form_class=DocExtResourceForm,
+        ).initial["resources"]
+        form = ExtResourceForm(
+            data=dict(resources=initial), extresource_form_class=DocExtResourceForm
+        )
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(
             [
