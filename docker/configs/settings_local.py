@@ -122,8 +122,52 @@ APP_API_TOKENS = {
     "ietf.person.api_uuid_by_pk" : ["devtoken"],  # Not a real secret
 }
 
-# Fernet key the account app seals migration passwords with. Not a real secret.
-ACCOUNT_MIGRATION_PASSWORD_KEY = b"qg3_hvMoGhwvR3KL59OAaiCEqwYMyXuGnJjLbMb2VJ4="
+# Private key the account migration API decrypts passwords with. Not a real secret - the
+# account app encrypts to the matching public key, which
+#   openssl rsa -pubout -in <this key>
+# prints.
+ACCOUNT_MIGRATION_PRIVATE_KEY = b"""\
+-----BEGIN PRIVATE KEY-----
+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
+iQYoVN6njxYZu9Rew7Njrlw=
+-----END PRIVATE KEY-----
+"""
 
 # Errata system api configuration
 ERRATA_METADATA_NOTIFICATION_URL = "http://host.docker.internal:8808/api/rfc_metadata_update/"

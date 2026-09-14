@@ -6,7 +6,10 @@ import uuid
 
 from unittest import mock
 
-from cryptography.fernet import Fernet
+from base64 import b64encode
+
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 from django.test import override_settings
 from django.urls import reverse as urlreverse
@@ -28,16 +31,29 @@ from ietf.utils.test_utils import APITestCase
 
 CLAIM_TOKEN = "claim-email-token"
 VERIFY_TOKEN = "verify-token"
-PASSWORD_KEY = Fernet.generate_key()
+# 2048 rather than the 3072 a deployment should use: this runs on every test.
+_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+PRIVATE_KEY = _KEY.private_bytes(
+    serialization.Encoding.PEM,
+    serialization.PrivateFormat.PKCS8,
+    serialization.NoEncryption(),
+)
+OAEP = padding.OAEP(
+    mgf=padding.MGF1(algorithm=hashes.SHA256()),
+    algorithm=hashes.SHA256(),
+    label=None,
+)
 
 
-def seal(password):
-    return Fernet(PASSWORD_KEY).encrypt(password.encode()).decode()
+def seal(password, key=None):
+    """Encrypt as the account app does - to the public key, base64 encoded"""
+    public_key = (key or _KEY).public_key()
+    return b64encode(public_key.encrypt(password.encode(), OAEP)).decode()
 
 
 @override_settings(
     APP_API_TOKENS={"ietf.ietfauth.api_migration.verify": [VERIFY_TOKEN]},
-    ACCOUNT_MIGRATION_PASSWORD_KEY=PASSWORD_KEY,
+    ACCOUNT_MIGRATION_PRIVATE_KEY=PRIVATE_KEY,
 )
 class VerifyTests(APITestCase):
     def setUp(self):
@@ -276,13 +292,13 @@ class VerifyTests(APITestCase):
         self.assertEqual(r.status_code, 400)
 
     def test_wrong_key_is_not_a_credential_failure(self):
+        """Encrypted to somebody else's public key"""
+        stranger = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         r = self.client.post(
             self.url,
             {
                 "username_or_email": self.person.user.username,
-                "encrypted_password": Fernet(Fernet.generate_key())
-                .encrypt(self.password.encode())
-                .decode(),
+                "encrypted_password": seal(self.password, key=stranger),
             },
             format="json",
             headers={"X-Api-Key": VERIFY_TOKEN},
@@ -290,7 +306,7 @@ class VerifyTests(APITestCase):
         self.assertEqual(r.status_code, 400)
         self.assertEqual(r.json()["errors"][0]["code"], "undecryptable_password")
 
-    @override_settings(ACCOUNT_MIGRATION_PASSWORD_KEY=b"not-a-fernet-key")
+    @override_settings(ACCOUNT_MIGRATION_PRIVATE_KEY=b"not-a-pem")
     def test_an_unusable_server_key_is_not_a_client_error(self):
         """The datatracker's own misconfiguration must not read as a bad request
 
@@ -548,7 +564,7 @@ class ClaimEmailTests(APITestCase):
         "ietf.ietfauth.api_migration.verify": [VERIFY_TOKEN],
         "ietf.ietfauth.api_migration.claim_email": [CLAIM_TOKEN],
     },
-    ACCOUNT_MIGRATION_PASSWORD_KEY=PASSWORD_KEY,
+    ACCOUNT_MIGRATION_PRIVATE_KEY=PRIVATE_KEY,
 )
 class TokenScopeTests(APITestCase):
     """Each endpoint's token opens only that endpoint

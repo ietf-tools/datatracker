@@ -9,9 +9,11 @@ it is the point of the migration to stop using.
 Each endpoint carries its own api_key_endpoint so its token can be withdrawn on its own.
 """
 
+from base64 import b64decode
 from urllib.parse import urljoin
 
-from cryptography.fernet import Fernet, InvalidToken
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding
 from drf_spectacular.utils import extend_schema
 from rest_framework import exceptions, serializers, status
 from rest_framework.generics import get_object_or_404
@@ -61,26 +63,33 @@ class UndecryptablePassword(exceptions.APIException):
 
 @sensitive_variables()
 def decrypt_password(envelope):
-    """The plaintext password inside a Fernet envelope
+    """The plaintext password inside an RSA-OAEP envelope, base64 encoded
 
-    The caller encrypts under a key shared with the datatracker so that the password does
-    not travel in the clear. There is no plaintext path: a password that arrives
-    unencrypted cannot open and is refused like any other malformed envelope.
+    The caller encrypts under the datatracker's public key so that the password does not
+    travel in the clear. Only the datatracker can decrypt: the caller holds no key that
+    opens anything, so a leak on its side exposes nothing that was ever sent. There is no
+    plaintext path - a password that arrives unencrypted cannot open and is refused like
+    any other malformed envelope.
 
-    A key the datatracker itself cannot load raises rather than returning 400. That is
-    the datatracker's own fault, not the caller's, and reporting it as a client error
-    would leave every request failing with the answer that says the caller sent something
-    wrong.
-
-    Fernet stamps each envelope, but no age limit is imposed. An envelope is usable only
-    at this endpoint, which is read-only, network-restricted and token-gated, so it is
-    weaker than the password it wraps; an age limit would trade a fleet-wide sensitivity
-    to clock drift for that.
+    A private key the datatracker itself cannot load raises rather than returning 400.
+    That is the datatracker's own fault, not the caller's, and reporting it as a client
+    error would leave every request failing with the answer that says the caller sent
+    something wrong.
     """
-    fernet = Fernet(settings.ACCOUNT_MIGRATION_PASSWORD_KEY)
+    private_key = serialization.load_pem_private_key(
+        settings.ACCOUNT_MIGRATION_PRIVATE_KEY, password=None
+    )
     try:
-        return fernet.decrypt(envelope.encode()).decode()
-    except (InvalidToken, UnicodeDecodeError):
+        plaintext = private_key.decrypt(
+            b64decode(envelope, validate=True),
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None,
+            ),
+        )
+        return plaintext.decode()
+    except (ValueError, UnicodeDecodeError):
         # from None: nothing about the envelope should reach a chained traceback.
         raise UndecryptablePassword() from None
 
@@ -214,11 +223,12 @@ class VerifyView(APIView):
             "Validate a datatracker login and return the Person it belongs to, so the "
             "account app can offer that person's addresses and profile while it builds "
             "their new account.\n\n"
-            "encrypted_password is the password sealed with the Fernet key shared with "
-            "the datatracker; the password is never sent in the clear and there is no "
-            "unencrypted alternative. An envelope that does not open is a 400 with "
-            "code undecryptable_password, which means the keys are out of step - it is "
-            "not a statement about the credentials.\n\n"
+            "encrypted_password is the password encrypted to the datatracker's public "
+            "key with RSA-OAEP (SHA-256 for both the digest and MGF1, no label) and "
+            "base64 encoded. The password is never sent in the clear and there is no "
+            "unencrypted alternative. An envelope that does not open is a 400 with code "
+            "undecryptable_password, which means the key in use is not the one this "
+            "datatracker holds - it is not a statement about the credentials.\n\n"
             "Matching on the identifier is case-insensitive, and it may be either the "
             "datatracker username or any of the Person's email addresses.\n\n"
             "Every credential failure is the same 401. An unknown address, a wrong "
