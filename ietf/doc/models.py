@@ -53,7 +53,10 @@ from ietf.person.utils import get_active_balloters
 from ietf.utils import log
 from ietf.utils.decorators import memoize
 from ietf.utils.text import decode_document_content
-from ietf.utils.validators import validate_no_control_chars
+from ietf.utils.validators import (
+    validate_no_control_chars,
+    validate_external_resource_value,
+)
 from ietf.utils.mail import formataddr
 from ietf.utils.models import ForeignKey
 from ietf.utils.timezone import date_today, RPC_TZINFO, DEADLINE_TZINFO
@@ -1408,9 +1411,18 @@ class ExtResource(models.Model):
         priority = self.display_name or self.name.name
         return u"%s (%s) %s" % (priority, self.name.slug, self.value)
 
+    def clean(self):
+        # full_clean() calls clean() even when clean_fields() has already failed
+        try:
+            name = self.name
+        except ExtResourceName.DoesNotExist:
+            return
+        if self.value:
+            validate_external_resource_value(name, self.value)
+
     class Meta:
         abstract = True
-        
+
     # The to_form_entry_str() and matching from_form_entry_str() class method are
     # defined here to ensure that change request emails suggest resources in the
     # correct format to cut-and-paste into the current textarea on the external
