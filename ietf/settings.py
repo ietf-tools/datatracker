@@ -575,6 +575,13 @@ INTERNAL_IPS = (
         '::1',
 )
 
+# Tracebacks mailed to ADMINS carry request.META and every frame local. The default
+# filter does not recognise the Authorization header, which the account migration API
+# accepts a shared secret in.
+DEFAULT_EXCEPTION_REPORTER_FILTER = (
+    "ietf.utils.exception_filter.AuthorizationAwareReporterFilter"
+)
+
 # django-rest-framework configuration
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [

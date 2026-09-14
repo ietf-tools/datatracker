@@ -1,16 +1,20 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 """Tests for the account migration API"""
 
+import sys
 import uuid
+
+from unittest import mock
 
 from cryptography.fernet import Fernet
 
-from django.test import override_settings
+from django.test import RequestFactory, override_settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
+from ietf.ietfauth import api_migration
 from ietf.name.models import ExtResourceName
 from ietf.person.factories import (
     EmailFactory,
@@ -19,6 +23,7 @@ from ietf.person.factories import (
     UserFactory,
 )
 from ietf.person.models import Email, PersonExtResource
+from ietf.utils.exception_filter import AuthorizationAwareReporterFilter
 from ietf.utils.test_utils import APITestCase
 
 CLAIM_TOKEN = "claim-email-token"
@@ -234,6 +239,74 @@ class VerifyTests(APITestCase):
             headers={"X-Api-Key": VERIFY_TOKEN},
         )
         self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.json()["errors"][0]["code"], "undecryptable_password")
+
+    @override_settings(ACCOUNT_MIGRATION_PASSWORD_KEY=b"not-a-fernet-key")
+    def test_an_unusable_server_key_is_not_a_client_error(self):
+        """The datatracker's own misconfiguration must not read as a bad request
+
+        Answering 400 would leave every enrollment failing with the one code that tells
+        the account app it sent something wrong, and nothing would reach ADMINS.
+        """
+        with self.assertRaises(ValueError):
+            self.verify()
+
+    def test_a_traceback_cannot_carry_the_plaintext_password(self):
+        """A 500 anywhere under verify/ mails ADMINS every frame local
+
+        LOGGING sends ERROR to AdminEmailHandler with include_html, and the reporter
+        dumps frame locals uncleansed unless sensitive_variables is on the stack.
+
+        Asserts on the frames that hold the password rather than on the rendered report:
+        this test's own frame holds the literal too, and nothing protects that.
+        """
+        identifier, secret = "someone@example.com", "s3cret-plaintext"
+        with mock.patch.object(
+            api_migration.User.objects, "filter", side_effect=RuntimeError("boom")
+        ):
+            try:
+                api_migration.authenticate_person(identifier, secret)
+            except RuntimeError:
+                tb = sys.exc_info()[2]
+
+        cleansed = AuthorizationAwareReporterFilter.cleansed_substitute
+        frames = {}
+        while tb is not None:
+            frames[tb.tb_frame.f_code.co_name] = tb.tb_frame
+            tb = tb.tb_next
+        self.assertIn("authenticate_person", frames, "Test is broken")
+        self.assertIn("sensitive_variables_wrapper", frames, "Test is broken")
+
+        reported = {
+            name: dict(
+                AuthorizationAwareReporterFilter().get_traceback_frame_variables(
+                    None, frame
+                )
+            )
+            for name, frame in frames.items()
+        }
+        for name in ("authenticate_person", "sensitive_variables_wrapper"):
+            self.assertNotIn(
+                secret, " ".join(str(v) for v in reported[name].values()), name
+            )
+
+        # The decorated frame is cleansed wholesale; in the decorator's own frame only
+        # the call arguments are, which is where the password is.
+        self.assertTrue(
+            all(v == cleansed for v in reported["authenticate_person"].values())
+        )
+        self.assertEqual(reported["sensitive_variables_wrapper"]["func_args"], cleansed)
+
+    def test_a_traceback_cannot_carry_the_api_token(self):
+        """Django's own filter matches X-Api-Key through 'KEY' but nothing in Authorization"""
+        request = RequestFactory().post(
+            self.url, headers={"Authorization": f"Token {VERIFY_TOKEN}"}
+        )
+        meta = AuthorizationAwareReporterFilter().get_safe_request_meta(request)
+        self.assertEqual(
+            meta["HTTP_AUTHORIZATION"],
+            AuthorizationAwareReporterFilter.cleansed_substitute,
+        )
 
     def test_malformed_request(self):
         r = self.client.post(
@@ -386,3 +459,47 @@ class ClaimEmailTests(APITestCase):
         r = self.claim("not-an-address")
         self.assertEqual(r.status_code, 400)
         self.assertFalse(Email.objects.filter(address="not-an-address").exists())
+
+    def racing_claim(self, address, winner):
+        """Claim an address that another tab commits in the window we race
+
+        The competing row has to be inserted before claim_address opens its savepoint, or
+        rolling that savepoint back would take the competing row with it and the test
+        would be exercising something that cannot happen. The existence check is the last
+        thing to run before the savepoint, so it is what gets hooked.
+        """
+        real_filter = Email.objects.filter
+        raced = []
+
+        def racing_filter(*args, **kwargs):
+            if raced:
+                return real_filter(*args, **kwargs)
+            raced.append(True)
+            Email.objects.bulk_create(
+                [Email(address=address, person=winner, origin="another tab")]
+            )
+            return Email.objects.none()
+
+        with mock.patch.object(Email.objects, "filter", side_effect=racing_filter):
+            return self.claim(address)
+
+    def test_survives_a_concurrent_first_claim(self):
+        """The loser of a create race re-reads the row instead of failing
+
+        Email.address is the primary key, so the existence check and the insert race, and
+        the doc has two enrollment tabs reaching here at once.
+        """
+        address = "new@example.com"
+        r = self.racing_claim(address, self.person)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["address"], address)
+        self.assertEqual(Email.objects.filter(address=address).count(), 1)
+
+    def test_a_concurrent_claim_by_another_person_still_conflicts(self):
+        address = "new@example.com"
+        other = PersonFactory()
+        r = self.racing_claim(address, other)
+        self.assertEqual(r.status_code, 409)
+        self.assertEqual(
+            r.json()["errors"][0]["code"], "address_belongs_to_another_person"
+        )

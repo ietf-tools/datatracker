@@ -21,7 +21,8 @@ from rest_framework.views import APIView
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
-from django.db import transaction
+from django.views.decorators.debug import sensitive_variables
+from django.db import IntegrityError, transaction
 
 from ietf.api.authentication import ApiKeyAuthentication, BearerTokenAuthentication
 from ietf.person.models import Email, Person, PersonUUID
@@ -59,22 +60,33 @@ class UndecryptablePassword(exceptions.APIException):
     default_code = "undecryptable_password"
 
 
+@sensitive_variables()
 def decrypt_password(envelope):
     """The plaintext password inside a Fernet envelope
 
     The caller encrypts under a key shared with the datatracker so that the password does
     not travel in the clear. There is no plaintext path: a password that arrives
     unencrypted cannot open and is refused like any other malformed envelope.
+
+    A key the datatracker itself cannot load raises rather than returning 400. That is
+    the datatracker's own fault, not the caller's, and reporting it as a client error
+    would leave every request failing with the answer that says the caller sent something
+    wrong.
+
+    Fernet stamps each envelope, but no age limit is imposed. An envelope is usable only
+    at this endpoint, which is read-only, network-restricted and token-gated, so it is
+    weaker than the password it wraps; an age limit would trade a fleet-wide sensitivity
+    to clock drift for that.
     """
+    fernet = Fernet(settings.ACCOUNT_MIGRATION_PASSWORD_KEY)
     try:
-        return Fernet(settings.ACCOUNT_MIGRATION_PASSWORD_KEY).decrypt(
-            envelope.encode()
-        ).decode()
-    except (InvalidToken, UnicodeDecodeError, ValueError):
+        return fernet.decrypt(envelope.encode()).decode()
+    except (InvalidToken, UnicodeDecodeError):
         # from None: nothing about the envelope should reach a chained traceback.
         raise UndecryptablePassword() from None
 
 
+@sensitive_variables()
 def authenticate_person(identifier, password):
     """The Person whose account these credentials prove, or None
 
@@ -191,9 +203,9 @@ class VerifyView(APIView):
             "their new account.\n\n"
             "encrypted_password is the password sealed with the Fernet key shared with "
             "the datatracker; the password is never sent in the clear and there is no "
-            "unencrypted alternative. An envelope that does not open is a 400, which "
-            "means the keys are out of step - it is not a statement about the "
-            "credentials.\n\n"
+            "unencrypted alternative. An envelope that does not open is a 400 with "
+            "code undecryptable_password, which means the keys are out of step - it is "
+            "not a statement about the credentials.\n\n"
             "Matching on the identifier is case-insensitive, and it may be either the "
             "datatracker username or any of the Person's email addresses.\n\n"
             "Every credential failure is the same 401. An unknown address, a wrong "
@@ -217,6 +229,7 @@ class VerifyView(APIView):
             401: None,
         },
     )
+    @sensitive_variables()
     def post(self, request):
         request_serializer = VerifyRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
@@ -286,6 +299,29 @@ class AddressHasNoOwner(exceptions.APIException):
     default_code = "address_has_no_owner"
 
 
+def claim_address(person, address):
+    """The Email row for the address, creating it for the Person if there is none
+
+    Returns (email, created). The insert is savepointed and the row re-read if it
+    conflicts: address is the primary key and two enrollment tabs can reach here at once,
+    in which case the loser has to go on to the ownership checks rather than fail the
+    request it was told was idempotent.
+    """
+    email = Email.objects.filter(address__iexact=address).first()
+    if email is not None:
+        return email, False
+    try:
+        with transaction.atomic():
+            return (
+                Email.objects.create(
+                    address=address, person=person, origin=CLAIM_ORIGIN
+                ),
+                True,
+            )
+    except IntegrityError:
+        return Email.objects.get(address__iexact=address), False
+
+
 def person_for_uuid(person_uuid):
     """The Person any UUID the datatracker has issued belongs to
 
@@ -344,11 +380,8 @@ class ClaimEmailView(APIView):
         address = request_serializer.validated_data["address"]
 
         person = person_for_uuid(person_uuid)
-        email = Email.objects.filter(address__iexact=address).first()
-        if email is None:
-            email = Email.objects.create(
-                address=address, person=person, origin=CLAIM_ORIGIN
-            )
+        email, created = claim_address(person, address)
+        if created:
             outcome = "created"
         elif email.person_id is None:
             log.log(
