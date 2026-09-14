@@ -38,6 +38,15 @@ if _NOMCOM_APP_SECRET_B64 is not None:
 else:
     raise RuntimeError("DATATRACKER_NOMCOM_APP_SECRET_B64 must be set")
 
+_ACCOUNT_MIGRATION_PASSWORD_KEY = os.environ.get(
+    "DATATRACKER_ACCOUNT_MIGRATION_PASSWORD_KEY", None
+)
+if _ACCOUNT_MIGRATION_PASSWORD_KEY is not None:
+    # Already url-safe base64 - it is a Fernet key, which is that encoding by definition.
+    ACCOUNT_MIGRATION_PASSWORD_KEY = _ACCOUNT_MIGRATION_PASSWORD_KEY.encode()
+else:
+    raise RuntimeError("DATATRACKER_ACCOUNT_MIGRATION_PASSWORD_KEY must be set")
+
 _IANA_SYNC_PASSWORD = os.environ.get("DATATRACKER_IANA_SYNC_PASSWORD", None)
 if _IANA_SYNC_PASSWORD is not None:
     IANA_SYNC_PASSWORD = _IANA_SYNC_PASSWORD

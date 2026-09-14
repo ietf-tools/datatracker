@@ -116,9 +116,13 @@ for storagename in ARTIFACT_STORAGE_NAMES:
 APP_API_TOKENS = {
     "ietf.api.red_api" : ["devtoken", "redtoken"],  # Not a real secret
     "ietf.api.views_rpc" : ["devtoken"],  # Not a real secret
+    "ietf.ietfauth.api_migration.verify" : ["devtoken"],  # Not a real secret
     "ietf.person.api_uuid" : ["devtoken"],  # Not a real secret
     "ietf.person.api_uuid_by_pk" : ["devtoken"],  # Not a real secret
 }
+
+# Fernet key the account app seals migration passwords with. Not a real secret.
+ACCOUNT_MIGRATION_PASSWORD_KEY = b"qg3_hvMoGhwvR3KL59OAaiCEqwYMyXuGnJjLbMb2VJ4="
 
 # Errata system api configuration
 ERRATA_METADATA_NOTIFICATION_URL = "http://host.docker.internal:8808/api/rfc_metadata_update/"
