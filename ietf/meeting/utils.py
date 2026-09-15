@@ -1879,16 +1879,12 @@ def fix_missing_registrations(meeting=None):
         return (value or "").strip().lower()
 
     numbers = [int(meeting)] if meeting is not None else list(range(72, 100))
-    meeting_ids = [
-        m.pk
-        for m in Meeting.objects.filter(type="ietf")
-        if m.number.isdigit() and int(m.number) in numbers
-    ]
+    meetings = Meeting.objects.filter(type="ietf", number__in=[str(num) for num in numbers])
 
     # names already present in the new table, keyed by (meeting, email)
     existing = defaultdict(set)
     for meeting_id, email, first, last in Registration.objects.filter(
-        meeting_id__in=meeting_ids
+        meeting__in=meetings
     ).values_list("meeting_id", "email", "first_name", "last_name"):
         existing[(meeting_id, norm(email))].add((norm(first), norm(last)))
 
@@ -1897,7 +1893,7 @@ def fix_missing_registrations(meeting=None):
     added = {}
     created = 0
     collision_keys = set()  # (meeting, email) that had duplicate-email records
-    for mr in MeetingRegistration.objects.filter(meeting_id__in=meeting_ids):
+    for mr in MeetingRegistration.objects.filter(meeting__in=meetings):
         key = (mr.meeting_id, norm(mr.email))
         name = (norm(mr.first_name), norm(mr.last_name))
         if name in existing[key]:
@@ -1905,7 +1901,7 @@ def fix_missing_registrations(meeting=None):
         collision_keys.add(key)
         reg = added.get(key + name)
         if reg is None:
-            reg = added[key + name] = Registration.objects.create(
+            reg = Registration.objects.create(
                 meeting=mr.meeting,
                 first_name=mr.first_name,
                 last_name=mr.last_name,
@@ -1916,6 +1912,7 @@ def fix_missing_registrations(meeting=None):
                 attended=mr.attended,
                 checkedin=mr.checkedin,
             )
+            added[key + name] = reg
             created += 1
             log("fix_missing_registrations created registration: email={!r} name={!r} {!r}".format(
                 mr.email, mr.first_name, mr.last_name))
@@ -1929,7 +1926,7 @@ def fix_missing_registrations(meeting=None):
     # excluded - only the pre-existing (migrated) records are trimmed.
     created_ids = {reg.pk for reg in added.values()}
     surviving = defaultdict(list)
-    for reg in Registration.objects.filter(meeting_id__in=meeting_ids).exclude(
+    for reg in Registration.objects.filter(meeting__in=meetings).exclude(
         pk__in=created_ids
     ):
         surviving[(reg.meeting_id, norm(reg.email))].append(reg)
@@ -2000,13 +1997,14 @@ def fix_mismatched_registrations(meeting=None):
         key = (meeting_id, norm(email))
         agg = legacy.get(key)
         if agg is None:
-            agg = legacy[key] = {
+            agg = {
                 "affiliation": "",
                 # raw (un-normalized) value, used when writing a fix back
                 "affiliation_raw": "",
                 "attended": False,
                 "checkedin": False,
             }
+            legacy[key] = agg
         agg["attended"] = agg["attended"] or attended
         agg["checkedin"] = agg["checkedin"] or checkedin
         if not agg["affiliation"]:
