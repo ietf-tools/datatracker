@@ -10,8 +10,9 @@ from base64 import b64encode
 
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from drf_spectacular.generators import SchemaGenerator
 
-from django.test import override_settings
+from django.test import TestCase, override_settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
 
@@ -162,7 +163,11 @@ class VerifyTests(APITestCase):
             self.person.email_set.filter(active=True).first().address,
             inactive_address,
         ):
-            self.assertEqual(self.verify(identifier=identifier).status_code, 401, identifier)
+            r = self.verify(identifier=identifier)
+            self.assertEqual(r.status_code, 400, identifier)
+            self.assertEqual(
+                r.json()["errors"][0]["code"], "verification_failed", identifier
+            )
 
     def test_response_carries_no_username_or_password_material(self):
         payload = self.verify().json()
@@ -247,12 +252,15 @@ class VerifyTests(APITestCase):
             ),
         ]
         for r in failures:
-            self.assertEqual(r.status_code, 401)
+            self.assertEqual(r.status_code, 400)
+            self.assertEqual(r.json()["errors"][0]["code"], "verification_failed")
         self.assertEqual(len({r.content for r in failures}), 1)
 
     def test_ambiguous_identifier_is_refused(self):
         UserFactory(username=self.person.user.username.upper())
-        self.assertEqual(self.verify().status_code, 401)
+        r = self.verify()
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.json()["errors"][0]["code"], "verification_failed")
 
     def test_a_username_and_another_persons_address_is_refused(self):
         """One string naming two Persons is not resolved by proving one of the passwords"""
@@ -264,7 +272,8 @@ class VerifyTests(APITestCase):
         r = self.verify(
             identifier=shared, password=f"{claimant.user.username}+password"
         )
-        self.assertEqual(r.status_code, 401)
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.json()["errors"][0]["code"], "verification_failed")
 
     def test_a_username_and_an_unowned_address_still_verifies(self):
         """An Email with no Person names nobody, so there is nothing to be ambiguous with"""
@@ -290,6 +299,7 @@ class VerifyTests(APITestCase):
             headers={"X-Api-Key": VERIFY_TOKEN},
         )
         self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.json()["errors"][0]["code"], "undecryptable_password")
 
     def test_wrong_key_is_not_a_credential_failure(self):
         """Encrypted to somebody else's public key"""
@@ -363,6 +373,7 @@ class VerifyTests(APITestCase):
         self.assertEqual(reported["sensitive_variables_wrapper"]["func_args"], cleansed)
 
     def test_malformed_request(self):
+        """Also 400, so the code is what tells it apart from a failed verification"""
         r = self.client.post(
             self.url,
             {"encrypted_password": seal("x")},
@@ -370,6 +381,10 @@ class VerifyTests(APITestCase):
             headers={"X-Api-Key": VERIFY_TOKEN},
         )
         self.assertEqual(r.status_code, 400)
+        self.assertEqual(
+            [(e["attr"], e["code"]) for e in r.json()["errors"]],
+            [("username_or_email", "required")],
+        )
 
 
 @override_settings(
@@ -620,3 +635,61 @@ class TokenScopeTests(APITestCase):
             self.assertEqual(
                 self.client.post(url, body, format="json").status_code, 403, url
             )
+
+
+class SchemaTests(TestCase):
+    """The generated OpenAPI schema describes the errors these endpoints actually raise
+
+    drf-standardized-errors builds the error responses, and listing a status code in
+    extend_schema's responses suppresses that generation - so a well-meant annotation can
+    silently replace a documented error with "no response body".
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.schema = SchemaGenerator().get_schema(request=None, public=True)
+
+    def codes_for(self, path, status_code):
+        """Every value the `code` enum can take in that response, refs followed"""
+        response = self.schema["paths"][path]["post"]["responses"][str(status_code)]
+        self.assertIn("content", response, f"{path} {status_code} has no body")
+        codes = set()
+
+        def walk(node):
+            if isinstance(node, dict):
+                if "$ref" in node:
+                    name = node["$ref"].rsplit("/", 1)[1]
+                    walk(self.schema["components"]["schemas"][name])
+                    return
+                for key, value in node.items():
+                    if key == "code":
+                        target = value
+                        if "$ref" in target:
+                            target = self.schema["components"]["schemas"][
+                                target["$ref"].rsplit("/", 1)[1]
+                            ]
+                        codes.update(target.get("enum", []))
+                    else:
+                        walk(value)
+            elif isinstance(node, list):
+                for item in node:
+                    walk(item)
+
+        walk(response["content"]["application/json"]["schema"])
+        return codes
+
+    def test_verify_documents_its_own_failures(self):
+        path = "/api/accounts/migration/verify/"
+        codes = self.codes_for(path, 400)
+        self.assertIn("verification_failed", codes)
+        self.assertIn("undecryptable_password", codes)
+        self.assertIn("required", codes, "serializer validation should still be described")
+        self.assertNotIn(
+            "401",
+            self.schema["paths"][path]["post"]["responses"],
+            "a credential failure is a 400 with a code, not a 401",
+        )
+
+    def test_claim_email_documents_both_conflicts(self):
+        codes = self.codes_for("/api/accounts/migration/claim-email/", 409)
+        self.assertEqual(codes, set(api_migration.CLAIM_EMAIL_CONFLICT_CODES))

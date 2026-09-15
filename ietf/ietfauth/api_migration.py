@@ -15,6 +15,8 @@ from urllib.parse import urljoin
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from drf_spectacular.utils import extend_schema
+from drf_standardized_errors.openapi_serializers import ClientErrorEnum
+from drf_standardized_errors.openapi_validation_errors import extend_validation_errors
 from rest_framework import exceptions, serializers, status
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
@@ -36,27 +38,29 @@ GITHUB_USERNAME_SLUG = "github_username"
 CLAIM_ORIGIN = "account migration"
 
 
-class VerificationFailed(exceptions.APIException):
+class VerificationFailed(exceptions.ValidationError):
     """The one failure verify/ has
 
-    An unknown address, a wrong password, a disabled account and an account with no Person
-    all raise this, so the endpoint cannot be used to work out which addresses exist.
+    An unknown address, a wrong password, a disabled account, an ambiguous identifier and
+    an account with no Person all raise this, so the endpoint cannot be used to work out
+    which addresses exist.
+
+    Not a 401. The caller is authenticated - by its API key - and what failed is the
+    password it asked about, which is payload rather than protocol. A 401 would also owe
+    a WWW-Authenticate challenge (RFC 9110) that there is nothing to put in.
     """
 
-    status_code = status.HTTP_401_UNAUTHORIZED
     default_detail = "Unable to verify those credentials."
     default_code = "verification_failed"
 
 
-class UndecryptablePassword(exceptions.APIException):
+class UndecryptablePassword(exceptions.ValidationError):
     """The password envelope did not open
 
-    Not a 401: it says nothing about the credentials, and answering with one would leave a
-    key that has drifted out of step looking exactly like every user typing the wrong
-    password.
+    Its own code, so a key that has drifted out of step does not look like every user
+    typing the wrong password.
     """
 
-    status_code = status.HTTP_400_BAD_REQUEST
     default_detail = "Unable to decrypt the password."
     default_code = "undecryptable_password"
 
@@ -211,6 +215,7 @@ class VerifyResponseSerializer(serializers.Serializer):
 
 
 @extend_schema(tags=["migration"])
+@extend_validation_errors(["verification_failed", "undecryptable_password"])
 class VerifyView(APIView):
     """Prove a datatracker password and get back the Person behind it"""
 
@@ -228,14 +233,18 @@ class VerifyView(APIView):
             "base64 encoded. The password is never sent in the clear and there is no "
             "unencrypted alternative. An envelope that does not open is a 400 with code "
             "undecryptable_password, which means the key in use is not the one this "
-            "datatracker holds - it is not a statement about the credentials.\n\n"
+            "datatracker holds - it is not a statement about the credentials, and is "
+            "worth alerting on rather than showing the person.\n\n"
             "Matching on the identifier is case-insensitive, and it may be either the "
             "datatracker username or any of the Person's email addresses.\n\n"
-            "Every credential failure is the same 401. An unknown address, a wrong "
-            "password, a disabled account and an account with no Person are not "
+            "Every credential failure is the same 400 with code verification_failed: "
+            "an unknown address, a wrong password, a disabled account, an identifier "
+            "that names two people and an account with no Person are not "
             "distinguished, so the response cannot be used to discover which addresses "
-            "exist. There is no lockout: repeated failures neither block the caller nor "
-            "let one person deny another their enrollment.\n\n"
+            "exist. It is not a 401 - the caller is authenticated, and what failed is "
+            "the password it asked about. There is no lockout: repeated failures "
+            "neither block the caller nor let one person deny another their "
+            "enrollment.\n\n"
             "emails carries every address of the Person, including inactive ones - offer "
             "the active ones and treat the rest as claimable. already_linked true means "
             "the Person is already attached to an account and enrollment must stop and "
@@ -246,11 +255,7 @@ class VerifyView(APIView):
             "to keep existing relying parties working."
         ),
         request=VerifyRequestSerializer,
-        responses={
-            200: VerifyResponseSerializer,
-            400: None,
-            401: None,
-        },
+        responses={200: VerifyResponseSerializer},
     )
     @sensitive_variables()
     def post(self, request):
@@ -322,6 +327,28 @@ class AddressHasNoOwner(exceptions.APIException):
     default_code = "address_has_no_owner"
 
 
+# The library generates error responses only for the status codes in
+# DRF_STANDARDIZED_ERRORS["ALLOWED_ERROR_STATUS_CODES"], and 409 is not one of them:
+# turning it on there would add a 409 to every operation in the schema.
+CLAIM_EMAIL_CONFLICT_CODES = (
+    "address_belongs_to_another_person",
+    "address_has_no_owner",
+)
+
+
+class ClaimEmailConflictSerializer(serializers.Serializer):
+    code = serializers.ChoiceField(choices=CLAIM_EMAIL_CONFLICT_CODES)
+    detail = serializers.CharField()
+    attr = serializers.CharField(allow_null=True)
+
+
+class ClaimEmailConflictResponseSerializer(serializers.Serializer):
+    """The standardized-errors envelope, for the one status code it does not generate"""
+
+    type = serializers.ChoiceField(choices=ClientErrorEnum.choices)
+    errors = ClaimEmailConflictSerializer(many=True)
+
+
 def claim_address(person, address):
     """The Email row for the address, creating it for the Person if there is none
 
@@ -389,8 +416,7 @@ class ClaimEmailView(APIView):
         request=ClaimEmailRequestSerializer,
         responses={
             200: MigrationEmailSerializer,
-            404: None,
-            409: None,
+            409: ClaimEmailConflictResponseSerializer,
         },
     )
     @transaction.atomic
