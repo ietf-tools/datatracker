@@ -2,11 +2,9 @@
 """Account migration API
 
 Serves the account app's backend while people move their datatracker accounts to the
-external identity provider. Every response is Person-scoped: no User.username, no
-User.email and no password material, so the account app never learns the legacy username
-it is the point of the migration to stop using.
-
-Each endpoint carries its own api_key_endpoint so its token can be withdrawn on its own.
+external identity provider. Responses are Person-scoped - no User.username, no
+User.email, no password material - and each endpoint has its own api_key_endpoint so its
+token can be withdrawn separately.
 """
 
 from base64 import b64decode
@@ -33,21 +31,15 @@ from ietf.utils import log
 
 GITHUB_USERNAME_SLUG = "github_username"
 
-# Recorded on Emails this API creates, so a support question about where an address came
-# from has an answer that names the flow rather than a person.
+# Origin of Emails this API creates, so support can see where an address came from.
 CLAIM_ORIGIN = "account migration"
 
 
 class VerificationFailed(exceptions.ValidationError):
-    """The one failure verify/ has
+    """The one failure verify/ has, so it cannot be used to find which addresses exist
 
-    An unknown address, a wrong password, a disabled account, an ambiguous identifier and
-    an account with no Person all raise this, so the endpoint cannot be used to work out
-    which addresses exist.
-
-    Not a 401. The caller is authenticated - by its API key - and what failed is the
-    password it asked about, which is payload rather than protocol. A 401 would also owe
-    a WWW-Authenticate challenge (RFC 9110) that there is nothing to put in.
+    Not a 401: the caller is authenticated, and the password that failed is payload. A
+    401 would also owe a WWW-Authenticate challenge (RFC 9110) there is nothing to fill.
     """
 
     default_detail = "Unable to verify those credentials."
@@ -55,11 +47,7 @@ class VerificationFailed(exceptions.ValidationError):
 
 
 class UndecryptablePassword(exceptions.ValidationError):
-    """The password envelope did not open
-
-    Its own code, so a key that has drifted out of step does not look like every user
-    typing the wrong password.
-    """
+    """Its own code, so a drifted key does not look like every user mistyping"""
 
     default_detail = "Unable to decrypt the password."
     default_code = "undecryptable_password"
@@ -67,18 +55,14 @@ class UndecryptablePassword(exceptions.ValidationError):
 
 @sensitive_variables()
 def decrypt_password(envelope):
-    """The plaintext password inside an RSA-OAEP envelope, base64 encoded
+    """The plaintext inside a base64 RSA-OAEP envelope
 
-    The caller encrypts under the datatracker's public key so that the password does not
-    travel in the clear. Only the datatracker can decrypt: the caller holds no key that
-    opens anything, so a leak on its side exposes nothing that was ever sent. There is no
-    plaintext path - a password that arrives unencrypted cannot open and is refused like
-    any other malformed envelope.
+    Encrypted to the datatracker's public key, so only the datatracker can open it and a
+    leak at the caller exposes nothing already sent. No plaintext path: an unencrypted
+    password is refused like any other malformed envelope.
 
-    A private key the datatracker itself cannot load raises rather than returning 400.
-    That is the datatracker's own fault, not the caller's, and reporting it as a client
-    error would leave every request failing with the answer that says the caller sent
-    something wrong.
+    A private key this end cannot load raises rather than returning 400, which would
+    report the datatracker's own misconfiguration as the caller's mistake.
     """
     private_key = serialization.load_pem_private_key(
         settings.ACCOUNT_MIGRATION_PRIVATE_KEY, password=None
@@ -102,16 +86,13 @@ def decrypt_password(envelope):
 def authenticate_person(identifier, password):
     """The Person whose account these credentials prove, or None
 
-    Applies CaseInsensitiveModelBackend's semantics to User.username and extends them to
-    the Person's Email addresses, because the address is what people know they have. Runs
-    a password hash when no account matched, so an unknown identifier and a wrong password
-    take comparable time.
+    CaseInsensitiveModelBackend's semantics for User.username, extended to the Person's
+    Email addresses because the address is what people know they have. Hashes a password
+    when nothing matched, so an unknown identifier costs about what a wrong one does.
 
-    An identifier that could mean more than one Person proves nothing about which of them
-    the caller meant, so it is refused rather than resolved arbitrarily. That covers two
-    Users whose usernames differ only in case, and a username belonging to one Person
-    while the same string is an address belonging to another - which the password cannot
-    settle, since it proves only that the caller holds one of the two accounts.
+    An identifier naming two Persons is refused rather than resolved arbitrarily - two
+    usernames differing only in case, or one Person's username that is another's address.
+    The password cannot settle it: it proves only that the caller holds one of the two.
     """
     candidates = list(User.objects.filter(username__iexact=identifier)[:2])
     if len(candidates) > 1:
@@ -136,11 +117,7 @@ def authenticate_person(identifier, password):
 
 
 def portrait_url(person):
-    """Absolute URL of the Person's full-frame photo, or None
-
-    The full frame rather than a thumbnail: the provider stores this as the source the
-    smaller renderings are derived from.
-    """
+    """Absolute URL of the full-frame photo, which the provider derives thumbnails from"""
     if not person.photo:
         return None
     return urljoin(settings.IDTRACKER_BASE_URL, person.photo.url)
@@ -149,10 +126,8 @@ def portrait_url(person):
 def github_username(person):
     """The Person's GitHub username, or None
 
-    Ordered because nothing stops a Person having more than one: the profile editor takes
-    external resources as free text and validates each line's tag and value without
-    checking that a tag appears once. Picking by value at least makes the choice
-    repeatable rather than leaving it to the database.
+    Ordered because nothing stops a Person having two: the profile editor takes resources
+    as free text and never checks that a tag appears once. Repeatable beats arbitrary.
     """
     return (
         person.personextresource_set.filter(name_id=GITHUB_USERNAME_SLUG)
@@ -165,9 +140,8 @@ def github_username(person):
 def email_payload(person):
     """Every Email of the Person, primary first, then active ones oldest first
 
-    Inactive addresses are included rather than filtered out: the enrollment flow offers
-    the active ones but has to recognise an inactive address the person types, which
-    claim-email/ reactivates instead of rejecting.
+    Inactive ones included: enrollment offers the active addresses but must recognise an
+    inactive one the person types, which claim-email/ reactivates.
     """
     return [
         {"address": email.address, "primary": email.primary, "active": email.active}
@@ -196,11 +170,9 @@ class VerifyRequestSerializer(serializers.Serializer):
 class VerifyResponseSerializer(serializers.Serializer):
     """The account the credentials proved, as much of it as enrollment needs
 
-    Output only, and deliberately not read_only=True field by field: read_only implies
-    required=False, which would leave a generated client treating every field as optional.
-
-    person_uuid is null only where the Person's UUID rows are inconsistent, which is a
-    data fault rather than a normal outcome.
+    Output only, but not read_only=True per field: read_only implies required=False,
+    leaving a generated client treating every field as optional. person_uuid is null only
+    when the Person's UUID rows are inconsistent, which check_person_uuids reports.
     """
 
     person_uuid = serializers.UUIDField(allow_null=True)
@@ -300,11 +272,10 @@ class VerifyView(APIView):
 
 
 class AddressBelongsToAnotherPerson(exceptions.APIException):
-    """The address is another Person's
+    """The address is another Person's, and an Email is never moved between Persons
 
-    Distinct from every other claim-email/ failure because it is the one the flow can act
-    on: offer a different address, or route the person to support, who may find this is a
-    Person merge rather than a mistake. An Email is never moved between Persons.
+    Its own code because the flow can act on it: offer another address, or route to
+    support, who may find the two Persons should be merged.
     """
 
     status_code = status.HTTP_409_CONFLICT
@@ -315,11 +286,9 @@ class AddressBelongsToAnotherPerson(exceptions.APIException):
 class AddressHasNoOwner(exceptions.APIException):
     """The address exists but no Person owns it
 
-    Refused rather than adopted. These rows come from places that record an address
-    without establishing who is behind it - draft submissions, roles - and history points
-    through them. Handing one to whoever proved a password would attribute that history on
-    no evidence, and the endpoint cannot tell the true owner from a namesake. Support
-    establishes ownership; enrollment does not.
+    Refused, not adopted. Draft submissions and roles record addresses without
+    establishing who is behind them, and history points through those rows; handing one
+    to whoever proved a password would attribute that history to a possible namesake.
     """
 
     status_code = status.HTTP_409_CONFLICT
@@ -327,9 +296,8 @@ class AddressHasNoOwner(exceptions.APIException):
     default_code = "address_has_no_owner"
 
 
-# The library generates error responses only for the status codes in
-# DRF_STANDARDIZED_ERRORS["ALLOWED_ERROR_STATUS_CODES"], and 409 is not one of them:
-# turning it on there would add a 409 to every operation in the schema.
+# 409 is not in DRF_STANDARDIZED_ERRORS["ALLOWED_ERROR_STATUS_CODES"], so nothing
+# generates its response, and adding it there would give every operation a 409.
 CLAIM_EMAIL_CONFLICT_CODES = (
     "address_belongs_to_another_person",
     "address_has_no_owner",
@@ -352,10 +320,9 @@ class ClaimEmailConflictResponseSerializer(serializers.Serializer):
 def claim_address(person, address):
     """The Email row for the address, creating it for the Person if there is none
 
-    Returns (email, created). The insert is savepointed and the row re-read if it
-    conflicts: address is the primary key and two enrollment tabs can reach here at once,
-    in which case the loser has to go on to the ownership checks rather than fail the
-    request it was told was idempotent.
+    Returns (email, created). Savepointed and re-read on conflict: address is the primary
+    key, and the loser of a two-tab race has to reach the ownership checks rather than
+    fail a request documented as idempotent.
     """
     email = Email.objects.filter(address__iexact=address).first()
     if email is not None:
@@ -373,11 +340,7 @@ def claim_address(person, address):
 
 
 def person_for_uuid(person_uuid):
-    """The Person any UUID the datatracker has issued belongs to
-
-    Resolves prior UUIDs as well as the primary, so a caller holding a UUID from before a
-    merge still reaches the surviving Person.
-    """
+    """The Person a UUID belongs to, prior UUIDs included, so pre-merge UUIDs resolve"""
     return get_object_or_404(
         PersonUUID.objects.select_related("person"), uuid=person_uuid
     ).person
