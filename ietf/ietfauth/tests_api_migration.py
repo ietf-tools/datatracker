@@ -4,6 +4,7 @@
 import sys
 import uuid
 
+from contextlib import contextmanager
 from unittest import mock
 
 from base64 import b64encode
@@ -12,6 +13,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from drf_spectacular.generators import SchemaGenerator
 
+from django.contrib.auth.hashers import get_hasher
 from django.test import TestCase, override_settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
@@ -168,6 +170,56 @@ class VerifyTests(APITestCase):
             self.assertEqual(
                 r.json()["errors"][0]["code"], "verification_failed", identifier
             )
+
+    @contextmanager
+    def counted_hashes(self):
+        """Count argon2 operations, however the hasher is reached
+
+        encode is the one primitive both paths run: Argon2PasswordHasher.verify is
+        decode plus encode plus a constant-time compare, and check_password's
+        unusable-encoding branch reaches encode through make_password. Patching the
+        memoized hasher instance catches both without changing what either returns.
+        """
+        hasher = get_hasher("default")
+        calls = []
+        real_encode = hasher.encode
+
+        def encode(*args, **kwargs):
+            calls.append(kwargs.get("salt", args[1] if len(args) > 1 else None))
+            return real_encode(*args, **kwargs)
+
+        with mock.patch.object(hasher, "encode", encode):
+            yield calls
+
+    def test_every_outcome_costs_one_hash(self):
+        """Otherwise the response time says whether the identifier named an account"""
+        no_person = UserFactory()
+        inactive = PersonFactory()
+        inactive.user.is_active = False
+        inactive.user.save()
+        unusable = PersonFactory()
+        unusable.user.set_unusable_password()
+        unusable.user.save()
+        colliding = PersonFactory()
+        shared = EmailFactory(person=colliding).address
+        PersonFactory(user__username=shared)
+        UserFactory(username="TwinName")
+        UserFactory(username="twinname")
+
+        cases = {
+            "success": (None, None),
+            "wrong password": (None, "wrong"),
+            "unknown identifier": ("nobody@example.com", None),
+            "user with no Person": (no_person.username, f"{no_person.username}+password"),
+            "inactive user": (inactive.user.username, None),
+            "unusable password": (unusable.user.username, None),
+            "identifier naming two Persons": (shared, None),
+            "case-ambiguous username": ("twinname", None),
+        }
+        for label, (identifier, password) in cases.items():
+            with self.counted_hashes() as calls:
+                self.verify(identifier=identifier, password=password)
+            self.assertEqual(len(calls), 1, f"{label}: {len(calls)} hashes")
 
     def test_response_carries_no_username_or_password_material(self):
         payload = self.verify().json()

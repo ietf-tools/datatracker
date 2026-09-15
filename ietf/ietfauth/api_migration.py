@@ -19,6 +19,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from django.conf import settings
+from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
 from django.views.decorators.debug import sensitive_variables
@@ -28,6 +29,9 @@ from ietf.person.models import Email, Person, PersonUUID
 from ietf.utils import log
 
 GITHUB_USERNAME_SLUG = "github_username"
+
+# What an unmatched identifier is checked against, so it costs a hash like any other.
+UNUSABLE_PASSWORD = make_password(None)
 
 # Origin of Emails this API creates, so support can see where an address came from.
 CLAIM_ORIGIN = "account migration"
@@ -80,17 +84,15 @@ def decrypt_password(envelope):
         raise UndecryptablePassword() from None
 
 
-@sensitive_variables()
-def authenticate_person(identifier, password):
-    """The Person whose account these credentials prove, or None
+def resolve_user(identifier):
+    """The User an identifier names, or None if it names none or more than one
 
     CaseInsensitiveModelBackend's semantics for User.username, extended to the Person's
-    Email addresses because the address is what people know they have. Hashes a password
-    when nothing matched, so an unknown identifier costs about what a wrong one does.
+    Email addresses because the address is what people know they have.
 
-    An identifier naming two Persons is refused rather than resolved arbitrarily - two
-    usernames differing only in case, or one Person's username that is another's address.
-    The password cannot settle it: it proves only that the caller holds one of the two.
+    An identifier naming two Persons resolves to neither - two usernames differing only
+    in case, or one Person's username that is another's address. The password cannot
+    settle it: it proves only that the caller holds one of the two.
     """
     candidates = list(User.objects.filter(username__iexact=identifier)[:2])
     if len(candidates) > 1:
@@ -100,18 +102,29 @@ def authenticate_person(identifier, password):
     email = Email.objects.filter(address__iexact=identifier).first()
     # An Email with no Person names nobody, so it cannot disagree with the username.
     addressee = email.person if email else None
-
     if user is None:
-        user = addressee.user if addressee else None
-    person = Person.objects.filter(user=user).first() if user else None
-    if addressee is not None and person is not None and addressee != person:
+        return addressee.user if addressee else None
+    if addressee is not None and addressee.user_id != user.pk:
         return None
+    return user
+
+
+@sensitive_variables()
+def authenticate_person(identifier, password):
+    """The Person whose account these credentials prove, or None
+
+    Runs exactly one password hash whichever way it goes, so the time taken does not say
+    whether the identifier named an account. check_password does the hashing on both
+    paths - given an unusable encoding it runs the default hasher once and returns False,
+    which is the whole reason the unmatched path passes it one.
+    """
+    user = resolve_user(identifier)
     if user is None:
-        User().set_password(password)
+        check_password(password, UNUSABLE_PASSWORD)
         return None
     if not (user.check_password(password) and user.is_active):
         return None
-    return person
+    return Person.objects.filter(user=user).first()
 
 
 def portrait_url(person):
