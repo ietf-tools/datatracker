@@ -472,7 +472,7 @@ class ClaimEmailTests(APITestCase):
         other = PersonFactory()
         address = other.email_set.get().address
         r = self.claim(address)
-        self.assertEqual(r.status_code, 409)
+        self.assertEqual(r.status_code, 400)
         self.assertEqual(
             r.json()["errors"][0]["code"], "address_belongs_to_another_person"
         )
@@ -481,7 +481,7 @@ class ClaimEmailTests(APITestCase):
     def test_refuses_an_unowned_address(self):
         orphan = self.unowned_email()
         r = self.claim(orphan.address)
-        self.assertEqual(r.status_code, 409)
+        self.assertEqual(r.status_code, 400)
         self.assertEqual(r.json()["errors"][0]["code"], "address_has_no_owner")
         orphan.refresh_from_db()
         self.assertIsNone(orphan.person)
@@ -521,7 +521,8 @@ class ClaimEmailTests(APITestCase):
 
     def test_unknown_person_uuid(self):
         r = self.claim("new@example.com", person_uuid=uuid.uuid4())
-        self.assertEqual(r.status_code, 404)
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.json()["errors"][0]["code"], "unknown_person_uuid")
         self.assertFalse(Email.objects.filter(address="new@example.com").exists())
 
     def test_rejects_a_malformed_address(self):
@@ -568,7 +569,7 @@ class ClaimEmailTests(APITestCase):
         address = "new@example.com"
         other = PersonFactory()
         r = self.racing_claim(address, other)
-        self.assertEqual(r.status_code, 409)
+        self.assertEqual(r.status_code, 400)
         self.assertEqual(
             r.json()["errors"][0]["code"], "address_belongs_to_another_person"
         )
@@ -690,6 +691,20 @@ class SchemaTests(TestCase):
             "a credential failure is a 400 with a code, not a 401",
         )
 
-    def test_claim_email_documents_both_conflicts(self):
-        codes = self.codes_for("/api/accounts/migration/claim-email/", 409)
-        self.assertEqual(codes, set(api_migration.CLAIM_EMAIL_CONFLICT_CODES))
+    def test_claim_email_documents_its_own_refusals(self):
+        codes = self.codes_for("/api/accounts/migration/claim-email/", 400)
+        self.assertLessEqual(
+            {
+                "address_belongs_to_another_person",
+                "address_has_no_owner",
+                "unknown_person_uuid",
+            },
+            codes,
+        )
+        self.assertNotIn(
+            "409",
+            self.schema["paths"]["/api/accounts/migration/claim-email/"]["post"][
+                "responses"
+            ],
+            "a refusal is about the data supplied, not the state of a resource",
+        )

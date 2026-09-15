@@ -13,10 +13,8 @@ from urllib.parse import urljoin
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from drf_spectacular.utils import extend_schema
-from drf_standardized_errors.openapi_serializers import ClientErrorEnum
 from drf_standardized_errors.openapi_validation_errors import extend_validation_errors
-from rest_framework import exceptions, serializers, status
-from rest_framework.generics import get_object_or_404
+from rest_framework import exceptions, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -271,19 +269,18 @@ class VerifyView(APIView):
         )
 
 
-class AddressBelongsToAnotherPerson(exceptions.APIException):
+class AddressBelongsToAnotherPerson(exceptions.ValidationError):
     """The address is another Person's, and an Email is never moved between Persons
 
     Its own code because the flow can act on it: offer another address, or route to
     support, who may find the two Persons should be merged.
     """
 
-    status_code = status.HTTP_409_CONFLICT
     default_detail = "That address belongs to a different person."
     default_code = "address_belongs_to_another_person"
 
 
-class AddressHasNoOwner(exceptions.APIException):
+class AddressHasNoOwner(exceptions.ValidationError):
     """The address exists but no Person owns it
 
     Refused, not adopted. Draft submissions and roles record addresses without
@@ -291,30 +288,20 @@ class AddressHasNoOwner(exceptions.APIException):
     to whoever proved a password would attribute that history to a possible namesake.
     """
 
-    status_code = status.HTTP_409_CONFLICT
     default_detail = "That address is not attached to any person."
     default_code = "address_has_no_owner"
 
 
-# 409 is not in DRF_STANDARDIZED_ERRORS["ALLOWED_ERROR_STATUS_CODES"], so nothing
-# generates its response, and adding it there would give every operation a 409.
-CLAIM_EMAIL_CONFLICT_CODES = (
-    "address_belongs_to_another_person",
-    "address_has_no_owner",
-)
+class UnknownPersonUUID(exceptions.ValidationError):
+    """No Person has this UUID
 
+    Not a 404: the UUID arrives in the body, so nothing about the addressed resource is
+    missing. It does not distinguish a UUID never issued from one whose Person has since
+    been deleted, because deleting a Person deletes its UUIDs.
+    """
 
-class ClaimEmailConflictSerializer(serializers.Serializer):
-    code = serializers.ChoiceField(choices=CLAIM_EMAIL_CONFLICT_CODES)
-    detail = serializers.CharField()
-    attr = serializers.CharField(allow_null=True)
-
-
-class ClaimEmailConflictResponseSerializer(serializers.Serializer):
-    """The standardized-errors envelope, for the one status code it does not generate"""
-
-    type = serializers.ChoiceField(choices=ClientErrorEnum.choices)
-    errors = ClaimEmailConflictSerializer(many=True)
+    default_detail = "No person has that UUID."
+    default_code = "unknown_person_uuid"
 
 
 def claim_address(person, address):
@@ -341,9 +328,10 @@ def claim_address(person, address):
 
 def person_for_uuid(person_uuid):
     """The Person a UUID belongs to, prior UUIDs included, so pre-merge UUIDs resolve"""
-    return get_object_or_404(
-        PersonUUID.objects.select_related("person"), uuid=person_uuid
-    ).person
+    row = PersonUUID.objects.select_related("person").filter(uuid=person_uuid).first()
+    if row is None:
+        raise UnknownPersonUUID()
+    return row.person
 
 
 class ClaimEmailRequestSerializer(serializers.Serializer):
@@ -352,6 +340,9 @@ class ClaimEmailRequestSerializer(serializers.Serializer):
 
 
 @extend_schema(tags=["migration"])
+@extend_validation_errors(
+    ["address_belongs_to_another_person", "address_has_no_owner", "unknown_person_uuid"]
+)
 class ClaimEmailView(APIView):
     """Attach an address to a Person, so enrollment can use it"""
 
@@ -365,22 +356,22 @@ class ClaimEmailView(APIView):
             "datatracker, already theirs, or theirs but inactive. Idempotent: calling it "
             "again with the same arguments succeeds and changes nothing.\n\n"
             "person_uuid may be any UUID the datatracker has issued for the Person, not "
-            "only the current primary. An unknown one is a 404.\n\n"
-            "Two failures are worth handling separately, both 409, told apart by their "
-            "error code. address_belongs_to_another_person means the address is someone "
-            "else's; it is never moved, so offer another address or send the person to "
-            "support, who may find the two Persons should be merged. "
-            "address_has_no_owner means the datatracker knows the address but has never "
-            "established who is behind it - support establishes that, not enrollment.\n\n"
+            "only the current primary.\n\n"
+            "Every refusal is a 400, told apart by its error code, because each one is "
+            "about the data supplied rather than the state of a resource. "
+            "address_belongs_to_another_person means the address is someone else's; it "
+            "is never moved, so offer another address or send the person to support, who "
+            "may find the two Persons should be merged. address_has_no_owner means the "
+            "datatracker knows the address but has never established who is behind it - "
+            "support establishes that, not enrollment. unknown_person_uuid means no "
+            "Person has that UUID, and does not distinguish one never issued from one "
+            "whose Person has since been deleted.\n\n"
             "The response describes the address as it now stands. It does not make the "
             "address primary - which address is primary is the person's own profile "
             "choice and is not changed here."
         ),
         request=ClaimEmailRequestSerializer,
-        responses={
-            200: MigrationEmailSerializer,
-            409: ClaimEmailConflictResponseSerializer,
-        },
+        responses={200: MigrationEmailSerializer},
     )
     @transaction.atomic
     def post(self, request):
