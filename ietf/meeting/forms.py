@@ -481,38 +481,6 @@ class UploadBlueSheetForm(FileUploadForm):
     doc_type = 'bluesheets'
 
 
-class ApplyToAllFileUploadForm(FileUploadForm):
-    """FileUploadField that adds an apply_to_all checkbox
-
-    Checkbox can be disabled by passing show_apply_to_all_checkbox=False to the constructor.
-    This entirely removes the field from the form.
-    """
-    # Note: subclasses must set doc_type for FileUploadForm
-    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=True,required=False)
-
-    def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if not show_apply_to_all_checkbox:
-            self.fields.pop('apply_to_all')
-        else:
-            self.order_fields(
-                sorted(
-                    self.fields.keys(),
-                    key=lambda f: 'zzzzzz' if f == 'apply_to_all' else f
-                )
-            )
-
-class UploadMinutesForm(ApplyToAllFileUploadForm):
-    doc_type = 'minutes'
-
-class UploadNarrativeMinutesForm(ApplyToAllFileUploadForm):
-    doc_type = 'narrativeminutes'
-
-
-class UploadAgendaForm(ApplyToAllFileUploadForm):
-    doc_type = 'agenda'
-
-
 class ApplyToSessionsFileUploadForm(FileUploadForm):
     """FileUploadForm with a checkbox for each other session the upload can also apply to
 
@@ -540,6 +508,7 @@ class ApplyToSessionsFileUploadForm(FileUploadForm):
         if shared_with:
             self.fields["scope"] = forms.ChoiceField(
                 label="",
+                required=False,  # absent means revise, which is what an upload always meant before
                 widget=forms.RadioSelect,
                 initial=self.SCOPE_REVISE,
                 choices=[
@@ -547,8 +516,6 @@ class ApplyToSessionsFileUploadForm(FileUploadForm):
                     (self.SCOPE_REPLACE, f"Upload a new {kind} for this session, unlinking the shared one here"),
                 ],
             )
-            if "apply_to_sessions" in self.fields:
-                self.fields["apply_to_sessions"].help_text = f"Only used when uploading a new {kind}"
         self.order_fields(
             sorted(
                 self.fields.keys(),
@@ -568,6 +535,18 @@ class ApplyToSessionsFileUploadForm(FileUploadForm):
 
     def replace_shared(self):
         return self.cleaned_data.get("scope") == self.SCOPE_REPLACE
+
+
+class UploadMinutesForm(ApplyToSessionsFileUploadForm):
+    doc_type = 'minutes'
+
+
+class UploadNarrativeMinutesForm(ApplyToSessionsFileUploadForm):
+    doc_type = 'narrativeminutes'
+
+
+class UploadAgendaForm(ApplyToSessionsFileUploadForm):
+    doc_type = 'agenda'
 
 
 class UploadSlidesForm(ApplyToSessionsFileUploadForm):

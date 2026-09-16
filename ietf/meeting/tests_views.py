@@ -6838,7 +6838,7 @@ class MaterialsTests(TestCase):
                 test_bytes = b'This is some text for a test, with the word\nvirtual at the beginning of a line.'
                 test_file = BytesIO(test_bytes)
                 test_file.name = "some.txt"
-                r = self.client.post(url,dict(submission_method="upload",file=test_file,apply_to_all=False))
+                r = self.client.post(url,dict(submission_method="upload",file=test_file))
                 self.assertEqual(r.status_code, 302)
                 doc = session.presentations.filter(document__type_id=doctype).first().document
                 self.assertEqual(doc.rev,'01')
@@ -6853,7 +6853,7 @@ class MaterialsTests(TestCase):
                 test_bytes = b'this is some different text for a test'
                 test_file = BytesIO(test_bytes)
                 test_file.name = "also_some.txt"
-                r = self.client.post(url,dict(submission_method="upload",file=test_file,apply_to_all=True))
+                r = self.client.post(url,dict(submission_method="upload",file=test_file,apply_to_sessions=[session2.pk]))
                 self.assertEqual(r.status_code, 302)
                 doc = Document.objects.get(pk=doc.pk)
                 self.assertEqual(doc.rev,'02')
@@ -6887,15 +6887,103 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue(q('#id_apply_to_all'))
+            boxes = q('input[name=apply_to_sessions]')
+            self.assertEqual([b.attr('value') for b in boxes.items()], [str(first.pk)], 'Only the other scheduled session is offered')
             self.assertIn('Session 2', q('h2').text(), 'Unscheduled sessions must not count toward the session number')
             test_file = BytesIO(b'some text for a test')
             test_file.name = 'some.txt'
-            r = self.client.post(url, dict(submission_method='upload', file=test_file, apply_to_all=True))
+            r = self.client.post(url, dict(submission_method='upload', file=test_file, apply_to_sessions=[first.pk]))
             self.assertEqual(r.status_code, 302)
             doc = last.presentations.get(document__type_id=doctype).document
             self.assertEqual(first.presentations.get(document__type_id=doctype).document, doc)
             self.assertEqual(list(cancelled.presentations.all()), [kept])
+
+    def _material_upload_url(self, doctype, session):
+        return urlreverse('ietf.meeting.views.upload_session_%s' % doctype, kwargs={'num': session.meeting.number, 'session_id': session.id})
+
+    def test_new_agenda_or_minutes_notes_what_other_sessions_would_lose(self):
+        for doctype in ('minutes', 'agenda'):
+            first, last = make_group_sessions(['sched', 'sched'])
+            own = SessionPresentationFactory(session=first, document__type_id=doctype, document__title='Their own').document
+            self.client.login(username='secretary', password='secretary+password')
+            r = self.client.get(self._material_upload_url(doctype, last))
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            boxes = q('input[name=apply_to_sessions]')
+            self.assertEqual(len(boxes), 1)
+            self.assertFalse(boxes.is_(':checked'), 'Sessions with different material are not preselected')
+            label = q('label[for=%s]' % boxes.attr('id')).text()
+            self.assertIn('Session 1', label)
+            self.assertIn('Their own', label)
+            self.assertIn('would be unlinked', label)
+            self.assertFalse(q('input[name=scope]'), 'Nothing is shared yet, so there is nothing to revise or replace')
+
+            test_file = BytesIO(b'some text for a test')
+            test_file.name = 'some.txt'
+            r = self.client.post(self._material_upload_url(doctype, last), dict(submission_method='upload', file=test_file, apply_to_sessions=[first.pk]))
+            self.assertEqual(r.status_code, 302)
+            doc = last.presentations.get(document__type_id=doctype).document
+            self.assertEqual(first.presentations.get(document__type_id=doctype).document, doc, 'The chosen session is relinked')
+            self.assertFalse(first.presentations.filter(document=own).exists(), 'and its own material is unlinked')
+            self.assertNotIn(last.docname_token(), doc.name, 'Applied to every scheduled session, so named for the group')
+
+    def test_shared_agenda_or_minutes_can_be_revised_or_replaced(self):
+        for doctype in ('minutes', 'agenda'):
+            first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
+            self.client.login(username='secretary', password='secretary+password')
+            test_file = BytesIO(b'shared text')
+            test_file.name = 'some.txt'
+            r = self.client.post(self._material_upload_url(doctype, first), dict(submission_method='upload', file=test_file, apply_to_sessions=[last.pk]))
+            self.assertEqual(r.status_code, 302)
+            shared = first.presentations.get(document__type_id=doctype).document
+            self.assertEqual(last.presentations.get(document__type_id=doctype).document, shared)
+            # a session cancelled after the material was shared still links it
+            SessionPresentationFactory(session=cancelled, document=shared, rev=shared.rev)
+
+            r = self.client.get(self._material_upload_url(doctype, first))
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertFalse(q('input[name=apply_to_sessions]'), 'Every scheduled session is linked, so there is nothing to choose')
+            scopes = q('input[name=scope]')
+            self.assertEqual(len(scopes), 2)
+            self.assertEqual(q('input[name=scope]:checked').attr('value'), 'revise')
+            revise_label = q('label[for=%s]' % scopes.eq(0).attr('id')).text()
+            self.assertIn('Session 2', revise_label)
+            self.assertIn('cancelled', revise_label)
+
+            test_file = BytesIO(b'revised shared text')
+            test_file.name = 'some.txt'
+            r = self.client.post(self._material_upload_url(doctype, first), dict(submission_method='upload', file=test_file, scope='revise'))
+            self.assertEqual(r.status_code, 302)
+            shared.refresh_from_db()
+            self.assertEqual(shared.rev, '01')
+            for s in (first, cancelled, last):
+                self.assertEqual(s.presentations.get(document=shared).rev, '01', 'A revision reaches every linked session, %s' % s)
+
+            test_file = BytesIO(b'text for this session only')
+            test_file.name = 'some.txt'
+            r = self.client.post(self._material_upload_url(doctype, first), dict(submission_method='upload', file=test_file, scope='replace'))
+            self.assertEqual(r.status_code, 302)
+            own = first.presentations.get(document__type_id=doctype).document
+            self.assertNotEqual(own, shared)
+            self.assertEqual(own.rev, '00')
+            self.assertFalse(first.presentations.filter(document=shared).exists(), 'The shared material is unlinked here')
+            for s in (cancelled, last):
+                self.assertEqual(s.presentations.get(document__type_id=doctype).document, shared, 'and kept elsewhere, %s' % s)
+            shared.refresh_from_db()
+            self.assertEqual(shared.rev, '01')
+
+            # From the other side, the material is still shared, but only with the cancelled session, and
+            # this session's own material is what would be unlinked
+            r = self.client.get(self._material_upload_url(doctype, last))
+            q = PyQuery(r.content)
+            scopes = q('input[name=scope]')
+            revise_label = q('label[for=%s]' % scopes.eq(0).attr('id')).text()
+            self.assertIn('cancelled', revise_label)
+            self.assertNotIn('Session', revise_label)
+            boxes = q('input[name=apply_to_sessions]')
+            self.assertEqual([b.attr('value') for b in boxes.items()], [str(first.pk)])
+            self.assertIn(own.title, q('label[for=%s]' % boxes.attr('id')).text())
 
     def test_material_pages_number_scheduled_sessions_only(self):
         first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])

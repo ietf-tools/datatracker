@@ -776,12 +776,64 @@ def apply_to_choices(session, doc_type, exclude=()):
     return choices, select_all
 
 
-def save_session_minutes_revision(session, file, ext, request, encoding=None, apply_to_all=False, narrative=False):
+def material_upload_choices(session, doc_type, existing_sp):
+    """What an upload page for doc_type offers: (choices, select_all, shared_with)
+
+    existing_sp is the session's presentation of that type, if any. Revising it offers only the sessions
+    its document is not linked to, unchecked; the sessions it is linked to are named in shared_with.
+    """
+    linked = []
+    if existing_sp is not None:
+        linked = list(
+            Session.objects.filter(presentations__document=existing_sp.document, meeting=session.meeting)
+            .exclude(pk=session.pk)
+        )
+    choices, select_all = apply_to_choices(session, doc_type, exclude=linked)
+    if existing_sp is not None:
+        select_all = False  # the document's current sessions are the truth about where it belongs
+    return choices, select_all, [material_session_label(s) for s in linked]
+
+
+def group_wide_material_name(session, also_sessions):
+    """Whether material for session and also_sessions is named for the group rather than for the session
+
+    The group-wide name is what "apply to all" always produced, and later uploads with the same title
+    reuse it, so it must mean every scheduled session.
+    """
+    scheduled, _ = sessions_covered_by_apply_to_all(session)
+    return session.type_id == "regular" and all(s == session or s in also_sessions for s in scheduled)
+
+
+def link_material_to_sessions(doc, session, also_sessions=()):
+    """Point session, also_sessions and every session already linked to doc at doc's current revision
+
+    A revision reaches every session already linked, chosen or not: there is one document to show.
+    For one-per-session types such as agendas and minutes, doc displaces what the session had of that type.
+    """
+    targets = [session, *also_sessions]
+    for linked in Session.objects.filter(presentations__document=doc, meeting=session.meeting):
+        if linked not in targets:
+            targets.append(linked)
+    for target in targets:
+        sp = target.presentations.filter(document=doc).first()
+        if sp is not None:
+            sp.rev = doc.rev
+            sp.save()
+        else:
+            target.presentations.filter(document__type=doc.type).delete()
+            target.presentations.create(document=doc, rev=doc.rev)
+
+
+def save_session_minutes_revision(session, file, ext, request, encoding=None, also_sessions=(), replace=False, narrative=False):
     """Creates or updates session minutes records
 
     This updates the database models to reflect a new version. It does not handle
     storing the new file contents, that should be handled via handle_upload_file()
     or similar.
+
+    The minutes are linked to session, to also_sessions, and to every session already linked to the
+    document, displacing whatever minutes those sessions had. With replace, a session that already has
+    minutes gets new ones instead of a revision, and the old ones are unlinked here only.
 
     If the session does not already have minutes, it must be a scheduled
     session. If not, SessionNotScheduledError will be raised.
@@ -791,16 +843,15 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
     """
     document_type = DocTypeName.objects.get(slug= 'narrativeminutes' if narrative else 'minutes')
     minutes_sp = session.presentations.filter(document__type=document_type).first()
-    if minutes_sp:
+    if minutes_sp and not replace:
         doc = minutes_sp.document
         doc.rev = '%02d' % (int(doc.rev)+1)
-        minutes_sp.rev = doc.rev
-        minutes_sp.save()
     else:
         ota = session.official_timeslotassignment()
         sess_time = ota and ota.timeslot.time
         if not sess_time:
             raise SessionNotScheduledError
+        apply_to_all = group_wide_material_name(session, also_sessions)
         if session.meeting.type_id=='ietf':
             name = f"{document_type.prefix}-{session.meeting.number}-{session.group.acronym}"
             title = f"{document_type.name} IETF{session.meeting.number}: {session.group.acronym}"
@@ -822,18 +873,7 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
                 rev = '00',
             )
         doc.states.add(State.objects.get(type_id=document_type.slug,slug='active'))
-        if session.presentations.filter(document=doc).exists():
-            sp = session.presentations.get(document=doc)
-            sp.rev = doc.rev
-            sp.save()
-        else:
-            session.presentations.create(document=doc,rev=doc.rev)
-    if apply_to_all:
-        sessions, _ = sessions_covered_by_apply_to_all(session)
-        for other_session in sessions:
-            if other_session != session:
-                other_session.presentations.filter(document__type=document_type).delete()
-                other_session.presentations.create(document=doc,rev=doc.rev)
+    link_material_to_sessions(doc, session, also_sessions)
     filename = f'{doc.name}-{doc.rev}{ext}'
     doc.uploaded_filename = filename
     e = NewRevisionDocEvent.objects.create(
