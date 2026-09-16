@@ -723,6 +723,59 @@ class SessionNotScheduledError(Exception):
     pass
 
 
+def material_session_label(session, session_number=None):
+    """How the material pages name a session: "Session 2: Tue 09:30", or the time and status if it has no number"""
+    if session_number is None:
+        _, session_number = sessions_covered_by_apply_to_all(session)
+    ota = session.official_timeslotassignment()
+    when = ota.timeslot.local_start_time().strftime("%a %H:%M") if ota else "unscheduled"
+    if session_number:
+        return f"Session {session_number}: {when}"
+    status = current_session_status(session)
+    return f"{when} ({status.name.lower()})" if status else when
+
+
+@dataclass
+class MaterialSessionChoice:
+    """Another session a material upload could also apply to"""
+    session: Session
+    label: str
+    current_doc: Document | None  # its document of the upload's type, which applying would unlink
+
+
+def apply_to_choices(session, doc_type, exclude=()):
+    """The other scheduled sessions an upload of doc_type to session could also apply to, and whether to preselect them
+
+    Returns (choices, select_all). Preselect only when every scheduled session holds the same documents of
+    this type, counting none anywhere as the same: the sessions are being run as one set. Any difference
+    means they are not, and pre-checking would silently unlink or spread material. Sessions in exclude
+    (already linked to the document being revised) get no choice. Slides are added beside existing decks,
+    so applying them never unlinks anything and current_doc is always None for them.
+    """
+    scheduled, _ = sessions_covered_by_apply_to_all(session)
+    if len(scheduled) < 2:
+        return [], False
+    docs_by_session = [
+        frozenset(
+            s.presentations.filter(document__type_id=doc_type)
+            .exclude(document__states__slug="deleted")
+            .values_list("document_id", flat=True)
+        )
+        for s in scheduled
+    ]
+    select_all = len(set(docs_by_session)) == 1
+    choices = []
+    for number, other in enumerate(scheduled, start=1):
+        if other == session or other in exclude:
+            continue
+        current_doc = None
+        if doc_type != "slides":
+            current_sp = other.presentations.filter(document__type_id=doc_type).first()
+            current_doc = current_sp.document if current_sp else None
+        choices.append(MaterialSessionChoice(other, material_session_label(other, number), current_doc))
+    return choices, select_all
+
+
 def save_session_minutes_revision(session, file, ext, request, encoding=None, apply_to_all=False, narrative=False):
     """Creates or updates session minutes records
 

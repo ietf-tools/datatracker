@@ -10,14 +10,17 @@ from json import JSONDecodeError
 from unittest.mock import patch, Mock
 
 from django.http import HttpResponse, JsonResponse
-from ietf.meeting.factories import MeetingFactory, RegistrationFactory, RegistrationTicketFactory
+from ietf.meeting.factories import MeetingFactory, RegistrationFactory, RegistrationTicketFactory, SessionPresentationFactory
 from ietf.meeting.models import Registration
+from ietf.meeting.tests_views import make_group_sessions
 from ietf.meeting.utils import (
     process_single_registration,
     get_registration_data, 
     sync_registration_data, 
     fetch_attendance_from_meetings, 
-    get_activity_stats
+    get_activity_stats,
+    apply_to_choices,
+    material_session_label,
 )
 from ietf.nomcom.models import Volunteer
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
@@ -307,3 +310,52 @@ class GetRegistrationsTests(TestCase):
             mock_meetings,
         )
         self.assertEqual(stats, [d1, d2, d3])
+
+
+class ApplyToChoicesTests(TestCase):
+    def test_preselects_only_when_sessions_hold_the_same_material(self):
+        first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
+
+        # nothing anywhere counts as the same
+        choices, select_all = apply_to_choices(first, 'agenda')
+        self.assertEqual([c.session for c in choices], [last])
+        self.assertTrue(select_all)
+        self.assertEqual(choices[0].label, material_session_label(last))
+        self.assertTrue(choices[0].label.startswith('Session 2:'))
+        self.assertIsNone(choices[0].current_doc)
+
+        # the cancelled session's material is not part of the comparison and it gets no choice
+        SessionPresentationFactory(session=cancelled, document__type_id='agenda')
+        choices, select_all = apply_to_choices(first, 'agenda')
+        self.assertEqual([c.session for c in choices], [last])
+        self.assertTrue(select_all)
+
+        # a session with its own agenda means the sessions are not run as one set
+        own = SessionPresentationFactory(session=last, document__type_id='agenda').document
+        choices, select_all = apply_to_choices(first, 'agenda')
+        self.assertFalse(select_all)
+        self.assertEqual(choices[0].current_doc, own)
+
+        # the same agenda everywhere is one set again
+        SessionPresentationFactory(session=first, document=own)
+        _, select_all = apply_to_choices(first, 'agenda')
+        self.assertTrue(select_all)
+
+    def test_slides_compare_whole_decks_and_never_unlink(self):
+        first, last = make_group_sessions(['sched', 'sched'])
+        deck = SessionPresentationFactory(session=first, document__type_id='slides').document
+        SessionPresentationFactory(session=last, document=deck)
+        choices, select_all = apply_to_choices(first, 'slides')
+        self.assertTrue(select_all)
+        self.assertIsNone(choices[0].current_doc)
+        SessionPresentationFactory(session=last, document__type_id='slides')
+        _, select_all = apply_to_choices(first, 'slides')
+        self.assertFalse(select_all)
+
+    def test_excluded_and_lone_sessions(self):
+        first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
+        self.assertEqual(apply_to_choices(first, 'agenda', exclude=[last]), ([], True))
+        self.assertEqual(apply_to_choices(cancelled, 'agenda'), ([], False))
+        self.assertEqual(material_session_label(first), material_session_label(first, 1))
+        self.assertIn('cancelled', material_session_label(cancelled))
+        self.assertNotIn('Session', material_session_label(cancelled))
