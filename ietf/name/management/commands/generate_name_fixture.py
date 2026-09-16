@@ -2,7 +2,9 @@
 """Management command for exporting name related base data for the tests"""
 
 import json
+import os
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.core.serializers import serialize
 from django.core.serializers.json import DjangoJSONEncoder
@@ -21,10 +23,16 @@ class Command(BaseCommand):
     help = """
     Generate a custom fixture for all objects needed by the datatracker test suite.
 
-    The fixture is written to stdout:
-
-      "ietf/manage.py generate_name_fixture > ietf/name/fixtures/names.json"
+    Defaults to overwriting `ietf/name/fixtures/names.json`, which is the actual fixture
+    location. Modify this with the `--file` option.
     """
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--file",
+            default=os.path.join(settings.BASE_DIR, "name/fixtures/names.json"),
+            help='file to write the fixture to, or "-" for stdout (default: %(default)s)',
+        )
 
     def handle(self, *args, **options):
         objects: list[models.Model] = []  # type: ignore[annotation-unchecked]
@@ -56,15 +64,9 @@ class Command(BaseCommand):
         # names, and string pks must compare by code point, not by DB collation.
         data = sorted(serialize("python", objects), key=lambda d: (d["model"], d["pk"]))
 
-        # ensure_ascii=False keeps non-ASCII characters (e.g., "Åland Islands") as UTF-8,
-        # so the stream has to be able to encode them whatever the environment's locale.
-        reconfigure = getattr(self.stdout, "reconfigure", None)
-        if reconfigure is not None:
-            reconfigure(encoding="utf-8")
-
         # These options reproduce the formatting of "jq --sort-keys", which historically
-        # post-processed this command's output. OutputWrapper adds the trailing newline.
-        self.stdout.write(
+        # post-processed this command's output.
+        text = (
             json.dumps(
                 data,
                 cls=DjangoJSONEncoder,
@@ -72,4 +74,16 @@ class Command(BaseCommand):
                 sort_keys=True,
                 ensure_ascii=False,
             )
+            + "\n"
         )
+
+        # ensure_ascii=False keeps non-ASCII characters (e.g., "Åland Islands") as UTF-8,
+        # so the destination has to be able to encode them whatever the locale says.
+        if options["file"] == "-":
+            reconfigure = getattr(self.stdout, "reconfigure", None)
+            if reconfigure is not None:
+                reconfigure(encoding="utf-8")
+            self.stdout.write(text)  # text already ends with a newline
+        else:
+            with open(options["file"], "w", encoding="utf-8", newline="\n") as f:
+                f.write(text)
