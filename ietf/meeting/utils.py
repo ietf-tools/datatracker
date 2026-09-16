@@ -1852,7 +1852,7 @@ def process_single_registration(reg_data, meeting):
     return registration, action_taken
 
 
-def fix_missing_registrations(meeting=None):
+def fix_missing_registrations(meeting=None):    # pragma: no cover
     """Recreate legacy registrations dropped by the meeting.Registration migration.
 
     For meetings before 100 the legacy stats.MeetingRegistration system allowed
