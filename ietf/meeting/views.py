@@ -3028,8 +3028,19 @@ def session_details(request, num, acronym):
     if not sessions:
         raise Http404
 
+    scheduled_sessions = scheduled_only(sessions)
+    unscheduled_sessions = [s for s in sessions if s not in scheduled_sessions]
+
     status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
     for session in sessions:
+        # Numbered the same way as the material upload pages, so "Session 2" means the same thing on both
+        session.session_number = (
+            1 + scheduled_sessions.index(session)
+            if session in scheduled_sessions and len(scheduled_sessions) > 1
+            else None
+        )
+        session.cancelled = session.current_status in Session.CANCELED_STATUSES
+        session.status = '' if session in scheduled_sessions else status_names.get(session.current_status, session.current_status)
 
         session.type_counter = Counter()
         ss = session.timeslotassignments.filter(schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None]).order_by('timeslot__time')
@@ -3038,16 +3049,10 @@ def session_details(request, num, acronym):
                 session.times = [ x.timeslot.utc_start_time() for x in ss ]                
             else:
                 session.times = [ x.timeslot.local_start_time() for x in ss ]
-            session.cancelled = session.current_status in Session.CANCELED_STATUSES
-            session.status = ''
         elif meeting.type_id=='interim':
             session.times = [ meeting.date ]
-            session.cancelled = session.current_status in Session.CANCELED_STATUSES
-            session.status = ''
         else:
             session.times = []
-            session.cancelled = session.current_status in Session.CANCELED_STATUSES
-            session.status = status_names.get(session.current_status, session.current_status)
 
         if session.meeting.type_id == 'ietf' and not session.meeting.proceedings_final:
             artifact_types = ['agenda','minutes','narrativeminutes']
@@ -3082,9 +3087,6 @@ def session_details(request, num, acronym):
     group = session.group
     can_manage = can_manage_session_materials(request.user, group, session)
     can_view_request = can_view_interim_request(meeting, request.user)
-
-    scheduled_sessions = [s for s in sessions if s.current_status == 'sched']
-    unscheduled_sessions = [s for s in sessions if s.current_status != 'sched']
 
     # Start with all the pending suggestions for all the group's sessions
     pending_suggestions = SlideSubmission.objects.filter(session__in=sessions, status__slug='pending')

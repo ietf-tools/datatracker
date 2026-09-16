@@ -4614,6 +4614,20 @@ class SessionDetailsTests(TestCase):
         self.assertTrue(all([x in unicontent(r) for x in ('slides','agenda','minutes','draft')]))
         self.assertNotContains(r, 'deleted')
 
+    def test_session_details_numbers_only_scheduled_sessions(self):
+        """Session numbers count scheduled sessions; unscheduled ones show their status instead"""
+        for unscheduled_status in ('canceled', 'resched'):
+            first, unscheduled, last = make_group_sessions(['sched', unscheduled_status, 'sched'])
+            url = urlreverse('ietf.meeting.views.session_details', kwargs=dict(num=first.meeting.number, acronym=first.group.acronym))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            headings = {s: q('h3#session_%d' % s.pk).text() for s in (first, unscheduled, last)}
+            self.assertIn('Session 1', headings[first])
+            self.assertIn('Session 2', headings[last])
+            self.assertNotIn('Session', headings[unscheduled])
+            self.assertIn(SessionStatusName.objects.get(slug=unscheduled_status).name, headings[unscheduled])
+
     def test_session_details_slides_drag_and_drop_markup(self):
         """Every slides table is a drag-and-drop target with the attributes the JS reads
 
