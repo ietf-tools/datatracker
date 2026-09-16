@@ -86,6 +86,25 @@ else:
     print("     "+skip_message)
 
 
+def make_group_sessions(statuses):
+    """One session per status for a single group at an upcoming IETF meeting, in schedule order"""
+    meeting = MeetingFactory(type_id='ietf', date=date_today() + datetime.timedelta(days=7))
+    meeting.importantdate_set.create(name_id='revsub', date=meeting.date + datetime.timedelta(days=20))
+    group = GroupFactory()
+    sessions = []
+    for day, status in enumerate(statuses):
+        session = SessionFactory(meeting=meeting, group=group, status_id=status, add_to_schedule=False)
+        timeslot = TimeSlotFactory(
+            meeting=meeting,
+            time=meeting.tz().localize(
+                datetime.datetime.combine(meeting.date + datetime.timedelta(days=day), datetime.time(11, 0))
+            ),
+        )
+        session.timeslotassignments.create(timeslot=timeslot, schedule=meeting.schedule)
+        sessions.append(session)
+    return sessions
+
+
 class BaseMeetingTestCase(TestCase):
     """Base class for meeting-related tests that need to set up temporary directories
 
@@ -7062,6 +7081,59 @@ class MaterialsTests(TestCase):
             call(session=session2, slides=sp.document),
         )
 
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_upload_slides_apply_to_all_covers_scheduled_sessions_only(self, mock_slides_manager_cls):
+        for unscheduled_status in ('canceled', 'resched'):
+            mock_slides_manager_cls.reset_mock()
+            first, unscheduled, last = make_group_sessions(['sched', unscheduled_status, 'sched'])
+            url = urlreverse('ietf.meeting.views.upload_session_slides', kwargs={'num': last.meeting.number, 'session_id': last.id})
+            self.client.login(username='secretary', password='secretary+password')
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertTrue(q('#id_apply_to_all'))
+            self.assertIn('Session 2', q('h2').text(), 'Unscheduled sessions must not count toward the session number')
+            test_file = BytesIO(b'not really slides')
+            test_file.name = 'not_really.txt'
+            r = self.client.post(url, dict(file=test_file, title='a deck for every session', apply_to_all=True, approved=True))
+            self.assertEqual(r.status_code, 302)
+            self.assertEqual(first.presentations.count(), 1)
+            self.assertEqual(last.presentations.count(), 1)
+            self.assertEqual(unscheduled.presentations.count(), 0)
+            doc = last.presentations.first().document
+            self.assertCountEqual(
+                mock_slides_manager_cls.return_value.add.call_args_list,
+                [
+                    call(session=first, slides=doc, order=1),
+                    call(session=last, slides=doc, order=1),
+                ],
+            )
+
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_upload_slides_to_unscheduled_session_touches_only_that_session(self, mock_slides_manager_cls):
+        first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
+        url = urlreverse('ietf.meeting.views.upload_session_slides', kwargs={'num': cancelled.meeting.number, 'session_id': cancelled.id})
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertFalse(q('#id_apply_to_all'))
+        self.assertNotIn('Session', q('h2').text(), 'An unscheduled session has no session number')
+        test_file = BytesIO(b'not really slides')
+        test_file.name = 'not_really.txt'
+        r = self.client.post(url, dict(file=test_file, title='a deck for a cancelled session', apply_to_all=True, approved=True))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(first.presentations.count(), 0)
+        self.assertEqual(last.presentations.count(), 0)
+        self.assertEqual(cancelled.presentations.count(), 1)
+        doc = cancelled.presentations.first().document
+        self.assertEqual(
+            mock_slides_manager_cls.return_value.add.call_args_list,
+            [call(session=cancelled, slides=doc, order=1)],
+        )
+
     def test_upload_slide_title_bad_unicode(self):
         session1 = SessionFactory(meeting__type_id='ietf')
         url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session1.meeting.number,'session_id':session1.id})
@@ -7360,6 +7432,59 @@ class MaterialsTests(TestCase):
                 call(session=session1, slides=submission.doc, order=1),
                 call(session=session2, slides=submission.doc, order=1),
             ]
+        )
+
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_approve_proposed_slides_apply_to_all_covers_scheduled_sessions_only(self, mock_slides_manager_cls):
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
+        submission = SlideSubmissionFactory(session=last)
+        chair = RoleFactory(group=last.group, name_id='chair').person
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': last.meeting.number})
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('#id_apply_to_all'))
+        self.assertIn('Session 2', q('h2').text(), 'Unscheduled sessions must not count toward the session number')
+        r = self.client.post(url, dict(title='a deck for every session', apply_to_all=1, approve='approve'))
+        self.assertEqual(r.status_code, 302)
+        submission.refresh_from_db()
+        self.assertEqual(first.presentations.count(), 1)
+        self.assertEqual(last.presentations.count(), 1)
+        self.assertEqual(cancelled.presentations.count(), 0)
+        self.assertCountEqual(
+            mock_slides_manager_cls.return_value.add.call_args_list,
+            [
+                call(session=first, slides=submission.doc, order=1),
+                call(session=last, slides=submission.doc, order=1),
+            ],
+        )
+
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_approve_proposed_slides_for_unscheduled_session_touches_only_that_session(self, mock_slides_manager_cls):
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
+        submission = SlideSubmissionFactory(session=cancelled)
+        chair = RoleFactory(group=cancelled.group, name_id='chair').person
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': cancelled.meeting.number})
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertFalse(q('#id_apply_to_all'))
+        self.assertNotIn('Session', q('h2').text(), 'An unscheduled session has no session number')
+        r = self.client.post(url, dict(title='a deck for a cancelled session', apply_to_all=1, approve='approve'))
+        self.assertEqual(r.status_code, 302)
+        submission.refresh_from_db()
+        self.assertEqual(first.presentations.count(), 0)
+        self.assertEqual(last.presentations.count(), 0)
+        self.assertEqual(cancelled.presentations.count(), 1)
+        self.assertEqual(
+            mock_slides_manager_cls.return_value.add.call_args_list,
+            [call(session=cancelled, slides=submission.doc, order=1)],
         )
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls

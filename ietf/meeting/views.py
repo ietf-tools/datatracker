@@ -3647,13 +3647,14 @@ def upload_session_slides(request, session_id, num, name=None):
             "This meeting has already occurred. Contact a chair or the secretariat for further action.",
         )
 
-    session_number = None
-    sessions = get_sessions(session.meeting.number, session.group.acronym)
+    sessions = scheduled_only(get_sessions(session.meeting.number, session.group.acronym))
+    if session not in sessions:
+        # Unscheduled sessions are not part of any "all sessions" group, even with each other
+        sessions = [session]
     show_apply_to_all_checkbox = (
         len(sessions) > 1 if session.type_id == "regular" else False
     )
-    if len(sessions) > 1:
-        session_number = 1 + sessions.index(session)
+    session_number = 1 + sessions.index(session) if len(sessions) > 1 else None
 
     doc = None
     if name:
@@ -5703,11 +5704,12 @@ def approve_proposed_slides(request, slidesubmission_id, num):
     if submission.session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")   
     
-    session_number = None
-    sessions = get_sessions(submission.session.meeting.number,submission.session.group.acronym)
+    sessions = scheduled_only(get_sessions(submission.session.meeting.number, submission.session.group.acronym))
+    if submission.session not in sessions:
+        # Unscheduled sessions are not part of any "all sessions" group, even with each other
+        sessions = [submission.session]
     show_apply_to_all_checkbox = len(sessions) > 1 if submission.session.type_id == 'regular' else False
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(submission.session)
+    session_number = 1 + sessions.index(submission.session) if len(sessions) > 1 else None
     name, _ = os.path.splitext(submission.filename)
     name = name[:name.rfind('-ss')]
     existing_doc = Document.objects.filter(name=name).first()
