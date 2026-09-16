@@ -168,6 +168,8 @@ from ietf.meeting.utils import (
     get_meeting_sessions,
     scheduled_only,
     sessions_covered_by_apply_to_all,
+    apply_to_choices,
+    material_session_label,
     SessionNotScheduledError,
     data_for_meetings_overview,
     handle_upload_file,
@@ -3614,26 +3616,34 @@ def upload_session_slides(request, session_id, num, name=None):
             "This meeting has already occurred. Contact a chair or the secretariat for further action.",
         )
 
-    sessions, session_number = sessions_covered_by_apply_to_all(session)
-    show_apply_to_all_checkbox = (
-        len(sessions) > 1 if session.type_id == "regular" else False
-    )
+    scheduled_sessions, session_number = sessions_covered_by_apply_to_all(session)
 
     doc = None
+    also_linked = []
     if name:
         doc = get_object_or_404(
             session.presentations, document__name=name, document__type_id="slides"
         ).document
+        also_linked = list(
+            Session.objects.filter(presentations__document=doc, meeting=session.meeting)
+            .exclude(pk=session.pk)
+            .with_current_status()
+        )
+    choices, select_all = apply_to_choices(session, "slides", exclude=also_linked)
+    if doc is not None:
+        select_all = False  # the deck's current sessions are the truth about where it belongs
 
     if request.method == "POST":
         form = UploadSlidesForm(
-            session, show_apply_to_all_checkbox, can_manage, request.POST, request.FILES
+            session, can_manage, choices, select_all, request.POST, request.FILES
         )
         if form.is_valid():
             file = request.FILES["file"]
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type_id == "regular"
-            if show_apply_to_all_checkbox:
+            also_sessions = form.sessions_to_apply()
+            # A group-wide document name means "every scheduled session"; a proposal keeps a plain yes/no
+            apply_to_all = session.type_id == "regular" and len(also_sessions) == len(choices)
+            if "apply_to_all" in form.fields:
                 apply_to_all = form.cleaned_data["apply_to_all"]
             if can_manage:
                 approved = form.cleaned_data["approved"]
@@ -3714,8 +3724,12 @@ def upload_session_slides(request, session_id, num, name=None):
                 doc.states.add(State.objects.get(type_id="slides", slug="active"))
                 doc.states.add(State.objects.get(type_id="reuse_policy", slug="single"))
 
-            # Now handle creation / update of the SessionPresentation(s)
-            sessions_to_apply = sessions if apply_to_all else [session]
+            # Now handle creation / update of the SessionPresentation(s). A revision reaches every
+            # session already linked to the document, chosen or not: there is only one document to show.
+            sessions_to_apply = [session] + also_sessions
+            for linked in Session.objects.filter(presentations__document=doc, meeting=session.meeting):
+                if linked not in sessions_to_apply:
+                    sessions_to_apply.append(linked)
             added_presentations = []
             revised_presentations = []
             for sess in sessions_to_apply:
@@ -3770,11 +3784,15 @@ def upload_session_slides(request, session_id, num, name=None):
             if hasattr(settings, "MEETECHO_API_CONFIG"):
                 sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
                 for sp in added_presentations:
+                    if sp.session not in scheduled_sessions:
+                        continue  # Meetecho only runs the sessions that will happen
                     try:
                         sm.add(session=sp.session, slides=doc, order=sp.order)
                     except MeetechoAPIError as err:
                         log(f"Error in SlidesManager.add(): {err}")
                 for sp in revised_presentations:
+                    if sp.session not in scheduled_sessions:
+                        continue
                     try:
                         sm.revise(session=sp.session, slides=doc)
                     except MeetechoAPIError as err:
@@ -3794,7 +3812,7 @@ def upload_session_slides(request, session_id, num, name=None):
         initial = {}
         if doc is not None:
             initial = {"title": doc.title}
-        form = UploadSlidesForm(session, show_apply_to_all_checkbox, can_manage, initial=initial)
+        form = UploadSlidesForm(session, can_manage, choices, select_all, initial=initial)
 
     return render(
         request,
@@ -3802,6 +3820,7 @@ def upload_session_slides(request, session_id, num, name=None):
         {
             "session": session,
             "session_number": session_number,
+            "also_linked": [material_session_label(s) for s in also_linked],
             "slides_sp": session.presentations.filter(document=doc).first() if doc else None,
             "manage": session.can_manage_materials(request.user),
             "form": form,

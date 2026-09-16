@@ -7065,7 +7065,7 @@ class MaterialsTests(TestCase):
         test_bytes = b'this is not really a slide'
         test_file = BytesIO(test_bytes)
         test_file.name = 'not_really.txt'
-        r = self.client.post(url,dict(file=test_file,title='a test slide file',apply_to_all=True,approved=True))
+        r = self.client.post(url,dict(file=test_file,title='a test slide file',apply_to_sessions=[session2.pk],approved=True))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(session1.presentations.count(),1) 
         self.assertEqual(session2.presentations.count(),1) 
@@ -7090,7 +7090,7 @@ class MaterialsTests(TestCase):
         test_bytes = b'some other thing still not slidelike'
         test_file = BytesIO(test_bytes)
         test_file.name = 'also_not_really.txt'
-        r = self.client.post(url,dict(file=test_file,title='a different slide file',apply_to_all=False,approved=True))
+        r = self.client.post(url,dict(file=test_file,title='a different slide file',approved=True))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(session1.presentations.count(),1)
         self.assertEqual(session2.presentations.count(),2)
@@ -7116,7 +7116,7 @@ class MaterialsTests(TestCase):
         test_bytes = b'new content for the second slide deck'
         test_file = BytesIO(test_bytes)
         test_file.name = 'doesnotmatter.txt'
-        r = self.client.post(url,dict(file=test_file,title='rename the presentation',apply_to_all=False, approved=True))
+        r = self.client.post(url,dict(file=test_file,title='rename the presentation', approved=True))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(session1.presentations.count(),1)
         self.assertEqual(session2.presentations.count(),2)
@@ -7143,11 +7143,13 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue(q('#id_apply_to_all'))
+            boxes = q('input[name=apply_to_sessions]')
+            self.assertEqual([b.attr('value') for b in boxes.items()], [str(first.pk)], 'Only the other scheduled session is offered')
+            self.assertTrue(boxes.is_(':checked'), 'Sessions holding the same material (none) are preselected')
             self.assertIn('Session 2', q('h2').text(), 'Unscheduled sessions must not count toward the session number')
             test_file = BytesIO(b'not really slides')
             test_file.name = 'not_really.txt'
-            r = self.client.post(url, dict(file=test_file, title='a deck for every session', apply_to_all=True, approved=True))
+            r = self.client.post(url, dict(file=test_file, title='a deck for every session', apply_to_sessions=[first.pk], approved=True))
             self.assertEqual(r.status_code, 302)
             self.assertEqual(first.presentations.count(), 1)
             self.assertEqual(last.presentations.count(), 1)
@@ -7170,11 +7172,11 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertFalse(q('#id_apply_to_all'))
+        self.assertFalse(q('input[name=apply_to_sessions]'))
         self.assertNotIn('Session', q('h2').text(), 'An unscheduled session has no session number')
         test_file = BytesIO(b'not really slides')
         test_file.name = 'not_really.txt'
-        r = self.client.post(url, dict(file=test_file, title='a deck for a cancelled session', apply_to_all=True, approved=True))
+        r = self.client.post(url, dict(file=test_file, title='a deck for a cancelled session', approved=True))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(first.presentations.count(), 0)
         self.assertEqual(last.presentations.count(), 0)
@@ -7184,6 +7186,86 @@ class MaterialsTests(TestCase):
             mock_slides_manager_cls.return_value.add.call_args_list,
             [call(session=cancelled, slides=doc, order=1)],
         )
+
+    def _slides_upload_url(self, session, name=None):
+        kwargs = {'num': session.meeting.number, 'session_id': session.id}
+        if name:
+            kwargs['name'] = name
+        return urlreverse('ietf.meeting.views.upload_session_slides', kwargs=kwargs)
+
+    def test_upload_slides_preselects_sessions_only_while_they_match(self):
+        first, last = make_group_sessions(['sched', 'sched'])
+        self.client.login(username='secretary', password='secretary+password')
+        test_file = BytesIO(b'not really slides')
+        test_file.name = 'not_really.txt'
+        r = self.client.post(self._slides_upload_url(first), dict(file=test_file, title='first only', approved=True))
+        self.assertEqual(r.status_code, 302)
+        deck = first.presentations.get().document
+        self.assertIn(first.docname_token(), deck.name, 'A deck not applied to every scheduled session is named for its session')
+        self.assertFalse(last.presentations.exists())
+
+        # The sessions now differ, so nothing is preselected for the next deck
+        r = self.client.get(self._slides_upload_url(first))
+        boxes = PyQuery(r.content)('input[name=apply_to_sessions]')
+        self.assertEqual(len(boxes), 1)
+        self.assertFalse(boxes.is_(':checked'))
+
+        # Revising a deck offers the sessions it is not on yet, unchecked, and names none as linked
+        r = self.client.get(self._slides_upload_url(first, deck.name))
+        q = PyQuery(r.content)
+        boxes = q('input[name=apply_to_sessions]')
+        self.assertEqual([b.attr('value') for b in boxes.items()], [str(last.pk)])
+        self.assertFalse(boxes.is_(':checked'))
+        self.assertNotContains(r, 'also linked to')
+
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_revising_slides_reaches_every_linked_session(self, mock_slides_manager_cls):
+        first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
+        deck = SessionPresentationFactory(session=first, document__type_id='slides', document__rev='00').document
+        for s in (cancelled, last):
+            SessionPresentationFactory(session=s, document=deck)
+        self.client.login(username='secretary', password='secretary+password')
+        url = self._slides_upload_url(first, deck.name)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertFalse(q('input[name=apply_to_sessions]'), 'Every scheduled session is linked, so there is nothing to choose')
+        notice = q('.alert-info').text()
+        self.assertIn('also linked to', notice)
+        self.assertIn('Session 2', notice)
+        self.assertIn('cancelled', notice)
+        test_file = BytesIO(b'new content')
+        test_file.name = 'not_really.txt'
+        r = self.client.post(url, dict(file=test_file, title=deck.title, approved=True))
+        self.assertEqual(r.status_code, 302)
+        for s in (first, cancelled, last):
+            self.assertEqual(s.presentations.get(document=deck).rev, '01', s)
+        self.assertCountEqual(
+            mock_slides_manager_cls.return_value.revise.call_args_list,
+            [call(session=first, slides=deck), call(session=last, slides=deck)],
+            'Meetecho hears about the scheduled sessions only',
+        )
+        self.assertFalse(mock_slides_manager_cls.return_value.add.called)
+
+    def test_upload_slides_names_group_wide_only_when_every_session_chosen(self):
+        first, middle, last = make_group_sessions(['sched', 'sched', 'sched'])
+        self.client.login(username='secretary', password='secretary+password')
+        test_file = BytesIO(b'not really slides')
+        test_file.name = 'not_really.txt'
+        r = self.client.post(self._slides_upload_url(first), dict(file=test_file, title='two of three', apply_to_sessions=[middle.pk], approved=True))
+        self.assertEqual(r.status_code, 302)
+        deck = first.presentations.get().document
+        self.assertIn(first.docname_token(), deck.name)
+        self.assertTrue(middle.presentations.filter(document=deck).exists())
+        self.assertFalse(last.presentations.exists())
+        test_file = BytesIO(b'not really slides')
+        test_file.name = 'not_really.txt'
+        r = self.client.post(self._slides_upload_url(first), dict(file=test_file, title='all three', apply_to_sessions=[middle.pk, last.pk], approved=True))
+        self.assertEqual(r.status_code, 302)
+        deck = last.presentations.get().document
+        self.assertEqual(deck.name, 'slides-%s-%s-all-three' % (first.meeting.number, first.group.acronym))
+        self.assertEqual([s.presentations.filter(document=deck).count() for s in (first, middle, last)], [1, 1, 1])
 
     def test_upload_slide_title_bad_unicode(self):
         session1 = SessionFactory(meeting__type_id='ietf')

@@ -29,7 +29,7 @@ from ietf.meeting.models import (Session, Meeting, Schedule, COUNTRIES, TIMEZONE
 from ietf.meeting.helpers import get_next_interim_number, make_materials_directories
 from ietf.meeting.helpers import is_interim_meeting_approved, get_next_agenda_name
 from ietf.message.models import Message
-from ietf.name.models import TimeSlotTypeName, SessionPurposeName, TimerangeName, ConstraintName
+from ietf.name.models import TimeSlotTypeName, SessionPurposeName, TimerangeName, ConstraintName, DocTypeName
 from ietf.person.fields import SearchablePersonsField
 from ietf.person.models import Person
 from ietf.utils import log
@@ -513,16 +513,81 @@ class UploadAgendaForm(ApplyToAllFileUploadForm):
     doc_type = 'agenda'
 
 
-class UploadSlidesForm(ApplyToAllFileUploadForm):
+class ApplyToSessionsFileUploadForm(FileUploadForm):
+    """FileUploadForm with a checkbox for each other session the upload can also apply to
+
+    choices and select_all come from apply_to_choices(); with no choices the field is removed.
+    shared_with names the other sessions linked to the document being revised. When given, the
+    form also asks whether to revise that shared document or replace it for this session alone.
+    """
+    SCOPE_REVISE = "revise"
+    SCOPE_REPLACE = "replace"
+
+    apply_to_sessions = forms.TypedMultipleChoiceField(
+        coerce=int, required=False, widget=forms.CheckboxSelectMultiple, label="Also apply to",
+    )
+
+    def __init__(self, choices, select_all, *args, shared_with=(), **kwargs):
+        super().__init__(*args, **kwargs)
+        self.session_choices = list(choices)
+        kind = DocTypeName.objects.get(slug=self.doc_type).name.lower()
+        if self.session_choices:
+            field = self.fields["apply_to_sessions"]
+            field.choices = [(c.session.pk, self._choice_label(c, kind)) for c in self.session_choices]
+            field.initial = [c.session.pk for c in self.session_choices] if select_all else []
+        else:
+            self.fields.pop("apply_to_sessions")
+        if shared_with:
+            self.fields["scope"] = forms.ChoiceField(
+                label="",
+                widget=forms.RadioSelect,
+                initial=self.SCOPE_REVISE,
+                choices=[
+                    (self.SCOPE_REVISE, f"Revise the shared {kind}, which also updates {', '.join(shared_with)}"),
+                    (self.SCOPE_REPLACE, f"Upload a new {kind} for this session, unlinking the shared one here"),
+                ],
+            )
+            if "apply_to_sessions" in self.fields:
+                self.fields["apply_to_sessions"].help_text = f"Only used when uploading a new {kind}"
+        self.order_fields(
+            sorted(
+                self.fields.keys(),
+                key=lambda f: {"scope": "", "apply_to_sessions": "zzzzzz"}.get(f, f),
+            )
+        )
+
+    @staticmethod
+    def _choice_label(choice, kind):
+        if choice.current_doc is None:
+            return choice.label
+        return f"{choice.label} (its {kind}, {choice.current_doc.title}, would be unlinked)"
+
+    def sessions_to_apply(self):
+        chosen = self.cleaned_data.get("apply_to_sessions", [])
+        return [c.session for c in self.session_choices if c.session.pk in chosen]
+
+    def replace_shared(self):
+        return self.cleaned_data.get("scope") == self.SCOPE_REPLACE
+
+
+class UploadSlidesForm(ApplyToSessionsFileUploadForm):
     doc_type = 'slides'
     title = forms.CharField(max_length=255)
     approved = forms.BooleanField(label='Auto-approve', initial=True, required=False)
+    # Proposals record a single yes/no; the approver decides where the deck goes
+    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting', initial=True, required=False)
 
-    def __init__(self, session, show_apply_to_all_checkbox, can_manage, *args, **kwargs):
-        super().__init__(show_apply_to_all_checkbox, *args, **kwargs)
-        if not can_manage:
-            self.fields.pop('approved')
+    def __init__(self, session, can_manage, choices, select_all, *args, **kwargs):
+        super().__init__(choices if can_manage else [], select_all, *args, **kwargs)
         self.session = session
+        if can_manage:
+            self.fields.pop('apply_to_all')
+        else:
+            self.fields.pop('approved')
+            if choices:
+                self.order_fields([f for f in self.fields if f != 'apply_to_all'] + ['apply_to_all'])
+            else:
+                self.fields.pop('apply_to_all')
 
     def clean_title(self):
         title = self.cleaned_data['title']
