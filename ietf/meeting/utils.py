@@ -675,6 +675,7 @@ def preprocess_meeting_important_dates(meetings):
     
 
 def get_meeting_sessions(num, acronym):
+    """The group's sessions at the meeting, in any state, annotated with current_status and in schedule order"""
     types = ['regular','plenary','other']
     sessions = Session.objects.filter(
         meeting__number=num,
@@ -687,7 +688,34 @@ def get_meeting_sessions(num, acronym):
             short=acronym,
             type__in=types,
         )
-    return sessions
+    return sorted(
+        sessions.with_current_status(),
+        key=lambda s: session_time_for_sorting(s, use_meeting_date=False)
+    )
+
+
+def scheduled_only(sessions):
+    """The sessions from get_meeting_sessions() that are currently in the 'sched' state, in the same order
+
+    Cancelled sessions and the tombstones left by rescheduling keep their timeslot assignment, so
+    get_meeting_sessions() still returns them. Anything that treats "all of the group's sessions" as a unit,
+    such as material uploads that apply to every session, must use this subset instead.
+    """
+    return [s for s in sessions if s.current_status == "sched"]
+
+
+def sessions_covered_by_apply_to_all(session):
+    """The sessions an "apply to all" change to session's materials covers, and session's number among them
+
+    Returns (sessions, session_number). The list always includes session itself and is in schedule
+    order. A session that is not scheduled is covered alone: unscheduled sessions are not part of any
+    "all sessions" group, even with each other. session_number is None when the session is alone.
+    """
+    sessions = scheduled_only(get_meeting_sessions(session.meeting.number, session.group.acronym))
+    if session not in sessions:
+        sessions = [session]
+    session_number = 1 + sessions.index(session) if len(sessions) > 1 else None
+    return sessions, session_number
 
 
 class SessionNotScheduledError(Exception):
@@ -748,7 +776,8 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
         else:
             session.presentations.create(document=doc,rev=doc.rev)
     if apply_to_all:
-        for other_session in get_meeting_sessions(session.meeting.number, session.group.acronym):
+        sessions, _ = sessions_covered_by_apply_to_all(session)
+        for other_session in sessions:
             if other_session != session:
                 other_session.presentations.filter(document__type=document_type).delete()
                 other_session.presentations.create(document=doc,rev=doc.rev)

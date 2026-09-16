@@ -1307,6 +1307,9 @@ class Session(models.Model):
         return "".join(chars[::-1])
 
     def docname_token(self):
+        # Position in pk order, so the token never changes for the life of the session. It is an
+        # identifier, not a sequence number: sessions get reordered, cancelled and moved after
+        # documents carrying the token exist, so "sessb" says nothing about when the session meets.
         sess_mtg = Session.objects.filter(meeting=self.meeting, group=self.group).order_by('pk')
         index = list(sess_mtg).index(self)
         return f"sess{self._alpha_str(index)}"
