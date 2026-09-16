@@ -162,11 +162,12 @@ from ietf.meeting.utils import (
 )
 from ietf.meeting.utils import (
     add_event_info_to_session_qs,
-    session_time_for_sorting,
     session_requested_by,
     SaveMaterialsError,
     current_session_status,
-    get_meeting_sessions,
+    get_sessions,
+    scheduled_only,
+    apply_to_all_sessions,
     SessionNotScheduledError,
     data_for_meetings_overview,
     handle_upload_file,
@@ -3004,23 +3005,6 @@ def meeting_requests(request, num=None):
     )
 
 
-def get_sessions(num, acronym):
-    return sorted(
-        get_meeting_sessions(num, acronym).with_current_status(),
-        key=lambda s: session_time_for_sorting(s, use_meeting_date=False)
-    )
-
-
-def scheduled_only(sessions):
-    """The sessions from get_sessions() that are currently in the 'sched' state, in the same order
-
-    Cancelled sessions and the tombstones left by rescheduling keep their timeslot assignment, so
-    get_sessions() still returns them. Anything that treats "all of the group's sessions" as a unit,
-    such as material uploads that apply to every session, must use this subset instead.
-    """
-    return [s for s in sessions if s.current_status == "sched"]
-
-
 def session_details(request, num, acronym):
     meeting = get_meeting(num=num,type_in=None)
     sessions = get_sessions(num, acronym)
@@ -3649,14 +3633,10 @@ def upload_session_slides(request, session_id, num, name=None):
             "This meeting has already occurred. Contact a chair or the secretariat for further action.",
         )
 
-    sessions = scheduled_only(get_sessions(session.meeting.number, session.group.acronym))
-    if session not in sessions:
-        # Unscheduled sessions are not part of any "all sessions" group, even with each other
-        sessions = [session]
+    sessions, session_number = apply_to_all_sessions(session)
     show_apply_to_all_checkbox = (
         len(sessions) > 1 if session.type_id == "regular" else False
     )
-    session_number = 1 + sessions.index(session) if len(sessions) > 1 else None
 
     doc = None
     if name:
@@ -5706,12 +5686,8 @@ def approve_proposed_slides(request, slidesubmission_id, num):
     if submission.session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")   
     
-    sessions = scheduled_only(get_sessions(submission.session.meeting.number, submission.session.group.acronym))
-    if submission.session not in sessions:
-        # Unscheduled sessions are not part of any "all sessions" group, even with each other
-        sessions = [submission.session]
+    sessions, session_number = apply_to_all_sessions(submission.session)
     show_apply_to_all_checkbox = len(sessions) > 1 if submission.session.type_id == 'regular' else False
-    session_number = 1 + sessions.index(submission.session) if len(sessions) > 1 else None
     name, _ = os.path.splitext(submission.filename)
     name = name[:name.rfind('-ss')]
     existing_doc = Document.objects.filter(name=name).first()

@@ -690,6 +690,37 @@ def get_meeting_sessions(num, acronym):
     return sessions
 
 
+def get_sessions(num, acronym):
+    return sorted(
+        get_meeting_sessions(num, acronym).with_current_status(),
+        key=lambda s: session_time_for_sorting(s, use_meeting_date=False)
+    )
+
+
+def scheduled_only(sessions):
+    """The sessions from get_sessions() that are currently in the 'sched' state, in the same order
+
+    Cancelled sessions and the tombstones left by rescheduling keep their timeslot assignment, so
+    get_sessions() still returns them. Anything that treats "all of the group's sessions" as a unit,
+    such as material uploads that apply to every session, must use this subset instead.
+    """
+    return [s for s in sessions if s.current_status == "sched"]
+
+
+def apply_to_all_sessions(session):
+    """The sessions an "apply to all" change to session's materials covers, and session's number among them
+
+    Returns (sessions, session_number). The list always includes session itself and is in schedule
+    order. A session that is not scheduled is covered alone: unscheduled sessions are not part of any
+    "all sessions" group, even with each other. session_number is None when the session is alone.
+    """
+    sessions = scheduled_only(get_sessions(session.meeting.number, session.group.acronym))
+    if session not in sessions:
+        sessions = [session]
+    session_number = 1 + sessions.index(session) if len(sessions) > 1 else None
+    return sessions, session_number
+
+
 class SessionNotScheduledError(Exception):
     """Indicates failure because operation requires a scheduled session"""
     pass
