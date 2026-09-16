@@ -165,9 +165,9 @@ from ietf.meeting.utils import (
     session_requested_by,
     SaveMaterialsError,
     current_session_status,
-    get_sessions,
+    get_meeting_sessions,
     scheduled_only,
-    apply_to_all_sessions,
+    sessions_covered_by_apply_to_all,
     SessionNotScheduledError,
     data_for_meetings_overview,
     handle_upload_file,
@@ -3007,7 +3007,7 @@ def meeting_requests(request, num=None):
 
 def session_details(request, num, acronym):
     meeting = get_meeting(num=num,type_in=None)
-    sessions = get_sessions(num, acronym)
+    sessions = get_meeting_sessions(num, acronym)
 
     if not sessions:
         raise Http404
@@ -3067,7 +3067,7 @@ def session_details(request, num, acronym):
         session.order_number = session.order_in_meeting()
 
     # we somewhat arbitrarily use the group of the last session we get from
-    # get_sessions() above when checking can_manage_session_materials()
+    # get_meeting_sessions() above when checking can_manage_session_materials()
     group = session.group
     can_manage = can_manage_session_materials(request.user, group, session)
     can_view_request = can_view_interim_request(meeting, request.user)
@@ -3120,7 +3120,7 @@ def add_session_drafts(request, session_id, num):
 
     already_linked = [sp.document for sp in session.presentations.filter(document__type_id='draft')]
 
-    _, session_number = apply_to_all_sessions(session)
+    _, session_number = sessions_covered_by_apply_to_all(session)
 
     if request.method == 'POST':
         form = SessionDraftsForm(request.POST,already_linked=already_linked)
@@ -3176,7 +3176,7 @@ def add_session_recordings(request, session_id, num):
         )
     }
 
-    _, session_number = apply_to_all_sessions(session)
+    _, session_number = sessions_covered_by_apply_to_all(session)
 
     presentations = session.presentations.filter(
         document__in=session.get_material("recording", only_one=False),
@@ -3293,7 +3293,7 @@ def upload_session_bluesheets(request, session_id, num):
     if session.meeting.type.slug == 'ietf' and not has_role(request.user, 'Secretariat'):
         permission_denied(request, 'Restricted to role Secretariat')
         
-    _, session_number = apply_to_all_sessions(session)
+    _, session_number = sessions_covered_by_apply_to_all(session)
 
     if request.method == 'POST':
         form = UploadBlueSheetForm(request.POST,request.FILES)
@@ -3338,7 +3338,7 @@ def upload_session_minutes(request, session_id, num):
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
-    sessions, session_number = apply_to_all_sessions(session)
+    sessions, session_number = sessions_covered_by_apply_to_all(session)
     show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
 
     minutes_sp = session.presentations.filter(document__type='minutes').first()
@@ -3394,7 +3394,7 @@ def upload_session_narrativeminutes(request, session_id, num):
     if session.group.acronym != "iesg":
         raise Http404()
     
-    sessions, session_number = apply_to_all_sessions(session)
+    sessions, session_number = sessions_covered_by_apply_to_all(session)
     show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
 
     narrativeminutes_sp = session.presentations.filter(document__type='narrativeminutes').first()
@@ -3496,7 +3496,7 @@ def upload_session_agenda(request, session_id, num):
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
-    sessions, session_number = apply_to_all_sessions(session)
+    sessions, session_number = sessions_covered_by_apply_to_all(session)
     show_apply_to_all_checkbox = len(sessions) > 1 if session.type.slug == 'regular' else False
 
     agenda_sp = session.presentations.filter(document__type='agenda').first()
@@ -3614,7 +3614,7 @@ def upload_session_slides(request, session_id, num, name=None):
             "This meeting has already occurred. Contact a chair or the secretariat for further action.",
         )
 
-    sessions, session_number = apply_to_all_sessions(session)
+    sessions, session_number = sessions_covered_by_apply_to_all(session)
     show_apply_to_all_checkbox = (
         len(sessions) > 1 if session.type_id == "regular" else False
     )
@@ -5667,7 +5667,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
     if submission.session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")   
     
-    sessions, session_number = apply_to_all_sessions(submission.session)
+    sessions, session_number = sessions_covered_by_apply_to_all(submission.session)
     show_apply_to_all_checkbox = len(sessions) > 1 if submission.session.type_id == 'regular' else False
     name, _ = os.path.splitext(submission.filename)
     name = name[:name.rfind('-ss')]
@@ -5811,7 +5811,7 @@ def notify_meetecho_of_all_slides(request, num, acronym):
             content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
             permitted_methods=("POST",),
         )
-    scheduled_sessions = scheduled_only(get_sessions(meeting.number, acronym))
+    scheduled_sessions = scheduled_only(get_meeting_sessions(meeting.number, acronym))
     sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
     updated = []
     for session in scheduled_sessions:
