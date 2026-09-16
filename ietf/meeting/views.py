@@ -3011,6 +3011,16 @@ def get_sessions(num, acronym):
     )
 
 
+def scheduled_only(sessions):
+    """The sessions from get_sessions() that are currently in the 'sched' state, in the same order
+
+    Cancelled sessions and the tombstones left by rescheduling keep their timeslot assignment, so
+    get_sessions() still returns them. Anything that treats "all of the group's sessions" as a unit,
+    such as material uploads that apply to every session, must use this subset instead.
+    """
+    return [s for s in sessions if s.current_status == "sched"]
+
+
 def session_details(request, num, acronym):
     meeting = get_meeting(num=num,type_in=None)
     sessions = get_sessions(num, acronym)
@@ -5840,11 +5850,7 @@ def notify_meetecho_of_all_slides(request, num, acronym):
             content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
             permitted_methods=("POST",),
         )
-    scheduled_sessions = [
-        session
-        for session in get_sessions(meeting.number, acronym)
-        if session.current_status == "sched"
-    ]
+    scheduled_sessions = scheduled_only(get_sessions(meeting.number, acronym))
     sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
     updated = []
     for session in scheduled_sessions:
