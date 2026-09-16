@@ -1,17 +1,12 @@
 # Copyright The IETF Trust 2019-2026, All Rights Reserved
 """Management command for exporting name related base data for the tests"""
 
-import io
-import os
-import sys
-from pprint import pprint
 from typing import List  # pyflakes:ignore
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.core.serializers import serialize
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db import connection, models
+from django.db import models
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.models import BallotType, State, StateType
@@ -35,38 +30,15 @@ class Command(BaseCommand):
     The recommended way to use this is unfortunately not the default, as the ordering
     of the resulting fixture isn't quite stable.  Instead use:
 
-      "ietf/manage.py generate_name_fixture --stdout | jq --sort-keys 'sort_by(.model, .pk)' > ietf/name/fixtures/names.json"
+      "ietf/manage.py generate_name_fixture | jq --sort-keys 'sort_by(.model, .pk)' > ietf/name/fixtures/names.json"
     """
-    output = None
-
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "--stdout",
-            action="store_true",
-            default=False,
-            help="Send fixture to stdout instead of ietf/name/fixtures/names.json",
-        )
 
     def handle(self, *args, **options):
-        self.output = (
-            sys.stdout
-            if options.get("stdout")
-            else io.open(
-                os.path.join(settings.BASE_DIR, "name/fixtures/names.json"), "w"
-            )
-        )
-
         def model_name(model_: type[models.Model]):
             return "%s.%s" % (model_._meta.app_label, model_.__name__)
 
         def output(seq):
-            try:
-                f = self.output
-                f.write(serialize("json", seq, cls=SortedJsonEncoder, indent=2))
-                f.close()
-            except:
-                pprint(connection.queries)
-                raise
+            self.stdout.write(serialize("json", seq, cls=SortedJsonEncoder, indent=2))
 
         objects: List[object] = []  # type: ignore[annotation-unchecked]
         model_objects = {}
