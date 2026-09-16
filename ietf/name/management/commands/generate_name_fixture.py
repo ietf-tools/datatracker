@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2019-2026, All Rights Reserved
 """Management command for exporting name related base data for the tests"""
 
-import inspect
 import io
 import os
 import sys
@@ -12,14 +11,14 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.core.serializers import serialize
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db import connection
+from django.db import connection, models
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.models import BallotType, State, StateType
 from ietf.group.models import GroupFeatures
 from ietf.mailtrigger.models import MailTrigger, Recipient
 from ietf.meeting.models import BusinessConstraint
-from ietf.name import models as name_models
+from ietf.name.models import NameModel
 from ietf.stats.models import CountryAlias
 
 
@@ -57,7 +56,7 @@ class Command(BaseCommand):
             )
         )
 
-        def model_name(model_):
+        def model_name(model_: type[models.Model]):
             return "%s.%s" % (model_._meta.app_label, model_.__name__)
 
         def output(seq):
@@ -66,7 +65,6 @@ class Command(BaseCommand):
                 f.write(serialize("json", seq, cls=SortedJsonEncoder, indent=2))
                 f.close()
             except:
-
                 pprint(connection.queries)
                 raise
 
@@ -74,13 +72,11 @@ class Command(BaseCommand):
         model_objects = {}
 
         # Grab all ietf.name.models
-        for n in dir(name_models):
-            item = getattr(name_models, n)
-            if inspect.isclass(item) and issubclass(item, name_models.NameModel):
-                if not item._meta.abstract:
-                    model_objects[model_name(item)] = list(
-                        item.objects.all().order_by("pk")
-                    )
+        for name_model in NameModel.__subclasses__():
+            if not name_model._meta.abstract:
+                model_objects[model_name(name_model)] = list(
+                    name_model.objects.all().order_by("pk")
+                )
 
         for m in (
             BallotType,
