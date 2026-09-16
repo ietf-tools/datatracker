@@ -3120,10 +3120,7 @@ def add_session_drafts(request, session_id, num):
 
     already_linked = [sp.document for sp in session.presentations.filter(document__type_id='draft')]
 
-    session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
+    _, session_number = apply_to_all_sessions(session)
 
     if request.method == 'POST':
         form = SessionDraftsForm(request.POST,already_linked=already_linked)
@@ -3168,7 +3165,6 @@ def add_session_recordings(request, session_id, num):
     ):
         raise Http404
 
-    session_number = None
     official_timeslotassignment = session.official_timeslotassignment()
     assertion("official_timeslotassignment is not None")
     initial = {
@@ -3180,10 +3176,7 @@ def add_session_recordings(request, session_id, num):
         )
     }
 
-    # find session number if WG has more than one session at the meeting
-    sessions = get_sessions(session.meeting.number, session.group.acronym)
-    if len(sessions) > 1:
-        session_number = 1 + sessions.index(session)
+    _, session_number = apply_to_all_sessions(session)
 
     presentations = session.presentations.filter(
         document__in=session.get_material("recording", only_one=False),
@@ -3300,10 +3293,7 @@ def upload_session_bluesheets(request, session_id, num):
     if session.meeting.type.slug == 'ietf' and not has_role(request.user, 'Secretariat'):
         permission_denied(request, 'Restricted to role Secretariat')
         
-    session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
+    _, session_number = apply_to_all_sessions(session)
 
     if request.method == 'POST':
         form = UploadBlueSheetForm(request.POST,request.FILES)
@@ -3348,11 +3338,8 @@ def upload_session_minutes(request, session_id, num):
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
-    session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
+    sessions, session_number = apply_to_all_sessions(session)
     show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
 
     minutes_sp = session.presentations.filter(document__type='minutes').first()
     
@@ -3407,11 +3394,8 @@ def upload_session_narrativeminutes(request, session_id, num):
     if session.group.acronym != "iesg":
         raise Http404()
     
-    session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
+    sessions, session_number = apply_to_all_sessions(session)
     show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
 
     narrativeminutes_sp = session.presentations.filter(document__type='narrativeminutes').first()
     
@@ -3512,11 +3496,8 @@ def upload_session_agenda(request, session_id, num):
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
-    session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
+    sessions, session_number = apply_to_all_sessions(session)
     show_apply_to_all_checkbox = len(sessions) > 1 if session.type.slug == 'regular' else False
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
 
     agenda_sp = session.presentations.filter(document__type='agenda').first()
     

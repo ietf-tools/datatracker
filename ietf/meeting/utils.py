@@ -779,7 +779,8 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
         else:
             session.presentations.create(document=doc,rev=doc.rev)
     if apply_to_all:
-        for other_session in get_meeting_sessions(session.meeting.number, session.group.acronym):
+        sessions, _ = apply_to_all_sessions(session)
+        for other_session in sessions:
             if other_session != session:
                 other_session.presentations.filter(document__type=document_type).delete()
                 other_session.presentations.create(document=doc,rev=doc.rev)

@@ -6876,6 +6876,43 @@ class MaterialsTests(TestCase):
                 self.requests_mock.get(f'{session.notes_url()}/info', text=json.dumps({'title': 'title', 'updatetime': '2021-12-01T17:11:00z'}))
                 self.crawl_materials(url=url, top=top)
 
+    def test_upload_minutes_agenda_apply_to_all_covers_scheduled_sessions_only(self):
+        for doctype in ('minutes', 'agenda'):
+            first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
+            # Material already on the cancelled session must survive an apply-to-all upload elsewhere
+            kept = SessionPresentationFactory(session=cancelled, document__type_id=doctype)
+            view = 'ietf.meeting.views.upload_session_%s' % doctype
+            url = urlreverse(view, kwargs={'num': last.meeting.number, 'session_id': last.id})
+            self.client.login(username='secretary', password='secretary+password')
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertTrue(q('#id_apply_to_all'))
+            self.assertIn('Session 2', q('h2').text(), 'Unscheduled sessions must not count toward the session number')
+            test_file = BytesIO(b'some text for a test')
+            test_file.name = 'some.txt'
+            r = self.client.post(url, dict(submission_method='upload', file=test_file, apply_to_all=True))
+            self.assertEqual(r.status_code, 302)
+            doc = last.presentations.get(document__type_id=doctype).document
+            self.assertEqual(first.presentations.get(document__type_id=doctype).document, doc)
+            self.assertEqual(list(cancelled.presentations.all()), [kept])
+
+    def test_material_pages_number_scheduled_sessions_only(self):
+        first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
+        self.client.login(username='secretary', password='secretary+password')
+        for view in (
+            'ietf.meeting.views.add_session_drafts',
+            'ietf.meeting.views.add_session_recordings',
+            'ietf.meeting.views.upload_session_bluesheets',
+        ):
+            r = self.client.get(urlreverse(view, kwargs={'num': last.meeting.number, 'session_id': last.id}))
+            self.assertEqual(r.status_code, 200)
+            self.assertContains(r, 'Session 2', msg_prefix=view)
+            r = self.client.get(urlreverse(view, kwargs={'num': cancelled.meeting.number, 'session_id': cancelled.id}))
+            self.assertEqual(r.status_code, 200)
+            for n in (1, 2, 3):
+                self.assertNotContains(r, 'Session %d' % n, msg_prefix=view)
+
     def test_upload_minutes_agenda_unscheduled(self):
         for doctype in ('minutes','agenda'):
             session = SessionFactory(meeting__type_id='ietf', add_to_schedule=False)
