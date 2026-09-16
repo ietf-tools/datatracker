@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2019-2026, All Rights Reserved
 """Management command for exporting name related base data for the tests"""
 
-from typing import List  # pyflakes:ignore
+import json
 
 from django.core.management.base import BaseCommand
 from django.core.serializers import serialize
@@ -17,39 +17,24 @@ from ietf.name.models import NameModel
 from ietf.stats.models import CountryAlias
 
 
-class SortedJsonEncoder(DjangoJSONEncoder):
-    def __init__(self, *args, **kwargs):
-        kwargs["sort_keys"] = True
-        super().__init__(*args, **kwargs)
-
-
 class Command(BaseCommand):
     help = """
     Generate a custom fixture for all objects needed by the datatracker test suite.
 
-    The recommended way to use this is unfortunately not the default, as the ordering
-    of the resulting fixture isn't quite stable.  Instead use:
+    The fixture is written to stdout:
 
-      "ietf/manage.py generate_name_fixture | jq --sort-keys 'sort_by(.model, .pk)' > ietf/name/fixtures/names.json"
+      "ietf/manage.py generate_name_fixture > ietf/name/fixtures/names.json"
     """
 
     def handle(self, *args, **options):
-        def model_name(model_: type[models.Model]):
-            return "%s.%s" % (model_._meta.app_label, model_.__name__)
-
-        def output(seq):
-            self.stdout.write(serialize("json", seq, cls=SortedJsonEncoder, indent=2))
-
-        objects: List[object] = []  # type: ignore[annotation-unchecked]
-        model_objects = {}
+        objects: list[models.Model] = []  # type: ignore[annotation-unchecked]
 
         # Grab all ietf.name.models
         for name_model in NameModel.__subclasses__():
             if not name_model._meta.abstract:
-                model_objects[model_name(name_model)] = list(
-                    name_model.objects.all().order_by("pk")
-                )
+                objects.extend(name_model.objects.all())
 
+        # Grab some name-like models, too
         for m in (
             BallotType,
             State,
@@ -60,12 +45,31 @@ class Command(BaseCommand):
             CountryAlias,
             BusinessConstraint,
         ):
-            model_objects[model_name(m)] = list(m.objects.all().order_by("pk"))
+            objects.extend(m.objects.all())
 
+        # This specific DBTemplate was needed as of 2019
         for m in (DBTemplate,):
-            model_objects[model_name(m)] = [m.objects.get(pk=354)]
+            objects.append(m.objects.get(pk=354))
 
-        for model_name in sorted(model_objects.keys()):
-            objects += model_objects[model_name]
+        # Sort the serialized dicts rather than the querysets: "model" is the lowercased
+        # "app_label.modelname", which does not order the same way as the model class
+        # names, and string pks must compare by code point, not by DB collation.
+        data = sorted(serialize("python", objects), key=lambda d: (d["model"], d["pk"]))
 
-        output(objects)
+        # ensure_ascii=False keeps non-ASCII characters (e.g., "Åland Islands") as UTF-8,
+        # so the stream has to be able to encode them whatever the environment's locale.
+        reconfigure = getattr(self.stdout, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8")
+
+        # These options reproduce the formatting of "jq --sort-keys", which historically
+        # post-processed this command's output. OutputWrapper adds the trailing newline.
+        self.stdout.write(
+            json.dumps(
+                data,
+                cls=DjangoJSONEncoder,
+                indent=2,
+                sort_keys=True,
+                ensure_ascii=False,
+            )
+        )
