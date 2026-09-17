@@ -26,11 +26,12 @@ from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.encoding import smart_str
+from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.doc.storage_utils import store_bytes, store_str, AlreadyExistsError
+from ietf.doc.storage_utils import store_bytes, store_str, retrieve_bytes, AlreadyExistsError
 from ietf.meeting.models import (
     Session,
     SchedulingEvent,
@@ -723,65 +724,278 @@ class SessionNotScheduledError(Exception):
     pass
 
 
-def save_session_minutes_revision(session, file, ext, request, encoding=None, apply_to_all=False, narrative=False):
+def material_session_label(session, session_number=None):
+    """How the material pages name a session: "Session 2: Tue 09:30", or the time and status if it has no number"""
+    if session_number is None:
+        _, session_number = sessions_covered_by_apply_to_all(session)
+    ota = session.official_timeslotassignment()
+    when = ota.timeslot.local_start_time().strftime("%a %H:%M") if ota else "unscheduled"
+    if session_number:
+        return f"Session {session_number}: {when}"
+    status = current_session_status(session)
+    return f"{when} ({status.name.lower()})" if status else when
+
+
+@dataclass
+class MaterialSessionChoice:
+    """Another session a material upload could also apply to"""
+    session: Session
+    label: str
+    current_doc: Document | None  # its document of the upload's type, which applying would unlink
+
+
+def apply_to_choices(session, doc_type, exclude=()):
+    """The other scheduled sessions an upload of doc_type to session could also apply to, and whether to preselect them
+
+    Returns (choices, select_all). Preselect only when every scheduled session holds the same documents of
+    this type, counting none anywhere as the same: the sessions are being run as one set. Any difference
+    means they are not, and pre-checking would silently unlink or spread material. Sessions in exclude
+    (already linked to the document being revised) get no choice. Slides are added beside existing decks,
+    so applying them never unlinks anything and current_doc is always None for them.
+    """
+    scheduled, _ = sessions_covered_by_apply_to_all(session)
+    if len(scheduled) < 2 or session.type_id != "regular":
+        return [], False
+    docs_by_session = [
+        frozenset(
+            s.presentations.filter(document__type_id=doc_type)
+            .exclude(document__states__slug="deleted")
+            .values_list("document_id", flat=True)
+        )
+        for s in scheduled
+    ]
+    select_all = len(set(docs_by_session)) == 1
+    choices = []
+    for number, other in enumerate(scheduled, start=1):
+        if other == session or other in exclude:
+            continue
+        current_doc = None
+        if doc_type != "slides":
+            current_sp = other.presentations.filter(document__type_id=doc_type).first()
+            current_doc = current_sp.document if current_sp else None
+        choices.append(MaterialSessionChoice(other, material_session_label(other, number), current_doc))
+    return choices, select_all
+
+
+def material_upload_choices(session, doc_type, existing_sp):
+    """What an upload page for doc_type offers: (choices, select_all, shared_with)
+
+    existing_sp is the session's presentation of that type, if any. Revising it offers only the sessions
+    its document is not linked to, unchecked; the sessions it is linked to are named in shared_with.
+    """
+    linked = []
+    if existing_sp is not None:
+        linked = list(sessions_linked_to(existing_sp.document, session.meeting).exclude(pk=session.pk))
+    choices, select_all = apply_to_choices(session, doc_type, exclude=linked)
+    if existing_sp is not None:
+        select_all = False  # the document's current sessions are the truth about where it belongs
+    return choices, select_all, [material_session_label(s) for s in linked]
+
+
+def group_wide_material_name(session, also_sessions):
+    """Whether material for session and also_sessions is named for the group rather than for the session
+
+    The group-wide name is what "apply to all" always produced, and later uploads with the same title
+    reuse it, so once anything is scheduled it must mean every scheduled session, and a session in any
+    other state gets its own name. Before anything is scheduled there is nothing to protect, and each
+    session's upload is named for the group as it always was.
+    """
+    if session.type_id != "regular":
+        return False
+    scheduled = scheduled_only(get_meeting_sessions(session.meeting.number, session.group.acronym))
+    if not scheduled:
+        return True
+    return session in scheduled and all(s == session or s in also_sessions for s in scheduled)
+
+
+def sessions_linked_to(doc, meeting):
+    """The meeting's sessions that present doc, except deleted ones, which keep their links but are gone"""
+    return Session.objects.filter(presentations__document=doc, meeting=meeting).not_deleted()
+
+
+def link_material_to_sessions(doc, session, also_sessions=()):
+    """Point session, also_sessions and every session already linked to doc at doc's current revision
+
+    A revision reaches every session already linked, chosen or not: there is one document to show.
+    For one-per-session types such as agendas and minutes, doc displaces what the session had of that type.
+    """
+    targets = [session, *also_sessions]
+    for linked in sessions_linked_to(doc, session.meeting):
+        if linked not in targets:
+            targets.append(linked)
+    for target in targets:
+        sp = target.presentations.filter(document=doc).first()
+        if sp is not None:
+            sp.rev = doc.rev
+            sp.save()
+        else:
+            target.presentations.filter(document__type=doc.type).delete()
+            target.presentations.create(document=doc, rev=doc.rev)
+
+
+def material_document_name(session, doc_type, group_wide, title=None):
+    """(name, title) for a new agenda, minutes or slides document uploaded to session
+
+    Only an IETF meeting has a group-wide name; interim material is always named for its session.
+    Agendas and slides carry the session's docname token and minutes its start time, as they always
+    have. A session with no timeslot gets the token for minutes too, so a copy can always be named.
+    Slides take their title from the uploader and add its slug to the name.
+    """
+    typename = DocTypeName.objects.get(slug=doc_type)
+    meeting = session.meeting
+    ota = session.official_timeslotassignment()
+    sess_time = ota.timeslot.time if ota else None
+    if doc_type in ("minutes", "narrativeminutes") and sess_time:
+        suffix = sess_time.strftime("%Y%m%d%H%M")
+    else:
+        suffix = session.docname_token()
+    when = f": {sess_time.strftime('%a %H:%M')}" if sess_time else ""
+    if meeting.type_id == "ietf":
+        name = f"{typename.prefix}-{meeting.number}-{session.group.acronym}"
+        doc_title = f"{typename.name} IETF{meeting.number}: {session.group.acronym}"
+        if not group_wide:
+            name += f"-{suffix}"
+            doc_title += when
+    else:
+        name = f"{typename.prefix}-{meeting.number}-{suffix}"
+        doc_title = f"{typename.name} {meeting.number}{when}"
+    if doc_type == "slides":
+        name += "-" + slugify(title).replace("_", "-")[:128]
+        doc_title = title
+    return name, doc_title
+
+
+def reclaim_material_name(doc, session, by, keep=(), _in_progress=frozenset()):
+    """Give every other session linked to doc its own copy, so session can reuse doc's name for new content
+
+    doc carries session's own name, so it belongs to session. Each other session linked to it, except
+    those in keep, gets doc's current content as a new revision of the document named for that session,
+    created at 00 if need be, and is relinked to the copy. Cancelled and rescheduled sessions are
+    included so that what they show does not change. Returns (warnings, relinked): warnings to show
+    the uploader, and (presentation, document it was moved off) for each session now pointing at a
+    copy, for whoever must announce the change.
+
+    The copy's own document may in turn be shared with further sessions, so it is reclaimed for its
+    owner first, recursively. A document already being reclaimed further up is left alone: that reclaim
+    gives it new content and relinks its owner.
+    """
+    meeting = session.meeting
+    in_progress = _in_progress | {doc.pk}
+    warnings = []
+    relinked = []
+    kind = doc.type.name.lower()
+    others = [o for o in sessions_linked_to(doc, meeting).exclude(pk=session.pk) if o not in keep]
+    content = material_content(doc, meeting)
+    if not content:  # the blob store hands back empty bytes when it is disabled
+        # Leave them linked rather than lose the record of what they showed; the uploader is told.
+        return [
+            f"{material_session_label(other)} shared this {kind}, but its current file could not be found, "
+            f"so no copy was made. It will show the new revision until a {kind} is uploaded to it."
+            for other in others
+        ], []
+    ext = Path(doc.uploaded_filename).suffix
+    for other in others:
+        name, title = material_document_name(other, doc.type_id, group_wide=False, title=doc.title)
+        copy = Document.objects.filter(name=name).first()
+        if copy is None:
+            copy = Document.objects.create(name=name, type_id=doc.type_id, title=title, group=doc.group, rev="00")
+            if doc.type_id == "slides":
+                copy.set_state(State.objects.get(type_id="reuse_policy", slug="single"))
+        elif copy.pk in in_progress:
+            continue
+        else:
+            more_warnings, more_relinked = reclaim_material_name(copy, other, by, _in_progress=in_progress)
+            warnings += more_warnings
+            relinked += more_relinked
+            copy.rev = "%02d" % (int(copy.rev) + 1)
+        copy.set_state(State.objects.get(type_id=doc.type_id, slug="active"))
+        copy.uploaded_filename = f"{copy.name}-{copy.rev}{ext}"
+        target_dir = Path(meeting.get_materials_path()) / doc.type_id
+        target_dir.mkdir(parents=True, exist_ok=True)
+        (target_dir / copy.uploaded_filename).write_bytes(content)
+        store_bytes(doc.type_id, copy.uploaded_filename, content)
+        events = [
+            NewRevisionDocEvent.objects.create(doc=copy, by=by, type="new_revision", rev=copy.rev, desc=f"New revision available: {copy.rev}"),
+            DocEvent.objects.create(doc=copy, by=by, type="added_comment", rev=copy.rev,
+                                    desc=f"Copied from {doc.name}-{doc.rev}, which is being revised for its own session"),
+        ]
+        copy.save_with_history(events)
+        resolve_uploaded_material(meeting=meeting, doc=copy)
+        # Anything still presenting the copy target, such as a session skipped above, follows its revision
+        SessionPresentation.objects.filter(document=copy).update(rev=copy.rev)
+        if other.presentations.filter(document=copy).exists():
+            other.presentations.filter(document=doc).delete()  # it held both; one link to the copy is enough
+        else:
+            other.presentations.filter(document=doc).update(document=copy, rev=copy.rev)
+        relinked.append((other.presentations.get(document=copy), doc))
+    return warnings, relinked
+
+
+def material_content(doc, meeting):
+    """The bytes of doc's current revision from disk or the blob store, or None if neither has them"""
+    if not doc.uploaded_filename:
+        return None
+    source = Path(meeting.get_materials_path()) / doc.type_id / doc.uploaded_filename
+    if source.exists():
+        return source.read_bytes()
+    try:
+        return retrieve_bytes(doc.type_id, doc.uploaded_filename)
+    except Exception:
+        return None
+
+
+def save_session_minutes_revision(session, file, ext, request, encoding=None, also_sessions=(), replace=False, narrative=False):
     """Creates or updates session minutes records
 
     This updates the database models to reflect a new version. It does not handle
     storing the new file contents, that should be handled via handle_upload_file()
     or similar.
 
+    The minutes are linked to session, to also_sessions, and to every session already linked to the
+    document, displacing whatever minutes those sessions had. With replace, a session that already has
+    minutes gets new ones instead of a revision, and the old ones are unlinked here only.
+
     If the session does not already have minutes, it must be a scheduled
     session. If not, SessionNotScheduledError will be raised.
 
-    Returns (Document, [DocEvents]), which should be passed to doc.save_with_history()
-    if the file contents are stored successfully.
+    The file is stored first; if that raises SaveMaterialsError nothing has changed. Returns warnings
+    to show the uploader.
     """
     document_type = DocTypeName.objects.get(slug= 'narrativeminutes' if narrative else 'minutes')
     minutes_sp = session.presentations.filter(document__type=document_type).first()
-    if minutes_sp:
+    reclaim = False
+    if minutes_sp and not replace:
         doc = minutes_sp.document
-        doc.rev = '%02d' % (int(doc.rev)+1)
-        minutes_sp.rev = doc.rev
-        minutes_sp.save()
+        name, title = doc.name, doc.title
     else:
         ota = session.official_timeslotassignment()
         sess_time = ota and ota.timeslot.time
         if not sess_time:
             raise SessionNotScheduledError
-        if session.meeting.type_id=='ietf':
-            name = f"{document_type.prefix}-{session.meeting.number}-{session.group.acronym}"
-            title = f"{document_type.name} IETF{session.meeting.number}: {session.group.acronym}"
-            if not apply_to_all:
-                name += '-%s' % (sess_time.strftime("%Y%m%d%H%M"),)
-                title += ': %s' % (sess_time.strftime("%a %H:%M"),)
-        else:
-            name =f"{document_type.prefix}-{session.meeting.number}-{sess_time.strftime('%Y%m%d%H%M')}"
-            title = f"{document_type.name} {session.meeting.number}: {sess_time.strftime('%a %H:%M')}"
-        if Document.objects.filter(name=name).exists():
-            doc = Document.objects.get(name=name)
-            doc.rev = '%02d' % (int(doc.rev)+1)
-        else:
-            doc = Document.objects.create(
-                name = name,
-                type = document_type,
-                title = title,
-                group = session.group,
-                rev = '00',
-            )
-        doc.states.add(State.objects.get(type_id=document_type.slug,slug='active'))
-        if session.presentations.filter(document=doc).exists():
-            sp = session.presentations.get(document=doc)
-            sp.rev = doc.rev
-            sp.save()
-        else:
-            session.presentations.create(document=doc,rev=doc.rev)
-    if apply_to_all:
-        sessions, _ = sessions_covered_by_apply_to_all(session)
-        for other_session in sessions:
-            if other_session != session:
-                other_session.presentations.filter(document__type=document_type).delete()
-                other_session.presentations.create(document=doc,rev=doc.rev)
-    filename = f'{doc.name}-{doc.rev}{ext}'
+        apply_to_all = group_wide_material_name(session, also_sessions) and not replace
+        name, title = material_document_name(session, document_type.slug, group_wide=apply_to_all)
+        doc = Document.objects.filter(name=name).first()
+        # A document carrying this session's own name belongs to it, whatever the reason the name came up
+        reclaim = doc is not None and name == material_document_name(session, document_type.slug, group_wide=False)[0]
+    rev = '%02d' % (int(doc.rev)+1) if doc is not None else '00'
+    filename = f'{name}-{rev}{ext}'
+
+    # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
+    handle_upload_file(
+        file=file,
+        filename=filename,
+        meeting=session.meeting,
+        subdir=document_type.slug,
+        request=request,
+        encoding=encoding,
+    )
+
+    warnings, _ = reclaim_material_name(doc, session, request.user.person, keep=also_sessions) if reclaim else ([], [])
+    if doc is None:
+        doc = Document.objects.create(name=name, type=document_type, title=title, group=session.group, rev=rev)
+        doc.set_state(State.objects.get(type_id=document_type.slug,slug='active'))
+    else:
+        doc.rev = rev
     doc.uploaded_filename = filename
     e = NewRevisionDocEvent.objects.create(
         doc=doc,
@@ -790,17 +1004,9 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
         desc=f'New revision available: {doc.rev}',
         rev=doc.rev,
     )
-
-    # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
-    handle_upload_file(
-        file=file,
-        filename=doc.uploaded_filename,
-        meeting=session.meeting,
-        subdir=document_type.slug,
-        request=request,
-        encoding=encoding,
-    )
     doc.save_with_history([e])
+    link_material_to_sessions(doc, session, also_sessions)
+    return warnings
 
 
 def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=None):

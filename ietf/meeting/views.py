@@ -168,6 +168,12 @@ from ietf.meeting.utils import (
     get_meeting_sessions,
     scheduled_only,
     sessions_covered_by_apply_to_all,
+    material_upload_choices,
+    group_wide_material_name,
+    link_material_to_sessions,
+    material_document_name,
+    reclaim_material_name,
+    sessions_linked_to,
     SessionNotScheduledError,
     data_for_meetings_overview,
     handle_upload_file,
@@ -3338,25 +3344,22 @@ def upload_session_minutes(request, session_id, num):
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
-    sessions, session_number = sessions_covered_by_apply_to_all(session)
-    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
-
+    _, session_number = sessions_covered_by_apply_to_all(session)
     minutes_sp = session.presentations.filter(document__type='minutes').first()
-    
+    choices, select_all, shared_with = material_upload_choices(session, 'minutes', minutes_sp)
+
     if request.method == 'POST':
-        form = UploadMinutesForm(show_apply_to_all_checkbox,request.POST,request.FILES)
+        form = UploadMinutesForm(choices, select_all, request.POST, request.FILES, shared_with=shared_with)
         if form.is_valid():
             file = request.FILES['file']
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type_id == 'regular'
-            if show_apply_to_all_checkbox:
-                apply_to_all = form.cleaned_data['apply_to_all']
 
             # Set up the new revision
             try:
-                save_session_minutes_revision(
+                warnings = save_session_minutes_revision(
                     session=session,
-                    apply_to_all=apply_to_all,
+                    also_sessions=form.sessions_to_apply(),
+                    replace=form.replace_shared(),
                     file=file,
                     ext=ext,
                     encoding=form.file_encoding[file.name],
@@ -3371,11 +3374,13 @@ def upload_session_minutes(request, session_id, num):
                 form.add_error(None, str(err))
             else:
                 # no exception -- success!
+                for warning in warnings:
+                    messages.warning(request, warning)
                 resolve_uploaded_material(meeting=session.meeting, doc=session.minutes())
                 messages.success(request, f'Successfully uploaded minutes as revision {session.minutes().rev}.')
                 return redirect('ietf.meeting.views.session_details', num=num, acronym=session.group.acronym)
     else:
-        form = UploadMinutesForm(show_apply_to_all_checkbox)
+        form = UploadMinutesForm(choices, select_all, shared_with=shared_with)
 
     tsa = session.official_timeslotassignment()
     future = tsa is not None and timezone.now() < tsa.timeslot.end_time()
@@ -3394,25 +3399,22 @@ def upload_session_narrativeminutes(request, session_id, num):
     if session.group.acronym != "iesg":
         raise Http404()
     
-    sessions, session_number = sessions_covered_by_apply_to_all(session)
-    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
-
+    _, session_number = sessions_covered_by_apply_to_all(session)
     narrativeminutes_sp = session.presentations.filter(document__type='narrativeminutes').first()
-    
+    choices, select_all, shared_with = material_upload_choices(session, 'narrativeminutes', narrativeminutes_sp)
+
     if request.method == 'POST':
-        form = UploadNarrativeMinutesForm(show_apply_to_all_checkbox,request.POST,request.FILES)
+        form = UploadNarrativeMinutesForm(choices, select_all, request.POST, request.FILES, shared_with=shared_with)
         if form.is_valid():
             file = request.FILES['file']
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type_id == 'regular'
-            if show_apply_to_all_checkbox:
-                apply_to_all = form.cleaned_data['apply_to_all']
 
             # Set up the new revision
             try:
-                save_session_minutes_revision(
+                warnings = save_session_minutes_revision(
                     session=session,
-                    apply_to_all=apply_to_all,
+                    also_sessions=form.sessions_to_apply(),
+                    replace=form.replace_shared(),
                     file=file,
                     ext=ext,
                     encoding=form.file_encoding[file.name],
@@ -3428,11 +3430,13 @@ def upload_session_narrativeminutes(request, session_id, num):
                 form.add_error(None, str(err))
             else:
                 # no exception -- success!
+                for warning in warnings:
+                    messages.warning(request, warning)
                 resolve_uploaded_material(meeting=session.meeting, doc=session.narrative_minutes())
                 messages.success(request, f'Successfully uploaded narrative minutes as revision {session.narrative_minutes().rev}.')
                 return redirect('ietf.meeting.views.session_details', num=num, acronym=session.group.acronym)
     else:
-        form = UploadMinutesForm(show_apply_to_all_checkbox)
+        form = UploadNarrativeMinutesForm(choices, select_all, shared_with=shared_with)
 
     return render(request, "meeting/upload_session_narrativeminutes.html", 
                   {'session': session,
@@ -3453,7 +3457,7 @@ class UploadOrEnterAgendaForm(UploadAgendaForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["file"].required=False
-        self.order_fields(["submission_method", "file", "content"])
+        self.order_fields(["scope", "submission_method", "file", "content"])
 
     def clean_content(self):
         return self.cleaned_data["content"].replace("\r", "")
@@ -3496,25 +3500,22 @@ def upload_session_agenda(request, session_id, num):
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
-    sessions, session_number = sessions_covered_by_apply_to_all(session)
-    show_apply_to_all_checkbox = len(sessions) > 1 if session.type.slug == 'regular' else False
-
+    _, session_number = sessions_covered_by_apply_to_all(session)
     agenda_sp = session.presentations.filter(document__type='agenda').first()
-    
+    choices, select_all, shared_with = material_upload_choices(session, 'agenda', agenda_sp)
+
     if request.method == 'POST':
-        form = UploadOrEnterAgendaForm(show_apply_to_all_checkbox,request.POST,request.FILES)
+        form = UploadOrEnterAgendaForm(choices, select_all, request.POST, request.FILES, shared_with=shared_with)
         if form.is_valid():
             file = form.get_file()
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type.slug == 'regular'
-            if show_apply_to_all_checkbox:
-                apply_to_all = form.cleaned_data['apply_to_all']
-            if agenda_sp:
+            also_sessions = form.sessions_to_apply()
+            reclaim = False
+            if agenda_sp and not form.replace_shared():
                 doc = agenda_sp.document
-                doc.rev = '%02d' % (int(doc.rev)+1)
-                agenda_sp.rev = doc.rev
-                agenda_sp.save()
+                name, title = doc.name, doc.title
             else:
+                apply_to_all = group_wide_material_name(session, also_sessions) and not form.replace_shared()
                 ota = session.official_timeslotassignment()
                 sess_time = ota and ota.timeslot.time
                 if not sess_time:
@@ -3522,66 +3523,45 @@ def upload_session_agenda(request, session_id, num):
                         "Cannot receive uploads for an unscheduled session.  Please check the session ID.",
                         content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
                     )
-                if session.meeting.type_id=='ietf':
-                    name = 'agenda-%s-%s' % (session.meeting.number, 
-                                                 session.group.acronym) 
-                    title = 'Agenda IETF%s: %s' % (session.meeting.number, 
-                                                         session.group.acronym) 
-                    if not apply_to_all:
-                        name += '-%s' % (session.docname_token(),)
-                        if sess_time:
-                            title += ': %s' % (sess_time.strftime("%a %H:%M"),)
-                else:
-                    name = 'agenda-%s-%s' % (session.meeting.number, session.docname_token())
-                    title = 'Agenda %s' % (session.meeting.number, )
-                    if sess_time:
-                        title += ': %s' % (sess_time.strftime("%a %H:%M"),)
-                if Document.objects.filter(name=name).exists():
-                    doc = Document.objects.get(name=name)
-                    doc.rev = '%02d' % (int(doc.rev)+1)
-                else:
-                    doc = Document.objects.create(
-                              name = name,
-                              type_id = 'agenda',
-                              title = title,
-                              group = session.group,
-                              rev = '00',
-                          )
-                doc.states.add(State.objects.get(type_id='agenda',slug='active'))
-            if session.presentations.filter(document=doc).exists():
-                sp = session.presentations.get(document=doc)
-                sp.rev = doc.rev
-                sp.save()
-            else:
-                session.presentations.create(document=doc,rev=doc.rev)
-            if apply_to_all:
-                for other_session in sessions:
-                    if other_session != session:
-                        other_session.presentations.filter(document__type='agenda').delete()
-                        other_session.presentations.create(document=doc,rev=doc.rev)
-            filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
-            doc.uploaded_filename = filename
-            e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
-            # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
+                name, title = material_document_name(session, 'agenda', group_wide=apply_to_all)
+                doc = Document.objects.filter(name=name).first()
+                # A document carrying this session's own name belongs to it, whatever the reason the name came up
+                reclaim = doc is not None and name == material_document_name(session, 'agenda', group_wide=False)[0]
+            rev = '%02d' % (int(doc.rev)+1) if doc is not None else '00'
+            filename = '%s-%s%s' % (name, rev, ext)
             try:
                 encoding=form.file_encoding[file.name]
             except AttributeError:
                 encoding=None
+            # Store the file before changing any record, so a rejected upload changes nothing.
+            # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
             try:
                 handle_upload_file(file, filename, session.meeting, 'agenda', request=request, encoding=encoding)
             except SaveMaterialsError as err:
                 form.add_error(None, str(err))
             else:
+                if reclaim:
+                    warnings, _ = reclaim_material_name(doc, session, request.user.person, keep=also_sessions)
+                    for warning in warnings:
+                        messages.warning(request, warning)
+                if doc is None:
+                    doc = Document.objects.create(name=name, type_id='agenda', title=title, group=session.group, rev=rev)
+                    doc.set_state(State.objects.get(type_id='agenda',slug='active'))
+                else:
+                    doc.rev = rev
+                doc.uploaded_filename = filename
+                e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
                 doc.save_with_history([e])
+                link_material_to_sessions(doc, session, also_sessions)
                 resolve_uploaded_material(meeting=session.meeting, doc=doc)
                 messages.success(request, f'Successfully uploaded agenda as revision {doc.rev}.')
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
-        initial={'apply_to_all':session.type_id=='regular', 'submission_method':'upload'}
+        initial={'submission_method':'upload'}
         if agenda_sp:
             doc = agenda_sp.document
             initial['content'] = doc.text()
-        form = UploadOrEnterAgendaForm(show_apply_to_all_checkbox, initial=initial)
+        form = UploadOrEnterAgendaForm(choices, select_all, initial=initial, shared_with=shared_with)
 
     return render(request, "meeting/upload_session_agenda.html", 
                   {'session': session,
@@ -3614,26 +3594,28 @@ def upload_session_slides(request, session_id, num, name=None):
             "This meeting has already occurred. Contact a chair or the secretariat for further action.",
         )
 
-    sessions, session_number = sessions_covered_by_apply_to_all(session)
-    show_apply_to_all_checkbox = (
-        len(sessions) > 1 if session.type_id == "regular" else False
-    )
+    _, session_number = sessions_covered_by_apply_to_all(session)
+    # Meetecho runs only the sessions that will happen, whoever uploads
+    scheduled_sessions = scheduled_only(get_meeting_sessions(session.meeting.number, session.group.acronym))
 
-    doc = None
+    slides_sp = None
     if name:
-        doc = get_object_or_404(
+        slides_sp = get_object_or_404(
             session.presentations, document__name=name, document__type_id="slides"
-        ).document
+        )
+    doc = slides_sp.document if slides_sp else None
+    choices, select_all, also_linked = material_upload_choices(session, "slides", slides_sp)
 
     if request.method == "POST":
         form = UploadSlidesForm(
-            session, show_apply_to_all_checkbox, can_manage, request.POST, request.FILES
+            session, can_manage, choices, select_all, request.POST, request.FILES
         )
         if form.is_valid():
             file = request.FILES["file"]
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type_id == "regular"
-            if show_apply_to_all_checkbox:
+            also_sessions = form.sessions_to_apply()
+            apply_to_all = group_wide_material_name(session, also_sessions)
+            if "apply_to_all" in form.fields:  # a proposal keeps a plain yes/no
                 apply_to_all = form.cleaned_data["apply_to_all"]
             if can_manage:
                 approved = form.cleaned_data["approved"]
@@ -3678,76 +3660,18 @@ def upload_session_slides(request, session_id, num, name=None):
                 messages.success(request, 'Successfully submitted proposed slides.')
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
 
-            # Handle creation / update of the Document (but do not save yet)
-            if doc is not None:
-                # This is a revision - bump the version and update the title.
-                doc.rev = "%02d" % (int(doc.rev) + 1)
-                doc.title = form.cleaned_data["title"]
-            else:
-                # This is a new slide deck - create a new doc unless one exists with that name
-                title = form.cleaned_data["title"]
-                if session.meeting.type_id == "ietf":
-                    name = "slides-%s-%s" % (
-                        session.meeting.number,
-                        session.group.acronym,
-                    )
-                    if not apply_to_all:
-                        name += "-%s" % (session.docname_token(),)
-                else:
-                    name = "slides-%s-%s" % (
-                        session.meeting.number,
-                        session.docname_token(),
-                    )
-                name = name + "-" + slugify(title).replace("_", "-")[:128]
-                if Document.objects.filter(name=name).exists():
-                    doc = Document.objects.get(name=name)
-                    doc.rev = "%02d" % (int(doc.rev) + 1)
-                    doc.title = form.cleaned_data["title"]
-                else:
-                    doc = Document.objects.create(
-                        name=name,
-                        type_id="slides",
-                        title=title,
-                        group=session.group,
-                        rev="00",
-                    )
-                doc.states.add(State.objects.get(type_id="slides", slug="active"))
-                doc.states.add(State.objects.get(type_id="reuse_policy", slug="single"))
-
-            # Now handle creation / update of the SessionPresentation(s)
-            sessions_to_apply = sessions if apply_to_all else [session]
-            added_presentations = []
-            revised_presentations = []
-            for sess in sessions_to_apply:
-                sp = sess.presentations.filter(document=doc).first()
-                if sp is not None:
-                    sp.rev = doc.rev
-                    sp.save()
-                    revised_presentations.append(sp)
-                else:
-                    max_order = (
-                        sess.presentations.filter(document__type="slides").aggregate(
-                            Max("order")
-                        )["order__max"]
-                        or 0
-                    )
-                    sp = sess.presentations.create(
-                        document=doc, rev=doc.rev, order=max_order + 1
-                    )
-                    added_presentations.append(sp)
-
-            # Now handle the uploaded file
-            filename = "%s-%s%s" % (doc.name, doc.rev, ext)
-            doc.uploaded_filename = filename
-            e = NewRevisionDocEvent.objects.create(
-                doc=doc,
-                by=request.user.person,
-                type="new_revision",
-                desc="New revision available: %s" % doc.rev,
-                rev=doc.rev,
-            )
+            # Work out the document and revision, but change nothing until the file is stored
+            title = form.cleaned_data["title"]
+            reclaim = False
+            if doc is None:
+                name, _ = material_document_name(session, "slides", group_wide=apply_to_all, title=title)
+                # A new deck reuses an existing document of that name as a revision
+                doc = Document.objects.filter(name=name).first()
+                # A document carrying this session's own name belongs to it, whatever the reason the name came up
+                reclaim = doc is not None and name == material_document_name(session, "slides", group_wide=False, title=title)[0]
+            rev = "%02d" % (int(doc.rev) + 1) if doc is not None else "00"
+            filename = "%s-%s%s" % (doc.name if doc is not None else name, rev, ext)
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
-            save_failed = False
             try:
                 handle_upload_file(
                     file,
@@ -3759,28 +3683,88 @@ def upload_session_slides(request, session_id, num, name=None):
                 )
             except SaveMaterialsError as err:
                 form.add_error(None, str(err))
-                save_failed = True
             else:
+                relinked = []
+                if reclaim:
+                    warnings, relinked = reclaim_material_name(doc, session, request.user.person, keep=also_sessions)
+                    for warning in warnings:
+                        messages.warning(request, warning)
+                if doc is None:
+                    doc = Document.objects.create(
+                        name=name,
+                        type_id="slides",
+                        title=title,
+                        group=session.group,
+                        rev=rev,
+                    )
+                    doc.set_state(State.objects.get(type_id="slides", slug="active"))
+                    doc.set_state(State.objects.get(type_id="reuse_policy", slug="single"))
+                else:
+                    doc.rev = rev
+                    doc.title = title
+                doc.uploaded_filename = filename
+                e = NewRevisionDocEvent.objects.create(
+                    doc=doc,
+                    by=request.user.person,
+                    type="new_revision",
+                    desc="New revision available: %s" % doc.rev,
+                    rev=doc.rev,
+                )
                 doc.save_with_history([e])
+
+                # Now handle creation / update of the SessionPresentation(s). A revision reaches every
+                # session already linked to the document, chosen or not: there is only one document to show.
+                sessions_to_apply = [session] + also_sessions
+                for linked in sessions_linked_to(doc, session.meeting):
+                    if linked not in sessions_to_apply:
+                        sessions_to_apply.append(linked)
+                added_presentations = []
+                revised_presentations = []
+                for sess in sessions_to_apply:
+                    sp = sess.presentations.filter(document=doc).first()
+                    if sp is not None:
+                        sp.rev = doc.rev
+                        sp.save()
+                        revised_presentations.append(sp)
+                    else:
+                        max_order = (
+                            sess.presentations.filter(document__type="slides").aggregate(
+                                Max("order")
+                            )["order__max"]
+                            or 0
+                        )
+                        sp = sess.presentations.create(
+                            document=doc, rev=doc.rev, order=max_order + 1
+                        )
+                        added_presentations.append(sp)
                 post_process(doc)
                 resolve_uploaded_material(meeting=session.meeting, doc=doc)
 
-            # Send MeetEcho updates even if we had a problem saving - that will keep it in sync with the
-            # SessionPresentation, which was already saved regardless of problems saving the file.
-            if hasattr(settings, "MEETECHO_API_CONFIG"):
-                sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
-                for sp in added_presentations:
-                    try:
-                        sm.add(session=sp.session, slides=doc, order=sp.order)
-                    except MeetechoAPIError as err:
-                        log(f"Error in SlidesManager.add(): {err}")
-                for sp in revised_presentations:
-                    try:
-                        sm.revise(session=sp.session, slides=doc)
-                    except MeetechoAPIError as err:
-                        log(f"Error in SlidesManager.revise(): {err}")
+                if hasattr(settings, "MEETECHO_API_CONFIG"):
+                    sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+                    for sp, moved_off in relinked:
+                        if sp.session not in scheduled_sessions:
+                            continue
+                        try:  # the session's deck is now its own copy of what it had
+                            sm.delete(session=sp.session, slides=moved_off)
+                            sm.add(session=sp.session, slides=sp.document, order=sp.order)
+                        except MeetechoAPIError as err:
+                            log(f"Error in SlidesManager while replacing a deck with its copy: {err}")
+                    for sp in added_presentations:
+                        if sp.session not in scheduled_sessions:
+                            continue  # Meetecho only runs the sessions that will happen
+                        try:
+                            sm.add(session=sp.session, slides=doc, order=sp.order)
+                        except MeetechoAPIError as err:
+                            log(f"Error in SlidesManager.add(): {err}")
+                    for sp in revised_presentations:
+                        if sp.session not in scheduled_sessions:
+                            continue
+                        try:
+                            sm.revise(session=sp.session, slides=doc)
+                        except MeetechoAPIError as err:
+                            log(f"Error in SlidesManager.revise(): {err}")
 
-            if not save_failed:
                 messages.success(
                     request,
                     f"Successfully uploaded slides as revision {doc.rev} of {doc.name}.",
@@ -3794,7 +3778,7 @@ def upload_session_slides(request, session_id, num, name=None):
         initial = {}
         if doc is not None:
             initial = {"title": doc.title}
-        form = UploadSlidesForm(session, show_apply_to_all_checkbox, can_manage, initial=initial)
+        form = UploadSlidesForm(session, can_manage, choices, select_all, initial=initial)
 
     return render(
         request,
@@ -3802,7 +3786,8 @@ def upload_session_slides(request, session_id, num, name=None):
         {
             "session": session,
             "session_number": session_number,
-            "slides_sp": session.presentations.filter(document=doc).first() if doc else None,
+            "also_linked": also_linked,
+            "slides_sp": slides_sp,
             "manage": session.can_manage_materials(request.user),
             "form": form,
         },
@@ -5865,15 +5850,20 @@ def import_session_minutes(request, session_id, num):
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
+    minutes_sp = session.presentations.filter(document__type='minutes').first()
+    choices, select_all, shared_with = material_upload_choices(session, 'minutes', minutes_sp)
+
     if request.method == 'POST':
-        form = ImportMinutesForm(request.POST)
+        form = ImportMinutesForm(choices, select_all, request.POST, shared_with=shared_with)
         if not form.is_valid():
             import_contents = form.data['markdown_text']
         else:
             import_contents = form.cleaned_data['markdown_text']
             try:
-                save_session_minutes_revision(
+                warnings = save_session_minutes_revision(
                     session=session,
+                    also_sessions=form.sessions_to_apply(),
+                    replace=form.replace_shared(),
                     file=io.BytesIO(import_contents.encode('utf8')),
                     ext='.md',
                     request=request,
@@ -5886,6 +5876,8 @@ def import_session_minutes(request, session_id, num):
             except SaveMaterialsError as err:
                 form.add_error(None, str(err))
             else:
+                for warning in warnings:
+                    messages.warning(request, warning)
                 resolve_uploaded_material(meeting=session.meeting, doc=session.minutes())
                 messages.success(request, f'Successfully imported minutes as revision {session.minutes().rev}.')
                 return redirect('ietf.meeting.views.session_details', num=num, acronym=session.group.acronym)
@@ -5895,7 +5887,7 @@ def import_session_minutes(request, session_id, num):
         except NoteError as err:
             messages.error(request, f'Could not import notes with id {note.id}: {err}.')
             return redirect('ietf.meeting.views.session_details', num=num, acronym=session.group.acronym)
-        form = ImportMinutesForm(initial={'markdown_text': import_contents})
+        form = ImportMinutesForm(choices, select_all, initial={'markdown_text': import_contents}, shared_with=shared_with)
 
     # Try to prevent pointless revision creation. Note that we do not block replacing
     # a document with an identical copy in the validation above. We cannot entirely
