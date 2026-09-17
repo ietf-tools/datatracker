@@ -53,7 +53,10 @@ from ietf.person.utils import get_active_balloters
 from ietf.utils import log
 from ietf.utils.decorators import memoize
 from ietf.utils.text import decode_document_content
-from ietf.utils.validators import validate_no_control_chars
+from ietf.utils.validators import (
+    validate_no_control_chars,
+    validate_external_resource_value,
+)
 from ietf.utils.mail import formataddr
 from ietf.utils.models import ForeignKey
 from ietf.utils.timezone import date_today, RPC_TZINFO, DEADLINE_TZINFO
@@ -1408,35 +1411,27 @@ class ExtResource(models.Model):
         priority = self.display_name or self.name.name
         return u"%s (%s) %s" % (priority, self.name.slug, self.value)
 
+    def clean(self):
+        # full_clean() calls clean() even when clean_fields() has already failed
+        try:
+            name = self.name
+        except ExtResourceName.DoesNotExist:
+            return
+        if self.value:
+            validate_external_resource_value(name, self.value)
+
     class Meta:
         abstract = True
-        
-    # The to_form_entry_str() and matching from_form_entry_str() class method are
-    # defined here to ensure that change request emails suggest resources in the
-    # correct format to cut-and-paste into the current textarea on the external
-    # resource form. If that is changed to a formset or other non-text entry field,
-    # these methods really should not be needed.
+
+    # Change request emails suggest resources in this format so they can be pasted
+    # into the textarea on the external resource form. This needs to be kept up to
+    # date with the parsing done by ExtResourceForm.
     def to_form_entry_str(self):
         """Serialize as a string suitable for entry in a form"""
         if self.display_name:
             return "%s %s (%s)" % (self.name.slug, self.value, self.display_name.strip('()'))
         else:
             return "%s %s" % (self.name.slug, self.value)
-
-    @classmethod
-    def from_form_entry_str(cls, s):
-        """Create an instance from the form_entry_str format
-
-        Expected format is "<tag> <value>[ (<display name>)]"
-        Any text after the value is treated as the display name, with whitespace replaced by
-        spaces and leading/trailing parentheses stripped.
-        """
-        parts = s.split(None, 2)
-        display_name = ' '.join(parts[2:]).strip('()')
-        kwargs = dict(name_id=parts[0], value=parts[1])
-        if display_name:
-            kwargs['display_name'] = display_name
-        return cls(**kwargs)
 
     @classmethod
     def from_sibling_class(cls, sib):

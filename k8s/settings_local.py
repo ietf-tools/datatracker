@@ -38,6 +38,14 @@ if _NOMCOM_APP_SECRET_B64 is not None:
 else:
     raise RuntimeError("DATATRACKER_NOMCOM_APP_SECRET_B64 must be set")
 
+_ACCOUNT_MIGRATION_PRIVATE_KEY_B64 = os.environ.get(
+    "DATATRACKER_ACCOUNT_MIGRATION_PRIVATE_KEY_B64", None
+)
+if _ACCOUNT_MIGRATION_PRIVATE_KEY_B64 is not None:
+    ACCOUNT_MIGRATION_PRIVATE_KEY = b64decode(_ACCOUNT_MIGRATION_PRIVATE_KEY_B64)
+else:
+    raise RuntimeError("DATATRACKER_ACCOUNT_MIGRATION_PRIVATE_KEY_B64 must be set")
+
 _IANA_SYNC_PASSWORD = os.environ.get("DATATRACKER_IANA_SYNC_PASSWORD", None)
 if _IANA_SYNC_PASSWORD is not None:
     IANA_SYNC_PASSWORD = _IANA_SYNC_PASSWORD
@@ -220,21 +228,27 @@ else:
 # to leave a copy lying around. When done editing, copy/paste the final JSON through
 #    jq -c | base64
 # and copy/paste the output into the secret store.
-if "DATATRACKER_APP_API_TOKENS_JSON_B64" in os.environ:
-    if "DATATRACKER_APP_API_TOKENS_JSON" in os.environ:
+_app_api_tokens_json_b64 = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON_B64")
+_app_api_tokens_json = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON")
+if _app_api_tokens_json_b64 is not None:
+    if _app_api_tokens_json is not None:
         raise RuntimeError(
             "Only one of DATATRACKER_APP_API_TOKENS_JSON and DATATRACKER_APP_API_TOKENS_JSON_B64 may be set"
         )
-    _APP_API_TOKENS_JSON = b64decode(
-        os.environ.get("DATATRACKER_APP_API_TOKENS_JSON_B64")
+    _app_api_tokens_json = b64decode(
+        _app_api_tokens_json_b64
     )
-else:
-    _APP_API_TOKENS_JSON = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON", None)
 
-if _APP_API_TOKENS_JSON is not None:
-    APP_API_TOKENS = json.loads(_APP_API_TOKENS_JSON)
+if _app_api_tokens_json is not None:
+    APP_API_TOKENS = json.loads(_app_api_tokens_json)
 else:
     APP_API_TOKENS = {}
+
+_APP_API_TOKEN_PEPPER = os.environ.get("DATATRACKER_APP_API_TOKEN_PEPPER", None)
+if _APP_API_TOKEN_PEPPER is None:
+    raise RuntimeError("DATATRACKER_APP_API_TOKEN_PEPPER must be set")
+else:
+    APP_API_TOKEN_PEPPER_BYTES = _APP_API_TOKEN_PEPPER.encode("utf-8")
 
 EMAIL_COPY_TO = ""
 

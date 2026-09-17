@@ -9,6 +9,7 @@ from unittest import mock
 
 from io import StringIO, BytesIO
 from PIL import Image
+from django.utils.html import escape
 from pyquery import PyQuery
 
 import django.core.signing
@@ -178,7 +179,7 @@ class PersonTests(TestCase):
         self.assertEqual(second.status_code, 200)
         # The cached section is HTML, not text to be escaped again.
         self.assertEqual(first.content, second.content)
-        self.assertContains(second, person.name)
+        self.assertContains(second, escape(person.name))
         self.assertLess(len(context.captured_queries), 5)
 
     def test_person_profile_without_email(self):
@@ -228,7 +229,7 @@ class PersonTests(TestCase):
         upper = url.replace(str(uuid_value), str(uuid_value).upper())
         self.assertNotEqual(url, upper)
         r = self.client.get(upper)
-        self.assertContains(r, person.name, status_code=200)
+        self.assertContains(r, escape(person.name), status_code=200)
 
     def test_person_profile_by_uuid_unknown(self):
         url = urlreverse(

@@ -575,6 +575,13 @@ INTERNAL_IPS = (
         '::1',
 )
 
+# Tracebacks mailed to ADMINS carry request.META and every frame local. The default
+# filter does not recognise the Authorization header, which the OIDC provider takes
+# client credentials and bearer access tokens in.
+DEFAULT_EXCEPTION_REPORTER_FILTER = (
+    "ietf.utils.exception_filter.AuthorizationAwareReporterFilter"
+)
+
 # django-rest-framework configuration
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -1347,6 +1354,13 @@ MEETECHO_SESSION_RECORDING_URL = "https://meetecho-player.ietf.org/playout/?sess
 # ERRATA_METADATA_NOTIFICATION_URL
 # ERRATA_METADATA_NOTIFICATION_API_KEY
 
+
+# Set this for non-production mode only. For production, set it to a secret value in
+# settings_local
+if SERVER_MODE != "production":
+    APP_API_TOKEN_PEPPER_BYTES = b"it-was-twenty-years-ago-today"
+
+
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from ietf.settings_local import *            # pyflakes:ignore pylint: disable=wildcard-import
@@ -1438,8 +1452,8 @@ if "CACHES" not in locals():
         CACHES = {
             "default": {
                 "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-                #'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
-                #'LOCATION': '127.0.0.1:11211',
+                # 'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
+                # 'LOCATION': '127.0.0.1:11211',
                 #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
                 "VERSION": __version__,
                 "KEY_PREFIX": "ietf:dt",

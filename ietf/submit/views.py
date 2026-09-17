@@ -34,6 +34,7 @@ from ietf.submit.forms import (
     EditSubmissionForm,
     PreapprovalForm,
     ReplacesForm,
+    SubmissionExtResourceForm,
     SubmissionManualUploadForm,
     SubmissionSearchForm,
 )
@@ -418,7 +419,7 @@ def submission_status(request, submission_id, access_token=None):
     replaces_form = ReplacesForm(name=submission.name,initial=Document.objects.filter(name__in=submission.replaces.split(",")))
     extresources_form = ExtResourceForm(
         initial=dict(resources=[er['res'] for er in external_resources]),
-        extresource_model=SubmissionExtResource,
+        extresource_form_class=SubmissionExtResourceForm,
     )
 
     if request.method == 'POST':
@@ -430,7 +431,7 @@ def submission_status(request, submission_id, access_token=None):
             submitter_form = SubmitterForm(request.POST, prefix="submitter")
             replaces_form = ReplacesForm(request.POST, name=submission.name)
             extresources_form = ExtResourceForm(
-                request.POST, extresource_model=SubmissionExtResource
+                request.POST, extresource_form_class=SubmissionExtResourceForm
             )
             validations = [
                 submitter_form.is_valid(),

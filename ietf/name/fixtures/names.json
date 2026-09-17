@@ -12883,7 +12883,7 @@
   {
     "fields": {
       "default_offset_days": -43,
-      "desc": "Cut-off date for revised BOF proposal requests to Area Directors at UTC 23:59. To request a BOF, please see instructions at https://www.ietf.org/how/bofs/bof-procedures on Requesting a BOF.",
+      "desc": "Cut-off date for revised BOF proposal requests to Area Directors at UTC 23:59. To request a BOF, please see the [instructions for submitting a BOF proposal](https://www.ietf.org/process/bofs/).",
       "name": "Cut-off revised BOF requests",
       "order": 0,
       "used": true

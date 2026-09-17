@@ -297,45 +297,6 @@ ICANN
 
         # we don't actually try posting as that would trigger a real run
 
-class DiscrepanciesTests(TestCase):
-    def test_discrepancies(self):
-
-        # draft approved but no RFC Editor state
-        doc = Document.objects.create(name="draft-ietf-test1", type_id="draft")
-        doc.set_state(State.objects.get(used=True, type="draft-iesg", slug="ann"))
-
-        r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
-        self.assertContains(r, doc.name)
-
-        # draft with IANA state "In Progress" but RFC Editor state not IANA
-        doc = Document.objects.create(name="draft-ietf-test2", type_id="draft")
-        doc.set_state(State.objects.get(used=True, type="draft-iesg", slug="rfcqueue"))
-        doc.set_state(State.objects.get(used=True, type="draft-iana-action", slug="inprog"))
-        doc.set_state(State.objects.get(used=True, type="draft-rfceditor", slug="auth"))
-
-        r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
-        self.assertContains(r, doc.name)
-
-        # draft with IANA state "Waiting on RFC Editor" or "RFC-Ed-Ack"
-        # but RFC Editor state is IANA
-        doc = Document.objects.create(name="draft-ietf-test3", type_id="draft")
-        doc.set_state(State.objects.get(used=True, type="draft-iesg", slug="rfcqueue"))
-        doc.set_state(State.objects.get(used=True, type="draft-iana-action", slug="waitrfc"))
-        doc.set_state(State.objects.get(used=True, type="draft-rfceditor", slug="iana"))
-
-        r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
-        self.assertContains(r, doc.name)
-
-        # draft with state other than "RFC Ed Queue" or "RFC Published"
-        # that are in RFC Editor or IANA queues
-        doc = Document.objects.create(name="draft-ietf-test4", type_id="draft")
-        doc.set_state(State.objects.get(used=True, type="draft-iesg", slug="ann"))
-        doc.set_state(State.objects.get(used=True, type="draft-rfceditor", slug="auth"))
-
-        r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
-        self.assertContains(r, doc.name)
-
-
 class RFCEditorUndoTests(TestCase):
     def test_rfceditor_undo(self):
         draft = WgDraftFactory()

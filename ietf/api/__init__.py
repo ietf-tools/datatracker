@@ -23,7 +23,7 @@ from ietf.utils.log import log
 
 _api_list = []
 
-OMITTED_APPS_APIS = ["ietf.status"]
+OMITTED_APPS_APIS = ["ietf.api", "ietf.status"]
 
 # Pre-py3.11, fromisoformat() does not handle Z or +HH tz offsets
 HAVE_BROKEN_FROMISOFORMAT = sys.version_info < (3, 11, 0, "", 0)
