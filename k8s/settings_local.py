@@ -228,19 +228,19 @@ else:
 # to leave a copy lying around. When done editing, copy/paste the final JSON through
 #    jq -c | base64
 # and copy/paste the output into the secret store.
-if "DATATRACKER_APP_API_TOKENS_JSON_B64" in os.environ:
-    if "DATATRACKER_APP_API_TOKENS_JSON" in os.environ:
+_app_api_tokens_json_b64 = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON_B64")
+_app_api_tokens_json = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON")
+if _app_api_tokens_json_b64 is not None:
+    if _app_api_tokens_json is not None:
         raise RuntimeError(
             "Only one of DATATRACKER_APP_API_TOKENS_JSON and DATATRACKER_APP_API_TOKENS_JSON_B64 may be set"
         )
-    _APP_API_TOKENS_JSON = b64decode(
-        os.environ.get("DATATRACKER_APP_API_TOKENS_JSON_B64")
+    _app_api_tokens_json = b64decode(
+        _app_api_tokens_json_b64
     )
-else:
-    _APP_API_TOKENS_JSON = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON", None)
 
-if _APP_API_TOKENS_JSON is not None:
-    APP_API_TOKENS = json.loads(_APP_API_TOKENS_JSON)
+if _app_api_tokens_json is not None:
+    APP_API_TOKENS = json.loads(_app_api_tokens_json)
 else:
     APP_API_TOKENS = {}
 
