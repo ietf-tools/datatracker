@@ -16,24 +16,7 @@ from ietf.api.models import AppApiToken
 from ietf.utils.test_utils import TestCase
 
 
-class IetfUtilsTests(TestCase):
-    @override_settings(
-        APP_API_TOKENS={
-            "ietf.api.foobar": ["valid-token"],
-            "ietf.api.misconfigured": "valid-token",  # misconfigured
-        }
-    )
-    def test_is_valid_token(self):
-        self.assertFalse(is_valid_token("ietf.fake.endpoint", "valid-token"))
-        self.assertFalse(is_valid_token("ietf.api.foobar", "invalid-token"))
-        self.assertFalse(is_valid_token("ietf.api.foobar", None))
-        self.assertTrue(is_valid_token("ietf.api.foobar", "valid-token"))
-
-        # misconfiguration
-        self.assertFalse(is_valid_token("ietf.api.misconfigured", "v"))
-        self.assertFalse(is_valid_token("ietf.api.misconfigured", None))
-        self.assertTrue(is_valid_token("ietf.api.misconfigured", "valid-token"))
-
+class RequiresApiTokenDecoratorTests(TestCase):
     @override_settings(
         APP_API_TOKENS={
             "ietf.api.foo": ["valid-token"],
@@ -93,6 +76,47 @@ class IetfUtilsTests(TestCase):
         request = RequestFactory().get("/some/url", headers={"X_API_KEY": "v"})
         result = another_protected_function(request)
         self.assertEqual(result.status_code, 403)
+
+    def test_requires_api_token_derives_endpoint_from_qualname(self):
+        """Bare decorator names the endpoint after the wrapped function"""
+
+        @requires_api_token
+        def protected_function(request):
+            return f"Access granted: {request.method}"
+
+        # functools.wraps() copies __module__/__qualname__ from the original
+        # function onto the wrapper, so this matches what the decorator itself
+        # computes internally
+        endpoint = f"{protected_function.__module__}.{protected_function.__qualname__}"
+
+        with override_settings(APP_API_TOKENS={endpoint: ["valid-token"]}):
+            request = RequestFactory().get(
+                "/some/url", headers={"X_API_KEY": "valid-token"}
+            )
+            result = protected_function(request)
+            self.assertEqual(result, "Access granted: GET")
+
+            request = RequestFactory().get(
+                "/some/url", headers={"X_API_KEY": "wrong-token"}
+            )
+            result = protected_function(request)
+            self.assertEqual(result.status_code, 403)
+
+    @override_settings(APP_API_TOKENS={"ietf.api.passthrough": ["valid-token"]})
+    def test_requires_api_token_passes_through_arguments(self):
+        """Positional/keyword arguments and the return value are untouched"""
+
+        @requires_api_token("ietf.api.passthrough")
+        def protected_function(request, *args, **kwargs):
+            return request, args, kwargs
+
+        request = RequestFactory().get(
+            "/some/url", headers={"X_API_KEY": "valid-token"}
+        )
+        arg = object()
+        kwarg = object()
+        result = protected_function(request, arg, kwarg=kwarg)
+        self.assertEqual(result, (request, (arg,), {"kwarg": kwarg}))
 
 
 class CachedHashedTokenStoreTests(TestCase):
@@ -243,6 +267,32 @@ class IsValidTokenTests(TestCase):
         self.assertFalse(is_valid_token("ietf.api.foobar", ""), "empty token accepted")
         self.assertEqual(
             self.mocked_store.call_count, 0, "an empty token reached the token store"
+        )
+
+    @override_settings(
+        APP_API_TOKENS={
+            "ietf.api.settings.foo": ["valid-token"],
+            "ietf.api.settings.bar": ["a-different-token"],
+            "ietf.api.settings.misconfigured": "valid-token",  # misconfigured
+        }
+    )
+    def test_is_valid_token_settings_based(self):
+        self.assertFalse(is_valid_token("ietf.fake.endpoint", "valid-token"))
+        self.assertFalse(is_valid_token("ietf.api.settings.foo", "invalid-token"))
+        self.assertFalse(is_valid_token("ietf.api.settings.foo", None))
+        self.assertTrue(is_valid_token("ietf.api.settings.foo", "valid-token"))
+
+        # a token valid for one endpoint must not validate a different endpoint
+        self.assertFalse(is_valid_token("ietf.api.settings.bar", "valid-token"))
+        self.assertFalse(is_valid_token("ietf.api.settings.foo", "a-different-token"))
+        self.assertTrue(is_valid_token("ietf.api.settings.bar", "a-different-token"))
+
+        # misconfiguration: a bare string must be treated as a single token,
+        # not matched via substring containment
+        self.assertFalse(is_valid_token("ietf.api.settings.misconfigured", "v"))
+        self.assertFalse(is_valid_token("ietf.api.settings.misconfigured", None))
+        self.assertTrue(
+            is_valid_token("ietf.api.settings.misconfigured", "valid-token")
         )
 
     @override_settings(APP_API_TOKENS={"ietf.api.disabled": ["a-settings-token"]})

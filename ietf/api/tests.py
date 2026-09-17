@@ -17,8 +17,7 @@ from urllib.parse import quote, urlencode, urljoin
 
 from django.apps import apps
 from django.conf import settings
-from django.http import HttpResponseForbidden
-from django.test import Client, RequestFactory
+from django.test import Client
 from django.test.utils import override_settings
 from django.urls import Resolver404, resolve, reverse as urlreverse
 from django.utils import timezone
@@ -44,7 +43,6 @@ from ietf.utils.models import DumpInfo
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, reload_db_objects
 
 from . import OMITTED_APPS_APIS, Serializer
-from .ietf_utils import is_valid_token, requires_api_token
 from .views import EmailIngestionError
 
 OMITTED_APPS = (
@@ -2232,85 +2230,3 @@ class RfcdiffSupportTests(TestCase):
             url = urlreverse(self.target_view, kwargs={'name': name})
             r = self.client.get(url)
             self.assertEqual(r.status_code, 404)
-
-
-class TokenTests(TestCase):
-    @override_settings(APP_API_TOKENS={"known.endpoint": ["token in a list"], "oops": "token as a str"})
-    def test_is_valid_token(self):
-        # various invalid cases
-        self.assertFalse(is_valid_token("unknown.endpoint", "token in a list"))
-        self.assertFalse(is_valid_token("known.endpoint", "token"))
-        self.assertFalse(is_valid_token("known.endpoint", "token as a str"))
-        self.assertFalse(is_valid_token("oops", "token"))
-        self.assertFalse(is_valid_token("oops", "token in a list"))
-        # the only valid cases
-        self.assertTrue(is_valid_token("known.endpoint", "token in a list"))
-        self.assertTrue(is_valid_token("oops", "token as a str"))
-
-    @mock.patch("ietf.api.ietf_utils.is_valid_token")
-    def test_requires_api_token(self, mock_is_valid_token):
-        called = False
-
-        @requires_api_token
-        def fn_to_wrap(request, *args, **kwargs):
-            nonlocal called
-            called = True
-            return request, args, kwargs
-        
-        req_factory = RequestFactory()
-        arg = object()
-        kwarg = object()
-
-        # No X-Api-Key header
-        mock_is_valid_token.return_value = False
-        val = fn_to_wrap(
-            req_factory.get("/some/url", headers={}),
-            arg,
-            kwarg=kwarg,
-        )
-        self.assertTrue(isinstance(val, HttpResponseForbidden))
-        self.assertFalse(mock_is_valid_token.called)
-        self.assertFalse(called)
-
-        # Bad X-Api-Key header (not resetting the mock, it was not used yet)
-        val = fn_to_wrap(
-            req_factory.get("/some/url", headers={"X-Api-Key": "some-value"}),
-            arg, 
-            kwarg=kwarg,
-        )
-        self.assertTrue(isinstance(val, HttpResponseForbidden))
-        self.assertTrue(mock_is_valid_token.called)
-        self.assertEqual(
-            mock_is_valid_token.call_args[0], 
-            (fn_to_wrap.__module__ + "." + fn_to_wrap.__qualname__, "some-value"),
-        )
-        self.assertFalse(called)
-
-        # Valid header
-        mock_is_valid_token.reset_mock()
-        mock_is_valid_token.return_value = True
-        request = req_factory.get("/some/url", headers={"X-Api-Key": "some-value"}) 
-        # Bad X-Api-Key header (not resetting the mock, it was not used yet)
-        val = fn_to_wrap(
-            request,
-            arg, 
-            kwarg=kwarg,
-        )
-        self.assertEqual(val, (request, (arg,), {"kwarg": kwarg}))
-        self.assertTrue(mock_is_valid_token.called)
-        self.assertEqual(
-            mock_is_valid_token.call_args[0], 
-            (fn_to_wrap.__module__ + "." + fn_to_wrap.__qualname__, "some-value"),
-        )
-        self.assertTrue(called)
-
-        # Test the endpoint setting
-        @requires_api_token("endpoint")
-        def another_fn_to_wrap(request):
-            return "yep"
-        
-        val = another_fn_to_wrap(request)
-        self.assertEqual(
-            mock_is_valid_token.call_args[0], 
-            ("endpoint", "some-value"),
-        )
