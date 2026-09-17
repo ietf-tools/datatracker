@@ -860,15 +860,21 @@ def material_document_name(session, doc_type, group_wide):
     return name, title
 
 
-def reclaim_material_name(doc, session, by, keep=()):
+def reclaim_material_name(doc, session, by, keep=(), _in_progress=frozenset()):
     """Give every other session linked to doc its own copy, so session can reuse doc's name for new content
 
     doc carries session's own name, so it belongs to session. Each other session linked to it, except
     those in keep, gets doc's current content as a new revision of the document named for that session,
     created at 00 if need be, and is relinked to the copy. Cancelled and rescheduled sessions are
     included so that what they show does not change. Returns warnings to show the uploader.
+
+    The copy's own document may in turn be shared with further sessions, so it is reclaimed for its
+    owner first, recursively. A document already being reclaimed further up is left alone: that reclaim
+    gives it new content and relinks its owner.
     """
     meeting = session.meeting
+    in_progress = _in_progress | {doc.pk}
+    warnings = []
     kind = doc.type.name.lower()
     others = [o for o in sessions_linked_to(doc, meeting).exclude(pk=session.pk) if o not in keep]
     content = material_content(doc, meeting)
@@ -885,9 +891,10 @@ def reclaim_material_name(doc, session, by, keep=()):
         copy = Document.objects.filter(name=name).first()
         if copy is None:
             copy = Document.objects.create(name=name, type_id=doc.type_id, title=title, group=doc.group, rev="00")
-        elif copy == doc:
+        elif copy.pk in in_progress:
             continue
         else:
+            warnings += reclaim_material_name(copy, other, by, _in_progress=in_progress)
             copy.rev = "%02d" % (int(copy.rev) + 1)
         copy.states.add(State.objects.get(type_id=doc.type_id, slug="active"))
         copy.uploaded_filename = f"{copy.name}-{copy.rev}{ext}"
@@ -902,8 +909,14 @@ def reclaim_material_name(doc, session, by, keep=()):
         ]
         copy.save_with_history(events)
         resolve_uploaded_material(meeting=meeting, doc=copy)
-        other.presentations.filter(document=doc).update(document=copy, rev=copy.rev)
-    return []
+        already = other.presentations.filter(document=copy).first()
+        if already is None:
+            other.presentations.filter(document=doc).update(document=copy, rev=copy.rev)
+        else:  # a session may hold both decks; one link to the copy is enough
+            already.rev = copy.rev
+            already.save()
+            other.presentations.filter(document=doc).delete()
+    return warnings
 
 
 def material_content(doc, meeting):

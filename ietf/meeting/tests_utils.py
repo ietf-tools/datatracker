@@ -11,6 +11,7 @@ from unittest.mock import patch, Mock
 
 from django.http import HttpResponse, JsonResponse
 from ietf.meeting.factories import MeetingFactory, RegistrationFactory, RegistrationTicketFactory, SessionPresentationFactory
+from ietf.doc.storage_utils import store_bytes, retrieve_bytes
 from ietf.meeting.models import Registration
 from ietf.meeting.tests_views import make_group_sessions
 from ietf.meeting.utils import (
@@ -22,13 +23,15 @@ from ietf.meeting.utils import (
     apply_to_choices,
     material_session_label,
     group_wide_material_name,
+    material_document_name,
+    reclaim_material_name,
 )
 from ietf.nomcom.models import Volunteer
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
 from ietf.person.factories import PersonFactory
 from ietf.utils.test_utils import TestCase
 from ietf.meeting.test_data import make_meeting_test_data
-from ietf.doc.factories import NewRevisionDocEventFactory, DocEventFactory
+from ietf.doc.factories import NewRevisionDocEventFactory, DocEventFactory, DocumentFactory
 
 
 class JsonResponseWithJson(JsonResponse):
@@ -381,3 +384,30 @@ class GroupWideMaterialNameTests(TestCase):
         first.type_id = 'other'
         first.save()
         self.assertFalse(group_wide_material_name(first, []))
+
+
+class ReclaimMaterialNameTests(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
+
+    def _own_doc(self, session, content):
+        name, title = material_document_name(session, 'agenda', group_wide=False)
+        doc = DocumentFactory(name=name, type_id='agenda', title=title, group=session.group, rev='00', uploaded_filename=f'{name}-00.md')
+        store_bytes('agenda', doc.uploaded_filename, content)
+        return doc
+
+    def test_two_documents_pointing_at_each_others_owner_terminate(self):
+        a, b = make_group_sessions(['sched', 'sched'])
+        a_doc = self._own_doc(a, b'a content')
+        b_doc = self._own_doc(b, b'b content')
+        for session, doc in ((a, a_doc), (b, a_doc), (a, b_doc), (b, b_doc)):
+            SessionPresentationFactory(session=session, document=doc, rev='00')
+        warnings = reclaim_material_name(a_doc, a, PersonFactory())
+        self.assertEqual(warnings, [])
+        b_doc.refresh_from_db()
+        self.assertEqual(b_doc.rev, '01', "B's own document took a copy of A's content")
+        self.assertEqual(retrieve_bytes('agenda', b_doc.uploaded_filename), b'a content')
+        self.assertFalse(b.presentations.filter(document=a_doc).exists())
+        self.assertEqual(b.presentations.filter(document=b_doc).count(), 1)
+        a_doc.refresh_from_db()
+        self.assertEqual(a_doc.rev, '00', "A's document is left for the caller to revise")
+        self.assertTrue(a.presentations.filter(document=b_doc).exists(), "A's stray link is left for the caller's relink to displace")

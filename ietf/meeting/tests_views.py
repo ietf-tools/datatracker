@@ -7139,6 +7139,35 @@ class MaterialsTests(TestCase):
         self.assertEqual(last.presentations.get(document=own).rev, '02')
         self.assertFalse(Document.objects.filter(name=material_document_name(last, 'agenda', group_wide=False)[0]).exists())
 
+    def test_taking_back_a_name_reclaims_the_copy_targets_too(self):
+        """B's own agenda was spread to C, then B switched to A's; when A takes its name back, C must not change"""
+        a, b, c = make_group_sessions(['sched', 'sched', 'sched'])
+        self.client.login(username='secretary', password='secretary+password')
+        def enter(session, content, **extra):
+            r = self.client.post(self._material_upload_url('agenda', session), dict(submission_method='enter', content=content, **extra))
+            self.assertEqual(r.status_code, 302, r.content[:300])
+        def current(session):
+            return session.presentations.get(document__type_id='agenda').document
+        enter(b, 'v1 b')
+        enter(b, 'v2 b shared with c', apply_to_sessions=[c.pk])
+        b_doc = current(b)
+        self.assertEqual(current(c), b_doc)
+        enter(a, 'v3 a shared with b', apply_to_sessions=[b.pk])
+        a_doc = current(a)
+        self.assertEqual(current(b), a_doc)
+        self.assertEqual(current(c), b_doc, 'C is still on B\'s document')
+        enter(a, 'v4 a alone', scope='replace')
+
+        a_doc.refresh_from_db(); b_doc.refresh_from_db()
+        self.assertEqual((current(a), a_doc.rev), (a_doc, '01'))
+        self.assertEqual(retrieve_bytes('agenda', a_doc.uploaded_filename), b'v4 a alone')
+        self.assertEqual((current(b), b_doc.rev), (b_doc, '02'), 'B got its own document back with a copy of what it showed')
+        self.assertEqual(retrieve_bytes('agenda', b_doc.uploaded_filename), b'v3 a shared with b')
+        c_doc = current(c)
+        self.assertEqual(c_doc.name, material_document_name(c, 'agenda', group_wide=False)[0])
+        self.assertEqual(c_doc.rev, '00')
+        self.assertEqual(retrieve_bytes('agenda', c_doc.uploaded_filename), b'v2 b shared with c', 'C keeps showing what it showed')
+
     def test_material_pages_number_scheduled_sessions_only(self):
         first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
         self.client.login(username='secretary', password='secretary+password')
