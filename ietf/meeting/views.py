@@ -168,6 +168,7 @@ from ietf.meeting.utils import (
     get_meeting_sessions,
     scheduled_only,
     sessions_covered_by_apply_to_all,
+    session_is_inactive,
     material_upload_choices,
     group_wide_material_name,
     link_material_to_sessions,
@@ -3019,10 +3020,10 @@ def session_details(request, num, acronym):
         raise Http404
 
     scheduled_sessions = scheduled_only(sessions)
-    unscheduled_sessions = [s for s in sessions if s not in scheduled_sessions]
 
     status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
     for session in sessions:
+        session.inactive = session_is_inactive(session)
         # Numbered the same way as the material upload pages, so "Session 2" means the same thing on both
         session.session_number = (
             1 + scheduled_sessions.index(session)
@@ -3069,8 +3070,16 @@ def session_details(request, num, acronym):
         for qs in [session.filtered_artifacts,session.filtered_slides,session.filtered_drafts]:
             qs = [p for p in qs if p.document.get_state_slug(p.document.type_id)!='deleted']
             session.type_counter.update([p.document.type.slug for p in qs])
+        session.has_materials = bool(
+            session.type_counter or filtered_chatlogs.exists() or filtered_polls.exists() or session.recordings()
+        )
 
         session.order_number = session.order_in_meeting()
+
+    # A session that will not happen is shown only for the materials it still holds
+    unscheduled_sessions = [s for s in sessions if s not in scheduled_sessions and not s.inactive]
+    cancelled_sessions = [s for s in sessions if s.inactive and s.cancelled and s.has_materials]
+    rescheduled_sessions = [s for s in sessions if s.inactive and not s.cancelled and s.has_materials]
 
     # we somewhat arbitrarily use the group of the last session we get from
     # get_meeting_sessions() above when checking can_manage_session_materials()
@@ -3092,6 +3101,8 @@ def session_details(request, num, acronym):
     return render(request, "meeting/session_details.html",
                   { 'scheduled_sessions':scheduled_sessions ,
                     'unscheduled_sessions':unscheduled_sessions , 
+                    'cancelled_sessions': cancelled_sessions,
+                    'rescheduled_sessions': rescheduled_sessions,
                     'pending_suggestions' : pending_suggestions,
                     'meeting' :meeting ,
                     'group': group,

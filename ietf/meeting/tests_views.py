@@ -4618,6 +4618,7 @@ class SessionDetailsTests(TestCase):
         """Session numbers count scheduled sessions; unscheduled ones show their status instead"""
         for unscheduled_status in ('canceled', 'resched'):
             first, unscheduled, last = make_group_sessions(['sched', unscheduled_status, 'sched'])
+            SessionPresentationFactory(session=unscheduled, document__type_id='slides')  # or it would not be shown at all
             url = urlreverse('ietf.meeting.views.session_details', kwargs=dict(num=first.meeting.number, acronym=first.group.acronym))
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
@@ -4627,6 +4628,55 @@ class SessionDetailsTests(TestCase):
             self.assertIn('Session 2', headings[last])
             self.assertNotIn('Session', headings[unscheduled])
             self.assertIn(SessionStatusName.objects.get(slug=unscheduled_status).name, headings[unscheduled])
+
+    def test_session_details_inactive_sessions(self):
+        """Cancelled and rescheduled sessions: hidden when empty, otherwise folded away without any controls"""
+        chair_role = RoleFactory(name_id='chair', group__type_id='wg', group__state_id='active')
+        group = chair_role.group
+        meeting = MeetingFactory(type_id='ietf', date=date_today() + datetime.timedelta(days=7))
+        meeting.importantdate_set.create(name_id='revsub', date=meeting.date + datetime.timedelta(days=20))
+        live, empty_cancelled, cancelled, tombstone = (
+            SessionFactory(meeting=meeting, group=group, status_id=status)
+            for status in ('sched', 'canceled', 'canceled', 'resched')
+        )
+        tombstone.tombstone_for = live
+        tombstone.save()
+        deck = SessionPresentationFactory(session=cancelled, document__type_id='slides').document
+        SessionPresentationFactory(session=cancelled, document__type_id='draft', rev=None)
+        SessionPresentationFactory(session=tombstone, document__type_id='agenda')
+        username = chair_role.person.user.username
+        self.client.login(username=username, password=username + '+password')
+        url = urlreverse('ietf.meeting.views.session_details', kwargs=dict(num=meeting.number, acronym=group.acronym))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        self.assertFalse(q('#session_%d' % empty_cancelled.pk), 'A cancelled session with nothing to show is not shown')
+        self.assertNotContains(r, 'Unscheduled Sessions', msg_prefix='nothing is merely unscheduled')
+
+        for section, sess in (('cancelled', cancelled), ('rescheduled', tombstone)):
+            toggle = q('a[data-bs-toggle=collapse][href="#%s-sessions"]' % section)
+            self.assertEqual(len(toggle), 1, section)
+            self.assertIn('(1)', toggle.text())
+            folded = q('div#%s-sessions' % section)
+            self.assertIn('collapse', folded.attr('class'))
+            self.assertNotIn('show', folded.attr('class').split(), 'folded away by default')
+            self.assertEqual(len(folded.find('#session_%d' % sess.pk)), 1, 'the session with materials is inside its section')
+            self.assertFalse(folded.find('a.btn'), 'no buttons of any kind on a %s session' % section)
+            self.assertFalse(folded.find('a[href*="/session/%d/"]' % sess.pk), 'no links to management views')
+
+        cancelled_body = q('table#slides_%d > tbody' % cancelled.pk)
+        self.assertEqual(cancelled_body.attr('data-frozen'), 'true')
+        row = cancelled_body.find('tr[data-name="%s"]' % deck.name)
+        self.assertIn('draggable', row.attr('class'), 'the deck can still be dragged out')
+        self.assertTrue(row.find('.drag-handle'))
+        self.assertIn('Drag a slide deck to one of the scheduled sessions', cancelled_body.parents('div').text())
+        self.assertNotIn('Meeting tools', q('div#rescheduled-sessions').text(), 'a tombstone offers no way to join')
+
+        live_body = q('table#slides_%d > tbody' % live.pk)
+        self.assertIsNone(live_body.attr('data-frozen'))
+        self.assertTrue(q('#session_%d' % live.pk).parents().is_('body'))
+        self.assertTrue(q('a.uploadslides[href*="/session/%d/"]' % live.pk), 'the live session keeps its controls')
 
     def test_session_details_slides_drag_and_drop_markup(self):
         """Every slides table is a drag-and-drop target with the attributes the JS reads

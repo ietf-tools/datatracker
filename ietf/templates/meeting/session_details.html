@@ -29,8 +29,30 @@
     {% endif %}
     <h2 class="mt-3">Scheduled Sessions</h2>
     {% include 'meeting/session_details_panel.html' with sessions=scheduled_sessions %}
-    <h2 class="mt-3">Unscheduled Sessions</h2>
-    {% include 'meeting/session_details_panel.html' with sessions=unscheduled_sessions %}
+    {% if unscheduled_sessions %}
+        <h2 class="mt-3">Unscheduled Sessions</h2>
+        {% include 'meeting/session_details_panel.html' with sessions=unscheduled_sessions %}
+    {% endif %}
+    {% if cancelled_sessions %}
+        <h2 class="mt-3">
+            <a class="text-decoration-none" data-bs-toggle="collapse" href="#cancelled-sessions" role="button" aria-expanded="false" aria-controls="cancelled-sessions">
+                <i class="bi bi-caret-right-fill small"></i> Cancelled Sessions ({{ cancelled_sessions|length }})
+            </a>
+        </h2>
+        <div class="collapse" id="cancelled-sessions">
+            {% include 'meeting/session_details_panel.html' with sessions=cancelled_sessions %}
+        </div>
+    {% endif %}
+    {% if rescheduled_sessions %}
+        <h2 class="mt-3">
+            <a class="text-decoration-none" data-bs-toggle="collapse" href="#rescheduled-sessions" role="button" aria-expanded="false" aria-controls="rescheduled-sessions">
+                <i class="bi bi-caret-right-fill small"></i> Rescheduled Sessions ({{ rescheduled_sessions|length }})
+            </a>
+        </h2>
+        <div class="collapse" id="rescheduled-sessions">
+            {% include 'meeting/session_details_panel.html' with sessions=rescheduled_sessions %}
+        </div>
+    {% endif %}
     {% for s in pending_suggestions %}
         {% if forloop.first %}<h2 class="mt-3">
             {% if can_manage_materials %}
