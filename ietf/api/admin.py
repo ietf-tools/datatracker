@@ -62,11 +62,9 @@ class AppApiTokenAdmin(admin.ModelAdmin):
                 new_token = AppApiToken.generate_token()
             obj.set_token(new_token)
         try:
-            # Nested atomic() is a savepoint, so a collision here only rolls back
-            # this save, not the whole request-level transaction the admin already
-            # wraps this view in.
             with transaction.atomic():
                 super().save_model(request, obj, form, change)
+                cached_hashed_token_store(force_update=True)  # update the cache
         except IntegrityError:
             self.message_user(
                 request,
@@ -76,7 +74,16 @@ class AppApiTokenAdmin(admin.ModelAdmin):
                 level=messages.ERROR,
             )
             raise
-        cached_hashed_token_store(force_update=True)  # update the cache
+        except Exception:
+            self.message_user(
+                request,
+                "Save failed. The cached API tokens being enforced may not agree with "
+                "the database state. Edit and save again to update the cache. Alert "
+                "the admins if this message appears again.",
+                level=messages.ERROR,
+            )
+            raise
+
         if new_token:
             self.message_user(
                 request,
@@ -108,5 +115,16 @@ class KnownApiEndpointAdmin(admin.ModelAdmin):
     search_fields = ["name"]
 
     def save_model(self, request, obj: KnownApiEndpoint, form, change):
-        super().save_model(request, obj, form, change)
-        cached_hashed_token_store(force_update=True)  # update the cache
+        try:
+            with transaction.atomic():
+                super().save_model(request, obj, form, change)
+                cached_hashed_token_store(force_update=True)  # update the cache
+        except Exception:
+            self.message_user(
+                request,
+                "Save failed. The cached API tokens being enforced may not agree with "
+                "the database state. Edit and save again to update the cache. Alert "
+                "the admins if this message appears again.",
+                level=messages.ERROR,
+            )
+            raise

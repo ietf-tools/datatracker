@@ -5,7 +5,7 @@ from unittest import mock
 from django.contrib.auth.models import User
 from django.urls import reverse as urlreverse
 
-from ietf.api.models import MIN_TOKEN_LENGTH, AppApiToken
+from ietf.api.models import MIN_TOKEN_LENGTH, AppApiToken, KnownApiEndpoint
 from ietf.utils.test_utils import TestCase
 
 
@@ -174,6 +174,63 @@ class AppApiTokenAdminTests(TestCase):
                 mocked.call_args_list,
                 "KnownApiEndpointAdmin did not refresh the token cache",
             )
+
+    def test_save_model_rolls_back_token_on_cache_failure(self):
+        """A cache-refresh failure inside the transaction rolls back the token save"""
+        with (
+            mock.patch(
+                "ietf.api.admin.cached_hashed_token_store",
+                side_effect=RuntimeError("boom"),
+            ),
+            mock.patch(
+                "ietf.api.admin.AppApiTokenAdmin.message_user"
+            ) as mocked_message_user,
+        ):
+            with self.assertRaises(RuntimeError):
+                self.client.post(self.add_url, self.post_data())
+
+        self.assertEqual(
+            AppApiToken.objects.count(),
+            0,
+            "the token was saved even though the cache refresh failed",
+        )
+        self.assertTrue(
+            any(
+                "may not agree with the database state" in call.args[1]
+                for call in mocked_message_user.call_args_list
+            ),
+            "no warning was shown for the cache failure",
+        )
+
+    def test_save_model_rolls_back_endpoint_on_cache_failure(self):
+        """A cache set failure inside the transaction rolls back the endpoint save"""
+        with (
+            mock.patch(
+                "ietf.api.admin.cached_hashed_token_store",
+                side_effect=RuntimeError("boom"),
+            ),
+            mock.patch(
+                "ietf.api.admin.KnownApiEndpointAdmin.message_user"
+            ) as mocked_message_user,
+        ):
+            with self.assertRaises(RuntimeError):
+                self.client.post(
+                    urlreverse("admin:api_knownapiendpoint_add"),
+                    {"name": "ietf.api.foobar", "enabled": "on"},
+                )
+
+        self.assertEqual(
+            KnownApiEndpoint.objects.filter(name="ietf.api.foobar").count(),
+            0,
+            "the endpoint was saved even though the cache refresh failed",
+        )
+        self.assertTrue(
+            any(
+                "may not agree with the database state" in call.args[1]
+                for call in mocked_message_user.call_args_list
+            ),
+            "no warning was shown for the cache failure",
+        )
 
     def test_search_by_token_value(self):
         raw_token = "a-searchable-token-" + "a" * MIN_TOKEN_LENGTH
