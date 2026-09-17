@@ -122,6 +122,8 @@ APP_API_TOKENS = {
     "ietf.person.api_uuid_by_pk" : ["devtoken"],  # Not a real secret
 }
 
+APP_API_TOKEN_PEPPER_BYTES = b"app_api_token_pepper_bytes"
+
 # Private key the account migration API decrypts passwords with. Not a real secret - the
 # account app encrypts to the matching public key, which
 #   openssl rsa -pubout -in <this key>

@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 import hashlib
+import hmac
 import secrets
 
 from django.conf import settings
@@ -68,12 +69,16 @@ class AppApiToken(models.Model):
     def hash(token: str):
         """Hash a token for storage / comparison
 
-        Salts the value as a precaution. Tokens will generally be long, high-entropy
+        Peppers the value as a precaution. Tokens will generally be long, high-entropy
         byte strings that are not vulnerable to rainbow table attacks, but this will
         provide some insurance if someone ill-advisedly adds a simple token.
         """
-        salt = getattr(settings, "APP_API_TOKEN_SALT_BYTES", b"5a1+Y&+45t`/")
-        return hashlib.sha384(salt + token.encode()).hexdigest()
+        pepper = getattr(settings, "APP_API_TOKEN_PEPPER_BYTES", None)
+        if pepper is None:
+            raise RuntimeError("APP_API_TOKEN_PEPPER_BYTES must be set")
+        elif not isinstance(pepper, bytes):
+            raise RuntimeError("APP_API_TOKEN_PEPPER_BYTES must be a bytestring")
+        return hmac.new(pepper, token.encode(), hashlib.sha384).hexdigest()
 
     def validate_new_token(self, token: str):
         if len(token) < MIN_TOKEN_LENGTH:

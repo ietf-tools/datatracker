@@ -244,6 +244,12 @@ if _APP_API_TOKENS_JSON is not None:
 else:
     APP_API_TOKENS = {}
 
+_APP_API_TOKEN_PEPPER = os.environ.get("DATATRACKER_APP_API_TOKEN_PEPPER", None)
+if _APP_API_TOKEN_PEPPER is None:
+    raise RuntimeError("DATATRACKER_APP_API_TOKEN_PEPPER must be set")
+else:
+    APP_API_TOKEN_PEPPER_BYTES = _APP_API_TOKEN_PEPPER.encode("utf-8")
+
 EMAIL_COPY_TO = ""
 
 # I-D Submission settings
