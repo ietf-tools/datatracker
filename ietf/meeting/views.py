@@ -5846,15 +5846,20 @@ def import_session_minutes(request, session_id, num):
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
+    minutes_sp = session.presentations.filter(document__type='minutes').first()
+    choices, select_all, shared_with = material_upload_choices(session, 'minutes', minutes_sp)
+
     if request.method == 'POST':
-        form = ImportMinutesForm(request.POST)
+        form = ImportMinutesForm(choices, select_all, request.POST, shared_with=shared_with)
         if not form.is_valid():
             import_contents = form.data['markdown_text']
         else:
             import_contents = form.cleaned_data['markdown_text']
             try:
-                save_session_minutes_revision(
+                warnings = save_session_minutes_revision(
                     session=session,
+                    also_sessions=form.sessions_to_apply(),
+                    replace=form.replace_shared(),
                     file=io.BytesIO(import_contents.encode('utf8')),
                     ext='.md',
                     request=request,
@@ -5867,6 +5872,8 @@ def import_session_minutes(request, session_id, num):
             except SaveMaterialsError as err:
                 form.add_error(None, str(err))
             else:
+                for warning in warnings:
+                    messages.warning(request, warning)
                 resolve_uploaded_material(meeting=session.meeting, doc=session.minutes())
                 messages.success(request, f'Successfully imported minutes as revision {session.minutes().rev}.')
                 return redirect('ietf.meeting.views.session_details', num=num, acronym=session.group.acronym)
@@ -5876,7 +5883,7 @@ def import_session_minutes(request, session_id, num):
         except NoteError as err:
             messages.error(request, f'Could not import notes with id {note.id}: {err}.')
             return redirect('ietf.meeting.views.session_details', num=num, acronym=session.group.acronym)
-        form = ImportMinutesForm(initial={'markdown_text': import_contents})
+        form = ImportMinutesForm(choices, select_all, initial={'markdown_text': import_contents}, shared_with=shared_with)
 
     # Try to prevent pointless revision creation. Note that we do not block replacing
     # a document with an identical copy in the validation above. We cannot entirely

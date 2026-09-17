@@ -481,30 +481,30 @@ class UploadBlueSheetForm(FileUploadForm):
     doc_type = 'bluesheets'
 
 
-class ApplyToSessionsFileUploadForm(FileUploadForm):
-    """FileUploadForm with a checkbox for each other session the upload can also apply to
+class ApplyToSessionsFormMixin:
+    """Adds a checkbox for each other session a material change can also apply to
 
-    choices and select_all come from apply_to_choices(); with no choices the field is removed.
-    shared_with names the other sessions linked to the document being revised. When given, the
-    form also asks whether to revise that shared document or replace it for this session alone.
+    For forms with a doc_type. choices and select_all come from apply_to_choices(); with no choices
+    there is no field. shared_with names the other sessions linked to the document being revised.
+    When given, the form also asks whether to revise that shared document or replace it for this
+    session alone.
     """
     SCOPE_REVISE = "revise"
     SCOPE_REPLACE = "replace"
-
-    apply_to_sessions = forms.TypedMultipleChoiceField(
-        coerce=int, required=False, widget=forms.CheckboxSelectMultiple, label="Also apply to",
-    )
 
     def __init__(self, choices, select_all, *args, shared_with=(), **kwargs):
         super().__init__(*args, **kwargs)
         self.session_choices = list(choices)
         kind = DocTypeName.objects.get(slug=self.doc_type).name.lower()
         if self.session_choices:
-            field = self.fields["apply_to_sessions"]
-            field.choices = [(c.session.pk, self._choice_label(c, kind)) for c in self.session_choices]
-            field.initial = [c.session.pk for c in self.session_choices] if select_all else []
-        else:
-            self.fields.pop("apply_to_sessions")
+            self.fields["apply_to_sessions"] = forms.TypedMultipleChoiceField(
+                coerce=int,
+                required=False,
+                widget=forms.CheckboxSelectMultiple,
+                label="Also apply to",
+                choices=[(c.session.pk, self._choice_label(c, kind)) for c in self.session_choices],
+                initial=[c.session.pk for c in self.session_choices] if select_all else [],
+            )
         if shared_with:
             self.fields["scope"] = forms.ChoiceField(
                 label="",
@@ -535,6 +535,10 @@ class ApplyToSessionsFileUploadForm(FileUploadForm):
 
     def replace_shared(self):
         return self.cleaned_data.get("scope") == self.SCOPE_REPLACE
+
+
+class ApplyToSessionsFileUploadForm(ApplyToSessionsFormMixin, FileUploadForm):
+    pass
 
 
 class UploadMinutesForm(ApplyToSessionsFileUploadForm):
@@ -579,7 +583,8 @@ class UploadSlidesForm(ApplyToSessionsFileUploadForm):
         return title
 
 
-class ImportMinutesForm(forms.Form):
+class ImportMinutesForm(ApplyToSessionsFormMixin, forms.Form):
+    doc_type = 'minutes'
     markdown_text = forms.CharField(strip=False, widget=forms.HiddenInput)
 
 

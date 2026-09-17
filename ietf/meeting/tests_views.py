@@ -8146,6 +8146,49 @@ class ImportNotesTests(TestCase):
             ),
         )
 
+    def test_import_offers_the_same_choices_as_upload(self):
+        """Importing onto shared minutes asks whether to revise them or replace them here"""
+        first, last = make_group_sessions(['sched', 'sched'])
+        self.client.login(username='secretary', password='secretary+password')
+        f = BytesIO(b'shared minutes'); f.name = 'minutes.txt'
+        r = self.client.post(
+            urlreverse('ietf.meeting.views.upload_session_minutes', kwargs={'num': first.meeting.number, 'session_id': first.pk}),
+            dict(file=f, apply_to_sessions=[last.pk]),
+        )
+        self.assertEqual(r.status_code, 302)
+        def minutes_of(session):  # Session.minutes() caches on the instance
+            return session.presentations.get(document__type_id='minutes').document
+        shared = minutes_of(first)
+        self.assertEqual(minutes_of(last), shared)
+
+        url = urlreverse('ietf.meeting.views.import_session_minutes', kwargs={'num': first.meeting.number, 'session_id': first.pk})
+        with requests_mock.Mocker() as mock:
+            mock.get(f'https://notes.ietf.org/{first.notes_id()}/download', text='notes for the first session')
+            mock.get(f'https://notes.ietf.org/{first.notes_id()}/info', text=json.dumps({"title": "title", "updatetime": "2021-12-02T11:22:33z"}))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            scopes = q('input[name=scope]')
+            self.assertEqual(len(scopes), 2)
+            self.assertIn('Session 2', q('label[for=%s]' % scopes.eq(0).attr('id')).text())
+            self.assertFalse(q('input[name=apply_to_sessions]'), 'every scheduled session is linked, nothing to choose')
+
+            r = self.client.post(url, {'markdown_text': 'notes for the first session', 'scope': 'replace'})
+        self.assertEqual(r.status_code, 302)
+        own = minutes_of(first)
+        self.assertNotEqual(own, shared)
+        self.assertEqual(retrieve_bytes('minutes', own.uploaded_filename), b'notes for the first session')
+        self.assertEqual(minutes_of(last), shared, 'the other session keeps the shared minutes')
+        shared.refresh_from_db()
+        self.assertEqual(shared.rev, '00')
+
+        # and a plain import onto shared minutes revises them for everyone, as before
+        url = urlreverse('ietf.meeting.views.import_session_minutes', kwargs={'num': last.meeting.number, 'session_id': last.pk})
+        r = self.client.post(url, {'markdown_text': 'revised shared notes'})
+        self.assertEqual(r.status_code, 302)
+        shared.refresh_from_db()
+        self.assertEqual(shared.rev, '01')
+
     def test_imports_previewed_text(self):
         """Import text that was shown as preview even if notes site is updated"""
         url = urlreverse('ietf.meeting.views.import_session_minutes',
