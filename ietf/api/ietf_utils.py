@@ -6,20 +6,43 @@ from functools import wraps
 from typing import Callable, Optional, Union
 
 from django.conf import settings
+from django.core import signing
 from django.core.cache import caches
 from django.http import HttpResponseForbidden
+
+from ietf.utils.log import log
 
 from .models import AppApiToken
 
 
 def cached_hashed_token_store(force_update=False):
+    CACHE_SECONDS = 86400  # one day
     cache = caches["default"]
     cache_key = "ietf.api.ietf_utils.cached_hashed_token_store"
-    cached_value = None if force_update else cache.get(cache_key)
-    if cached_value is None:
-        cached_value = AppApiToken.objects.as_hashed_token_dict()
-        cache.set(cache_key, cached_value, 86400)
-    return cached_value
+
+    if not force_update:
+        cached_value = cache.get(cache_key)
+        if cached_value is None:
+            pass  # no cached value, that's ok
+        elif isinstance(cached_value, str):
+            try:
+                # Return the cached value if the signature passes. Allow a 1 second
+                # grace period to ensure this never fails because the signature
+                # timestamp is added very slightly before the value is cached.
+                return signing.loads(
+                    cached_value, salt=cache_key, max_age=CACHE_SECONDS + 1
+                )
+            except signing.BadSignature:
+                log("WARNING: Bad or expired signature on API token cache!")
+        else:
+            log("WARNING: Invalid data found in API token cache!")
+
+    # need to compute the token store
+    hashed_token_store = AppApiToken.objects.as_hashed_token_dict()
+    cache.set(
+        cache_key, signing.dumps(hashed_token_store, salt=cache_key), CACHE_SECONDS
+    )
+    return hashed_token_store
 
 
 def is_valid_token(endpoint, token):
