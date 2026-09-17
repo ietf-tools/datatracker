@@ -866,17 +866,21 @@ def reclaim_material_name(doc, session, by, keep=()):
     doc carries session's own name, so it belongs to session. Each other session linked to it, except
     those in keep, gets doc's current content as a new revision of the document named for that session,
     created at 00 if need be, and is relinked to the copy. Cancelled and rescheduled sessions are
-    included so that what they show does not change.
+    included so that what they show does not change. Returns warnings to show the uploader.
     """
     meeting = session.meeting
-    if not doc.uploaded_filename:
-        return  # pre-revision-era material; nothing to copy
+    kind = doc.type.name.lower()
+    others = [o for o in sessions_linked_to(doc, meeting).exclude(pk=session.pk) if o not in keep]
+    content = material_content(doc, meeting)
+    if content is None:
+        # Leave them linked rather than lose the record of what they showed; the uploader is told.
+        return [
+            f"{material_session_label(other)} shared this {kind}, but its current file could not be found, "
+            f"so no copy was made. It will show the new revision until a {kind} is uploaded to it."
+            for other in others
+        ]
     ext = Path(doc.uploaded_filename).suffix
-    source = Path(meeting.get_materials_path()) / doc.type_id / doc.uploaded_filename
-    content = source.read_bytes() if source.exists() else retrieve_bytes(doc.type_id, doc.uploaded_filename)
-    for other in sessions_linked_to(doc, meeting).exclude(pk=session.pk):
-        if other in keep:
-            continue
+    for other in others:
         name, title = material_document_name(other, doc.type_id, group_wide=False)
         copy = Document.objects.filter(name=name).first()
         if copy is None:
@@ -899,6 +903,20 @@ def reclaim_material_name(doc, session, by, keep=()):
         copy.save_with_history(events)
         resolve_uploaded_material(meeting=meeting, doc=copy)
         other.presentations.filter(document=doc).update(document=copy, rev=copy.rev)
+    return []
+
+
+def material_content(doc, meeting):
+    """The bytes of doc's current revision from disk or the blob store, or None if neither has them"""
+    if not doc.uploaded_filename:
+        return None
+    source = Path(meeting.get_materials_path()) / doc.type_id / doc.uploaded_filename
+    if source.exists():
+        return source.read_bytes()
+    try:
+        return retrieve_bytes(doc.type_id, doc.uploaded_filename)
+    except Exception:
+        return None
 
 
 def save_session_minutes_revision(session, file, ext, request, encoding=None, also_sessions=(), replace=False, narrative=False):
@@ -915,14 +933,15 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, al
     If the session does not already have minutes, it must be a scheduled
     session. If not, SessionNotScheduledError will be raised.
 
-    Returns (Document, [DocEvents]), which should be passed to doc.save_with_history()
-    if the file contents are stored successfully.
+    The file is stored first; if that raises SaveMaterialsError nothing has changed. Returns warnings
+    to show the uploader.
     """
     document_type = DocTypeName.objects.get(slug= 'narrativeminutes' if narrative else 'minutes')
     minutes_sp = session.presentations.filter(document__type=document_type).first()
+    reclaim = False
     if minutes_sp and not replace:
         doc = minutes_sp.document
-        doc.rev = '%02d' % (int(doc.rev)+1)
+        name, title = doc.name, doc.title
     else:
         ota = session.official_timeslotassignment()
         sess_time = ota and ota.timeslot.time
@@ -931,21 +950,26 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, al
         apply_to_all = group_wide_material_name(session, also_sessions)
         name, title = material_document_name(session, document_type.slug, group_wide=apply_to_all)
         doc = Document.objects.filter(name=name).first()
-        if doc is not None:
-            if not apply_to_all:
-                reclaim_material_name(doc, session, request.user.person, keep=also_sessions)
-            doc.rev = '%02d' % (int(doc.rev)+1)
-        else:
-            doc = Document.objects.create(
-                name = name,
-                type = document_type,
-                title = title,
-                group = session.group,
-                rev = '00',
-            )
-        doc.states.add(State.objects.get(type_id=document_type.slug,slug='active'))
-    link_material_to_sessions(doc, session, also_sessions)
-    filename = f'{doc.name}-{doc.rev}{ext}'
+        reclaim = doc is not None and not apply_to_all
+    rev = '%02d' % (int(doc.rev)+1) if doc is not None else '00'
+    filename = f'{name}-{rev}{ext}'
+
+    # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
+    handle_upload_file(
+        file=file,
+        filename=filename,
+        meeting=session.meeting,
+        subdir=document_type.slug,
+        request=request,
+        encoding=encoding,
+    )
+
+    warnings = reclaim_material_name(doc, session, request.user.person, keep=also_sessions) if reclaim else []
+    if doc is None:
+        doc = Document.objects.create(name=name, type=document_type, title=title, group=session.group, rev=rev)
+    else:
+        doc.rev = rev
+    doc.states.add(State.objects.get(type_id=document_type.slug,slug='active'))
     doc.uploaded_filename = filename
     e = NewRevisionDocEvent.objects.create(
         doc=doc,
@@ -954,17 +978,9 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, al
         desc=f'New revision available: {doc.rev}',
         rev=doc.rev,
     )
-
-    # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
-    handle_upload_file(
-        file=file,
-        filename=doc.uploaded_filename,
-        meeting=session.meeting,
-        subdir=document_type.slug,
-        request=request,
-        encoding=encoding,
-    )
     doc.save_with_history([e])
+    link_material_to_sessions(doc, session, also_sessions)
+    return warnings
 
 
 def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=None):

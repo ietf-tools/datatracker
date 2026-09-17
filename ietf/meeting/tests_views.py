@@ -55,7 +55,7 @@ from ietf.meeting.utils import (
     generate_proceedings_content,
     diff_meeting_schedules,
 )
-from ietf.meeting.utils import add_event_info_to_session_qs, material_document_name
+from ietf.meeting.utils import add_event_info_to_session_qs, material_document_name, SaveMaterialsError
 from ietf.meeting.utils import create_recording, delete_recording, get_next_sequence, bluesheet_data
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose, generate_agenda_data
@@ -7074,6 +7074,70 @@ class MaterialsTests(TestCase):
             'The deleted session keeps its stale links and gets no copy',
         )
         self.assertFalse(Document.objects.filter(name=material_document_name(deleted, 'agenda', group_wide=False)[0]).exists())
+
+    def test_rejected_upload_changes_nothing(self):
+        """A file that fails to store must leave documents, links and revisions exactly as they were"""
+        bad = '<html><h1>Title</h1><section>Some\x93text</section></html>'.encode('latin1')
+        for doctype in ('agenda', 'minutes', 'slides'):
+            first, last = make_group_sessions(['sched', 'sched'])
+            self.client.login(username='secretary', password='secretary+password')
+            url = self._material_upload_url(doctype, first) if doctype != 'slides' else self._slides_upload_url(first)
+            good = BytesIO(b'fine'); good.name = 'fine.txt'
+            data = dict(submission_method='upload', file=good, apply_to_sessions=[last.pk])
+            if doctype == 'slides':
+                data.update(title='a deck', approved=True)
+            r = self.client.post(url, data)
+            self.assertEqual(r.status_code, 302, doctype)
+            before = {
+                'docs': set(Document.objects.filter(type_id=doctype).values_list('name', 'rev')),
+                'links': sorted((sp.session_id, sp.document.name, sp.rev) for sp in SessionPresentation.objects.filter(session__in=(first, last))),
+            }
+            if doctype == 'slides':
+                # slides never accept html, so make the storage step itself fail
+                badfile = BytesIO(b'fine'); badfile.name = 'fine.txt'
+                data = dict(file=badfile, apply_to_sessions=[last.pk], title='a deck', approved=True)  # same title: a revision of the shared deck
+                with patch('ietf.meeting.views.handle_upload_file', side_effect=SaveMaterialsError('storage refused the file')):
+                    r = self.client.post(url, data)
+                complaint = 'storage refused the file'
+            else:
+                badfile = BytesIO(bad); badfile.name = 'some.html'
+                r = self.client.post(url, dict(submission_method='upload', file=badfile, apply_to_sessions=[last.pk], scope='replace'))
+                complaint = 'Could not identify the file encoding'
+            self.assertEqual(r.status_code, 200, doctype)
+            self.assertContains(r, complaint, msg_prefix=doctype)
+            after = {
+                'docs': set(Document.objects.filter(type_id=doctype).values_list('name', 'rev')),
+                'links': sorted((sp.session_id, sp.document.name, sp.rev) for sp in SessionPresentation.objects.filter(session__in=(first, last))),
+            }
+            self.assertEqual(after, before, doctype)
+
+    def test_taking_back_a_name_whose_file_is_missing_warns_and_leaves_the_link(self):
+        first, last = make_group_sessions(['sched', 'sched'])
+        self.client.login(username='secretary', password='secretary+password')
+        url = self._material_upload_url('agenda', first)
+        r = self.client.post(url, dict(submission_method='enter', content='v1 mine'))
+        self.assertEqual(r.status_code, 302)
+        own = first.presentations.get(document__type_id='agenda').document
+        r = self.client.post(url, dict(submission_method='enter', content='v2 spread', apply_to_sessions=[last.pk]))
+        self.assertEqual(r.status_code, 302)
+        own.refresh_from_db()
+        self.assertEqual(last.presentations.get(document__type_id='agenda').document, own)
+        (Path(settings.AGENDA_PATH) / first.meeting.number / 'agenda' / own.uploaded_filename).unlink()
+        remove_from_storage('agenda', own.uploaded_filename)
+
+        r = self.client.post(url, dict(submission_method='enter', content='v3 mine again', scope='replace'))
+        self.assertEqual(r.status_code, 302)
+        r = self.client.get(r['Location'])
+        warnings = [str(m) for m in r.context['messages'] if m.level_tag == 'warning']
+        self.assertEqual(len(warnings), 1)
+        self.assertIn('Session 2', warnings[0])
+        self.assertIn('could not be found', warnings[0])
+        own.refresh_from_db()
+        self.assertEqual(own.rev, '02')
+        self.assertEqual(retrieve_bytes('agenda', own.uploaded_filename), b'v3 mine again')
+        self.assertEqual(last.presentations.get(document__type_id='agenda').document, own, 'left linked rather than losing the record')
+        self.assertEqual(last.presentations.get(document=own).rev, '02')
+        self.assertFalse(Document.objects.filter(name=material_document_name(last, 'agenda', group_wide=False)[0]).exists())
 
     def test_material_pages_number_scheduled_sessions_only(self):
         first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
