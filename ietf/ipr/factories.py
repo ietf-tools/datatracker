@@ -1,7 +1,4 @@
-# Copyright The IETF Trust 2018-2023, All Rights Reserved
-# -*- coding: utf-8 -*-
-
-
+# Copyright The IETF Trust 2018-2026, All Rights Reserved
 import datetime
 import factory
 from faker import Faker
@@ -13,14 +10,49 @@ from ietf.ipr.models import (
     GenericIprDisclosure, IprDocRel, RelatedIpr, IprEvent
 )
 
+_fake = Faker()
+
+
+def _fake_name(max_length):
+    """Fake a name acceptable to ietf.ipr.forms.validate_name
+
+    The limits are those of the edit form, not of the model: patent_info is an
+    unbounded TextField, but the edit form parses it back into bounded, validated
+    fields. Retries rather than truncating, so the result is still a plausible name.
+    """
+    for _ in range(100):
+        name = _fake.name()
+        if (
+            len(name) <= max_length
+            and " " in name
+            and sum(c.isalpha() for c in name) >= 3
+        ):
+            return name
+    raise RuntimeError(f"Unable to fake a name of at most {max_length:d} characters")
+
+
+def _fake_patent_title():
+    """Fake a patent title acceptable to ietf.ipr.forms.validate_title"""
+    for _ in range(100):
+        title = _fake.sentence(nb_words=8)
+        if (
+            len(title) <= 255
+            and title.count(" ") >= 2
+            and sum(c.isalpha() for c in title) >= 15
+        ):
+            return title
+    raise RuntimeError("Unable to fake a patent title")
+
+
 def _fake_patent_info():
-    fake = Faker()
-    return "Date: %s\nNotes: %s\nTitle: %s\nNumber: %s\nInventor: %s\n" % (
-        (timezone.now()-datetime.timedelta(days=365)).strftime("%Y-%m-%d"),
-        fake.paragraph(),
-        fake.sentence(nb_words=8),
-        'US9999999',
-        fake.name(),
+    # Values must not contain newlines - text_to_dict() parses this back as RFC2822
+    # headers and returns {} for anything it cannot parse.
+    return "Date: {}\nNotes: {}\nTitle: {}\nNumber: {}\nInventor: {}\n".format(
+        (timezone.now() - datetime.timedelta(days=365)).strftime("%Y-%m-%d"),
+        _fake.paragraph(),
+        _fake_patent_title(),
+        "US9999999",
+        _fake_name(63),
     )
 
 class IprDisclosureBaseFactory(factory.django.DjangoModelFactory):
@@ -30,7 +62,7 @@ class IprDisclosureBaseFactory(factory.django.DjangoModelFactory):
 
     by = factory.SubFactory('ietf.person.factories.PersonFactory')
     compliant = True
-    holder_legal_name = factory.Faker('name')
+    holder_legal_name = factory.LazyFunction(lambda: _fake_name(255))
     state_id='posted'
     submitter_name = factory.Faker('name')
     submitter_email = factory.Faker('email') 
