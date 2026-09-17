@@ -26,6 +26,7 @@ from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.encoding import smart_str
+from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
 
@@ -832,12 +833,13 @@ def link_material_to_sessions(doc, session, also_sessions=()):
             target.presentations.create(document=doc, rev=doc.rev)
 
 
-def material_document_name(session, doc_type, group_wide):
-    """(name, title) for a new agenda or minutes document uploaded to session
+def material_document_name(session, doc_type, group_wide, title=None):
+    """(name, title) for a new agenda, minutes or slides document uploaded to session
 
     Only an IETF meeting has a group-wide name; interim material is always named for its session.
-    Agendas carry the session's docname token and minutes its start time, as they always have. A
-    session with no timeslot gets the token for minutes too, so a copy can always be named.
+    Agendas and slides carry the session's docname token and minutes its start time, as they always
+    have. A session with no timeslot gets the token for minutes too, so a copy can always be named.
+    Slides take their title from the uploader and add its slug to the name.
     """
     typename = DocTypeName.objects.get(slug=doc_type)
     meeting = session.meeting
@@ -850,14 +852,17 @@ def material_document_name(session, doc_type, group_wide):
     when = f": {sess_time.strftime('%a %H:%M')}" if sess_time else ""
     if meeting.type_id == "ietf":
         name = f"{typename.prefix}-{meeting.number}-{session.group.acronym}"
-        title = f"{typename.name} IETF{meeting.number}: {session.group.acronym}"
+        doc_title = f"{typename.name} IETF{meeting.number}: {session.group.acronym}"
         if not group_wide:
             name += f"-{suffix}"
-            title += when
+            doc_title += when
     else:
         name = f"{typename.prefix}-{meeting.number}-{suffix}"
-        title = f"{typename.name} {meeting.number}{when}"
-    return name, title
+        doc_title = f"{typename.name} {meeting.number}{when}"
+    if doc_type == "slides":
+        name += "-" + slugify(title).replace("_", "-")[:128]
+        doc_title = title
+    return name, doc_title
 
 
 def reclaim_material_name(doc, session, by, keep=(), _in_progress=frozenset()):
@@ -866,7 +871,8 @@ def reclaim_material_name(doc, session, by, keep=(), _in_progress=frozenset()):
     doc carries session's own name, so it belongs to session. Each other session linked to it, except
     those in keep, gets doc's current content as a new revision of the document named for that session,
     created at 00 if need be, and is relinked to the copy. Cancelled and rescheduled sessions are
-    included so that what they show does not change. Returns warnings to show the uploader.
+    included so that what they show does not change. Returns (warnings, relinked): warnings to show
+    the uploader, and the presentations now pointing at copies, for whoever must announce the change.
 
     The copy's own document may in turn be shared with further sessions, so it is reclaimed for its
     owner first, recursively. A document already being reclaimed further up is left alone: that reclaim
@@ -875,6 +881,7 @@ def reclaim_material_name(doc, session, by, keep=(), _in_progress=frozenset()):
     meeting = session.meeting
     in_progress = _in_progress | {doc.pk}
     warnings = []
+    relinked = []
     kind = doc.type.name.lower()
     others = [o for o in sessions_linked_to(doc, meeting).exclude(pk=session.pk) if o not in keep]
     content = material_content(doc, meeting)
@@ -884,19 +891,23 @@ def reclaim_material_name(doc, session, by, keep=(), _in_progress=frozenset()):
             f"{material_session_label(other)} shared this {kind}, but its current file could not be found, "
             f"so no copy was made. It will show the new revision until a {kind} is uploaded to it."
             for other in others
-        ]
+        ], []
     ext = Path(doc.uploaded_filename).suffix
     for other in others:
-        name, title = material_document_name(other, doc.type_id, group_wide=False)
+        name, title = material_document_name(other, doc.type_id, group_wide=False, title=doc.title)
         copy = Document.objects.filter(name=name).first()
         if copy is None:
             copy = Document.objects.create(name=name, type_id=doc.type_id, title=title, group=doc.group, rev="00")
         elif copy.pk in in_progress:
             continue
         else:
-            warnings += reclaim_material_name(copy, other, by, _in_progress=in_progress)
+            more_warnings, more_relinked = reclaim_material_name(copy, other, by, _in_progress=in_progress)
+            warnings += more_warnings
+            relinked += more_relinked
             copy.rev = "%02d" % (int(copy.rev) + 1)
         copy.states.add(State.objects.get(type_id=doc.type_id, slug="active"))
+        if doc.type_id == "slides":
+            copy.states.add(State.objects.get(type_id="reuse_policy", slug="single"))
         copy.uploaded_filename = f"{copy.name}-{copy.rev}{ext}"
         target_dir = Path(meeting.get_materials_path()) / doc.type_id
         target_dir.mkdir(parents=True, exist_ok=True)
@@ -916,7 +927,8 @@ def reclaim_material_name(doc, session, by, keep=(), _in_progress=frozenset()):
             already.rev = copy.rev
             already.save()
             other.presentations.filter(document=doc).delete()
-    return warnings
+        relinked.append(other.presentations.get(document=copy))
+    return warnings, relinked
 
 
 def material_content(doc, meeting):
@@ -977,7 +989,7 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, al
         encoding=encoding,
     )
 
-    warnings = reclaim_material_name(doc, session, request.user.person, keep=also_sessions) if reclaim else []
+    warnings, _ = reclaim_material_name(doc, session, request.user.person, keep=also_sessions) if reclaim else ([], [])
     if doc is None:
         doc = Document.objects.create(name=name, type=document_type, title=title, group=session.group, rev=rev)
     else:

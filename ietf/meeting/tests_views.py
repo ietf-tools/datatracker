@@ -7538,6 +7538,44 @@ class MaterialsTests(TestCase):
         self.assertEqual(deck.name, 'slides-%s-%s-all-three' % (first.meeting.number, first.group.acronym))
         self.assertEqual([s.presentations.filter(document=deck).count() for s in (first, middle, last)], [1, 1, 1])
 
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_new_deck_reusing_own_name_gives_other_sessions_copies(self, mock_slides_manager_cls):
+        first, last = make_group_sessions(['sched', 'sched'])
+        self.client.login(username='secretary', password='secretary+password')
+        def upload(url, content, **extra):
+            f = BytesIO(content); f.name = 'deck.txt'
+            r = self.client.post(url, dict(file=f, title='the talk', approved=True, **extra))
+            self.assertEqual(r.status_code, 302, r.content[:300])
+        upload(self._slides_upload_url(first), b'v1 first only')
+        deck = first.presentations.get().document
+        self.assertIn(first.docname_token(), deck.name)
+        upload(self._slides_upload_url(first, deck.name), b'v2 spread to last', apply_to_sessions=[last.pk])
+        deck.refresh_from_db()
+        self.assertEqual(deck.rev, '01')
+        self.assertEqual(last.presentations.get().document, deck)
+        last_order = last.presentations.get().order
+        mock_slides_manager_cls.reset_mock()
+
+        # A new deck with the same title for the first session alone reuses its name as a revision.
+        # The last session keeps what it had, as its own copy.
+        upload(self._slides_upload_url(first), b'v3 first alone again')
+        deck.refresh_from_db()
+        self.assertEqual((first.presentations.get().document, deck.rev), (deck, '02'))
+        self.assertEqual(retrieve_bytes('slides', deck.uploaded_filename), b'v3 first alone again')
+        copy_sp = last.presentations.get()
+        copy = copy_sp.document
+        self.assertNotEqual(copy, deck)
+        self.assertEqual(copy.name, material_document_name(last, 'slides', group_wide=False, title='the talk')[0])
+        self.assertEqual((copy.rev, copy_sp.rev, copy_sp.order), ('00', '00', last_order))
+        self.assertEqual(copy.title, 'the talk')
+        self.assertEqual(copy.get_state_slug('reuse_policy'), 'single')
+        self.assertEqual(retrieve_bytes('slides', copy.uploaded_filename), b'v2 spread to last')
+        sm = mock_slides_manager_cls.return_value
+        self.assertEqual(sm.delete.call_args_list, [call(session=last, slides=deck)])
+        self.assertEqual(sm.add.call_args_list, [call(session=last, slides=copy, order=last_order)])
+        self.assertEqual(sm.revise.call_args_list, [call(session=first, slides=deck)])
+
     def test_upload_slide_title_bad_unicode(self):
         session1 = SessionFactory(meeting__type_id='ietf')
         url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session1.meeting.number,'session_id':session1.id})

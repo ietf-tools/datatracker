@@ -3540,7 +3540,8 @@ def upload_session_agenda(request, session_id, num):
                 form.add_error(None, str(err))
             else:
                 if reclaim:
-                    for warning in reclaim_material_name(doc, session, request.user.person, keep=also_sessions):
+                    warnings, _ = reclaim_material_name(doc, session, request.user.person, keep=also_sessions)
+                    for warning in warnings:
                         messages.warning(request, warning)
                 if doc is None:
                     doc = Document.objects.create(name=name, type_id='agenda', title=title, group=session.group, rev=rev)
@@ -3658,22 +3659,12 @@ def upload_session_slides(request, session_id, num, name=None):
 
             # Work out the document and revision, but change nothing until the file is stored
             title = form.cleaned_data["title"]
+            reclaim = False
             if doc is None:
-                if session.meeting.type_id == "ietf":
-                    name = "slides-%s-%s" % (
-                        session.meeting.number,
-                        session.group.acronym,
-                    )
-                    if not apply_to_all:
-                        name += "-%s" % (session.docname_token(),)
-                else:
-                    name = "slides-%s-%s" % (
-                        session.meeting.number,
-                        session.docname_token(),
-                    )
-                name = name + "-" + slugify(title).replace("_", "-")[:128]
+                name, _ = material_document_name(session, "slides", group_wide=apply_to_all, title=title)
                 # A new deck reuses an existing document of that name as a revision
                 doc = Document.objects.filter(name=name).first()
+                reclaim = doc is not None and not apply_to_all
             rev = "%02d" % (int(doc.rev) + 1) if doc is not None else "00"
             filename = "%s-%s%s" % (doc.name if doc is not None else name, rev, ext)
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
@@ -3689,6 +3680,11 @@ def upload_session_slides(request, session_id, num, name=None):
             except SaveMaterialsError as err:
                 form.add_error(None, str(err))
             else:
+                relinked = []
+                if reclaim:
+                    warnings, relinked = reclaim_material_name(doc, session, request.user.person, keep=also_sessions)
+                    for warning in warnings:
+                        messages.warning(request, warning)
                 if doc is None:
                     doc = Document.objects.create(
                         name=name,
@@ -3742,6 +3738,14 @@ def upload_session_slides(request, session_id, num, name=None):
 
                 if hasattr(settings, "MEETECHO_API_CONFIG"):
                     sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+                    for sp in relinked:
+                        if sp.session not in scheduled_sessions:
+                            continue
+                        try:  # the session's deck is now its own copy of what it had
+                            sm.delete(session=sp.session, slides=doc)
+                            sm.add(session=sp.session, slides=sp.document, order=sp.order)
+                        except MeetechoAPIError as err:
+                            log(f"Error in SlidesManager while replacing a deck with its copy: {err}")
                     for sp in added_presentations:
                         if sp.session not in scheduled_sessions:
                             continue  # Meetecho only runs the sessions that will happen

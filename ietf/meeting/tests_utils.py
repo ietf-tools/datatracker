@@ -10,7 +10,7 @@ from json import JSONDecodeError
 from unittest.mock import patch, Mock
 
 from django.http import HttpResponse, JsonResponse
-from ietf.meeting.factories import MeetingFactory, RegistrationFactory, RegistrationTicketFactory, SessionPresentationFactory
+from ietf.meeting.factories import MeetingFactory, RegistrationFactory, RegistrationTicketFactory, SessionPresentationFactory, SessionFactory
 from ietf.doc.storage_utils import store_bytes, retrieve_bytes
 from ietf.meeting.models import Registration
 from ietf.meeting.tests_views import make_group_sessions
@@ -401,8 +401,9 @@ class ReclaimMaterialNameTests(TestCase):
         b_doc = self._own_doc(b, b'b content')
         for session, doc in ((a, a_doc), (b, a_doc), (a, b_doc), (b, b_doc)):
             SessionPresentationFactory(session=session, document=doc, rev='00')
-        warnings = reclaim_material_name(a_doc, a, PersonFactory())
+        warnings, relinked = reclaim_material_name(a_doc, a, PersonFactory())
         self.assertEqual(warnings, [])
+        self.assertEqual([sp.session for sp in relinked], [b])
         b_doc.refresh_from_db()
         self.assertEqual(b_doc.rev, '01', "B's own document took a copy of A's content")
         self.assertEqual(retrieve_bytes('agenda', b_doc.uploaded_filename), b'a content')
@@ -411,3 +412,22 @@ class ReclaimMaterialNameTests(TestCase):
         a_doc.refresh_from_db()
         self.assertEqual(a_doc.rev, '00', "A's document is left for the caller to revise")
         self.assertTrue(a.presentations.filter(document=b_doc).exists(), "A's stray link is left for the caller's relink to displace")
+
+
+class MaterialDocumentNameTests(TestCase):
+    def test_names_match_the_established_conventions(self):
+        first, last = make_group_sessions(['sched', 'sched'])
+        num, acronym = first.meeting.number, first.group.acronym
+        self.assertEqual(material_document_name(first, 'agenda', group_wide=True)[0], f'agenda-{num}-{acronym}')
+        self.assertEqual(material_document_name(first, 'agenda', group_wide=False)[0], f'agenda-{num}-{acronym}-{first.docname_token()}')
+        when = first.official_timeslotassignment().timeslot.time.strftime('%Y%m%d%H%M')
+        self.assertEqual(material_document_name(first, 'minutes', group_wide=False)[0], f'minutes-{num}-{acronym}-{when}')
+        name, title = material_document_name(last, 'slides', group_wide=False, title='A Talk_Title, Really!')
+        self.assertEqual(name, f'slides-{num}-{acronym}-{last.docname_token()}-a-talk-title-really')
+        self.assertEqual(title, 'A Talk_Title, Really!')
+        self.assertEqual(material_document_name(last, 'slides', group_wide=True, title='x')[0], f'slides-{num}-{acronym}-x')
+
+        interim = SessionFactory(meeting__type_id='interim')
+        inum = interim.meeting.number
+        self.assertEqual(material_document_name(interim, 'agenda', group_wide=True)[0], f'agenda-{inum}-{interim.docname_token()}', 'interim material is never group-wide')
+        self.assertEqual(material_document_name(interim, 'slides', group_wide=True, title='x')[0], f'slides-{inum}-{interim.docname_token()}-x')
