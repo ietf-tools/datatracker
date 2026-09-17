@@ -1354,6 +1354,13 @@ MEETECHO_SESSION_RECORDING_URL = "https://meetecho-player.ietf.org/playout/?sess
 # ERRATA_METADATA_NOTIFICATION_URL
 # ERRATA_METADATA_NOTIFICATION_API_KEY
 
+
+# Set this for non-production mode only. For production, set it to a secret value in
+# settings_local
+if SERVER_MODE != "production":
+    APP_API_TOKEN_PEPPER_BYTES = b"it-was-twenty-years-ago-today"
+
+
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from ietf.settings_local import *            # pyflakes:ignore pylint: disable=wildcard-import
