@@ -92,7 +92,7 @@ class HolderIprDisclosureFactory(IprDisclosureBaseFactory):
     holder_contact_email = factory.Faker('email')
     holder_contact_name = factory.Faker('name')
     licensing_id = 'reasonable'
-    patent_info = _fake_patent_info()
+    patent_info = factory.LazyFunction(_fake_patent_info)
 
 
 class ThirdPartyIprDisclosureFactory(IprDisclosureBaseFactory):
@@ -101,7 +101,7 @@ class ThirdPartyIprDisclosureFactory(IprDisclosureBaseFactory):
 
     ietfer_name = factory.Faker('name')
     ietfer_contact_email = factory.Faker('email')
-    patent_info = _fake_patent_info()
+    patent_info = factory.LazyFunction(_fake_patent_info)
 
 
 class NonDocSpecificIprDisclosureFactory(IprDisclosureBaseFactory):
@@ -110,7 +110,7 @@ class NonDocSpecificIprDisclosureFactory(IprDisclosureBaseFactory):
 
     holder_contact_email = factory.Faker('email')
     holder_contact_name = factory.Faker('name')
-    patent_info = _fake_patent_info()
+    patent_info = factory.LazyFunction(_fake_patent_info)
 
 class GenericIprDisclosureFactory(IprDisclosureBaseFactory):
     class Meta:
