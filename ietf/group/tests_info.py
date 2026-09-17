@@ -409,7 +409,7 @@ class GroupPagesTests(TestCase):
             self.assertContains(r, draft.name)
             self.assertContains(r, group.name)
             self.assertContains(r, group.acronym)
-            self.assertNotContains(r, draft.action_holders.first().plain_name())
+            self.assertNotContains(r, escape(draft.action_holders.first().plain_name()))
             self.assertContains(r, draft2.name)
             self.assertContains(r, draft3.name)
             for ah in draft3.action_holders.all():

@@ -162,11 +162,12 @@ from ietf.meeting.utils import (
 )
 from ietf.meeting.utils import (
     add_event_info_to_session_qs,
-    session_time_for_sorting,
     session_requested_by,
     SaveMaterialsError,
     current_session_status,
     get_meeting_sessions,
+    scheduled_only,
+    sessions_covered_by_apply_to_all,
     SessionNotScheduledError,
     data_for_meetings_overview,
     handle_upload_file,
@@ -3004,22 +3005,26 @@ def meeting_requests(request, num=None):
     )
 
 
-def get_sessions(num, acronym):
-    return sorted(
-        get_meeting_sessions(num, acronym).with_current_status(),
-        key=lambda s: session_time_for_sorting(s, use_meeting_date=False)
-    )
-
-
 def session_details(request, num, acronym):
     meeting = get_meeting(num=num,type_in=None)
-    sessions = get_sessions(num, acronym)
+    sessions = get_meeting_sessions(num, acronym)
 
     if not sessions:
         raise Http404
 
+    scheduled_sessions = scheduled_only(sessions)
+    unscheduled_sessions = [s for s in sessions if s not in scheduled_sessions]
+
     status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
     for session in sessions:
+        # Numbered the same way as the material upload pages, so "Session 2" means the same thing on both
+        session.session_number = (
+            1 + scheduled_sessions.index(session)
+            if session in scheduled_sessions and len(scheduled_sessions) > 1
+            else None
+        )
+        session.cancelled = session.current_status in Session.CANCELED_STATUSES
+        session.status = '' if session in scheduled_sessions else status_names.get(session.current_status, session.current_status)
 
         session.type_counter = Counter()
         ss = session.timeslotassignments.filter(schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None]).order_by('timeslot__time')
@@ -3028,16 +3033,10 @@ def session_details(request, num, acronym):
                 session.times = [ x.timeslot.utc_start_time() for x in ss ]                
             else:
                 session.times = [ x.timeslot.local_start_time() for x in ss ]
-            session.cancelled = session.current_status in Session.CANCELED_STATUSES
-            session.status = ''
         elif meeting.type_id=='interim':
             session.times = [ meeting.date ]
-            session.cancelled = session.current_status in Session.CANCELED_STATUSES
-            session.status = ''
         else:
             session.times = []
-            session.cancelled = session.current_status in Session.CANCELED_STATUSES
-            session.status = status_names.get(session.current_status, session.current_status)
 
         if session.meeting.type_id == 'ietf' and not session.meeting.proceedings_final:
             artifact_types = ['agenda','minutes','narrativeminutes']
@@ -3068,13 +3067,10 @@ def session_details(request, num, acronym):
         session.order_number = session.order_in_meeting()
 
     # we somewhat arbitrarily use the group of the last session we get from
-    # get_sessions() above when checking can_manage_session_materials()
+    # get_meeting_sessions() above when checking can_manage_session_materials()
     group = session.group
     can_manage = can_manage_session_materials(request.user, group, session)
     can_view_request = can_view_interim_request(meeting, request.user)
-
-    scheduled_sessions = [s for s in sessions if s.current_status == 'sched']
-    unscheduled_sessions = [s for s in sessions if s.current_status != 'sched']
 
     # Start with all the pending suggestions for all the group's sessions
     pending_suggestions = SlideSubmission.objects.filter(session__in=sessions, status__slug='pending')
@@ -3124,10 +3120,7 @@ def add_session_drafts(request, session_id, num):
 
     already_linked = [sp.document for sp in session.presentations.filter(document__type_id='draft')]
 
-    session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
+    _, session_number = sessions_covered_by_apply_to_all(session)
 
     if request.method == 'POST':
         form = SessionDraftsForm(request.POST,already_linked=already_linked)
@@ -3172,7 +3165,6 @@ def add_session_recordings(request, session_id, num):
     ):
         raise Http404
 
-    session_number = None
     official_timeslotassignment = session.official_timeslotassignment()
     assertion("official_timeslotassignment is not None")
     initial = {
@@ -3184,10 +3176,7 @@ def add_session_recordings(request, session_id, num):
         )
     }
 
-    # find session number if WG has more than one session at the meeting
-    sessions = get_sessions(session.meeting.number, session.group.acronym)
-    if len(sessions) > 1:
-        session_number = 1 + sessions.index(session)
+    _, session_number = sessions_covered_by_apply_to_all(session)
 
     presentations = session.presentations.filter(
         document__in=session.get_material("recording", only_one=False),
@@ -3304,10 +3293,7 @@ def upload_session_bluesheets(request, session_id, num):
     if session.meeting.type.slug == 'ietf' and not has_role(request.user, 'Secretariat'):
         permission_denied(request, 'Restricted to role Secretariat')
         
-    session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
+    _, session_number = sessions_covered_by_apply_to_all(session)
 
     if request.method == 'POST':
         form = UploadBlueSheetForm(request.POST,request.FILES)
@@ -3352,11 +3338,8 @@ def upload_session_minutes(request, session_id, num):
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
-    session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
+    sessions, session_number = sessions_covered_by_apply_to_all(session)
     show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
 
     minutes_sp = session.presentations.filter(document__type='minutes').first()
     
@@ -3411,11 +3394,8 @@ def upload_session_narrativeminutes(request, session_id, num):
     if session.group.acronym != "iesg":
         raise Http404()
     
-    session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
+    sessions, session_number = sessions_covered_by_apply_to_all(session)
     show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
 
     narrativeminutes_sp = session.presentations.filter(document__type='narrativeminutes').first()
     
@@ -3516,11 +3496,8 @@ def upload_session_agenda(request, session_id, num):
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
-    session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
+    sessions, session_number = sessions_covered_by_apply_to_all(session)
     show_apply_to_all_checkbox = len(sessions) > 1 if session.type.slug == 'regular' else False
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
 
     agenda_sp = session.presentations.filter(document__type='agenda').first()
     
@@ -3637,13 +3614,10 @@ def upload_session_slides(request, session_id, num, name=None):
             "This meeting has already occurred. Contact a chair or the secretariat for further action.",
         )
 
-    session_number = None
-    sessions = get_sessions(session.meeting.number, session.group.acronym)
+    sessions, session_number = sessions_covered_by_apply_to_all(session)
     show_apply_to_all_checkbox = (
         len(sessions) > 1 if session.type_id == "regular" else False
     )
-    if len(sessions) > 1:
-        session_number = 1 + sessions.index(session)
 
     doc = None
     if name:
@@ -5693,11 +5667,8 @@ def approve_proposed_slides(request, slidesubmission_id, num):
     if submission.session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")   
     
-    session_number = None
-    sessions = get_sessions(submission.session.meeting.number,submission.session.group.acronym)
+    sessions, session_number = sessions_covered_by_apply_to_all(submission.session)
     show_apply_to_all_checkbox = len(sessions) > 1 if submission.session.type_id == 'regular' else False
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(submission.session)
     name, _ = os.path.splitext(submission.filename)
     name = name[:name.rfind('-ss')]
     existing_doc = Document.objects.filter(name=name).first()
@@ -5840,11 +5811,7 @@ def notify_meetecho_of_all_slides(request, num, acronym):
             content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
             permitted_methods=("POST",),
         )
-    scheduled_sessions = [
-        session
-        for session in get_sessions(meeting.number, acronym)
-        if session.current_status == "sched"
-    ]
+    scheduled_sessions = scheduled_only(get_meeting_sessions(meeting.number, acronym))
     sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
     updated = []
     for session in scheduled_sessions:

@@ -197,12 +197,7 @@ class ReviewTests(TestCase):
         r = self.client.get(url)
         self.assertContains(r, review_req.team.acronym)
         self.assertContains(r, review_req.team.name)
-        try:
-            # FIXME-LARS
-            self.assertContains(r, escape(author.name))
-        except:
-            print(r.content)
-            self.assertContains(r, author.name)
+        self.assertContains(r, escape(author.name))
 
         url = urlreverse('ietf.doc.views_review.review_request_forced_login', kwargs={ "name": doc.name, "request_id": review_req.pk })
         r = self.client.get(url)

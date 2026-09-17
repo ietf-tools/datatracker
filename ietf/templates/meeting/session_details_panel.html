@@ -14,7 +14,7 @@
                 </div>
             {% endif %}
             <h3 class="" id="session_{{ session.pk }}">
-                {% if sessions|length > 1 %}Session {{ forloop.counter }} :{% endif %}
+                {% if session.session_number %}Session {{ session.session_number }} :{% endif %}
                 {% for time in session.times %}
                     {% if not forloop.first %},{% endif %}
                     <span class="session-time date me-3" data-start-utc="{{ timeslot.time|utc|date:'Y-m-d H:i' }}" data-end-utc="{{ timeslot.end_time|utc|date:'Y-m-d H:i' }}"></span>

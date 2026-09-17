@@ -11,6 +11,15 @@ from .serializers_rpc import EditableRfcSerializer
 
 
 class EditableRfcSerializerTests(TestCase):
+    def test_published_requires_an_offset(self):
+        """published is an AwareDateTimeField, so a naive value is refused"""
+        serializer = EditableRfcSerializer(data={"published": "2025-06-01T00:00:00"})
+        self.assertFalse(serializer.is_valid())
+        self.assertEqual(
+            [str(e) for e in serializer.errors["published"]],
+            ["Datetime must include a UTC offset."],
+        )
+
     def test_create(self):
         serializer = EditableRfcSerializer(
             data={
