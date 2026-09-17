@@ -22,15 +22,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // A session with no slides renders an empty tbody, which has no height and so cannot
         // be dropped on. Give such a tbody a placeholder row to serve as the drop target.
-        function make_placeholder () {
+        function make_placeholder (tbody) {
             const row = document.createElement('tr')
             row.classList.add('slides-drop-placeholder')
             const cell = document.createElement('td')
             cell.colSpan = 2
             cell.classList.add('text-body-secondary', 'fst-italic')
-            cell.textContent = 'No slides. Drag a slide deck here to add it to this session.'
+            cell.textContent = is_frozen(tbody) ? 'No slides.' : 'No slides. Drag a slide deck here to add it to this session.'
             row.appendChild(cell)
             return row
+        }
+
+        // A cancelled or rescheduled session will not happen: decks may be dragged out of it, never into it
+        function is_frozen (tbody) {
+            return tbody.getAttribute('data-frozen') === 'true'
         }
 
         function update_placeholder (tbody) {
@@ -38,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tbody.querySelector(':scope > .draggable')) {
                 if (placeholder) placeholder.remove()
             } else if (!placeholder) {
-                tbody.appendChild(make_placeholder())
+                tbody.appendChild(make_placeholder(tbody))
             }
         }
 
@@ -62,7 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function onEnd (event) {
-            if (event.to == event.from) {
+            // A drop that was refused snaps the row back where it was; nothing to tell the server
+            if (event.to == event.from && !is_frozen(event.from) && event.oldDraggableIndex !== event.newDraggableIndex) {
                 $.post(event.from.getAttribute('data-reorder-in-session'), {
                     'oldIndex': event.oldDraggableIndex + 1,
                     'newIndex': event.newDraggableIndex + 1
@@ -75,7 +81,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         for (const elt of document.querySelectorAll('.slides tbody')) {
             update_placeholder(elt)
-            sortables.push(Sortable.create(elt, options))
+            const frozen = is_frozen(elt)
+            sortables.push(Sortable.create(elt, {
+                ...options,
+                group: { name: 'slides', pull: true, put: !frozen },
+                sort: !frozen,
+            }))
         }
     }
 })
