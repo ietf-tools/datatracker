@@ -19,10 +19,18 @@ class AppApiTokenTests(TestCase):
             hashed, AppApiToken.hash("a-token"), "hash changed on subsequent call"
         )
         self.assertNotEqual(hashed, AppApiToken.hash("another-token"), "hash collides")
-        with override_settings(APP_API_TOKEN_SALT_BYTES=b"a-different-salt"):
+        with override_settings(APP_API_TOKEN_PEPPER_BYTES=b"a-different-pepper"):
             self.assertNotEqual(
-                hashed, AppApiToken.hash("a-token"), "hash does not depend on salt"
+                hashed, AppApiToken.hash("a-token"), "hash does not depend on pepper"
             )
+
+    def test_hash_requires_configured_pepper(self):
+        with override_settings(APP_API_TOKEN_PEPPER_BYTES=None):
+            with self.assertRaises(RuntimeError):
+                AppApiToken.hash("a-token")
+        with override_settings(APP_API_TOKEN_PEPPER_BYTES="not-bytes"):
+            with self.assertRaises(RuntimeError):
+                AppApiToken.hash("a-token")
 
     def test_set_token(self):
         raw_token = "a" * MIN_TOKEN_LENGTH
