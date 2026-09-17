@@ -211,41 +211,5 @@
                 Milestones
             </a>
         </li>
-        <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
-               href="{% url 'ietf.sync.views.discrepancies' %}">
-                Sync discrepancies
-            </a>
-        </li>
-    {% endif %}
-    {% if user|has_role:"IANA" %}
-        {% if flavor == "top" %}
-            <li><hr class="dropdown-divider">
-            </li>
-        {% endif %}
-        <li {% if flavor == "top" %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>
-            IANA
-        </li>
-        <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
-               href="{% url 'ietf.sync.views.discrepancies' %}">
-                Sync discrepancies
-            </a>
-        </li>
-    {% endif %}
-    {% if user|has_role:"RFC Editor" %}
-        {% if flavor == "top" %}
-            <li><hr class="dropdown-divider">
-            </li>
-        {% endif %}
-        <li {% if flavor == "top" %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>
-            RFC Editor
-        </li>
-        <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
-               href="{% url 'ietf.sync.views.discrepancies' %}">
-                Sync discrepancies
-            </a>
-        </li>
     {% endif %}
     {% if flavor == "top" %}</ul></li>{% endif %}
