@@ -171,6 +171,8 @@ from ietf.meeting.utils import (
     material_upload_choices,
     group_wide_material_name,
     link_material_to_sessions,
+    material_document_name,
+    reclaim_material_name,
     SessionNotScheduledError,
     data_for_meetings_overview,
     handle_upload_file,
@@ -3515,22 +3517,11 @@ def upload_session_agenda(request, session_id, num):
                         "Cannot receive uploads for an unscheduled session.  Please check the session ID.",
                         content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
                     )
-                if session.meeting.type_id=='ietf':
-                    name = 'agenda-%s-%s' % (session.meeting.number, 
-                                                 session.group.acronym) 
-                    title = 'Agenda IETF%s: %s' % (session.meeting.number, 
-                                                         session.group.acronym) 
+                name, title = material_document_name(session, 'agenda', group_wide=apply_to_all)
+                doc = Document.objects.filter(name=name).first()
+                if doc is not None:
                     if not apply_to_all:
-                        name += '-%s' % (session.docname_token(),)
-                        if sess_time:
-                            title += ': %s' % (sess_time.strftime("%a %H:%M"),)
-                else:
-                    name = 'agenda-%s-%s' % (session.meeting.number, session.docname_token())
-                    title = 'Agenda %s' % (session.meeting.number, )
-                    if sess_time:
-                        title += ': %s' % (sess_time.strftime("%a %H:%M"),)
-                if Document.objects.filter(name=name).exists():
-                    doc = Document.objects.get(name=name)
+                        reclaim_material_name(doc, session, request.user.person, keep=also_sessions)
                     doc.rev = '%02d' % (int(doc.rev)+1)
                 else:
                     doc = Document.objects.create(

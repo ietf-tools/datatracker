@@ -30,7 +30,7 @@ from django.utils.encoding import smart_str
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.doc.storage_utils import store_bytes, store_str, AlreadyExistsError
+from ietf.doc.storage_utils import store_bytes, store_str, retrieve_bytes, AlreadyExistsError
 from ietf.meeting.models import (
     Session,
     SchedulingEvent,
@@ -824,6 +824,76 @@ def link_material_to_sessions(doc, session, also_sessions=()):
             target.presentations.create(document=doc, rev=doc.rev)
 
 
+def material_document_name(session, doc_type, group_wide):
+    """(name, title) for a new agenda or minutes document uploaded to session
+
+    Only an IETF meeting has a group-wide name; interim material is always named for its session.
+    Agendas carry the session's docname token and minutes its start time, as they always have. A
+    session with no timeslot gets the token for minutes too, so a copy can always be named.
+    """
+    typename = DocTypeName.objects.get(slug=doc_type)
+    meeting = session.meeting
+    ota = session.official_timeslotassignment()
+    sess_time = ota.timeslot.time if ota else None
+    if doc_type in ("minutes", "narrativeminutes") and sess_time:
+        suffix = sess_time.strftime("%Y%m%d%H%M")
+    else:
+        suffix = session.docname_token()
+    when = f": {sess_time.strftime('%a %H:%M')}" if sess_time else ""
+    if meeting.type_id == "ietf":
+        name = f"{typename.prefix}-{meeting.number}-{session.group.acronym}"
+        title = f"{typename.name} IETF{meeting.number}: {session.group.acronym}"
+        if not group_wide:
+            name += f"-{suffix}"
+            title += when
+    else:
+        name = f"{typename.prefix}-{meeting.number}-{suffix}"
+        title = f"{typename.name} {meeting.number}{when}"
+    return name, title
+
+
+def reclaim_material_name(doc, session, by, keep=()):
+    """Give every other session linked to doc its own copy, so session can reuse doc's name for new content
+
+    doc carries session's own name, so it belongs to session. Each other session linked to it, except
+    those in keep, gets doc's current content as a new revision of the document named for that session,
+    created at 00 if need be, and is relinked to the copy. Cancelled and rescheduled sessions are
+    included so that what they show does not change.
+    """
+    meeting = session.meeting
+    if not doc.uploaded_filename:
+        return  # pre-revision-era material; nothing to copy
+    ext = Path(doc.uploaded_filename).suffix
+    source = Path(meeting.get_materials_path()) / doc.type_id / doc.uploaded_filename
+    content = source.read_bytes() if source.exists() else retrieve_bytes(doc.type_id, doc.uploaded_filename)
+    others = Session.objects.filter(presentations__document=doc, meeting=meeting).exclude(pk=session.pk)
+    for other in others:
+        if other in keep:
+            continue
+        name, title = material_document_name(other, doc.type_id, group_wide=False)
+        copy = Document.objects.filter(name=name).first()
+        if copy is None:
+            copy = Document.objects.create(name=name, type_id=doc.type_id, title=title, group=doc.group, rev="00")
+        elif copy == doc:
+            continue
+        else:
+            copy.rev = "%02d" % (int(copy.rev) + 1)
+        copy.states.add(State.objects.get(type_id=doc.type_id, slug="active"))
+        copy.uploaded_filename = f"{copy.name}-{copy.rev}{ext}"
+        target_dir = Path(meeting.get_materials_path()) / doc.type_id
+        target_dir.mkdir(parents=True, exist_ok=True)
+        (target_dir / copy.uploaded_filename).write_bytes(content)
+        store_bytes(doc.type_id, copy.uploaded_filename, content)
+        events = [
+            NewRevisionDocEvent.objects.create(doc=copy, by=by, type="new_revision", rev=copy.rev, desc=f"New revision available: {copy.rev}"),
+            DocEvent.objects.create(doc=copy, by=by, type="added_comment", rev=copy.rev,
+                                    desc=f"Copied from {doc.name}-{doc.rev}, which is being revised for its own session"),
+        ]
+        copy.save_with_history(events)
+        resolve_uploaded_material(meeting=meeting, doc=copy)
+        other.presentations.filter(document=doc).update(document=copy, rev=copy.rev)
+
+
 def save_session_minutes_revision(session, file, ext, request, encoding=None, also_sessions=(), replace=False, narrative=False):
     """Creates or updates session minutes records
 
@@ -852,17 +922,11 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, al
         if not sess_time:
             raise SessionNotScheduledError
         apply_to_all = group_wide_material_name(session, also_sessions)
-        if session.meeting.type_id=='ietf':
-            name = f"{document_type.prefix}-{session.meeting.number}-{session.group.acronym}"
-            title = f"{document_type.name} IETF{session.meeting.number}: {session.group.acronym}"
+        name, title = material_document_name(session, document_type.slug, group_wide=apply_to_all)
+        doc = Document.objects.filter(name=name).first()
+        if doc is not None:
             if not apply_to_all:
-                name += '-%s' % (sess_time.strftime("%Y%m%d%H%M"),)
-                title += ': %s' % (sess_time.strftime("%a %H:%M"),)
-        else:
-            name =f"{document_type.prefix}-{session.meeting.number}-{sess_time.strftime('%Y%m%d%H%M')}"
-            title = f"{document_type.name} {session.meeting.number}: {sess_time.strftime('%a %H:%M')}"
-        if Document.objects.filter(name=name).exists():
-            doc = Document.objects.get(name=name)
+                reclaim_material_name(doc, session, request.user.person, keep=also_sessions)
             doc.rev = '%02d' % (int(doc.rev)+1)
         else:
             doc = Document.objects.create(

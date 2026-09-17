@@ -55,7 +55,7 @@ from ietf.meeting.utils import (
     generate_proceedings_content,
     diff_meeting_schedules,
 )
-from ietf.meeting.utils import add_event_info_to_session_qs
+from ietf.meeting.utils import add_event_info_to_session_qs, material_document_name
 from ietf.meeting.utils import create_recording, delete_recording, get_next_sequence, bluesheet_data
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose, generate_agenda_data
@@ -6984,6 +6984,53 @@ class MaterialsTests(TestCase):
             boxes = q('input[name=apply_to_sessions]')
             self.assertEqual([b.attr('value') for b in boxes.items()], [str(first.pk)])
             self.assertIn(own.title, q('label[for=%s]' % boxes.attr('id')).text())
+
+    def test_taking_back_own_agenda_or_minutes_gives_other_sessions_copies(self):
+        """Replaying: share, take Monday's own, spread Monday's own to all, take it back again"""
+        for doctype in ('agenda', 'minutes'):
+            monday, cancelled, wednesday, friday = make_group_sessions(['sched', 'canceled', 'sched', 'sched'])
+            url = self._material_upload_url(doctype, monday)
+            self.client.login(username='secretary', password='secretary+password')
+
+            def post(content, **extra):
+                if doctype == 'agenda':
+                    data = dict(submission_method='enter', content=content)
+                else:
+                    f = BytesIO(content.encode()); f.name = 'minutes.md'
+                    data = dict(submission_method='upload', file=f)
+                data.update(extra)
+                r = self.client.post(url, data)
+                self.assertEqual(r.status_code, 302, r.content[:400])
+
+            def current(session):
+                return session.presentations.get(document__type_id=doctype).document
+
+            post('v1 shared', apply_to_sessions=[wednesday.pk, friday.pk])
+            shared = current(monday)
+            post('v2 monday only', scope='replace')
+            own = current(monday)
+            self.assertNotEqual(own, shared)
+            post('v3 monday agenda for all', apply_to_sessions=[wednesday.pk, friday.pk])
+            self.assertEqual(current(wednesday), own)
+            # a session cancelled after the material was shared still links it
+            SessionPresentationFactory(session=cancelled, document=own, rev=own.rev)
+            post('v4 monday only again', scope='replace')
+
+            own.refresh_from_db()
+            self.assertEqual(current(monday), own)
+            self.assertEqual(own.rev, '02')
+            self.assertEqual(retrieve_bytes(doctype, own.uploaded_filename), b'v4 monday only again')
+            self.assertEqual(list(Session.objects.filter(presentations__document=own)), [monday], 'Monday has its name back to itself')
+            for other in (wednesday, friday, cancelled):
+                copy = current(other)
+                self.assertNotIn(copy, (own, shared), other)
+                self.assertEqual(copy.name, material_document_name(other, doctype, group_wide=False)[0])
+                self.assertEqual(copy.rev, '00')
+                self.assertEqual(other.presentations.get(document=copy).rev, '00')
+                self.assertEqual(retrieve_bytes(doctype, copy.uploaded_filename), b'v3 monday agenda for all', other)
+                self.assertTrue((Path(settings.AGENDA_PATH) / other.meeting.number / doctype / copy.uploaded_filename).exists())
+                self.assertTrue(copy.docevent_set.filter(type='new_revision', rev='00').exists())
+                self.assertIn(own.name, copy.docevent_set.get(type='added_comment').desc)
 
     def test_material_pages_number_scheduled_sessions_only(self):
         first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
