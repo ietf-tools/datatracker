@@ -754,7 +754,7 @@ def apply_to_choices(session, doc_type, exclude=()):
     so applying them never unlinks anything and current_doc is always None for them.
     """
     scheduled, _ = sessions_covered_by_apply_to_all(session)
-    if len(scheduled) < 2:
+    if len(scheduled) < 2 or session.type_id != "regular":
         return [], False
     docs_by_session = [
         frozenset(
@@ -872,7 +872,8 @@ def reclaim_material_name(doc, session, by, keep=(), _in_progress=frozenset()):
     those in keep, gets doc's current content as a new revision of the document named for that session,
     created at 00 if need be, and is relinked to the copy. Cancelled and rescheduled sessions are
     included so that what they show does not change. Returns (warnings, relinked): warnings to show
-    the uploader, and the presentations now pointing at copies, for whoever must announce the change.
+    the uploader, and (presentation, document it was moved off) for each session now pointing at a
+    copy, for whoever must announce the change.
 
     The copy's own document may in turn be shared with further sessions, so it is reclaimed for its
     owner first, recursively. A document already being reclaimed further up is left alone: that reclaim
@@ -885,7 +886,7 @@ def reclaim_material_name(doc, session, by, keep=(), _in_progress=frozenset()):
     kind = doc.type.name.lower()
     others = [o for o in sessions_linked_to(doc, meeting).exclude(pk=session.pk) if o not in keep]
     content = material_content(doc, meeting)
-    if content is None:
+    if not content:  # the blob store hands back empty bytes when it is disabled
         # Leave them linked rather than lose the record of what they showed; the uploader is told.
         return [
             f"{material_session_label(other)} shared this {kind}, but its current file could not be found, "
@@ -898,6 +899,8 @@ def reclaim_material_name(doc, session, by, keep=(), _in_progress=frozenset()):
         copy = Document.objects.filter(name=name).first()
         if copy is None:
             copy = Document.objects.create(name=name, type_id=doc.type_id, title=title, group=doc.group, rev="00")
+            if doc.type_id == "slides":
+                copy.set_state(State.objects.get(type_id="reuse_policy", slug="single"))
         elif copy.pk in in_progress:
             continue
         else:
@@ -905,9 +908,7 @@ def reclaim_material_name(doc, session, by, keep=(), _in_progress=frozenset()):
             warnings += more_warnings
             relinked += more_relinked
             copy.rev = "%02d" % (int(copy.rev) + 1)
-        copy.states.add(State.objects.get(type_id=doc.type_id, slug="active"))
-        if doc.type_id == "slides":
-            copy.states.add(State.objects.get(type_id="reuse_policy", slug="single"))
+        copy.set_state(State.objects.get(type_id=doc.type_id, slug="active"))
         copy.uploaded_filename = f"{copy.name}-{copy.rev}{ext}"
         target_dir = Path(meeting.get_materials_path()) / doc.type_id
         target_dir.mkdir(parents=True, exist_ok=True)
@@ -920,14 +921,13 @@ def reclaim_material_name(doc, session, by, keep=(), _in_progress=frozenset()):
         ]
         copy.save_with_history(events)
         resolve_uploaded_material(meeting=meeting, doc=copy)
-        already = other.presentations.filter(document=copy).first()
-        if already is None:
+        # Anything still presenting the copy target, such as a session skipped above, follows its revision
+        SessionPresentation.objects.filter(document=copy).update(rev=copy.rev)
+        if other.presentations.filter(document=copy).exists():
+            other.presentations.filter(document=doc).delete()  # it held both; one link to the copy is enough
+        else:
             other.presentations.filter(document=doc).update(document=copy, rev=copy.rev)
-        else:  # a session may hold both decks; one link to the copy is enough
-            already.rev = copy.rev
-            already.save()
-            other.presentations.filter(document=doc).delete()
-        relinked.append(other.presentations.get(document=copy))
+        relinked.append((other.presentations.get(document=copy), doc))
     return warnings, relinked
 
 
@@ -972,10 +972,11 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, al
         sess_time = ota and ota.timeslot.time
         if not sess_time:
             raise SessionNotScheduledError
-        apply_to_all = group_wide_material_name(session, also_sessions)
+        apply_to_all = group_wide_material_name(session, also_sessions) and not replace
         name, title = material_document_name(session, document_type.slug, group_wide=apply_to_all)
         doc = Document.objects.filter(name=name).first()
-        reclaim = doc is not None and not apply_to_all
+        # A document carrying this session's own name belongs to it, whatever the reason the name came up
+        reclaim = doc is not None and name == material_document_name(session, document_type.slug, group_wide=False)[0]
     rev = '%02d' % (int(doc.rev)+1) if doc is not None else '00'
     filename = f'{name}-{rev}{ext}'
 
@@ -992,9 +993,9 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, al
     warnings, _ = reclaim_material_name(doc, session, request.user.person, keep=also_sessions) if reclaim else ([], [])
     if doc is None:
         doc = Document.objects.create(name=name, type=document_type, title=title, group=session.group, rev=rev)
+        doc.set_state(State.objects.get(type_id=document_type.slug,slug='active'))
     else:
         doc.rev = rev
-    doc.states.add(State.objects.get(type_id=document_type.slug,slug='active'))
     doc.uploaded_filename = filename
     e = NewRevisionDocEvent.objects.create(
         doc=doc,

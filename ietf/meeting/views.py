@@ -3515,7 +3515,7 @@ def upload_session_agenda(request, session_id, num):
                 doc = agenda_sp.document
                 name, title = doc.name, doc.title
             else:
-                apply_to_all = group_wide_material_name(session, also_sessions)
+                apply_to_all = group_wide_material_name(session, also_sessions) and not form.replace_shared()
                 ota = session.official_timeslotassignment()
                 sess_time = ota and ota.timeslot.time
                 if not sess_time:
@@ -3525,7 +3525,8 @@ def upload_session_agenda(request, session_id, num):
                     )
                 name, title = material_document_name(session, 'agenda', group_wide=apply_to_all)
                 doc = Document.objects.filter(name=name).first()
-                reclaim = doc is not None and not apply_to_all
+                # A document carrying this session's own name belongs to it, whatever the reason the name came up
+                reclaim = doc is not None and name == material_document_name(session, 'agenda', group_wide=False)[0]
             rev = '%02d' % (int(doc.rev)+1) if doc is not None else '00'
             filename = '%s-%s%s' % (name, rev, ext)
             try:
@@ -3545,9 +3546,9 @@ def upload_session_agenda(request, session_id, num):
                         messages.warning(request, warning)
                 if doc is None:
                     doc = Document.objects.create(name=name, type_id='agenda', title=title, group=session.group, rev=rev)
+                    doc.set_state(State.objects.get(type_id='agenda',slug='active'))
                 else:
                     doc.rev = rev
-                doc.states.add(State.objects.get(type_id='agenda',slug='active'))
                 doc.uploaded_filename = filename
                 e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
                 doc.save_with_history([e])
@@ -3593,7 +3594,9 @@ def upload_session_slides(request, session_id, num, name=None):
             "This meeting has already occurred. Contact a chair or the secretariat for further action.",
         )
 
-    scheduled_sessions, session_number = sessions_covered_by_apply_to_all(session)
+    _, session_number = sessions_covered_by_apply_to_all(session)
+    # Meetecho runs only the sessions that will happen, whoever uploads
+    scheduled_sessions = scheduled_only(get_meeting_sessions(session.meeting.number, session.group.acronym))
 
     slides_sp = None
     if name:
@@ -3664,7 +3667,8 @@ def upload_session_slides(request, session_id, num, name=None):
                 name, _ = material_document_name(session, "slides", group_wide=apply_to_all, title=title)
                 # A new deck reuses an existing document of that name as a revision
                 doc = Document.objects.filter(name=name).first()
-                reclaim = doc is not None and not apply_to_all
+                # A document carrying this session's own name belongs to it, whatever the reason the name came up
+                reclaim = doc is not None and name == material_document_name(session, "slides", group_wide=False, title=title)[0]
             rev = "%02d" % (int(doc.rev) + 1) if doc is not None else "00"
             filename = "%s-%s%s" % (doc.name if doc is not None else name, rev, ext)
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
@@ -3693,11 +3697,11 @@ def upload_session_slides(request, session_id, num, name=None):
                         group=session.group,
                         rev=rev,
                     )
+                    doc.set_state(State.objects.get(type_id="slides", slug="active"))
+                    doc.set_state(State.objects.get(type_id="reuse_policy", slug="single"))
                 else:
                     doc.rev = rev
                     doc.title = title
-                doc.states.add(State.objects.get(type_id="slides", slug="active"))
-                doc.states.add(State.objects.get(type_id="reuse_policy", slug="single"))
                 doc.uploaded_filename = filename
                 e = NewRevisionDocEvent.objects.create(
                     doc=doc,
@@ -3738,11 +3742,11 @@ def upload_session_slides(request, session_id, num, name=None):
 
                 if hasattr(settings, "MEETECHO_API_CONFIG"):
                     sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
-                    for sp in relinked:
+                    for sp, moved_off in relinked:
                         if sp.session not in scheduled_sessions:
                             continue
                         try:  # the session's deck is now its own copy of what it had
-                            sm.delete(session=sp.session, slides=doc)
+                            sm.delete(session=sp.session, slides=moved_off)
                             sm.add(session=sp.session, slides=sp.document, order=sp.order)
                         except MeetechoAPIError as err:
                             log(f"Error in SlidesManager while replacing a deck with its copy: {err}")

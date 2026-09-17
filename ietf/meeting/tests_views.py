@@ -39,8 +39,8 @@ from django.utils.text import slugify
 
 import debug           # pyflakes:ignore
 
-from ietf.doc.models import Document, NewRevisionDocEvent
-from ietf.doc.storage_utils import exists_in_storage, remove_from_storage, retrieve_bytes, retrieve_str
+from ietf.doc.models import Document, NewRevisionDocEvent, State
+from ietf.doc.storage_utils import exists_in_storage, remove_from_storage, retrieve_bytes, retrieve_str, store_bytes
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.group.utils import can_manage_group
 from ietf.person.models import Person
@@ -6925,7 +6925,7 @@ class MaterialsTests(TestCase):
             doc = last.presentations.get(document__type_id=doctype).document
             self.assertEqual(first.presentations.get(document__type_id=doctype).document, doc, 'The chosen session is relinked')
             self.assertFalse(first.presentations.filter(document=own).exists(), 'and its own material is unlinked')
-            self.assertNotIn(last.docname_token(), doc.name, 'Applied to every scheduled session, so named for the group')
+            self.assertEqual(doc.name, material_document_name(last, doctype, group_wide=True)[0], 'Applied to every scheduled session, so named for the group')
 
     def test_shared_agenda_or_minutes_can_be_revised_or_replaced(self):
         for doctype in ('minutes', 'agenda'):
@@ -7167,6 +7167,81 @@ class MaterialsTests(TestCase):
         self.assertEqual(c_doc.name, material_document_name(c, 'agenda', group_wide=False)[0])
         self.assertEqual(c_doc.rev, '00')
         self.assertEqual(retrieve_bytes('agenda', c_doc.uploaded_filename), b'v2 b shared with c', 'C keeps showing what it showed')
+
+    def test_replace_with_the_only_other_partner_cancelled_still_unlinks(self):
+        """A picks 'new agenda for this session'; B, cancelled, must keep the old shared one untouched"""
+        for doctype in ('agenda', 'minutes'):
+            a, b = make_group_sessions(['sched', 'sched'])
+            self.client.login(username='secretary', password='secretary+password')
+            url = self._material_upload_url(doctype, a)
+            def post(content, **extra):
+                f = BytesIO(content.encode()); f.name = 'm.txt'
+                r = self.client.post(url, dict(submission_method='upload', file=f, **extra))
+                self.assertEqual(r.status_code, 302, r.content[:300])
+            def current(session):
+                return session.presentations.get(document__type_id=doctype).document
+            post('v1 shared', apply_to_sessions=[b.pk])
+            shared = current(a)
+            self.assertEqual(shared.name, material_document_name(a, doctype, group_wide=True)[0])
+            SchedulingEvent.objects.create(session=b, status_id='canceled', by=PersonFactory())
+            r = self.client.get(url)
+            self.assertTrue(PyQuery(r.content)('input[name=scope]'), 'still shared, so the choice is offered')
+            post('v2 a alone', scope='replace')
+            own = current(a)
+            self.assertNotEqual(own, shared)
+            self.assertEqual(own.name, material_document_name(a, doctype, group_wide=False)[0])
+            shared.refresh_from_db()
+            self.assertEqual((current(b), shared.rev), (shared, '00'), 'B keeps what it had, at the revision it had')
+
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_meetecho_follows_each_session_not_the_uploader(self, mock_slides_manager_cls):
+        first, cancelled = make_group_sessions(['sched', 'canceled'])
+        deck = SessionPresentationFactory(session=cancelled, document__type_id='slides', document__rev='00').document
+        SessionPresentationFactory(session=first, document=deck)
+        self.client.login(username='secretary', password='secretary+password')
+        f = BytesIO(b'new'); f.name = 'deck.txt'
+        r = self.client.post(self._slides_upload_url(cancelled, deck.name), dict(file=f, title=deck.title, approved=True))
+        self.assertEqual(r.status_code, 302)
+        sm = mock_slides_manager_cls.return_value
+        self.assertEqual(sm.revise.call_args_list, [call(session=first, slides=deck)], 'the scheduled session hears about it, the cancelled uploader does not')
+
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_recursive_reclaim_tells_meetecho_which_deck_each_session_lost(self, mock_slides_manager_cls):
+        a, b, c = make_group_sessions(['sched', 'sched', 'sched'])
+        title = 'the talk'
+        def deck_for(session, content):
+            name, _ = material_document_name(session, 'slides', group_wide=False, title=title)
+            doc = DocumentFactory(type_id='slides', name=name, title=title, rev='00', uploaded_filename=f'{name}-00.txt', group=session.group)
+            store_bytes('slides', doc.uploaded_filename, content)
+            return doc
+        deck_a = deck_for(a, b'a content')
+        deck_b = deck_for(b, b'b content')
+        for session, doc, order in ((a, deck_a, 1), (b, deck_a, 1), (b, deck_b, 2), (c, deck_b, 1)):
+            SessionPresentationFactory(session=session, document=doc, rev='00', order=order)
+        self.client.login(username='secretary', password='secretary+password')
+        f = BytesIO(b'a new content'); f.name = 'deck.txt'
+        r = self.client.post(self._slides_upload_url(a), dict(file=f, title=title, approved=True))
+        self.assertEqual(r.status_code, 302)
+        copy_c = c.presentations.get().document
+        self.assertNotIn(copy_c, (deck_a, deck_b))
+        self.assertEqual(retrieve_bytes('slides', copy_c.uploaded_filename), b'b content', 'C keeps what it showed')
+        self.assertEqual([sp.document for sp in b.presentations.all()], [deck_b], 'B is left with one deck')
+        sm = mock_slides_manager_cls.return_value
+        self.assertCountEqual(sm.delete.call_args_list, [call(session=c, slides=deck_b), call(session=b, slides=deck_a)])
+        self.assertCountEqual(sm.add.call_args_list, [call(session=c, slides=copy_c, order=1), call(session=b, slides=deck_b, order=2)])
+        self.assertEqual(sm.revise.call_args_list, [call(session=a, slides=deck_a)])
+
+    def test_revising_a_deck_keeps_a_single_reuse_policy(self):
+        first, = make_group_sessions(['sched'])
+        deck = SessionPresentationFactory(session=first, document__type_id='slides', document__rev='00').document
+        deck.set_state(State.objects.get(type_id='reuse_policy', slug='multiple'))
+        self.client.login(username='secretary', password='secretary+password')
+        f = BytesIO(b'new'); f.name = 'deck.txt'
+        r = self.client.post(self._slides_upload_url(first, deck.name), dict(file=f, title=deck.title, approved=True))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(list(deck.states.filter(type_id='reuse_policy').values_list('slug', flat=True)), ['multiple'])
 
     def test_material_pages_number_scheduled_sessions_only(self):
         first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
@@ -7452,11 +7527,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(first.presentations.count(), 0)
         self.assertEqual(last.presentations.count(), 0)
         self.assertEqual(cancelled.presentations.count(), 1)
-        doc = cancelled.presentations.first().document
-        self.assertEqual(
-            mock_slides_manager_cls.return_value.add.call_args_list,
-            [call(session=cancelled, slides=doc, order=1)],
-        )
+        self.assertFalse(mock_slides_manager_cls.return_value.add.called, 'Meetecho does not run a cancelled session')
 
     def _slides_upload_url(self, session, name=None):
         kwargs = {'num': session.meeting.number, 'session_id': session.id}

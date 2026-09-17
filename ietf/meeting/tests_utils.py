@@ -10,8 +10,10 @@ from json import JSONDecodeError
 from unittest.mock import patch, Mock
 
 from django.http import HttpResponse, JsonResponse
+from django.test import override_settings
 from ietf.meeting.factories import MeetingFactory, RegistrationFactory, RegistrationTicketFactory, SessionPresentationFactory, SessionFactory
-from ietf.doc.storage_utils import store_bytes, retrieve_bytes
+from ietf.doc.models import Document
+from ietf.doc.storage_utils import store_bytes, retrieve_bytes, remove_from_storage
 from ietf.meeting.models import Registration
 from ietf.meeting.tests_views import make_group_sessions
 from ietf.meeting.utils import (
@@ -403,15 +405,36 @@ class ReclaimMaterialNameTests(TestCase):
             SessionPresentationFactory(session=session, document=doc, rev='00')
         warnings, relinked = reclaim_material_name(a_doc, a, PersonFactory())
         self.assertEqual(warnings, [])
-        self.assertEqual([sp.session for sp in relinked], [b])
         b_doc.refresh_from_db()
         self.assertEqual(b_doc.rev, '01', "B's own document took a copy of A's content")
+        self.assertEqual(a.presentations.get(document=b_doc).rev, '01', "A's stray link follows the revision it now shows")
         self.assertEqual(retrieve_bytes('agenda', b_doc.uploaded_filename), b'a content')
         self.assertFalse(b.presentations.filter(document=a_doc).exists())
         self.assertEqual(b.presentations.filter(document=b_doc).count(), 1)
         a_doc.refresh_from_db()
         self.assertEqual(a_doc.rev, '00', "A's document is left for the caller to revise")
         self.assertTrue(a.presentations.filter(document=b_doc).exists(), "A's stray link is left for the caller's relink to displace")
+        self.assertEqual([(sp.session, moved_off) for sp, moved_off in relinked], [(b, a_doc)])
+
+    def test_missing_source_with_blob_store_disabled_warns_instead_of_copying(self):
+        a, b = make_group_sessions(['sched', 'sched'])
+        a_doc = self._own_doc(a, b'a content')
+        for session in (a, b):
+            SessionPresentationFactory(session=session, document=a_doc, rev='00')
+        remove_from_storage('agenda', a_doc.uploaded_filename)
+        with override_settings(ENABLE_BLOBSTORAGE=False):
+            warnings, relinked = reclaim_material_name(a_doc, a, PersonFactory())
+        self.assertEqual(len(warnings), 1)
+        self.assertIn('could not be found', warnings[0])
+        self.assertEqual(relinked, [])
+        self.assertEqual(b.presentations.get().document, a_doc)
+        self.assertFalse(Document.objects.filter(name=material_document_name(b, 'agenda', group_wide=False)[0]).exists())
+
+    def test_non_regular_sessions_get_no_choices(self):
+        first, last = make_group_sessions(['sched', 'sched'])
+        first.type_id = 'other'
+        first.save()
+        self.assertEqual(apply_to_choices(first, 'agenda'), ([], False))
 
 
 class MaterialDocumentNameTests(TestCase):
