@@ -2,6 +2,7 @@
 
 from unittest import mock
 
+from django.core import signing
 from django.core.cache.backends.base import BaseCache
 from django.test import RequestFactory
 from django.test.utils import override_settings
@@ -113,6 +114,9 @@ class CachedHashedTokenStoreTests(TestCase):
         self.builder = mocked_model.objects.as_hashed_token_dict
         self.builder.return_value = self.built_store
 
+        # cache key is hardcoded in cached_hashed_token_store() and doubles as the
+        # signing salt, so tests need it to construct/verify signed fixtures
+        self.cache_key = "ietf.api.ietf_utils.cached_hashed_token_store"
         self.cached_store = {"ietf.api.cached": ["a-different-hashed-token"]}
 
     def test_cold_cache_builds_and_stores(self):
@@ -127,13 +131,15 @@ class CachedHashedTokenStoreTests(TestCase):
             "the store was cached under a different key than it is read from",
         )
         self.assertEqual(
-            self.cache.set.call_args.args[1],
+            signing.loads(self.cache.set.call_args.args[1], salt=self.cache_key),
             self.built_store,
-            "the store was not cached",
+            "the store was not signed and cached",
         )
 
     def test_warm_cache_returns_cached_value(self):
-        self.cache.get.return_value = self.cached_store
+        self.cache.get.return_value = signing.dumps(
+            self.cached_store, salt=self.cache_key
+        )
         self.assertEqual(
             cached_hashed_token_store(),
             self.cached_store,
@@ -144,7 +150,9 @@ class CachedHashedTokenStoreTests(TestCase):
         self.assertEqual(self.cache.set.call_count, 0, "a warm cache was written again")
 
     def test_force_update_rebuilds(self):
-        self.cache.get.return_value = self.cached_store
+        self.cache.get.return_value = signing.dumps(
+            self.cached_store, salt=self.cache_key
+        )
         self.assertEqual(
             cached_hashed_token_store(force_update=True),
             self.built_store,
@@ -153,10 +161,55 @@ class CachedHashedTokenStoreTests(TestCase):
         self.assertEqual(self.cache.get.call_count, 0, "the cache was consulted anyway")
         self.assertEqual(self.builder.call_count, 1, "the store was not rebuilt")
         self.assertEqual(
-            self.cache.set.call_args.args[1],
+            signing.loads(self.cache.set.call_args.args[1], salt=self.cache_key),
             self.built_store,
-            "the rebuilt store was not cached",
+            "the rebuilt store was not signed and cached",
         )
+
+    @mock.patch("ietf.api.ietf_utils.log")
+    def test_tampered_cache_value_rebuilds_and_logs(self, mock_log):
+        signed = signing.dumps(self.cached_store, salt=self.cache_key)
+        # flip the last character so the signature no longer matches the payload
+        corrupted = signed[:-1] + ("0" if signed[-1] != "0" else "1")
+        self.cache.get.return_value = corrupted
+
+        self.assertEqual(
+            cached_hashed_token_store(),
+            self.built_store,
+            "a tampered cache value was trusted instead of triggering a rebuild",
+        )
+        self.assertEqual(self.builder.call_count, 1, "the store was not rebuilt")
+        self.assertEqual(
+            self.cache.set.call_count, 1, "the rebuilt store was not recached"
+        )
+        self.assertEqual(
+            signing.loads(self.cache.set.call_args.args[1], salt=self.cache_key),
+            self.built_store,
+            "the recached value was not properly signed",
+        )
+        self.assertEqual(mock_log.call_count, 1)
+
+    @mock.patch("ietf.api.ietf_utils.log")
+    def test_non_string_cache_value_rebuilds_and_logs(self, mock_log):
+        # e.g., a value left over from before the cache started storing signed
+        # strings, or any other unexpected type
+        self.cache.get.return_value = self.cached_store
+
+        self.assertEqual(
+            cached_hashed_token_store(),
+            self.built_store,
+            "a non-string cache value was trusted instead of triggering a rebuild",
+        )
+        self.assertEqual(self.builder.call_count, 1, "the store was not rebuilt")
+        self.assertEqual(
+            self.cache.set.call_count, 1, "the rebuilt store was not recached"
+        )
+        self.assertEqual(
+            signing.loads(self.cache.set.call_args.args[1], salt=self.cache_key),
+            self.built_store,
+            "the recached value was not properly signed",
+        )
+        self.assertEqual(mock_log.call_count, 1)
 
 
 class IsValidTokenTests(TestCase):
