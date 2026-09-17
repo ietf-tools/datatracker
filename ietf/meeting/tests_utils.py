@@ -21,6 +21,7 @@ from ietf.meeting.utils import (
     get_activity_stats,
     apply_to_choices,
     material_session_label,
+    group_wide_material_name,
 )
 from ietf.nomcom.models import Volunteer
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
@@ -359,3 +360,24 @@ class ApplyToChoicesTests(TestCase):
         self.assertEqual(material_session_label(first), material_session_label(first, 1))
         self.assertIn('cancelled', material_session_label(cancelled))
         self.assertNotIn('Session', material_session_label(cancelled))
+
+
+class GroupWideMaterialNameTests(TestCase):
+    def test_nothing_scheduled_yet_keeps_the_group_name(self):
+        first, second = make_group_sessions(['schedw', 'scheda'])
+        self.assertTrue(group_wide_material_name(first, []))
+        self.assertTrue(group_wide_material_name(second, []))
+
+    def test_once_anything_is_scheduled_only_a_full_cover_by_a_scheduled_session_is_group_wide(self):
+        first, cancelled, waiting, last = make_group_sessions(['sched', 'canceled', 'schedw', 'sched'])
+        self.assertTrue(group_wide_material_name(first, [last]))
+        self.assertFalse(group_wide_material_name(first, []))
+        self.assertFalse(group_wide_material_name(cancelled, []), 'A cancelled session may not revise the shared material')
+        self.assertFalse(group_wide_material_name(waiting, [first, last]), 'nor may one still waiting to be scheduled')
+        self.assertTrue(group_wide_material_name(last, [first]))
+
+    def test_non_regular_sessions_are_never_group_wide(self):
+        first, = make_group_sessions(['sched'])
+        first.type_id = 'other'
+        first.save()
+        self.assertFalse(group_wide_material_name(first, []))

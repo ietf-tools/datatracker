@@ -7032,6 +7032,49 @@ class MaterialsTests(TestCase):
                 self.assertTrue(copy.docevent_set.filter(type='new_revision', rev='00').exists())
                 self.assertIn(own.name, copy.docevent_set.get(type='added_comment').desc)
 
+    def test_upload_to_unscheduled_session_is_named_for_the_session(self):
+        first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.post(self._material_upload_url('agenda', first), dict(submission_method='enter', content='shared', apply_to_sessions=[last.pk]))
+        self.assertEqual(r.status_code, 302)
+        shared = first.presentations.get(document__type_id='agenda').document
+        self.assertNotIn('sess', shared.name)
+        r = self.client.post(self._material_upload_url('agenda', cancelled), dict(submission_method='enter', content='for the cancelled session'))
+        self.assertEqual(r.status_code, 302)
+        own = cancelled.presentations.get(document__type_id='agenda').document
+        self.assertIn(cancelled.docname_token(), own.name)
+        shared.refresh_from_db()
+        self.assertEqual(shared.rev, '00', 'The shared agenda is untouched')
+        for s in (first, last):
+            self.assertEqual(s.presentations.get(document__type_id='agenda').document, shared)
+
+    def test_deleted_sessions_neither_receive_revisions_nor_copies(self):
+        first, deleted, last = make_group_sessions(['sched', 'deleted', 'sched'])
+        self.client.login(username='secretary', password='secretary+password')
+        url = self._material_upload_url('agenda', first)
+        r = self.client.post(url, dict(submission_method='enter', content='v1', apply_to_sessions=[last.pk]))
+        self.assertEqual(r.status_code, 302)
+        shared = first.presentations.get(document__type_id='agenda').document
+        stale = SessionPresentationFactory(session=deleted, document=shared, rev='00')
+        r = self.client.post(url, dict(submission_method='enter', content='v2', scope='revise'))
+        self.assertEqual(r.status_code, 302)
+        stale.refresh_from_db()
+        self.assertEqual(stale.rev, '00')
+        r = self.client.post(self._material_upload_url('agenda', last), dict(submission_method='enter', content='own for last', scope='replace'))
+        self.assertEqual(r.status_code, 302)
+        r = self.client.post(self._material_upload_url('agenda', last), dict(submission_method='enter', content='spread', apply_to_sessions=[first.pk]))
+        self.assertEqual(r.status_code, 302)
+        own_last = last.presentations.get(document__type_id='agenda').document
+        SessionPresentationFactory(session=deleted, document=own_last, rev=own_last.rev)
+        r = self.client.post(self._material_upload_url('agenda', last), dict(submission_method='enter', content='taken back', scope='replace'))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(
+            sorted(sp.document.name for sp in deleted.presentations.all()),
+            sorted([shared.name, own_last.name]),
+            'The deleted session keeps its stale links and gets no copy',
+        )
+        self.assertFalse(Document.objects.filter(name=material_document_name(deleted, 'agenda', group_wide=False)[0]).exists())
+
     def test_material_pages_number_scheduled_sessions_only(self):
         first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
         self.client.login(username='secretary', password='secretary+password')

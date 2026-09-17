@@ -784,10 +784,7 @@ def material_upload_choices(session, doc_type, existing_sp):
     """
     linked = []
     if existing_sp is not None:
-        linked = list(
-            Session.objects.filter(presentations__document=existing_sp.document, meeting=session.meeting)
-            .exclude(pk=session.pk)
-        )
+        linked = list(sessions_linked_to(existing_sp.document, session.meeting).exclude(pk=session.pk))
     choices, select_all = apply_to_choices(session, doc_type, exclude=linked)
     if existing_sp is not None:
         select_all = False  # the document's current sessions are the truth about where it belongs
@@ -798,10 +795,21 @@ def group_wide_material_name(session, also_sessions):
     """Whether material for session and also_sessions is named for the group rather than for the session
 
     The group-wide name is what "apply to all" always produced, and later uploads with the same title
-    reuse it, so it must mean every scheduled session.
+    reuse it, so once anything is scheduled it must mean every scheduled session, and a session in any
+    other state gets its own name. Before anything is scheduled there is nothing to protect, and each
+    session's upload is named for the group as it always was.
     """
-    scheduled, _ = sessions_covered_by_apply_to_all(session)
-    return session.type_id == "regular" and all(s == session or s in also_sessions for s in scheduled)
+    if session.type_id != "regular":
+        return False
+    scheduled = scheduled_only(get_meeting_sessions(session.meeting.number, session.group.acronym))
+    if not scheduled:
+        return True
+    return session in scheduled and all(s == session or s in also_sessions for s in scheduled)
+
+
+def sessions_linked_to(doc, meeting):
+    """The meeting's sessions that present doc, except deleted ones, which keep their links but are gone"""
+    return Session.objects.filter(presentations__document=doc, meeting=meeting).not_deleted()
 
 
 def link_material_to_sessions(doc, session, also_sessions=()):
@@ -811,7 +819,7 @@ def link_material_to_sessions(doc, session, also_sessions=()):
     For one-per-session types such as agendas and minutes, doc displaces what the session had of that type.
     """
     targets = [session, *also_sessions]
-    for linked in Session.objects.filter(presentations__document=doc, meeting=session.meeting):
+    for linked in sessions_linked_to(doc, session.meeting):
         if linked not in targets:
             targets.append(linked)
     for target in targets:
@@ -866,8 +874,7 @@ def reclaim_material_name(doc, session, by, keep=()):
     ext = Path(doc.uploaded_filename).suffix
     source = Path(meeting.get_materials_path()) / doc.type_id / doc.uploaded_filename
     content = source.read_bytes() if source.exists() else retrieve_bytes(doc.type_id, doc.uploaded_filename)
-    others = Session.objects.filter(presentations__document=doc, meeting=meeting).exclude(pk=session.pk)
-    for other in others:
+    for other in sessions_linked_to(doc, meeting).exclude(pk=session.pk):
         if other in keep:
             continue
         name, title = material_document_name(other, doc.type_id, group_wide=False)

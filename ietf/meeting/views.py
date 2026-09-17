@@ -173,6 +173,7 @@ from ietf.meeting.utils import (
     link_material_to_sessions,
     material_document_name,
     reclaim_material_name,
+    sessions_linked_to,
     SessionNotScheduledError,
     data_for_meetings_overview,
     handle_upload_file,
@@ -3691,7 +3692,7 @@ def upload_session_slides(request, session_id, num, name=None):
             # Now handle creation / update of the SessionPresentation(s). A revision reaches every
             # session already linked to the document, chosen or not: there is only one document to show.
             sessions_to_apply = [session] + also_sessions
-            for linked in Session.objects.filter(presentations__document=doc, meeting=session.meeting):
+            for linked in sessions_linked_to(doc, session.meeting):
                 if linked not in sessions_to_apply:
                     sessions_to_apply.append(linked)
             added_presentations = []
