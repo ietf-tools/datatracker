@@ -44,14 +44,16 @@ class VerificationFailed(exceptions.ValidationError):
     401 would also owe a WWW-Authenticate challenge (RFC 9110) there is nothing to fill.
     """
 
-    default_detail = "Unable to verify those credentials."
+    default_detail = {
+        api_settings.NON_FIELD_ERRORS_KEY: ["Unable to verify those credentials."]
+    }
     default_code = "verification_failed"
 
 
 class UndecryptablePassword(exceptions.ValidationError):
     """Its own code, so a drifted key does not look like every user mistyping"""
 
-    default_detail = "Unable to decrypt the password."
+    default_detail = {"encrypted_password": ["Unable to decrypt the password."]}
     default_code = "undecryptable_password"
 
 
@@ -198,7 +200,10 @@ class VerifyResponseSerializer(serializers.Serializer):
 
 
 @extend_schema(tags=["migration"])
-@extend_validation_errors(["verification_failed", "undecryptable_password"])
+@extend_validation_errors(["undecryptable_password"], field_name="encrypted_password")
+@extend_validation_errors(
+    ["verification_failed"], field_name=api_settings.NON_FIELD_ERRORS_KEY
+)
 class VerifyView(APIView):
     """Prove a datatracker password and get back the Person behind it"""
 
