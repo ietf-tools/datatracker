@@ -19,7 +19,7 @@ from django.db.utils import IntegrityError
 from django.http import HttpRequest
 from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
-from django.urls import reverse as urlreverse
+from django.urls import reverse as urlreverse, NoReverseMatch
 from django.utils import timezone
 from django.utils.encoding import iri_to_uri
 
@@ -948,10 +948,10 @@ class PersonUUIDApiTests(TestCase):
         self.assertEqual(r.json()["uuid"], str(person.primary_uuid))
 
     def test_retrieve_malformed(self):
-        r = self.client.get(
-            "/api/person/uuid/not-a-uuid/", headers={"X-Api-Key": "uuid-api-token"}
-        )
-        self.assertEqual(r.status_code, 404)
+        # Test that a non-uuid will 404 without retrieving a non-reversible URL.
+        # This avoids UrlCoverageWarnings.
+        with self.assertRaises(NoReverseMatch):
+            self.retrieve_url("not-a-uuid")
 
     def test_batch(self):
         person = PersonFactory()
