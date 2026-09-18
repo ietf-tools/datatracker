@@ -383,8 +383,8 @@ class BallotWriteupsTests(TestCase):
         text = self._regenerate_last_call_text(draft)
         self._assertCopyAddress(text, doc_alias)
         self.assertIn(
-            "The IESG plans to make a decision on this document in the coming weeks,"
-            " and hereby solicits last call comments.",
+            "The IESG plans to make a decision on this document in the coming weeks, "
+            "and solicits last-call comments.",
             unwrap(text),
         )
 
