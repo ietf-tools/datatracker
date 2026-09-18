@@ -12,18 +12,18 @@ from urllib.parse import urljoin
 
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
-from drf_spectacular.utils import extend_schema
-from drf_standardized_errors.openapi_validation_errors import extend_validation_errors
-from rest_framework import exceptions, serializers
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
-from django.views.decorators.debug import sensitive_variables
 from django.db import IntegrityError, transaction
+from django.views.decorators.debug import sensitive_variables
+from drf_spectacular.utils import extend_schema
+from drf_standardized_errors.openapi_validation_errors import extend_validation_errors
+from rest_framework import exceptions, serializers
+from rest_framework.response import Response
+from rest_framework.settings import api_settings
+from rest_framework.views import APIView
 
 from ietf.person.models import Email, Person, PersonUUID
 from ietf.utils import log
@@ -44,14 +44,16 @@ class VerificationFailed(exceptions.ValidationError):
     401 would also owe a WWW-Authenticate challenge (RFC 9110) there is nothing to fill.
     """
 
-    default_detail = "Unable to verify those credentials."
+    default_detail = {
+        api_settings.NON_FIELD_ERRORS_KEY: ["Unable to verify those credentials."]
+    }
     default_code = "verification_failed"
 
 
 class UndecryptablePassword(exceptions.ValidationError):
     """Its own code, so a drifted key does not look like every user mistyping"""
 
-    default_detail = "Unable to decrypt the password."
+    default_detail = {"encrypted_password": ["Unable to decrypt the password."]}
     default_code = "undecryptable_password"
 
 
@@ -198,7 +200,10 @@ class VerifyResponseSerializer(serializers.Serializer):
 
 
 @extend_schema(tags=["migration"])
-@extend_validation_errors(["verification_failed", "undecryptable_password"])
+@extend_validation_errors(["undecryptable_password"], field_name="encrypted_password")
+@extend_validation_errors(
+    ["verification_failed"], field_name=api_settings.NON_FIELD_ERRORS_KEY
+)
 class VerifyView(APIView):
     """Prove a datatracker password and get back the Person behind it"""
 
@@ -289,7 +294,11 @@ class AddressBelongsToAnotherPerson(exceptions.ValidationError):
     support, who may find the two Persons should be merged.
     """
 
-    default_detail = "That address belongs to a different person."
+    default_detail = {
+        api_settings.NON_FIELD_ERRORS_KEY: [
+            "That address belongs to a different person."
+        ]
+    }
     default_code = "address_belongs_to_another_person"
 
 
@@ -301,7 +310,7 @@ class AddressHasNoOwner(exceptions.ValidationError):
     to whoever proved a password would attribute that history to a possible namesake.
     """
 
-    default_detail = "That address is not attached to any person."
+    default_detail = {"address": ["That address is not attached to any person."]}
     default_code = "address_has_no_owner"
 
 
@@ -313,7 +322,7 @@ class UnknownPersonUUID(exceptions.ValidationError):
     been deleted, because deleting a Person deletes its UUIDs.
     """
 
-    default_detail = "No person has that UUID."
+    default_detail = {"person_uuid": ["No person has that UUID."]}
     default_code = "unknown_person_uuid"
 
 
@@ -353,8 +362,10 @@ class ClaimEmailRequestSerializer(serializers.Serializer):
 
 
 @extend_schema(tags=["migration"])
+@extend_validation_errors(["unknown_person_uuid"], field_name="person_uuid")
+@extend_validation_errors(["address_has_no_owner"], field_name="address")
 @extend_validation_errors(
-    ["address_belongs_to_another_person", "address_has_no_owner", "unknown_person_uuid"]
+    ["address_belongs_to_another_person"], field_name=api_settings.NON_FIELD_ERRORS_KEY
 )
 class ClaimEmailView(APIView):
     """Attach an address to a Person, so enrollment can use it"""
