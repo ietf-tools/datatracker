@@ -705,6 +705,22 @@ def scheduled_only(sessions):
     return [s for s in sessions if s.current_status == "sched"]
 
 
+INACTIVE_SESSION_STATUSES = Session.CANCELED_STATUSES + ["resched"]
+
+
+def session_is_inactive(session):
+    """Whether the session was cancelled or is the tombstone a rescheduling left behind
+
+    Such a session will not happen. Its materials stay visible but can no longer be changed,
+    except that slides may be dragged out of it to a session that will happen.
+    """
+    status = getattr(session, "current_status", None)
+    if status is None:
+        current = current_session_status(session)
+        status = current.slug if current else None
+    return status in INACTIVE_SESSION_STATUSES
+
+
 def sessions_covered_by_apply_to_all(session):
     """The sessions an "apply to all" change to session's materials covers, and session's number among them
 

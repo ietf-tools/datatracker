@@ -168,6 +168,7 @@ from ietf.meeting.utils import (
     get_meeting_sessions,
     scheduled_only,
     sessions_covered_by_apply_to_all,
+    session_is_inactive,
     material_upload_choices,
     group_wide_material_name,
     link_material_to_sessions,
@@ -3019,10 +3020,10 @@ def session_details(request, num, acronym):
         raise Http404
 
     scheduled_sessions = scheduled_only(sessions)
-    unscheduled_sessions = [s for s in sessions if s not in scheduled_sessions]
 
     status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
     for session in sessions:
+        session.inactive = session_is_inactive(session)
         # Numbered the same way as the material upload pages, so "Session 2" means the same thing on both
         session.session_number = (
             1 + scheduled_sessions.index(session)
@@ -3069,8 +3070,16 @@ def session_details(request, num, acronym):
         for qs in [session.filtered_artifacts,session.filtered_slides,session.filtered_drafts]:
             qs = [p for p in qs if p.document.get_state_slug(p.document.type_id)!='deleted']
             session.type_counter.update([p.document.type.slug for p in qs])
+        session.has_materials = bool(
+            session.type_counter or filtered_chatlogs.exists() or filtered_polls.exists() or session.recordings()
+        )
 
         session.order_number = session.order_in_meeting()
+
+    # A session that will not happen is shown only for the materials it still holds
+    unscheduled_sessions = [s for s in sessions if s not in scheduled_sessions and not s.inactive]
+    cancelled_sessions = [s for s in sessions if s.inactive and s.cancelled and s.has_materials]
+    rescheduled_sessions = [s for s in sessions if s.inactive and not s.cancelled and s.has_materials]
 
     # we somewhat arbitrarily use the group of the last session we get from
     # get_meeting_sessions() above when checking can_manage_session_materials()
@@ -3092,6 +3101,8 @@ def session_details(request, num, acronym):
     return render(request, "meeting/session_details.html",
                   { 'scheduled_sessions':scheduled_sessions ,
                     'unscheduled_sessions':unscheduled_sessions , 
+                    'cancelled_sessions': cancelled_sessions,
+                    'rescheduled_sessions': rescheduled_sessions,
                     'pending_suggestions' : pending_suggestions,
                     'meeting' :meeting ,
                     'group': group,
@@ -3123,6 +3134,8 @@ def add_session_drafts(request, session_id, num):
         raise Http404
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         raise Http404
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
 
     already_linked = [sp.document for sp in session.presentations.filter(document__type_id='draft')]
 
@@ -3170,6 +3183,8 @@ def add_session_recordings(request, session_id, num):
         request.user, "Secretariat"
     ):
         raise Http404
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
 
     official_timeslotassignment = session.official_timeslotassignment()
     assertion("official_timeslotassignment is not None")
@@ -3295,6 +3310,8 @@ def upload_session_bluesheets(request, session_id, num):
         permission_denied(request, "You don't have permission to upload bluesheets for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
 
     if session.meeting.type.slug == 'ietf' and not has_role(request.user, 'Secretariat'):
         permission_denied(request, 'Restricted to role Secretariat')
@@ -3343,6 +3360,8 @@ def upload_session_minutes(request, session_id, num):
         permission_denied(request, "You don't have permission to upload minutes for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
 
     _, session_number = sessions_covered_by_apply_to_all(session)
     minutes_sp = session.presentations.filter(document__type='minutes').first()
@@ -3398,6 +3417,8 @@ def upload_session_narrativeminutes(request, session_id, num):
     session = get_object_or_404(Session,pk=session_id)
     if session.group.acronym != "iesg":
         raise Http404()
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
     
     _, session_number = sessions_covered_by_apply_to_all(session)
     narrativeminutes_sp = session.presentations.filter(document__type='narrativeminutes').first()
@@ -3499,6 +3520,8 @@ def upload_session_agenda(request, session_id, num):
         permission_denied(request, "You don't have permission to upload an agenda for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
 
     _, session_number = sessions_covered_by_apply_to_all(session)
     agenda_sp = session.presentations.filter(document__type='agenda').first()
@@ -3587,6 +3610,8 @@ def upload_session_slides(request, session_id, num, name=None):
             request,
             "The materials cutoff for this session has passed. Contact the secretariat for further action.",
         )
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
 
     if session.is_past() and not can_manage:
         permission_denied(
@@ -3810,6 +3835,8 @@ def remove_sessionpresentation(request, session_id, num, name):
             request,
             "The materials cutoff for this session has passed. Contact the secretariat for further action.",
         )
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
     if request.method == "POST":
         session.presentations.filter(pk=sp.pk).delete()
         c = DocEvent(
@@ -3851,6 +3878,8 @@ def ajax_add_slides_to_session(request, session_id, num):
             request,
             "The materials cutoff for this session has passed. Contact the secretariat for further action.",
         )
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
 
     if request.method != "POST" or not request.POST:
         return HttpResponse(
@@ -4006,6 +4035,8 @@ def ajax_reorder_slides_in_session(request, session_id, num):
             request,
             "The materials cutoff for this session has passed. Contact the secretariat for further action.",
         )
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
 
     if request.method != "POST" or not request.POST:
         return HttpResponse(
@@ -5849,6 +5880,8 @@ def import_session_minutes(request, session_id, num):
         permission_denied(request, "You don't have permission to import minutes for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
 
     minutes_sp = session.presentations.filter(document__type='minutes').first()
     choices, select_all, shared_with = material_upload_choices(session, 'minutes', minutes_sp)
