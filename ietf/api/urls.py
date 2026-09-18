@@ -8,7 +8,10 @@ from django.views.generic import TemplateView
 
 from ietf import api
 from ietf.doc import views_ballot, api as doc_api
+from ietf.ietfauth import api_migration
+from ietf.meeting import api as meeting_api
 from ietf.meeting import views as meeting_views
+from ietf.person import api_uuid as person_uuid_api
 from ietf.submit import views as submit_views
 from ietf.utils.urls import url
 
@@ -20,6 +23,20 @@ from .routers import PrefixedSimpleRouter
 # core_router = PrefixedSimpleRouter(name_prefix="ietf.api.core_api")  # core api router
 # core_router.register("email", person_api.EmailViewSet)
 # core_router.register("person", person_api.PersonViewSet)
+
+# Person identity API router
+person_router = PrefixedSimpleRouter(
+    use_regex_path=False, name_prefix="ietf.api.person_api"
+)
+person_router.register(
+    "uuid", person_uuid_api.PersonUUIDViewSet, basename="person-uuid"
+)
+
+# Session data pushed by the conference system
+meeting_router = PrefixedSimpleRouter(
+    use_regex_path=False, name_prefix="ietf.api.meeting"
+)
+meeting_router.register("session", meeting_api.SessionDataViewSet, basename="session")
 
 # todo more general name for this API?
 red_router = PrefixedSimpleRouter(name_prefix="ietf.api.red_api")  # red api router
@@ -38,12 +55,28 @@ urlpatterns = [
     # --- DRF API ---
     # path("core/", include(core_router.urls)),
     path("purple/", include("ietf.api.urls_rpc")),
+    path("meeting/", include(meeting_router.urls)),
     path("red/", include(red_router.urls)),
     path("schema/", SpectacularAPIView.as_view()),
     #
     # --- Custom API endpoints, sorted alphabetically ---
+    # Account migration, for the account app's backend only
+    path(
+        "accounts/migration/claim-email/",
+        api_migration.ClaimEmailView.as_view(),
+        name="ietf.api.migration_api.claim-email",
+    ),
+    path(
+        "accounts/migration/verify/",
+        api_migration.VerifyView.as_view(),
+        name="ietf.api.migration_api.verify",
+    ),
     # Email alias information for drafts
     url(r'^doc/draft-aliases/$', api_views.draft_aliases),
+    # Recipients for author survey for recently published RFCs
+    url(
+        r'^doc/rfc-author-survey-recipients/$', api_views.rfc_author_survey_recipients
+    ),
     # email ingestor
     url(r'email/$', api_views.ingest_email),
     # email ingestor
@@ -67,6 +100,13 @@ urlpatterns = [
     url(r'^meeting/(?P<num>[A-Za-z0-9._+-]+)/agenda-data$', meeting_views.api_get_agenda_data),
     # Meeting session materials
     url(r'^meeting/session/(?P<session_id>[A-Za-z0-9._+-]+)/materials$', meeting_views.api_get_session_materials),
+    # Before the email-keyed route below so "by-uuid" is never read as an address.
+    path(
+        "meeting/registration/attended/by-uuid/<anycase_uuid:uuid>/",
+        meeting_api.MeetingsAttendedByUuid.as_view(),
+        name="ietf.api.meeting.registration.attended_by_uuid",
+    ),
+    url(r'^meeting/registration/attended/(?P<email>[^/\x00]+)/?$', meeting_api.MeetingsAttendedByEmail.as_view(), name="ietf.api.meeting.registration.attended"),
     # Let MeetEcho upload bluesheets
     url(r'^notify/meeting/bluesheet/?$', meeting_views.api_upload_bluesheet),
     # Let MeetEcho tell us about session attendees
@@ -84,6 +124,16 @@ urlpatterns = [
     url(r'^person/email/$', api_views.active_email_list),
     # Related Email listing
     url(r'^person/email/(?P<email>[^/\x00]+)/related/$', api_views.related_email_list),
+    # Transitional pk-to-UUID conversion. Before the router include below so it wins
+    # over the router's uuid/ routes.
+    path(
+        "person/uuid/by-person-pk/",
+        person_uuid_api.PersonUUIDByPersonPkView.as_view(),
+        name="ietf.api.person_api.person-uuid-by-pk",
+    ),
+    # Person UUID resolution API. After the ^person/email/ routes above so those keep
+    # matching first.
+    path("person/", include(person_router.urls)),
     # Draft submission API
     url(r'^submit/?$', submit_views.api_submit_tombstone),
     # Draft upload API

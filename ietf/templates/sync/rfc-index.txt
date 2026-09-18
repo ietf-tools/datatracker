@@ -21,9 +21,10 @@ or
 
 For example:
 
-  1129 Internet Time Synchronization: The Network Time Protocol. D.L.
-       Mills. October 1989. (Format: TXT, PS, PDF, HTML) (Also RFC1119)
-       (Status: INFORMATIONAL) (DOI: 10.17487/RFC1129)
+  9915 Dynamic Host Configuration Protocol for IPv6 (DHCPv6). T. Mrugalski,
+       B. Volz, M. Richardson, S. Jiang, T. Winters. January 2026. (Format:
+       HTML, TXT, PDF, XML) (Obsoletes RFC8415) (Also STD102) (Status:
+       INTERNET STANDARD) (DOI: 10.17487/RFC9915)
 
 Key to citations:
 

@@ -59,7 +59,23 @@
             </p>
         {% endif %}
         {% for check in submission.latest_checks %}
-            {% if check.errors %}
+            {% if check.is_advisory %}
+                {% if check.would_block_in_future %}
+                    <p class="alert alert-warning my-3">
+                        <b>The {{ check.checker }} returned {{ check.errors }} error{{ check.errors|pluralize }}
+                        and {{ check.warnings }} warning{{ check.warnings|pluralize }}.</b>
+                        The {{ check.checker }} does not affect this submission, so those errors have
+                        <b>not</b> stopped it.  It is expected to become a required submission check,
+                        however, and this Internet-Draft would then be rejected.  Click the button
+                        below to see details, and please fix those before you submit again.
+                    </p>
+                {% elif check.warnings %}
+                    <p class="alert alert-warning my-3">
+                        The {{ check.checker }} returned {{ check.warnings }} warning{{ check.warnings|pluralize }}.
+                        None of them would stop this submission.
+                    </p>
+                {% endif %}
+            {% elif check.errors %}
                 <p class="alert alert-warning my-3">
                     The {{ check.checker }} returned {{ check.errors }} error{{ check.errors|pluralize }}
                     and {{ check.warnings }} warning{{ check.warnings|pluralize }}; click the button
@@ -72,7 +88,7 @@
             {% endif %}
         {% endfor %}
         {% for check in submission.latest_checks %}
-            <button class="btn btn-{% if check.passed %}{% if check.warnings %}warning{% elif check.errors %}danger{% else %}success{% endif %}{% else %}danger{% endif %}"
+            <button class="btn btn-{% if check.is_advisory %}{% if check.errors or check.warnings %}warning{% else %}success{% endif %}{% elif check.passed %}{% if check.warnings %}warning{% elif check.errors %}danger{% else %}success{% endif %}{% else %}danger{% endif %}"
                     type="button"
                     data-bs-toggle="modal"
                     data-bs-target="#check-{{ check.pk }}">

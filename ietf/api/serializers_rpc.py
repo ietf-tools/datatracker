@@ -31,6 +31,7 @@ from ietf.group.models import Group, Role
 from ietf.group.serializers import AreaSerializer
 from ietf.name.models import StreamName, StdLevelName
 from ietf.person.models import Person
+from ietf.utils.rest_framework.fields import AwareDateTimeField
 from ietf.utils import log
 
 
@@ -286,7 +287,7 @@ class RfcGroupRelatedField(serializers.SlugRelatedField):
 class RfcPubSerializer(serializers.ModelSerializer):
     """Write-only serializer for RFC publication"""
     # publication-related fields
-    published = serializers.DateTimeField(default_timezone=datetime.timezone.utc)
+    published = AwareDateTimeField()
     draft_name = serializers.RegexField(
         required=False, regex=r"^draft-[a-zA-Z0-9-]+$"
     )
@@ -562,10 +563,7 @@ class EditableRfcSerializer(serializers.ModelSerializer):
     # Treats published and subseries fields as write-only. This isn't quite correct,
     # but makes it easier and we don't currently use the serialized value except for
     # debugging.
-    published = serializers.DateTimeField(
-        default_timezone=datetime.timezone.utc,
-        write_only=True,
-    )
+    published = AwareDateTimeField(write_only=True)
     authors = RfcAuthorSerializer(many=True, min_length=1, source="rfcauthor_set")
     subseries = serializers.ListField(
         child=SubseriesNameField(required=False),
@@ -827,10 +825,9 @@ class RfcFileSerializer(serializers.Serializer):
             "file types, but filenames are otherwise ignored."
         ),
     )
-    mtime = serializers.DateTimeField(
+    mtime = AwareDateTimeField(
         required=False,
         default=timezone.now,
-        default_timezone=datetime.UTC,
         help_text="Modification timestamp to apply to uploaded files",
     )
     replace = serializers.BooleanField(

@@ -1,0 +1,152 @@
+{# Copyright The IETF Trust 2015-2026, All Rights Reserved #}
+{% load markup_tags %}
+{% load ietf_filters textfilters %}
+{% with person=profile.person %}
+    <h1>
+        {{ person.name }}
+        {% if person.ascii != person.name %}
+            <br>
+            <span class="text-body-secondary fs-2">({{ person.ascii }})</span>
+        {% endif %}
+        {% if person.pronouns %}
+            <br>
+            <span class="text-body-secondary fs-3">Pronouns: {{person.pronouns}}</span>
+        {% endif %}
+    </h1>
+    <div class="bio-text">
+        {% if person.photo %}
+            <div class="float-end ms-3 mb-3">{% include "person/photo.html" with person=person %}</div>
+        {% endif %}
+        {{ person.biography|apply_markup:"restructuredtext"|urlize_ietf_docs|linkify }}
+    </div>
+    {% if profile.has_roles %}
+        <h2 class="mt-5" id="roles-{{ person.pk }}">Roles</h2>
+        {% if profile.roles %}
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <tr>
+                    <th scope="col" data-sort="role">Role</th>
+                    <th scope="col" data-sort="group">Group</th>
+                    <th scope="col" data-sort="email">Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for role in profile.roles %}
+                    <tr>
+                        <td>{{ role.name.name }}
+                            {% if role.name.name == 'Reviewer' %}
+                             (<a href="{% url 'ietf.group.views.review_requests_history' acronym=role.group.acronym %}?reviewer_email={{ role.email.address }}&since=1y">See reviews</a>)
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.name }}</a>
+                            (<a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.acronym }}</a>)
+                        </td>
+                        <td>
+                            <a href="mailto:{{ role.email.address }}">{{ role.email.address }}</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p>{{ person.first_name }} does not currently have any active roles.</p>
+        {% endif %}
+    {% endif %}
+    {% if profile.ext_resources %}
+        <h2 class="mt-5" id="extresources-{{ person.pk }}">External Resources</h2>
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <tr>
+                    <th scope="col" data-sort="name">Name</th>
+                    <th scope="col" data-sort="value">Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for extres in profile.ext_resources %}
+                    <tr>
+                        <td>
+                            <span title="{{ extres.name.name }}">{% firstof extres.display_name extres.name.name %}</span>
+                        </td>
+                        <td>{{ extres.value|linkify }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+    <h2 class="mt-5" id="rfcs-{{ person.pk }}">
+        RFCs <small class="text-body-secondary">({{ profile.rfcs|length }})</small>
+    </h2>
+    {% if profile.rfcs %}
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <tr>
+                    <th scope="col" data-sort="rfc">RFC</th>
+                    <th scope="col" data-sort="date">Date</th>
+                    <th scope="col" data-sort="title">Title</th>
+                    <th scope="col" data-sort="citedby">Cited by</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in profile.rfcs %}
+                    <tr>
+                        <td>
+                            <a class="text-nowrap" href="{{ row.doc.get_absolute_url }}">RFC {{ row.doc.rfc_number }}</a>
+                        </td>
+                        <td data-sort-number="{{ row.pub_date|date:"U" }}">{{ row.pub_date|date:"b Y"|title }}</td>
+                        <td>{{ row.doc.title|urlize_ietf_docs }}</td>
+                        <td class="text-end">
+                            {% if row.referenced_by %}
+                                <a class="text-end"
+                                   href="{% url 'ietf.doc.views_doc.document_referenced_by' row.doc.name %}"
+                                   rel="nofollow">
+                                    {{ row.referenced_by }} RFC{{ row.referenced_by|pluralize }}
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        {{ person.first_name }} has no RFCs.
+    {% endif %}
+    <h2 class="mt-5" id="drafts-{{ person.pk }}">
+        Active Internet-Drafts <small class="text-body-secondary">({{ profile.active_drafts|length }})</small>
+    </h2>
+    {% if profile.active_drafts %}
+        <ul>
+            {% for doc in profile.active_drafts %}
+                <li>
+                    <a href="{{ doc.get_absolute_url }}">{{ doc.name }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        {{ person.first_name }} has no active Internet-Drafts.
+    {% endif %}
+    <h2 class="mt-5">
+        Expired Internet-Drafts <small class="text-body-secondary">({{ profile.expired_drafts|length }})</small>
+    </h2>
+    {% if profile.expired_drafts %}
+        <ul>
+            {% for doc in profile.expired_drafts %}
+                <li>
+                    <a href="{{ doc.get_absolute_url }}">
+                        {{ doc.name }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+        (Excluding replaced Internet-Drafts.)
+    {% else %}
+        {{ person.first_name }} has no expired Internet-Drafts.
+    {% endif %}
+    {% if profile.has_drafts %}
+        <h2 class="mt-5">
+            Internet-Draft Activity
+        </h2>
+        <div id="chart-{{ person.pk }}">
+        </div>
+    {% endif %}
+{% endwith %}

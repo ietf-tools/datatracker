@@ -5,7 +5,7 @@
 {% origin %}
 <meta property="og:title" content="{% if doc.type_id == 'rfc' and not snapshot %}RFC {{ rfc_number }}: {% endif %}{{ doc.title }}">
 <meta property="og:url" content="{{ settings.IDTRACKER_BASE_URL }}{{ request.path }}">
-<link rel="canonical" href="{{ settings.IDTRACKER_BASE_URL }}{{ request.path }}">
+{% include "doc/canonical_link.html" %}
 <meta property="og:site_name" content="IETF Datatracker">
 <meta property="og:description" content="{{ doc.abstract|clean_whitespace }}">
 <meta property="og:type" content="article">

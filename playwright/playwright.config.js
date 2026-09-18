@@ -106,7 +106,7 @@ const config = {
   /* Run your local dev server before starting the tests */
   ...process.env.CI && {
     webServer: {
-      command: 'cd .. && yarn preview',
+      command: 'cd .. && npm run preview',
       port: 3000,
       reuseExistingServer: false
     }

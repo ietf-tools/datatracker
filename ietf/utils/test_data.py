@@ -22,6 +22,7 @@ from ietf.person.models import Person, Email
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName, ReviewTypeName, ReviewTeamSettings )
 from ietf.person.name import unidecode_name
+from ietf.person.utils import assign_primary_uuid
 from ietf.utils.timezone import date_today
 
 
@@ -40,6 +41,7 @@ def create_person(group, role_name, name=None, username=None, email_address=None
     user.set_password(password)
     user.save()
     person = Person.objects.create(name=name, ascii=unidecode_name(smart_str(name)), user=user)
+    assign_primary_uuid(person)
     email = Email.objects.create(address=email_address, person=person, origin=user.username)
     Role.objects.create(group=group, name_id=role_name, person=person, email=email)
     return person
@@ -63,6 +65,7 @@ def make_immutable_base_data():
 
     # system
     system_person = Person.objects.create(name="(System)", ascii="(System)")
+    assign_primary_uuid(system_person)
     Email.objects.create(address="", person=system_person, origin='test')
 
     # high-level groups
@@ -120,6 +123,7 @@ def make_immutable_base_data():
     for i in range(1, 10):
         u = User.objects.create(username="ad%s" % i)
         p = Person.objects.create(name="Ad No%s" % i, ascii="Ad No%s" % i, user=u)
+        assign_primary_uuid(p)
         email = Email.objects.create(address="ad%s@example.org" % i, person=p, origin=u.username)
         if i < 6:
             # active
@@ -148,6 +152,7 @@ def make_immutable_base_data():
     for i in range(1, 5):
         u = User.objects.create(username="irsgmember%s" % i)
         p = Person.objects.create(name="IRSG Member No%s" % i, ascii="IRSG Member No%s" % i, user=u)
+        assign_primary_uuid(p)
         email = Email.objects.create(address="irsgmember%s@example.org" % i, person=p, origin=u.username)
         Role.objects.create(name_id="member", group=irsg, person=p, email=email)
 
@@ -250,6 +255,7 @@ def make_test_data():
     u.set_password("plain+password")
     u.save()
     plainman = Person.objects.create(name="Plain Man", ascii="Plain Man", user=u)
+    assign_primary_uuid(plainman)
     email = Email.objects.create(address="plain@example.com", person=plainman, origin=u.username)
 
     # group personnel
@@ -436,6 +442,7 @@ def make_review_data(doc):
     u.set_password("reviewer+password")
     u.save()
     reviewer = Person.objects.create(name="Some Réviewer", ascii="Some Reviewer", user=u)
+    assign_primary_uuid(reviewer)
     email = Email.objects.create(address="reviewer@example.com", person=reviewer, origin=u.username)
 
     for team in (team1, team2, team3):
@@ -459,6 +466,7 @@ def make_review_data(doc):
     u.set_password("reviewsecretary+password")
     u.save()
     reviewsecretary = Person.objects.create(name="Réview Secretary", ascii="Review Secretary", user=u)
+    assign_primary_uuid(reviewsecretary)
     reviewsecretary_email = Email.objects.create(address="reviewsecretary@example.com", person=reviewsecretary, origin=u.username)
     Role.objects.create(name_id="secr", person=reviewsecretary, email=reviewsecretary_email, group=team1)
 
@@ -466,6 +474,7 @@ def make_review_data(doc):
     u.set_password("reviewsecretary3+password")
     u.save()
     reviewsecretary3 = Person.objects.create(name="Réview Secretary3", ascii="Review Secretary3", user=u)
+    assign_primary_uuid(reviewsecretary3)
     reviewsecretary3_email = Email.objects.create(address="reviewsecretary3@example.com", person=reviewsecretary, origin=u.username)
     Role.objects.create(name_id="secr", person=reviewsecretary3, email=reviewsecretary3_email, group=team3)
     

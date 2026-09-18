@@ -7,20 +7,29 @@ from PIL import Image
 
 from django.conf import settings
 from django.contrib import messages
-from django.db.models import Q
+from django.core.cache import caches
+from django.db.models import Count, Q
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
-from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
+from ietf.doc.models import DocEvent, RelatedDocument
 from ietf.ietfauth.utils import role_required
 from ietf.person.models import Email, Person
 from ietf.person.fields import select2_id_name_json
 from ietf.person.forms import MergeForm, MergeRequestForm
-from ietf.person.utils import handle_users, merge_persons, lookup_persons
+from ietf.person.utils import (
+    get_person_uuid_object,
+    handle_users,
+    lookup_persons,
+    merge_persons,
+)
 from ietf.utils.mail import send_mail_text
+from ietf.utils.timezone import RPC_TZINFO
+
+REFERENCE_RELATIONSHIPS = ("refnorm", "refinfo", "refunk", "refold")
 
 
 def ajax_select2_search(request, model_name):
@@ -72,9 +81,153 @@ def ajax_select2_search(request, model_name):
     return HttpResponse(select2_id_name_json(objs), content_type='application/json')
 
 
+def rfc_rows(persons):
+    """Build the RFC table rows for each person
+
+    Returns a dict keyed on person pk. The columns are gathered for every person at
+    once - read one at a time off the Document, each row costs a query per column.
+    """
+    rfcs = {p.pk: p.rfcs() for p in persons}
+    rfc_ids = {d.pk for docs in rfcs.values() for d in docs}
+
+    # The references of the draft an RFC was published from count as the RFC's own.
+    draft_of = dict(
+        RelatedDocument.objects.filter(
+            target_id__in=rfc_ids, relationship="became_rfc"
+        ).values_list("target_id", "source_id")
+    )
+    referenced_by = dict(
+        RelatedDocument.objects.filter(
+            target_id__in=rfc_ids | set(draft_of.values()),
+            relationship__in=REFERENCE_RELATIONSHIPS,
+            source__type__slug="rfc",
+        )
+        .values("target_id")
+        .annotate(count=Count("id"))
+        .values_list("target_id", "count")
+    )
+
+    # Matches Document.latest_event ordering, so the first row seen for a document
+    # is the one its pub_date would have reported.
+    published = {}
+    for doc_id, time in (
+        DocEvent.objects.filter(doc_id__in=rfc_ids, type="published_rfc")
+        .order_by("-time", "-id")
+        .values_list("doc_id", "time")
+    ):
+        published.setdefault(doc_id, time)
+
+    return {
+        pk: [
+            {
+                "doc": doc,
+                "pub_date": (
+                    published[doc.pk].astimezone(RPC_TZINFO).date()
+                    if doc.pk in published
+                    else None
+                ),
+                "referenced_by": referenced_by.get(doc.pk, 0)
+                + referenced_by.get(draft_of.get(doc.pk), 0),
+            }
+            for doc in docs
+        ]
+        for pk, docs in rfcs.items()
+    }
+
+
+def profile_data(persons):
+    """Build everything person/profile.html renders for each of persons"""
+    rfcs = rfc_rows(persons)
+    expired = {p.pk: list(p.expired_drafts().prefetch_related("states")) for p in persons}
+    replaced = set(
+        RelatedDocument.objects.filter(
+            target_id__in={d.pk for docs in expired.values() for d in docs},
+            relationship="replaces",
+        ).values_list("target_id", flat=True)
+    )
+
+    profiles = []
+    for person in persons:
+        # Role.Meta orders by name_id alone, which leaves ties to the query plan.
+        roles = sorted(
+            person.role_set.select_related("name", "group", "email"),
+            key=lambda r: (r.name_id, r.group.acronym),
+        )
+        profiles.append(
+            {
+                "person": person,
+                "has_roles": bool(roles),
+                "roles": [
+                    r
+                    for r in roles
+                    if r.group.state_id in ["active", "bof"]
+                    and r.group.acronym != "secretariat"
+                ],
+                "ext_resources": list(
+                    person.personextresource_set.select_related("name")
+                ),
+                "rfcs": rfcs[person.pk],
+                "active_drafts": list(
+                    person.active_drafts().prefetch_related("states")
+                ),
+                "expired_drafts": [
+                    d for d in expired[person.pk] if d.pk not in replaced
+                ],
+                "has_drafts": person.has_drafts(),
+            }
+        )
+    return profiles
+
+
+def profile_sections(persons):
+    """Render each person's part of the profile page
+
+    The rendered sections are cached, so a repeat view of a profile - including the
+    revalidation a conditional request makes - costs neither the queries nor the
+    render. Nothing in a section is tied to the moment it was rendered, so how stale
+    one can be is entirely PERSON_PROFILE_CACHE_SECONDS.
+    """
+    slowpages = caches["slowpages"]
+    keys = {person.pk: f"person:profile:{person.pk}" for person in persons}
+    sections = slowpages.get_many(list(keys.values()))
+
+    uncached = [person for person in persons if keys[person.pk] not in sections]
+    for profile in profile_data(uncached):
+        person = profile["person"]
+        section = {
+            "id": person.pk,
+            "name": str(person),
+            "has_drafts": profile["has_drafts"],
+            "html": render_to_string("person/profile_body.html", {"profile": profile}),
+        }
+        slowpages.set(keys[person.pk], section, settings.PERSON_PROFILE_CACHE_SECONDS)
+        sections[keys[person.pk]] = section
+
+    return [sections[keys[person.pk]] for person in persons]
+
+
 def profile(request, email_or_name):
     persons = lookup_persons(email_or_name)
-    return render(request, 'person/profile.html', {'persons': persons, 'today': timezone.now()})
+    return render(
+        request, "person/profile.html", {"sections": profile_sections(persons)}
+    )
+
+
+def profile_by_uuid(request, uuid):
+    person_uuid = get_person_uuid_object(uuid)
+    if person_uuid is None:
+        raise Http404("No such person identifier")
+    if not person_uuid.primary:
+        # Self-heal a link that predates a merge by sending it to the canonical address.
+        return redirect(
+            "ietf.person.views.profile_by_uuid",
+            uuid=person_uuid.person.primary_uuid,
+        )
+    return render(
+        request,
+        "person/profile.html",
+        {"sections": profile_sections([person_uuid.person])},
+    )
 
 
 def photo(request, email_or_name):

@@ -128,12 +128,10 @@ def send_smtp(msg, bcc=None):
             outbox.append(msg)
         server = None
         try:
-            server = smtplib.SMTP()
-            #log("SMTP server: %s" % repr(server))
-            #if settings.DEBUG:
+            server = smtplib.SMTP(host=SMTP_ADDR["ip4"], port=SMTP_ADDR["port"])
+            # log("SMTP server: %s" % repr(server))
+            # if settings.DEBUG:
             #    server.set_debuglevel(1)
-            conn_code, conn_msg = server.connect(SMTP_ADDR['ip4'], SMTP_ADDR['port'])
-            #log("SMTP connect: code: %s; msg: %s" % (conn_code, conn_msg))
             if settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD:
                 server.ehlo()
                 if 'starttls' not in server.esmtp_features:

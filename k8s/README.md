@@ -2,4 +2,5 @@
 
 ## Run locally
 
-The `secrets.yaml` file is provided as a reference only and must be referenced manually in the `kustomization.yaml` file.
+The `secrets.yaml.example` file is provided as a reference. To use it, rename it to `secrets.yaml`, update its contents, and reference it in the `kustomization.yaml` file.
+

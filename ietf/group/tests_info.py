@@ -409,7 +409,7 @@ class GroupPagesTests(TestCase):
             self.assertContains(r, draft.name)
             self.assertContains(r, group.name)
             self.assertContains(r, group.acronym)
-            self.assertNotContains(r, draft.action_holders.first().plain_name())
+            self.assertNotContains(r, escape(draft.action_holders.first().plain_name()))
             self.assertContains(r, draft2.name)
             self.assertContains(r, draft3.name)
             for ah in draft3.action_holders.all():
@@ -1760,6 +1760,41 @@ class MilestoneTests(TestCase):
 
         self.assertEqual(group.charter.docevent_set.count(), events_before + 2) # 1 delete, 1 add
 
+    def test_reset_charter_milestones_bad_ids(self):
+        """A non-integer milestone id is rejected without echoing the submitted value
+
+        int() puts the offending value in its exception message and
+        HttpResponseBadRequest serves its content as unescaped text/html, so
+        reflecting the message would be an XSS vector.
+        """
+        m1, m2, group = self.create_test_milestones()
+
+        url = urlreverse('ietf.group.milestones.reset_charter_milestones', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+        login_testing_unauthorized(self, "secretary", url)
+
+        milestones_before = GroupMilestone.objects.count()
+        events_before = group.charter.docevent_set.count()
+
+        payload = '<img src=x onerror=alert(1)>'
+        for bad_id in (payload, 'not-a-number', '1.5'):
+            r = self.client.post(url, dict(milestone=[str(m1.pk), bad_id]))
+            self.assertEqual(r.status_code, 400)
+            content = r.content.decode('utf-8')
+            self.assertIn('error in list of ids', content)
+            self.assertNotIn(bad_id, content)
+            self.assertNotIn('invalid literal', content)
+
+        # an empty id is also rejected, without the exception detail
+        r = self.client.post(url, dict(milestone=[str(m1.pk), '']))
+        self.assertEqual(r.status_code, 400)
+        self.assertNotIn('invalid literal', r.content.decode('utf-8'))
+
+        # nothing was changed
+        self.assertEqual(GroupMilestone.objects.count(), milestones_before)
+        self.assertEqual(group.charter.docevent_set.count(), events_before)
+        self.assertEqual(GroupMilestone.objects.get(pk=m1.pk).state_id, m1.state_id)
+        self.assertEqual(GroupMilestone.objects.get(pk=m2.pk).state_id, m2.state_id)
+
     def test_edit_sort(self):
         group = GroupFactory(uses_milestone_dates=False)
         DatelessGroupMilestoneFactory(group=group,order=1)
@@ -2112,7 +2147,86 @@ class MeetingInfoTests(TestCase):
         self.assertEqual(response.status_code, 200) 
         q = PyQuery(response.content)
         self.assertFalse(q('#inprogressmeets'))
-        
+
+
+class PendingInterimMeetingTests(TestCase):
+    """Tests for the pending-interim warning on a group's meetings list.
+
+    The meetings page shows a ``#pending_warning`` banner when the group has an
+    interim meeting that is either awaiting approval (session status ``apprw``)
+    or approved but not yet announced (session status ``scheda``). See
+    ietf.meeting.helpers.has_pending_interim.
+    """
+
+    def _meetings_page(self, group):
+        url = urlreverse('ietf.group.views.meetings', kwargs={'acronym': group.acronym})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        return PyQuery(response.content)
+
+    def test_pending_approval_interim_shows_warning(self):
+        """An interim awaiting approval (apprw) triggers the warning."""
+        group = GroupFactory.create(type_id='wg')
+        SessionFactory.create(
+            meeting__type_id="interim",
+            meeting__date=date_today() + datetime.timedelta(days=30),
+            group=group,
+            status_id="apprw",
+        )
+        q = self._meetings_page(group)
+        warning = q('#pending_warning')
+        self.assertTrue(warning)
+        # The warning links to both the pending-approval and to-be-announced views
+        # and names the group.
+        self.assertIn(urlreverse('ietf.meeting.views.interim_pending'),
+                      [a.attrib['href'] for a in warning.find('a')])
+        self.assertIn(urlreverse('ietf.meeting.views.interim_announce'),
+                      [a.attrib['href'] for a in warning.find('a')])
+        self.assertIn(group.acronym, warning.text())
+
+    def test_to_be_announced_interim_shows_warning(self):
+        """An approved-but-unannounced interim (scheda) triggers the warning."""
+        group = GroupFactory.create(type_id='wg')
+        SessionFactory.create(
+            meeting__type_id="interim",
+            meeting__date=date_today() + datetime.timedelta(days=30),
+            group=group,
+            status_id="scheda",
+        )
+        q = self._meetings_page(group)
+        self.assertTrue(q('#pending_warning'))
+
+    def test_scheduled_interim_shows_no_warning(self):
+        """A fully scheduled interim (sched) does not trigger the warning."""
+        group = GroupFactory.create(type_id='wg')
+        SessionFactory.create(
+            meeting__type_id='interim',
+            meeting__date=date_today() + datetime.timedelta(days=30),
+            group=group,
+            status_id='sched',
+        )
+        q = self._meetings_page(group)
+        self.assertFalse(q('#pending_warning'))
+
+    def test_no_interim_meetings_shows_no_warning(self):
+        """A group with no interim meetings does not trigger the warning."""
+        group = GroupFactory.create(type_id='wg')
+        q = self._meetings_page(group)
+        self.assertFalse(q('#pending_warning'))
+
+    def test_pending_interim_for_other_group_not_shown(self):
+        """A pending interim belonging to another group must not warn on this group."""
+        group = GroupFactory.create(type_id='wg')
+        other = GroupFactory.create(type_id='wg')
+        SessionFactory.create(
+            meeting__type_id='interim',
+            meeting__date=date_today() + datetime.timedelta(days=30),
+            group=other,
+            status_id='apprw',
+        )
+        q = self._meetings_page(group)
+        self.assertFalse(q('#pending_warning'))
+
 
 class StatusUpdateTests(TestCase):
 

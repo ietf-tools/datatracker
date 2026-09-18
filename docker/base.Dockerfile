@@ -1,13 +1,48 @@
-FROM python:3.12-bookworm
+FROM debian:trixie AS builder
+
+# Update to the desired release tag
+ARG LIBYANG_TAG=v5.8.6
+
+# Build-time dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        cmake \
+        build-essential \
+        pkg-config \
+        ca-certificates \
+        libpcre2-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+RUN git clone --branch ${LIBYANG_TAG} --depth 1 \
+    https://github.com/CESNET/libyang.git libyang
+
+WORKDIR /src/libyang/build
+RUN cmake \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/opt/libyang \
+        -DBUILD_SHARED_LIBS=ON \
+        .. \
+    && make -j"$(nproc)" \
+    && make install
+
+FROM python:3.12-trixie
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV NODE_MAJOR=16
+ENV NODE_MAJOR=26
 
 # Update system packages
 RUN apt-get update \
     && apt-get -qy upgrade \
-    && apt-get -y install --no-install-recommends apt-utils dialog 2>&1
+    && apt-get -y install --no-install-recommends dialog 2>&1
+
+COPY --from=builder /opt/libyang /opt/libyang
+
+RUN echo /opt/libyang/lib > /etc/ld.so.conf.d/libyang.conf \
+    && ldconfig \
+    && ln -s /opt/libyang/bin/yanglint  /usr/bin/yanglint \
+    && ln -s /opt/libyang/bin/yangre    /usr/bin/yangre
 
 # Add Node.js Source
 RUN apt-get install -y --no-install-recommends ca-certificates curl gnupg \
@@ -51,7 +86,6 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 	libgtk2.0-0 \
 	libgtk-3-0 \
 	libnotify-dev \
-	libgconf-2-4 \
 	libgbm-dev \
 	libnss3 \
 	libxss1 \
@@ -60,7 +94,6 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 	libmagic-dev \
 	libmariadb-dev \
 	libmemcached-tools \
-	libyang2-tools \
 	locales \
 	make \
 	mariadb-client \
@@ -99,9 +132,6 @@ RUN GK_VERSION=$(if [ ${GECKODRIVER_VERSION:-latest} = "latest" ]; then echo "0.
   && chmod 755 /opt/geckodriver-$GK_VERSION \
   && ln -fs /opt/geckodriver-$GK_VERSION /usr/bin/geckodriver
 
-# Activate Yarn
-RUN corepack enable
-
 # Get rid of installation files we don't need in the image, to reduce size
 RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
@@ -111,8 +141,6 @@ ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
 
 # avoid million NPM install messages
 ENV npm_config_loglevel=warn
-# allow installing when the main user is root
-ENV npm_config_unsafe_perm=true
 # disable NPM funding messages
 ENV npm_config_fund=false
 

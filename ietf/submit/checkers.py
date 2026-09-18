@@ -3,10 +3,12 @@
 
 
 import io
+import json
 import os
 from pathlib import Path
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -311,3 +313,169 @@ class DraftYangChecker(object):
         info['items'] = items
         info['code']['yang'] = model_list
         return passed, message, errors, warnings, info
+
+
+class DraftIdnits3Checker(object):
+    """
+    Draft checker class for idnits3, run in "submission" mode.
+
+    idnits3 understands both text and XML Internet-Drafts, so both
+    check_file_xml() and check_file_txt() are defined; the XML is preferred
+    when the submission includes it, since that is the form the author wrote.
+
+    This checker is advisory: it never fails a submission, even when idnits3
+    reports errors that would block it once idnits3 becomes a required check.
+    It records whether it would have blocked in the check's `items` so that the
+    submitter can be warned.  A run that could not be completed at all (missing
+    or broken binary, unparsable output) returns None for `passed`, which marks
+    the check as "did not apply" and hides it from the submitter.
+    """
+
+    name = "idnits3 check"
+
+    symbol = ""
+
+    _severities = (
+        ("ValidationError", "Errors"),
+        ("ValidationWarning", "Warnings"),
+        ("ValidationComment", "Comments"),
+    )
+
+    def __init__(self, options=None):
+        if options is None:
+            # --mode submission limits the checks to those relevant when a
+            # draft is submitted; --output json gives us reliable per-severity
+            # counts and structured nits to render ourselves.
+            options = ["--mode", "submission", "--output", "json", "--no-color"]
+            if settings.IDSUBMIT_IDNITS3_OFFLINE:
+                options.append("--offline")
+        assert isinstance(options, list)
+        self.options = options
+
+    def _version(self):
+        try:
+            result = subprocess.run(
+                [settings.IDSUBMIT_IDNITS3_BINARY, "--version"],
+                capture_output=True,
+                timeout=settings.IDSUBMIT_IDNITS3_TIMEOUT,
+            )
+        except (OSError, subprocess.SubprocessError):
+            return "unknown version"
+        if result.returncode != 0:
+            return "unknown version"
+        return result.stdout.decode("utf-8", errors="replace").strip()
+
+    def _render(self, nits, counts):
+        """Render the idnits3 nits as the text shown to the submitter"""
+        lines = [
+            "idnits %s (submission mode): %d error%s, %d warning%s, %d comment%s"
+            % (
+                self._version(),
+                counts["error"], "" if counts["error"] == 1 else "s",
+                counts["warning"], "" if counts["warning"] == 1 else "s",
+                counts["comment"], "" if counts["comment"] == 1 else "s",
+            ),
+            "",
+            "These results do not affect this submission.  Errors reported here are",
+            "expected to prevent submission once idnits3 becomes a required check.",
+            "",
+        ]
+        if not nits:
+            lines.append("No nits found.")
+            return "\n".join(lines) + "\n"
+        index = 0
+        for severity, heading in self._severities:
+            of_severity = [n for n in nits if n.get("severity") == severity]
+            if not of_severity:
+                continue
+            lines.append("%s:" % heading)
+            lines.append("")
+            for nit in of_severity:
+                index += 1
+                indent = " " * 6
+                lines.append("%4d. %s" % (index, nit.get("code", "UNKNOWN")))
+                lines.append("%s%s" % (indent, nit.get("desc", "")))
+                if nit.get("text"):
+                    lines.append("%sText: %s" % (indent, nit["text"]))
+                if nit.get("path"):
+                    lines.append("%sPath: %s" % (indent, nit["path"]))
+                if nit.get("line"):
+                    lines.append(
+                        "%sAt: %s"
+                        % (
+                            indent,
+                            ", ".join(
+                                "line %s column %s" % (loc.get("line"), loc.get("pos"))
+                                for loc in nit["line"]
+                            ),
+                        )
+                    )
+                if nit.get("ref"):
+                    lines.append("%sSee %s" % (indent, nit["ref"]))
+                lines.append("")
+        return "\n".join(lines) + "\n"
+
+    def _check_file(self, path):
+        info = {
+            "checker": self.name,
+            "items": [],
+            "code": {},
+            "advisory": True,
+            "would_block_in_future": False,
+        }
+        cmd = [settings.IDSUBMIT_IDNITS3_BINARY] + self.options + [str(path)]
+        try:
+            result = subprocess.run(
+                cmd, capture_output=True, timeout=settings.IDSUBMIT_IDNITS3_TIMEOUT
+            )
+        except (OSError, subprocess.SubprocessError) as err:
+            message = "idnits3 error: %s:\n  %s" % (" ".join(cmd), err)
+            log(message)
+            return None, message, 0, 0, info
+        if result.returncode != 0:
+            message = "idnits3 error: %s:\n  Error %s: %s" % (
+                " ".join(cmd),
+                result.returncode,
+                result.stderr.decode("utf-8", errors="replace"),
+            )
+            log(message)
+            return None, message, 0, 0, info
+        try:
+            output = json.loads(result.stdout.decode("utf-8", errors="replace"))
+            counts = {
+                severity: int(output["nitsBySeverity"].get(severity, 0))
+                for severity in ("error", "warning", "comment")
+            }
+            nits = output.get("nits", [])
+            if not isinstance(nits, list) or not all(
+                isinstance(nit, dict) for nit in nits
+            ):
+                raise ValueError("'nits' is not a list of nits")
+        except (AttributeError, KeyError, TypeError, ValueError) as err:
+            message = "idnits3 error: %s:\n  Could not parse the idnits3 output: %s" % (
+                " ".join(cmd),
+                err,
+            )
+            log(message)
+            return None, message, 0, 0, info
+
+        info["items"] = [
+            (
+                nit["line"][0]["line"] if nit.get("line") else None,
+                None,
+                "%s: %s" % (nit.get("code", "UNKNOWN"), nit.get("desc", "")),
+            )
+            for nit in nits
+        ]
+        info["would_block_in_future"] = counts["error"] > 0
+        # Comments are neither errors nor warnings, but reporting them as
+        # warnings is the only way to get them in front of the submitter.
+        warnings = counts["warning"] + counts["comment"]
+        # Always passes -- idnits3 does not block submission yet.
+        return True, self._render(nits, counts), counts["error"], warnings, info
+
+    def check_file_txt(self, path):
+        return self._check_file(path)
+
+    def check_file_xml(self, path):
+        return self._check_file(path)

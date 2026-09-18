@@ -2,15 +2,15 @@
   "name": "del-packages",
   "version": "1.0.0",
   "description": "",
+  "license": "ISC",
+  "author": "",
   "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "@octokit/core": "^4.2.4",
-    "luxon": "^3.4.4"
+    "@octokit/core": "7.0.6",
+    "luxon": "3.7.2"
   }
 }

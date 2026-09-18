@@ -2,13 +2,13 @@
   "name": "coverage-action",
   "version": "1.0.0",
   "description": "Parse and generate coverage and changelog files for Datatracker releases",
-  "main": "index.js",
-  "author": "IETF Trust",
   "license": "BSD-3-Clause",
+  "author": "IETF Trust",
+  "type": "module",
+  "main": "index.js",
   "dependencies": {
-    "@actions/core": "1.11.1",
-    "@actions/github": "6.0.1",
-    "lodash": "4.17.21",
-    "luxon": "3.7.1"
+    "@actions/core": "3.0.1",
+    "@actions/github": "9.1.1",
+    "es-toolkit": "1.50.0"
   }
 }

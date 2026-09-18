@@ -5,7 +5,7 @@ import servePreviewAssets from './dev/vite-plugins/serve-preview-assets'
 import precompileLodashTemplates from './dev/vite-plugins/precompile-lodash-templates'
 
 // https://vitejs.dev/config/
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({ mode }) => {
   const viteConfig = {
     base: '/static/',
     build: {
@@ -23,9 +23,7 @@ export default defineConfig(({ command, mode }) => {
     plugins: [
       vue(),
       precompileLodashTemplates({
-        include: [
-          '**/shared/urls.js'
-        ]
+        include: ['**/shared/urls.js']
       })
     ],
     publicDir: 'ietf/static/public',
@@ -38,6 +36,20 @@ export default defineConfig(({ command, mode }) => {
       host: true,
       port: 3000,
       strictPort: true
+    },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          quietDeps: true,
+          silenceDeprecations: [
+            'import',
+            'if-function',
+            'global-builtin',
+            'color-functions',
+            'legacy-js-api'
+          ]
+        }
+      }
     }
   }
   if (mode === 'test') {

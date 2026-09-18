@@ -278,45 +278,5 @@ $ curl -S -F "apikey=DgAAAMLSi3coaE5TjrRs518xO8eBRlCmFF3eQcC8_SjUTtRGLGiJh7-1SYP
                 a regular login in order to activate access.
             </li>
         </ul>
-        <h2 id="signing-keys">
-            Signing Keys
-        </h2>
-        <p>
-            When sending notifications to other APIs, the datatracker may sign
-            information with a
-            <a href="{% url 'ietf.doc.views_doc.document_html' name='rfc7515' %}">
-                RFC
-                7515: JSON Web Signature (JWS)
-            </a>,
-            using a public/private keypair with
-            this public key:
-        </p>
-        <p>
-            <code>{{ key.export_public }}</code>
-        </p>
-        <p>
-            or alternatively:
-        </p>
-        <pre>{{ key.export_to_pem }}</pre>
-        <p>
-            To verify a signature and get the verified data using Python with the
-            <a href="https://jwcrypto.readthedocs.io/en/latest/">
-                jwcrypto
-            </a>
-            module,
-            you could do:
-        </p>
-        <pre>
-from jwcrypto import jwk, jws
-
-# ... receive json web signed data as 'data', used below ...
-
-key = jwk.JWK()
-key.import_from_pem(API_PUBLIC_KEY_PEM)   # the key above
-jwstoken = jws.JWS()
-jwstoken.deserialize(data)
-jwstoken.verify(key)
-payload = jwstoken.payload
-        </pre>
     </div>
 {% endblock %}

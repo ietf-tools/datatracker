@@ -3,9 +3,13 @@ from django.contrib import admin
 import simple_history
 
 from django import forms
+from django.contrib import messages
+from django.db import transaction
 
-from ietf.person.models import Email, Alias, Person, PersonalApiKey, PersonEvent, PersonApiKeyEvent, PersonExtResource
+from ietf.person.models import Email, Alias, Person, PersonalApiKey, PersonEvent, \
+    PersonApiKeyEvent, PersonExtResource, PersonUUID
 from ietf.person.name import name_parts
+from ietf.person.utils import queue_person_uuid_push
 
 from ietf.utils.admin import SaferStackedInline, SaferTabularInline
 from ietf.utils.validators import validate_external_resource_value
@@ -29,6 +33,53 @@ admin.site.register(Alias, AliasAdmin)
 class AliasInline(SaferStackedInline):
     model = Alias
 
+
+@admin.action(description="Make this the person's primary UUID")
+def set_primary(modeladmin, request, queryset):
+    """Re-designate a Person's primary UUID
+
+    Acts on exactly one UUID at a time: promoting two at once would either violate the
+    one-primary-per-person constraint or silently ignore one of them.
+    """
+    if queryset.count() != 1:
+        modeladmin.message_user(
+            request, "Select exactly one UUID.", level=messages.ERROR
+        )
+        return
+    new_primary = queryset.first()
+    if new_primary.primary:
+        modeladmin.message_user(request, "That UUID is already primary.")
+        return
+    person = new_primary.person
+    with transaction.atomic():
+        person.uuids.filter(primary=True).update(primary=False)
+        new_primary.primary = True
+        new_primary.save(update_fields=["primary"])
+    queue_person_uuid_push(person)
+    modeladmin.message_user(
+        request, f"{new_primary.uuid} is now the primary UUID for {person}."
+    )
+
+
+class PersonUUIDAdmin(admin.ModelAdmin):
+    list_display = ["uuid", "person", "primary", "time"]  # noqa: RUF012
+    list_filter = ["primary"]  # noqa: RUF012
+    search_fields = ["uuid", "person__name"]  # noqa: RUF012
+    raw_id_fields = ["person"]  # noqa: RUF012
+    readonly_fields = ["uuid", "primary", "time"]  # noqa: RUF012
+    actions = [set_primary]  # noqa: RUF012
+admin.site.register(PersonUUID, PersonUUIDAdmin)
+
+
+class PersonUUIDInline(SaferStackedInline):
+    model = PersonUUID
+    extra = 0
+    # primary is changed through the PersonUUID admin's set_primary action, which demotes
+    # the old primary first. Editing it here would trip the uniqueness constraint.
+    readonly_fields = ["uuid", "primary", "time"]  # noqa: RUF012
+    can_delete = False
+
+
 class PersonAdmin(simple_history.admin.SimpleHistoryAdmin):
     def plain_name(self, obj):
         if obj.plain:
@@ -41,7 +92,7 @@ class PersonAdmin(simple_history.admin.SimpleHistoryAdmin):
     readonly_fields = ("name_from_draft", )
     search_fields = ["name", "ascii"]
     raw_id_fields = ["user"]
-    inlines = [ EmailInline, AliasInline, ]
+    inlines = [ EmailInline, AliasInline, PersonUUIDInline]
 #    actions = None
 admin.site.register(Person, PersonAdmin)
 

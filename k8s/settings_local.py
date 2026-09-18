@@ -38,6 +38,14 @@ if _NOMCOM_APP_SECRET_B64 is not None:
 else:
     raise RuntimeError("DATATRACKER_NOMCOM_APP_SECRET_B64 must be set")
 
+_ACCOUNT_MIGRATION_PRIVATE_KEY_B64 = os.environ.get(
+    "DATATRACKER_ACCOUNT_MIGRATION_PRIVATE_KEY_B64", None
+)
+if _ACCOUNT_MIGRATION_PRIVATE_KEY_B64 is not None:
+    ACCOUNT_MIGRATION_PRIVATE_KEY = b64decode(_ACCOUNT_MIGRATION_PRIVATE_KEY_B64)
+else:
+    raise RuntimeError("DATATRACKER_ACCOUNT_MIGRATION_PRIVATE_KEY_B64 must be set")
+
 _IANA_SYNC_PASSWORD = os.environ.get("DATATRACKER_IANA_SYNC_PASSWORD", None)
 if _IANA_SYNC_PASSWORD is not None:
     IANA_SYNC_PASSWORD = _IANA_SYNC_PASSWORD
@@ -49,30 +57,6 @@ if _YOUTUBE_API_KEY is not None:
     YOUTUBE_API_KEY = _YOUTUBE_API_KEY
 else:
     raise RuntimeError("DATATRACKER_YOUTUBE_API_KEY must be set")
-
-_GITHUB_BACKUP_API_KEY = os.environ.get("DATATRACKER_GITHUB_BACKUP_API_KEY", None)
-if _GITHUB_BACKUP_API_KEY is not None:
-    GITHUB_BACKUP_API_KEY = _GITHUB_BACKUP_API_KEY
-else:
-    raise RuntimeError("DATATRACKER_GITHUB_BACKUP_API_KEY must be set")
-
-_API_KEY_TYPE = os.environ.get("DATATRACKER_API_KEY_TYPE", None)
-if _API_KEY_TYPE is not None:
-    API_KEY_TYPE = _API_KEY_TYPE
-else:
-    raise RuntimeError("DATATRACKER_API_KEY_TYPE must be set")
-
-_API_PUBLIC_KEY_PEM_B64 = os.environ.get("DATATRACKER_API_PUBLIC_KEY_PEM_B64", None)
-if _API_PUBLIC_KEY_PEM_B64 is not None:
-    API_PUBLIC_KEY_PEM = b64decode(_API_PUBLIC_KEY_PEM_B64)
-else:
-    raise RuntimeError("DATATRACKER_API_PUBLIC_KEY_PEM_B64 must be set")
-
-_API_PRIVATE_KEY_PEM_B64 = os.environ.get("DATATRACKER_API_PRIVATE_KEY_PEM_B64", None)
-if _API_PRIVATE_KEY_PEM_B64 is not None:
-    API_PRIVATE_KEY_PEM = b64decode(_API_PRIVATE_KEY_PEM_B64)
-else:
-    raise RuntimeError("DATATRACKER_API_PRIVATE_KEY_PEM_B64 must be set")
 
 _RED_PRECOMPUTER_TRIGGER_RETRY_DELAY = os.environ.get(
     "DATATRACKER_RED_PRECOMPUTER_TRIGGER_RETRY_DELAY", None
@@ -148,6 +132,17 @@ USING_DEBUG_EMAIL_SERVER = (
 )
 EMAIL_HOST = os.environ.get("DATATRACKER_EMAIL_HOST", "localhost")
 EMAIL_PORT = int(os.environ.get("DATATRACKER_EMAIL_PORT", "2025"))
+
+_email_host_user = os.environ.get("DATATRACKER_EMAIL_HOST_USER", None)
+_email_host_password = os.environ.get("DATATRACKER_EMAIL_HOST_PASSWORD", None)
+if _email_host_user is not None or _email_host_password is not None:
+    if _email_host_user is None or _email_host_password is None:
+        raise RuntimeError(
+            "DATATRACKER_EMAIL_HOST_USER and ..._PASSWORD must BOTH or NEITHER be set"
+        )
+    EMAIL_HOST_USER = _email_host_user
+    EMAIL_HOST_PASSWORD = _email_host_password
+    EMAIL_USE_TLS = True
 
 _broker_url = os.environ.get("DATATRACKER_BROKER_URL", None)
 _celery_password = os.environ.get("CELERY_PASSWORD", None)
@@ -233,21 +228,27 @@ else:
 # to leave a copy lying around. When done editing, copy/paste the final JSON through
 #    jq -c | base64
 # and copy/paste the output into the secret store.
-if "DATATRACKER_APP_API_TOKENS_JSON_B64" in os.environ:
-    if "DATATRACKER_APP_API_TOKENS_JSON" in os.environ:
+_app_api_tokens_json_b64 = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON_B64")
+_app_api_tokens_json = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON")
+if _app_api_tokens_json_b64 is not None:
+    if _app_api_tokens_json is not None:
         raise RuntimeError(
             "Only one of DATATRACKER_APP_API_TOKENS_JSON and DATATRACKER_APP_API_TOKENS_JSON_B64 may be set"
         )
-    _APP_API_TOKENS_JSON = b64decode(
-        os.environ.get("DATATRACKER_APP_API_TOKENS_JSON_B64")
+    _app_api_tokens_json = b64decode(
+        _app_api_tokens_json_b64
     )
-else:
-    _APP_API_TOKENS_JSON = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON", None)
 
-if _APP_API_TOKENS_JSON is not None:
-    APP_API_TOKENS = json.loads(_APP_API_TOKENS_JSON)
+if _app_api_tokens_json is not None:
+    APP_API_TOKENS = json.loads(_app_api_tokens_json)
 else:
     APP_API_TOKENS = {}
+
+_APP_API_TOKEN_PEPPER = os.environ.get("DATATRACKER_APP_API_TOKEN_PEPPER", None)
+if _APP_API_TOKEN_PEPPER is None:
+    raise RuntimeError("DATATRACKER_APP_API_TOKEN_PEPPER must be set")
+else:
+    APP_API_TOKEN_PEPPER_BYTES = _APP_API_TOKEN_PEPPER.encode("utf-8")
 
 EMAIL_COPY_TO = ""
 
@@ -317,6 +318,7 @@ DJANGO_VITE["default"]["manifest_path"] = os.path.join(
 # Binaries that are different in the docker image
 DE_GFM_BINARY = "/usr/local/bin/de-gfm"
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
+IDSUBMIT_IDNITS3_BINARY = "/usr/local/bin/idnits3"
 
 # Duplicating production cache from settings.py and using it whether we're in production mode or not
 MEMCACHED_HOST = os.environ.get("DT_MEMCACHED_SERVICE_HOST", "127.0.0.1")
@@ -387,6 +389,12 @@ CACHES = {
         "KEY_PREFIX": "ietf:celery",
     },
 }
+
+_person_profile_cache_seconds = os.environ.get(
+    "DATATRACKER_PERSON_PROFILE_CACHE_SECONDS", None
+)
+if _person_profile_cache_seconds is not None:
+    PERSON_PROFILE_CACHE_SECONDS = int(_person_profile_cache_seconds)
 
 _csrf_trusted_origins_str = os.environ.get("DATATRACKER_CSRF_TRUSTED_ORIGINS")
 if _csrf_trusted_origins_str is not None:

@@ -21,6 +21,7 @@ from ietf.group.utils import (save_milestone_in_history, can_manage_all_groups_o
 from ietf.name.models import GroupMilestoneStateName
 from ietf.group.mails import email_milestones_changed
 from ietf.utils.fields import DatepickerDateField
+from ietf.utils.log import log
 from ietf.utils.response import permission_denied
 
 class MilestoneForm(forms.Form):
@@ -415,7 +416,11 @@ def reset_charter_milestones(request, acronym, group_type=None):
         try:
             milestone_ids = [int(v) for v in request.POST.getlist("milestone")]
         except ValueError as e:
-            return HttpResponseBadRequest("error in list of ids - %s" % e)
+            # Log the detail rather than reflecting it - the exception message from int()
+            # embeds the offending value verbatim, and HttpResponseBadRequest serves its
+            # content as unescaped text/html.
+            log("Invalid milestone id in reset_charter_milestones POST: %s" % e)
+            return HttpResponseBadRequest("error in list of ids")
 
         # delete existing
         for m in charter_milestones:

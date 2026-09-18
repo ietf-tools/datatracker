@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2025, All Rights Reserved
+# Copyright The IETF Trust 2009-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Portion Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
@@ -250,6 +250,34 @@ def load_and_run_fixtures(verbosity):
             module = importlib.import_module(module_name)
             fn = getattr(module, components[-1])
             fn()
+
+    check_base_data_person_uuids()
+
+
+def check_base_data_person_uuids():
+    """Every Person in the base test data must have exactly one primary UUID
+
+    UUIDs are assigned by an explicit assign_primary_uuid() call at each site that
+    creates a Person (see ietf.person.utils), so a new site added without one would
+    otherwise go unnoticed until something asked for the Person's identifier.
+    """
+    from django.db.models import Count, Q
+
+    from ietf.person.models import Person
+
+    broken = list(
+        Person.objects.annotate(
+            primary_count=Count("uuids", filter=Q(uuids__primary=True), distinct=True)
+        )
+        .exclude(primary_count=1)
+        .values_list("pk", "name", "primary_count")[:10]
+    )
+    if broken:
+        raise RuntimeError(
+            "Base test data has Persons without exactly one primary UUID - a Person "
+            "with none needs an assign_primary_uuid() call where it is created: "
+            + ", ".join(f"{pk} ({name}): {n} primary" for pk, name, n in broken)
+        )
 
 def safe_create_test_db(self, verbosity, *args, **kwargs):
     if old_create is None:
@@ -1036,7 +1064,7 @@ class IetfTestRunner(DiscoverRunner):
                 with tempfile.NamedTemporaryFile() as stdout:
                     subprocess.run(
                         [
-                            "yarn",
+                            "npx",
                             "html-validate",
                             "--formatter=json",
                             "--config=" + self.config_file[kind].name,

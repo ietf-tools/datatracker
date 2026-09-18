@@ -11,8 +11,17 @@ from celery import shared_task
 
 from django.conf import settings
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 
-from ietf.doc.models import DocEvent, DocTagName, Document, RelatedDocument, RpcAssignmentDocEvent, State
+from ietf.doc.models import (
+    DocEvent,
+    DocTagName,
+    Document,
+    RelatedDocument,
+    RpcActionHolderOpenEntry,
+    RpcAssignmentDocEvent,
+    State,
+)
 from ietf.doc.tasks import rebuild_reference_relations_task
 from ietf.doc.utils import add_state_change_event, new_state_change_event, update_action_holders
 from ietf.person.models import Person
@@ -299,6 +308,154 @@ def refresh_rfc_index_task():
         mark_rfcindex_as_processed(new_processed_time)
 
 
+# Human-readable labels for the RPC publication queue "Status", mirroring the
+# ietf-tools/queue website (website/app/utils/queue.ts, renderAssignmentsByRoles)
+# so the datatracker shows the same status text that appears at
+# https://queue.rfc-editor.org/. The queue "Status" is not a stored field; it is
+# derived from the active assignment roles, pending activities, blocking reasons
+# and IANA status carried in the purple pubq queue payload.
+RPC_QUEUE_ROLE_LABELS = {
+    "first_editor": "In Progress (First Edit)",
+    "second_editor": "In Progress (Second Edit)",
+    "final_review_editor": "In Final Review",
+}
+# Roles the queue site does not surface in the Status column.
+RPC_QUEUE_HIDDEN_ROLES = {"ref_checker", "publisher"}
+
+
+def _humanize_slug(slug):
+    return slug.replace("_", " ")
+
+
+def _rpc_role_label(role):
+    return RPC_QUEUE_ROLE_LABELS.get(role, _humanize_slug(role))
+
+
+def _rpc_blocking_reason_label(name):
+    # Special case mirrored from the queue site's humanFriendlyBlockingReason().
+    if name == "Reference: First Edit Incomplete":
+        return "Author Input Required"
+    return _humanize_slug(name)
+
+
+def format_rpc_queue_status(obj):
+    """Render the RPC publication queue "Status" for a single queue entry.
+
+    Mirrors renderAssignmentsByRoles() from the ietf-tools/queue website so the
+    datatracker presents the same status text. ``obj`` is one entry of the purple
+    pubq queue payload. Roles, pending activities and blocking reasons are sorted
+    so the result is stable (a change to the string is what triggers a new
+    RpcAssignmentDocEvent).
+    """
+    roles = {
+        a["role"] for a in (obj.get("assignment_set") or []) if a.get("role")
+    }
+    is_blocked = "blocked" in roles
+
+    parts = []
+
+    # IANA hold: iana_status "not_completed" while a first_editor is assigned.
+    iana_status = obj.get("iana_status") or {}
+    if iana_status.get("slug") == "not_completed" and "first_editor" in roles:
+        parts.append("IANA hold")
+
+    # Pending activities (only when not blocked): "Awaiting <role>", skipping any
+    # role that is already a current assignment. Note the queue site does NOT hide
+    # ref_checker/publisher here (only for current-role badges below), so e.g.
+    # "Awaiting Reference Checker" can appear.
+    if not is_blocked:
+        for activity in sorted(
+            obj.get("pending_activities") or [],
+            key=lambda a: (a.get("name") or a.get("slug") or ""),
+        ):
+            slug = activity.get("slug")
+            if not slug or slug in roles:
+                continue
+            parts.append(f"Awaiting {activity.get('name') or _humanize_slug(slug)}")
+
+    # Current assignment roles (ref_checker/publisher hidden). Blocking reason
+    # names are appended to the "blocked" role.
+    blocking_names = sorted(
+        _rpc_blocking_reason_label(br["reason"]["name"])
+        for br in (obj.get("blocking_reasons") or [])
+        if br.get("reason", {}).get("name")
+    )
+    for role in sorted(roles - RPC_QUEUE_HIDDEN_ROLES):
+        label = _rpc_role_label(role)
+        if role == "blocked" and blocking_names:
+            label += ": " + ", ".join(blocking_names)
+        parts.append(label)
+
+    if not parts:
+        return "Awaiting Editor Assignment"
+    return ", ".join(parts)
+
+
+# The datatracker's "(System)" person. The RPC tool substitutes a placeholder
+# person of its own whenever no real person was named, and sends that person's
+# datatracker id - so an action holder must never be associated with this pk.
+# Which pk the RPC tool uses is configurable at its end, hence the separate
+# check against the "(System)" person the datatracker actually has.
+SYSTEM_PERSON_ID = 1
+
+
+def _rpc_action_holder_person(holder, system_person):
+    """Resolve the datatracker Person for one action holder, if there is one
+
+    Returns None whenever the entry does not name a person the datatracker can
+    act on. The RPC tool substitutes its system person when no real person was
+    named, and that placeholder must never become an action holder here. Do not
+    use "body" to make this decision - the RPC tool's edit path can set or clear
+    "body" without touching the person, so it is unreliable in both directions.
+    """
+    person_id = (holder.get("person") or {}).get("person_id")
+    if person_id in (SYSTEM_PERSON_ID, system_person.pk):
+        return None
+    if holder.get("body"):
+        return None  # a body holds the action, not a person
+    person = Person.objects.filter(pk=person_id).first()
+    if person is None:
+        log.log(
+            f"process_rpc_queue_task: unknown action holder person {person_id}"
+        )
+        return None
+    return person
+
+
+def _sync_rpc_action_holders(doc, holders, rfc_number, system_person):
+    """Reconcile the open action holder entries for one document"""
+    open_purple_ids = []
+    for holder in holders:
+        if holder.get("completed") is not None:
+            # The RPC tool reports completed action holders as well as open
+            # ones. Only open ones are kept here, so this line is the only
+            # place the datatracker sees a completion happen.
+            continue
+        RpcActionHolderOpenEntry.objects.update_or_create(
+            purple_id=holder["id"],
+            defaults=dict(
+                document=doc,
+                person=_rpc_action_holder_person(holder, system_person),
+                body=holder.get("body") or "",
+                display_name=holder.get("display_name") or "",
+                comment=holder.get("comment") or "",
+                rfc_number=rfc_number,
+                since_when=parse_datetime(holder["since_when"]),
+                deadline=(
+                    parse_datetime(holder["deadline"])
+                    if holder.get("deadline")
+                    else None
+                ),
+            ),
+        )
+        open_purple_ids.append(holder["id"])
+    # Anything else we were holding for this document has been completed or
+    # removed at the RPC tool.
+    RpcActionHolderOpenEntry.objects.filter(document=doc).exclude(
+        purple_id__in=open_purple_ids
+    ).delete()
+
+
 @shared_task
 def process_rpc_queue_task(data: list):
     in_progress_state = State.objects.get(
@@ -366,16 +523,7 @@ def process_rpc_queue_task(data: list):
                 e.save()
                 events.append(e)
 
-        roles = sorted(a["role"] for a in obj.get("assignment_set", []))
-        next_assignments = ", ".join(roles)
-        blocking_names = sorted(
-            br["reason"]["name"] for br in obj.get("blocking_reasons", [])
-        )
-        if blocking_names:
-            next_assignments += ": " + ", ".join(blocking_names)
-
-        if next_assignments == "":
-            next_assignments = "Awaiting Editor Assignment"
+        next_assignments = format_rpc_queue_status(obj)
 
         prev_assignments_event = d.latest_event(
             RpcAssignmentDocEvent, type="changed_rpc_assignments"
@@ -411,6 +559,10 @@ def process_rpc_queue_task(data: list):
 
         d.tags.remove(*iana_ref_tags)
 
+        _sync_rpc_action_holders(
+            d, obj.get("actionholder_set") or [], rfc_number, system
+        )
+
         if events:
             d.save_with_history(events)
 
@@ -421,3 +573,4 @@ def process_rpc_queue_task(data: list):
     ):
         d.tags.remove(*iana_ref_tags)
         d.unset_state("draft-rfceditor")
+        RpcActionHolderOpenEntry.objects.filter(document=d).delete()

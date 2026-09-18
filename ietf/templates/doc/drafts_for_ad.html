@@ -80,6 +80,39 @@
             </tbody>
         </table>
     {% endif %}
+    {% if rpc_action_holders %}
+        <h2 class="mt-4">RPC decisions pending from {{ ad.name }}</h2>
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <tr>
+                    <th scope="col" data-sort="document">Document</th>
+                    <th scope="col" data-sort="queue">Queue entry</th>
+                    <th scope="col" data-sort="since">Waiting since</th>
+                    <th scope="col" data-sort="deadline">Deadline</th>
+                    <th scope="col" data-sort="request">Request</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in rpc_action_holders %}
+                    <tr>
+                        <td>{{ entry.document.displayname_with_link }}</td>
+                        <td>
+                            {% if entry.final_review_url %}
+                                <a href="{{ entry.final_review_url }}">Final review</a>
+                            {% endif %}
+                        </td>
+                        <td>{{ entry.since_when|date:"Y-m-d" }}</td>
+                        <td>
+                            {% if entry.deadline %}
+                                {{ entry.deadline|date:"Y-m-d" }}
+                            {% endif %}
+                        </td>
+                        <td>{{ entry.comment }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
     <h2 class="mt-4">Documents for {{ ad.name }}</h2>
     {% include "doc/search/search_results.html" with start_table=True end_table=True %}
 {% endblock %}

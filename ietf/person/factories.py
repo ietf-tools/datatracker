@@ -20,7 +20,8 @@ from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 
-from ietf.person.models import Person, Alias, Email, PersonalApiKey, PersonApiKeyEvent, PERSON_API_KEY_ENDPOINTS
+from ietf.person.models import Person, Alias, Email, PersonalApiKey, PersonApiKeyEvent, \
+    PERSON_API_KEY_ENDPOINTS, PersonUUID
 from ietf.person.name import normalize_name, unidecode_name
 
 
@@ -64,6 +65,21 @@ class UserFactory(factory.django.DjangoModelFactory):
         obj.set_password( '%s+password' % obj.username ) # pylint: disable=no-value-for-parameter
         obj.save()
 
+
+class PersonUUIDFactory(factory.django.DjangoModelFactory):
+    """A UUID for a Person
+
+    Defaults to a superseded, non-primary UUID, which is what a test asking for an extra
+    UUID wants. PersonFactory uses this with primary=True to make each Person's primary;
+    creating a second primary for the same Person violates a uniqueness constraint.
+    """
+    person = factory.SubFactory("ietf.person.factories.PersonFactory")
+    primary = False
+
+    class Meta:
+        model = PersonUUID
+
+
 class PersonFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Person
@@ -78,6 +94,16 @@ class PersonFactory(factory.django.DjangoModelFactory):
 
     class Params:
         with_bio = factory.Trait(biography = "\n\n".join(fake.paragraphs())) # type: ignore
+
+    @factory.post_generation
+    def primary_uuid(obj, create, extracted, **kwargs):  # pylint: disable=no-self-argument
+        """Give the Person the primary UUID every Person is supposed to have
+
+        Pass primary_uuid=False for a Person with no UUIDs at all, which is otherwise
+        not reachable through any production path.
+        """
+        if create and extracted is not False:
+            PersonUUIDFactory(person=obj, primary=True)
 
     @factory.post_generation
     def default_aliases(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument

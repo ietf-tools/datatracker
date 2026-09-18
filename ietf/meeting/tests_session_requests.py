@@ -12,6 +12,7 @@ from ietf.utils.test_utils import TestCase
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.meeting.models import Session, ResourceAssociation, SchedulingEvent, Constraint
 from ietf.meeting.factories import MeetingFactory, SessionFactory
+from ietf.meeting.views_session_request import get_requester_text
 from ietf.name.models import ConstraintName, TimerangeName
 from ietf.person.factories import PersonFactory
 from ietf.person.models import Person
@@ -723,6 +724,70 @@ class SubmitRequestCase(TestCase):
             f"{header} meeting session request has just been submitted by {requester.name}.",
             get_payload_text(msg),
         )
+
+    def test_wg_request_notification_msg(self):
+        to = "<iesg-secretary@ietf.org>"
+        subject = "Dummy subject"
+        template = "meeting/session_request_notification.txt"
+        header = "A new"
+        meeting = MeetingFactory(type_id="ietf", date=date_today())
+        area = GroupFactory(type_id='area')
+        mars = GroupFactory(parent=area, acronym='mars')
+        secretariat_role = RoleFactory(group__acronym='secretariat', name_id='secr')
+        requester = get_requester_text(secretariat_role.person, mars)
+        context = {"header": header, "meeting": meeting, "requester": requester}
+        cc = "cc.a@example.com, cc.b@example.com"
+        bcc = "bcc@example.com"
+
+        msg = send_mail(
+            None,
+            to,
+            None,
+            subject,
+            template,
+            context,
+            cc=cc,
+            bcc=bcc,
+        )
+        # Undo the text wrapping for simple checking
+        payload = get_payload_text(msg).replace("\n"," ")
+        self.assertIn(
+            f"{header} meeting session request has just been submitted by {requester}",
+            payload,
+        )
+        self.assertIn("MARS Working Group", payload)
+
+    def test_bof_request_notification_msg(self):
+        to = "<iesg-secretary@ietf.org>"
+        subject = "Dummy subject"
+        template = "meeting/session_request_notification.txt"
+        header = "A new"
+        meeting = MeetingFactory(type_id="ietf", date=date_today())
+        bof = RoleFactory(group__type_id="wg", group__state_id="bof", name_id="chair").group
+        secretariat_role = RoleFactory(group__acronym='secretariat', name_id='secr')
+        requester = get_requester_text(secretariat_role.person, bof)
+        context = {"header": header, "meeting": meeting, "requester": requester}
+        cc = "cc.a@example.com, cc.b@example.com"
+        bcc = "bcc@example.com"
+
+        msg = send_mail(
+            None,
+            to,
+            None,
+            subject,
+            template,
+            context,
+            cc=cc,
+            bcc=bcc,
+        )
+        # Undo the text wrapping for simple checking
+        payload = get_payload_text(msg).replace("\n"," ")
+        self.assertIn(
+            f"{header} meeting session request has just been submitted by {requester}",
+            payload,
+        )
+        self.assertIn("BOF", payload)
+        self.assertNotIn("Working Group", payload)
 
     def test_request_notification_third_session(self):
         meeting = MeetingFactory(type_id='ietf', date=date_today())
