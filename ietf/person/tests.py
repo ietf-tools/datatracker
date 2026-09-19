@@ -1,5 +1,4 @@
-# Copyright The IETF Trust 2014-2025, All Rights Reserved
-# -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2014-2026, All Rights Reserved
 
 
 import datetime
@@ -22,8 +21,6 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse as urlreverse, NoReverseMatch
 from django.utils import timezone
 from django.utils.encoding import iri_to_uri
-
-import yaml
 
 import debug                            # pyflakes:ignore
 
