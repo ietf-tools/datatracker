@@ -357,8 +357,11 @@ class BallotWriteupsTests(TestCase):
         )
 
         text = self._regenerate_last_call_text(draft)
+        # Text depends on the contents of doc/mail/last_call_announcement.txt. Only
+        # check for the last word before EOL ("document:") to avoid wrapping variations
+        # causing random test failures.
         self.assertIn(
-            "consider the following document:\n"
+            "document:\n"
             f"  'A short title'\n"
             f"  {draft.file_tag()} as Proposed Standard\n",
             text,
