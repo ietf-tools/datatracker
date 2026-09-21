@@ -503,6 +503,9 @@ if "DATATRACKER_RFCINDEX_OUTPUT_PATH" in os.environ:
 if "DATATRACKER_RFCINDEX_INPUT_PATH" in os.environ:
     RFCINDEX_INPUT_PATH = os.environ.get("DATATRACKER_RFCINDEX_INPUT_PATH")
 
+if "DATATRACKER_POPULARITY_JSON_PATH" in os.environ:
+    POPULARITY_JSON_PATH = os.environ.get("DATATRACKER_POPULARITY_JSON_PATH")
+
 # Configure the blobdb app for artifact storage
 _blobdb_replication_enabled = (
     os.environ.get("DATATRACKER_BLOBDB_REPLICATION_ENABLED", "true").lower() == "true"

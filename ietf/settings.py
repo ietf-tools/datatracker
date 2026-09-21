@@ -1011,6 +1011,9 @@ RFC_FILE_TYPES = IDSUBMIT_FILE_TYPES
 RFCINDEX_INPUT_PATH = "other/"
 RFCINDEX_OUTPUT_PATH = "other/"
 
+# Paths in the reef bucket
+POPULARITY_JSON_PATH = "popularity.json"
+
 IDSUBMIT_MAX_DRAFT_SIZE =  {
     'txt':  2*1024*1024,  # Max size of txt draft file in bytes
     'xml':  3*1024*1024,  # Max size of xml draft file in bytes

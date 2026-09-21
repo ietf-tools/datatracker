@@ -3,22 +3,18 @@
 
 import json
 
+from django.conf import settings
 from django.core.cache import caches
 from django.core.files.storage import storages, Storage
-
-# Relative path to popularity.json in the reef storage
-POPULARITY_JSON_PATH = "popularity.json"
 
 
 class _PopularityRankingCache:
     CACHE_LIFETIME = 15 * 60  # seconds
 
-    @property
-    def storage(self) -> Storage:
-        return storages["reef_bucket"]
-
     def get_popularity_json(self):
-        with self.storage.open(POPULARITY_JSON_PATH, "rb") as fp:
+        storage = storages["reef_bucket"]
+        popularity_json_path = settings.POPULARITY_JSON_PATH
+        with storage.open(popularity_json_path, "rb") as fp:
             return json.load(fp)
 
     @staticmethod
@@ -62,6 +58,7 @@ class _PopularityRankingCache:
     def __call__(self, item: int) -> int | None:
         rankings = self.cached_popularity_rankings()
         return rankings.get(item, None)
+
 
 # Look up popularity ranking of an RFC. Call with rfc_number (int) as a parameter, get
 # ranking. Value is None if there is no ranking for the RFC. This indicates the lowest
