@@ -3,7 +3,7 @@
 {% for session in sessions %}
     {% with item=session.official_timeslotassignment %} {% with timeslot=item.timeslot %}
         <div class="mt-4">
-            {% if not session.cancelled %}
+            {% if not session.inactive %}
                 <div class="regular ms-3 float-end">
                     {# see note in the included templates re: show_agenda parameter and required JS import #}
                     {% if meeting.type.slug == 'interim' %}
@@ -70,7 +70,7 @@
                             <td>
                                 <a href="{{ pres.document.get_href }}">{{ pres.document.title }}</a>
                                 <a href="{{ url }}">({{ pres.document.name }})</a>
-                                {% if user|has_role:"Secretariat" or can_manage_materials %}
+                                {% if not session.inactive and user|has_role:"Secretariat" or not session.inactive and can_manage_materials %}
                                     {% if pres.document.type.slug == 'minutes' %}
                                         {% url 'ietf.meeting.views.upload_session_minutes' session_id=session.pk num=session.meeting.number as upload_url %}
                                     {% elif pres.document.type.slug == 'narrativeminutes' %}
@@ -101,7 +101,7 @@
                 </tbody>
             {% endif %}
         </table>
-        {% if can_manage_materials %}
+        {% if can_manage_materials and not session.inactive %}
             {% if not session.type_counter.agenda %}
                 <a class="btn btn-primary"
                    href="{% url 'ietf.meeting.views.upload_session_agenda' session_id=session.pk num=session.meeting.number %}">
@@ -122,11 +122,13 @@
                 </a>
         {% endif %}           
         {% endif %}
-        {% if user|has_role:"Secretariat" and not session.type_counter.bluesheets or meeting.type.slug == 'interim' and can_manage_materials and not session.type_counter.bluesheets %}
-            <a class="btn btn-primary"
-               href="{% url 'ietf.meeting.views.upload_session_bluesheets' session_id=session.pk num=session.meeting.number %}">
-                Upload bluesheets
-            </a>
+        {% if not session.inactive %}
+            {% if user|has_role:"Secretariat" and not session.type_counter.bluesheets or meeting.type.slug == 'interim' and can_manage_materials and not session.type_counter.bluesheets %}
+                <a class="btn btn-primary"
+                   href="{% url 'ietf.meeting.views.upload_session_bluesheets' session_id=session.pk num=session.meeting.number %}">
+                    Upload bluesheets
+                </a>
+            {% endif %}
         {% endif %}
         {% if session.filtered_chatlog_and_polls %}
             <h3 class="mt-4">Chatlog and polls</h3>
@@ -150,6 +152,7 @@
                id="slides_{{ session.pk }}">
             {# The tbody is rendered even when there are no slides, so that it can be a drag-and-drop target. #}
             <tbody data-session="{{ session.pk }}"
+                   {% if session.inactive %}data-frozen="true"{% endif %}
                    data-add-to-session="{% url 'ietf.meeting.views.ajax_add_slides_to_session' session_id=session.pk num=session.meeting.number %}"
                    data-remove-from-session="{% url 'ietf.meeting.views.ajax_remove_slides_from_session' session_id=session.pk num=session.meeting.number %}"
                    data-reorder-in-session="{% url 'ietf.meeting.views.ajax_reorder_slides_in_session' session_id=session.pk num=session.meeting.number %}">
@@ -162,7 +165,7 @@
                             </td>
                         {% endif %}
                         <td>
-                            {% if can_manage_materials %}
+                            {% if can_manage_materials and not session.inactive %}
                                 <a class="btn btn-primary btn-sm float-end ms-1"
                                    href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number name=pres.document.name %}">
                                     Upload revision
@@ -179,11 +182,14 @@
                 {% endfor %}
             </tbody>
         </table>
-        {% if can_manage_materials %}
+        {% if session.inactive %}
+            {% if can_manage_materials and session.filtered_slides %}<div class="form-text">This session will not happen. Drag a slide deck to one of the scheduled sessions to move it there.</div>{% endif %}
+        {% elif can_manage_materials %}
             <a class="btn btn-primary uploadslides"
                href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number %}">
                 Upload new slides
             </a>
+            <div class="form-text">Drag-and-drop to reorder slides, or to move them to another session of this group</div>
         {% elif request.user.is_authenticated and not session.is_past %}
             <a class="btn btn-primary proposeslides"
                href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number %}">
@@ -191,7 +197,6 @@
             </a>
         {% endif %}
 
-    {% if can_manage_materials %}<div class="form-text">Drag-and-drop to reorder slides, or to move them to another session of this group</div>{% endif %}
     <h3 class="mt-4">Internet-Drafts</h3>
     <table class="table table-sm table-striped">
         {% if session.filtered_drafts %}
@@ -206,7 +211,7 @@
                             </a>
                         </td>
                         <td>
-                            {% if can_manage_materials %}
+                            {% if can_manage_materials and not session.inactive %}
                                 <a class="btn btn-primary btn-sm"
                                    href="{% url 'ietf.meeting.views.remove_sessionpresentation' session_id=session.pk num=session.meeting.number name=pres.document.name %}">
                                     Remove
@@ -218,13 +223,13 @@
             </tbody>
         {% endif %}
     </table>
-    {% if can_manage_materials %}
+    {% if can_manage_materials and not session.inactive %}
         <a class="btn btn-primary"
            href="{% url 'ietf.meeting.views.add_session_drafts' session_id=session.pk num=session.meeting.number %}">
             Link additional I-Ds to session
         </a>
     {% endif %}
-    {% if timezone_now < timeslot.end_time %}{# show meeting tools until the session ends #}
+    {% if not session.inactive and timezone_now < timeslot.end_time %}{# show meeting tools until the session ends #}
         <h3 class="mt-4">Meeting tools</h3>
         <table class="table table-sm table-striped meeting-tools"
                id="meeting_tools_{{ session.pk }}">
@@ -304,7 +309,7 @@
             {% endif %}
             </tbody>
         </table>
-    {% else %}{# session is in the past #}
+    {% elif not session.inactive or session.recordings %}{# the session is over, or will not happen but was recorded #}
         <h3 class="mt-4">Notes and recordings</h3>
         <table class="table table-sm table-striped meeting-tools"
                id="notes_and_recordings_{{ session.pk }}">
@@ -368,7 +373,7 @@
         </table>
     {% endif %}
 
-    {% if can_manage_materials %}
+    {% if can_manage_materials and not session.inactive %}
         <a class="btn btn-primary"
             href="{% url 'ietf.meeting.views.add_session_recordings' session_id=session.pk num=session.meeting.number %}">
             Link additional recordings to session

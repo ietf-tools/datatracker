@@ -4618,6 +4618,7 @@ class SessionDetailsTests(TestCase):
         """Session numbers count scheduled sessions; unscheduled ones show their status instead"""
         for unscheduled_status in ('canceled', 'resched'):
             first, unscheduled, last = make_group_sessions(['sched', unscheduled_status, 'sched'])
+            SessionPresentationFactory(session=unscheduled, document__type_id='slides')  # or it would not be shown at all
             url = urlreverse('ietf.meeting.views.session_details', kwargs=dict(num=first.meeting.number, acronym=first.group.acronym))
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
@@ -4627,6 +4628,55 @@ class SessionDetailsTests(TestCase):
             self.assertIn('Session 2', headings[last])
             self.assertNotIn('Session', headings[unscheduled])
             self.assertIn(SessionStatusName.objects.get(slug=unscheduled_status).name, headings[unscheduled])
+
+    def test_session_details_inactive_sessions(self):
+        """Cancelled and rescheduled sessions: hidden when empty, otherwise folded away without any controls"""
+        chair_role = RoleFactory(name_id='chair', group__type_id='wg', group__state_id='active')
+        group = chair_role.group
+        meeting = MeetingFactory(type_id='ietf', date=date_today() + datetime.timedelta(days=7))
+        meeting.importantdate_set.create(name_id='revsub', date=meeting.date + datetime.timedelta(days=20))
+        live, empty_cancelled, cancelled, tombstone = (
+            SessionFactory(meeting=meeting, group=group, status_id=status)
+            for status in ('sched', 'canceled', 'canceled', 'resched')
+        )
+        tombstone.tombstone_for = live
+        tombstone.save()
+        deck = SessionPresentationFactory(session=cancelled, document__type_id='slides').document
+        SessionPresentationFactory(session=cancelled, document__type_id='draft', rev=None)
+        SessionPresentationFactory(session=tombstone, document__type_id='agenda')
+        username = chair_role.person.user.username
+        self.client.login(username=username, password=username + '+password')
+        url = urlreverse('ietf.meeting.views.session_details', kwargs=dict(num=meeting.number, acronym=group.acronym))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        self.assertFalse(q('#session_%d' % empty_cancelled.pk), 'A cancelled session with nothing to show is not shown')
+        self.assertNotContains(r, 'Unscheduled Sessions', msg_prefix='nothing is merely unscheduled')
+
+        for section, sess in (('cancelled', cancelled), ('rescheduled', tombstone)):
+            toggle = q('a[data-bs-toggle=collapse][href="#%s-sessions"]' % section)
+            self.assertEqual(len(toggle), 1, section)
+            self.assertIn('(1)', toggle.text())
+            folded = q('div#%s-sessions' % section)
+            self.assertIn('collapse', folded.attr('class'))
+            self.assertNotIn('show', folded.attr('class').split(), 'folded away by default')
+            self.assertEqual(len(folded.find('#session_%d' % sess.pk)), 1, 'the session with materials is inside its section')
+            self.assertFalse(folded.find('a.btn'), 'no buttons of any kind on a %s session' % section)
+            self.assertFalse(folded.find('a[href*="/session/%d/"]' % sess.pk), 'no links to management views')
+
+        cancelled_body = q('table#slides_%d > tbody' % cancelled.pk)
+        self.assertEqual(cancelled_body.attr('data-frozen'), 'true')
+        row = cancelled_body.find('tr[data-name="%s"]' % deck.name)
+        self.assertIn('draggable', row.attr('class'), 'the deck can still be dragged out')
+        self.assertTrue(row.find('.drag-handle'))
+        self.assertIn('Drag a slide deck to one of the scheduled sessions', cancelled_body.parents('div').text())
+        self.assertNotIn('Meeting tools', q('div#rescheduled-sessions').text(), 'a tombstone offers no way to join')
+
+        live_body = q('table#slides_%d > tbody' % live.pk)
+        self.assertIsNone(live_body.attr('data-frozen'))
+        self.assertTrue(q('#session_%d' % live.pk).parents().is_('body'))
+        self.assertTrue(q('a.uploadslides[href*="/session/%d/"]' % live.pk), 'the live session keeps its controls')
 
     def test_session_details_slides_drag_and_drop_markup(self):
         """Every slides table is a drag-and-drop target with the attributes the JS reads
@@ -7033,16 +7083,16 @@ class MaterialsTests(TestCase):
                 self.assertIn(own.name, copy.docevent_set.get(type='added_comment').desc)
 
     def test_upload_to_unscheduled_session_is_named_for_the_session(self):
-        first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
+        first, waiting, last = make_group_sessions(['sched', 'schedw', 'sched'])
         self.client.login(username='secretary', password='secretary+password')
         r = self.client.post(self._material_upload_url('agenda', first), dict(submission_method='enter', content='shared', apply_to_sessions=[last.pk]))
         self.assertEqual(r.status_code, 302)
         shared = first.presentations.get(document__type_id='agenda').document
         self.assertNotIn('sess', shared.name)
-        r = self.client.post(self._material_upload_url('agenda', cancelled), dict(submission_method='enter', content='for the cancelled session'))
+        r = self.client.post(self._material_upload_url('agenda', waiting), dict(submission_method='enter', content='for the waiting session'))
         self.assertEqual(r.status_code, 302)
-        own = cancelled.presentations.get(document__type_id='agenda').document
-        self.assertIn(cancelled.docname_token(), own.name)
+        own = waiting.presentations.get(document__type_id='agenda').document
+        self.assertIn(waiting.docname_token(), own.name)
         shared.refresh_from_db()
         self.assertEqual(shared.rev, '00', 'The shared agenda is untouched')
         for s in (first, last):
@@ -7196,15 +7246,15 @@ class MaterialsTests(TestCase):
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
     @patch("ietf.meeting.views.SlidesManager")
     def test_meetecho_follows_each_session_not_the_uploader(self, mock_slides_manager_cls):
-        first, cancelled = make_group_sessions(['sched', 'canceled'])
-        deck = SessionPresentationFactory(session=cancelled, document__type_id='slides', document__rev='00').document
+        first, waiting = make_group_sessions(['sched', 'schedw'])
+        deck = SessionPresentationFactory(session=waiting, document__type_id='slides', document__rev='00').document
         SessionPresentationFactory(session=first, document=deck)
         self.client.login(username='secretary', password='secretary+password')
         f = BytesIO(b'new'); f.name = 'deck.txt'
-        r = self.client.post(self._slides_upload_url(cancelled, deck.name), dict(file=f, title=deck.title, approved=True))
+        r = self.client.post(self._slides_upload_url(waiting, deck.name), dict(file=f, title=deck.title, approved=True))
         self.assertEqual(r.status_code, 302)
         sm = mock_slides_manager_cls.return_value
-        self.assertEqual(sm.revise.call_args_list, [call(session=first, slides=deck)], 'the scheduled session hears about it, the cancelled uploader does not')
+        self.assertEqual(sm.revise.call_args_list, [call(session=first, slides=deck)], 'the scheduled session hears about it, the unscheduled uploader does not')
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
     @patch("ietf.meeting.views.SlidesManager")
@@ -7243,8 +7293,53 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(list(deck.states.filter(type_id='reuse_policy').values_list('slug', flat=True)), ['multiple'])
 
+    def test_inactive_sessions_reject_material_changes(self):
+        """Every management view refuses a cancelled or rescheduled session; dragging a deck out still works"""
+        for status in ('canceled', 'resched'):
+            live, inactive = make_group_sessions(['sched', status])
+            deck = SessionPresentationFactory(session=inactive, document__type_id='slides', order=1).document
+            self.client.login(username='secretary', password='secretary+password')
+            kwargs = {'num': inactive.meeting.number, 'session_id': inactive.pk}
+            refused = [
+                urlreverse('ietf.meeting.views.add_session_drafts', kwargs=kwargs),
+                urlreverse('ietf.meeting.views.add_session_recordings', kwargs=kwargs),
+                urlreverse('ietf.meeting.views.upload_session_bluesheets', kwargs=kwargs),
+                urlreverse('ietf.meeting.views.upload_session_minutes', kwargs=kwargs),
+                urlreverse('ietf.meeting.views.upload_session_agenda', kwargs=kwargs),
+                urlreverse('ietf.meeting.views.upload_session_slides', kwargs=kwargs),
+                urlreverse('ietf.meeting.views.upload_session_slides', kwargs=dict(kwargs, name=deck.name)),
+                urlreverse('ietf.meeting.views.import_session_minutes', kwargs=kwargs),
+                urlreverse('ietf.meeting.views.remove_sessionpresentation', kwargs=dict(kwargs, name=deck.name)),
+            ]
+            for url in refused:
+                for method in (self.client.get, self.client.post):
+                    r = method(url)
+                    self.assertEqual(r.status_code, 403, f'{status} {method.__name__} {url}')
+                    self.assertContains(r, 'cancelled or rescheduled', status_code=403)
+            for view, data in (
+                ('ietf.meeting.views.ajax_add_slides_to_session', {'order': 1, 'name': DocumentFactory(type_id='slides').name}),
+                ('ietf.meeting.views.ajax_reorder_slides_in_session', {'oldIndex': 1, 'newIndex': 1}),
+            ):
+                r = self.client.post(urlreverse(view, kwargs=kwargs), data)
+                self.assertEqual(r.status_code, 403, view)
+            self.assertEqual(inactive.presentations.count(), 1, 'nothing changed')
+            self.assertEqual(live.presentations.count(), 0)
+
+            # dragging out: removed from the inactive session, added to the live one
+            r = self.client.post(urlreverse('ietf.meeting.views.ajax_remove_slides_from_session', kwargs=kwargs), {'oldIndex': 1, 'name': deck.name})
+            self.assertEqual(r.status_code, 200)
+            self.assertTrue(r.json()['success'], r.content)
+            r = self.client.post(
+                urlreverse('ietf.meeting.views.ajax_add_slides_to_session', kwargs={'num': live.meeting.number, 'session_id': live.pk}),
+                {'order': 1, 'name': deck.name},
+            )
+            self.assertEqual(r.status_code, 200)
+            self.assertTrue(r.json()['success'], r.content)
+            self.assertFalse(inactive.presentations.exists())
+            self.assertEqual(live.presentations.get().document, deck)
+
     def test_material_pages_number_scheduled_sessions_only(self):
-        first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
+        first, waiting, last = make_group_sessions(['sched', 'schedw', 'sched'])
         self.client.login(username='secretary', password='secretary+password')
         for view in (
             'ietf.meeting.views.add_session_drafts',
@@ -7254,7 +7349,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(urlreverse(view, kwargs={'num': last.meeting.number, 'session_id': last.id}))
             self.assertEqual(r.status_code, 200)
             self.assertContains(r, 'Session 2', msg_prefix=view)
-            r = self.client.get(urlreverse(view, kwargs={'num': cancelled.meeting.number, 'session_id': cancelled.id}))
+            r = self.client.get(urlreverse(view, kwargs={'num': waiting.meeting.number, 'session_id': waiting.id}))
             self.assertEqual(r.status_code, 200)
             for n in (1, 2, 3):
                 self.assertNotContains(r, 'Session %d' % n, msg_prefix=view)
@@ -7508,26 +7603,6 @@ class MaterialsTests(TestCase):
                     call(session=last, slides=doc, order=1),
                 ],
             )
-
-    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
-    def test_upload_slides_to_unscheduled_session_touches_only_that_session(self, mock_slides_manager_cls):
-        first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
-        url = urlreverse('ietf.meeting.views.upload_session_slides', kwargs={'num': cancelled.meeting.number, 'session_id': cancelled.id})
-        self.client.login(username='secretary', password='secretary+password')
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertFalse(q('input[name=apply_to_sessions]'))
-        self.assertNotIn('Session', q('h2').text(), 'An unscheduled session has no session number')
-        test_file = BytesIO(b'not really slides')
-        test_file.name = 'not_really.txt'
-        r = self.client.post(url, dict(file=test_file, title='a deck for a cancelled session', approved=True))
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(first.presentations.count(), 0)
-        self.assertEqual(last.presentations.count(), 0)
-        self.assertEqual(cancelled.presentations.count(), 1)
-        self.assertFalse(mock_slides_manager_cls.return_value.add.called, 'Meetecho does not run a cancelled session')
 
     def _slides_upload_url(self, session, name=None):
         kwargs = {'num': session.meeting.number, 'session_id': session.id}
