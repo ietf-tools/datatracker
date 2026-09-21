@@ -230,6 +230,42 @@ def update_or_create_rfc_entries(
     log(f"Added {success_count} RFCs to the index, failed to add {fail_count}")
 
 
+def partial_update_rfc_entries(
+    rfcs: Iterable[Document],
+    fields: dict[str, Callable[[Document], Any]],
+    batchsize: int | None = None,
+):
+    success_count = 0
+    fail_count = 0
+    client = get_typesense_client()
+    batches = [rfcs] if batchsize is None else batched(rfcs, batchsize)
+    for batch in batches:
+        tdata_batch = [
+            {"id": f"doc-{rfc.pk}"}  # required
+            | {
+                field_name: field_extractor(rfc)
+                for field_name, field_extractor in fields.items()
+            }
+            for rfc in batch
+        ]
+        results = client.collections[get_collection_name()].documents.import_(
+            tdata_batch, {"action": "update"}
+        )
+        for tdata, result in zip(tdata_batch, results):
+            if result["success"]:
+                success_count += 1
+            else:
+                fail_count += 1
+                log(f"Failed to update {tdata['id']}: {result['error']}")
+    log(f"Updated {success_count} RFCs in the index, failed to update {fail_count}")
+
+
+def update_rfc_popularities(rfcs: Iterable[Document], batchsize: int | None = None):
+    partial_update_rfc_entries(
+        rfcs, {"popularityRanking": get_popularity_ranking}, batchsize
+    )
+
+
 DOCS_SCHEMA = {
     "enable_nested_fields": True,
     "default_sorting_field": "ranking",
