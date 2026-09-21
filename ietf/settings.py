@@ -816,10 +816,18 @@ MATERIALS_TYPES_SERVED_BY_WORKER = [
 ]
 
 # Other storages
-STORAGES["red_bucket"] = {
-    "BACKEND": "django.core.files.storage.InMemoryStorage",
-    "OPTIONS": {"location": "red_bucket"},
-}
+STORAGES.update(
+    {
+        "red_bucket": {
+            "BACKEND": "django.core.files.storage.InMemoryStorage",
+            "OPTIONS": {"location": "red_bucket"},
+        },
+        "reef_bucket": {
+            "BACKEND": "django.core.files.storage.InMemoryStorage",
+            "OPTIONS": {"location": "reef_bucket"},
+        }
+    }
+)
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
