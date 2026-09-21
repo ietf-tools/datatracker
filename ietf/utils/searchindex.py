@@ -13,11 +13,11 @@ import requests
 import typesense
 import typesense.exceptions
 from django.conf import settings
-from doc.utils_reef import get_popularity_ranking
 from typesense.types.document import DocumentSchema
 
 from ietf.doc.models import Document, StoredObject
 from ietf.doc.storage_utils import retrieve_str
+from ietf.doc.utils_reef import get_popularity_ranking
 from ietf.utils.log import log
 
 # Error classes that might succeed just by retrying a failed attempt.

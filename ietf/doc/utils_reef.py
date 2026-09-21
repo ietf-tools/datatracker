@@ -7,6 +7,8 @@ from django.conf import settings
 from django.core.cache import caches
 from django.core.files.storage import storages, Storage
 
+from ietf.doc.models import Document
+
 
 class _PopularityRankingCache:
     CACHE_LIFETIME = 15 * 60  # seconds
@@ -55,9 +57,11 @@ class _PopularityRankingCache:
             )
         return cached_rankings
 
-    def __call__(self, item: int) -> int | None:
+    def __call__(self, item: Document) -> int | None:
+        if item.rfc_number is None:
+            return None
         rankings = self.cached_popularity_rankings()
-        return rankings.get(item, None)
+        return rankings.get(item.rfc_number, None)
 
 
 # Look up popularity ranking of an RFC. Call with rfc_number (int) as a parameter, get

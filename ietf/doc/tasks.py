@@ -230,7 +230,7 @@ def update_rfc_searchindex_popularities_task(self):
     if not searchindex.enabled():
         log.log("Search indexing is not enabled, skipping")
         return
-
+    
     rfcs = Document.objects.filter(type_id="rfc")
     try:
         searchindex.update_rfc_popularities(rfcs)
