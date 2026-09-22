@@ -8208,6 +8208,30 @@ class MaterialsTests(TestCase):
         self.assertEqual(last.presentations.get().document, deck)
         self.assertEqual(mock_slides_manager_cls.return_value.add.call_args_list, [call(session=last, slides=deck, order=1)])
 
+    def test_approve_page_says_when_the_deck_moved_on(self):
+        """A chair who revised the deck after the proposal is told before approving the older file on top"""
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, = make_group_sessions(['sched'])
+        deck = SessionPresentationFactory(session=first, document__type_id='slides', document__rev='00', document__title='The Talk').document
+        proposer = PersonFactory()
+        chair = RoleFactory(group=first.group, name_id='chair').person
+        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+        f = BytesIO(b'proposed'); f.name = 'deck.txt'
+        self.assertEqual(self.client.post(self._slides_upload_url(first, deck.name), dict(file=f, title=deck.title)).status_code, 302)
+        submission = SlideSubmission.objects.latest('pk')
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
+
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        self.assertNotContains(self.client.get(url), 'has moved on')
+        f = BytesIO(b'uploaded meanwhile'); f.name = 'deck.txt'
+        self.assertEqual(self.client.post(self._slides_upload_url(first, deck.name), dict(file=f, title=deck.title, approved='on')).status_code, 302)
+        deck.refresh_from_db()
+        self.assertEqual(deck.rev, '01')
+        r = self.client.get(url)
+        self.assertContains(r, 'has moved on since this was proposed')
+        self.assertContains(r, '%s uploaded revision 01' % chair.plain_name())
+        self.assertContains(r, 'on top as the next revision')
+
     def test_approve_and_status_pages_list_sessions_in_schedule_order(self):
         early, middle, late = make_group_sessions(['sched', 'sched', 'sched'])
         # the oldest session is the last one in the week, so creation order and schedule order differ

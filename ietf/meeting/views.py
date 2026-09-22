@@ -5796,10 +5796,15 @@ def approve_proposed_slides(request, slidesubmission_id, num):
     else:
         form = ApproveSlidesForm(submission, linked, initial={'title': submission.title})
 
+    moved_on = None
+    if submission.doc_id and submission.status_id == "pending":
+        moved_on = NewRevisionDocEvent.objects.filter(doc=submission.doc, time__gt=submission.time).order_by("time").first()
+
     return render(request, "meeting/approve_proposed_slides.html",
                   {'submission': submission,
                    'session_number': session_number,
                    'existing_doc' : None if submission.doc_id else existing_doc,
+                   'moved_on': moved_on,
                    'linked': [material_session_label(s) for s in linked],
                    'requested': [material_session_label(s) for s in sort_sessions(submission.sessions.all())],
                    'form': form,

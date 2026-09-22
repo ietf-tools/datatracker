@@ -28,6 +28,12 @@
             This is a proposed new revision of <a href="{% url 'ietf.doc.views_doc.document_main' name=submission.doc.name %}">{{ submission.doc.title }} ({{ submission.doc.name }})</a>, now at revision {{ submission.doc.rev }}.
             {% if not linked %}The deck is no longer on any session of this meeting. Choose where the new revision goes.{% endif %}
         </p>
+        {% if moved_on %}
+            <p class="alert alert-warning my-3">
+                The deck has moved on since this was proposed on {{ submission.time|date:"j F" }}: {{ moved_on.by }} uploaded revision {{ moved_on.rev }} on {{ moved_on.time|date:"j F" }}.
+                Approving puts the proposed file, which predates that, on top as the next revision.
+            </p>
+        {% endif %}
     {% endif %}
     {% if existing_doc %}
         <p class="alert alert-warning my-3">
