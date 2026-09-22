@@ -178,6 +178,7 @@ from ietf.meeting.utils import (
     link_slides_to_sessions,
     tell_meetecho_about_slides,
     sessions_linked_to,
+    sort_sessions,
     SessionNotScheduledError,
     data_for_meetings_overview,
     handle_upload_file,
@@ -5623,36 +5624,51 @@ def request_minutes(request, num=None):
     return render(request, 'meeting/request_minutes.html', context)
 
 class ApproveSlidesForm(forms.Form):
+    """Approve a proposal, choosing which further sessions the deck goes to
+
+    linked are the sessions the deck is already on: they get the new revision regardless, so they are
+    not offered. The proposal's own choice preselects the boxes for a new deck; for a revision the boxes
+    mean "also add it here", so nothing is preselected.
+    """
     title = forms.CharField(max_length=255)
     sessions = forms.TypedMultipleChoiceField(
-        coerce=int, widget=forms.CheckboxSelectMultiple, label="Link the deck to",
-        error_messages={"required": "Choose at least one session."},
+        coerce=int, required=False, widget=forms.CheckboxSelectMultiple, label="Also link the deck to",
     )
 
-    def __init__(self, submission, *args, **kwargs):
+    def __init__(self, submission, linked, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.meeting = submission.session.meeting
-        self.scheduled = scheduled_only(get_meeting_sessions(submission.session.meeting.number, submission.session.group.acronym))
-        if not self.scheduled:
-            self.scheduled = [submission.session]
-        if len(self.scheduled) > 1:
-            proposed = set(submission.sessions.values_list("pk", flat=True))
-            self.fields["sessions"].choices = [
-                (s.pk, material_session_label(s, n) + (" (proposed for this session)" if s == submission.session else ""))
-                for n, s in enumerate(self.scheduled, start=1)
-            ]
-            self.fields["sessions"].initial = [s.pk for s in self.scheduled if s.pk in proposed]
-        else:
+        self.linked = list(linked)
+        scheduled = scheduled_only(get_meeting_sessions(submission.session.meeting.number, submission.session.group.acronym))
+        if not scheduled:
+            scheduled = [submission.session]
+        self.offered = [s for s in scheduled if s not in self.linked]
+        if self.offered == scheduled and len(scheduled) == 1:
+            self.fields.pop("sessions")  # nowhere else it could go
+            return
+        if not self.offered:
             self.fields.pop("sessions")
+            return
+        field = self.fields["sessions"]
+        field.label = "Also link the deck to" if self.linked else "Link the deck to"
+        field.required = not self.linked
+        field.error_messages["required"] = "Choose at least one session."
+        requested = set(submission.sessions.values_list("pk", flat=True))
+        field.choices = [
+            (s.pk, material_session_label(s, n) + (" (requested)" if s.pk in requested else ""))
+            for n, s in enumerate(scheduled, start=1) if s in self.offered
+        ]
+        if not submission.doc_id:
+            field.initial = [s.pk for s in self.offered if s.pk in requested]
 
     def clean_title(self):
         return validate_slides_title(self.cleaned_data["title"], self.meeting)
 
     def chosen_sessions(self):
         if "sessions" not in self.fields:
-            return list(self.scheduled)
+            return list(self.offered)
         chosen = self.cleaned_data["sessions"]
-        return [s for s in self.scheduled if s.pk in chosen]
+        return [s for s in self.offered if s.pk in chosen]
 
 @login_required
 def approve_proposed_slides(request, slidesubmission_id, num):
@@ -5661,15 +5677,31 @@ def approve_proposed_slides(request, slidesubmission_id, num):
         if user_is_person(request.user, submission.submitter):
             return render(request, "meeting/proposed_slides_status.html", {
                 "submission": submission,
-                "proposed_for": [material_session_label(s) for s in submission.sessions.all()],
+                "proposed_for": [material_session_label(s) for s in sort_sessions(submission.sessions.all())],
             })
         permission_denied(request, "You don't have permission to manage slides for this session.")
     if submission.session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")   
     
     _, session_number = sessions_covered_by_apply_to_all(submission.session)
+
+    def document_for(title):
+        """The document approving under this title would revise, if it exists"""
+        if submission.doc_id:
+            return submission.doc
+        proposed = list(submission.sessions.all()) or [submission.session]
+        home = submission.session if submission.session in proposed else proposed[0]
+        name, _ = material_document_name(
+            home, 'slides', group_wide=group_wide_material_name(home, [s for s in proposed if s != home]), title=title
+        )
+        return Document.objects.filter(name=name).first()
+
+    title_in_play = request.POST.get('title') or submission.title
+    existing_doc = document_for(title_in_play)
+    linked = sort_sessions(sessions_linked_to(existing_doc, submission.session.meeting)) if existing_doc else []
+
     if request.method == 'POST' and submission.status.slug == 'pending':
-        form = ApproveSlidesForm(submission, request.POST)
+        form = ApproveSlidesForm(submission, linked, request.POST)
         if form.is_valid():
             if request.POST.get('approve'):
                 content = b""
@@ -5682,10 +5714,12 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                     return HttpResponseNotFound("The slides you attempted to approve could not be found.  Please decline and delete them instead.")
                 title = form.cleaned_data['title']
                 chosen = form.chosen_sessions()
-                home = submission.session if submission.session in chosen else chosen[0]
+                where = chosen + [s for s in linked if s not in chosen]
+                home = submission.session if submission.session in where else where[0]
                 also_sessions = [s for s in chosen if s != home]
-                if submission.doc_id:
-                    doc = submission.doc
+                if existing_doc is not None:
+                    # the deck the page said would be revised, whichever sessions were added
+                    doc = existing_doc
                     name = doc.name
                     reclaim = False
                 else:
@@ -5759,17 +5793,14 @@ def approve_proposed_slides(request, slidesubmission_id, num):
         return render(request, "meeting/previously_approved_slides.html",
                       {'submission': submission })
     else:
-        form = ApproveSlidesForm(submission, initial={'title': submission.title})
+        form = ApproveSlidesForm(submission, linked, initial={'title': submission.title})
 
-    proposed = list(submission.sessions.all()) or [submission.session]
-    home = submission.session if submission.session in proposed else proposed[0]
-    proposed_name, _ = material_document_name(
-        home, 'slides', group_wide=group_wide_material_name(home, [s for s in proposed if s != home]), title=submission.title
-    )
     return render(request, "meeting/approve_proposed_slides.html",
                   {'submission': submission,
                    'session_number': session_number,
-                   'existing_doc' : None if submission.doc_id else Document.objects.filter(name=proposed_name).first(),
+                   'existing_doc' : None if submission.doc_id else existing_doc,
+                   'linked': [material_session_label(s) for s in linked],
+                   'requested': [material_session_label(s) for s in sort_sessions(submission.sessions.all())],
                    'form': form,
                   })
 
