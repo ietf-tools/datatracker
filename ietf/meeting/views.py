@@ -3633,7 +3633,11 @@ def upload_session_slides(request, session_id, num, name=None):
     doc = slides_sp.document if slides_sp else None
     choices, select_all, also_linked = material_upload_choices(session, "slides", slides_sp)
 
-    if request.method == "POST":
+    def pending_revision_of(deck):
+        return SlideSubmission.objects.filter(doc=deck, status_id="pending").select_related("submitter").first() if deck else None
+
+    blocked_by = None if can_manage else pending_revision_of(doc)
+    if request.method == "POST" and blocked_by is None:
         form = UploadSlidesForm(
             session, can_manage, choices if can_manage or doc is None else [], select_all, request.POST, request.FILES
         )
@@ -3656,6 +3660,16 @@ def upload_session_slides(request, session_id, num, name=None):
                     # the same title makes a revision at approval, so say so from the start
                     name, _ = material_document_name(session, "slides", group_wide=apply_to_all, title=title)
                     doc = Document.objects.filter(name=name).first()
+                blocked_by = pending_revision_of(doc)
+                if blocked_by is not None:
+                    form.add_error(None, f'A revision of "{doc.title}" is already awaiting approval; there can be only one proposed revision at a time.')
+                    doc = slides_sp.document if slides_sp else None
+                    return render(request, "meeting/upload_session_slides.html", {
+                        "session": session, "session_number": session_number, "also_linked": also_linked,
+                        "slides_sp": slides_sp, "manage": can_manage, "form": form, "blocked_by": blocked_by,
+                        "show_form": True,  # the refusal is the form's own error
+                        "decks": [], "own_pending": [],
+                    })
                 submission = SlideSubmission.objects.create(session=session, title=title, filename='', submitter=request.user.person, doc=doc)
                 if doc is not None:
                     submission.sessions.set(sessions_linked_to(doc, session.meeting) or [session])
@@ -3765,6 +3779,8 @@ def upload_session_slides(request, session_id, num, name=None):
             "slides_sp": slides_sp,
             "manage": can_manage,
             "form": form,
+            "blocked_by": blocked_by,
+            "show_form": blocked_by is None,
             "decks": [] if can_manage or doc else [
                 sp for sp in session.presentations.filter(document__type_id="slides").order_by("order")
                 if sp.document.get_state_slug("slides") != "deleted"
@@ -5815,6 +5831,10 @@ def withdraw_proposed_slides(request, slidesubmission_id, num):
     if submission.status_id == "pending":
         submission.withdraw()
         messages.success(request, f"Withdrew the proposed slides '{submission.title}'.")
+    if request.POST.get("return_to") == "revise" and submission.doc_id:
+        return redirect(
+            "ietf.meeting.views.upload_session_slides", session_id=submission.session_id, num=num, name=submission.doc.name
+        )
     return redirect("ietf.meeting.views.session_details", num=num, acronym=submission.session.group.acronym)
 
 

@@ -8299,56 +8299,90 @@ class MaterialsTests(TestCase):
         self.assertFalse(submission.session.presentations.exists())
         submission.refresh_from_db()
         self.assertEqual(submission.status_id, 'expired')
-
-    def test_withdraw_proposal_and_propose_another(self):
+    def test_one_pending_revision_per_deck(self):
+        """A second revision of a deck is refused until the pending one is withdrawn"""
         TestBlobstoreManager().emptyTestBlobstores()
-        first, = make_group_sessions(['sched'])
-        deck = SessionPresentationFactory(session=first, document__type_id='slides', document__rev='00').document
-        proposer, bystander = PersonFactory(), PersonFactory()
+        first, second = make_group_sessions(['sched', 'sched'])
+        deck = SessionPresentationFactory(session=first, document__type_id='slides', document__rev='00', document__title='The Talk').document
+        SessionPresentationFactory(session=second, document=deck, rev='00')
+        Document.objects.filter(pk=deck.pk).update(name=material_document_name(first, 'slides', group_wide=True, title='The Talk')[0])
+        deck.refresh_from_db()
+        proposer, other, bystander = PersonFactory(), PersonFactory(), PersonFactory()
         chair = RoleFactory(group=first.group, name_id='chair').person
         revise_url = self._slides_upload_url(first, deck.name)
+        propose_url = self._slides_upload_url(first)
 
-        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
-        f = BytesIO(b'first attempt'); f.name = 'deck.txt'
-        r = self.client.post(revise_url, dict(file=f, title=deck.title))
-        self.assertEqual(r.status_code, 302)
+        def login(person):
+            self.client.login(username=person.user.username, password=person.user.username + '+password')
+        def post_revision(url, content, **extra):
+            f = BytesIO(content); f.name = 'deck.txt'
+            return self.client.post(url, dict(file=f, title=deck.title, **extra))
+
+        login(proposer)
+        self.assertEqual(post_revision(revise_url, b'first attempt').status_code, 302)
         submission = SlideSubmission.objects.latest('pk')
         withdraw_url = urlreverse('ietf.meeting.views.withdraw_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
         status_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
 
+        # the owner sees the pending revision and Withdraw, and no upload form
         r = self.client.get(revise_url)
-        self.assertContains(r, 'awaiting approval, as a revision of')
-        self.assertTrue(PyQuery(r.content)('form[action="%s"] button' % withdraw_url))
+        q = PyQuery(r.content)
+        self.assertContains(r, 'is awaiting approval. There can be only one proposed revision at a time.')
+        self.assertFalse(q('.alert form'), 'the button is not inside the message')
+        self.assertEqual(q('form[action="%s"] button' % withdraw_url).text(), 'Withdraw the pending revision')
+        self.assertContains(r, 'Withdrawing discards the file you proposed')
+        self.assertFalse(q('input[name=file]'), 'no upload while one is pending')
+        self.assertNotContains(r, 'This form will allow you', msg_prefix='nothing about a form that is not there')
+        self.assertNotContains(r, 'The new revision replaces it there too')
+        before = SlideSubmission.objects.count()
+        r = post_revision(revise_url, b'second attempt')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(SlideSubmission.objects.count(), before, 'the post is refused')
+        # nor may a plain proposal under the same title slip past (for all sessions, as the deck is named)
+        r = post_revision(propose_url, b'same title', apply_to_all='on')
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'already awaiting approval')
+        self.assertEqual(SlideSubmission.objects.count(), before)
+
+        # someone else is told whose revision is pending, without a Withdraw button
+        login(other)
+        r = self.client.get(revise_url)
+        q = PyQuery(r.content)
+        self.assertContains(r, 'proposed by %s' % proposer.plain_name())
+        self.assertContains(r, 'The chairs will see it.')
+        self.assertFalse(q('form[action="%s"]' % withdraw_url))
+        self.assertFalse(q('input[name=file]'))
+        self.assertEqual(post_revision(revise_url, b'competing attempt').status_code, 200)
+        self.assertEqual(SlideSubmission.objects.count(), before)
+
+        # only the owner can withdraw
+        self.assertEqual(self.client.post(withdraw_url).status_code, 403)
+        login(bystander)
+        self.assertEqual(self.client.post(withdraw_url).status_code, 403)
+        login(chair)
+        self.assertEqual(self.client.post(withdraw_url).status_code, 403, 'chairs decline, they do not withdraw')
+        login(proposer)
+        self.assertEqual(self.client.get(withdraw_url).status_code, 405, 'withdrawing is a POST')
         r = self.client.get(status_url)
         self.assertTrue(PyQuery(r.content)('form[action="%s"] button' % withdraw_url))
-
-        self.assertEqual(self.client.get(withdraw_url).status_code, 405, 'withdrawing is a POST')
-        self.client.login(username=bystander.user.username, password=bystander.user.username + '+password')
-        self.assertEqual(self.client.post(withdraw_url).status_code, 403)
-        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
-        self.assertEqual(self.client.post(withdraw_url).status_code, 403, 'chairs decline, they do not withdraw')
-        submission.refresh_from_db()
-        self.assertEqual(submission.status_id, 'pending')
-
-        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
-        r = self.client.post(withdraw_url)
-        self.assertEqual(r.status_code, 302)
+        r = self.client.post(withdraw_url, dict(return_to='revise'))
+        self.assertRedirects(r, revise_url, fetch_redirect_response=False, msg_prefix='withdrawing from the revise page returns to it')
         submission.refresh_from_db()
         self.assertEqual(submission.status_id, 'withdrawn')
         self.assertFalse(exists_in_storage('staging', submission.filename))
         r = self.client.get(status_url)
         self.assertContains(r, 'Withdrawn by you')
-        self.assertFalse(PyQuery(r.content)('form[action="%s"]' % withdraw_url))
-        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
-        r = self.client.get(status_url)
-        self.assertContains(r, 'This proposal was withdrawn')
+        login(chair)
+        self.assertContains(self.client.get(status_url), 'This proposal was withdrawn')
 
-        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+        # the way is clear again
+        login(proposer)
         r = self.client.get(revise_url)
-        self.assertNotContains(r, 'awaiting approval')
-        f = BytesIO(b'second attempt'); f.name = 'deck.txt'
-        r = self.client.post(revise_url, dict(file=f, title=deck.title))
-        self.assertEqual(r.status_code, 302)
+        self.assertNotContains(r, 'There can be only one proposed revision at a time')
+        self.assertTrue(PyQuery(r.content)('input[name=file]'))
+        self.assertContains(r, 'This form will allow you')
+        self.assertContains(r, 'The new revision replaces it there too')
+        self.assertEqual(post_revision(revise_url, b'second attempt').status_code, 302)
         self.assertEqual(SlideSubmission.objects.filter(doc=deck, status_id='pending').count(), 1)
 
     def test_disapprove_proposed_slides(self):
@@ -8583,25 +8617,28 @@ class MaterialsTests(TestCase):
         r = self.client.post(upload_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
         self.assertEqual(r.status_code, 302)
 
+        # a second revision while one is pending is refused
         test_file = BytesIO(b'this is not really a slide, but it is third version of it')
         test_file.name = 'not_really.txt'
         r = self.client.post(upload_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
-        self.assertEqual(r.status_code, 302)
-        self.client.logout()       
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'already awaiting approval')
+        self.client.logout()
 
-        (first_submission, second_submission) = SlideSubmission.objects.filter(session=session, status__slug = 'pending').order_by('id')
-
-        self.assertTrue(exists_in_storage("staging", first_submission.filename))
+        pending = SlideSubmission.objects.filter(session=session, status__slug='pending')
+        self.assertEqual(pending.count(), 1)
+        second_submission = pending.get()
+        self.assertEqual(second_submission.doc, submission.doc, 'the same title is a revision of the approved deck')
         self.assertTrue(exists_in_storage("staging", second_submission.filename))
         approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':second_submission.pk,'num':second_submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, approve_url)
         r = self.client.post(approve_url,dict(title=submission.title,approve='approve'))
-        first_submission.refresh_from_db()
         second_submission.refresh_from_db()
-        self.assertTrue(exists_in_storage("staging", first_submission.filename))
+        self.assertEqual(r.status_code,302)
         self.assertFalse(exists_in_storage("staging", second_submission.filename))
         self.assertTrue(exists_in_storage("slides", second_submission.doc.uploaded_filename))
-        self.assertEqual(r.status_code,302)
+        self.assertEqual(second_submission.doc.rev, '01')
+        self.assertIn(b'another version', retrieve_bytes("slides", second_submission.doc.uploaded_filename))
         self.assertEqual(mock_slides_manager_cls.call_count, 1)
         self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
         self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 0)
@@ -8610,17 +8647,8 @@ class MaterialsTests(TestCase):
             mock_slides_manager_cls.return_value.revise.call_args,
             call(session=session, slides=second_submission.doc),
         )
-        mock_slides_manager_cls.reset_mock()
-
-        disapprove_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':first_submission.pk,'num':first_submission.session.meeting.number})
-        r = self.client.post(disapprove_url,dict(title='some title',disapprove="disapprove"))
-        self.assertEqual(r.status_code,302)
         self.client.logout()
-        self.assertFalse(mock_slides_manager_cls.called)
-        self.assertFalse(exists_in_storage("staging", first_submission.filename))
-
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(),0)
-        self.assertEqual(SlideSubmission.objects.filter(status__slug = 'rejected').count(),1)
         self.assertEqual(session.presentations.first().document.rev,'01')
         path = os.path.join(submission.session.meeting.get_materials_path(),'slides')
         filename = os.path.join(path,session.presentations.first().document.name+'-01.txt')
@@ -8628,7 +8656,7 @@ class MaterialsTests(TestCase):
         fd = io.open(filename, 'r')
         contents = fd.read()
         fd.close()
-        self.assertIn('third version', contents)
+        self.assertIn('another version', contents)
 
     @override_settings(
         MEETECHO_API_CONFIG="fake settings"
