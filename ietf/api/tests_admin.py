@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 import re
+from contextlib import contextmanager
 from unittest import mock
 
 from django.contrib.auth.models import User
@@ -184,16 +185,23 @@ class AppApiTokenAdminTests(TestCase):
             data[f"AppApiToken_endpoints-{n}-knownapiendpoint"] = str(endpoint.pk)
         return data
 
-    def test_token_usable_after_single_save(self):
-        # mock a stand-in for the cache so is_valid_token() reads what the admin stored
+    @contextmanager
+    def mocked_cache(self):
+        """Patch in a mock cache so is_valid_token() reads what the admin stored"""
         store = {}
         cache = mock.create_autospec(BaseCache, instance=True)
         cache.get.side_effect = store.get
         cache.set.side_effect = lambda key, value, *args, **kwargs: store.update(
             {key: value}
         )
-
         with mock.patch("ietf.api.ietf_utils.caches", {"default": cache}):
+            yield
+
+    def delete_url(self, token):
+        return urlreverse("admin:api_appapitoken_delete", args=[token.pk])
+
+    def test_token_usable_after_single_save(self):
+        with self.mocked_cache():
             endpoint = KnownApiEndpoint.objects.create(name="ietf.api.foobar")
 
             # new token created with an endpoint
@@ -221,6 +229,61 @@ class AppApiTokenAdminTests(TestCase):
                 is_valid_token(endpoint.name, other_raw_token),
                 "endpoint change was not effective until saved a second time",
             )
+
+    def test_token_unusable_after_delete(self):
+        endpoint = KnownApiEndpoint.objects.create(name="ietf.api.foobar")
+        raw_token = "a-token-" + "a" * MIN_TOKEN_LENGTH
+        other_raw_token = "another-token-" + "a" * MIN_TOKEN_LENGTH
+        token = self.create_token(raw_token, client="a client")
+        other_token = self.create_token(other_raw_token, client="another client")
+        token.endpoints.add(endpoint)
+        other_token.endpoints.add(endpoint)
+
+        with self.mocked_cache():
+            self.assertTrue(is_valid_token(endpoint.name, raw_token))  # fills cache
+            self.assertTrue(is_valid_token(endpoint.name, other_raw_token))
+
+            self.client.post(self.delete_url(token), {"post": "yes"})
+            self.assertFalse(
+                is_valid_token(endpoint.name, raw_token),
+                "deleted token was still usable",
+            )
+            self.assertTrue(is_valid_token(endpoint.name, other_raw_token))
+
+            self.client.post(
+                urlreverse("admin:api_knownapiendpoint_delete", args=[endpoint.pk]),
+                {"post": "yes"},
+            )
+            self.assertFalse(
+                is_valid_token(endpoint.name, other_raw_token),
+                "token was still usable for a deleted endpoint",
+            )
+
+    def test_delete_rolls_back_on_cache_failure(self):
+        token = self.create_token()
+        with (
+            mock.patch(
+                "ietf.api.admin.cached_hashed_token_store",
+                side_effect=RuntimeError("boom"),
+            ),
+            mock.patch(
+                "ietf.api.admin.AppApiTokenAdmin.message_user"
+            ) as mocked_message_user,
+        ):
+            with self.assertRaises(RuntimeError):
+                self.client.post(self.delete_url(token), {"post": "yes"})
+
+        self.assertTrue(
+            AppApiToken.objects.filter(pk=token.pk).exists(),
+            "the token was deleted even though the cache refresh failed",
+        )
+        self.assertTrue(
+            any(
+                "may not agree with the database state" in call.args[1]
+                for call in mocked_message_user.call_args_list
+            ),
+            "no warning was shown for the cache failure",
+        )
 
     def test_save_model_rolls_back_token_on_cache_failure(self):
         """A cache-refresh failure inside the transaction rolls back the token save"""

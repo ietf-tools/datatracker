@@ -44,13 +44,22 @@ class AppApiTokenForm(forms.ModelForm):
 
 
 class TokenCacheRefreshMixin:
-    """Refresh the API token cache after admin saves, inside the transaction
+    """Refresh the API token cache after admin changes, inside the transaction
 
     The refresh is done in save_related() rather than save_model() because the
     admin persists inline formsets and M2M fields (e.g. AppApiToken.endpoints)
     only after save_model() returns. Both run inside the transaction that
     Django opens around the change view, so a failed refresh rolls back the
     object and its related rows together.
+
+    Deletes are covered by delete_model() (the delete view) and delete_queryset()
+    (the delete_selected changelist action, currently disabled site-wide in
+    ietf/urls.py). Django does not open a transaction around changelist actions,
+    so each hook here opens its own to keep the rollback guarantee on that path.
+
+    The delete_queryset() method is here as a safeguard in case delete-selected is
+    later enabled and is not covered by tests. Someone enabling that action should
+    add appropriate test coverage.
     """
 
     def _refresh_token_cache(self, request):
@@ -59,9 +68,9 @@ class TokenCacheRefreshMixin:
         except Exception:
             self.message_user(
                 request,
-                "Save failed. The cached API tokens being enforced may not agree with "
-                "the database state. Edit and save again to update the cache. Alert "
-                "the admins if this message appears again.",
+                "Change failed. The cached API tokens being enforced may not agree "
+                "with the database state. Edit and save again to update the cache. "
+                "Alert the admins if this message appears again.",
                 level=messages.ERROR,
             )
             raise
@@ -69,6 +78,16 @@ class TokenCacheRefreshMixin:
     def save_related(self, request, form, formsets, change):
         with transaction.atomic():
             super().save_related(request, form, formsets, change)
+            self._refresh_token_cache(request)
+
+    def delete_model(self, request, obj):
+        with transaction.atomic():
+            super().delete_model(request, obj)
+            self._refresh_token_cache(request)
+
+    def delete_queryset(self, request, queryset):
+        with transaction.atomic():
+            super().delete_queryset(request, queryset)
             self._refresh_token_cache(request)
 
 
