@@ -20,7 +20,7 @@
     {% endif %}
     <p class="alert alert-info my-3">
         {{ submission.submitter }} proposed these slides for this session:
-        <a href="{{ submission.staged_url }}">{{ submission.staged_url }}</a>.
+        <a href="{% url 'ietf.meeting.views.proposed_slides_file' slidesubmission_id=submission.pk num=submission.session.meeting.number %}">{{ submission.filename }}</a>.
     </p>
     {% if existing_doc %}
         <p class="alert alert-warning my-3">

@@ -1471,12 +1471,6 @@ class SlideSubmission(models.Model):
     status      = ForeignKey(SlideSubmissionStatusName, null=True, default='pending', on_delete=models.SET_NULL)
     doc         = ForeignKey(Document, blank=True, null=True, on_delete=models.SET_NULL)
 
-    def staged_filepath(self):
-        return os.path.join(settings.SLIDE_STAGING_PATH , self.filename)
-
-    def staged_url(self):
-        return "".join([settings.SLIDE_STAGING_URL, self.filename])
-
 
 class ProceedingsMaterial(models.Model):
     meeting = ForeignKey(Meeting, related_name='proceedings_materials')

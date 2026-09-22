@@ -237,10 +237,6 @@ class SlideSubmissionFactory(factory.django.DjangoModelFactory):
     filename = factory.Sequence(lambda n: 'test_slide_%d'%n)
     submitter = factory.SubFactory(PersonFactory)
 
-    make_file = factory.PostGeneration(
-                    lambda obj, create, extracted, **kwargs: open(obj.staged_filepath(),'a').close()
-                )
-    
     store_submission = factory.PostGeneration(
         lambda obj, create, extracted, **kwargs: store_str("staging", obj.filename, "")
     )

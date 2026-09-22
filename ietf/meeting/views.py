@@ -6,13 +6,13 @@ import io
 import itertools
 import json
 import math
+import mimetypes
 import os
 
 import pytz
 import re
 import tarfile
 import tempfile
-import shutil
 
 from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
@@ -69,6 +69,7 @@ from ietf.doc.storage_utils import (
     remove_from_storage,
     retrieve_bytes,
     store_file,
+    exists_in_storage,
 )
 from ietf.doc.templatetags.ietf_filters import absurl
 from ietf.group.models import Group
@@ -3661,11 +3662,7 @@ def upload_session_slides(request, session_id, num, name=None):
                     name = 'slides-%s-%s' % (session.meeting.number, session.docname_token())
                 name = name + '-' + slugify(title).replace('_', '-')[:128]
                 filename = '%s-ss%d%s'% (name, submission.id, ext)
-                destination = io.open(os.path.join(settings.SLIDE_STAGING_PATH, filename),'wb+')
-                for chunk in file.chunks():
-                    destination.write(chunk)
-                destination.close()
-                file.seek(0)
+                file.seek(0)  # validation read it
                 store_file("staging", filename, file)
 
                 submission.filename = filename
@@ -5696,7 +5693,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 apply_to_all = form.cleaned_data['apply_to_all']
             if request.POST.get('approve'):
                 # Ensure that we have a file to approve.  The system gets cranky otherwise.
-                if submission.filename is None or submission.filename == '' or not os.path.isfile(submission.staged_filepath()):
+                if not submission.filename or not exists_in_storage("staging", submission.filename):
                     return HttpResponseNotFound("The slides you attempted to approve could not be found.  Please decline and delete them instead.")
                 title = form.cleaned_data['title']
                 if existing_doc:
@@ -5737,11 +5734,11 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 doc.uploaded_filename = target_filename
                 e = NewRevisionDocEvent.objects.create(doc=doc,by=submission.submitter,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
                 doc.save_with_history([e])
-                path = os.path.join(submission.session.meeting.get_materials_path(),'slides')
-                if not os.path.exists(path):
-                    os.makedirs(path)
-                shutil.move(submission.staged_filepath(), os.path.join(path, target_filename))
-                doc.store_bytes(target_filename, retrieve_bytes("staging", submission.filename))
+                content = retrieve_bytes("staging", submission.filename)
+                path = Path(submission.session.meeting.get_materials_path()) / 'slides'
+                path.mkdir(parents=True, exist_ok=True)
+                (path / target_filename).write_bytes(content)
+                doc.store_bytes(target_filename, content)
                 remove_from_storage("staging", submission.filename)
                 post_process(doc)
                 resolve_uploaded_material(meeting=submission.session.meeting, doc=doc)
@@ -5782,11 +5779,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 # this case and keep processing the 'disapprove' even if
                 # the filename doesn't exist.
 
-                if submission.filename != None and submission.filename != '':
-                    try:
-                        os.unlink(submission.staged_filepath())
-                    except (FileNotFoundError, IsADirectoryError):
-                        pass
+                if submission.filename:
                     remove_from_storage("staging", submission.filename)
 
                 acronym = submission.session.group.acronym
@@ -5811,6 +5804,29 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                    'existing_doc' : existing_doc,
                    'form': form,
                   })
+
+
+@login_required
+def proposed_slides_file(request, slidesubmission_id, num):
+    """The staged file of a slide proposal, for those who approve it and the one who proposed it"""
+    submission = get_object_or_404(SlideSubmission, pk=slidesubmission_id)
+    if not (
+        submission.session.can_manage_materials(request.user)
+        or user_is_person(request.user, submission.submitter)
+    ):
+        permission_denied(request, "You don't have permission to see these proposed slides.")
+    if not submission.filename:
+        raise Http404
+    try:
+        content = retrieve_bytes("staging", submission.filename)
+    except FileNotFoundError:
+        raise Http404
+    if not content:
+        raise Http404
+    content_type, _ = mimetypes.guess_type(submission.filename)
+    response = HttpResponse(content, content_type=content_type or "application/octet-stream")
+    response["Content-Disposition"] = f'attachment; filename="{submission.filename}"'
+    return response
 
 
 @role_required("Secretariat")

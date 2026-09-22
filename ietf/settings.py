@@ -929,8 +929,6 @@ DAYS_TO_EXPIRE_NOMINATION_LINK = ''
 NOMINEE_FEEDBACK_TYPES = ['comment', 'questio', 'nomina', 'obe']
 
 # SlideSubmission settings
-SLIDE_STAGING_PATH = '/a/www/www6s/staging/'
-SLIDE_STAGING_URL = 'https://www.ietf.org/staging/'
 
 # ID Submission Tool settings
 IDSUBMIT_FROM_EMAIL = 'IETF I-D Submission Tool <idsubmission@ietf.org>'
