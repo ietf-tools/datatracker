@@ -39,7 +39,7 @@ from django.utils.text import slugify
 
 import debug           # pyflakes:ignore
 
-from ietf.doc.models import Document, NewRevisionDocEvent, State
+from ietf.doc.models import Document, NewRevisionDocEvent, State, StoredObject
 from ietf.doc.storage_utils import exists_in_storage, remove_from_storage, retrieve_bytes, retrieve_str, store_bytes
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.group.utils import can_manage_group
@@ -6705,11 +6705,18 @@ class FinalizeProceedingsTests(TestCase):
 
         self.assertEqual(meeting.proceedings_final,False)
         self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().presentations.filter(document__type="draft").first().rev,None)
+        pending = SlideSubmissionFactory(session=meeting.session_set.filter(group__acronym='mars').first())
+        elsewhere = SlideSubmissionFactory()
         r = self.client.post(url,{'finalize':1})
         self.assertEqual(r.status_code, 302)
         meeting = Meeting.objects.get(pk=meeting.pk)
         self.assertEqual(meeting.proceedings_final,True)
         self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().presentations.filter(document__type="draft").first().rev,'00')
+        pending.refresh_from_db()
+        elsewhere.refresh_from_db()
+        self.assertEqual(pending.status_id, 'expired', 'a proposal still pending when proceedings are finalized expires')
+        self.assertFalse(exists_in_storage('staging', pending.filename))
+        self.assertEqual(elsewhere.status_id, 'pending', "another meeting's proposal is untouched")
  
     @patch("ietf.meeting.utils.generate_bluesheet")
     def test_bluesheet_generation(self, mock):
@@ -7975,7 +7982,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(self.client.get(url).status_code, 404, 'gone from the blob store means gone')
 
     def test_proposal_records_the_sessions_it_is_for(self):
-        first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
+        first, cancelled, middle, last = make_group_sessions(['sched', 'canceled', 'sched', 'sched'])
         proposer = PersonFactory()
         chair = RoleFactory(group=first.group, name_id='chair').person
         url = self._slides_upload_url(first)
@@ -7988,7 +7995,7 @@ class MaterialsTests(TestCase):
             return SlideSubmission.objects.latest('pk')
 
         # a participant has only the yes/no: all scheduled sessions, or this one
-        self.assertCountEqual(propose(proposer, title='for all', apply_to_all=True).sessions.all(), [first, last])
+        self.assertCountEqual(propose(proposer, title='for all', apply_to_all=True).sessions.all(), [first, middle, last])
         self.assertCountEqual(propose(proposer, title='for one').sessions.all(), [first])
         # a chair who does not auto-approve keeps the exact choice
         self.assertCountEqual(propose(chair, title='chosen', apply_to_sessions=[last.pk]).sessions.all(), [first, last])
@@ -8384,6 +8391,49 @@ class MaterialsTests(TestCase):
         self.assertContains(r, 'The new revision replaces it there too')
         self.assertEqual(post_revision(revise_url, b'second attempt').status_code, 302)
         self.assertEqual(SlideSubmission.objects.filter(doc=deck, status_id='pending').count(), 1)
+
+    def test_closing_a_proposal_clears_its_staged_blob_and_stored_object(self):
+        """Decline, withdraw, expire and approve all leave nothing live in the staging store"""
+        TestBlobstoreManager().emptyTestBlobstores()
+
+        def staged(submission):
+            row = StoredObject.objects.filter(store='staging', name=submission.filename).first()
+            return exists_in_storage('staging', submission.filename), (row.deleted if row else 'no row')
+
+        for how in ('decline', 'withdraw', 'expire', 'approve'):
+            first, = make_group_sessions(['sched'])
+            proposer = PersonFactory()
+            chair = RoleFactory(group=first.group, name_id='chair').person
+            self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+            f = BytesIO(b'staged bytes'); f.name = 'deck.txt'
+            self.assertEqual(self.client.post(self._slides_upload_url(first), dict(file=f, title=f'deck to {how}')).status_code, 302)
+            submission = SlideSubmission.objects.get(title=f'deck to {how}')
+            self.assertEqual(staged(submission), (True, None), how)
+            approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
+
+            if how == 'decline':
+                self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+                self.assertEqual(self.client.post(approve_url, dict(title=submission.title, disapprove='disapprove')).status_code, 302)
+            elif how == 'withdraw':
+                self.assertEqual(self.client.post(urlreverse('ietf.meeting.views.withdraw_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})).status_code, 302)
+            elif how == 'expire':
+                submission.expire()
+            else:
+                self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+                self.assertEqual(self.client.post(approve_url, dict(title=submission.title, approve='approve')).status_code, 302)
+
+            submission.refresh_from_db()
+            exists, deleted = staged(submission)
+            self.assertFalse(exists, f'{how}: staged blob still readable')
+            self.assertIsNotNone(deleted, f'{how}: StoredObject row not stamped deleted')
+            self.assertNotEqual(deleted, 'no row', f'{how}: StoredObject row missing rather than stamped')
+            if how == 'approve':
+                self.assertEqual(submission.status_id, 'approved')
+                approved = StoredObject.objects.get(store='slides', name=submission.doc.uploaded_filename)
+                self.assertIsNone(approved.deleted, 'the approved deck is live in the slides store')
+                self.assertEqual(retrieve_bytes('slides', submission.doc.uploaded_filename), b'staged bytes')
+            else:
+                self.assertEqual(submission.status_id, {'decline': 'rejected', 'withdraw': 'withdrawn', 'expire': 'expired'}[how])
 
     def test_disapprove_proposed_slides(self):
         submission = SlideSubmissionFactory()

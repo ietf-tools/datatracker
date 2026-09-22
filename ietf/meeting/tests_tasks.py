@@ -4,13 +4,14 @@ import datetime
 from unittest.mock import patch, call
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import date_today
-from .factories import MeetingFactory
+from .factories import MeetingFactory, SessionFactory, SlideSubmissionFactory
+from django.test import override_settings
 from .tasks import (
     proceedings_content_refresh_task,
     agenda_data_refresh_task,
     agenda_data_refresh_all_task,
 )
-from .tasks import fetch_meeting_attendance_task
+from .tasks import fetch_meeting_attendance_task, expire_interim_slide_proposals_task, expire_past_ietf_slide_proposals_task
 
 
 class TaskTests(TestCase):
@@ -119,3 +120,50 @@ class TaskTests(TestCase):
         fetch_meeting_attendance_task()
         self.assertTrue(mock_fetch_attendance.called)
         # Good enough that we got here without raising an exception
+
+    @override_settings(INTERIM_SLIDE_PROPOSAL_EXPIRY_DAYS=14)
+    def test_expire_interim_slide_proposals_task(self):
+        def proposal(meeting_type, days_ago):
+            session = SessionFactory(meeting__type_id=meeting_type, meeting__date=date_today() - datetime.timedelta(days=days_ago))
+            return SlideSubmissionFactory(session=session)
+        old_interim = proposal('interim', 20)
+        recent_interim = proposal('interim', 10)
+        old_ietf = proposal('ietf', 60)
+        approved_old_interim = proposal('interim', 20)
+        approved_old_interim.status_id = 'approved'
+        approved_old_interim.save()
+
+        expire_interim_slide_proposals_task()
+
+        for submission in (old_interim, recent_interim, old_ietf, approved_old_interim):
+            submission.refresh_from_db()
+        self.assertEqual(old_interim.status_id, 'expired')
+        self.assertEqual(recent_interim.status_id, 'pending', 'not yet two weeks after the interim')
+        self.assertEqual(old_ietf.status_id, 'pending', 'IETF meetings expire proposals when proceedings are finalized')
+        self.assertEqual(approved_old_interim.status_id, 'approved')
+
+        with override_settings(INTERIM_SLIDE_PROPOSAL_EXPIRY_DAYS=7):
+            expire_interim_slide_proposals_task()
+        recent_interim.refresh_from_db()
+        self.assertEqual(recent_interim.status_id, 'expired', 'the waiting period is the setting')
+
+    def test_expire_past_ietf_slide_proposals_task(self):
+        def proposal(meeting_type, revsub_days_from_now):
+            session = SessionFactory(meeting__type_id=meeting_type)
+            session.meeting.importantdate_set.create(name_id='revsub', date=date_today() + datetime.timedelta(days=revsub_days_from_now))
+            return SlideSubmissionFactory(session=session)
+        closed = proposal('ietf', -1)
+        open_still = proposal('ietf', 1)
+        interim = proposal('interim', -30)
+        rejected_closed = proposal('ietf', -100)
+        rejected_closed.status_id = 'rejected'
+        rejected_closed.save()
+
+        self.assertEqual(expire_past_ietf_slide_proposals_task(), 1)
+
+        for submission in (closed, open_still, interim, rejected_closed):
+            submission.refresh_from_db()
+        self.assertEqual(closed.status_id, 'expired')
+        self.assertEqual(open_still.status_id, 'pending', 'corrections cutoff not yet passed')
+        self.assertEqual(interim.status_id, 'pending', 'interims have their own task')
+        self.assertEqual(rejected_closed.status_id, 'rejected')

@@ -234,7 +234,7 @@ class SlideSubmissionFactory(factory.django.DjangoModelFactory):
 
     session = factory.SubFactory(SessionFactory)
     title = factory.Faker('sentence')
-    filename = factory.Sequence(lambda n: 'test_slide_%d'%n)
+    filename = factory.Sequence(lambda n: 'test_slide_%d.txt'%n)
     submitter = factory.SubFactory(PersonFactory)
 
     store_submission = factory.PostGeneration(

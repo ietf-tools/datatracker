@@ -33,6 +33,7 @@ import debug                            # pyflakes:ignore
 from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.storage_utils import store_bytes, store_str, retrieve_bytes, AlreadyExistsError
 from ietf.meeting.models import (
+    SlideSubmission,
     Session,
     SchedulingEvent,
     TimeSlot,
@@ -297,9 +298,20 @@ def finalize(request, meeting):
                 messages.error(request, str(err))
     
     create_proceedings_templates(meeting)
+    expire_pending_slide_proposals(meeting)
     meeting.proceedings_final = True
     meeting.save()
     return
+
+
+def expire_pending_slide_proposals(meeting):
+    """Expire every slide proposal for the meeting that is still pending; returns how many"""
+    pending = SlideSubmission.objects.filter(session__meeting=meeting, status_id="pending")
+    count = 0
+    for submission in pending:
+        submission.expire()
+        count += 1
+    return count
 
 def sort_accept_tuple(accept):
     tup = []
