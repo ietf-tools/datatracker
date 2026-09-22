@@ -6,7 +6,8 @@ Subject: {{ submission.submitter }} has proposed slides for {{ submission.sessio
 {{ submission.submitter }} has proposed slides for {{ submission.session.meeting }} : {{ submission.session.group.acronym }}{% if session.name %} : {{submission.session.name}}{% endif %}
 
 Title: {{submission.title}}
-
+{% if submission.doc %}This is a proposed new revision of {{ submission.doc.title }} ({{ submission.doc.name }}).
+{% endif %}
 Chairs can approve or decline this proposal, and {{ submission.submitter }} can follow its status, at {{settings.IDTRACKER_BASE_URL}}{% url "ietf.meeting.views.approve_proposed_slides" slidesubmission_id=submission.pk num=submission.session.meeting.number %}
 
 {% endautoescape %}

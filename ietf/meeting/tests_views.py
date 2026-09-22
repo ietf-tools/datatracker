@@ -8068,6 +8068,89 @@ class MaterialsTests(TestCase):
         submission.refresh_from_db()
         self.assertContains(r, submission.doc.name)
 
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.utils.SlidesManager")
+    def test_propose_revision_of_existing_deck(self, mock_slides_manager_cls):
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, last = make_group_sessions(['sched', 'sched'])
+        deck = SessionPresentationFactory(session=first, document__type_id='slides', document__rev='00', document__title='The Talk').document
+        SessionPresentationFactory(session=last, document=deck, rev='00')
+        proposer = PersonFactory()
+        chair = RoleFactory(group=first.group, name_id='chair').person
+
+        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+        r = self.client.get(self._slides_upload_url(first))
+        q = PyQuery(r.content)
+        revise_url = self._slides_upload_url(first, deck.name)
+        self.assertEqual(q('a[href="%s"]' % revise_url).text(), 'Propose revision')
+        self.assertContains(r, 'The Talk')
+
+        empty_outbox()
+        f = BytesIO(b'second version'); f.name = 'deck.txt'
+        r = self.client.post(revise_url, dict(file=f, title='The Talk, revised'))
+        self.assertEqual(r.status_code, 302)
+        submission = SlideSubmission.objects.get(title='The Talk, revised')
+        self.assertEqual(submission.doc, deck)
+        self.assertTrue(submission.filename.startswith(deck.name + '-ss'), 'staged under the deck it revises')
+        self.assertCountEqual(submission.sessions.all(), [first, last], 'a revision reaches the sessions the deck is on')
+        self.assertIn('new revision of The Talk (%s)' % deck.name, get_payload_text(outbox[0]))
+        r = self.client.get(self._slides_upload_url(first))
+        self.assertContains(r, 'as a revision of The Talk (%s)' % deck.name)
+
+        approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        r = self.client.get(approve_url)
+        self.assertContains(r, 'proposed new revision of')
+        self.assertNotContains(r, 'replace an existing set of slides')
+        decks_before = Document.objects.filter(type_id='slides').count()
+        r = self.client.post(approve_url, dict(title='The Talk, revised', sessions=[first.pk, last.pk], approve='approve'))
+        self.assertEqual(r.status_code, 302)
+        deck.refresh_from_db()
+        self.assertEqual((deck.rev, deck.title), ('01', 'The Talk, revised'))
+        self.assertEqual(retrieve_bytes('slides', deck.uploaded_filename), b'second version')
+        self.assertEqual(Document.objects.filter(type_id='slides').count(), decks_before, 'no second deck')
+        for s in (first, last):
+            self.assertEqual(s.presentations.get(document=deck).rev, '01')
+        self.assertCountEqual(
+            mock_slides_manager_cls.return_value.revise.call_args_list,
+            [call(session=first, slides=deck), call(session=last, slides=deck)],
+        )
+        self.assertFalse(mock_slides_manager_cls.return_value.add.called)
+
+    def test_same_title_proposal_is_a_revision_from_the_start(self):
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, last = make_group_sessions(['sched', 'sched'])
+        deck = SessionPresentationFactory(session=first, document__type_id='slides', document__rev='00', document__title='The Talk').document
+        name, _ = material_document_name(first, 'slides', group_wide=False, title='The Talk')
+        Document.objects.filter(pk=deck.pk).update(name=name)
+        deck.refresh_from_db()
+        proposer = PersonFactory()
+        chair = RoleFactory(group=first.group, name_id='chair').person
+        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+        empty_outbox()
+        f = BytesIO(b'v2 under the same title'); f.name = 'deck.txt'
+        r = self.client.post(self._slides_upload_url(first), dict(file=f, title='The Talk'))  # plain proposal, not "Propose revision"
+        self.assertEqual(r.status_code, 302)
+        submission = SlideSubmission.objects.latest('pk')
+        self.assertEqual(submission.doc, deck, 'a matching title is a revision at proposal time, not only at approval')
+        self.assertCountEqual(submission.sessions.all(), [first])
+        self.assertIn('new revision of The Talk (%s)' % deck.name, get_payload_text(outbox[0]))
+
+        r = self.client.get(self._slides_upload_url(first))
+        self.assertContains(r, 'as a revision of The Talk (%s)' % deck.name)
+        r = self.client.get(urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number}))
+        self.assertContains(r, 'Revises')
+        self.assertContains(r, 'The Talk (%s)' % deck.name)
+
+        # the participant's revise page has no apply-to-all box: a revision goes where the deck is
+        r = self.client.get(self._slides_upload_url(first, deck.name))
+        self.assertFalse(PyQuery(r.content)('input[name=apply_to_all]'))
+
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        r = self.client.get(urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number}))
+        self.assertContains(r, 'proposed new revision of')
+        self.assertContains(r, 'The Talk (%s)' % deck.name)
+
     def test_disapprove_proposed_slides(self):
         submission = SlideSubmissionFactory()
         submission.session.meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))

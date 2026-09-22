@@ -54,7 +54,6 @@ from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.encoding import force_str
-from django.utils.text import slugify
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import RedirectView
@@ -178,6 +177,7 @@ from ietf.meeting.utils import (
     reclaim_material_name,
     link_slides_to_sessions,
     tell_meetecho_about_slides,
+    sessions_linked_to,
     SessionNotScheduledError,
     data_for_meetings_overview,
     handle_upload_file,
@@ -3634,7 +3634,7 @@ def upload_session_slides(request, session_id, num, name=None):
 
     if request.method == "POST":
         form = UploadSlidesForm(
-            session, can_manage, choices, select_all, request.POST, request.FILES
+            session, can_manage, choices if can_manage or doc is None else [], select_all, request.POST, request.FILES
         )
         if form.is_valid():
             file = request.FILES["file"]
@@ -3651,17 +3651,16 @@ def upload_session_slides(request, session_id, num, name=None):
             # Propose slides if not auto-approved
             if not approved:
                 title = form.cleaned_data['title']
-                submission = SlideSubmission.objects.create(session=session, title=title, filename='', submitter=request.user.person)
-                submission.sessions.set(scheduled_sessions if apply_to_all else [session, *also_sessions])
-
-                if session.meeting.type_id=='ietf':
-                    name = 'slides-%s-%s' % (session.meeting.number, 
-                                         session.group.acronym) 
-                    if not apply_to_all:
-                        name += '-%s' % (session.docname_token(),)
+                if doc is None:
+                    # the same title makes a revision at approval, so say so from the start
+                    name, _ = material_document_name(session, "slides", group_wide=apply_to_all, title=title)
+                    doc = Document.objects.filter(name=name).first()
+                submission = SlideSubmission.objects.create(session=session, title=title, filename='', submitter=request.user.person, doc=doc)
+                if doc is not None:
+                    submission.sessions.set(sessions_linked_to(doc, session.meeting) or [session])
+                    name = doc.name
                 else:
-                    name = 'slides-%s-%s' % (session.meeting.number, session.docname_token())
-                name = name + '-' + slugify(title).replace('_', '-')[:128]
+                    submission.sessions.set(scheduled_sessions if apply_to_all else [session, *also_sessions])
                 filename = '%s-ss%d%s'% (name, submission.id, ext)
                 file.seek(0)  # validation read it
                 store_file("staging", filename, file)
@@ -3753,7 +3752,7 @@ def upload_session_slides(request, session_id, num, name=None):
         initial = {}
         if doc is not None:
             initial = {"title": doc.title}
-        form = UploadSlidesForm(session, can_manage, choices, select_all, initial=initial)
+        form = UploadSlidesForm(session, can_manage, choices if can_manage or doc is None else [], select_all, initial=initial)
 
     return render(
         request,
@@ -3763,8 +3762,15 @@ def upload_session_slides(request, session_id, num, name=None):
             "session_number": session_number,
             "also_linked": also_linked,
             "slides_sp": slides_sp,
-            "manage": session.can_manage_materials(request.user),
+            "manage": can_manage,
             "form": form,
+            "decks": [] if can_manage or doc else [
+                sp for sp in session.presentations.filter(document__type_id="slides").order_by("order")
+                if sp.document.get_state_slug("slides") != "deleted"
+            ],
+            "own_pending": [] if can_manage or doc or not hasattr(request.user, "person") else SlideSubmission.objects.filter(
+                session=session, submitter=request.user.person, status_id="pending"
+            ).order_by("time"),
         },
     )
 
@@ -5678,10 +5684,15 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 chosen = form.chosen_sessions()
                 home = submission.session if submission.session in chosen else chosen[0]
                 also_sessions = [s for s in chosen if s != home]
-                group_wide = group_wide_material_name(home, also_sessions)
-                name, _ = material_document_name(home, 'slides', group_wide=group_wide, title=title)
-                doc = Document.objects.filter(name=name).first()
-                reclaim = doc is not None and name == material_document_name(home, 'slides', group_wide=False, title=title)[0]
+                if submission.doc_id:
+                    doc = submission.doc
+                    name = doc.name
+                    reclaim = False
+                else:
+                    group_wide = group_wide_material_name(home, also_sessions)
+                    name, _ = material_document_name(home, 'slides', group_wide=group_wide, title=title)
+                    doc = Document.objects.filter(name=name).first()
+                    reclaim = doc is not None and name == material_document_name(home, 'slides', group_wide=False, title=title)[0]
                 rev = '%02d' % (int(doc.rev) + 1) if doc is not None else '00'
                 _, ext = os.path.splitext(submission.filename)
                 target_filename = f'{name}-{rev}{ext}'
@@ -5758,7 +5769,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
     return render(request, "meeting/approve_proposed_slides.html",
                   {'submission': submission,
                    'session_number': session_number,
-                   'existing_doc' : Document.objects.filter(name=proposed_name).first(),
+                   'existing_doc' : None if submission.doc_id else Document.objects.filter(name=proposed_name).first(),
                    'form': form,
                   })
 

@@ -34,6 +34,30 @@
         To replace a deck that is already on the session, propose the new file under the same title: it becomes the next revision of that deck rather than a second deck.
     </p>
     {% endif %}
+    {% if decks or own_pending %}
+        <h2 class="mt-3">Already on this session</h2>
+        <table class="table table-sm table-striped">
+            <tbody>
+                {% for sp in decks %}
+                    <tr>
+                        <td>
+                            <a href="{{ sp.document.get_href }}">{{ sp.document.title }}</a>
+                            <a class="btn btn-primary btn-sm float-end" href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number name=sp.document.name %}">Propose revision</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                {% for proposal in own_pending %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'ietf.meeting.views.approve_proposed_slides' slidesubmission_id=proposal.pk num=session.meeting.number %}">{{ proposal.title }}</a>
+                            <span class="text-body-secondary">awaiting approval{% if proposal.doc %}, as a revision of {{ proposal.doc.title }} ({{ proposal.doc.name }}){% endif %}</span>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <h2 class="mt-3">Propose a new deck</h2>
+    {% endif %}
     {% if slides_sp %}<h3>{{ slides_sp.document.name }}</h3>{% endif %}
     {% if also_linked %}
         <p class="alert alert-info my-3">

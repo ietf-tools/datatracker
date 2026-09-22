@@ -22,6 +22,11 @@
         {{ submission.submitter }} proposed these slides for this session:
         <a href="{% url 'ietf.meeting.views.proposed_slides_file' slidesubmission_id=submission.pk num=submission.session.meeting.number %}">{{ submission.filename }}</a>.
     </p>
+    {% if submission.doc %}
+        <p class="alert alert-info my-3">
+            This is a proposed new revision of <a href="{% url 'ietf.doc.views_doc.document_main' name=submission.doc.name %}">{{ submission.doc.title }} ({{ submission.doc.name }})</a>, now at revision {{ submission.doc.rev }}.
+        </p>
+    {% endif %}
     {% if existing_doc %}
         <p class="alert alert-warning my-3">
             Warning: If you approve this set of slides with the proposed title of "{{ submission.title }}", it will replace an existing set of slides. If that's not what you intend, please adjust the title.
