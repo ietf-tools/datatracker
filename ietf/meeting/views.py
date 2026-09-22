@@ -48,7 +48,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.validators import URLValidator
 from django.urls import reverse, reverse_lazy, NoReverseMatch
-from django.db.models import F, Max, Q
+from django.db.models import F, Q
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
@@ -69,7 +69,6 @@ from ietf.doc.storage_utils import (
     remove_from_storage,
     retrieve_bytes,
     store_file,
-    exists_in_storage,
 )
 from ietf.doc.templatetags.ietf_filters import absurl
 from ietf.group.models import Group
@@ -121,6 +120,7 @@ from ietf.meeting.forms import (
     UploadBlueSheetForm,
     UploadMinutesForm,
     UploadSlidesForm,
+    validate_slides_title,
     UploadNarrativeMinutesForm,
 )
 from ietf.meeting.helpers import (
@@ -174,6 +174,7 @@ from ietf.meeting.utils import (
     group_wide_material_name,
     link_material_to_sessions,
     material_document_name,
+    material_session_label,
     reclaim_material_name,
     link_slides_to_sessions,
     tell_meetecho_about_slides,
@@ -5617,13 +5618,36 @@ def request_minutes(request, num=None):
 
 class ApproveSlidesForm(forms.Form):
     title = forms.CharField(max_length=255)
-    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=False,required=False)
+    sessions = forms.TypedMultipleChoiceField(
+        coerce=int, widget=forms.CheckboxSelectMultiple, label="Link the deck to",
+        error_messages={"required": "Choose at least one session."},
+    )
 
-    def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
-        super(ApproveSlidesForm, self).__init__(*args, **kwargs )
-        if not show_apply_to_all_checkbox:
-            self.fields.pop('apply_to_all')
-            
+    def __init__(self, submission, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.meeting = submission.session.meeting
+        self.scheduled = scheduled_only(get_meeting_sessions(submission.session.meeting.number, submission.session.group.acronym))
+        if not self.scheduled:
+            self.scheduled = [submission.session]
+        if len(self.scheduled) > 1:
+            proposed = set(submission.sessions.values_list("pk", flat=True))
+            self.fields["sessions"].choices = [
+                (s.pk, material_session_label(s, n) + (" (proposed for this session)" if s == submission.session else ""))
+                for n, s in enumerate(self.scheduled, start=1)
+            ]
+            self.fields["sessions"].initial = [s.pk for s in self.scheduled if s.pk in proposed]
+        else:
+            self.fields.pop("sessions")
+
+    def clean_title(self):
+        return validate_slides_title(self.cleaned_data["title"], self.meeting)
+
+    def chosen_sessions(self):
+        if "sessions" not in self.fields:
+            return list(self.scheduled)
+        chosen = self.cleaned_data["sessions"]
+        return [s for s in self.scheduled if s.pk in chosen]
+
 @login_required
 def approve_proposed_slides(request, slidesubmission_id, num):
     submission = get_object_or_404(SlideSubmission,pk=slidesubmission_id)
@@ -5632,88 +5656,63 @@ def approve_proposed_slides(request, slidesubmission_id, num):
     if submission.session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")   
     
-    sessions, session_number = sessions_covered_by_apply_to_all(submission.session)
-    show_apply_to_all_checkbox = len(sessions) > 1 if submission.session.type_id == 'regular' else False
-    name, _ = os.path.splitext(submission.filename)
-    name = name[:name.rfind('-ss')]
-    existing_doc = Document.objects.filter(name=name).first()
+    _, session_number = sessions_covered_by_apply_to_all(submission.session)
     if request.method == 'POST' and submission.status.slug == 'pending':
-        form = ApproveSlidesForm(show_apply_to_all_checkbox, request.POST)
+        form = ApproveSlidesForm(submission, request.POST)
         if form.is_valid():
-            apply_to_all = submission.session.type_id == 'regular'
-            if show_apply_to_all_checkbox:
-                apply_to_all = form.cleaned_data['apply_to_all']
             if request.POST.get('approve'):
-                # Ensure that we have a file to approve.  The system gets cranky otherwise.
-                if not submission.filename or not exists_in_storage("staging", submission.filename):
+                content = b""
+                if submission.filename:
+                    try:
+                        content = retrieve_bytes("staging", submission.filename)
+                    except FileNotFoundError:
+                        pass
+                if not content:
                     return HttpResponseNotFound("The slides you attempted to approve could not be found.  Please decline and delete them instead.")
                 title = form.cleaned_data['title']
-                if existing_doc:
-                   doc = Document.objects.get(name=name)
-                   doc.rev = '%02d' % (int(doc.rev)+1)
-                   doc.title = form.cleaned_data['title']
-                else:
-                    doc = Document.objects.create(
-                              name = name,
-                              type_id = 'slides',
-                              title = title,
-                              group = submission.session.group,
-                              rev = '00',
-                          )
-                doc.states.add(State.objects.get(type_id='slides',slug='active'))
-                doc.states.add(State.objects.get(type_id='reuse_policy',slug='single'))
-                added_presentations = []
-                revised_presentations = []
-                if submission.session.presentations.filter(document=doc).exists():
-                    sp = submission.session.presentations.get(document=doc)
-                    sp.rev = doc.rev
-                    sp.save()
-                    revised_presentations.append(sp)
-                else:
-                    max_order = submission.session.presentations.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
-                    added_presentations.append(
-                        submission.session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
-                    )
-                if apply_to_all:
-                    for other_session in sessions:
-                        if other_session != submission.session and not other_session.presentations.filter(document=doc).exists():
-                            max_order = other_session.presentations.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
-                            added_presentations.append(
-                                other_session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
-                            )
-                sub_name, sub_ext = os.path.splitext(submission.filename)
-                target_filename = '%s-%s%s' % (sub_name[:sub_name.rfind('-ss')],doc.rev,sub_ext)
-                doc.uploaded_filename = target_filename
-                e = NewRevisionDocEvent.objects.create(doc=doc,by=submission.submitter,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
-                doc.save_with_history([e])
-                content = retrieve_bytes("staging", submission.filename)
+                chosen = form.chosen_sessions()
+                home = submission.session if submission.session in chosen else chosen[0]
+                also_sessions = [s for s in chosen if s != home]
+                group_wide = group_wide_material_name(home, also_sessions)
+                name, _ = material_document_name(home, 'slides', group_wide=group_wide, title=title)
+                doc = Document.objects.filter(name=name).first()
+                reclaim = doc is not None and name == material_document_name(home, 'slides', group_wide=False, title=title)[0]
+                rev = '%02d' % (int(doc.rev) + 1) if doc is not None else '00'
+                _, ext = os.path.splitext(submission.filename)
+                target_filename = f'{name}-{rev}{ext}'
                 path = Path(submission.session.meeting.get_materials_path()) / 'slides'
                 path.mkdir(parents=True, exist_ok=True)
                 (path / target_filename).write_bytes(content)
+
+                relinked = []
+                if reclaim:
+                    warnings, relinked = reclaim_material_name(doc, home, request.user.person, keep=also_sessions)
+                    for warning in warnings:
+                        messages.warning(request, warning)
+                if doc is None:
+                    doc = Document.objects.create(name=name, type_id='slides', title=title, group=submission.session.group, rev=rev)
+                    doc.set_state(State.objects.get(type_id='slides', slug='active'))
+                    doc.set_state(State.objects.get(type_id='reuse_policy', slug='single'))
+                else:
+                    doc.rev = rev
+                    doc.title = title
+                    if doc.get_state_slug('slides') == 'deleted':  # revised back into use
+                        doc.set_state(State.objects.get(type_id='slides', slug='active'))
+                doc.uploaded_filename = target_filename
+                e = NewRevisionDocEvent.objects.create(doc=doc,by=submission.submitter,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
+                doc.save_with_history([e])
                 doc.store_bytes(target_filename, content)
-                remove_from_storage("staging", submission.filename)
+                added, revised = link_slides_to_sessions(doc, home, also_sessions)
                 post_process(doc)
                 resolve_uploaded_material(meeting=submission.session.meeting, doc=doc)
                 DocEvent.objects.create(type="approved_slides", doc=doc, rev=doc.rev, by=request.user.person, desc="Slides approved")
-
-                # update meetecho slide info if configured
-                if hasattr(settings, "MEETECHO_API_CONFIG"):
-                    sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
-                    for sp in added_presentations:
-                        try:
-                            sm.add(session=sp.session, slides=doc, order=sp.order)
-                        except MeetechoAPIError as err:
-                            log(f"Error in SlidesManager.add(): {err}")
-                    for sp in revised_presentations:
-                        try:
-                            sm.revise(session=sp.session, slides=doc)
-                        except MeetechoAPIError as err:
-                            log(f"Error in SlidesManager.revise(): {err}")
+                tell_meetecho_about_slides(home, doc, added, revised, relinked)
 
                 acronym = submission.session.group.acronym
                 submission.status = SlideSubmissionStatusName.objects.get(slug='approved')
                 submission.doc = doc
                 submission.save()
+                remove_from_storage("staging", submission.filename)
                 (to, cc) = gather_address_lists('slides_approved', group=submission.session.group, proposer=submission.submitter).as_strings()
                 subject = f"Slides approved for {submission.session.meeting} : {submission.session.group.acronym}{' : '+submission.session.name if submission.session.name else ''}"
                 body = render_to_string("meeting/slides_approved.txt", {
@@ -5744,16 +5743,17 @@ def approve_proposed_slides(request, slidesubmission_id, num):
         return render(request, "meeting/previously_approved_slides.html",
                       {'submission': submission })
     else:
-        initial = {
-            'title': submission.title,
-            'apply_to_all' : submission.apply_to_all,
-        }
-        form = ApproveSlidesForm(show_apply_to_all_checkbox, initial=initial )
+        form = ApproveSlidesForm(submission, initial={'title': submission.title})
 
+    proposed = list(submission.sessions.all()) or [submission.session]
+    home = submission.session if submission.session in proposed else proposed[0]
+    proposed_name, _ = material_document_name(
+        home, 'slides', group_wide=group_wide_material_name(home, [s for s in proposed if s != home]), title=submission.title
+    )
     return render(request, "meeting/approve_proposed_slides.html",
                   {'submission': submission,
                    'session_number': session_number,
-                   'existing_doc' : existing_doc,
+                   'existing_doc' : Document.objects.filter(name=proposed_name).first(),
                    'form': form,
                   })
 

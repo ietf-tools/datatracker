@@ -238,7 +238,11 @@ class SlideSubmissionFactory(factory.django.DjangoModelFactory):
     submitter = factory.SubFactory(PersonFactory)
 
     store_submission = factory.PostGeneration(
-        lambda obj, create, extracted, **kwargs: store_str("staging", obj.filename, "")
+        lambda obj, create, extracted, **kwargs: store_str("staging", obj.filename, "not really slides")
+    )
+
+    proposed_for = factory.PostGeneration(
+        lambda obj, create, extracted, **kwargs: obj.sessions.add(obj.session) if create else None
     )
 
 class ConstraintFactory(factory.django.DjangoModelFactory):
