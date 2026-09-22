@@ -65,7 +65,6 @@ from ietf.api.ietf_utils import requires_api_token
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent
 from ietf.doc.storage_utils import (
-    remove_from_storage,
     retrieve_bytes,
     store_file,
 )
@@ -201,7 +200,6 @@ from ietf.meeting.utils import (
 )
 from ietf.message.utils import infer_message
 from ietf.name.models import (
-    SlideSubmissionStatusName,
     ProceedingsMaterialTypeName,
     SessionPurposeName,
     CountryName,
@@ -5775,10 +5773,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 tell_meetecho_about_slides(home, doc, added, revised, relinked)
 
                 acronym = submission.session.group.acronym
-                submission.status = SlideSubmissionStatusName.objects.get(slug='approved')
-                submission.doc = doc
-                submission.save()
-                remove_from_storage("staging", submission.filename)
+                submission.approve(doc, request.user.person)
                 (to, cc) = gather_address_lists('slides_approved', group=submission.session.group, proposer=submission.submitter).as_strings()
                 subject = f"Slides approved for {submission.session.meeting} : {submission.session.group.acronym}{' : '+submission.session.name if submission.session.name else ''}"
                 body = render_to_string("meeting/slides_approved.txt", {
@@ -5791,18 +5786,8 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 send_mail_text(request, to, None, subject, body, cc=cc)
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=acronym)
             elif request.POST.get('disapprove'):
-                # Errors in processing a submit request sometimes result
-                # in a SlideSubmission object without a file.  Handle
-                # this case and keep processing the 'disapprove' even if
-                # the filename doesn't exist.
-
-                if submission.filename:
-                    remove_from_storage("staging", submission.filename)
-
-                acronym = submission.session.group.acronym
-                submission.status = SlideSubmissionStatusName.objects.get(slug='rejected')
-                submission.save()
-                return redirect('ietf.meeting.views.session_details',num=num,acronym=acronym)
+                submission.decline(request.user.person)
+                return redirect('ietf.meeting.views.session_details',num=num,acronym=submission.session.group.acronym)
             else:
                 pass
     elif not submission.status.slug == 'pending':

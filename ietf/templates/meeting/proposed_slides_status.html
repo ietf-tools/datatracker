@@ -31,13 +31,13 @@
             {% if submission.status.slug == 'pending' %}
                 Awaiting approval by the chairs of {{ submission.session.group.acronym }}.
             {% elif submission.status.slug == 'approved' %}
-                Approved{% if submission.doc %} as <a href="{% url 'ietf.doc.views_doc.document_main' name=submission.doc.name %}">{{ submission.doc.name }}</a>{% endif %}.
+                Approved{% if submission.resolved_by %} by {{ submission.resolved_by }}{% endif %}{% if submission.resolved %} on {{ submission.resolved|date:"j F Y" }}{% endif %}{% if submission.doc %} as <a href="{% url 'ietf.doc.views_doc.document_main' name=submission.doc.name %}">{{ submission.doc.name }}</a>{% endif %}.
             {% elif submission.status.slug == 'expired' %}
-                Expired: the meeting's materials closed while this proposal was still awaiting approval, and the file has been discarded.
+                Expired{% if submission.resolved %} on {{ submission.resolved|date:"j F Y" }}{% endif %}: the meeting's materials closed while this proposal was still awaiting approval, and the file has been discarded.
             {% elif submission.status.slug == 'withdrawn' %}
-                Withdrawn by you.
+                Withdrawn by you{% if submission.resolved %} on {{ submission.resolved|date:"j F Y" }}{% endif %}.
             {% else %}
-                Declined by the chairs.
+                Declined{% if submission.resolved_by %} by {{ submission.resolved_by }}{% endif %}{% if submission.resolved %} on {{ submission.resolved|date:"j F Y" }}{% endif %}.
             {% endif %}
         </dd>
     </dl>

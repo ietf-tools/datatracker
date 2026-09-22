@@ -8071,7 +8071,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
         r = self.client.get(url)
-        self.assertContains(r, 'Approved as')
+        self.assertContains(r, 'Approved by %s' % chair.plain_name())
         submission.refresh_from_db()
         self.assertContains(r, submission.doc.name)
 
@@ -8434,6 +8434,50 @@ class MaterialsTests(TestCase):
                 self.assertEqual(retrieve_bytes('slides', submission.doc.uploaded_filename), b'staged bytes')
             else:
                 self.assertEqual(submission.status_id, {'decline': 'rejected', 'withdraw': 'withdrawn', 'expire': 'expired'}[how])
+
+    def test_resolving_a_proposal_records_who_and_when(self):
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, = make_group_sessions(['sched'])
+        chair = RoleFactory(group=first.group, name_id='chair').person
+        proposer = PersonFactory()
+        first.meeting.importantdate_set.update(date=date_today() + datetime.timedelta(days=20))
+
+        def proposal(title):
+            self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+            f = BytesIO(b'bytes'); f.name = 'deck.txt'
+            self.assertEqual(self.client.post(self._slides_upload_url(first), dict(file=f, title=title)).status_code, 302)
+            return SlideSubmission.objects.get(title=title)
+        def approve_url(sub):
+            return urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': sub.pk, 'num': first.meeting.number})
+        def as_chair():
+            self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        def as_proposer():
+            self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+
+        approved, declined, withdrawn, expired = (proposal(t) for t in ('to approve', 'to decline', 'to withdraw', 'to expire'))
+        for sub in (approved, declined, withdrawn, expired):
+            self.assertIsNone(sub.resolved)
+            self.assertIsNone(sub.resolved_by)
+
+        as_chair()
+        self.assertEqual(self.client.post(approve_url(approved), dict(title=approved.title, approve='approve')).status_code, 302)
+        self.assertEqual(self.client.post(approve_url(declined), dict(title=declined.title, disapprove='disapprove')).status_code, 302)
+        as_proposer()
+        self.assertEqual(self.client.post(urlreverse('ietf.meeting.views.withdraw_proposed_slides', kwargs={'slidesubmission_id': withdrawn.pk, 'num': first.meeting.number})).status_code, 302)
+        expired.expire()
+
+        for sub, status, by in ((approved, 'approved', chair), (declined, 'rejected', chair), (withdrawn, 'withdrawn', proposer), (expired, 'expired', Person.objects.get(name='(System)'))):
+            sub.refresh_from_db()
+            self.assertEqual((sub.status_id, sub.resolved_by), (status, by), sub.title)
+            self.assertIsNotNone(sub.resolved, sub.title)
+            self.assertGreater(sub.resolved, sub.time, 'resolved after proposed, and the proposal time itself untouched')
+
+        as_proposer()
+        when = approved.resolved.strftime('%-d %B %Y')
+        self.assertContains(self.client.get(approve_url(approved)), 'Approved by %s on %s' % (chair.plain_name(), when))
+        self.assertContains(self.client.get(approve_url(declined)), 'Declined by %s on %s' % (chair.plain_name(), when))
+        self.assertContains(self.client.get(approve_url(withdrawn)), 'Withdrawn by you on %s' % when)
+        self.assertContains(self.client.get(approve_url(expired)), 'Expired on %s' % when)
 
     def test_disapprove_proposed_slides(self):
         submission = SlideSubmissionFactory()
