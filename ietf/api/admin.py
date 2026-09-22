@@ -37,11 +37,43 @@ class AppApiTokenForm(forms.ModelForm):
                 self.instance.validate_new_token(new_token)
             except ValueError as err:
                 raise forms.ValidationError(f"{str(err)} Enter a different value.")
+        elif self.instance.pk is None:
+            # New instance without a specified token, generate a default
+            new_token = AppApiToken.generate_token()
         return new_token
 
 
+class TokenCacheRefreshMixin:
+    """Refresh the API token cache after admin saves, inside the transaction
+
+    The refresh is done in save_related() rather than save_model() because the
+    admin persists inline formsets and M2M fields (e.g. AppApiToken.endpoints)
+    only after save_model() returns. Both run inside the transaction that
+    Django opens around the change view, so a failed refresh rolls back the
+    object and its related rows together.
+    """
+
+    def _refresh_token_cache(self, request):
+        try:
+            cached_hashed_token_store(force_update=True)
+        except Exception:
+            self.message_user(
+                request,
+                "Save failed. The cached API tokens being enforced may not agree with "
+                "the database state. Edit and save again to update the cache. Alert "
+                "the admins if this message appears again.",
+                level=messages.ERROR,
+            )
+            raise
+
+    def save_related(self, request, form, formsets, change):
+        with transaction.atomic():
+            super().save_related(request, form, formsets, change)
+            self._refresh_token_cache(request)
+
+
 @admin.register(AppApiToken)
-class AppApiTokenAdmin(admin.ModelAdmin):
+class AppApiTokenAdmin(TokenCacheRefreshMixin, admin.ModelAdmin):
     form = AppApiTokenForm
     list_display = ["__str__", "enabled", "description"]
     list_filter = ["enabled", "endpoints__name"]
@@ -55,16 +87,10 @@ class AppApiTokenAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj: AppApiToken, form, change):
         new_token = form.cleaned_data["new_token"]
-        if new_token or not change:
-            # Not change => this is a new instance. Give it a default if a token
-            # was not specified.
-            if not new_token:
-                new_token = AppApiToken.generate_token()
+        if new_token:
             obj.set_token(new_token)
         try:
-            with transaction.atomic():
-                super().save_model(request, obj, form, change)
-                cached_hashed_token_store(force_update=True)  # update the cache
+            super().save_model(request, obj, form, change)
         except IntegrityError:
             self.message_user(
                 request,
@@ -74,16 +100,11 @@ class AppApiTokenAdmin(admin.ModelAdmin):
                 level=messages.ERROR,
             )
             raise
-        except Exception:
-            self.message_user(
-                request,
-                "Save failed. The cached API tokens being enforced may not agree with "
-                "the database state. Edit and save again to update the cache. Alert "
-                "the admins if this message appears again.",
-                level=messages.ERROR,
-            )
-            raise
 
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        # Only reveal the new token once the save and cache refresh have succeeded
+        new_token = form.cleaned_data["new_token"]
         if new_token:
             self.message_user(
                 request,
@@ -110,21 +131,6 @@ class AppApiTokenAdmin(admin.ModelAdmin):
 
 
 @admin.register(KnownApiEndpoint)
-class KnownApiEndpointAdmin(admin.ModelAdmin):
+class KnownApiEndpointAdmin(TokenCacheRefreshMixin, admin.ModelAdmin):
     list_display = ["name", "enabled"]
     search_fields = ["name"]
-
-    def save_model(self, request, obj: KnownApiEndpoint, form, change):
-        try:
-            with transaction.atomic():
-                super().save_model(request, obj, form, change)
-                cached_hashed_token_store(force_update=True)  # update the cache
-        except Exception:
-            self.message_user(
-                request,
-                "Save failed. The cached API tokens being enforced may not agree with "
-                "the database state. Edit and save again to update the cache. Alert "
-                "the admins if this message appears again.",
-                level=messages.ERROR,
-            )
-            raise

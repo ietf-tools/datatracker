@@ -3,8 +3,10 @@ import re
 from unittest import mock
 
 from django.contrib.auth.models import User
+from django.core.cache.backends.base import BaseCache
 from django.urls import reverse as urlreverse
 
+from ietf.api.ietf_utils import is_valid_token
 from ietf.api.models import MIN_TOKEN_LENGTH, AppApiToken, KnownApiEndpoint
 from ietf.utils.test_utils import TestCase
 
@@ -173,6 +175,51 @@ class AppApiTokenAdminTests(TestCase):
                 mock.call(force_update=True),
                 mocked.call_args_list,
                 "KnownApiEndpointAdmin did not refresh the token cache",
+            )
+
+    def endpoint_inline_data(self, *endpoints):
+        """POST data selecting endpoints in the inline formset"""
+        data = {"AppApiToken_endpoints-TOTAL_FORMS": str(len(endpoints))}
+        for n, endpoint in enumerate(endpoints):
+            data[f"AppApiToken_endpoints-{n}-knownapiendpoint"] = str(endpoint.pk)
+        return data
+
+    def test_token_usable_after_single_save(self):
+        # mock a stand-in for the cache so is_valid_token() reads what the admin stored
+        store = {}
+        cache = mock.create_autospec(BaseCache, instance=True)
+        cache.get.side_effect = store.get
+        cache.set.side_effect = lambda key, value, *args, **kwargs: store.update(
+            {key: value}
+        )
+
+        with mock.patch("ietf.api.ietf_utils.caches", {"default": cache}):
+            endpoint = KnownApiEndpoint.objects.create(name="ietf.api.foobar")
+
+            # new token created with an endpoint
+            raw_token = "a-new-token-" + "a" * MIN_TOKEN_LENGTH
+            self.client.post(
+                self.add_url,
+                self.post_data(
+                    new_token=raw_token, **self.endpoint_inline_data(endpoint)
+                ),
+            )
+            self.assertTrue(
+                is_valid_token(endpoint.name, raw_token),
+                "new token was not usable until saved a second time",
+            )
+
+            # endpoint added to an existing token
+            other_raw_token = "another-token-" + "a" * MIN_TOKEN_LENGTH
+            other_token = self.create_token(other_raw_token)
+            self.assertFalse(is_valid_token(endpoint.name, other_raw_token))
+            self.client.post(
+                self.change_url(other_token),
+                self.post_data(**self.endpoint_inline_data(endpoint)),
+            )
+            self.assertTrue(
+                is_valid_token(endpoint.name, other_raw_token),
+                "endpoint change was not effective until saved a second time",
             )
 
     def test_save_model_rolls_back_token_on_cache_failure(self):
