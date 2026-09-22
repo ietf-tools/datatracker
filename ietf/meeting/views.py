@@ -5652,6 +5652,11 @@ class ApproveSlidesForm(forms.Form):
 def approve_proposed_slides(request, slidesubmission_id, num):
     submission = get_object_or_404(SlideSubmission,pk=slidesubmission_id)
     if not submission.session.can_manage_materials(request.user):
+        if user_is_person(request.user, submission.submitter):
+            return render(request, "meeting/proposed_slides_status.html", {
+                "submission": submission,
+                "proposed_for": [material_session_label(s) for s in submission.sessions.all()],
+            })
         permission_denied(request, "You don't have permission to manage slides for this session.")
     if submission.session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")   

@@ -4677,6 +4677,44 @@ class SessionDetailsTests(TestCase):
         self.assertTrue(q('#session_%d' % live.pk).parents().is_('body'))
         self.assertTrue(q('a.uploadslides[href*="/session/%d/"]' % live.pk), 'the live session keeps its controls')
 
+    def test_session_details_flags_pending_proposals(self):
+        chair_role = RoleFactory(name_id='chair', group__type_id='wg', group__state_id='active')
+        session = SessionFactory(meeting__type_id='ietf', group=chair_role.group, meeting__date=date_today() + datetime.timedelta(days=7))
+        url = urlreverse('ietf.meeting.views.session_details', kwargs=dict(num=session.meeting.number, acronym=session.group.acronym))
+        chair = chair_role.person
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        r = self.client.get(url)
+        self.assertFalse(PyQuery(r.content)('#pending-proposals-notice'), 'nothing pending, nothing to flag')
+
+        SlideSubmissionFactory.create_batch(2, session=session)
+        expired = SlideSubmissionFactory(session=session)
+        expired.expire()
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        notice = q('#pending-proposals-notice a')
+        self.assertEqual(notice.text(), '2 proposed slide decks awaiting your approval')
+        self.assertEqual(notice.attr('href'), '#proposed-slides')
+        self.assertEqual(len(q('h2#proposed-slides')), 1)
+
+        bystander = PersonFactory()
+        self.client.login(username=bystander.user.username, password=bystander.user.username + '+password')
+        r = self.client.get(url)
+        self.assertFalse(PyQuery(r.content)('#pending-proposals-notice'), 'only those who can approve are nagged')
+
+    def test_session_details_offers_login_to_propose(self):
+        group = GroupFactory(type_id='wg', state_id='active')
+        future = SessionFactory(meeting__type_id='ietf', group=group, meeting__date=date_today() + datetime.timedelta(days=7))
+        url = urlreverse('ietf.meeting.views.session_details', kwargs=dict(num=future.meeting.number, acronym=group.acronym))
+        r = self.client.get(url)
+        button = PyQuery(r.content)('a.proposeslides')
+        self.assertEqual(button.text(), 'Log in to propose slides')
+        self.assertTrue(button.attr('href').startswith(urlreverse('ietf.ietfauth.views.login')))
+        self.assertIn('next=', button.attr('href'))
+
+        past = SessionFactory(meeting__type_id='ietf', group=group, meeting__date=date_today() - datetime.timedelta(days=60))
+        r = self.client.get(urlreverse('ietf.meeting.views.session_details', kwargs=dict(num=past.meeting.number, acronym=group.acronym)))
+        self.assertFalse(PyQuery(r.content)('a.proposeslides'), 'no proposing once the session is over')
+
     def test_session_details_slides_drag_and_drop_markup(self):
         """Every slides table is a drag-and-drop target with the attributes the JS reads
 
@@ -7805,7 +7843,7 @@ class MaterialsTests(TestCase):
             self.assertEqual(r.status_code,200)
             q = PyQuery(r.content)
             self.assertFalse(q('.uploadslides'))
-            self.assertFalse(q('.proposeslides'))
+            self.assertIn(urlreverse('ietf.ietfauth.views.login'), q('.proposeslides').attr('href'), 'anonymous visitors are pointed at login')
 
             self.client.login(username=newperson.user.username,password=newperson.user.username+"+password")
             r = self.client.get(session_overview_url)
@@ -7817,6 +7855,7 @@ class MaterialsTests(TestCase):
             login_testing_unauthorized(self,newperson.user.username,upload_url)
             r = self.client.get(upload_url)
             self.assertEqual(r.status_code,200)
+            self.assertContains(r, 'under the same title')
             test_bytes = b'this is not really a slide'
             test_file = BytesIO(test_bytes)
             test_file.name = 'not_really.txt'
@@ -7987,6 +8026,47 @@ class MaterialsTests(TestCase):
         submission.refresh_from_db()
         self.assertEqual(submission.status_id, 'pending')
         self.assertFalse(submission.session.presentations.exists())
+
+    def test_proposer_follows_their_proposal(self):
+        """The link in the mail shows the proposer a status page, and approving is left to the chairs"""
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, last = make_group_sessions(['sched', 'sched'])
+        proposer = PersonFactory()
+        chair = RoleFactory(group=first.group, name_id='chair').person
+        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+        empty_outbox()
+        f = BytesIO(b'not really slides'); f.name = 'deck.txt'
+        r = self.client.post(self._slides_upload_url(first), dict(file=f, title='my talk', apply_to_all=True))
+        self.assertEqual(r.status_code, 302)
+        submission = SlideSubmission.objects.get(title='my talk')
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
+        self.assertEqual(len(outbox), 1)
+        self.assertIn('can follow its status', get_payload_text(outbox[0]))
+        self.assertIn(url, get_payload_text(outbox[0]))
+
+        materials = self.client.get(urlreverse('ietf.meeting.views.session_details', kwargs={'num': first.meeting.number, 'acronym': first.group.acronym}))
+        self.assertTrue(PyQuery(materials.content)('.proposedslidelist a[href="%s"]' % url), 'the materials page links the proposer to the status page')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Awaiting approval')
+        self.assertContains(r, 'my talk')
+        self.assertContains(r, 'Session 1')
+        self.assertContains(r, 'Session 2')
+        q = PyQuery(r.content)
+        self.assertTrue(q('a[href="%s"]' % urlreverse('ietf.meeting.views.proposed_slides_file', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})))
+        self.assertFalse(q('button[name=approve]'))
+        r = self.client.post(url, dict(title='my talk', sessions=[first.pk, last.pk], approve='approve'))
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(first.presentations.exists(), 'a proposer cannot approve their own proposal')
+
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        r = self.client.post(url, dict(title='my talk', sessions=[first.pk, last.pk], approve='approve'))
+        self.assertEqual(r.status_code, 302)
+        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+        r = self.client.get(url)
+        self.assertContains(r, 'Approved as')
+        submission.refresh_from_db()
+        self.assertContains(r, submission.doc.name)
 
     def test_disapprove_proposed_slides(self):
         submission = SlideSubmissionFactory()
