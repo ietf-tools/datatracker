@@ -14940,6 +14940,16 @@
   },
   {
     "fields": {
+      "desc": "Expired: the meeting's materials closed with the proposal still pending",
+      "name": "expired",
+      "order": 3,
+      "used": true
+    },
+    "model": "name.slidesubmissionstatusname",
+    "pk": "expired"
+  },
+  {
+    "fields": {
       "desc": "Pending",
       "name": "pending",
       "order": 0,
@@ -14957,6 +14967,16 @@
     },
     "model": "name.slidesubmissionstatusname",
     "pk": "rejected"
+  },
+  {
+    "fields": {
+      "desc": "Withdrawn by the proposer",
+      "name": "withdrawn",
+      "order": 4,
+      "used": true
+    },
+    "model": "name.slidesubmissionstatusname",
+    "pk": "withdrawn"
   },
   {
     "fields": {

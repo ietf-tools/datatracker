@@ -30,6 +30,7 @@ from django.utils.text import slugify
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.models import Document
+from ietf.doc.storage_utils import remove_from_storage
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import (
@@ -1470,6 +1471,20 @@ class SlideSubmission(models.Model):
     submitter = ForeignKey(Person)
     status      = ForeignKey(SlideSubmissionStatusName, null=True, default='pending', on_delete=models.SET_NULL)
     doc         = ForeignKey(Document, blank=True, null=True, on_delete=models.SET_NULL)
+
+    def expire(self):
+        """Close a proposal nobody acted on before the meeting's materials closed, dropping its staged file"""
+        self._close("expired")
+
+    def withdraw(self):
+        """The proposer takes the proposal back; its staged file goes with it"""
+        self._close("withdrawn")
+
+    def _close(self, status):
+        if self.filename:
+            remove_from_storage("staging", self.filename, warn_if_missing=False)
+        SlideSubmission.objects.filter(pk=self.pk).update(status_id=status)  # save() would restamp time
+        self.status_id = status
 
 
 class ProceedingsMaterial(models.Model):

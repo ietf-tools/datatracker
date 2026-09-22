@@ -8273,6 +8273,83 @@ class MaterialsTests(TestCase):
         self.assertNotContains(r, 'new revision of the existing deck')
         r = self.client.post(url, dict(title=existing_title))  # neither approve nor decline: re-rendered
         self.assertContains(r, 'new revision of the existing deck %s' % existing.name)
+    def test_expired_proposal(self):
+        TestBlobstoreManager().emptyTestBlobstores()
+        submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
+        submission.session.meeting.importantdate_set.create(name_id='revsub', date=date_today() + datetime.timedelta(days=20))
+        chair = RoleFactory(group=submission.session.group, name_id='chair').person
+        self.assertTrue(exists_in_storage('staging', submission.filename))
+
+        proposed_at = submission.time
+        submission.expire()
+        submission.refresh_from_db()
+        self.assertEqual(submission.status_id, 'expired')
+        self.assertEqual(submission.time, proposed_at, 'closing a proposal does not restamp when it was made')
+        self.assertFalse(exists_in_storage('staging', submission.filename), 'the staged file goes with it')
+
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': submission.session.meeting.number})
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'This proposal has expired')
+        self.assertFalse(PyQuery(r.content)('button[name=approve]'))
+        r = self.client.post(url, dict(title='too late', approve='approve'))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'This proposal has expired')
+        self.assertFalse(submission.session.presentations.exists())
+        submission.refresh_from_db()
+        self.assertEqual(submission.status_id, 'expired')
+
+    def test_withdraw_proposal_and_propose_another(self):
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, = make_group_sessions(['sched'])
+        deck = SessionPresentationFactory(session=first, document__type_id='slides', document__rev='00').document
+        proposer, bystander = PersonFactory(), PersonFactory()
+        chair = RoleFactory(group=first.group, name_id='chair').person
+        revise_url = self._slides_upload_url(first, deck.name)
+
+        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+        f = BytesIO(b'first attempt'); f.name = 'deck.txt'
+        r = self.client.post(revise_url, dict(file=f, title=deck.title))
+        self.assertEqual(r.status_code, 302)
+        submission = SlideSubmission.objects.latest('pk')
+        withdraw_url = urlreverse('ietf.meeting.views.withdraw_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
+        status_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
+
+        r = self.client.get(revise_url)
+        self.assertContains(r, 'awaiting approval, as a revision of')
+        self.assertTrue(PyQuery(r.content)('form[action="%s"] button' % withdraw_url))
+        r = self.client.get(status_url)
+        self.assertTrue(PyQuery(r.content)('form[action="%s"] button' % withdraw_url))
+
+        self.assertEqual(self.client.get(withdraw_url).status_code, 405, 'withdrawing is a POST')
+        self.client.login(username=bystander.user.username, password=bystander.user.username + '+password')
+        self.assertEqual(self.client.post(withdraw_url).status_code, 403)
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        self.assertEqual(self.client.post(withdraw_url).status_code, 403, 'chairs decline, they do not withdraw')
+        submission.refresh_from_db()
+        self.assertEqual(submission.status_id, 'pending')
+
+        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+        r = self.client.post(withdraw_url)
+        self.assertEqual(r.status_code, 302)
+        submission.refresh_from_db()
+        self.assertEqual(submission.status_id, 'withdrawn')
+        self.assertFalse(exists_in_storage('staging', submission.filename))
+        r = self.client.get(status_url)
+        self.assertContains(r, 'Withdrawn by you')
+        self.assertFalse(PyQuery(r.content)('form[action="%s"]' % withdraw_url))
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        r = self.client.get(status_url)
+        self.assertContains(r, 'This proposal was withdrawn')
+
+        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+        r = self.client.get(revise_url)
+        self.assertNotContains(r, 'awaiting approval')
+        f = BytesIO(b'second attempt'); f.name = 'deck.txt'
+        r = self.client.post(revise_url, dict(file=f, title=deck.title))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(SlideSubmission.objects.filter(doc=deck, status_id='pending').count(), 1)
 
     def test_disapprove_proposed_slides(self):
         submission = SlideSubmissionFactory()

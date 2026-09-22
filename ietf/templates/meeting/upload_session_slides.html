@@ -49,6 +49,10 @@
                 {% for proposal in own_pending %}
                     <tr>
                         <td>
+                            <form class="float-end" method="post" action="{% url 'ietf.meeting.views.withdraw_proposed_slides' slidesubmission_id=proposal.pk num=session.meeting.number %}">
+                                {% csrf_token %}
+                                <button class="btn btn-warning btn-sm" type="submit">Withdraw</button>
+                            </form>
                             <a href="{% url 'ietf.meeting.views.approve_proposed_slides' slidesubmission_id=proposal.pk num=session.meeting.number %}">{{ proposal.title }}</a>
                             <span class="text-body-secondary">awaiting approval{% if proposal.doc %}, as a revision of {{ proposal.doc.title }} ({{ proposal.doc.name }}){% endif %}</span>
                         </td>
@@ -58,7 +62,7 @@
         </table>
         <h2 class="mt-3">Propose a new deck</h2>
     {% endif %}
-    {% if slides_sp %}<h3>{{ slides_sp.document.name }}</h3>{% endif %}
+    {% if slides_sp %}<h2 class="mt-3">{{ slides_sp.document.name }}</h2>{% endif %}
     {% if also_linked %}
         <p class="alert alert-info my-3">
             This deck is also linked to {{ also_linked|join:", " }}. The new revision replaces it there too.

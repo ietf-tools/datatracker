@@ -3769,8 +3769,8 @@ def upload_session_slides(request, session_id, num, name=None):
                 sp for sp in session.presentations.filter(document__type_id="slides").order_by("order")
                 if sp.document.get_state_slug("slides") != "deleted"
             ],
-            "own_pending": [] if can_manage or doc or not hasattr(request.user, "person") else SlideSubmission.objects.filter(
-                session=session, submitter=request.user.person, status_id="pending"
+            "own_pending": [] if can_manage or not hasattr(request.user, "person") else SlideSubmission.objects.filter(
+                session=session, submitter=request.user.person, status_id="pending", **({"doc": doc} if doc else {})
             ).order_by("time"),
         },
     )
@@ -5803,6 +5803,19 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                    'requested': [material_session_label(s) for s in sort_sessions(submission.sessions.all())],
                    'form': form,
                   })
+
+
+@login_required
+def withdraw_proposed_slides(request, slidesubmission_id, num):
+    submission = get_object_or_404(SlideSubmission, pk=slidesubmission_id)
+    if not user_is_person(request.user, submission.submitter):
+        permission_denied(request, "Only the person who proposed these slides can withdraw them.")
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    if submission.status_id == "pending":
+        submission.withdraw()
+        messages.success(request, f"Withdrew the proposed slides '{submission.title}'.")
+    return redirect("ietf.meeting.views.session_details", num=num, acronym=submission.session.group.acronym)
 
 
 @login_required
