@@ -175,7 +175,8 @@ from ietf.meeting.utils import (
     link_material_to_sessions,
     material_document_name,
     reclaim_material_name,
-    sessions_linked_to,
+    link_slides_to_sessions,
+    tell_meetecho_about_slides,
     SessionNotScheduledError,
     data_for_meetings_overview,
     handle_upload_file,
@@ -3621,8 +3622,6 @@ def upload_session_slides(request, session_id, num, name=None):
         )
 
     _, session_number = sessions_covered_by_apply_to_all(session)
-    # Meetecho runs only the sessions that will happen, whoever uploads
-    scheduled_sessions = scheduled_only(get_meeting_sessions(session.meeting.number, session.group.acronym))
 
     slides_sp = None
     if name:
@@ -3734,58 +3733,10 @@ def upload_session_slides(request, session_id, num, name=None):
                 )
                 doc.save_with_history([e])
 
-                # Now handle creation / update of the SessionPresentation(s). A revision reaches every
-                # session already linked to the document, chosen or not: there is only one document to show.
-                sessions_to_apply = [session] + also_sessions
-                for linked in sessions_linked_to(doc, session.meeting):
-                    if linked not in sessions_to_apply:
-                        sessions_to_apply.append(linked)
-                added_presentations = []
-                revised_presentations = []
-                for sess in sessions_to_apply:
-                    sp = sess.presentations.filter(document=doc).first()
-                    if sp is not None:
-                        sp.rev = doc.rev
-                        sp.save()
-                        revised_presentations.append(sp)
-                    else:
-                        max_order = (
-                            sess.presentations.filter(document__type="slides").aggregate(
-                                Max("order")
-                            )["order__max"]
-                            or 0
-                        )
-                        sp = sess.presentations.create(
-                            document=doc, rev=doc.rev, order=max_order + 1
-                        )
-                        added_presentations.append(sp)
+                added, revised = link_slides_to_sessions(doc, session, also_sessions)
                 post_process(doc)
                 resolve_uploaded_material(meeting=session.meeting, doc=doc)
-
-                if hasattr(settings, "MEETECHO_API_CONFIG"):
-                    sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
-                    for sp, moved_off in relinked:
-                        if sp.session not in scheduled_sessions:
-                            continue
-                        try:  # the session's deck is now its own copy of what it had
-                            sm.delete(session=sp.session, slides=moved_off)
-                            sm.add(session=sp.session, slides=sp.document, order=sp.order)
-                        except MeetechoAPIError as err:
-                            log(f"Error in SlidesManager while replacing a deck with its copy: {err}")
-                    for sp in added_presentations:
-                        if sp.session not in scheduled_sessions:
-                            continue  # Meetecho only runs the sessions that will happen
-                        try:
-                            sm.add(session=sp.session, slides=doc, order=sp.order)
-                        except MeetechoAPIError as err:
-                            log(f"Error in SlidesManager.add(): {err}")
-                    for sp in revised_presentations:
-                        if sp.session not in scheduled_sessions:
-                            continue
-                        try:
-                            sm.revise(session=sp.session, slides=doc)
-                        except MeetechoAPIError as err:
-                            log(f"Error in SlidesManager.revise(): {err}")
+                tell_meetecho_about_slides(session, doc, added, revised, relinked)
 
                 messages.success(
                     request,

@@ -7240,7 +7240,7 @@ class MaterialsTests(TestCase):
             self.assertEqual((current(b), shared.rev), (shared, '00'), 'B keeps what it had, at the revision it had')
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
+    @patch("ietf.meeting.utils.SlidesManager")
     def test_meetecho_follows_each_session_not_the_uploader(self, mock_slides_manager_cls):
         first, waiting = make_group_sessions(['sched', 'schedw'])
         deck = SessionPresentationFactory(session=waiting, document__type_id='slides', document__rev='00').document
@@ -7253,7 +7253,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(sm.revise.call_args_list, [call(session=first, slides=deck)], 'the scheduled session hears about it, the unscheduled uploader does not')
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
+    @patch("ietf.meeting.utils.SlidesManager")
     def test_recursive_reclaim_tells_meetecho_which_deck_each_session_lost(self, mock_slides_manager_cls):
         a, b, c = make_group_sessions(['sched', 'sched', 'sched'])
         title = 'the talk'
@@ -7486,7 +7486,7 @@ class MaterialsTests(TestCase):
 
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
+    @patch("ietf.meeting.utils.SlidesManager")
     def test_upload_slides(self, mock_slides_manager_cls):
 
         session1 = SessionFactory(meeting__type_id='ietf')
@@ -7570,7 +7570,7 @@ class MaterialsTests(TestCase):
         )
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
+    @patch("ietf.meeting.utils.SlidesManager")
     def test_upload_slides_apply_to_all_covers_scheduled_sessions_only(self, mock_slides_manager_cls):
         for unscheduled_status in ('canceled', 'resched'):
             mock_slides_manager_cls.reset_mock()
@@ -7632,7 +7632,7 @@ class MaterialsTests(TestCase):
         self.assertNotContains(r, 'also linked to')
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
+    @patch("ietf.meeting.utils.SlidesManager")
     def test_revising_slides_reaches_every_linked_session(self, mock_slides_manager_cls):
         first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
         deck = SessionPresentationFactory(session=first, document__type_id='slides', document__rev='00').document
@@ -7681,7 +7681,7 @@ class MaterialsTests(TestCase):
         self.assertEqual([s.presentations.filter(document=deck).count() for s in (first, middle, last)], [1, 1, 1])
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
+    @patch("ietf.meeting.utils.SlidesManager")
     def test_new_deck_reusing_own_name_gives_other_sessions_copies(self, mock_slides_manager_cls):
         first, last = make_group_sessions(['sched', 'sched'])
         self.client.login(username='secretary', password='secretary+password')

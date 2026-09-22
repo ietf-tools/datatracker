@@ -60,6 +60,7 @@ from ietf.person.models import Person
 from ietf.utils import markdown
 from ietf.utils.html import clean_html
 from ietf.utils.log import log
+from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
 from ietf.utils.timezone import date_today
 
 
@@ -945,6 +946,64 @@ def reclaim_material_name(doc, session, by, keep=(), _in_progress=frozenset()):
             other.presentations.filter(document=doc).update(document=copy, rev=copy.rev)
         relinked.append((other.presentations.get(document=copy), doc))
     return warnings, relinked
+
+
+def link_slides_to_sessions(doc, session, also_sessions=()):
+    """Present doc at session, at also_sessions and at every session already presenting it, at its current revision
+
+    A revision reaches every session already linked to the document, chosen or not: there is one
+    document to show. A new link goes at the end of the session's deck order.
+    Returns (added, revised) presentations.
+    """
+    sessions = [session, *also_sessions]
+    for linked in sessions_linked_to(doc, session.meeting):
+        if linked not in sessions:
+            sessions.append(linked)
+    added = []
+    revised = []
+    for sess in sessions:
+        sp = sess.presentations.filter(document=doc).first()
+        if sp is not None:
+            sp.rev = doc.rev
+            sp.save()
+            revised.append(sp)
+        else:
+            max_order = sess.presentations.filter(document__type="slides").aggregate(Max("order"))["order__max"] or 0
+            added.append(sess.presentations.create(document=doc, rev=doc.rev, order=max_order + 1))
+    return added, revised
+
+
+def tell_meetecho_about_slides(session, doc, added=(), revised=(), relinked=()):
+    """Send Meetecho the deck changes for the sessions it runs, which are the scheduled ones
+
+    relinked holds (presentation, document it was moved off) pairs from reclaim_material_name().
+    """
+    if not hasattr(settings, "MEETECHO_API_CONFIG"):
+        return
+    scheduled_sessions = scheduled_only(get_meeting_sessions(session.meeting.number, session.group.acronym))
+    sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+    for sp, moved_off in relinked:
+        if sp.session not in scheduled_sessions:
+            continue
+        try:
+            sm.delete(session=sp.session, slides=moved_off)
+            sm.add(session=sp.session, slides=sp.document, order=sp.order)
+        except MeetechoAPIError as err:
+            log(f"Error in SlidesManager while replacing a deck with its copy: {err}")
+    for sp in added:
+        if sp.session not in scheduled_sessions:
+            continue
+        try:
+            sm.add(session=sp.session, slides=doc, order=sp.order)
+        except MeetechoAPIError as err:
+            log(f"Error in SlidesManager.add(): {err}")
+    for sp in revised:
+        if sp.session not in scheduled_sessions:
+            continue
+        try:
+            sm.revise(session=sp.session, slides=doc)
+        except MeetechoAPIError as err:
+            log(f"Error in SlidesManager.revise(): {err}")
 
 
 def material_content(doc, meeting):
