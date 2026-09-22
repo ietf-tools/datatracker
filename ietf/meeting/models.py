@@ -1467,7 +1467,6 @@ class SlideSubmission(models.Model):
     sessions = models.ManyToManyField(Session, blank=True, related_name="proposed_slides", help_text="Sessions the deck is proposed for")
     title = models.CharField(max_length=255)
     filename = models.CharField(max_length=255)
-    apply_to_all = models.BooleanField(default=False)
     submitter = ForeignKey(Person)
     status      = ForeignKey(SlideSubmissionStatusName, null=True, default='pending', on_delete=models.SET_NULL)
     doc         = ForeignKey(Document, blank=True, null=True, on_delete=models.SET_NULL)

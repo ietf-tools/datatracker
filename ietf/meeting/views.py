@@ -3651,7 +3651,7 @@ def upload_session_slides(request, session_id, num, name=None):
             # Propose slides if not auto-approved
             if not approved:
                 title = form.cleaned_data['title']
-                submission = SlideSubmission.objects.create(session = session, title = title, filename = '', apply_to_all = apply_to_all, submitter=request.user.person)
+                submission = SlideSubmission.objects.create(session=session, title=title, filename='', submitter=request.user.person)
                 submission.sessions.set(scheduled_sessions if apply_to_all else [session, *also_sessions])
 
                 if session.meeting.type_id=='ietf':
