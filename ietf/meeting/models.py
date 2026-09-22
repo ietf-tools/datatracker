@@ -1464,6 +1464,7 @@ class ImportantDate(models.Model):
 class SlideSubmission(models.Model):
     time = models.DateTimeField(auto_now=True)
     session = ForeignKey(Session)
+    sessions = models.ManyToManyField(Session, blank=True, related_name="proposed_slides", help_text="Sessions the deck is proposed for")
     title = models.CharField(max_length=255)
     filename = models.CharField(max_length=255)
     apply_to_all = models.BooleanField(default=False)

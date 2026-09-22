@@ -7935,6 +7935,27 @@ class MaterialsTests(TestCase):
         remove_from_storage('staging', submission.filename)
         self.assertEqual(self.client.get(url).status_code, 404, 'gone from the blob store means gone')
 
+    def test_proposal_records_the_sessions_it_is_for(self):
+        first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
+        proposer = PersonFactory()
+        chair = RoleFactory(group=first.group, name_id='chair').person
+        url = self._slides_upload_url(first)
+
+        def propose(person, **data):
+            self.client.login(username=person.user.username, password=person.user.username + '+password')
+            f = BytesIO(b'not really slides'); f.name = 'deck.txt'
+            r = self.client.post(url, dict(file=f, **data))
+            self.assertEqual(r.status_code, 302, r.content[:300])
+            return SlideSubmission.objects.latest('pk')
+
+        # a participant has only the yes/no: all scheduled sessions, or this one
+        self.assertCountEqual(propose(proposer, title='for all', apply_to_all=True).sessions.all(), [first, last])
+        self.assertCountEqual(propose(proposer, title='for one').sessions.all(), [first])
+        # a chair who does not auto-approve keeps the exact choice
+        self.assertCountEqual(propose(chair, title='chosen', apply_to_sessions=[last.pk]).sessions.all(), [first, last])
+        self.assertCountEqual(propose(chair, title='alone').sessions.all(), [first])
+        self.assertFalse(cancelled.proposed_slides.exists())
+
     def test_disapprove_proposed_slides(self):
         submission = SlideSubmissionFactory()
         submission.session.meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))

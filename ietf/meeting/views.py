@@ -3621,7 +3621,7 @@ def upload_session_slides(request, session_id, num, name=None):
             "This meeting has already occurred. Contact a chair or the secretariat for further action.",
         )
 
-    _, session_number = sessions_covered_by_apply_to_all(session)
+    scheduled_sessions, session_number = sessions_covered_by_apply_to_all(session)
 
     slides_sp = None
     if name:
@@ -3651,6 +3651,7 @@ def upload_session_slides(request, session_id, num, name=None):
             if not approved:
                 title = form.cleaned_data['title']
                 submission = SlideSubmission.objects.create(session = session, title = title, filename = '', apply_to_all = apply_to_all, submitter=request.user.person)
+                submission.sessions.set(scheduled_sessions if apply_to_all else [session, *also_sessions])
 
                 if session.meeting.type_id=='ietf':
                     name = 'slides-%s-%s' % (session.meeting.number, 
