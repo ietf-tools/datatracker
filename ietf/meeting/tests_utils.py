@@ -10,21 +10,30 @@ from json import JSONDecodeError
 from unittest.mock import patch, Mock
 
 from django.http import HttpResponse, JsonResponse
-from ietf.meeting.factories import MeetingFactory, RegistrationFactory, RegistrationTicketFactory
+from django.test import override_settings
+from ietf.meeting.factories import MeetingFactory, RegistrationFactory, RegistrationTicketFactory, SessionPresentationFactory, SessionFactory
+from ietf.doc.models import Document
+from ietf.doc.storage_utils import store_bytes, retrieve_bytes, remove_from_storage
 from ietf.meeting.models import Registration
+from ietf.meeting.tests_views import make_group_sessions
 from ietf.meeting.utils import (
     process_single_registration,
     get_registration_data, 
     sync_registration_data, 
     fetch_attendance_from_meetings, 
-    get_activity_stats
+    get_activity_stats,
+    apply_to_choices,
+    material_session_label,
+    group_wide_material_name,
+    material_document_name,
+    reclaim_material_name,
 )
 from ietf.nomcom.models import Volunteer
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
 from ietf.person.factories import PersonFactory
 from ietf.utils.test_utils import TestCase
 from ietf.meeting.test_data import make_meeting_test_data
-from ietf.doc.factories import NewRevisionDocEventFactory, DocEventFactory
+from ietf.doc.factories import NewRevisionDocEventFactory, DocEventFactory, DocumentFactory
 
 
 class JsonResponseWithJson(JsonResponse):
@@ -307,3 +316,141 @@ class GetRegistrationsTests(TestCase):
             mock_meetings,
         )
         self.assertEqual(stats, [d1, d2, d3])
+
+
+class ApplyToChoicesTests(TestCase):
+    def test_preselects_only_when_sessions_hold_the_same_material(self):
+        first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
+
+        # nothing anywhere counts as the same
+        choices, select_all = apply_to_choices(first, 'agenda')
+        self.assertEqual([c.session for c in choices], [last])
+        self.assertTrue(select_all)
+        self.assertEqual(choices[0].label, material_session_label(last))
+        self.assertTrue(choices[0].label.startswith('Session 2:'))
+        self.assertIsNone(choices[0].current_doc)
+
+        # the cancelled session's material is not part of the comparison and it gets no choice
+        SessionPresentationFactory(session=cancelled, document__type_id='agenda')
+        choices, select_all = apply_to_choices(first, 'agenda')
+        self.assertEqual([c.session for c in choices], [last])
+        self.assertTrue(select_all)
+
+        # a session with its own agenda means the sessions are not run as one set
+        own = SessionPresentationFactory(session=last, document__type_id='agenda').document
+        choices, select_all = apply_to_choices(first, 'agenda')
+        self.assertFalse(select_all)
+        self.assertEqual(choices[0].current_doc, own)
+
+        # the same agenda everywhere is one set again
+        SessionPresentationFactory(session=first, document=own)
+        _, select_all = apply_to_choices(first, 'agenda')
+        self.assertTrue(select_all)
+
+    def test_slides_compare_whole_decks_and_never_unlink(self):
+        first, last = make_group_sessions(['sched', 'sched'])
+        deck = SessionPresentationFactory(session=first, document__type_id='slides').document
+        SessionPresentationFactory(session=last, document=deck)
+        choices, select_all = apply_to_choices(first, 'slides')
+        self.assertTrue(select_all)
+        self.assertIsNone(choices[0].current_doc)
+        SessionPresentationFactory(session=last, document__type_id='slides')
+        _, select_all = apply_to_choices(first, 'slides')
+        self.assertFalse(select_all)
+
+    def test_excluded_and_lone_sessions(self):
+        first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
+        self.assertEqual(apply_to_choices(first, 'agenda', exclude=[last]), ([], True))
+        self.assertEqual(apply_to_choices(cancelled, 'agenda'), ([], False))
+        self.assertEqual(material_session_label(first), material_session_label(first, 1))
+        self.assertIn('cancelled', material_session_label(cancelled))
+        self.assertNotIn('Session', material_session_label(cancelled))
+
+
+class GroupWideMaterialNameTests(TestCase):
+    def test_nothing_scheduled_yet_keeps_the_group_name(self):
+        first, second = make_group_sessions(['schedw', 'scheda'])
+        self.assertTrue(group_wide_material_name(first, []))
+        self.assertTrue(group_wide_material_name(second, []))
+
+    def test_once_anything_is_scheduled_only_a_full_cover_by_a_scheduled_session_is_group_wide(self):
+        first, cancelled, waiting, last = make_group_sessions(['sched', 'canceled', 'schedw', 'sched'])
+        self.assertTrue(group_wide_material_name(first, [last]))
+        self.assertFalse(group_wide_material_name(first, []))
+        self.assertFalse(group_wide_material_name(cancelled, []), 'A cancelled session may not revise the shared material')
+        self.assertFalse(group_wide_material_name(waiting, [first, last]), 'nor may one still waiting to be scheduled')
+        self.assertTrue(group_wide_material_name(last, [first]))
+
+    def test_non_regular_sessions_are_never_group_wide(self):
+        first, = make_group_sessions(['sched'])
+        first.type_id = 'other'
+        first.save()
+        self.assertFalse(group_wide_material_name(first, []))
+
+
+class ReclaimMaterialNameTests(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
+
+    def _own_doc(self, session, content):
+        name, title = material_document_name(session, 'agenda', group_wide=False)
+        doc = DocumentFactory(name=name, type_id='agenda', title=title, group=session.group, rev='00', uploaded_filename=f'{name}-00.md')
+        store_bytes('agenda', doc.uploaded_filename, content)
+        return doc
+
+    def test_two_documents_pointing_at_each_others_owner_terminate(self):
+        a, b = make_group_sessions(['sched', 'sched'])
+        a_doc = self._own_doc(a, b'a content')
+        b_doc = self._own_doc(b, b'b content')
+        for session, doc in ((a, a_doc), (b, a_doc), (a, b_doc), (b, b_doc)):
+            SessionPresentationFactory(session=session, document=doc, rev='00')
+        warnings, relinked = reclaim_material_name(a_doc, a, PersonFactory())
+        self.assertEqual(warnings, [])
+        b_doc.refresh_from_db()
+        self.assertEqual(b_doc.rev, '01', "B's own document took a copy of A's content")
+        self.assertEqual(a.presentations.get(document=b_doc).rev, '01', "A's stray link follows the revision it now shows")
+        self.assertEqual(retrieve_bytes('agenda', b_doc.uploaded_filename), b'a content')
+        self.assertFalse(b.presentations.filter(document=a_doc).exists())
+        self.assertEqual(b.presentations.filter(document=b_doc).count(), 1)
+        a_doc.refresh_from_db()
+        self.assertEqual(a_doc.rev, '00', "A's document is left for the caller to revise")
+        self.assertTrue(a.presentations.filter(document=b_doc).exists(), "A's stray link is left for the caller's relink to displace")
+        self.assertEqual([(sp.session, moved_off) for sp, moved_off in relinked], [(b, a_doc)])
+
+    def test_missing_source_with_blob_store_disabled_warns_instead_of_copying(self):
+        a, b = make_group_sessions(['sched', 'sched'])
+        a_doc = self._own_doc(a, b'a content')
+        for session in (a, b):
+            SessionPresentationFactory(session=session, document=a_doc, rev='00')
+        remove_from_storage('agenda', a_doc.uploaded_filename)
+        with override_settings(ENABLE_BLOBSTORAGE=False):
+            warnings, relinked = reclaim_material_name(a_doc, a, PersonFactory())
+        self.assertEqual(len(warnings), 1)
+        self.assertIn('could not be found', warnings[0])
+        self.assertEqual(relinked, [])
+        self.assertEqual(b.presentations.get().document, a_doc)
+        self.assertFalse(Document.objects.filter(name=material_document_name(b, 'agenda', group_wide=False)[0]).exists())
+
+    def test_non_regular_sessions_get_no_choices(self):
+        first, last = make_group_sessions(['sched', 'sched'])
+        first.type_id = 'other'
+        first.save()
+        self.assertEqual(apply_to_choices(first, 'agenda'), ([], False))
+
+
+class MaterialDocumentNameTests(TestCase):
+    def test_names_match_the_established_conventions(self):
+        first, last = make_group_sessions(['sched', 'sched'])
+        num, acronym = first.meeting.number, first.group.acronym
+        self.assertEqual(material_document_name(first, 'agenda', group_wide=True)[0], f'agenda-{num}-{acronym}')
+        self.assertEqual(material_document_name(first, 'agenda', group_wide=False)[0], f'agenda-{num}-{acronym}-{first.docname_token()}')
+        when = first.official_timeslotassignment().timeslot.time.strftime('%Y%m%d%H%M')
+        self.assertEqual(material_document_name(first, 'minutes', group_wide=False)[0], f'minutes-{num}-{acronym}-{when}')
+        name, title = material_document_name(last, 'slides', group_wide=False, title='A Talk_Title, Really!')
+        self.assertEqual(name, f'slides-{num}-{acronym}-{last.docname_token()}-a-talk-title-really')
+        self.assertEqual(title, 'A Talk_Title, Really!')
+        self.assertEqual(material_document_name(last, 'slides', group_wide=True, title='x')[0], f'slides-{num}-{acronym}-x')
+
+        interim = SessionFactory(meeting__type_id='interim')
+        inum = interim.meeting.number
+        self.assertEqual(material_document_name(interim, 'agenda', group_wide=True)[0], f'agenda-{inum}-{interim.docname_token()}', 'interim material is never group-wide')
+        self.assertEqual(material_document_name(interim, 'slides', group_wide=True, title='x')[0], f'slides-{inum}-{interim.docname_token()}-x')

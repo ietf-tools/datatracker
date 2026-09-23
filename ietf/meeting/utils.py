@@ -5,6 +5,7 @@ import itertools
 from contextlib import suppress
 from dataclasses import dataclass
 
+import json
 import jsonschema
 import os
 import requests
@@ -25,11 +26,12 @@ from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.encoding import smart_str
+from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.doc.storage_utils import store_bytes, store_str, AlreadyExistsError
+from ietf.doc.storage_utils import store_bytes, store_str, retrieve_bytes, AlreadyExistsError
 from ietf.meeting.models import (
     Session,
     SchedulingEvent,
@@ -59,6 +61,11 @@ from ietf.utils import markdown
 from ietf.utils.html import clean_html
 from ietf.utils.log import log
 from ietf.utils.timezone import date_today
+
+
+class SaveMaterialsError(Exception):
+    """Indicates failure saving session materials"""
+    pass
 
 
 def session_time_for_sorting(session, use_meeting_date):
@@ -202,7 +209,11 @@ def bluesheet_data(session):
     ]
 
 
-def save_bluesheet(request, session, file, encoding='utf-8'):
+def save_bluesheet(request, session, file, by, encoding='utf-8'):
+    """Store a bluesheet upload as a new revision of the session's document
+
+    Raises SaveMaterialsError if it cannot be saved.
+    """
     bluesheet_sp = session.presentations.filter(document__type='bluesheets').first()
     _, ext = os.path.splitext(file.name)
 
@@ -214,6 +225,8 @@ def save_bluesheet(request, session, file, encoding='utf-8'):
     else:
         ota = session.official_timeslotassignment()
         sess_time = ota and ota.timeslot.time
+        if sess_time is None:
+            raise SaveMaterialsError("Could not find official timeslot for session")
 
         if session.meeting.type_id=='ietf':
             name = 'bluesheets-%s-%s-%s' % (session.meeting.number, 
@@ -236,15 +249,18 @@ def save_bluesheet(request, session, file, encoding='utf-8'):
         session.presentations.create(document=doc,rev='00')
     filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
     doc.uploaded_filename = filename
-    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
-    save_error = handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=encoding)
-    if not save_error:
-        doc.save_with_history([e])
-        resolve_uploaded_material(meeting=session.meeting, doc=doc)
-    return save_error
+    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=by, type='new_revision', desc='New revision available: %s'%doc.rev)
+    handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=encoding)
+    doc.save_with_history([e])
+    resolve_uploaded_material(meeting=session.meeting, doc=doc)
 
 
-def generate_bluesheet(request, session):
+def generate_bluesheet(request, session, by):
+    """Render the session's attendance into a new bluesheet revision
+
+    Does nothing if the session has no attendance recorded. Raises
+    SaveMaterialsError if the bluesheet cannot be saved.
+    """
     data = bluesheet_data(session)
     if not data:
         return
@@ -252,7 +268,7 @@ def generate_bluesheet(request, session):
             'session': session,
             'data': data,
         })
-    return save_bluesheet(request, session, ContentFile(text.encode("utf-8"), name="unusednamepartsothereisanextension.txt"))
+    save_bluesheet(request, session, ContentFile(text.encode("utf-8"), name="unusednamepartsothereisanextension.txt"), by)
 
 
 def finalize(request, meeting):
@@ -274,9 +290,10 @@ def finalize(request, meeting):
 
         # Don't try to generate a bluesheet if it's before we had Attended records.
         if int(meeting.number) >= 108:
-            save_error = generate_bluesheet(request, session)
-            if save_error:
-                messages.error(request, save_error)
+            try:
+                generate_bluesheet(request, session, request.user.person)
+            except SaveMaterialsError as err:
+                messages.error(request, str(err))
     
     create_proceedings_templates(meeting)
     meeting.proceedings_final = True
@@ -659,6 +676,7 @@ def preprocess_meeting_important_dates(meetings):
     
 
 def get_meeting_sessions(num, acronym):
+    """The group's sessions at the meeting, in any state, annotated with current_status and in schedule order"""
     types = ['regular','plenary','other']
     sessions = Session.objects.filter(
         meeting__number=num,
@@ -671,7 +689,50 @@ def get_meeting_sessions(num, acronym):
             short=acronym,
             type__in=types,
         )
-    return sessions
+    return sorted(
+        sessions.with_current_status(),
+        key=lambda s: session_time_for_sorting(s, use_meeting_date=False)
+    )
+
+
+def scheduled_only(sessions):
+    """The sessions from get_meeting_sessions() that are currently in the 'sched' state, in the same order
+
+    Cancelled sessions and the tombstones left by rescheduling keep their timeslot assignment, so
+    get_meeting_sessions() still returns them. Anything that treats "all of the group's sessions" as a unit,
+    such as material uploads that apply to every session, must use this subset instead.
+    """
+    return [s for s in sessions if s.current_status == "sched"]
+
+
+INACTIVE_SESSION_STATUSES = Session.CANCELED_STATUSES + ["resched"]
+
+
+def session_is_inactive(session):
+    """Whether the session was cancelled or is the tombstone a rescheduling left behind
+
+    Such a session will not happen. Its materials stay visible but can no longer be changed,
+    except that slides may be dragged out of it to a session that will happen.
+    """
+    status = getattr(session, "current_status", None)
+    if status is None:
+        current = current_session_status(session)
+        status = current.slug if current else None
+    return status in INACTIVE_SESSION_STATUSES
+
+
+def sessions_covered_by_apply_to_all(session):
+    """The sessions an "apply to all" change to session's materials covers, and session's number among them
+
+    Returns (sessions, session_number). The list always includes session itself and is in schedule
+    order. A session that is not scheduled is covered alone: unscheduled sessions are not part of any
+    "all sessions" group, even with each other. session_number is None when the session is alone.
+    """
+    sessions = scheduled_only(get_meeting_sessions(session.meeting.number, session.group.acronym))
+    if session not in sessions:
+        sessions = [session]
+    session_number = 1 + sessions.index(session) if len(sessions) > 1 else None
+    return sessions, session_number
 
 
 class SessionNotScheduledError(Exception):
@@ -679,69 +740,278 @@ class SessionNotScheduledError(Exception):
     pass
 
 
-class SaveMaterialsError(Exception):
-    """Indicates failure saving session materials"""
-    pass
+def material_session_label(session, session_number=None):
+    """How the material pages name a session: "Session 2: Tue 09:30", or the time and status if it has no number"""
+    if session_number is None:
+        _, session_number = sessions_covered_by_apply_to_all(session)
+    ota = session.official_timeslotassignment()
+    when = ota.timeslot.local_start_time().strftime("%a %H:%M") if ota else "unscheduled"
+    if session_number:
+        return f"Session {session_number}: {when}"
+    status = current_session_status(session)
+    return f"{when} ({status.name.lower()})" if status else when
 
 
-def save_session_minutes_revision(session, file, ext, request, encoding=None, apply_to_all=False, narrative=False):
+@dataclass
+class MaterialSessionChoice:
+    """Another session a material upload could also apply to"""
+    session: Session
+    label: str
+    current_doc: Document | None  # its document of the upload's type, which applying would unlink
+
+
+def apply_to_choices(session, doc_type, exclude=()):
+    """The other scheduled sessions an upload of doc_type to session could also apply to, and whether to preselect them
+
+    Returns (choices, select_all). Preselect only when every scheduled session holds the same documents of
+    this type, counting none anywhere as the same: the sessions are being run as one set. Any difference
+    means they are not, and pre-checking would silently unlink or spread material. Sessions in exclude
+    (already linked to the document being revised) get no choice. Slides are added beside existing decks,
+    so applying them never unlinks anything and current_doc is always None for them.
+    """
+    scheduled, _ = sessions_covered_by_apply_to_all(session)
+    if len(scheduled) < 2 or session.type_id != "regular":
+        return [], False
+    docs_by_session = [
+        frozenset(
+            s.presentations.filter(document__type_id=doc_type)
+            .exclude(document__states__slug="deleted")
+            .values_list("document_id", flat=True)
+        )
+        for s in scheduled
+    ]
+    select_all = len(set(docs_by_session)) == 1
+    choices = []
+    for number, other in enumerate(scheduled, start=1):
+        if other == session or other in exclude:
+            continue
+        current_doc = None
+        if doc_type != "slides":
+            current_sp = other.presentations.filter(document__type_id=doc_type).first()
+            current_doc = current_sp.document if current_sp else None
+        choices.append(MaterialSessionChoice(other, material_session_label(other, number), current_doc))
+    return choices, select_all
+
+
+def material_upload_choices(session, doc_type, existing_sp):
+    """What an upload page for doc_type offers: (choices, select_all, shared_with)
+
+    existing_sp is the session's presentation of that type, if any. Revising it offers only the sessions
+    its document is not linked to, unchecked; the sessions it is linked to are named in shared_with.
+    """
+    linked = []
+    if existing_sp is not None:
+        linked = list(sessions_linked_to(existing_sp.document, session.meeting).exclude(pk=session.pk))
+    choices, select_all = apply_to_choices(session, doc_type, exclude=linked)
+    if existing_sp is not None:
+        select_all = False  # the document's current sessions are the truth about where it belongs
+    return choices, select_all, [material_session_label(s) for s in linked]
+
+
+def group_wide_material_name(session, also_sessions):
+    """Whether material for session and also_sessions is named for the group rather than for the session
+
+    The group-wide name is what "apply to all" always produced, and later uploads with the same title
+    reuse it, so once anything is scheduled it must mean every scheduled session, and a session in any
+    other state gets its own name. Before anything is scheduled there is nothing to protect, and each
+    session's upload is named for the group as it always was.
+    """
+    if session.type_id != "regular":
+        return False
+    scheduled = scheduled_only(get_meeting_sessions(session.meeting.number, session.group.acronym))
+    if not scheduled:
+        return True
+    return session in scheduled and all(s == session or s in also_sessions for s in scheduled)
+
+
+def sessions_linked_to(doc, meeting):
+    """The meeting's sessions that present doc, except deleted ones, which keep their links but are gone"""
+    return Session.objects.filter(presentations__document=doc, meeting=meeting).not_deleted()
+
+
+def link_material_to_sessions(doc, session, also_sessions=()):
+    """Point session, also_sessions and every session already linked to doc at doc's current revision
+
+    A revision reaches every session already linked, chosen or not: there is one document to show.
+    For one-per-session types such as agendas and minutes, doc displaces what the session had of that type.
+    """
+    targets = [session, *also_sessions]
+    for linked in sessions_linked_to(doc, session.meeting):
+        if linked not in targets:
+            targets.append(linked)
+    for target in targets:
+        sp = target.presentations.filter(document=doc).first()
+        if sp is not None:
+            sp.rev = doc.rev
+            sp.save()
+        else:
+            target.presentations.filter(document__type=doc.type).delete()
+            target.presentations.create(document=doc, rev=doc.rev)
+
+
+def material_document_name(session, doc_type, group_wide, title=None):
+    """(name, title) for a new agenda, minutes or slides document uploaded to session
+
+    Only an IETF meeting has a group-wide name; interim material is always named for its session.
+    Agendas and slides carry the session's docname token and minutes its start time, as they always
+    have. A session with no timeslot gets the token for minutes too, so a copy can always be named.
+    Slides take their title from the uploader and add its slug to the name.
+    """
+    typename = DocTypeName.objects.get(slug=doc_type)
+    meeting = session.meeting
+    ota = session.official_timeslotassignment()
+    sess_time = ota.timeslot.time if ota else None
+    if doc_type in ("minutes", "narrativeminutes") and sess_time:
+        suffix = sess_time.strftime("%Y%m%d%H%M")
+    else:
+        suffix = session.docname_token()
+    when = f": {sess_time.strftime('%a %H:%M')}" if sess_time else ""
+    if meeting.type_id == "ietf":
+        name = f"{typename.prefix}-{meeting.number}-{session.group.acronym}"
+        doc_title = f"{typename.name} IETF{meeting.number}: {session.group.acronym}"
+        if not group_wide:
+            name += f"-{suffix}"
+            doc_title += when
+    else:
+        name = f"{typename.prefix}-{meeting.number}-{suffix}"
+        doc_title = f"{typename.name} {meeting.number}{when}"
+    if doc_type == "slides":
+        name += "-" + slugify(title).replace("_", "-")[:128]
+        doc_title = title
+    return name, doc_title
+
+
+def reclaim_material_name(doc, session, by, keep=(), _in_progress=frozenset()):
+    """Give every other session linked to doc its own copy, so session can reuse doc's name for new content
+
+    doc carries session's own name, so it belongs to session. Each other session linked to it, except
+    those in keep, gets doc's current content as a new revision of the document named for that session,
+    created at 00 if need be, and is relinked to the copy. Cancelled and rescheduled sessions are
+    included so that what they show does not change. Returns (warnings, relinked): warnings to show
+    the uploader, and (presentation, document it was moved off) for each session now pointing at a
+    copy, for whoever must announce the change.
+
+    The copy's own document may in turn be shared with further sessions, so it is reclaimed for its
+    owner first, recursively. A document already being reclaimed further up is left alone: that reclaim
+    gives it new content and relinks its owner.
+    """
+    meeting = session.meeting
+    in_progress = _in_progress | {doc.pk}
+    warnings = []
+    relinked = []
+    kind = doc.type.name.lower()
+    others = [o for o in sessions_linked_to(doc, meeting).exclude(pk=session.pk) if o not in keep]
+    content = material_content(doc, meeting)
+    if not content:  # the blob store hands back empty bytes when it is disabled
+        # Leave them linked rather than lose the record of what they showed; the uploader is told.
+        return [
+            f"{material_session_label(other)} shared this {kind}, but its current file could not be found, "
+            f"so no copy was made. It will show the new revision until a {kind} is uploaded to it."
+            for other in others
+        ], []
+    ext = Path(doc.uploaded_filename).suffix
+    for other in others:
+        name, title = material_document_name(other, doc.type_id, group_wide=False, title=doc.title)
+        copy = Document.objects.filter(name=name).first()
+        if copy is None:
+            copy = Document.objects.create(name=name, type_id=doc.type_id, title=title, group=doc.group, rev="00")
+            if doc.type_id == "slides":
+                copy.set_state(State.objects.get(type_id="reuse_policy", slug="single"))
+        elif copy.pk in in_progress:
+            continue
+        else:
+            more_warnings, more_relinked = reclaim_material_name(copy, other, by, _in_progress=in_progress)
+            warnings += more_warnings
+            relinked += more_relinked
+            copy.rev = "%02d" % (int(copy.rev) + 1)
+        copy.set_state(State.objects.get(type_id=doc.type_id, slug="active"))
+        copy.uploaded_filename = f"{copy.name}-{copy.rev}{ext}"
+        target_dir = Path(meeting.get_materials_path()) / doc.type_id
+        target_dir.mkdir(parents=True, exist_ok=True)
+        (target_dir / copy.uploaded_filename).write_bytes(content)
+        store_bytes(doc.type_id, copy.uploaded_filename, content)
+        events = [
+            NewRevisionDocEvent.objects.create(doc=copy, by=by, type="new_revision", rev=copy.rev, desc=f"New revision available: {copy.rev}"),
+            DocEvent.objects.create(doc=copy, by=by, type="added_comment", rev=copy.rev,
+                                    desc=f"Copied from {doc.name}-{doc.rev}, which is being revised for its own session"),
+        ]
+        copy.save_with_history(events)
+        resolve_uploaded_material(meeting=meeting, doc=copy)
+        # Anything still presenting the copy target, such as a session skipped above, follows its revision
+        SessionPresentation.objects.filter(document=copy).update(rev=copy.rev)
+        if other.presentations.filter(document=copy).exists():
+            other.presentations.filter(document=doc).delete()  # it held both; one link to the copy is enough
+        else:
+            other.presentations.filter(document=doc).update(document=copy, rev=copy.rev)
+        relinked.append((other.presentations.get(document=copy), doc))
+    return warnings, relinked
+
+
+def material_content(doc, meeting):
+    """The bytes of doc's current revision from disk or the blob store, or None if neither has them"""
+    if not doc.uploaded_filename:
+        return None
+    source = Path(meeting.get_materials_path()) / doc.type_id / doc.uploaded_filename
+    if source.exists():
+        return source.read_bytes()
+    try:
+        return retrieve_bytes(doc.type_id, doc.uploaded_filename)
+    except Exception:
+        return None
+
+
+def save_session_minutes_revision(session, file, ext, request, encoding=None, also_sessions=(), replace=False, narrative=False):
     """Creates or updates session minutes records
 
     This updates the database models to reflect a new version. It does not handle
     storing the new file contents, that should be handled via handle_upload_file()
     or similar.
 
+    The minutes are linked to session, to also_sessions, and to every session already linked to the
+    document, displacing whatever minutes those sessions had. With replace, a session that already has
+    minutes gets new ones instead of a revision, and the old ones are unlinked here only.
+
     If the session does not already have minutes, it must be a scheduled
     session. If not, SessionNotScheduledError will be raised.
 
-    Returns (Document, [DocEvents]), which should be passed to doc.save_with_history()
-    if the file contents are stored successfully.
+    The file is stored first; if that raises SaveMaterialsError nothing has changed. Returns warnings
+    to show the uploader.
     """
     document_type = DocTypeName.objects.get(slug= 'narrativeminutes' if narrative else 'minutes')
     minutes_sp = session.presentations.filter(document__type=document_type).first()
-    if minutes_sp:
+    reclaim = False
+    if minutes_sp and not replace:
         doc = minutes_sp.document
-        doc.rev = '%02d' % (int(doc.rev)+1)
-        minutes_sp.rev = doc.rev
-        minutes_sp.save()
+        name, title = doc.name, doc.title
     else:
         ota = session.official_timeslotassignment()
         sess_time = ota and ota.timeslot.time
         if not sess_time:
             raise SessionNotScheduledError
-        if session.meeting.type_id=='ietf':
-            name = f"{document_type.prefix}-{session.meeting.number}-{session.group.acronym}"
-            title = f"{document_type.name} IETF{session.meeting.number}: {session.group.acronym}"
-            if not apply_to_all:
-                name += '-%s' % (sess_time.strftime("%Y%m%d%H%M"),)
-                title += ': %s' % (sess_time.strftime("%a %H:%M"),)
-        else:
-            name =f"{document_type.prefix}-{session.meeting.number}-{sess_time.strftime('%Y%m%d%H%M')}"
-            title = f"{document_type.name} {session.meeting.number}: {sess_time.strftime('%a %H:%M')}"
-        if Document.objects.filter(name=name).exists():
-            doc = Document.objects.get(name=name)
-            doc.rev = '%02d' % (int(doc.rev)+1)
-        else:
-            doc = Document.objects.create(
-                name = name,
-                type = document_type,
-                title = title,
-                group = session.group,
-                rev = '00',
-            )
-        doc.states.add(State.objects.get(type_id=document_type.slug,slug='active'))
-        if session.presentations.filter(document=doc).exists():
-            sp = session.presentations.get(document=doc)
-            sp.rev = doc.rev
-            sp.save()
-        else:
-            session.presentations.create(document=doc,rev=doc.rev)
-    if apply_to_all:
-        for other_session in get_meeting_sessions(session.meeting.number, session.group.acronym):
-            if other_session != session:
-                other_session.presentations.filter(document__type=document_type).delete()
-                other_session.presentations.create(document=doc,rev=doc.rev)
-    filename = f'{doc.name}-{doc.rev}{ext}'
+        apply_to_all = group_wide_material_name(session, also_sessions) and not replace
+        name, title = material_document_name(session, document_type.slug, group_wide=apply_to_all)
+        doc = Document.objects.filter(name=name).first()
+        # A document carrying this session's own name belongs to it, whatever the reason the name came up
+        reclaim = doc is not None and name == material_document_name(session, document_type.slug, group_wide=False)[0]
+    rev = '%02d' % (int(doc.rev)+1) if doc is not None else '00'
+    filename = f'{name}-{rev}{ext}'
+
+    # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
+    handle_upload_file(
+        file=file,
+        filename=filename,
+        meeting=session.meeting,
+        subdir=document_type.slug,
+        request=request,
+        encoding=encoding,
+    )
+
+    warnings, _ = reclaim_material_name(doc, session, request.user.person, keep=also_sessions) if reclaim else ([], [])
+    if doc is None:
+        doc = Document.objects.create(name=name, type=document_type, title=title, group=session.group, rev=rev)
+        doc.set_state(State.objects.get(type_id=document_type.slug,slug='active'))
+    else:
+        doc.rev = rev
     doc.uploaded_filename = filename
     e = NewRevisionDocEvent.objects.create(
         doc=doc,
@@ -750,20 +1020,9 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
         desc=f'New revision available: {doc.rev}',
         rev=doc.rev,
     )
-
-    # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
-    save_error = handle_upload_file(
-        file=file,
-        filename=doc.uploaded_filename,
-        meeting=session.meeting,
-        subdir=document_type.slug,
-        request=request,
-        encoding=encoding,
-    )
-    if save_error:
-        raise SaveMaterialsError(save_error)
-    else:
-        doc.save_with_history([e])
+    doc.save_with_history([e])
+    link_material_to_sessions(doc, session, also_sessions)
+    return warnings
 
 
 def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=None):
@@ -771,6 +1030,8 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
 
     This function takes a _binary mode_ file object, a filename and a meeting object and subdir as string.
     It saves the file to the appropriate directory, get_materials_path() + subdir.
+
+    Raises SaveMaterialsError if the file cannot be saved.
     """
     filename = Path(filename)
 
@@ -794,7 +1055,7 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
                 try:
                     text = text.decode(encoding)
                 except LookupError as e:
-                    return (
+                    raise SaveMaterialsError(
                         f"Failure trying to save '{filename}': "
                         f"Could not identify the file encoding, got '{str(e)[:120]}'. "
                         f"Hint: Try to upload as UTF-8."
@@ -803,7 +1064,10 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
                 try:
                     text = smart_str(text)
                 except UnicodeDecodeError as e:
-                    return "Failure trying to save '%s'. Hint: Try to upload as UTF-8: %s..." % (filename, str(e)[:120])
+                    raise SaveMaterialsError(
+                        "Failure trying to save '%s'. Hint: Try to upload as UTF-8: %s..."
+                        % (filename, str(e)[:120])
+                    )
             # Whole file sanitization; add back what's missing from a complete
             # document (sanitize will remove these).
             clean = clean_html(text)
@@ -829,7 +1093,6 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
             # TODO-BLOBSTORE: See above question about refactoring
             store_bytes(subdir, filename.name, b"".join(chunks))
 
-    return None
 
 def new_doc_for_session(type_id, session):
     typename = DocTypeName.objects.get(slug=type_id)
@@ -853,6 +1116,36 @@ def new_doc_for_session(type_id, session):
     doc.states.add(State.objects.get(type_id=type_id, slug='active'))
     session.presentations.create(document=doc,rev='00')
     return doc
+
+
+def save_session_json_doc(session, type_id, data, by):
+    """Store a chatlog or polls upload as a new revision of the session's document
+
+    Raises SaveMaterialsError if it cannot be stored.
+    """
+    presentation = session.presentations.filter(document__type=type_id).first()
+    if presentation:
+        doc = presentation.document
+        doc.rev = f"{(int(doc.rev)+1):02d}"
+        presentation.rev = doc.rev
+        presentation.save()
+    else:
+        doc = new_doc_for_session(type_id, session)
+        if doc is None:
+            raise SaveMaterialsError("Could not find official timeslot for session")
+    filename = f"{doc.name}-{doc.rev}.json"
+    doc.uploaded_filename = filename
+    write_doc_for_session(session, type_id, filename, json.dumps(data))
+    e = NewRevisionDocEvent.objects.create(
+        doc=doc,
+        rev=doc.rev,
+        by=by,
+        type="new_revision",
+        desc="New revision available: %s" % doc.rev,
+    )
+    doc.save_with_history([e])
+    resolve_uploaded_material(meeting=session.meeting, doc=doc)
+
 
 # TODO-BLOBSTORE - consider adding doc to this signature and factoring away type_id
 def write_doc_for_session(session, type_id, filename, contents):
@@ -1198,6 +1491,38 @@ def store_blobs_for_one_meeting(meeting: Meeting):
 
     for doc in meeting_documents:
         store_blobs_for_one_material_doc(doc)
+
+
+def save_session_video_url(session, url, by):
+    """Point the session's video recording at url
+
+    Updates the newest existing video recording, or creates one. Raises
+    SaveMaterialsError if there is no timeslot to name a new recording after.
+    """
+    recordings = [r for r in session.recordings() if "video" in r.title.lower()]
+    if recordings:
+        doc = recordings[-1]
+        if doc.external_url != url:
+            e = DocEvent.objects.create(
+                doc=doc,
+                rev=doc.rev,
+                type="added_comment",
+                by=by,
+                desc="External url changed from %s to %s" % (doc.external_url, url),
+            )
+            doc.external_url = url
+            doc.save_with_history([e])
+        return
+    ota = session.official_timeslotassignment()
+    if ota is None:
+        raise SaveMaterialsError("Could not find official timeslot for session")
+    time = ota.timeslot.time
+    title = "Video recording for %s on %s at %s" % (
+        session.group.acronym,
+        time.date(),
+        time.time(),
+    )
+    create_recording(session, url, title=title, user=by)
 
 
 def create_recording(session, url, title=None, user=None):
@@ -1861,6 +2186,215 @@ def process_single_registration(reg_data, meeting):
         action_taken = 'updated'
 
     return registration, action_taken
+
+
+def fix_missing_registrations(meeting=None):    # pragma: no cover
+    """Recreate legacy registrations dropped by the meeting.Registration migration.
+
+    For meetings before 100 the legacy stats.MeetingRegistration system allowed
+    several registrations under one email with different names. The migration to
+    meeting.Registration keyed on (meeting, email) and kept only one, so the
+    extra legacy records - which are genuine registrations - were lost. This adds
+    a Registration for any legacy (meeting, email, name) with no matching row.
+
+    The migration also piled the extra legacy rows' tickets onto that single
+    surviving Registration instead of splitting them across records. For each
+    such duplicate email this trims the surviving record back to a single ticket
+    (the recreated registrations get their own tickets above).
+
+    If meeting (a meeting number) is given, only that meeting is checked;
+    otherwise all of meetings 72 through 99 are checked.
+
+    Returns (created, removed): the number of Registration records created and
+    the number of surplus tickets removed.
+    """
+    # import here to avoid a circular import with ietf.stats.models
+    from ietf.stats.models import MeetingRegistration
+
+    def norm(value):
+        return (value or "").strip().lower()
+
+    numbers = [int(meeting)] if meeting is not None else list(range(72, 100))
+    meetings = Meeting.objects.filter(type="ietf", number__in=[str(num) for num in numbers])
+
+    # names already present in the new table, keyed by (meeting, email)
+    existing = defaultdict(set)
+    for meeting_id, email, first, last in Registration.objects.filter(
+        meeting__in=meetings
+    ).values_list("meeting_id", "email", "first_name", "last_name"):
+        existing[(meeting_id, norm(email))].add((norm(first), norm(last)))
+
+    # Registrations created during this run, keyed by (meeting, email, name), so
+    # repeated legacy rows for one attendee add tickets instead of duplicates.
+    added = {}
+    created = 0
+    collision_keys = set()  # (meeting, email) that had duplicate-email records
+    for mr in MeetingRegistration.objects.filter(meeting__in=meetings):
+        key = (mr.meeting_id, norm(mr.email))
+        name = (norm(mr.first_name), norm(mr.last_name))
+        if name in existing[key]:
+            continue
+        collision_keys.add(key)
+        reg = added.get(key + name)
+        if reg is None:
+            reg = Registration.objects.create(
+                meeting=mr.meeting,
+                first_name=mr.first_name,
+                last_name=mr.last_name,
+                affiliation=mr.affiliation,
+                country_code=mr.country_code,
+                person=mr.person,
+                email=mr.email,
+                attended=mr.attended,
+                checkedin=mr.checkedin,
+            )
+            added[key + name] = reg
+            created += 1
+            log("fix_missing_registrations created registration: email={!r} name={!r} {!r}".format(
+                mr.email, mr.first_name, mr.last_name))
+        reg.tickets.create(
+            attendance_type_id=mr.reg_type or 'unknown',
+            ticket_type_id=mr.ticket_type or 'unknown',
+        )
+
+    # Trim the tickets the migration piled onto the surviving record for each
+    # duplicate email, leaving a single ticket. The records created above are
+    # excluded - only the pre-existing (migrated) records are trimmed.
+    created_ids = {reg.pk for reg in added.values()}
+    surviving = defaultdict(list)
+    for reg in Registration.objects.filter(meeting__in=meetings).exclude(
+        pk__in=created_ids
+    ):
+        surviving[(reg.meeting_id, norm(reg.email))].append(reg)
+
+    removed = 0
+    for key in collision_keys:
+        for reg in surviving.get(key, []):
+            extra = list(reg.tickets.order_by("id")[1:])
+            for ticket in extra:
+                log("fix_missing_registrations removed ticket {!r} from email={!r} name={!r} {!r}".format(
+                    str(ticket), reg.email, reg.first_name, reg.last_name))
+                ticket.delete()
+                removed += 1
+
+    return created, removed
+
+
+def fix_mismatched_registrations(meeting=None):
+    """Correct meeting.Registration records that disagree with their legacy rows.
+
+    For meetings 100 and later, legacy stats.MeetingRegistration records are
+    matched to a meeting.Registration on (meeting, email). The legacy table
+    stores one row per (attendee, reg_type, ticket_type), so a (meeting, email)
+    often has several legacy rows that were combined into a single Registration.
+    affiliation, attended and checkedin are OR-ed across those rows: if any
+    legacy row had the flag set (or an affiliation populated), the Registration
+    should reflect it. Because the new system is authoritative it may have more
+    set than the legacy rows, so this is one-directional - a value present in
+    legacy but missing on the Registration is a gap that this corrects in place:
+      - affiliation is filled from the legacy value if blank
+      - attended is set True if any legacy row was attended
+      - checkedin is set True if any legacy row was checked in
+
+    A legacy (meeting, email) with no matching Registration is a cancelled
+    registration and is skipped. Names may legitimately differ and are ignored.
+
+    If meeting (a meeting number) is given, only that meeting is checked;
+    otherwise all meetings numbered 100+ are checked.
+
+    Returns the number of Registrations corrected.
+    """
+    # import here to avoid a circular import with ietf.stats.models
+    from ietf.stats.models import MeetingRegistration
+
+    def norm(value):
+        return (value or "").strip().lower()
+
+    if meeting is not None:
+        meeting_ids = list(
+            Meeting.objects.filter(number=str(meeting)).values_list("id", flat=True)
+        )
+    else:
+        meeting_ids = [
+            m.pk
+            for m in Meeting.objects.filter(type="ietf")
+            if m.number.isdigit() and int(m.number) >= 100
+        ]
+
+    # Aggregate legacy rows keyed on (meeting, email): attended and checkedin are
+    # OR-ed (True if any row was); affiliation takes the first non-blank value.
+    # Rows with a blank email cannot be matched and are ignored.
+    legacy = {}
+    for meeting_id, email, affiliation, attended, checkedin in (
+        MeetingRegistration.objects.filter(meeting_id__in=meeting_ids).values_list(
+            "meeting_id", "email", "affiliation", "attended", "checkedin"
+        )
+    ):
+        key = (meeting_id, norm(email))
+        agg = legacy.get(key)
+        if agg is None:
+            agg = {
+                "affiliation": "",
+                # raw (un-normalized) value, used when writing a fix back
+                "affiliation_raw": "",
+                "attended": False,
+                "checkedin": False,
+            }
+            legacy[key] = agg
+        agg["attended"] = agg["attended"] or attended
+        agg["checkedin"] = agg["checkedin"] or checkedin
+        if not agg["affiliation"]:
+            agg["affiliation"] = norm(affiliation)
+            agg["affiliation_raw"] = (affiliation or "").strip()
+
+    # Build a lookup of new Registrations keyed on (meeting, email). There is at
+    # most one Registration per (meeting, email).
+    new = {}
+    for pk, meeting_id, email, affiliation, attended, checkedin in (
+        Registration.objects.filter(meeting_id__in=meeting_ids).values_list(
+            "id", "meeting_id", "email", "affiliation", "attended", "checkedin"
+        )
+    ):
+        new[(meeting_id, norm(email))] = {
+            "id": pk,
+            "affiliation": norm(affiliation),
+            "attended": attended,
+            "checkedin": checkedin,
+        }
+
+    fixed = 0
+    for key, agg in sorted(legacy.items()):
+        meeting_id, email = key
+        rec = new.get(key)
+        if rec is None:
+            # No matching Registration: a cancelled registration - skip it.
+            continue
+
+        # affiliation / attended / checkedin are one-directional gap fills. The
+        # write uses the raw (un-normalized) legacy value; the normalized copy is
+        # only for the comparison.
+        changes = {}
+        if agg["affiliation"] and not rec["affiliation"]:
+            changes["affiliation"] = agg["affiliation_raw"]
+        if agg["attended"] and not rec["attended"]:
+            changes["attended"] = True
+        if agg["checkedin"] and not rec["checkedin"]:
+            changes["checkedin"] = True
+
+        if not changes:
+            continue
+        Registration.objects.filter(pk=rec["id"]).update(**changes)
+        fixed += 1
+        log(
+            "fix_mismatched_registrations corrected registration: "
+            "meeting={} email={!r} {}".format(
+                meeting_id,
+                email,
+                ", ".join("{}={!r}".format(k, v) for k, v in sorted(changes.items())),
+            )
+        )
+
+    return fixed
 
 
 def fetch_attendance_from_meetings(meetings):

@@ -14,7 +14,11 @@ from ietf.meeting.forms import FileUploadForm
 from ietf.meeting.models import Meeting, MeetingHost
 from ietf.meeting.helpers import get_meeting
 from ietf.name.models import ProceedingsMaterialTypeName
-from ietf.meeting.utils import handle_upload_file, resolve_uploaded_material
+from ietf.meeting.utils import (
+    SaveMaterialsError,
+    handle_upload_file,
+    resolve_uploaded_material,
+)
 from ietf.utils.text import xslugify
 
 class UploadProceedingsMaterialForm(FileUploadForm):
@@ -102,9 +106,10 @@ def save_proceedings_material_doc(meeting, material_type, title, request, file=N
         if not created:
             doc.rev = '{:02}'.format(int(doc.rev) + 1)
         filename = f'{doc.name}-{doc.rev}{Path(file.name).suffix}'
-        save_error = handle_upload_file(file, filename, meeting, 'procmaterials', )
-        if save_error is not None:
-            raise RuntimeError(save_error)
+        try:
+            handle_upload_file(file, filename, meeting, 'procmaterials', )
+        except SaveMaterialsError as err:
+            raise RuntimeError(str(err))
 
         doc.uploaded_filename = filename
         doc.external_url = ''

@@ -2678,10 +2678,10 @@ class DocTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertNotContains(r, "Request publication")
 
-    def _parse_bibtex_response(self, response) -> dict:
-        parser = bibtexparser.bparser.BibTexParser(common_strings=True)
-        parser.homogenise_fields = False  # do not modify field names (e.g., turns "url" into "link" by default)
-        return bibtexparser.loads(response.content.decode(), parser=parser).get_entry_dict()
+    def _parse_bibtex_response(self, response) -> dict[str, bibtexparser.model.Entry]:
+        library = bibtexparser.parse_string(response.content.decode())
+        self.assertEqual(len(library.failed_blocks), 0)
+        return library.entries_dict
 
     @override_settings(RFC_EDITOR_INFO_BASE_URL='https://www.rfc-editor.ietf.org/info/')
     def test_document_bibtex(self):

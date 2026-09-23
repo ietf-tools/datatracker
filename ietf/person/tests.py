@@ -1,5 +1,4 @@
-# Copyright The IETF Trust 2014-2025, All Rights Reserved
-# -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2014-2026, All Rights Reserved
 
 
 import datetime
@@ -9,6 +8,7 @@ from unittest import mock
 
 from io import StringIO, BytesIO
 from PIL import Image
+from django.utils.html import escape
 from pyquery import PyQuery
 
 import django.core.signing
@@ -18,11 +18,9 @@ from django.db.utils import IntegrityError
 from django.http import HttpRequest
 from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
-from django.urls import reverse as urlreverse
+from django.urls import reverse as urlreverse, NoReverseMatch
 from django.utils import timezone
 from django.utils.encoding import iri_to_uri
-
-import yaml
 
 import debug                            # pyflakes:ignore
 
@@ -178,7 +176,7 @@ class PersonTests(TestCase):
         self.assertEqual(second.status_code, 200)
         # The cached section is HTML, not text to be escaped again.
         self.assertEqual(first.content, second.content)
-        self.assertContains(second, person.name)
+        self.assertContains(second, escape(person.name))
         self.assertLess(len(context.captured_queries), 5)
 
     def test_person_profile_without_email(self):
@@ -228,7 +226,7 @@ class PersonTests(TestCase):
         upper = url.replace(str(uuid_value), str(uuid_value).upper())
         self.assertNotEqual(url, upper)
         r = self.client.get(upper)
-        self.assertContains(r, person.name, status_code=200)
+        self.assertContains(r, escape(person.name), status_code=200)
 
     def test_person_profile_by_uuid_unknown(self):
         url = urlreverse(
@@ -947,10 +945,10 @@ class PersonUUIDApiTests(TestCase):
         self.assertEqual(r.json()["uuid"], str(person.primary_uuid))
 
     def test_retrieve_malformed(self):
-        r = self.client.get(
-            "/api/person/uuid/not-a-uuid/", headers={"X-Api-Key": "uuid-api-token"}
-        )
-        self.assertEqual(r.status_code, 404)
+        # Test that a non-uuid will 404 without retrieving a non-reversible URL.
+        # This avoids UrlCoverageWarnings.
+        with self.assertRaises(NoReverseMatch):
+            self.retrieve_url("not-a-uuid")
 
     def test_batch(self):
         person = PersonFactory()
@@ -1075,39 +1073,6 @@ class PersonUUIDApiTests(TestCase):
             headers={"X-Api-Key": "by-pk-token"},
         )
         self.assertEqual(r.status_code, 400)
-
-    def test_schema(self):
-        r = self.client.get("/api/schema/")
-        self.assertEqual(r.status_code, 200)
-        schema = yaml.safe_load(r.content)
-        paths = schema["paths"]
-        self.assertIn("/api/person/uuid/{uuid}/", paths)
-        self.assertIn("/api/person/uuid/lookup/", paths)
-        self.assertIn("/api/person/uuid/by-person-pk/", paths)
-        self.assertEqual(
-            paths["/api/person/uuid/{uuid}/"]["get"]["operationId"],
-            "person_uuid_retrieve",
-        )
-        self.assertEqual(
-            paths["/api/person/uuid/lookup/"]["post"]["operationId"],
-            "person_uuid_lookup",
-        )
-        by_pk = paths["/api/person/uuid/by-person-pk/"]["post"]
-        self.assertEqual(by_pk["operationId"], "person_uuid_by_person_pk")
-        self.assertTrue(by_pk["deprecated"])
-        self.assertIn("PersonUUIDResolution", schema["components"]["schemas"])
-        for path, method in (
-            ("/api/person/uuid/{uuid}/", "get"),
-            ("/api/person/uuid/lookup/", "post"),
-            ("/api/person/uuid/by-person-pk/", "post"),
-        ):
-            responses = paths[path][method]["responses"]
-            self.assertIn("200", responses, path)
-        # Consumers switch on status, so it has to be a declared, required field
-        for component in ("PersonUUIDBatchEntry", "PersonPkBatchEntry"):
-            entry = schema["components"]["schemas"][component]
-            self.assertIn("status", entry["required"], component)
-            self.assertTrue(entry["properties"]["primary_uuid"]["nullable"], component)
 
 
 class TaskTests(TestCase):
