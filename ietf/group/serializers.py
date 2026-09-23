@@ -9,35 +9,26 @@ from ietf.person.models import Email
 from .models import Group, Role
 
 
-class GroupStateField(serializers.ChoiceField):
-    """API representation of group state
-
-    Only represents "active" and "conclude". The "bof-conc" state is treated as
-    "conclude". Any other state is represented as "other".
-    """
-
-    def __init__(self, **kwargs):
-        if not kwargs.pop("read_only", True):
-            raise RuntimeError("GroupStateField is read-only")
-        choices = ("active", "conclude", "other")
-        super().__init__(choices, read_only=True, **kwargs)
-
-    def to_representation(self, value):
-        if not isinstance(value, GroupStateName):
-            raise ValueError(f"value is a {type(value)}, not a GroupStateName")
-        return {
-            "active": "active",
-            "bof-conc": "conclude",
-            "conclude": "conclude",
-        }.get(value.slug, "other")
 
 
 class GroupSerializer(serializers.ModelSerializer):
-    state = GroupStateField(allow_null=True)
+    state = serializers.SerializerMethodField()
+
+    GROUP_STATE_CHOICES = ("active", "concluded", "other")  # simplified group states
 
     class Meta:
         model = Group
         fields = ["acronym", "name", "type", "state", "list_email"]
+
+    @extend_schema_field(serializers.ChoiceField(choices=GROUP_STATE_CHOICES))
+    def get_state(self, group: Group):
+        if group.state_id is None:
+            return "other"
+        return {
+            "active": "active",
+            "bof-conc": "concluded",
+            "conclude": "concluded",
+        }.get(group.state_id, "other")
 
 
 class AreaDirectorSerializer(serializers.Serializer):

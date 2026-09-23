@@ -29,7 +29,7 @@ class GroupSerializerTests(TestCase):
             wg.save()
             self.assertEqual(
                 GroupSerializer(wg).data,
-                partial_expected_json | {"state": "conclude"},
+                partial_expected_json | {"state": "concluded"},
             )
         for state in GroupStateName.objects.filter(used=True).exclude(
             slug__in=["active", "bof-conc", "conclude"]
@@ -45,7 +45,7 @@ class GroupSerializerTests(TestCase):
         wg.save()
         self.assertEqual(
             GroupSerializer(wg).data,
-            partial_expected_json | {"state": None},
+            partial_expected_json | {"state": "other"},
         )
 
 
