@@ -8176,12 +8176,12 @@ class MaterialsTests(TestCase):
         url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
         self.client.login(username=chair.user.username, password=chair.user.username + '+password')
 
-        # while the deck is on both sessions there is nothing to choose, and the page says where it is
+        # while the deck is on both sessions there is nothing to choose, and the notice says where it is
         r = self.client.get(url)
         q = PyQuery(r.content)
         self.assertFalse(q('input[name=sessions]'))
-        linked = [li.text() for li in q('#currently-linked li').items()]
-        self.assertEqual(linked, [material_session_label(first, 1), material_session_label(last, 2)])
+        self.assertFalse(q('#currently-linked'), 'no list when there are no boxes to read it against')
+        self.assertContains(r, 'on %s, %s. The new revision replaces it at each of them.' % (material_session_label(first, 1), material_session_label(last, 2)))
 
         # the chair takes it off Session 2: that session is now merely offered, unticked
         last.presentations.filter(document=deck).delete()
@@ -8190,6 +8190,8 @@ class MaterialsTests(TestCase):
         boxes = q('input[name=sessions]')
         self.assertEqual([b.attr('value') for b in boxes.items()], [str(last.pk)])
         self.assertFalse(boxes.is_(':checked'), 'a revision is not put back where the chair removed it')
+        self.assertEqual([li.text() for li in q('#currently-linked li').items()], [material_session_label(first, 1)])
+        self.assertContains(r, 'The new revision replaces the deck there.')
         self.assertEqual(q('label[for=%s]' % boxes.attr('id')).text(), material_session_label(last, 2) + ' (requested)', 'the proposer did ask for it there, even though it is not preselected')
 
         # and off Session 1 too: the deck is gone, so the approver must choose
@@ -8233,6 +8235,36 @@ class MaterialsTests(TestCase):
         self.assertContains(r, 'has been revised since this file was proposed')
         self.assertContains(r, '%s uploaded revision 01' % chair.plain_name())
         self.assertContains(r, 'the current deck')
+
+    def test_approve_page_for_a_lone_session(self):
+        """One scheduled session: no boxes, no list, and the session named by its time without a state"""
+        TestBlobstoreManager().emptyTestBlobstores()
+        alone, = make_group_sessions(['sched'])
+        deck = SessionPresentationFactory(session=alone, document__type_id='slides', document__rev='00', document__title='The Talk').document
+        proposer = PersonFactory()
+        chair = RoleFactory(group=alone.group, name_id='chair').person
+        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+        f = BytesIO(b'v2'); f.name = 'deck.txt'
+        self.assertEqual(self.client.post(self._slides_upload_url(alone, deck.name), dict(file=f, title=deck.title)).status_code, 302)
+        submission = SlideSubmission.objects.latest('pk')
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': alone.meeting.number})
+        when = material_session_label(alone)
+        self.assertNotIn('(', when)
+
+        r = self.client.get(url)
+        self.assertContains(r, 'Proposed for')
+        self.assertContains(r, when)
+        self.assertNotContains(r, '(scheduled)')
+
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertContains(r, 'for %s.' % when)
+        self.assertFalse(q('input[name=sessions]'))
+        self.assertFalse(q('#currently-linked'))
+        self.assertContains(r, 'now at revision 00, on %s. The new revision replaces it there.' % when)
+        self.assertNotContains(r, '(scheduled)')
+        self.assertNotContains(r, 'each of')
 
     def test_approve_and_status_pages_list_sessions_in_schedule_order(self):
         early, middle, late = make_group_sessions(['sched', 'sched', 'sched'])
