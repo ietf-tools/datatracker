@@ -16,8 +16,8 @@ def forward(apps, schema_editor):
         events = approvals.get(submission.doc_id)
         if not events:
             continue
-        # approving saved the row after creating the event, so the proposal's time (auto_now) sits
-        # just after its own event: take the event nearest in time, not the first one after
+        # time was auto_now until 0020, and approving saved the row after creating the event, so a
+        # proposal's time sits just after its own event: take the event nearest in time, not the first after
         event = min(events, key=lambda e: abs(e["time"] - submission.time))
         SlideSubmission.objects.filter(pk=submission.pk).update(resolved=event["time"], resolved_by_id=event["by_id"])
 

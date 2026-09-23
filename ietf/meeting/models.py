@@ -1463,7 +1463,7 @@ class ImportantDate(models.Model):
         return u'%s : %s : %s' % ( self.meeting, self.name, self.date )
 
 class SlideSubmission(models.Model):
-    time = models.DateTimeField(auto_now=True)
+    time = models.DateTimeField(default=timezone.now)  # when proposed; before auto_now was dropped, when last saved
     session = ForeignKey(Session)
     sessions = models.ManyToManyField(Session, blank=True, related_name="proposed_slides", help_text="Sessions the deck is proposed for")
     title = models.CharField(max_length=255)
@@ -1493,7 +1493,7 @@ class SlideSubmission(models.Model):
 
     def _resolve(self, status, by):
         now = timezone.now()
-        SlideSubmission.objects.filter(pk=self.pk).update(status_id=status, resolved=now, resolved_by=by)  # save() would restamp time
+        SlideSubmission.objects.filter(pk=self.pk).update(status_id=status, resolved=now, resolved_by=by)
         self.status_id, self.resolved, self.resolved_by = status, now, by
         if self.filename:  # last, so a failure above leaves a proposal that can still be acted on
             remove_from_storage("staging", self.filename, warn_if_missing=False)
