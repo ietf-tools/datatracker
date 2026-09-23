@@ -19,6 +19,7 @@ class GroupSerializerTests(TestCase):
                 "acronym": wg.acronym,
                 "name": wg.name,
                 "type": "wg",
+                "state": "active",
                 "list_email": wg.list_email,
             },
         )
