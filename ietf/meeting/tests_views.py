@@ -8222,15 +8222,15 @@ class MaterialsTests(TestCase):
         url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
 
         self.client.login(username=chair.user.username, password=chair.user.username + '+password')
-        self.assertNotContains(self.client.get(url), 'has moved on')
+        self.assertNotContains(self.client.get(url), 'has been revised since')
         f = BytesIO(b'uploaded meanwhile'); f.name = 'deck.txt'
         self.assertEqual(self.client.post(self._slides_upload_url(first, deck.name), dict(file=f, title=deck.title, approved='on')).status_code, 302)
         deck.refresh_from_db()
         self.assertEqual(deck.rev, '01')
         r = self.client.get(url)
-        self.assertContains(r, 'has moved on since this was proposed')
+        self.assertContains(r, 'has been revised since this file was proposed')
         self.assertContains(r, '%s uploaded revision 01' % chair.plain_name())
-        self.assertContains(r, 'on top as the next revision')
+        self.assertContains(r, 'the current deck')
 
     def test_approve_and_status_pages_list_sessions_in_schedule_order(self):
         early, middle, late = make_group_sessions(['sched', 'sched', 'sched'])

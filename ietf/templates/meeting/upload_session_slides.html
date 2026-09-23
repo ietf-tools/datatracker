@@ -31,7 +31,7 @@
     {% if not manage and show_form %}
     <p class="alert alert-info my-3">
         This form will allow you to propose a slide deck to the session chairs. After you upload your proposal, mail will be sent to the session chairs asking for their approval.
-        To replace a deck that is already on the session, propose the new file under the same title: it becomes the next revision of that deck rather than a second deck.
+        To replace a deck that is already on the session, propose the new file under the same title. If approved, this will become a new revision of the existing deck.
     </p>
     {% endif %}
     {% if blocked_by %}
@@ -41,8 +41,8 @@
         </div>
         {% if blocked_by.submitter == user.person %}
             <p>
-                To propose a different file, withdraw the pending revision first. Withdrawing discards the file you proposed on {{ blocked_by.time|date:"j F" }}; no mail is sent, and the chairs simply no longer see it.
-                The deck as it is now stays on the session. After withdrawing the current proposal, you can return to this page to propose a new revision.
+                To propose a different file, withdraw the pending revision first. Withdrawing discards the file you proposed on {{ blocked_by.time|date:"j F" }} and does not affect the deck currently on the session.
+                After withdrawing the current proposal, you can return to this page to propose a new revision.
             </p>
             <form method="post" action="{% url 'ietf.meeting.views.withdraw_proposed_slides' slidesubmission_id=blocked_by.pk num=session.meeting.number %}">
                 {% csrf_token %}

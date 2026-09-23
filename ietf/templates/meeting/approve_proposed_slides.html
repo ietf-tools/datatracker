@@ -26,18 +26,18 @@
     {% if submission.doc %}
         <p class="alert {% if linked %}alert-info{% else %}alert-warning{% endif %} my-3">
             This is a proposed new revision of <a href="{% url 'ietf.doc.views_doc.document_main' name=submission.doc.name %}">{{ submission.doc.title }} ({{ submission.doc.name }})</a>, now at revision {{ submission.doc.rev }}.
-            {% if not linked %}The deck is no longer on any session of this meeting. Choose where the new revision goes.{% endif %}
+            {% if not linked %}The deck is no longer on any session of this meeting. Choose where to put the new revision.{% endif %}
         </p>
         {% if moved_on %}
             <p class="alert alert-warning my-3">
-                The deck has moved on since this was proposed on {{ submission.time|date:"j F" }}: {{ moved_on.by }} uploaded revision {{ moved_on.rev }} on {{ moved_on.time|date:"j F" }}.
-                Approving puts the proposed file, which predates that, on top as the next revision.
+                The deck has been revised since this file was proposed on {{ submission.time|date:"j F" }}: {{ moved_on.by }} uploaded revision {{ moved_on.rev }} on {{ moved_on.time|date:"j F" }}.
+                Approving will make this proposed file, which predates that revision, the current deck.
             </p>
         {% endif %}
     {% endif %}
     {% if existing_doc %}
         <p class="alert alert-warning my-3">
-            Warning: approving with the title "{{ form.title.value }}" makes this a new revision of the existing deck {{ existing_doc.name }}. If that's not what you intend, adjust the title.
+            Warning: approving with the title "{{ form.title.value }}" will make this a new revision of the existing deck {{ existing_doc.name }}. If that's not what you intend, adjust the title.
         </p>
     {% endif %}
     <form enctype="multipart/form-data" method="post" class="my-3">

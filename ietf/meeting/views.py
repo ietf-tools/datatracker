@@ -3767,6 +3767,18 @@ def upload_session_slides(request, session_id, num, name=None):
             initial = {"title": doc.title}
         form = UploadSlidesForm(session, can_manage, choices if can_manage or doc is None else [], select_all, initial=initial)
 
+    decks = []
+    if not (can_manage or doc):
+        decks = [
+            sp for sp in session.presentations.filter(document__type_id="slides").order_by("order")
+            if sp.document.get_state_slug("slides") != "deleted"
+        ]
+    own_pending = []
+    if not can_manage and hasattr(request.user, "person"):
+        own_pending = SlideSubmission.objects.filter(
+            session=session, submitter=request.user.person, status_id="pending", **({"doc": doc} if doc else {})
+        ).order_by("time")
+
     return render(
         request,
         "meeting/upload_session_slides.html",
@@ -3779,13 +3791,8 @@ def upload_session_slides(request, session_id, num, name=None):
             "form": form,
             "blocked_by": blocked_by,
             "show_form": blocked_by is None,
-            "decks": [] if can_manage or doc else [
-                sp for sp in session.presentations.filter(document__type_id="slides").order_by("order")
-                if sp.document.get_state_slug("slides") != "deleted"
-            ],
-            "own_pending": [] if can_manage or not hasattr(request.user, "person") else SlideSubmission.objects.filter(
-                session=session, submitter=request.user.person, status_id="pending", **({"doc": doc} if doc else {})
-            ).order_by("time"),
+            "decks": decks,
+            "own_pending": own_pending,
         },
     )
 
@@ -5699,19 +5706,19 @@ def approve_proposed_slides(request, slidesubmission_id, num):
     
     _, session_number = sessions_covered_by_apply_to_all(submission.session)
 
-    def document_for(title):
-        """The document approving under this title would revise, if it exists"""
-        if submission.doc_id:
-            return submission.doc
+    # the document approving would revise, if there is one: the deck proposed against, or whatever
+    # the posted (or proposed) title would name for the proposed sessions
+    if submission.doc_id:
+        existing_doc = submission.doc
+    else:
         proposed = list(submission.sessions.all()) or [submission.session]
         home = submission.session if submission.session in proposed else proposed[0]
         name, _ = material_document_name(
-            home, 'slides', group_wide=group_wide_material_name(home, [s for s in proposed if s != home]), title=title
+            home, 'slides',
+            group_wide=group_wide_material_name(home, [s for s in proposed if s != home]),
+            title=request.POST.get('title') or submission.title,
         )
-        return Document.objects.filter(name=name).first()
-
-    title_in_play = request.POST.get('title') or submission.title
-    existing_doc = document_for(title_in_play)
+        existing_doc = Document.objects.filter(name=name).first()
     linked = sort_sessions(sessions_linked_to(existing_doc, submission.session.meeting)) if existing_doc else []
 
     if request.method == 'POST' and submission.status.slug == 'pending':
