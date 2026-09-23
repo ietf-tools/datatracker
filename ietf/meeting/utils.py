@@ -304,9 +304,11 @@ def finalize(request, meeting):
     return
 
 
-def expire_pending_slide_proposals(meeting):
-    """Expire every slide proposal for the meeting that is still pending; returns how many"""
+def expire_pending_slide_proposals(meeting, dry_run=False):
+    """Expire every slide proposal for the meeting that is still pending; returns how many (would be)"""
     pending = SlideSubmission.objects.filter(session__meeting=meeting, status_id="pending")
+    if dry_run:
+        return pending.count()
     count = 0
     for submission in pending:
         submission.expire()

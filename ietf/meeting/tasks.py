@@ -278,19 +278,24 @@ def expire_interim_slide_proposals_task():
 
 
 @shared_task
-def expire_past_ietf_slide_proposals_task():
+def expire_past_ietf_slide_proposals_task(meeting_number=None, dry_run=False):
     """Expire slide proposals still pending for IETF meetings whose corrections cutoff (revsub) has passed
 
     A one-time clean-up for meetings finalized before proceedings finalization began expiring them;
-    run by hand from the periodic task admin.
+    run by hand from the periodic task admin. meeting_number limits it to one meeting, for a first
+    try; dry_run only logs what would be expired, per meeting.
     """
     today = date_today()
     with_pending = Meeting.objects.filter(
         type_id="ietf", session__slidesubmission__status_id="pending"
     ).distinct()
+    if meeting_number is not None:
+        with_pending = with_pending.filter(number=meeting_number)
     expired = 0
-    for meeting in with_pending:
+    for meeting in with_pending.order_by("date"):
         if meeting.get_submission_correction_date() < today:
-            expired += expire_pending_slide_proposals(meeting)
-    log.log(f"Expired {expired} slide proposals for past IETF meetings")
+            count = expire_pending_slide_proposals(meeting, dry_run=dry_run)
+            log.log(f"{'Would expire' if dry_run else 'Expired'} {count} slide proposals for {meeting}")
+            expired += count
+    log.log(f"{'Would expire' if dry_run else 'Expired'} {expired} slide proposals for past IETF meetings")
     return expired

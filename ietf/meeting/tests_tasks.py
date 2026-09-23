@@ -5,6 +5,7 @@ from unittest.mock import patch, call
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import date_today
 from .factories import MeetingFactory, SessionFactory, SlideSubmissionFactory
+from .models import SlideSubmission
 from django.test import override_settings
 from .tasks import (
     proceedings_content_refresh_task,
@@ -159,6 +160,12 @@ class TaskTests(TestCase):
         rejected_closed.status_id = 'rejected'
         rejected_closed.save()
 
+        also_closed = proposal('ietf', -2)
+        self.assertEqual(expire_past_ietf_slide_proposals_task(dry_run=True), 2, 'a dry run counts')
+        self.assertEqual(SlideSubmission.objects.filter(status_id='pending').count(), 4, 'and changes nothing')
+        self.assertEqual(expire_past_ietf_slide_proposals_task(meeting_number=also_closed.session.meeting.number), 1, 'one meeting alone')
+        also_closed.refresh_from_db()
+        self.assertEqual(also_closed.status_id, 'expired')
         self.assertEqual(expire_past_ietf_slide_proposals_task(), 1)
 
         for submission in (closed, open_still, interim, rejected_closed):
