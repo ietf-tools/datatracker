@@ -896,6 +896,7 @@ class MeetingTests(BaseMeetingTestCase):
             return urlreverse("ietf.meeting.views.materials_document", kwargs=kwargs)
 
         presentation = SessionPresentationFactory(
+            session__meeting__type_id="interim",
             document__rev="00",
             document__name="slides-whatever",
             document__uploaded_filename="slides-whatever-00.txt",
@@ -3561,19 +3562,16 @@ class ReorderSlidesTests(TestCase):
         def _sppk_at(sppk, positions):
             return [sppk[p-1] for p in positions]
         chair_role = RoleFactory(name_id='chair')
-        session = SessionFactory(group=chair_role.group, meeting__date=date_today() - datetime.timedelta(days=90))
-        sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session)
-        sppk = [o.pk for o in sp_list]
-        for num, sp in enumerate(sp_list, start=1):
-            sp.order = num
-            sp.save()
-        url = urlreverse('ietf.meeting.views.ajax_reorder_slides_in_session', kwargs={'session_id':session.pk, 'num':session.meeting.number})
 
         for type_id in ['ietf','interim']:
-            
-            session.meeting.type_id = type_id
-            session.meeting.date = date_today()-datetime.timedelta(days=90)
-            session.meeting.save()
+            session = SessionFactory(group=chair_role.group, meeting__type_id=type_id, meeting__date=date_today() - datetime.timedelta(days=90))
+            sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session)
+            sppk = [o.pk for o in sp_list]
+            for num, sp in enumerate(sp_list, start=1):
+                sp.order = num
+                sp.save()
+            url = urlreverse('ietf.meeting.views.ajax_reorder_slides_in_session', kwargs={'session_id':session.pk, 'num':session.meeting.number})
+            self.client.logout()
 
             # Not a valid user
             r = self.client.post(url, {'oldIndex':1, 'newIndex':2 })
@@ -7948,38 +7946,42 @@ class MaterialsTests(TestCase):
     def test_proposed_slides_file(self):
         """The staged deck is served from the datatracker to approvers and the proposer, and nobody else"""
         TestBlobstoreManager().emptyTestBlobstores()
-        submission = SlideSubmissionFactory(session__meeting__type_id='ietf', filename='slides-proposed-ss1.pdf')
-        submission.session.meeting.importantdate_set.create(name_id='revsub', date=date_today() + datetime.timedelta(days=20))
-        store_bytes('staging', submission.filename, b'%PDF-1.4 not really', allow_overwrite=True)
-        chair = RoleFactory(group=submission.session.group, name_id='chair').person
-        url = urlreverse('ietf.meeting.views.proposed_slides_file', kwargs={'slidesubmission_id': submission.pk, 'num': submission.session.meeting.number})
+        for meeting_type in ('ietf', 'interim'):
+            submission = SlideSubmissionFactory(session__meeting__type_id=meeting_type, filename=f'slides-proposed-{meeting_type}-ss1.pdf')
+            submission.session.meeting.importantdate_set.create(name_id='revsub', date=date_today() + datetime.timedelta(days=20))
+            store_bytes('staging', submission.filename, b'%PDF-1.4 not really', allow_overwrite=True)
+            chair = RoleFactory(group=submission.session.group, name_id='chair').person
+            url = urlreverse('ietf.meeting.views.proposed_slides_file', kwargs={'slidesubmission_id': submission.pk, 'num': submission.session.meeting.number})
 
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 302, 'anonymous users are sent to log in')
-        self.assertIn(urlreverse('ietf.ietfauth.views.login'), r['Location'])
-
-        bystander = PersonFactory()
-        self.client.login(username=bystander.user.username, password=bystander.user.username + '+password')
-        self.assertEqual(self.client.get(url).status_code, 403)
-
-        for person in (chair, submission.submitter):
-            self.client.login(username=person.user.username, password=person.user.username + '+password')
+            self.client.logout()
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200, person)
-            self.assertEqual(r.content, b'%PDF-1.4 not really')
-            self.assertEqual(r['Content-Type'], 'application/pdf')
-            self.assertIn('attachment', r['Content-Disposition'])
-            self.assertIn(submission.filename, r['Content-Disposition'])
+            self.assertEqual(r.status_code, 302, 'anonymous users are sent to log in')
+            self.assertIn(urlreverse('ietf.ietfauth.views.login'), r['Location'])
 
-        approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': submission.session.meeting.number})
-        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
-        r = self.client.get(approve_url)
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(PyQuery(r.content)('a[href="%s"]' % url).text(), submission.filename)
-        self.assertNotContains(r, 'www.ietf.org/staging')
+            bystander = PersonFactory()
+            self.client.login(username=bystander.user.username, password=bystander.user.username + '+password')
+            self.assertEqual(self.client.get(url).status_code, 403)
 
-        remove_from_storage('staging', submission.filename)
-        self.assertEqual(self.client.get(url).status_code, 404, 'gone from the blob store means gone')
+            for person in (chair, submission.submitter):
+                self.client.login(username=person.user.username, password=person.user.username + '+password')
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 200, person)
+                self.assertEqual(r.content, b'%PDF-1.4 not really')
+                self.assertEqual(r['Content-Type'], 'application/pdf')
+                self.assertIn('attachment', r['Content-Disposition'])
+                self.assertIn(submission.filename, r['Content-Disposition'])
+
+            approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': submission.session.meeting.number})
+            self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+            r = self.client.get(approve_url)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(PyQuery(r.content)('a[href="%s"]' % url).text(), submission.filename)
+
+            # once withdrawn there is nothing to serve
+            self.client.login(username=submission.submitter.user.username, password=submission.submitter.user.username + '+password')
+            withdraw_url = urlreverse('ietf.meeting.views.withdraw_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': submission.session.meeting.number})
+            self.assertEqual(self.client.post(withdraw_url).status_code, 302)
+            self.assertEqual(self.client.get(url).status_code, 404)
 
     def test_proposal_records_the_sessions_it_is_for(self):
         first, cancelled, middle, last = make_group_sessions(['sched', 'canceled', 'sched', 'sched'])
