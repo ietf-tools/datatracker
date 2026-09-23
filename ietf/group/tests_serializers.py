@@ -1,5 +1,5 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
-from ietf.group.factories import RoleFactory, GroupFactory
+from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.serializers import (
     AreaDirectorSerializer,
     AreaSerializer,

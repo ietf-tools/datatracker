@@ -4,7 +4,6 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from ietf.name.models import GroupStateName
 from ietf.person.models import Email
 from .models import Group, Role
 
