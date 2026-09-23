@@ -10,24 +10,30 @@ from .models import Group, Role
 
 
 class GroupStateField(serializers.ChoiceField):
+    """API representation of group state
+
+    Only represents "active" and "conclude". The "bof-conc" state is treated as
+    "conclude". Any other state is represented as "other".
+    """
+
     def __init__(self, **kwargs):
         if not kwargs.pop("read_only", True):
             raise RuntimeError("GroupStateField is read-only")
-        choices = list(
-            GroupStateName.objects.filter(used=True)
-            .values_list("slug", "name")
-            .order_by("slug")
-        )
+        choices = ("active", "conclude", "other")
         super().__init__(choices, read_only=True, **kwargs)
 
     def to_representation(self, value):
-        return super().to_representation(
-            value.slug if isinstance(value, GroupStateName) else value
-        )
+        if not isinstance(value, GroupStateName):
+            raise ValueError(f"value is a {type(value)}, not a GroupStateName")
+        return {
+            "active": "active",
+            "bof-conc": "conclude",
+            "conclude": "conclude",
+        }.get(value.slug, "other")
 
 
 class GroupSerializer(serializers.ModelSerializer):
-    state = GroupStateField()
+    state = GroupStateField(allow_null=True)
 
     class Meta:
         model = Group
@@ -45,7 +51,7 @@ class AreaDirectorSerializer(serializers.Serializer):
 
     @extend_schema_field(serializers.CharField)
     def get_name(self, instance: Email | Role):
-        person = getattr(instance, 'person', None)
+        person = getattr(instance, "person", None)
         return person.plain_name() if person else None
 
     @extend_schema_field(serializers.EmailField)
