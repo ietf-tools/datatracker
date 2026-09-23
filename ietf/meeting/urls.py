@@ -32,6 +32,8 @@ safe_for_all_meeting_types = [
     url(r'^session/(?P<session_id>\d+)\.ics$',    views.agenda_ical),
     url(r'^sessions/(?P<acronym>[-a-z0-9]+)\.ics$', views.agenda_ical),
     url(r'^slidesubmission/(?P<slidesubmission_id>\d+)$', views.approve_proposed_slides),
+    url(r'^slidesubmission/(?P<slidesubmission_id>\d+)/file$', views.proposed_slides_file),
+    url(r'^slidesubmission/(?P<slidesubmission_id>\d+)/withdraw$', views.withdraw_proposed_slides),
 ]
 
 

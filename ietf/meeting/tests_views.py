@@ -39,7 +39,7 @@ from django.utils.text import slugify
 
 import debug           # pyflakes:ignore
 
-from ietf.doc.models import Document, NewRevisionDocEvent, State
+from ietf.doc.models import Document, NewRevisionDocEvent, State, StoredObject
 from ietf.doc.storage_utils import exists_in_storage, remove_from_storage, retrieve_bytes, retrieve_str, store_bytes
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.group.utils import can_manage_group
@@ -55,7 +55,7 @@ from ietf.meeting.utils import (
     generate_proceedings_content,
     diff_meeting_schedules,
 )
-from ietf.meeting.utils import add_event_info_to_session_qs, material_document_name, SaveMaterialsError
+from ietf.meeting.utils import add_event_info_to_session_qs, material_document_name, material_session_label, SaveMaterialsError
 from ietf.meeting.utils import create_recording, delete_recording, get_next_sequence, bluesheet_data
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose, generate_agenda_data
@@ -896,6 +896,7 @@ class MeetingTests(BaseMeetingTestCase):
             return urlreverse("ietf.meeting.views.materials_document", kwargs=kwargs)
 
         presentation = SessionPresentationFactory(
+            session__meeting__type_id="interim",
             document__rev="00",
             document__name="slides-whatever",
             document__uploaded_filename="slides-whatever-00.txt",
@@ -3561,19 +3562,16 @@ class ReorderSlidesTests(TestCase):
         def _sppk_at(sppk, positions):
             return [sppk[p-1] for p in positions]
         chair_role = RoleFactory(name_id='chair')
-        session = SessionFactory(group=chair_role.group, meeting__date=date_today() - datetime.timedelta(days=90))
-        sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session)
-        sppk = [o.pk for o in sp_list]
-        for num, sp in enumerate(sp_list, start=1):
-            sp.order = num
-            sp.save()
-        url = urlreverse('ietf.meeting.views.ajax_reorder_slides_in_session', kwargs={'session_id':session.pk, 'num':session.meeting.number})
 
         for type_id in ['ietf','interim']:
-            
-            session.meeting.type_id = type_id
-            session.meeting.date = date_today()-datetime.timedelta(days=90)
-            session.meeting.save()
+            session = SessionFactory(group=chair_role.group, meeting__type_id=type_id, meeting__date=date_today() - datetime.timedelta(days=90))
+            sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session)
+            sppk = [o.pk for o in sp_list]
+            for num, sp in enumerate(sp_list, start=1):
+                sp.order = num
+                sp.save()
+            url = urlreverse('ietf.meeting.views.ajax_reorder_slides_in_session', kwargs={'session_id':session.pk, 'num':session.meeting.number})
+            self.client.logout()
 
             # Not a valid user
             r = self.client.post(url, {'oldIndex':1, 'newIndex':2 })
@@ -4598,7 +4596,6 @@ class EditTests(TestCase):
 
 
 class SessionDetailsTests(TestCase):
-    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['SLIDE_STAGING_PATH']
 
     def test_session_details(self):
 
@@ -4677,6 +4674,44 @@ class SessionDetailsTests(TestCase):
         self.assertIsNone(live_body.attr('data-frozen'))
         self.assertTrue(q('#session_%d' % live.pk).parents().is_('body'))
         self.assertTrue(q('a.uploadslides[href*="/session/%d/"]' % live.pk), 'the live session keeps its controls')
+
+    def test_session_details_flags_pending_proposals(self):
+        chair_role = RoleFactory(name_id='chair', group__type_id='wg', group__state_id='active')
+        session = SessionFactory(meeting__type_id='ietf', group=chair_role.group, meeting__date=date_today() + datetime.timedelta(days=7))
+        url = urlreverse('ietf.meeting.views.session_details', kwargs=dict(num=session.meeting.number, acronym=session.group.acronym))
+        chair = chair_role.person
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        r = self.client.get(url)
+        self.assertFalse(PyQuery(r.content)('#pending-proposals-notice'), 'nothing pending, nothing to flag')
+
+        SlideSubmissionFactory.create_batch(2, session=session)
+        expired = SlideSubmissionFactory(session=session)
+        expired.expire()
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        notice = q('#pending-proposals-notice a')
+        self.assertEqual(notice.text(), '2 proposed slide decks awaiting your approval')
+        self.assertEqual(notice.attr('href'), '#proposed-slides')
+        self.assertEqual(len(q('h2#proposed-slides')), 1)
+
+        bystander = PersonFactory()
+        self.client.login(username=bystander.user.username, password=bystander.user.username + '+password')
+        r = self.client.get(url)
+        self.assertFalse(PyQuery(r.content)('#pending-proposals-notice'), 'only those who can approve are nagged')
+
+    def test_session_details_offers_login_to_propose(self):
+        group = GroupFactory(type_id='wg', state_id='active')
+        future = SessionFactory(meeting__type_id='ietf', group=group, meeting__date=date_today() + datetime.timedelta(days=7))
+        url = urlreverse('ietf.meeting.views.session_details', kwargs=dict(num=future.meeting.number, acronym=group.acronym))
+        r = self.client.get(url)
+        button = PyQuery(r.content)('a.proposeslides')
+        self.assertEqual(button.text(), 'Log in to propose slides')
+        self.assertTrue(button.attr('href').startswith(urlreverse('ietf.ietfauth.views.login')))
+        self.assertIn('next=', button.attr('href'))
+
+        past = SessionFactory(meeting__type_id='ietf', group=group, meeting__date=date_today() - datetime.timedelta(days=60))
+        r = self.client.get(urlreverse('ietf.meeting.views.session_details', kwargs=dict(num=past.meeting.number, acronym=group.acronym)))
+        self.assertFalse(PyQuery(r.content)('a.proposeslides'), 'no proposing once the session is over')
 
     def test_session_details_slides_drag_and_drop_markup(self):
         """Every slides table is a drag-and-drop target with the attributes the JS reads
@@ -6668,11 +6703,18 @@ class FinalizeProceedingsTests(TestCase):
 
         self.assertEqual(meeting.proceedings_final,False)
         self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().presentations.filter(document__type="draft").first().rev,None)
+        pending = SlideSubmissionFactory(session=meeting.session_set.filter(group__acronym='mars').first())
+        elsewhere = SlideSubmissionFactory()
         r = self.client.post(url,{'finalize':1})
         self.assertEqual(r.status_code, 302)
         meeting = Meeting.objects.get(pk=meeting.pk)
         self.assertEqual(meeting.proceedings_final,True)
         self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().presentations.filter(document__type="draft").first().rev,'00')
+        pending.refresh_from_db()
+        elsewhere.refresh_from_db()
+        self.assertEqual(pending.status_id, 'expired', 'a proposal still pending when proceedings are finalized expires')
+        self.assertFalse(exists_in_storage('staging', pending.filename))
+        self.assertEqual(elsewhere.status_id, 'pending', "another meeting's proposal is untouched")
  
     @patch("ietf.meeting.utils.generate_bluesheet")
     def test_bluesheet_generation(self, mock):
@@ -6703,10 +6745,7 @@ class FinalizeProceedingsTests(TestCase):
 
 
 class MaterialsTests(TestCase):
-    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [
-        'AGENDA_PATH',
-        'SLIDE_STAGING_PATH'
-    ]
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
     def setUp(self):
         super().setUp()
         self.materials_dir = self.tempdir('materials')
@@ -7244,7 +7283,7 @@ class MaterialsTests(TestCase):
             self.assertEqual((current(b), shared.rev), (shared, '00'), 'B keeps what it had, at the revision it had')
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
+    @patch("ietf.meeting.utils.SlidesManager")
     def test_meetecho_follows_each_session_not_the_uploader(self, mock_slides_manager_cls):
         first, waiting = make_group_sessions(['sched', 'schedw'])
         deck = SessionPresentationFactory(session=waiting, document__type_id='slides', document__rev='00').document
@@ -7257,7 +7296,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(sm.revise.call_args_list, [call(session=first, slides=deck)], 'the scheduled session hears about it, the unscheduled uploader does not')
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
+    @patch("ietf.meeting.utils.SlidesManager")
     def test_recursive_reclaim_tells_meetecho_which_deck_each_session_lost(self, mock_slides_manager_cls):
         a, b, c = make_group_sessions(['sched', 'sched', 'sched'])
         title = 'the talk'
@@ -7490,7 +7529,7 @@ class MaterialsTests(TestCase):
 
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
+    @patch("ietf.meeting.utils.SlidesManager")
     def test_upload_slides(self, mock_slides_manager_cls):
 
         session1 = SessionFactory(meeting__type_id='ietf')
@@ -7574,7 +7613,7 @@ class MaterialsTests(TestCase):
         )
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
+    @patch("ietf.meeting.utils.SlidesManager")
     def test_upload_slides_apply_to_all_covers_scheduled_sessions_only(self, mock_slides_manager_cls):
         for unscheduled_status in ('canceled', 'resched'):
             mock_slides_manager_cls.reset_mock()
@@ -7636,7 +7675,7 @@ class MaterialsTests(TestCase):
         self.assertNotContains(r, 'also linked to')
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
+    @patch("ietf.meeting.utils.SlidesManager")
     def test_revising_slides_reaches_every_linked_session(self, mock_slides_manager_cls):
         first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
         deck = SessionPresentationFactory(session=first, document__type_id='slides', document__rev='00').document
@@ -7685,7 +7724,7 @@ class MaterialsTests(TestCase):
         self.assertEqual([s.presentations.filter(document=deck).count() for s in (first, middle, last)], [1, 1, 1])
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
+    @patch("ietf.meeting.utils.SlidesManager")
     def test_new_deck_reusing_own_name_gives_other_sessions_copies(self, mock_slides_manager_cls):
         first, last = make_group_sessions(['sched', 'sched'])
         self.client.login(username='secretary', password='secretary+password')
@@ -7809,7 +7848,7 @@ class MaterialsTests(TestCase):
             self.assertEqual(r.status_code,200)
             q = PyQuery(r.content)
             self.assertFalse(q('.uploadslides'))
-            self.assertFalse(q('.proposeslides'))
+            self.assertIn(urlreverse('ietf.ietfauth.views.login'), q('.proposeslides').attr('href'), 'anonymous visitors are pointed at login')
 
             self.client.login(username=newperson.user.username,password=newperson.user.username+"+password")
             r = self.client.get(session_overview_url)
@@ -7821,6 +7860,7 @@ class MaterialsTests(TestCase):
             login_testing_unauthorized(self,newperson.user.username,upload_url)
             r = self.client.get(upload_url)
             self.assertEqual(r.status_code,200)
+            self.assertContains(r, 'under the same title')
             test_bytes = b'this is not really a slide'
             test_file = BytesIO(test_bytes)
             test_file.name = 'not_really.txt'
@@ -7903,6 +7943,568 @@ class MaterialsTests(TestCase):
             self.assertEqual(r.status_code,200)
             self.client.logout()
 
+    def test_proposed_slides_file(self):
+        """The staged deck is served from the datatracker to approvers and the proposer, and nobody else"""
+        TestBlobstoreManager().emptyTestBlobstores()
+        for meeting_type in ('ietf', 'interim'):
+            submission = SlideSubmissionFactory(session__meeting__type_id=meeting_type, filename=f'slides-proposed-{meeting_type}-ss1.pdf')
+            submission.session.meeting.importantdate_set.create(name_id='revsub', date=date_today() + datetime.timedelta(days=20))
+            store_bytes('staging', submission.filename, b'%PDF-1.4 not really', allow_overwrite=True)
+            chair = RoleFactory(group=submission.session.group, name_id='chair').person
+            url = urlreverse('ietf.meeting.views.proposed_slides_file', kwargs={'slidesubmission_id': submission.pk, 'num': submission.session.meeting.number})
+
+            self.client.logout()
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 302, 'anonymous users are sent to log in')
+            self.assertIn(urlreverse('ietf.ietfauth.views.login'), r['Location'])
+
+            bystander = PersonFactory()
+            self.client.login(username=bystander.user.username, password=bystander.user.username + '+password')
+            self.assertEqual(self.client.get(url).status_code, 403)
+
+            for person in (chair, submission.submitter):
+                self.client.login(username=person.user.username, password=person.user.username + '+password')
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 200, person)
+                self.assertEqual(r.content, b'%PDF-1.4 not really')
+                self.assertEqual(r['Content-Type'], 'application/pdf')
+                self.assertIn('attachment', r['Content-Disposition'])
+                self.assertIn(submission.filename, r['Content-Disposition'])
+
+            approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': submission.session.meeting.number})
+            self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+            r = self.client.get(approve_url)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(PyQuery(r.content)('a[href="%s"]' % url).text(), submission.filename)
+
+            # once withdrawn there is nothing to serve
+            self.client.login(username=submission.submitter.user.username, password=submission.submitter.user.username + '+password')
+            withdraw_url = urlreverse('ietf.meeting.views.withdraw_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': submission.session.meeting.number})
+            self.assertEqual(self.client.post(withdraw_url).status_code, 302)
+            self.assertEqual(self.client.get(url).status_code, 404)
+
+    def test_proposal_records_the_sessions_it_is_for(self):
+        first, cancelled, middle, last = make_group_sessions(['sched', 'canceled', 'sched', 'sched'])
+        proposer = PersonFactory()
+        chair = RoleFactory(group=first.group, name_id='chair').person
+        url = self._slides_upload_url(first)
+
+        def propose(person, **data):
+            self.client.login(username=person.user.username, password=person.user.username + '+password')
+            f = BytesIO(b'not really slides'); f.name = 'deck.txt'
+            r = self.client.post(url, dict(file=f, **data))
+            self.assertEqual(r.status_code, 302, r.content[:300])
+            return SlideSubmission.objects.latest('pk')
+
+        # a participant has only the yes/no: all scheduled sessions, or this one
+        self.assertCountEqual(propose(proposer, title='for all', apply_to_all=True).sessions.all(), [first, middle, last])
+        self.assertCountEqual(propose(proposer, title='for one').sessions.all(), [first])
+        # a chair who does not auto-approve keeps the exact choice
+        self.assertCountEqual(propose(chair, title='chosen', apply_to_sessions=[last.pk]).sessions.all(), [first, last])
+        self.assertCountEqual(propose(chair, title='alone').sessions.all(), [first])
+        self.assertFalse(cancelled.proposed_slides.exists())
+
+    def test_approving_a_revision_of_a_deleted_deck_brings_it_back(self):
+        """A deck in state deleted, revised through approval, is active again like a fresh upload would be"""
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, = make_group_sessions(['sched'])
+        deck = SessionPresentationFactory(session=first, document__type_id='slides', document__rev='00', document__title='The Talk').document
+        Document.objects.filter(pk=deck.pk).update(name=material_document_name(first, 'slides', group_wide=True, title='The Talk')[0])
+        deck.refresh_from_db()
+        deck.set_state(State.objects.get(type_id='slides', slug='deleted'))
+        submission = SlideSubmissionFactory(session=first, title='The Talk')
+        first.meeting.importantdate_set.create(name_id='revsub', date=date_today() + datetime.timedelta(days=20))
+        chair = RoleFactory(group=first.group, name_id='chair').person
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
+        self.assertEqual(self.client.post(url, dict(title='The Talk', approve='approve')).status_code, 302)
+        deck.refresh_from_db()
+        self.assertEqual(deck.rev, '01')
+        self.assertEqual(deck.get_state_slug('slides'), 'active')
+
+    def test_approval_title_follows_the_upload_rules(self):
+        TestBlobstoreManager().emptyTestBlobstores()
+        submission = SlideSubmissionFactory(session__meeting__type_id='interim')
+        submission.session.meeting.importantdate_set.create(name_id='revsub', date=date_today() + datetime.timedelta(days=20))
+        chair = RoleFactory(group=submission.session.group, name_id='chair').person
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': submission.session.meeting.number})
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        r = self.client.post(url, dict(title='Routing update -01', approve='approve'))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'looks like a revision number')
+        submission.refresh_from_db()
+        self.assertEqual(submission.status_id, 'pending')
+        self.assertFalse(submission.session.presentations.exists())
+
+    def test_proposer_follows_their_proposal(self):
+        """The link in the mail shows the proposer a status page, and approving is left to the chairs"""
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, last = make_group_sessions(['sched', 'sched'])
+        proposer = PersonFactory()
+        chair = RoleFactory(group=first.group, name_id='chair').person
+        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+        empty_outbox()
+        f = BytesIO(b'not really slides'); f.name = 'deck.txt'
+        r = self.client.post(self._slides_upload_url(first), dict(file=f, title='my talk', apply_to_all=True))
+        self.assertEqual(r.status_code, 302)
+        submission = SlideSubmission.objects.get(title='my talk')
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
+        self.assertEqual(len(outbox), 1)
+        self.assertIn('can follow its status', get_payload_text(outbox[0]))
+        self.assertIn(url, get_payload_text(outbox[0]))
+
+        materials = self.client.get(urlreverse('ietf.meeting.views.session_details', kwargs={'num': first.meeting.number, 'acronym': first.group.acronym}))
+        self.assertTrue(PyQuery(materials.content)('.proposedslidelist a[href="%s"]' % url), 'the materials page links the proposer to the status page')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Awaiting approval')
+        self.assertContains(r, 'my talk')
+        self.assertContains(r, 'Session 1')
+        self.assertContains(r, 'Session 2')
+        q = PyQuery(r.content)
+        self.assertTrue(q('a[href="%s"]' % urlreverse('ietf.meeting.views.proposed_slides_file', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})))
+        self.assertFalse(q('button[name=approve]'))
+        r = self.client.post(url, dict(title='my talk', sessions=[first.pk, last.pk], approve='approve'))
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(first.presentations.exists(), 'a proposer cannot approve their own proposal')
+
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        r = self.client.post(url, dict(title='my talk', sessions=[first.pk, last.pk], approve='approve'))
+        self.assertEqual(r.status_code, 302)
+        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+        r = self.client.get(url)
+        self.assertContains(r, 'Approved by %s' % chair.plain_name())
+        submission.refresh_from_db()
+        self.assertContains(r, submission.doc.name)
+
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.utils.SlidesManager")
+    def test_propose_revision_of_existing_deck(self, mock_slides_manager_cls):
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, last = make_group_sessions(['sched', 'sched'])
+        deck = SessionPresentationFactory(session=first, document__type_id='slides', document__rev='00', document__title='The Talk').document
+        SessionPresentationFactory(session=last, document=deck, rev='00')
+        proposer = PersonFactory()
+        chair = RoleFactory(group=first.group, name_id='chair').person
+
+        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+        r = self.client.get(self._slides_upload_url(first))
+        q = PyQuery(r.content)
+        revise_url = self._slides_upload_url(first, deck.name)
+        self.assertEqual(q('a[href="%s"]' % revise_url).text(), 'Propose revision')
+        self.assertContains(r, 'The Talk')
+
+        empty_outbox()
+        f = BytesIO(b'second version'); f.name = 'deck.txt'
+        r = self.client.post(revise_url, dict(file=f, title='The Talk, revised'))
+        self.assertEqual(r.status_code, 302)
+        submission = SlideSubmission.objects.get(title='The Talk, revised')
+        self.assertEqual(submission.doc, deck)
+        self.assertTrue(submission.filename.startswith(deck.name + '-ss'), 'staged under the deck it revises')
+        self.assertCountEqual(submission.sessions.all(), [first, last], 'a revision reaches the sessions the deck is on')
+        self.assertIn('new revision of The Talk (%s)' % deck.name, get_payload_text(outbox[0]))
+        r = self.client.get(self._slides_upload_url(first))
+        self.assertContains(r, 'as a revision of The Talk (%s)' % deck.name)
+
+        approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        r = self.client.get(approve_url)
+        self.assertContains(r, 'proposed new revision of')
+        self.assertNotContains(r, 'replace an existing set of slides')
+        decks_before = Document.objects.filter(type_id='slides').count()
+        r = self.client.post(approve_url, dict(title='The Talk, revised', sessions=[first.pk, last.pk], approve='approve'))
+        self.assertEqual(r.status_code, 302)
+        deck.refresh_from_db()
+        self.assertEqual((deck.rev, deck.title), ('01', 'The Talk, revised'))
+        self.assertEqual(retrieve_bytes('slides', deck.uploaded_filename), b'second version')
+        self.assertEqual(Document.objects.filter(type_id='slides').count(), decks_before, 'no second deck')
+        for s in (first, last):
+            self.assertEqual(s.presentations.get(document=deck).rev, '01')
+        self.assertCountEqual(
+            mock_slides_manager_cls.return_value.revise.call_args_list,
+            [call(session=first, slides=deck), call(session=last, slides=deck)],
+        )
+        self.assertFalse(mock_slides_manager_cls.return_value.add.called)
+
+    def test_same_title_proposal_is_a_revision_from_the_start(self):
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, last = make_group_sessions(['sched', 'sched'])
+        deck = SessionPresentationFactory(session=first, document__type_id='slides', document__rev='00', document__title='The Talk').document
+        name, _ = material_document_name(first, 'slides', group_wide=False, title='The Talk')
+        Document.objects.filter(pk=deck.pk).update(name=name)
+        deck.refresh_from_db()
+        proposer = PersonFactory()
+        chair = RoleFactory(group=first.group, name_id='chair').person
+        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+        empty_outbox()
+        f = BytesIO(b'v2 under the same title'); f.name = 'deck.txt'
+        r = self.client.post(self._slides_upload_url(first), dict(file=f, title='The Talk'))  # plain proposal, not "Propose revision"
+        self.assertEqual(r.status_code, 302)
+        submission = SlideSubmission.objects.latest('pk')
+        self.assertEqual(submission.doc, deck, 'a matching title is a revision at proposal time, not only at approval')
+        self.assertCountEqual(submission.sessions.all(), [first])
+        self.assertIn('new revision of The Talk (%s)' % deck.name, get_payload_text(outbox[0]))
+
+        r = self.client.get(self._slides_upload_url(first))
+        self.assertContains(r, 'as a revision of The Talk (%s)' % deck.name)
+        r = self.client.get(urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number}))
+        self.assertContains(r, 'Revises')
+        self.assertContains(r, 'The Talk (%s)' % deck.name)
+
+        # the participant's revise page has no apply-to-all box: a revision goes where the deck is
+        r = self.client.get(self._slides_upload_url(first, deck.name))
+        self.assertFalse(PyQuery(r.content)('input[name=apply_to_all]'))
+
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        r = self.client.get(urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number}))
+        self.assertContains(r, 'proposed new revision of')
+        self.assertContains(r, 'The Talk (%s)' % deck.name)
+
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.utils.SlidesManager")
+    def test_approving_a_revision_of_a_removed_deck_asks_where_it_goes(self, mock_slides_manager_cls):
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, last = make_group_sessions(['sched', 'sched'])
+        deck = SessionPresentationFactory(session=first, document__type_id='slides', document__rev='00').document
+        SessionPresentationFactory(session=last, document=deck, rev='00')
+        proposer = PersonFactory()
+        chair = RoleFactory(group=first.group, name_id='chair').person
+        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+        f = BytesIO(b'v2'); f.name = 'deck.txt'
+        self.assertEqual(self.client.post(self._slides_upload_url(first, deck.name), dict(file=f, title=deck.title)).status_code, 302)
+        submission = SlideSubmission.objects.latest('pk')
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+
+        # while the deck is on both sessions there is nothing to choose, and the page says where it is
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertFalse(q('input[name=sessions]'))
+        linked = [li.text() for li in q('#currently-linked li').items()]
+        self.assertEqual(linked, [material_session_label(first, 1), material_session_label(last, 2)])
+
+        # the chair takes it off Session 2: that session is now merely offered, unticked
+        last.presentations.filter(document=deck).delete()
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        boxes = q('input[name=sessions]')
+        self.assertEqual([b.attr('value') for b in boxes.items()], [str(last.pk)])
+        self.assertFalse(boxes.is_(':checked'), 'a revision is not put back where the chair removed it')
+        self.assertEqual(q('label[for=%s]' % boxes.attr('id')).text(), material_session_label(last, 2) + ' (requested)', 'the proposer did ask for it there, even though it is not preselected')
+
+        # and off Session 1 too: the deck is gone, so the approver must choose
+        first.presentations.filter(document=deck).delete()
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertIn('no longer on any session', q('.alert-warning').text())
+        self.assertEqual(len(q('input[name=sessions]')), 2)
+        r = self.client.post(url, dict(title=deck.title, approve='approve'))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Choose at least one session')
+        self.assertFalse(first.presentations.exists())
+        r = self.client.post(url, dict(title=deck.title, sessions=[last.pk], approve='approve'))
+        self.assertEqual(r.status_code, 302)
+        deck.refresh_from_db()
+        self.assertEqual(deck.rev, '01')
+        self.assertFalse(first.presentations.exists(), 'not resurrected where it was removed')
+        self.assertEqual(last.presentations.get().document, deck)
+        self.assertEqual(mock_slides_manager_cls.return_value.add.call_args_list, [call(session=last, slides=deck, order=1)])
+
+    def test_approve_page_says_when_the_deck_moved_on(self):
+        """A chair who revised the deck after the proposal is told before approving the older file on top"""
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, = make_group_sessions(['sched'])
+        deck = SessionPresentationFactory(session=first, document__type_id='slides', document__rev='00', document__title='The Talk').document
+        proposer = PersonFactory()
+        chair = RoleFactory(group=first.group, name_id='chair').person
+        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+        f = BytesIO(b'proposed'); f.name = 'deck.txt'
+        self.assertEqual(self.client.post(self._slides_upload_url(first, deck.name), dict(file=f, title=deck.title)).status_code, 302)
+        submission = SlideSubmission.objects.latest('pk')
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
+
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        self.assertNotContains(self.client.get(url), 'has been revised since')
+        f = BytesIO(b'uploaded meanwhile'); f.name = 'deck.txt'
+        self.assertEqual(self.client.post(self._slides_upload_url(first, deck.name), dict(file=f, title=deck.title, approved='on')).status_code, 302)
+        deck.refresh_from_db()
+        self.assertEqual(deck.rev, '01')
+        r = self.client.get(url)
+        self.assertContains(r, 'has been revised since this file was proposed')
+        self.assertContains(r, '%s uploaded revision 01' % chair.plain_name())
+        self.assertContains(r, 'the current deck')
+
+    def test_approve_and_status_pages_list_sessions_in_schedule_order(self):
+        early, middle, late = make_group_sessions(['sched', 'sched', 'sched'])
+        # the oldest session is the last one in the week, so creation order and schedule order differ
+        a, b = early.timeslotassignments.get(), late.timeslotassignments.get()
+        a.timeslot, b.timeslot = b.timeslot, a.timeslot
+        a.save(); b.save()
+        submission = SlideSubmissionFactory(session=early, proposed_for=None)
+        submission.sessions.add(early, late)
+        deck = SessionPresentationFactory(session=early, document__type_id='slides', document__rev='00').document
+        SessionPresentationFactory(session=late, document=deck, rev='00')
+        SlideSubmission.objects.filter(pk=submission.pk).update(doc=deck, title=deck.title)
+        in_order = [material_session_label(late, 1), material_session_label(early, 3)]
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': early.meeting.number})
+
+        chair = RoleFactory(group=early.group, name_id='chair').person
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        r = self.client.get(url)
+        self.assertContains(r, 'for %s.' % ', '.join(in_order))
+        self.assertEqual([li.text() for li in PyQuery(r.content)('#currently-linked li').items()], in_order)
+
+        self.client.login(username=submission.submitter.user.username, password=submission.submitter.user.username + '+password')
+        r = self.client.get(url)
+        self.assertContains(r, ', '.join(in_order))
+
+    def test_approval_revises_the_deck_the_page_named(self):
+        """A plain proposal that came to match a deck is approved as its revision, however many sessions are added"""
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, middle, last = make_group_sessions(['sched', 'sched', 'sched'])
+        proposer = PersonFactory()
+        chair = RoleFactory(group=first.group, name_id='chair').person
+        self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+        f = BytesIO(b'proposed first'); f.name = 'deck.txt'
+        self.assertEqual(self.client.post(self._slides_upload_url(first), dict(file=f, title='The Talk')).status_code, 302)
+        submission = SlideSubmission.objects.get(title='The Talk')
+        self.assertIsNone(submission.doc, 'no such deck when proposed')
+        # meanwhile the chair uploads a deck under that title to Session 1 alone: named for the session
+        deck = SessionPresentationFactory(session=first, document__type_id='slides', document__rev='00', document__title='The Talk').document
+        Document.objects.filter(pk=deck.pk).update(name=material_document_name(first, 'slides', group_wide=False, title='The Talk')[0])
+        deck.refresh_from_db()
+
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual([li.text() for li in q('#currently-linked li').items()], [material_session_label(first, 1)])
+        self.assertEqual(sorted(b.attr('value') for b in q('input[name=sessions]').items()), sorted([str(middle.pk), str(last.pk)]))
+        # adding both other sessions would make a group-wide name; the deck the page named is revised all the same
+        decks_before = Document.objects.filter(type_id='slides').count()
+        r = self.client.post(url, dict(title='The Talk', sessions=[middle.pk, last.pk], approve='approve'))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(Document.objects.filter(type_id='slides').count(), decks_before, 'no second deck')
+        deck.refresh_from_db()
+        self.assertEqual(deck.rev, '01')
+        self.assertEqual(retrieve_bytes('slides', deck.uploaded_filename), b'proposed first')
+        for s in (first, middle, last):
+            self.assertEqual(s.presentations.get(document=deck).rev, '01')
+
+    def test_approve_warns_about_the_title_actually_posted(self):
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, = make_group_sessions(['sched'])
+        existing_title = 'Existing Talk'
+        name, _ = material_document_name(first, 'slides', group_wide=True, title=existing_title)
+        existing = DocumentFactory(type_id='slides', name=name, title=existing_title, rev='00')
+        SessionPresentationFactory(session=first, document=existing, rev='00')
+        submission = SlideSubmissionFactory(session=first, title='Something Else')
+        chair = RoleFactory(group=first.group, name_id='chair').person
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        r = self.client.get(url)
+        self.assertNotContains(r, 'new revision of the existing deck')
+        r = self.client.post(url, dict(title=existing_title))  # neither approve nor decline: re-rendered
+        self.assertContains(r, 'new revision of the existing deck %s' % existing.name)
+    def test_expired_proposal(self):
+        TestBlobstoreManager().emptyTestBlobstores()
+        submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
+        submission.session.meeting.importantdate_set.create(name_id='revsub', date=date_today() + datetime.timedelta(days=20))
+        chair = RoleFactory(group=submission.session.group, name_id='chair').person
+        self.assertTrue(exists_in_storage('staging', submission.filename))
+
+        proposed_at = submission.time
+        submission.expire()
+        submission.refresh_from_db()
+        self.assertEqual(submission.status_id, 'expired')
+        self.assertEqual(submission.time, proposed_at, 'closing a proposal does not restamp when it was made')
+        self.assertFalse(exists_in_storage('staging', submission.filename), 'the staged file goes with it')
+
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': submission.session.meeting.number})
+        self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'This proposal has expired')
+        self.assertFalse(PyQuery(r.content)('button[name=approve]'))
+        r = self.client.post(url, dict(title='too late', approve='approve'))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'This proposal has expired')
+        self.assertFalse(submission.session.presentations.exists())
+        submission.refresh_from_db()
+        self.assertEqual(submission.status_id, 'expired')
+    def test_one_pending_revision_per_deck(self):
+        """A second revision of a deck is refused until the pending one is withdrawn"""
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, second = make_group_sessions(['sched', 'sched'])
+        deck = SessionPresentationFactory(session=first, document__type_id='slides', document__rev='00', document__title='The Talk').document
+        SessionPresentationFactory(session=second, document=deck, rev='00')
+        Document.objects.filter(pk=deck.pk).update(name=material_document_name(first, 'slides', group_wide=True, title='The Talk')[0])
+        deck.refresh_from_db()
+        proposer, other, bystander = PersonFactory(), PersonFactory(), PersonFactory()
+        chair = RoleFactory(group=first.group, name_id='chair').person
+        revise_url = self._slides_upload_url(first, deck.name)
+        propose_url = self._slides_upload_url(first)
+
+        def login(person):
+            self.client.login(username=person.user.username, password=person.user.username + '+password')
+        def post_revision(url, content, **extra):
+            f = BytesIO(content); f.name = 'deck.txt'
+            return self.client.post(url, dict(file=f, title=deck.title, **extra))
+
+        login(proposer)
+        self.assertEqual(post_revision(revise_url, b'first attempt').status_code, 302)
+        submission = SlideSubmission.objects.latest('pk')
+        withdraw_url = urlreverse('ietf.meeting.views.withdraw_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
+        status_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
+
+        # the owner sees the pending revision and Withdraw, and no upload form
+        r = self.client.get(revise_url)
+        q = PyQuery(r.content)
+        self.assertContains(r, 'is awaiting approval. There can be only one proposed revision at a time.')
+        self.assertFalse(q('.alert form'), 'the button is not inside the message')
+        self.assertEqual(q('form[action="%s"] button' % withdraw_url).text(), 'Withdraw the pending revision')
+        self.assertContains(r, 'Withdrawing discards the file you proposed')
+        self.assertFalse(q('input[name=file]'), 'no upload while one is pending')
+        self.assertNotContains(r, 'This form will allow you', msg_prefix='nothing about a form that is not there')
+        self.assertNotContains(r, 'The new revision replaces it there too')
+        before = SlideSubmission.objects.count()
+        r = post_revision(revise_url, b'second attempt')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(SlideSubmission.objects.count(), before, 'the post is refused')
+        # nor may a plain proposal under the same title slip past (for all sessions, as the deck is named)
+        r = post_revision(propose_url, b'same title', apply_to_all='on')
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'already awaiting approval')
+        self.assertEqual(SlideSubmission.objects.count(), before)
+
+        # someone else is told whose revision is pending, without a Withdraw button
+        login(other)
+        r = self.client.get(revise_url)
+        q = PyQuery(r.content)
+        self.assertContains(r, 'proposed by %s' % proposer.plain_name())
+        self.assertContains(r, 'The chairs will see it.')
+        self.assertFalse(q('form[action="%s"]' % withdraw_url))
+        self.assertFalse(q('input[name=file]'))
+        self.assertEqual(post_revision(revise_url, b'competing attempt').status_code, 200)
+        self.assertEqual(SlideSubmission.objects.count(), before)
+
+        # only the owner can withdraw
+        self.assertEqual(self.client.post(withdraw_url).status_code, 403)
+        login(bystander)
+        self.assertEqual(self.client.post(withdraw_url).status_code, 403)
+        login(chair)
+        self.assertEqual(self.client.post(withdraw_url).status_code, 403, 'chairs decline, they do not withdraw')
+        login(proposer)
+        self.assertEqual(self.client.get(withdraw_url).status_code, 405, 'withdrawing is a POST')
+        r = self.client.get(status_url)
+        self.assertTrue(PyQuery(r.content)('form[action="%s"] button' % withdraw_url))
+        r = self.client.post(withdraw_url, dict(return_to='revise'))
+        self.assertRedirects(r, revise_url, fetch_redirect_response=False, msg_prefix='withdrawing from the revise page returns to it')
+        submission.refresh_from_db()
+        self.assertEqual(submission.status_id, 'withdrawn')
+        self.assertFalse(exists_in_storage('staging', submission.filename))
+        r = self.client.get(status_url)
+        self.assertContains(r, 'Withdrawn by you')
+        login(chair)
+        self.assertContains(self.client.get(status_url), 'This proposal was withdrawn')
+
+        # the way is clear again
+        login(proposer)
+        r = self.client.get(revise_url)
+        self.assertNotContains(r, 'There can be only one proposed revision at a time')
+        self.assertTrue(PyQuery(r.content)('input[name=file]'))
+        self.assertContains(r, 'This form will allow you')
+        self.assertContains(r, 'The new revision replaces it there too')
+        self.assertEqual(post_revision(revise_url, b'second attempt').status_code, 302)
+        self.assertEqual(SlideSubmission.objects.filter(doc=deck, status_id='pending').count(), 1)
+
+    def test_closing_a_proposal_clears_its_staged_blob_and_stored_object(self):
+        """Decline, withdraw, expire and approve all leave nothing live in the staging store"""
+        TestBlobstoreManager().emptyTestBlobstores()
+
+        def staged(submission):
+            row = StoredObject.objects.filter(store='staging', name=submission.filename).first()
+            return exists_in_storage('staging', submission.filename), (row.deleted if row else 'no row')
+
+        for how in ('decline', 'withdraw', 'expire', 'approve'):
+            first, = make_group_sessions(['sched'])
+            proposer = PersonFactory()
+            chair = RoleFactory(group=first.group, name_id='chair').person
+            self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+            f = BytesIO(b'staged bytes'); f.name = 'deck.txt'
+            self.assertEqual(self.client.post(self._slides_upload_url(first), dict(file=f, title=f'deck to {how}')).status_code, 302)
+            submission = SlideSubmission.objects.get(title=f'deck to {how}')
+            self.assertEqual(staged(submission), (True, None), how)
+            approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})
+
+            if how == 'decline':
+                self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+                self.assertEqual(self.client.post(approve_url, dict(title=submission.title, disapprove='disapprove')).status_code, 302)
+            elif how == 'withdraw':
+                self.assertEqual(self.client.post(urlreverse('ietf.meeting.views.withdraw_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': first.meeting.number})).status_code, 302)
+            elif how == 'expire':
+                submission.expire()
+            else:
+                self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+                self.assertEqual(self.client.post(approve_url, dict(title=submission.title, approve='approve')).status_code, 302)
+
+            submission.refresh_from_db()
+            exists, deleted = staged(submission)
+            self.assertFalse(exists, f'{how}: staged blob still readable')
+            self.assertIsNotNone(deleted, f'{how}: StoredObject row not stamped deleted')
+            self.assertNotEqual(deleted, 'no row', f'{how}: StoredObject row missing rather than stamped')
+            if how == 'approve':
+                self.assertEqual(submission.status_id, 'approved')
+                approved = StoredObject.objects.get(store='slides', name=submission.doc.uploaded_filename)
+                self.assertIsNone(approved.deleted, 'the approved deck is live in the slides store')
+                self.assertEqual(retrieve_bytes('slides', submission.doc.uploaded_filename), b'staged bytes')
+            else:
+                self.assertEqual(submission.status_id, {'decline': 'rejected', 'withdraw': 'withdrawn', 'expire': 'expired'}[how])
+
+    def test_resolving_a_proposal_records_who_and_when(self):
+        TestBlobstoreManager().emptyTestBlobstores()
+        first, = make_group_sessions(['sched'])
+        chair = RoleFactory(group=first.group, name_id='chair').person
+        proposer = PersonFactory()
+        first.meeting.importantdate_set.update(date=date_today() + datetime.timedelta(days=20))
+
+        def proposal(title):
+            self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+            f = BytesIO(b'bytes'); f.name = 'deck.txt'
+            self.assertEqual(self.client.post(self._slides_upload_url(first), dict(file=f, title=title)).status_code, 302)
+            return SlideSubmission.objects.get(title=title)
+        def approve_url(sub):
+            return urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': sub.pk, 'num': first.meeting.number})
+        def as_chair():
+            self.client.login(username=chair.user.username, password=chair.user.username + '+password')
+        def as_proposer():
+            self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
+
+        approved, declined, withdrawn, expired = (proposal(t) for t in ('to approve', 'to decline', 'to withdraw', 'to expire'))
+        for sub in (approved, declined, withdrawn, expired):
+            self.assertIsNone(sub.resolved)
+            self.assertIsNone(sub.resolved_by)
+
+        as_chair()
+        self.assertEqual(self.client.post(approve_url(approved), dict(title=approved.title, approve='approve')).status_code, 302)
+        self.assertEqual(self.client.post(approve_url(declined), dict(title=declined.title, disapprove='disapprove')).status_code, 302)
+        as_proposer()
+        self.assertEqual(self.client.post(urlreverse('ietf.meeting.views.withdraw_proposed_slides', kwargs={'slidesubmission_id': withdrawn.pk, 'num': first.meeting.number})).status_code, 302)
+        expired.expire()
+
+        for sub, status, by in ((approved, 'approved', chair), (declined, 'rejected', chair), (withdrawn, 'withdrawn', proposer), (expired, 'expired', Person.objects.get(name='(System)'))):
+            sub.refresh_from_db()
+            self.assertEqual((sub.status_id, sub.resolved_by), (status, by), sub.title)
+            self.assertIsNotNone(sub.resolved, sub.title)
+            self.assertGreater(sub.resolved, sub.time, 'resolved after proposed, and the proposal time itself untouched')
+
+        as_proposer()
+        when = approved.resolved.strftime('%-d %B %Y')
+        self.assertContains(self.client.get(approve_url(approved)), 'Approved by %s on %s' % (chair.plain_name(), when))
+        self.assertContains(self.client.get(approve_url(declined)), 'Declined by %s on %s' % (chair.plain_name(), when))
+        self.assertContains(self.client.get(approve_url(withdrawn)), 'Withdrawn by you on %s' % when)
+        self.assertContains(self.client.get(approve_url(expired)), 'Expired on %s' % when)
+
     def test_disapprove_proposed_slides(self):
         submission = SlideSubmissionFactory()
         submission.session.meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
@@ -7923,7 +8525,7 @@ class MaterialsTests(TestCase):
         self.assertRegex(r.content.decode(), r"These\s+slides\s+have\s+already\s+been\s+declined")
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
+    @patch("ietf.meeting.utils.SlidesManager")
     def test_approve_proposed_slides(self, mock_slides_manager_cls):
         submission = SlideSubmissionFactory()
         session = submission.session
@@ -7965,7 +8567,7 @@ class MaterialsTests(TestCase):
         self.assertIn('Slides approved', outbox[0]['Subject'])
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
+    @patch("ietf.meeting.utils.SlidesManager")
     def test_approve_proposed_slides_multisession_apply_one(self, mock_slides_manager_cls):
         TestBlobstoreManager().emptyTestBlobstores()
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
@@ -7978,13 +8580,19 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertTrue(q('#id_apply_to_all'))
-        r = self.client.post(url,dict(title='yet another title',approve='approve'))
+        boxes = q('input[name=sessions]')
+        self.assertEqual(len(boxes), 2)
+        self.assertEqual([b.attr('value') for b in boxes.items() if b.is_(':checked')], [str(session1.pk)], 'prefilled with what was proposed')
+        self.assertIn('(requested)', q('label[for=%s]' % boxes.eq(0).attr('id')).text())
+        self.assertNotIn('(requested)', q('label[for=%s]' % boxes.eq(1).attr('id')).text())
+        self.assertContains(r, 'for %s.' % material_session_label(session1, 1), msg_prefix='the intro names the requested sessions')
+        r = self.client.post(url,dict(title='yet another title',sessions=[session1.pk],approve='approve'))
         submission.refresh_from_db()
         self.assertIsNotNone(submission.doc)
         self.assertEqual(r.status_code,302)
         self.assertEqual(session1.presentations.count(),1)
         self.assertEqual(session2.presentations.count(),0)
+        self.assertIn(session1.docname_token(), submission.doc.name, 'not every scheduled session, so named for its session')
         self.assertEqual(mock_slides_manager_cls.call_count, 1)
         self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
         self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 1)
@@ -7994,7 +8602,7 @@ class MaterialsTests(TestCase):
         )
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
+    @patch("ietf.meeting.utils.SlidesManager")
     def test_approve_proposed_slides_multisession_apply_all(self, mock_slides_manager_cls):
         TestBlobstoreManager().emptyTestBlobstores()
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
@@ -8006,11 +8614,12 @@ class MaterialsTests(TestCase):
         login_testing_unauthorized(self, chair.user.username, url)
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
-        r = self.client.post(url,dict(title='yet another title',apply_to_all=1,approve='approve'))
+        r = self.client.post(url,dict(title='yet another title',sessions=[session1.pk, session2.pk],approve='approve'))
         submission.refresh_from_db()
         self.assertEqual(r.status_code,302)
         self.assertEqual(session1.presentations.count(),1)
         self.assertEqual(session2.presentations.count(),1)
+        self.assertNotIn('sess', submission.doc.name, 'every scheduled session, so named for the group')
         self.assertEqual(mock_slides_manager_cls.call_count, 1)
         self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
         self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 2)
@@ -8023,7 +8632,7 @@ class MaterialsTests(TestCase):
         )
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
+    @patch("ietf.meeting.utils.SlidesManager")
     def test_approve_proposed_slides_apply_to_all_covers_scheduled_sessions_only(self, mock_slides_manager_cls):
         TestBlobstoreManager().emptyTestBlobstores()
         first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
@@ -8034,9 +8643,9 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(q('#id_apply_to_all'))
+        self.assertEqual([b.attr('value') for b in q('input[name=sessions]').items()], [str(first.pk), str(last.pk)], 'only scheduled sessions are offered')
         self.assertIn('Session 2', q('h2').text(), 'Unscheduled sessions must not count toward the session number')
-        r = self.client.post(url, dict(title='a deck for every session', apply_to_all=1, approve='approve'))
+        r = self.client.post(url, dict(title='a deck for every session', sessions=[first.pk, last.pk], approve='approve'))
         self.assertEqual(r.status_code, 302)
         submission.refresh_from_db()
         self.assertEqual(first.presentations.count(), 1)
@@ -8051,32 +8660,39 @@ class MaterialsTests(TestCase):
         )
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
-    def test_approve_proposed_slides_for_unscheduled_session_touches_only_that_session(self, mock_slides_manager_cls):
+    @patch("ietf.meeting.utils.SlidesManager")
+    def test_approve_proposed_slides_for_cancelled_session_goes_to_a_scheduled_one(self, mock_slides_manager_cls):
         TestBlobstoreManager().emptyTestBlobstores()
         first, cancelled, last = make_group_sessions(['sched', 'canceled', 'sched'])
         submission = SlideSubmissionFactory(session=cancelled)
+        submission.sessions.set([cancelled])
         chair = RoleFactory(group=cancelled.group, name_id='chair').person
         url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id': submission.pk, 'num': cancelled.meeting.number})
         login_testing_unauthorized(self, chair.user.username, url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertFalse(q('#id_apply_to_all'))
+        boxes = q('input[name=sessions]')
+        self.assertEqual([b.attr('value') for b in boxes.items()], [str(first.pk), str(last.pk)], 'the cancelled session is not on offer')
+        self.assertFalse(boxes.is_(':checked'), 'nothing preselected: the approver must choose')
         self.assertNotIn('Session', q('h2').text(), 'An unscheduled session has no session number')
-        r = self.client.post(url, dict(title='a deck for a cancelled session', apply_to_all=1, approve='approve'))
+        r = self.client.post(url, dict(title='a deck for a cancelled session', approve='approve'))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Choose at least one session')
+        r = self.client.post(url, dict(title='a deck for a cancelled session', sessions=[last.pk], approve='approve'))
         self.assertEqual(r.status_code, 302)
         submission.refresh_from_db()
         self.assertEqual(first.presentations.count(), 0)
-        self.assertEqual(last.presentations.count(), 0)
-        self.assertEqual(cancelled.presentations.count(), 1)
+        self.assertEqual(cancelled.presentations.count(), 0)
+        self.assertEqual(last.presentations.get().document, submission.doc)
+        self.assertIn(last.docname_token(), submission.doc.name, 'named for the session it landed on')
         self.assertEqual(
             mock_slides_manager_cls.return_value.add.call_args_list,
-            [call(session=cancelled, slides=submission.doc, order=1)],
+            [call(session=last, slides=submission.doc, order=1)],
         )
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
-    @patch("ietf.meeting.views.SlidesManager")
+    @patch("ietf.meeting.utils.SlidesManager")
     def test_submit_and_approve_multiple_versions(self, mock_slides_manager_cls):
         # create session in a meeting in the near future, not the past
         session = SessionFactory(meeting__type_id='ietf', meeting__date=date_today() + datetime.timedelta(days=3))
@@ -8121,25 +8737,28 @@ class MaterialsTests(TestCase):
         r = self.client.post(upload_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
         self.assertEqual(r.status_code, 302)
 
+        # a second revision while one is pending is refused
         test_file = BytesIO(b'this is not really a slide, but it is third version of it')
         test_file.name = 'not_really.txt'
         r = self.client.post(upload_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
-        self.assertEqual(r.status_code, 302)
-        self.client.logout()       
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'already awaiting approval')
+        self.client.logout()
 
-        (first_submission, second_submission) = SlideSubmission.objects.filter(session=session, status__slug = 'pending').order_by('id')
-
-        self.assertTrue(exists_in_storage("staging", first_submission.filename))
+        pending = SlideSubmission.objects.filter(session=session, status__slug='pending')
+        self.assertEqual(pending.count(), 1)
+        second_submission = pending.get()
+        self.assertEqual(second_submission.doc, submission.doc, 'the same title is a revision of the approved deck')
         self.assertTrue(exists_in_storage("staging", second_submission.filename))
         approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':second_submission.pk,'num':second_submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, approve_url)
         r = self.client.post(approve_url,dict(title=submission.title,approve='approve'))
-        first_submission.refresh_from_db()
         second_submission.refresh_from_db()
-        self.assertTrue(exists_in_storage("staging", first_submission.filename))
+        self.assertEqual(r.status_code,302)
         self.assertFalse(exists_in_storage("staging", second_submission.filename))
         self.assertTrue(exists_in_storage("slides", second_submission.doc.uploaded_filename))
-        self.assertEqual(r.status_code,302)
+        self.assertEqual(second_submission.doc.rev, '01')
+        self.assertIn(b'another version', retrieve_bytes("slides", second_submission.doc.uploaded_filename))
         self.assertEqual(mock_slides_manager_cls.call_count, 1)
         self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
         self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 0)
@@ -8148,17 +8767,8 @@ class MaterialsTests(TestCase):
             mock_slides_manager_cls.return_value.revise.call_args,
             call(session=session, slides=second_submission.doc),
         )
-        mock_slides_manager_cls.reset_mock()
-
-        disapprove_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':first_submission.pk,'num':first_submission.session.meeting.number})
-        r = self.client.post(disapprove_url,dict(title='some title',disapprove="disapprove"))
-        self.assertEqual(r.status_code,302)
         self.client.logout()
-        self.assertFalse(mock_slides_manager_cls.called)
-        self.assertFalse(exists_in_storage("staging", first_submission.filename))
-
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(),0)
-        self.assertEqual(SlideSubmission.objects.filter(status__slug = 'rejected').count(),1)
         self.assertEqual(session.presentations.first().document.rev,'01')
         path = os.path.join(submission.session.meeting.get_materials_path(),'slides')
         filename = os.path.join(path,session.presentations.first().document.name+'-01.txt')
@@ -8166,7 +8776,7 @@ class MaterialsTests(TestCase):
         fd = io.open(filename, 'r')
         contents = fd.read()
         fd.close()
-        self.assertIn('third version', contents)
+        self.assertIn('another version', contents)
 
     @override_settings(
         MEETECHO_API_CONFIG="fake settings"

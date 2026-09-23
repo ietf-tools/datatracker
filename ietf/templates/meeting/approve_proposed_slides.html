@@ -19,17 +19,41 @@
         </h2>
     {% endif %}
     <p class="alert alert-info my-3">
-        {{ submission.submitter }} proposed these slides for this session:
-        <a href="{{ submission.staged_url }}">{{ submission.staged_url }}</a>.
+        {{ submission.submitter }} proposed
+        <a href="{% url 'ietf.meeting.views.proposed_slides_file' slidesubmission_id=submission.pk num=submission.session.meeting.number %}">{{ submission.filename }}</a>
+        for {{ requested|join:", "|default:"this session" }}.
     </p>
+    {% if submission.doc %}
+        <p class="alert {% if linked %}alert-info{% else %}alert-warning{% endif %} my-3">
+            This is a proposed new revision of <a href="{% url 'ietf.doc.views_doc.document_main' name=submission.doc.name %}">{{ submission.doc.title }} ({{ submission.doc.name }})</a>, now at revision {{ submission.doc.rev }}.
+            {% if not linked %}The deck is no longer on any session of this meeting. Choose where to put the new revision.{% endif %}
+        </p>
+        {% if moved_on %}
+            <p class="alert alert-warning my-3">
+                The deck has been revised since this file was proposed on {{ submission.time|date:"j F" }}: {{ moved_on.by }} uploaded revision {{ moved_on.rev }} on {{ moved_on.time|date:"j F" }}.
+                Approving will make this proposed file, which predates that revision, the current deck.
+            </p>
+        {% endif %}
+    {% endif %}
     {% if existing_doc %}
         <p class="alert alert-warning my-3">
-            Warning: If you approve this set of slides with the proposed title of "{{ submission.title }}", it will replace an existing set of slides. If that's not what you intend, please adjust the title.
+            Warning: approving with the title "{{ form.title.value }}" will make this a new revision of the existing deck {{ existing_doc.name }}. If that's not what you intend, adjust the title.
         </p>
     {% endif %}
     <form enctype="multipart/form-data" method="post" class="my-3">
         {% csrf_token %}
-        {% bootstrap_form form %}
+        {% bootstrap_form_errors form type="non_fields" %}
+        {% bootstrap_field form.title %}
+        {% if linked %}
+            <div class="mb-3">
+                <div class="form-label">Currently linked to</div>
+                <ul class="list-unstyled mb-0" id="currently-linked">
+                    {% for label in linked %}<li>{{ label }}</li>{% endfor %}
+                </ul>
+                <div class="form-text">The new revision replaces the deck at each of these.</div>
+            </div>
+        {% endif %}
+        {% if form.sessions %}{% bootstrap_field form.sessions %}{% endif %}
         <button type="submit" class="btn btn-primary" name="approve" value="approve">Approve</button>
         <button type="submit"
                 class="btn btn-warning"

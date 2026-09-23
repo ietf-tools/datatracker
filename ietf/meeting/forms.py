@@ -573,14 +573,18 @@ class UploadSlidesForm(ApplyToSessionsFileUploadForm):
                 self.fields.pop('apply_to_all')
 
     def clean_title(self):
-        title = self.cleaned_data['title']
-        # The current tables only handles Unicode BMP:
-        if ord(max(title)) > 0xffff:
-            raise forms.ValidationError("The title contains characters outside the Unicode BMP, which is not currently supported")
-        if self.session.meeting.type_id=='interim':
-            if re.search(r'-\d{2}$', title):
-                raise forms.ValidationError("Interim slides currently may not have a title that ends with something that looks like a revision number (-nn)")
-        return title
+        return validate_slides_title(self.cleaned_data['title'], self.session.meeting)
+
+
+def validate_slides_title(title, meeting):
+    """The title a slide deck is named from, or a ValidationError; shared by uploading and approving"""
+    # The current tables only handles Unicode BMP:
+    if ord(max(title)) > 0xffff:
+        raise forms.ValidationError("The title contains characters outside the Unicode BMP, which is not currently supported")
+    if meeting.type_id == 'interim':
+        if re.search(r'-\d{2}$', title):
+            raise forms.ValidationError("Interim slides currently may not have a title that ends with something that looks like a revision number (-nn)")
+    return title
 
 
 class ImportMinutesForm(ApplyToSessionsFormMixin, forms.Form):

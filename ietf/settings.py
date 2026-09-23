@@ -928,10 +928,6 @@ OPENSSL_COMMAND = '/usr/bin/openssl'
 DAYS_TO_EXPIRE_NOMINATION_LINK = ''
 NOMINEE_FEEDBACK_TYPES = ['comment', 'questio', 'nomina', 'obe']
 
-# SlideSubmission settings
-SLIDE_STAGING_PATH = '/a/www/www6s/staging/'
-SLIDE_STAGING_URL = 'https://www.ietf.org/staging/'
-
 # ID Submission Tool settings
 IDSUBMIT_FROM_EMAIL = 'IETF I-D Submission Tool <idsubmission@ietf.org>'
 IDSUBMIT_ANNOUNCE_FROM_EMAIL = 'internet-drafts@ietf.org'
@@ -1076,6 +1072,8 @@ MEETING_DOC_GREFS = {
 MEETING_MATERIALS_DEFAULT_SUBMISSION_START_DAYS = 90
 MEETING_MATERIALS_DEFAULT_SUBMISSION_CUTOFF_DAYS = 26
 MEETING_MATERIALS_DEFAULT_SUBMISSION_CORRECTION_DAYS = 50
+# Slide proposals still pending this long after an interim ends are expired; IETF meetings expire theirs when proceedings are finalized
+INTERIM_SLIDE_PROPOSAL_EXPIRY_DAYS = 14
 
 MEETING_VALID_UPLOAD_EXTENSIONS = {
     'agenda':       ['.txt','.html','.htm', '.md', ],

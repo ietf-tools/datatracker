@@ -2,24 +2,36 @@
 {# Copyright The IETF Trust 2020, All Rights Reserved #}
 {% load origin static django_bootstrap5 %}
 {% block title %}
-    Approved Slides for {{ submission.session.meeting }} : {{ submission.session.group.acronym }}
+    Proposed Slides for {{ submission.session.meeting }} : {{ submission.session.group.acronym }}
 {% endblock %}
 {% block content %}
     {% origin %}
     <h1 class="mb-3">
-        These slides have already been
-        {% if submission.status.slug == 'approved' %}
-            approved
+        {% if submission.status.slug == 'expired' %}
+            This proposal has expired
+        {% elif submission.status.slug == 'withdrawn' %}
+            This proposal was withdrawn
         {% else %}
-            declined
+            These slides have already been
+            {% if submission.status.slug == 'approved' %}
+                approved
+            {% else %}
+                declined
+            {% endif %}
         {% endif %}
     </h1>
     <p>
-        The slides from {{ submission.submitter }} have already been
-        {% if submission.status.slug == 'approved' %}
-            approved.
+        {% if submission.status.slug == 'expired' %}
+            The slides from {{ submission.submitter }} were still awaiting approval when this meeting's materials closed, so the proposal expired and the uploaded file has been discarded.
+        {% elif submission.status.slug == 'withdrawn' %}
+            {{ submission.submitter }} withdrew this proposal and the uploaded file has been discarded.
         {% else %}
-            declined.
+            The slides from {{ submission.submitter }} have already been
+            {% if submission.status.slug == 'approved' %}
+                approved.
+            {% else %}
+                declined.
+            {% endif %}
         {% endif %}
         No further action is needed.
     </p>

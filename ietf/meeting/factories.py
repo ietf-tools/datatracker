@@ -234,15 +234,15 @@ class SlideSubmissionFactory(factory.django.DjangoModelFactory):
 
     session = factory.SubFactory(SessionFactory)
     title = factory.Faker('sentence')
-    filename = factory.Sequence(lambda n: 'test_slide_%d'%n)
+    filename = factory.Sequence(lambda n: 'test_slide_%d.txt'%n)
     submitter = factory.SubFactory(PersonFactory)
 
-    make_file = factory.PostGeneration(
-                    lambda obj, create, extracted, **kwargs: open(obj.staged_filepath(),'a').close()
-                )
-    
     store_submission = factory.PostGeneration(
-        lambda obj, create, extracted, **kwargs: store_str("staging", obj.filename, "")
+        lambda obj, create, extracted, **kwargs: store_str("staging", obj.filename, "not really slides")
+    )
+
+    proposed_for = factory.PostGeneration(
+        lambda obj, create, extracted, **kwargs: obj.sessions.add(obj.session) if create else None
     )
 
 class ConstraintFactory(factory.django.DjangoModelFactory):

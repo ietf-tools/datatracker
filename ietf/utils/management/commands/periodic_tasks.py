@@ -84,6 +84,26 @@ class Command(BaseCommand):
         )
 
         PeriodicTask.objects.get_or_create(
+            name="Expire interim slide proposals",
+            task="ietf.meeting.tasks.expire_interim_slide_proposals_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["daily"],
+                description="Expire slide proposals still pending two weeks after an interim ended",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Expire slide proposals for past IETF meetings",
+            task="ietf.meeting.tasks.expire_past_ietf_slide_proposals_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["daily"],
+                description="One-time clean-up, run by hand: expire proposals still pending for IETF meetings past their corrections cutoff (revsub)",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
             name="Fetch meeting attendance",
             task="ietf.stats.tasks.fetch_meeting_attendance_task",
             defaults=dict(

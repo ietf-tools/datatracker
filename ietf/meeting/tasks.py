@@ -7,9 +7,12 @@ import datetime
 from itertools import batched
 
 from celery import shared_task, chain
+from django.conf import settings
 from django.db.models import IntegerField
 from django.db.models.functions import Cast
 from django.utils import timezone
+
+from ietf.utils.timezone import date_today
 
 from ietf.utils import log
 from .models import Meeting
@@ -21,6 +24,7 @@ from .utils import (
 from .views import generate_agenda_data
 from .utils import fetch_attendance_from_meetings, fix_missing_registrations
 from .utils import fix_mismatched_registrations
+from .utils import expire_pending_slide_proposals
 
 
 @shared_task
@@ -259,3 +263,39 @@ def fix_missing_registrations_task():
 def fix_mismatched_registrations_task():
     """One time task to fix mismatched meeting.Registrations"""
     fix_mismatched_registrations()
+
+
+@shared_task
+def expire_interim_slide_proposals_task():
+    """Expire slide proposals still pending INTERIM_SLIDE_PROPOSAL_EXPIRY_DAYS after an interim ended"""
+    cutoff = timezone.now() - datetime.timedelta(days=settings.INTERIM_SLIDE_PROPOSAL_EXPIRY_DAYS)
+    with_pending = Meeting.objects.filter(
+        type_id="interim", session__slidesubmission__status_id="pending"
+    ).distinct()
+    for meeting in with_pending:
+        if meeting.end_datetime() <= cutoff:
+            expire_pending_slide_proposals(meeting)
+
+
+@shared_task
+def expire_past_ietf_slide_proposals_task(meeting_number=None, dry_run=False):
+    """Expire slide proposals still pending for IETF meetings whose corrections cutoff (revsub) has passed
+
+    A one-time clean-up for meetings finalized before proceedings finalization began expiring them;
+    run by hand from the periodic task admin. meeting_number limits it to one meeting, for a first
+    try; dry_run only logs what would be expired, per meeting.
+    """
+    today = date_today()
+    with_pending = Meeting.objects.filter(
+        type_id="ietf", session__slidesubmission__status_id="pending"
+    ).distinct()
+    if meeting_number is not None:
+        with_pending = with_pending.filter(number=meeting_number)
+    expired = 0
+    for meeting in with_pending.order_by("date"):
+        if meeting.get_submission_correction_date() < today:
+            count = expire_pending_slide_proposals(meeting, dry_run=dry_run)
+            log.log(f"{'Would expire' if dry_run else 'Expired'} {count} slide proposals for {meeting}")
+            expired += count
+    log.log(f"{'Would expire' if dry_run else 'Expired'} {expired} slide proposals for past IETF meetings")
+    return expired
