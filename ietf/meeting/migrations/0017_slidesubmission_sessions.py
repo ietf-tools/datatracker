@@ -33,8 +33,7 @@ def forward(apps, schema_editor):
 
 
 def reverse(apps, schema_editor):
-    SlideSubmission = apps.get_model("meeting", "SlideSubmission")
-    SlideSubmission.sessions.through.objects.all().delete()
+    pass  # removing the field drops the through table, rows and all
 
 
 class Migration(migrations.Migration):
