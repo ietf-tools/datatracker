@@ -365,6 +365,8 @@ class ApplyToChoicesTests(TestCase):
         self.assertEqual(material_session_label(first), material_session_label(first, 1))
         self.assertIn('cancelled', material_session_label(cancelled))
         self.assertNotIn('Session', material_session_label(cancelled))
+        alone, = make_group_sessions(['sched'])
+        self.assertRegex(material_session_label(alone), r'^[A-Z][a-z]{2} \d\d:\d\d$', 'a lone scheduled session is named by its time alone')
 
 
 class GroupWideMaterialNameTests(TestCase):

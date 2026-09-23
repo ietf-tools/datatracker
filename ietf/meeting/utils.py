@@ -756,7 +756,11 @@ class SessionNotScheduledError(Exception):
 
 
 def material_session_label(session, session_number=None):
-    """How the material pages name a session: "Session 2: Tue 09:30", or the time and status if it has no number"""
+    """How the material pages name a session: "Session 2: Tue 09:30", or the time if it has no number
+
+    A session without a number is either the group's only scheduled one, named by its time alone, or
+    one that is not scheduled, whose status is the point: "Tue 14:00 (canceled)".
+    """
     if session_number is None:
         _, session_number = sessions_covered_by_apply_to_all(session)
     ota = session.official_timeslotassignment()
@@ -764,7 +768,7 @@ def material_session_label(session, session_number=None):
     if session_number:
         return f"Session {session_number}: {when}"
     status = current_session_status(session)
-    return f"{when} ({status.name.lower()})" if status else when
+    return f"{when} ({status.name.lower()})" if status and status.slug != "sched" else when
 
 
 @dataclass
