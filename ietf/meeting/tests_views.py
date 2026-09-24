@@ -8530,12 +8530,31 @@ class MaterialsTests(TestCase):
             self.assertIsNotNone(sub.resolved, sub.title)
             self.assertGreater(sub.resolved, sub.time, 'resolved after proposed, and the proposal time itself untouched')
 
+        def _date_when(when):
+            # Helper to format a timestamp as it should appear in the template
+            return when.astimezone(first.meeting.tz()).strftime("%-d %B %Y")
+
         as_proposer()
-        when = approved.resolved.strftime('%-d %B %Y')
-        self.assertContains(self.client.get(approve_url(approved)), 'Approved by %s on %s' % (escape(chair.plain_name()), when))
-        self.assertContains(self.client.get(approve_url(declined)), 'Declined by %s on %s' % (escape(chair.plain_name()), when))
-        self.assertContains(self.client.get(approve_url(withdrawn)), 'Withdrawn by you on %s' % when)
-        self.assertContains(self.client.get(approve_url(expired)), 'Expired on %s' % when)
+        self.assertContains(
+            self.client.get(approve_url(approved)),
+            "Approved by {} on {}".format(
+                escape(chair.plain_name()), _date_when(approved.resolved)
+            ),
+        )
+        self.assertContains(
+            self.client.get(approve_url(declined)),
+            "Declined by {} on {}".format(
+                escape(chair.plain_name()), _date_when(declined.resolved)
+            ),
+        )
+        self.assertContains(
+            self.client.get(approve_url(withdrawn)),
+            "Withdrawn by you on {}".format(_date_when(withdrawn.resolved)),
+        )
+        self.assertContains(
+            self.client.get(approve_url(expired)),
+            "Expired on {}".format(_date_when(expired.resolved)),
+        )
 
     def test_disapprove_proposed_slides(self):
         submission = SlideSubmissionFactory()
