@@ -65,9 +65,17 @@ class Blob(models.Model):
         return f"{self.bucket}:{self.name}"
 
     def save(self, **kwargs):
+        # If we're updating the content field, we must update checksum also. Add it
+        # to update_fields if that is set. If update_fields is None, all fields are
+        # being updated.
+        update_fields = kwargs.get("update_fields")
+        if update_fields is None or "content" in update_fields:
+            self.checksum = sha384(self.content, usedforsecurity=False).hexdigest()
+            if update_fields is not None:
+                kwargs["update_fields"] = {*update_fields, "checksum"}
+        # Now the actual save
         db = get_blobdb()
         with transaction.atomic(using=db):
-            self.checksum = sha384(self.content, usedforsecurity=False).hexdigest()
             super().save(**kwargs)
             self._emit_blob_change_event(using=db)
 
