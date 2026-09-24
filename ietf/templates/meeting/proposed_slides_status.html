@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2026, All Rights Reserved #}
-{% load origin %}
+{% load origin tz %}
 {% block title %}
     Your proposed slides for {{ submission.session.meeting }} : {{ submission.session.group.acronym }}
 {% endblock %}
-{% block content %}
+{% block content %}{% timezone submission.session.meeting.tz %}
     {% origin %}
     <h1>
         Your proposed slides for {{ submission.session.meeting }}
@@ -50,4 +50,4 @@
     <a class="btn btn-primary" href="{% url 'ietf.meeting.views.session_details' num=submission.session.meeting.number acronym=submission.session.group.acronym %}">
         Back to the session materials
     </a>
-{% endblock %}
+{% endtimezone %}{% endblock %}
