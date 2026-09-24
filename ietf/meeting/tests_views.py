@@ -8534,17 +8534,20 @@ class MaterialsTests(TestCase):
             # Helper to format a timestamp as it should appear in the template
             return when.astimezone(first.meeting.tz()).strftime("%-d %B %Y")
 
+        # Chair name is rendered with escaping into the HTML we are inspecting
+        escaped_chair_name = escape(chair.plain_name())
+
         as_proposer()
         self.assertContains(
             self.client.get(approve_url(approved)),
             "Approved by {} on {}".format(
-                escape(chair.plain_name()), _date_when(approved.resolved)
+                escaped_chair_name, _date_when(approved.resolved)
             ),
         )
         self.assertContains(
             self.client.get(approve_url(declined)),
             "Declined by {} on {}".format(
-                escape(chair.plain_name()), _date_when(declined.resolved)
+                escaped_chair_name, _date_when(declined.resolved)
             ),
         )
         self.assertContains(
