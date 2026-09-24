@@ -7,44 +7,43 @@ from tempfile import TemporaryDirectory
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
-from drf_spectacular.utils import OpenApiParameter
-from rest_framework import mixins, parsers, serializers, viewsets, status
-from rest_framework.decorators import action
-from rest_framework.exceptions import APIException
-from rest_framework.views import APIView
-from rest_framework.response import Response
-
-from django.db.models import CharField as ModelCharField, OuterRef, Subquery, Q
+from django.db.models import CharField as ModelCharField
+from django.db.models import OuterRef, Q, Subquery
 from django.db.models.functions import Coalesce
 from django.http import Http404
-from drf_spectacular.utils import extend_schema_view, extend_schema
-from rest_framework import generics
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from rest_framework import generics, mixins, parsers, serializers, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import APIException
 from rest_framework.fields import CharField as DrfCharField
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from ietf.api.serializers_rpc import (
-    PersonSerializer,
-    FullDraftSerializer,
     DraftSerializer,
-    SubmittedToQueueSerializer,
-    OriginalStreamSerializer,
-    ReferenceSerializer,
-    EmailPersonSerializer,
-    RfcWithAuthorsSerializer,
     DraftWithAuthorsSerializer,
-    NotificationAckSerializer,
-    RfcPubSerializer,
-    RfcFileSerializer,
     EditableRfcSerializer,
+    EmailPersonSerializer,
+    FullDraftSerializer,
+    NotificationAckSerializer,
+    OriginalStreamSerializer,
+    PersonSerializer,
+    ReferenceSerializer,
+    RfcFileSerializer,
+    RfcPubSerializer,
+    RfcWithAuthorsSerializer,
+    SubmittedToQueueSerializer,
 )
-from ietf.doc.models import Document, DocHistory, RfcAuthor, DocEvent
+from ietf.doc.models import DocEvent, DocHistory, Document, RfcAuthor
 from ietf.doc.serializers import RfcAuthorSerializer
-from ietf.doc.storage_utils import remove_from_storage, store_file, exists_in_storage
+from ietf.doc.storage_utils import exists_in_storage, remove_from_storage, store_file
 from ietf.doc.tasks import (
-    signal_update_rfc_metadata_task,
     rebuild_reference_relations_task,
+    signal_update_rfc_metadata_task,
     trigger_red_precomputer_task,
+    update_rfc_searchindex_popularities_task,
     update_rfc_searchindex_task,
 )
 from ietf.person.models import Email, Person
@@ -604,7 +603,10 @@ class ProcessRpcQueueView(APIView):
     @extend_schema(
         operation_id="process_rpc_queue",
         summary="Process the provided RPC queue",
-        description="Schedules parsing the provided queue to update documents with change dqueue data",
+        description=(
+                "Schedules parsing the provided queue to update documents with changed "
+                "queue data"
+        ),
         responses={202: None},
         request=RpcQueueDataSerializer,
     )
@@ -613,3 +615,22 @@ class ProcessRpcQueueView(APIView):
         serializer.is_valid(raise_exception=True)
         process_rpc_queue_task.delay(serializer.validated_data["data"])
         return Response(status=202)
+
+
+class RfcPopularityView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
+    
+    @extend_schema(
+        operation_id="refresh_rfc_popularity",
+        summary="Refresh RFC popularity data",
+        description=(
+            "Notifies Datatracker that RFC popularity has changed and dependent data "
+            "should be updated appropriately"
+        ),
+        responses={202: None},
+        request=None,
+    )
+    def post(self, request):
+        update_rfc_searchindex_popularities_task.delay()
+        return Response(status=202)
+

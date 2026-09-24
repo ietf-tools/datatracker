@@ -31,6 +31,11 @@ urlpatterns = [
         name="ietf.api.purple_api.upload_rfc_files",
     ),
     path(
+        r"rfc/popularity_updated/",
+        views_rpc.RfcPopularityView.as_view(),
+        name="ietf.api.purple_api.notify_rfc_popularity_updated",
+    ),
+    path(
         r"rfc_index/refresh/",
         views_rpc.RfcIndexView.as_view(),
         name="ietf.api.purple_api.refresh_rfc_index",

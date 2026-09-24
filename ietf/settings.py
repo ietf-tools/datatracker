@@ -816,10 +816,18 @@ MATERIALS_TYPES_SERVED_BY_WORKER = [
 ]
 
 # Other storages
-STORAGES["red_bucket"] = {
-    "BACKEND": "django.core.files.storage.InMemoryStorage",
-    "OPTIONS": {"location": "red_bucket"},
-}
+STORAGES.update(
+    {
+        "red_bucket": {
+            "BACKEND": "django.core.files.storage.InMemoryStorage",
+            "OPTIONS": {"location": "red_bucket"},
+        },
+        "reef_bucket": {
+            "BACKEND": "django.core.files.storage.InMemoryStorage",
+            "OPTIONS": {"location": "reef_bucket"},
+        }
+    }
+)
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
@@ -998,6 +1006,9 @@ RFC_FILE_TYPES = IDSUBMIT_FILE_TYPES
 # Paths in the red bucket
 RFCINDEX_INPUT_PATH = "other/"
 RFCINDEX_OUTPUT_PATH = "other/"
+
+# Paths in the reef bucket
+POPULARITY_JSON_PATH = "popularity.json"
 
 IDSUBMIT_MAX_DRAFT_SIZE =  {
     'txt':  2*1024*1024,  # Max size of txt draft file in bytes

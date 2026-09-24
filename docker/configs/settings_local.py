@@ -112,6 +112,13 @@ for storagename in ARTIFACT_STORAGE_NAMES:
 #     "OPTIONS": {"location": "red_bucket"},
 # }
 
+# For dev involving RFC popularity, create a reef_bucket/ directory in the project
+# root and uncomment. Popularity belongs in popularity.json.
+# STORAGES["reef_bucket"] = {
+#     "BACKEND": "django.core.files.storage.FileSystemStorage",
+#     "OPTIONS": {"location": "reef_bucket"},
+# }
+
 APP_API_TOKENS = {
     "ietf.api.red_api" : ["devtoken", "redtoken"],  # Not a real secret
     "ietf.api.views_rpc" : ["devtoken"],  # Not a real secret

@@ -2,9 +2,10 @@
 """Search indexing utilities"""
 
 import re
+from collections.abc import Callable
 from itertools import batched
 from math import floor
-from typing import Iterable
+from typing import Any, Iterable
 from urllib.parse import urljoin
 
 import httpx  # just for exceptions
@@ -16,6 +17,7 @@ from typesense.types.document import DocumentSchema
 
 from ietf.doc.models import Document, StoredObject
 from ietf.doc.storage_utils import retrieve_str
+from ietf.doc.utils_reef import get_popularity_ranking
 from ietf.utils.log import log
 
 # Error classes that might succeed just by retrying a failed attempt.
@@ -66,7 +68,7 @@ def get_collection_name() -> str:
 
 def _sanitize_text(content: str):
     """Sanitize content text for search
-    
+
     Aggressively simplifies whitespace, removes most punctuation
     """
     # REs (with approximate names)
@@ -89,7 +91,7 @@ def _sanitize_text(content: str):
 
 def _sanitize_abstract(abstract: str):
     """Sanitize abstract text for search
-    
+
     Simplifies whitespace but mostly leaves text intact. Abstract text will be
     displayed in search results, so a light touch is needed.
     """
@@ -159,11 +161,12 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
         "obsoletedBy": [str(doc.rfc_number) for doc in obsoleted_by],
         "updatedBy": [str(doc.rfc_number) for doc in updated_by],
         "ranking": rfc.rfc_number,
+        "popularityRanking": get_popularity_ranking(rfc.rfc_number),
     }
     if subseries is not None:
         ts_document["subseries"] = {
             "acronym": subseries.type.slug,
-            "number": int(subseries.name[len(subseries.type.slug):]),
+            "number": int(subseries.name[len(subseries.type.slug) :]),
             "total": len(subseries.contains()),
         }
     if rfc.group is not None:
@@ -225,6 +228,42 @@ def update_or_create_rfc_entries(
                 fail_count += 1
                 log(f"Failed to index RFC {tdoc['rfcNumber']}: {result['error']}")
     log(f"Added {success_count} RFCs to the index, failed to add {fail_count}")
+
+
+def partial_update_rfc_entries(
+    rfcs: Iterable[Document],
+    fields: dict[str, Callable[[Document], Any]],
+    batchsize: int | None = None,
+):
+    success_count = 0
+    fail_count = 0
+    client = get_typesense_client()
+    batches = [rfcs] if batchsize is None else batched(rfcs, batchsize)
+    for batch in batches:
+        tdata_batch = [
+            {"id": f"doc-{rfc.pk}"}  # required
+            | {
+                field_name: field_extractor(rfc)
+                for field_name, field_extractor in fields.items()
+            }
+            for rfc in batch
+        ]
+        results = client.collections[get_collection_name()].documents.import_(
+            tdata_batch, {"action": "update"}
+        )
+        for tdata, result in zip(tdata_batch, results):
+            if result["success"]:
+                success_count += 1
+            else:
+                fail_count += 1
+                log(f"Failed to update {tdata['id']}: {result['error']}")
+    log(f"Updated {success_count} RFCs in the index, failed to update {fail_count}")
+
+
+def update_rfc_popularities(rfcs: Iterable[Document], batchsize: int | None = None):
+    partial_update_rfc_entries(
+        rfcs, {"popularityRanking": get_popularity_ranking}, batchsize
+    )
 
 
 DOCS_SCHEMA = {
@@ -371,6 +410,14 @@ DOCS_SCHEMA = {
         # This ensures newer RFCs get listed first in the default search results
         # (without a query)
         {"name": "ranking", "type": "int32", "facet": False},
+        # Popularity ranking. Unranked will sort below those with ranking unless
+        # the sort_by field explicity specifies different missing_values behavior.
+        {
+            "name": "popularityRanking",
+            "type": "int32",
+            "facet": False,
+            "optional": True,
+        },
     ],
 }
 
@@ -379,13 +426,13 @@ SEARCH_PRESETS = {
         "collection": "docs",
         "infix": "off,always,off,off,off,off,off,off",
         "query_by": "rfc,filename,title,abstract,keywords,authors,group,area",
-        "query_by_weights": "127,50,50,20,20,5,2,1"
+        "query_by_weights": "127,50,50,20,20,5,2,1",
     },
     "red-content": {
-      "collection": "docs",
-      "infix": "off,always,off,off,off,off,off,off,off",
-      "query_by": "rfc,filename,title,abstract,keywords,authors,group,area,content",
-      "query_by_weights": "127,50,50,20,20,5,2,1,1"
+        "collection": "docs",
+        "infix": "off,always,off,off,off,off,off,off,off",
+        "query_by": "rfc,filename,title,abstract,keywords,authors,group,area,content",
+        "query_by_weights": "127,50,50,20,20,5,2,1,1",
     },
 }
 
