@@ -4,7 +4,7 @@
 {% block title %}
     Your proposed slides for {{ submission.session.meeting }} : {{ submission.session.group.acronym }}
 {% endblock %}
-{% block content %}
+{% block content %}{% timezone submission.session.meeting.tz %}
     {% origin %}
     <h1>
         Your proposed slides for {{ submission.session.meeting }}
@@ -27,7 +27,7 @@
             </dd>
         {% endif %}
         <dt class="col-sm-2">Status</dt>
-        <dd class="col-sm-10">{% localtime off %}{# use UTC for |date filters #}
+        <dd class="col-sm-10">
             {% if submission.status.slug == 'pending' %}
                 Awaiting approval by the chairs of {{ submission.session.group.acronym }}.
             {% elif submission.status.slug == 'approved' %}
@@ -38,7 +38,7 @@
                 Withdrawn by you{% if submission.resolved %} on {{ submission.resolved|date:"j F Y" }}{% endif %}.
             {% else %}
                 Declined{% if submission.resolved_by %} by {{ submission.resolved_by }}{% endif %}{% if submission.resolved %} on {{ submission.resolved|date:"j F Y" }}{% endif %}.
-            {% endif %}{% endlocaltime %}
+            {% endif %}
         </dd>
     </dl>
     {% if submission.status.slug == 'pending' %}
@@ -50,4 +50,4 @@
     <a class="btn btn-primary" href="{% url 'ietf.meeting.views.session_details' num=submission.session.meeting.number acronym=submission.session.group.acronym %}">
         Back to the session materials
     </a>
-{% endblock %}
+{% endtimezone %}{% endblock %}
