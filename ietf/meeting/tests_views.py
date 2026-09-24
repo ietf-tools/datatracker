@@ -8496,7 +8496,7 @@ class MaterialsTests(TestCase):
     def test_resolving_a_proposal_records_who_and_when(self):
         TestBlobstoreManager().emptyTestBlobstores()
         first, = make_group_sessions(['sched'])
-        chair = RoleFactory(person__name="Yargı Fırat", group=first.group, name_id='chair').person
+        chair = RoleFactory(group=first.group, name_id='chair').person
         proposer = PersonFactory()
         first.meeting.importantdate_set.update(date=date_today() + datetime.timedelta(days=20))
 
