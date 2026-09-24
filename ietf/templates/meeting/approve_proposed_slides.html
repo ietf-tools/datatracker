@@ -25,7 +25,7 @@
     </p>
     {% if submission.doc %}
         <p class="alert {% if linked %}alert-info{% else %}alert-warning{% endif %} my-3">
-            This is a proposed new revision of <a href="{% url 'ietf.doc.views_doc.document_main' name=submission.doc.name %}">{{ submission.doc.title }} ({{ submission.doc.name }})</a>, now at revision {{ submission.doc.rev }}.
+            This is a proposed new revision of <a href="{% url 'ietf.doc.views_doc.document_main' name=submission.doc.name %}">{{ submission.doc.title }} ({{ submission.doc.name }})</a>, now at revision {{ submission.doc.rev }}{% if linked and not form.sessions %}, on {{ linked|join:", " }}. The new revision replaces it {% if linked|length == 1 %}there{% else %}at each of them{% endif %}{% endif %}.
             {% if not linked %}The deck is no longer on any session of this meeting. Choose where to put the new revision.{% endif %}
         </p>
         {% if moved_on %}
@@ -44,13 +44,13 @@
         {% csrf_token %}
         {% bootstrap_form_errors form type="non_fields" %}
         {% bootstrap_field form.title %}
-        {% if linked %}
+        {% if linked and form.sessions %}
             <div class="mb-3">
                 <div class="form-label">Currently linked to</div>
                 <ul class="list-unstyled mb-0" id="currently-linked">
                     {% for label in linked %}<li>{{ label }}</li>{% endfor %}
                 </ul>
-                <div class="form-text">The new revision replaces the deck at each of these.</div>
+                <div class="form-text">The new revision replaces the deck {% if linked|length == 1 %}there{% else %}at each of these{% endif %}.</div>
             </div>
         {% endif %}
         {% if form.sessions %}{% bootstrap_field form.sessions %}{% endif %}
