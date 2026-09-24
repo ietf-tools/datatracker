@@ -8073,7 +8073,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.client.login(username=proposer.user.username, password=proposer.user.username + '+password')
         r = self.client.get(url)
-        self.assertContains(r, 'Approved by %s' % chair.plain_name())
+        self.assertContains(r, f"Approved by {escape(chair.plain_name())}")
         submission.refresh_from_db()
         self.assertContains(r, submission.doc.name)
 
@@ -8233,7 +8233,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(deck.rev, '01')
         r = self.client.get(url)
         self.assertContains(r, 'has been revised since this file was proposed')
-        self.assertContains(r, '%s uploaded revision 01' % chair.plain_name())
+        self.assertContains(r, f"{escape(chair.plain_name())} uploaded revision 01")
         self.assertContains(r, 'the current deck')
 
     def test_approve_page_for_a_lone_session(self):
@@ -8413,7 +8413,7 @@ class MaterialsTests(TestCase):
         login(other)
         r = self.client.get(revise_url)
         q = PyQuery(r.content)
-        self.assertContains(r, 'proposed by %s' % proposer.plain_name())
+        self.assertContains(r, f"proposed by {escape(proposer.plain_name())}")
         self.assertContains(r, 'The chairs will see it.')
         self.assertFalse(q('form[action="%s"]' % withdraw_url))
         self.assertFalse(q('input[name=file]'))
