@@ -1,5 +1,6 @@
-# Copyright The IETF Trust 2025, All Rights Reserved
+# Copyright The IETF Trust 2025-2026, All Rights Reserved
 import datetime
+from hashlib import sha384
 
 from django.core.files.base import ContentFile
 
@@ -36,7 +37,7 @@ class StorageTests(TestCase):
         self.assertEqual(bytes(blob.content), b"These are my bytes.")
         self.assertEqual(blob.mtime, timestamp)
         self.assertEqual(blob.content_type, "application/x-my-content-type")
-        
+
     def test_save_naive_file(self):
         storage = BlobdbStorage(bucket_name="my-bucket")
         my_naive_file = ContentFile(content=b"These are my naive bytes.")
@@ -64,7 +65,9 @@ class StorageTests(TestCase):
 
     def test_open_null_mtime(self):
         """BlobdbStorage open yields a BlobFile with default mtime and content_type"""
-        blob = BlobFactory(content_type="application/x-oh-no-you-didnt")  # does not set mtime
+        blob = BlobFactory(
+            content_type="application/x-oh-no-you-didnt"
+        )  # does not set mtime
         storage = BlobdbStorage(bucket_name=blob.bucket)
         with storage.open(blob.name, "rb") as f:
             self.assertTrue(isinstance(f, BlobFile))
@@ -78,3 +81,40 @@ class StorageTests(TestCase):
         storage = BlobdbStorage(bucket_name="not-a-bucket")
         with self.assertRaises(FileNotFoundError):
             storage.open("definitely/not-a-file.txt")
+
+
+class BlobModelTests(TestCase):
+    @staticmethod
+    def _digest(content: bytes) -> str:
+        return sha384(content, usedforsecurity=False).hexdigest()
+
+    def test_save_sets_checksum(self):
+        blob = BlobFactory(content=b"original")
+        stored = Blob.objects.get(pk=blob.pk)
+        self.assertEqual(stored.checksum, self._digest(b"original"))
+
+        blob.content = b"replaced"
+        blob.content_type = "text/plain"
+        blob.save()
+        stored = Blob.objects.get(pk=blob.pk)
+        self.assertEqual(bytes(stored.content), b"replaced")
+        self.assertEqual(stored.checksum, self._digest(b"replaced"))
+        self.assertEqual(stored.content_type, "text/plain")
+
+    def test_partial_save_with_content_updates_checksum(self):
+        blob = BlobFactory(content=b"original")
+        blob.content = b"replaced"
+        blob.save(update_fields=["content"])
+        stored = Blob.objects.get(pk=blob.pk)
+        self.assertEqual(bytes(stored.content), b"replaced")
+        self.assertEqual(stored.checksum, self._digest(b"replaced"))
+
+    def test_partial_save_without_content_leaves_checksum(self):
+        blob = BlobFactory(content=b"original", content_type="text/plain")
+        blob.content = b"not saved"
+        blob.content_type = "application/octet-stream"
+        blob.save(update_fields=["content_type"])
+        stored = Blob.objects.get(pk=blob.pk)
+        self.assertEqual(stored.content_type, "application/octet-stream")
+        self.assertEqual(bytes(stored.content), b"original")
+        self.assertEqual(stored.checksum, self._digest(b"original"))
