@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2026, All Rights Reserved #}
-{% load origin %}
+{% load origin tz %}
 {% block title %}
     Your proposed slides for {{ submission.session.meeting }} : {{ submission.session.group.acronym }}
 {% endblock %}
@@ -27,7 +27,7 @@
             </dd>
         {% endif %}
         <dt class="col-sm-2">Status</dt>
-        <dd class="col-sm-10">
+        <dd class="col-sm-10">{% localtime off %}{# use UTC for |date filters #}
             {% if submission.status.slug == 'pending' %}
                 Awaiting approval by the chairs of {{ submission.session.group.acronym }}.
             {% elif submission.status.slug == 'approved' %}
@@ -38,7 +38,7 @@
                 Withdrawn by you{% if submission.resolved %} on {{ submission.resolved|date:"j F Y" }}{% endif %}.
             {% else %}
                 Declined{% if submission.resolved_by %} by {{ submission.resolved_by }}{% endif %}{% if submission.resolved %} on {{ submission.resolved|date:"j F Y" }}{% endif %}.
-            {% endif %}
+            {% endif %}{% endlocaltime %}
         </dd>
     </dl>
     {% if submission.status.slug == 'pending' %}

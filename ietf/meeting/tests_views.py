@@ -8496,7 +8496,7 @@ class MaterialsTests(TestCase):
     def test_resolving_a_proposal_records_who_and_when(self):
         TestBlobstoreManager().emptyTestBlobstores()
         first, = make_group_sessions(['sched'])
-        chair = RoleFactory(group=first.group, name_id='chair').person
+        chair = RoleFactory(person__name="Yargı Fırat", group=first.group, name_id='chair').person
         proposer = PersonFactory()
         first.meeting.importantdate_set.update(date=date_today() + datetime.timedelta(days=20))
 
@@ -8532,8 +8532,8 @@ class MaterialsTests(TestCase):
 
         as_proposer()
         when = approved.resolved.strftime('%-d %B %Y')
-        self.assertContains(self.client.get(approve_url(approved)), 'Approved by %s on %s' % (chair.plain_name(), when))
-        self.assertContains(self.client.get(approve_url(declined)), 'Declined by %s on %s' % (chair.plain_name(), when))
+        self.assertContains(self.client.get(approve_url(approved)), 'Approved by %s on %s' % (escape(chair.plain_name()), when))
+        self.assertContains(self.client.get(approve_url(declined)), 'Declined by %s on %s' % (escape(chair.plain_name()), when))
         self.assertContains(self.client.get(approve_url(withdrawn)), 'Withdrawn by you on %s' % when)
         self.assertContains(self.client.get(approve_url(expired)), 'Expired on %s' % when)
 
