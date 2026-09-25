@@ -17,7 +17,7 @@ from typesense.types.document import DocumentSchema
 
 from ietf.doc.models import Document, StoredObject
 from ietf.doc.storage_utils import retrieve_str
-from ietf.doc.utils_reef import get_popularity_ranking
+from ietf.doc.utils_reef import get_popularity_score
 from ietf.utils.log import log
 
 # Error classes that might succeed just by retrying a failed attempt.
@@ -161,7 +161,7 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
         "obsoletedBy": [str(doc.rfc_number) for doc in obsoleted_by],
         "updatedBy": [str(doc.rfc_number) for doc in updated_by],
         "ranking": rfc.rfc_number,
-        "popularityRanking": get_popularity_ranking(rfc.rfc_number),
+        "popularity": get_popularity_score(rfc.rfc_number),
     }
     if subseries is not None:
         ts_document["subseries"] = {
@@ -262,7 +262,7 @@ def partial_update_rfc_entries(
 
 def update_rfc_popularities(rfcs: Iterable[Document], batchsize: int | None = None):
     partial_update_rfc_entries(
-        rfcs, {"popularityRanking": get_popularity_ranking}, batchsize
+        rfcs, {"popularity": get_popularity_score}, batchsize
     )
 
 
@@ -410,11 +410,12 @@ DOCS_SCHEMA = {
         # This ensures newer RFCs get listed first in the default search results
         # (without a query)
         {"name": "ranking", "type": "int32", "facet": False},
-        # Popularity ranking. Unranked will sort below those with ranking unless
-        # the sort_by field explicity specifies different missing_values behavior.
+        # Popularity score. Unscored will sort after those with any score, regardless of
+        # sort direction, unless the sort_by field explicity specifies different
+        # missing_values behavior.
         {
-            "name": "popularityRanking",
-            "type": "int32",
+            "name": "popularity",
+            "type": "float",
             "facet": False,
             "optional": True,
         },
