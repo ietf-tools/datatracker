@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2025, All Rights Reserved
+# Copyright The IETF Trust 2007-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 from ietf.settings import *  # pyflakes:ignore
@@ -11,6 +11,9 @@ from ietf.settings import (
 )
 
 ALLOWED_HOSTS = ['*']
+
+# Allow login with any account without password check. ONLY FOR DEV!
+AUTHENTICATION_BACKENDS = ("ietf.ietfauth.backends.UnsafeAllowAnyModelBackend",)
 
 from ietf.settings_postgresqldb import DATABASES  # pyflakes:ignore
 DATABASE_ROUTERS = ["ietf.blobdb.routers.BlobdbStorageRouter"]
