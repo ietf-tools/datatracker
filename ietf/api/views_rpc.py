@@ -615,22 +615,3 @@ class ProcessRpcQueueView(APIView):
         serializer.is_valid(raise_exception=True)
         process_rpc_queue_task.delay(serializer.validated_data["data"])
         return Response(status=202)
-
-
-class RfcPopularityView(APIView):
-    api_key_endpoint = "ietf.api.views_rpc"
-    
-    @extend_schema(
-        operation_id="refresh_rfc_popularity",
-        summary="Refresh RFC popularity data",
-        description=(
-            "Notifies Datatracker that RFC popularity has changed and dependent data "
-            "should be updated appropriately"
-        ),
-        responses={202: None},
-        request=None,
-    )
-    def post(self, request):
-        update_rfc_searchindex_popularities_task.delay()
-        return Response(status=202)
-
