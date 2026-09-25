@@ -8,10 +8,26 @@ from ietf.person.models import Email
 from .models import Group, Role
 
 
+
+
 class GroupSerializer(serializers.ModelSerializer):
+    state = serializers.SerializerMethodField()
+
+    GROUP_STATE_CHOICES = ("active", "concluded", "other")  # simplified group states
+
     class Meta:
         model = Group
-        fields = ["acronym", "name", "type", "list_email"]
+        fields = ["acronym", "name", "type", "state", "list_email"]
+
+    @extend_schema_field(serializers.ChoiceField(choices=GROUP_STATE_CHOICES))
+    def get_state(self, group: Group):
+        if group.state_id is None:
+            return "other"
+        return {
+            "active": "active",
+            "bof-conc": "concluded",
+            "conclude": "concluded",
+        }.get(group.state_id, "other")
 
 
 class AreaDirectorSerializer(serializers.Serializer):
@@ -25,7 +41,7 @@ class AreaDirectorSerializer(serializers.Serializer):
 
     @extend_schema_field(serializers.CharField)
     def get_name(self, instance: Email | Role):
-        person = getattr(instance, 'person', None)
+        person = getattr(instance, "person", None)
         return person.plain_name() if person else None
 
     @extend_schema_field(serializers.EmailField)

@@ -192,7 +192,7 @@ admin.site.register(ImportantDate,ImportantDateAdmin)
 class SlideSubmissionAdmin(admin.ModelAdmin):
     model = SlideSubmission
     list_display = ['session', 'submitter', 'title']
-    raw_id_fields = ['submitter', 'session', 'doc']
+    raw_id_fields = ['submitter', 'session', 'sessions', 'doc']
 
 admin.site.register(SlideSubmission, SlideSubmissionAdmin)
 

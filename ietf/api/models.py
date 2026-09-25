@@ -14,7 +14,7 @@ MIN_TOKEN_LENGTH = 20
 class AppApiTokenQuerySet(models.QuerySet):
     def as_hashed_token_dict(self):
         """Collapse a queryset into a dict for use with is_valid_token tooling
-        
+
         Structure of return value is:
             {
                 "endpoint_a": [<list of hashed tokens>],
@@ -117,7 +117,11 @@ class KnownApiEndpoint(models.Model):
     settings.
     """
 
-    name = models.CharField(max_length=1000, help_text="API endpoint name")
+    name = models.CharField(
+        max_length=1000,
+        help_text="API endpoint name",
+        unique=True,
+    )
     enabled = models.BooleanField(
         default=True,
         help_text="Are bearers of tokens for this endpoint allowed access?",
