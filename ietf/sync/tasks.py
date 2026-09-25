@@ -27,6 +27,7 @@ from ietf.doc.utils import add_state_change_event, new_state_change_event, updat
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_text
 from ietf.sync import iana
+from ietf.sync.bibxml import recreate_rfc_bibxml
 from ietf.sync.errata import (
     errata_are_dirty,
     mark_errata_as_processed,
@@ -574,3 +575,8 @@ def process_rpc_queue_task(data: list):
         d.tags.remove(*iana_ref_tags)
         d.unset_state("draft-rfceditor")
         RpcActionHolderOpenEntry.objects.filter(document=d).delete()
+
+
+@shared_task
+def recreate_rfc_bibxml_task():
+    recreate_rfc_bibxml()
