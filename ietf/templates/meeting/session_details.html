@@ -27,6 +27,11 @@
             The materials upload cutoff date for this session has passed. If you need to change the materials, contact the Secretariat.
         </div>
     {% endif %}
+    {% if can_manage_materials and pending_suggestions %}
+        <div class="alert alert-info my-3" id="pending-proposals-notice">
+            <a href="#proposed-slides">{{ pending_suggestions|length }} proposed slide deck{{ pending_suggestions|length|pluralize }} awaiting your approval</a>
+        </div>
+    {% endif %}
     <h2 class="mt-3">Scheduled Sessions</h2>
     {% include 'meeting/session_details_panel.html' with sessions=scheduled_sessions %}
     {% if unscheduled_sessions %}
@@ -54,7 +59,7 @@
         </div>
     {% endif %}
     {% for s in pending_suggestions %}
-        {% if forloop.first %}<h2 class="mt-3">
+        {% if forloop.first %}<h2 class="mt-3" id="proposed-slides">
             {% if can_manage_materials %}
                 Proposed slides awaiting your approval
             {% else %}
@@ -70,7 +75,9 @@
                 </p>
             {% else %}
                 <p>
-                    {{ s.title }} ({{ s.time }})
+                    <a href="{% url "ietf.meeting.views.approve_proposed_slides" slidesubmission_id=s.pk num=s.session.meeting.number %}">
+                        {{ s.title }} ({{ s.time }})
+                    </a>
                 </p>
             {% endif %}
         {% if forloop.last %}</div>{% endif %}

@@ -365,7 +365,6 @@ class SlideSubmissionResource(ModelResource):
             "id": ALL,
             "title": ALL,
             "filename": ALL,
-            "apply_to_all": ALL,
             "session": ALL_WITH_RELATIONS,
             "submitter": ALL_WITH_RELATIONS,
         }

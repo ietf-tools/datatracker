@@ -28,20 +28,70 @@
             Session {{ session_number }} : {{ session.official_timeslotassignment.timeslot.time|timezone:session.meeting.time_zone|date:"D M-d-Y Hi" }}
         </h2>
     {% endif %}
-    {% if not manage %}
+    {% if not manage and show_form %}
     <p class="alert alert-info my-3">
         This form will allow you to propose a slide deck to the session chairs. After you upload your proposal, mail will be sent to the session chairs asking for their approval.
+        To replace a deck that is already on the session, propose the new file under the same title. If approved, this will become a new revision of the existing deck.
     </p>
     {% endif %}
-    {% if slides_sp %}<h3>{{ slides_sp.document.name }}</h3>{% endif %}
-    {% if also_linked %}
+    {% if blocked_by %}
+        <div class="alert alert-warning my-3">
+            A revision of this deck, "{{ blocked_by.title }}", proposed by {{ blocked_by.submitter }} on {{ blocked_by.time|date:"j F" }}, is awaiting approval. There can be only one proposed revision at a time.
+            {% if blocked_by.submitter != user.person %}The chairs will see it.{% endif %}
+        </div>
+        {% if blocked_by.submitter == user.person %}
+            <p>
+                To propose a different file, withdraw the pending revision first. Withdrawing discards the file you proposed on {{ blocked_by.time|date:"j F" }} and does not affect the deck currently on the session.
+                After withdrawing the current proposal, you can return to this page to propose a new revision.
+            </p>
+            <form method="post" action="{% url 'ietf.meeting.views.withdraw_proposed_slides' slidesubmission_id=blocked_by.pk num=session.meeting.number %}">
+                {% csrf_token %}
+                <input type="hidden" name="return_to" value="revise">
+                <button class="btn btn-warning" type="submit">Withdraw the pending revision</button>
+            </form>
+        {% endif %}
+    {% endif %}
+    {% if decks or own_pending and not slides_sp %}
+        <h2 class="mt-3">Already on this session</h2>
+        <table class="table table-sm table-striped">
+            <tbody>
+                {% for sp in decks %}
+                    <tr>
+                        <td>
+                            <a href="{{ sp.document.get_href }}">{{ sp.document.title }}</a>
+                            <a class="btn btn-primary btn-sm float-end" href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number name=sp.document.name %}">Propose revision</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                {% if not slides_sp %}
+                    {% for proposal in own_pending %}
+                        <tr>
+                            <td>
+                                <form class="float-end" method="post" action="{% url 'ietf.meeting.views.withdraw_proposed_slides' slidesubmission_id=proposal.pk num=session.meeting.number %}">
+                                    {% csrf_token %}
+                                    <button class="btn btn-warning btn-sm" type="submit">Withdraw</button>
+                                </form>
+                                <a href="{% url 'ietf.meeting.views.approve_proposed_slides' slidesubmission_id=proposal.pk num=session.meeting.number %}">{{ proposal.title }}</a>
+                                <span class="text-body-secondary">awaiting approval{% if proposal.doc %}, as a revision of {{ proposal.doc.title }} ({{ proposal.doc.name }}){% endif %}</span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+        <h2 class="mt-3">Propose a new deck</h2>
+    {% endif %}
+    {% if slides_sp %}<h2 class="mt-3">{{ slides_sp.document.name }}</h2>{% endif %}
+    {% if also_linked and show_form %}
         <p class="alert alert-info my-3">
             This deck is also linked to {{ also_linked|join:", " }}. The new revision replaces it there too.
         </p>
     {% endif %}
+    {% if show_form %}
     <form class="my-3" enctype="multipart/form-data" method="post">
         {% csrf_token %}
         {% bootstrap_form form %}
         <button type="submit" class="btn btn-primary">Upload</button>
     </form>
+    {% endif %}
 {% endblock %}

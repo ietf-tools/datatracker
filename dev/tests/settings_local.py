@@ -63,6 +63,5 @@ FTP_DIR = '/assets/ftp'
 NFS_METRICS_TMP_DIR = '/assets/tmp'
 
 NOMCOM_PUBLIC_KEYS_DIR = 'data/nomcom_keys/public_keys/'
-SLIDE_STAGING_PATH = 'test/staging/'
 
 DE_GFM_BINARY = '/usr/local/bin/de-gfm'

@@ -30,6 +30,7 @@ from django.utils.text import slugify
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.models import Document
+from ietf.doc.storage_utils import remove_from_storage
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import (
@@ -1462,20 +1463,40 @@ class ImportantDate(models.Model):
         return u'%s : %s : %s' % ( self.meeting, self.name, self.date )
 
 class SlideSubmission(models.Model):
-    time = models.DateTimeField(auto_now=True)
+    time = models.DateTimeField(default=timezone.now)  # when proposed; before auto_now was dropped, when last saved
     session = ForeignKey(Session)
+    sessions = models.ManyToManyField(Session, blank=True, related_name="proposed_slides", help_text="Sessions the deck is proposed for")
     title = models.CharField(max_length=255)
     filename = models.CharField(max_length=255)
-    apply_to_all = models.BooleanField(default=False)
     submitter = ForeignKey(Person)
     status      = ForeignKey(SlideSubmissionStatusName, null=True, default='pending', on_delete=models.SET_NULL)
     doc         = ForeignKey(Document, blank=True, null=True, on_delete=models.SET_NULL)
+    resolved    = models.DateTimeField(null=True, blank=True, help_text="When the proposal stopped being pending")
+    resolved_by = ForeignKey(Person, null=True, blank=True, related_name="resolved_slide_proposals", on_delete=models.SET_NULL,
+                             help_text="Who approved, declined or withdrew it; (System) when it expired")
 
-    def staged_filepath(self):
-        return os.path.join(settings.SLIDE_STAGING_PATH , self.filename)
+    def expire(self):
+        """Close a proposal nobody acted on before the meeting's materials closed, dropping its staged file"""
+        self._resolve("expired", Person.objects.get(name="(System)"))
 
-    def staged_url(self):
-        return "".join([settings.SLIDE_STAGING_URL, self.filename])
+    def withdraw(self):
+        """The proposer takes the proposal back; its staged file goes with it"""
+        self._resolve("withdrawn", self.submitter)
+
+    def approve(self, doc, by):
+        SlideSubmission.objects.filter(pk=self.pk).update(doc=doc)
+        self.doc = doc
+        self._resolve("approved", by)
+
+    def decline(self, by):
+        self._resolve("rejected", by)
+
+    def _resolve(self, status, by):
+        now = timezone.now()
+        SlideSubmission.objects.filter(pk=self.pk).update(status_id=status, resolved=now, resolved_by=by)
+        self.status_id, self.resolved, self.resolved_by = status, now, by
+        if self.filename:  # last, so a failure above leaves a proposal that can still be acted on
+            remove_from_storage("staging", self.filename, warn_if_missing=False)
 
 
 class ProceedingsMaterial(models.Model):
