@@ -23,8 +23,6 @@ from django.urls import reverse as urlreverse, NoReverseMatch
 from django.utils import timezone
 from django.utils.encoding import iri_to_uri
 
-import yaml
-
 import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList
