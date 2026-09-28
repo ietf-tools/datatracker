@@ -339,7 +339,7 @@ class SearchindexTests(TestCase):
 
         searchindex.update_rfc_popularities(rfcs, batchsize=7)
         self.assertEqual(
-            mock_partial_update.call_args, mock.call(rfcs, mock.ANY, batchsize=7)
+            mock_partial_update.call_args, mock.call(rfcs, mock.ANY, 7)
         )
         fields = mock_partial_update.call_args.args[1]
         self.assertEqual(list(fields.keys()), ["popularity"])

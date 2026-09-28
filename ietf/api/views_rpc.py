@@ -43,7 +43,6 @@ from ietf.doc.tasks import (
     rebuild_reference_relations_task,
     signal_update_rfc_metadata_task,
     trigger_red_precomputer_task,
-    update_rfc_searchindex_popularities_task,
     update_rfc_searchindex_task,
 )
 from ietf.person.models import Email, Person

@@ -244,7 +244,7 @@ def partial_update_rfc_entries(
     client = get_typesense_client()
     batches = [rfcs] if batchsize is None else batched(rfcs, batchsize)
     for batch in batches:
-        tdata_batch = [
+        tdata_batch: list[DocumentSchema] = [
             {"id": f"doc-{rfc.pk}"}  # required
             | {
                 field_name: field_extractor(rfc)
@@ -265,8 +265,16 @@ def partial_update_rfc_entries(
 
 
 def update_rfc_popularities(rfcs: Iterable[Document], batchsize: int | None = None):
+    # Load fresh scores once rather than per RFC. This also refreshes the cache.
+    scores = get_popularity_score.refresh()
     partial_update_rfc_entries(
-        rfcs, {"popularity": get_popularity_score}, batchsize
+        rfcs,
+        {
+            "popularity": lambda rfc: (
+                None if rfc.rfc_number is None else scores.get(rfc.rfc_number)
+            )
+        },
+        batchsize,
     )
 
 
