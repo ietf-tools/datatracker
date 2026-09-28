@@ -161,7 +161,7 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
         "obsoletedBy": [str(doc.rfc_number) for doc in obsoleted_by],
         "updatedBy": [str(doc.rfc_number) for doc in updated_by],
         "ranking": rfc.rfc_number,
-        "popularity": get_popularity_score(rfc.rfc_number),
+        "popularity": get_popularity_score(rfc),
     }
     if subseries is not None:
         ts_document["subseries"] = {
