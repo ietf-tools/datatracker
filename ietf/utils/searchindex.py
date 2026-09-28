@@ -17,7 +17,7 @@ from typesense.types.document import DocumentSchema
 
 from ietf.doc.models import Document, StoredObject
 from ietf.doc.storage_utils import retrieve_str
-from ietf.doc.utils_reef import get_popularity_score, refresh_popularity_scores
+from ietf.doc.utils_reef import cached_popularity_scores, refresh_popularity_scores
 from ietf.utils.log import log
 
 # Error classes that might succeed just by retrying a failed attempt.
@@ -101,7 +101,23 @@ def _sanitize_abstract(abstract: str):
     return abstract
 
 
-def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
+def _get_popularity_scores() -> dict[int, float] | None:
+    """Get cached popularity scores, or None if they are unavailable"""
+    try:
+        return cached_popularity_scores()
+    except Exception as err:
+        log(f"Unable to load popularity scores: {err}")
+        return None
+
+
+def typesense_doc_from_rfc(
+    rfc: Document, popularity_scores: dict[int, float] | None
+) -> DocumentSchema:
+    """Build the typesense document for an RFC
+
+    popularity_scores maps rfc_number to popularity score, or is None if scores are
+    unavailable.
+    """
     assert rfc.type_id == "rfc"
     assert rfc.rfc_number is not None
     assert rfc.pages is not None
@@ -161,6 +177,9 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
         "obsoletedBy": [str(doc.rfc_number) for doc in obsoleted_by],
         "updatedBy": [str(doc.rfc_number) for doc in updated_by],
         "ranking": rfc.rfc_number,
+        "popularity": (
+            None if popularity_scores is None else popularity_scores.get(rfc.rfc_number)
+        ),
     }
     if subseries is not None:
         ts_document["subseries"] = {
@@ -186,11 +205,6 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
         }
     if rfc.ad is not None:
         ts_document["adName"] = rfc.ad.name
-    try:
-        ts_document["popularity"] = get_popularity_score(rfc)
-    except Exception as err:
-        # popularity is an optional field, omit if unavailable
-        log(f"Unable to look up popularity for {rfc.name}: {err}")
     if content != "":
         ts_document["content"] = _sanitize_text(content)
     return ts_document
@@ -198,7 +212,7 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
 
 def update_or_create_rfc_entry(rfc: Document):
     """Update/create index entries for one RFC"""
-    ts_document = typesense_doc_from_rfc(rfc)
+    ts_document = typesense_doc_from_rfc(rfc, _get_popularity_scores())
     client = get_typesense_client()
     client.collections[get_collection_name()].documents.upsert(ts_document)
 
@@ -219,9 +233,10 @@ def update_or_create_rfc_entries(
     success_count = 0
     fail_count = 0
     client = get_typesense_client()
+    popularity_scores = _get_popularity_scores()
     batches = [rfcs] if batchsize is None else batched(rfcs, batchsize)
     for batch in batches:
-        tdoc_batch = [typesense_doc_from_rfc(rfc) for rfc in batch]
+        tdoc_batch = [typesense_doc_from_rfc(rfc, popularity_scores) for rfc in batch]
         results = client.collections[get_collection_name()].documents.import_(
             tdoc_batch, {"action": "upsert"}
         )

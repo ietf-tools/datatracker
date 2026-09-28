@@ -8,7 +8,6 @@ from django.conf import settings
 from django.core.cache import caches
 from django.core.files.storage import storages
 
-from ietf.doc.models import Document
 from ietf.utils.log import log
 
 POPULARITY_CACHE_KEY = "ietf.doc.utils_reef.cached_popularity_rankings"
@@ -89,15 +88,3 @@ def cached_popularity_scores() -> dict[int, float]:
     if cached_scores is None:
         cached_scores = refresh_popularity_scores()
     return cached_scores
-
-
-def get_popularity_score(rfc: Document) -> float | None:
-    """Look up the popularity score of an RFC
-
-    Returns a float between 0 and 1, higher being more popular, or None if there is
-    no score for the RFC.
-    """
-    if rfc.rfc_number is None:
-        return None
-    scores = cached_popularity_scores()
-    return scores.get(rfc.rfc_number, None)
