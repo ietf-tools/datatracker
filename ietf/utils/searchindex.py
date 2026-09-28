@@ -17,7 +17,7 @@ from typesense.types.document import DocumentSchema
 
 from ietf.doc.models import Document, StoredObject
 from ietf.doc.storage_utils import retrieve_str
-from ietf.doc.utils_reef import get_popularity_score
+from ietf.doc.utils_reef import get_popularity_score, refresh_popularity_scores
 from ietf.utils.log import log
 
 # Error classes that might succeed just by retrying a failed attempt.
@@ -266,7 +266,7 @@ def partial_update_rfc_entries(
 
 def update_rfc_popularities(rfcs: Iterable[Document], batchsize: int | None = None):
     # Load fresh scores once rather than per RFC. This also refreshes the cache.
-    scores = get_popularity_score.refresh()
+    scores = refresh_popularity_scores()
     partial_update_rfc_entries(
         rfcs,
         {

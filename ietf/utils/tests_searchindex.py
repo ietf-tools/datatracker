@@ -30,6 +30,9 @@ class SearchindexTests(TestCase):
         popularity_patcher = mock.patch("ietf.utils.searchindex.get_popularity_score")
         self.mock_get_popularity_score = popularity_patcher.start()
         self.addCleanup(popularity_patcher.stop)
+        refresh_patcher = mock.patch("ietf.utils.searchindex.refresh_popularity_scores")
+        self.mock_refresh_popularity_scores = refresh_patcher.start()
+        self.addCleanup(refresh_patcher.stop)
 
     def test_enabled(self):
         with override_settings():
@@ -332,9 +335,10 @@ class SearchindexTests(TestCase):
 
     @mock.patch("ietf.utils.searchindex.partial_update_rfc_entries", autospec=True)
     def test_update_rfc_popularities(self, mock_partial_update):
-        mock_refresh = self.mock_get_popularity_score.refresh
         scored_rfc, unscored_rfc = WgRfcFactory.create_batch(2)
-        mock_refresh.return_value = {scored_rfc.rfc_number: 0.75}
+        self.mock_refresh_popularity_scores.return_value = {
+            scored_rfc.rfc_number: 0.75
+        }
         rfcs = [scored_rfc, unscored_rfc]
 
         searchindex.update_rfc_popularities(rfcs, batchsize=7)
@@ -346,10 +350,7 @@ class SearchindexTests(TestCase):
         self.assertEqual(fields["popularity"](scored_rfc), 0.75)
         self.assertIsNone(fields["popularity"](unscored_rfc))
         # Scores are loaded fresh once, not looked up in the cache per RFC
-        self.assertEqual(mock_refresh.call_count, 1)
-        self.assertFalse(
-            self.mock_get_popularity_score.cached_popularity_scores.called
-        )
+        self.assertEqual(self.mock_refresh_popularity_scores.call_count, 1)
         self.assertFalse(self.mock_get_popularity_score.called)
 
     @override_settings(
