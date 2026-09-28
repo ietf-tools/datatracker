@@ -1,27 +1,36 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 from unittest import mock
 
+import jsonschema
 import requests.exceptions
 import typesense.exceptions
 from django.conf import settings
 from django.test.utils import override_settings
 
-from . import searchindex
-from .test_utils import TestCase
-from ..blobdb.models import Blob
-from ..doc.factories import (
+from ietf.blobdb.models import Blob
+from ietf.doc.factories import (
+    BcpFactory,
+    PublishedRfcDocEventFactory,
+    StdFactory,
     WgDraftFactory,
     WgRfcFactory,
-    PublishedRfcDocEventFactory,
-    BcpFactory,
-    StdFactory,
 )
-from ..doc.models import Document, RelatedDocument
-from ..doc.storage_utils import store_str
-from ..person.factories import PersonFactory
+from ietf.doc.models import Document, RelatedDocument
+from ietf.doc.storage_utils import store_str
+from ietf.person.factories import PersonFactory
+
+from . import searchindex
+from .test_utils import TestCase
 
 
 class SearchindexTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        # Keep tests independent of popularity.json in the reef bucket
+        popularity_patcher = mock.patch("ietf.utils.searchindex.get_popularity_score")
+        self.mock_get_popularity_score = popularity_patcher.start()
+        self.addCleanup(popularity_patcher.stop)
+
     def test_enabled(self):
         with override_settings():
             try:
@@ -80,6 +89,7 @@ class SearchindexTests(TestCase):
         self.assertEqual(searchindex._sanitize_abstract(dirty_abstract), sanitized)
 
     def test_typesense_doc_from_rfc(self):
+        self.mock_get_popularity_score.return_value = 0.5
         not_rfc = WgDraftFactory()
         assert isinstance(not_rfc, Document)
         with self.assertRaises(AssertionError):
@@ -101,6 +111,8 @@ class SearchindexTests(TestCase):
         self.assertNotIn("adName", result)
         self.assertNotIn("content", result)  # no blob
         self.assertNotIn("subseries", result)
+        self.assertEqual(result["popularity"], 0.5)
+        self.assertEqual(self.mock_get_popularity_score.call_args, mock.call(rfc))
 
         # repeat, this time with contents, an AD, and subseries docs
         store_str(
@@ -191,6 +203,14 @@ class SearchindexTests(TestCase):
         self.assertFalse(result["flags"]["obsoleted"])
         self.assertFalse(result["flags"]["updated"])
 
+    def test_typesense_doc_from_rfc_popularity_unavailable(self):
+        rfc = PublishedRfcDocEventFactory().doc
+        for err in [FileNotFoundError(), jsonschema.ValidationError("invalid")]:
+            with self.subTest(repr(err)):
+                self.mock_get_popularity_score.side_effect = err
+                result = searchindex.typesense_doc_from_rfc(rfc)
+                self.assertEqual(result["rfcNumber"], rfc.rfc_number)
+                self.assertNotIn("popularity", result)
 
     @override_settings(
         SEARCHINDEX_CONFIG={
@@ -260,6 +280,77 @@ class SearchindexTests(TestCase):
                 mock.call([fake_tdoc] * 10, {"action": "upsert"}),
             ],
         )
+
+    @override_settings(
+        SEARCHINDEX_CONFIG={
+            "TYPESENSE_API_URL": "http://ts.example.com",
+            "TYPESENSE_API_KEY": "test-api-key",
+            "TYPESENSE_COLLECTION_NAME": "frogs",
+        }
+    )
+    @mock.patch("ietf.utils.searchindex.typesense.Client")
+    def test_partial_update_rfc_entries(self, mock_ts_client_constructor):
+        mock_import_ = mock_ts_client_constructor.return_value.collections[
+            "frogs"  # matches value in override_settings above
+        ].documents.import_
+        # Alternate success and failure results
+        mock_import_.side_effect = lambda tdata_batch, params: [
+            {"success": index % 2 == 0, "error": "failed"}
+            for index in range(len(tdata_batch))
+        ]
+        fields = {
+            "rfcNumber": lambda rfc: rfc.rfc_number,
+            "constant": lambda rfc: "some value",
+        }
+
+        def expected_tdata(rfc):
+            return {
+                "id": f"doc-{rfc.pk}",
+                "rfcNumber": rfc.rfc_number,
+                "constant": "some value",
+            }
+
+        rfcs = WgRfcFactory.create_batch(3)
+        searchindex.partial_update_rfc_entries(rfcs, fields)
+        self.assertEqual(mock_import_.call_count, 1)
+        self.assertEqual(
+            mock_import_.call_args,
+            mock.call([expected_tdata(rfc) for rfc in rfcs], {"action": "update"}),
+        )
+
+        mock_import_.reset_mock()
+        rfc = rfcs[0]
+        searchindex.partial_update_rfc_entries([rfc] * 50, fields, batchsize=20)
+        self.assertEqual(
+            mock_import_.call_args_list,
+            [
+                mock.call([expected_tdata(rfc)] * 20, {"action": "update"}),
+                mock.call([expected_tdata(rfc)] * 20, {"action": "update"}),
+                mock.call([expected_tdata(rfc)] * 10, {"action": "update"}),
+            ],
+        )
+
+    @mock.patch("ietf.utils.searchindex.partial_update_rfc_entries", autospec=True)
+    def test_update_rfc_popularities(self, mock_partial_update):
+        mock_refresh = self.mock_get_popularity_score.refresh
+        scored_rfc, unscored_rfc = WgRfcFactory.create_batch(2)
+        mock_refresh.return_value = {scored_rfc.rfc_number: 0.75}
+        rfcs = [scored_rfc, unscored_rfc]
+
+        searchindex.update_rfc_popularities(rfcs, batchsize=7)
+        self.assertEqual(
+            mock_partial_update.call_args, mock.call(rfcs, mock.ANY, batchsize=7)
+        )
+        fields = mock_partial_update.call_args.args[1]
+        self.assertEqual(list(fields.keys()), ["popularity"])
+        self.assertEqual(fields["popularity"](scored_rfc), 0.75)
+        self.assertIsNone(fields["popularity"](unscored_rfc))
+        # Scores are loaded fresh once, not looked up in the cache per RFC
+        self.assertEqual(mock_refresh.call_count, 1)
+        self.assertFalse(
+            self.mock_get_popularity_score.cached_popularity_scores.called
+        )
+        self.assertFalse(self.mock_get_popularity_score.called)
 
     @override_settings(
         SEARCHINDEX_CONFIG={
