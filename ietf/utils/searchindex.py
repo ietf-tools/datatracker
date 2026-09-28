@@ -161,7 +161,6 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
         "obsoletedBy": [str(doc.rfc_number) for doc in obsoleted_by],
         "updatedBy": [str(doc.rfc_number) for doc in updated_by],
         "ranking": rfc.rfc_number,
-        "popularity": get_popularity_score(rfc),
     }
     if subseries is not None:
         ts_document["subseries"] = {
@@ -187,6 +186,11 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
         }
     if rfc.ad is not None:
         ts_document["adName"] = rfc.ad.name
+    try:
+        ts_document["popularity"] = get_popularity_score(rfc)
+    except Exception as err:
+        # popularity is an optional field, omit if unavailable
+        log(f"Unable to look up popularity for {rfc.name}: {err}")
     if content != "":
         ts_document["content"] = _sanitize_text(content)
     return ts_document
