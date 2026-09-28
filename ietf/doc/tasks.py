@@ -213,6 +213,11 @@ def update_rfc_searchindex_task(self, rfc_number: int):
 def rebuild_searchindex_task(
     *, batchsize=40, drop_collection=False, upsert_presets=True
 ):
+    """Rebuild the entire searchindex, optionally dropping the existing collection
+
+    batchsize is the number of RFCs to update per API call. It is not the Typesense
+    server-side batch size, which is left at its default of 40.
+    """
     if drop_collection:
         searchindex.delete_collection()
         searchindex.create_collection()
@@ -225,15 +230,19 @@ def rebuild_searchindex_task(
 
 
 @shared_task(bind=True)
-def update_rfc_searchindex_popularities_task(self):
-    """Update the search index popularities for all RFCs"""
+def update_rfc_searchindex_popularities_task(self, *, batchsize=200):
+    """Update the search index popularities for all RFCs
+
+    batchsize is the number of RFCs to update per API call. It is not the Typesense
+    server-side batch size, which is left at its default of 40.
+    """
     if not searchindex.enabled():
         log.log("Search indexing is not enabled, skipping")
         return
-    
+
     rfcs = Document.objects.filter(type_id="rfc")
     try:
-        searchindex.update_rfc_popularities(rfcs)
+        searchindex.update_rfc_popularities(rfcs, batchsize=batchsize)
     except Exception as err:
         log.log(f"Search index popularities update failed ({repr(err)})")
         if isinstance(err, searchindex.RETRYABLE_ERROR_CLASSES):
