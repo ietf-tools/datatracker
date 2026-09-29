@@ -1,24 +1,26 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 from unittest import mock
 
+import jsonschema
 import requests.exceptions
 import typesense.exceptions
 from django.conf import settings
 from django.test.utils import override_settings
 
-from . import searchindex
-from .test_utils import TestCase
-from ..blobdb.models import Blob
-from ..doc.factories import (
+from ietf.blobdb.models import Blob
+from ietf.doc.factories import (
+    BcpFactory,
+    PublishedRfcDocEventFactory,
+    StdFactory,
     WgDraftFactory,
     WgRfcFactory,
-    PublishedRfcDocEventFactory,
-    BcpFactory,
-    StdFactory,
 )
-from ..doc.models import Document, RelatedDocument
-from ..doc.storage_utils import store_str
-from ..person.factories import PersonFactory
+from ietf.doc.models import Document, RelatedDocument
+from ietf.doc.storage_utils import store_str
+from ietf.person.factories import PersonFactory
+
+from . import searchindex
+from .test_utils import TestCase
 
 
 class SearchindexTests(TestCase):
@@ -83,16 +85,17 @@ class SearchindexTests(TestCase):
         not_rfc = WgDraftFactory()
         assert isinstance(not_rfc, Document)
         with self.assertRaises(AssertionError):
-            searchindex.typesense_doc_from_rfc(not_rfc)
+            searchindex.typesense_doc_from_rfc(not_rfc, {})
 
         invalid_rfc = WgRfcFactory(name="rfc1000000", rfc_number=None)
         assert isinstance(invalid_rfc, Document)
         with self.assertRaises(AssertionError):
-            searchindex.typesense_doc_from_rfc(invalid_rfc)
+            searchindex.typesense_doc_from_rfc(invalid_rfc, {})
 
         rfc = PublishedRfcDocEventFactory().doc
         assert isinstance(rfc, Document)
-        result = searchindex.typesense_doc_from_rfc(rfc)
+        popularity_scores = {rfc.rfc_number: 0.5}
+        result = searchindex.typesense_doc_from_rfc(rfc, popularity_scores)
         # Check a few values, not exhaustive
         self.assertEqual(result["id"], f"doc-{rfc.pk}")
         self.assertEqual(result["rfcNumber"], rfc.rfc_number)
@@ -101,6 +104,13 @@ class SearchindexTests(TestCase):
         self.assertNotIn("adName", result)
         self.assertNotIn("content", result)  # no blob
         self.assertNotIn("subseries", result)
+        self.assertEqual(result["popularity"], 0.5)
+
+        # Unscored RFC and unavailable scores both give None
+        result = searchindex.typesense_doc_from_rfc(rfc, {})
+        self.assertIsNone(result["popularity"])
+        result = searchindex.typesense_doc_from_rfc(rfc, None)
+        self.assertIsNone(result["popularity"])
 
         # repeat, this time with contents, an AD, and subseries docs
         store_str(
@@ -115,7 +125,7 @@ class SearchindexTests(TestCase):
         # (the typesense schema does not support this for real at the moment)
         BcpFactory(contains=[rfc], name="bcp1234")
         StdFactory(contains=[rfc], name="std1234")
-        result = searchindex.typesense_doc_from_rfc(rfc)
+        result = searchindex.typesense_doc_from_rfc(rfc, popularity_scores)
         # Check a few values, not exhaustive
         self.assertEqual(
             result["content"],
@@ -135,7 +145,7 @@ class SearchindexTests(TestCase):
 
         # Finally, delete the contents blob and make sure things don't blow up
         Blob.objects.get(bucket="rfc", name=f"txt/{rfc.name}.txt").delete()
-        result = searchindex.typesense_doc_from_rfc(rfc)
+        result = searchindex.typesense_doc_from_rfc(rfc, popularity_scores)
         self.assertNotIn("content", result)
 
     def test_typesense_doc_from_rfc_flags_obsoleted(self):
@@ -145,7 +155,7 @@ class SearchindexTests(TestCase):
         self.assertEqual(len(rfc.related_that("obs")), 0)
         self.assertEqual(len(rfc.related_that("updates")), 0)
         self.assertNotEqual(rfc.std_level.slug, "hist")
-        result = searchindex.typesense_doc_from_rfc(rfc)
+        result = searchindex.typesense_doc_from_rfc(rfc, {})
         self.assertFalse(result["flags"]["hiddenDefault"])
         self.assertFalse(result["flags"]["obsoleted"])
         self.assertFalse(result["flags"]["updated"])
@@ -155,7 +165,7 @@ class SearchindexTests(TestCase):
             target=rfc,
             relationship_id="obs",
         )
-        result = searchindex.typesense_doc_from_rfc(rfc)
+        result = searchindex.typesense_doc_from_rfc(rfc, {})
         self.assertTrue(result["flags"]["hiddenDefault"])
         self.assertTrue(result["flags"]["obsoleted"])
         self.assertFalse(result["flags"]["updated"])
@@ -167,7 +177,7 @@ class SearchindexTests(TestCase):
         self.assertEqual(len(rfc.related_that("obs")), 0)
         self.assertEqual(len(rfc.related_that("updates")), 0)
         self.assertNotEqual(rfc.std_level.slug, "hist")
-        result = searchindex.typesense_doc_from_rfc(rfc)
+        result = searchindex.typesense_doc_from_rfc(rfc, {})
         self.assertFalse(result["flags"]["hiddenDefault"])
         self.assertFalse(result["flags"]["obsoleted"])
         self.assertFalse(result["flags"]["updated"])
@@ -177,7 +187,7 @@ class SearchindexTests(TestCase):
             target=rfc,
             relationship_id="updates",
         )
-        result = searchindex.typesense_doc_from_rfc(rfc)
+        result = searchindex.typesense_doc_from_rfc(rfc, {})
         self.assertFalse(result["flags"]["hiddenDefault"])
         self.assertFalse(result["flags"]["obsoleted"])
         self.assertTrue(result["flags"]["updated"])
@@ -186,11 +196,19 @@ class SearchindexTests(TestCase):
         """typesense docs should set flags correctly for historic RFC"""
         rfc = PublishedRfcDocEventFactory(doc__std_level_id="hist").doc
         assert isinstance(rfc, Document)
-        result = searchindex.typesense_doc_from_rfc(rfc)
+        result = searchindex.typesense_doc_from_rfc(rfc, {})
         self.assertTrue(result["flags"]["hiddenDefault"])
         self.assertFalse(result["flags"]["obsoleted"])
         self.assertFalse(result["flags"]["updated"])
 
+    @mock.patch("ietf.utils.searchindex.cached_popularity_scores")
+    def test_get_popularity_scores(self, mock_cached_scores):
+        mock_cached_scores.return_value = {1234: 0.5}
+        self.assertEqual(searchindex._get_popularity_scores(), {1234: 0.5})
+        for err in [FileNotFoundError(), jsonschema.ValidationError("invalid")]:
+            with self.subTest(repr(err)):
+                mock_cached_scores.side_effect = err
+                self.assertIsNone(searchindex._get_popularity_scores())
 
     @override_settings(
         SEARCHINDEX_CONFIG={
@@ -199,16 +217,21 @@ class SearchindexTests(TestCase):
             "TYPESENSE_COLLECTION_NAME": "frogs",
         }
     )
+    @mock.patch("ietf.utils.searchindex._get_popularity_scores")
     @mock.patch("ietf.utils.searchindex.typesense_doc_from_rfc")
     @mock.patch("ietf.utils.searchindex.typesense.Client")
     def test_update_or_create_rfc_entry(
-        self, mock_ts_client_constructor, mock_tdoc_from_rfc
+        self, mock_ts_client_constructor, mock_tdoc_from_rfc, mock_get_scores
     ):
         fake_tdoc = object()
         mock_tdoc_from_rfc.return_value = fake_tdoc
+        fake_scores = object()
+        mock_get_scores.return_value = fake_scores
         rfc = WgRfcFactory()
         assert isinstance(rfc, Document)
         searchindex.update_or_create_rfc_entry(rfc)
+        self.assertEqual(mock_get_scores.call_count, 1)
+        self.assertEqual(mock_tdoc_from_rfc.call_args, mock.call(rfc, fake_scores))
         self.assertTrue(mock_ts_client_constructor.called)
         # walk the tree down to the method we expected to be called...
         mock_upsert = mock_ts_client_constructor.return_value.collections[
@@ -224,16 +247,24 @@ class SearchindexTests(TestCase):
             "TYPESENSE_COLLECTION_NAME": "frogs",
         }
     )
+    @mock.patch("ietf.utils.searchindex._get_popularity_scores")
     @mock.patch("ietf.utils.searchindex.typesense_doc_from_rfc")
     @mock.patch("ietf.utils.searchindex.typesense.Client")
     def test_update_or_create_rfc_entries(
-        self, mock_ts_client_constructor, mock_tdoc_from_rfc
+        self, mock_ts_client_constructor, mock_tdoc_from_rfc, mock_get_scores
     ):
         fake_tdoc = object()
         mock_tdoc_from_rfc.return_value = fake_tdoc
+        fake_scores = object()
+        mock_get_scores.return_value = fake_scores
         rfc = WgRfcFactory()
         assert isinstance(rfc, Document)
         searchindex.update_or_create_rfc_entries([rfc] * 50)  # list of docs...
+        # Scores are loaded once, not per RFC
+        self.assertEqual(mock_get_scores.call_count, 1)
+        self.assertEqual(
+            mock_tdoc_from_rfc.call_args_list, [mock.call(rfc, fake_scores)] * 50
+        )
         self.assertEqual(mock_ts_client_constructor.call_count, 1)
         # walk the tree down to the method we expected to be called...
         mock_import_ = mock_ts_client_constructor.return_value.collections[
@@ -245,7 +276,13 @@ class SearchindexTests(TestCase):
         )
 
         mock_import_.reset_mock()
+        mock_get_scores.reset_mock()
+        mock_tdoc_from_rfc.reset_mock()
         searchindex.update_or_create_rfc_entries([rfc] * 50, batchsize=20)
+        self.assertEqual(mock_get_scores.call_count, 1)
+        self.assertEqual(
+            mock_tdoc_from_rfc.call_args_list, [mock.call(rfc, fake_scores)] * 50
+        )
         self.assertEqual(mock_ts_client_constructor.call_count, 2)  # one more
         # walk the tree down to the method we expected to be called...
         mock_import_ = mock_ts_client_constructor.return_value.collections[
@@ -260,6 +297,77 @@ class SearchindexTests(TestCase):
                 mock.call([fake_tdoc] * 10, {"action": "upsert"}),
             ],
         )
+
+    @override_settings(
+        SEARCHINDEX_CONFIG={
+            "TYPESENSE_API_URL": "http://ts.example.com",
+            "TYPESENSE_API_KEY": "test-api-key",
+            "TYPESENSE_COLLECTION_NAME": "frogs",
+        }
+    )
+    @mock.patch("ietf.utils.searchindex.typesense.Client")
+    def test_partial_update_rfc_entries(self, mock_ts_client_constructor):
+        mock_import_ = mock_ts_client_constructor.return_value.collections[
+            "frogs"  # matches value in override_settings above
+        ].documents.import_
+        # Alternate success and failure results
+        mock_import_.side_effect = lambda tdata_batch, params: [
+            {"success": index % 2 == 0, "error": "failed"}
+            for index in range(len(tdata_batch))
+        ]
+        fields = {
+            "rfcNumber": lambda rfc: rfc.rfc_number,
+            "constant": lambda rfc: "some value",
+        }
+
+        def expected_tdata(rfc):
+            return {
+                "id": f"doc-{rfc.pk}",
+                "rfcNumber": rfc.rfc_number,
+                "constant": "some value",
+            }
+
+        rfcs = WgRfcFactory.create_batch(3)
+        searchindex.partial_update_rfc_entries(rfcs, fields)
+        self.assertEqual(mock_import_.call_count, 1)
+        self.assertEqual(
+            mock_import_.call_args,
+            mock.call([expected_tdata(rfc) for rfc in rfcs], {"action": "update"}),
+        )
+
+        mock_import_.reset_mock()
+        rfc = rfcs[0]
+        searchindex.partial_update_rfc_entries([rfc] * 50, fields, batchsize=20)
+        self.assertEqual(
+            mock_import_.call_args_list,
+            [
+                mock.call([expected_tdata(rfc)] * 20, {"action": "update"}),
+                mock.call([expected_tdata(rfc)] * 20, {"action": "update"}),
+                mock.call([expected_tdata(rfc)] * 10, {"action": "update"}),
+            ],
+        )
+
+    @mock.patch("ietf.utils.searchindex.cached_popularity_scores")
+    @mock.patch("ietf.utils.searchindex.refresh_popularity_scores")
+    @mock.patch("ietf.utils.searchindex.partial_update_rfc_entries", autospec=True)
+    def test_update_rfc_popularities(
+        self, mock_partial_update, mock_refresh_scores, mock_cached_scores
+    ):
+        scored_rfc, unscored_rfc = WgRfcFactory.create_batch(2)
+        mock_refresh_scores.return_value = {scored_rfc.rfc_number: 0.75}
+        rfcs = [scored_rfc, unscored_rfc]
+
+        searchindex.update_rfc_popularities(rfcs, batchsize=7)
+        self.assertEqual(
+            mock_partial_update.call_args, mock.call(rfcs, mock.ANY, 7)
+        )
+        fields = mock_partial_update.call_args.args[1]
+        self.assertEqual(list(fields.keys()), ["popularity"])
+        self.assertEqual(fields["popularity"](scored_rfc), 0.75)
+        self.assertIsNone(fields["popularity"](unscored_rfc))
+        # Scores are loaded fresh once, not looked up in the cache per RFC
+        self.assertEqual(mock_refresh_scores.call_count, 1)
+        self.assertFalse(mock_cached_scores.called)
 
     @override_settings(
         SEARCHINDEX_CONFIG={

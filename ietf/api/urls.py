@@ -57,6 +57,12 @@ urlpatterns = [
     path("purple/", include("ietf.api.urls_rpc")),
     path("meeting/", include(meeting_router.urls)),
     path("red/", include(red_router.urls)),
+    # API to update RFC popularity scores
+    path(
+        r"reef/rfc/popularity_updated/",
+        doc_api.RfcPopularityView.as_view(),
+        name="ietf.api.reef_api.notify_rfc_popularity_updated",
+    ),
     path("schema/", SpectacularAPIView.as_view()),
     #
     # --- Custom API endpoints, sorted alphabetically ---
