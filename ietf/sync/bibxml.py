@@ -145,7 +145,7 @@ def get_abstract_bibxml(abstract):
     return f"""<abstract>{ts}</abstract>""" if ts else ""
 
 
-def get_rfc_bibxml(rfc):
+def build_rfc_bibxml(rfc):
     """Return BibXML entry for the given rfc Document object"""
 
     rfc_number = rfc.rfc_number
@@ -187,7 +187,7 @@ def get_rfc_bibxml(rfc):
     return f"""<reference anchor="RFC{rfc_number}" target="{link}"><front><title>{esc(rfc.title)}</title>{authors}{date}{get_abstract_bibxml(rfc.abstract)}</front>{subseries_info}<seriesInfo name="RFC" value="{rfc_number}"/><seriesInfo name="DOI" value="{rfc.doi}"/></reference>"""
 
 
-def get_bcp_bibxml(bcp_number):
+def build_bcp_bibxml(bcp_number):
     """Return BibXML entry for the given bcp"""
     bcp = Document.objects.get(type_id="bcp", name=f"bcp{bcp_number}")
     bcp_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"bcp{bcp_number}")
@@ -196,12 +196,12 @@ def get_bcp_bibxml(bcp_number):
     if not rfcs:
         raise BibXMLException(f"No RFCs found for BCP {bcp_number}.")
     for rfc in rfcs:
-        rfc_bibxml += get_rfc_bibxml(rfc)
+        rfc_bibxml += build_rfc_bibxml(rfc)
 
     return f"""<referencegroup anchor="BCP{bcp_number}" target="{bcp_link}">{rfc_bibxml}</referencegroup>"""
 
 
-def get_std_bibxml(std_number):
+def build_std_bibxml(std_number):
     """Return BibXML entry for the given std"""
     std = Document.objects.get(type_id="std", name=f"std{std_number}")
     std_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"std{std_number}")
@@ -210,12 +210,12 @@ def get_std_bibxml(std_number):
     if not rfcs:
         raise BibXMLException(f"No RFCs found for STD {std_number}.")
     for rfc in rfcs:
-        rfc_bibxml += get_rfc_bibxml(rfc)
+        rfc_bibxml += build_rfc_bibxml(rfc)
 
     return f"""<referencegroup anchor="STD{std_number}" target="{std_link}">{rfc_bibxml}</referencegroup>"""
 
 
-def get_fyi_bibxml(fyi_number):
+def build_fyi_bibxml(fyi_number):
     """Return BibXML entry for the given fyi"""
     fyi = Document.objects.get(type_id="fyi", name=f"fyi{fyi_number}")
     fyi_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"fyi{fyi_number}")
@@ -224,7 +224,7 @@ def get_fyi_bibxml(fyi_number):
     if not rfcs:
         raise BibXMLException(f"No RFCs found for FYI {fyi_number}.")
     for rfc in rfcs:
-        rfc_bibxml += get_rfc_bibxml(rfc)
+        rfc_bibxml += build_rfc_bibxml(rfc)
 
     return f"""<referencegroup anchor="FYI{fyi_number}" target="{fyi_link}">{rfc_bibxml}</referencegroup>"""
 
@@ -247,7 +247,7 @@ def recreate_rfc_bibxml():
     for rfc in Document.objects.filter(type_id="rfc"):
         rfc_number = rfc.rfc_number
         filename = f"bibxml/rfc{rfc_number}.xml"
-        bibxml = get_rfc_bibxml(rfc)
+        bibxml = build_rfc_bibxml(rfc)
         save_bibxml(bibxml, filename)
 
 
@@ -268,7 +268,7 @@ def recreate_rfcsubseries_bibxml():
     for bcp_number in bcps:
         try:
             filename = f"bibxml-rfcsubseries/bcp{bcp_number}.xml"
-            bibxml = get_bcp_bibxml(bcp_number)
+            bibxml = build_bcp_bibxml(bcp_number)
             save_bibxml(bibxml, filename)
         except BibXMLException as e:
             log(f"{e}")
@@ -287,7 +287,7 @@ def recreate_rfcsubseries_bibxml():
     for std_number in stds:
         filename = f"bibxml-rfcsubseries/std{std_number}.xml"
         try:
-            bibxml = get_std_bibxml(std_number)
+            bibxml = build_std_bibxml(std_number)
             save_bibxml(bibxml, filename)
         except BibXMLException as e:
             log(f"{e}")
@@ -307,7 +307,7 @@ def recreate_rfcsubseries_bibxml():
     for fyi_number in fyis:
         filename = f"bibxml-rfcsubseries/fyi{fyi_number}.xml"
         try:
-            bibxml = get_fyi_bibxml(fyi_number)
+            bibxml = build_fyi_bibxml(fyi_number)
             save_bibxml(bibxml, filename)
         except BibXMLException as e:
             log(f"{e}")
