@@ -27,7 +27,7 @@ from .models import HolderIprDisclosure, IprEvent
 
 
 class ResponseEmailTests(TestCase):
-    def test_is_valid_response_email_to_address(self):
+    def test_extract_valid_response_email_to_address(self):
         local, domain = get_base_ipr_request_address().split("@", maxsplit=1)
         # Lists of (input, output) pairs
         test_cases = [
