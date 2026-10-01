@@ -176,6 +176,16 @@ class UndeliverableIprResponseError(Exception):
     """Response email could not be delivered and should be treated as an error"""
 
 
+def is_valid_response_email_to_address(to: str) -> bool:
+    # exit if this isn't a response we're interested in (with plus addressing)
+    local, domain = get_base_ipr_request_address().split("@")
+    valid_pattern = fr"^{local}\+[a-zA-Z0-9_\-]{'{16}'}@{domain}"
+    return (
+        re.match(valid_pattern, to)
+        is not None
+    )
+
+
 def process_response_email(msg):
     """Save an incoming IPR response email message
     
@@ -192,8 +202,7 @@ def process_response_email(msg):
     to = message.get('To', '')
 
     # exit if this isn't a response we're interested in (with plus addressing)
-    local, domain = get_base_ipr_request_address().split('@')
-    if not re.match(r'^{}\+[a-zA-Z0-9_\-]{}@{}'.format(local,'{16}',domain),to):
+    if not is_valid_response_email_to_address(to):
         _from = message.get("From", "<unknown>")
         log(f"Ignoring IPR email without a message identifier from {_from} to {to}")
         return
