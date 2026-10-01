@@ -4,6 +4,7 @@
 
 import datetime
 import json
+from textwrap import dedent
 from unittest import mock
 import re
 
@@ -799,11 +800,14 @@ I would like to revoke this declaration.
             )
 
         # test process response
-        message_string = """To: {}
-From: joe@test.com
-Date: {}
-Subject: test
-""".format(reply_to, timezone.now().ctime())
+        message_string = dedent(
+            """\
+            To: {}
+            From: joe@test.com
+            Date: {}
+            Subject: test
+            """.format(reply_to, timezone.now().ctime())
+        )
         process_response_email(message_string)
         self.assertFalse(event.response_past_due())
 
@@ -814,11 +818,14 @@ Subject: test
             reply_to,
         )
         self.assertNotEqual(reply_to, bad_reply_to)
-        message_string = f"""To: {bad_reply_to}
-        From: joe@test.com
-        Date: {timezone.now().ctime()}
-        Subject: test
-        """
+        message_string = dedent(
+            f"""\
+            To: {bad_reply_to}
+            From: joe@test.com
+            Date: {timezone.now().ctime()}
+            Subject: test
+            """
+        )
         with self.assertRaises(UndeliverableIprResponseError):
             process_response_email(message_string)
 
