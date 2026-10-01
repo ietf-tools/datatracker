@@ -13,11 +13,11 @@ from ietf.doc.factories import (
     StdFactory,
 )
 from ietf.sync.bibxml import (
+    build_bcp_bibxml,
+    build_fyi_bibxml,
+    build_rfc_bibxml,
+    build_std_bibxml,
     get_abstract_bibxml,
-    get_bcp_bibxml,
-    get_fyi_bibxml,
-    get_rfc_bibxml,
-    get_std_bibxml,
     recreate_rfc_bibxml,
     recreate_rfcsubseries_bibxml,
     save_bibxml,
@@ -73,15 +73,15 @@ class BibXmlTests(TestCase):
         for empty in ["", "   ", "\n\n"]:
             self.assertEqual(get_abstract_bibxml(empty), "", f"{empty!r}")
 
-    def test_get_rfc_bibxml_without_abstract(self):
+    def test_build_rfc_bibxml_without_abstract(self):
         self.rfc.abstract = ""
-        bibxml = get_rfc_bibxml(self.rfc)
+        bibxml = build_rfc_bibxml(self.rfc)
         self.assertNotIn("<abstract>", bibxml)
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
 
-    def test_get_rfc_bibxml_abstract(self):
+    def test_build_rfc_bibxml_abstract(self):
         self.rfc.abstract = "First paragraph.  Still it.\n\n Second paragraph."
-        bibxml = get_rfc_bibxml(self.rfc)
+        bibxml = build_rfc_bibxml(self.rfc)
         self.assertIn(
             "<abstract><t>First paragraph. Still it.</t>"
             "<t>Second paragraph.</t></abstract>",
@@ -89,8 +89,8 @@ class BibXmlTests(TestCase):
         )
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
 
-    def test_get_rfc_bibxml(self):
-        bibxml = get_rfc_bibxml(self.rfc)
+    def test_build_rfc_bibxml(self):
+        bibxml = build_rfc_bibxml(self.rfc)
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
         self.assertIn(f"RFC{self.rfc.rfc_number}", bibxml)
         self.assertIn(
@@ -98,9 +98,9 @@ class BibXmlTests(TestCase):
         )
         self.assertIn('<date month="April" year="2021"/>', bibxml)
 
-    def test_get_bcp_bibxml(self):
+    def test_build_bcp_bibxml(self):
         bcp_number = self.bcp.name[3:]
-        bibxml = get_bcp_bibxml(bcp_number)
+        bibxml = build_bcp_bibxml(bcp_number)
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
         self.assertIn(f"BCP{bcp_number}", bibxml)
         self.assertIn(f"{settings.RFC_EDITOR_INFO_BASE_URL}bcp{bcp_number}", bibxml)
@@ -110,9 +110,9 @@ class BibXmlTests(TestCase):
         )
         self.assertIn('<date month="April" year="2021"/>', bibxml)
 
-    def test_get_std_bibxml(self):
+    def test_build_std_bibxml(self):
         std_number = self.std.name[3:]
-        bibxml = get_std_bibxml(std_number)
+        bibxml = build_std_bibxml(std_number)
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
         self.assertIn(f"STD{std_number}", bibxml)
         self.assertIn(f"{settings.RFC_EDITOR_INFO_BASE_URL}std{std_number}", bibxml)
@@ -122,9 +122,9 @@ class BibXmlTests(TestCase):
         )
         self.assertIn('<date month="April" year="2021"/>', bibxml)
 
-    def test_get_fyi_bibxml(self):
+    def test_build_fyi_bibxml(self):
         fyi_number = self.fyi.name[3:]
-        bibxml = get_fyi_bibxml(fyi_number)
+        bibxml = build_fyi_bibxml(fyi_number)
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
         self.assertIn(f"FYI{fyi_number}", bibxml)
         self.assertIn(f"{settings.RFC_EDITOR_INFO_BASE_URL}fyi{fyi_number}", bibxml)
@@ -150,7 +150,7 @@ class BibXmlTests(TestCase):
 
     def test_create_rfc_bibxml(self):
         bibxml_bucket = storages["bibxml_bucket"]
-        bibxml = get_rfc_bibxml(self.rfc)
+        bibxml = build_rfc_bibxml(self.rfc)
         filename = f"bibxml/rfc{self.rfc.rfc_number}.xml"
         save_bibxml(bibxml, filename)
         with bibxml_bucket.open(filename, "rb") as f:
@@ -165,7 +165,7 @@ class BibXmlTests(TestCase):
     def test_create_bcp_bibxml(self):
         bibxml_bucket = storages["bibxml_bucket"]
         bcp_number = self.bcp.name[3:]
-        bibxml = get_bcp_bibxml(bcp_number)
+        bibxml = build_bcp_bibxml(bcp_number)
         filename = f"bibxml-rfcsubseries/bcp{bcp_number}.xml"
         save_bibxml(bibxml, filename)
         with bibxml_bucket.open(filename, "rb") as f:
@@ -181,7 +181,7 @@ class BibXmlTests(TestCase):
     def test_create_std_bibxml(self):
         bibxml_bucket = storages["bibxml_bucket"]
         std_number = self.std.name[3:]
-        bibxml = get_std_bibxml(std_number)
+        bibxml = build_std_bibxml(std_number)
         filename = f"bibxml-rfcsubseries/std{std_number}.xml"
         save_bibxml(bibxml, filename)
         with bibxml_bucket.open(filename, "rb") as f:
@@ -197,7 +197,7 @@ class BibXmlTests(TestCase):
     def test_create_fyi_bibxml(self):
         bibxml_bucket = storages["bibxml_bucket"]
         fyi_number = self.fyi.name[3:]
-        bibxml = get_fyi_bibxml(fyi_number)
+        bibxml = build_fyi_bibxml(fyi_number)
         filename = f"bibxml-rfcsubseries/fyi{fyi_number}.xml"
         save_bibxml(bibxml, filename)
         with bibxml_bucket.open(filename, "rb") as f:
