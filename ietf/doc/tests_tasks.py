@@ -14,7 +14,12 @@ from typesense import exceptions as typesense_exceptions
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import datetime_today
 
-from .factories import DocumentFactory, NewRevisionDocEventFactory, WgRfcFactory
+from .factories import (
+    DocumentFactory,
+    NewRevisionDocEventFactory,
+    WgDraftFactory,
+    WgRfcFactory,
+)
 from .models import Document, NewRevisionDocEvent
 from .tasks import (
     expire_ids_task,
@@ -25,6 +30,7 @@ from .tasks import (
     investigate_fragment_task,
     notify_expirations_task,
     rebuild_searchindex_task,
+    update_rfc_searchindex_popularities_task,
     update_rfc_searchindex_task,
 )
 
@@ -196,6 +202,40 @@ class TaskTests(TestCase):
             ordered=True,
         )
         self.assertEqual(mock_update.call_args.kwargs["batchsize"], 3)
+
+    @mock.patch("ietf.doc.tasks.searchindex.update_rfc_popularities")
+    @mock.patch("ietf.doc.tasks.searchindex.enabled")
+    def test_update_rfc_searchindex_popularities_task(
+        self, mock_searchindex_enabled, mock_update_popularities
+    ):
+        rfcs = WgRfcFactory.create_batch(3)
+        WgDraftFactory()  # not included in the update
+
+        mock_searchindex_enabled.return_value = False
+        update_rfc_searchindex_popularities_task()
+        self.assertFalse(mock_update_popularities.called)
+
+        mock_searchindex_enabled.return_value = True
+        update_rfc_searchindex_popularities_task()
+        self.assertTrue(mock_update_popularities.called)
+        self.assertQuerysetEqual(
+            mock_update_popularities.call_args.args[0], rfcs, ordered=False
+        )
+        self.assertEqual(mock_update_popularities.call_args.kwargs["batchsize"], 200)
+
+        update_rfc_searchindex_popularities_task(batchsize=17)
+        self.assertEqual(mock_update_popularities.call_args.kwargs["batchsize"], 17)
+
+        with override_settings(SEARCHINDEX_CONFIG={"TASK_MAX_RETRIES": 0}):
+            # Try a non-retryable error (there are others)
+            mock_update_popularities.side_effect = (
+                typesense_exceptions.RequestMalformed
+            )
+            update_rfc_searchindex_popularities_task()  # no retry
+            # Now what should be a retryable error
+            mock_update_popularities.side_effect = typesense_exceptions.Timeout
+            with self.assertRaises(Retry):
+                update_rfc_searchindex_popularities_task()
 
 
 class Idnits2SupportTests(TestCase):
