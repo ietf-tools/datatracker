@@ -9,7 +9,7 @@ import os
 import re
 
 from email import message_from_bytes
-from email.utils import parsedate_tz
+from email.utils import parsedate_tz, parseaddr
 
 from django.template.loader import render_to_string
 from django.utils.encoding import force_str, force_bytes
@@ -180,8 +180,11 @@ def is_valid_response_email_to_address(to: str) -> bool:
     # exit if this isn't a response we're interested in (with plus addressing)
     local, domain = get_base_ipr_request_address().split("@")
     valid_pattern = fr"^{local}\+[a-zA-Z0-9_\-]{'{16}'}@{domain}"
+    to_name, to_addr = parseaddr(to)
+    if (to_name, to_addr) == ("", ""):
+        return False
     return (
-        re.match(valid_pattern, to)
+        re.match(valid_pattern, to_addr)
         is not None
     )
 
