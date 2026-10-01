@@ -48,6 +48,14 @@ class ResponseEmailTests(TestCase):
             ("notanipr@ietf.org", None),
             (f"{local}+abcd1234-EFGH789@some-other-domain.example.com", None),
             (f"{local}@{domain}", None),
+            (
+                f"{local}+AbCd1234-efgh789@{domain}, something@example.com",
+                None,
+            ),
+            (
+                f"{local}+AbCd1234-efgh789@{domain},{local}+AbCd1234-efgh789@{domain}",
+                None,
+            ),
         ]
         for email, expected in test_cases:
             with self.subTest(email=email):
