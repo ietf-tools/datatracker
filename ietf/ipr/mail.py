@@ -9,7 +9,7 @@ import os
 import re
 
 from email import message_from_bytes
-from email.utils import parsedate_tz
+from email.utils import parsedate_tz, parseaddr
 
 from django.template.loader import render_to_string
 from django.utils.encoding import force_str, force_bytes
@@ -176,6 +176,17 @@ class UndeliverableIprResponseError(Exception):
     """Response email could not be delivered and should be treated as an error"""
 
 
+def extract_valid_response_email_to_address(to: str) -> str | None:
+    # exit if this isn't a response we're interested in (with plus addressing)
+    local, domain = get_base_ipr_request_address().split("@")
+    valid_pattern = fr"{local}\+[a-zA-Z0-9_\-]{{16}}@{domain}$"
+    to_name, to_addr = parseaddr(to)
+    if (to_name, to_addr) == ("", ""):
+        return None  # entirely invalid address
+    is_valid = re.fullmatch(valid_pattern, to_addr) is not None
+    return to_addr if is_valid else None
+
+
 def process_response_email(msg):
     """Save an incoming IPR response email message
     
@@ -189,13 +200,13 @@ def process_response_email(msg):
     the original message via new IprEvent
     """
     message = message_from_bytes(force_bytes(msg))
-    to = message.get('To', '')
+    raw_to = message.get('To', '')
 
     # exit if this isn't a response we're interested in (with plus addressing)
-    local, domain = get_base_ipr_request_address().split('@')
-    if not re.match(r'^{}\+[a-zA-Z0-9_\-]{}@{}'.format(local,'{16}',domain),to):
+    to = extract_valid_response_email_to_address(raw_to)
+    if to is None:
         _from = message.get("From", "<unknown>")
-        log(f"Ignoring IPR email without a message identifier from {_from} to {to}")
+        log(f"Ignoring IPR email without a message identifier from {_from} to {raw_to}")
         return
 
     try:
