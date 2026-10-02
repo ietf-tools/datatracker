@@ -4,7 +4,7 @@ from collections import namedtuple
 
 import debug  # pyflakes:ignore
 
-from ietf.mailtrigger.models import MailTrigger, Recipient
+from ietf.mailtrigger.models import MailTrigger, Recipient, clean_duplicates
 from ietf.submit.models import Submission
 from ietf.utils.mail import excludeaddrs
 
@@ -47,6 +47,7 @@ def gather_address_lists(
     to.discard("")
     if skipped_recipients:
         to = excludeaddrs(to, skipped_recipients)
+    to = clean_duplicates(to)
 
     cc = set()
     for recipient in mailtrigger.cc.all():
@@ -54,6 +55,7 @@ def gather_address_lists(
     cc.discard("")
     if skipped_recipients:
         cc = excludeaddrs(cc, skipped_recipients)
+    cc = clean_duplicates(cc)
 
     return AddrLists(to=sorted(list(to)), cc=sorted(list(cc)))
 
