@@ -2,7 +2,6 @@
 from unittest import mock
 
 import jsonschema
-from django.test.utils import override_settings
 
 from ietf.blobdb.models import Blob
 from ietf.doc.factories import (
@@ -81,7 +80,9 @@ class SearchindexesTests(TestCase):
         # Check a few values, not exhaustive
         self.assertEqual(result["id"], f"doc-{rfc.pk}")
         self.assertEqual(result["rfcNumber"], rfc.rfc_number)
-        self.assertEqual(result["abstract"], searchindexes._sanitize_abstract(rfc.abstract))
+        self.assertEqual(
+            result["abstract"], searchindexes._sanitize_abstract(rfc.abstract)
+        )
         self.assertEqual(result["pages"], rfc.pages)
         self.assertNotIn("adName", result)
         self.assertNotIn("content", result)  # no blob
@@ -192,16 +193,9 @@ class SearchindexesTests(TestCase):
                 mock_cached_scores.side_effect = err
                 self.assertIsNone(searchindexes._get_popularity_scores())
 
-    @override_settings(
-        SEARCH_PROVIDER_CONFIG={
-            "TYPESENSE_API_URL": "http://ts.example.com",
-            "TYPESENSE_API_KEY": "test-api-key",
-            "TYPESENSE_COLLECTION_NAME": "frogs",
-        }
-    )
     @mock.patch("ietf.doc.searchindexes._get_popularity_scores")
     @mock.patch("ietf.doc.searchindexes.typesense_doc_from_rfc")
-    @mock.patch("ietf.utils.search_provider.upsert_document")
+    @mock.patch("ietf.utils.search_provider.SearchIndex.upsert_document", autospec=True)
     def test_update_or_create_rfc_entry(
         self, mock_upsert_document, mock_tdoc_from_rfc, mock_get_scores
     ):
@@ -216,26 +210,21 @@ class SearchindexesTests(TestCase):
         self.assertEqual(mock_tdoc_from_rfc.call_args, mock.call(rfc, fake_scores))
         self.assertEqual(
             mock_upsert_document.call_args,
-            mock.call("frogs", fake_tdoc),  # matches value in override_settings above
+            mock.call(searchindexes.DOCS_INDEX, fake_tdoc),
         )
 
-    @override_settings(
-        SEARCH_PROVIDER_CONFIG={
-            "TYPESENSE_API_URL": "http://ts.example.com",
-            "TYPESENSE_API_KEY": "test-api-key",
-            "TYPESENSE_COLLECTION_NAME": "frogs",
-        }
-    )
     @mock.patch("ietf.doc.searchindexes.log")
     @mock.patch("ietf.doc.searchindexes._get_popularity_scores")
     @mock.patch("ietf.doc.searchindexes.typesense_doc_from_rfc")
-    @mock.patch("ietf.utils.search_provider.upsert_documents")
+    @mock.patch(
+        "ietf.utils.search_provider.SearchIndex.upsert_documents", autospec=True
+    )
     def test_update_or_create_rfc_entries(
         self, mock_upsert_documents, mock_tdoc_from_rfc, mock_get_scores, mock_log
     ):
         written = []
 
-        def fake_upsert_documents(name, documents, *, batchsize):
+        def fake_upsert_documents(index, documents, *, batchsize):
             written.extend(documents)  # consumes the generator
             return WriteResult(written=len(written))
 
@@ -254,7 +243,7 @@ class SearchindexesTests(TestCase):
         )
         self.assertEqual(
             mock_upsert_documents.call_args,
-            mock.call("frogs", mock.ANY, batchsize=None),
+            mock.call(searchindexes.DOCS_INDEX, mock.ANY, batchsize=None),
         )
         self.assertEqual(written, [fake_tdoc] * 50)
 
@@ -269,7 +258,7 @@ class SearchindexesTests(TestCase):
         )
         self.assertEqual(
             mock_upsert_documents.call_args,
-            mock.call("frogs", mock.ANY, batchsize=20),
+            mock.call(searchindexes.DOCS_INDEX, mock.ANY, batchsize=20),
         )
         self.assertEqual(written, [fake_tdoc] * 50)
 
@@ -284,19 +273,14 @@ class SearchindexesTests(TestCase):
             mock.call("Failed to index RFC 1234: oops"), mock_log.call_args_list
         )
 
-    @override_settings(
-        SEARCH_PROVIDER_CONFIG={
-            "TYPESENSE_API_URL": "http://ts.example.com",
-            "TYPESENSE_API_KEY": "test-api-key",
-            "TYPESENSE_COLLECTION_NAME": "frogs",
-        }
-    )
     @mock.patch("ietf.doc.searchindexes.log")
-    @mock.patch("ietf.utils.search_provider.update_documents")
+    @mock.patch(
+        "ietf.utils.search_provider.SearchIndex.update_documents", autospec=True
+    )
     def test_partial_update_rfc_entries(self, mock_update_documents, mock_log):
         written = []
 
-        def fake_update_documents(name, partial_documents, *, batchsize):
+        def fake_update_documents(index, partial_documents, *, batchsize):
             written.extend(partial_documents)  # consumes the generator
             return WriteResult(written=len(written))
 
@@ -317,7 +301,7 @@ class SearchindexesTests(TestCase):
         searchindexes.partial_update_rfc_entries(rfcs, fields)
         self.assertEqual(
             mock_update_documents.call_args,
-            mock.call("frogs", mock.ANY, batchsize=None),
+            mock.call(searchindexes.DOCS_INDEX, mock.ANY, batchsize=None),
         )
         self.assertEqual(written, [expected_tdata(rfc) for rfc in rfcs])
 
@@ -327,7 +311,7 @@ class SearchindexesTests(TestCase):
         searchindexes.partial_update_rfc_entries([rfc] * 50, fields, batchsize=20)
         self.assertEqual(
             mock_update_documents.call_args,
-            mock.call("frogs", mock.ANY, batchsize=20),
+            mock.call(searchindexes.DOCS_INDEX, mock.ANY, batchsize=20),
         )
         self.assertEqual(written, [expected_tdata(rfc)] * 50)
 
@@ -353,9 +337,7 @@ class SearchindexesTests(TestCase):
         rfcs = [scored_rfc, unscored_rfc]
 
         searchindexes.update_rfc_popularities(rfcs, batchsize=7)
-        self.assertEqual(
-            mock_partial_update.call_args, mock.call(rfcs, mock.ANY, 7)
-        )
+        self.assertEqual(mock_partial_update.call_args, mock.call(rfcs, mock.ANY, 7))
         fields = mock_partial_update.call_args.args[1]
         self.assertEqual(list(fields.keys()), ["popularity"])
         self.assertEqual(fields["popularity"](scored_rfc), 0.75)
@@ -363,3 +345,8 @@ class SearchindexesTests(TestCase):
         # Scores are loaded fresh once, not looked up in the cache per RFC
         self.assertEqual(mock_refresh_scores.call_count, 1)
         self.assertFalse(mock_cached_scores.called)
+
+    def test_docs_index(self):
+        self.assertEqual(searchindexes.DOCS_INDEX.name, "docs")
+        self.assertIs(searchindexes.DOCS_INDEX.schema, searchindexes.DOCS_SCHEMA)
+        self.assertIs(searchindexes.DOCS_INDEX.presets, searchindexes.SEARCH_PRESETS)

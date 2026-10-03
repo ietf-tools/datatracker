@@ -163,7 +163,7 @@ def typesense_doc_from_rfc(
 def update_or_create_rfc_entry(rfc: Document):
     """Update/create index entries for one RFC"""
     ts_document = typesense_doc_from_rfc(rfc, _get_popularity_scores())
-    search_provider.upsert_document(search_provider.get_collection_name(), ts_document)
+    DOCS_INDEX.upsert_document(ts_document)
 
 
 def update_or_create_rfc_entries(
@@ -175,8 +175,7 @@ def update_or_create_rfc_entries(
     index. Will make a total of (len(rfcs) // batchsize) + 1 API calls.
     """
     popularity_scores = _get_popularity_scores()
-    result = search_provider.upsert_documents(
-        search_provider.get_collection_name(),
+    result = DOCS_INDEX.upsert_documents(
         (typesense_doc_from_rfc(rfc, popularity_scores) for rfc in rfcs),
         batchsize=batchsize,
     )
@@ -193,8 +192,7 @@ def partial_update_rfc_entries(
     fields: dict[str, Callable[[Document], Any]],
     batchsize: int | None = None,
 ):
-    result = search_provider.update_documents(
-        search_provider.get_collection_name(),
+    result = DOCS_INDEX.update_documents(
         (
             {"id": f"doc-{rfc.pk}"}  # required
             | {
@@ -397,3 +395,7 @@ SEARCH_PRESETS = {
         "query_by_weights": "127,50,50,20,20,5,2,1,1",
     },
 }
+
+DOCS_INDEX = search_provider.SearchIndex(
+    name="docs", schema=DOCS_SCHEMA, presets=SEARCH_PRESETS
+)

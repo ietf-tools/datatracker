@@ -61,13 +61,6 @@ def _get_client() -> typesense.Client:
     return client
 
 
-def get_collection_name() -> str:
-    _settings = get_settings()
-    collection_name = _settings["TYPESENSE_COLLECTION_NAME"]
-    assert isinstance(collection_name, str)
-    return collection_name
-
-
 @dataclass
 class WriteFailure:
     document: Mapping[str, Any]
@@ -80,63 +73,68 @@ class WriteResult:
     failures: list[WriteFailure] = field(default_factory=list)
 
 
-def create_index(name: str, schema: dict[str, Any]):
-    log(f"Creating '{name}' collection")
-    client = _get_client()
-    client.collections.create(cast(CollectionCreateSchema, {"name": name} | schema))
+@dataclass(frozen=True)
+class SearchIndex:
+    """A search index definition and the operations on it"""
 
+    name: str
+    schema: dict[str, Any]
+    presets: dict[str, dict[str, Any]] = field(default_factory=dict)
 
-def delete_index(name: str):
-    log(f"Deleting '{name}' collection")
-    client = _get_client()
-    try:
-        client.collections[name].delete()
-    except typesense.exceptions.ObjectNotFound:
-        pass
-
-
-def upsert_presets(presets: dict[str, dict[str, Any]]):
-    # typesense-python does not support presets, so use requests
-    _settings = get_settings()
-    api_base = _settings["TYPESENSE_API_URL"]
-    api_key = _settings["TYPESENSE_API_KEY"]
-    for preset_name, payload in presets.items():
-        log(f"Upserting '{preset_name}' preset")
-        response = requests.put(
-            urljoin(api_base, f"/presets/{preset_name}"),
-            json={"value": payload},
-            headers={
-                "X-TYPESENSE-API-KEY": api_key,
-            },
-            timeout=3,
+    def create(self):
+        log(f"Creating '{self.name}' collection")
+        client = _get_client()
+        client.collections.create(
+            cast(CollectionCreateSchema, {"name": self.name} | self.schema)
         )
-        response.raise_for_status()
 
+    def delete(self):
+        log(f"Deleting '{self.name}' collection")
+        client = _get_client()
+        try:
+            client.collections[self.name].delete()
+        except typesense.exceptions.ObjectNotFound:
+            pass
 
-def upsert_document(name: str, document: Mapping[str, Any]):
-    """Create or replace one document"""
-    client = _get_client()
-    client.collections[name].documents.upsert(document)
+    def upsert_presets(self):
+        # typesense-python does not support presets, so use requests
+        _settings = get_settings()
+        api_base = _settings["TYPESENSE_API_URL"]
+        api_key = _settings["TYPESENSE_API_KEY"]
+        for preset_name, payload in self.presets.items():
+            log(f"Upserting '{preset_name}' preset")
+            response = requests.put(
+                urljoin(api_base, f"/presets/{preset_name}"),
+                json={"value": payload},
+                headers={
+                    "X-TYPESENSE-API-KEY": api_key,
+                },
+                timeout=3,
+            )
+            response.raise_for_status()
 
+    def upsert_document(self, document: Mapping[str, Any]):
+        """Create or replace one document"""
+        client = _get_client()
+        client.collections[self.name].documents.upsert(document)
 
-def upsert_documents(
-    name: str, documents: Iterable[Mapping[str, Any]], *, batchsize: int | None = None
-) -> WriteResult:
-    """Create or replace documents in bulk"""
-    return _import_documents(name, documents, "upsert", batchsize)
+    def upsert_documents(
+        self, documents: Iterable[Mapping[str, Any]], *, batchsize: int | None = None
+    ) -> WriteResult:
+        """Create or replace documents in bulk"""
+        return _import_documents(self.name, documents, "upsert", batchsize)
 
+    def update_documents(
+        self,
+        partial_documents: Iterable[Mapping[str, Any]],
+        *,
+        batchsize: int | None = None,
+    ) -> WriteResult:
+        """Update fields of existing documents in bulk
 
-def update_documents(
-    name: str,
-    partial_documents: Iterable[Mapping[str, Any]],
-    *,
-    batchsize: int | None = None,
-) -> WriteResult:
-    """Update fields of existing documents in bulk
-
-    Each partial document must include the id of the document it updates.
-    """
-    return _import_documents(name, partial_documents, "update", batchsize)
+        Each partial document must include the id of the document it updates.
+        """
+        return _import_documents(self.name, partial_documents, "update", batchsize)
 
 
 def _import_documents(

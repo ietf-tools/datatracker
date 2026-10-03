@@ -28,9 +28,9 @@ class SearchProviderTests(TestCase):
             self.assertTrue(search_provider.enabled())
 
     @mock.patch("ietf.utils.search_provider.typesense.Client")
-    def test_create_index(self, mock_ts_client_constructor):
+    def test_create(self, mock_ts_client_constructor):
         schema = {"fields": [{"name": "title", "type": "string"}]}
-        search_provider.create_index("frogs", schema)
+        search_provider.SearchIndex(name="frogs", schema=schema).create()
         self.assertEqual(mock_ts_client_constructor.call_count, 1)
         mock_collections = mock_ts_client_constructor.return_value.collections
         self.assertEqual(
@@ -41,16 +41,17 @@ class SearchProviderTests(TestCase):
         )
 
     @mock.patch("ietf.utils.search_provider.typesense.Client")
-    def test_delete_index(self, mock_ts_client_constructor):
-        search_provider.delete_index("frogs")
+    def test_delete(self, mock_ts_client_constructor):
+        index = search_provider.SearchIndex(name="frogs", schema={})
+        index.delete()
         self.assertEqual(mock_ts_client_constructor.call_count, 1)
         mock_collections = mock_ts_client_constructor.return_value.collections
         self.assertTrue(mock_collections["frogs"].delete.called)
 
-        mock_collections["frogs"].delete.side_effect = (
-            typesense.exceptions.ObjectNotFound
-        )
-        search_provider.delete_index("frogs")  # should ignore the exception
+        mock_collections[
+            "frogs"
+        ].delete.side_effect = typesense.exceptions.ObjectNotFound
+        index.delete()  # should ignore the exception
 
     @override_settings(
         SEARCH_PROVIDER_CONFIG={
@@ -63,13 +64,14 @@ class SearchProviderTests(TestCase):
             "preset-a": {"collection": "frogs", "query_by": "title"},
             "preset-b": {"collection": "frogs", "query_by": "abstract"},
         }
+        index = search_provider.SearchIndex(name="frogs", schema={}, presets=presets)
         self.requests_mock.put(
             "http://ts.example.com/presets/preset-a", text="ok", status_code=201
         )
         self.requests_mock.put(
             "http://ts.example.com/presets/preset-b", text="ok", status_code=202
         )
-        search_provider.upsert_presets(presets)
+        index.upsert_presets()
         self.assertEqual(
             [request.json() for request in self.requests_mock.request_history],
             [
@@ -88,7 +90,7 @@ class SearchProviderTests(TestCase):
             "http://ts.example.com/presets/preset-a", text="not ok", status_code=400
         )
         with self.assertRaises(requests.exceptions.HTTPError):
-            search_provider.upsert_presets(presets)
+            index.upsert_presets()
 
         self.requests_mock.put(
             "http://ts.example.com/presets/preset-a", text="ok", status_code=200
@@ -97,12 +99,13 @@ class SearchProviderTests(TestCase):
             "http://ts.example.com/presets/preset-b", text="not ok", status_code=400
         )
         with self.assertRaises(requests.exceptions.HTTPError):
-            search_provider.upsert_presets(presets)
+            index.upsert_presets()
 
     @mock.patch("ietf.utils.search_provider.typesense.Client")
     def test_upsert_document(self, mock_ts_client_constructor):
         document = {"id": "doc-1"}
-        search_provider.upsert_document("frogs", document)
+        index = search_provider.SearchIndex(name="frogs", schema={})
+        index.upsert_document(document)
         mock_upsert = mock_ts_client_constructor.return_value.collections[
             "frogs"
         ].documents.upsert
@@ -110,7 +113,7 @@ class SearchProviderTests(TestCase):
 
         mock_upsert.side_effect = typesense.exceptions.RequestMalformed
         with self.assertRaises(typesense.exceptions.RequestMalformed):
-            search_provider.upsert_document("frogs", document)
+            index.upsert_document(document)
 
     @mock.patch("ietf.utils.search_provider.typesense.Client")
     def test_upsert_documents(self, mock_ts_client_constructor):
@@ -127,7 +130,8 @@ class SearchProviderTests(TestCase):
             for index in range(len(batch))
         ]
         documents = [{"id": f"doc-{n}"} for n in range(3)]
-        result = search_provider.upsert_documents("frogs", documents)
+        index = search_provider.SearchIndex(name="frogs", schema={})
+        result = index.upsert_documents(documents)
         self.assertEqual(
             mock_import_.call_args_list,
             [mock.call(documents, {"action": "upsert"})],
@@ -157,9 +161,7 @@ class SearchProviderTests(TestCase):
 
         mock_import_.reset_mock()
         mock_import_.side_effect = fake_import_
-        result = search_provider.upsert_documents(
-            "frogs", generate_documents(), batchsize=20
-        )
+        result = index.upsert_documents(generate_documents(), batchsize=20)
         self.assertEqual(
             mock_import_.call_args_list,
             [
@@ -187,7 +189,8 @@ class SearchProviderTests(TestCase):
             {"success": False, "error": "not found", "code": 404},
         ]
         partial_documents = [{"id": "doc-1", "x": 1}, {"id": "doc-2", "x": 2}]
-        result = search_provider.update_documents("frogs", partial_documents)
+        index = search_provider.SearchIndex(name="frogs", schema={})
+        result = index.update_documents(partial_documents)
         self.assertEqual(
             mock_import_.call_args_list,
             [mock.call(partial_documents, {"action": "update"})],
