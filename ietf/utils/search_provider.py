@@ -40,7 +40,7 @@ DEFAULT_SETTINGS = {
 
 
 def get_settings():
-    return DEFAULT_SETTINGS | getattr(settings, "SEARCHINDEX_CONFIG", {})
+    return DEFAULT_SETTINGS | getattr(settings, "SEARCH_PROVIDER_CONFIG", {})
 
 
 def enabled():

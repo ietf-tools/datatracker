@@ -122,8 +122,8 @@ class TaskTests(TestCase):
             retval, {"name_fragment": "some fragment", "results": investigation_results}
         )
 
-    @mock.patch("ietf.doc.tasks.searchindex.update_or_create_rfc_entry")
-    @mock.patch("ietf.doc.tasks.searchindex.enabled")
+    @mock.patch("ietf.doc.tasks.search_provider.update_or_create_rfc_entry")
+    @mock.patch("ietf.doc.tasks.search_provider.enabled")
     def test_update_rfc_searchindex_task(
         self, mock_searchindex_enabled, mock_create_entry
     ):
@@ -142,7 +142,7 @@ class TaskTests(TestCase):
         update_rfc_searchindex_task(rfc_number=rfc.rfc_number)
         self.assertTrue(mock_create_entry.called)
 
-        with override_settings(SEARCHINDEX_CONFIG={"TASK_MAX_RETRIES": 0}):
+        with override_settings(SEARCH_PROVIDER_CONFIG={"TASK_MAX_RETRIES": 0}):
             # Try a non-retryable error (there are others)
             mock_create_entry.side_effect = typesense_exceptions.RequestMalformed
             update_rfc_searchindex_task(rfc_number=rfc.rfc_number)  # no retry
@@ -151,10 +151,10 @@ class TaskTests(TestCase):
             with self.assertRaises(Retry):
                 update_rfc_searchindex_task(rfc_number=rfc.rfc_number)
 
-    @mock.patch("ietf.doc.tasks.searchindex.update_or_create_rfc_entries")
-    @mock.patch("ietf.doc.tasks.searchindex.upsert_presets")
-    @mock.patch("ietf.doc.tasks.searchindex.create_collection")
-    @mock.patch("ietf.doc.tasks.searchindex.delete_collection")
+    @mock.patch("ietf.doc.tasks.search_provider.update_or_create_rfc_entries")
+    @mock.patch("ietf.doc.tasks.search_provider.upsert_presets")
+    @mock.patch("ietf.doc.tasks.search_provider.create_collection")
+    @mock.patch("ietf.doc.tasks.search_provider.delete_collection")
     def test_rebuild_searchindex_task(
         self, mock_delete, mock_create, mock_presets, mock_update
     ):
@@ -203,8 +203,8 @@ class TaskTests(TestCase):
         )
         self.assertEqual(mock_update.call_args.kwargs["batchsize"], 3)
 
-    @mock.patch("ietf.doc.tasks.searchindex.update_rfc_popularities")
-    @mock.patch("ietf.doc.tasks.searchindex.enabled")
+    @mock.patch("ietf.doc.tasks.search_provider.update_rfc_popularities")
+    @mock.patch("ietf.doc.tasks.search_provider.enabled")
     def test_update_rfc_searchindex_popularities_task(
         self, mock_searchindex_enabled, mock_update_popularities
     ):
@@ -226,7 +226,7 @@ class TaskTests(TestCase):
         update_rfc_searchindex_popularities_task(batchsize=17)
         self.assertEqual(mock_update_popularities.call_args.kwargs["batchsize"], 17)
 
-        with override_settings(SEARCHINDEX_CONFIG={"TASK_MAX_RETRIES": 0}):
+        with override_settings(SEARCH_PROVIDER_CONFIG={"TASK_MAX_RETRIES": 0}):
             # Try a non-retryable error (there are others)
             mock_update_popularities.side_effect = (
                 typesense_exceptions.RequestMalformed

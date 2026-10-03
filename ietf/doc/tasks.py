@@ -13,7 +13,7 @@ from django.utils import timezone
 import debug  # pyflakes:ignore
 from ietf.doc.utils_r2 import rfcs_are_in_r2
 from ietf.doc.utils_red import trigger_red_precomputer
-from ietf.utils import log, searchindex
+from ietf.utils import log, search_provider
 from ietf.utils.timezone import datetime_today
 
 from .expire import (
@@ -187,7 +187,7 @@ def trigger_red_precomputer_task(self, rfc_number_list=()):
 @shared_task(bind=True)
 def update_rfc_searchindex_task(self, rfc_number: int):
     """Update the search index for one RFC"""
-    if not searchindex.enabled():
+    if not search_provider.enabled():
         log.log("Search indexing is not enabled, skipping")
         return
 
@@ -198,11 +198,11 @@ def update_rfc_searchindex_task(self, rfc_number: int):
         )
         return
     try:
-        searchindex.update_or_create_rfc_entry(rfc)
+        search_provider.update_or_create_rfc_entry(rfc)
     except Exception as err:
         log.log(f"Search index update for {rfc.name} failed ({repr(err)})")
-        if isinstance(err, searchindex.RETRYABLE_ERROR_CLASSES):
-            searchindex_settings = searchindex.get_settings()
+        if isinstance(err, search_provider.RETRYABLE_ERROR_CLASSES):
+            searchindex_settings = search_provider.get_settings()
             self.retry(
                 countdown=searchindex_settings["TASK_RETRY_DELAY"],
                 max_retries=searchindex_settings["TASK_MAX_RETRIES"],
@@ -219,11 +219,11 @@ def rebuild_searchindex_task(
     server-side batch size, which is left at its default of 40.
     """
     if drop_collection:
-        searchindex.delete_collection()
-        searchindex.create_collection()
+        search_provider.delete_collection()
+        search_provider.create_collection()
     if upsert_presets:
-        searchindex.upsert_presets()  # ok if they already exist
-    searchindex.update_or_create_rfc_entries(
+        search_provider.upsert_presets()  # ok if they already exist
+    search_provider.update_or_create_rfc_entries(
         Document.objects.filter(type_id="rfc").order_by("-rfc_number"),
         batchsize=batchsize,
     )
@@ -236,17 +236,17 @@ def update_rfc_searchindex_popularities_task(self, *, batchsize=200):
     batchsize is the number of RFCs to update per API call. It is not the Typesense
     server-side batch size, which is left at its default of 40.
     """
-    if not searchindex.enabled():
+    if not search_provider.enabled():
         log.log("Search indexing is not enabled, skipping")
         return
 
     rfcs = Document.objects.filter(type_id="rfc")
     try:
-        searchindex.update_rfc_popularities(rfcs, batchsize=batchsize)
+        search_provider.update_rfc_popularities(rfcs, batchsize=batchsize)
     except Exception as err:
         log.log(f"Search index popularities update failed ({repr(err)})")
-        if isinstance(err, searchindex.RETRYABLE_ERROR_CLASSES):
-            searchindex_settings = searchindex.get_settings()
+        if isinstance(err, search_provider.RETRYABLE_ERROR_CLASSES):
+            searchindex_settings = search_provider.get_settings()
             self.retry(
                 countdown=searchindex_settings["TASK_RETRY_DELAY"],
                 max_retries=searchindex_settings["TASK_MAX_RETRIES"],
