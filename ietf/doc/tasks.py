@@ -28,6 +28,13 @@ from .expire import (
 )
 from .lastcall import expire_last_call, get_expired_last_calls
 from .models import Document, NewRevisionDocEvent
+from .searchindexes import (
+    DOCS_SCHEMA,
+    SEARCH_PRESETS,
+    update_or_create_rfc_entries,
+    update_or_create_rfc_entry,
+    update_rfc_popularities,
+)
 from .utils import (
     ensure_draft_bibxml_path_exists,
     generate_idnits2_rfc_status,
@@ -198,7 +205,7 @@ def update_rfc_searchindex_task(self, rfc_number: int):
         )
         return
     try:
-        search_provider.update_or_create_rfc_entry(rfc)
+        update_or_create_rfc_entry(rfc)
     except Exception as err:
         log.log(f"Search index update for {rfc.name} failed ({repr(err)})")
         if isinstance(err, search_provider.RETRYABLE_ERROR_CLASSES):
@@ -219,11 +226,12 @@ def rebuild_searchindex_task(
     server-side batch size, which is left at its default of 40.
     """
     if drop_collection:
-        search_provider.delete_collection()
-        search_provider.create_collection()
+        index_name = search_provider.get_collection_name()
+        search_provider.delete_index(index_name)
+        search_provider.create_index(index_name, DOCS_SCHEMA)
     if upsert_presets:
-        search_provider.upsert_presets()  # ok if they already exist
-    search_provider.update_or_create_rfc_entries(
+        search_provider.upsert_presets(SEARCH_PRESETS)  # ok if they already exist
+    update_or_create_rfc_entries(
         Document.objects.filter(type_id="rfc").order_by("-rfc_number"),
         batchsize=batchsize,
     )
@@ -242,7 +250,7 @@ def update_rfc_searchindex_popularities_task(self, *, batchsize=200):
 
     rfcs = Document.objects.filter(type_id="rfc")
     try:
-        search_provider.update_rfc_popularities(rfcs, batchsize=batchsize)
+        update_rfc_popularities(rfcs, batchsize=batchsize)
     except Exception as err:
         log.log(f"Search index popularities update failed ({repr(err)})")
         if isinstance(err, search_provider.RETRYABLE_ERROR_CLASSES):

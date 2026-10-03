@@ -122,7 +122,7 @@ class TaskTests(TestCase):
             retval, {"name_fragment": "some fragment", "results": investigation_results}
         )
 
-    @mock.patch("ietf.doc.tasks.search_provider.update_or_create_rfc_entry")
+    @mock.patch("ietf.doc.tasks.update_or_create_rfc_entry")
     @mock.patch("ietf.doc.tasks.search_provider.enabled")
     def test_update_rfc_searchindex_task(
         self, mock_searchindex_enabled, mock_create_entry
@@ -151,10 +151,10 @@ class TaskTests(TestCase):
             with self.assertRaises(Retry):
                 update_rfc_searchindex_task(rfc_number=rfc.rfc_number)
 
-    @mock.patch("ietf.doc.tasks.search_provider.update_or_create_rfc_entries")
+    @mock.patch("ietf.doc.tasks.update_or_create_rfc_entries")
     @mock.patch("ietf.doc.tasks.search_provider.upsert_presets")
-    @mock.patch("ietf.doc.tasks.search_provider.create_collection")
-    @mock.patch("ietf.doc.tasks.search_provider.delete_collection")
+    @mock.patch("ietf.doc.tasks.search_provider.create_index")
+    @mock.patch("ietf.doc.tasks.search_provider.delete_index")
     def test_rebuild_searchindex_task(
         self, mock_delete, mock_create, mock_presets, mock_update
     ):
@@ -203,7 +203,7 @@ class TaskTests(TestCase):
         )
         self.assertEqual(mock_update.call_args.kwargs["batchsize"], 3)
 
-    @mock.patch("ietf.doc.tasks.search_provider.update_rfc_popularities")
+    @mock.patch("ietf.doc.tasks.update_rfc_popularities")
     @mock.patch("ietf.doc.tasks.search_provider.enabled")
     def test_update_rfc_searchindex_popularities_task(
         self, mock_searchindex_enabled, mock_update_popularities
