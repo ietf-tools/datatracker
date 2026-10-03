@@ -350,3 +350,59 @@ class SearchindexesTests(TestCase):
         self.assertEqual(searchindexes.DOCS_INDEX.name, "docs")
         self.assertIs(searchindexes.DOCS_INDEX.schema, searchindexes.DOCS_SCHEMA)
         self.assertIs(searchindexes.DOCS_INDEX.presets, searchindexes.SEARCH_PRESETS)
+
+    @mock.patch("ietf.doc.searchindexes.update_or_create_rfc_entry")
+    def test_update_rfc_searchindex(self, mock_create_entry):
+        self.assertFalse(Document.objects.filter(rfc_number=5073).exists())
+        rfc = WgRfcFactory()
+        searchindexes.update_rfc_searchindex(5073)
+        self.assertFalse(mock_create_entry.called)
+        searchindexes.update_rfc_searchindex(rfc.rfc_number)
+        self.assertEqual(mock_create_entry.call_args, mock.call(rfc))
+
+    @mock.patch("ietf.doc.searchindexes.update_or_create_rfc_entries")
+    @mock.patch("ietf.utils.search_provider.SearchIndex.upsert_presets", autospec=True)
+    @mock.patch("ietf.utils.search_provider.SearchIndex.create", autospec=True)
+    @mock.patch("ietf.utils.search_provider.SearchIndex.delete", autospec=True)
+    def test_rebuild_searchindex(
+        self, mock_delete, mock_create, mock_presets, mock_update
+    ):
+        rfcs = WgRfcFactory.create_batch(10)
+        WgDraftFactory()  # not included in the rebuild
+        expected_rfcs = sorted(rfcs, key=lambda doc: -doc.rfc_number)
+
+        searchindexes.rebuild_searchindex()
+        self.assertFalse(mock_delete.called)
+        self.assertFalse(mock_create.called)
+        self.assertEqual(mock_presets.call_args, mock.call(searchindexes.DOCS_INDEX))
+        self.assertQuerysetEqual(
+            mock_update.call_args.args[0], expected_rfcs, ordered=True
+        )
+        self.assertEqual(mock_update.call_args.kwargs["batchsize"], 40)
+
+        mock_presets.reset_mock()
+        mock_update.reset_mock()
+        searchindexes.rebuild_searchindex(
+            drop_collection=True, batchsize=3, upsert_presets=False
+        )
+        self.assertEqual(mock_delete.call_args, mock.call(searchindexes.DOCS_INDEX))
+        self.assertEqual(mock_create.call_args, mock.call(searchindexes.DOCS_INDEX))
+        self.assertFalse(mock_presets.called)
+        self.assertQuerysetEqual(
+            mock_update.call_args.args[0], expected_rfcs, ordered=True
+        )
+        self.assertEqual(mock_update.call_args.kwargs["batchsize"], 3)
+
+    @mock.patch("ietf.doc.searchindexes.update_rfc_popularities")
+    def test_update_rfc_searchindex_popularities(self, mock_update_popularities):
+        rfcs = WgRfcFactory.create_batch(3)
+        WgDraftFactory()  # not included in the update
+
+        searchindexes.update_rfc_searchindex_popularities()
+        self.assertQuerysetEqual(
+            mock_update_popularities.call_args.args[0], rfcs, ordered=False
+        )
+        self.assertEqual(mock_update_popularities.call_args.kwargs["batchsize"], 200)
+
+        searchindexes.update_rfc_searchindex_popularities(batchsize=17)
+        self.assertEqual(mock_update_popularities.call_args.kwargs["batchsize"], 17)

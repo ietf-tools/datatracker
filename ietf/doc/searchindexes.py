@@ -399,3 +399,36 @@ SEARCH_PRESETS = {
 DOCS_INDEX = search_provider.SearchIndex(
     name="docs", schema=DOCS_SCHEMA, presets=SEARCH_PRESETS
 )
+
+
+def update_rfc_searchindex(rfc_number: int):
+    """Update the search index for one RFC"""
+    rfc = Document.objects.filter(type_id="rfc", rfc_number=rfc_number).first()
+    if rfc is None:
+        log(f"ERROR: Document for rfc{rfc_number} not found, not updating search index")
+        return
+    update_or_create_rfc_entry(rfc)
+
+
+def rebuild_searchindex(*, batchsize=40, drop_collection=False, upsert_presets=True):
+    """Rebuild the entire search index, optionally dropping the existing collection
+
+    batchsize is the number of RFCs to update per API call.
+    """
+    if drop_collection:
+        DOCS_INDEX.delete()
+        DOCS_INDEX.create()
+    if upsert_presets:
+        DOCS_INDEX.upsert_presets()  # ok if they already exist
+    update_or_create_rfc_entries(
+        Document.objects.filter(type_id="rfc").order_by("-rfc_number"),
+        batchsize=batchsize,
+    )
+
+
+def update_rfc_searchindex_popularities(*, batchsize=200):
+    """Update the search index popularities for all RFCs
+
+    batchsize is the number of RFCs to update per API call.
+    """
+    update_rfc_popularities(Document.objects.filter(type_id="rfc"), batchsize=batchsize)

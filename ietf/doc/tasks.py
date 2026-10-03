@@ -29,10 +29,9 @@ from .expire import (
 from .lastcall import expire_last_call, get_expired_last_calls
 from .models import Document, NewRevisionDocEvent
 from .searchindexes import (
-    DOCS_INDEX,
-    update_or_create_rfc_entries,
-    update_or_create_rfc_entry,
-    update_rfc_popularities,
+    rebuild_searchindex,
+    update_rfc_searchindex,
+    update_rfc_searchindex_popularities,
 )
 from .utils import (
     ensure_draft_bibxml_path_exists,
@@ -197,16 +196,10 @@ def update_rfc_searchindex_task(self, rfc_number: int):
         log.log("Search indexing is not enabled, skipping")
         return
 
-    rfc = Document.objects.filter(type_id="rfc", rfc_number=rfc_number).first()
-    if rfc is None:
-        log.log(
-            f"ERROR: Document for rfc{rfc_number} not found, not updating search index"
-        )
-        return
     try:
-        update_or_create_rfc_entry(rfc)
+        update_rfc_searchindex(rfc_number)
     except Exception as err:
-        log.log(f"Search index update for {rfc.name} failed ({repr(err)})")
+        log.log(f"Search index update for rfc{rfc_number} failed ({repr(err)})")
         if isinstance(err, search_provider.RETRYABLE_ERROR_CLASSES):
             searchindex_settings = search_provider.get_settings()
             self.retry(
@@ -224,14 +217,10 @@ def rebuild_searchindex_task(
     batchsize is the number of RFCs to update per API call. It is not the Typesense
     server-side batch size, which is left at its default of 40.
     """
-    if drop_collection:
-        DOCS_INDEX.delete()
-        DOCS_INDEX.create()
-    if upsert_presets:
-        DOCS_INDEX.upsert_presets()  # ok if they already exist
-    update_or_create_rfc_entries(
-        Document.objects.filter(type_id="rfc").order_by("-rfc_number"),
+    rebuild_searchindex(
         batchsize=batchsize,
+        drop_collection=drop_collection,
+        upsert_presets=upsert_presets,
     )
 
 
@@ -246,9 +235,8 @@ def update_rfc_searchindex_popularities_task(self, *, batchsize=200):
         log.log("Search indexing is not enabled, skipping")
         return
 
-    rfcs = Document.objects.filter(type_id="rfc")
     try:
-        update_rfc_popularities(rfcs, batchsize=batchsize)
+        update_rfc_searchindex_popularities(batchsize=batchsize)
     except Exception as err:
         log.log(f"Search index popularities update failed ({repr(err)})")
         if isinstance(err, search_provider.RETRYABLE_ERROR_CLASSES):
