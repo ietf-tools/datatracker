@@ -7,7 +7,17 @@ from django.conf import settings
 from django.test.utils import override_settings
 
 from . import search_provider
+from .test_typesense import FakeTypesenseClient
 from .test_utils import TestCase
+
+LIVE = "frogs_1"
+BUILDING = "frogs_2"
+
+
+def _mock_plain_collection(mock_client, name):
+    """Make a mock client report one collection named name and no alias"""
+    mock_client.aliases[name].retrieve.side_effect = typesense.exceptions.ObjectNotFound
+    mock_client.collections.retrieve.return_value = [{"name": name}]
 
 
 class SearchProviderTests(TestCase):
@@ -103,6 +113,7 @@ class SearchProviderTests(TestCase):
 
     @mock.patch("ietf.utils.search_provider.typesense.Client")
     def test_upsert_document(self, mock_ts_client_constructor):
+        _mock_plain_collection(mock_ts_client_constructor.return_value, "frogs")
         document = {"id": "doc-1"}
         index = search_provider.SearchIndex(name="frogs", schema={})
         index.upsert_document(document)
@@ -117,6 +128,7 @@ class SearchProviderTests(TestCase):
 
     @mock.patch("ietf.utils.search_provider.typesense.Client")
     def test_upsert_documents(self, mock_ts_client_constructor):
+        _mock_plain_collection(mock_ts_client_constructor.return_value, "frogs")
         mock_import_ = mock_ts_client_constructor.return_value.collections[
             "frogs"
         ].documents.import_
@@ -181,6 +193,7 @@ class SearchProviderTests(TestCase):
 
     @mock.patch("ietf.utils.search_provider.typesense.Client")
     def test_update_documents(self, mock_ts_client_constructor):
+        _mock_plain_collection(mock_ts_client_constructor.return_value, "frogs")
         mock_import_ = mock_ts_client_constructor.return_value.collections[
             "frogs"
         ].documents.import_
@@ -203,4 +216,191 @@ class SearchProviderTests(TestCase):
                     search_provider.WriteFailure(partial_documents[1], "not found")
                 ],
             ),
+        )
+
+    def test_index_state(self):
+        state = search_provider._IndexState(
+            name="frogs",
+            alias_target=LIVE,
+            collections={
+                "frogs_1",
+                "frogs_2",
+                "frogs_10",
+                "frogs_",
+                "frogs_x",
+                "frogs_1_old",
+                "frogsx_1",
+                "toads_1",
+            },
+        )
+        self.assertEqual(state.live, LIVE)
+        self.assertEqual(state.versioned, [LIVE, BUILDING, "frogs_10"])  # numeric order
+        self.assertEqual(state.others, [BUILDING, "frogs_10"])
+        self.assertEqual(state.write_targets, [LIVE, BUILDING, "frogs_10"])
+
+        # no alias, plain collection (before the alias is created)
+        state = search_provider._IndexState(
+            name="frogs", alias_target=None, collections={"frogs", BUILDING}
+        )
+        self.assertEqual(state.live, "frogs")
+        self.assertEqual(state.write_targets, ["frogs", BUILDING])
+
+        # nothing
+        state = search_provider._IndexState(
+            name="frogs", alias_target=None, collections=set()
+        )
+        self.assertIsNone(state.live)
+        self.assertEqual(state.write_targets, [])
+
+        # regex characters in the name are literal
+        state = search_provider._IndexState(
+            name="fr.gs",
+            alias_target=None,
+            collections={"fr.gs_1", "frogs_1"},
+        )
+        self.assertEqual(state.versioned, ["fr.gs_1"])
+
+    @mock.patch("ietf.utils.search_provider.typesense.Client")
+    def test_upsert_document_targets(self, mock_ts_client_constructor):
+        fake = FakeTypesenseClient()
+        mock_ts_client_constructor.return_value = fake
+        index = search_provider.SearchIndex(name="frogs", schema={})
+
+        # before the alias is created: only the plain collection
+        fake.add_collection("frogs")
+        index.upsert_document({"id": "doc-1"})
+        self.assertEqual(fake.documents("frogs"), {"doc-1": {"id": "doc-1"}})
+        self.assertEqual(list(fake.collection_data), ["frogs"])
+
+        # live collection and a rebuild in progress
+        fake.collection_data.clear()
+        fake.add_collection(LIVE)
+        fake.add_collection(BUILDING)
+        fake.alias_data["frogs"] = LIVE
+        index.upsert_document({"id": "doc-1"})
+        self.assertEqual(fake.documents(LIVE), {"doc-1": {"id": "doc-1"}})
+        self.assertEqual(fake.documents(BUILDING), {"doc-1": {"id": "doc-1"}})
+
+    @mock.patch("ietf.utils.search_provider.typesense.Client")
+    def test_upsert_document_target_deleted(self, mock_ts_client_constructor):
+        fake = FakeTypesenseClient()
+        mock_ts_client_constructor.return_value = fake
+        fake.add_collection(LIVE)
+        fake.add_collection(BUILDING)
+        fake.alias_data["frogs"] = LIVE
+
+        def delete_building(collection):
+            # a failed rebuild deletes its collection after targets were listed
+            if collection == BUILDING:
+                del fake.collection_data[BUILDING]
+
+        fake.before_write = delete_building
+        search_provider.SearchIndex(name="frogs", schema={}).upsert_document(
+            {"id": "doc-1"}
+        )
+        self.assertEqual(fake.documents(LIVE), {"doc-1": {"id": "doc-1"}})
+
+    @mock.patch("ietf.utils.search_provider.typesense.Client")
+    def test_upsert_document_target_error(self, mock_ts_client_constructor):
+        fake = FakeTypesenseClient()
+        mock_ts_client_constructor.return_value = fake
+        fake.add_collection(LIVE)
+        fake.add_collection(BUILDING)
+        fake.alias_data["frogs"] = LIVE
+
+        def fail_live(collection):
+            if collection == LIVE:
+                raise typesense.exceptions.Timeout()
+
+        fake.before_write = fail_live
+        with self.assertRaises(typesense.exceptions.Timeout):
+            search_provider.SearchIndex(name="frogs", schema={}).upsert_document(
+                {"id": "doc-1"}
+            )
+        # other targets were still written
+        self.assertEqual(fake.documents(BUILDING), {"doc-1": {"id": "doc-1"}})
+
+    @mock.patch("ietf.utils.search_provider.typesense.Client")
+    def test_upsert_document_no_index(self, mock_ts_client_constructor):
+        mock_ts_client_constructor.return_value = FakeTypesenseClient()
+        with self.assertRaises(typesense.exceptions.ObjectNotFound):
+            search_provider.SearchIndex(name="frogs", schema={}).upsert_document(
+                {"id": "doc-1"}
+            )
+
+    @mock.patch("ietf.utils.search_provider.log")
+    @mock.patch("ietf.utils.search_provider.typesense.Client")
+    def test_upsert_documents_targets(self, mock_ts_client_constructor, mock_log):
+        fake = FakeTypesenseClient()
+        mock_ts_client_constructor.return_value = fake
+        fake.add_collection(LIVE)
+        fake.add_collection(BUILDING)
+        fake.alias_data["frogs"] = LIVE
+        fake.document_errors[(BUILDING, "doc-3")] = "bad document"
+
+        generated_count = 0
+        generated_at_import = []
+
+        def generate_documents():
+            nonlocal generated_count
+            for n in range(5):
+                generated_count += 1
+                yield {"id": f"doc-{n}"}
+
+        fake.before_write = lambda collection: generated_at_import.append(
+            (collection, generated_count)
+        )
+        result = search_provider.SearchIndex(name="frogs", schema={}).upsert_documents(
+            generate_documents(), batchsize=2
+        )
+        # each batch is written to every target before the next batch is built
+        self.assertEqual(
+            generated_at_import,
+            [
+                (LIVE, 2),
+                (BUILDING, 2),
+                (LIVE, 4),
+                (BUILDING, 4),
+                (LIVE, 5),
+                (BUILDING, 5),
+            ],
+        )
+        self.assertEqual(len(fake.documents(LIVE)), 5)
+        self.assertEqual(len(fake.documents(BUILDING)), 4)
+        # result describes the live collection; other failures are logged
+        self.assertEqual(result, search_provider.WriteResult(written=5))
+        self.assertIn(
+            mock.call(
+                f"Write of doc-3 to in-progress collection {BUILDING} failed: "
+                "bad document"
+            ),
+            mock_log.call_args_list,
+        )
+
+    @mock.patch("ietf.utils.search_provider.log")
+    @mock.patch("ietf.utils.search_provider.typesense.Client")
+    def test_update_documents_targets(self, mock_ts_client_constructor, mock_log):
+        fake = FakeTypesenseClient()
+        mock_ts_client_constructor.return_value = fake
+        fake.add_collection(LIVE, documents=[{"id": "doc-1"}, {"id": "doc-2"}])
+        fake.add_collection(BUILDING, documents=[{"id": "doc-1"}])
+        fake.alias_data["frogs"] = LIVE
+
+        result = search_provider.SearchIndex(name="frogs", schema={}).update_documents(
+            [{"id": "doc-1", "x": 1}, {"id": "doc-2", "x": 2}, {"id": "doc-3", "x": 3}]
+        )
+        self.assertEqual(fake.documents(LIVE)["doc-2"], {"id": "doc-2", "x": 2})
+        self.assertEqual(fake.documents(BUILDING), {"doc-1": {"id": "doc-1", "x": 1}})
+        # missing documents in the in-progress collection are not failures...
+        self.assertIn(
+            mock.call(
+                f"2 documents not yet in in-progress collection {BUILDING}, "
+                "not updated there"
+            ),
+            mock_log.call_args_list,
+        )
+        # ...but are in the live collection
+        self.assertEqual(result.written, 2)
+        self.assertEqual(
+            [failure.document["id"] for failure in result.failures], ["doc-3"]
         )
