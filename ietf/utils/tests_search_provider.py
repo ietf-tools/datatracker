@@ -417,11 +417,8 @@ class SearchProviderTests(TestCase):
 SCHEMA = {"fields": [{"name": "title", "type": "string"}]}
 
 
-class RebuildTests(TestCase):
-    """SearchIndex.rebuild()
-
-    When LIVE is the live collection, the rebuild creates BUILDING.
-    """
+class FakeTypesenseTestCase(TestCase):
+    """Test case with FakeTypesenseClient in place of the Typesense client"""
 
     def setUp(self):
         super().setUp()
@@ -436,6 +433,13 @@ class RebuildTests(TestCase):
     def make_live(self, collection, documents=()):
         self.fake.add_collection(collection, documents=documents)
         self.fake.alias_data["frogs"] = collection
+
+
+class RebuildTests(FakeTypesenseTestCase):
+    """SearchIndex.rebuild()
+
+    When LIVE is the live collection, the rebuild creates BUILDING.
+    """
 
     def test_rebuild_fresh(self):
         result = self.index.rebuild(({"id": f"doc-{n}"} for n in range(3)))
@@ -626,3 +630,46 @@ class RebuildTests(TestCase):
         self.assertTrue(
             any(LIVE in str(call) for call in mock_log.call_args_list),
         )
+
+
+class CleanUpTests(FakeTypesenseTestCase):
+    """SearchIndex.clean_up()"""
+
+    def test_clean_up_with_alias(self):
+        self.make_live(LIVE)
+        self.fake.add_collection(BUILDING)
+        self.fake.add_collection("frogs_5")
+        self.fake.add_collection("toads_1")
+        self.assertEqual(self.index.clean_up(), [BUILDING, "frogs_5"])
+        self.assertEqual(sorted(self.fake.collection_data), [LIVE, "toads_1"])
+        self.assertEqual(self.fake.alias_data, {"frogs": LIVE})
+
+    def test_clean_up_pre_transition(self):
+        self.fake.add_collection("frogs")
+        self.fake.add_collection("frogs_0")
+        self.assertEqual(self.index.clean_up(), ["frogs_0"])
+        self.assertEqual(list(self.fake.collection_data), ["frogs"])
+
+    def test_clean_up_ambiguous(self):
+        # Without an alias or a plain collection, any of these might hold the only
+        # good copy of the index, so none may be deleted automatically.
+        self.fake.add_collection(LIVE)
+        self.fake.add_collection(BUILDING)
+        with self.assertRaises(search_provider.IndexStateError):
+            self.index.clean_up()
+        self.assertEqual(sorted(self.fake.collection_data), [LIVE, BUILDING])
+
+    def test_clean_up_dangling_alias(self):
+        # The live collection is gone, so the remaining collections might hold the
+        # only good copy of the index.
+        self.fake.alias_data["frogs"] = LIVE
+        self.fake.add_collection(BUILDING)
+        with self.assertRaises(search_provider.IndexStateError):
+            self.index.clean_up()
+        self.assertEqual(list(self.fake.collection_data), [BUILDING])
+
+    def test_clean_up_nothing(self):
+        self.assertEqual(self.index.clean_up(), [])
+        self.make_live(LIVE)
+        self.assertEqual(self.index.clean_up(), [])
+        self.assertEqual(list(self.fake.collection_data), [LIVE])

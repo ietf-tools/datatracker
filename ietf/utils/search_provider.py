@@ -265,6 +265,35 @@ class SearchIndex:
                 )
         return result
 
+    def clean_up(self) -> list[str]:
+        """Delete collections left behind by failed or interrupted rebuilds
+
+        Deletes all numbered collections of the index except the live one. Returns
+        the names of collections deleted. Do not call this during a rebuild because it
+        will delete the new collection!
+
+        Raises IndexStateError without deleting anything if it cannot tell which
+        collection is live.
+        """
+        client = _get_client()
+        state = _get_index_state(client, self.name)
+        if state.live is None and len(state.versioned) > 0:
+            raise IndexStateError(
+                f"{self.name} has no alias and no collection named {self.name}, so "
+                f"none of {', '.join(state.versioned)} is known to be live. Resolve "
+                "this manually."
+            )
+        if state.alias_target is not None and (
+            state.alias_target not in state.collections
+        ):
+            raise IndexStateError(
+                f"Alias {self.name} points to {state.alias_target}, which does not "
+                "exist. Resolve this manually."
+            )
+        for collection in state.others:
+            _delete_collection(client, collection)
+        return state.others
+
 
 @dataclass
 class _IndexState:
