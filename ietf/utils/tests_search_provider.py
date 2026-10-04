@@ -283,6 +283,8 @@ class SearchProviderTests(TestCase):
 
     @mock.patch("ietf.utils.search_provider.typesense.Client")
     def test_upsert_document_target_deleted(self, mock_ts_client_constructor):
+        # Rebuilds delete collections while writes may be in flight. A failed write to a
+        # deleted collection does not lose anything, so it must not fail the write.
         fake = FakeTypesenseClient()
         mock_ts_client_constructor.return_value = fake
         fake.add_collection(LIVE)
@@ -302,6 +304,8 @@ class SearchProviderTests(TestCase):
 
     @mock.patch("ietf.utils.search_provider.typesense.Client")
     def test_upsert_document_target_error(self, mock_ts_client_constructor):
+        # A real failure must not stop writes to the other collections. The original
+        # exception must reach the task so it can decide whether to retry.
         fake = FakeTypesenseClient()
         mock_ts_client_constructor.return_value = fake
         fake.add_collection(LIVE)
@@ -331,6 +335,8 @@ class SearchProviderTests(TestCase):
     @mock.patch("ietf.utils.search_provider.log")
     @mock.patch("ietf.utils.search_provider.typesense.Client")
     def test_upsert_documents_targets(self, mock_ts_client_constructor, mock_log):
+        # Documents may come from a generator, which can only be read once. Each batch
+        # must go to every collection before the next batch is generated.
         fake = FakeTypesenseClient()
         mock_ts_client_constructor.return_value = fake
         fake.add_collection(LIVE)
@@ -380,6 +386,8 @@ class SearchProviderTests(TestCase):
     @mock.patch("ietf.utils.search_provider.log")
     @mock.patch("ietf.utils.search_provider.typesense.Client")
     def test_update_documents_targets(self, mock_ts_client_constructor, mock_log):
+        # Partial updates to documents the rebuild has not loaded yet will miss in the
+        # new collection. That is expected, so they are not reported as failures.
         fake = FakeTypesenseClient()
         mock_ts_client_constructor.return_value = fake
         fake.add_collection(LIVE, documents=[{"id": "doc-1"}, {"id": "doc-2"}])
@@ -403,4 +411,218 @@ class SearchProviderTests(TestCase):
         self.assertEqual(result.written, 2)
         self.assertEqual(
             [failure.document["id"] for failure in result.failures], ["doc-3"]
+        )
+
+
+SCHEMA = {"fields": [{"name": "title", "type": "string"}]}
+
+
+class RebuildTests(TestCase):
+    """SearchIndex.rebuild()
+
+    When LIVE is the live collection, the rebuild creates BUILDING.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.fake = FakeTypesenseClient()
+        patcher = mock.patch(
+            "ietf.utils.search_provider.typesense.Client", return_value=self.fake
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.index = search_provider.SearchIndex(name="frogs", schema=SCHEMA)
+
+    def make_live(self, collection, documents=()):
+        self.fake.add_collection(collection, documents=documents)
+        self.fake.alias_data["frogs"] = collection
+
+    def test_rebuild_fresh(self):
+        result = self.index.rebuild(({"id": f"doc-{n}"} for n in range(3)))
+        self.assertEqual(self.fake.collection_data["frogs_0"].schema, SCHEMA)
+        self.assertEqual(
+            sorted(self.fake.documents("frogs_0")), ["doc-0", "doc-1", "doc-2"]
+        )
+        self.assertEqual(self.fake.alias_data, {"frogs": "frogs_0"})
+        self.assertEqual(list(self.fake.collection_data), ["frogs_0"])
+        self.assertEqual(result, search_provider.RebuildResult(loaded=3))
+
+    def test_rebuild_replaces_live(self):
+        self.make_live(LIVE, documents=[{"id": "doc-old"}])
+        self.index.rebuild([{"id": "doc-1"}, {"id": "doc-2"}], batchsize=1)
+        self.assertEqual(self.fake.alias_data, {"frogs": BUILDING})
+        self.assertEqual(list(self.fake.collection_data), [BUILDING])
+        self.assertEqual(sorted(self.fake.documents(BUILDING)), ["doc-1", "doc-2"])
+
+    def test_rebuild_numbering(self):
+        self.make_live("frogs_9")
+        self.index.rebuild([{"id": "doc-1"}])
+        self.assertEqual(self.fake.alias_data, {"frogs": "frogs_10"})
+
+    def test_rebuild_unrecognized_live(self):
+        self.make_live("frogs_old")
+        with self.assertRaises(search_provider.IndexStateError):
+            self.index.rebuild([{"id": "doc-1"}])
+        self.assertEqual(list(self.fake.collection_data), ["frogs_old"])
+
+    def test_rebuild_pre_transition(self):
+        # Typesense refuses an alias named like an existing collection, so the plain
+        # collection must be converted before a rebuild can go live.
+        self.fake.add_collection("frogs")
+        with self.assertRaises(search_provider.IndexStateError):
+            self.index.rebuild([{"id": "doc-1"}])
+        self.assertEqual(list(self.fake.collection_data), ["frogs"])
+        self.assertEqual(self.fake.alias_data, {})
+
+    def test_rebuild_leftovers(self):
+        self.make_live(LIVE)
+        self.fake.add_collection("frogs_5")
+        with self.assertRaisesRegex(search_provider.IndexStateError, "frogs_5"):
+            self.index.rebuild([{"id": "doc-1"}])
+        self.assertEqual(sorted(self.fake.collection_data), [LIVE, "frogs_5"])
+
+    def test_rebuild_name_taken(self):
+        # Overlapping rebuilds from the same live collection choose the same name, so
+        # the create conflict stops all but one. The others must leave the winner's
+        # collection alone.
+        def another_rebuild_running(schema):
+            # created the same collection after our first check
+            self.fake.add_collection(BUILDING, documents=[{"id": "doc-other"}])
+
+        def another_rebuild_finished(schema):
+            # created the same collection and made it live after our first check
+            self.fake.add_collection(BUILDING, documents=[{"id": "doc-other"}])
+            self.fake.alias_data["frogs"] = BUILDING
+            del self.fake.collection_data[LIVE]
+
+        for other_rebuild, expected_alias in [
+            (another_rebuild_running, LIVE),
+            (another_rebuild_finished, BUILDING),
+        ]:
+            with self.subTest(other_rebuild.__name__):
+                self.fake.collection_data.clear()
+                self.make_live(LIVE)
+                create = self.fake.collections.create
+
+                def create_after_other_rebuild(schema):
+                    other_rebuild(schema)
+                    create(schema)
+
+                with mock.patch.object(
+                    self.fake.collections,
+                    "create",
+                    side_effect=create_after_other_rebuild,
+                ):
+                    with self.assertRaises(search_provider.IndexStateError):
+                        self.index.rebuild([{"id": "doc-1"}])
+                # the other rebuild's collection is left alone
+                self.assertEqual(list(self.fake.documents(BUILDING)), ["doc-other"])
+                self.assertEqual(self.fake.alias_data, {"frogs": expected_alias})
+
+    def test_rebuild_concurrent_write_wins(self):
+        # An update made during the rebuild has newer data than the rebuild read.
+        # Overwriting it would lose the update when the new collection goes live.
+        self.make_live(LIVE)
+
+        def concurrent_update(collection):
+            # an update writes newer data before the rebuild loads this document
+            if collection == BUILDING and "doc-1" not in self.fake.documents(BUILDING):
+                self.fake.documents(BUILDING)["doc-1"] = {"id": "doc-1", "v": "new"}
+
+        self.fake.before_write = concurrent_update
+        result = self.index.rebuild([{"id": "doc-1", "v": "old"}, {"id": "doc-2"}])
+        self.assertEqual(self.fake.documents(BUILDING)["doc-1"]["v"], "new")
+        self.assertEqual(result, search_provider.RebuildResult(loaded=1, skipped=1))
+
+    def test_rebuild_documents_consumed_after_create(self):
+        # Documents read before the new collection exists may miss updates that only
+        # reached the old collection. Those updates would be lost when it goes live.
+        self.make_live(LIVE)
+        collection_existed = []
+
+        def documents():
+            collection_existed.append(BUILDING in self.fake.collection_data)
+            yield {"id": "doc-1"}
+
+        self.index.rebuild(documents())
+        self.assertEqual(collection_existed, [True])
+
+    def test_rebuild_failures(self):
+        self.make_live(LIVE)
+        self.fake.document_errors[(BUILDING, "doc-2")] = "bad document"
+        documents = [{"id": "doc-1"}, {"id": "doc-2"}]
+        with self.assertRaises(search_provider.RebuildFailedError) as context:
+            self.index.rebuild(documents)
+        self.assertEqual(
+            context.exception.result,
+            search_provider.RebuildResult(
+                loaded=1,
+                failures=[search_provider.WriteFailure(documents[1], "bad document")],
+            ),
+        )
+        self.assertEqual(list(self.fake.collection_data), [LIVE])
+        self.assertEqual(self.fake.alias_data, {"frogs": LIVE})
+
+        result = self.index.rebuild(documents, ignore_errors=True)
+        self.assertEqual(result.loaded, 1)
+        self.assertEqual(len(result.failures), 1)
+        self.assertEqual(self.fake.alias_data, {"frogs": BUILDING})
+        self.assertEqual(list(self.fake.collection_data), [BUILDING])
+
+    def test_rebuild_exception_cleans_up(self):
+        self.make_live(LIVE)
+
+        # during loading
+        def fail_load(collection):
+            raise typesense.exceptions.Timeout()
+
+        self.fake.before_write = fail_load
+        with self.assertRaises(typesense.exceptions.Timeout):
+            self.index.rebuild([{"id": "doc-1"}])
+        self.assertEqual(list(self.fake.collection_data), [LIVE])
+        self.assertEqual(self.fake.alias_data, {"frogs": LIVE})
+        self.fake.before_write = None
+
+        # updating the alias
+        with mock.patch.object(
+            self.fake.aliases, "upsert", side_effect=typesense.exceptions.Timeout()
+        ):
+            with self.assertRaises(typesense.exceptions.Timeout):
+                self.index.rebuild([{"id": "doc-1"}])
+        self.assertEqual(list(self.fake.collection_data), [LIVE])
+        self.assertEqual(self.fake.alias_data, {"frogs": LIVE})
+
+        # The alias update took effect although it raised an error. Deleting the new
+        # collection here would leave the alias dangling.
+        upsert = self.fake.aliases.upsert
+
+        def upsert_then_fail(name, mapping):
+            upsert(name, mapping)
+            raise typesense.exceptions.Timeout()
+
+        with mock.patch.object(
+            self.fake.aliases, "upsert", side_effect=upsert_then_fail
+        ):
+            with self.assertRaises(typesense.exceptions.Timeout):
+                self.index.rebuild([{"id": "doc-1"}])
+        # the new collection is live, so it is kept; the old one is left over
+        self.assertEqual(self.fake.alias_data, {"frogs": BUILDING})
+        self.assertEqual(sorted(self.fake.collection_data), [LIVE, BUILDING])
+
+    @mock.patch("ietf.utils.search_provider.log")
+    def test_rebuild_old_delete_fails(self, mock_log):
+        # The new collection is already live, so the rebuild succeeded. The leftover
+        # old collection is reported by the next rebuild instead of failing this one.
+        self.make_live(LIVE)
+
+        def fail_delete(collection):
+            raise typesense.exceptions.Timeout()
+
+        self.fake.before_delete = fail_delete
+        result = self.index.rebuild([{"id": "doc-1"}])
+        self.assertEqual(result.loaded, 1)
+        self.assertEqual(self.fake.alias_data, {"frogs": BUILDING})
+        self.assertEqual(sorted(self.fake.collection_data), [LIVE, BUILDING])
+        self.assertTrue(
+            any(LIVE in str(call) for call in mock_log.call_args_list),
         )

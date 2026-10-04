@@ -77,6 +77,25 @@ class WriteResult:
     failures: list[WriteFailure] = field(default_factory=list)
 
 
+@dataclass
+class RebuildResult:
+    loaded: int = 0
+    skipped: int = 0  # already written by a concurrent update
+    failures: list[WriteFailure] = field(default_factory=list)
+
+
+class IndexStateError(Exception):
+    """The index's collections and alias are not in a state that allows the operation"""
+
+
+class RebuildFailedError(Exception):
+    """Documents failed to load during a rebuild; the live index is unchanged"""
+
+    def __init__(self, message: str, result: RebuildResult):
+        super().__init__(message)
+        self.result = result
+
+
 @dataclass(frozen=True)
 class SearchIndex:
     """A search index definition and the operations on it"""
@@ -118,7 +137,12 @@ class SearchIndex:
             response.raise_for_status()
 
     def upsert_document(self, document: Mapping[str, Any]):
-        """Create or replace one document"""
+        """Create or replace one document
+
+        To ensure a concurrent rebuild() does not lose data, ensure data this adds to
+        the index are already readable from the data source. E.g., do not call this
+        method until after a transaction writing its data has committed.
+        """
         client = _get_client()
         state = _get_index_state(client, self.name)
         _write_to_targets(
@@ -133,7 +157,12 @@ class SearchIndex:
     def upsert_documents(
         self, documents: Iterable[Mapping[str, Any]], *, batchsize: int | None = None
     ) -> WriteResult:
-        """Create or replace documents in bulk"""
+        """Create or replace documents in bulk
+
+        To ensure a concurrent rebuild() does not lose data, ensure data this adds to
+        the index are already readable from the data source. E.g., do not call this
+        method until after a transaction writing its data has committed.
+        """
         return _import_documents(self.name, documents, "upsert", batchsize)
 
     def update_documents(
@@ -145,8 +174,96 @@ class SearchIndex:
         """Update fields of existing documents in bulk
 
         Each partial document must include the id of the document it updates.
+
+        To ensure a concurrent rebuild() does not lose data, ensure data this adds to
+        the index are already readable from the data source. E.g., do not call this
+        method until after a transaction writing its data has committed.
         """
         return _import_documents(self.name, partial_documents, "update", batchsize)
+
+    def rebuild(
+        self,
+        documents: Iterable[Mapping[str, Any]],
+        *,
+        batchsize: int | None = None,
+        ignore_errors: bool = False,
+    ) -> RebuildResult:
+        """Replace the contents of the index with documents
+
+        Loads the documents into a new collection, then switches searches to it and
+        deletes the old one. Searches use the old contents until the switch.
+
+        Consumes the documents iterable only after the new collection is created. This
+        ensures that any updates via upsert_document, upsert_documents, or
+        update_documents made concurrent to the rebuild call are reflected correctly
+        in the rebuilt collection. The documents iterable must not read its input until
+        it is consumed.
+
+        Raises IndexStateError if the index is not in a rebuildable state (e.g., a
+        rebuild is in progress or a failed rebuild left collections behind), and
+        RebuildFailedError if any documents fail to load (unless ignore_errors is set).
+        """
+        client = _get_client()
+        state = _get_index_state(client, self.name)
+        if state.alias_target is None and self.name in state.collections:
+            raise IndexStateError(
+                f"{self.name} is a collection rather than an alias. Convert it to an "
+                "alias before rebuilding."
+            )
+        if len(state.others) > 0:
+            raise IndexStateError(
+                f"Collections {', '.join(state.others)} exist besides the live "
+                f"collection of {self.name}. Another rebuild may be running. If not, "
+                "remove them with clean_up() and rebuild again."
+            )
+
+        # Rebuilds that start from the same live collection choose the same name for
+        # the new one, so creating it succeeds for at most one of them.
+        new_collection = _next_collection_name(state)
+        try:
+            client.collections.create(
+                cast(CollectionCreateSchema, {"name": new_collection} | self.schema)
+            )
+        except typesense.exceptions.ObjectAlreadyExists:
+            raise IndexStateError(
+                f"Collection {new_collection} already exists. Another rebuild of "
+                f"{self.name} is running or has just finished, or one failed and left "
+                "it behind. If no rebuild is running, remove it with clean_up() and "
+                "rebuild again."
+            )
+        log(f"Created collection {new_collection} to rebuild {self.name}")
+
+        try:
+            result = _load_documents(client, new_collection, documents, batchsize)
+            log(
+                f"Loaded {result.loaded} documents into {new_collection}, skipped "
+                f"{result.skipped} already written by updates, "
+                f"{len(result.failures)} failed"
+            )
+            if len(result.failures) > 0 and not ignore_errors:
+                raise RebuildFailedError(
+                    f"{len(result.failures)} documents failed to load. Discarding "
+                    f"{new_collection}; {self.name} is unchanged.",
+                    result,
+                )
+            _set_alias(client, self.name, new_collection)
+        except Exception:
+            _discard_collection(client, self.name, new_collection)
+            raise
+
+        # We only reach this point if the alias has been updated to point to the new
+        # collection. If set, state.alias_target is still the previous live collection.
+        if state.alias_target is not None:
+            try:
+                _delete_collection(client, state.alias_target)
+            except Exception as err:
+                # The rebuild succeeded; the old collection is a leftover that the
+                # next rebuild reports and clean_up() removes.
+                log(
+                    f"Failed to delete previous collection {state.alias_target} of "
+                    f"{self.name} ({err!r}). Remove it with clean_up()."
+                )
+        return result
 
 
 @dataclass
@@ -239,7 +356,8 @@ def _write_to_targets(
             )
             if vanished:
                 log(
-                    f"Ignoring failed write to deleted collection {collection} ({err!r})"
+                    f"Ignoring failed write to deleted collection {collection} "
+                    f"({err!r})"
                 )
             else:
                 log(f"Write to collection {collection} failed ({err!r})")
@@ -259,7 +377,7 @@ def _import_batch(
     client: typesense.Client,
     collection: str,
     batch: list[Mapping[str, Any]],
-    action: Literal["upsert", "update"],
+    action: Literal["create", "upsert", "update"],
 ) -> list[ImportOutcome]:
     params: DocumentWriteParameters = {"action": action}
     return list(
@@ -341,3 +459,73 @@ def _log_other_outcomes(
             f"{not_found} documents not yet in in-progress collection {collection}, "
             "not updated there"
         )
+
+
+def _next_collection_name(state: _IndexState) -> str:
+    """Name for a collection to replace the live one
+
+    One more than the live collection's number, or 0 if there is no live collection.
+    """
+    if state.live is None:
+        return f"{state.name}_0"
+    number = _collection_number(state.name, state.live)
+    if number is None:
+        raise IndexStateError(
+            f"Live collection {state.live} of {state.name} is not named "
+            f"{state.name}_<number>"
+        )
+    return f"{state.name}_{number + 1}"
+
+
+def _set_alias(client: typesense.Client, name: str, collection: str):
+    client.aliases.upsert(name, {"collection_name": collection})
+    log(f"Pointed alias {name} at collection {collection}")
+
+
+def _delete_collection(client: typesense.Client, collection: str):
+    try:
+        client.collections[collection].delete()
+    except typesense.exceptions.ObjectNotFound:
+        return
+    log(f"Deleted collection {collection}")
+
+
+def _discard_collection(client: typesense.Client, name: str, collection: str):
+    """Delete a collection a failed rebuild created, unless it went live
+
+    Errors are logged rather than raised so they do not hide the rebuild's error.
+    """
+    try:
+        if _get_index_state(client, name).alias_target == collection:
+            # The alias update took effect although it raised an error
+            log(f"Not discarding collection {collection}: alias {name} points to it")
+            return
+        _delete_collection(client, collection)
+    except Exception as err:
+        log(f"Failed to discard collection {collection} ({err!r})")
+
+
+def _load_documents(
+    client: typesense.Client,
+    collection: str,
+    documents: Iterable[Mapping[str, Any]],
+    batchsize: int | None,
+) -> RebuildResult:
+    """Create documents in a new collection
+
+    A document that already exists was written by a concurrent update, which has
+    newer data, so it is counted as skipped.
+    """
+    result = RebuildResult()
+    batches = [documents] if batchsize is None else batched(documents, batchsize)
+    for batch in batches:
+        for document, outcome in _import_batch(
+            client, collection, list(batch), "create"
+        ):
+            if outcome["success"]:
+                result.loaded += 1
+            elif outcome["code"] == 409:
+                result.skipped += 1
+            else:
+                result.failures.append(WriteFailure(document, outcome["error"]))
+    return result

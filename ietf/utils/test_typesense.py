@@ -32,6 +32,8 @@ class FakeTypesenseClient:
     Hooks for simulating concurrent activity or errors:
     * `before_write(collection_name)` is called before each document write or
       import; it may modify state or raise.
+    * `before_delete(collection_name)` is called before each collection delete; it
+      may modify state or raise.
     * `document_errors` maps (collection_name, document id) to an error message;
       importing that document fails with code 400.
     """
@@ -40,6 +42,7 @@ class FakeTypesenseClient:
         self.collection_data: dict[str, FakeCollection] = {}
         self.alias_data: dict[str, str] = {}
         self.before_write: Callable[[str], None] | None = None
+        self.before_delete: Callable[[str], None] | None = None
         self.document_errors: dict[tuple[str, str], str] = {}
         self.collections = _Collections(self)
         self.aliases = _Aliases(self)
@@ -98,6 +101,8 @@ class _CollectionRef:
         self.documents = _Documents(client, name)
 
     def delete(self):
+        if self._client.before_delete is not None:
+            self._client.before_delete(self._name)
         if self._name not in self._client.collection_data:
             raise typesense.exceptions.ObjectNotFound(f"No collection {self._name}")
         del self._client.collection_data[self._name]
