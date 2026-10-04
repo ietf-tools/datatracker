@@ -247,6 +247,15 @@ class SearchIndex:
                     result,
                 )
             _set_alias(client, self.name, new_collection)
+            # Typesense allows an alias to point at a missing collection. If ours was
+            # deleted, deleting the previous one too would leave searches no data.
+            if new_collection not in _list_collections(client):
+                _restore_alias(client, self.name, state.alias_target)
+                raise IndexStateError(
+                    f"Collection {new_collection} was deleted during the rebuild of "
+                    f"{self.name}, possibly by clean_up() while the rebuild was "
+                    "running."
+                )
         except Exception:
             _discard_collection(client, self.name, new_collection)
             raise
@@ -509,6 +518,21 @@ def _next_collection_name(state: _IndexState) -> str:
 def _set_alias(client: typesense.Client, name: str, collection: str):
     client.aliases.upsert(name, {"collection_name": collection})
     log(f"Pointed alias {name} at collection {collection}")
+
+
+def _restore_alias(client: typesense.Client, name: str, collection: str | None):
+    """Point the alias back at collection, or remove it if collection is None
+
+    Errors are logged rather than raised so they do not hide the rebuild's error.
+    """
+    try:
+        if collection is None:
+            client.aliases[name].delete()
+            log(f"Removed alias {name}")
+        else:
+            _set_alias(client, name, collection)
+    except Exception as err:
+        log(f"Failed to restore alias {name} ({err!r})")
 
 
 def _delete_collection(client: typesense.Client, collection: str):

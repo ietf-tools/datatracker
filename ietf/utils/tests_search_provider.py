@@ -631,6 +631,44 @@ class RebuildTests(FakeTypesenseTestCase):
             any(LIVE in str(call) for call in mock_log.call_args_list),
         )
 
+    def test_rebuild_new_collection_deleted(self):
+        # Typesense lets an alias point at a missing collection. If the collection an
+        # in-progress rebuild is populating is deleted during the short window between
+        # completing the population and repointing the alias (which could be done by
+        # the clean_up method), rebuild should leave the alias on the old live
+        # collection and report failure.
+        upsert = self.fake.aliases.upsert
+
+        def delete_then_upsert(collection):
+            def side_effect(name, mapping):
+                # e.g. clean_up() was run while the rebuild was loading
+                if mapping["collection_name"] == collection:
+                    self.fake.collection_data.pop(collection, None)
+                return upsert(name, mapping)
+
+            return side_effect
+
+        # with a previous live collection, the alias goes back to it
+        self.make_live(LIVE)
+        with mock.patch.object(
+            self.fake.aliases, "upsert", side_effect=delete_then_upsert(BUILDING)
+        ):
+            with self.assertRaises(search_provider.IndexStateError):
+                self.index.rebuild([{"id": "doc-1"}])
+        self.assertEqual(self.fake.alias_data, {"frogs": LIVE})
+        self.assertEqual(list(self.fake.collection_data), [LIVE])
+
+        # without one, the alias is removed
+        self.fake.collection_data.clear()
+        self.fake.alias_data.clear()
+        with mock.patch.object(
+            self.fake.aliases, "upsert", side_effect=delete_then_upsert("frogs_0")
+        ):
+            with self.assertRaises(search_provider.IndexStateError):
+                self.index.rebuild([{"id": "doc-1"}])
+        self.assertEqual(self.fake.alias_data, {})
+        self.assertEqual(self.fake.collection_data, {})
+
 
 class CleanUpTests(FakeTypesenseTestCase):
     """SearchIndex.clean_up()"""
