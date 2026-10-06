@@ -14,7 +14,12 @@ from ietf.doc.factories import (
 from ietf.doc.models import Document, RelatedDocument
 from ietf.doc.storage_utils import store_str
 from ietf.person.factories import PersonFactory
-from ietf.utils.search_provider import WriteFailure, WriteResult
+from ietf.utils.search_provider import (
+    RebuildFailedError,
+    RebuildResult,
+    WriteFailure,
+    WriteResult,
+)
 from ietf.utils.test_utils import TestCase
 
 from . import searchindexes
@@ -194,84 +199,18 @@ class SearchindexesTests(TestCase):
                 self.assertIsNone(searchindexes._get_popularity_scores())
 
     @mock.patch("ietf.doc.searchindexes._get_popularity_scores")
-    @mock.patch("ietf.doc.searchindexes.typesense_doc_from_rfc")
     @mock.patch("ietf.utils.search_provider.SearchIndex.upsert_document", autospec=True)
-    def test_update_or_create_rfc_entry(
-        self, mock_upsert_document, mock_tdoc_from_rfc, mock_get_scores
-    ):
-        fake_tdoc = object()
-        mock_tdoc_from_rfc.return_value = fake_tdoc
-        fake_scores = object()
-        mock_get_scores.return_value = fake_scores
-        rfc = WgRfcFactory()
+    def test_update_or_create_rfc_entry(self, mock_upsert_document, mock_get_scores):
+        rfc = PublishedRfcDocEventFactory().doc
         assert isinstance(rfc, Document)
+        mock_get_scores.return_value = {rfc.rfc_number: 0.5}
         searchindexes.update_or_create_rfc_entry(rfc)
         self.assertEqual(mock_get_scores.call_count, 1)
-        self.assertEqual(mock_tdoc_from_rfc.call_args, mock.call(rfc, fake_scores))
-        self.assertEqual(
-            mock_upsert_document.call_args,
-            mock.call(searchindexes.DOCS_INDEX, fake_tdoc),
-        )
-
-    @mock.patch("ietf.doc.searchindexes.log")
-    @mock.patch("ietf.doc.searchindexes._get_popularity_scores")
-    @mock.patch("ietf.doc.searchindexes.typesense_doc_from_rfc")
-    @mock.patch(
-        "ietf.utils.search_provider.SearchIndex.upsert_documents", autospec=True
-    )
-    def test_update_or_create_rfc_entries(
-        self, mock_upsert_documents, mock_tdoc_from_rfc, mock_get_scores, mock_log
-    ):
-        written = []
-
-        def fake_upsert_documents(index, documents, *, batchsize):
-            written.extend(documents)  # consumes the generator
-            return WriteResult(written=len(written))
-
-        mock_upsert_documents.side_effect = fake_upsert_documents
-        fake_tdoc = object()
-        mock_tdoc_from_rfc.return_value = fake_tdoc
-        fake_scores = object()
-        mock_get_scores.return_value = fake_scores
-        rfc = WgRfcFactory()
-        assert isinstance(rfc, Document)
-        searchindexes.update_or_create_rfc_entries([rfc] * 50)  # list of docs...
-        # Scores are loaded once, not per RFC
-        self.assertEqual(mock_get_scores.call_count, 1)
-        self.assertEqual(
-            mock_tdoc_from_rfc.call_args_list, [mock.call(rfc, fake_scores)] * 50
-        )
-        self.assertEqual(
-            mock_upsert_documents.call_args,
-            mock.call(searchindexes.DOCS_INDEX, mock.ANY, batchsize=None),
-        )
-        self.assertEqual(written, [fake_tdoc] * 50)
-
-        written.clear()
-        mock_upsert_documents.reset_mock()
-        mock_get_scores.reset_mock()
-        mock_tdoc_from_rfc.reset_mock()
-        searchindexes.update_or_create_rfc_entries([rfc] * 50, batchsize=20)
-        self.assertEqual(mock_get_scores.call_count, 1)
-        self.assertEqual(
-            mock_tdoc_from_rfc.call_args_list, [mock.call(rfc, fake_scores)] * 50
-        )
-        self.assertEqual(
-            mock_upsert_documents.call_args,
-            mock.call(searchindexes.DOCS_INDEX, mock.ANY, batchsize=20),
-        )
-        self.assertEqual(written, [fake_tdoc] * 50)
-
-        # Failures are logged by RFC number
-        mock_upsert_documents.side_effect = None
-        mock_upsert_documents.return_value = WriteResult(
-            written=0, failures=[WriteFailure({"rfcNumber": 1234}, "oops")]
-        )
-        mock_log.reset_mock()
-        searchindexes.update_or_create_rfc_entries([rfc])
-        self.assertIn(
-            mock.call("Failed to index RFC 1234: oops"), mock_log.call_args_list
-        )
+        index, document = mock_upsert_document.call_args.args
+        self.assertIs(index, searchindexes.DOCS_INDEX)
+        self.assertEqual(document["id"], f"doc-{rfc.pk}")
+        self.assertEqual(document["rfcNumber"], rfc.rfc_number)
+        self.assertEqual(document["popularity"], 0.5)
 
     @mock.patch("ietf.doc.searchindexes.log")
     @mock.patch(
@@ -364,40 +303,81 @@ class SearchindexesTests(TestCase):
         searchindexes.update_rfc_searchindex(rfc.rfc_number)
         self.assertEqual(mock_create_entry.call_args, mock.call(rfc))
 
-    @mock.patch("ietf.doc.searchindexes.update_or_create_rfc_entries")
+    @mock.patch("ietf.doc.searchindexes.log")
+    @mock.patch("ietf.doc.searchindexes._get_popularity_scores")
     @mock.patch("ietf.utils.search_provider.upsert_presets")
-    @mock.patch("ietf.utils.search_provider.SearchIndex.create", autospec=True)
-    @mock.patch("ietf.utils.search_provider.SearchIndex.delete", autospec=True)
+    @mock.patch("ietf.utils.search_provider.SearchIndex.rebuild", autospec=True)
     def test_rebuild_searchindex(
-        self, mock_delete, mock_create, mock_presets, mock_update
+        self, mock_rebuild, mock_presets, mock_get_scores, mock_log
     ):
-        rfcs = WgRfcFactory.create_batch(10)
+        rfcs = [PublishedRfcDocEventFactory().doc for _ in range(3)]
         WgDraftFactory()  # not included in the rebuild
-        expected_rfcs = sorted(rfcs, key=lambda doc: -doc.rfc_number)
+        mock_get_scores.return_value = {}
+        loaded = []
+        read_before_consuming = []
+        presets_before_rebuild = []
 
+        def fake_rebuild(index, documents, *, batchsize, ignore_errors):
+            # rebuild() consumes documents only after its new collection exists, so
+            # nothing may be read before then
+            read_before_consuming.append(mock_get_scores.called)
+            presets_before_rebuild.append(mock_presets.called)
+            loaded.extend(documents)
+            failures = [WriteFailure({"rfcNumber": 1234}, "oops")]
+            return RebuildResult(
+                loaded=len(loaded), failures=failures if ignore_errors else []
+            )
+
+        mock_rebuild.side_effect = fake_rebuild
         searchindexes.rebuild_searchindex()
-        self.assertFalse(mock_delete.called)
-        self.assertFalse(mock_create.called)
+        self.assertEqual(
+            mock_rebuild.call_args,
+            mock.call(
+                searchindexes.DOCS_INDEX, mock.ANY, batchsize=40, ignore_errors=False
+            ),
+        )
+        self.assertEqual(read_before_consuming, [False])
+        self.assertEqual(
+            [document["rfcNumber"] for document in loaded],
+            sorted((rfc.rfc_number for rfc in rfcs), reverse=True),
+        )
+        # presets are saved after a successful rebuild
+        self.assertEqual(presets_before_rebuild, [False])
         self.assertEqual(
             mock_presets.call_args, mock.call(searchindexes.RED_SEARCH_PRESETS)
         )
-        self.assertQuerysetEqual(
-            mock_update.call_args.args[0], expected_rfcs, ordered=True
-        )
-        self.assertEqual(mock_update.call_args.kwargs["batchsize"], 40)
 
+        loaded.clear()
         mock_presets.reset_mock()
-        mock_update.reset_mock()
         searchindexes.rebuild_searchindex(
-            drop_collection=True, batchsize=3, upsert_presets=False
+            batchsize=3, ignore_errors=True, upsert_presets=False
         )
-        self.assertEqual(mock_delete.call_args, mock.call(searchindexes.DOCS_INDEX))
-        self.assertEqual(mock_create.call_args, mock.call(searchindexes.DOCS_INDEX))
+        self.assertEqual(
+            mock_rebuild.call_args,
+            mock.call(
+                searchindexes.DOCS_INDEX, mock.ANY, batchsize=3, ignore_errors=True
+            ),
+        )
         self.assertFalse(mock_presets.called)
-        self.assertQuerysetEqual(
-            mock_update.call_args.args[0], expected_rfcs, ordered=True
+        self.assertIn(
+            mock.call("Failed to index RFC 1234: oops"), mock_log.call_args_list
         )
-        self.assertEqual(mock_update.call_args.kwargs["batchsize"], 3)
+
+    @mock.patch("ietf.doc.searchindexes.log")
+    @mock.patch("ietf.utils.search_provider.upsert_presets")
+    @mock.patch("ietf.utils.search_provider.SearchIndex.rebuild", autospec=True)
+    def test_rebuild_searchindex_failed(self, mock_rebuild, mock_presets, mock_log):
+        mock_rebuild.side_effect = RebuildFailedError(
+            "failed",
+            RebuildResult(failures=[WriteFailure({"rfcNumber": 1234}, "oops")]),
+        )
+        with self.assertRaises(RebuildFailedError):
+            searchindexes.rebuild_searchindex()
+        self.assertIn(
+            mock.call("Failed to index RFC 1234: oops"), mock_log.call_args_list
+        )
+        # presets are left as they were
+        self.assertFalse(mock_presets.called)
 
     @mock.patch("ietf.doc.searchindexes.update_rfc_popularities")
     def test_update_rfc_searchindex_popularities(self, mock_update_popularities):

@@ -166,27 +166,6 @@ def update_or_create_rfc_entry(rfc: Document):
     DOCS_INDEX.upsert_document(ts_document)
 
 
-def update_or_create_rfc_entries(
-    rfcs: Iterable[Document], batchsize: int | None = None
-):
-    """Update/create index entries for RFCs in bulk
-
-    If batchsize is set, computes index data in batches of batchsize and adds to the
-    index. Will make a total of (len(rfcs) // batchsize) + 1 API calls.
-    """
-    popularity_scores = _get_popularity_scores()
-    result = DOCS_INDEX.upsert_documents(
-        (typesense_doc_from_rfc(rfc, popularity_scores) for rfc in rfcs),
-        batchsize=batchsize,
-    )
-    for failure in result.failures:
-        log(f"Failed to index RFC {failure.document['rfcNumber']}: {failure.error}")
-    log(
-        f"Added {result.written} RFCs to the index, "
-        f"failed to add {len(result.failures)}"
-    )
-
-
 def partial_update_rfc_entries(
     rfcs: Iterable[Document],
     fields: dict[str, Callable[[Document], Any]],
@@ -410,20 +389,38 @@ def update_rfc_searchindex(rfc_number: int):
     update_or_create_rfc_entry(rfc)
 
 
-def rebuild_searchindex(*, batchsize=40, drop_collection=False, upsert_presets=True):
-    """Rebuild the entire search index, optionally dropping the existing collection
+def rebuild_searchindex(*, batchsize=40, ignore_errors=False, upsert_presets=True):
+    """Rebuild the entire search index
 
-    batchsize is the number of RFCs to update per API call.
+    batchsize is the number of RFCs to load per API call. If ignore_errors is set,
+    the rebuilt index goes live even if some RFCs fail to load.
     """
-    if drop_collection:
-        DOCS_INDEX.delete()
-        DOCS_INDEX.create()
+    try:
+        result = DOCS_INDEX.rebuild(
+            _rfc_documents(), batchsize=batchsize, ignore_errors=ignore_errors
+        )
+    except search_provider.RebuildFailedError as err:
+        _log_load_failures(err.result)
+        raise
+    _log_load_failures(result)
     if upsert_presets:
         search_provider.upsert_presets(RED_SEARCH_PRESETS)  # ok if they already exist
-    update_or_create_rfc_entries(
-        Document.objects.filter(type_id="rfc").order_by("-rfc_number"),
-        batchsize=batchsize,
-    )
+
+
+def _rfc_documents():
+    """Generate index documents for all RFCs
+
+    Nothing is read until the first document is requested, so a rebuild can wait to
+    start reading until its new collection exists.
+    """
+    popularity_scores = _get_popularity_scores()
+    for rfc in Document.objects.filter(type_id="rfc").order_by("-rfc_number"):
+        yield typesense_doc_from_rfc(rfc, popularity_scores)
+
+
+def _log_load_failures(result: search_provider.RebuildResult):
+    for failure in result.failures:
+        log(f"Failed to index RFC {failure.document['rfcNumber']}: {failure.error}")
 
 
 def update_rfc_searchindex_popularities(*, batchsize=200):

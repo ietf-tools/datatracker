@@ -67,7 +67,7 @@ def _get_client() -> typesense.Client:
 
 def upsert_presets(presets: Mapping[str, Mapping[str, Any]]):
     """Upsert search presets
-    
+
     For Typesense, search preset names are global. Watch out for conflicts.
     """
     # typesense-python does not support presets, so use requests

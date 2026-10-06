@@ -209,19 +209,21 @@ def update_rfc_searchindex_task(self, rfc_number: int):
 
 
 @shared_task
-def rebuild_searchindex_task(
-    *, batchsize=40, drop_collection=False, upsert_presets=True
-):
-    """Rebuild the entire searchindex, optionally dropping the existing collection
+def rebuild_searchindex_task(*, batchsize=40, ignore_errors=False, upsert_presets=True):
+    """Rebuild the entire searchindex
 
-    batchsize is the number of RFCs to update per API call. It is not the Typesense
+    batchsize is the number of RFCs to load per API call. It is not the Typesense
     server-side batch size, which is left at its default of 40.
     """
-    rebuild_searchindex(
-        batchsize=batchsize,
-        drop_collection=drop_collection,
-        upsert_presets=upsert_presets,
-    )
+    try:
+        rebuild_searchindex(
+            batchsize=batchsize,
+            ignore_errors=ignore_errors,
+            upsert_presets=upsert_presets,
+        )
+    except (search_provider.IndexStateError, search_provider.RebuildFailedError) as err:
+        log.log(f"Search index rebuild failed: {err}")
+        raise
 
 
 @shared_task(bind=True)

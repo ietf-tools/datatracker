@@ -1,9 +1,8 @@
 # Copyright The IETF Trust 2024-2026, All Rights Reserved
 
 import datetime
-from unittest import mock
-
 from pathlib import Path
+from unittest import mock
 
 from celery.exceptions import Retry
 from django.conf import settings
@@ -11,6 +10,11 @@ from django.test.utils import override_settings
 from django.utils import timezone
 from typesense import exceptions as typesense_exceptions
 
+from ietf.utils.search_provider import (
+    IndexStateError,
+    RebuildFailedError,
+    RebuildResult,
+)
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import datetime_today
 
@@ -20,8 +24,8 @@ from .tasks import (
     expire_ids_task,
     expire_last_calls_task,
     generate_draft_bibxml_files_task,
-    generate_idnits2_rfcs_obsoleted_task,
     generate_idnits2_rfc_status_task,
+    generate_idnits2_rfcs_obsoleted_task,
     investigate_fragment_task,
     notify_expirations_task,
     rebuild_searchindex_task,
@@ -139,21 +143,33 @@ class TaskTests(TestCase):
             with self.assertRaises(Retry):
                 update_rfc_searchindex_task(rfc_number=5073)
 
+    @mock.patch("ietf.doc.tasks.log")
     @mock.patch("ietf.doc.tasks.rebuild_searchindex")
-    def test_rebuild_searchindex_task(self, mock_rebuild):
+    def test_rebuild_searchindex_task(self, mock_rebuild, mock_log):
         rebuild_searchindex_task()
         self.assertEqual(
             mock_rebuild.call_args,
-            mock.call(batchsize=40, drop_collection=False, upsert_presets=True),
+            mock.call(batchsize=40, ignore_errors=False, upsert_presets=True),
         )
 
-        rebuild_searchindex_task(
-            drop_collection=True, batchsize=3, upsert_presets=False
-        )
+        rebuild_searchindex_task(batchsize=3, ignore_errors=True, upsert_presets=False)
         self.assertEqual(
             mock_rebuild.call_args,
-            mock.call(batchsize=3, drop_collection=True, upsert_presets=False),
+            mock.call(batchsize=3, ignore_errors=True, upsert_presets=False),
         )
+
+        for error in [
+            IndexStateError("in a bad state"),
+            RebuildFailedError("failed to load", RebuildResult()),
+        ]:
+            with self.subTest(repr(error)):
+                mock_rebuild.side_effect = error
+                with self.assertRaises(type(error)):
+                    rebuild_searchindex_task()
+                self.assertEqual(
+                    mock_log.log.call_args,
+                    mock.call(f"Search index rebuild failed: {error}"),
+                )
 
     @mock.patch("ietf.doc.tasks.update_rfc_searchindex_popularities")
     @mock.patch("ietf.doc.tasks.search_provider.enabled")
@@ -173,9 +189,7 @@ class TaskTests(TestCase):
 
         with override_settings(SEARCH_PROVIDER_CONFIG={"TASK_MAX_RETRIES": 0}):
             # Try a non-retryable error (there are others)
-            mock_update_popularities.side_effect = (
-                typesense_exceptions.RequestMalformed
-            )
+            mock_update_popularities.side_effect = typesense_exceptions.RequestMalformed
             update_rfc_searchindex_popularities_task()  # no retry
             # Now what should be a retryable error
             mock_update_popularities.side_effect = typesense_exceptions.Timeout
