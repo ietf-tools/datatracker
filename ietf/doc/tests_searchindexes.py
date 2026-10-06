@@ -349,7 +349,11 @@ class SearchindexesTests(TestCase):
     def test_docs_index(self):
         self.assertEqual(searchindexes.DOCS_INDEX.name, "docs")
         self.assertIs(searchindexes.DOCS_INDEX.schema, searchindexes.DOCS_SCHEMA)
-        self.assertIs(searchindexes.DOCS_INDEX.presets, searchindexes.SEARCH_PRESETS)
+
+    def test_red_search_presets(self):
+        """Red searches thd docs collection"""
+        for preset in searchindexes.RED_SEARCH_PRESETS.values():
+            self.assertEqual(preset["collection"], searchindexes.DOCS_INDEX.name)
 
     @mock.patch("ietf.doc.searchindexes.update_or_create_rfc_entry")
     def test_update_rfc_searchindex(self, mock_create_entry):
@@ -361,7 +365,7 @@ class SearchindexesTests(TestCase):
         self.assertEqual(mock_create_entry.call_args, mock.call(rfc))
 
     @mock.patch("ietf.doc.searchindexes.update_or_create_rfc_entries")
-    @mock.patch("ietf.utils.search_provider.SearchIndex.upsert_presets", autospec=True)
+    @mock.patch("ietf.utils.search_provider.upsert_presets")
     @mock.patch("ietf.utils.search_provider.SearchIndex.create", autospec=True)
     @mock.patch("ietf.utils.search_provider.SearchIndex.delete", autospec=True)
     def test_rebuild_searchindex(
@@ -374,7 +378,9 @@ class SearchindexesTests(TestCase):
         searchindexes.rebuild_searchindex()
         self.assertFalse(mock_delete.called)
         self.assertFalse(mock_create.called)
-        self.assertEqual(mock_presets.call_args, mock.call(searchindexes.DOCS_INDEX))
+        self.assertEqual(
+            mock_presets.call_args, mock.call(searchindexes.RED_SEARCH_PRESETS)
+        )
         self.assertQuerysetEqual(
             mock_update.call_args.args[0], expected_rfcs, ordered=True
         )

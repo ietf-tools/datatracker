@@ -381,24 +381,24 @@ DOCS_SCHEMA = {
     ],
 }
 
-SEARCH_PRESETS = {
+DOCS_INDEX = search_provider.SearchIndex(name="docs", schema=DOCS_SCHEMA)
+
+# Search parameters for the red frontend's searches of the docs index. They belong
+# to red but are configured here for operational convenience.
+RED_SEARCH_PRESETS = {
     "red": {
-        "collection": "docs",
+        "collection": DOCS_INDEX.name,
         "infix": "off,always,off,off,off,off,off,off",
         "query_by": "rfc,filename,title,abstract,keywords,authors,group,area",
         "query_by_weights": "127,50,50,20,20,5,2,1",
     },
     "red-content": {
-        "collection": "docs",
+        "collection": DOCS_INDEX.name,
         "infix": "off,always,off,off,off,off,off,off,off",
         "query_by": "rfc,filename,title,abstract,keywords,authors,group,area,content",
         "query_by_weights": "127,50,50,20,20,5,2,1,1",
     },
 }
-
-DOCS_INDEX = search_provider.SearchIndex(
-    name="docs", schema=DOCS_SCHEMA, presets=SEARCH_PRESETS
-)
 
 
 def update_rfc_searchindex(rfc_number: int):
@@ -419,7 +419,7 @@ def rebuild_searchindex(*, batchsize=40, drop_collection=False, upsert_presets=T
         DOCS_INDEX.delete()
         DOCS_INDEX.create()
     if upsert_presets:
-        DOCS_INDEX.upsert_presets()  # ok if they already exist
+        search_provider.upsert_presets(RED_SEARCH_PRESETS)  # ok if they already exist
     update_or_create_rfc_entries(
         Document.objects.filter(type_id="rfc").order_by("-rfc_number"),
         batchsize=batchsize,

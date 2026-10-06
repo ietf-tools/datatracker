@@ -74,14 +74,13 @@ class SearchProviderTests(TestCase):
             "preset-a": {"collection": "frogs", "query_by": "title"},
             "preset-b": {"collection": "frogs", "query_by": "abstract"},
         }
-        index = search_provider.SearchIndex(name="frogs", schema={}, presets=presets)
         self.requests_mock.put(
             "http://ts.example.com/presets/preset-a", text="ok", status_code=201
         )
         self.requests_mock.put(
             "http://ts.example.com/presets/preset-b", text="ok", status_code=202
         )
-        index.upsert_presets()
+        search_provider.upsert_presets(presets)
         self.assertEqual(
             [request.json() for request in self.requests_mock.request_history],
             [
@@ -100,7 +99,7 @@ class SearchProviderTests(TestCase):
             "http://ts.example.com/presets/preset-a", text="not ok", status_code=400
         )
         with self.assertRaises(requests.exceptions.HTTPError):
-            index.upsert_presets()
+            search_provider.upsert_presets(presets)
 
         self.requests_mock.put(
             "http://ts.example.com/presets/preset-a", text="ok", status_code=200
@@ -109,7 +108,7 @@ class SearchProviderTests(TestCase):
             "http://ts.example.com/presets/preset-b", text="not ok", status_code=400
         )
         with self.assertRaises(requests.exceptions.HTTPError):
-            index.upsert_presets()
+            search_provider.upsert_presets(presets)
 
     @mock.patch("ietf.utils.search_provider.typesense.Client")
     def test_upsert_document(self, mock_ts_client_constructor):

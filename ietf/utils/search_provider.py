@@ -65,6 +65,28 @@ def _get_client() -> typesense.Client:
     return client
 
 
+def upsert_presets(presets: Mapping[str, Mapping[str, Any]]):
+    """Upsert search presets
+    
+    For Typesense, search preset names are global. Watch out for conflicts.
+    """
+    # typesense-python does not support presets, so use requests
+    _settings = get_settings()
+    api_base = _settings["TYPESENSE_API_URL"]
+    api_key = _settings["TYPESENSE_API_KEY"]
+    for preset_name, payload in presets.items():
+        log(f"Upserting '{preset_name}' preset")
+        response = requests.put(
+            urljoin(api_base, f"/presets/{preset_name}"),
+            json={"value": payload},
+            headers={
+                "X-TYPESENSE-API-KEY": api_key,
+            },
+            timeout=3,
+        )
+        response.raise_for_status()
+
+
 @dataclass
 class WriteFailure:
     document: Mapping[str, Any]
@@ -102,7 +124,6 @@ class SearchIndex:
 
     name: str
     schema: dict[str, Any]
-    presets: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     def create(self):
         log(f"Creating '{self.name}' collection")
@@ -118,23 +139,6 @@ class SearchIndex:
             client.collections[self.name].delete()
         except typesense.exceptions.ObjectNotFound:
             pass
-
-    def upsert_presets(self):
-        # typesense-python does not support presets, so use requests
-        _settings = get_settings()
-        api_base = _settings["TYPESENSE_API_URL"]
-        api_key = _settings["TYPESENSE_API_KEY"]
-        for preset_name, payload in self.presets.items():
-            log(f"Upserting '{preset_name}' preset")
-            response = requests.put(
-                urljoin(api_base, f"/presets/{preset_name}"),
-                json={"value": payload},
-                headers={
-                    "X-TYPESENSE-API-KEY": api_key,
-                },
-                timeout=3,
-            )
-            response.raise_for_status()
 
     def upsert_document(self, document: Mapping[str, Any]):
         """Create or replace one document
