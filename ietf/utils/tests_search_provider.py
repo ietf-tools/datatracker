@@ -37,32 +37,6 @@ class SearchProviderTests(TestCase):
         ):
             self.assertTrue(search_provider.enabled())
 
-    @mock.patch("ietf.utils.search_provider.typesense.Client")
-    def test_create(self, mock_ts_client_constructor):
-        schema = {"fields": [{"name": "title", "type": "string"}]}
-        search_provider.SearchIndex(name="frogs", schema=schema).create()
-        self.assertEqual(mock_ts_client_constructor.call_count, 1)
-        mock_collections = mock_ts_client_constructor.return_value.collections
-        self.assertEqual(
-            mock_collections.create.call_args,
-            mock.call(
-                {"name": "frogs", "fields": [{"name": "title", "type": "string"}]}
-            ),
-        )
-
-    @mock.patch("ietf.utils.search_provider.typesense.Client")
-    def test_delete(self, mock_ts_client_constructor):
-        index = search_provider.SearchIndex(name="frogs", schema={})
-        index.delete()
-        self.assertEqual(mock_ts_client_constructor.call_count, 1)
-        mock_collections = mock_ts_client_constructor.return_value.collections
-        self.assertTrue(mock_collections["frogs"].delete.called)
-
-        mock_collections[
-            "frogs"
-        ].delete.side_effect = typesense.exceptions.ObjectNotFound
-        index.delete()  # should ignore the exception
-
     @override_settings(
         SEARCH_PROVIDER_CONFIG={
             "TYPESENSE_API_URL": "http://ts.example.com",

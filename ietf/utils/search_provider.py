@@ -125,21 +125,6 @@ class SearchIndex:
     name: str
     schema: dict[str, Any]
 
-    def create(self):
-        log(f"Creating '{self.name}' collection")
-        client = _get_client()
-        client.collections.create(
-            cast(CollectionCreateSchema, {"name": self.name} | self.schema)
-        )
-
-    def delete(self):
-        log(f"Deleting '{self.name}' collection")
-        client = _get_client()
-        try:
-            client.collections[self.name].delete()
-        except typesense.exceptions.ObjectNotFound:
-            pass
-
     def upsert_document(self, document: Mapping[str, Any]):
         """Create or replace one document
 
