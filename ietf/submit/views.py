@@ -210,7 +210,7 @@ def api_submission(request):
 
 @csrf_exempt
 def api_submission_status(request, submission_id):
-    submission = get_submission_or_404(submission_id)
+    submission = get_object_or_404(Submission, pk=submission_id)
     return JsonResponse(
         {
             'id': str(submission.pk),
@@ -768,17 +768,6 @@ def manualpost(request):
             'selected': 'manual_posts'
         }
     )
-
-
-def get_submission_or_404(submission_id, access_token=None):
-    submission = get_object_or_404(Submission, pk=submission_id)
-
-    key_matched = access_token and submission.access_token() == access_token
-    if not key_matched: key_matched = submission.access_key == access_token # backwards-compat
-    if access_token and not key_matched:
-        raise Http404
-
-    return submission
 
 
 def async_poke_test(request):
