@@ -3754,20 +3754,24 @@ class HelperTests(TestCase):
     def test_access_token_is_valid(self):
         submission: Submission = SubmissionFactory()  # type: ignore
         valid_token = submission.access_token()
-        access_key = submission.access_key  # accept this for backwards compat
+        # The key itself used to be accepted in place of a derived token. Ensure that
+        # is no longer the case.
+        access_key = submission.access_key
         invalid_token = "not the valid token"
         self.assertTrue(access_token_is_valid(submission, valid_token))
-        self.assertTrue(access_token_is_valid(submission, access_key))
+        self.assertFalse(access_token_is_valid(submission, access_key))
         self.assertFalse(access_token_is_valid(submission, invalid_token))
 
     def test_auth_token_is_valid(self):
         auth_key = generate_random_key()
         submission: Submission = SubmissionFactory(auth_key = auth_key)  # type: ignore
         valid_token = generate_access_token(submission.auth_key)
-        auth_key = submission.auth_key  # accept this for backwards compat
+        # The key itself used to be accepted in place of a derived token. Ensure that
+        # is no longer the case.
+        auth_key = submission.auth_key
         invalid_token = "not the valid token"
         self.assertTrue(auth_token_is_valid(submission, valid_token))
-        self.assertTrue(auth_token_is_valid(submission, auth_key))
+        self.assertFalse(auth_token_is_valid(submission, auth_key))
         self.assertFalse(auth_token_is_valid(submission, invalid_token))
 
         submission.auth_key = ""
