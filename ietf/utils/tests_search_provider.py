@@ -684,3 +684,66 @@ class CleanUpTests(FakeTypesenseTestCase):
         self.make_live(LIVE)
         self.assertEqual(self.index.clean_up(), [])
         self.assertEqual(list(self.fake.collection_data), [LIVE])
+
+
+class TransitionTests(FakeTypesenseTestCase):
+    """SearchIndex.build_transition_collection()"""
+
+    def test_build_transition_collection(self):
+        self.fake.add_collection("frogs", documents=[{"id": "doc-1", "v": "old"}])
+        result = self.index.build_transition_collection(
+            [{"id": "doc-1", "v": "new"}, {"id": "doc-2"}]
+        )
+        self.assertEqual(result, search_provider.RebuildResult(loaded=2))
+        self.assertEqual(sorted(self.fake.collection_data), ["frogs", "frogs_0"])
+        self.assertEqual(sorted(self.fake.documents("frogs_0")), ["doc-1", "doc-2"])
+        # the existing collection is left alone and no alias is created
+        self.assertEqual(
+            self.fake.documents("frogs"), {"doc-1": {"id": "doc-1", "v": "old"}}
+        )
+        self.assertEqual(self.fake.alias_data, {})
+
+    def test_build_transition_collection_wrong_state(self):
+        def alias_exists():
+            self.make_live(LIVE)
+
+        def no_plain_collection():
+            pass
+
+        def numbered_collection_exists():
+            self.fake.add_collection("frogs")
+            self.fake.add_collection("frogs_0")
+
+        for setup in [alias_exists, no_plain_collection, numbered_collection_exists]:
+            with self.subTest(setup.__name__):
+                self.fake.collection_data.clear()
+                self.fake.alias_data.clear()
+                setup()
+                collections_before = sorted(self.fake.collection_data)
+                with self.assertRaises(search_provider.IndexStateError):
+                    self.index.build_transition_collection([{"id": "doc-1"}])
+                self.assertEqual(sorted(self.fake.collection_data), collections_before)
+
+    def test_build_transition_collection_failures(self):
+        self.fake.add_collection("frogs")
+        self.fake.document_errors[("frogs_0", "doc-2")] = "bad document"
+        documents = [{"id": "doc-1"}, {"id": "doc-2"}]
+        with self.assertRaises(search_provider.RebuildFailedError):
+            self.index.build_transition_collection(documents)
+        self.assertEqual(list(self.fake.collection_data), ["frogs"])
+
+        result = self.index.build_transition_collection(documents, ignore_errors=True)
+        self.assertEqual(len(result.failures), 1)
+        self.assertEqual(sorted(self.fake.collection_data), ["frogs", "frogs_0"])
+
+    def test_transition_then_rebuild(self):
+        self.fake.add_collection("frogs", documents=[{"id": "doc-1"}])
+        self.index.build_transition_collection([{"id": "doc-1"}])
+        # the operator's cutover
+        del self.fake.collection_data["frogs"]
+        self.fake.alias_data["frogs"] = "frogs_0"
+
+        self.index.rebuild([{"id": "doc-1"}, {"id": "doc-2"}])
+        self.assertEqual(self.fake.alias_data, {"frogs": "frogs_1"})
+        self.assertEqual(list(self.fake.collection_data), ["frogs_1"])
+        self.assertEqual(sorted(self.fake.documents("frogs_1")), ["doc-1", "doc-2"])

@@ -209,32 +209,11 @@ class SearchIndex:
         # Rebuilds that start from the same live collection choose the same name for
         # the new one, so creating it succeeds for at most one of them.
         new_collection = _next_collection_name(state)
-        try:
-            client.collections.create(
-                cast(CollectionCreateSchema, {"name": new_collection} | self.schema)
-            )
-        except typesense.exceptions.ObjectAlreadyExists:
-            raise IndexStateError(
-                f"Collection {new_collection} already exists. Another rebuild of "
-                f"{self.name} is running or has just finished, or one failed and left "
-                "it behind. If no rebuild is running, remove it with clean_up() and "
-                "rebuild again."
-            )
-        log(f"Created collection {new_collection} to rebuild {self.name}")
+        result = _create_and_load(
+            client, self, new_collection, documents, batchsize, ignore_errors
+        )
 
         try:
-            result = _load_documents(client, new_collection, documents, batchsize)
-            log(
-                f"Loaded {result.loaded} documents into {new_collection}, skipped "
-                f"{result.skipped} already written by updates, "
-                f"{len(result.failures)} failed"
-            )
-            if len(result.failures) > 0 and not ignore_errors:
-                raise RebuildFailedError(
-                    f"{len(result.failures)} documents failed to load. Discarding "
-                    f"{new_collection}; {self.name} is unchanged.",
-                    result,
-                )
             _set_alias(client, self.name, new_collection)
             # Typesense allows an alias to point at a missing collection. If ours was
             # deleted, deleting the previous one too would leave searches no data.
@@ -291,6 +270,35 @@ class SearchIndex:
         for collection in state.others:
             _delete_collection(client, collection)
         return state.others
+
+    def build_transition_collection(
+        self,
+        documents: Iterable[Mapping[str, Any]],
+        *,
+        batchsize: int | None = None,
+        ignore_errors: bool = False,
+    ) -> RebuildResult:
+        """Build the first numbered collection for an index stored in a plain collection
+
+        Temporary and Typesense-specific. Converting an index stored in a collection
+        named like the index to one whose name is an alias takes two steps. This is
+        the first: it creates {name}_0 and loads documents into it like rebuild()
+        does, leaving the existing collection alone and creating no alias. Then an
+        operator deletes the existing collection and creates the alias.
+        """
+        client = _get_client()
+        state = _get_index_state(client, self.name)
+        if state.alias_target is not None:
+            raise IndexStateError(f"{self.name} is already an alias")
+        if self.name not in state.collections:
+            raise IndexStateError(f"There is no collection named {self.name}")
+        if len(state.versioned) > 0:
+            raise IndexStateError(
+                f"Collections {', '.join(state.versioned)} already exist"
+            )
+        return _create_and_load(
+            client, self, f"{self.name}_0", documents, batchsize, ignore_errors
+        )
 
 
 @dataclass
@@ -545,6 +553,50 @@ def _discard_collection(client: typesense.Client, name: str, collection: str):
         _delete_collection(client, collection)
     except Exception as err:
         log(f"Failed to discard collection {collection} ({err!r})")
+
+
+def _create_and_load(
+    client: typesense.Client,
+    index: SearchIndex,
+    collection: str,
+    documents: Iterable[Mapping[str, Any]],
+    batchsize: int | None,
+    ignore_errors: bool,
+) -> RebuildResult:
+    """Create a collection for an index and load documents into it
+
+    Discards the collection if loading fails.
+    """
+    try:
+        client.collections.create(
+            cast(CollectionCreateSchema, {"name": collection} | index.schema)
+        )
+    except typesense.exceptions.ObjectAlreadyExists:
+        raise IndexStateError(
+            f"Collection {collection} already exists. Another rebuild of "
+            f"{index.name} is running or has just finished, or one failed and left "
+            "it behind. If no rebuild is running, remove it with clean_up() and "
+            "rebuild again."
+        )
+    log(f"Created collection {collection} to rebuild {index.name}")
+
+    try:
+        result = _load_documents(client, collection, documents, batchsize)
+        log(
+            f"Loaded {result.loaded} documents into {collection}, skipped "
+            f"{result.skipped} already written by updates, "
+            f"{len(result.failures)} failed"
+        )
+        if len(result.failures) > 0 and not ignore_errors:
+            raise RebuildFailedError(
+                f"{len(result.failures)} documents failed to load. Discarding "
+                f"{collection}; {index.name} is unchanged.",
+                result,
+            )
+    except Exception:
+        _discard_collection(client, index.name, collection)
+        raise
+    return result
 
 
 def _load_documents(
