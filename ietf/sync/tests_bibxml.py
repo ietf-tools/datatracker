@@ -49,6 +49,14 @@ class BibXmlTests(TestCase):
         # Create a FYI with non-April Fools RFC
         self.fyi = FyiFactory(contains=[self.rfc], name="fyi3")
 
+        # Low-numbered RFC (< 1000) for the zero-padded four-digit variant
+        self.low_rfc = PublishedRfcDocEventFactory(
+            time="2021-04-01T12:00:00Z",
+            doc__name="rfc822",
+            doc__rfc_number=822,
+            doc__std_level_id="std",
+        ).doc
+
     def test_get_abstract_bibxml(self):
         # sentences separated by two spaces collapse to one
         self.assertEqual(
@@ -97,6 +105,30 @@ class BibXmlTests(TestCase):
             f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
         )
         self.assertIn('<date month="April" year="2021"/>', bibxml)
+
+    def test_build_rfc_bibxml_unpadded_low_number(self):
+        # A sub-1000 RFC keeps its plain anchor unless padding is requested
+        bibxml = build_rfc_bibxml(self.low_rfc)
+        self.assertIsNotNone(ElementTree.fromstring(bibxml))
+        self.assertIn('anchor="RFC822"', bibxml)
+        self.assertNotIn('anchor="RFC0822"', bibxml)
+        # link and seriesInfo always use the plain number
+        self.assertIn(f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc822", bibxml)
+        self.assertIn('<seriesInfo name="RFC" value="822"/>', bibxml)
+
+    def test_build_rfc_bibxml_padded_low_number(self):
+        # With padding the anchor is zero-padded to four digits
+        bibxml = build_rfc_bibxml(self.low_rfc, four_digits=True)
+        self.assertIsNotNone(ElementTree.fromstring(bibxml))
+        self.assertIn('anchor="RFC0822"', bibxml)
+        # link and seriesInfo still use the plain number, not the padded one
+        self.assertIn(f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc822", bibxml)
+        self.assertIn('<seriesInfo name="RFC" value="822"/>', bibxml)
+
+    def test_build_rfc_bibxml_padding_ignored_for_high_number(self):
+        # Padding has no effect on RFCs >= 1000
+        bibxml = build_rfc_bibxml(self.rfc, four_digits=True)
+        self.assertIn(f'anchor="RFC{self.rfc.rfc_number}"', bibxml)
 
     def test_build_bcp_bibxml(self):
         bcp_number = self.bcp.name[3:]
@@ -210,11 +242,42 @@ class BibXmlTests(TestCase):
             self.assertIn(f'<seriesInfo name="FYI" value="{fyi_number}"/>', bibxml)
             self.assertIn('<date month="April" year="2021"/>', bibxml)
 
+    def test_create_rfc_bibxml_padded_low_number(self):
+        bibxml_bucket = storages["bibxml_bucket"]
+        bibxml = build_rfc_bibxml(self.low_rfc, four_digits=True)
+        filename = f"bibxml/rfc{self.low_rfc.rfc_number:04d}.xml"
+        save_bibxml(bibxml, filename)
+        with bibxml_bucket.open(filename, "rb") as f:
+            bibxml = f.read().decode("utf-8")
+            self.assertIsNotNone(ElementTree.fromstring(bibxml))
+            self.assertIn('anchor="RFC0822"', bibxml)
+
     @patch("ietf.sync.bibxml.save_bibxml")
     def test_recreate_rfc_bibxml(self, mock_save_bibxml):
         recreate_rfc_bibxml()
         filename = f"bibxml/rfc{self.rfc.rfc_number}.xml"
-        mock_save_bibxml.assert_called_with(ANY, filename)
+        mock_save_bibxml.assert_any_call(ANY, filename)
+
+    @patch("ietf.sync.bibxml.save_bibxml")
+    def test_recreate_rfc_bibxml_writes_both_forms_for_low_number(
+        self, mock_save_bibxml
+    ):
+        # A sub-1000 RFC is written both unpadded and zero-padded
+        recreate_rfc_bibxml()
+        mock_save_bibxml.assert_has_calls(
+            [
+                call(ANY, "bibxml/rfc822.xml"),
+                call(ANY, "bibxml/rfc0822.xml"),
+            ],
+            any_order=True,
+        )
+
+    @patch("ietf.sync.bibxml.save_bibxml")
+    def test_recreate_rfc_bibxml_single_form_for_high_number(self, mock_save_bibxml):
+        # An RFC >= 1000 is written exactly once, with no extra padded form
+        recreate_rfc_bibxml()
+        written = [c.args[1] for c in mock_save_bibxml.call_args_list]
+        self.assertEqual(written.count(f"bibxml/rfc{self.rfc.rfc_number}.xml"), 1)
 
     @patch("ietf.sync.bibxml.save_bibxml")
     def test_recreate_rfcsubseries_bibxml(self, mock_save_bibxml):

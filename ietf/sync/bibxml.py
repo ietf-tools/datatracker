@@ -145,10 +145,16 @@ def get_abstract_bibxml(abstract):
     return f"""<abstract>{ts}</abstract>""" if ts else ""
 
 
-def build_rfc_bibxml(rfc):
-    """Return BibXML entry for the given rfc Document object"""
+def build_rfc_bibxml(rfc, four_digits=False):
+    """Return BibXML entry for the given rfc Document object
+
+    When four_digits is True, RFC number in the anchor is padded to 4 digits.
+    """
 
     rfc_number = rfc.rfc_number
+    anchor = (
+        f"{rfc_number:04d}" if four_digits and rfc_number < 1000 else f"{rfc_number}"
+    )
     link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"rfc{rfc_number}")
     date = rfc.pub_date().strftime('<date month="%B" year="%Y"/>')
     authors = ""
@@ -184,7 +190,7 @@ def build_rfc_bibxml(rfc):
     for subseries in rfc.part_of():
         subseries_info += f"""<seriesInfo name="{subseries.type_id.upper()}" value="{subseries.name[3:]}"/>"""
 
-    return f"""<reference anchor="RFC{rfc_number}" target="{link}"><front><title>{esc(rfc.title)}</title>{authors}{date}{get_abstract_bibxml(rfc.abstract)}</front>{subseries_info}<seriesInfo name="RFC" value="{rfc_number}"/><seriesInfo name="DOI" value="{rfc.doi}"/></reference>"""
+    return f"""<reference anchor="RFC{anchor}" target="{link}"><front><title>{esc(rfc.title)}</title>{authors}{date}{get_abstract_bibxml(rfc.abstract)}</front>{subseries_info}<seriesInfo name="RFC" value="{rfc_number}"/><seriesInfo name="DOI" value="{rfc.doi}"/></reference>"""
 
 
 def build_bcp_bibxml(bcp_number):
@@ -249,6 +255,12 @@ def recreate_rfc_bibxml():
         filename = f"bibxml/rfc{rfc_number}.xml"
         bibxml = build_rfc_bibxml(rfc)
         save_bibxml(bibxml, filename)
+
+        # Save 4 digit RFCs for < 1000 for backward compatibility
+        if rfc_number < 1000:
+            padded_filename = f"bibxml/rfc{rfc_number:04d}.xml"
+            padded_bibxml = build_rfc_bibxml(rfc, four_digits=True)
+            save_bibxml(padded_bibxml, padded_filename)
 
 
 def recreate_rfcsubseries_bibxml():
