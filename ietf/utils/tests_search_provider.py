@@ -100,71 +100,6 @@ class SearchProviderTests(TestCase):
             index.upsert_document(document)
 
     @mock.patch("ietf.utils.search_provider.typesense.Client")
-    def test_upsert_documents(self, mock_ts_client_constructor):
-        _mock_plain_collection(mock_ts_client_constructor.return_value, "frogs")
-        mock_import_ = mock_ts_client_constructor.return_value.collections[
-            "frogs"
-        ].documents.import_
-        # Alternate success and failure results
-        mock_import_.side_effect = lambda batch, params: [
-            (
-                {"success": True}
-                if index % 2 == 0
-                else {"success": False, "error": "failed", "code": 400}
-            )
-            for index in range(len(batch))
-        ]
-        documents = [{"id": f"doc-{n}"} for n in range(3)]
-        index = search_provider.SearchIndex(name="frogs", schema={})
-        result = index.upsert_documents(documents)
-        self.assertEqual(
-            mock_import_.call_args_list,
-            [mock.call(documents, {"action": "upsert"})],
-        )
-        self.assertEqual(
-            result,
-            search_provider.WriteResult(
-                written=2,
-                failures=[search_provider.WriteFailure(documents[1], "failed")],
-            ),
-        )
-
-        # With batchsize, a generator is consumed one batch at a time
-        generated_count = 0
-
-        def generate_documents():
-            nonlocal generated_count
-            for n in range(50):
-                generated_count += 1
-                yield {"id": f"doc-{n}"}
-
-        generated_at_import = []
-
-        def fake_import_(batch, params):
-            generated_at_import.append(generated_count)
-            return [{"success": True}] * len(batch)
-
-        mock_import_.reset_mock()
-        mock_import_.side_effect = fake_import_
-        result = index.upsert_documents(generate_documents(), batchsize=20)
-        self.assertEqual(
-            mock_import_.call_args_list,
-            [
-                mock.call(
-                    [{"id": f"doc-{n}"} for n in range(0, 20)], {"action": "upsert"}
-                ),
-                mock.call(
-                    [{"id": f"doc-{n}"} for n in range(20, 40)], {"action": "upsert"}
-                ),
-                mock.call(
-                    [{"id": f"doc-{n}"} for n in range(40, 50)], {"action": "upsert"}
-                ),
-            ],
-        )
-        self.assertEqual(generated_at_import, [20, 40, 50])
-        self.assertEqual(result, search_provider.WriteResult(written=50))
-
-    @mock.patch("ietf.utils.search_provider.typesense.Client")
     def test_update_documents(self, mock_ts_client_constructor):
         _mock_plain_collection(mock_ts_client_constructor.return_value, "frogs")
         mock_import_ = mock_ts_client_constructor.return_value.collections[
@@ -190,6 +125,37 @@ class SearchProviderTests(TestCase):
                 ],
             ),
         )
+
+        # With batchsize, a generator is consumed one batch at a time
+        generated_count = 0
+
+        def generate_documents():
+            nonlocal generated_count
+            for n in range(50):
+                generated_count += 1
+                yield {"id": f"doc-{n}", "x": n}
+
+        generated_at_import = []
+
+        def fake_import_(batch, params):
+            generated_at_import.append(generated_count)
+            return [{"success": True}] * len(batch)
+
+        mock_import_.reset_mock()
+        mock_import_.side_effect = fake_import_
+        result = index.update_documents(generate_documents(), batchsize=20)
+        self.assertEqual(
+            mock_import_.call_args_list,
+            [
+                mock.call(
+                    [{"id": f"doc-{n}", "x": n} for n in range(start, end)],
+                    {"action": "update"},
+                )
+                for start, end in [(0, 20), (20, 40), (40, 50)]
+            ],
+        )
+        self.assertEqual(generated_at_import, [20, 40, 50])
+        self.assertEqual(result, search_provider.WriteResult(written=50))
 
     def test_index_state(self):
         state = search_provider._IndexState(
@@ -307,57 +273,6 @@ class SearchProviderTests(TestCase):
 
     @mock.patch("ietf.utils.search_provider.log")
     @mock.patch("ietf.utils.search_provider.typesense.Client")
-    def test_upsert_documents_targets(self, mock_ts_client_constructor, mock_log):
-        # Documents may come from a generator, which can only be read once. Each batch
-        # must go to every collection before the next batch is generated.
-        fake = FakeTypesenseClient()
-        mock_ts_client_constructor.return_value = fake
-        fake.add_collection(LIVE)
-        fake.add_collection(BUILDING)
-        fake.alias_data["frogs"] = LIVE
-        fake.document_errors[(BUILDING, "doc-3")] = "bad document"
-
-        generated_count = 0
-        generated_at_import = []
-
-        def generate_documents():
-            nonlocal generated_count
-            for n in range(5):
-                generated_count += 1
-                yield {"id": f"doc-{n}"}
-
-        fake.before_write = lambda collection: generated_at_import.append(
-            (collection, generated_count)
-        )
-        result = search_provider.SearchIndex(name="frogs", schema={}).upsert_documents(
-            generate_documents(), batchsize=2
-        )
-        # each batch is written to every target before the next batch is built
-        self.assertEqual(
-            generated_at_import,
-            [
-                (LIVE, 2),
-                (BUILDING, 2),
-                (LIVE, 4),
-                (BUILDING, 4),
-                (LIVE, 5),
-                (BUILDING, 5),
-            ],
-        )
-        self.assertEqual(len(fake.documents(LIVE)), 5)
-        self.assertEqual(len(fake.documents(BUILDING)), 4)
-        # result describes the live collection; other failures are logged
-        self.assertEqual(result, search_provider.WriteResult(written=5))
-        self.assertIn(
-            mock.call(
-                f"Write of doc-3 to in-progress collection {BUILDING} failed: "
-                "bad document"
-            ),
-            mock_log.call_args_list,
-        )
-
-    @mock.patch("ietf.utils.search_provider.log")
-    @mock.patch("ietf.utils.search_provider.typesense.Client")
     def test_update_documents_targets(self, mock_ts_client_constructor, mock_log):
         # Partial updates to documents the rebuild has not loaded yet will miss in the
         # new collection. That is expected, so they are not reported as failures.
@@ -384,6 +299,53 @@ class SearchProviderTests(TestCase):
         self.assertEqual(result.written, 2)
         self.assertEqual(
             [failure.document["id"] for failure in result.failures], ["doc-3"]
+        )
+
+        # Documents may come from a generator, which can only be read once. Each batch
+        # must go to every collection before the next batch is generated.
+        fake = FakeTypesenseClient()
+        mock_ts_client_constructor.return_value = fake
+        documents = [{"id": f"doc-{n}"} for n in range(5)]
+        fake.add_collection(LIVE, documents=documents)
+        fake.add_collection(BUILDING, documents=documents)
+        fake.alias_data["frogs"] = LIVE
+        fake.document_errors[(BUILDING, "doc-3")] = "bad document"
+
+        generated_count = 0
+        generated_at_import = []
+
+        def generate_documents():
+            nonlocal generated_count
+            for n in range(5):
+                generated_count += 1
+                yield {"id": f"doc-{n}", "x": n}
+
+        fake.before_write = lambda collection: generated_at_import.append(
+            (collection, generated_count)
+        )
+        mock_log.reset_mock()
+        result = search_provider.SearchIndex(name="frogs", schema={}).update_documents(
+            generate_documents(), batchsize=2
+        )
+        self.assertEqual(
+            generated_at_import,
+            [
+                (LIVE, 2),
+                (BUILDING, 2),
+                (LIVE, 4),
+                (BUILDING, 4),
+                (LIVE, 5),
+                (BUILDING, 5),
+            ],
+        )
+        # result describes the live collection; other failures are logged
+        self.assertEqual(result, search_provider.WriteResult(written=5))
+        self.assertIn(
+            mock.call(
+                f"Write of doc-3 to in-progress collection {BUILDING} failed: "
+                "bad document"
+            ),
+            mock_log.call_args_list,
         )
 
 

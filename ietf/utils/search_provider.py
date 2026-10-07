@@ -143,17 +143,6 @@ class SearchIndex:
             ),
         )
 
-    def upsert_documents(
-        self, documents: Iterable[Mapping[str, Any]], *, batchsize: int | None = None
-    ) -> WriteResult:
-        """Create or replace documents in bulk
-
-        To ensure a concurrent rebuild() does not lose data, ensure data this adds to
-        the index are already readable from the data source. E.g., do not call this
-        method until after a transaction writing its data has committed.
-        """
-        return _import_documents(self.name, documents, "upsert", batchsize)
-
     def update_documents(
         self,
         partial_documents: Iterable[Mapping[str, Any]],
@@ -183,9 +172,9 @@ class SearchIndex:
         deletes the old one. Searches use the old contents until the switch.
 
         Consumes the documents iterable only after the new collection is created. This
-        ensures that any updates via upsert_document, upsert_documents, or
-        update_documents made concurrent to the rebuild call are reflected correctly
-        in the rebuilt collection. The documents iterable must not read its input until
+        ensures that any updates via upsert_document or update_documents made
+        concurrent to the rebuild call are reflected correctly in the rebuilt
+        collection. The documents iterable must not read its input until
         it is consumed.
 
         Raises IndexStateError if the index is not in a rebuildable state (e.g., a
