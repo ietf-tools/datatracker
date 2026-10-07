@@ -389,16 +389,26 @@ def update_rfc_searchindex(rfc_number: int):
     update_or_create_rfc_entry(rfc)
 
 
-def rebuild_searchindex(*, batchsize=40, ignore_errors=False, upsert_presets=True):
+def rebuild_searchindex(
+    *, batchsize=40, ignore_errors=False, upsert_presets=True, transition=False
+):
     """Rebuild the entire search index
 
     batchsize is the number of RFCs to load per API call. If ignore_errors is set,
     the rebuilt index goes live even if some RFCs fail to load.
+
+    If transition is set, builds the collection for converting the index to an alias
+    instead (temporary; see SearchIndex.build_transition_collection()).
     """
     try:
-        result = DOCS_INDEX.rebuild(
-            _rfc_documents(), batchsize=batchsize, ignore_errors=ignore_errors
-        )
+        if transition:
+            result = DOCS_INDEX.build_transition_collection(
+                _rfc_documents(), batchsize=batchsize, ignore_errors=ignore_errors
+            )
+        else:
+            result = DOCS_INDEX.rebuild(
+                _rfc_documents(), batchsize=batchsize, ignore_errors=ignore_errors
+            )
     except search_provider.RebuildFailedError as err:
         _log_load_failures(err.result)
         raise

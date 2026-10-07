@@ -363,6 +363,43 @@ class SearchindexesTests(TestCase):
             mock.call("Failed to index RFC 1234: oops"), mock_log.call_args_list
         )
 
+    @mock.patch("ietf.doc.searchindexes._get_popularity_scores")
+    @mock.patch("ietf.utils.search_provider.upsert_presets")
+    @mock.patch("ietf.utils.search_provider.SearchIndex.rebuild", autospec=True)
+    @mock.patch(
+        "ietf.utils.search_provider.SearchIndex.build_transition_collection",
+        autospec=True,
+    )
+    def test_rebuild_searchindex_transition(
+        self, mock_build_transition, mock_rebuild, mock_presets, mock_get_scores
+    ):
+        rfc = PublishedRfcDocEventFactory().doc
+        mock_get_scores.return_value = {}
+        loaded = []
+        read_before_consuming = []
+
+        def fake_build_transition(index, documents, *, batchsize, ignore_errors):
+            read_before_consuming.append(mock_get_scores.called)
+            loaded.extend(documents)
+            return RebuildResult(loaded=len(loaded))
+
+        mock_build_transition.side_effect = fake_build_transition
+        searchindexes.rebuild_searchindex(batchsize=3, transition=True)
+        self.assertFalse(mock_rebuild.called)
+        self.assertEqual(
+            mock_build_transition.call_args,
+            mock.call(
+                searchindexes.DOCS_INDEX, mock.ANY, batchsize=3, ignore_errors=False
+            ),
+        )
+        self.assertEqual(read_before_consuming, [False])
+        self.assertEqual(
+            [document["rfcNumber"] for document in loaded], [rfc.rfc_number]
+        )
+        self.assertEqual(
+            mock_presets.call_args, mock.call(searchindexes.RED_SEARCH_PRESETS)
+        )
+
     @mock.patch("ietf.doc.searchindexes.log")
     @mock.patch("ietf.utils.search_provider.upsert_presets")
     @mock.patch("ietf.utils.search_provider.SearchIndex.rebuild", autospec=True)

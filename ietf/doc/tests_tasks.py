@@ -149,13 +149,19 @@ class TaskTests(TestCase):
         rebuild_searchindex_task()
         self.assertEqual(
             mock_rebuild.call_args,
-            mock.call(batchsize=40, ignore_errors=False, upsert_presets=True),
+            mock.call(
+                batchsize=40, ignore_errors=False, upsert_presets=True, transition=False
+            ),
         )
 
-        rebuild_searchindex_task(batchsize=3, ignore_errors=True, upsert_presets=False)
+        rebuild_searchindex_task(
+            batchsize=3, ignore_errors=True, upsert_presets=False, transition=True
+        )
         self.assertEqual(
             mock_rebuild.call_args,
-            mock.call(batchsize=3, ignore_errors=True, upsert_presets=False),
+            mock.call(
+                batchsize=3, ignore_errors=True, upsert_presets=False, transition=True
+            ),
         )
 
         for error in [
