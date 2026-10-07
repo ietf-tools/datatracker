@@ -1,7 +1,10 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
+from contextlib import contextmanager
 from unittest import mock
 
 import jsonschema
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 
 from ietf.blobdb.models import Blob
 from ietf.doc.factories import (
@@ -23,6 +26,21 @@ from ietf.utils.search_provider import (
 from ietf.utils.test_utils import TestCase
 
 from . import searchindexes
+
+
+class FakeRebuild:
+    """Stands in for search_provider.Rebuild, recording what is loaded"""
+
+    def __init__(self):
+        self.result = RebuildResult()
+        self.loaded = []
+        self.batchsizes = []
+
+    def load(self, documents, *, batchsize=None):
+        documents = list(documents)
+        self.loaded.extend(documents)
+        self.batchsizes.append(batchsize)
+        self.result.loaded += len(documents)
 
 
 class SearchindexesTests(TestCase):
@@ -306,58 +324,71 @@ class SearchindexesTests(TestCase):
     @mock.patch("ietf.doc.searchindexes.log")
     @mock.patch("ietf.doc.searchindexes._get_popularity_scores")
     @mock.patch("ietf.utils.search_provider.upsert_presets")
-    @mock.patch("ietf.utils.search_provider.SearchIndex.rebuild", autospec=True)
+    @mock.patch(
+        "ietf.utils.search_provider.SearchIndex.rebuild_collection", autospec=True
+    )
     def test_rebuild_searchindex(
-        self, mock_rebuild, mock_presets, mock_get_scores, mock_log
+        self, mock_rebuild_collection, mock_presets, mock_get_scores, mock_log
     ):
         rfcs = [PublishedRfcDocEventFactory().doc for _ in range(3)]
         WgDraftFactory()  # not included in the rebuild
         mock_get_scores.return_value = {}
-        loaded = []
-        read_before_consuming = []
-        presets_before_rebuild = []
+        queries = CaptureQueriesContext(connection)
+        entered = []
+        rebuilds = []
 
-        def fake_rebuild(index, documents, *, batchsize, ignore_errors):
-            # rebuild() consumes documents only after its new collection exists, so
-            # nothing may be read before then
-            read_before_consuming.append(mock_get_scores.called)
-            presets_before_rebuild.append(mock_presets.called)
-            loaded.extend(documents)
-            failures = [WriteFailure({"rfcNumber": 1234}, "oops")]
-            return RebuildResult(
-                loaded=len(loaded), failures=failures if ignore_errors else []
+        @contextmanager
+        def fake_rebuild_collection(index, *, ignore_errors):
+            # Entering creates the new collection. Nothing may be read before then.
+            entered.append(
+                {
+                    "index": index,
+                    "ignore_errors": ignore_errors,
+                    "scores_read": mock_get_scores.called,
+                    "queries": len(queries.captured_queries),
+                }
             )
+            rebuild = FakeRebuild()
+            rebuilds.append(rebuild)
+            yield rebuild
+            self.assertFalse(mock_presets.called)  # presets come after the rebuild
+            if ignore_errors:
+                rebuild.result.failures.append(
+                    WriteFailure({"rfcNumber": 1234}, "oops")
+                )
 
-        mock_rebuild.side_effect = fake_rebuild
-        searchindexes.rebuild_searchindex()
+        mock_rebuild_collection.side_effect = fake_rebuild_collection
+        with queries:
+            searchindexes.rebuild_searchindex()
         self.assertEqual(
-            mock_rebuild.call_args,
-            mock.call(
-                searchindexes.DOCS_INDEX, mock.ANY, batchsize=40, ignore_errors=False
-            ),
+            entered,
+            [
+                {
+                    "index": searchindexes.DOCS_INDEX,
+                    "ignore_errors": False,
+                    "scores_read": False,
+                    "queries": 0,
+                }
+            ],
         )
-        self.assertEqual(read_before_consuming, [False])
+        self.assertGreater(len(queries.captured_queries), 0)
         self.assertEqual(
-            [document["rfcNumber"] for document in loaded],
+            [document["rfcNumber"] for document in rebuilds[0].loaded],
             sorted((rfc.rfc_number for rfc in rfcs), reverse=True),
         )
-        # presets are saved after a successful rebuild
-        self.assertEqual(presets_before_rebuild, [False])
+        self.assertEqual(rebuilds[0].batchsizes, [40])
         self.assertEqual(
             mock_presets.call_args, mock.call(searchindexes.RED_SEARCH_PRESETS)
         )
 
-        loaded.clear()
+        entered.clear()
+        rebuilds.clear()
         mock_presets.reset_mock()
         searchindexes.rebuild_searchindex(
             batchsize=3, ignore_errors=True, upsert_presets=False
         )
-        self.assertEqual(
-            mock_rebuild.call_args,
-            mock.call(
-                searchindexes.DOCS_INDEX, mock.ANY, batchsize=3, ignore_errors=True
-            ),
-        )
+        self.assertTrue(entered[0]["ignore_errors"])
+        self.assertEqual(rebuilds[0].batchsizes, [3])
         self.assertFalse(mock_presets.called)
         self.assertIn(
             mock.call("Failed to index RFC 1234: oops"), mock_log.call_args_list
@@ -365,49 +396,61 @@ class SearchindexesTests(TestCase):
 
     @mock.patch("ietf.doc.searchindexes._get_popularity_scores")
     @mock.patch("ietf.utils.search_provider.upsert_presets")
-    @mock.patch("ietf.utils.search_provider.SearchIndex.rebuild", autospec=True)
     @mock.patch(
-        "ietf.utils.search_provider.SearchIndex.build_transition_collection",
+        "ietf.utils.search_provider.SearchIndex.rebuild_collection", autospec=True
+    )
+    @mock.patch(
+        "ietf.utils.search_provider.SearchIndex.transition_build_collection",
         autospec=True,
     )
     def test_rebuild_searchindex_transition(
-        self, mock_build_transition, mock_rebuild, mock_presets, mock_get_scores
+        self, mock_transition, mock_rebuild_collection, mock_presets, mock_get_scores
     ):
         rfc = PublishedRfcDocEventFactory().doc
         mock_get_scores.return_value = {}
-        loaded = []
-        read_before_consuming = []
+        scores_read_on_entry = []
+        rebuilds = []
 
-        def fake_build_transition(index, documents, *, batchsize, ignore_errors):
-            read_before_consuming.append(mock_get_scores.called)
-            loaded.extend(documents)
-            return RebuildResult(loaded=len(loaded))
+        @contextmanager
+        def fake_transition_build_collection(index, *, ignore_errors):
+            scores_read_on_entry.append(mock_get_scores.called)
+            rebuild = FakeRebuild()
+            rebuilds.append(rebuild)
+            yield rebuild
 
-        mock_build_transition.side_effect = fake_build_transition
+        mock_transition.side_effect = fake_transition_build_collection
         searchindexes.rebuild_searchindex(batchsize=3, transition=True)
-        self.assertFalse(mock_rebuild.called)
+        self.assertFalse(mock_rebuild_collection.called)
         self.assertEqual(
-            mock_build_transition.call_args,
-            mock.call(
-                searchindexes.DOCS_INDEX, mock.ANY, batchsize=3, ignore_errors=False
-            ),
+            mock_transition.call_args,
+            mock.call(searchindexes.DOCS_INDEX, ignore_errors=False),
         )
-        self.assertEqual(read_before_consuming, [False])
+        self.assertEqual(scores_read_on_entry, [False])
         self.assertEqual(
-            [document["rfcNumber"] for document in loaded], [rfc.rfc_number]
+            [document["rfcNumber"] for document in rebuilds[0].loaded],
+            [rfc.rfc_number],
         )
+        self.assertEqual(rebuilds[0].batchsizes, [3])
         self.assertEqual(
             mock_presets.call_args, mock.call(searchindexes.RED_SEARCH_PRESETS)
         )
 
     @mock.patch("ietf.doc.searchindexes.log")
     @mock.patch("ietf.utils.search_provider.upsert_presets")
-    @mock.patch("ietf.utils.search_provider.SearchIndex.rebuild", autospec=True)
-    def test_rebuild_searchindex_failed(self, mock_rebuild, mock_presets, mock_log):
-        mock_rebuild.side_effect = RebuildFailedError(
-            "failed",
-            RebuildResult(failures=[WriteFailure({"rfcNumber": 1234}, "oops")]),
-        )
+    @mock.patch(
+        "ietf.utils.search_provider.SearchIndex.rebuild_collection", autospec=True
+    )
+    def test_rebuild_searchindex_failed(
+        self, mock_rebuild_collection, mock_presets, mock_log
+    ):
+        @contextmanager
+        def failing_rebuild_collection(index, *, ignore_errors):
+            rebuild = FakeRebuild()
+            yield rebuild
+            rebuild.result.failures.append(WriteFailure({"rfcNumber": 1234}, "oops"))
+            raise RebuildFailedError("failed", rebuild.result)
+
+        mock_rebuild_collection.side_effect = failing_rebuild_collection
         with self.assertRaises(RebuildFailedError):
             searchindexes.rebuild_searchindex()
         self.assertIn(

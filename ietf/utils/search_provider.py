@@ -7,7 +7,8 @@ Datatracker Document model.
 """
 
 import re
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from itertools import batched
 from typing import Any, Literal, TypeVar, cast
@@ -181,6 +182,33 @@ class SearchIndex:
         rebuild is in progress or a failed rebuild left collections behind), and
         RebuildFailedError if any documents fail to load (unless ignore_errors is set).
         """
+        with self.rebuild_collection(ignore_errors=ignore_errors) as rebuild:
+            rebuild.load(documents, batchsize=batchsize)
+        return rebuild.result
+
+    @contextmanager
+    def rebuild_collection(self, *, ignore_errors: bool = False) -> Iterator["Rebuild"]:
+        """Replace the contents of the index
+
+        Use as
+
+            with index.rebuild_collection() as rebuild:
+                rebuild.load(documents)
+
+        Entering the with block creates a new collection. Searches use the old
+        contents until the block exits normally, then switch to the new collection,
+        and the old one is deleted. If the block exits with an exception, the new
+        collection is discarded.
+
+        Read the data to load inside the with block. Updates via upsert_document or
+        update_documents made during the rebuild then reach the new collection and
+        are not overwritten with older data.
+
+        Raises IndexStateError on entry if the index is not in a rebuildable state
+        (e.g., a rebuild is in progress or a failed rebuild left collections behind),
+        and RebuildFailedError on exit if any documents failed to load (unless
+        ignore_errors is set).
+        """
         client = _get_client()
         state = _get_index_state(client, self.name)
         if state.alias_target is None and self.name in state.collections:
@@ -198,9 +226,8 @@ class SearchIndex:
         # Rebuilds that start from the same live collection choose the same name for
         # the new one, so creating it succeeds for at most one of them.
         new_collection = _next_collection_name(state)
-        result = _create_and_load(
-            client, self, new_collection, documents, batchsize, ignore_errors
-        )
+        with _new_collection(client, self, new_collection, ignore_errors) as rebuild:
+            yield rebuild
 
         try:
             _set_alias(client, self.name, new_collection)
@@ -229,7 +256,6 @@ class SearchIndex:
                     f"Failed to delete previous collection {state.alias_target} of "
                     f"{self.name} ({err!r}). Remove it with clean_up()."
                 )
-        return result
 
     def clean_up(self) -> list[str]:
         """Delete collections left behind by failed or interrupted rebuilds
@@ -275,6 +301,23 @@ class SearchIndex:
         does, leaving the existing collection alone and creating no alias. Then an
         operator deletes the existing collection and creates the alias.
         """
+        with self.transition_build_collection(ignore_errors=ignore_errors) as rebuild:
+            rebuild.load(documents, batchsize=batchsize)
+        return rebuild.result
+
+    @contextmanager
+    def transition_build_collection(
+        self, *, ignore_errors: bool = False
+    ) -> Iterator["Rebuild"]:
+        """Build the first numbered collection for an index stored in a plain collection
+
+        Temporary and Typesense-specific. Converting an index stored in a collection
+        named like the index to one whose name is an alias takes two steps. This is
+        the first: it creates {name}_0 and loads documents into it like
+        rebuild_collection() does, leaving the existing collection alone and creating
+        no alias. Then an operator deletes the existing collection and creates the
+        alias.
+        """
         client = _get_client()
         state = _get_index_state(client, self.name)
         if state.alias_target is not None:
@@ -285,8 +328,28 @@ class SearchIndex:
             raise IndexStateError(
                 f"Collections {', '.join(state.versioned)} already exist"
             )
-        return _create_and_load(
-            client, self, f"{self.name}_0", documents, batchsize, ignore_errors
+        with _new_collection(client, self, f"{self.name}_0", ignore_errors) as rebuild:
+            yield rebuild
+
+
+class Rebuild:
+    """Loads documents into the new collection of a rebuild"""
+
+    def __init__(self, client: typesense.Client, collection: str):
+        self._client = client
+        self._collection = collection
+        self.result = RebuildResult()
+
+    def load(
+        self, documents: Iterable[Mapping[str, Any]], *, batchsize: int | None = None
+    ):
+        """Add documents to the new collection
+
+        May be called more than once. If batchsize is set, imports the documents in
+        batches of batchsize, one API call per batch.
+        """
+        _load_documents(
+            self._client, self._collection, documents, batchsize, self.result
         )
 
 
@@ -544,17 +607,17 @@ def _discard_collection(client: typesense.Client, name: str, collection: str):
         log(f"Failed to discard collection {collection} ({err!r})")
 
 
-def _create_and_load(
+@contextmanager
+def _new_collection(
     client: typesense.Client,
     index: SearchIndex,
     collection: str,
-    documents: Iterable[Mapping[str, Any]],
-    batchsize: int | None,
     ignore_errors: bool,
-) -> RebuildResult:
-    """Create a collection for an index and load documents into it
+) -> Iterator[Rebuild]:
+    """Create a collection for an index and yield a Rebuild that loads it
 
-    Discards the collection if loading fails.
+    Discards the collection if the block raises or, unless ignore_errors is set, if
+    any documents failed to load.
     """
     try:
         client.collections.create(
@@ -569,8 +632,10 @@ def _create_and_load(
         )
     log(f"Created collection {collection} to rebuild {index.name}")
 
+    rebuild = Rebuild(client, collection)
     try:
-        result = _load_documents(client, collection, documents, batchsize)
+        yield rebuild
+        result = rebuild.result
         log(
             f"Loaded {result.loaded} documents into {collection}, skipped "
             f"{result.skipped} already written by updates, "
@@ -585,7 +650,6 @@ def _create_and_load(
     except Exception:
         _discard_collection(client, index.name, collection)
         raise
-    return result
 
 
 def _load_documents(
@@ -593,13 +657,13 @@ def _load_documents(
     collection: str,
     documents: Iterable[Mapping[str, Any]],
     batchsize: int | None,
-) -> RebuildResult:
-    """Create documents in a new collection
+    result: RebuildResult,
+):
+    """Create documents in a new collection, adding the outcomes to result
 
     A document that already exists was written by a concurrent update, which has
     newer data, so it is counted as skipped.
     """
-    result = RebuildResult()
     batches = [documents] if batchsize is None else batched(documents, batchsize)
     for batch in batches:
         for document, outcome in _import_batch(
@@ -611,4 +675,3 @@ def _load_documents(
                 result.skipped += 1
             else:
                 result.failures.append(WriteFailure(document, outcome["error"]))
-    return result

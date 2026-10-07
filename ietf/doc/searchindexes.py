@@ -398,34 +398,27 @@ def rebuild_searchindex(
     the rebuilt index goes live even if some RFCs fail to load.
 
     If transition is set, builds the collection for converting the index to an alias
-    instead (temporary; see SearchIndex.build_transition_collection()).
+    instead (temporary; see SearchIndex.transition_build_collection()).
     """
+    rebuild_context = (
+        DOCS_INDEX.transition_build_collection(ignore_errors=ignore_errors)
+        if transition
+        else DOCS_INDEX.rebuild_collection(ignore_errors=ignore_errors)
+    )
     try:
-        if transition:
-            result = DOCS_INDEX.build_transition_collection(
-                _rfc_documents(), batchsize=batchsize, ignore_errors=ignore_errors
+        with rebuild_context as rebuild:
+            popularity_scores = _get_popularity_scores()
+            rfcs = Document.objects.filter(type_id="rfc").order_by("-rfc_number")
+            rebuild.load(
+                (typesense_doc_from_rfc(rfc, popularity_scores) for rfc in rfcs),
+                batchsize=batchsize,
             )
-        else:
-            result = DOCS_INDEX.rebuild(
-                _rfc_documents(), batchsize=batchsize, ignore_errors=ignore_errors
-            )
-    except search_provider.RebuildFailedError as err:
-        _log_load_failures(err.result)
+    except search_provider.RebuildFailedError:
+        _log_load_failures(rebuild.result)
         raise
-    _log_load_failures(result)
+    _log_load_failures(rebuild.result)
     if upsert_presets:
         search_provider.upsert_presets(RED_SEARCH_PRESETS)  # ok if they already exist
-
-
-def _rfc_documents():
-    """Generate index documents for all RFCs
-
-    Nothing is read until the first document is requested, so a rebuild can wait to
-    start reading until its new collection exists.
-    """
-    popularity_scores = _get_popularity_scores()
-    for rfc in Document.objects.filter(type_id="rfc").order_by("-rfc_number"):
-        yield typesense_doc_from_rfc(rfc, popularity_scores)
 
 
 def _log_load_failures(result: search_provider.RebuildResult):
