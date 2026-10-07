@@ -448,7 +448,7 @@ class SearchindexesTests(TestCase):
             rebuild = FakeRebuild()
             yield rebuild
             rebuild.result.failures.append(WriteFailure({"rfcNumber": 1234}, "oops"))
-            raise RebuildFailedError("failed", rebuild.result)
+            raise RebuildFailedError("failed")
 
         mock_rebuild_collection.side_effect = failing_rebuild_collection
         with self.assertRaises(RebuildFailedError):

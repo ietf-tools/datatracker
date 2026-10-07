@@ -168,14 +168,6 @@ class _Aliases:
     def __init__(self, client):
         self._client = client
 
-    def retrieve(self):
-        return {
-            "aliases": [
-                {"name": name, "collection_name": target}
-                for name, target in self._client.alias_data.items()
-            ]
-        }
-
     def upsert(self, name, mapping):
         if name in self._client.collection_data:
             raise typesense.exceptions.ServerError(

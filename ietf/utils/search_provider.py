@@ -4,6 +4,10 @@
 Where this module refers to "document," it is a Typesense / other search provider
 record. I.e., it is the thing that is indexed. That should not be confused with the
 Datatracker Document model.
+
+The primary interface to this module is the SearchIndex class. The upsert_presets()
+and enabled() functions, get_settings(), and RETRYABLE_ERROR_CLASSES are also used
+outside the module.
 """
 
 import re
@@ -114,10 +118,6 @@ class IndexStateError(Exception):
 class RebuildFailedError(Exception):
     """Documents failed to load during a rebuild; the live index is unchanged"""
 
-    def __init__(self, message: str, result: RebuildResult):
-        super().__init__(message)
-        self.result = result
-
 
 @dataclass(frozen=True)
 class SearchIndex:
@@ -129,9 +129,9 @@ class SearchIndex:
     def upsert_document(self, document: Mapping[str, Any]):
         """Create or replace one document
 
-        To ensure a concurrent rebuild() does not lose data, ensure data this adds to
-        the index are already readable from the data source. E.g., do not call this
-        method until after a transaction writing its data has committed.
+        To ensure a concurrent rebuild_collection() does not lose data, ensure data
+        this adds to the index are already readable from the data source. E.g., do not
+        call this method until after a transaction writing its data has committed.
         """
         client = _get_client()
         state = _get_index_state(client, self.name)
@@ -154,37 +154,11 @@ class SearchIndex:
 
         Each partial document must include the id of the document it updates.
 
-        To ensure a concurrent rebuild() does not lose data, ensure data this adds to
-        the index are already readable from the data source. E.g., do not call this
-        method until after a transaction writing its data has committed.
+        To ensure a concurrent rebuild_collection() does not lose data, ensure data
+        this adds to the index are already readable from the data source. E.g., do not
+        call this method until after a transaction writing its data has committed.
         """
-        return _import_documents(self.name, partial_documents, "update", batchsize)
-
-    def rebuild(
-        self,
-        documents: Iterable[Mapping[str, Any]],
-        *,
-        batchsize: int | None = None,
-        ignore_errors: bool = False,
-    ) -> RebuildResult:
-        """Replace the contents of the index with documents
-
-        Loads the documents into a new collection, then switches searches to it and
-        deletes the old one. Searches use the old contents until the switch.
-
-        Consumes the documents iterable only after the new collection is created. This
-        ensures that any updates via upsert_document or update_documents made
-        concurrent to the rebuild call are reflected correctly in the rebuilt
-        collection. The documents iterable must not read its input until
-        it is consumed.
-
-        Raises IndexStateError if the index is not in a rebuildable state (e.g., a
-        rebuild is in progress or a failed rebuild left collections behind), and
-        RebuildFailedError if any documents fail to load (unless ignore_errors is set).
-        """
-        with self.rebuild_collection(ignore_errors=ignore_errors) as rebuild:
-            rebuild.load(documents, batchsize=batchsize)
-        return rebuild.result
+        return _import_documents(self.name, partial_documents, batchsize)
 
     @contextmanager
     def rebuild_collection(self, *, ignore_errors: bool = False) -> Iterator["Rebuild"]:
@@ -285,25 +259,6 @@ class SearchIndex:
         for collection in state.others:
             _delete_collection(client, collection)
         return state.others
-
-    def build_transition_collection(
-        self,
-        documents: Iterable[Mapping[str, Any]],
-        *,
-        batchsize: int | None = None,
-        ignore_errors: bool = False,
-    ) -> RebuildResult:
-        """Build the first numbered collection for an index stored in a plain collection
-
-        Temporary and Typesense-specific. Converting an index stored in a collection
-        named like the index to one whose name is an alias takes two steps. This is
-        the first: it creates {name}_0 and loads documents into it like rebuild()
-        does, leaving the existing collection alone and creating no alias. Then an
-        operator deletes the existing collection and creates the alias.
-        """
-        with self.transition_build_collection(ignore_errors=ignore_errors) as rebuild:
-            rebuild.load(documents, batchsize=batchsize)
-        return rebuild.result
 
     @contextmanager
     def transition_build_collection(
@@ -464,7 +419,7 @@ def _import_batch(
     client: typesense.Client,
     collection: str,
     batch: list[Mapping[str, Any]],
-    action: Literal["create", "upsert", "update"],
+    action: Literal["create", "update"],
 ) -> list[ImportOutcome]:
     params: DocumentWriteParameters = {"action": action}
     return list(
@@ -475,10 +430,9 @@ def _import_batch(
 def _import_documents(
     name: str,
     documents: Iterable[Mapping[str, Any]],
-    action: Literal["upsert", "update"],
     batchsize: int | None,
 ) -> WriteResult:
-    """Import documents in bulk into all write targets of the index
+    """Import partial documents in bulk into all write targets of the index
 
     If batchsize is set, consumes documents in batches of batchsize and imports each
     batch with one API call per target. Otherwise, imports all documents with a
@@ -503,7 +457,7 @@ def _import_documents(
             client,
             targets,
             state.collections,
-            lambda collection: _import_batch(client, collection, doc_batch, action),
+            lambda collection: _import_batch(client, collection, doc_batch, "update"),
         )
         # Drop deleted targets. If a finished rebuild deleted the live collection,
         # its replacement becomes the first target and the one reported.
@@ -512,7 +466,7 @@ def _import_documents(
             if index == 0:
                 _add_outcomes(result, batch_outcomes[collection])
             else:
-                _log_other_outcomes(collection, batch_outcomes[collection], action)
+                _log_other_outcomes(collection, batch_outcomes[collection])
     return result
 
 
@@ -524,16 +478,12 @@ def _add_outcomes(result: WriteResult, outcomes: list[ImportOutcome]):
             result.failures.append(WriteFailure(document, outcome["error"]))
 
 
-def _log_other_outcomes(
-    collection: str,
-    outcomes: list[ImportOutcome],
-    action: Literal["upsert", "update"],
-):
+def _log_other_outcomes(collection: str, outcomes: list[ImportOutcome]):
     not_found = 0
     for document, outcome in outcomes:
         if outcome["success"]:
             continue
-        if action == "update" and outcome["code"] == 404:
+        if outcome["code"] == 404:
             # the rebuild in progress has not created this document yet
             not_found += 1
         else:
@@ -644,8 +594,7 @@ def _new_collection(
         if len(result.failures) > 0 and not ignore_errors:
             raise RebuildFailedError(
                 f"{len(result.failures)} documents failed to load. Discarding "
-                f"{collection}; {index.name} is unchanged.",
-                result,
+                f"{collection}; {index.name} is unchanged."
             )
     except Exception:
         _discard_collection(client, index.name, collection)

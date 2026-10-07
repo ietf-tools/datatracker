@@ -10,11 +10,7 @@ from django.test.utils import override_settings
 from django.utils import timezone
 from typesense import exceptions as typesense_exceptions
 
-from ietf.utils.search_provider import (
-    IndexStateError,
-    RebuildFailedError,
-    RebuildResult,
-)
+from ietf.utils.search_provider import IndexStateError, RebuildFailedError
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import datetime_today
 
@@ -166,7 +162,7 @@ class TaskTests(TestCase):
 
         for error in [
             IndexStateError("in a bad state"),
-            RebuildFailedError("failed to load", RebuildResult()),
+            RebuildFailedError("failed to load"),
         ]:
             with self.subTest(repr(error)):
                 mock_rebuild.side_effect = error

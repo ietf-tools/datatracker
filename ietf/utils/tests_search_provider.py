@@ -371,13 +371,15 @@ class FakeTypesenseTestCase(TestCase):
 
 
 class RebuildTests(FakeTypesenseTestCase):
-    """SearchIndex.rebuild()
+    """SearchIndex.rebuild_collection()
 
     When LIVE is the live collection, the rebuild creates BUILDING.
     """
 
     def test_rebuild_fresh(self):
-        result = self.index.rebuild(({"id": f"doc-{n}"} for n in range(3)))
+        with self.index.rebuild_collection() as rebuild:
+            rebuild.load(({"id": f"doc-{n}"} for n in range(3)))
+        result = rebuild.result
         self.assertEqual(self.fake.collection_data["frogs_0"].schema, SCHEMA)
         self.assertEqual(
             sorted(self.fake.documents("frogs_0")), ["doc-0", "doc-1", "doc-2"]
@@ -388,20 +390,23 @@ class RebuildTests(FakeTypesenseTestCase):
 
     def test_rebuild_replaces_live(self):
         self.make_live(LIVE, documents=[{"id": "doc-old"}])
-        self.index.rebuild([{"id": "doc-1"}, {"id": "doc-2"}], batchsize=1)
+        with self.index.rebuild_collection() as rebuild:
+            rebuild.load([{"id": "doc-1"}, {"id": "doc-2"}], batchsize=1)
         self.assertEqual(self.fake.alias_data, {"frogs": BUILDING})
         self.assertEqual(list(self.fake.collection_data), [BUILDING])
         self.assertEqual(sorted(self.fake.documents(BUILDING)), ["doc-1", "doc-2"])
 
     def test_rebuild_numbering(self):
         self.make_live("frogs_9")
-        self.index.rebuild([{"id": "doc-1"}])
+        with self.index.rebuild_collection() as rebuild:
+            rebuild.load([{"id": "doc-1"}])
         self.assertEqual(self.fake.alias_data, {"frogs": "frogs_10"})
 
     def test_rebuild_unrecognized_live(self):
         self.make_live("frogs_old")
         with self.assertRaises(search_provider.IndexStateError):
-            self.index.rebuild([{"id": "doc-1"}])
+            with self.index.rebuild_collection() as rebuild:
+                rebuild.load([{"id": "doc-1"}])
         self.assertEqual(list(self.fake.collection_data), ["frogs_old"])
 
     def test_rebuild_pre_transition(self):
@@ -409,7 +414,8 @@ class RebuildTests(FakeTypesenseTestCase):
         # collection must be converted before a rebuild can go live.
         self.fake.add_collection("frogs")
         with self.assertRaises(search_provider.IndexStateError):
-            self.index.rebuild([{"id": "doc-1"}])
+            with self.index.rebuild_collection() as rebuild:
+                rebuild.load([{"id": "doc-1"}])
         self.assertEqual(list(self.fake.collection_data), ["frogs"])
         self.assertEqual(self.fake.alias_data, {})
 
@@ -417,7 +423,8 @@ class RebuildTests(FakeTypesenseTestCase):
         self.make_live(LIVE)
         self.fake.add_collection("frogs_5")
         with self.assertRaisesRegex(search_provider.IndexStateError, "frogs_5"):
-            self.index.rebuild([{"id": "doc-1"}])
+            with self.index.rebuild_collection() as rebuild:
+                rebuild.load([{"id": "doc-1"}])
         self.assertEqual(sorted(self.fake.collection_data), [LIVE, "frogs_5"])
 
     def test_rebuild_name_taken(self):
@@ -453,7 +460,8 @@ class RebuildTests(FakeTypesenseTestCase):
                     side_effect=create_after_other_rebuild,
                 ):
                     with self.assertRaises(search_provider.IndexStateError):
-                        self.index.rebuild([{"id": "doc-1"}])
+                        with self.index.rebuild_collection() as rebuild:
+                            rebuild.load([{"id": "doc-1"}])
                 # the other rebuild's collection is left alone
                 self.assertEqual(list(self.fake.documents(BUILDING)), ["doc-other"])
                 self.assertEqual(self.fake.alias_data, {"frogs": expected_alias})
@@ -469,31 +477,21 @@ class RebuildTests(FakeTypesenseTestCase):
                 self.fake.documents(BUILDING)["doc-1"] = {"id": "doc-1", "v": "new"}
 
         self.fake.before_write = concurrent_update
-        result = self.index.rebuild([{"id": "doc-1", "v": "old"}, {"id": "doc-2"}])
+        with self.index.rebuild_collection() as rebuild:
+            rebuild.load([{"id": "doc-1", "v": "old"}, {"id": "doc-2"}])
+        result = rebuild.result
         self.assertEqual(self.fake.documents(BUILDING)["doc-1"]["v"], "new")
         self.assertEqual(result, search_provider.RebuildResult(loaded=1, skipped=1))
-
-    def test_rebuild_documents_consumed_after_create(self):
-        # Documents read before the new collection exists may miss updates that only
-        # reached the old collection. Those updates would be lost when it goes live.
-        self.make_live(LIVE)
-        collection_existed = []
-
-        def documents():
-            collection_existed.append(BUILDING in self.fake.collection_data)
-            yield {"id": "doc-1"}
-
-        self.index.rebuild(documents())
-        self.assertEqual(collection_existed, [True])
 
     def test_rebuild_failures(self):
         self.make_live(LIVE)
         self.fake.document_errors[(BUILDING, "doc-2")] = "bad document"
         documents = [{"id": "doc-1"}, {"id": "doc-2"}]
-        with self.assertRaises(search_provider.RebuildFailedError) as context:
-            self.index.rebuild(documents)
+        with self.assertRaises(search_provider.RebuildFailedError):
+            with self.index.rebuild_collection() as rebuild:
+                rebuild.load(documents)
         self.assertEqual(
-            context.exception.result,
+            rebuild.result,
             search_provider.RebuildResult(
                 loaded=1,
                 failures=[search_provider.WriteFailure(documents[1], "bad document")],
@@ -502,7 +500,9 @@ class RebuildTests(FakeTypesenseTestCase):
         self.assertEqual(list(self.fake.collection_data), [LIVE])
         self.assertEqual(self.fake.alias_data, {"frogs": LIVE})
 
-        result = self.index.rebuild(documents, ignore_errors=True)
+        with self.index.rebuild_collection(ignore_errors=True) as rebuild:
+            rebuild.load(documents)
+        result = rebuild.result
         self.assertEqual(result.loaded, 1)
         self.assertEqual(len(result.failures), 1)
         self.assertEqual(self.fake.alias_data, {"frogs": BUILDING})
@@ -517,7 +517,8 @@ class RebuildTests(FakeTypesenseTestCase):
 
         self.fake.before_write = fail_load
         with self.assertRaises(typesense.exceptions.Timeout):
-            self.index.rebuild([{"id": "doc-1"}])
+            with self.index.rebuild_collection() as rebuild:
+                rebuild.load([{"id": "doc-1"}])
         self.assertEqual(list(self.fake.collection_data), [LIVE])
         self.assertEqual(self.fake.alias_data, {"frogs": LIVE})
         self.fake.before_write = None
@@ -527,7 +528,8 @@ class RebuildTests(FakeTypesenseTestCase):
             self.fake.aliases, "upsert", side_effect=typesense.exceptions.Timeout()
         ):
             with self.assertRaises(typesense.exceptions.Timeout):
-                self.index.rebuild([{"id": "doc-1"}])
+                with self.index.rebuild_collection() as rebuild:
+                    rebuild.load([{"id": "doc-1"}])
         self.assertEqual(list(self.fake.collection_data), [LIVE])
         self.assertEqual(self.fake.alias_data, {"frogs": LIVE})
 
@@ -543,7 +545,8 @@ class RebuildTests(FakeTypesenseTestCase):
             self.fake.aliases, "upsert", side_effect=upsert_then_fail
         ):
             with self.assertRaises(typesense.exceptions.Timeout):
-                self.index.rebuild([{"id": "doc-1"}])
+                with self.index.rebuild_collection() as rebuild:
+                    rebuild.load([{"id": "doc-1"}])
         # the new collection is live, so it is kept; the old one is left over
         self.assertEqual(self.fake.alias_data, {"frogs": BUILDING})
         self.assertEqual(sorted(self.fake.collection_data), [LIVE, BUILDING])
@@ -558,7 +561,9 @@ class RebuildTests(FakeTypesenseTestCase):
             raise typesense.exceptions.Timeout()
 
         self.fake.before_delete = fail_delete
-        result = self.index.rebuild([{"id": "doc-1"}])
+        with self.index.rebuild_collection() as rebuild:
+            rebuild.load([{"id": "doc-1"}])
+        result = rebuild.result
         self.assertEqual(result.loaded, 1)
         self.assertEqual(self.fake.alias_data, {"frogs": BUILDING})
         self.assertEqual(sorted(self.fake.collection_data), [LIVE, BUILDING])
@@ -589,7 +594,8 @@ class RebuildTests(FakeTypesenseTestCase):
             self.fake.aliases, "upsert", side_effect=delete_then_upsert(BUILDING)
         ):
             with self.assertRaises(search_provider.IndexStateError):
-                self.index.rebuild([{"id": "doc-1"}])
+                with self.index.rebuild_collection() as rebuild:
+                    rebuild.load([{"id": "doc-1"}])
         self.assertEqual(self.fake.alias_data, {"frogs": LIVE})
         self.assertEqual(list(self.fake.collection_data), [LIVE])
 
@@ -600,7 +606,8 @@ class RebuildTests(FakeTypesenseTestCase):
             self.fake.aliases, "upsert", side_effect=delete_then_upsert("frogs_0")
         ):
             with self.assertRaises(search_provider.IndexStateError):
-                self.index.rebuild([{"id": "doc-1"}])
+                with self.index.rebuild_collection() as rebuild:
+                    rebuild.load([{"id": "doc-1"}])
         self.assertEqual(self.fake.alias_data, {})
         self.assertEqual(self.fake.collection_data, {})
 
@@ -701,13 +708,13 @@ class CleanUpTests(FakeTypesenseTestCase):
 
 
 class TransitionTests(FakeTypesenseTestCase):
-    """SearchIndex.build_transition_collection()"""
+    """SearchIndex.transition_build_collection()"""
 
-    def test_build_transition_collection(self):
+    def test_transition_build_collection_loads(self):
         self.fake.add_collection("frogs", documents=[{"id": "doc-1", "v": "old"}])
-        result = self.index.build_transition_collection(
-            [{"id": "doc-1", "v": "new"}, {"id": "doc-2"}]
-        )
+        with self.index.transition_build_collection() as rebuild:
+            rebuild.load([{"id": "doc-1", "v": "new"}, {"id": "doc-2"}])
+        result = rebuild.result
         self.assertEqual(result, search_provider.RebuildResult(loaded=2))
         self.assertEqual(sorted(self.fake.collection_data), ["frogs", "frogs_0"])
         self.assertEqual(sorted(self.fake.documents("frogs_0")), ["doc-1", "doc-2"])
@@ -717,7 +724,7 @@ class TransitionTests(FakeTypesenseTestCase):
         )
         self.assertEqual(self.fake.alias_data, {})
 
-    def test_build_transition_collection_wrong_state(self):
+    def test_transition_build_collection_wrong_state(self):
         def alias_exists():
             self.make_live(LIVE)
 
@@ -735,29 +742,35 @@ class TransitionTests(FakeTypesenseTestCase):
                 setup()
                 collections_before = sorted(self.fake.collection_data)
                 with self.assertRaises(search_provider.IndexStateError):
-                    self.index.build_transition_collection([{"id": "doc-1"}])
+                    with self.index.transition_build_collection() as rebuild:
+                        rebuild.load([{"id": "doc-1"}])
                 self.assertEqual(sorted(self.fake.collection_data), collections_before)
 
-    def test_build_transition_collection_failures(self):
+    def test_transition_build_collection_failures(self):
         self.fake.add_collection("frogs")
         self.fake.document_errors[("frogs_0", "doc-2")] = "bad document"
         documents = [{"id": "doc-1"}, {"id": "doc-2"}]
         with self.assertRaises(search_provider.RebuildFailedError):
-            self.index.build_transition_collection(documents)
+            with self.index.transition_build_collection() as rebuild:
+                rebuild.load(documents)
         self.assertEqual(list(self.fake.collection_data), ["frogs"])
 
-        result = self.index.build_transition_collection(documents, ignore_errors=True)
+        with self.index.transition_build_collection(ignore_errors=True) as rebuild:
+            rebuild.load(documents)
+        result = rebuild.result
         self.assertEqual(len(result.failures), 1)
         self.assertEqual(sorted(self.fake.collection_data), ["frogs", "frogs_0"])
 
     def test_transition_then_rebuild(self):
         self.fake.add_collection("frogs", documents=[{"id": "doc-1"}])
-        self.index.build_transition_collection([{"id": "doc-1"}])
+        with self.index.transition_build_collection() as rebuild:
+            rebuild.load([{"id": "doc-1"}])
         # the operator's cutover
         del self.fake.collection_data["frogs"]
         self.fake.alias_data["frogs"] = "frogs_0"
 
-        self.index.rebuild([{"id": "doc-1"}, {"id": "doc-2"}])
+        with self.index.rebuild_collection() as rebuild:
+            rebuild.load([{"id": "doc-1"}, {"id": "doc-2"}])
         self.assertEqual(self.fake.alias_data, {"frogs": "frogs_1"})
         self.assertEqual(list(self.fake.collection_data), ["frogs_1"])
         self.assertEqual(sorted(self.fake.documents("frogs_1")), ["doc-1", "doc-2"])
