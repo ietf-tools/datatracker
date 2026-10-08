@@ -21,7 +21,7 @@ from zoneinfo import ZoneInfo
 from django.conf import settings
 from django.contrib import messages
 from django.core.cache import caches
-from django.db.models import Max, OuterRef, Prefetch
+from django.db.models import Max, OuterRef, Prefetch, Subquery
 from django.forms import ValidationError
 from django.http import Http404
 from django.template.loader import render_to_string
@@ -1727,14 +1727,29 @@ class DraftAliasGenerator:
                     document__pk=OuterRef("pk"),
                     state__type_id="draft"
                 ).values("state__slug"),
+                # Publication time of the RFC this draft became, for the window check
+                # below. Annotated rather than fetched per draft: doing it with
+                # became_rfc() + latest_event() costs two queries for every draft that
+                # reached RFC, which is most of them.
+                became_rfc_published=Subquery(
+                    DocEvent.objects.filter(
+                        type="published_rfc",
+                        doc__targets_related__source=OuterRef("pk"),
+                        doc__targets_related__relationship_id="became_rfc",
+                    )
+                    .order_by("-time", "-id")
+                    .values("time")[:1]
+                ),
             )
         )
         for this_draft in inactive_recent_drafts:
             # Omit drafts that became RFCs, unless they were published in the last DEFAULT_YEARS
             if this_draft.draft_state_slug == "rfc":
-                rfc = this_draft.became_rfc()
-                log.assertion("rfc is not None")
-                if rfc.latest_event(type='published_rfc').time < show_since:
+                published = this_draft.became_rfc_published
+                # None means either no became_rfc relation or no published_rfc event.
+                # Neither should happen; keep the draft rather than dropping it silently.
+                log.assertion("published is not None")
+                if published is not None and published < show_since:
                     continue
             for alias, addresses in self._yield_aliases_for_draft(this_draft):
                 yield alias, addresses

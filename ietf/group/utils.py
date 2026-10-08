@@ -86,6 +86,19 @@ class GroupEmailCache:
     def __init__(self):
         self._ad_emails = {}
         self._role_emails = {}
+        self._ad_roles = {}
+
+    def ad_role(self, group):
+        """Memoized Group.ad_role(), fetching the Role's Email with it
+
+        Group.ad_role() leaves role.email unfetched, so the caller's role.email.address
+        costs a second query for every group. Ordering matches Group.ad_role().
+        """
+        if group.pk not in self._ad_roles:
+            self._ad_roles[group.pk] = (
+                group.role_set.filter(name="ad").select_related("email").first()
+            )
+        return self._ad_roles[group.pk]
 
     def ad_emails(self, group):
         key = group.pk if group is not None else None
@@ -130,7 +143,7 @@ def get_group_ad_emails(group, cache=None):
         emails = role_emails(group.parent, ('pre-ad', 'ad', 'chair'))
     # Make sure the assigned AD is included (in case that is not one of the area ADs)
     if group.state.slug=='active':
-        ad_role = group.ad_role()
+        ad_role = cache.ad_role(group) if cache is not None else group.ad_role()
         wg_ad_email = ad_role and ad_role.email.address
         if wg_ad_email:
             emails.add(wg_ad_email)
