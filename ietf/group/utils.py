@@ -67,33 +67,71 @@ def get_charter_text(group):
     except IOError:
         return 'Error Loading Group Charter'
 
+class GroupEmailCache:
+    """Memo for the group role lookups the alias generators repeat
+
+    The alias generators ask the same handful of groups for their chairs and ADs over and
+    over - at the time of writing, 3360 active drafts share 143 distinct groups - so the
+    lookups below dominate their query count. This caches them for the life of one
+    generator run.
+
+    Scoped to a generator instance on purpose, never to the module or process: the same
+    generators back the per-document and per-group "Email expansions" pages, where a
+    long-lived cache would show stale role data.
+
+    Results are stored frozen and handed back as fresh sets, because callers (including
+    get_group_ad_emails() below) mutate what they get.
+    """
+
+    def __init__(self):
+        self._ad_emails = {}
+        self._role_emails = {}
+
+    def ad_emails(self, group):
+        key = group.pk if group is not None else None
+        if key not in self._ad_emails:
+            self._ad_emails[key] = frozenset(get_group_ad_emails(group, cache=self))
+        return set(self._ad_emails[key])
+
+    def role_emails(self, group, roles):
+        key = (group.pk if group is not None else None, tuple(roles))
+        if key not in self._role_emails:
+            self._role_emails[key] = frozenset(get_group_role_emails(group, roles))
+        return set(self._role_emails[key])
+
+
 def get_group_role_emails(group, roles):
     "Get a list of email addresses for a given WG and Role"
     if not group or not group.acronym or group.acronym == 'none':
         return set()
-    emails = Email.objects.filter(role__group=group, role__name__in=roles)
+    emails = Email.objects.filter(
+        role__group=group, role__name__in=roles
+    ).select_related("person")
     return set([_f for _f in [e.email_address() for e in emails] if _f])
 
-def get_child_group_role_emails(parent, roles, group_type='wg'):
+def get_child_group_role_emails(parent, roles, group_type='wg', cache=None):
     """Get a list of email addresses for a given set of
     roles for all child groups of a given type"""
+    role_emails = cache.role_emails if cache is not None else get_group_role_emails
     emails = set()
     groups = Group.objects.filter(parent=parent, type=group_type, state="active")
     for group in groups:
-        emails |= get_group_role_emails(group, roles)
+        emails |= role_emails(group, roles)
     return emails
 
-def get_group_ad_emails(group):
+def get_group_ad_emails(group, cache=None):
     " Get list of area directors' email addresses for a given GROUP "
     if not group.acronym or group.acronym == 'none':
         return set()
+    role_emails = cache.role_emails if cache is not None else get_group_role_emails
     if group.type.slug == 'area':
-        emails = get_group_role_emails(group, roles=('pre-ad', 'ad', 'chair'))
+        emails = role_emails(group, ('pre-ad', 'ad', 'chair'))
     else:
-        emails = get_group_role_emails(group.parent, roles=('pre-ad', 'ad', 'chair'))
+        emails = role_emails(group.parent, ('pre-ad', 'ad', 'chair'))
     # Make sure the assigned AD is included (in case that is not one of the area ADs)
     if group.state.slug=='active':
-        wg_ad_email = group.ad_role() and group.ad_role().email.address
+        ad_role = group.ad_role()
+        wg_ad_email = ad_role and ad_role.email.address
         if wg_ad_email:
             emails.add(wg_ad_email)
     return emails
@@ -387,6 +425,7 @@ class GroupAliasGenerator:
             self.group_queryset = Group.objects.all()
         else:
             self.group_queryset = group_queryset
+        self.email_cache = GroupEmailCache()
 
     def __iter__(self):
         show_since = timezone.now() - datetime.timedelta(days=self.days)
@@ -399,7 +438,9 @@ class GroupAliasGenerator:
             if g == "program":
                 domains.append("iab")
 
-            entries = self.group_queryset.filter(type=g).all()
+            entries = self.group_queryset.filter(type=g).select_related(
+                "parent", "type", "state"
+            )
             active_entries = entries.filter(state__in=self.active_states)
             inactive_recent_entries = entries.exclude(
                 state__in=self.active_states
@@ -411,11 +452,11 @@ class GroupAliasGenerator:
 
                 # Research groups, teams, and programs do not have -ads lists
                 if not g in self.no_ad_group_types:
-                    ad_emails = get_group_ad_emails(e)
+                    ad_emails = self.email_cache.ad_emails(e)
                     if ad_emails:
                         yield name + "-ads", domains, list(ad_emails)
                 # All group types have -chairs lists
-                chair_emails = get_group_role_emails(e, ["chair", "secr"])
+                chair_emails = self.email_cache.role_emails(e, ["chair", "secr"])
                 if chair_emails:
                     yield name + "-chairs", domains, list(chair_emails)
 
@@ -424,10 +465,12 @@ class GroupAliasGenerator:
         active_areas = areas.filter(state__in=self.active_states)
         for area in active_areas:
             name = area.acronym
-            area_ad_emails = get_group_role_emails(area, ["pre-ad", "ad", "chair"])
+            area_ad_emails = self.email_cache.role_emails(area, ["pre-ad", "ad", "chair"])
             if area_ad_emails:
                 yield name + "-ads", ["ietf"], list(area_ad_emails)
-            chair_emails = get_child_group_role_emails(area, ["chair", "secr"]) | area_ad_emails
+            chair_emails = get_child_group_role_emails(
+                area, ["chair", "secr"], cache=self.email_cache
+            ) | area_ad_emails
             if chair_emails:
                 yield name + "-chairs", ["ietf"], list(chair_emails)
 
@@ -437,7 +480,7 @@ class GroupAliasGenerator:
             type__features__req_subm_approval=True, acronym__in=gtypes, state="active"
         )
         for group in special_groups:
-            chair_emails = get_group_role_emails(group, ["chair", "delegate"])
+            chair_emails = self.email_cache.role_emails(group, ["chair", "delegate"])
             if chair_emails:
                 yield group.acronym + "-chairs", ["ietf"], list(chair_emails)
 

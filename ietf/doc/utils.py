@@ -21,7 +21,7 @@ from zoneinfo import ZoneInfo
 from django.conf import settings
 from django.contrib import messages
 from django.core.cache import caches
-from django.db.models import Max, OuterRef
+from django.db.models import Max, OuterRef, Prefetch
 from django.forms import ValidationError
 from django.http import Http404
 from django.template.loader import render_to_string
@@ -52,7 +52,7 @@ from ietf.doc.storage_utils import force_replication
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role, Group, GroupFeatures
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author, is_bofreq_editor
-from ietf.person.models import Email, Person
+from ietf.person.models import Person
 from ietf.person.utils import get_active_balloters
 from ietf.review.models import ReviewWish
 from ietf.utils import draft, log
@@ -1536,30 +1536,67 @@ def bibxml_for_draft(doc, rev=None):
 class DraftAliasGenerator:
     days = 2 * 365
 
+    # Followed for every draft, so fetch them with the draft rather than one query apiece.
+    # group__parent/type/state are read by get_group_ad_emails(), shepherd__person by
+    # Email.email_address() when the shepherd address is inactive.
+    related_fields = (
+        "group",
+        "group__parent",
+        "group__type",
+        "group__state",
+        "ad",
+        "shepherd",
+        "shepherd__person",
+    )
+
     def __init__(self, draft_queryset=None):
+        from ietf.group.utils import GroupEmailCache  # avoid circular import
         if draft_queryset is not None:
             self.draft_queryset = draft_queryset.filter(type_id="draft")  # only drafts allowed
         else:
             self.draft_queryset = Document.objects.filter(type_id="draft")
+        # Authors are read for every draft, and each one needs its Email and that Email's
+        # Person to decide which address to use. Built per instance rather than on the
+        # class so that no Prefetch state is shared between generator runs.
+        self.prefetch_fields = (
+            Prefetch(
+                "documentauthor_set",
+                queryset=DocumentAuthor.objects.select_related("email", "email__person"),
+            ),
+        )
+        # Memos for the lookups repeated across drafts. Both are scoped to this generator
+        # instance - see GroupEmailCache for why that matters.
+        self.email_cache = GroupEmailCache()
+        self._person_email_address = {}
+
+    def _email_address_for_person(self, person):
+        """Memoized Person.email_address()
+
+        Person.email_address() caches per instance, but each draft brings its own Person
+        instance, so without this the same AD is looked up once per draft they hold.
+        """
+        if person.pk not in self._person_email_address:
+            self._person_email_address[person.pk] = person.email_address()
+        return self._person_email_address[person.pk]
 
     def get_draft_ad_emails(self, doc):
         """Get AD email addresses for the given draft, if any."""
-        from ietf.group.utils import get_group_ad_emails  # avoid circular import
         ad_emails = set()
         # If working group document, return current WG ADs
         if doc.group and doc.group.acronym != "none":
-            ad_emails.update(get_group_ad_emails(doc.group))
+            ad_emails.update(self.email_cache.ad_emails(doc.group))
         # Document may have an explicit AD set
         if doc.ad:
-            ad_emails.add(doc.ad.email_address())
+            ad_emails.add(self._email_address_for_person(doc.ad))
         return ad_emails
 
     def get_draft_chair_emails(self, doc):
         """Get chair email addresses for the given draft, if any."""
-        from ietf.group.utils import get_group_role_emails  # avoid circular import
         chair_emails = set()
         if doc.group:
-            chair_emails.update(get_group_role_emails(doc.group, ["chair", "secr"]))
+            chair_emails.update(
+                self.email_cache.role_emails(doc.group, ["chair", "secr"])
+            )
         return chair_emails
 
     def get_draft_shepherd_email(self, doc):
@@ -1572,11 +1609,17 @@ class DraftAliasGenerator:
     def get_draft_authors_emails(self, doc):
         """Get list of authors for the given draft."""
         author_emails = set()
-        for email in Email.objects.filter(documentauthor__document=doc):
+        # Walk documentauthor_set rather than querying Email directly so that the
+        # prefetch in prefetch_fields can serve this without a query per draft. Authors
+        # with no recorded email are skipped, as the old Email-side join did.
+        for author in doc.documentauthor_set.all():
+            email = author.email
+            if email is None:
+                continue
             if email.active:
                 author_emails.add(email.address)
             elif email.person:
-                person_email = email.person.email_address()
+                person_email = self._email_address_for_person(email.person)
                 if person_email:
                     author_emails.add(person_email)
         return author_emails
@@ -1660,7 +1703,11 @@ class DraftAliasGenerator:
         # works, but it does not work as expected in `exclude()`.
         active_state = State.objects.get(type_id="draft", slug="active")
         active_pks = []  # build a static list of the drafts we actually returned as "active"
-        active_drafts = drafts.filter(states=active_state)
+        active_drafts = (
+            drafts.filter(states=active_state)
+            .select_related(*self.related_fields)
+            .prefetch_related(*self.prefetch_fields)
+        )
         for this_draft in active_drafts:
             active_pks.append(this_draft.pk)
             for alias, addresses in self._yield_aliases_for_draft(this_draft):
@@ -1671,6 +1718,8 @@ class DraftAliasGenerator:
         inactive_recent_drafts = (
             drafts.exclude(pk__in=active_pks)  # don't re-filter by state, states may have changed during the run!
             .filter(expires__gte=show_since)
+            .select_related(*self.related_fields)
+            .prefetch_related(*self.prefetch_fields)
             .annotate(
                 # Why _default_manager instead of objects? See:
                 # https://docs.djangoproject.com/en/4.2/topics/db/managers/#django.db.models.Model._default_manager
