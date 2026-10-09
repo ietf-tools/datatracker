@@ -5,6 +5,7 @@
 from django.db import models
 from django.template import Template, Context
 
+import re
 from email.utils import parseaddr
 
 from simple_history.models import HistoricalRecords
@@ -20,17 +21,23 @@ import debug                            # pyflakes:ignore
 def clean_duplicates(addrlist):
     address_info = {}
     for a in addrlist:
-        (name,addr) = parseaddr(a)
-        # This collapses duplicate addresses to one, using (arbitrarily) the
-        # name from the last one:
-        address_info[addr] = (name, a)
+        (name, addr) = parseaddr(a)
+        if (name, addr) == ("", "") and "<" in a and a.strip().endswith(">"):
+            m = re.match(r"^(.*?)\s*<([^>]+)>$", a.strip())
+            if m:
+                name, addr = m.group(1).strip(), m.group(2).strip()
+        key = addr.lower() if addr else ""
+        # This collapses duplicate addresses to one, using the address and
+        # preferring entries that have a display name:
+        if key not in address_info or (name and not address_info[key][0]):
+            address_info[key] = (name, addr, a)
     addresses = []
-    for addr, info in address_info.items():
-        name, a = info
-        if (name,addr)==('',''):
+    for key, info in address_info.items():
+        name, addr, a = info
+        if (name, addr) == ("", ""):
             addresses.append(a)
         elif name:
-            addresses.append(formataddr((name,addr)))
+            addresses.append(formataddr((name, addr)))
         else:
             addresses.append(addr)
     return addresses
@@ -217,12 +224,12 @@ class Recipient(models.Model):
     def gather_submission_authors(self, **kwargs):
         """
         Returns a list of name and email, e.g.: [ 'Ano Nymous <ano@nymous.org>' ]
-        Is intended for display use, not in email context.
         """
         addrs = []
         if 'submission' in kwargs:
             submission = kwargs['submission']
-            addrs.extend(["%s <%s>" % (author["name"], author["email"]) for author in submission.authors if author.get("email")])
+            emails = [ Email.objects.filter(address=author['email']).first() or author for author in submission.authors if author.get('email') ]
+            addrs.extend([ e.formatted_email() if isinstance(e, Email) else formataddr((e["name"], e["email"])) for e in emails ])
         return addrs
 
     def gather_submission_submitter(self, **kwargs):
