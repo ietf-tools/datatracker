@@ -19,6 +19,7 @@ urlpatterns = [
         url(r'^password/$', views.change_password),
         url(r'^profile/$', views.profile),
         url(r'^editexternalresources/$', views.edit_person_externalresources),
+        url(r'^editsubscriptions/$', views.edit_subscriptions),
         url(r'^reset/$', views.password_reset),
         url(r'^reset/confirm/(?P<auth>[^/]+)/$', views.confirm_password_reset),
         url(r'^review/$', views.review_overview),
