@@ -9,12 +9,16 @@ from urllib.parse import urlencode
 import tastypie.resources
 import tastypie.serializers
 from django.apps import apps as django_apps
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import FieldDoesNotExist
 from django.db import DataError, transaction
+from django.db.models import Prefetch
+from django.db.models.fields.related_descriptors import (
+    ManyToManyDescriptor,
+    ReverseManyToOneDescriptor,
+)
 from django.http import HttpResponseNotAllowed
 from django.utils.module_loading import autodiscover_modules
 from tastypie.api import Api
-from tastypie.bundle import Bundle
 from tastypie.exceptions import ApiFieldError, BadRequest, InvalidFilterError
 from tastypie.fields import ApiField
 
@@ -50,6 +54,29 @@ def autodiscover():
 
 
 class ModelResource(tastypie.resources.ModelResource):
+    """Base class for the datatracker's /api/v1/ resources
+
+    Adds the following to tastypie's ModelResource:
+
+    - Related objects are loaded with the query for the page rather than one
+      row at a time. Tastypie otherwise runs a query for every foreign key and
+      every to-many field on every row it returns, which can mean thousands of
+      queries for a single page. The relations to load are worked out from the
+      resource's declared fields, so resources need no extra configuration and
+      plain tastypie ToOneField/ToManyField declarations are enough.
+    - Database errors caused by bad filter values become a 400 rather than a
+      500. Filter values reach the database with little validation.
+    - Filter values that tastypie would accept but that cannot work are
+      rejected with a 400 before the query runs: "in" and "range" filters given
+      a boolean or null, and "range" filters without exactly two values.
+      Datetime filter values without a timezone are treated as UTC.
+    - POST to a detail URL returns 405. Tastypie raises NotImplementedError
+      there, which would be a 500.
+    - Cache keys are built with urlencode(), so query arguments containing
+      spaces don't produce invalid memcached keys. Not needed by production any
+      more because we hash keys before they reach memcached, but harmless.
+    """
+
     def dispatch(self, request_type, request, **kwargs):
         """Turn a database error caused by request data into a bad request
 
@@ -86,6 +113,66 @@ class ModelResource(tastypie.resources.ModelResource):
 
     def post_detail(self, request, **kwargs):
         return HttpResponseNotAllowed(["GET"])
+
+    def _related_fields(self):
+        """Find the related fields whose objects can be loaded with the queryset
+
+        Returns (select, prefetch): attribute names of ToOneFields that are a single
+        forward foreign key or one-to-one, and the ToManyFields whose attribute is a
+        single model relation. Fields with callable or "__" attributes are left to
+        load per row.
+        """
+        cls = type(self)
+        if "_related_fields_cache" not in cls.__dict__:
+            model = self._meta.object_class
+            select = []
+            prefetch = []
+            for field in self.fields.values():
+                attr = field.attribute
+                if not isinstance(attr, str) or "__" in attr:
+                    continue
+                if isinstance(field, tastypie.fields.ToOneField):
+                    try:
+                        model_field = model._meta.get_field(attr)
+                    except FieldDoesNotExist:
+                        continue
+                    if model_field.concrete and (
+                        model_field.many_to_one or model_field.one_to_one
+                    ):
+                        select.append(attr)
+                elif isinstance(field, tastypie.fields.ToManyField):
+                    # Reverse accessors such as "submission_set" are not field
+                    # names, so look for the relation descriptor on the model.
+                    if isinstance(
+                        getattr(model, attr, None),
+                        (ManyToManyDescriptor, ReverseManyToOneDescriptor),
+                    ):
+                        prefetch.append(field)
+            cls._related_fields_cache = (select, prefetch)
+        return cls._related_fields_cache
+
+    def get_object_list(self, request):
+        """Load related objects with the queryset rather than once per row"""
+        queryset = super().get_object_list(request)
+        select, prefetch = self._related_fields()
+        if select:
+            queryset = queryset.select_related(*select)
+        lookups = []
+        for field in prefetch:
+            if field.full:
+                # The nested resource dehydrates its own related fields, so
+                # prefetch with its queryset to load those as well.
+                lookups.append(
+                    Prefetch(
+                        field.attribute,
+                        queryset=field.to_class().get_object_list(request),
+                    )
+                )
+            else:
+                lookups.append(field.attribute)
+        if lookups:
+            queryset = queryset.prefetch_related(*lookups)
+        return queryset
 
     def generate_cache_key(self, *args, **kwargs):
         """
@@ -207,59 +294,6 @@ class TimedeltaField(ApiField):
                 )
 
         return value
-
-
-class ToOneField(tastypie.fields.ToOneField):
-    "Subclass of tastypie.fields.ToOneField which adds caching in the dehydrate method."
-
-    def dehydrate(self, bundle, for_list=True):
-        foreign_obj = None
-        previous_obj = None
-        attrib = None
-
-        if callable(self.attribute):
-            previous_obj = bundle.obj
-            foreign_obj = self.attribute(bundle)
-        elif isinstance(self.attribute, str):
-            foreign_obj = bundle.obj
-
-            for attr in self._attrs:
-                attrib = attr
-                previous_obj = foreign_obj
-                try:
-                    foreign_obj = getattr(foreign_obj, attr, None)
-                except ObjectDoesNotExist:
-                    foreign_obj = None
-
-        if not foreign_obj:
-            if not self.null:
-                if callable(self.attribute):
-                    raise ApiFieldError(
-                        f"The related resource for resource {previous_obj} could not be found."
-                    )
-                else:
-                    raise ApiFieldError(
-                        f"The model '{previous_obj!r}' has an empty attribute '{attrib}' and doesn't allow a null value."
-                    )
-            return None
-
-        fk_resource = self.get_related_resource(foreign_obj)
-
-        # Up to this point we've copied the code from tastypie 0.13.1.  Now
-        # we add caching.
-        cache_key = fk_resource.generate_cache_key(
-            "related",
-            pk=foreign_obj.pk,
-            for_list=for_list,
-        )
-        dehydrated = fk_resource._meta.cache.get(cache_key)
-        if dehydrated is None:
-            fk_bundle = Bundle(obj=foreign_obj, request=bundle.request)
-            dehydrated = self.dehydrate_related(
-                fk_bundle, fk_resource, for_list=for_list
-            )
-            fk_resource._meta.cache.set(cache_key, dehydrated)
-        return dehydrated
 
 
 # XML 1.0 forbids all control characters except tab (#x9), LF (#xA), and CR (#xD).

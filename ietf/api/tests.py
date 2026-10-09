@@ -17,8 +17,9 @@ from urllib.parse import quote, urlencode, urljoin
 
 from django.apps import apps
 from django.conf import settings
+from django.db import connection
 from django.test import Client
-from django.test.utils import override_settings
+from django.test.utils import CaptureQueriesContext, override_settings
 from django.urls import Resolver404, resolve, reverse as urlreverse
 from django.utils import timezone
 
@@ -29,15 +30,16 @@ import debug                            # pyflakes:ignore
 import ietf
 from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils import get_unicode_document_content
-from ietf.doc.models import RelatedDocument, State
+from ietf.doc.models import DocEvent, Document, RelatedDocument, State
 from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory, RfcAuthorFactory, DocEventFactory
 from ietf.group.factories import RoleFactory
-from ietf.meeting.factories import MeetingFactory, SessionFactory
+from ietf.meeting.factories import MeetingFactory, RegistrationFactory, SessionFactory
 from ietf.meeting.models import Session, Registration
 from ietf.nomcom.models import Volunteer
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
 from ietf.person.factories import PersonFactory, random_faker, EmailFactory, PersonalApiKeyFactory
 from ietf.person.models import Email, User
+from ietf.submit.factories import SubmissionFactory
 from ietf.utils.mail import empty_outbox, outbox, get_payload_text
 from ietf.utils.models import DumpInfo
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, reload_db_objects
@@ -2020,6 +2022,57 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
                     405,
                     f"POST to {name}.{model_name} detail should return 405 status",
                 )
+
+    def test_list_query_count_does_not_grow_with_rows(self):
+        """List endpoints load related objects without a query per row"""
+
+        def make_document():
+            doc = WgDraftFactory(
+                ad=PersonFactory(),
+                shepherd=EmailFactory(),
+                intended_std_level_id="ps",
+                std_level_id="ps",
+            )
+            doc.tags.add("w-expert")
+            SubmissionFactory(draft=doc, name=doc.name, group=doc.group)
+            DocEventFactory(doc=doc)
+            return doc
+
+        def make_registration():
+            return RegistrationFactory(meeting=meeting)
+
+        def num_queries(url):
+            with CaptureQueriesContext(connection) as ctx:
+                r = self.client.get(url)
+            self.assertValidJSONResponse(r)
+            return len(ctx.captured_queries)
+
+        meeting = MeetingFactory(type_id="ietf")
+        endpoints = [
+            ("/api/v1/doc/document/?format=json&limit=100", make_document),
+            ("/api/v1/meeting/registration/?format=json&limit=100", make_registration),
+        ]
+        for url, make in endpoints:
+            make()
+            with_one = num_queries(url)
+            make()
+            make()
+            self.assertEqual(num_queries(url), with_one, url)
+
+        doc = Document.objects.filter(type_id="draft").first()
+        r = self.client.get(f"/api/v1/doc/document/{doc.name}/?format=json")
+        self.assertValidJSONResponse(r)
+        data = r.json()
+        self.assertEqual(data["group"], f"/api/v1/group/group/{doc.group.pk}/")
+        self.assertEqual(data["type"], "/api/v1/name/doctypename/draft/")
+        self.assertEqual(data["ad"], f"/api/v1/person/person/{doc.ad.pk}/")
+        self.assertEqual(data["shepherd"], f"/api/v1/person/email/{doc.shepherd.pk}/")
+        self.assertEqual(data["tags"], ["/api/v1/name/doctagname/w-expert/"])
+
+        event = DocEvent.objects.filter(doc=doc).first()
+        r = self.client.get(f"/api/v1/doc/docevent/{event.pk}/?format=json")
+        self.assertValidJSONResponse(r)
+        self.assertEqual(r.json()["doc"], f"/api/v1/doc/document/{doc.name}/")
 
 
 class RfcdiffSupportTests(TestCase):
