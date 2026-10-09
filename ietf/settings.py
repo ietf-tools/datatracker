@@ -825,6 +825,10 @@ STORAGES.update(
         "reef_bucket": {
             "BACKEND": "django.core.files.storage.InMemoryStorage",
             "OPTIONS": {"location": "reef_bucket"},
+        },
+        "bibxml_bucket": {
+            "BACKEND": "django.core.files.storage.InMemoryStorage",
+            "OPTIONS": {"location": "bibxml_bucket"},
         }
     }
 )
