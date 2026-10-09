@@ -6,15 +6,14 @@ document.addEventListener('DOMContentLoaded', () => {
     Chart.register(zoomPlugin) // enable the zoom plugin
 
     // ── Safely parse JSON data injected from Django view ──
-    const totalChartData = JSON.parse(document.getElementById('total-chart-data').textContent)
-    const inPersonChartData = JSON.parse(document.getElementById('in-person-chart-data').textContent)
-    const statsType = JSON.parse(document.getElementById('stats-type-data').textContent)
-    const stackedLines = statsType === 'total'
+    const chartData = JSON.parse(document.getElementById('chart_data').textContent) ;
+    const objects = JSON.parse(document.getElementById('objects').textContent) ;
+    const stackedLines = false ;
 
     function displayChart (id, data) {
-        const ctx = document.getElementById(id).getContext('2d')
+        const ctx = document.getElementById(id).getContext('2d') ;
         return new Chart(ctx, {
-            type: 'line',   // Change to 'doughnut' for a donut chart
+            type: 'line',
             data: data,
             options: {
                 responsive: true,
@@ -25,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     x: {
                         title: {
                             display: true,
-                            text: 'IETF Meeting Number',
+                            text: 'Year',
                         },
                     },
                 },
@@ -43,19 +42,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         titleFont: { size: 14 },
                         bodyFont: { size: 13 },
                         callbacks: {
-                            title: function (items) {
-                                return `IETF Meeting ${items[0].label}`
+                            title: function(items) {
+                                return `${items[0].label}`;
                             },
-                            label: function (context) {
-                                return ` ${context.dataset.label}: ${context.parsed.y} participants`
+                            label: function(context) {
+                                return ` ${context.dataset.label}: ${context.parsed.y} ${objects}`;
                             }
                         }
                     },
                     zoom: {
                         zoom: {
-                            wheel: { enabled: true },      // scroll to zoom
-                            pinch: { enabled: true },      // pinch on mobile
-                            drag: {                        // drag to select range 
+                            wheel: {
+                                enabled: true,
+                                modifierKey: 'alt'   // Alt + scroll wheel to zoom
+                            },      // scroll to zoom
+                            pinch: {
+                                enabled: true
+                            },      // pinch on mobile
+                            drag: {                        // drag to select range
                                 enabled: true,
                                 modifierKey: 'alt'
                             },
@@ -63,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         },
                         pan: {
                             enabled: true,
+                            modifierKey: 'alt',
                             mode: 'xy',                     // pan X-axis and Y-axis
                         },
                     },
@@ -71,22 +76,14 @@ document.addEventListener('DOMContentLoaded', () => {
         })
     }
 
-    const totalChart = displayChart('totalRegistrationChart', totalChartData)
-    if (inPersonChartData !== null) {
-        inPersonChart = displayChart('inPersonRegistrationChart', inPersonChartData)
-    }
+    const documentsChart = displayChart('documentsChart', chartData) ;
+
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
-            totalChart.resetZoom()
-            if (inPersonChart !== null) {
-                inPersonChart.resetZoom()
-            }
+            documentsChart.resetZoom()
         }
     })
     document.getElementById('resetButton').addEventListener('click', () => {
-        totalChart.resetZoom()
-        if (inPersonChart !== null) {
-            inPersonChart.resetZoom()
-        }
+        documentsChart.resetZoom()
     })
 })
