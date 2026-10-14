@@ -4,12 +4,11 @@
 
 
 from ietf.api import ModelResource
-from tastypie.fields import ToManyField                 # pyflakes:ignore
+from tastypie.fields import ToOneField, ToManyField     # pyflakes:ignore
 from tastypie.constants import ALL, ALL_WITH_RELATIONS  # pyflakes:ignore
 from tastypie.cache import SimpleCache
 
 from ietf import api
-from ietf.api import ToOneField                         # pyflakes:ignore
 
 from ietf.stats.models import CountryAlias, AffiliationIgnoredEnding, AffiliationAlias, MeetingRegistration
 

@@ -4,8 +4,7 @@
 
 
 from ietf.api import ModelResource
-from ietf.api import ToOneField
-from tastypie.fields import ToManyField, DateTimeField
+from tastypie.fields import ToOneField, ToManyField, DateTimeField
 from tastypie.constants import ALL, ALL_WITH_RELATIONS
 from tastypie.cache import SimpleCache
 

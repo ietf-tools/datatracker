@@ -123,6 +123,14 @@ body
         recv = outbox[-1]
         self.assertEqual(recv['Fuzz'], 'bucket, monger')
 
+    def test_send_mail_preformatted_mime_headers(self):
+        msg = "To: to@example.com\nFrom: from@ietf.org\nSubject: subject\n\nbody é\n"
+        send_mail_preformatted(None, msg)
+        recv = outbox[-1]
+        for header in ["MIME-Version", "Content-Type", "Content-Transfer-Encoding"]:
+            self.assertEqual(len(recv.get_all(header, [])), 1, header)
+        self.assertEqual(get_payload_text(recv), "body é\n")
+
 
 class MailUtilsTests(TestCase):
     def test_decode_header_value(self):

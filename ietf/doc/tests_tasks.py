@@ -1,9 +1,8 @@
 # Copyright The IETF Trust 2024-2026, All Rights Reserved
 
 import datetime
-from unittest import mock
-
 from pathlib import Path
+from unittest import mock
 
 from celery.exceptions import Retry
 from django.conf import settings
@@ -11,22 +10,18 @@ from django.test.utils import override_settings
 from django.utils import timezone
 from typesense import exceptions as typesense_exceptions
 
+from ietf.utils.search_provider import IndexStateError, RebuildFailedError
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import datetime_today
 
-from .factories import (
-    DocumentFactory,
-    NewRevisionDocEventFactory,
-    WgDraftFactory,
-    WgRfcFactory,
-)
+from .factories import DocumentFactory, NewRevisionDocEventFactory
 from .models import Document, NewRevisionDocEvent
 from .tasks import (
     expire_ids_task,
     expire_last_calls_task,
     generate_draft_bibxml_files_task,
-    generate_idnits2_rfcs_obsoleted_task,
     generate_idnits2_rfc_status_task,
+    generate_idnits2_rfcs_obsoleted_task,
     investigate_fragment_task,
     notify_expirations_task,
     rebuild_searchindex_task,
@@ -122,115 +117,81 @@ class TaskTests(TestCase):
             retval, {"name_fragment": "some fragment", "results": investigation_results}
         )
 
-    @mock.patch("ietf.doc.tasks.searchindex.update_or_create_rfc_entry")
-    @mock.patch("ietf.doc.tasks.searchindex.enabled")
+    @mock.patch("ietf.doc.tasks.update_rfc_searchindex")
+    @mock.patch("ietf.doc.tasks.search_provider.enabled")
     def test_update_rfc_searchindex_task(
-        self, mock_searchindex_enabled, mock_create_entry
+        self, mock_searchindex_enabled, mock_update_searchindex
     ):
         mock_searchindex_enabled.return_value = False
-
-        self.assertFalse(Document.objects.filter(rfc_number=5073).exists())
-        rfc = WgRfcFactory()
         update_rfc_searchindex_task(rfc_number=5073)
-        self.assertFalse(mock_create_entry.called)
-        update_rfc_searchindex_task(rfc_number=rfc.rfc_number)
-        self.assertFalse(mock_create_entry.called)
+        self.assertFalse(mock_update_searchindex.called)
 
         mock_searchindex_enabled.return_value = True
         update_rfc_searchindex_task(rfc_number=5073)
-        self.assertFalse(mock_create_entry.called)
-        update_rfc_searchindex_task(rfc_number=rfc.rfc_number)
-        self.assertTrue(mock_create_entry.called)
+        self.assertEqual(mock_update_searchindex.call_args, mock.call(5073))
 
-        with override_settings(SEARCHINDEX_CONFIG={"TASK_MAX_RETRIES": 0}):
+        with override_settings(SEARCH_PROVIDER_CONFIG={"TASK_MAX_RETRIES": 0}):
             # Try a non-retryable error (there are others)
-            mock_create_entry.side_effect = typesense_exceptions.RequestMalformed
-            update_rfc_searchindex_task(rfc_number=rfc.rfc_number)  # no retry
+            mock_update_searchindex.side_effect = typesense_exceptions.RequestMalformed
+            update_rfc_searchindex_task(rfc_number=5073)  # no retry
             # Now what should be a retryable error
-            mock_create_entry.side_effect = typesense_exceptions.Timeout
+            mock_update_searchindex.side_effect = typesense_exceptions.Timeout
             with self.assertRaises(Retry):
-                update_rfc_searchindex_task(rfc_number=rfc.rfc_number)
+                update_rfc_searchindex_task(rfc_number=5073)
 
-    @mock.patch("ietf.doc.tasks.searchindex.update_or_create_rfc_entries")
-    @mock.patch("ietf.doc.tasks.searchindex.upsert_presets")
-    @mock.patch("ietf.doc.tasks.searchindex.create_collection")
-    @mock.patch("ietf.doc.tasks.searchindex.delete_collection")
-    def test_rebuild_searchindex_task(
-        self, mock_delete, mock_create, mock_presets, mock_update
-    ):
-        rfcs = WgRfcFactory.create_batch(10)
+    @mock.patch("ietf.doc.tasks.log")
+    @mock.patch("ietf.doc.tasks.rebuild_searchindex")
+    def test_rebuild_searchindex_task(self, mock_rebuild, mock_log):
         rebuild_searchindex_task()
-        self.assertFalse(mock_delete.called)
-        self.assertFalse(mock_create.called)
-        self.assertTrue(mock_presets.called)
-        self.assertTrue(mock_update.called)
-        self.assertQuerysetEqual(
-            mock_update.call_args.args[0],
-            sorted(rfcs, key=lambda doc: -doc.rfc_number),
-            ordered=True,
+        self.assertEqual(
+            mock_rebuild.call_args,
+            mock.call(
+                batchsize=40, ignore_errors=False, upsert_presets=True, transition=False
+            ),
         )
 
-        mock_delete.reset_mock()
-        mock_create.reset_mock()
-        mock_presets.reset_mock()
-        mock_update.reset_mock()
-        rebuild_searchindex_task(drop_collection=True)
-        self.assertTrue(mock_delete.called)
-        self.assertTrue(mock_create.called)
-        self.assertTrue(mock_presets.called)
-        self.assertTrue(mock_update.called)
-        self.assertQuerysetEqual(
-            mock_update.call_args.args[0],
-            sorted(rfcs, key=lambda doc: -doc.rfc_number),
-            ordered=True,
-        )
-
-        mock_delete.reset_mock()
-        mock_create.reset_mock()
-        mock_presets.reset_mock()
-        mock_update.reset_mock()
         rebuild_searchindex_task(
-            drop_collection=True, batchsize=3, upsert_presets=False
+            batchsize=3, ignore_errors=True, upsert_presets=False, transition=True
         )
-        self.assertTrue(mock_delete.called)
-        self.assertTrue(mock_create.called)
-        self.assertFalse(mock_presets.called)
-        self.assertTrue(mock_update.called)
-        self.assertQuerysetEqual(
-            mock_update.call_args.args[0],
-            sorted(rfcs, key=lambda doc: -doc.rfc_number),
-            ordered=True,
+        self.assertEqual(
+            mock_rebuild.call_args,
+            mock.call(
+                batchsize=3, ignore_errors=True, upsert_presets=False, transition=True
+            ),
         )
-        self.assertEqual(mock_update.call_args.kwargs["batchsize"], 3)
 
-    @mock.patch("ietf.doc.tasks.searchindex.update_rfc_popularities")
-    @mock.patch("ietf.doc.tasks.searchindex.enabled")
+        for error in [
+            IndexStateError("in a bad state"),
+            RebuildFailedError("failed to load"),
+        ]:
+            with self.subTest(repr(error)):
+                mock_rebuild.side_effect = error
+                with self.assertRaises(type(error)):
+                    rebuild_searchindex_task()
+                self.assertEqual(
+                    mock_log.log.call_args,
+                    mock.call(f"Search index rebuild failed: {error}"),
+                )
+
+    @mock.patch("ietf.doc.tasks.update_rfc_searchindex_popularities")
+    @mock.patch("ietf.doc.tasks.search_provider.enabled")
     def test_update_rfc_searchindex_popularities_task(
         self, mock_searchindex_enabled, mock_update_popularities
     ):
-        rfcs = WgRfcFactory.create_batch(3)
-        WgDraftFactory()  # not included in the update
-
         mock_searchindex_enabled.return_value = False
         update_rfc_searchindex_popularities_task()
         self.assertFalse(mock_update_popularities.called)
 
         mock_searchindex_enabled.return_value = True
         update_rfc_searchindex_popularities_task()
-        self.assertTrue(mock_update_popularities.called)
-        self.assertQuerysetEqual(
-            mock_update_popularities.call_args.args[0], rfcs, ordered=False
-        )
-        self.assertEqual(mock_update_popularities.call_args.kwargs["batchsize"], 200)
+        self.assertEqual(mock_update_popularities.call_args, mock.call(batchsize=200))
 
         update_rfc_searchindex_popularities_task(batchsize=17)
-        self.assertEqual(mock_update_popularities.call_args.kwargs["batchsize"], 17)
+        self.assertEqual(mock_update_popularities.call_args, mock.call(batchsize=17))
 
-        with override_settings(SEARCHINDEX_CONFIG={"TASK_MAX_RETRIES": 0}):
+        with override_settings(SEARCH_PROVIDER_CONFIG={"TASK_MAX_RETRIES": 0}):
             # Try a non-retryable error (there are others)
-            mock_update_popularities.side_effect = (
-                typesense_exceptions.RequestMalformed
-            )
+            mock_update_popularities.side_effect = typesense_exceptions.RequestMalformed
             update_rfc_searchindex_popularities_task()  # no retry
             # Now what should be a retryable error
             mock_update_popularities.side_effect = typesense_exceptions.Timeout
