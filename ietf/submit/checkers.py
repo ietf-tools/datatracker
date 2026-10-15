@@ -422,6 +422,7 @@ class DraftIdnits3Checker(object):
             "code": {},
             "advisory": True,
             "would_block_in_future": False,
+            "comments": 0,
         }
         cmd = [settings.IDSUBMIT_IDNITS3_BINARY] + self.options + [str(path)]
         try:
@@ -468,11 +469,10 @@ class DraftIdnits3Checker(object):
             for nit in nits
         ]
         info["would_block_in_future"] = counts["error"] > 0
-        # Comments are neither errors nor warnings, but reporting them as
-        # warnings is the only way to get them in front of the submitter.
-        warnings = counts["warning"] + counts["comment"]
+        # SubmissionCheck has no field for comments, so they travel in items
+        info["comments"] = counts["comment"]
         # Always passes -- idnits3 does not block submission yet.
-        return True, self._render(nits, counts), counts["error"], warnings, info
+        return True, self._render(nits, counts), counts["error"], counts["warning"], info
 
     def check_file_txt(self, path):
         return self._check_file(path)

@@ -475,9 +475,18 @@ def parse_preformatted(preformatted, extra=None, override=None):
             else:
                 msg[k] = v 
 
-    extra = copy.deepcopy(extra)        # don't modify the caller's extra obj
-    headers = copy.copy(msg)            # don't modify the message
-    for key in ['To', 'From', 'Subject', 'Bcc']:
+    # Extract headers to be handled as "extra". Exclude those that send_mail_text
+    # treats as parameters or those that the msg.set_charset() call added. Those are
+    # left on msg to ensure that later processing of its payload is correct.
+    HEADERS_PASSED_AS_PARAMS = ["To", "From", "Subject", "Bcc"]
+    HEADERS_INJECTED_BY_SET_CHARSET = [
+        "MIME-Version",
+        "Content-Type",
+        "Content-Transfer-Encoding",
+    ]
+    extra = copy.deepcopy(extra)  # don't modify the caller's extra obj
+    headers = copy.copy(msg)  # don't modify the message
+    for key in HEADERS_PASSED_AS_PARAMS + HEADERS_INJECTED_BY_SET_CHARSET:
         del headers[key]
     for k in list(headers.keys()):
         v = headers.get_all(k, [])
@@ -508,6 +517,7 @@ def parse_preformatted(preformatted, extra=None, override=None):
                 else:
                     msg[key] = Header(v, 'utf-8')
 
+    # Remove Bcc from the msg, it is only used in the SMTP envelope
     bcc = msg['Bcc']
     del msg['Bcc']
 
