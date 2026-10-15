@@ -3489,6 +3489,18 @@ class SubmissionStatusTests(BaseSubmitTestCase):
         self.assertContains(r, "and 1 warning.")
         self.assertContains(r, "would then be rejected")
         self.assertContains(r, "idnits3 message")
+        alert = " ".join(PyQuery(r.content)("p.alert-warning").text().split())
+        self.assertIn("so those errors have not stopped it", alert)
+        self.assertIn("please fix them before you submit again", alert)
+
+        # A single error is referred to in the singular
+        check.errors = 1
+        check.save()
+        r = self.client.get(url)
+        alert = " ".join(PyQuery(r.content)("p.alert-warning").text().split())
+        self.assertIn("returned 1 error and 1 warning.", alert)
+        self.assertIn("so that error has not stopped it", alert)
+        self.assertIn("please fix it before you submit again", alert)
 
         # Warnings only - nothing that would block later
         check.errors = 0
@@ -3505,6 +3517,51 @@ class SubmissionStatusTests(BaseSubmitTestCase):
         r = self.client.get(url)
         self.assertNotContains(r, "would then be rejected")
         self.assertNotContains(r, "None of them would stop this submission.")
+
+    def test_advisory_submission_check_comments(self):
+        """Comments from an advisory check are reported as comments, not warnings"""
+        submission = SubmissionFactory(state_id="uploaded")
+        url = urlreverse(
+            "ietf.submit.views.submission_status",
+            kwargs={"submission_id": submission.pk},
+        )
+        check = submission.checks.create(
+            checker="idnits3 check",
+            passed=True,
+            message="idnits3 message",
+            errors=2,
+            warnings=1,
+            items={"advisory": True, "would_block_in_future": True, "comments": 3},
+        )
+
+        def alert_text(r):
+            return " ".join(PyQuery(r.content)("p.alert").text().split())
+
+        def button_classes(r):
+            return PyQuery(r.content)(f'button[data-bs-target="#check-{check.pk}"]').attr("class")
+
+        # Errors, warnings and comments are each counted
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("returned 2 errors, 1 warning, and 3 comments.", alert_text(r))
+
+        # Warnings and comments
+        check.errors = 0
+        check.items = {"advisory": True, "would_block_in_future": False, "comments": 1}
+        check.save()
+        r = self.client.get(url)
+        self.assertIn("returned 1 warning and 1 comment. None of them", alert_text(r))
+        self.assertIn("btn-warning", button_classes(r))
+
+        # Comments only - an informational note, not a warning
+        check.warnings = 0
+        check.items = {"advisory": True, "would_block_in_future": False, "comments": 2}
+        check.save()
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("p.alert-info:contains('returned 2 comments.')")), 1)
+        self.assertNotIn("warning", alert_text(r))
+        self.assertIn("btn-success", button_classes(r))
 
 
 class Idnits3CheckerTests(TestCase):
@@ -3584,7 +3641,8 @@ class Idnits3CheckerTests(TestCase):
         # The check must not fail the submission, even though idnits3 found errors
         self.assertTrue(passed)
         self.assertEqual(errors, 1)
-        self.assertEqual(warnings, 2)  # warnings and comments are both reported as warnings
+        self.assertEqual(warnings, 1)
+        self.assertEqual(info["comments"], 1)
         self.assertTrue(info["advisory"])
         self.assertTrue(info["would_block_in_future"])
         self.assertEqual(len(info["items"]), 3)
@@ -3613,7 +3671,34 @@ class Idnits3CheckerTests(TestCase):
         self.assertTrue(passed)
         self.assertEqual(errors, 0)
         self.assertEqual(warnings, 1)
+        self.assertEqual(info["comments"], 0)
         self.assertFalse(info["would_block_in_future"])
+
+    def test_comments_are_not_warnings(self):
+        output = self.idnits3_output(
+            [
+                {
+                    "severity": "ValidationComment",
+                    "code": "SOME_COMMENT",
+                    "desc": "Just a comment.",
+                },
+                {
+                    "severity": "ValidationComment",
+                    "code": "ANOTHER_COMMENT",
+                    "desc": "Another comment.",
+                },
+            ]
+        )
+        with override_settings(IDSUBMIT_IDNITS3_BINARY=self.fake_idnits3(output)):
+            passed, message, errors, warnings, info = DraftIdnits3Checker().check_file_txt(
+                self.draft_path
+            )
+        self.assertTrue(passed)
+        self.assertEqual((errors, warnings), (0, 0))
+        self.assertEqual(info["comments"], 2)
+        self.assertFalse(info["would_block_in_future"])
+        self.assertIn("0 errors, 0 warnings, 2 comments", message)
+        self.assertIn("Comments:", message)
 
     def test_clean_document(self):
         with override_settings(
