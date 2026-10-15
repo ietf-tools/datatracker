@@ -171,22 +171,22 @@ NOTE: Please remove the above text when posting your write-up.
     these instructions to the Designated Expert clear?
 
 [1]: https://www.ietf.org/about/groups/iesg/
-[2]: https://www.rfc-editor.org/rfc/rfc4858.html
-[3]: https://www.rfc-editor.org/rfc/rfc7942.html
-[4]: https://www.rfc-editor.org/rfc/rfc9907.html
+[2]: https://www.rfc-editor.org/info/rfc4858/
+[3]: https://www.rfc-editor.org/info/rfc7942/
+[4]: https://www.rfc-editor.org/info/rfc9907/
 [5]: https://wiki.ietf.org/group/iesg/ExpertTopics
-[6]: https://www.rfc-editor.org/rfc/rfc2026.html#section-5
-[7]: https://www.rfc-editor.org/rfc/rfc2026.html#section-4.1
-[8]: https://www.rfc-editor.org/rfc/rfc2026.html#section-4.2
+[6]: https://www.rfc-editor.org/info/rfc2026/#section-5
+[7]: https://www.rfc-editor.org/info/rfc2026/#section-4.1
+[8]: https://www.rfc-editor.org/info/rfc2026/#section-4.2
 [9]: https://datatracker.ietf.org/doc/bcp14/
 [10]: https://datatracker.ietf.org/doc/statement-iesg-statement-on-clarifying-the-use-of-bcp-14-key-words/
-[11]: https://www.rfc-editor.org/info/bcp79
+[11]: https://www.rfc-editor.org/info/bcp79/
 [12]: https://author-tools.ietf.org/idnits3/
 [13]: https://authors.ietf.org/en/content-guidelines-overview
 [14]: https://www.ietf.org/about/groups/iesg/statements/normative-informative-references/
-[15]: https://www.rfc-editor.org/rfc/rfc3967.html
-[16]: https://www.rfc-editor.org/info/bcp97
+[15]: https://www.rfc-editor.org/info/rfc3967/
+[16]: https://www.rfc-editor.org/info/bcp97/
 [17]: https://datatracker.ietf.org/doc/downref/
-[18]: https://www.rfc-editor.org/rfc/rfc8126.html
+[18]: https://www.rfc-editor.org/info/rfc8126/
 {% else %}There is no default shepherd write-up template for the {{stream}} stream.
 {% endif %}{% else %}There is no stream set for this document (thus, no default shepherd write-up template).{% endif %}
