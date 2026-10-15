@@ -62,17 +62,27 @@
             {% if check.is_advisory %}
                 {% if check.would_block_in_future %}
                     <p class="alert alert-warning my-3">
-                        <b>The {{ check.checker }} returned {{ check.errors }} error{{ check.errors|pluralize }}
-                        and {{ check.warnings }} warning{{ check.warnings|pluralize }}.</b>
-                        The {{ check.checker }} does not affect this submission, so those errors have
+                        <b>The {{ check.checker }} returned {{ check.errors }} error{{ check.errors|pluralize }}{% if check.comments %},
+                        {{ check.warnings }} warning{{ check.warnings|pluralize }}
+                        and {{ check.comments }} comment{{ check.comments|pluralize }}.{% else %}
+                        and {{ check.warnings }} warning{{ check.warnings|pluralize }}.{% endif %}</b>
+                        The {{ check.checker }} does not affect this submission, so
+                        {% if check.errors == 1 %}that error has{% else %}those errors have{% endif %}
                         <b>not</b> stopped it.  It is expected to become a required submission check,
                         however, and this Internet-Draft would then be rejected.  Click the button
-                        below to see details, and please fix those before you submit again.
+                        below to see details, and please fix {% if check.errors == 1 %}it{% else %}them{% endif %}
+                        before you submit again.
                     </p>
                 {% elif check.warnings %}
                     <p class="alert alert-warning my-3">
-                        The {{ check.checker }} returned {{ check.warnings }} warning{{ check.warnings|pluralize }}.
+                        The {{ check.checker }} returned {{ check.warnings }} warning{{ check.warnings|pluralize }}{% if check.comments %}
+                        and {{ check.comments }} comment{{ check.comments|pluralize }}{% endif %}.
                         None of them would stop this submission.
+                    </p>
+                {% elif check.comments %}
+                    <p class="alert alert-info my-3">
+                        The {{ check.checker }} returned {{ check.comments }} comment{{ check.comments|pluralize }}.
+                        Comments are for information and would not stop this submission.
                     </p>
                 {% endif %}
             {% elif check.errors %}
