@@ -20,6 +20,7 @@ from django.template.loader import render_to_string
 from django.forms.utils import ErrorList
 from django.template.defaultfilters import pluralize
 from django.utils import timezone
+from django.utils.html import escape
 from django.db.models.functions import Collate
 
 
@@ -972,14 +973,16 @@ def edit_shepherd_writeup(request, name):
             else:
                 generate_type = "group"           
             init = {
-                "content": render_to_string(
-                    "doc/shepherd_writeup.txt",
-                    dict(
-                        doc=doc,
-                        type=generate_type,
-                        stream=doc.stream.slug,
-                        group=doc.group.type.slug,
-                    ),
+                "content": escape(
+                    render_to_string(
+                        "doc/shepherd_writeup.txt",
+                        dict(
+                            doc=doc,
+                            type=generate_type,
+                            stream=doc.stream.slug,
+                            group=doc.group.type.slug,
+                        ),
+                    )
                 )
             }
             form = ShepherdWriteupUploadForm(initial=init)
@@ -1004,14 +1007,16 @@ def edit_shepherd_writeup(request, name):
                 generate_type = "individ"
             else:
                 generate_type = "group"
-            init["content"] = render_to_string(
-                "doc/shepherd_writeup.txt",
-                dict(
-                    doc=doc,
-                    type=generate_type,
-                    stream=doc.stream.slug,
-                    group=doc.group.type.slug,
-                ),
+            init["content"] = escape(
+                render_to_string(
+                    "doc/shepherd_writeup.txt",
+                    dict(
+                        doc=doc,
+                        type=generate_type,
+                        stream=doc.stream.slug,
+                        group=doc.group.type.slug,
+                    ),
+                )
             )
         form = ShepherdWriteupUploadForm(initial=init)
 
