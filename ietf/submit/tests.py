@@ -3543,7 +3543,7 @@ class SubmissionStatusTests(BaseSubmitTestCase):
         # Errors, warnings and comments are each counted
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertIn("returned 2 errors, 1 warning and 3 comments.", alert_text(r))
+        self.assertIn("returned 2 errors, 1 warning, and 3 comments.", alert_text(r))
 
         # Warnings and comments
         check.errors = 0

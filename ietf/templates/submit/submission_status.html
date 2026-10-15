@@ -63,7 +63,7 @@
                 {% if check.would_block_in_future %}
                     <p class="alert alert-warning my-3">
                         <b>The {{ check.checker }} returned {{ check.errors }} error{{ check.errors|pluralize }}{% if check.comments %},
-                        {{ check.warnings }} warning{{ check.warnings|pluralize }}
+                        {{ check.warnings }} warning{{ check.warnings|pluralize }},
                         and {{ check.comments }} comment{{ check.comments|pluralize }}.{% else %}
                         and {{ check.warnings }} warning{{ check.warnings|pluralize }}.{% endif %}</b>
                         The {{ check.checker }} does not affect this submission, so
