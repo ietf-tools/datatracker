@@ -10,6 +10,7 @@ import unicodedata
 
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
+from django.template.loader import render_to_string
 from django.utils.functional import keep_lazy
 from django.utils.safestring import mark_safe
 
@@ -281,3 +282,15 @@ def decode_document_content(content: bytes) -> str:
         except UnicodeDecodeError:
             pass
     return content.decode("latin-1")  # everything is legal in latin-1
+
+
+def render_txt_as_unsafe(*args, **kwargs) -> str:
+    """Render a plain text template to a str that is not marked safe
+
+    Takes the same arguments as render_to_string(). That function marks its
+    output safe for HTML, so Django will not escape it where it is later shown
+    in a page, e.g. as a form field's initial value. Use this instead when
+    rendering a .txt template whose output is text, not HTML.
+    """
+    # str(SafeString) returns the SafeString itself; str.__str__ makes a plain str
+    return str.__str__(render_to_string(*args, **kwargs))

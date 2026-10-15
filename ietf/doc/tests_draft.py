@@ -1209,7 +1209,7 @@ class IndividualInfoFormsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('h1:contains("for Group Documents")')), 1)
+        self.assertEqual(len(q('h1:contains("for Working Group Documents")')), 1)
 
         url = urlreverse(
             "ietf.doc.views_doc.document_shepherd_writeup_template",
@@ -2559,9 +2559,16 @@ class ShepherdWriteupTests(TestCase):
         self.assertContains(r, "for Individual Documents", status_code=200)
         url = urlreverse('ietf.doc.views_draft.edit_shepherd_writeup', kwargs=dict(name=wg_draft.name))
         r = self.client.get(url)
-        self.assertContains(r, "for Group Documents", status_code=200)
+        self.assertContains(r, "for Working Group Documents", status_code=200)
         r = self.client.post(url,dict(reset_text=''))
-        self.assertContains(r, "for Group Documents", status_code=200)
+        self.assertContains(r, "for Working Group Documents", status_code=200)
+        self.assertContains(r, "Document History &amp; Implementations")
+
+        # submitted text is saved as entered, not HTML-escaped
+        r = self.client.post(url, dict(content="Questions & <answers>", submit_response="1"))
+        self.assertEqual(r.status_code, 302)
+        writeup = wg_draft.latest_event(WriteupDocEvent, type="changed_protocol_writeup")
+        self.assertEqual(writeup.text, "Questions & <answers>")
 
 class EditorialDraftMetadataTests(TestCase):
     def test_editorial_metadata(self):

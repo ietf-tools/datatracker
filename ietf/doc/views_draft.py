@@ -55,6 +55,7 @@ from ietf.person.fields import SearchableEmailField
 from ietf.person.models import Person, Email
 from ietf.utils.mail import send_mail, send_mail_message, on_behalf_of, send_mail_text
 from ietf.utils.textupload import get_cleaned_text_file_content
+from ietf.utils.text import render_txt_as_unsafe
 from ietf.utils import log
 from ietf.utils.fields import DatepickerDateField, ModelMultipleChoiceField, MultiEmailField
 from ietf.utils.response import permission_denied
@@ -972,7 +973,7 @@ def edit_shepherd_writeup(request, name):
             else:
                 generate_type = "group"           
             init = {
-                "content": render_to_string(
+                "content": render_txt_as_unsafe(
                     "doc/shepherd_writeup.txt",
                     dict(
                         doc=doc,
@@ -1004,7 +1005,7 @@ def edit_shepherd_writeup(request, name):
                 generate_type = "individ"
             else:
                 generate_type = "group"
-            init["content"] = render_to_string(
+            init["content"] = render_txt_as_unsafe(
                 "doc/shepherd_writeup.txt",
                 dict(
                     doc=doc,
