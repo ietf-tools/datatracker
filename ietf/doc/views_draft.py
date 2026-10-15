@@ -20,7 +20,6 @@ from django.template.loader import render_to_string
 from django.forms.utils import ErrorList
 from django.template.defaultfilters import pluralize
 from django.utils import timezone
-from django.utils.html import escape
 from django.db.models.functions import Collate
 
 
@@ -56,6 +55,7 @@ from ietf.person.fields import SearchableEmailField
 from ietf.person.models import Person, Email
 from ietf.utils.mail import send_mail, send_mail_message, on_behalf_of, send_mail_text
 from ietf.utils.textupload import get_cleaned_text_file_content
+from ietf.utils.text import render_txt_as_unsafe
 from ietf.utils import log
 from ietf.utils.fields import DatepickerDateField, ModelMultipleChoiceField, MultiEmailField
 from ietf.utils.response import permission_denied
@@ -973,16 +973,14 @@ def edit_shepherd_writeup(request, name):
             else:
                 generate_type = "group"           
             init = {
-                "content": escape(
-                    render_to_string(
-                        "doc/shepherd_writeup.txt",
-                        dict(
-                            doc=doc,
-                            type=generate_type,
-                            stream=doc.stream.slug,
-                            group=doc.group.type.slug,
-                        ),
-                    )
+                "content": render_txt_as_unsafe(
+                    "doc/shepherd_writeup.txt",
+                    dict(
+                        doc=doc,
+                        type=generate_type,
+                        stream=doc.stream.slug,
+                        group=doc.group.type.slug,
+                    ),
                 )
             }
             form = ShepherdWriteupUploadForm(initial=init)
@@ -1007,16 +1005,14 @@ def edit_shepherd_writeup(request, name):
                 generate_type = "individ"
             else:
                 generate_type = "group"
-            init["content"] = escape(
-                render_to_string(
-                    "doc/shepherd_writeup.txt",
-                    dict(
-                        doc=doc,
-                        type=generate_type,
-                        stream=doc.stream.slug,
-                        group=doc.group.type.slug,
-                    ),
-                )
+            init["content"] = render_txt_as_unsafe(
+                "doc/shepherd_writeup.txt",
+                dict(
+                    doc=doc,
+                    type=generate_type,
+                    stream=doc.stream.slug,
+                    group=doc.group.type.slug,
+                ),
             )
         form = ShepherdWriteupUploadForm(initial=init)
 

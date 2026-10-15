@@ -2564,6 +2564,12 @@ class ShepherdWriteupTests(TestCase):
         self.assertContains(r, "for Working Group Documents", status_code=200)
         self.assertContains(r, "Document History &amp; Implementations")
 
+        # submitted text is saved as entered, not HTML-escaped
+        r = self.client.post(url, dict(content="Questions & <answers>", submit_response="1"))
+        self.assertEqual(r.status_code, 302)
+        writeup = wg_draft.latest_event(WriteupDocEvent, type="changed_protocol_writeup")
+        self.assertEqual(writeup.text, "Questions & <answers>")
+
 class EditorialDraftMetadataTests(TestCase):
     def test_editorial_metadata(self):
         draft = EditorialDraftFactory()
