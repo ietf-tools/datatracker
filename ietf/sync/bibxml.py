@@ -1,18 +1,17 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 import re
-from pathlib import Path
 from urllib.parse import urljoin
 from xml.sax.saxutils import escape as esc
 from xml.sax.saxutils import quoteattr as qa
 
 from django.conf import settings
-from django.core.files.base import ContentFile
-from django.core.files.storage import storages
 from django.db import models
 from django.db.models.functions import Cast, Substr
+from django.utils import timezone
 from lxml import etree
 
 from ietf.doc.models import Document
+from ietf.doc.storage_utils import store_bytes
 from ietf.utils.log import log
 
 ORG_LOOKUP = {
@@ -113,19 +112,6 @@ NAME_RE = re.compile(rf"^\s*(?P<initials>(?:{INITIAL}[-\s]*)*)(?P<surname>.*?)\s
 
 class BibXMLException(Exception):
     pass
-
-
-def save_to_bucket(filename: str, content: str | bytes):
-    bibxml_bucket = storages["bibxml_bucket"]
-    bucket_path = str(Path(getattr(settings, "BIBXML_OUTPUT_PATH", "")) / filename)
-    if getattr(settings, "BIBXML_DELETE_THEN_WRITE", True):
-        # Django 4.2's FileSystemStorage does not support allow_overwrite.
-        bibxml_bucket.delete(bucket_path)
-    bibxml_bucket.save(
-        bucket_path,
-        ContentFile(content if isinstance(content, bytes) else content.encode("utf-8")),
-    )
-    log(f"Saved {bucket_path} in bibxml_bucket storage")
 
 
 def get_abstract_bibxml(abstract):
@@ -235,8 +221,11 @@ def build_fyi_bibxml(fyi_number):
     return f"""<referencegroup anchor="FYI{fyi_number}" target="{fyi_link}">{rfc_bibxml}</referencegroup>"""
 
 
-def save_bibxml(bibxml, filename):
-    """Prettify and save given BibXML"""
+def save_bibxml(bibxml, filename, doc_name=None):
+    """Prettify and save given BibXML in the bibxml blob store
+
+    doc_name names the Document the BibXML describes, e.g. rfc9000 or bcp14.
+    """
 
     # make it pretty
     pretty_bibxml = etree.tostring(
@@ -245,7 +234,17 @@ def save_bibxml(bibxml, filename):
         xml_declaration=False,
         pretty_print=4,
     )
-    save_to_bucket(filename, pretty_bibxml)
+    store_bytes(
+        kind="bibxml",
+        name=filename,
+        content=pretty_bibxml,
+        allow_overwrite=True,
+        doc_name=doc_name,
+        doc_rev=None,
+        content_type="application/xml",
+        mtime=timezone.now(),
+    )
+    log(f"Saved {filename} in bibxml storage")
 
 
 def recreate_rfc_bibxml():
@@ -254,13 +253,13 @@ def recreate_rfc_bibxml():
         rfc_number = rfc.rfc_number
         filename = f"bibxml/rfc{rfc_number}.xml"
         bibxml = build_rfc_bibxml(rfc)
-        save_bibxml(bibxml, filename)
+        save_bibxml(bibxml, filename, doc_name=rfc.name)
 
         # Save 4 digit RFCs for < 1000 for backward compatibility
         if rfc_number < 1000:
             padded_filename = f"bibxml/rfc{rfc_number:04d}.xml"
             padded_bibxml = build_rfc_bibxml(rfc, four_digits=True)
-            save_bibxml(padded_bibxml, padded_filename)
+            save_bibxml(padded_bibxml, padded_filename, doc_name=rfc.name)
 
 
 def recreate_rfcsubseries_bibxml():
@@ -281,7 +280,7 @@ def recreate_rfcsubseries_bibxml():
         try:
             filename = f"bibxml-rfcsubseries/bcp{bcp_number}.xml"
             bibxml = build_bcp_bibxml(bcp_number)
-            save_bibxml(bibxml, filename)
+            save_bibxml(bibxml, filename, doc_name=f"bcp{bcp_number}")
         except BibXMLException as e:
             log(f"{e}")
     # STDs
@@ -300,7 +299,7 @@ def recreate_rfcsubseries_bibxml():
         filename = f"bibxml-rfcsubseries/std{std_number}.xml"
         try:
             bibxml = build_std_bibxml(std_number)
-            save_bibxml(bibxml, filename)
+            save_bibxml(bibxml, filename, doc_name=f"std{std_number}")
         except BibXMLException as e:
             log(f"{e}")
 
@@ -320,6 +319,6 @@ def recreate_rfcsubseries_bibxml():
         filename = f"bibxml-rfcsubseries/fyi{fyi_number}.xml"
         try:
             bibxml = build_fyi_bibxml(fyi_number)
-            save_bibxml(bibxml, filename)
+            save_bibxml(bibxml, filename, doc_name=f"fyi{fyi_number}")
         except BibXMLException as e:
             log(f"{e}")
