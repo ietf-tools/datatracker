@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2013-2026, All Rights Reserved
 from collections import defaultdict
+from functools import cached_property
 import datetime
 import io
 import os
@@ -149,7 +150,7 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
             Prefetch(
                 "session",
                 queryset=add_event_info_to_session_qs(Session.objects.all().prefetch_related(
-                    'group', 'group__charter', 'group__charter__group',
+                    'group', 'group__charter', 'group__charter__group', 'purpose',
                     Prefetch('materials',
                              queryset=Document.objects.exclude(states__type=F("type"), states__slug='deleted').order_by('presentations__order').prefetch_related('states'),
                              to_attr='prefetched_active_materials'
@@ -223,6 +224,7 @@ class AgendaKeywordTool:
             raise RuntimeError('Exactly one of assignments or sessions must be specified')
 
         self.meeting = self.sessions[0].meeting if len(self.sessions) > 0 else None
+        self._group_parents = {}
 
     def _use_legacy_keywords(self):
         """Should legacy keyword handling be used for this meeting?"""
@@ -244,7 +246,12 @@ class AgendaKeywordTool:
             return s.group_parent_at_the_time()
         else:
             # Assumption is that s is a group...
-            return s and s.parent
+            if not s or s.parent_id is None:
+                return s and s.parent
+            # Many group instances share a parent, so look each parent up once
+            if s.parent_id not in self._group_parents:
+                self._group_parents[s.parent_id] = s.parent
+            return self._group_parents[s.parent_id]
 
     def _purpose_keyword(self, purpose):
         """Get the keyword corresponding to a session purpose"""
@@ -258,9 +265,33 @@ class AgendaKeywordTool:
         """Get the keyword identifying a session by name"""
         return xslugify(session.name) if session.name else None
 
-    @property
+    @cached_property
     def filterable_purposes(self):
-        return SessionPurposeName.objects.exclude(slug='none').order_by('name')
+        return list(SessionPurposeName.objects.exclude(slug='none').order_by('name'))
+
+    @cached_property
+    def _agenda_filter_type_by_group_type(self):
+        return dict(GroupFeatures.objects.values_list('type_id', 'agenda_filter_type_id'))
+
+    def _agenda_filter_type(self, group):
+        """Same as group.features.agenda_filter_type_id, without a query per group"""
+        return self._agenda_filter_type_by_group_type.get(group.type_id)
+
+    @cached_property
+    def _session_pks_by_meeting_and_group(self):
+        session_pks = defaultdict(list)
+        for meeting_id, group_id, pk in Session.objects.filter(
+            meeting__in={s.meeting_id for s in self.sessions},
+        ).order_by('pk').values_list('meeting_id', 'group_id', 'pk'):
+            session_pks[(meeting_id, group_id)].append(pk)
+        return session_pks
+
+    def _docname_token_only_for_multiple(self, session):
+        """Same as session.docname_token_only_for_multiple(), without a query per session"""
+        session_pks = self._session_pks_by_meeting_and_group[(session.meeting_id, session.group_id)]
+        if len(session_pks) > 1:
+            return f"sess{Session._alpha_str(session_pks.index(session.pk))}"
+        return None
 
 
 class AgendaFilterOrganizer(AgendaKeywordTool):
@@ -386,12 +417,12 @@ class AgendaFilterOrganizer(AgendaKeywordTool):
         all_groups.difference_update([g for g in all_groups if g.acronym in self.exclude_acronyms])
         headings = {g: set()
                     for g in all_groups
-                    if g.features.agenda_filter_type_id == 'heading'}
+                    if self._agenda_filter_type(g) == 'heading'}
         special = set(g for g in all_groups
-                      if g.features.agenda_filter_type_id == 'special')
+                      if self._agenda_filter_type(g) == 'special')
 
         for g in groups:
-            if g.features.agenda_filter_type_id == 'normal':
+            if self._agenda_filter_type(g) == 'normal':
                 # normal filter group with a heading parent goes in that column
                 p = self._get_group_parent(g)
                 if p in headings:
@@ -598,9 +629,9 @@ class AgendaKeywordTagger(AgendaKeywordTool):
         """Should this group appear in the 'regular' agenda filter button lists?"""
         parent = self._get_group_parent(group)
         return (
-                group.features.agenda_filter_type_id == 'normal'
+                self._agenda_filter_type(group) == 'normal'
                 and parent
-                and parent.features.agenda_filter_type_id == 'heading'
+                and self._agenda_filter_type(parent) == 'heading'
         )
 
     def _tag_assignments_with_filter_keywords(self):
@@ -677,7 +708,7 @@ class AgendaKeywordTagger(AgendaKeywordTool):
         if group is None:
             return None
         kw = self._group_keyword(group)  # start with this
-        token = session.docname_token_only_for_multiple()
+        token = self._docname_token_only_for_multiple(session)
         return kw if token is None else '{}-{}'.format(kw, token)
 
 

@@ -8,7 +8,9 @@ from unittest.mock import patch, Mock
 
 from django.conf import settings
 from django.contrib.messages.storage.fallback import FallbackStorage
+from django.db import connection
 from django.test import override_settings, RequestFactory
+from django.test.utils import CaptureQueriesContext
 
 from ietf.group.factories import GroupFactory, GroupHistoryFactory
 from ietf.group.models import Group
@@ -16,7 +18,7 @@ from ietf.meeting.factories import SessionFactory, MeetingFactory, TimeSlotFacto
 from ietf.meeting.helpers import (AgendaFilterOrganizer, AgendaKeywordTagger,
     delete_interim_session_conferences, sessions_post_save, sessions_post_cancel,
     create_interim_session_conferences, get_ietf_meeting, set_order_in_meeting)
-from ietf.meeting.models import SchedTimeSessAssignment, Session
+from ietf.meeting.models import Meeting, SchedTimeSessAssignment, Session
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.utils.meetecho import Conference
 from ietf.utils.test_utils import TestCase
@@ -160,6 +162,34 @@ class AgendaKeywordTaggerTests(TestCase):
         self.do_test_tag_assignments_with_filter_keywords(104, bof=True)
         self.do_test_tag_assignments_with_filter_keywords(105, bof=True, historic='group')
         self.do_test_tag_assignments_with_filter_keywords(106, bof=True, historic='parent')
+
+    def test_query_count(self):
+        """Tagging sessions and organizing filters should not run queries per session"""
+        meeting_pk = MeetingFactory(type_id='ietf').pk
+        area = GroupFactory(type_id='area')
+
+        def add_sessions(count):
+            for _ in range(count):
+                SessionFactory.create_batch(2, meeting_id=meeting_pk, group=GroupFactory(parent=area))
+
+        def count_queries():
+            # Share one Meeting instance, as preprocess_assignments_for_agenda() does
+            meeting = Meeting.objects.get(pk=meeting_pk)
+            sessions = list(Session.objects.filter(meeting=meeting).select_related('group', 'purpose'))
+            for s in sessions:
+                s.meeting = meeting
+            with CaptureQueriesContext(connection) as context:
+                AgendaKeywordTagger(sessions=sessions).apply()
+                AgendaFilterOrganizer(sessions=sessions).get_filter_categories()
+            return len(context.captured_queries)
+
+        add_sessions(2)
+        baseline = count_queries()
+        add_sessions(4)
+        doubled = count_queries()
+
+        # A per-session lookup would add at least one query for each of the 8 new sessions
+        self.assertLessEqual(doubled, baseline)
 
 
 class AgendaFilterOrganizerTests(TestCase):
