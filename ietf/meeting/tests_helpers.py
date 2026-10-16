@@ -15,7 +15,7 @@ from ietf.group.models import Group
 from ietf.meeting.factories import SessionFactory, MeetingFactory, TimeSlotFactory
 from ietf.meeting.helpers import (AgendaFilterOrganizer, AgendaKeywordTagger,
     delete_interim_session_conferences, sessions_post_save, sessions_post_cancel,
-    create_interim_session_conferences, get_ietf_meeting)
+    create_interim_session_conferences, get_ietf_meeting, set_order_in_meeting)
 from ietf.meeting.models import SchedTimeSessAssignment, Session
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.utils.meetecho import Conference
@@ -640,3 +640,27 @@ class HelperTests(TestCase):
         ietf.date = today
         ietf.save()
         self.assertEqual(get_ietf_meeting(), ietf, 'Return current meeting if there is one')
+
+    def test_set_order_in_meeting(self):
+        """set_order_in_meeting() should give the same results as Session.order_in_meeting()"""
+        meeting = MeetingFactory(type_id='ietf')
+        area = GroupFactory(type_id='area')
+        wg = GroupFactory(parent=area)
+        sessions = [SessionFactory(meeting=meeting, group=wg, name=name) for name in ('c', 'a', 'b')]
+        sessions.append(SessionFactory(meeting=meeting, group=wg, add_to_schedule=False))  # not on the schedule
+        sessions.append(SessionFactory(meeting=meeting, group__parent=area))
+        sessions.append(SessionFactory(meeting=meeting, group__type_id='sdo'))  # group type without meetings
+        expected = {s.pk: Session.objects.get(pk=s.pk).order_in_meeting() for s in sessions}
+        self.assertCountEqual([expected[s.pk] for s in sessions[:4]], [0, 1, 2, 3])
+
+        fresh = list(Session.objects.filter(pk__in=expected).select_related('group'))
+        with self.assertNumQueries(2):
+            set_order_in_meeting(meeting, fresh)
+        with self.assertNumQueries(0):
+            self.assertEqual({s.pk: s.order_in_meeting() for s in fresh}, expected)
+
+        # a session from another meeting is left for order_in_meeting() to work out
+        other = SessionFactory(meeting=MeetingFactory(type_id='ietf'), group=wg)
+        set_order_in_meeting(meeting, [other])
+        self.assertFalse(hasattr(other, '_order_in_meeting'))
+        self.assertEqual(other.order_in_meeting(), 1)

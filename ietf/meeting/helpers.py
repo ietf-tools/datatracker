@@ -19,6 +19,7 @@ from django.utils import timezone
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document
+from ietf.group.models import GroupFeatures
 from ietf.group.utils import can_manage_some_groups, can_manage_group
 from ietf.ietfauth.utils import has_role, user_is_person
 from ietf.liaisons.utils import get_person_for_user
@@ -91,6 +92,47 @@ def get_schedule_by_name(meeting, owner, name):
     else:
         return meeting.schedule_set.filter(name = name).first()
 
+def set_order_in_meeting(meeting, sessions):
+    """Precompute Session.order_in_meeting() for sessions of a meeting
+
+    Gives the same result as calling order_in_meeting() on each session, but
+    with a few queries in total rather than several per session.
+    """
+    has_meetings = dict(GroupFeatures.objects.values_list("type_id", "has_meetings"))
+    official = {}
+    for a in SchedTimeSessAssignment.objects.filter(
+        session__meeting=meeting,
+        schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None],
+    ).select_related("timeslot", "session__group__parent"):
+        # default ordering matches the .first() in official_timeslotassignment()
+        official.setdefault(a.session_id, a)
+
+    assignments_by_group = defaultdict(list)
+    for a in sorted(official.values(), key=lambda a: a.session_id):  # pk order breaks ties below
+        assignments_by_group[a.session.group_id].append(a)
+    order = {}
+    for group_assignments in assignments_by_group.values():
+        # same sort as Session.all_meeting_sessions_for_group()
+        group_assignments.sort(
+            key=lambda a: (
+                a.timeslot.time,
+                a.timeslot.type_id,
+                a.session.group.parent.name if a.session.group.parent else None,
+                a.session.name,
+            )
+        )
+        for number, a in enumerate(group_assignments, start=1):
+            order[a.session_id] = number
+
+    for s in sessions:
+        if s.meeting_id != meeting.pk:
+            continue  # leave it to order_in_meeting()
+        if has_meetings.get(s.group.type_id):
+            s._order_in_meeting = order.get(s.pk, 0)
+        else:
+            s._order_in_meeting = 1
+
+
 def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefetches=()):
     """Add computed properties to assignments
 
@@ -122,6 +164,8 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
     # assignments = list(assignments_queryset) # make sure we're set in stone
     assignments = assignments_queryset
 
+    set_order_in_meeting(meeting, [a.session for a in assignments if a.session and a.session.group])
+
     # replace groups with historic counterparts
     groups = [ ]
     for a in assignments:
@@ -129,7 +173,7 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
             # Ensure that all Sessions refer to the same Meeting instance so they can share the
             # _groups_at_the_time() cache. The Sessions should all belong to the same meeting, but
             # check before blindly assigning to meeting just in case.
-            if a.session.meeting.pk == meeting.pk:
+            if a.session.meeting_id == meeting.pk:
                 a.session.meeting = meeting
             a.session.order_number = a.session.order_in_meeting() if a.session.group else None
 

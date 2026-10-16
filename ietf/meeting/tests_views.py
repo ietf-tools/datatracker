@@ -247,6 +247,30 @@ class AgendaApiTests(TestCase):
 
 
 class MeetingTests(BaseMeetingTestCase):
+    def test_agenda_txt_query_count(self):
+        meeting = MeetingFactory(type_id='ietf')
+        area = GroupFactory(type_id='area')
+        url = urlreverse('ietf.meeting.views.agenda_plain', kwargs=dict(num=meeting.number, ext='.txt'))
+
+        def add_sessions(count):
+            for _ in range(count):
+                group = GroupFactory(parent=area)
+                SessionFactory.create_batch(2, meeting=meeting, group=group)
+
+        def count_queries():
+            with CaptureQueriesContext(connection) as context:
+                r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            return len(context.captured_queries)
+
+        add_sessions(2)
+        baseline = count_queries()
+        add_sessions(4)
+        doubled = count_queries()
+
+        # A per-session lookup would add at least one query for each of the 8 new sessions
+        self.assertLessEqual(doubled, baseline)
+
     @override_settings(
         MEETECHO_ONSITE_TOOL_URL="https://onsite.example.com",
         MEETECHO_VIDEO_STREAM_URL="https://meetecho.example.com",

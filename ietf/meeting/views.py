@@ -1883,13 +1883,10 @@ def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, 
         get_assignments_for_agenda(schedule),
         meeting
     )
-    AgendaKeywordTagger(assignments=filtered_assignments).apply()
 
     # Done processing for CSV output
     if ext == ".csv":
         return agenda_csv(schedule, filtered_assignments, utc=utc is not None)
-
-    filter_organizer = AgendaFilterOrganizer(assignments=filtered_assignments)
 
     is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
 
@@ -1903,8 +1900,6 @@ def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, 
                 "schedule": schedule,
                 "filtered_assignments": filtered_assignments,
                 "updated": updated,
-                "filter_categories": filter_organizer.get_filter_categories(),
-                "non_area_keywords": filter_organizer.get_non_area_keywords(),
                 "now": timezone.now().astimezone(meeting.tz()),
                 "display_timezone": display_timezone,
                 "is_current_meeting": is_current_meeting,
