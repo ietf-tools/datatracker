@@ -29,6 +29,8 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.serializers.json import DjangoJSONEncoder
 from django.test import Client, override_settings
+from django.test.utils import CaptureQueriesContext
+from django.db import connection
 from django.db.models import F, Max
 from django.http import QueryDict, FileResponse
 from django.template import Context, Template
@@ -9326,6 +9328,43 @@ class SessionTests(TestCase):
             '<span class="badge rounded-pill text-bg-info">Tutorial</span>',
             html=True,
         )
+
+    def test_meeting_requests_query_count(self):
+        meeting = MeetingFactory(type_id='ietf')
+        area = GroupFactory(type_id='area')
+        url = urlreverse('ietf.meeting.views.meeting_requests', kwargs={'num': meeting.number})
+
+        def add_sessions(count):
+            for _ in range(count):
+                session = SessionFactory(meeting=meeting, group__parent=area, status_id='schedw', add_to_schedule=False)
+                RoleFactory(name_id='ad', group=session.group)
+                session.joint_with_groups.add(GroupFactory(parent=area))
+                for name_id in ('chair_conflict', 'tech_overlap'):
+                    ConstraintFactory(
+                        meeting=meeting,
+                        name_id=name_id,
+                        source=session.group,
+                        target=GroupFactory(parent=area),
+                        person=None,
+                    )
+                ConstraintFactory(meeting=meeting, name_id='bethere', source=session.group, target=None, person=PersonFactory())
+
+        def count_queries():
+            with CaptureQueriesContext(connection) as context:
+                r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            return len(context.captured_queries)
+
+        # person_link's own per-person lookups are left out of this count
+        with patch.object(Person, 'has_alias_for_name', return_value=False), \
+                patch.object(Person, 'email_address', return_value='person@example.com'):
+            add_sessions(2)
+            baseline = count_queries()
+            add_sessions(4)
+            doubled = count_queries()
+
+        # A per-session lookup would add at least one query for each of the 4 new sessions
+        self.assertLessEqual(doubled, baseline)
 
     def test_request_minutes(self):
         meeting = MeetingFactory(type_id='ietf')
