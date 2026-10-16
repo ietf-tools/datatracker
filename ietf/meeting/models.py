@@ -494,7 +494,7 @@ class Meeting(models.Model):
             all_group_pks.update(self.session_set.values_list('group__parent__pk', flat=True))
             all_group_pks.discard(None)
             self.cached_groups_at_the_time = find_history_replacements_active_at(
-                Group.objects.filter(pk__in=all_group_pks),
+                Group.objects.filter(pk__in=all_group_pks).select_related("parent"),
                 self.meeting_start(),
             )
         return self.cached_groups_at_the_time
