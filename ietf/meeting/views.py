@@ -48,7 +48,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.validators import URLValidator
 from django.urls import reverse, reverse_lazy, NoReverseMatch
-from django.db.models import F, Q
+from django.db.models import F, Prefetch, Q
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
@@ -69,7 +69,7 @@ from ietf.doc.storage_utils import (
     store_file,
 )
 from ietf.doc.templatetags.ietf_filters import absurl
-from ietf.group.models import Group
+from ietf.group.models import Group, Role
 from ietf.group.utils import (
     can_manage_session_materials,
     can_manage_some_groups,
@@ -79,6 +79,7 @@ from ietf.person.models import Person, User
 from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import (
+    Constraint,
     Meeting,
     Session,
     Schedule,
@@ -2968,17 +2969,38 @@ def meeting_requests(request, num=None):
             purpose__in=('admin', 'social'),
         ).with_current_status().with_requested_by().exclude(
             requested_by=0
+        ).select_related(
+            "group__parent__type", "group__state", "group__type", "purpose"
         ).prefetch_related(
-            "group", "group__ad_role__person", "group__type"
+            "joint_with_groups",
+            Prefetch(
+                "group__role_set",
+                queryset=Role.objects.filter(name="ad").select_related("person"),
+                to_attr="ad_roles",
+            ),
         )
     )
 
     status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
     session_requesters = {p.pk: p for p in Person.objects.filter(pk__in=[s.requested_by for s in sessions if s.requested_by is not None])}
 
+    # Same constraints and order as Session.constraints(), fetched for all sessions at once
+    constraints_by_group = defaultdict(list)
+    for c in Constraint.objects.filter(
+        meeting=meeting,
+        source__in={s.group_id for s in sessions},
+    ).order_by(
+        "name__name", "target__acronym", "person__name"
+    ).select_related(
+        "name", "person", "source__parent", "target__parent"
+    ).prefetch_related("timeranges"):
+        constraints_by_group[c.source_id].append(c)
+
     for s in sessions:
         s.current_status_name = status_names.get(s.current_status, s.current_status)
         s.requested_by_person = session_requesters.get(s.requested_by)
+        s.ad_role = s.group.ad_roles[0] if s.group.ad_roles else None
+        s.constraint_list = constraints_by_group[s.group_id]
         if s.group.parent and s.group.parent.type.slug in ('area', 'irtf'):
             s.display_area = s.group.parent
         else:
