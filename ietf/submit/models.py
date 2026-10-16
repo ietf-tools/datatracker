@@ -157,6 +157,13 @@ class SubmissionCheck(models.Model):
             isinstance(self.items, dict) and self.items.get("would_block_in_future")
         )
 
+    @property
+    def comments(self):
+        """Number of comments (neither errors nor warnings) the check reported"""
+        if isinstance(self.items, dict):
+            return self.items.get("comments", 0)
+        return 0
+
 class SubmissionEvent(models.Model):
     submission = ForeignKey(Submission)
     time = models.DateTimeField(default=timezone.now)

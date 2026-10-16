@@ -1,6 +1,10 @@
 # Copyright The IETF Trust 2021-2026, All Rights Reserved
+from unittest import mock
+
+from django.utils.safestring import SafeData, SafeString
+
 from ietf.utils.test_utils import TestCase
-from ietf.utils.text import parse_unicode, decode_document_content
+from ietf.utils.text import decode_document_content, parse_unicode, render_txt_as_unsafe
 
 
 class TestDecoders(TestCase):
@@ -69,3 +73,14 @@ class TestDecoders(TestCase):
             decode_document_content(other_bytes),
             other_bytes.decode("latin-1"),
         )
+
+
+class TestRenderTxtAsUnsafe(TestCase):
+    @mock.patch("ietf.utils.text.render_to_string")
+    def test_render_txt_as_unsafe(self, mock_render):
+        mock_render.return_value = SafeString("History & <Implementations>")
+        result = render_txt_as_unsafe("some/template.txt", {"a": 1}, request=None)
+        mock_render.assert_called_once_with("some/template.txt", {"a": 1}, request=None)
+        self.assertIs(type(result), str)
+        self.assertNotIsInstance(result, SafeData)
+        self.assertEqual(result, "History & <Implementations>")
