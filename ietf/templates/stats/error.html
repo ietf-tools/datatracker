@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load origin %}
+{% load ietf_filters static %}
+{% block content %}
+    {% origin %}
+    <h1>
+        {% block title %}Invalid input{% endblock %}
+    </h1>
+    <p>
+        There was an error in your request: {{ message }}.
+    </p>
+{% endblock %}
