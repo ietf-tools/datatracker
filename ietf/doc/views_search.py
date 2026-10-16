@@ -774,10 +774,9 @@ def docs_for_ad(request, name):
         and not (
             r.type_id == "draft"
             and (
-                r.get_state_slug("draft-iesg") == "dead"
+                r.get_state_slug("draft-iesg") in ("dead", "idexists")
                 or r.get_state_slug("draft") == "repl"
                 or r.get_state_slug("draft") == "rfc"
-                or (r.get_state_slug("draft") == "expired" and r.get_state_slug("draft-iesg") == "idexists")
             )
         )
     ]
