@@ -658,3 +658,9 @@ class HelperTests(TestCase):
             set_order_in_meeting(meeting, fresh)
         with self.assertNumQueries(0):
             self.assertEqual({s.pk: s.order_in_meeting() for s in fresh}, expected)
+
+        # a session from another meeting is left for order_in_meeting() to work out
+        other = SessionFactory(meeting=MeetingFactory(type_id='ietf'), group=wg)
+        set_order_in_meeting(meeting, [other])
+        self.assertFalse(hasattr(other, '_order_in_meeting'))
+        self.assertEqual(other.order_in_meeting(), 1)

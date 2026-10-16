@@ -1210,6 +1210,9 @@ class Session(models.Model):
             return [self]
 
     def order_in_meeting(self):
+        # The _order_in_meeting memo may also be set in bulk by
+        # ietf.meeting.helpers.set_order_in_meeting(), which repeats the filter and sort in
+        # all_meeting_sessions_for_group(). Keep the two in step.
         if not hasattr(self, '_order_in_meeting'):
             session_list = self.all_meeting_sessions_for_group()
             self._order_in_meeting = session_list.index(self) + 1 if self in session_list else 0
