@@ -32,37 +32,36 @@ class EventMailTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'doc_group_mail_list')
 
-    def test_clean_duplicates_unquoted_commas_and_suffixes(self):
-        from ietf.mailtrigger.models import clean_duplicates
-        # Addresses with unquoted commas and suffixes must be recovered and properly quoted
-        addrs = [
-            'Dane Foster, Ph.D. <dane@example.com>',
-            'User Lname, Ph.D <user@example.com>',
-            '"User Lname" <user@example.com>',
-        ]
-        cleaned = clean_duplicates(addrs)
-        self.assertIn('"Dane Foster, Ph.D." <dane@example.com>', cleaned)
-        # Multiple addresses for the same recipient are collapsed
-        self.assertEqual(len([a for a in cleaned if 'user@example.com' in a]), 1)
-
-    def test_gather_submission_authors_with_phd(self):
+    def test_gather_submission_authors_with_comma_and_suffix(self):
+        from email.utils import getaddresses
         from ietf.person.factories import PersonFactory, EmailFactory
         from ietf.submit.factories import SubmissionFactory
         from ietf.mailtrigger.models import Recipient
+        from ietf.mailtrigger.utils import gather_address_lists
 
         person = PersonFactory(name="Dane Foster, Ph.D.")
         email = EmailFactory(person=person, address="dane.foster@example.com")
         sub = SubmissionFactory(
             authors=[
                 {"name": "Dane Foster, Ph.D.", "email": email.address},
-                {"name": "No DB, Ph.D.", "email": "nodb@example.com"},
+                {"name": "User LName, Ph.D.", "email": "user@example.com"},
             ]
         )
         recip = Recipient.objects.get(slug="submission_authors")
         addrs = recip.gather(submission=sub)
-        # Registered person gets plain name formatted email
+
+        # Registered person gets clean plain name without dangling comma
         self.assertIn(f"{person.plain_name()} <{email.address}>", addrs)
         # Unregistered author gets properly quoted formataddr
-        self.assertIn('"No DB, Ph.D." <nodb@example.com>', addrs)
+        self.assertIn('"User LName, Ph.D." <user@example.com>', addrs)
+
+        # When used in sub_announced_to_authors mail trigger, recipients must not split on commas (issue #11844)
+        addr_lists = gather_address_lists("sub_announced_to_authors", submission=sub)
+        parsed = getaddresses(addr_lists.to)
+        # Each recipient must be parsed as a single address rather than splitting on the comma into two
+        user_entries = [entry for entry in parsed if entry[1] == "user@example.com"]
+        self.assertEqual(len(user_entries), 1)
+        self.assertEqual(user_entries[0][0], "User LName, Ph.D.")
+
 
 
