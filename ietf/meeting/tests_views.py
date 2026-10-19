@@ -5543,6 +5543,24 @@ class InterimTests(TestCase):
         ))
         self.assertIn('%d, %d' % (end.day, end.year), date_text(recent))
 
+    def test_past_legacy_hosts(self):
+        today = date_today()
+        first = MeetingFactory(type_id='ietf', number='1', date=today - datetime.timedelta(days=4000))
+        no_host = MeetingFactory(type_id='ietf', number='35', date=today - datetime.timedelta(days=3000))
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        def entry(meeting):
+            return q('#plenary .past-plenary').filter(
+                lambda i, el: PyQuery(el)('h2').text() == 'IETF %s' % meeting.number
+            )
+
+        self.assertEqual(' '.join(entry(first)('.past-legacy-host').text().split()), 'Hosted by Linkabit')
+        self.assertEqual(len(entry(first)('img')), 0)
+        self.assertEqual(len(entry(no_host)('.past-legacy-host')), 0)
+        self.assertNotIn('Hosted by', entry(no_host).text())
+
     def do_upcoming_test(self, querystring=None, create_meeting=True):
         if create_meeting:
             make_meeting_test_data(create_interims=True)
@@ -10010,7 +10028,11 @@ class MeetingHostTests(BaseMeetingTestCase):
         )
 
     def test_past_meetings_show_host_logos(self):
-        host = MeetingHostFactory(meeting__date=date_today() - datetime.timedelta(days=30))
+        # use a meeting number with no LEGACY_PLENARY_HOSTS entry
+        host = MeetingHostFactory(
+            meeting__number='120',
+            meeting__date=date_today() - datetime.timedelta(days=30),
+        )
         r = self.client.get(urlreverse('ietf.meeting.views.past'))
         self.assertEqual(r.status_code, 200)
         img = PyQuery(r.content)('#plenary .host-logo img')
@@ -10023,6 +10045,18 @@ class MeetingHostTests(BaseMeetingTestCase):
             ),
         )
         self.assertEqual(img.attr('alt'), host.name)
+
+    def test_past_meetings_legacy_host_overrides_logos(self):
+        host = MeetingHostFactory(
+            meeting__number='96',
+            meeting__date=date_today() - datetime.timedelta(days=30),
+        )
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#plenary .host-logo img')), 0)
+        self.assertIn('Juniper Networks', q('#plenary .past-legacy-host').text())
+        self.assertNotIn(host.name, q('#plenary').text())
 
     def test_permissions(self):
         meeting = MeetingFactory(type_id='ietf')

@@ -4759,6 +4759,100 @@ LEGACY_PLENARY_DATES = {
 }
 
 
+# Hosts for IETF meetings that have no MeetingHost records, as named on
+# https://www.ietf.org/meeting/past/ (October 2026). Shown as text, without logos.
+LEGACY_PLENARY_HOSTS = {
+    "1": "Linkabit",
+    "2": "Army Ballistics Research Lab",
+    "3": "University of Michigan",
+    "4": "SRI",
+    "5": "NASA Ames Research Center",
+    "6": "BBN",
+    "7": "MITRE",
+    "8": "NCAR",
+    "9": "San Diego Supercomputer Center",
+    "10": "US Naval Academy",
+    "11": "University of Michigan",
+    "12": "University of Texas",
+    "13": "Kennedy Space Center",
+    "14": "Stanford University",
+    "15": "University of Hawaii",
+    "16": "Florida State University Supercomputer Center",
+    "17": "Pittsburgh Supercomputer Center",
+    "18": "University of British Columbia",
+    "19": "University of Colorado",
+    "20": "Washington University",
+    "21": "BellSouth",
+    "22": "Los Alamos National Laboratory",
+    "23": "San Diego Supercomputer Center",
+    "24": "NEARnet",
+    "25": "US Sprint",
+    "26": "OARnet and The Ohio State University",
+    "27": "Surfnet and RARE",
+    "28": "SESQUINET and Rice University",
+    "29": "NorthWestNet",
+    "30": "University of Toronto",
+    "31": "Sun Microsystems",
+    "32": "FTP Software and NEARnet",
+    "33": "the Royal Institute of Technology and NORDUnet",
+    "34": "MCI",
+    "37": "Cisco Systems",
+    "38": "Federal Express",
+    "39": "ISOC-Germany Chapter",
+    "40": "Newbridge Networks, Inc",
+    "42": "Motorola",
+    "43": "Microsoft Corporation",
+    "44": "Ascend Communications",
+    "45": "Uninett",
+    "46": "Nortel Networks, Inc",
+    "47": "connect.com.au",
+    "48": "Marconi",
+    "49": "Cisco Systems and Qualcomm",
+    "50": "Lucent Technologies",
+    "51": "BTexact Technologies",
+    "52": "Novell",
+    "53": "Cable & Wireless",
+    "54": "Fujitsu and The WIDE Project",
+    "55": "Nokia",
+    "57": "Austria Telekom",
+    "59": "KT (Korea Telcom) and Samsung",
+    "61": "Alcatel",
+    "63": "France Telecom",
+    "64": "Nortel",
+    "65": "Nokia",
+    "66": "Ericsson",
+    "67": "Siemens",
+    "68": "NeuStar",
+    "69": "Motorola",
+    "70": "Cisco Research and Microsoft",
+    "71": "Comcast",
+    "72": "Alcatel-Lucent",
+    "73": "Google",
+    "74": "Juniper",
+    "75": ".SE",
+    "76": "WIDE",
+    "78": "SIDN",
+    "79": "Tsinghua University",
+    "80": "CZ.NIC",
+    "81": "RIM",
+    "82": "TWNIC",
+    "83": "Cisco",
+    "84": "Google",
+    "85": "North American Cable Industry",
+    "86": "Comcast and NBC Universal",
+    "87": "DENIC, EURid, Deutsche Telekom, Dyn and eco",
+    "88": "Huawei",
+    "89": "ICANN",
+    "90": "Ericsson",
+    "91": "Cisco",
+    "92": "Google",
+    "93": "Brocade and CZ.NIC",
+    "94": "WIDE",
+    "95": "LACNIC and the Internet Society",
+    "96": "Juniper Networks"
+}
+
+
 def past(request):
     '''List of past meetings'''
     today = timezone.now()
@@ -4779,6 +4873,7 @@ def past(request):
             meeting.past_start = meeting.date
             meeting.past_end = meeting.end_date()
         meeting.attendance = meeting.get_attendance()
+        meeting.legacy_host = LEGACY_PLENARY_HOSTS.get(meeting.number)
         if meeting.attendance is None and meeting.number in LEGACY_PLENARY_ATTENDANCE:
             legacy = LEGACY_PLENARY_ATTENDANCE[meeting.number]
             meeting.attendance = PastAttendance(onsite=legacy['onsite'], remote=legacy.get('remote'))
