@@ -94,7 +94,12 @@
                             {% endif %}
                         </div>
                         {% with hosts=meeting.meetinghosts.all %}
-                            {% if hosts %}
+                            {% if meeting.legacy_host %}
+                                <div class="past-legacy-host">
+                                    <span class="small text-body-secondary">Hosted by</span>
+                                    {{ meeting.legacy_host }}
+                                </div>
+                            {% elif hosts %}
                                 <div class="d-flex flex-wrap align-items-center gap-2">
                                     <span class="small text-body-secondary">Hosted by</span>
                                     {% for host in hosts %}
