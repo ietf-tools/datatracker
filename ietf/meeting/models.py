@@ -8,6 +8,7 @@ import io
 import os
 from functools import cached_property
 
+import pycountry
 import pytz
 import random
 import re
@@ -51,10 +52,18 @@ from ietf.utils.validators import (
 )
 from ietf.utils.fields import MissingOkImageField
 
-# Set up countries / timezones, including an empty choice for fields
+# Set up countries / timezones, including an empty choice for fields. After moving to
+# Django 5.x, the choices can become a runtime callable.
 EMPTY_CHOICE = ("", "-" * 9)
 COUNTRIES = (EMPTY_CHOICE,) + tuple(
-    sorted(pytz.country_names.items(), key=lambda x: x[1])
+    sorted(
+        [
+            # use common_name if available, falling back to name if not
+            (country.alpha_2, getattr(country, "common_name", country.name))
+            for country in pycountry.countries
+        ],
+        key=lambda x: x[1],
+    )
 )
 
 _tzdata_ics_path = Path(settings.TZDATA_ICS_PATH)
