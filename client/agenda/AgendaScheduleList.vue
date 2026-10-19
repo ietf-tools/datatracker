@@ -7,7 +7,7 @@
           th.agenda-table-head-check(v-if='pickerModeActive') &nbsp;
           th.agenda-table-head-time Time
           th.agenda-table-head-location(colspan='2') Location
-          th.agenda-table-head-event(colspan='2') {{ siteStore.viewport < 990 ? '' : 'Event' }}
+          th.agenda-table-head-event(colspan='2') Event
       tbody
         tr.agenda-table-display-noresult(
           v-if='!meetingEvents || meetingEvents.length < 1'
@@ -159,7 +159,9 @@
                 :style='{ "color": getEventColor(item.key) }'
                 )
 
-  .agenda-table-search
+  .agenda-table-search(
+    v-if='meetingEvents.length > 0'
+  )
     n-popover
       template(#trigger)
         button(
@@ -169,7 +171,9 @@
           i.bi.bi-search
       span {{ agendaStore.searchVisible ? 'Close Search' : 'Search Events' }}
 
-  .agenda-table-colorpicker
+  .agenda-table-colorpicker(
+    v-if='meetingEvents.length > 0'
+  )
     n-popover
       template(#trigger)
         button(
