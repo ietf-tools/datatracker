@@ -5,64 +5,174 @@
 {% load cache %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+    <style>
+        .past-plenary .host-logo img {
+            height: auto;
+            width: auto;
+            max-height: 2.5rem;
+            max-width: 9rem;
+        }
+    </style>
 {% endblock %}
 {% block title %}Past Meetings{% endblock %}
 {% block content %}
-    {% cache 3600 pastmeetings %}
+    {% cache 3600 pastmeetings-tabs %}
     {% origin %}
     <h1>Past Meetings</h1>
-    {% if meetings %}
-        <table class="table table-sm table-striped tablesorter">
-            <thead>
-                <tr>
-                    <th scope="col" data-sort="date">Date</th>
-                    <th scope="col" data-sort="group">Group</th>
-                    <th scope="col" data-sort="name">Name</th>
-                    <th scope="col" class="d-none d-sm-table-cell"></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for meeting in meetings %}
-                    <tr>
-                        <td>{{ meeting.date }}</td>
-                        <td>
-                            {% if meeting.responsible_group.type_id != 'ietf' %}
-                                <a href="{% url 'ietf.group.views.group_home' meeting.responsible_group.acronym %}">
-                                    {{ meeting.responsible_group.acronym }}
-                                </a>
-                            {% else %}
-                                {{ meeting.responsible_group.acronym }}
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if meeting.type_id == "interim" %}
-                                <a href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.responsible_group.acronym %}">{{ meeting.number }}</a>
-                                {% if meeting.interim_meeting_cancelled %}<span class="badge rounded-pill text-bg-warning">Cancelled</span>{% endif %}
-                            {% else %}
-                                {% if meeting.get_number > 28 %}
-                                    <a href="{% url 'agenda' num=meeting.number %}">IETF-{{ meeting.number }}</a>
+    <ul class="nav nav-tabs my-3" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active"
+                    id="plenary-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#plenary"
+                    type="button"
+                    role="tab"
+                    aria-controls="plenary"
+                    aria-selected="true">
+                IETF plenary meetings
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link"
+                    id="interim-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#interim"
+                    type="button"
+                    role="tab"
+                    aria-controls="interim"
+                    aria-selected="false">
+                Interim meetings
+            </button>
+        </li>
+    </ul>
+    <div class="tab-content navskip">
+        <div class="tab-pane active"
+             id="plenary"
+             role="tabpanel"
+             aria-labelledby="plenary-tab">
+            {% for meeting in plenaries %}
+                <div class="past-plenary card mb-3">
+                    <div class="card-header">
+                        <h2 class="h5 mb-0">IETF {{ meeting.number }}</h2>
+                        <div class="past-dates text-body-secondary">
+                            {% with start=meeting.past_start end=meeting.past_end %}
+                                {% if start.year != end.year %}
+                                    {{ start|date:"F j, Y" }} - {{ end|date:"F j, Y" }}
+                                {% elif start.month != end.month %}
+                                    {{ start|date:"F j" }} - {{ end|date:"F j, Y" }}
                                 {% else %}
-                                    <a href="https://www.ietf.org/proceedings/{{meeting.get_number|stringformat:'02d'}}.pdf">IETF-{{ meeting.number }}</a>
+                                    {{ start|date:"F j" }}-{{ end|date:"j, Y" }}
                                 {% endif %}
+                            {% endwith %}
+                            {% if meeting.city %}
+                                &middot; {{ meeting.city }}{% if meeting.country %}, {{ meeting.get_country_display }}{% endif %}
                             {% endif %}
-                        </td>
-                        <td class="d-none d-sm-table-cell">
-                            {% if meeting.type_id == "interim" %}
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-wrap align-items-center column-gap-5 row-gap-3">
+                        <div>
+                            {% with attendance=meeting.attendance %}
+                                {% if attendance %}
+                                    <div class="past-attendance mb-2">
+                                        {% if attendance.remote is None %}
+                                            {{ attendance.onsite }} participant{{ attendance.onsite|pluralize }}
+                                        {% else %}
+                                            {% if attendance.onsite > 0 %}
+                                                {{ attendance.onsite }} onsite participant{{ attendance.onsite|pluralize }}{% if attendance.remote > 0 %},{% endif %}
+                                            {% endif %}
+                                            {% if attendance.remote > 0 %}{{ attendance.remote }} online participant{{ attendance.remote|pluralize }}{% endif %}
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                            {% if meeting.get_number > 28 %}
+                                <a class="btn btn-sm btn-outline-primary"
+                                   href="{% url 'ietf.meeting.views.proceedings' num=meeting.number %}">Proceedings</a>
                             {% else %}
-                                {% if meeting.get_number > 97 %}
-                                    <a href="{% url 'ietf.meeting.views.important_dates' num=meeting.number %}">Important dates</a>
-                                {% endif %}
+                                <a class="btn btn-sm btn-outline-primary"
+                                   href="https://www.ietf.org/proceedings/{{ meeting.get_number|stringformat:'02d' }}.pdf">Proceedings (PDF)</a>
                             {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <h2>No past meetings</h2>
-    {% endif %}
+                        </div>
+                        {% with hosts=meeting.meetinghosts.all %}
+                            {% if hosts %}
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <span class="small text-body-secondary">Hosted by</span>
+                                    {% for host in hosts %}
+                                        <span class="host-logo bg-white rounded px-2 py-1">
+                                            <img src="{% url 'ietf.meeting.views_proceedings.meetinghost_logo' num=meeting.number host_id=host.pk %}"
+                                                 height="{{ host.logo_height }}"
+                                                 width="{{ host.logo_width }}"
+                                                 alt="{{ host.name }}"
+                                                 title="{{ host.name }}"
+                                                 loading="lazy">
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            {% empty %}
+                <p>No past IETF plenary meetings.</p>
+            {% endfor %}
+        </div>
+        <div class="tab-pane"
+             id="interim"
+             role="tabpanel"
+             aria-labelledby="interim-tab">
+            {% if interims %}
+                <table class="table table-sm table-striped tablesorter">
+                    <thead>
+                        <tr>
+                            <th scope="col" data-sort="date">Date</th>
+                            <th scope="col" data-sort="group">Group</th>
+                            <th scope="col" data-sort="name">Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for meeting in interims %}
+                            <tr>
+                                <td>{{ meeting.date }}</td>
+                                <td>
+                                    {% if meeting.responsible_group.type_id != 'ietf' %}
+                                        <a href="{% url 'ietf.group.views.group_home' meeting.responsible_group.acronym %}">
+                                            {{ meeting.responsible_group.acronym }}
+                                        </a>
+                                    {% else %}
+                                        {{ meeting.responsible_group.acronym }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.responsible_group.acronym %}">{{ meeting.number }}</a>
+                                    {% if meeting.interim_meeting_cancelled %}<span class="badge rounded-pill text-bg-warning">Cancelled</span>{% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <h2>No past interim meetings</h2>
+            {% endif %}
+        </div>
+    </div>
     {% endcache %}
 {% endblock %}
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
+    <script>
+        $(document)
+            .ready(function () {
+                // Javascript to enable link to tab
+                var url = document.location.toString();
+                if (url.match('#')) {
+                    $('.nav-tabs button[data-bs-target="#' + url.split('#')[1] + '"]')
+                        .tab('show');
+                }
+                // Change hash for page-reload
+                $('.nav-tabs button')
+                    .on('shown.bs.tab', function (e) {
+                        history.replaceState(null, null, e.currentTarget.dataset.bsTarget);
+                    });
+            });
+    </script>
 {% endblock %}

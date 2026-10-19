@@ -5471,13 +5471,77 @@ class InterimTests(TestCase):
         last_week = today - datetime.timedelta(days=7)
         ietf = SessionFactory(meeting__type_id='ietf',meeting__date=last_week,group__state_id='active',group__parent=GroupFactory(state_id='active'))
         SessionFactory(meeting__type_id='interim',meeting__date=last_week,status_id='canceled',group__state_id='active',group__parent=GroupFactory(state_id='active'))
+        old_ietf = MeetingFactory(type_id='ietf', number='5', date=last_week - datetime.timedelta(days=365))
         url = urlreverse('ietf.meeting.views.past')
         r = self.client.get(url)
-        self.assertContains(r, 'IETF-%02d'%int(ietf.meeting.number))
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        #id="-%s" % interim.group.acronym
-        #self.assertIn('Cancelled', q('[id*="'+id+'"]').text())
-        self.assertIn('Cancelled', q('tr>td>a+span').text())
+        plenary = q('#plenary')
+        interim = q('#interim')
+        self.assertIn('IETF %s' % ietf.meeting.number, plenary('h2').text())
+        self.assertEqual(
+            len(plenary('a[href="%s"]' % urlreverse('ietf.meeting.views.proceedings', kwargs=dict(num=ietf.meeting.number)))),
+            1,
+        )
+        self.assertEqual(len(plenary('a[href="https://www.ietf.org/proceedings/05.pdf"]')), 1)
+        self.assertIn('IETF %s' % old_ietf.number, plenary('h2').text())
+        # interim tab holds only interims, rendered as a table
+        self.assertEqual(len(interim('tbody tr')), 1)
+        self.assertIn('Cancelled', interim('tr>td>a+span').text())
+        self.assertNotIn('IETF %s' % ietf.meeting.number, interim.text())
+
+    def test_past_attendance(self):
+        today = date_today()
+        legacy = MeetingFactory(type_id='ietf', number='5', date=today - datetime.timedelta(days=4000))
+        legacy_hybrid = MeetingFactory(type_id='ietf', number='91', date=today - datetime.timedelta(days=3000))
+        legacy_online = MeetingFactory(type_id='ietf', number='108', date=today - datetime.timedelta(days=2000))
+        modern = MeetingFactory(type_id='ietf', number='120', date=today - datetime.timedelta(days=1000))
+        RegistrationFactory.create_batch(
+            3, meeting=modern, with_ticket={'attendance_type_id': 'onsite'}, attended=True,
+        )
+        RegistrationFactory.create_batch(
+            2, meeting=modern, with_ticket={'attendance_type_id': 'remote'}, attended=True,
+        )
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        def attendance_text(meeting):
+            entry = q('#plenary .past-plenary').filter(
+                lambda i, el: PyQuery(el)('h2').text() == 'IETF %s' % meeting.number
+            )
+            return ' '.join(entry('.past-attendance').text().split())
+
+        # before remote attendance was reported: a single figure, no onsite/online wording
+        self.assertEqual(attendance_text(legacy), '35 participants')
+        self.assertEqual(attendance_text(legacy_hybrid), '1109 onsite participants, 361 online participants')
+        self.assertEqual(attendance_text(legacy_online), '1102 online participants')
+        # registration data for modern meetings
+        self.assertEqual(attendance_text(modern), '3 onsite participants, 2 online participants')
+
+    def test_past_dates(self):
+        today = date_today()
+        # database dates for early meetings are overridden with the published ones
+        first = MeetingFactory(type_id='ietf', number='1', date=datetime.date(1986, 1, 16), days=7)
+        seoul = MeetingFactory(type_id='ietf', number='59', date=datetime.date(2004, 3, 29), days=7)
+        recent = MeetingFactory(type_id='ietf', number='120', date=today - datetime.timedelta(days=100), days=7)
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        def date_text(meeting):
+            entry = q('#plenary .past-plenary').filter(
+                lambda i, el: PyQuery(el)('h2').text() == 'IETF %s' % meeting.number
+            )
+            return ' '.join(entry('.past-dates').text().split())
+
+        self.assertTrue(date_text(first).startswith('January 16-17, 1986'))
+        self.assertTrue(date_text(seoul).startswith('February 29 - March 4, 2004'))
+        end = recent.date + datetime.timedelta(days=6)
+        self.assertTrue(date_text(recent).startswith(
+            '%s %d' % (recent.date.strftime('%B'), recent.date.day)
+        ))
+        self.assertIn('%d, %d' % (end.day, end.year), date_text(recent))
 
     def do_upcoming_test(self, querystring=None, create_meeting=True):
         if create_meeting:
@@ -9944,6 +10008,21 @@ class MeetingHostTests(BaseMeetingTestCase):
                 'meetinghosts-1-name': '',
             },
         )
+
+    def test_past_meetings_show_host_logos(self):
+        host = MeetingHostFactory(meeting__date=date_today() - datetime.timedelta(days=30))
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        img = PyQuery(r.content)('#plenary .host-logo img')
+        self.assertEqual(len(img), 1)
+        self.assertEqual(
+            img.attr('src'),
+            urlreverse(
+                'ietf.meeting.views_proceedings.meetinghost_logo',
+                kwargs=dict(num=host.meeting.number, host_id=host.pk),
+            ),
+        )
+        self.assertEqual(img.attr('alt'), host.name)
 
     def test_permissions(self):
         meeting = MeetingFactory(type_id='ietf')

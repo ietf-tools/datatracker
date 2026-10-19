@@ -4576,14 +4576,219 @@ def interim_request_edit(request, number):
         "form": form,
         "formset": formset})
 
+# Attendance for IETF meetings that predate the registration data used by
+# Meeting.get_attendance() (IETF 110 and later), as published on
+# https://www.ietf.org/meeting/past/ in October 2026. Remote attendance was
+# first reported for IETF 91; earlier entries have no "remote" key.
+LEGACY_PLENARY_ATTENDANCE = {
+    "1": {"onsite": 21},
+    "2": {"onsite": 21},
+    "3": {"onsite": 18},
+    "4": {"onsite": 35},
+    "5": {"onsite": 35},
+    "6": {"onsite": 88},
+    "7": {"onsite": 101},
+    "8": {"onsite": 56},
+    "9": {"onsite": 82},
+    "10": {"onsite": 112},
+    "11": {"onsite": 114},
+    "12": {"onsite": 120},
+    "13": {"onsite": 114},
+    "14": {"onsite": 217},
+    "15": {"onsite": 138},
+    "16": {"onsite": 196},
+    "17": {"onsite": 244},
+    "18": {"onsite": 293},
+    "19": {"onsite": 292},
+    "20": {"onsite": 348},
+    "21": {"onsite": 387},
+    "22": {"onsite": 372},
+    "23": {"onsite": 530},
+    "24": {"onsite": 677},
+    "25": {"onsite": 633},
+    "26": {"onsite": 638},
+    "27": {"onsite": 493},
+    "28": {"onsite": 636},
+    "29": {"onsite": 785},
+    "30": {"onsite": 710},
+    "31": {"onsite": 1079},
+    "32": {"onsite": 983},
+    "33": {"onsite": 617},
+    "34": {"onsite": 1007},
+    "35": {"onsite": 1038},
+    "36": {"onsite": 1283},
+    "37": {"onsite": 1993},
+    "38": {"onsite": 1321},
+    "39": {"onsite": 1308},
+    "40": {"onsite": 1897},
+    "41": {"onsite": 1775},
+    "42": {"onsite": 2106},
+    "43": {"onsite": 2124},
+    "44": {"onsite": 1705},
+    "45": {"onsite": 1710},
+    "46": {"onsite": 2379},
+    "47": {"onsite": 1431},
+    "48": {"onsite": 2344},
+    "49": {"onsite": 2810},
+    "50": {"onsite": 1822},
+    "51": {"onsite": 2226},
+    "52": {"onsite": 1691},
+    "53": {"onsite": 1656},
+    "54": {"onsite": 1885},
+    "55": {"onsite": 1570},
+    "56": {"onsite": 1679},
+    "57": {"onsite": 1304},
+    "58": {"onsite": 1233},
+    "59": {"onsite": 1390},
+    "60": {"onsite": 1460},
+    "61": {"onsite": 1311},
+    "62": {"onsite": 1133},
+    "63": {"onsite": 1450},
+    "64": {"onsite": 1240},
+    "65": {"onsite": 1264},
+    "66": {"onsite": 1257},
+    "67": {"onsite": 1245},
+    "68": {"onsite": 1193},
+    "69": {"onsite": 1175},
+    "70": {"onsite": 1128},
+    "71": {"onsite": 1174},
+    "72": {"onsite": 1181},
+    "73": {"onsite": 962},
+    "74": {"onsite": 1185},
+    "75": {"onsite": 1124},
+    "76": {"onsite": 1152},
+    "77": {"onsite": 1248},
+    "78": {"onsite": 1192},
+    "79": {"onsite": 1207},
+    "80": {"onsite": 1231},
+    "81": {"onsite": 1127},
+    "82": {"onsite": 948},
+    "83": {"onsite": 1395},
+    "84": {"onsite": 1199},
+    "85": {"onsite": 1157},
+    "86": {"onsite": 1115},
+    "87": {"onsite": 1435},
+    "88": {"onsite": 1189},
+    "89": {"onsite": 1400},
+    "90": {"onsite": 1237},
+    "91": {"onsite": 1109, "remote": 361},
+    "92": {"onsite": 1221, "remote": 421},
+    "93": {"onsite": 1387, "remote": 387},
+    "94": {"onsite": 1319, "remote": 358},
+    "95": {"onsite": 1043, "remote": 614},
+    "96": {"onsite": 1423, "remote": 368},
+    "97": {"onsite": 1042, "remote": 367},
+    "98": {"onsite": 1127, "remote": 315},
+    "99": {"onsite": 1230, "remote": 506},
+    "100": {"onsite": 1018, "remote": 468},
+    "101": {"onsite": 1235, "remote": 575},
+    "102": {"onsite": 1078, "remote": 547},
+    "103": {"onsite": 879, "remote": 521},
+    "104": {"onsite": 1213, "remote": 864},
+    "105": {"onsite": 1103, "remote": 861},
+    "106": {"onsite": 1004, "remote": 607},
+    "107": {"onsite": 0, "remote": 701},
+    "108": {"onsite": 0, "remote": 1102},
+    "109": {"onsite": 0, "remote": 1061}
+}
+
+
+# Dates for IETF meetings whose Meeting.date/days in the database don't match
+# the dates published on https://www.ietf.org/meeting/past/ (October 2026).
+# These early meetings were imported with the default length of 7 days.
+LEGACY_PLENARY_DATES = {
+    "1": {"start": "1986-01-16", "end": "1986-01-17"},
+    "2": {"start": "1986-04-08", "end": "1986-04-09"},
+    "3": {"start": "1986-07-23", "end": "1986-07-24"},
+    "4": {"start": "1986-10-15", "end": "1986-10-17"},
+    "5": {"start": "1987-02-04", "end": "1987-02-06"},
+    "6": {"start": "1987-04-22", "end": "1987-04-24"},
+    "7": {"start": "1987-07-27", "end": "1987-07-29"},
+    "8": {"start": "1987-11-02", "end": "1987-11-04"},
+    "9": {"start": "1988-03-01", "end": "1988-03-03"},
+    "10": {"start": "1988-06-15", "end": "1988-06-17"},
+    "11": {"start": "1988-10-17", "end": "1988-10-19"},
+    "12": {"start": "1989-01-18", "end": "1989-01-20"},
+    "13": {"start": "1989-04-11", "end": "1989-04-14"},
+    "14": {"start": "1989-07-25", "end": "1989-07-28"},
+    "15": {"start": "1989-10-31", "end": "1989-11-03"},
+    "16": {"start": "1990-02-06", "end": "1990-02-09"},
+    "17": {"start": "1990-05-01", "end": "1990-05-04"},
+    "18": {"start": "1990-07-30", "end": "1990-08-03"},
+    "19": {"start": "1990-12-03", "end": "1990-12-07"},
+    "20": {"start": "1991-03-11", "end": "1991-03-15"},
+    "21": {"start": "1991-07-29", "end": "1991-08-02"},
+    "22": {"start": "1991-11-18", "end": "1991-11-22"},
+    "23": {"start": "1992-03-16", "end": "1992-03-20"},
+    "24": {"start": "1992-07-13", "end": "1992-07-17"},
+    "25": {"start": "1992-11-16", "end": "1992-11-20"},
+    "26": {"start": "1993-03-29", "end": "1993-04-02"},
+    "27": {"start": "1993-07-12", "end": "1993-07-16"},
+    "28": {"start": "1993-11-01", "end": "1993-11-05"},
+    "29": {"start": "1994-03-28", "end": "1994-04-01"},
+    "30": {"start": "1994-07-25", "end": "1994-07-29"},
+    "31": {"start": "1994-12-05", "end": "1994-12-09"},
+    "32": {"start": "1995-04-03", "end": "1995-04-07"},
+    "33": {"start": "1995-07-17", "end": "1995-07-21"},
+    "34": {"start": "1995-12-04", "end": "1995-12-08"},
+    "35": {"start": "1996-03-04", "end": "1996-03-08"},
+    "36": {"start": "1996-06-24", "end": "1996-06-28"},
+    "37": {"start": "1996-12-09", "end": "1996-12-13"},
+    "38": {"start": "1997-04-07", "end": "1997-04-11"},
+    "39": {"start": "1997-08-11", "end": "1997-08-15"},
+    "40": {"start": "1997-12-08", "end": "1997-12-12"},
+    "41": {"start": "1998-03-30", "end": "1998-04-03"},
+    "42": {"start": "1998-08-24", "end": "1998-08-28"},
+    "43": {"start": "1998-12-07", "end": "1998-12-11"},
+    "44": {"start": "1999-03-14", "end": "1999-03-19"},
+    "45": {"start": "1999-07-11", "end": "1999-07-16"},
+    "46": {"start": "1999-11-07", "end": "1999-11-12"},
+    "47": {"start": "2000-03-26", "end": "2000-03-31"},
+    "48": {"start": "2000-07-31", "end": "2000-08-04"},
+    "49": {"start": "2000-12-10", "end": "2000-12-15"},
+    "50": {"start": "2001-03-18", "end": "2001-03-25"},
+    "51": {"start": "2001-08-05", "end": "2001-08-10"},
+    "52": {"start": "2001-12-09", "end": "2001-12-14"},
+    "53": {"start": "2002-03-17", "end": "2002-03-22"},
+    "54": {"start": "2002-07-14", "end": "2002-07-19"},
+    "55": {"start": "2002-11-17", "end": "2002-11-21"},
+    "56": {"start": "2003-03-16", "end": "2003-03-21"},
+    "57": {"start": "2003-07-13", "end": "2003-07-18"},
+    "58": {"start": "2003-11-09", "end": "2003-11-14"},
+    "59": {"start": "2004-02-29", "end": "2004-03-04"}
+}
+
+
 def past(request):
     '''List of past meetings'''
     today = timezone.now()
 
-    meetings = data_for_meetings_overview(Meeting.objects.filter(date__lte=today).order_by('-date'))
+    plenaries = list(
+        Meeting.objects.filter(type_id='ietf', date__lte=today)
+        .prefetch_related('meetinghosts')
+        .order_by('-date')
+    )
+    # remote is None for meetings before remote attendance was reported
+    PastAttendance = namedtuple('PastAttendance', 'onsite remote')
+    for meeting in plenaries:
+        if meeting.number in LEGACY_PLENARY_DATES:
+            legacy_dates = LEGACY_PLENARY_DATES[meeting.number]
+            meeting.past_start = datetime.date.fromisoformat(legacy_dates['start'])
+            meeting.past_end = datetime.date.fromisoformat(legacy_dates['end'])
+        else:
+            meeting.past_start = meeting.date
+            meeting.past_end = meeting.end_date()
+        meeting.attendance = meeting.get_attendance()
+        if meeting.attendance is None and meeting.number in LEGACY_PLENARY_ATTENDANCE:
+            legacy = LEGACY_PLENARY_ATTENDANCE[meeting.number]
+            meeting.attendance = PastAttendance(onsite=legacy['onsite'], remote=legacy.get('remote'))
+    interims = data_for_meetings_overview(
+        Meeting.objects.filter(type_id='interim', date__lte=today).order_by('-date')
+    )
 
     return render(request, 'meeting/past.html', {
-                  'meetings': meetings,
+                  'plenaries': plenaries,
+                  'interims': interims,
                   })
 
 def upcoming(request):
