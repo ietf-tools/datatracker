@@ -160,7 +160,7 @@
                 )
 
   .agenda-table-search(
-    v-if='meetingEvents.length > 0'
+    v-if='agendaStore.hasEvents'
   )
     n-popover
       template(#trigger)
@@ -172,7 +172,7 @@
       span {{ agendaStore.searchVisible ? 'Close Search' : 'Search Events' }}
 
   .agenda-table-colorpicker(
-    v-if='meetingEvents.length > 0'
+    v-if='agendaStore.hasEvents'
   )
     n-popover
       template(#trigger)
