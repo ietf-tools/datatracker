@@ -88,6 +88,7 @@ from ietf.meeting.models import (
     TimeSlot,
     SlideSubmission,
     Attended,
+    MeetingExtResource,
 )
 from ietf.blobdb.models import ResolvedMaterial
 from ietf.blobdb.storage import BlobdbStorage, BlobFile
@@ -4859,7 +4860,14 @@ def past(request):
 
     plenaries = list(
         Meeting.objects.filter(type_id='ietf', date__lte=today)
-        .prefetch_related('meetinghosts')
+        .prefetch_related(
+            'meetinghosts',
+            Prefetch(
+                'meetingextresource_set',
+                queryset=MeetingExtResource.objects.filter(name_id='meeting_survey').order_by('pk'),
+                to_attr='surveys',
+            ),
+        )
         .order_by('-date')
     )
     # remote is None for meetings before remote attendance was reported

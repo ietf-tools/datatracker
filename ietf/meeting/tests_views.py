@@ -50,7 +50,7 @@ from ietf.meeting.helpers import can_approve_interim_request, can_request_interi
 from ietf.meeting.helpers import send_interim_approval_request, AgendaKeywordTagger
 from ietf.meeting.helpers import send_interim_meeting_cancellation_notice, send_interim_session_cancellation_notice
 from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates, update_important_dates
-from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission, SchedulingEvent, Room, Constraint, ConstraintName
+from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission, SchedulingEvent, Room, Constraint, ConstraintName, MeetingExtResource
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
 from ietf.meeting.utils import (
     condition_slide_order,
@@ -10405,6 +10405,90 @@ class MeetingHostTests(BaseMeetingTestCase):
 
 # Keep these settings consistent with the assumptions in these tests
 @override_settings(PROCEEDINGS_VERSION_CHANGES=[0, 97, 111])
+class MeetingExtResourceTests(TestCase):
+    def test_edit_requires_secretariat(self):
+        meeting = MeetingFactory(type_id='ietf', number='120')
+        url = urlreverse('ietf.meeting.views_proceedings.edit_meeting_extresources', kwargs=dict(num=meeting.number))
+        login_testing_unauthorized(self, 'secretary', url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+    def test_edit(self):
+        meeting = MeetingFactory(type_id='ietf', number='120')
+        MeetingExtResource.objects.create(
+            meeting=meeting, name_id='meeting_survey', value='https://example.com/old.pdf',
+        )
+        url = urlreverse('ietf.meeting.views_proceedings.edit_meeting_extresources', kwargs=dict(num=meeting.number))
+        self.client.login(username='secretary', password='secretary+password')
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('meeting_survey https://example.com/old.pdf', PyQuery(r.content)('textarea[name="resources"]').text())
+
+        r = self.client.post(url, {'resources': 'meeting_survey https://example.com/new.pdf (Survey results)'})
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.past'))
+        res = meeting.meetingextresource_set.get()
+        self.assertEqual(res.name_id, 'meeting_survey')
+        self.assertEqual(res.value, 'https://example.com/new.pdf')
+        self.assertEqual(res.display_name, 'Survey results')
+
+        # tags that do not apply to meetings are rejected, and nothing changes
+        r = self.client.post(url, {'resources': 'github_repo https://github.com/ietf-tools/datatracker'})
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('Bad tag', unicontent(r))
+        self.assertEqual(meeting.meetingextresource_set.get().value, 'https://example.com/new.pdf')
+
+        # values are validated against the tag type
+        r = self.client.post(url, {'resources': 'meeting_survey not-a-url'})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(meeting.meetingextresource_set.count(), 1)
+
+        r = self.client.post(url, {'resources': ''})
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.past'))
+        self.assertFalse(meeting.meetingextresource_set.exists())
+
+    def test_past_meetings_show_surveys(self):
+        meeting = MeetingFactory(type_id='ietf', number='120', date=date_today() - datetime.timedelta(days=30))
+        other = MeetingFactory(type_id='ietf', number='121', date=date_today() - datetime.timedelta(days=10))
+        MeetingExtResource.objects.create(meeting=meeting, name_id='meeting_survey', value='https://example.com/120.pdf')
+        MeetingExtResource.objects.create(
+            meeting=other, name_id='meeting_survey', value='https://example.com/121.pdf', display_name='Survey summary',
+        )
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(q('#plenary a.past-survey[href="https://example.com/120.pdf"]').text(), 'Survey results')
+        self.assertEqual(q('#plenary a.past-survey[href="https://example.com/121.pdf"]').text(), 'Survey summary')
+        self.assertEqual(len(q('#plenary a.past-survey')), 2)
+
+    @override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
+    def test_edit_clears_past_meetings_cache(self):
+        meeting = MeetingFactory(type_id='ietf', number='120', date=date_today() - datetime.timedelta(days=30))
+        past_url = urlreverse('ietf.meeting.views.past')
+        self.assertEqual(len(PyQuery(self.client.get(past_url).content)('a.past-survey')), 0)  # now cached
+
+        self.client.login(username='secretary', password='secretary+password')
+        self.assertEqual(len(PyQuery(self.client.get(past_url).content)('a.past-survey')), 0)  # secretariat copy cached
+        r = self.client.post(
+            urlreverse('ietf.meeting.views_proceedings.edit_meeting_extresources', kwargs=dict(num=meeting.number)),
+            {'resources': 'meeting_survey https://example.com/120.pdf'},
+        )
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(len(PyQuery(self.client.get(past_url).content)('a.past-survey')), 1)
+        self.client.logout()
+        self.assertEqual(len(PyQuery(self.client.get(past_url).content)('a.past-survey')), 1)
+
+    def test_past_meetings_edit_link(self):
+        meeting = MeetingFactory(type_id='ietf', number='120', date=date_today() - datetime.timedelta(days=30))
+        edit_url = urlreverse('ietf.meeting.views_proceedings.edit_meeting_extresources', kwargs=dict(num=meeting.number))
+        past_url = urlreverse('ietf.meeting.views.past')
+        r = self.client.get(past_url)
+        self.assertEqual(len(PyQuery(r.content)('a[href="%s"]' % edit_url)), 0)
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.get(past_url)
+        self.assertEqual(len(PyQuery(r.content)('a[href="%s"]' % edit_url)), 1)
+
+
 class ProceedingsTests(BaseMeetingTestCase):
     """Tests related to meeting proceedings display
 

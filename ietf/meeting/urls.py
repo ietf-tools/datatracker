@@ -110,6 +110,7 @@ type_ietf_only_patterns_id_optional = [
     url(r'^important-dates/$', views.important_dates),
     url(r'^important-dates.(?P<output_format>ics)$', views.important_dates),
     url(r'^proceedings/meetinghosts/edit/', views_proceedings.edit_meetinghosts),
+    url(r'^resources/edit/$', views_proceedings.edit_meeting_extresources),
     url(r'^proceedings/meetinghosts/(?P<host_id>\d+)/logo/$', views_proceedings.meetinghost_logo),
     url(r'^session/request/%(acronym)s/edit/$' % settings.URL_REGEXPS, views_session_request.edit_request),
     url(r'^session/request/%(acronym)s/view/$' % settings.URL_REGEXPS, views_session_request.view_request),

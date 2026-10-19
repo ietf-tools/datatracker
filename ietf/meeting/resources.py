@@ -16,7 +16,7 @@ from ietf.meeting.models import (Meeting, ResourceAssociation, Constraint, Room,
                                  FloorPlan,
                                  UrlResource, ImportantDate, SlideSubmission,
                                  SchedulingEvent,
-                                 BusinessConstraint, ProceedingsMaterial, MeetingHost,
+                                 BusinessConstraint, ProceedingsMaterial, MeetingHost, MeetingExtResource,
                                  Attended,
                                  Registration, RegistrationTicket)
 
@@ -489,3 +489,23 @@ class RegistrationTicketResource(ModelResource):
             "registration": ALL_WITH_RELATIONS,
         }
 api.meeting.register(RegistrationTicketResource())
+
+
+from ietf.name.resources import ExtResourceNameResource
+class MeetingExtResourceResource(ModelResource):
+    name             = ToOneField(ExtResourceNameResource, 'name')
+    meeting          = ToOneField(MeetingResource, 'meeting')
+    class Meta:
+        queryset = MeetingExtResource.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        resource_name = 'meetingextresource'
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "display_name": ALL,
+            "value": ALL,
+            "name": ALL_WITH_RELATIONS,
+            "meeting": ALL_WITH_RELATIONS,
+        }
+api.meeting.register(MeetingExtResourceResource())
