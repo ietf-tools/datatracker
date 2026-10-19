@@ -151,7 +151,7 @@
                           :class='`text-` + lnk.color'
                           ): i.bi(:class='`bi-` + lnk.icon')
                       span {{lnk.label}}
-                    
+
               .agenda-table-colorindicator(
                 v-if='agendaStore.colorPickerVisible || getEventColor(item.key)'
                 @click='agendaStore.colorPickerVisible && openColorPicker(item.key)'
@@ -199,14 +199,7 @@ import sortBy from 'lodash/sortBy'
 import reduce from 'lodash/reduce'
 import truncate from 'lodash/truncate'
 import xslugify from '../shared/xslugify'
-import {
-  NButton,
-  NCheckbox,
-  NCheckboxGroup,
-  NDropdown,
-  NPopover,
-  useMessage
-} from 'naive-ui'
+import { NButton, NCheckbox, NCheckboxGroup, NDropdown, NPopover, useMessage } from 'naive-ui'
 
 import AgendaDetailsModal from './AgendaDetailsModal.vue'
 
@@ -245,217 +238,129 @@ const meetingEvents = computed(() => {
   state.currentMinute
 
   const meetingNumberInt = parseInt(agendaStore.meeting.number)
-  const current = (agendaStore.nowDebugDiff ? DateTime.local().minus(agendaStore.nowDebugDiff) : DateTime.local()).setZone(agendaStore.timezone)
+  const current = (
+    agendaStore.nowDebugDiff ? DateTime.local().minus(agendaStore.nowDebugDiff) : DateTime.local()
+  ).setZone(agendaStore.timezone)
 
-  return reduce(sortBy(agendaStore.scheduleAdjusted, 'adjustedStartDate'), (acc, item) => {
-    const isLive = current >= item.adjustedStart && current < item.adjustedEnd
-    const itemTimeSlot = siteStore.viewport > 576 ?
-      `${item.adjustedStart.toFormat('HH:mm')} - ${item.adjustedEnd.toFormat('HH:mm')}` :
-      `${item.adjustedStart.toFormat('HH:mm')} ${item.adjustedEnd.toFormat('HH:mm')}`
+  return reduce(
+    sortBy(agendaStore.scheduleAdjusted, 'adjustedStartDate'),
+    (acc, item) => {
+      const isLive = current >= item.adjustedStart && current < item.adjustedEnd
+      const itemTimeSlot =
+        siteStore.viewport > 576
+          ? `${item.adjustedStart.toFormat('HH:mm')} - ${item.adjustedEnd.toFormat('HH:mm')}`
+          : `${item.adjustedStart.toFormat('HH:mm')} ${item.adjustedEnd.toFormat('HH:mm')}`
 
-    // -> Add date row
-    const itemDate = DateTime.fromISO(item.adjustedStartDate)
-    let willRenderDateRow = false
-    if (itemDate.toISODate() !== acc.lastDate) {
-      acc.result.push({
-        id: item.id,
-        slug: daySlug(item),
-        key: `day-${itemDate.toISODate()}`,
-        displayType: 'day',
-        date: itemDate.toLocaleString(DateTime.DATE_HUGE),
-        cssClasses: 'agenda-table-display-day'
-      })
-      willRenderDateRow = true
-    }
-    acc.lastDate = itemDate.toISODate()
-
-    // -> Add session header row
-    const typeName = `${item.type}-${item.slotName}`
-    if (item.type === 'regular' && (acc.lastTypeName !== typeName || willRenderDateRow)) {
-      acc.result.push({
-        key: `sesshd-${item.id}`,
-        displayType: 'session-head',
-        timeslot: itemTimeSlot,
-        name: `${item.adjustedStart.setZone(agendaStore.meeting.timezone).toFormat('cccc')} ${item.slotName}`,
-        cssClasses: 'agenda-table-display-session-head' + (isLive ? ' agenda-table-live' : '')
-      })
-    }
-    acc.lastTypeName = typeName
-
-    // 
-    /**
-     * -> Populate event menu items
-     * 
-     * links is an array of either,
-     * 1. { href: "...",        click: undefined, ...sharedProps }
-     * 2. { click: () => {...}, href: undefined,  ...sharedProps }
-     */
-    const links = []
-    const typesWithLinks = ['regular', 'plenary', 'other']
-    const purposesWithoutLinks = ['admin', 'closed_meeting', 'officehours', 'social']
-    if (item.flags.showAgenda || (typesWithLinks.includes(item.type) && !purposesWithoutLinks.includes(item.purpose))) {
-      if (item.flags.agenda) {
-        // -> Meeting Materials
-        links.push({
-          id: `btn-${item.id}-mat`,
-          label: 'Show meeting materials',
-          icon: 'collection',
-          href: undefined,
-          click: () => showMaterials(item.id),
-          color: 'darkgray'
+      // -> Add date row
+      const itemDate = DateTime.fromISO(item.adjustedStartDate)
+      let willRenderDateRow = false
+      if (itemDate.toISODate() !== acc.lastDate) {
+        acc.result.push({
+          id: item.id,
+          slug: daySlug(item),
+          key: `day-${itemDate.toISODate()}`,
+          displayType: 'day',
+          date: itemDate.toLocaleString(DateTime.DATE_HUGE),
+          cssClasses: 'agenda-table-display-day'
         })
-        links.push({
-          id: `lnk-${item.id}-tar`,
-          label: 'Download meeting materials as .tar archive',
-          icon: 'file-zip',
-          href: getUrl('meetingMaterialsTar', {
-            meetingNumber: agendaStore.meeting.number,
-            eventAcronym: item.acronym
-          }),
-          color: 'brown'
-        })
-        links.push({
-          id: `lnk-${item.id}-pdf`,
-          label: 'Download meeting materials as PDF file',
-          icon: 'file-pdf',
-          href: getUrl('meetingMaterialsPdf', {
-            meetingNumber: agendaStore.meeting.number,
-            eventAcronym: item.acronym
-          }),
-          color: 'red'
+        willRenderDateRow = true
+      }
+      acc.lastDate = itemDate.toISODate()
+
+      // -> Add session header row
+      const typeName = `${item.type}-${item.slotName}`
+      if (item.type === 'regular' && (acc.lastTypeName !== typeName || willRenderDateRow)) {
+        acc.result.push({
+          key: `sesshd-${item.id}`,
+          displayType: 'session-head',
+          timeslot: itemTimeSlot,
+          name: `${item.adjustedStart.setZone(agendaStore.meeting.timezone).toFormat('cccc')} ${item.slotName}`,
+          cssClasses: 'agenda-table-display-session-head' + (isLive ? ' agenda-table-live' : '')
         })
       }
-      // -> Point to Wiki for Hackathon sessions, HedgeDocs otherwise
-      if (item.groupAcronym === 'hackathon') {
-        links.push({
-          id: `lnk-${item.id}-wiki`,
-          label: 'Wiki',
-          icon: 'book',
-          href: getUrl('hackathonWiki', {
-            meetingNumber: agendaStore.meeting.number
-          }),
-          color: 'blue'
-        })
-      } else if (agendaStore.usesNotes) {
-        links.push({
-          id: `lnk-${item.id}-note`,
-          label: 'Notepad for note-takers',
-          icon: 'journal-text',
-          href: getUrl('meetingNotes', {
-            meetingNumber: agendaStore.meeting.number,
-            eventAcronym: item.type === 'plenary' ? 'plenary' : item.acronym
-          }),
-          color: 'blue'
-        })
-      }
-      if (item.adjustedEnd > current) {
-        // -> Pre/live event
-        // -> Chat room
-        links.push({
-          id: `lnk-${item.id}-room`,
-          label: `Chat room for ${item.acronym}`,
-          icon: 'chat-left-text',
-          href: item.links.chat,
-          color: 'green'
-        })
-        // -> Video stream
-        if (item.links.videoStream) {
+      acc.lastTypeName = typeName
+
+      //
+      /**
+       * -> Populate event menu items
+       *
+       * links is an array of either,
+       * 1. { href: "...",        click: undefined, ...sharedProps }
+       * 2. { click: () => {...}, href: undefined,  ...sharedProps }
+       */
+      const links = []
+      const typesWithLinks = ['regular', 'plenary', 'other']
+      const purposesWithoutLinks = ['admin', 'closed_meeting', 'officehours', 'social']
+      if (
+        item.flags.showAgenda ||
+        (typesWithLinks.includes(item.type) && !purposesWithoutLinks.includes(item.purpose))
+      ) {
+        if (item.flags.agenda) {
+          // -> Meeting Materials
           links.push({
-            id: `lnk-${item.id}-video`,
-            label: 'Full Client with Video',
-            icon: 'camera-video',
-            href: item.links.videoStream,
-            color: 'purple'
+            id: `btn-${item.id}-mat`,
+            label: 'Show meeting materials',
+            icon: 'collection',
+            href: undefined,
+            click: () => showMaterials(item.id),
+            color: 'darkgray'
+          })
+          links.push({
+            id: `lnk-${item.id}-tar`,
+            label: 'Download meeting materials as .tar archive',
+            icon: 'file-zip',
+            href: getUrl('meetingMaterialsTar', {
+              meetingNumber: agendaStore.meeting.number,
+              eventAcronym: item.acronym
+            }),
+            color: 'brown'
+          })
+          links.push({
+            id: `lnk-${item.id}-pdf`,
+            label: 'Download meeting materials as PDF file',
+            icon: 'file-pdf',
+            href: getUrl('meetingMaterialsPdf', {
+              meetingNumber: agendaStore.meeting.number,
+              eventAcronym: item.acronym
+            }),
+            color: 'red'
           })
         }
-        // -> Onsite tool
-        if (item.links.onsiteTool) {
+        // -> Point to Wiki for Hackathon sessions, HedgeDocs otherwise
+        if (item.groupAcronym === 'hackathon') {
           links.push({
-            id: `lnk-${item.id}-onsitetool`,
-            label: 'Onsite tool',
-            icon: 'telephone-outbound',
-            href: item.links.onsiteTool,
-            color: 'teal'
+            id: `lnk-${item.id}-wiki`,
+            label: 'Wiki',
+            icon: 'book',
+            href: getUrl('hackathonWiki', {
+              meetingNumber: agendaStore.meeting.number
+            }),
+            color: 'blue'
+          })
+        } else if (agendaStore.usesNotes) {
+          links.push({
+            id: `lnk-${item.id}-note`,
+            label: 'Notepad for note-takers',
+            icon: 'journal-text',
+            href: getUrl('meetingNotes', {
+              meetingNumber: agendaStore.meeting.number,
+              eventAcronym: item.type === 'plenary' ? 'plenary' : item.acronym
+            }),
+            color: 'blue'
           })
         }
-        // -> Audio stream
-        if (item.links.audioStream) {
+        if (item.adjustedEnd > current) {
+          // -> Pre/live event
+          // -> Chat room
           links.push({
-            id: `lnk-${item.id}-audio`,
-            label: 'Audio stream',
-            icon: 'headphones',
-            href: item.links.audioStream,
-            color: 'teal'
-          })
-        }
-        // -> Remote call-in
-        if (item.links.remoteCallIn) {
-          links.push({
-            id: `lnk-${item.id}-remotecallin`,
-            label: 'Online conference',
-            icon: 'people',
-            href: item.links.remoteCallIn,
-            color: 'teal'
-          })
-        }
-      } else {
-        // -> Post event
-        if (meetingNumberInt >= 60) {
-          // -> Chat logs
-          links.push({
-            id: `lnk-${item.id}-logs`,
-            label: `Chat logs for ${item.acronym}`,
+            id: `lnk-${item.id}-room`,
+            label: `Chat room for ${item.acronym}`,
             icon: 'chat-left-text',
-            href: item.links.chatArchive,
+            href: item.links.chat,
             color: 'green'
           })
-        }
-        if (meetingNumberInt >= 80) {
-          // -> Recordings
-          for (const rec of item.links.recordings) {
-            if (rec.url.indexOf('audio') > 0) {
-              // -> Audio
-              links.push({
-                id: `lnk-${item.id}-audio-${rec.id}`,
-                label: isMobile.value ? truncate(rec.title, 30) : rec.title,
-                icon: 'soundwave',
-                href: rec.url,
-                color: 'teal'
-              })
-            } else if (rec.url.indexOf('youtu') > 0) {
-              // -> Youtube
-              links.push({
-                id: `lnk-${item.id}-youtube-${rec.id}`,
-                label: isMobile.value ? truncate(rec.title, 30) : rec.title,
-                icon: 'youtube',
-                href: rec.url,
-                color: 'red'
-              })
-            } else {
-              // -> Others
-              links.push({
-                id: `lnk-${item.id}-video-${rec.id}`,
-                label: isMobile.value ? truncate(rec.title, 30) : rec.title,
-                icon: 'file-play',
-                href: rec.url,
-                color: 'purple'
-              })
-            }
-          }
+          // -> Video stream
           if (item.links.videoStream) {
-            links.push({
-              id: `lnk-${item.id}-rec`,
-              label: 'Session recording',
-              icon: 'film',
-              href: getUrl('meetingMeetechoRecordings', {
-                meetingNumber: agendaStore.meeting.number,
-                eventAcronym: item.acronym.toUpperCase()
-              }),
-              color: 'purple'
-            })
-          }
-          // -> Keep showing video client / on-site tool for Plenary until end of day, in case it goes over the planned time range
-          if (item.type === 'plenary' && item.adjustedEnd.day === current.day) {
             links.push({
               id: `lnk-${item.id}-video`,
               label: 'Full Client with Video',
@@ -463,6 +368,9 @@ const meetingEvents = computed(() => {
               href: item.links.videoStream,
               color: 'purple'
             })
+          }
+          // -> Onsite tool
+          if (item.links.onsiteTool) {
             links.push({
               id: `lnk-${item.id}-onsitetool`,
               label: 'Onsite tool',
@@ -471,86 +379,181 @@ const meetingEvents = computed(() => {
               color: 'teal'
             })
           }
+          // -> Audio stream
+          if (item.links.audioStream) {
+            links.push({
+              id: `lnk-${item.id}-audio`,
+              label: 'Audio stream',
+              icon: 'headphones',
+              href: item.links.audioStream,
+              color: 'teal'
+            })
+          }
+          // -> Remote call-in
+          if (item.links.remoteCallIn) {
+            links.push({
+              id: `lnk-${item.id}-remotecallin`,
+              label: 'Online conference',
+              icon: 'people',
+              href: item.links.remoteCallIn,
+              color: 'teal'
+            })
+          }
+        } else {
+          // -> Post event
+          if (meetingNumberInt >= 60) {
+            // -> Chat logs
+            links.push({
+              id: `lnk-${item.id}-logs`,
+              label: `Chat logs for ${item.acronym}`,
+              icon: 'chat-left-text',
+              href: item.links.chatArchive,
+              color: 'green'
+            })
+          }
+          if (meetingNumberInt >= 80) {
+            // -> Recordings
+            for (const rec of item.links.recordings) {
+              if (rec.url.indexOf('audio') > 0) {
+                // -> Audio
+                links.push({
+                  id: `lnk-${item.id}-audio-${rec.id}`,
+                  label: isMobile.value ? truncate(rec.title, 30) : rec.title,
+                  icon: 'soundwave',
+                  href: rec.url,
+                  color: 'teal'
+                })
+              } else if (rec.url.indexOf('youtu') > 0) {
+                // -> Youtube
+                links.push({
+                  id: `lnk-${item.id}-youtube-${rec.id}`,
+                  label: isMobile.value ? truncate(rec.title, 30) : rec.title,
+                  icon: 'youtube',
+                  href: rec.url,
+                  color: 'red'
+                })
+              } else {
+                // -> Others
+                links.push({
+                  id: `lnk-${item.id}-video-${rec.id}`,
+                  label: isMobile.value ? truncate(rec.title, 30) : rec.title,
+                  icon: 'file-play',
+                  href: rec.url,
+                  color: 'purple'
+                })
+              }
+            }
+            if (item.links.videoStream) {
+              links.push({
+                id: `lnk-${item.id}-rec`,
+                label: 'Session recording',
+                icon: 'film',
+                href: getUrl('meetingMeetechoRecordings', {
+                  meetingNumber: agendaStore.meeting.number,
+                  eventAcronym: item.acronym.toUpperCase()
+                }),
+                color: 'purple'
+              })
+            }
+            // -> Keep showing video client / on-site tool for Plenary until end of day, in case it goes over the planned time range
+            if (item.type === 'plenary' && item.adjustedEnd.day === current.day) {
+              links.push({
+                id: `lnk-${item.id}-video`,
+                label: 'Full Client with Video',
+                icon: 'camera-video',
+                href: item.links.videoStream,
+                color: 'purple'
+              })
+              links.push({
+                id: `lnk-${item.id}-onsitetool`,
+                label: 'Onsite tool',
+                icon: 'telephone-outbound',
+                href: item.links.onsiteTool,
+                color: 'teal'
+              })
+            }
+          }
         }
       }
-    }
-    // Add Calendar item for all events that has a calendar link
-    if (item.adjustedEnd > current && item.links.calendar) {
-      links.push({
-        id: `lnk-${item.id}-calendar`,
-        label: 'Calendar (.ics) entry for this session',
-        icon: 'calendar-check',
-        href: item.links.calendar,
-        color: 'pink'
+      // Add Calendar item for all events that has a calendar link
+      if (item.adjustedEnd > current && item.links.calendar) {
+        links.push({
+          id: `lnk-${item.id}-calendar`,
+          label: 'Calendar (.ics) entry for this session',
+          icon: 'calendar-check',
+          href: item.links.calendar,
+          color: 'pink'
+        })
+      }
+
+      // Event icon
+      let icon = null
+      switch (item.type) {
+        case 'break':
+          icon = 'bi-cup-straw'
+          break
+        case 'plenary':
+          icon = 'bi-flower3 bi-green'
+          break
+        case 'other':
+          if (item.name.toLowerCase().indexOf('office hours') >= 0) {
+            icon = 'bi-building'
+          } else if (item.groupAcronym === 'hackathon') {
+            icon = 'bi-command bi-pink'
+          }
+          break
+      }
+
+      // -> Add event item
+      acc.result.push({
+        key: item.id,
+        acronym: item.acronym,
+        cssClasses: [
+          `agenda-table-display-event`,
+          `agenda-table-status-${item.status}`,
+          `agenda-table-type-${item.type}`,
+          item.note ? 'agenda-table-has-note' : '',
+          isLive ? 'agenda-table-live' : ''
+        ].join(' '),
+        agenda: item.agenda,
+        displayType: 'event',
+        end: item.adjustedEnd,
+        flags: item.flags,
+        groupAcronym: item.groupParent?.acronym,
+        groupName: item.groupName,
+        // groupParentDescription: item.groupParent?.description,
+        // groupParentName: item.groupParent?.name,
+        icon,
+        isBoF: item.isBoF,
+        isProposed: item.isProposed,
+        isSessionEvent: item.type === 'regular',
+        links,
+        location: item.location,
+        name: item.name,
+        note: item.note,
+        room: item.room,
+        sessionName: item.sessionName,
+        start: item.adjustedStart,
+        status: item.status,
+        timeslot: itemTimeSlot,
+        type: item.type
       })
+
+      return acc
+    },
+    {
+      lastDate: null,
+      lastTypeName: null,
+      result: []
     }
-
-    // Event icon
-    let icon = null
-    switch (item.type) {
-      case 'break':
-        icon = 'bi-cup-straw'
-        break
-      case 'plenary':
-        icon = 'bi-flower3 bi-green'
-        break
-      case 'other':
-        if (item.name.toLowerCase().indexOf('office hours') >= 0) {
-          icon = 'bi-building'
-        } else if (item.groupAcronym === 'hackathon') {
-          icon = 'bi-command bi-pink'
-        }
-        break
-    }
-
-    // -> Add event item
-    acc.result.push({
-      key: item.id,
-      acronym: item.acronym,
-      cssClasses: [
-        `agenda-table-display-event`,
-        `agenda-table-status-${item.status}`,
-        `agenda-table-type-${item.type}`,
-        item.note ? 'agenda-table-has-note' : '',
-        isLive ? 'agenda-table-live' : ''
-      ].join(' '),
-      agenda: item.agenda,
-      displayType: 'event',
-      end: item.adjustedEnd,
-      flags: item.flags,
-      groupAcronym: item.groupParent?.acronym,
-      groupName: item.groupName,
-      // groupParentDescription: item.groupParent?.description,
-      // groupParentName: item.groupParent?.name,
-      icon,
-      isBoF: item.isBoF,
-      isProposed: item.isProposed,
-      isSessionEvent: item.type === 'regular',
-      links,
-      location: item.location,
-      name: item.name,
-      note: item.note,
-      room: item.room,
-      sessionName: item.sessionName,
-      start: item.adjustedStart,
-      status: item.status,
-      timeslot: itemTimeSlot,
-      type: item.type
-    })
-
-    return acc
-  }, {
-    lastDate: null,
-    lastTypeName: null,
-    result: []
-  }).result
+  ).result
 })
 
 const pickedEvents = computed({
-  get () {
+  get() {
     return agendaStore.pickedEvents
   },
-  set (newValue) {
+  set(newValue) {
     agendaStore.$patch({
       pickedEvents: newValue
     })
@@ -563,21 +566,21 @@ const isMobile = computed(() => {
 
 // METHODS
 
-function toggleSearch () {
+function toggleSearch() {
   agendaStore.$patch({
     searchText: '',
     searchVisible: !agendaStore.searchVisible
   })
 }
 
-function toggleColorPicker () {
+function toggleColorPicker() {
   state.selectedColorPicker = null
   agendaStore.$patch({
     colorPickerVisible: !agendaStore.colorPickerVisible
   })
 }
 
-function goToSessionLink (lnkKey, lnk) {
+function goToSessionLink(lnkKey, lnk) {
   if (lnk.href) {
     window.location.assign(lnk.href)
   } else {
@@ -585,16 +588,16 @@ function goToSessionLink (lnkKey, lnk) {
   }
 }
 
-function showMaterials (eventId) {
+function showMaterials(eventId) {
   state.eventDetails = find(agendaStore.scheduleAdjusted, ['id', eventId])
   state.showEventDetails = true
 }
 
-function openColorPicker (itemKey) {
-  state.selectedColorPicker = (state.selectedColorPicker === itemKey) ? null : itemKey
+function openColorPicker(itemKey) {
+  state.selectedColorPicker = state.selectedColorPicker === itemKey ? null : itemKey
 }
 
-function setEventColor (itemKey, colorIdx) {
+function setEventColor(itemKey, colorIdx) {
   agendaStore.$patch({
     colorAssignments: {
       ...agendaStore.colorAssignments,
@@ -605,7 +608,7 @@ function setEventColor (itemKey, colorIdx) {
   agendaStore.persistMeetingPreferences()
 }
 
-function getEventColor (itemKey) {
+function getEventColor(itemKey) {
   const clIdx = agendaStore.colorAssignments[`${agendaStore.meeting.number}-${itemKey}`]
   if (clIdx || clIdx === 0) {
     return agendaStore.colors[clIdx]?.hex
@@ -614,11 +617,11 @@ function getEventColor (itemKey) {
   }
 }
 
-function renderLinkIcon (opt) {
+function renderLinkIcon(opt) {
   return h('i', { class: `bi bi-${opt.icon} text-${opt.color}` })
 }
 
-function renderLink (opt) {
+function renderLink(opt) {
   if (opt.click) {
     return h('button', { type: 'button', class: 'overflow-button', onClick: opt.click }, opt.label)
   }
@@ -626,7 +629,7 @@ function renderLink (opt) {
   return h('a', { href: opt.href, target: '_blank' }, opt.label)
 }
 
-function recalculateRedLine () {
+function recalculateRedLine() {
   state.currentMinute = DateTime.local().minute
   const currentEventId = agendaStore.findCurrentEventId()
 
@@ -644,7 +647,7 @@ function recalculateRedLine () {
   if (!window.location.hash) {
     return
   }
-  if (!(window.location.hash === "#now" || window.location.hash.startsWith(`#${daySlugPrefix}`))) {
+  if (!(window.location.hash === '#now' || window.location.hash.startsWith(`#${daySlugPrefix}`))) {
     return
   }
   const unsubscribe = agendaStore.$subscribe((_mutation, agendaStoreState) => {
@@ -652,14 +655,14 @@ function recalculateRedLine () {
       return
     }
     unsubscribe() // we only need to scroll once, so unsubscribe from future updates
-    if (window.location.hash === "#now") {
+    if (window.location.hash === '#now') {
       const nowEventId = agendaStore.findNowEvent()
       if (nowEventId) {
         document.getElementById(`agenda-rowid-${nowEventId}`)?.scrollIntoView(true)
       } else {
         message.warning('There is no event happening right now or in the future.')
       }
-    } else if(window.location.hash.startsWith(`#${daySlugPrefix}`)) {
+    } else if (window.location.hash.startsWith(`#${daySlugPrefix}`)) {
       document.getElementById(window.location.hash.substring(1))?.scrollIntoView(true)
     }
   })
@@ -678,13 +681,12 @@ onMounted(() => {
 onBeforeUnmount(() => {
   clearInterval(redhandScheduler)
 })
-
 </script>
 
 <style lang="scss">
-@import "bootstrap/scss/functions";
-@import "bootstrap/scss/variables";
-@import "../shared/breakpoints";
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import '../shared/breakpoints';
 
 .agenda-table {
   border: 1px solid $gray-600;
@@ -695,11 +697,11 @@ onBeforeUnmount(() => {
   &-redhand {
     position: absolute;
     top: 0;
-    content: "";
+    content: '';
     width: 100%;
     height: 2px;
-    background-color: #F00;
-    box-shadow: 0 0 5px 0 #F00;
+    background-color: #f00;
+    box-shadow: 0 0 5px 0 #f00;
     transition: top 1s ease;
 
     &::after {
@@ -709,8 +711,8 @@ onBeforeUnmount(() => {
       height: 0;
       border-top: 7px solid transparent;
       border-bottom: 7px solid transparent;
-      border-left: 7px solid #F00;
-      transform: translate(0,-6px);
+      border-left: 7px solid #f00;
+      transform: translate(0, -6px);
     }
   }
 
@@ -725,11 +727,11 @@ onBeforeUnmount(() => {
         width: 6px;
         height: calc(100% + 2px);
         left: -4px;
-        box-shadow: 0 0 10px 0 #F00;
+        box-shadow: 0 0 10px 0 #f00;
         top: -1px;
         bottom: 0;
-        background-color: #FFF;
-        border: 3px solid #F00;
+        background-color: #fff;
+        border: 3px solid #f00;
         border-bottom: 0;
         border-radius: 3px 3px 0 0;
       }
@@ -756,11 +758,11 @@ onBeforeUnmount(() => {
           width: 6px;
           height: 4px;
           left: -4px;
-          box-shadow: 0 0 10px 0 #F00;
+          box-shadow: 0 0 10px 0 #f00;
           top: -2px;
           bottom: 0;
-          background-color: #FFF;
-          border: 3px solid #F00;
+          background-color: #fff;
+          border: 3px solid #f00;
           border-top: 0;
           border-radius: 0 0 3px 3px;
         }
@@ -770,7 +772,7 @@ onBeforeUnmount(() => {
 
   table {
     width: 100%;
-    border: 1px solid #FFF;
+    border: 1px solid #fff;
     border-radius: 5px;
     border-collapse: separate;
     border-spacing: 0;
@@ -790,12 +792,12 @@ onBeforeUnmount(() => {
     text-align: center;
     // background: linear-gradient(to bottom, desaturate($blue-700, 50%), desaturate($blue-500, 65%));
     background: linear-gradient(to bottom, lighten($gray-800, 8%), lighten($gray-600, 4%));
-    color: #FFF;
+    color: #fff;
     border: 0;
-    border-bottom: 1px solid #FFF;
+    border-bottom: 1px solid #fff;
     padding: 0 12px;
     font-weight: 600;
-    border-right: 1px solid #FFF;
+    border-right: 1px solid #fff;
 
     @at-root .theme-dark & {
       border-bottom-color: #000;
@@ -803,7 +805,7 @@ onBeforeUnmount(() => {
     }
 
     @media screen and (max-width: $bs5-break-md) {
-      font-size: .8em;
+      font-size: 0.8em;
       padding: 0 6px;
     }
 
@@ -855,7 +857,7 @@ onBeforeUnmount(() => {
   // }
 
   tr:nth-child(odd) td {
-    background-color: #F9F9F9;
+    background-color: #f9f9f9;
 
     @at-root .theme-dark & {
       background-color: darken($gray-900, 5%);
@@ -867,21 +869,21 @@ onBeforeUnmount(() => {
     height: 60px;
     padding: 0 12px;
     color: $gray-800;
-    text-shadow: 1px 1px 0 #FFF;
+    text-shadow: 1px 1px 0 #fff;
     font-weight: 600;
 
     @at-root .theme-dark & {
       background: linear-gradient(to bottom, $gray-900, $gray-800);
-      color: #FFF;
+      color: #fff;
       text-shadow: 1px 1px 0 $gray-900;
     }
   }
 
   &-display-day > td {
     background: linear-gradient(to top, lighten($gray-900, 8%), lighten($gray-700, 4%));
-    color: #FFF;
+    color: #fff;
     border: 0;
-    border-bottom: 1px solid #FFF;
+    border-bottom: 1px solid #fff;
     padding: 0 12px;
     font-weight: 600;
     scroll-margin-top: 25px;
@@ -891,7 +893,7 @@ onBeforeUnmount(() => {
     }
 
     @media screen and (max-width: $bs5-break-md) {
-      font-size: .9em;
+      font-size: 0.9em;
     }
   }
 
@@ -903,7 +905,11 @@ onBeforeUnmount(() => {
     color: #333;
 
     @at-root .theme-dark & {
-      background: linear-gradient(to top, lighten($blue-900, 8%), lighten($blue-900, 4%)) !important;
+      background: linear-gradient(
+        to top,
+        lighten($blue-900, 8%),
+        lighten($blue-900, 4%)
+      ) !important;
       color: $blue-100;
     }
 
@@ -930,7 +936,7 @@ onBeforeUnmount(() => {
       }
 
       @media screen and (max-width: $bs5-break-md) {
-        font-size: .9em;
+        font-size: 0.9em;
       }
     }
   }
@@ -941,7 +947,7 @@ onBeforeUnmount(() => {
     color: #333;
 
     @at-root .theme-dark & {
-      color: #FFF;
+      color: #fff;
     }
 
     @media screen and (max-width: $bs5-break-md) {
@@ -950,7 +956,7 @@ onBeforeUnmount(() => {
 
     &.agenda-table-cell-check {
       background-color: desaturate($blue-700, 50%) !important;
-      border-bottom: 1px solid #FFF;
+      border-bottom: 1px solid #fff;
       padding-bottom: 2px;
 
       @at-root .theme-dark & {
@@ -964,10 +970,14 @@ onBeforeUnmount(() => {
         background: linear-gradient(to right, lighten($blue-100, 8%), lighten($blue-100, 5%));
         border-right: 1px solid $blue-200 !important;
         color: $blue-200;
-        border-bottom: 1px solid #FFF;
+        border-bottom: 1px solid #fff;
 
         @at-root .theme-dark & {
-          background: linear-gradient(to right, rgba(lighten($blue-900, 8%), .1), lighten($blue-900, 5%));
+          background: linear-gradient(
+            to right,
+            rgba(lighten($blue-900, 8%), 0.1),
+            lighten($blue-900, 5%)
+          );
           border-right-color: $blue-700 !important;
           border-bottom-color: $blue-700;
           color: $blue-700;
@@ -986,21 +996,21 @@ onBeforeUnmount(() => {
       }
 
       @media screen and (max-width: 1300px) {
-        font-size: .85rem;
+        font-size: 0.85rem;
       }
 
       @media screen and (max-width: $bs5-break-md) {
         white-space: initial;
         word-wrap: break-word;
         max-width: 70px;
-        font-size: .7rem;
+        font-size: 0.7rem;
       }
 
       .badge {
         display: inline-flex;
         min-width: 20px;
         height: 16px;
-        font-size: .65em;
+        font-size: 0.65em;
         background-color: $yellow-200;
         border-bottom: 1px solid $yellow-500;
         border-right: 1px solid $yellow-500;
@@ -1034,7 +1044,7 @@ onBeforeUnmount(() => {
       }
 
       @media screen and (max-width: $bs5-break-md) {
-        font-size: .7rem;
+        font-size: 0.7rem;
         word-break: break-all;
       }
 
@@ -1042,7 +1052,7 @@ onBeforeUnmount(() => {
         display: inline-flex;
         min-width: 32px;
         height: 16px;
-        font-size: .65em;
+        font-size: 0.65em;
         font-weight: 600;
         background-color: $gray-300;
         border-bottom: 1px solid $gray-500;
@@ -1072,7 +1082,7 @@ onBeforeUnmount(() => {
 
     &.agenda-table-cell-name {
       @media screen and (max-width: $bs5-break-md) {
-        font-size: .7rem;
+        font-size: 0.7rem;
         word-break: break-word;
         word-wrap: break-word;
       }
@@ -1155,123 +1165,134 @@ onBeforeUnmount(() => {
       .agenda-table-cell-links-buttons {
         white-space: nowrap;
 
-        > a, > i, > button {
+        > a,
+        > i,
+        > button {
           margin-left: 3px;
           color: #666;
           cursor: pointer;
-          background-color: rgba(255, 255, 255, .8);
+          background-color: rgba(255, 255, 255, 0.8);
           border-radius: 3px;
           padding: 2px 3px;
-          transition: background-color .6s ease;
+          transition: background-color 0.6s ease;
 
           @at-root .theme-dark & {
-            background-color: rgba(0, 0, 0, .2);
+            background-color: rgba(0, 0, 0, 0.2);
             color: $gray-200;
           }
 
-          &:hover, &:focus {
+          &:hover,
+          &:focus {
             color: $blue;
           }
 
           &.text-red {
             color: $red-500;
-            background-color: rgba($red-500, .1);
+            background-color: rgba($red-500, 0.1);
 
             @at-root .theme-dark & {
               color: $red-400;
             }
 
-            &:hover, &:focus {
-              background-color: rgba($red-500, .3);
+            &:hover,
+            &:focus {
+              background-color: rgba($red-500, 0.3);
             }
           }
           &.text-brown {
             color: $orange-700;
-            background-color: rgba($orange-500, .1);
+            background-color: rgba($orange-500, 0.1);
 
             @at-root .theme-dark & {
               color: $orange-400;
             }
 
-            &:hover, &:focus {
-              background-color: rgba($orange-500, .3);
+            &:hover,
+            &:focus {
+              background-color: rgba($orange-500, 0.3);
             }
           }
           &.text-darkgray {
             color: $gray-900;
-            background-color: rgba($gray-700, .1);
+            background-color: rgba($gray-700, 0.1);
 
             @at-root .theme-dark & {
               color: $gray-100;
             }
 
-            &:hover, &:focus {
-              background-color: rgba($gray-700, .3);
+            &:hover,
+            &:focus {
+              background-color: rgba($gray-700, 0.3);
             }
           }
           &.text-blue {
             color: $blue-600;
-            background-color: rgba($blue-300, .1);
+            background-color: rgba($blue-300, 0.1);
 
             @at-root .theme-dark & {
               color: $blue-300;
             }
 
-            &:hover, &:focus {
-              background-color: rgba($blue-300, .3);
+            &:hover,
+            &:focus {
+              background-color: rgba($blue-300, 0.3);
             }
           }
           &.text-green {
             color: $green-500;
-            background-color: rgba($green-300, .1);
+            background-color: rgba($green-300, 0.1);
 
             @at-root .theme-dark & {
               color: $green-300;
             }
 
-            &:hover, &:focus {
-              background-color: rgba($green-300, .3);
+            &:hover,
+            &:focus {
+              background-color: rgba($green-300, 0.3);
             }
           }
           &.text-purple {
             color: $purple-500;
-            background-color: rgba($purple-400, .1);
+            background-color: rgba($purple-400, 0.1);
 
             @at-root .theme-dark & {
               color: $purple-300;
             }
 
-            &:hover, &:focus {
-              background-color: rgba($purple-400, .3);
+            &:hover,
+            &:focus {
+              background-color: rgba($purple-400, 0.3);
             }
           }
           &.text-pink {
             color: $pink-500;
-            background-color: rgba($pink-400, .1);
+            background-color: rgba($pink-400, 0.1);
 
             @at-root .theme-dark & {
               color: $pink-400;
             }
 
-            &:hover, &:focus {
-              background-color: rgba($pink-400, .3);
+            &:hover,
+            &:focus {
+              background-color: rgba($pink-400, 0.3);
             }
           }
           &.text-teal {
             color: $teal-600;
-            background-color: rgba($teal-400, .1);
+            background-color: rgba($teal-400, 0.1);
 
             @at-root .theme-dark & {
               color: $teal-300;
             }
 
-            &:hover, &:focus {
-              background-color: rgba($teal-400, .3);
+            &:hover,
+            &:focus {
+              background-color: rgba($teal-400, 0.3);
             }
           }
           &.no-meeting-materials {
             background-color: $red-400;
-            color: #FFF;
+            color: #fff;
 
             > i:nth-child(2) {
               color: $red-100;
@@ -1285,7 +1306,18 @@ onBeforeUnmount(() => {
   &-cell-ts {
     border-right: 1px solid $gray-300 !important;
     // -> Use system font instead of Inter so that all digits align vertically
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-family:
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      Oxygen,
+      Ubuntu,
+      Cantarell,
+      'Open Sans',
+      'Helvetica Neue',
+      sans-serif;
     font-size: 1rem;
     font-weight: 700;
     text-align: right;
@@ -1296,22 +1328,22 @@ onBeforeUnmount(() => {
     }
 
     @media screen and (max-width: 1300px) {
-      font-size: .9rem;
+      font-size: 0.9rem;
     }
 
     @media screen and (max-width: $bs5-break-md) {
-      font-size: .8rem;
+      font-size: 0.8rem;
     }
 
     @media screen and (max-width: $bs5-break-sm) {
       white-space: initial;
-      font-size: .7rem;
+      font-size: 0.7rem;
     }
   }
 
   // -> Row BG Color Highlight
   &-status-canceled td {
-    background-color: rgba($red, .15) !important;
+    background-color: rgba($red, 0.15) !important;
     border-top: 1px solid darken($red-100, 5%);
     border-bottom: 1px solid darken($red-100, 5%);
 
@@ -1334,16 +1366,17 @@ onBeforeUnmount(() => {
       text-decoration: line-through;
     }
 
-    &.agenda-table-cell-name > a, &.agenda-table-cell-name > span {
+    &.agenda-table-cell-name > a,
+    &.agenda-table-cell-name > span {
       text-decoration: line-through;
     }
 
     &:last-child {
-      background: linear-gradient(to right, rgba($red, 0), rgba($red, .5));
+      background: linear-gradient(to right, rgba($red, 0), rgba($red, 0.5));
     }
   }
   &-status-resched td {
-    background-color: rgba($orange, .15) !important;
+    background-color: rgba($orange, 0.15) !important;
     border-top: 1px solid darken($orange-100, 5%);
     border-bottom: 1px solid darken($orange-100, 5%);
 
@@ -1366,16 +1399,17 @@ onBeforeUnmount(() => {
       text-decoration: line-through;
     }
 
-    &.agenda-table-cell-name > a, &.agenda-table-cell-name > span {
+    &.agenda-table-cell-name > a,
+    &.agenda-table-cell-name > span {
       text-decoration: line-through;
     }
 
     &:last-child {
-      background: linear-gradient(to right, rgba($orange, 0), rgba($orange, .5));
+      background: linear-gradient(to right, rgba($orange, 0), rgba($orange, 0.5));
     }
   }
   &-type-break td {
-    background-color: rgba($indigo, .1) !important;
+    background-color: rgba($indigo, 0.1) !important;
     border-top: 1px solid darken($indigo-100, 5%);
     border-bottom: 1px solid darken($indigo-100, 5%);
 
@@ -1390,7 +1424,7 @@ onBeforeUnmount(() => {
       border-right: 1px solid $indigo-100 !important;
 
       @at-root .theme-dark & {
-        background: rgba($indigo, .1) !important;
+        background: rgba($indigo, 0.1) !important;
         color: $indigo-100;
         border-right-color: $indigo-500 !important;
       }
@@ -1413,18 +1447,18 @@ onBeforeUnmount(() => {
       background: linear-gradient(to right, lighten($indigo-100, 5%), lighten($indigo-100, 8%));
 
       @at-root .theme-dark & {
-        background: rgba($indigo, .1) !important;
+        background: rgba($indigo, 0.1) !important;
       }
     }
   }
   &-type-plenary td {
-    background-color: rgba($teal, .15) !important;
+    background-color: rgba($teal, 0.15) !important;
     color: $teal-800;
     border-top: 1px solid darken($teal-100, 5%);
     border-bottom: 1px solid darken($teal-100, 5%);
 
     @at-root .theme-dark & {
-      background: rgba($teal, .15) !important;
+      background: rgba($teal, 0.15) !important;
       color: $teal-100;
       border-bottom: 1px solid darken($teal-600, 5%);
     }
@@ -1455,7 +1489,7 @@ onBeforeUnmount(() => {
       background: linear-gradient(to right, rgba(lighten($teal, 54%), 0), lighten($teal, 54%));
 
       @at-root .theme-dark & {
-        background: rgba($teal, .15) !important;
+        background: rgba($teal, 0.15) !important;
       }
     }
   }
@@ -1466,7 +1500,7 @@ onBeforeUnmount(() => {
 
       .agenda-table-note {
         font-weight: 600;
-        font-size: .95em;
+        font-size: 0.95em;
         color: $pink-500;
       }
     }
@@ -1479,7 +1513,7 @@ onBeforeUnmount(() => {
       margin-bottom: 8px;
     }
     > span {
-      font-size: .9em;
+      font-size: 0.9em;
       display: -webkit-box;
       -webkit-line-clamp: 4;
       -webkit-box-orient: vertical;
@@ -1497,7 +1531,8 @@ onBeforeUnmount(() => {
     color: inherit;
     text-decoration: none;
 
-    &:hover, &:focus {
+    &:hover,
+    &:focus {
       color: $blue-500;
       text-decoration: underline;
     }
@@ -1509,20 +1544,21 @@ onBeforeUnmount(() => {
 
   // -> TOP RIGHT BUTTONS
 
-  &-search, &-colorpicker {
+  &-search,
+  &-colorpicker {
     position: absolute;
     display: flex;
     top: 15px;
     align-items: center;
 
     > button {
-      border: 1px solid #FFF;
+      border: 1px solid #fff;
       border-radius: 5px;
       background-color: lighten($gray-600, 6%);
       background-image: linear-gradient(to bottom, lighten($gray-600, 6%), darken($gray-600, 6%));
       height: 40px;
       width: 40px;
-      color: #FFF;
+      color: #fff;
 
       &:hover {
         background-color: lighten($gray-600, 8%);
@@ -1530,7 +1566,7 @@ onBeforeUnmount(() => {
       }
 
       &:focus {
-        box-shadow: 0 0 0 5px rgba(255,255,255,.1);
+        box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.1);
       }
 
       &:active {
@@ -1569,10 +1605,10 @@ onBeforeUnmount(() => {
     border-radius: 7px;
     animation: fadeInAnim 1s ease;
     box-shadow: 0 0 6px 1px currentcolor;
-    transition: all .4s ease;
+    transition: all 0.4s ease;
 
     &.is-active {
-      background-color: #FFF;
+      background-color: #fff;
       cursor: pointer;
 
       &:hover {
@@ -1594,7 +1630,7 @@ onBeforeUnmount(() => {
     background-color: currentColor;
     border-radius: 5px;
     margin-left: 3px;
-    animation: fadeInAnim .4s ease forwards;
+    animation: fadeInAnim 0.4s ease forwards;
     opacity: 0;
     cursor: pointer;
     display: flex;
@@ -1602,11 +1638,11 @@ onBeforeUnmount(() => {
     justify-content: center;
 
     > .bi {
-      color: #FFF;
+      color: #fff;
     }
 
     &:hover {
-      border: 3px solid rgba(0,0,0,.25);
+      border: 3px solid rgba(0, 0, 0, 0.25);
     }
 
     &:first-child {
@@ -1615,7 +1651,7 @@ onBeforeUnmount(() => {
 
     @for $i from 1 through 5 {
       &:nth-child(#{$i}) {
-        animation-delay: #{(5 - $i) * .05}s;
+        animation-delay: #{(5 - $i) * 0.05}s;
       }
     }
   }
@@ -1628,7 +1664,7 @@ onBeforeUnmount(() => {
   background: transparent;
 
   &:before {
-    content: "";
+    content: '';
     position: absolute;
     left: 0;
     right: 0;
@@ -1654,5 +1690,4 @@ onBeforeUnmount(() => {
     opacity: 1;
   }
 }
-
 </style>
