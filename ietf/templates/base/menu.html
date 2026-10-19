@@ -372,7 +372,7 @@
     </li>
     <li>
         <a class="dropdown-item{% if flavor != 'top' %} text-wrap{% endif %}"
-           href="https://www.ietf.org/how/meetings/past/">
+           href="{% url 'ietf.meeting.views.past' %}#plenary">
             Meeting proceedings
         </a>
     </li>

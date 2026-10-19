@@ -177,12 +177,17 @@
     <script>
         $(document)
             .ready(function () {
-                // Javascript to enable link to tab
-                var url = document.location.toString();
-                if (url.match('#')) {
-                    $('.nav-tabs button[data-bs-target="#' + url.split('#')[1] + '"]')
-                        .tab('show');
+                // Javascript to enable link to tab, including from the site menu
+                // while already on this page
+                function showTabForHash() {
+                    var url = document.location.toString();
+                    if (url.match('#')) {
+                        $('.nav-tabs button[data-bs-target="#' + url.split('#')[1] + '"]')
+                            .tab('show');
+                    }
                 }
+                showTabForHash();
+                $(window).on('hashchange', showTabForHash);
                 // Change hash for page-reload
                 $('.nav-tabs button')
                     .on('shown.bs.tab', function (e) {
