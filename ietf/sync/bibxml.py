@@ -251,13 +251,13 @@ def recreate_rfc_bibxml():
     """Creates BibXML for all RFCs."""
     for rfc in Document.objects.filter(type_id="rfc"):
         rfc_number = rfc.rfc_number
-        filename = f"bibxml/rfc{rfc_number}.xml"
+        filename = f"bibxml/reference.RFC.{rfc_number}.xml"
         bibxml = build_rfc_bibxml(rfc)
         save_bibxml(bibxml, filename, doc_name=rfc.name)
 
         # Save 4 digit RFCs for < 1000 for backward compatibility
         if rfc_number < 1000:
-            padded_filename = f"bibxml/rfc{rfc_number:04d}.xml"
+            padded_filename = f"bibxml/reference.RFC.{rfc_number:04d}.xml"
             padded_bibxml = build_rfc_bibxml(rfc, four_digits=True)
             save_bibxml(padded_bibxml, padded_filename, doc_name=rfc.name)
 
@@ -278,7 +278,7 @@ def recreate_rfcsubseries_bibxml():
     )
     for bcp_number in bcps:
         try:
-            filename = f"bibxml-rfcsubseries/bcp{bcp_number}.xml"
+            filename = f"bibxml-rfcsubseries/reference.BCP.{bcp_number}.xml"
             bibxml = build_bcp_bibxml(bcp_number)
             save_bibxml(bibxml, filename, doc_name=f"bcp{bcp_number}")
         except BibXMLException as e:
@@ -296,7 +296,7 @@ def recreate_rfcsubseries_bibxml():
         .values_list("number", flat=True)
     )
     for std_number in stds:
-        filename = f"bibxml-rfcsubseries/std{std_number}.xml"
+        filename = f"bibxml-rfcsubseries/reference.STD.{std_number}.xml"
         try:
             bibxml = build_std_bibxml(std_number)
             save_bibxml(bibxml, filename, doc_name=f"std{std_number}")
@@ -316,7 +316,7 @@ def recreate_rfcsubseries_bibxml():
         .values_list("number", flat=True)
     )
     for fyi_number in fyis:
-        filename = f"bibxml-rfcsubseries/fyi{fyi_number}.xml"
+        filename = f"bibxml-rfcsubseries/reference.FYI.{fyi_number}.xml"
         try:
             bibxml = build_fyi_bibxml(fyi_number)
             save_bibxml(bibxml, filename, doc_name=f"fyi{fyi_number}")
