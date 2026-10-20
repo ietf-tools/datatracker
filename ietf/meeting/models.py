@@ -1425,23 +1425,12 @@ class Session(models.Model):
             return url.format(session=self)
         return None
 
-    def _session_recording_url_label(self):
-        otsa = self.official_timeslotassignment()
-        if otsa is None:
-            return None
-        if self.meeting.type.slug == "ietf" and self.has_onsite_tool:
-            session_label = f"IETF{self.meeting.number}-{self.group.acronym.upper()}-{otsa.timeslot.time.strftime('%Y%m%d-%H%M')}"
-        else:
-            session_label = f"IETF-{self.group.acronym.upper()}-{otsa.timeslot.time.strftime('%Y%m%d-%H%M')}"
-        return session_label
-
     def session_recording_url(self):
+        """Meetecho player URL, or None until Meetecho has reported a recording name"""
         url_formatter = getattr(settings, "MEETECHO_SESSION_RECORDING_URL", "")
         url = None
         name = self.meetecho_recording_name
-        if name is None or name.strip() == "":
-            name = self._session_recording_url_label()
-        if url_formatter.strip() != "" and name is not None:
+        if url_formatter.strip() != "" and name is not None and name.strip() != "":
             url = url_formatter.format(session_label=name)
         return url
 
