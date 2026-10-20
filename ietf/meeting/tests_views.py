@@ -506,6 +506,7 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertEqual(len(links), 2)
         self.assertEqual(links[0].attrib['href'], str(session.notes_url()))
         self.assertEqual(links[1].attrib['href'], str(session.session_recording_url()))
+        self.assertIn("my_test_session_name", links[1].attrib["href"])
         self.assertEqual(
             [a.attrib["href"] for a in q('a[title="Session recording"]')],
             [str(session.session_recording_url())],
