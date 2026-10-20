@@ -255,7 +255,7 @@ def active_drafts_index_by_group(extra_values=()):
             d["initial_rev_time"] = time
 
     # add authors
-    for a in DocumentAuthor.objects.filter(document__states=active_state).order_by("order").select_related("person"):
+    for a in DocumentAuthor.objects.filter(document__states=active_state).order_by("order").select_related("document", "person"):
         d = docs_dict.get(a.document.name)
         if d:
             if "authors" not in d:

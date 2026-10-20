@@ -178,13 +178,13 @@
                         <td class="d-none d-lg-table-cell">{{ session.attendees|default:"" }}</td>
                         <td class="d-none d-lg-table-cell">{% person_link session.requested_by_person with_email=False %}</td>
                         <td class="d-none d-lg-table-cell">
-                            {% if session.group.ad_role %}
-                                {% person_link session.group.ad_role.person with_email=False %}
+                            {% if session.ad_role %}
+                                {% person_link session.ad_role.person with_email=False %}
                             {% endif %}
                         </td>
                         <td>
                             {% if session.requested_duration %}
-                                {% regroup session.constraints by name as prioritized_constraints %}
+                                {% regroup session.constraint_list by name as prioritized_constraints %}
                                 {% for grouped_constraint in prioritized_constraints %}
                                     <div{% if not forloop.last %} class="mb-2"{% endif %}>
                                     <b>{{ grouped_constraint.grouper.name }}:</b>
