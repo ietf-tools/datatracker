@@ -773,6 +773,7 @@ STORAGES: dict[str, Any] = {
 ARTIFACT_STORAGE_NAMES: list[str] = [
     "active-draft",
     "agenda",
+    "bibxml",
     "bibxml-ids",
     "bluesheets",
     "bofreq",
@@ -825,7 +826,7 @@ STORAGES.update(
         "reef_bucket": {
             "BACKEND": "django.core.files.storage.InMemoryStorage",
             "OPTIONS": {"location": "reef_bucket"},
-        }
+        },
     }
 )
 
