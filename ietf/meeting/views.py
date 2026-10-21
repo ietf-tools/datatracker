@@ -4883,17 +4883,28 @@ def past(request):
     '''List of past meetings'''
     today = timezone.now()
 
-    # past.html caches its content, so only build these when the template
-    # actually renders them
+    # past.html caches its content, so only build this when the template
+    # actually renders it
     plenaries = SimpleLazyObject(lambda: _past_plenaries(today))
+
+    return render(request, 'meeting/past.html', {
+                  'plenaries': plenaries,
+                  })
+
+
+def past_interims(request):
+    '''Table of past interim meetings, loaded into the past meetings page when its tab is shown'''
+    today = timezone.now()
+
+    # past_interims.html caches its content, so only build this when the
+    # template actually renders it
     interims = SimpleLazyObject(
         lambda: data_for_meetings_overview(
             Meeting.objects.filter(type_id='interim', date__lte=today).order_by('-date')
         )
     )
 
-    return render(request, 'meeting/past.html', {
-                  'plenaries': plenaries,
+    return render(request, 'meeting/past_interims.html', {
                   'interims': interims,
                   })
 
