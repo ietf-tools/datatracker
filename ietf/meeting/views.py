@@ -54,6 +54,7 @@ from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.encoding import force_str
+from django.utils.functional import SimpleLazyObject
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import RedirectView
@@ -4854,10 +4855,8 @@ LEGACY_PLENARY_HOSTS = {
 }
 
 
-def past(request):
-    '''List of past meetings'''
-    today = timezone.now()
-
+def _past_plenaries(today):
+    """Past IETF meetings with the extra data the past meetings page shows"""
     plenaries = list(
         Meeting.objects.filter(type_id='ietf', date__lte=today)
         .prefetch_related(
@@ -4885,8 +4884,20 @@ def past(request):
         if meeting.attendance is None and meeting.number in LEGACY_PLENARY_ATTENDANCE:
             legacy = LEGACY_PLENARY_ATTENDANCE[meeting.number]
             meeting.attendance = PastAttendance(onsite=legacy['onsite'], remote=legacy.get('remote'))
-    interims = data_for_meetings_overview(
-        Meeting.objects.filter(type_id='interim', date__lte=today).order_by('-date')
+    return plenaries
+
+
+def past(request):
+    '''List of past meetings'''
+    today = timezone.now()
+
+    # past.html caches its content, so only build these when the template
+    # actually renders them
+    plenaries = SimpleLazyObject(lambda: _past_plenaries(today))
+    interims = SimpleLazyObject(
+        lambda: data_for_meetings_overview(
+            Meeting.objects.filter(type_id='interim', date__lte=today).order_by('-date')
+        )
     )
 
     return render(request, 'meeting/past.html', {

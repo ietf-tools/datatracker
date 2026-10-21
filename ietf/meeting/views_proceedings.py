@@ -3,7 +3,7 @@ from pathlib import Path
 
 from django import forms
 from django.contrib import messages
-from django.core.cache import cache
+from django.core.cache import caches
 from django.core.cache.utils import make_template_fragment_key
 from django.http import Http404, FileResponse, HttpResponseBadRequest
 from django.shortcuts import render, redirect, get_object_or_404
@@ -322,7 +322,7 @@ def edit_meeting_extresources(request, num):
             if update_meeting_extresources(meeting, form.cleaned_data['resources']):
                 # past.html caches its content, varying on whether the viewer is secretariat
                 for is_secretariat in (True, False):
-                    cache.delete(make_template_fragment_key('pastmeetings-tabs', [is_secretariat]))
+                    caches['slowpages'].delete(make_template_fragment_key('pastmeetings-tabs', [is_secretariat]))
                 messages.success(request, "Meeting resources updated.")
             else:
                 messages.info(request, "No change in meeting resources.")

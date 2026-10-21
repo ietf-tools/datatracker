@@ -10461,7 +10461,25 @@ class MeetingExtResourceTests(TestCase):
         self.assertEqual(q('#plenary a.past-survey[href="https://example.com/121.pdf"]').text(), 'Survey summary')
         self.assertEqual(len(q('#plenary a.past-survey')), 2)
 
-    @override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
+    LOCMEM_CACHES = {
+        'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'default'},
+        'slowpages': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'slowpages'},
+    }
+
+    @override_settings(CACHES=LOCMEM_CACHES)
+    def test_past_meetings_cache_hit_skips_queries(self):
+        MeetingFactory(type_id='ietf', number='120', date=date_today() - datetime.timedelta(days=30))
+        past_url = urlreverse('ietf.meeting.views.past')
+        self.client.get(past_url)  # fills the cache
+        with CaptureQueriesContext(connection) as queries:
+            r = self.client.get(past_url)
+        self.assertContains(r, 'IETF 120')
+        self.assertFalse(
+            [q['sql'] for q in queries.captured_queries if 'meeting_meeting' in q['sql']],
+            'A cached past meetings page should not query meetings',
+        )
+
+    @override_settings(CACHES=LOCMEM_CACHES)
     def test_edit_clears_past_meetings_cache(self):
         meeting = MeetingFactory(type_id='ietf', number='120', date=date_today() - datetime.timedelta(days=30))
         past_url = urlreverse('ietf.meeting.views.past')

@@ -17,7 +17,7 @@
 {% block title %}Past Meetings{% endblock %}
 {% block content %}
     {% with is_secretariat=user|has_role:"Secretariat" %}
-    {% cache 3600 pastmeetings-tabs is_secretariat %}
+    {% cache 3600 pastmeetings-tabs is_secretariat using="slowpages" %}
     {% origin %}
     <h1>Past Meetings</h1>
     <ul class="nav nav-tabs my-3" role="tablist">
