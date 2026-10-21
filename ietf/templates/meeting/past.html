@@ -133,66 +133,19 @@
         <div class="tab-pane"
              id="interim"
              role="tabpanel"
-             aria-labelledby="interim-tab">
-            {% if interims %}
-                <table class="table table-sm table-striped tablesorter">
-                    <thead>
-                        <tr>
-                            <th scope="col" data-sort="date">Date</th>
-                            <th scope="col" data-sort="group">Group</th>
-                            <th scope="col" data-sort="name">Name</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for meeting in interims %}
-                            <tr>
-                                <td>{{ meeting.date }}</td>
-                                <td>
-                                    {% if meeting.responsible_group.type_id != 'ietf' %}
-                                        <a href="{% url 'ietf.group.views.group_home' meeting.responsible_group.acronym %}">
-                                            {{ meeting.responsible_group.acronym }}
-                                        </a>
-                                    {% else %}
-                                        {{ meeting.responsible_group.acronym }}
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <a href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.responsible_group.acronym %}">{{ meeting.number }}</a>
-                                    {% if meeting.interim_meeting_cancelled %}<span class="badge rounded-pill text-bg-warning">Cancelled</span>{% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% else %}
-                <h2>No past interim meetings</h2>
-            {% endif %}
+             aria-labelledby="interim-tab"
+             data-src="{% url 'ietf.meeting.views.past_interims' %}"
+             data-listjs-src="{% static 'ietf/js/list.js' %}">
+            <div class="past-interims-loading text-center my-5">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading interim meetings...</span>
+                </div>
+            </div>
         </div>
     </div>
     {% endcache %}
     {% endwith %}
 {% endblock %}
 {% block js %}
-    <script src="{% static "ietf/js/list.js" %}"></script>
-    <script>
-        $(document)
-            .ready(function () {
-                // Javascript to enable link to tab, including from the site menu
-                // while already on this page
-                function showTabForHash() {
-                    var url = document.location.toString();
-                    if (url.match('#')) {
-                        $('.nav-tabs button[data-bs-target="#' + url.split('#')[1] + '"]')
-                            .tab('show');
-                    }
-                }
-                showTabForHash();
-                $(window).on('hashchange', showTabForHash);
-                // Change hash for page-reload
-                $('.nav-tabs button')
-                    .on('shown.bs.tab', function (e) {
-                        history.replaceState(null, null, e.currentTarget.dataset.bsTarget);
-                    });
-            });
-    </script>
+    <script src="{% static 'ietf/js/past_meetings.js' %}"></script>
 {% endblock %}

@@ -5485,10 +5485,19 @@ class InterimTests(TestCase):
         )
         self.assertEqual(len(plenary('a[href="https://www.ietf.org/proceedings/05.pdf"]')), 1)
         self.assertIn('IETF %s' % old_ietf.number, plenary('h2').text())
-        # interim tab holds only interims, rendered as a table
-        self.assertEqual(len(interim('tbody tr')), 1)
-        self.assertIn('Cancelled', interim('tr>td>a+span').text())
-        self.assertNotIn('IETF %s' % ietf.meeting.number, interim.text())
+        # the interim tab is fetched when shown, not sent with the page
+        interims_url = urlreverse('ietf.meeting.views.past_interims')
+        self.assertEqual(interim.attr('data-src'), interims_url)
+        self.assertEqual(len(interim('table')), 0)
+
+        # the fetched interim table holds only interims
+        r = self.client.get(interims_url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('table.tablesorter tbody tr')), 1)
+        self.assertIn('Cancelled', q('tr>td>a+span').text())
+        self.assertNotIn('IETF %s' % ietf.meeting.number, q.text())
+        self.assertNotIn('<html', r.content.decode())  # a fragment, not a full page
 
     def test_past_attendance(self):
         today = date_today()
