@@ -198,7 +198,7 @@ class BibXmlTests(TestCase):
 
     def test_create_rfc_bibxml(self):
         bibxml = build_rfc_bibxml(self.rfc)
-        filename = f"bibxml/rfc{self.rfc.rfc_number}.xml"
+        filename = f"bibxml/reference.RFC.{self.rfc.rfc_number}.xml"
         save_bibxml(bibxml, filename, doc_name=self.rfc.name)
         bibxml = retrieve_bytes("bibxml", filename).decode("utf-8")
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
@@ -211,7 +211,7 @@ class BibXmlTests(TestCase):
     def test_create_bcp_bibxml(self):
         bcp_number = self.bcp.name[3:]
         bibxml = build_bcp_bibxml(bcp_number)
-        filename = f"bibxml-rfcsubseries/bcp{bcp_number}.xml"
+        filename = f"bibxml-rfcsubseries/reference.BCP.{bcp_number}.xml"
         save_bibxml(bibxml, filename, doc_name=self.bcp.name)
         bibxml = retrieve_bytes("bibxml", filename).decode("utf-8")
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
@@ -225,7 +225,7 @@ class BibXmlTests(TestCase):
     def test_create_std_bibxml(self):
         std_number = self.std.name[3:]
         bibxml = build_std_bibxml(std_number)
-        filename = f"bibxml-rfcsubseries/std{std_number}.xml"
+        filename = f"bibxml-rfcsubseries/reference.STD.{std_number}.xml"
         save_bibxml(bibxml, filename, doc_name=self.std.name)
         bibxml = retrieve_bytes("bibxml", filename).decode("utf-8")
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
@@ -239,7 +239,7 @@ class BibXmlTests(TestCase):
     def test_create_fyi_bibxml(self):
         fyi_number = self.fyi.name[3:]
         bibxml = build_fyi_bibxml(fyi_number)
-        filename = f"bibxml-rfcsubseries/fyi{fyi_number}.xml"
+        filename = f"bibxml-rfcsubseries/reference.FYI.{fyi_number}.xml"
         save_bibxml(bibxml, filename, doc_name=self.fyi.name)
         bibxml = retrieve_bytes("bibxml", filename).decode("utf-8")
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
@@ -252,7 +252,7 @@ class BibXmlTests(TestCase):
 
     def test_create_rfc_bibxml_padded_low_number(self):
         bibxml = build_rfc_bibxml(self.low_rfc, four_digits=True)
-        filename = f"bibxml/rfc{self.low_rfc.rfc_number:04d}.xml"
+        filename = f"bibxml/reference.RFC.{self.low_rfc.rfc_number:04d}.xml"
         save_bibxml(bibxml, filename, doc_name=self.low_rfc.name)
         bibxml = retrieve_bytes("bibxml", filename).decode("utf-8")
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
@@ -261,7 +261,7 @@ class BibXmlTests(TestCase):
     @patch("ietf.sync.bibxml.save_bibxml")
     def test_recreate_rfc_bibxml(self, mock_save_bibxml):
         recreate_rfc_bibxml()
-        filename = f"bibxml/rfc{self.rfc.rfc_number}.xml"
+        filename = f"bibxml/reference.RFC.{self.rfc.rfc_number}.xml"
         mock_save_bibxml.assert_any_call(ANY, filename, doc_name=self.rfc.name)
 
     @patch("ietf.sync.bibxml.save_bibxml")
@@ -272,8 +272,8 @@ class BibXmlTests(TestCase):
         recreate_rfc_bibxml()
         mock_save_bibxml.assert_has_calls(
             [
-                call(ANY, "bibxml/rfc822.xml", doc_name="rfc822"),
-                call(ANY, "bibxml/rfc0822.xml", doc_name="rfc822"),
+                call(ANY, "bibxml/reference.RFC.822.xml", doc_name="rfc822"),
+                call(ANY, "bibxml/reference.RFC.0822.xml", doc_name="rfc822"),
             ],
             any_order=True,
         )
@@ -283,14 +283,16 @@ class BibXmlTests(TestCase):
         # An RFC >= 1000 is written exactly once, with no extra padded form
         recreate_rfc_bibxml()
         written = [c.args[1] for c in mock_save_bibxml.call_args_list]
-        self.assertEqual(written.count(f"bibxml/rfc{self.rfc.rfc_number}.xml"), 1)
+        self.assertEqual(
+            written.count(f"bibxml/reference.RFC.{self.rfc.rfc_number}.xml"), 1
+        )
 
     @patch("ietf.sync.bibxml.save_bibxml")
     def test_recreate_rfcsubseries_bibxml(self, mock_save_bibxml):
         recreate_rfcsubseries_bibxml()
-        bcp_filename = f"bibxml-rfcsubseries/bcp{self.bcp.name[3:]}.xml"
-        std_filename = f"bibxml-rfcsubseries/std{self.std.name[3:]}.xml"
-        fyi_filename = f"bibxml-rfcsubseries/fyi{self.fyi.name[3:]}.xml"
+        bcp_filename = f"bibxml-rfcsubseries/reference.BCP.{self.bcp.name[3:]}.xml"
+        std_filename = f"bibxml-rfcsubseries/reference.STD.{self.std.name[3:]}.xml"
+        fyi_filename = f"bibxml-rfcsubseries/reference.FYI.{self.fyi.name[3:]}.xml"
         mock_save_bibxml.assert_has_calls(
             [
                 call(ANY, bcp_filename, doc_name=self.bcp.name),
