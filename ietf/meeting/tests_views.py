@@ -243,6 +243,20 @@ class AgendaApiTests(TestCase):
         self.assertEqual(extracted[pk_with['timeslot named']]['name'], '')
         self.assertEqual(extracted[pk_with['timeslot named']]['slotName'], 'Timeslot Name')
         self.assertEqual(extracted[pk_with['neither named']]['name'], '')
+
+    @override_settings(MEETECHO_SESSION_RECORDING_URL="http://player.example.com?{session_label}")
+    def test_agenda_extract_schedule_session_recording(self):
+        meeting = MeetingFactory(type_id='ietf')
+        unnamed = SessionFactory(meeting=meeting)
+        named = SessionFactory(meeting=meeting, meetecho_recording_name='IETF123-NAMED-20250101-0900')
+        processed = preprocess_assignments_for_agenda(meeting.schedule.assignments.all(), meeting)
+        AgendaKeywordTagger(assignments=processed).apply()
+        extracted = {item.session.pk: agenda_extract_schedule(item) for item in processed}
+        self.assertEqual(extracted[unnamed.pk]['links']['sessionRecording'], '')
+        self.assertEqual(
+            extracted[named.pk]['links']['sessionRecording'],
+            'http://player.example.com?IETF123-NAMED-20250101-0900',
+        )
         self.assertEqual(extracted[pk_with['neither named']]['slotName'], '')
 
 

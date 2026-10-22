@@ -442,15 +442,12 @@ const meetingEvents = computed(() => {
               })
             }
           }
-          if (item.links.videoStream) {
+          if (item.links.sessionRecording) {
             links.push({
               id: `lnk-${item.id}-rec`,
               label: 'Session recording',
               icon: 'film',
-              href: getUrl('meetingMeetechoRecordings', {
-                meetingNumber: agendaStore.meeting.number,
-                eventAcronym: item.acronym.toUpperCase()
-              }),
+              href: item.links.sessionRecording,
               color: 'purple'
             })
           }

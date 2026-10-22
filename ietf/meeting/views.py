@@ -2108,6 +2108,7 @@ def agenda_extract_schedule(item):
             "chatArchive" : item.session.chat_archive_url(),
             "recordings": list(map(agenda_extract_recording, item.session.recordings())),
             "videoStream": item.session.video_stream_url() or "",
+            "sessionRecording": item.session.session_recording_url() or "",
             "audioStream": item.session.audio_stream_url() or "",
             "webex": item.timeslot.location.webex_url() if item.timeslot.location else "",
             "onsiteTool": item.session.onsite_tool_url() or "",

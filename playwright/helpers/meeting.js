@@ -133,6 +133,7 @@ function createEvent ({
   hasAgenda = false,
   showAgenda = false,
   hasRecordings = false,
+  hasSessionRecording = hasRecordings,
   hasVideoStream = true,
   hasWebex = false,
   isBoF = false
@@ -194,6 +195,7 @@ function createEvent ({
           ]
         : [],
       videoStream: showAgenda && hasVideoStream ? 'https://meetings.conf.meetecho.com/ietf{meeting.number}/?group={group.acronym}&short={short}&item={order_number}' : null,
+      sessionRecording: hasSessionRecording ? `https://meetecho-player.ietf.org/playout/?session=IETF123-${group.keyword.toUpperCase()}-${startDateTime.toFormat('yyyyLLdd-HHmm')}` : '',
       audioStream: hasAgenda ? 'https://mp3.conf.meetecho.com/ietf123/{group.acronym}/{order_number}.m3u' : null,
       webex: hasWebex ? 'https://webex.com/123' : null,
       onsiteTool: hasAgenda ? 'https://meetings.conf.meetecho.com/onsite{meeting.number}/?group={group.acronym}&short={short}&item={order_number}' : null,
