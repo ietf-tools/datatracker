@@ -9,18 +9,12 @@ export default createRouter({
     {
       name: 'agenda',
       path: '/meeting/:meetingNumber(\\d+)?/agenda',
-      component: () => import('./agenda/Agenda.vue'),
-      meta: {
-        hideLeftMenu: true
-      }
+      component: () => import('./agenda/Agenda.vue')
     },
     {
       name: 'floor-plan',
       path: '/meeting/:meetingNumber(\\d+)?/floor-plan',
-      component: () => import('./agenda/FloorPlan.vue'),
-      meta: {
-        hideLeftMenu: true
-      }
+      component: () => import('./agenda/FloorPlan.vue')
     },
     // -> Redirects
     {

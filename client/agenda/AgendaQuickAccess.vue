@@ -166,7 +166,7 @@ const downloadIcsOptions = [
 // COMPUTED
 
 const shortMode = computed(() => {
-  return siteStore.viewport <= 1350
+  return agendaStore.containerWidth <= 1350
 })
 
 const icsLink = computed(() => {
@@ -222,14 +222,14 @@ function scrollToNow (ev) {
 .agenda-quickaccess {
   width: 300px;
 
-  @media screen and (max-width: 1350px) {
+  @container (max-width: 1350px) {
     width: 150px !important;
   }
 
   .card {
     width: 300px;
 
-    @media screen and (max-width: 1350px) {
+    @container (max-width: 1350px) {
       width: 150px;
 
       .card-body {
@@ -256,7 +256,7 @@ function scrollToNow (ev) {
       border-color: $secondary;
     }
 
-    @media screen and (max-width: 1350px) {
+    @container (max-width: 1350px) {
       flex-direction: column;
     }
 
@@ -281,7 +281,7 @@ function scrollToNow (ev) {
     button {
       flex: 1;
 
-      @media screen and (max-width: 1350px) {
+      @container (max-width: 1350px) {
         padding: 12px 0;
         margin-left: 0 !important;
         margin-right: 0 !important;

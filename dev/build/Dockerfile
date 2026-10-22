@@ -1,4 +1,4 @@
-FROM ghcr.io/ietf-tools/datatracker-app-base:20260915T2300
+FROM ghcr.io/ietf-tools/datatracker-app-base:20261022T1737
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive

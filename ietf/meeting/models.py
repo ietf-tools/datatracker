@@ -494,7 +494,7 @@ class Meeting(models.Model):
             all_group_pks.update(self.session_set.values_list('group__parent__pk', flat=True))
             all_group_pks.discard(None)
             self.cached_groups_at_the_time = find_history_replacements_active_at(
-                Group.objects.filter(pk__in=all_group_pks),
+                Group.objects.filter(pk__in=all_group_pks).select_related("parent"),
                 self.meeting_start(),
             )
         return self.cached_groups_at_the_time
@@ -1210,6 +1210,9 @@ class Session(models.Model):
             return [self]
 
     def order_in_meeting(self):
+        # The _order_in_meeting memo may also be set in bulk by
+        # ietf.meeting.helpers.set_order_in_meeting(), which repeats the filter and sort in
+        # all_meeting_sessions_for_group(). Keep the two in step.
         if not hasattr(self, '_order_in_meeting'):
             session_list = self.all_meeting_sessions_for_group()
             self._order_in_meeting = session_list.index(self) + 1 if self in session_list else 0
