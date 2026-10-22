@@ -1171,6 +1171,7 @@ def get_diff_revisions(request, name, doc):
                 "charter",
                 "conflict-review",
                 "status-change",
+                "minutes",
             ]
         ]
     )
@@ -1222,6 +1223,8 @@ def get_diff_revisions(request, name, doc):
         elif name.startswith("conflict-review"):
             url = find_history_active_at(e.doc, e.time).get_href()
         elif name.startswith("status-change"):
+            url = find_history_active_at(e.doc, e.time).get_href()
+        elif name.startswith("minutes"):
             url = find_history_active_at(e.doc, e.time).get_href()
         elif name.startswith("draft") or name.startswith("rfc"):
             # rfcdiff tool has special support for IDs
