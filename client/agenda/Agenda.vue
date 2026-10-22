@@ -391,12 +391,6 @@ function handleCurrentMeetingRedirect () {
   }
 }
 
-// --------------------------------------------------------------------
-// Track available agenda width
-// -> The optional left menu reduces the width available to the agenda, so
-//    this is measured from the agenda itself instead of using the window width.
-// --------------------------------------------------------------------
-
 const resizeObserver = new ResizeObserver(debounce(entries => {
   const entry = entries[entries.length - 1]
   agendaStore.$patch({ containerWidth: Math.round(entry.contentRect.width) })
@@ -491,7 +485,8 @@ onMounted(() => {
 
 // Make the agenda a size container so responsive rules measure the space
 // available to it (e.g. with the left menu open) instead of the window.
-// Note: this must not wrap position: fixed elements (e.g. the mobile bar).
+// Note: this must not wrap `position: fixed` elements (e.g. the mobile bar),
+// because layout containment would make them relative to this element.
 .agenda-row {
   container-type: inline-size;
 }

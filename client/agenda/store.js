@@ -26,7 +26,7 @@ export const useAgendaStore = defineStore('agenda', {
       { hex: '#20c997', tag: 'Attended' }
     ],
     colorAssignments: {},
-    containerWidth: Math.round(window.innerWidth),
+    containerWidth: Math.round(window.innerWidth), // placeholder until Agenda.vue measures the real width
     currentTab: 'agenda',
     dayIntersectId: '',
     defaultCalendarView: 'week',
