@@ -126,6 +126,9 @@ export const useAgendaStore = defineStore('agenda', {
         label: siteStore.viewport < 1350 ? DateTime.fromISO(s.adjustedStartDate).toFormat('ccc LLL d') : DateTime.fromISO(s.adjustedStartDate).toLocaleString(DateTime.DATE_HUGE)
       }))
     },
+    hasEvents (state) {
+      return state.schedule.some(s => s.type !== 'lead')
+    },
     isMeetingLive (state) {
       const current = (state.nowDebugDiff ? DateTime.local().minus(state.nowDebugDiff) : DateTime.local()).setZone(state.timezone)
       const isAfterStart = this.scheduleAdjusted.some(s => s.adjustedStart < current)
