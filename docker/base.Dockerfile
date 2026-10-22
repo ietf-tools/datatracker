@@ -179,6 +179,11 @@ RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
 RUN chmod +rx /usr/local/bin/wait-for
 
+# Update to a patched pip without trusting pip's own CA bundle. Can be dropped if the
+# Python 3.12 base image ships with a safe pip or when we move to Python 3.13+, which
+# already ships with 26.2.2
+RUN python3 -m pip install "pip @ https://files.pythonhosted.org/packages/3f/06/3e4420302363fbb71be3c7f35ce042f54bfca330e3e66b3a2e3c4cca579f/pip-26.2.2-py3-none-any.whl#sha256=fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70"
+
 # Create assets directory
 RUN mkdir -p /assets
 
