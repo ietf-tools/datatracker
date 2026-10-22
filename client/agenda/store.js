@@ -26,6 +26,7 @@ export const useAgendaStore = defineStore('agenda', {
       { hex: '#20c997', tag: 'Attended' }
     ],
     colorAssignments: {},
+    containerWidth: Math.round(window.innerWidth),
     currentTab: 'agenda',
     dayIntersectId: '',
     defaultCalendarView: 'week',
@@ -119,11 +120,10 @@ export const useAgendaStore = defineStore('agenda', {
       })
     },
     meetingDays () {
-      const siteStore = useSiteStore()
       return uniqBy(this.scheduleAdjusted, 'adjustedStartDate').sort().map(s => ({
         slug: daySlug(s),
         ts: s.adjustedStartDate,
-        label: siteStore.viewport < 1350 ? DateTime.fromISO(s.adjustedStartDate).toFormat('ccc LLL d') : DateTime.fromISO(s.adjustedStartDate).toLocaleString(DateTime.DATE_HUGE)
+        label: this.containerWidth < 1350 ? DateTime.fromISO(s.adjustedStartDate).toFormat('ccc LLL d') : DateTime.fromISO(s.adjustedStartDate).toLocaleString(DateTime.DATE_HUGE)
       }))
     },
     hasEvents (state) {

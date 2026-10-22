@@ -1,5 +1,5 @@
 <template lang="pug">
-.agenda-mobile-bar(v-if='siteStore.viewport < 990')
+.agenda-mobile-bar(v-if='agendaStore.containerWidth < 990')
   n-dropdown(
     :options='jumpToDayOptions'
     size='huge'
@@ -38,7 +38,6 @@ import {
 } from 'naive-ui'
 
 import { useAgendaStore } from './store'
-import { useSiteStore } from '../shared/store'
 import { getUrl } from '../shared/urls'
 
 // MESSAGE PROVIDER
@@ -48,7 +47,6 @@ const message = useMessage()
 // STORES
 
 const agendaStore = useAgendaStore()
-const siteStore = useSiteStore()
 
 // Meeting Days
 

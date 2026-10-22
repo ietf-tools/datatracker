@@ -36,7 +36,7 @@
           i.bi.bi-gear
         span Settings
 
-  .row
+  .row.agenda-row(ref='agendaRow')
     .col
 
       // ----------------------------
@@ -71,7 +71,7 @@
               :text-color='agendaStore.timezone === `UTC` ? `#FFF` : null'
               ) UTC
           n-select.agenda-timezone-ddn(
-            v-if='siteStore.viewport > 1250'
+            v-if='agendaStore.containerWidth > 1250'
             v-model:value='agendaStore.timezone'
             :options='timezones'
             placeholder='Select Time Zone'
@@ -151,7 +151,7 @@
     // -----------------------------------
     // -> Anchored Day Quick Access Menu
     // -----------------------------------
-    .col-auto.d-print-none(v-if='siteStore.viewport >= 990')
+    .col-auto.d-print-none(v-if='agendaStore.containerWidth >= 990')
       agenda-quick-access
 
   agenda-mobile-bar
@@ -186,7 +186,6 @@ import timezones from '../shared/timezones'
 import { initTour } from './tour'
 
 import { useAgendaStore } from './store'
-import { useSiteStore } from '../shared/store'
 
 import './agenda.scss'
 
@@ -197,7 +196,6 @@ const message = useMessage()
 // STORES
 
 const agendaStore = useAgendaStore()
-const siteStore = useSiteStore()
 
 // ROUTER
 
@@ -214,6 +212,7 @@ const state = reactive({
 // REFS
 
 const searchIpt = ref(null)
+const agendaRow = ref(null)
 
 // WATCHERS
 
@@ -379,7 +378,7 @@ function toggleShare () {
 
 function startTour () {
   const tour = initTour({
-    mobileMode: siteStore.viewport < 990,
+    mobileMode: agendaStore.containerWidth < 990,
     pickerMode: agendaStore.pickerMode
   })
   tour.start()
@@ -391,6 +390,22 @@ function handleCurrentMeetingRedirect () {
     router.replace({ params: { meetingNumber: agendaStore.meeting.number } })
   }
 }
+
+// --------------------------------------------------------------------
+// Track available agenda width
+// -> The optional left menu reduces the width available to the agenda, so
+//    this is measured from the agenda itself instead of using the window width.
+// --------------------------------------------------------------------
+
+const resizeObserver = new ResizeObserver(debounce(entries => {
+  const entry = entries[entries.length - 1]
+  agendaStore.$patch({ containerWidth: Math.round(entry.contentRect.width) })
+}, 100, { leading: true, trailing: true }))
+
+watch(agendaRow, (newEl, oldEl) => {
+  if (oldEl) { resizeObserver.unobserve(oldEl) }
+  if (newEl) { resizeObserver.observe(newEl) }
+})
 
 // --------------------------------------------------------------------
 // Handle day indicator / scroll
@@ -449,6 +464,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   scrollObserver.disconnect()
+  resizeObserver.disconnect()
 })
 
 // --------------------------------------------------------------------
@@ -472,6 +488,13 @@ onMounted(() => {
 @import "bootstrap/scss/functions";
 @import "bootstrap/scss/variables";
 @import "../shared/breakpoints";
+
+// Make the agenda a size container so responsive rules measure the space
+// available to it (e.g. with the left menu open) instead of the window.
+// Note: this must not wrap position: fixed elements (e.g. the mobile bar).
+.agenda-row {
+  container-type: inline-size;
+}
 
 .agenda {
   min-height: 500px;
