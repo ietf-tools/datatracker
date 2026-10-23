@@ -43,6 +43,7 @@ from django.urls import reverse as urlreverse
 import debug                            # pyflakes:ignore
 
 from ietf.admin.sites import AdminSite
+from ietf.message.models import Message as _ModelMessage  # name clashes with email lib
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
 from ietf.utils.draft import PlaintextDraft, getmeta
@@ -158,17 +159,82 @@ body
             getaddresses([decode_header_value(outbox[-1]["To"])]),
             [("José", "jose@example.com"), ("Zoë Smith", "zoe@example.com")],
         )
-        self.assertEqual(address_pairs(recv["From"].addresses), [("Ångström", "angstrom@ietf.org")])
+        self.assertEqual(
+            address_pairs(recv["From"].addresses), [("Ångström", "angstrom@ietf.org")]
+        )
         self.assertEqual(recv["Subject"], "café olé")
         self.assertEqual(recv["X-Note"], "café")
 
+    def test_send_mail_preformatted_non_ascii_override(self):
+        msg = (
+            "To: to@example.com\n"
+            "From: from@ietf.org\n"
+            "Cc: cc@example.com\n"
+            "Subject: subject\n"
+            "\n"
+            "body\n"
+        )
+        override = {
+            "To": "José <jose@example.com>",
+            "From": "Ångström <angstrom@ietf.org>",
+            "Cc": ["Øyvind <oyvind@example.com>", "Zoë <zoe@example.com>"],
+            "Bcc": "Þóra <thora@example.com>",
+            "Subject": "café olé",
+        }
+        send_mail_preformatted(None, msg, override=override)
+        sent = outbox[-1]
+        for header in ["To", "From", "Cc"]:
+            self.assertEqual(len(sent.get_all(header, [])), 1, header)
+        self.assertIsNone(sent["Bcc"])
+        recv = message_from_string(sent.as_string(), policy=policy.default)
+        self.assertEqual(
+            getaddresses([decode_header_value(sent["To"])]),
+            [("José", "jose@example.com")],
+        )
+        self.assertEqual(
+            address_pairs(recv["From"].addresses), [("Ångström", "angstrom@ietf.org")]
+        )
+        self.assertEqual(
+            address_pairs(recv["Cc"].addresses),
+            [("Øyvind", "oyvind@example.com"), ("Zoë", "zoe@example.com")],
+        )
+        self.assertEqual(recv["Subject"], "café olé")
+        saved = _ModelMessage.objects.order_by("-pk").first()
+        self.assertEqual(getaddresses([saved.bcc]), [("Þóra", "thora@example.com")])
+
+    def test_send_mail_preformatted_cc_once(self):
+        msg = (
+            "To: to@example.com\n"
+            "From: from@ietf.org\n"
+            "Cc: Øyvind <oyvind@example.com>\n"
+            "Subject: subject\n"
+            "\n"
+            "body\n"
+        )
+        send_mail_preformatted(None, msg)
+        sent = outbox[-1]
+        self.assertEqual(len(sent.get_all("Cc", [])), 1)
+        recv = message_from_string(sent.as_string(), policy=policy.default)
+        self.assertEqual(
+            address_pairs(recv["Cc"].addresses), [("Øyvind", "oyvind@example.com")]
+        )
+
     def test_parse_preformatted_non_ascii_body(self):
-        msg, _, _ = parse_preformatted("To: to@example.com\nFrom: from@ietf.org\nSubject: subject\n\nbody é\n")
+        msg, _, _ = parse_preformatted(
+            "To: to@example.com\nFrom: from@ietf.org\nSubject: subject\n\nbody é\n"
+        )
         self.assertEqual(msg.get_payload(decode=True), "body é\n".encode("utf-8"))
 
     def test_send_mail_text_on_behalf_of(self):
         extra = {"Reply-To": ["list@example.com"]}
-        send_mail_text(None, "to@example.com", "Zoë <zoe@example.com>", "subject", "body", extra=extra)
+        send_mail_text(
+            None,
+            "to@example.com",
+            "Zoë <zoe@example.com>",
+            "subject",
+            "body",
+            extra=extra,
+        )
         self.assertEqual(extra, {"Reply-To": ["list@example.com"]})
         recv = outbox[-1]
         self.assertEqual(

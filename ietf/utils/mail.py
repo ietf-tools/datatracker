@@ -530,7 +530,7 @@ def parse_preformatted(preformatted, extra=None, override=None):
     # Extract headers to be handled as "extra". Exclude those that send_mail_text
     # treats as parameters and the MIME headers that msg.set_content() set. Those are
     # left on msg to ensure that later processing of its payload is correct.
-    HEADERS_PASSED_AS_PARAMS = ["To", "From", "Subject", "Bcc"]
+    HEADERS_PASSED_AS_PARAMS = ["To", "From", "Cc", "Subject", "Bcc"]
     HEADERS_SET_BY_SET_CONTENT = [
         "MIME-Version",
         "Content-Type",
@@ -570,9 +570,9 @@ def send_mail_preformatted(request, preformatted, extra=None, override=None):
         override = {}
 
     (msg, extra, bcc) = parse_preformatted(preformatted, extra, override)
-    to, frm, subject = (None if msg[k] is None else str(msg[k]) for k in ["To", "From", "Subject"])
+    to, frm, cc, subject = (None if msg[k] is None else str(msg[k]) for k in ["To", "From", "Cc", "Subject"])
     txt = msg.get_payload()
-    send_mail_text(request, to, frm, subject, txt, extra=extra, bcc=None if bcc is None else str(bcc))
+    send_mail_text(request, to, frm, subject, txt, cc=cc, extra=extra, bcc=None if bcc is None else str(bcc))
     return msg
 
 def send_mail_message(request, message, extra=None):
