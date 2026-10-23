@@ -63,6 +63,7 @@ from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, s
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose, generate_agenda_data
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
+from ietf.utils.mime import get_mime_type
 from ietf.utils.test_runner import TestBlobstoreManager, disable_coverage
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.timezone import date_today, time_now
@@ -6826,7 +6827,29 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 302)
         bs_doc = Document.objects.get(pk=bs_doc.pk)
         self.assertEqual(bs_doc.rev,'01')
-    
+
+    def test_upload_bluesheets_csv_like_txt(self):
+        """A .txt bluesheet that libmagic identifies as text/csv is accepted.
+
+        Comma-separated attendee lines are sniffed as text/csv even though the
+        file has a .txt extension and is uploaded as text/plain.
+        """
+        session = SessionFactory(meeting__type_id='ietf')
+        url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
+        self.client.login(username="secretary", password="secretary+password")
+        test_content = (
+            'Alice Smith, Example Corp, alice@example.com\n'
+            'Bob Jones, Acme Inc, bob@example.org\n'
+            'Carol White, Foo Ltd, carol@example.net\n'
+        )
+        self.assertEqual(get_mime_type(test_content.encode())[0], 'text/csv')
+        test_file = StringIO(test_content)
+        test_file.name = "bluesheet.txt"
+        r = self.client.post(url,dict(file=test_file))
+        self.assertEqual(r.status_code, 302)
+        bs_doc = session.presentations.filter(document__type_id='bluesheets').first().document
+        self.assertEqual(retrieve_str("bluesheets", f"{bs_doc.name}-{bs_doc.rev}.txt"), test_content)
+
     def test_upload_bluesheets_chair_access(self):
         make_meeting_test_data()
         mars = Group.objects.get(acronym='mars')
