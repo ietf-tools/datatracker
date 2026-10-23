@@ -5490,6 +5490,22 @@ class InterimTests(TestCase):
         self.assertIn('Cancelled', interim('tr>td>a+span').text())
         self.assertNotIn('IETF %s' % ietf.meeting.number, interim.text())
 
+    @override_settings(CACHES={
+        'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'default'},
+        'slowpages': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'slowpages'},
+    })
+    def test_past_meetings_cache_hit_skips_queries(self):
+        MeetingFactory(type_id='ietf', number='120', date=date_today() - datetime.timedelta(days=30))
+        past_url = urlreverse('ietf.meeting.views.past')
+        self.client.get(past_url)  # fills the cache
+        with CaptureQueriesContext(connection) as queries:
+            r = self.client.get(past_url)
+        self.assertContains(r, 'IETF 120')
+        self.assertFalse(
+            [q['sql'] for q in queries.captured_queries if 'meeting_meeting' in q['sql']],
+            'A cached past meetings page should not query meetings',
+        )
+
     def test_past_attendance(self):
         today = date_today()
         legacy = MeetingFactory(type_id='ietf', number='5', date=today - datetime.timedelta(days=4000))

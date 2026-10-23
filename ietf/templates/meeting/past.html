@@ -16,7 +16,7 @@
 {% endblock %}
 {% block title %}Past Meetings{% endblock %}
 {% block content %}
-    {% cache 3600 pastmeetings-tabs %}
+    {% cache 3600 pastmeetings-tabs using="slowpages" %}
     {% origin %}
     <h1>Past Meetings</h1>
     <ul class="nav nav-tabs my-3" role="tablist">
