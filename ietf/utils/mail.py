@@ -18,7 +18,7 @@ from email.mime.message import MIMEMessage
 from email.mime.multipart import MIMEMultipart
 from email.header import Header, decode_header
 from email.headerregistry import Address
-from email import message_from_bytes, message_from_string, policy
+from email import message_from_string, policy
 from email import charset as Charset
 from typing import Optional
 
@@ -36,7 +36,6 @@ import debug                            # pyflakes:ignore
 
 import ietf
 from ietf.utils.log import log, assertion
-from ietf.utils.text import isascii
 
 from typing import Any, Dict, List  # pyflakes:ignore
 
@@ -501,33 +500,49 @@ def parse_preformatted(preformatted, extra=None, override=None):
     if override is None:
         override = {}
     assert isinstance(preformatted, str)
-    msg = message_from_bytes(preformatted.encode('utf-8'))
-    msg.set_charset('UTF-8')
+    msg = message_from_string(preformatted, policy=policy.default)
+    # The message is parsed from a str, so the payload is already the body text.
+    # get_content() would garble non-ASCII characters.
+    body = msg.get_payload()
+    msg.set_content(body, cte="7bit" if body.isascii() else "8bit")
+
+    ADDRESS_HEADERS = ["To", "From", "Cc", "Bcc"]
+    for key in ADDRESS_HEADERS:
+        values = msg.get_all(key, [])
+        if values:
+            del msg[key]
+            addresses = _parse_addresses(key, values)
+            if addresses:
+                msg[key] = addresses
 
     for k, v in override.items():
-        if k in msg:
-            del msg[k]
+        del msg[k]
+        if k.lower() in (key.lower() for key in ADDRESS_HEADERS):
+            v = _parse_addresses(k, [v] if isinstance(v, str) else v or [])
+        elif isinstance(v, list):
+            v = ', '.join(v)
         if v:
-            if isinstance(v, list):
-                msg[k] = ', '.join(v)
-            else:
-                msg[k] = v 
+            msg[k] = v
+
+    senders = msg["From"].addresses if "From" in msg else ()
+    assertion('len(senders) < 2', note=f'parse_preformatted is constructing a From with multiple values: {senders}')
 
     # Extract headers to be handled as "extra". Exclude those that send_mail_text
-    # treats as parameters or those that the msg.set_charset() call added. Those are
+    # treats as parameters and the MIME headers that msg.set_content() set. Those are
     # left on msg to ensure that later processing of its payload is correct.
     HEADERS_PASSED_AS_PARAMS = ["To", "From", "Subject", "Bcc"]
-    HEADERS_INJECTED_BY_SET_CHARSET = [
+    HEADERS_SET_BY_SET_CONTENT = [
         "MIME-Version",
         "Content-Type",
         "Content-Transfer-Encoding",
     ]
+    excluded = {key.lower() for key in HEADERS_PASSED_AS_PARAMS + HEADERS_SET_BY_SET_CONTENT}
+    headers = {}
+    for k, v in msg.items():
+        if k.lower() not in excluded:
+            headers.setdefault(k, []).append(str(v))
     extra = copy.deepcopy(extra)  # don't modify the caller's extra obj
-    headers = copy.copy(msg)  # don't modify the message
-    for key in HEADERS_PASSED_AS_PARAMS + HEADERS_INJECTED_BY_SET_CHARSET:
-        del headers[key]
-    for k in list(headers.keys()):
-        v = headers.get_all(k, [])
+    for k, v in headers.items():
         if k in extra:
             ev = extra[k]
             if not isinstance(ev, list):
@@ -535,25 +550,6 @@ def parse_preformatted(preformatted, extra=None, override=None):
             extra[k] = list(set(v + ev))
         else:
             extra[k] = v
-
-    # Handle non-ascii address names and some other fields
-    for key in ['To', 'From', 'Cc', 'Bcc']:
-        values = msg.get_all(key, [])
-        if values:
-            values = getaddresses(values)
-            if key=='From':
-                assertion('len(values)<2', note=f'parse_preformatted is constructing a From with multiple values: {values}')
-            del msg[key]
-            msg[key] = ',\n    '.join(formataddr(v) for v in values)
-    for key in ['Subject', ]:
-        values = msg.get_all(key)
-        if values:
-            del msg[key]
-            for v in values:
-                if isascii(v):
-                    msg[key] = v
-                else:
-                    msg[key] = Header(v, 'utf-8')
 
     # Remove Bcc from the msg, it is only used in the SMTP envelope
     bcc = msg['Bcc']
@@ -574,8 +570,9 @@ def send_mail_preformatted(request, preformatted, extra=None, override=None):
         override = {}
 
     (msg, extra, bcc) = parse_preformatted(preformatted, extra, override)
+    to, frm, subject = (None if msg[k] is None else str(msg[k]) for k in ["To", "From", "Subject"])
     txt = msg.get_payload()
-    send_mail_text(request, msg['To'], msg["From"], msg["Subject"], txt, extra=extra, bcc=bcc)
+    send_mail_text(request, to, frm, subject, txt, extra=extra, bcc=None if bcc is None else str(bcc))
     return msg
 
 def send_mail_message(request, message, extra=None):

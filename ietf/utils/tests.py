@@ -15,7 +15,9 @@ from unittest.mock import call, patch
 from pyquery import PyQuery
 from typing import Dict, List       # pyflakes:ignore
 
+from email import message_from_string, policy
 from email.headerregistry import Address
+from email.utils import getaddresses
 from email.message import Message
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
@@ -47,6 +49,7 @@ from ietf.utils.draft import PlaintextDraft, getmeta
 from ietf.utils.fields import SearchableField
 from ietf.utils.log import unreachable, assertion
 from ietf.utils.mail import (
+    parse_preformatted,
     send_mail_preformatted,
     send_mail_text,
     send_mail_mime,
@@ -138,6 +141,30 @@ body
         for header in ["MIME-Version", "Content-Type", "Content-Transfer-Encoding"]:
             self.assertEqual(len(recv.get_all(header, [])), 1, header)
         self.assertEqual(get_payload_text(recv), "body é\n")
+
+    def test_send_mail_preformatted_non_ascii(self):
+        msg = dedent("""\
+            To: =?utf-8?q?Jos=C3=A9?= <jose@example.com>, Zoë
+             Smith <zoe@example.com>
+            From: Ångström <angstrom@ietf.org>
+            Subject: café olé
+            X-Note: café
+
+            body é
+            """)
+        send_mail_preformatted(None, msg)
+        recv = message_from_string(outbox[-1].as_string(), policy=policy.default)
+        self.assertEqual(
+            getaddresses([decode_header_value(outbox[-1]["To"])]),
+            [("José", "jose@example.com"), ("Zoë Smith", "zoe@example.com")],
+        )
+        self.assertEqual(address_pairs(recv["From"].addresses), [("Ångström", "angstrom@ietf.org")])
+        self.assertEqual(recv["Subject"], "café olé")
+        self.assertEqual(recv["X-Note"], "café")
+
+    def test_parse_preformatted_non_ascii_body(self):
+        msg, _, _ = parse_preformatted("To: to@example.com\nFrom: from@ietf.org\nSubject: subject\n\nbody é\n")
+        self.assertEqual(msg.get_payload(decode=True), "body é\n".encode("utf-8"))
 
     def test_send_mail_text_on_behalf_of(self):
         extra = {"Reply-To": ["list@example.com"]}
