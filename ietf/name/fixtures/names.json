@@ -13744,6 +13744,16 @@
   },
   {
     "fields": {
+      "desc": "Results of the post-meeting survey",
+      "name": "Post-Meeting Survey Results",
+      "order": 5,
+      "used": true
+    },
+    "model": "name.proceedingsmaterialtypename",
+    "pk": "meeting_survey"
+  },
+  {
+    "fields": {
       "desc": "Social event",
       "name": "Social Event",
       "order": 2,

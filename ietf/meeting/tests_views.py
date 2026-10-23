@@ -30,6 +30,7 @@ from django.contrib.auth.models import User
 from django.core.serializers.json import DjangoJSONEncoder
 from django.test import Client, override_settings
 from django.test.utils import CaptureQueriesContext
+from django.core.cache import caches
 from django.db import connection
 from django.db.models import F, Max
 from django.http import QueryDict, FileResponse
@@ -5471,13 +5472,116 @@ class InterimTests(TestCase):
         last_week = today - datetime.timedelta(days=7)
         ietf = SessionFactory(meeting__type_id='ietf',meeting__date=last_week,group__state_id='active',group__parent=GroupFactory(state_id='active'))
         SessionFactory(meeting__type_id='interim',meeting__date=last_week,status_id='canceled',group__state_id='active',group__parent=GroupFactory(state_id='active'))
+        old_ietf = MeetingFactory(type_id='ietf', number='5', date=last_week - datetime.timedelta(days=365))
         url = urlreverse('ietf.meeting.views.past')
         r = self.client.get(url)
-        self.assertContains(r, 'IETF-%02d'%int(ietf.meeting.number))
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        #id="-%s" % interim.group.acronym
-        #self.assertIn('Cancelled', q('[id*="'+id+'"]').text())
+        plenary = q('#plenary')
+        interim = q('#interim')
+        self.assertIn('IETF %s' % ietf.meeting.number, plenary('h2').text())
+        self.assertEqual(
+            len(plenary('a[href="%s"]' % urlreverse('ietf.meeting.views.proceedings', kwargs=dict(num=ietf.meeting.number)))),
+            1,
+        )
+        self.assertEqual(len(plenary('a[href="https://www.ietf.org/proceedings/05.pdf"]')), 1)
+        self.assertIn('IETF %s' % old_ietf.number, plenary('h2').text())
+        # the interim tab is fetched when shown, not sent with the page
+        interims_url = urlreverse('ietf.meeting.views.past_interims')
+        self.assertEqual(interim.attr('data-src'), interims_url)
+        self.assertEqual(len(interim('table')), 0)
+
+        # the fetched interim table holds only interims
+        r = self.client.get(interims_url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('table.tablesorter tbody tr')), 1)
         self.assertIn('Cancelled', q('tr>td>a+span').text())
+        self.assertNotIn('IETF %s' % ietf.meeting.number, q.text())
+        self.assertNotIn('<html', r.content.decode())  # a fragment, not a full page
+
+    @override_settings(CACHES={
+        'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'default'},
+        'slowpages': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'slowpages'},
+    })
+    def test_past_meetings_cache_hit_skips_queries(self):
+        caches['slowpages'].clear()  # locmem caches outlive a test
+        MeetingFactory(type_id='ietf', number='120', date=date_today() - datetime.timedelta(days=30))
+        past_url = urlreverse('ietf.meeting.views.past')
+        self.client.get(past_url)  # fills the cache
+        with CaptureQueriesContext(connection) as queries:
+            r = self.client.get(past_url)
+        self.assertContains(r, 'IETF 120')
+        self.assertFalse(
+            [q['sql'] for q in queries.captured_queries if 'meeting_meeting' in q['sql']],
+            'A cached past meetings page should not query meetings',
+        )
+
+    def test_past_attendance(self):
+        today = date_today()
+        legacy = MeetingFactory(type_id='ietf', number='5', date=today - datetime.timedelta(days=4000))
+        legacy_hybrid = MeetingFactory(type_id='ietf', number='91', date=today - datetime.timedelta(days=3000))
+        legacy_online = MeetingFactory(type_id='ietf', number='108', date=today - datetime.timedelta(days=2000))
+        modern = MeetingFactory(type_id='ietf', number='120', date=today - datetime.timedelta(days=1000))
+        RegistrationFactory.create_batch(
+            3, meeting=modern, with_ticket={'attendance_type_id': 'onsite'}, attended=True,
+        )
+        RegistrationFactory.create_batch(
+            2, meeting=modern, with_ticket={'attendance_type_id': 'remote'}, attended=True,
+        )
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        def attendance_text(meeting):
+            entry = q('#plenary .past-plenary').filter(
+                lambda i, el: PyQuery(el)('h2').text() == 'IETF %s' % meeting.number
+            )
+            return ' '.join(entry('.past-attendance').text().split())
+
+        # before remote attendance was reported: a single figure, no onsite/online wording
+        self.assertEqual(attendance_text(legacy), '35 participants')
+        self.assertEqual(attendance_text(legacy_hybrid), '1109 onsite participants, 361 online participants')
+        self.assertEqual(attendance_text(legacy_online), '1102 online participants')
+        # registration data for modern meetings
+        self.assertEqual(attendance_text(modern), '3 onsite participants, 2 online participants')
+
+    def test_past_dates(self):
+        # dates come from the meeting's date and length
+        first = MeetingFactory(type_id='ietf', number='1', date=datetime.date(1986, 1, 16), days=2)
+        seoul = MeetingFactory(type_id='ietf', number='59', date=datetime.date(2004, 2, 29), days=5)
+        online = MeetingFactory(type_id='ietf', number='112', date=datetime.date(2021, 11, 8), days=5)
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        def date_text(meeting):
+            entry = q('#plenary .past-plenary').filter(
+                lambda i, el: PyQuery(el)('h2').text() == 'IETF %s' % meeting.number
+            )
+            return ' '.join(entry('.past-dates').text().split())
+
+        self.assertTrue(date_text(first).startswith('January 16-17, 1986'))
+        self.assertTrue(date_text(seoul).startswith('February 29 - March 4, 2004'))
+        self.assertTrue(date_text(online).startswith('November 8-12, 2021'))
+
+    def test_past_legacy_hosts(self):
+        today = date_today()
+        first = MeetingFactory(type_id='ietf', number='1', date=today - datetime.timedelta(days=4000))
+        no_host = MeetingFactory(type_id='ietf', number='35', date=today - datetime.timedelta(days=3000))
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        def entry(meeting):
+            return q('#plenary .past-plenary').filter(
+                lambda i, el: PyQuery(el)('h2').text() == 'IETF %s' % meeting.number
+            )
+
+        self.assertEqual(' '.join(entry(first)('.past-legacy-host').text().split()), 'Hosted by Linkabit')
+        self.assertEqual(len(entry(first)('img')), 0)
+        self.assertEqual(len(entry(no_host)('.past-legacy-host')), 0)
+        self.assertNotIn('Hosted by', entry(no_host).text())
 
     def do_upcoming_test(self, querystring=None, create_meeting=True):
         if create_meeting:
@@ -9945,6 +10049,37 @@ class MeetingHostTests(BaseMeetingTestCase):
             },
         )
 
+    def test_past_meetings_show_host_logos(self):
+        # use a meeting number with no LEGACY_PLENARY_HOSTS entry
+        host = MeetingHostFactory(
+            meeting__number='120',
+            meeting__date=date_today() - datetime.timedelta(days=30),
+        )
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        img = PyQuery(r.content)('#plenary .host-logo img')
+        self.assertEqual(len(img), 1)
+        self.assertEqual(
+            img.attr('src'),
+            urlreverse(
+                'ietf.meeting.views_proceedings.meetinghost_logo',
+                kwargs=dict(num=host.meeting.number, host_id=host.pk),
+            ),
+        )
+        self.assertEqual(img.attr('alt'), host.name)
+
+    def test_past_meetings_legacy_host_overrides_logos(self):
+        host = MeetingHostFactory(
+            meeting__number='96',
+            meeting__date=date_today() - datetime.timedelta(days=30),
+        )
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#plenary .host-logo img')), 0)
+        self.assertIn('Juniper Networks', q('#plenary .past-legacy-host').text())
+        self.assertNotIn(host.name, q('#plenary').text())
+
     def test_permissions(self):
         meeting = MeetingFactory(type_id='ietf')
         url = urlreverse('ietf.meeting.views_proceedings.edit_meetinghosts', kwargs=dict(num=meeting.number))
@@ -10864,6 +10999,61 @@ class ProceedingsTests(BaseMeetingTestCase):
                     {'file': fd, 'external_url': ''},
                 )
                 self.assertEqual(mat.get_href(), f'{mat.document.name}:00')
+
+    def test_past_meetings_show_survey_materials(self):
+        survey = ProceedingsMaterialTypeName.objects.get(slug='meeting_survey')
+        modern = ProceedingsMaterialFactory(
+            meeting__number='123', meeting__date=date_today() - datetime.timedelta(days=30), type=survey,
+        )
+        old = ProceedingsMaterialFactory(
+            meeting__number='90', meeting__date=date_today() - datetime.timedelta(days=4000), type=survey,
+        )
+        ProceedingsMaterialFactory(
+            meeting__number='110', meeting__date=date_today() - datetime.timedelta(days=2000), type=survey,
+            document__states=[('procmaterials', 'removed')],
+        )
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        links = [a.attrib['href'] for a in PyQuery(r.content)('#plenary a.past-survey')]
+        self.assertCountEqual(links, [modern.get_href(), old.get_href()])
+        # meetings before 97 link to materials without a revision
+        self.assertTrue(old.get_href().endswith('/meeting/90/materials/proceedings-90-meeting-survey'))
+
+    def test_past_meetings_edit_materials_link(self):
+        meeting = self._procmat_test_meeting()
+        past_url = urlreverse('ietf.meeting.views.past')
+        details_url = urlreverse('ietf.meeting.views_proceedings.material_details', kwargs=dict(num=meeting.number))
+        self.assertEqual(len(PyQuery(self.client.get(past_url).content)('a[href="%s"]' % details_url)), 0)
+        self.client.login(username='secretary', password='secretary+password')
+        self.assertEqual(len(PyQuery(self.client.get(past_url).content)('a[href="%s"]' % details_url)), 1)
+
+    @override_settings(CACHES={
+        'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'default'},
+        'slowpages': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'slowpages'},
+    })
+    def test_survey_changes_clear_past_meetings_cache(self):
+        caches['slowpages'].clear()  # locmem caches outlive a test
+        meeting = self._procmat_test_meeting()
+        survey = ProceedingsMaterialTypeName.objects.get(slug='meeting_survey')
+        past_url = urlreverse('ietf.meeting.views.past')
+
+        def survey_links():
+            return len(PyQuery(self.client.get(past_url).content)('#plenary a.past-survey'))
+
+        self.assertEqual(survey_links(), 0)  # caches the public page
+        with self._proceedings_file() as fd:
+            self.upload_proceedings_material_test(meeting, survey, {'file': fd, 'external_url': ''})
+        self.client.logout()
+        self.assertEqual(survey_links(), 1)
+
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.post(urlreverse(
+            'ietf.meeting.views_proceedings.remove_material',
+            kwargs=dict(num=meeting.number, material_type=survey.slug),
+        ))
+        self.assertEqual(r.status_code, 302)
+        self.client.logout()
+        self.assertEqual(survey_links(), 0)
 
     def test_add_proceedings_material_doc_invalid_ext(self):
         """Upload proceedings materials document with disallowed extension"""
