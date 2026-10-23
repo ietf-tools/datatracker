@@ -3665,6 +3665,41 @@ class MaterialsTests(TestCase):
         # minutes are not RFCXML, so iddiff must diff them as raw text
         self.assertEqual(q("form.diff-form input[name=raw]").attr("value"), "1")
 
+    def test_minutes_diff_revisions_without_history(self):
+        """A rev with a DocEvent but no DocHistory must not break the history tab
+        
+        Some minutes are in this situation, probably where revision history was fixed up
+        but the individual docs were not available.
+        """
+        now = timezone.now()
+        minutes = DocumentFactory(
+            type_id="minutes",
+            rev="01",
+            group=self.doc.group,
+            name=f"minutes-111-{self.doc.group.acronym}",
+            uploaded_filename=f"minutes-111-{self.doc.group.acronym}-01.md",
+            time=now,
+        )
+        minutes.docevent_set.all().delete()  # discard the factory-generated event
+        # rev 00 predates the Document and has no DocHistory
+        NewRevisionDocEventFactory(
+            doc=minutes, rev="00", time=now - datetime.timedelta(days=1)
+        )
+        NewRevisionDocEventFactory(doc=minutes, rev="01", time=now)
+        SessionPresentationFactory(
+            session=self.doc.session_set.first(), document=minutes
+        )
+        self.assertFalse(minutes.history_set.exists())
+        diff_revisions = get_diff_revisions(HttpRequest(), minutes.name, minutes)
+        self.assertEqual([t[1] for t in diff_revisions], ["01"])
+        self.assertTrue(diff_revisions[0][3].endswith(f"/materials/{minutes.name}-01"))
+        url = urlreverse(
+            "ietf.doc.views_doc.document_history", kwargs=dict(name=minutes.name)
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+
 class Idnits2SupportTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['DERIVED_DIR']
 
