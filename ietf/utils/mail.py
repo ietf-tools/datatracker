@@ -17,7 +17,8 @@ from email.mime.text import MIMEText
 from email.mime.message import MIMEMessage
 from email.mime.multipart import MIMEMultipart
 from email.header import Header, decode_header
-from email import message_from_bytes, message_from_string
+from email.headerregistry import Address
+from email import message_from_bytes, message_from_string, policy
 from email import charset as Charset
 from typing import Optional
 
@@ -279,29 +280,64 @@ def excludeaddrs(addrlist, exlist):
     filtered = type(addrlist)(filtered)
     return filtered
 
-def condition_message(to, frm, subject, msg, cc, extra):
+def _parse_addresses(name, values):
+    """Parse address header values into a list of Address objects
+
+    values is a list or tuple whose items are header value strings,
+    (display_name, addr) tuples, or Address objects.
+    """
+    if not isinstance(values, (list, tuple)):
+        raise TypeError(f"values must be a list or tuple, not {type(values).__name__}")
+    addresses = []
+    for value in values:
+        if isinstance(value, Address):
+            addresses.append(value)
+            continue
+        if isinstance(value, tuple):
+            value = formataddr(value)
+        if value:
+            # header_factory rejects line breaks, so unfold first
+            value = re.sub(r"\r?\n(?=[ \t])", "", value)
+            addresses.extend(policy.default.header_factory(name, value).addresses)
+    return addresses
+
+def _format_addresses(name, addresses):
+    """Encode a list of Address objects as a header value for a compat32 message
+
+    compat32 messages don't encode structured headers, so each non-ASCII display
+    name is encoded here as its own chunk, leaving the addresses readable.
+    """
+    header = Header(header_name=name)
+    last = len(addresses) - 1
+    for i, address in enumerate(addresses):
+        separator = "," if i < last else ""
+        if address.display_name.isascii():
+            header.append(formataddr((address.display_name, address.addr_spec)) + separator, "us-ascii")
+        else:
+            header.append(address.display_name, "utf-8")
+            header.append(f"<{address.addr_spec}>{separator}", "us-ascii")
+    return header.encode()
+
+def _condition_message(to, frm, subject, msg, cc, extra):
+    """Set From, To, Cc, Subject, tracker headers, extra and Message-ID on msg in place
+
+    A From outside UTILS_FROM_EMAIL_DOMAINS is sent on behalf of the sender, who
+    is added to Reply-To.
+    """
     if extra:
         assertion("isinstance(extra, (dict, Message))")
         if 'Reply-To' in extra:
             assertion("isinstance(extra['Reply-To'], list)")
+    extra = {k: list(v) if isinstance(v, list) else v for k, v in (extra or {}).items()}
 
-    if isinstance(frm, tuple):
-        frm = formataddr(frm)
     if isinstance(to, list) or isinstance(to, tuple):
-        to = ", ".join([isinstance(addr, tuple) and formataddr(addr) or addr for addr in to if addr])
-    if isinstance(cc, list) or isinstance(cc, tuple):
-        cc = ", ".join([isinstance(addr, tuple) and formataddr(addr) or addr for addr in cc if addr])
+        to = ", ".join(formataddr(addr) if isinstance(addr, tuple) else addr for addr in to if addr)
     if frm:
-        n, a = parseaddr(frm)
-        domain = a.rsplit('@', 1)[-1]
-        if not domain in settings.UTILS_FROM_EMAIL_DOMAINS:
-            extra = extra or {}
-            if 'Reply-To' in extra:
-                extra['Reply-To'].append(frm)
-            else:
-                extra['Reply-To'] = [frm, ]
-            frm = on_behalf_of(frm)
-        msg['From'] = frm
+        senders = _parse_addresses("From", [frm])
+        if senders and senders[0].domain not in settings.UTILS_FROM_EMAIL_DOMAINS:
+            extra.setdefault("Reply-To", []).append(senders[0])
+            senders = _parse_addresses("From", [on_behalf_of((senders[0].display_name, senders[0].addr_spec))])
+        msg['From'] = _format_addresses("From", senders)
 
     # The following is a hack to avoid an issue with how the email module (as of version 4.0.3)
     # breaks lines when encoding header fields with anything other than the us-ascii codec.
@@ -322,21 +358,23 @@ def condition_message(to, frm, subject, msg, cc, extra):
     # Code downstream from this assumes that the msg['To'] will return a string, not an instance
     msg['To'] = to_str
 
-    if cc:
-        msg['Cc'] = cc
+    cc_addresses = _parse_addresses("Cc", [cc] if isinstance(cc, str) else cc or [])
+    if cc_addresses:
+        msg['Cc'] = _format_addresses("Cc", cc_addresses)
     msg['Subject'] = subject
     msg['X-Test-IDTracker'] = (settings.SERVER_MODE == 'production') and 'no' or 'yes'
     msg['X-IETF-IDTracker'] = ietf.__version__
     msg['Auto-Submitted'] = "auto-generated"
     msg['Precedence'] = "bulk"
-    if extra:
-        for k, v in extra.items():
-            if v:
+    for k, v in extra.items():
+        if v:
+            if k == 'Reply-To':
+                v = _parse_addresses(k, v)
+                assertion('len(set(map(str, v))) == len(v)')
+                msg[k] = _format_addresses(k, v)
+            else:
                 assertion('len(list(set(v))) == len(v)')
-                try:
-                    msg[k] = ", ".join(v)
-                except Exception:
-                    raise
+                msg[k] = ", ".join(v)
     if not msg.get('Message-ID', None):
         msg['Message-ID'] = make_msgid()
 
@@ -402,7 +440,7 @@ def save_as_message(request, msg, bcc):
 def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=False, bcc=None, copy=True, save=True):
     """Send MIME message with content already filled in."""
     
-    condition_message(to, frm, subject, msg, cc, extra)
+    _condition_message(to, frm, subject, msg, cc, extra)
 
     # start debug server with python -m smtpd -n -c DebuggingServer localhost:2025
     # then put USING_DEBUG_EMAIL_SERVER=True and EMAIL_HOST='localhost'

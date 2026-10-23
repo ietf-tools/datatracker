@@ -15,6 +15,7 @@ from unittest.mock import call, patch
 from pyquery import PyQuery
 from typing import Dict, List       # pyflakes:ignore
 
+from email.headerregistry import Address
 from email.message import Message
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
@@ -53,6 +54,8 @@ from ietf.utils.mail import (
     get_payload_text,
     decode_header_value,
     show_that_mail_was_sent,
+    _format_addresses,
+    _parse_addresses,
 )
 from ietf.utils.test_runner import (
     get_template_paths,
@@ -62,6 +65,11 @@ from ietf.utils.test_runner import (
 from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.timezone import timezone_not_near_midnight
 from ietf.utils.xmldraft import XMLDraft, InvalidMetadataError, capture_xml2rfc_output
+
+
+def address_pairs(addresses):
+    return [(a.display_name, a.addr_spec) for a in addresses]
+
 
 class SendingMail(TestCase):
 
@@ -131,8 +139,69 @@ body
             self.assertEqual(len(recv.get_all(header, [])), 1, header)
         self.assertEqual(get_payload_text(recv), "body é\n")
 
+    def test_send_mail_text_on_behalf_of(self):
+        extra = {"Reply-To": ["list@example.com"]}
+        send_mail_text(None, "to@example.com", "Zoë <zoe@example.com>", "subject", "body", extra=extra)
+        self.assertEqual(extra, {"Reply-To": ["list@example.com"]})
+        recv = outbox[-1]
+        self.assertEqual(
+            address_pairs(_parse_addresses("From", [recv["From"]])),
+            [("Zoë via Datatracker", settings.UTILS_ON_BEHALF_EMAIL)],
+        )
+        self.assertEqual(
+            address_pairs(_parse_addresses("Reply-To", [recv["Reply-To"]])),
+            [("", "list@example.com"), ("Zoë", "zoe@example.com")],
+        )
+
 
 class MailUtilsTests(TestCase):
+    def test_parse_addresses(self):
+        self.assertEqual(
+            address_pairs(_parse_addresses("To", ["a@example.com, B <b@example.com>"])),
+            [("", "a@example.com"), ("B", "b@example.com")],
+        )
+        values = ["a@example.com", ("B", "b@example.com"), Address("C", addr_spec="c@example.com"), ""]
+        expected = [("", "a@example.com"), ("B", "b@example.com"), ("C", "c@example.com")]
+        self.assertEqual(address_pairs(_parse_addresses("To", values)), expected)
+        self.assertEqual(address_pairs(_parse_addresses("To", tuple(values))), expected)
+        for value in ["a@example.com", Address("C", addr_spec="c@example.com"), None]:
+            with self.assertRaises(TypeError):
+                _parse_addresses("To", value)
+        self.assertEqual(
+            address_pairs(_parse_addresses("To", ['"Doe, John" <j@example.com>'])),
+            [("Doe, John", "j@example.com")],
+        )
+        self.assertEqual(
+            address_pairs(_parse_addresses("To", ["=?utf-8?b?Sm9zw6k=?= <jose@example.com>"])),
+            [("José", "jose@example.com")],
+        )
+        self.assertEqual(
+            address_pairs(_parse_addresses("To", ["a@example.com,\n    B\r\n <b@example.com>"])),
+            [("", "a@example.com"), ("B", "b@example.com")],
+        )
+
+    def test_format_addresses(self):
+        formatted = _format_addresses("To", [Address("José", addr_spec="jose@example.com")])
+        self.assertTrue(formatted.isascii())
+        self.assertNotIn('"', formatted)
+        self.assertEqual(address_pairs(_parse_addresses("To", [formatted])), [("José", "jose@example.com")])
+
+        long_name = "Zoë Ångström-Øyvindsdóttir Ñúñez-Çelik Þórhallsdóttir"
+        formatted = _format_addresses("To", [Address(long_name, addr_spec="zoe@example.com")])
+        self.assertLessEqual(max(len(line) for line in f"To: {formatted}".splitlines()), 78)
+        self.assertIn(long_name, decode_header_value(formatted))
+
+        formatted = _format_addresses("To", [Address("Doe, John", addr_spec="j@example.com")])
+        self.assertIn('"Doe, John"', formatted)
+
+        addresses = [
+            Address("", addr_spec="a@example.com"),
+            Address("Doe, John", addr_spec="j@example.com"),
+            Address("José", addr_spec="jose@example.com"),
+            Address("Zoë", addr_spec="zoe@example.com"),
+        ]
+        self.assertEqual(_parse_addresses("To", [_format_addresses("To", addresses)]), addresses)
+
     def test_decode_header_value(self):
         self.assertEqual(
             decode_header_value("cake"),
