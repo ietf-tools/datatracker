@@ -203,6 +203,7 @@ class ChangeStateTests(TestCase):
         self.assertTrue("Test comment" in str(outbox[-1]))
         self.assertTrue("rfc-editor@" in outbox[-1]['To'])
         self.assertTrue("iana@" in outbox[-1]['To'])
+        self.assertTrue("iesg-secretary@" in outbox[-1]['Cc'])
 
         self.assertTrue("Datatracker State Update Notice:" in outbox[-2]['Subject'])
         self.assertTrue("aread@" in outbox[-2]['To'])

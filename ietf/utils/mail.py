@@ -317,17 +317,34 @@ def _format_addresses(name, addresses):
             header.append(f"<{address.addr_spec}>{separator}", "us-ascii")
     return header.encode()
 
+
+# Reserved headers are set by _condition_message or by the MIME encoding of the
+# message, and are compared in lowercase.
+_PARAM_HEADERS = {"to", "from", "cc", "bcc", "subject"}
+_MIME_HEADERS = {"mime-version", "content-type", "content-transfer-encoding"}
+_DATATRACKER_HEADERS = {
+    "auto-submitted",
+    "precedence",
+    "x-test-idtracker",
+    "x-ietf-idtracker",
+}
+_RESERVED_HEADERS = _PARAM_HEADERS | _MIME_HEADERS | _DATATRACKER_HEADERS
+
+
 def _condition_message(to, frm, subject, msg, cc, extra):
     """Set From, To, Cc, Subject, tracker headers, extra and Message-ID on msg in place
 
     A From outside UTILS_FROM_EMAIL_DOMAINS is sent on behalf of the sender, who
-    is added to Reply-To.
+    is added to Reply-To. Raises ValueError if extra contains a reserved header.
     """
     if extra:
         assertion("isinstance(extra, (dict, Message))")
         if 'Reply-To' in extra:
             assertion("isinstance(extra['Reply-To'], list)")
     extra = {k: list(v) if isinstance(v, list) else v for k, v in (extra or {}).items()}
+    reserved = [k for k in extra if k.lower() in _RESERVED_HEADERS]
+    if reserved:
+        raise ValueError(f"extra must not contain {', '.join(reserved)}")
 
     if isinstance(to, list) or isinstance(to, tuple):
         to = ", ".join(formataddr(addr) if isinstance(addr, tuple) else addr for addr in to if addr)
@@ -501,6 +518,14 @@ def parse_preformatted(preformatted, extra=None, override=None):
         override = {}
     assert isinstance(preformatted, str)
     msg = message_from_string(preformatted, policy=policy.default)
+    in_text = [k for k in msg.keys() if k.lower() in _DATATRACKER_HEADERS]
+    if in_text:
+        raise ValueError(f"preformatted text must not contain {', '.join(in_text)}")
+    in_override = [
+        k for k in override if k.lower() in _RESERVED_HEADERS - _PARAM_HEADERS
+    ]
+    if in_override:
+        raise ValueError(f"override must not contain {', '.join(in_override)}")
     # The message is parsed from a str, so the payload is already the body text.
     # get_content() would garble non-ASCII characters.
     body = msg.get_payload()

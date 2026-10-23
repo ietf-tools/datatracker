@@ -107,16 +107,22 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
 def email_pulled_from_rfc_queue(request, doc, comment, prev_state, next_state):
     extra=extra_automation_headers(doc)
     addrs = gather_address_lists('doc_pulled_from_rfc_queue',doc=doc)
-    extra['Cc'] = addrs.cc
-    send_mail(request, addrs.to , None,
-              "%s changed state from %s to %s" % (doc.name, prev_state.name, next_state.name),
-              "doc/mail/pulled_from_rfc_queue_email.txt",
-              dict(doc=doc,
-                   prev_state=prev_state,
-                   next_state=next_state,
-                   comment=comment,
-                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
-              extra=extra)
+    send_mail(
+        request,
+        addrs.to,
+        None,
+        "%s changed state from %s to %s" % (doc.name, prev_state.name, next_state.name),
+        "doc/mail/pulled_from_rfc_queue_email.txt",
+        dict(
+            doc=doc,
+            prev_state=prev_state,
+            next_state=next_state,
+            comment=comment,
+            url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+        ),
+        cc=addrs.cc,
+        extra=extra,
+    )
 
 def email_iesg_processing_document(request, doc, changes):
     addrs = gather_address_lists('doc_iesg_processing_started',doc=doc)

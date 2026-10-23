@@ -246,6 +246,67 @@ body
             [("", "list@example.com"), ("Zoë", "zoe@example.com")],
         )
 
+    def test_send_mail_text_rejects_reserved_extra(self):
+        reserved = [
+            "To",
+            "From",
+            "Cc",
+            "Bcc",
+            "Subject",
+            "MIME-Version",
+            "Content-Type",
+            "Content-Transfer-Encoding",
+            "Auto-Submitted",
+            "Precedence",
+            "X-Test-IDTracker",
+            "X-IETF-IDTracker",
+        ]
+        outbox_before = len(outbox)
+        for header in reserved + [h.lower() for h in reserved]:
+            with self.subTest(header=header), self.assertRaises(ValueError):
+                send_mail_text(
+                    None,
+                    "to@example.com",
+                    "from@ietf.org",
+                    "subject",
+                    "body",
+                    extra={header: ["value"]},
+                )
+        self.assertEqual(len(outbox), outbox_before)
+
+    def test_parse_preformatted_rejects_reserved_override(self):
+        msg = "To: to@example.com\nFrom: from@ietf.org\nSubject: subject\n\nbody\n"
+        reserved = [
+            "MIME-Version",
+            "Content-Type",
+            "Content-Transfer-Encoding",
+            "Auto-Submitted",
+            "Precedence",
+            "X-Test-IDTracker",
+            "X-IETF-IDTracker",
+        ]
+        for header in reserved + [h.lower() for h in reserved]:
+            with self.subTest(header=header), self.assertRaises(ValueError):
+                parse_preformatted(msg, override={header: "value"})
+
+    def test_parse_preformatted_rejects_datatracker_headers_in_text(self):
+        for header in [
+            "Auto-Submitted",
+            "Precedence",
+            "X-Test-IDTracker",
+            "x-ietf-idtracker",
+        ]:
+            msg = (
+                "To: to@example.com\n"
+                "From: from@ietf.org\n"
+                "Subject: subject\n"
+                f"{header}: value\n"
+                "\n"
+                "body\n"
+            )
+            with self.subTest(header=header), self.assertRaises(ValueError):
+                parse_preformatted(msg)
+
 
 class MailUtilsTests(TestCase):
     def test_parse_addresses(self):
