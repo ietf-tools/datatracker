@@ -315,6 +315,21 @@ def expire_pending_slide_proposals(meeting, dry_run=False):
         count += 1
     return count
 
+def backfill_meetecho_recording_names(rows, dry_run=False):
+    """Store recording names from (session id, expected current name, new name) rows; returns how many sessions (would) change
+
+    A session changes only while its name is still the expected current value, so a name the
+    recording-name API has stored since the rows were prepared is kept.
+    """
+    count = 0
+    for session_id, current, name in rows:
+        matching = Session.objects.filter(pk=session_id, meetecho_recording_name=current)
+        if dry_run:
+            count += matching.count()
+        else:
+            count += matching.update(meetecho_recording_name=name)
+    return count
+
 def sort_accept_tuple(accept):
     tup = []
     if accept:

@@ -25,6 +25,8 @@ from .views import generate_agenda_data
 from .utils import fetch_attendance_from_meetings, fix_missing_registrations
 from .utils import fix_mismatched_registrations
 from .utils import expire_pending_slide_proposals
+from .utils import backfill_meetecho_recording_names
+from .meetecho_recording_names import RECORDING_NAMES
 
 
 @shared_task
@@ -299,3 +301,18 @@ def expire_past_ietf_slide_proposals_task(meeting_number=None, dry_run=False):
             expired += count
     log.log(f"{'Would expire' if dry_run else 'Expired'} {expired} slide proposals for past IETF meetings")
     return expired
+
+
+@shared_task
+def backfill_meetecho_recording_names_task(dry_run=False):
+    """Store the Meetecho recording name of past sessions from RECORDING_NAMES
+
+    A one-time data fix for sessions from before the recording-name API, run by hand from the
+    periodic task admin; dry_run only logs how many sessions would change.
+    """
+    changed = backfill_meetecho_recording_names(RECORDING_NAMES, dry_run=dry_run)
+    log.log(
+        f"{'Would change' if dry_run else 'Changed'} the recording name of {changed} sessions; "
+        f"{len(RECORDING_NAMES) - changed} of {len(RECORDING_NAMES)} rows no longer match the current name"
+    )
+    return changed
