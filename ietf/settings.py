@@ -1101,7 +1101,7 @@ MEETING_VALID_UPLOAD_MIME_TYPES = {
     'minutes':      ['text/plain', 'text/html', 'application/pdf', 'text/markdown', 'text/x-markdown', ],
     'narrativeminutes': ['text/plain', 'text/html', 'application/pdf', 'text/markdown', 'text/x-markdown', ],
     'slides':       [],
-    'bluesheets':   ['application/pdf', 'text/plain', ],
+    'bluesheets':   ['application/pdf', 'text/plain', 'text/csv', ],
     'procmaterials':['application/pdf', ],
     'meetinghostlogo':  ['image/jpeg', 'image/png', ],
 }
@@ -1123,6 +1123,7 @@ MEETING_APPLICATION_OCTET_STREAM_OVERRIDES = {
 MEETING_VALID_UPLOAD_MIME_FOR_OBSERVED_MIME = {
     'text/plain':   ['text/plain', 'text/markdown', 'text/x-markdown', ],
     'text/html':    ['text/html', ],
+    'text/csv':     ['text/plain', ],  # libmagic sniffs comma-separated text (e.g., bluesheets) as text/csv
     'application/pdf': ['application/pdf', ],
 }
 
