@@ -30,6 +30,7 @@ from django.contrib.auth.models import User
 from django.core.serializers.json import DjangoJSONEncoder
 from django.test import Client, override_settings
 from django.test.utils import CaptureQueriesContext
+from django.core.cache import caches
 from django.db import connection
 from django.db.models import F, Max
 from django.http import QueryDict, FileResponse
@@ -5504,6 +5505,7 @@ class InterimTests(TestCase):
         'slowpages': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'slowpages'},
     })
     def test_past_meetings_cache_hit_skips_queries(self):
+        caches['slowpages'].clear()  # locmem caches outlive a test
         MeetingFactory(type_id='ietf', number='120', date=date_today() - datetime.timedelta(days=30))
         past_url = urlreverse('ietf.meeting.views.past')
         self.client.get(past_url)  # fills the cache
@@ -10997,6 +10999,61 @@ class ProceedingsTests(BaseMeetingTestCase):
                     {'file': fd, 'external_url': ''},
                 )
                 self.assertEqual(mat.get_href(), f'{mat.document.name}:00')
+
+    def test_past_meetings_show_survey_materials(self):
+        survey = ProceedingsMaterialTypeName.objects.get(slug='meeting_survey')
+        modern = ProceedingsMaterialFactory(
+            meeting__number='123', meeting__date=date_today() - datetime.timedelta(days=30), type=survey,
+        )
+        old = ProceedingsMaterialFactory(
+            meeting__number='90', meeting__date=date_today() - datetime.timedelta(days=4000), type=survey,
+        )
+        ProceedingsMaterialFactory(
+            meeting__number='110', meeting__date=date_today() - datetime.timedelta(days=2000), type=survey,
+            document__states=[('procmaterials', 'removed')],
+        )
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        links = [a.attrib['href'] for a in PyQuery(r.content)('#plenary a.past-survey')]
+        self.assertCountEqual(links, [modern.get_href(), old.get_href()])
+        # meetings before 97 link to materials without a revision
+        self.assertTrue(old.get_href().endswith('/meeting/90/materials/proceedings-90-meeting-survey'))
+
+    def test_past_meetings_edit_materials_link(self):
+        meeting = self._procmat_test_meeting()
+        past_url = urlreverse('ietf.meeting.views.past')
+        details_url = urlreverse('ietf.meeting.views_proceedings.material_details', kwargs=dict(num=meeting.number))
+        self.assertEqual(len(PyQuery(self.client.get(past_url).content)('a[href="%s"]' % details_url)), 0)
+        self.client.login(username='secretary', password='secretary+password')
+        self.assertEqual(len(PyQuery(self.client.get(past_url).content)('a[href="%s"]' % details_url)), 1)
+
+    @override_settings(CACHES={
+        'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'default'},
+        'slowpages': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'slowpages'},
+    })
+    def test_survey_changes_clear_past_meetings_cache(self):
+        caches['slowpages'].clear()  # locmem caches outlive a test
+        meeting = self._procmat_test_meeting()
+        survey = ProceedingsMaterialTypeName.objects.get(slug='meeting_survey')
+        past_url = urlreverse('ietf.meeting.views.past')
+
+        def survey_links():
+            return len(PyQuery(self.client.get(past_url).content)('#plenary a.past-survey'))
+
+        self.assertEqual(survey_links(), 0)  # caches the public page
+        with self._proceedings_file() as fd:
+            self.upload_proceedings_material_test(meeting, survey, {'file': fd, 'external_url': ''})
+        self.client.logout()
+        self.assertEqual(survey_links(), 1)
+
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.post(urlreverse(
+            'ietf.meeting.views_proceedings.remove_material',
+            kwargs=dict(num=meeting.number, material_type=survey.slug),
+        ))
+        self.assertEqual(r.status_code, 302)
+        self.client.logout()
+        self.assertEqual(survey_links(), 0)
 
     def test_add_proceedings_material_doc_invalid_ext(self):
         """Upload proceedings materials document with disallowed extension"""

@@ -1067,6 +1067,7 @@ MEETING_DOC_OLD_HREFS = {
     "slides": "/meeting/{meeting.number}/materials/{doc.name}",
     "recording": "{doc.external_url}",
     "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
+    "procmaterials": "/meeting/{meeting.number}/materials/{doc.name}",
 }
 
 # For http references to documents without a version number (that is, to the current version at the time of reference)

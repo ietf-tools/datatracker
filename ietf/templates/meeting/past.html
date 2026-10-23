@@ -16,7 +16,8 @@
 {% endblock %}
 {% block title %}Past Meetings{% endblock %}
 {% block content %}
-    {% cache 3600 pastmeetings-tabs using="slowpages" %}
+    {% with is_secretariat=user|has_role:"Secretariat" %}
+    {% cache 3600 pastmeetings-tabs is_secretariat using="slowpages" %}
     {% origin %}
     <h1>Past Meetings</h1>
     <ul class="nav nav-tabs my-3" role="tablist">
@@ -92,6 +93,10 @@
                                 <a class="btn btn-sm btn-outline-primary"
                                    href="https://www.ietf.org/proceedings/{{ meeting.get_number|stringformat:'02d' }}.pdf">Proceedings (PDF)</a>
                             {% endif %}
+                            {% for survey in meeting.surveys %}
+                                <a class="btn btn-sm btn-outline-primary past-survey"
+                                   href="{{ survey.get_href }}">Survey results</a>
+                            {% endfor %}
                         </div>
                         {% with hosts=meeting.meetinghosts.all %}
                             {% if meeting.legacy_host %}
@@ -115,6 +120,10 @@
                                 </div>
                             {% endif %}
                         {% endwith %}
+                        {% if is_secretariat %}
+                            <a class="btn btn-sm btn-outline-secondary ms-auto"
+                               href="{% url 'ietf.meeting.views_proceedings.material_details' num=meeting.number %}">Edit materials</a>
+                        {% endif %}
                     </div>
                 </div>
             {% empty %}
@@ -135,6 +144,7 @@
         </div>
     </div>
     {% endcache %}
+    {% endwith %}
 {% endblock %}
 {% block js %}
     <script src="{% static 'ietf/js/past_meetings.js' %}"></script>

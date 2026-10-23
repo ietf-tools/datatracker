@@ -89,6 +89,7 @@ from ietf.meeting.models import (
     TimeSlot,
     SlideSubmission,
     Attended,
+    ProceedingsMaterial,
 )
 from ietf.blobdb.models import ResolvedMaterial
 from ietf.blobdb.storage import BlobdbStorage, BlobFile
@@ -4792,7 +4793,18 @@ def _past_plenaries(today):
     """Past IETF meetings with the extra data the past meetings page shows"""
     plenaries = list(
         Meeting.objects.filter(type_id='ietf', date__lte=today)
-        .prefetch_related('meetinghosts')
+        .prefetch_related(
+            'meetinghosts',
+            Prefetch(
+                'proceedings_materials',
+                queryset=ProceedingsMaterial.objects.filter(
+                    type_id='meeting_survey',
+                    document__states__type_id='procmaterials',
+                    document__states__slug='active',
+                ).select_related('document'),
+                to_attr='surveys',
+            ),
+        )
         .order_by('-date')
     )
     # remote is None for meetings before remote attendance was reported
