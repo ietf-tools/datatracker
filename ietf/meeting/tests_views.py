@@ -5545,11 +5545,10 @@ class InterimTests(TestCase):
         self.assertEqual(attendance_text(modern), '3 onsite participants, 2 online participants')
 
     def test_past_dates(self):
-        today = date_today()
-        # database dates for early meetings are overridden with the published ones
-        first = MeetingFactory(type_id='ietf', number='1', date=datetime.date(1986, 1, 16), days=7)
-        seoul = MeetingFactory(type_id='ietf', number='59', date=datetime.date(2004, 3, 29), days=7)
-        recent = MeetingFactory(type_id='ietf', number='120', date=today - datetime.timedelta(days=100), days=7)
+        # dates come from the meeting's date and length
+        first = MeetingFactory(type_id='ietf', number='1', date=datetime.date(1986, 1, 16), days=2)
+        seoul = MeetingFactory(type_id='ietf', number='59', date=datetime.date(2004, 2, 29), days=5)
+        online = MeetingFactory(type_id='ietf', number='112', date=datetime.date(2021, 11, 8), days=5)
         r = self.client.get(urlreverse('ietf.meeting.views.past'))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -5562,11 +5561,7 @@ class InterimTests(TestCase):
 
         self.assertTrue(date_text(first).startswith('January 16-17, 1986'))
         self.assertTrue(date_text(seoul).startswith('February 29 - March 4, 2004'))
-        end = recent.date + datetime.timedelta(days=6)
-        self.assertTrue(date_text(recent).startswith(
-            '%s %d' % (recent.date.strftime('%B'), recent.date.day)
-        ))
-        self.assertIn('%d, %d' % (end.day, end.year), date_text(recent))
+        self.assertTrue(date_text(online).startswith('November 8-12, 2021'))
 
     def test_past_legacy_hosts(self):
         today = date_today()

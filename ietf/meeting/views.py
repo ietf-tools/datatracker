@@ -4694,72 +4694,6 @@ LEGACY_PLENARY_ATTENDANCE = {
 }
 
 
-# Dates for IETF meetings whose Meeting.date/days in the database don't match
-# the dates published on https://www.ietf.org/meeting/past/ (October 2026).
-# These early meetings were imported with the default length of 7 days.
-LEGACY_PLENARY_DATES = {
-    "1": {"start": "1986-01-16", "end": "1986-01-17"},
-    "2": {"start": "1986-04-08", "end": "1986-04-09"},
-    "3": {"start": "1986-07-23", "end": "1986-07-24"},
-    "4": {"start": "1986-10-15", "end": "1986-10-17"},
-    "5": {"start": "1987-02-04", "end": "1987-02-06"},
-    "6": {"start": "1987-04-22", "end": "1987-04-24"},
-    "7": {"start": "1987-07-27", "end": "1987-07-29"},
-    "8": {"start": "1987-11-02", "end": "1987-11-04"},
-    "9": {"start": "1988-03-01", "end": "1988-03-03"},
-    "10": {"start": "1988-06-15", "end": "1988-06-17"},
-    "11": {"start": "1988-10-17", "end": "1988-10-19"},
-    "12": {"start": "1989-01-18", "end": "1989-01-20"},
-    "13": {"start": "1989-04-11", "end": "1989-04-14"},
-    "14": {"start": "1989-07-25", "end": "1989-07-28"},
-    "15": {"start": "1989-10-31", "end": "1989-11-03"},
-    "16": {"start": "1990-02-06", "end": "1990-02-09"},
-    "17": {"start": "1990-05-01", "end": "1990-05-04"},
-    "18": {"start": "1990-07-30", "end": "1990-08-03"},
-    "19": {"start": "1990-12-03", "end": "1990-12-07"},
-    "20": {"start": "1991-03-11", "end": "1991-03-15"},
-    "21": {"start": "1991-07-29", "end": "1991-08-02"},
-    "22": {"start": "1991-11-18", "end": "1991-11-22"},
-    "23": {"start": "1992-03-16", "end": "1992-03-20"},
-    "24": {"start": "1992-07-13", "end": "1992-07-17"},
-    "25": {"start": "1992-11-16", "end": "1992-11-20"},
-    "26": {"start": "1993-03-29", "end": "1993-04-02"},
-    "27": {"start": "1993-07-12", "end": "1993-07-16"},
-    "28": {"start": "1993-11-01", "end": "1993-11-05"},
-    "29": {"start": "1994-03-28", "end": "1994-04-01"},
-    "30": {"start": "1994-07-25", "end": "1994-07-29"},
-    "31": {"start": "1994-12-05", "end": "1994-12-09"},
-    "32": {"start": "1995-04-03", "end": "1995-04-07"},
-    "33": {"start": "1995-07-17", "end": "1995-07-21"},
-    "34": {"start": "1995-12-04", "end": "1995-12-08"},
-    "35": {"start": "1996-03-04", "end": "1996-03-08"},
-    "36": {"start": "1996-06-24", "end": "1996-06-28"},
-    "37": {"start": "1996-12-09", "end": "1996-12-13"},
-    "38": {"start": "1997-04-07", "end": "1997-04-11"},
-    "39": {"start": "1997-08-11", "end": "1997-08-15"},
-    "40": {"start": "1997-12-08", "end": "1997-12-12"},
-    "41": {"start": "1998-03-30", "end": "1998-04-03"},
-    "42": {"start": "1998-08-24", "end": "1998-08-28"},
-    "43": {"start": "1998-12-07", "end": "1998-12-11"},
-    "44": {"start": "1999-03-14", "end": "1999-03-19"},
-    "45": {"start": "1999-07-11", "end": "1999-07-16"},
-    "46": {"start": "1999-11-07", "end": "1999-11-12"},
-    "47": {"start": "2000-03-26", "end": "2000-03-31"},
-    "48": {"start": "2000-07-31", "end": "2000-08-04"},
-    "49": {"start": "2000-12-10", "end": "2000-12-15"},
-    "50": {"start": "2001-03-18", "end": "2001-03-25"},
-    "51": {"start": "2001-08-05", "end": "2001-08-10"},
-    "52": {"start": "2001-12-09", "end": "2001-12-14"},
-    "53": {"start": "2002-03-17", "end": "2002-03-22"},
-    "54": {"start": "2002-07-14", "end": "2002-07-19"},
-    "55": {"start": "2002-11-17", "end": "2002-11-21"},
-    "56": {"start": "2003-03-16", "end": "2003-03-21"},
-    "57": {"start": "2003-07-13", "end": "2003-07-18"},
-    "58": {"start": "2003-11-09", "end": "2003-11-14"},
-    "59": {"start": "2004-02-29", "end": "2004-03-04"}
-}
-
-
 # Hosts for IETF meetings that have no MeetingHost records, as named on
 # https://www.ietf.org/meeting/past/ (October 2026). Shown as text, without logos.
 LEGACY_PLENARY_HOSTS = {
@@ -4864,13 +4798,6 @@ def _past_plenaries(today):
     # remote is None for meetings before remote attendance was reported
     PastAttendance = namedtuple('PastAttendance', 'onsite remote')
     for meeting in plenaries:
-        if meeting.number in LEGACY_PLENARY_DATES:
-            legacy_dates = LEGACY_PLENARY_DATES[meeting.number]
-            meeting.past_start = datetime.date.fromisoformat(legacy_dates['start'])
-            meeting.past_end = datetime.date.fromisoformat(legacy_dates['end'])
-        else:
-            meeting.past_start = meeting.date
-            meeting.past_end = meeting.end_date()
         meeting.attendance = meeting.get_attendance()
         meeting.legacy_host = LEGACY_PLENARY_HOSTS.get(meeting.number)
         if meeting.attendance is None and meeting.number in LEGACY_PLENARY_ATTENDANCE:

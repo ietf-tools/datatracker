@@ -55,7 +55,7 @@
                     <div class="card-header">
                         <h2 class="h5 mb-0">IETF {{ meeting.number }}</h2>
                         <div class="past-dates text-body-secondary">
-                            {% with start=meeting.past_start end=meeting.past_end %}
+                            {% with start=meeting.date end=meeting.end_date %}
                                 {% if start.year != end.year %}
                                     {{ start|date:"F j, Y" }} - {{ end|date:"F j, Y" }}
                                 {% elif start.month != end.month %}
