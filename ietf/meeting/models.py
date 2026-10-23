@@ -29,7 +29,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.doc.models import Document
+from ietf.doc.models import Document, ExtResource
 from ietf.doc.storage_utils import remove_from_storage
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
@@ -1579,6 +1579,10 @@ class MeetingHost(models.Model):
     class Meta:
         unique_together = (('meeting', 'name'),)
         ordering = ('pk',)
+
+class MeetingExtResource(ExtResource):
+    """External resource for a meeting, such as its post-meeting survey results"""
+    meeting = ForeignKey(Meeting)
 
 class Attended(models.Model):
     person = ForeignKey(Person)

@@ -20,7 +20,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.cache import caches
 from django.core.files.base import ContentFile
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import Exists, OuterRef, Subquery, TextField, Q, Value, Max
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
@@ -377,6 +377,25 @@ def add_event_info_to_session_qs(qs, current_status=True, requested_by=False, re
 #        p.group_list.sort(key=lambda g: g.acronym)
 #
 #    return group_parents
+
+
+def update_meeting_extresources(meeting, new_resources):
+    """Replace a meeting's external resources
+
+    new_resources is a list of unsaved MeetingExtResource instances. Returns
+    True if anything changed.
+    """
+    old_res_strs = sorted(r.to_form_entry_str() for r in meeting.meetingextresource_set.all())
+    new_res_strs = sorted(r.to_form_entry_str() for r in new_resources)
+    if old_res_strs == new_res_strs:
+        return False  # no change
+
+    with transaction.atomic():
+        meeting.meetingextresource_set.all().delete()
+        for new_res in new_resources:
+            new_res.meeting = meeting
+            new_res.save()
+    return True
 
 
 def data_for_meetings_overview(meetings, interim_status=None):
