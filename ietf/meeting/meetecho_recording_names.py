@@ -1,40 +1,8 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 
-from django.db import migrations
-
-
-def forward(apps, schema_editor):
-    """Store the Meetecho recording name of past sessions
-
-    A session changes only while its name is still the expected current value,
-    so names set since the data was prepared are kept.
-    """
-    Session = apps.get_model("meeting", "Session")
-    for session_id, current, name in RECORDING_NAMES:
-        Session.objects.filter(pk=session_id, meetecho_recording_name=current).update(
-            meetecho_recording_name=name
-        )
-
-
-def reverse(apps, schema_editor):
-    Session = apps.get_model("meeting", "Session")
-    for session_id, current, name in RECORDING_NAMES:
-        Session.objects.filter(pk=session_id, meetecho_recording_name=name).update(
-            meetecho_recording_name=current
-        )
-
-
-class Migration(migrations.Migration):
-    dependencies = [
-        ("meeting", "0020_slidesubmission_time_default"),
-    ]
-
-    operations = [migrations.RunPython(forward, reverse)]
-
-
-# (session id, expected current name, new name), from Meetecho's list of recordings
-# matched against a production copy of 2026-10-22. An empty new name clears a name
-# that belongs to another session or to no recording.
+# (session id, expected current name, new name) for Session.meetecho_recording_name, from
+# Meetecho's list of recordings matched against a production copy of 2026-10-22. An empty
+# new name clears a name that belongs to another session or to no playable recording.
 RECORDING_NAMES = [
     (11, "IETF124-SPLICES-20251014-0000", ""),
     (16, "IETF124-RSSAC-20251102-2100", ""),
