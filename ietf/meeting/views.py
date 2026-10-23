@@ -45,7 +45,6 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.validators import URLValidator
 from django.urls import reverse, reverse_lazy, NoReverseMatch
 from django.db.models import F, Prefetch, Q
@@ -115,8 +114,8 @@ from ietf.meeting.forms import (
     InterimCancelForm,
     InterimSessionInlineFormSet,
     RequestMinutesForm,
-    UploadAgendaForm,
-    UploadBlueSheetForm,
+    UploadOrEnterAgendaForm,
+    UploadOrEnterBlueSheetForm,
     UploadMinutesForm,
     UploadSlidesForm,
     validate_slides_title,
@@ -3336,11 +3335,12 @@ def upload_session_bluesheets(request, session_id, num):
         permission_denied(request, 'Restricted to role Secretariat')
         
     _, session_number = sessions_covered_by_apply_to_all(session)
+    bluesheet_sp = session.presentations.filter(document__type='bluesheets').first()
 
     if request.method == 'POST':
-        form = UploadBlueSheetForm(request.POST,request.FILES)
+        form = UploadOrEnterBlueSheetForm(request.POST,request.FILES)
         if form.is_valid():
-            file = request.FILES['file']
+            file = form.get_file()
 
             ota = session.official_timeslotassignment()
             sess_time = ota and ota.timeslot.time
@@ -3352,16 +3352,17 @@ def upload_session_bluesheets(request, session_id, num):
 
 
             try:
-                save_bluesheet(request, session, file, request.user.person, encoding=form.file_encoding[file.name])
+                save_bluesheet(request, session, file, request.user.person, encoding=getattr(form, 'file_encoding', {}).get(file.name))
             except SaveMaterialsError as err:
                 form.add_error(None, str(err))
             else:
                 messages.success(request, 'Successfully uploaded bluesheets.')
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
-        form = UploadBlueSheetForm()
-
-    bluesheet_sp = session.presentations.filter(document__type='bluesheets').first()
+        initial = {'submission_method': 'upload'}
+        if bluesheet_sp and Path(bluesheet_sp.document.uploaded_filename).suffix == '.txt':
+            initial['content'] = bluesheet_sp.document.text()
+        form = UploadOrEnterBlueSheetForm(initial=initial)
 
     return render(request, "meeting/upload_session_bluesheets.html", 
                   {'session': session,
@@ -3485,51 +3486,6 @@ def upload_session_narrativeminutes(request, session_id, num):
                    'form': form,
                   })
 
-class UploadOrEnterAgendaForm(UploadAgendaForm):
-    ACTIONS = [
-        ("upload", "Upload agenda"),
-        ("enter", "Enter agenda"),
-    ]
-    submission_method = forms.ChoiceField(choices=ACTIONS, widget=forms.RadioSelect)
-
-    content = forms.CharField(widget=forms.Textarea, required=False, strip=False, label="Agenda text")
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["file"].required=False
-        self.order_fields(["scope", "submission_method", "file", "content"])
-
-    def clean_content(self):
-        return self.cleaned_data["content"].replace("\r", "")
-
-    def clean_file(self):
-        submission_method = self.cleaned_data.get("submission_method")
-        if submission_method == "upload":
-            if self.cleaned_data.get("file", None) is not None:
-                return super().clean_file()
-        return None
-
-    def clean(self):
-        def require_field(f):
-            if not self.cleaned_data.get(f):
-                self.add_error(f, ValidationError("You must fill in this field."))
-
-        submission_method = self.cleaned_data.get("submission_method")
-        if submission_method == "upload":
-            require_field("file")
-        elif submission_method == "enter":
-            require_field("content")
-
-    def get_file(self):
-        """Get content as a file-like object"""
-        if self.cleaned_data.get("submission_method") == "upload":
-            return self.cleaned_data["file"]
-        else:
-            return SimpleUploadedFile(
-                name="uploaded.md",
-                content=self.cleaned_data["content"].encode("utf-8"),
-                content_type="text/markdown;charset=utf-8",
-            )
 
 def upload_session_agenda(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure

@@ -6812,7 +6812,7 @@ class MaterialsTests(TestCase):
         test_content = '%PDF-1.4\n%âãÏÓ\nthis is some text for a test'
         test_file = StringIO(test_content)
         test_file.name = "not_really.pdf"
-        r = self.client.post(url,dict(file=test_file))
+        r = self.client.post(url,dict(submission_method="upload",file=test_file))
         self.assertEqual(r.status_code, 302)
         bs_doc = session.presentations.filter(document__type_id='bluesheets').first().document
         self.assertEqual(bs_doc.rev,'00')
@@ -6823,7 +6823,7 @@ class MaterialsTests(TestCase):
         self.assertIn('Revise', str(q("title")))
         test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some different text for a test')
         test_file.name = "also_not_really.pdf"
-        r = self.client.post(url,dict(file=test_file))
+        r = self.client.post(url,dict(submission_method="upload",file=test_file))
         self.assertEqual(r.status_code, 302)
         bs_doc = Document.objects.get(pk=bs_doc.pk)
         self.assertEqual(bs_doc.rev,'01')
@@ -6845,10 +6845,64 @@ class MaterialsTests(TestCase):
         self.assertEqual(get_mime_type(test_content.encode())[0], 'text/csv')
         test_file = StringIO(test_content)
         test_file.name = "bluesheet.txt"
-        r = self.client.post(url,dict(file=test_file))
+        r = self.client.post(url,dict(submission_method="upload",file=test_file))
         self.assertEqual(r.status_code, 302)
         bs_doc = session.presentations.filter(document__type_id='bluesheets').first().document
         self.assertEqual(retrieve_str("bluesheets", f"{bs_doc.name}-{bs_doc.rev}.txt"), test_content)
+
+    def test_enter_bluesheets(self):
+        session = SessionFactory(meeting__type_id='ietf')
+        url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
+        redirect_url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertIn('Upload', str(q("title")))
+        self.assertEqual(q('[name="submission_method"]:checked').val(), 'upload')
+        self.assertEqual(q('textarea[name="content"]').text().strip(), '')
+
+        r = self.client.post(url,dict(submission_method="enter",content=""))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(PyQuery(r.content)('textarea[name="content"]').hasClass('is-invalid'))
+        r = self.client.post(url,dict(content="Alice Smith, Example Corp"))
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(session.presentations.exists())
+
+        # Entered text is saved as .txt, with line endings normalized, even when it looks like CSV
+        test_text = 'Alice Smith, Example Corp, alice@example.com\nBob Jones, Acme Inc, bob@example.org\n'
+        r = self.client.post(url,dict(submission_method="enter",content=test_text.replace('\n', '\r\n')))
+        self.assertRedirects(r, redirect_url)
+        bs_doc = session.presentations.filter(document__type_id='bluesheets').first().document
+        self.assertEqual(bs_doc.rev,'00')
+        self.assertEqual(bs_doc.uploaded_filename, f"{bs_doc.name}-00.txt")
+        self.assertEqual(retrieve_str("bluesheets", f"{bs_doc.name}-00.txt"), test_text)
+
+        # Revising a .txt bluesheet starts from its current text
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertIn('Revise', str(q("title")))
+        self.assertEqual(q('textarea[name="content"]').text().strip(), test_text.strip())
+
+        test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
+        test_file.name = "not_really.pdf"
+        r = self.client.post(url,dict(submission_method="upload",file=test_file))
+        self.assertRedirects(r, redirect_url)
+        bs_doc = Document.objects.get(pk=bs_doc.pk)
+        self.assertEqual(bs_doc.rev,'01')
+
+        # A PDF bluesheet has no text to start from
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(PyQuery(r.content)('textarea[name="content"]').text().strip(), '')
+
+        test_text = 'Carol White, Foo Ltd\n'
+        r = self.client.post(url,dict(submission_method="enter",content=test_text))
+        self.assertRedirects(r, redirect_url)
+        bs_doc = Document.objects.get(pk=bs_doc.pk)
+        self.assertEqual(bs_doc.rev,'02')
+        self.assertEqual(retrieve_str("bluesheets", f"{bs_doc.name}-02.txt"), test_text)
 
     def test_upload_bluesheets_chair_access(self):
         make_meeting_test_data()
@@ -6871,7 +6925,7 @@ class MaterialsTests(TestCase):
         test_content = '%PDF-1.4\n%âãÏÓ\nthis is some text for a test'
         test_file = StringIO(test_content)
         test_file.name = "not_really.pdf"
-        r = self.client.post(url,dict(file=test_file))
+        r = self.client.post(url,dict(submission_method="upload",file=test_file))
         self.assertEqual(r.status_code, 302)
         bs_doc = session.presentations.filter(document__type_id='bluesheets').first().document
         self.assertEqual(bs_doc.rev,'00')
