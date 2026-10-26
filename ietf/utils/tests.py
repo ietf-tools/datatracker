@@ -307,6 +307,100 @@ body
             with self.subTest(header=header), self.assertRaises(ValueError):
                 parse_preformatted(msg)
 
+    def test_parse_preformatted_rejects_invalid_addresses(self):
+        for to in [
+            "a@example.com;b@example.com",
+            "not an address",
+            "x@example.com, y",
+            "unknown-email-Joe-Smith, y",
+        ]:
+            msg = f"To: {to}\nFrom: from@ietf.org\nSubject: subject\n\nbody\n"
+            with self.subTest(to=to), self.assertRaises(ValueError):
+                parse_preformatted(msg)
+
+    def test_parse_preformatted_accepts_empty_list_elements(self):
+        msg, _, _ = parse_preformatted(
+            "To: a@example.com,, b@example.com,\n"
+            "From: from@ietf.org\n"
+            "Subject: subject\n"
+            "\n"
+            "body\n"
+        )
+        self.assertEqual(
+            address_pairs(msg["To"].addresses),
+            [("", "a@example.com"), ("", "b@example.com")],
+        )
+
+    def test_send_mail_preformatted_placeholders(self):
+        msg = (
+            "To: a@example.com, unknown-email-Joe-Smith,\n"
+            " Joe <unknown-email-Joe-Bloggs>\n"
+            "From: from@ietf.org\n"
+            "Subject: subject\n"
+            "\n"
+            "body\n"
+        )
+        send_mail_preformatted(None, msg)
+        self.assertEqual(getaddresses([outbox[-1]["To"]]), [("", "a@example.com")])
+
+    def test_parse_preformatted_rejects_multiple_from(self):
+        msg = (
+            "To: to@example.com\n"
+            "From: a@ietf.org, b@ietf.org\n"
+            "Subject: subject\n"
+            "\n"
+            "body\n"
+        )
+        with self.assertRaises(ValueError):
+            parse_preformatted(msg)
+
+    @patch("ietf.utils.mail.log")
+    def test_send_mail_text_drops_invalid_cc(self, mock_log):
+        send_mail_text(
+            None,
+            "to@example.com",
+            "from@ietf.org",
+            "subject",
+            "body",
+            cc="a@example.com, y",
+        )
+        self.assertTrue(mock_log.called)
+        self.assertEqual(getaddresses([outbox[-1]["Cc"]]), [("", "a@example.com")])
+
+    @patch("ietf.utils.mail.log")
+    def test_send_mail_text_logs_malformed_cc(self, mock_log):
+        outbox_before = len(outbox)
+        send_mail_text(
+            None,
+            "to@example.com",
+            "from@ietf.org",
+            "subject",
+            "body",
+            cc="a@example.com;b@example.com",
+        )
+        self.assertTrue(mock_log.called)
+        self.assertEqual(len(outbox), outbox_before + 1)
+
+    def test_send_mail_text_multiple_from(self):
+        for frm, names in [
+            ("A <a@ietf.org>, B <b@ietf.org>", "A and B"),
+            (
+                "A <a@ietf.org>, B <b@example.com>, c@example.com",
+                "A, B, and c@example.com",
+            ),
+        ]:
+            with self.subTest(frm=frm):
+                send_mail_text(None, "to@example.com", frm, "subject", "body")
+                recv = outbox[-1]
+                self.assertEqual(
+                    address_pairs(_parse_addresses("From", [recv["From"]])),
+                    [(f"{names} via Datatracker", settings.UTILS_ON_BEHALF_EMAIL)],
+                )
+                self.assertEqual(
+                    address_pairs(_parse_addresses("Reply-To", [recv["Reply-To"]])),
+                    address_pairs(_parse_addresses("From", [frm])),
+                )
+
 
 class MailUtilsTests(TestCase):
     def test_parse_addresses(self):

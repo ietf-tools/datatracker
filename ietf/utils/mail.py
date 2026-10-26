@@ -16,6 +16,7 @@ from email.message import Message       # pyflakes:ignore
 from email.mime.text import MIMEText
 from email.mime.message import MIMEMessage
 from email.mime.multipart import MIMEMultipart
+from email.errors import InvalidHeaderDefect
 from email.header import Header, decode_header
 from email.headerregistry import Address
 from email import message_from_string, policy
@@ -279,26 +280,62 @@ def excludeaddrs(addrlist, exlist):
     filtered = type(addrlist)(filtered)
     return filtered
 
-def _parse_addresses(name, values):
+
+def _is_placeholder(address):
+    return address.addr_spec.startswith("unknown-email-")
+
+
+def _parse_addresses(name, values, *, strict=True):
     """Parse address header values into a list of Address objects
 
     values is a list or tuple whose items are header value strings,
     (display_name, addr) tuples, or Address objects.
+
+    Invalid addresses, and values the parser could not fully read, raise
+    ValueError when strict. Otherwise they are logged, and invalid addresses
+    are dropped. unknown-email-* placeholders are accepted.
     """
     if not isinstance(values, (list, tuple)):
         raise TypeError(f"values must be a list or tuple, not {type(values).__name__}")
+
+    def log_or_raise(message):
+        if strict:
+            raise ValueError(message)
+        log(message)
+
     addresses = []
     for value in values:
         if isinstance(value, Address):
-            addresses.append(value)
-            continue
-        if isinstance(value, tuple):
-            value = formataddr(value)
-        if value:
+            parsed = [value]
+        else:
+            if isinstance(value, tuple):
+                value = formataddr(value)
+            if not value:
+                continue
             # header_factory rejects line breaks, so unfold first
             value = re.sub(r"\r?\n(?=[ \t])", "", value)
-            addresses.extend(policy.default.header_factory(name, value).addresses)
+            header = policy.default.header_factory(name, value)
+            parsed = header.addresses
+            # A placeholder has no domain, so it also produces an InvalidHeaderDefect.
+            # Addresses lost from a malformed list that contains one are not detected.
+            if any(
+                isinstance(d, InvalidHeaderDefect) for d in header.defects
+            ) and not any(_is_placeholder(a) for a in parsed):
+                log_or_raise(f"Malformed {name} header: {value!r}")
+        for address in parsed:
+            if _is_placeholder(address) or is_valid_email(address.addr_spec):
+                addresses.append(address)
+            else:
+                log_or_raise(f"Invalid {name} address: {str(address)!r}")
     return addresses
+
+
+def _join_names(names):
+    """Join two or more names: "A and B", or "A, B, and C"."""
+    if len(names) == 2:
+        return " and ".join(names)
+    return ", ".join(names[:-1]) + ", and " + names[-1]
+
 
 def _format_addresses(name, addresses):
     """Encode a list of Address objects as a header value for a compat32 message
@@ -335,7 +372,10 @@ def _condition_message(to, frm, subject, msg, cc, extra):
     """Set From, To, Cc, Subject, tracker headers, extra and Message-ID on msg in place
 
     A From outside UTILS_FROM_EMAIL_DOMAINS is sent on behalf of the sender, who
-    is added to Reply-To. Raises ValueError if extra contains a reserved header.
+    is added to Reply-To. A From with more than one address is sent on behalf of
+    all of them, whatever their domains, and each is added to Reply-To. Invalid
+    addresses are logged and dropped. Raises ValueError if extra contains a
+    reserved header.
     """
     if extra:
         assertion("isinstance(extra, (dict, Message))")
@@ -349,10 +389,22 @@ def _condition_message(to, frm, subject, msg, cc, extra):
     if isinstance(to, list) or isinstance(to, tuple):
         to = ", ".join(formataddr(addr) if isinstance(addr, tuple) else addr for addr in to if addr)
     if frm:
-        senders = _parse_addresses("From", [frm])
-        if senders and senders[0].domain not in settings.UTILS_FROM_EMAIL_DOMAINS:
+        senders = _parse_addresses("From", [frm], strict=False)
+        if len(senders) > 1:
+            extra.setdefault("Reply-To", []).extend(senders)
+            names = _join_names([s.display_name or s.addr_spec for s in senders])
+            senders = [
+                Address(
+                    f"{names} via Datatracker", addr_spec=settings.UTILS_ON_BEHALF_EMAIL
+                )
+            ]
+        elif senders and senders[0].domain not in settings.UTILS_FROM_EMAIL_DOMAINS:
             extra.setdefault("Reply-To", []).append(senders[0])
-            senders = _parse_addresses("From", [on_behalf_of((senders[0].display_name, senders[0].addr_spec))])
+            senders = _parse_addresses(
+                "From",
+                [on_behalf_of((senders[0].display_name, senders[0].addr_spec))],
+                strict=False,
+            )
         msg['From'] = _format_addresses("From", senders)
 
     # The following is a hack to avoid an issue with how the email module (as of version 4.0.3)
@@ -374,7 +426,9 @@ def _condition_message(to, frm, subject, msg, cc, extra):
     # Code downstream from this assumes that the msg['To'] will return a string, not an instance
     msg['To'] = to_str
 
-    cc_addresses = _parse_addresses("Cc", [cc] if isinstance(cc, str) else cc or [])
+    cc_addresses = _parse_addresses(
+        "Cc", [cc] if isinstance(cc, str) else cc or [], strict=False
+    )
     if cc_addresses:
         msg['Cc'] = _format_addresses("Cc", cc_addresses)
     msg['Subject'] = subject
@@ -385,7 +439,7 @@ def _condition_message(to, frm, subject, msg, cc, extra):
     for k, v in extra.items():
         if v:
             if k == 'Reply-To':
-                v = _parse_addresses(k, v)
+                v = _parse_addresses(k, v, strict=False)
                 assertion('len(set(map(str, v))) == len(v)')
                 msg[k] = _format_addresses(k, v)
             else:
@@ -533,7 +587,9 @@ def parse_preformatted(preformatted, extra=None, override=None):
 
     ADDRESS_HEADERS = ["To", "From", "Cc", "Bcc"]
     for key in ADDRESS_HEADERS:
-        values = msg.get_all(key, [])
+        # Use the raw values. The parsed header objects have already dropped what
+        # the parser could not read, so re-parsing them would not detect it.
+        values = [v for k, v in msg.raw_items() if k.lower() == key.lower()]
         if values:
             del msg[key]
             addresses = _parse_addresses(key, values)
@@ -549,8 +605,8 @@ def parse_preformatted(preformatted, extra=None, override=None):
         if v:
             msg[k] = v
 
-    senders = msg["From"].addresses if "From" in msg else ()
-    assertion('len(senders) < 2', note=f'parse_preformatted is constructing a From with multiple values: {senders}')
+    if "From" in msg and len(msg["From"].addresses) > 1:
+        raise ValueError(f"From must have one address: {str(msg['From'])!r}")
 
     # Extract headers to be handled as "extra". Exclude those that send_mail_text
     # treats as parameters and the MIME headers that msg.set_content() set. Those are
