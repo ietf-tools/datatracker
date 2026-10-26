@@ -386,8 +386,6 @@ def _condition_message(to, frm, subject, msg, cc, extra):
     if reserved:
         raise ValueError(f"extra must not contain {', '.join(reserved)}")
 
-    if isinstance(to, list) or isinstance(to, tuple):
-        to = ", ".join(formataddr(addr) if isinstance(addr, tuple) else addr for addr in to if addr)
     if frm:
         senders = _parse_addresses("From", [frm], strict=False)
         if len(senders) > 1:
@@ -407,24 +405,12 @@ def _condition_message(to, frm, subject, msg, cc, extra):
             )
         msg['From'] = _format_addresses("From", senders)
 
-    # The following is a hack to avoid an issue with how the email module (as of version 4.0.3)
-    # breaks lines when encoding header fields with anything other than the us-ascii codec.
-    # This allows the Header implementation to encode each display name as a separate chunk. 
-    # The resulting encode produces a string that is us-ascii and has a good density of 
-    # "higher-level syntactic breaks"
-    to_hdr = Header(header_name='To')
-    for name, addr in getaddresses([to]):
-        if addr != '' and not addr.startswith('unknown-email-'):
-            if name:
-                to_hdr.append('"%s"' % name)
-            to_hdr.append("<%s>," % addr)
-    # Please note: The following .encode() does _not_ take a charset argument
-    to_str = to_hdr.encode()
-    if to_str and to_str[-1] == ',':
-        to_str=to_str[:-1]
-    # It's important to use this string, and not assign the Header object.
-    # Code downstream from this assumes that the msg['To'] will return a string, not an instance
-    msg['To'] = to_str
+    to_addresses = _parse_addresses(
+        "To", [to] if isinstance(to, str) else to or [], strict=False
+    )
+    msg["To"] = _format_addresses(
+        "To", [a for a in to_addresses if not _is_placeholder(a)]
+    )
 
     cc_addresses = _parse_addresses(
         "Cc", [cc] if isinstance(cc, str) else cc or [], strict=False

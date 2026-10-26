@@ -401,6 +401,38 @@ body
                     address_pairs(_parse_addresses("From", [frm])),
                 )
 
+    @patch("ietf.utils.mail.log")
+    def test_send_mail_text_drops_invalid_to(self, mock_log):
+        send_mail_text(
+            None, ["a@example.com", "", "y"], "from@ietf.org", "subject", "body"
+        )
+        self.assertTrue(mock_log.called)
+        self.assertEqual(getaddresses([outbox[-1]["To"]]), [("", "a@example.com")])
+
+    def test_send_mail_text_to_formatting(self):
+        send_mail_text(
+            None,
+            'José <jose@example.com>, "Doe, Jane" <jane@example.com>',
+            "from@ietf.org",
+            "subject",
+            "body",
+        )
+        to = outbox[-1]["To"]
+        self.assertNotIn('"=?', to)
+        self.assertIn('"Doe, Jane"', to)
+        recv = message_from_string(outbox[-1].as_string(), policy=policy.default)
+        self.assertEqual(
+            address_pairs(recv["To"].addresses),
+            [("José", "jose@example.com"), ("Doe, Jane", "jane@example.com")],
+        )
+
+    def test_send_mail_text_to_folding(self):
+        to = [f"Zoë Ångström-{i} <zoe{i}@example.com>" for i in range(20)]
+        send_mail_text(None, to, "from@ietf.org", "subject", "body")
+        lines = f"To: {outbox[-1]['To']}".splitlines()
+        self.assertGreater(len(lines), 1)
+        self.assertLessEqual(max(len(line) for line in lines), 78)
+
 
 class MailUtilsTests(TestCase):
     def test_parse_addresses(self):

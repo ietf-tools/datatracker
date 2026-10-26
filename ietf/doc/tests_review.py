@@ -252,7 +252,7 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(outbox), 1)
         self.assertIn('<reviewer@example.com>', outbox[0]["To"])
-        self.assertNotIn("<reviewsecretary@example.com>", outbox[0]["To"])
+        self.assertNotIn("reviewsecretary@example.com", outbox[0]["To"])
         self.assertIn("reviewsecretary2@example.com", outbox[0]["CC"])
         mail_content = get_payload_text(outbox[0])
         self.assertIn("closed", mail_content)
@@ -355,7 +355,7 @@ class ReviewTests(TestCase):
         self.assertEqual(assignment.state_id, "assigned")
 
         self.assertEqual(len(outbox), 1)
-        self.assertEqual('"Some Reviewer" <reviewer@example.com>', outbox[0]["To"])
+        self.assertEqual("Some Reviewer <reviewer@example.com>", outbox[0]["To"])
         message = get_payload_text(outbox[0])
         self.assertIn("Pages: {}".format(doc.pages), message )
         self.assertIn("{} has assigned {}".format(secretary.person.ascii, reviewer.person.ascii), message)
@@ -508,7 +508,7 @@ class ReviewTests(TestCase):
         self.assertTrue("rejected" in e.desc)
         self.assertEqual(len(outbox), 1)
         self.assertNotIn(assignment.reviewer.address, outbox[0]["To"])
-        self.assertIn("<reviewsecretary@example.com>", outbox[0]["To"])
+        self.assertIn("reviewsecretary@example.com", outbox[0]["To"])
         self.assertTrue("Test message" in get_payload_text(outbox[0]))
         self.client.logout()
 
@@ -535,7 +535,7 @@ class ReviewTests(TestCase):
         self.assertTrue("rejected" in e.desc)
         self.assertEqual(len(outbox), 1)
         self.assertIn(assignment.reviewer.address, outbox[0]["To"])
-        self.assertNotIn("<reviewsecretary@example.com>", outbox[0]["To"])
+        self.assertNotIn("reviewsecretary@example.com", outbox[0]["To"])
         self.assertTrue("Test message" in get_payload_text(outbox[0]))
 
         # try again, but now with an expired review request,
@@ -1154,7 +1154,7 @@ class ReviewTests(TestCase):
         self.assertTrue(assignment.review_request.doc.rev in assignment.review.name)
 
         self.assertEqual(len(outbox), 2)
-        self.assertIn("<reviewsecretary@example.com>", outbox[0]["To"])
+        self.assertIn("reviewsecretary@example.com", outbox[0]["To"])
         self.assertNotIn(assignment.reviewer.address, outbox[0]["To"])
         self.assertTrue("partially" in outbox[0]["Subject"].lower())
 
@@ -1301,7 +1301,7 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(outbox), 1)
         self.assertIn(assignment.reviewer.address,  outbox[0]["To"])
-        self.assertNotIn('<reviewsecretary@example.com>', outbox[0]["To"])
+        self.assertNotIn("reviewsecretary@example.com", outbox[0]["To"])
         self.assertIn('Reviewer assignment marked no-response', outbox[0]['Subject'])
 
     def test_withdraw_assignment(self):

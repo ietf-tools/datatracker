@@ -57,7 +57,7 @@ class MessageTests(TestCase):
 
         #
         self.assertEqual(Message.objects.count(), 0)
-        to = "<iesg-secretary@ietf.org>"
+        to = "iesg-secretary@ietf.org"
         subj = "Dummy subject"
         cc="cc.a@example.com, cc.b@example.com"
         body = "Dummy message text"
