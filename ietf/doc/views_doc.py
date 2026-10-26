@@ -1225,10 +1225,7 @@ def get_diff_revisions(request, name, doc):
         elif name.startswith("status-change"):
             url = find_history_active_at(e.doc, e.time).get_href()
         elif name.startswith("minutes"):
-            active_history = find_history_active_at(e.doc, e.time)
-            if active_history is None:
-                continue  # history is not available
-            url = active_history.get_href()
+            url = find_history_active_at(e.doc, e.time).get_href()
         elif name.startswith("draft") or name.startswith("rfc"):
             # rfcdiff tool has special support for IDs
             url = e.doc.name + "-" + e.rev
