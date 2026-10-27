@@ -551,7 +551,12 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
     return msg
 
 def parse_preformatted(preformatted, extra=None, override=None):
-    """Parse preformatted string containing mail with From:, To:, ...,"""
+    """Parse preformatted mail text from a string
+    
+    Supports mail with From, To, Cc, Bcc and Subject headers. Values in override will
+    replace them. The extra parameter can provide other headers.
+    See send_mail_preformatted for detailed constraints.
+    """
     if extra is None:
         extra = {}
     if override is None:
@@ -638,9 +643,21 @@ def parse_preformatted(preformatted, extra=None, override=None):
     return (msg, extra, bcc)
 
 def send_mail_preformatted(request, preformatted, extra=None, override=None):
-    """Parse preformatted string containing mail with From:, To:, ...,
-    and send it through the standard IETF mail interface (inserting
-    extra headers as needed)."""
+    """Parse preformatted mail text and send it with send_mail_text.
+
+    To, From, Cc, Bcc and Subject come from the text, and override can replace them.
+    Their addresses, in the text and in override, must be valid or unknown-email-*
+    placeholders. From must not have more than one address.
+
+    extra must not contain any header in _RESERVED_HEADERS. Apart from To, From, Cc,
+    Bcc and Subject, override must not contain them either. The text must not contain
+    any header in _DATATRACKER_HEADERS.
+
+    The body must be a single text/plain part. A Content-Transfer-Encoding header is
+    accepted and the body is decoded.
+
+    Violations raise ValueError. Returns the parsed message.
+    """
 
     if extra is None:
         extra = {}
