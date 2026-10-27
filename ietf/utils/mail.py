@@ -566,9 +566,20 @@ def parse_preformatted(preformatted, extra=None, override=None):
     ]
     if in_override:
         raise ValueError(f"override must not contain {', '.join(in_override)}")
-    # The message is parsed from a str, so the payload is already the body text.
-    # get_content() would garble non-ASCII characters.
-    body = msg.get_payload()
+    content_type = msg.get_content_type()
+    if content_type != "text/plain":
+        raise ValueError(f"preformatted text must be text/plain, not {content_type}")
+    # The message is parsed from a str, so an identity-encoded payload is already the
+    # body text, whatever charset is declared, and get_content() would garble
+    # non-ASCII characters. A quoted-printable or base64 payload is ASCII, and
+    # get_content() decodes it with the declared charset, or ASCII if none is.
+    cte = msg["Content-Transfer-Encoding"]
+    if cte is None or cte.cte in ("7bit", "8bit", "binary"):
+        body = msg.get_payload()
+    else:
+        if msg.get_param("charset") is None:
+            msg.set_param("charset", "utf-8")
+        body = msg.get_content()
     msg.set_content(body, cte="7bit" if body.isascii() else "8bit")
 
     ADDRESS_HEADERS = ["To", "From", "Cc", "Bcc"]

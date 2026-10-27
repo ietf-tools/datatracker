@@ -433,6 +433,66 @@ body
         self.assertGreater(len(lines), 1)
         self.assertLessEqual(max(len(line) for line in lines), 78)
 
+    def test_send_mail_preformatted_with_mime_headers(self):
+        msg = (
+            "To: to@example.com\n"
+            "From: from@ietf.org\n"
+            "Subject: subject\n"
+            "MIME-Version: 1.0\n"
+            'Content-Type: text/plain; charset="utf-8"\n'
+            "Content-Transfer-Encoding: 8bit\n"
+            "\n"
+            "body é\n"
+        )
+        send_mail_preformatted(None, msg)
+        recv = outbox[-1]
+        for header in ["MIME-Version", "Content-Type", "Content-Transfer-Encoding"]:
+            self.assertEqual(len(recv.get_all(header, [])), 1, header)
+        self.assertEqual(get_payload_text(recv), "body é\n")
+
+    def test_send_mail_preformatted_transfer_encoded_body(self):
+        headers = "To: to@example.com\nFrom: from@ietf.org\nSubject: subject\n"
+        for content_type in ['Content-Type: text/plain; charset="utf-8"\n', ""]:
+            for cte, payload in [
+                ("quoted-printable", "caf=C3=A9 =E2=82=AC\n"),
+                ("base64", "Y2Fmw6kg4oKsCg==\n"),
+            ]:
+                with self.subTest(content_type=content_type, cte=cte):
+                    send_mail_preformatted(
+                        None,
+                        f"{headers}{content_type}"
+                        f"Content-Transfer-Encoding: {cte}\n\n{payload}",
+                    )
+                    self.assertEqual(get_payload_text(outbox[-1]), "café €\n")
+
+    def test_send_mail_preformatted_declared_charset_identity_encoding(self):
+        msg = (
+            "To: to@example.com\n"
+            "From: from@ietf.org\n"
+            "Subject: subject\n"
+            "Content-Type: text/plain; charset=iso-8859-1\n"
+            "\n"
+            "body é\n"
+        )
+        send_mail_preformatted(None, msg)
+        self.assertEqual(get_payload_text(outbox[-1]), "body é\n")
+
+    def test_parse_preformatted_rejects_non_plain_text(self):
+        headers = "To: to@example.com\nFrom: from@ietf.org\nSubject: subject\n"
+        for body in [
+            "MIME-Version: 1.0\n"
+            'Content-Type: multipart/mixed; boundary="b"\n'
+            "\n"
+            "--b\n"
+            "Content-Type: text/plain\n"
+            "\n"
+            "body\n"
+            "--b--\n",
+            "Content-Type: text/html\n\n<p>body</p>\n",
+        ]:
+            with self.subTest(body=body), self.assertRaises(ValueError):
+                parse_preformatted(headers + body)
+
 
 class MailUtilsTests(TestCase):
     def test_parse_addresses(self):
