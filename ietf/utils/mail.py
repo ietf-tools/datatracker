@@ -236,16 +236,6 @@ def on_behalf_of(frm):
     addr = settings.UTILS_ON_BEHALF_EMAIL
     return formataddr((name, addr))
 
-def maybe_on_behalf_of(frm):
-    if isinstance(frm, tuple):
-        name, addr = frm
-    else:
-        name, addr = parseaddr(frm)
-    domain = addr.rsplit('@', 1)[-1]
-    if not domain in settings.UTILS_FROM_EMAIL_DOMAINS:
-        frm = on_behalf_of(frm)
-    return frm
-
 def formataddr(addrtuple):
     """
     Takes a name and email address, and inspects the name to see if it needs
