@@ -11,13 +11,15 @@ This file contains citations for all RFCs in numeric order.
 
 RFC citations appear in this format:
 
-  ####  Title of RFC.  Author 1, Author 2, Author 3.  Issue date.
-        (Format: ASCII) (Obsoletes xxx) (Obsoleted by xxx) (Updates xxx)
-        (Updated by xxx) (Also FYI ####) (Status: ssssss) (DOI: ddd)
+  #### Title of RFC. Author 1, Author 2, Author 3. Issue date.
+       (Format: ASCII) (Obsoletes xxx) (Obsoleted by xxx) (Updates xxx)
+       (Updated by xxx) (Also FYI ####) (Status: ssssss) (DOI: ddd)
 
 or
 
-  ####  Not Issued.
+  #### Not Issued.
+
+Continuation lines are indented to line up with the start of the title.
 
 For example:
 
