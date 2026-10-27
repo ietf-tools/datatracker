@@ -14,6 +14,7 @@ from django import forms
 from django.conf import settings
 from django.core import validators
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.forms import BaseInlineFormSet
 from django.template.defaultfilters import pluralize
 from django.utils.functional import cached_property
@@ -42,7 +43,7 @@ from ietf.utils.fields import (
 )
 from ietf.utils.html import clean_text_field
 from ietf.utils.validators import ( validate_file_size, validate_mime_type,
-    validate_file_extension, validate_no_html_frame)
+    validate_file_extension, validate_no_html_frame, validate_utf8_text)
 
 NUM_SESSION_CHOICES = (('', '--Please select'), ('1', '1'), ('2', '2'))
 SESSION_TIME_RELATION_CHOICES = (('', 'No preference'),) + Constraint.TIME_RELATION_CHOICES
@@ -430,6 +431,7 @@ class FileUploadForm(forms.Form):
     file = forms.FileField(label='File to upload')
 
     doc_type = ''  # subclasses must set this
+    require_utf8 = False  # subclasses set this to reject text files that are not UTF-8
 
     def __init__(self, *args, **kwargs):
         assert self.doc_type in settings.MEETING_VALID_UPLOAD_EXTENSIONS
@@ -441,6 +443,8 @@ class FileUploadForm(forms.Form):
             label += 'Did you remember to put in slide numbers? '
         if self.mime_types:
             label += 'Note that you can only upload files with these formats: %s.' % (', '.join(self.mime_types, ))
+        if self.require_utf8:
+            label += ' Files other than PDF must be UTF-8 encoded.' if '.pdf' in self.extensions else ' Files must be UTF-8 encoded.'
         self.fields['file'].label=label
 
     def clean_file(self):
@@ -469,6 +473,17 @@ class FileUploadForm(forms.Form):
             if file.content_type in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS:
                 if not ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS[file.content_type]:
                     raise ValidationError('Upload Content-Type (%s) does not match the extension (%s)' % (file.content_type, ext))
+        text_extensions = set()
+        for content_type, extensions in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS.items():
+            if content_type.startswith('text/'):
+                text_extensions.update(extensions)
+        if self.require_utf8 and ext in text_extensions:
+            file.seek(0)
+            raw = file.read()
+            text = validate_utf8_text(raw)
+            if text != raw:
+                file = SimpleUploadedFile(file.name, text, content_type=file.content_type)
+            self.file_encoding[file.name] = 'utf-8'
         if (file.content_type in ['text/html', ]
                 or ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS.get('text/html', [])):
             # We'll do html sanitization later, but for frames, we fail here,
@@ -479,6 +494,7 @@ class FileUploadForm(forms.Form):
 
 class UploadBlueSheetForm(FileUploadForm):
     doc_type = 'bluesheets'
+    require_utf8 = True
 
 
 class ApplyToSessionsFormMixin:
@@ -543,14 +559,17 @@ class ApplyToSessionsFileUploadForm(ApplyToSessionsFormMixin, FileUploadForm):
 
 class UploadMinutesForm(ApplyToSessionsFileUploadForm):
     doc_type = 'minutes'
+    require_utf8 = True
 
 
 class UploadNarrativeMinutesForm(ApplyToSessionsFileUploadForm):
     doc_type = 'narrativeminutes'
+    require_utf8 = True
 
 
 class UploadAgendaForm(ApplyToSessionsFileUploadForm):
     doc_type = 'agenda'
+    require_utf8 = True
 
 
 class UploadSlidesForm(ApplyToSessionsFileUploadForm):

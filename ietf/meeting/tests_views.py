@@ -6980,7 +6980,7 @@ class MaterialsTests(TestCase):
                 test_file = BytesIO('<html><h1>Title</h1><section>Some\x93text</section></html>'.encode('latin1'))
                 test_file.name = "some.html"
                 r = self.client.post(url,dict(submission_method="upload",file=test_file))
-                self.assertContains(r, 'Could not identify the file encoding')
+                self.assertContains(r, 'The file is not valid UTF-8 text')
                 doc = Document.objects.get(pk=doc.pk)
                 self.assertEqual(doc.rev,'02')
 
@@ -7192,7 +7192,6 @@ class MaterialsTests(TestCase):
 
     def test_rejected_upload_changes_nothing(self):
         """A file that fails to store must leave documents, links and revisions exactly as they were"""
-        bad = '<html><h1>Title</h1><section>Some\x93text</section></html>'.encode('latin1')
         for doctype in ('agenda', 'minutes', 'slides'):
             first, last = make_group_sessions(['sched', 'sched'])
             self.client.login(username='secretary', password='secretary+password')
@@ -7207,24 +7206,39 @@ class MaterialsTests(TestCase):
                 'docs': set(Document.objects.filter(type_id=doctype).values_list('name', 'rev')),
                 'links': sorted((sp.session_id, sp.document.name, sp.rev) for sp in SessionPresentation.objects.filter(session__in=(first, last))),
             }
+            # make the storage step itself fail
+            badfile = BytesIO(b'fine'); badfile.name = 'fine.txt'
             if doctype == 'slides':
-                # slides never accept html, so make the storage step itself fail
-                badfile = BytesIO(b'fine'); badfile.name = 'fine.txt'
                 data = dict(file=badfile, apply_to_sessions=[last.pk], title='a deck', approved=True)  # same title: a revision of the shared deck
-                with patch('ietf.meeting.views.handle_upload_file', side_effect=SaveMaterialsError('storage refused the file')):
-                    r = self.client.post(url, data)
-                complaint = 'storage refused the file'
             else:
-                badfile = BytesIO(bad); badfile.name = 'some.html'
-                r = self.client.post(url, dict(submission_method='upload', file=badfile, apply_to_sessions=[last.pk], scope='replace'))
-                complaint = 'Could not identify the file encoding'
+                data = dict(submission_method='upload', file=badfile, apply_to_sessions=[last.pk], scope='replace')
+            target = 'ietf.meeting.utils.handle_upload_file' if doctype == 'minutes' else 'ietf.meeting.views.handle_upload_file'
+            with patch(target, side_effect=SaveMaterialsError('storage refused the file')):
+                r = self.client.post(url, data)
             self.assertEqual(r.status_code, 200, doctype)
-            self.assertContains(r, complaint, msg_prefix=doctype)
+            self.assertContains(r, 'storage refused the file', msg_prefix=doctype)
             after = {
                 'docs': set(Document.objects.filter(type_id=doctype).values_list('name', 'rev')),
                 'links': sorted((sp.session_id, sp.document.name, sp.rev) for sp in SessionPresentation.objects.filter(session__in=(first, last))),
             }
             self.assertEqual(after, before, doctype)
+
+    def test_text_uploads_must_be_utf8(self):
+        """Text minutes, narrative minutes, agendas and bluesheets must be UTF-8, stored without a BOM"""
+        self.client.login(username='secretary', password='secretary+password')
+        for doctype in ('minutes', 'narrativeminutes', 'agenda', 'bluesheets'):
+            group = dict(group__acronym='iesg') if doctype == 'narrativeminutes' else {}
+            session = SessionFactory(meeting__type_id='ietf', **group)
+            url = self._material_upload_url(doctype, session)
+            bad = BytesIO('Minutes: café, hôtel\n'.encode('mac_roman')); bad.name = 'macroman.txt'
+            r = self.client.post(url, dict(submission_method='upload', file=bad))
+            self.assertContains(r, 'The first invalid byte is on line 1: Minutes: caf[0x8E], h[0x99]tel', msg_prefix=doctype)
+            self.assertFalse(Document.objects.filter(type_id=doctype).exists(), doctype)
+            good = BytesIO(b'\xef\xbb\xbf' + 'Minutes: café\n'.encode()); good.name = 'utf8.txt'
+            r = self.client.post(url, dict(submission_method='upload', file=good))
+            self.assertEqual(r.status_code, 302, doctype)
+            doc = session.presentations.get(document__type_id=doctype).document
+            self.assertEqual(retrieve_bytes(doctype, f'{doc.name}-{doc.rev}.txt'), 'Minutes: café\n'.encode(), doctype)
 
     def test_taking_back_a_name_whose_file_is_missing_warns_and_leaves_the_link(self):
         first, last = make_group_sessions(['sched', 'sched'])
