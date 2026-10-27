@@ -14,16 +14,6 @@ app.use(pinia)
 
 // Initialize router
 
-router.beforeEach((to, from) => {
-  // Route Flags
-  // -> Remove Left Menu
-  if (to.meta.hideLeftMenu) {
-    const leftMenuRef = document.querySelector('.leftmenu')
-    if (leftMenuRef) {
-      leftMenuRef.remove()
-    }
-  }
-})
 app.use(router)
 
 // Mount App
