@@ -1044,7 +1044,7 @@ MEETING_DOC_LOCAL_HREFS = {
     "chatlog": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "polls": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "recording": "{doc.external_url}",
-    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
+    "bluesheets": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "procmaterials": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
 }
 
@@ -1066,7 +1066,7 @@ MEETING_DOC_OLD_HREFS = {
     "narrativeminutes" : "/meeting/{meeting.number}/materials/{doc.name}",
     "slides": "/meeting/{meeting.number}/materials/{doc.name}",
     "recording": "{doc.external_url}",
-    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
+    "bluesheets": "/meeting/{meeting.number}/materials/{doc.name}",
 }
 
 # For http references to documents without a version number (that is, to the current version at the time of reference)
@@ -1076,7 +1076,7 @@ MEETING_DOC_GREFS = {
     "narrativeminutes": "/meeting/{meeting.number}/materials/{doc.name}",
     "slides": "/meeting/{meeting.number}/materials/{doc.name}",
     "recording": "{doc.external_url}",
-    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
+    "bluesheets": "/meeting/{meeting.number}/materials/{doc.name}",
     "procmaterials": "/meeting/{meeting.number}/materials/{doc.name}",
 }
 
