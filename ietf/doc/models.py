@@ -1123,7 +1123,7 @@ class Document(StorableMixin, DocumentInfo):
             if self.type_id == "draft" and self.get_state_slug() == "rfc":
                 name = self.name
                 url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ 'name': name }, urlconf="ietf.urls")
-            elif self.type_id in ('slides','bluesheets','recording'):
+            elif self.type_id in ('slides','recording'):
                 session = self.session_set.first()
                 if session:
                     meeting = session.meeting
