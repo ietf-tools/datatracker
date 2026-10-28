@@ -19,8 +19,6 @@ or
 
   #### Not Issued.
 
-Continuation lines are indented to line up with the start of the title.
-
 For example:
 
   9915 Dynamic Host Configuration Protocol for IPv6 (DHCPv6). T. Mrugalski,
