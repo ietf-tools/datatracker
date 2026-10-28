@@ -3340,7 +3340,7 @@ def upload_session_bluesheets(request, session_id, num):
     if request.method == 'POST':
         form = UploadBlueSheetForm(request.POST,request.FILES)
         if form.is_valid():
-            file = request.FILES['file']
+            file = form.cleaned_data['file']
 
             ota = session.official_timeslotassignment()
             sess_time = ota and ota.timeslot.time
@@ -3389,7 +3389,7 @@ def upload_session_minutes(request, session_id, num):
     if request.method == 'POST':
         form = UploadMinutesForm(choices, select_all, request.POST, request.FILES, shared_with=shared_with)
         if form.is_valid():
-            file = request.FILES['file']
+            file = form.cleaned_data['file']
             _, ext = os.path.splitext(file.name)
 
             # Set up the new revision
@@ -3446,7 +3446,7 @@ def upload_session_narrativeminutes(request, session_id, num):
     if request.method == 'POST':
         form = UploadNarrativeMinutesForm(choices, select_all, request.POST, request.FILES, shared_with=shared_with)
         if form.is_valid():
-            file = request.FILES['file']
+            file = form.cleaned_data['file']
             _, ext = os.path.splitext(file.name)
 
             # Set up the new revision
@@ -3511,7 +3511,7 @@ class UploadOrEnterAgendaForm(UploadAgendaForm):
 
     def clean(self):
         def require_field(f):
-            if not self.cleaned_data.get(f):
+            if not self.cleaned_data.get(f) and f not in self.errors:
                 self.add_error(f, ValidationError("You must fill in this field."))
 
         submission_method = self.cleaned_data.get("submission_method")
