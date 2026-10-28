@@ -1,28 +1,26 @@
-$(document)
-    .ready(function () {
-        var form = $("form.my-3");
+// Toggle between the file upload and text entry fields according to the selected submission method
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.querySelector('form.my-3')
+    if (!form) {
+        return
+    }
 
-        // review submission selection
-        form.find("[name=submission_method]")
-            .on("click change", function () {
-                var val = form.find("[name=submission_method]:checked")
-                    .val();
+    const fieldsByMethod = {
+        upload: form.querySelector('[name="file"]'),
+        enter: form.querySelector('[name="content"]')
+    }
+    const radios = form.querySelectorAll('[name="submission_method"]')
 
-                var shouldBeVisible = {
-                    upload: ['[name="file"]'],
-                    enter: ['[name="content"]']
-                };
+    function update () {
+        const checked = form.querySelector('[name="submission_method"]:checked')
+        const method = checked ? checked.value : null
+        for (const [key, field] of Object.entries(fieldsByMethod)) {
+            if (field) {
+                field.parentElement.style.display = key === method ? '' : 'none'
+            }
+        }
+    }
 
-                for (var v in shouldBeVisible) {
-                    for (var i in shouldBeVisible[v]) {
-                        var selector = shouldBeVisible[v][i];
-                        var row = form.find(selector).parent();
-                        if ($.inArray(selector, shouldBeVisible[val]) != -1)
-                            row.show();
-                        else
-                            row.hide();
-                    }
-                }
-            })
-            .trigger("change");
-    });
+    radios.forEach((radio) => radio.addEventListener('change', update))
+    update()
+})
