@@ -1123,7 +1123,7 @@ MEETING_APPLICATION_OCTET_STREAM_OVERRIDES = {
 MEETING_VALID_UPLOAD_MIME_FOR_OBSERVED_MIME = {
     'text/plain':   ['text/plain', 'text/markdown', 'text/x-markdown', ],
     'text/html':    ['text/html', ],
-    'text/csv':     ['text/plain', ],  # libmagic sniffs comma-separated text (e.g., bluesheets) as text/csv
+    'text/csv':     ['text/plain', 'text/csv', ],  # libmagic sniffs comma-separated text (e.g., bluesheets) as text/csv
     'application/pdf': ['application/pdf', ],
 }
 
