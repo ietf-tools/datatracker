@@ -27,6 +27,7 @@ from xml2rfc.util.date import extract_date as xml2rfc_extract_date
 
 from django.apps import apps
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.forms import Form
 from django.template import Context
@@ -61,6 +62,7 @@ from ietf.utils.test_runner import (
 )
 from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.timezone import timezone_not_near_midnight
+from ietf.utils.validators import validate_utf8_text
 from ietf.utils.xmldraft import XMLDraft, InvalidMetadataError, capture_xml2rfc_output
 
 class SendingMail(TestCase):
@@ -946,3 +948,26 @@ class HealthTests(TestCase):
             200,
         )
             
+
+
+class ValidateUtf8TextTests(TestCase):
+    def test_accepts_utf8(self):
+        for raw in (b"plain ascii\n", "“curly” café\n".encode()):
+            self.assertEqual(validate_utf8_text(raw), raw)
+        self.assertEqual(validate_utf8_text(b"\xef\xbb\xbf# caf\xc3\xa9\n"), b"# caf\xc3\xa9\n")
+
+    def test_rejects_other_encodings(self):
+        cases = [
+            ("ok\ncafé, hôtel\n".encode("mac_roman"), "line 2: caf[0x8E], h[0x99]tel"),
+            ("“curly”\n".encode("cp1252"), "line 1: [0x93]curly[0x94]"),
+            ("Łódź\n".encode("iso8859_2"), "line 1: [0xA3][0xF3]d[0xBC]"),  # libmagic calls this iso-8859-1
+            (b"x\n" * 600000 + b"caf\x8e\n", "line 600001: caf[0x8E]"),  # beyond what libmagic samples
+            (b"a" * 100 + b"\x8e" + b"b" * 100, "line 1: ..." + "a" * 30 + "[0x8E]" + "b" * 44 + "..."),
+        ]
+        for raw, detail in cases:
+            with self.assertRaises(ValidationError) as cm:
+                validate_utf8_text(raw)
+            self.assertEqual(
+                cm.exception.message,
+                f"The file is not valid UTF-8 text. The first invalid byte is on {detail}",
+            )

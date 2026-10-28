@@ -3390,7 +3390,7 @@ def upload_session_minutes(request, session_id, num):
     if request.method == 'POST':
         form = UploadMinutesForm(choices, select_all, request.POST, request.FILES, shared_with=shared_with)
         if form.is_valid():
-            file = request.FILES['file']
+            file = form.cleaned_data['file']
             _, ext = os.path.splitext(file.name)
 
             # Set up the new revision
@@ -3447,7 +3447,7 @@ def upload_session_narrativeminutes(request, session_id, num):
     if request.method == 'POST':
         form = UploadNarrativeMinutesForm(choices, select_all, request.POST, request.FILES, shared_with=shared_with)
         if form.is_valid():
-            file = request.FILES['file']
+            file = form.cleaned_data['file']
             _, ext = os.path.splitext(file.name)
 
             # Set up the new revision
