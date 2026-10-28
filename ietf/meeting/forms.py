@@ -438,6 +438,7 @@ class FileUploadForm(forms.Form):
         self.extensions = settings.MEETING_VALID_UPLOAD_EXTENSIONS[self.doc_type]
         self.mime_types = settings.MEETING_VALID_UPLOAD_MIME_TYPES[self.doc_type]
         super(FileUploadForm, self).__init__(*args, **kwargs)
+        self.file_encoding = {}
         label = '%s file to upload.  ' % (self.doc_type.capitalize(), )
         if self.doc_type == "slides":
             label += 'Did you remember to put in slide numbers? '
@@ -461,8 +462,6 @@ class FileUploadForm(forms.Form):
                 self.cleaned_data['file'] = file
 
         mime_type, encoding = validate_mime_type(file, self.mime_types)
-        if not hasattr(self, 'file_encoding'):
-            self.file_encoding = {}
         self.file_encoding[file.name] = encoding or None
         if self.mime_types:
             if not file.content_type in settings.MEETING_VALID_UPLOAD_MIME_FOR_OBSERVED_MIME[mime_type]:
@@ -495,9 +494,9 @@ class FileUploadForm(forms.Form):
 class UploadOrEnterFormMixin:
     """Adds a choice between uploading a file and entering its text directly.
 
-    For forms derived from FileUploadForm. Entered text is wrapped as a file named
+    For forms derived from FileUploadForm. Entered text is wrapped as a UTF-8 file named
     entered_file_name with entered_content_type, so callers can handle both methods alike
-    through get_file().
+    through get_file() and file_encoding.
     """
     entered_file_name = ''  # subclasses must set this
     entered_content_type = ''  # subclasses must set this
@@ -529,7 +528,7 @@ class UploadOrEnterFormMixin:
         cleaned_data = super().clean()
 
         def require_field(f):
-            if not self.cleaned_data.get(f):
+            if not self.cleaned_data.get(f) and f not in self.errors:
                 self.add_error(f, ValidationError("You must fill in this field."))
 
         submission_method = self.cleaned_data.get("submission_method")
@@ -537,6 +536,7 @@ class UploadOrEnterFormMixin:
             require_field("file")
         elif submission_method == "enter":
             require_field("content")
+            self.file_encoding[self.entered_file_name] = "utf-8"
         return cleaned_data
 
     def get_file(self):

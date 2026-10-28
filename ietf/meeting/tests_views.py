@@ -7310,6 +7310,7 @@ class MaterialsTests(TestCase):
             bad = BytesIO('Minutes: café, hôtel\n'.encode('mac_roman')); bad.name = 'macroman.txt'
             r = self.client.post(url, dict(submission_method='upload', file=bad))
             self.assertContains(r, 'The first invalid byte is on line 1: Minutes: caf[0x8E], h[0x99]tel', msg_prefix=doctype)
+            self.assertNotContains(r, 'You must fill in this field', msg_prefix=doctype)
             self.assertFalse(Document.objects.filter(type_id=doctype).exists(), doctype)
             good = BytesIO(b'\xef\xbb\xbf' + 'Minutes: café\n'.encode()); good.name = 'utf8.txt'
             r = self.client.post(url, dict(submission_method='upload', file=good))

@@ -3352,7 +3352,7 @@ def upload_session_bluesheets(request, session_id, num):
 
 
             try:
-                save_bluesheet(request, session, file, request.user.person, encoding=getattr(form, 'file_encoding', {}).get(file.name))
+                save_bluesheet(request, session, file, request.user.person, encoding=form.file_encoding[file.name])
             except SaveMaterialsError as err:
                 form.add_error(None, str(err))
             else:
@@ -3527,10 +3527,7 @@ def upload_session_agenda(request, session_id, num):
                 reclaim = doc is not None and name == material_document_name(session, 'agenda', group_wide=False)[0]
             rev = '%02d' % (int(doc.rev)+1) if doc is not None else '00'
             filename = '%s-%s%s' % (name, rev, ext)
-            try:
-                encoding=form.file_encoding[file.name]
-            except AttributeError:
-                encoding=None
+            encoding = form.file_encoding[file.name]
             # Store the file before changing any record, so a rejected upload changes nothing.
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
             try:
