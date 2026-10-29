@@ -53,6 +53,7 @@ from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.encoding import force_str
+from django.utils.functional import SimpleLazyObject
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import RedirectView
@@ -87,6 +88,7 @@ from ietf.meeting.models import (
     TimeSlot,
     SlideSubmission,
     Attended,
+    ProceedingsMaterial,
 )
 from ietf.blobdb.models import ResolvedMaterial
 from ietf.blobdb.storage import BlobdbStorage, BlobFile
@@ -4529,14 +4531,275 @@ def interim_request_edit(request, number):
         "form": form,
         "formset": formset})
 
+# Attendance for IETF meetings that predate the registration data used by
+# Meeting.get_attendance() (IETF 110 and later), as published on
+# https://www.ietf.org/meeting/past/ in October 2026. Remote attendance was
+# first reported for IETF 91; earlier entries have no "remote" key.
+LEGACY_PLENARY_ATTENDANCE = {
+    "1": {"onsite": 21},
+    "2": {"onsite": 21},
+    "3": {"onsite": 18},
+    "4": {"onsite": 35},
+    "5": {"onsite": 35},
+    "6": {"onsite": 88},
+    "7": {"onsite": 101},
+    "8": {"onsite": 56},
+    "9": {"onsite": 82},
+    "10": {"onsite": 112},
+    "11": {"onsite": 114},
+    "12": {"onsite": 120},
+    "13": {"onsite": 114},
+    "14": {"onsite": 217},
+    "15": {"onsite": 138},
+    "16": {"onsite": 196},
+    "17": {"onsite": 244},
+    "18": {"onsite": 293},
+    "19": {"onsite": 292},
+    "20": {"onsite": 348},
+    "21": {"onsite": 387},
+    "22": {"onsite": 372},
+    "23": {"onsite": 530},
+    "24": {"onsite": 677},
+    "25": {"onsite": 633},
+    "26": {"onsite": 638},
+    "27": {"onsite": 493},
+    "28": {"onsite": 636},
+    "29": {"onsite": 785},
+    "30": {"onsite": 710},
+    "31": {"onsite": 1079},
+    "32": {"onsite": 983},
+    "33": {"onsite": 617},
+    "34": {"onsite": 1007},
+    "35": {"onsite": 1038},
+    "36": {"onsite": 1283},
+    "37": {"onsite": 1993},
+    "38": {"onsite": 1321},
+    "39": {"onsite": 1308},
+    "40": {"onsite": 1897},
+    "41": {"onsite": 1775},
+    "42": {"onsite": 2106},
+    "43": {"onsite": 2124},
+    "44": {"onsite": 1705},
+    "45": {"onsite": 1710},
+    "46": {"onsite": 2379},
+    "47": {"onsite": 1431},
+    "48": {"onsite": 2344},
+    "49": {"onsite": 2810},
+    "50": {"onsite": 1822},
+    "51": {"onsite": 2226},
+    "52": {"onsite": 1691},
+    "53": {"onsite": 1656},
+    "54": {"onsite": 1885},
+    "55": {"onsite": 1570},
+    "56": {"onsite": 1679},
+    "57": {"onsite": 1304},
+    "58": {"onsite": 1233},
+    "59": {"onsite": 1390},
+    "60": {"onsite": 1460},
+    "61": {"onsite": 1311},
+    "62": {"onsite": 1133},
+    "63": {"onsite": 1450},
+    "64": {"onsite": 1240},
+    "65": {"onsite": 1264},
+    "66": {"onsite": 1257},
+    "67": {"onsite": 1245},
+    "68": {"onsite": 1193},
+    "69": {"onsite": 1175},
+    "70": {"onsite": 1128},
+    "71": {"onsite": 1174},
+    "72": {"onsite": 1181},
+    "73": {"onsite": 962},
+    "74": {"onsite": 1185},
+    "75": {"onsite": 1124},
+    "76": {"onsite": 1152},
+    "77": {"onsite": 1248},
+    "78": {"onsite": 1192},
+    "79": {"onsite": 1207},
+    "80": {"onsite": 1231},
+    "81": {"onsite": 1127},
+    "82": {"onsite": 948},
+    "83": {"onsite": 1395},
+    "84": {"onsite": 1199},
+    "85": {"onsite": 1157},
+    "86": {"onsite": 1115},
+    "87": {"onsite": 1435},
+    "88": {"onsite": 1189},
+    "89": {"onsite": 1400},
+    "90": {"onsite": 1237},
+    "91": {"onsite": 1109, "remote": 361},
+    "92": {"onsite": 1221, "remote": 421},
+    "93": {"onsite": 1387, "remote": 387},
+    "94": {"onsite": 1319, "remote": 358},
+    "95": {"onsite": 1043, "remote": 614},
+    "96": {"onsite": 1423, "remote": 368},
+    "97": {"onsite": 1042, "remote": 367},
+    "98": {"onsite": 1127, "remote": 315},
+    "99": {"onsite": 1230, "remote": 506},
+    "100": {"onsite": 1018, "remote": 468},
+    "101": {"onsite": 1235, "remote": 575},
+    "102": {"onsite": 1078, "remote": 547},
+    "103": {"onsite": 879, "remote": 521},
+    "104": {"onsite": 1213, "remote": 864},
+    "105": {"onsite": 1103, "remote": 861},
+    "106": {"onsite": 1004, "remote": 607},
+    "107": {"onsite": 0, "remote": 701},
+    "108": {"onsite": 0, "remote": 1102},
+    "109": {"onsite": 0, "remote": 1061}
+}
+
+
+# Hosts for IETF meetings that have no MeetingHost records, as named on
+# https://www.ietf.org/meeting/past/ (October 2026). Shown as text, without logos.
+LEGACY_PLENARY_HOSTS = {
+    "1": "Linkabit",
+    "2": "Army Ballistics Research Lab",
+    "3": "University of Michigan",
+    "4": "SRI",
+    "5": "NASA Ames Research Center",
+    "6": "BBN",
+    "7": "MITRE",
+    "8": "NCAR",
+    "9": "San Diego Supercomputer Center",
+    "10": "US Naval Academy",
+    "11": "University of Michigan",
+    "12": "University of Texas",
+    "13": "Kennedy Space Center",
+    "14": "Stanford University",
+    "15": "University of Hawaii",
+    "16": "Florida State University Supercomputer Center",
+    "17": "Pittsburgh Supercomputer Center",
+    "18": "University of British Columbia",
+    "19": "University of Colorado",
+    "20": "Washington University",
+    "21": "BellSouth",
+    "22": "Los Alamos National Laboratory",
+    "23": "San Diego Supercomputer Center",
+    "24": "NEARnet",
+    "25": "US Sprint",
+    "26": "OARnet and The Ohio State University",
+    "27": "Surfnet and RARE",
+    "28": "SESQUINET and Rice University",
+    "29": "NorthWestNet",
+    "30": "University of Toronto",
+    "31": "Sun Microsystems",
+    "32": "FTP Software and NEARnet",
+    "33": "the Royal Institute of Technology and NORDUnet",
+    "34": "MCI",
+    "37": "Cisco Systems",
+    "38": "Federal Express",
+    "39": "ISOC-Germany Chapter",
+    "40": "Newbridge Networks, Inc",
+    "42": "Motorola",
+    "43": "Microsoft Corporation",
+    "44": "Ascend Communications",
+    "45": "Uninett",
+    "46": "Nortel Networks, Inc",
+    "47": "connect.com.au",
+    "48": "Marconi",
+    "49": "Cisco Systems and Qualcomm",
+    "50": "Lucent Technologies",
+    "51": "BTexact Technologies",
+    "52": "Novell",
+    "53": "Cable & Wireless",
+    "54": "Fujitsu and The WIDE Project",
+    "55": "Nokia",
+    "57": "Austria Telekom",
+    "59": "KT (Korea Telcom) and Samsung",
+    "61": "Alcatel",
+    "63": "France Telecom",
+    "64": "Nortel",
+    "65": "Nokia",
+    "66": "Ericsson",
+    "67": "Siemens",
+    "68": "NeuStar",
+    "69": "Motorola",
+    "70": "Cisco Research and Microsoft",
+    "71": "Comcast",
+    "72": "Alcatel-Lucent",
+    "73": "Google",
+    "74": "Juniper",
+    "75": ".SE",
+    "76": "WIDE",
+    "78": "SIDN",
+    "79": "Tsinghua University",
+    "80": "CZ.NIC",
+    "81": "RIM",
+    "82": "TWNIC",
+    "83": "Cisco",
+    "84": "Google",
+    "85": "North American Cable Industry",
+    "86": "Comcast and NBC Universal",
+    "87": "DENIC, EURid, Deutsche Telekom, Dyn and eco",
+    "88": "Huawei",
+    "89": "ICANN",
+    "90": "Ericsson",
+    "91": "Cisco",
+    "92": "Google",
+    "93": "Brocade and CZ.NIC",
+    "94": "WIDE",
+    "95": "LACNIC and the Internet Society",
+    "96": "Juniper Networks"
+}
+
+
+def _past_plenaries(today):
+    """Past IETF meetings with the extra data the past meetings page shows"""
+    plenaries = list(
+        Meeting.objects.filter(type_id='ietf', date__lte=today)
+        .prefetch_related(
+            'meetinghosts',
+            Prefetch(
+                'proceedings_materials',
+                queryset=ProceedingsMaterial.objects.filter(
+                    type_id='meeting_survey',
+                    document__states__type_id='procmaterials',
+                    document__states__slug='active',
+                ).select_related('document'),
+                to_attr='surveys',
+            ),
+        )
+        .order_by('-date')
+    )
+    # remote is None for meetings before remote attendance was reported
+    PastAttendance = namedtuple('PastAttendance', 'onsite remote')
+    for meeting in plenaries:
+        meeting.attendance = meeting.get_attendance()
+        meeting.legacy_host = LEGACY_PLENARY_HOSTS.get(meeting.number)
+        if meeting.attendance is None and meeting.number in LEGACY_PLENARY_ATTENDANCE:
+            legacy = LEGACY_PLENARY_ATTENDANCE[meeting.number]
+            meeting.attendance = PastAttendance(onsite=legacy['onsite'], remote=legacy.get('remote'))
+    return plenaries
+
+
 def past(request):
     '''List of past meetings'''
     today = timezone.now()
 
-    meetings = data_for_meetings_overview(Meeting.objects.filter(date__lte=today).order_by('-date'))
+    # past.html caches its content, so only build this when the template
+    # actually renders it
+    plenaries = SimpleLazyObject(lambda: _past_plenaries(today))
 
     return render(request, 'meeting/past.html', {
-                  'meetings': meetings,
+                  'plenaries': plenaries,
+                  'selected_tab': 'plenary',
+                  })
+
+
+def past_interims(request):
+    '''List of past interim meetings, the second tab of the past meetings pages'''
+    today = timezone.now()
+
+    # past_interims.html caches its content, so only build this when the
+    # template actually renders it
+    interims = SimpleLazyObject(
+        lambda: data_for_meetings_overview(
+            Meeting.objects.filter(type_id='interim', date__lte=today).order_by('-date')
+        )
+    )
+
+    return render(request, 'meeting/past_interims.html', {
+                  'interims': interims,
+                  'selected_tab': 'interim',
                   })
 
 def upcoming(request):

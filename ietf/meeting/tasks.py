@@ -3,20 +3,26 @@
 # Celery task definitions
 #
 import datetime
+import requests
 
 from itertools import batched
 
 from celery import shared_task, chain
 from django.conf import settings
+from django.core.files.base import ContentFile
+from django.db import transaction
 from django.db.models import IntegerField
 from django.db.models.functions import Cast
 from django.utils import timezone
 
 from ietf.utils.timezone import date_today
 
+from ietf.name.models import ProceedingsMaterialTypeName
+from ietf.person.models import Person
 from ietf.utils import log
 from .models import Meeting
 from .utils import (
+    clear_past_meetings_cache,
     generate_proceedings_content,
     resolve_materials_for_one_meeting,
     store_blobs_for_one_meeting,
@@ -25,6 +31,7 @@ from .views import generate_agenda_data
 from .utils import fetch_attendance_from_meetings, fix_missing_registrations
 from .utils import fix_mismatched_registrations
 from .utils import expire_pending_slide_proposals
+from .views_proceedings import save_proceedings_material_doc
 
 
 @shared_task
@@ -299,3 +306,123 @@ def expire_past_ietf_slide_proposals_task(meeting_number=None, dry_run=False):
             expired += count
     log.log(f"{'Would expire' if dry_run else 'Expired'} {expired} slide proposals for past IETF meetings")
     return expired
+
+
+# Post-meeting survey results as linked from https://www.ietf.org/meeting/past/ (October 2026)
+SURVEY_RESULTS_URLS = [
+    ("64", "https://www.ietf.org/media/documents/64-Vancouver-2005.pdf"),
+    ("65", "https://www.ietf.org/media/documents/65-Dallas-2006.pdf"),
+    ("68", "https://www.ietf.org/media/documents/68-Prague-2007.pdf"),
+    ("70", "https://www.ietf.org/media/documents/70-Vancouver-2007.pdf"),
+    ("73", "https://www.ietf.org/media/documents/73-Minneapolis-2008.pdf"),
+    ("74", "https://www.ietf.org/media/documents/74-SanFrancisco-2009.pdf"),
+    ("76", "https://www.ietf.org/media/documents/76-Hiroshima-2009.pdf"),
+    ("77", "https://www.ietf.org/media/documents/77-Anaheim-2010.pdf"),
+    ("78", "https://www.ietf.org/media/documents/78-Maastricht-2010.pdf"),
+    ("79", "https://www.ietf.org/media/documents/79-Beijing-2010.pdf"),
+    ("81", "https://www.ietf.org/media/documents/81-Quebec-2011.pdf"),
+    ("82", "https://www.ietf.org/media/documents/82-Taipei-2011.pdf"),
+    ("83", "https://www.ietf.org/media/documents/83-Paris-2012.pdf"),
+    ("84", "https://www.ietf.org/media/documents/84-Vancouver-2012.pdf"),
+    ("85", "https://www.ietf.org/media/documents/85-Atlanta-2013.pdf"),
+    ("86", "https://www.ietf.org/media/documents/86-Orlando-2013.pdf"),
+    ("87", "https://www.ietf.org/media/documents/IETF87-Berlin-Survey.pdf"),
+    ("88", "https://www.ietf.org/media/documents/Vancouver88-Meeting-Survey.pdf"),
+    ("89", "https://www.ietf.org/media/documents/IETF89-London-Survey-Results.pdf"),
+    ("97", "https://www.ietf.org/media/documents/ietf97-survey-results.pdf"),
+    ("99", "https://www.ietf.org/media/documents/99_survey_results.pdf"),
+    ("100", "https://www.ietf.org/media/documents/100-Survey-Results.pdf"),
+    ("101", "https://www.ietf.org/media/documents/101_LondonSurvey.pdf"),
+    ("102", "https://www.ietf.org/media/documents/102_MontrealSurvey.pdf"),
+    ("103", "https://www.ietf.org/media/documents/103_survey_results.pdf"),
+    ("104", "https://www.ietf.org/media/documents/104_survey_results.pdf"),
+    ("105", "https://www.ietf.org/media/documents/ietf-105-survey-results.pdf"),
+    ("106", "https://www.ietf.org/media/documents/ietf-106-survey-results.pdf"),
+    ("107", "https://www.ietf.org/media/documents/ietf-107-survey-results.pdf"),
+    ("108", "https://www.ietf.org/media/documents/IETF_108_Meeting_Survey.pdf"),
+    ("109", "https://www.ietf.org/media/documents/IETF_109_Post-Meeting_Survey-2.pdf"),
+    ("110", "https://www.ietf.org/media/documents/IETF_110_Meeting_Survey.pdf"),
+    ("111", "https://www.ietf.org/media/documents/IETF_111_Meeting_Survey.pdf"),
+    ("112", "https://www.ietf.org/media/documents/IETF_112_Meeting_Survey.pdf"),
+    ("113", "https://www.ietf.org/media/documents/IETF_113_Meeting_Survey.pdf"),
+    ("114", "https://www.ietf.org/media/documents/IETF_114_Meeting_Survey-2.pdf"),
+    ("115", "https://www.ietf.org/media/documents/IETF_115_Meeting_Survey.pdf"),
+    ("116", "https://www.ietf.org/media/documents/IETF_116_Meeting_Survey.pdf"),
+    ("117", "https://www.ietf.org/media/documents/IETF_117_Meeting_Survey.pdf"),
+    ("118", "https://www.ietf.org/media/documents/IETF_118_Meeting_Survey.pdf"),
+    ("119", "https://www.ietf.org/media/documents/IETF_119_Meeting_Survey.pdf"),
+    ("120", "https://www.ietf.org/media/documents/IETF_120_Vancouver_Post-Meeting_Survey.pdf"),
+    ("121", "https://www.ietf.org/media/documents/IETF_121_Meeting_Survey_37YLJfu.pdf"),
+    ("122", "https://www.ietf.org/media/documents/IETF_122_Meeting_Survey.pdf"),
+    ("123", "https://www.ietf.org/media/documents/IETF_123_Madrid_Post-Meeting_Survey.pdf"),
+    ("124", "https://www.ietf.org/media/documents/IETF_124_Montreal_Post-Meeting_Survey.pdf"),
+    ("125", "https://www.ietf.org/media/documents/IETF_125_Shenzhen_Post-Meeting_Survey.pdf"),
+    ("126", "https://www.ietf.org/media/documents/IETF_126_Vienna_Post-Meeting_Survey___Qualtrics_Experience_Management.pdf"),
+]
+
+
+@shared_task
+def import_meeting_survey_results_task(meeting_number=None, dry_run=False):
+    """Import post-meeting survey results from www.ietf.org as proceedings materials
+
+    A one-time import of the survey PDFs listed in SURVEY_RESULTS_URLS; run by hand from
+    the periodic task admin. meeting_number limits it to one meeting, for a first try;
+    dry_run downloads and checks each file but saves nothing. Meetings that already have
+    a survey are skipped, so it is safe to run again after a partial failure.
+    """
+    survey_type = ProceedingsMaterialTypeName.objects.get(slug="meeting_survey")
+    system = Person.objects.get(name="(System)")
+    entries = SURVEY_RESULTS_URLS
+    if meeting_number is not None:
+        entries = [entry for entry in entries if entry[0] == str(meeting_number)]
+    counts = dict(created=0, skipped=0, failed=0)
+    for number, url in entries:
+        meeting = Meeting.objects.filter(type_id="ietf", number=number).first()
+        if meeting is None:
+            log.log(f"Survey import: no IETF meeting {number}")
+            counts["failed"] += 1
+            continue
+        if meeting.proceedings_materials.filter(type=survey_type).exists():
+            log.log(f"Survey import: IETF {number} already has survey results, skipping")
+            counts["skipped"] += 1
+            continue
+        try:
+            response = requests.get(url, timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
+        except requests.RequestException as err:
+            log.log(f"Survey import: IETF {number}: could not fetch {url}: {err}")
+            counts["failed"] += 1
+            continue
+        if response.status_code != 200 or not response.content.startswith(b"%PDF-"):
+            log.log(f"Survey import: IETF {number}: {url} did not return a PDF (status {response.status_code})")
+            counts["failed"] += 1
+            continue
+        if dry_run:
+            log.log(f"Survey import: would import {len(response.content)} bytes for IETF {number} from {url}")
+            counts["created"] += 1
+            continue
+        try:
+            with transaction.atomic():
+                doc = save_proceedings_material_doc(
+                    meeting,
+                    survey_type,
+                    title=survey_type.name,
+                    by=system,
+                    file=ContentFile(response.content, name="survey.pdf"),
+                )
+                meeting.proceedings_materials.create(type=survey_type, document=doc)
+        except Exception as err:
+            log.log(f"Survey import: IETF {number}: could not save {url}: {err}")
+            counts["failed"] += 1
+            continue
+        log.log(f"Survey import: imported {doc.name}-{doc.rev} for IETF {number} from {url}")
+        counts["created"] += 1
+        if meeting.proceedings_format_version and meeting.proceedings_format_version >= 2:
+            # Proceedings pages from IETF 97 on list proceedings materials
+            generate_proceedings_content(meeting, force_refresh=True)
+    if counts["created"] and not dry_run:
+        clear_past_meetings_cache()
+    log.log(
+        f"Survey import: {'would create' if dry_run else 'created'} {counts['created']}, "
+        f"skipped {counts['skipped']}, failed {counts['failed']}"
+    )
+    return counts

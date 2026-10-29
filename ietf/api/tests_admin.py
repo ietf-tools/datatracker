@@ -1,15 +1,13 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 import re
-from contextlib import contextmanager
 from unittest import mock
 
 from django.contrib.auth.models import User
-from django.core.cache.backends.base import BaseCache
 from django.urls import reverse as urlreverse
 
 from ietf.api.ietf_utils import is_valid_token
 from ietf.api.models import MIN_TOKEN_LENGTH, AppApiToken, KnownApiEndpoint
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, mocked_caches
 
 
 class AppApiTokenAdminTests(TestCase):
@@ -185,17 +183,9 @@ class AppApiTokenAdminTests(TestCase):
             data[f"AppApiToken_endpoints-{n}-knownapiendpoint"] = str(endpoint.pk)
         return data
 
-    @contextmanager
     def mocked_cache(self):
         """Patch in a mock cache so is_valid_token() reads what the admin stored"""
-        store = {}
-        cache = mock.create_autospec(BaseCache, instance=True)
-        cache.get.side_effect = store.get
-        cache.set.side_effect = lambda key, value, *args, **kwargs: store.update(
-            {key: value}
-        )
-        with mock.patch("ietf.api.ietf_utils.caches", {"default": cache}):
-            yield
+        return mocked_caches("ietf.api.ietf_utils.caches")
 
     def delete_url(self, token):
         return urlreverse("admin:api_appapitoken_delete", args=[token.pk])
