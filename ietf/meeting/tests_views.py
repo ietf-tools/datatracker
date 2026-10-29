@@ -30,7 +30,6 @@ from django.contrib.auth.models import User
 from django.core.serializers.json import DjangoJSONEncoder
 from django.test import Client, override_settings
 from django.test.utils import CaptureQueriesContext
-from django.core.cache import caches
 from django.db import connection
 from django.db.models import F, Max
 from django.http import QueryDict, FileResponse
@@ -65,7 +64,7 @@ from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_sum
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_runner import TestBlobstoreManager, disable_coverage
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized, mocked_caches, unicontent
 from ietf.utils.timezone import date_today, time_now
 
 from ietf.person.factories import PersonFactory, PersonalApiKeyFactory
@@ -5501,12 +5500,8 @@ class InterimTests(TestCase):
         self.assertIn('Cancelled', interim('tr>td>a+span').text())
         self.assertNotIn('IETF %s' % ietf.meeting.number, interim.text())
 
-    @override_settings(CACHES={
-        'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'default'},
-        'slowpages': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'slowpages'},
-    })
+    @mocked_caches('django.templatetags.cache.caches')
     def test_past_meetings_cache_hit_skips_queries(self):
-        caches['slowpages'].clear()  # locmem caches outlive a test
         MeetingFactory(type_id='ietf', number='120', date=date_today() - datetime.timedelta(days=30))
         past_url = urlreverse('ietf.meeting.views.past')
         self.client.get(past_url)  # fills the cache
@@ -11028,12 +11023,8 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.client.login(username='secretary', password='secretary+password')
         self.assertEqual(len(PyQuery(self.client.get(past_url).content)('a[href="%s"]' % details_url)), 1)
 
-    @override_settings(CACHES={
-        'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'default'},
-        'slowpages': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'slowpages'},
-    })
+    @mocked_caches('django.templatetags.cache.caches', 'ietf.meeting.utils.caches')
     def test_survey_changes_clear_past_meetings_cache(self):
-        caches['slowpages'].clear()  # locmem caches outlive a test
         meeting = self._procmat_test_meeting()
         survey = ProceedingsMaterialTypeName.objects.get(slug='meeting_survey')
         past_url = urlreverse('ietf.meeting.views.past')
