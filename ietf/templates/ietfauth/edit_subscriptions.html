@@ -1,0 +1,17 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% extends "base.html" %}
+{% load origin %}
+{% block title %}Edit subscriptions: {{ person.plain_name }}{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        Edit subscriptions:<br>
+        <small class="text-body-secondary">{{ person.plain_name }}</small>
+    </h1>
+    <form enctype="multipart/form-data" method="post">
+        {% csrf_token %}
+        {{ emails|json_script:"emails" }}
+        <div class="vue-embed" data-component="Subscriptions"></div>
+    </form>
+    <a class="btn btn-secondary float-end" href="{% url "ietf.ietfauth.views.profile" %}">Back</a>
+{% endblock %}
