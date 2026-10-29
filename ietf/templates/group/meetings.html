@@ -100,7 +100,7 @@
     {% if group.acronym != "iab" and group.acronym != "iesg" %}
         <p class="alert alert-info my-3">
             This page shows meetings within the last four years. For earlier meetings, please see the
-            <a href="{% url 'ietf.meeting.views.past' %}#plenary">proceedings</a>.
+            <a href="{% url 'ietf.meeting.views.past' %}">proceedings</a>.
         </p>
     {% else %}
         {% comment %}

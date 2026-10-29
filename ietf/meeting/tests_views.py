@@ -5477,8 +5477,11 @@ class InterimTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
+        interims_url = urlreverse('ietf.meeting.views.past_interims')
+        # each tab is its own page
+        self.assertEqual(q('.nav-tabs a.active').attr('href'), url)
+        self.assertEqual(len(q('.nav-tabs a[href="%s"]' % interims_url)), 1)
         plenary = q('#plenary')
-        interim = q('#interim')
         self.assertIn('IETF %s' % ietf.meeting.number, plenary('h2').text())
         self.assertEqual(
             len(plenary('a[href="%s"]' % urlreverse('ietf.meeting.views.proceedings', kwargs=dict(num=ietf.meeting.number)))),
@@ -5486,19 +5489,17 @@ class InterimTests(TestCase):
         )
         self.assertEqual(len(plenary('a[href="https://www.ietf.org/proceedings/05.pdf"]')), 1)
         self.assertIn('IETF %s' % old_ietf.number, plenary('h2').text())
-        # the interim tab is fetched when shown, not sent with the page
-        interims_url = urlreverse('ietf.meeting.views.past_interims')
-        self.assertEqual(interim.attr('data-src'), interims_url)
-        self.assertEqual(len(interim('table')), 0)
 
-        # the fetched interim table holds only interims
         r = self.client.get(interims_url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('table.tablesorter tbody tr')), 1)
-        self.assertIn('Cancelled', q('tr>td>a+span').text())
-        self.assertNotIn('IETF %s' % ietf.meeting.number, q.text())
-        self.assertNotIn('<html', r.content.decode())  # a fragment, not a full page
+        self.assertEqual(q('.nav-tabs a.active').attr('href'), interims_url)
+        self.assertEqual(len(q('.nav-tabs a[href="%s"]' % url)), 1)
+        # the interim tab lists only interims
+        interim = q('#interim')
+        self.assertEqual(len(interim('table.tablesorter tbody tr')), 1)
+        self.assertIn('Cancelled', interim('tr>td>a+span').text())
+        self.assertNotIn('IETF %s' % ietf.meeting.number, interim.text())
 
     @override_settings(CACHES={
         'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'default'},

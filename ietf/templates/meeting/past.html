@@ -1,10 +1,9 @@
-{% extends "base.html" %}
+{% extends "meeting/past_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load ietf_filters static %}
 {% load cache %}
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
     <style>
         .past-plenary .host-logo img {
             height: auto;
@@ -14,138 +13,90 @@
         }
     </style>
 {% endblock %}
-{% block title %}Past Meetings{% endblock %}
-{% block content %}
+{% block past_content %}
     {% with is_secretariat=user|has_role:"Secretariat" %}
-    {% cache 3600 pastmeetings-tabs is_secretariat using="slowpages" %}
+    {% cache 3600 pastmeetings-plenaries is_secretariat using="slowpages" %}
     {% origin %}
-    <h1>Past Meetings</h1>
-    <ul class="nav nav-tabs my-3" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active"
-                    id="plenary-tab"
-                    data-bs-toggle="tab"
-                    data-bs-target="#plenary"
-                    type="button"
-                    role="tab"
-                    aria-controls="plenary"
-                    aria-selected="true">
-                IETF plenary meetings
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link"
-                    id="interim-tab"
-                    data-bs-toggle="tab"
-                    data-bs-target="#interim"
-                    type="button"
-                    role="tab"
-                    aria-controls="interim"
-                    aria-selected="false">
-                Interim meetings
-            </button>
-        </li>
-    </ul>
-    <div class="tab-content navskip">
-        <div class="tab-pane active"
-             id="plenary"
-             role="tabpanel"
-             aria-labelledby="plenary-tab">
-            {% for meeting in plenaries %}
-                <div class="past-plenary card mb-3">
-                    <div class="card-header">
-                        <h2 class="h5 mb-0">IETF {{ meeting.number }}</h2>
-                        <div class="past-dates text-body-secondary">
-                            {% with start=meeting.date end=meeting.end_date %}
-                                {% if start.year != end.year %}
-                                    {{ start|date:"F j, Y" }} - {{ end|date:"F j, Y" }}
-                                {% elif start.month != end.month %}
-                                    {{ start|date:"F j" }} - {{ end|date:"F j, Y" }}
-                                {% else %}
-                                    {{ start|date:"F j" }}-{{ end|date:"j, Y" }}
-                                {% endif %}
-                            {% endwith %}
-                            {% if meeting.city %}
-                                &middot; {{ meeting.city }}{% if meeting.country %}, {{ meeting.get_country_display }}{% endif %}
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="card-body d-flex flex-wrap align-items-center column-gap-5 row-gap-3">
-                        <div>
-                            {% with attendance=meeting.attendance %}
-                                {% if attendance %}
-                                    <div class="past-attendance mb-2">
-                                        {% if attendance.remote is None %}
-                                            {{ attendance.onsite }} participant{{ attendance.onsite|pluralize }}
-                                        {% else %}
-                                            {% if attendance.onsite > 0 %}
-                                                {{ attendance.onsite }} onsite participant{{ attendance.onsite|pluralize }}{% if attendance.remote > 0 %},{% endif %}
-                                            {% endif %}
-                                            {% if attendance.remote > 0 %}{{ attendance.remote }} online participant{{ attendance.remote|pluralize }}{% endif %}
-                                        {% endif %}
-                                    </div>
-                                {% endif %}
-                            {% endwith %}
-                            {% if meeting.get_number > 28 %}
-                                <a class="btn btn-sm btn-outline-primary"
-                                   href="{% url 'ietf.meeting.views.proceedings' num=meeting.number %}">Proceedings</a>
+    <div id="plenary" class="navskip">
+        {% for meeting in plenaries %}
+            <div class="past-plenary card mb-3">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">IETF {{ meeting.number }}</h2>
+                    <div class="past-dates text-body-secondary">
+                        {% with start=meeting.date end=meeting.end_date %}
+                            {% if start.year != end.year %}
+                                {{ start|date:"F j, Y" }} - {{ end|date:"F j, Y" }}
+                            {% elif start.month != end.month %}
+                                {{ start|date:"F j" }} - {{ end|date:"F j, Y" }}
                             {% else %}
-                                <a class="btn btn-sm btn-outline-primary"
-                                   href="https://www.ietf.org/proceedings/{{ meeting.get_number|stringformat:'02d' }}.pdf">Proceedings (PDF)</a>
-                            {% endif %}
-                            {% for survey in meeting.surveys %}
-                                <a class="btn btn-sm btn-outline-primary past-survey"
-                                   href="{{ survey.get_href }}">Survey results</a>
-                            {% endfor %}
-                        </div>
-                        {% with hosts=meeting.meetinghosts.all %}
-                            {% if meeting.legacy_host %}
-                                <div class="past-legacy-host">
-                                    <span class="small text-body-secondary">Hosted by</span>
-                                    {{ meeting.legacy_host }}
-                                </div>
-                            {% elif hosts %}
-                                <div class="d-flex flex-wrap align-items-center gap-2">
-                                    <span class="small text-body-secondary">Hosted by</span>
-                                    {% for host in hosts %}
-                                        <span class="host-logo bg-white rounded px-2 py-1">
-                                            <img src="{% url 'ietf.meeting.views_proceedings.meetinghost_logo' num=meeting.number host_id=host.pk %}"
-                                                 height="{{ host.logo_height }}"
-                                                 width="{{ host.logo_width }}"
-                                                 alt="{{ host.name }}"
-                                                 title="{{ host.name }}"
-                                                 loading="lazy">
-                                        </span>
-                                    {% endfor %}
-                                </div>
+                                {{ start|date:"F j" }}-{{ end|date:"j, Y" }}
                             {% endif %}
                         {% endwith %}
-                        {% if is_secretariat %}
-                            <a class="btn btn-sm btn-outline-secondary ms-auto"
-                               href="{% url 'ietf.meeting.views_proceedings.material_details' num=meeting.number %}">Edit materials</a>
+                        {% if meeting.city %}
+                            &middot; {{ meeting.city }}{% if meeting.country %}, {{ meeting.get_country_display }}{% endif %}
                         {% endif %}
                     </div>
                 </div>
-            {% empty %}
-                <p>No past IETF plenary meetings.</p>
-            {% endfor %}
-        </div>
-        <div class="tab-pane"
-             id="interim"
-             role="tabpanel"
-             aria-labelledby="interim-tab"
-             data-src="{% url 'ietf.meeting.views.past_interims' %}"
-             data-listjs-src="{% static 'ietf/js/list.js' %}">
-            <div class="past-interims-loading text-center my-5">
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">Loading interim meetings...</span>
+                <div class="card-body d-flex flex-wrap align-items-center column-gap-5 row-gap-3">
+                    <div>
+                        {% with attendance=meeting.attendance %}
+                            {% if attendance %}
+                                <div class="past-attendance mb-2">
+                                    {% if attendance.remote is None %}
+                                        {{ attendance.onsite }} participant{{ attendance.onsite|pluralize }}
+                                    {% else %}
+                                        {% if attendance.onsite > 0 %}
+                                            {{ attendance.onsite }} onsite participant{{ attendance.onsite|pluralize }}{% if attendance.remote > 0 %},{% endif %}
+                                        {% endif %}
+                                        {% if attendance.remote > 0 %}{{ attendance.remote }} online participant{{ attendance.remote|pluralize }}{% endif %}
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                        {% if meeting.get_number > 28 %}
+                            <a class="btn btn-sm btn-outline-primary"
+                               href="{% url 'ietf.meeting.views.proceedings' num=meeting.number %}">Proceedings</a>
+                        {% else %}
+                            <a class="btn btn-sm btn-outline-primary"
+                               href="https://www.ietf.org/proceedings/{{ meeting.get_number|stringformat:'02d' }}.pdf">Proceedings (PDF)</a>
+                        {% endif %}
+                        {% for survey in meeting.surveys %}
+                            <a class="btn btn-sm btn-outline-primary past-survey"
+                               href="{{ survey.get_href }}">Survey results</a>
+                        {% endfor %}
+                    </div>
+                    {% with hosts=meeting.meetinghosts.all %}
+                        {% if meeting.legacy_host %}
+                            <div class="past-legacy-host">
+                                <span class="small text-body-secondary">Hosted by</span>
+                                {{ meeting.legacy_host }}
+                            </div>
+                        {% elif hosts %}
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <span class="small text-body-secondary">Hosted by</span>
+                                {% for host in hosts %}
+                                    <span class="host-logo bg-white rounded px-2 py-1">
+                                        <img src="{% url 'ietf.meeting.views_proceedings.meetinghost_logo' num=meeting.number host_id=host.pk %}"
+                                             height="{{ host.logo_height }}"
+                                             width="{{ host.logo_width }}"
+                                             alt="{{ host.name }}"
+                                             title="{{ host.name }}"
+                                             loading="lazy">
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                    {% if is_secretariat %}
+                        <a class="btn btn-sm btn-outline-secondary ms-auto"
+                           href="{% url 'ietf.meeting.views_proceedings.material_details' num=meeting.number %}">Edit materials</a>
+                    {% endif %}
                 </div>
             </div>
-        </div>
+        {% empty %}
+            <p>No past IETF plenary meetings.</p>
+        {% endfor %}
     </div>
     {% endcache %}
     {% endwith %}
-{% endblock %}
-{% block js %}
-    <script src="{% static 'ietf/js/past_meetings.js' %}"></script>
 {% endblock %}

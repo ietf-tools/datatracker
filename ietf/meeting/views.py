@@ -4828,11 +4828,12 @@ def past(request):
 
     return render(request, 'meeting/past.html', {
                   'plenaries': plenaries,
+                  'selected_tab': 'plenary',
                   })
 
 
 def past_interims(request):
-    '''Table of past interim meetings, loaded into the past meetings page when its tab is shown'''
+    '''List of past interim meetings, the second tab of the past meetings pages'''
     today = timezone.now()
 
     # past_interims.html caches its content, so only build this when the
@@ -4845,6 +4846,7 @@ def past_interims(request):
 
     return render(request, 'meeting/past_interims.html', {
                   'interims': interims,
+                  'selected_tab': 'interim',
                   })
 
 def upcoming(request):

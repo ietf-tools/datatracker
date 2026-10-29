@@ -383,11 +383,11 @@ def add_event_info_to_session_qs(qs, current_status=True, requested_by=False, re
 def clear_past_meetings_cache():
     """Drop the cached content of the past meetings page
 
-    meeting/past.html caches its content in "slowpages", varying on whether the
-    viewer is secretariat.
+    meeting/past.html caches its list of plenary meetings in "slowpages", varying
+    on whether the viewer is secretariat.
     """
     for is_secretariat in (True, False):
-        caches["slowpages"].delete(make_template_fragment_key("pastmeetings-tabs", [is_secretariat]))
+        caches["slowpages"].delete(make_template_fragment_key("pastmeetings-plenaries", [is_secretariat]))
 
 
 def data_for_meetings_overview(meetings, interim_status=None):
