@@ -8,7 +8,7 @@ from django.db.models import Count
 from ietf.meeting.models import (Attended, Meeting, Room, Session, TimeSlot, Constraint, Schedule,
     SchedTimeSessAssignment, ResourceAssociation, FloorPlan, UrlResource,
     SessionPresentation, ImportantDate, SlideSubmission, SchedulingEvent, BusinessConstraint,
-    ProceedingsMaterial, MeetingHost, Registration, RegistrationTicket,
+    ProceedingsMaterial, MeetingHost, MeetingExtResource, Registration, RegistrationTicket,
     AttendanceTypeName)
 from ietf.utils.admin import SaferTabularInline
 
@@ -209,6 +209,13 @@ class MeetingHostAdmin(admin.ModelAdmin):
     list_display = ['name', 'meeting']
     raw_id_fields = ['meeting']
 admin.site.register(MeetingHost, MeetingHostAdmin)
+
+
+class MeetingExtResourceAdmin(admin.ModelAdmin):
+    list_display = ['id', 'meeting', 'name', 'display_name', 'value',]
+    search_fields = ['meeting__number', 'value', 'display_name', 'name__slug',]
+    raw_id_fields = ['meeting', ]
+admin.site.register(MeetingExtResource, MeetingExtResourceAdmin)
 
 class AttendedAdmin(admin.ModelAdmin):
     model = Attended

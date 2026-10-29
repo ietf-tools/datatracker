@@ -2,6 +2,9 @@
 from pathlib import Path
 
 from django import forms
+from django.contrib import messages
+from django.core.cache import caches
+from django.core.cache.utils import make_template_fragment_key
 from django.http import Http404, FileResponse, HttpResponseBadRequest
 from django.shortcuts import render, redirect, get_object_or_404
 
@@ -10,7 +13,8 @@ import debug                            # pyflakes:ignore
 from ietf.doc.utils import add_state_change_event
 from ietf.doc.models import DocEvent, Document, NewRevisionDocEvent, State
 from ietf.ietfauth.utils import role_required
-from ietf.meeting.forms import FileUploadForm
+from ietf.doc.forms import ExtResourceForm
+from ietf.meeting.forms import FileUploadForm, MeetingExtResourceForm, MEETING_EXTRESOURCE_NAMES
 from ietf.meeting.models import Meeting, MeetingHost
 from ietf.meeting.helpers import get_meeting
 from ietf.name.models import ProceedingsMaterialTypeName
@@ -18,6 +22,7 @@ from ietf.meeting.utils import (
     SaveMaterialsError,
     handle_upload_file,
     resolve_uploaded_material,
+    update_meeting_extresources,
 )
 from ietf.utils.text import xslugify
 
@@ -304,6 +309,34 @@ def edit_meetinghosts(request, num):
     return render(request, 'meeting/proceedings/edit_meetinghosts.html', {
         'formset': formset,
         'meeting': meeting,
+    })
+
+
+@role_required('Secretariat')
+def edit_meeting_extresources(request, num):
+    meeting = get_meeting(num)
+
+    if request.method == 'POST':
+        form = ExtResourceForm(request.POST, extresource_form_class=MeetingExtResourceForm)
+        if form.is_valid():
+            if update_meeting_extresources(meeting, form.cleaned_data['resources']):
+                # past.html caches its content, varying on whether the viewer is secretariat
+                for is_secretariat in (True, False):
+                    caches['slowpages'].delete(make_template_fragment_key('pastmeetings-tabs', [is_secretariat]))
+                messages.success(request, "Meeting resources updated.")
+            else:
+                messages.info(request, "No change in meeting resources.")
+            return redirect('ietf.meeting.views.past')
+    else:
+        form = ExtResourceForm(
+            initial={"resources": meeting.meetingextresource_set.all()},
+            extresource_form_class=MeetingExtResourceForm,
+        )
+
+    return render(request, 'meeting/edit_meeting_extresources.html', {
+        'form': form,
+        'meeting': meeting,
+        'valid_tags': sorted(MEETING_EXTRESOURCE_NAMES),
     })
 
 

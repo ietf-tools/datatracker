@@ -22,11 +22,12 @@ from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 
+from ietf.doc.forms import BaseExtResourceForm
 from ietf.doc.models import Document, State, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.group.utils import groups_managed_by
 from ietf.meeting.models import (Session, Meeting, Schedule, COUNTRIES, TIMEZONES, TimeSlot, Room,
-    Constraint, ResourceAssociation)
+    Constraint, ResourceAssociation, MeetingExtResource)
 from ietf.meeting.helpers import get_next_interim_number, make_materials_directories
 from ietf.meeting.helpers import is_interim_meeting_approved, get_next_agenda_name
 from ietf.message.models import Message
@@ -1308,3 +1309,20 @@ class SessionRequestForm(forms.Form):
     def media(self):
         # get media for our formset
         return super().media + self.session_forms.media + forms.Media(js=('ietf/js/session_form.js',))
+
+
+# ExtResourceName slugs that make sense for a meeting
+MEETING_EXTRESOURCE_NAMES = ["meeting_survey"]
+
+
+class MeetingExtResourceForm(BaseExtResourceForm):
+    class Meta(BaseExtResourceForm.Meta):
+        model = MeetingExtResource
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        name_field = self.fields["name"]
+        name_field.queryset = name_field.queryset.filter(slug__in=MEETING_EXTRESOURCE_NAMES)
+        name_field.error_messages["invalid_choice"] = (
+            "Bad tag: Expected one of %s" % ", ".join(sorted(MEETING_EXTRESOURCE_NAMES))
+        )

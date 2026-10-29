@@ -12156,6 +12156,17 @@
   },
   {
     "fields": {
+      "desc": "Results of the post-meeting survey",
+      "name": "Meeting Survey Results",
+      "order": 0,
+      "type": "url",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "meeting_survey"
+  },
+  {
+    "fields": {
       "desc": "ORCID",
       "name": "ORCID",
       "order": 0,
