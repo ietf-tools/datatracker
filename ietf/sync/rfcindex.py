@@ -282,15 +282,17 @@ def get_rfc_text_index_entries():
             if subseries:
                 subseries = f"(Also {subseries}) "
 
+            rfc_number = format_rfc_number(rfc.rfc_number)
             entry = fill(
                 (
-                    f"{format_rfc_number(rfc.rfc_number)} {rfc.title}. {authors}. {date}. "
+                    f"{rfc_number} {rfc.title}. {authors}. {date}. "
                     f"(Format: {formats}){doc_relations}{subseries}"
                     f"(Status: {str(rfc.std_level).upper()}) "
                     f"(DOI: {rfc.doi})"
                 ),
                 width=73,
-                subsequent_indent=" " * 5,
+                # line continuation lines up with the start of the title
+                subsequent_indent=" " * (len(rfc_number) + 1),
             )
             entries.append(entry)
 
