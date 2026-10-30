@@ -13,7 +13,7 @@ from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.template.loader import render_to_string
 from django.utils import timezone
-from django.utils.encoding import smart_str, force_str
+from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 
@@ -218,7 +218,7 @@ def derive_new_work_text(review_text,group):
                                            'Reply_to':'<iesg@ietf.org>'})
     if not addrs.cc:
         del m['Cc']
-    return smart_str(m.as_string())
+    return m.as_bytes().decode("utf-8")
 
 def default_review_text(group, charter, by):
     now = timezone.now()

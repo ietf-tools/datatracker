@@ -16,8 +16,10 @@ from email.message import Message       # pyflakes:ignore
 from email.mime.text import MIMEText
 from email.mime.message import MIMEMessage
 from email.mime.multipart import MIMEMultipart
+from email.errors import InvalidHeaderDefect
 from email.header import Header, decode_header
-from email import message_from_bytes, message_from_string
+from email.headerregistry import Address
+from email import message_from_string, policy
 from email import charset as Charset
 from typing import Optional
 
@@ -35,7 +37,6 @@ import debug                            # pyflakes:ignore
 
 import ietf
 from ietf.utils.log import log, assertion
-from ietf.utils.text import isascii
 
 from typing import Any, Dict, List  # pyflakes:ignore
 
@@ -235,16 +236,6 @@ def on_behalf_of(frm):
     addr = settings.UTILS_ON_BEHALF_EMAIL
     return formataddr((name, addr))
 
-def maybe_on_behalf_of(frm):
-    if isinstance(frm, tuple):
-        name, addr = frm
-    else:
-        name, addr = parseaddr(frm)
-    domain = addr.rsplit('@', 1)[-1]
-    if not domain in settings.UTILS_FROM_EMAIL_DOMAINS:
-        frm = on_behalf_of(frm)
-    return frm
-
 def formataddr(addrtuple):
     """
     Takes a name and email address, and inspects the name to see if it needs
@@ -279,64 +270,157 @@ def excludeaddrs(addrlist, exlist):
     filtered = type(addrlist)(filtered)
     return filtered
 
-def condition_message(to, frm, subject, msg, cc, extra):
+
+def _is_placeholder(address):
+    return address.addr_spec.startswith("unknown-email-")
+
+
+def _parse_addresses(name, values, *, strict=True):
+    """Parse address header values into a list of Address objects
+
+    values is a list or tuple whose items are header value strings,
+    (display_name, addr) tuples, or Address objects.
+
+    Invalid addresses, and values the parser could not fully read, raise
+    ValueError when strict. Otherwise they are logged, and invalid addresses
+    are dropped. unknown-email-* placeholders are accepted.
+    """
+    if not isinstance(values, (list, tuple)):
+        raise TypeError(f"values must be a list or tuple, not {type(values).__name__}")
+
+    def log_or_raise(message):
+        if strict:
+            raise ValueError(message)
+        log(message)
+
+    addresses = []
+    for value in values:
+        if isinstance(value, Address):
+            parsed = [value]
+        else:
+            if isinstance(value, tuple):
+                value = formataddr(value)
+            if not value:
+                continue
+            # header_factory rejects line breaks, so unfold first
+            value = re.sub(r"\r?\n(?=[ \t])", "", value)
+            header = policy.default.header_factory(name, value)
+            parsed = header.addresses
+            # A placeholder has no domain, so it also produces an InvalidHeaderDefect.
+            # Addresses lost from a malformed list that contains one are not detected.
+            if any(
+                isinstance(d, InvalidHeaderDefect) for d in header.defects
+            ) and not any(_is_placeholder(a) for a in parsed):
+                log_or_raise(f"Malformed {name} header: {value!r}")
+        for address in parsed:
+            if _is_placeholder(address) or is_valid_email(address.addr_spec):
+                addresses.append(address)
+            else:
+                log_or_raise(f"Invalid {name} address: {str(address)!r}")
+    return addresses
+
+
+def _join_names(names):
+    """Join two or more names: "A and B", or "A, B, and C"."""
+    if len(names) == 2:
+        return " and ".join(names)
+    return ", ".join(names[:-1]) + ", and " + names[-1]
+
+
+def _format_addresses(name, addresses):
+    """Encode a list of Address objects as a header value for a compat32 message
+
+    compat32 messages don't encode structured headers, so each non-ASCII display
+    name is encoded here as its own chunk, leaving the addresses readable.
+    """
+    header = Header(header_name=name)
+    last = len(addresses) - 1
+    for i, address in enumerate(addresses):
+        separator = "," if i < last else ""
+        if address.display_name.isascii():
+            header.append(formataddr((address.display_name, address.addr_spec)) + separator, "us-ascii")
+        else:
+            header.append(address.display_name, "utf-8")
+            header.append(f"<{address.addr_spec}>{separator}", "us-ascii")
+    return header.encode()
+
+
+# Reserved headers are set by _condition_message or by the MIME encoding of the
+# message, and are compared in lowercase.
+_PARAM_HEADERS = {"to", "from", "cc", "bcc", "subject"}
+_MIME_HEADERS = {"mime-version", "content-type", "content-transfer-encoding"}
+_DATATRACKER_HEADERS = {
+    "auto-submitted",
+    "precedence",
+    "x-test-idtracker",
+    "x-ietf-idtracker",
+}
+_RESERVED_HEADERS = _PARAM_HEADERS | _MIME_HEADERS | _DATATRACKER_HEADERS
+
+
+def _condition_message(to, frm, subject, msg, cc, extra):
+    """Set From, To, Cc, Subject, tracker headers, extra and Message-ID on msg in place
+
+    A From outside UTILS_FROM_EMAIL_DOMAINS is sent on behalf of the sender, who
+    is added to Reply-To. A From with more than one address is sent on behalf of
+    all of them, whatever their domains, and each is added to Reply-To. Invalid
+    addresses are logged and dropped. Raises ValueError if extra contains a
+    reserved header.
+    """
     if extra:
         assertion("isinstance(extra, (dict, Message))")
         if 'Reply-To' in extra:
             assertion("isinstance(extra['Reply-To'], list)")
+    extra = {k: list(v) if isinstance(v, list) else v for k, v in (extra or {}).items()}
+    reserved = [k for k in extra if k.lower() in _RESERVED_HEADERS]
+    if reserved:
+        raise ValueError(f"extra must not contain {', '.join(reserved)}")
 
-    if isinstance(frm, tuple):
-        frm = formataddr(frm)
-    if isinstance(to, list) or isinstance(to, tuple):
-        to = ", ".join([isinstance(addr, tuple) and formataddr(addr) or addr for addr in to if addr])
-    if isinstance(cc, list) or isinstance(cc, tuple):
-        cc = ", ".join([isinstance(addr, tuple) and formataddr(addr) or addr for addr in cc if addr])
     if frm:
-        n, a = parseaddr(frm)
-        domain = a.rsplit('@', 1)[-1]
-        if not domain in settings.UTILS_FROM_EMAIL_DOMAINS:
-            extra = extra or {}
-            if 'Reply-To' in extra:
-                extra['Reply-To'].append(frm)
-            else:
-                extra['Reply-To'] = [frm, ]
-            frm = on_behalf_of(frm)
-        msg['From'] = frm
+        senders = _parse_addresses("From", [frm], strict=False)
+        if len(senders) > 1:
+            extra.setdefault("Reply-To", []).extend(senders)
+            names = _join_names([s.display_name or s.addr_spec for s in senders])
+            senders = [
+                Address(
+                    f"{names} via Datatracker", addr_spec=settings.UTILS_ON_BEHALF_EMAIL
+                )
+            ]
+        elif senders and senders[0].domain not in settings.UTILS_FROM_EMAIL_DOMAINS:
+            extra.setdefault("Reply-To", []).append(senders[0])
+            senders = _parse_addresses(
+                "From",
+                [on_behalf_of((senders[0].display_name, senders[0].addr_spec))],
+                strict=False,
+            )
+        msg['From'] = _format_addresses("From", senders)
 
-    # The following is a hack to avoid an issue with how the email module (as of version 4.0.3)
-    # breaks lines when encoding header fields with anything other than the us-ascii codec.
-    # This allows the Header implementation to encode each display name as a separate chunk. 
-    # The resulting encode produces a string that is us-ascii and has a good density of 
-    # "higher-level syntactic breaks"
-    to_hdr = Header(header_name='To')
-    for name, addr in getaddresses([to]):
-        if addr != '' and not addr.startswith('unknown-email-'):
-            if name:
-                to_hdr.append('"%s"' % name)
-            to_hdr.append("<%s>," % addr)
-    # Please note: The following .encode() does _not_ take a charset argument
-    to_str = to_hdr.encode()
-    if to_str and to_str[-1] == ',':
-        to_str=to_str[:-1]
-    # It's important to use this string, and not assign the Header object.
-    # Code downstream from this assumes that the msg['To'] will return a string, not an instance
-    msg['To'] = to_str
+    to_addresses = _parse_addresses(
+        "To", [to] if isinstance(to, str) else to or [], strict=False
+    )
+    msg["To"] = _format_addresses(
+        "To", [a for a in to_addresses if not _is_placeholder(a)]
+    )
 
-    if cc:
-        msg['Cc'] = cc
+    cc_addresses = _parse_addresses(
+        "Cc", [cc] if isinstance(cc, str) else cc or [], strict=False
+    )
+    if cc_addresses:
+        msg['Cc'] = _format_addresses("Cc", cc_addresses)
     msg['Subject'] = subject
     msg['X-Test-IDTracker'] = (settings.SERVER_MODE == 'production') and 'no' or 'yes'
     msg['X-IETF-IDTracker'] = ietf.__version__
     msg['Auto-Submitted'] = "auto-generated"
     msg['Precedence'] = "bulk"
-    if extra:
-        for k, v in extra.items():
-            if v:
+    for k, v in extra.items():
+        if v:
+            if k == 'Reply-To':
+                v = _parse_addresses(k, v, strict=False)
+                assertion('len(set(map(str, v))) == len(v)')
+                msg[k] = _format_addresses(k, v)
+            else:
                 assertion('len(list(set(v))) == len(v)')
-                try:
-                    msg[k] = ", ".join(v)
-                except Exception:
-                    raise
+                msg[k] = ", ".join(v)
     if not msg.get('Message-ID', None):
         msg['Message-ID'] = make_msgid()
 
@@ -402,7 +486,7 @@ def save_as_message(request, msg, bcc):
 def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=False, bcc=None, copy=True, save=True):
     """Send MIME message with content already filled in."""
     
-    condition_message(to, frm, subject, msg, cc, extra)
+    _condition_message(to, frm, subject, msg, cc, extra)
 
     # start debug server with python -m smtpd -n -c DebuggingServer localhost:2025
     # then put USING_DEBUG_EMAIL_SERVER=True and EMAIL_HOST='localhost'
@@ -457,39 +541,81 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
     return msg
 
 def parse_preformatted(preformatted, extra=None, override=None):
-    """Parse preformatted string containing mail with From:, To:, ...,"""
+    """Parse preformatted mail text from a string
+    
+    Supports mail with From, To, Cc, Bcc and Subject headers. Values in override will
+    replace them. The extra parameter can provide other headers.
+    See send_mail_preformatted for detailed constraints.
+    """
     if extra is None:
         extra = {}
     if override is None:
         override = {}
     assert isinstance(preformatted, str)
-    msg = message_from_bytes(preformatted.encode('utf-8'))
-    msg.set_charset('UTF-8')
+    msg = message_from_string(preformatted, policy=policy.default)
+    in_text = [k for k in msg.keys() if k.lower() in _DATATRACKER_HEADERS]
+    if in_text:
+        raise ValueError(f"preformatted text must not contain {', '.join(in_text)}")
+    in_override = [
+        k for k in override if k.lower() in _RESERVED_HEADERS - _PARAM_HEADERS
+    ]
+    if in_override:
+        raise ValueError(f"override must not contain {', '.join(in_override)}")
+    content_type = msg.get_content_type()
+    if content_type != "text/plain":
+        raise ValueError(f"preformatted text must be text/plain, not {content_type}")
+    # The message is parsed from a str, so an identity-encoded payload is already the
+    # body text, whatever charset is declared, and get_content() would garble
+    # non-ASCII characters. A quoted-printable or base64 payload is ASCII, and
+    # get_content() decodes it with the declared charset, or ASCII if none is.
+    cte = msg["Content-Transfer-Encoding"]
+    if cte is None or cte.cte in ("7bit", "8bit", "binary"):
+        body = msg.get_payload()
+    else:
+        if msg.get_param("charset") is None:
+            msg.set_param("charset", "utf-8")
+        body = msg.get_content()
+    msg.set_content(body, cte="7bit" if body.isascii() else "8bit")
+
+    ADDRESS_HEADERS = ["To", "From", "Cc", "Bcc"]
+    for key in ADDRESS_HEADERS:
+        # Use the raw values. The parsed header objects have already dropped what
+        # the parser could not read, so re-parsing them would not detect it.
+        values = [v for k, v in msg.raw_items() if k.lower() == key.lower()]
+        if values:
+            del msg[key]
+            addresses = _parse_addresses(key, values)
+            if addresses:
+                msg[key] = addresses
 
     for k, v in override.items():
-        if k in msg:
-            del msg[k]
+        del msg[k]
+        if k.lower() in (key.lower() for key in ADDRESS_HEADERS):
+            v = _parse_addresses(k, [v] if isinstance(v, str) else v or [])
+        elif isinstance(v, list):
+            v = ', '.join(v)
         if v:
-            if isinstance(v, list):
-                msg[k] = ', '.join(v)
-            else:
-                msg[k] = v 
+            msg[k] = v
+
+    if "From" in msg and len(msg["From"].addresses) > 1:
+        raise ValueError(f"From must have one address: {str(msg['From'])!r}")
 
     # Extract headers to be handled as "extra". Exclude those that send_mail_text
-    # treats as parameters or those that the msg.set_charset() call added. Those are
+    # treats as parameters and the MIME headers that msg.set_content() set. Those are
     # left on msg to ensure that later processing of its payload is correct.
-    HEADERS_PASSED_AS_PARAMS = ["To", "From", "Subject", "Bcc"]
-    HEADERS_INJECTED_BY_SET_CHARSET = [
+    HEADERS_PASSED_AS_PARAMS = ["To", "From", "Cc", "Subject", "Bcc"]
+    HEADERS_SET_BY_SET_CONTENT = [
         "MIME-Version",
         "Content-Type",
         "Content-Transfer-Encoding",
     ]
+    excluded = {key.lower() for key in HEADERS_PASSED_AS_PARAMS + HEADERS_SET_BY_SET_CONTENT}
+    headers = {}
+    for k, v in msg.items():
+        if k.lower() not in excluded:
+            headers.setdefault(k, []).append(str(v))
     extra = copy.deepcopy(extra)  # don't modify the caller's extra obj
-    headers = copy.copy(msg)  # don't modify the message
-    for key in HEADERS_PASSED_AS_PARAMS + HEADERS_INJECTED_BY_SET_CHARSET:
-        del headers[key]
-    for k in list(headers.keys()):
-        v = headers.get_all(k, [])
+    for k, v in headers.items():
         if k in extra:
             ev = extra[k]
             if not isinstance(ev, list):
@@ -497,25 +623,6 @@ def parse_preformatted(preformatted, extra=None, override=None):
             extra[k] = list(set(v + ev))
         else:
             extra[k] = v
-
-    # Handle non-ascii address names and some other fields
-    for key in ['To', 'From', 'Cc', 'Bcc']:
-        values = msg.get_all(key, [])
-        if values:
-            values = getaddresses(values)
-            if key=='From':
-                assertion('len(values)<2', note=f'parse_preformatted is constructing a From with multiple values: {values}')
-            del msg[key]
-            msg[key] = ',\n    '.join(formataddr(v) for v in values)
-    for key in ['Subject', ]:
-        values = msg.get_all(key)
-        if values:
-            del msg[key]
-            for v in values:
-                if isascii(v):
-                    msg[key] = v
-                else:
-                    msg[key] = Header(v, 'utf-8')
 
     # Remove Bcc from the msg, it is only used in the SMTP envelope
     bcc = msg['Bcc']
@@ -526,9 +633,21 @@ def parse_preformatted(preformatted, extra=None, override=None):
     return (msg, extra, bcc)
 
 def send_mail_preformatted(request, preformatted, extra=None, override=None):
-    """Parse preformatted string containing mail with From:, To:, ...,
-    and send it through the standard IETF mail interface (inserting
-    extra headers as needed)."""
+    """Parse preformatted mail text and send it with send_mail_text.
+
+    To, From, Cc, Bcc and Subject come from the text, and override can replace them.
+    Their addresses, in the text and in override, must be valid or unknown-email-*
+    placeholders. From must not have more than one address.
+
+    extra must not contain any header in _RESERVED_HEADERS. Apart from To, From, Cc,
+    Bcc and Subject, override must not contain them either. The text must not contain
+    any header in _DATATRACKER_HEADERS.
+
+    The body must be a single text/plain part. A Content-Transfer-Encoding header is
+    accepted and the body is decoded.
+
+    Violations raise ValueError. Returns the parsed message.
+    """
 
     if extra is None:
         extra = {}
@@ -536,8 +655,9 @@ def send_mail_preformatted(request, preformatted, extra=None, override=None):
         override = {}
 
     (msg, extra, bcc) = parse_preformatted(preformatted, extra, override)
+    to, frm, cc, subject = (None if msg[k] is None else str(msg[k]) for k in ["To", "From", "Cc", "Subject"])
     txt = msg.get_payload()
-    send_mail_text(request, msg['To'], msg["From"], msg["Subject"], txt, extra=extra, bcc=bcc)
+    send_mail_text(request, to, frm, subject, txt, cc=cc, extra=extra, bcc=None if bcc is None else str(bcc))
     return msg
 
 def send_mail_message(request, message, extra=None):

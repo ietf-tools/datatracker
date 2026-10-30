@@ -569,15 +569,20 @@ def to_iesg(request,name):
             doc.save_with_history(events)
 
             addrs= gather_address_lists('pubreq_iesg',doc=doc)
-            extra = {}
-            extra['Cc'] = addrs.cc
-            send_mail(request=request,
-                      to = addrs.to,
-                      frm = on_behalf_of(by.formatted_email()),
-                      subject = "Publication has been requested for %s-%s" % (doc.name,doc.rev),
-                      template = "doc/submit_to_iesg_email.txt",
-                      context = dict(doc=doc,by=by,url="%s%s"%(settings.IDTRACKER_BASE_URL,doc.get_absolute_url()),),
-                      extra = extra)
+            send_mail(
+                request=request,
+                to=addrs.to,
+                frm=on_behalf_of(by.formatted_email()),
+                subject="Publication has been requested for %s-%s"
+                % (doc.name, doc.rev),
+                template="doc/submit_to_iesg_email.txt",
+                context=dict(
+                    doc=doc,
+                    by=by,
+                    url="%s%s" % (settings.IDTRACKER_BASE_URL, doc.get_absolute_url()),
+                ),
+                cc=addrs.cc,
+            )
 
         return HttpResponseRedirect(doc.get_absolute_url())
 

@@ -15,6 +15,9 @@ from unittest.mock import call, patch
 from pyquery import PyQuery
 from typing import Dict, List       # pyflakes:ignore
 
+from email import message_from_string, policy
+from email.headerregistry import Address
+from email.utils import getaddresses
 from email.message import Message
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
@@ -41,12 +44,14 @@ from django.urls import reverse as urlreverse
 import debug                            # pyflakes:ignore
 
 from ietf.admin.sites import AdminSite
+from ietf.message.models import Message as _ModelMessage  # name clashes with email lib
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
 from ietf.utils.draft import PlaintextDraft, getmeta
 from ietf.utils.fields import SearchableField
 from ietf.utils.log import unreachable, assertion
 from ietf.utils.mail import (
+    parse_preformatted,
     send_mail_preformatted,
     send_mail_text,
     send_mail_mime,
@@ -54,6 +59,8 @@ from ietf.utils.mail import (
     get_payload_text,
     decode_header_value,
     show_that_mail_was_sent,
+    _format_addresses,
+    _parse_addresses,
 )
 from ietf.utils.test_runner import (
     get_template_paths,
@@ -64,6 +71,11 @@ from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.timezone import timezone_not_near_midnight
 from ietf.utils.validators import validate_utf8_text
 from ietf.utils.xmldraft import XMLDraft, InvalidMetadataError, capture_xml2rfc_output
+
+
+def address_pairs(addresses):
+    return [(a.display_name, a.addr_spec) for a in addresses]
+
 
 class SendingMail(TestCase):
 
@@ -133,8 +145,405 @@ body
             self.assertEqual(len(recv.get_all(header, [])), 1, header)
         self.assertEqual(get_payload_text(recv), "body é\n")
 
+    def test_send_mail_preformatted_non_ascii(self):
+        msg = dedent("""\
+            To: =?utf-8?q?Jos=C3=A9?= <jose@example.com>, Zoë
+             Smith <zoe@example.com>
+            From: Ångström <angstrom@ietf.org>
+            Subject: café olé
+            X-Note: café
+
+            body é
+            """)
+        send_mail_preformatted(None, msg)
+        recv = message_from_string(outbox[-1].as_string(), policy=policy.default)
+        self.assertEqual(
+            getaddresses([decode_header_value(outbox[-1]["To"])]),
+            [("José", "jose@example.com"), ("Zoë Smith", "zoe@example.com")],
+        )
+        self.assertEqual(
+            address_pairs(recv["From"].addresses), [("Ångström", "angstrom@ietf.org")]
+        )
+        self.assertEqual(recv["Subject"], "café olé")
+        self.assertEqual(recv["X-Note"], "café")
+
+    def test_send_mail_preformatted_non_ascii_override(self):
+        msg = (
+            "To: to@example.com\n"
+            "From: from@ietf.org\n"
+            "Cc: cc@example.com\n"
+            "Subject: subject\n"
+            "\n"
+            "body\n"
+        )
+        override = {
+            "To": "José <jose@example.com>",
+            "From": "Ångström <angstrom@ietf.org>",
+            "Cc": ["Øyvind <oyvind@example.com>", "Zoë <zoe@example.com>"],
+            "Bcc": "Þóra <thora@example.com>",
+            "Subject": "café olé",
+        }
+        send_mail_preformatted(None, msg, override=override)
+        sent = outbox[-1]
+        for header in ["To", "From", "Cc"]:
+            self.assertEqual(len(sent.get_all(header, [])), 1, header)
+        self.assertIsNone(sent["Bcc"])
+        recv = message_from_string(sent.as_string(), policy=policy.default)
+        self.assertEqual(
+            getaddresses([decode_header_value(sent["To"])]),
+            [("José", "jose@example.com")],
+        )
+        self.assertEqual(
+            address_pairs(recv["From"].addresses), [("Ångström", "angstrom@ietf.org")]
+        )
+        self.assertEqual(
+            address_pairs(recv["Cc"].addresses),
+            [("Øyvind", "oyvind@example.com"), ("Zoë", "zoe@example.com")],
+        )
+        self.assertEqual(recv["Subject"], "café olé")
+        saved = _ModelMessage.objects.order_by("-pk").first()
+        self.assertEqual(getaddresses([saved.bcc]), [("Þóra", "thora@example.com")])
+
+    def test_send_mail_preformatted_cc_once(self):
+        msg = (
+            "To: to@example.com\n"
+            "From: from@ietf.org\n"
+            "Cc: Øyvind <oyvind@example.com>\n"
+            "Subject: subject\n"
+            "\n"
+            "body\n"
+        )
+        send_mail_preformatted(None, msg)
+        sent = outbox[-1]
+        self.assertEqual(len(sent.get_all("Cc", [])), 1)
+        recv = message_from_string(sent.as_string(), policy=policy.default)
+        self.assertEqual(
+            address_pairs(recv["Cc"].addresses), [("Øyvind", "oyvind@example.com")]
+        )
+
+    def test_parse_preformatted_non_ascii_body(self):
+        msg, _, _ = parse_preformatted(
+            "To: to@example.com\nFrom: from@ietf.org\nSubject: subject\n\nbody é\n"
+        )
+        self.assertEqual(msg.get_payload(decode=True), "body é\n".encode("utf-8"))
+
+    def test_send_mail_text_on_behalf_of(self):
+        extra = {"Reply-To": ["list@example.com"]}
+        send_mail_text(
+            None,
+            "to@example.com",
+            "Zoë <zoe@example.com>",
+            "subject",
+            "body",
+            extra=extra,
+        )
+        self.assertEqual(extra, {"Reply-To": ["list@example.com"]})
+        recv = outbox[-1]
+        self.assertEqual(
+            address_pairs(_parse_addresses("From", [recv["From"]])),
+            [("Zoë via Datatracker", settings.UTILS_ON_BEHALF_EMAIL)],
+        )
+        self.assertEqual(
+            address_pairs(_parse_addresses("Reply-To", [recv["Reply-To"]])),
+            [("", "list@example.com"), ("Zoë", "zoe@example.com")],
+        )
+
+    def test_send_mail_text_rejects_reserved_extra(self):
+        reserved = [
+            "To",
+            "From",
+            "Cc",
+            "Bcc",
+            "Subject",
+            "MIME-Version",
+            "Content-Type",
+            "Content-Transfer-Encoding",
+            "Auto-Submitted",
+            "Precedence",
+            "X-Test-IDTracker",
+            "X-IETF-IDTracker",
+        ]
+        outbox_before = len(outbox)
+        for header in reserved + [h.lower() for h in reserved]:
+            with self.subTest(header=header), self.assertRaises(ValueError):
+                send_mail_text(
+                    None,
+                    "to@example.com",
+                    "from@ietf.org",
+                    "subject",
+                    "body",
+                    extra={header: ["value"]},
+                )
+        self.assertEqual(len(outbox), outbox_before)
+
+    def test_parse_preformatted_rejects_reserved_override(self):
+        msg = "To: to@example.com\nFrom: from@ietf.org\nSubject: subject\n\nbody\n"
+        reserved = [
+            "MIME-Version",
+            "Content-Type",
+            "Content-Transfer-Encoding",
+            "Auto-Submitted",
+            "Precedence",
+            "X-Test-IDTracker",
+            "X-IETF-IDTracker",
+        ]
+        for header in reserved + [h.lower() for h in reserved]:
+            with self.subTest(header=header), self.assertRaises(ValueError):
+                parse_preformatted(msg, override={header: "value"})
+
+    def test_parse_preformatted_rejects_datatracker_headers_in_text(self):
+        for header in [
+            "Auto-Submitted",
+            "Precedence",
+            "X-Test-IDTracker",
+            "x-ietf-idtracker",
+        ]:
+            msg = (
+                "To: to@example.com\n"
+                "From: from@ietf.org\n"
+                "Subject: subject\n"
+                f"{header}: value\n"
+                "\n"
+                "body\n"
+            )
+            with self.subTest(header=header), self.assertRaises(ValueError):
+                parse_preformatted(msg)
+
+    def test_parse_preformatted_rejects_invalid_addresses(self):
+        for to in [
+            "a@example.com;b@example.com",
+            "not an address",
+            "x@example.com, y",
+            "unknown-email-Joe-Smith, y",
+        ]:
+            msg = f"To: {to}\nFrom: from@ietf.org\nSubject: subject\n\nbody\n"
+            with self.subTest(to=to), self.assertRaises(ValueError):
+                parse_preformatted(msg)
+
+    def test_parse_preformatted_accepts_empty_list_elements(self):
+        msg, _, _ = parse_preformatted(
+            "To: a@example.com,, b@example.com,\n"
+            "From: from@ietf.org\n"
+            "Subject: subject\n"
+            "\n"
+            "body\n"
+        )
+        self.assertEqual(
+            address_pairs(msg["To"].addresses),
+            [("", "a@example.com"), ("", "b@example.com")],
+        )
+
+    def test_send_mail_preformatted_placeholders(self):
+        msg = (
+            "To: a@example.com, unknown-email-Joe-Smith,\n"
+            " Joe <unknown-email-Joe-Bloggs>\n"
+            "From: from@ietf.org\n"
+            "Subject: subject\n"
+            "\n"
+            "body\n"
+        )
+        send_mail_preformatted(None, msg)
+        self.assertEqual(getaddresses([outbox[-1]["To"]]), [("", "a@example.com")])
+
+    def test_parse_preformatted_rejects_multiple_from(self):
+        msg = (
+            "To: to@example.com\n"
+            "From: a@ietf.org, b@ietf.org\n"
+            "Subject: subject\n"
+            "\n"
+            "body\n"
+        )
+        with self.assertRaises(ValueError):
+            parse_preformatted(msg)
+
+    @patch("ietf.utils.mail.log")
+    def test_send_mail_text_drops_invalid_cc(self, mock_log):
+        send_mail_text(
+            None,
+            "to@example.com",
+            "from@ietf.org",
+            "subject",
+            "body",
+            cc="a@example.com, y",
+        )
+        self.assertTrue(mock_log.called)
+        self.assertEqual(getaddresses([outbox[-1]["Cc"]]), [("", "a@example.com")])
+
+    @patch("ietf.utils.mail.log")
+    def test_send_mail_text_logs_malformed_cc(self, mock_log):
+        outbox_before = len(outbox)
+        send_mail_text(
+            None,
+            "to@example.com",
+            "from@ietf.org",
+            "subject",
+            "body",
+            cc="a@example.com;b@example.com",
+        )
+        self.assertTrue(mock_log.called)
+        self.assertEqual(len(outbox), outbox_before + 1)
+
+    def test_send_mail_text_multiple_from(self):
+        for frm, names in [
+            ("A <a@ietf.org>, B <b@ietf.org>", "A and B"),
+            (
+                "A <a@ietf.org>, B <b@example.com>, c@example.com",
+                "A, B, and c@example.com",
+            ),
+        ]:
+            with self.subTest(frm=frm):
+                send_mail_text(None, "to@example.com", frm, "subject", "body")
+                recv = outbox[-1]
+                self.assertEqual(
+                    address_pairs(_parse_addresses("From", [recv["From"]])),
+                    [(f"{names} via Datatracker", settings.UTILS_ON_BEHALF_EMAIL)],
+                )
+                self.assertEqual(
+                    address_pairs(_parse_addresses("Reply-To", [recv["Reply-To"]])),
+                    address_pairs(_parse_addresses("From", [frm])),
+                )
+
+    @patch("ietf.utils.mail.log")
+    def test_send_mail_text_drops_invalid_to(self, mock_log):
+        send_mail_text(
+            None, ["a@example.com", "", "y"], "from@ietf.org", "subject", "body"
+        )
+        self.assertTrue(mock_log.called)
+        self.assertEqual(getaddresses([outbox[-1]["To"]]), [("", "a@example.com")])
+
+    def test_send_mail_text_to_formatting(self):
+        send_mail_text(
+            None,
+            'José <jose@example.com>, "Doe, Jane" <jane@example.com>',
+            "from@ietf.org",
+            "subject",
+            "body",
+        )
+        to = outbox[-1]["To"]
+        self.assertNotIn('"=?', to)
+        self.assertIn('"Doe, Jane"', to)
+        recv = message_from_string(outbox[-1].as_string(), policy=policy.default)
+        self.assertEqual(
+            address_pairs(recv["To"].addresses),
+            [("José", "jose@example.com"), ("Doe, Jane", "jane@example.com")],
+        )
+
+    def test_send_mail_text_to_folding(self):
+        to = [f"Zoë Ångström-{i} <zoe{i}@example.com>" for i in range(20)]
+        send_mail_text(None, to, "from@ietf.org", "subject", "body")
+        lines = f"To: {outbox[-1]['To']}".splitlines()
+        self.assertGreater(len(lines), 1)
+        self.assertLessEqual(max(len(line) for line in lines), 78)
+
+    def test_send_mail_preformatted_with_mime_headers(self):
+        msg = (
+            "To: to@example.com\n"
+            "From: from@ietf.org\n"
+            "Subject: subject\n"
+            "MIME-Version: 1.0\n"
+            'Content-Type: text/plain; charset="utf-8"\n'
+            "Content-Transfer-Encoding: 8bit\n"
+            "\n"
+            "body é\n"
+        )
+        send_mail_preformatted(None, msg)
+        recv = outbox[-1]
+        for header in ["MIME-Version", "Content-Type", "Content-Transfer-Encoding"]:
+            self.assertEqual(len(recv.get_all(header, [])), 1, header)
+        self.assertEqual(get_payload_text(recv), "body é\n")
+
+    def test_send_mail_preformatted_transfer_encoded_body(self):
+        headers = "To: to@example.com\nFrom: from@ietf.org\nSubject: subject\n"
+        for content_type in ['Content-Type: text/plain; charset="utf-8"\n', ""]:
+            for cte, payload in [
+                ("quoted-printable", "caf=C3=A9 =E2=82=AC\n"),
+                ("base64", "Y2Fmw6kg4oKsCg==\n"),
+            ]:
+                with self.subTest(content_type=content_type, cte=cte):
+                    send_mail_preformatted(
+                        None,
+                        f"{headers}{content_type}"
+                        f"Content-Transfer-Encoding: {cte}\n\n{payload}",
+                    )
+                    self.assertEqual(get_payload_text(outbox[-1]), "café €\n")
+
+    def test_send_mail_preformatted_declared_charset_identity_encoding(self):
+        msg = (
+            "To: to@example.com\n"
+            "From: from@ietf.org\n"
+            "Subject: subject\n"
+            "Content-Type: text/plain; charset=iso-8859-1\n"
+            "\n"
+            "body é\n"
+        )
+        send_mail_preformatted(None, msg)
+        self.assertEqual(get_payload_text(outbox[-1]), "body é\n")
+
+    def test_parse_preformatted_rejects_non_plain_text(self):
+        headers = "To: to@example.com\nFrom: from@ietf.org\nSubject: subject\n"
+        for body in [
+            "MIME-Version: 1.0\n"
+            'Content-Type: multipart/mixed; boundary="b"\n'
+            "\n"
+            "--b\n"
+            "Content-Type: text/plain\n"
+            "\n"
+            "body\n"
+            "--b--\n",
+            "Content-Type: text/html\n\n<p>body</p>\n",
+        ]:
+            with self.subTest(body=body), self.assertRaises(ValueError):
+                parse_preformatted(headers + body)
+
 
 class MailUtilsTests(TestCase):
+    def test_parse_addresses(self):
+        self.assertEqual(
+            address_pairs(_parse_addresses("To", ["a@example.com, B <b@example.com>"])),
+            [("", "a@example.com"), ("B", "b@example.com")],
+        )
+        values = ["a@example.com", ("B", "b@example.com"), Address("C", addr_spec="c@example.com"), ""]
+        expected = [("", "a@example.com"), ("B", "b@example.com"), ("C", "c@example.com")]
+        self.assertEqual(address_pairs(_parse_addresses("To", values)), expected)
+        self.assertEqual(address_pairs(_parse_addresses("To", tuple(values))), expected)
+        for value in ["a@example.com", Address("C", addr_spec="c@example.com"), None]:
+            with self.assertRaises(TypeError):
+                _parse_addresses("To", value)
+        self.assertEqual(
+            address_pairs(_parse_addresses("To", ['"Doe, John" <j@example.com>'])),
+            [("Doe, John", "j@example.com")],
+        )
+        self.assertEqual(
+            address_pairs(_parse_addresses("To", ["=?utf-8?b?Sm9zw6k=?= <jose@example.com>"])),
+            [("José", "jose@example.com")],
+        )
+        self.assertEqual(
+            address_pairs(_parse_addresses("To", ["a@example.com,\n    B\r\n <b@example.com>"])),
+            [("", "a@example.com"), ("B", "b@example.com")],
+        )
+
+    def test_format_addresses(self):
+        formatted = _format_addresses("To", [Address("José", addr_spec="jose@example.com")])
+        self.assertTrue(formatted.isascii())
+        self.assertNotIn('"', formatted)
+        self.assertEqual(address_pairs(_parse_addresses("To", [formatted])), [("José", "jose@example.com")])
+
+        long_name = "Zoë Ångström-Øyvindsdóttir Ñúñez-Çelik Þórhallsdóttir"
+        formatted = _format_addresses("To", [Address(long_name, addr_spec="zoe@example.com")])
+        self.assertLessEqual(max(len(line) for line in f"To: {formatted}".splitlines()), 78)
+        self.assertIn(long_name, decode_header_value(formatted))
+
+        formatted = _format_addresses("To", [Address("Doe, John", addr_spec="j@example.com")])
+        self.assertIn('"Doe, John"', formatted)
+
+        addresses = [
+            Address("", addr_spec="a@example.com"),
+            Address("Doe, John", addr_spec="j@example.com"),
+            Address("José", addr_spec="jose@example.com"),
+            Address("Zoë", addr_spec="zoe@example.com"),
+        ]
+        self.assertEqual(_parse_addresses("To", [_format_addresses("To", addresses)]), addresses)
+
     def test_decode_header_value(self):
         self.assertEqual(
             decode_header_value("cake"),

@@ -5,6 +5,7 @@
 import datetime
 import io
 
+from email import message_from_string, policy
 from pathlib import Path
 from pyquery import PyQuery
 
@@ -18,7 +19,7 @@ from ietf.doc.models import ( Document, State, BallotDocEvent, BallotType, NewRe
     TelechatDocEvent, WriteupDocEvent )
 from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils_charter import ( next_revision, default_review_text, default_action_text,
-    charter_name_for_group )
+    charter_name_for_group, derive_new_work_text )
 from ietf.doc.utils import close_open_ballots
 from ietf.group.factories import RoleFactory, GroupFactory
 from ietf.group.models import Group, GroupMilestone
@@ -570,6 +571,17 @@ class EditCharterTests(TestCase):
             self.assertEqual(r.status_code, 404, f"GET of charter named {bad_name} should 404")
             r = self.client.post(url, {})
             self.assertEqual(r.status_code, 404, f"POST of charter named {bad_name} should 404")
+
+    def test_derive_new_work_text_non_ascii(self):
+        charter = CharterFactory()
+        review_text = "To: Zoë <zoe@example.com>\nFrom: Zoë <zoe@ietf.org>\nSubject: Révision\n\nCharter text é\n"
+        text = derive_new_work_text(review_text, charter.group)
+        self.assertIn("\n\nCharter text é\n", text)
+        parsed = message_from_string(text, policy=policy.default)
+        self.assertEqual(parsed["Subject"], "Révision")
+        self.assertEqual(parsed["From"], "The IESG <iesg@ietf.org>")
+        self.assertEqual(parsed["Content-Transfer-Encoding"], "8bit")
+        self.assertEqual(parsed.get_payload(), "Charter text é\n")
 
     def test_edit_review_announcement_text(self):
         area = GroupFactory(type_id='area')
