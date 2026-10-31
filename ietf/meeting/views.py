@@ -54,6 +54,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.encoding import force_str
 from django.utils.functional import SimpleLazyObject
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import RedirectView
@@ -1695,8 +1696,13 @@ def edit_schedule_properties(request, num, owner, name):
         form = SchedulePropertiesForm(meeting, instance=Schedule.objects.get(pk=schedule.pk), data=request.POST)
         if form.is_valid():
             form.save()
-            if request.GET.get('next'):
-                return HttpResponseRedirect(request.GET.get('next'))
+            next_url = request.GET.get('next')
+            if next_url and url_has_allowed_host_and_scheme(
+                url=next_url,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure(),
+            ):
+                return HttpResponseRedirect(next_url)
             return redirect('ietf.meeting.views.edit_meeting_schedule', num=num, owner=owner, name=form.instance.name)
     else:
         form = SchedulePropertiesForm(meeting, instance=schedule)
