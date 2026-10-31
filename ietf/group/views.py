@@ -63,6 +63,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.utils import timezone
 from django.utils.html import escape
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.cache import cache_page, cache_control
 from django.urls import reverse
 
@@ -1946,6 +1947,12 @@ def email_open_review_assignments(request, acronym, group_type=None):
                                           r.reviewer.person.first_name())
 
     back_url = request.GET.get("next")
+    if back_url and not url_has_allowed_host_and_scheme(
+        url=back_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        back_url = None
     if not back_url:
         kwargs = { "acronym": group.acronym }
         if group_type:
@@ -2028,6 +2035,12 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
         settings.filter_re = get_default_filter_re(reviewer)
 
     back_url = request.GET.get("next")
+    if back_url and not url_has_allowed_host_and_scheme(
+        url=back_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        back_url = None
     if not back_url:
         import ietf.group.views
         kwargs = { "acronym": group.acronym}
