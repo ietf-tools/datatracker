@@ -126,6 +126,7 @@ from ietf.mailtrigger.utils import gather_address_lists
 from ietf.mailtrigger.models import Recipient
 from ietf.settings import MAILING_LIST_INFO_URL
 from ietf.utils.decorators import ignore_view_kwargs
+from ietf.utils.http import is_safe_next_url
 from ietf.utils.response import permission_denied
 from ietf.utils.text import strip_suffix
 from ietf.utils import markdown
@@ -1945,14 +1946,13 @@ def email_open_review_assignments(request, acronym, group_type=None):
     review_assignments.sort(key=lambda r: r.section_order + r.reviewer.person.last_name() + 
                                           r.reviewer.person.first_name())
 
-    back_url = request.GET.get("next")
-    if not back_url:
-        kwargs = { "acronym": group.acronym }
-        if group_type:
-            kwargs["group_type"] = group_type
+    kwargs = {"acronym": group.acronym}
+    if group_type:
+        kwargs["group_type"] = group_type
 
-        import ietf.group.views
-        back_url = urlreverse(ietf.group.views.review_requests, kwargs=kwargs)
+    import ietf.group.views
+
+    back_url = urlreverse(ietf.group.views.review_requests, kwargs=kwargs)
 
     if request.method == "POST" and request.POST.get("action") == "email":
         form = EmailOpenAssignmentsForm(request.POST)
@@ -2028,7 +2028,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
         settings.filter_re = get_default_filter_re(reviewer)
 
     back_url = request.GET.get("next")
-    if not back_url:
+    if not is_safe_next_url(back_url, {"ietf.ietfauth.views.review_overview"}):
         import ietf.group.views
         kwargs = { "acronym": group.acronym}
         if group_type:
