@@ -4,12 +4,8 @@ import os
 
 from django.conf import settings
 
-from ietf.meeting.models import Meeting, Session
+from ietf.meeting.models import Session
 
-def get_current_meeting():
-    '''Returns the most recent IETF meeting'''
-    return Meeting.objects.filter(type='ietf').order_by('-number')[0]
-    
 def get_materials(group,meeting):
     '''
     Returns the materials as a dictionary with keys = doctype.
