@@ -1688,6 +1688,13 @@ class ReturnToUrlTests(TestCase):
         with self.assertRaises(ValueError):
             parse_ballot_edit_return_point('https://example.com/phishing', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718')
 
+        for path in ("", "//evil.com/doc/search/", "/\\evil.com/doc/search/"):
+            with self.subTest(path=path):
+                with self.assertRaises(ValueError):
+                    parse_ballot_edit_return_point(
+                        path, "draft-ietf-opsawg-ipfix-tcpo-v6eh", "998718"
+                    )
+
     def test_valid_default_return_to_url(self):
         self.assertEqual(parse_ballot_edit_return_point(
             None,
@@ -1701,3 +1708,12 @@ class ReturnToUrlTests(TestCase):
             'draft-ietf-opsawg-ipfix-tcpo-v6eh',
             '998718'
         ), '/doc/draft-ietf-opsawg-ipfix-tcpo-v6eh/ballot/998718/')
+
+    def test_valid_return_to_url_with_query_and_fragment(self):
+        path = "/doc/search/?name=x&rfcs=on#frag"
+        self.assertEqual(
+            parse_ballot_edit_return_point(
+                path, "draft-ietf-opsawg-ipfix-tcpo-v6eh", "998718"
+            ),
+            path,
+        )
