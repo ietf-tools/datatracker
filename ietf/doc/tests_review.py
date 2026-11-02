@@ -9,6 +9,7 @@ import os
 import shutil
 
 from unittest.mock import patch, Mock
+from urllib.parse import urlencode
 from requests import Response
 
 from django.apps import apps
@@ -1367,3 +1368,21 @@ class ReviewTests(TestCase):
         r = self.client.post(url + '?next=http://example.com')
         self.assertRedirects(r, doc.get_absolute_url(), fetch_redirect_response=False)
         self.assertFalse(ReviewWish.objects.all())
+
+        # Only site-relative URLs are followed, not absolute URLs, even to this site
+        for next_url in (
+            "//example.com/",
+            "/\\example.com/",
+            "http://testserver/redirect-url",
+        ):
+            with self.subTest(next_url=next_url):
+                ReviewWish.objects.create(person=reviewer, doc=doc, team=team)
+                r = self.client.post(url + "?" + urlencode({"next": next_url}))
+                self.assertRedirects(
+                    r, doc.get_absolute_url(), fetch_redirect_response=False
+                )
+                self.assertFalse(ReviewWish.objects.all())
+
+        ReviewWish.objects.create(person=reviewer, doc=doc, team=team)
+        r = self.client.post(url + "?" + urlencode({"next": "/redirect-url?a=1#frag"}))
+        self.assertRedirects(r, "/redirect-url?a=1#frag", fetch_redirect_response=False)
