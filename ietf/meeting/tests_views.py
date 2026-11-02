@@ -18,7 +18,7 @@ from lxml.etree import tostring
 from icalendar import Calendar
 from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
-from urllib.parse import quote, urlparse, urlsplit
+from urllib.parse import quote, urlencode, urlparse, urlsplit
 from PIL import Image
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -1323,6 +1323,45 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertEqual(schedule.notes, "New Notes")
         self.assertEqual(schedule.base_id, new_base.pk)
         self.assertEqual(schedule.name, 'some-other-name')
+
+    def test_edit_schedule_properties_next(self):
+        schedule = ScheduleFactory(meeting__type_id="ietf")
+        url = urlreverse(
+            "ietf.meeting.views.edit_schedule_properties",
+            kwargs={
+                "owner": schedule.owner.email(),
+                "name": schedule.name,
+                "num": schedule.meeting.number,
+            },
+        )
+        default_url = urlreverse(
+            "ietf.meeting.views.edit_meeting_schedule",
+            kwargs={
+                "num": schedule.meeting.number,
+                "owner": schedule.owner.email(),
+                "name": schedule.name,
+            },
+        )
+        list_url = urlreverse(
+            "ietf.meeting.views.list_schedules", kwargs={"num": schedule.meeting.number}
+        )
+        data = {"name": schedule.name, "notes": "New Notes"}
+        self.client.login(username="secretary", password="secretary+password")
+        for next_url, expected_url in (
+            (f"{list_url}?a=1#frag", f"{list_url}?a=1#frag"),
+            ("https://evil.example/", default_url),
+            ("//evil.example/", default_url),
+            ("javascript:alert(1)", default_url),
+            (urlreverse("ietf.doc.views_search.search"), default_url),
+        ):
+            with self.subTest(next_url=next_url):
+                response = self.client.post(
+                    url + "?" + urlencode({"next": next_url}), data
+                )
+                self.assertNoFormPostErrors(response)
+                self.assertRedirects(
+                    response, expected_url, fetch_redirect_response=False
+                )
 
     def test_agenda_by_type_ics(self):
         session=SessionFactory(meeting__type_id='ietf',type_id='lead')

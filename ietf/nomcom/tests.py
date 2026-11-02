@@ -8,7 +8,7 @@ import random
 import shutil
 
 from pyquery import PyQuery
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
 from itertools import combinations
 from zoneinfo import ZoneInfo
 
@@ -1754,6 +1754,34 @@ class NewActiveNomComTests(TestCase):
         )
         response = self.client.post(url,{'key': force_str(key)})
         self.assertEqual(response.status_code,302)
+
+    def test_provide_private_key_back_to(self):
+        year = self.nc.year()
+        url = reverse("ietf.nomcom.views.private_key", kwargs={"year": year})
+        default_url = reverse("ietf.nomcom.views.private_index", kwargs={"year": year})
+        feedback_url = reverse("ietf.nomcom.views.view_feedback", kwargs={"year": year})
+        login_testing_unauthorized(self, self.chair.user.username, url)
+
+        # nomcom_private_key_required sends the user here, and back once the key is set
+        response = self.client.get(feedback_url)
+        self.assertEqual(response.status_code, 302)
+        response = self.client.post(response["Location"], {"key": force_str(key)})
+        self.assertRedirects(response, feedback_url, fetch_redirect_response=False)
+
+        for back_to, expected_url in (
+            (f"{feedback_url}?a=1#frag", f"{feedback_url}?a=1#frag"),
+            ("https://evil.example/", default_url),
+            ("//evil.example/", default_url),
+            ("javascript:alert(1)", default_url),
+            (reverse("ietf.doc.views_search.search"), default_url),
+        ):
+            with self.subTest(back_to=back_to):
+                response = self.client.post(
+                    url + "?" + urlencode({"back_to": back_to}), {"key": force_str(key)}
+                )
+                self.assertRedirects(
+                    response, expected_url, fetch_redirect_response=False
+                )
 
     def test_email_pasting(self):
         url = reverse('ietf.nomcom.views.private_feedback_email',kwargs={'year':self.nc.year()})

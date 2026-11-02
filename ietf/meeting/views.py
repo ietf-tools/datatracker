@@ -209,6 +209,7 @@ from ietf.name.models import (
 from ietf.utils import markdown
 from ietf.utils.decorators import require_api_key
 from ietf.utils.hedgedoc import Note, NoteError
+from ietf.utils.http import is_safe_next_url
 from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
 from ietf.utils.log import assertion, log
 from ietf.utils.mail import send_mail_message, send_mail_text
@@ -1695,8 +1696,9 @@ def edit_schedule_properties(request, num, owner, name):
         form = SchedulePropertiesForm(meeting, instance=Schedule.objects.get(pk=schedule.pk), data=request.POST)
         if form.is_valid():
             form.save()
-            if request.GET.get('next'):
-                return HttpResponseRedirect(request.GET.get('next'))
+            next_url = request.GET.get("next")
+            if is_safe_next_url(next_url, {"ietf.meeting.views.list_schedules"}):
+                return HttpResponseRedirect(next_url)
             return redirect('ietf.meeting.views.edit_meeting_schedule', num=num, owner=owner, name=form.instance.name)
     else:
         form = SchedulePropertiesForm(meeting, instance=schedule)

@@ -30,7 +30,10 @@ from ietf.group.models import Group, GroupEvent, Role
 from ietf.group.utils import update_role_set
 from ietf.message.models import Message
 
-from ietf.nomcom.decorators import nomcom_private_key_required
+from ietf.nomcom.decorators import (
+    NOMCOM_PRIVATE_KEY_RETURN_VIEWS,
+    nomcom_private_key_required,
+)
 from ietf.nomcom.forms import (NominateForm, NominateNewPersonForm, FeedbackForm, QuestionnaireForm,
                                MergeNomineeForm, MergePersonForm, NomComTemplateForm, PositionForm,
                                PrivateKeyForm, EditNomcomForm, EditNomineeForm,
@@ -46,6 +49,7 @@ from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key, sug
 
 from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person
+from ietf.utils.http import is_safe_next_url
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today
 
@@ -154,8 +158,10 @@ def history(request):
 @role_required("Nomcom")
 def private_key(request, year):
     nomcom = get_nomcom_by_year(year)
-    
-    back_url = request.GET.get('back_to', reverse('ietf.nomcom.views.private_index', None, args=(year, )))
+
+    back_url = request.GET.get("back_to")
+    if not is_safe_next_url(back_url, NOMCOM_PRIVATE_KEY_RETURN_VIEWS):
+        back_url = reverse("ietf.nomcom.views.private_index", None, args=(year,))
     if request.method == 'POST':
         form = PrivateKeyForm(data=request.POST)
         if form.is_valid():
