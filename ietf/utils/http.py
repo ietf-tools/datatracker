@@ -29,8 +29,8 @@ def is_safe_next_url(url, allowed_views=None):
     # scheme-relative URLs to another site.
     if not url or not url.startswith("/") or url.startswith(("//", "/\\")):
         return False
-    # Browsers remove tab, CR, and LF anywhere in a URL, so "/\t/evil.com" becomes
-    # "//evil.com"
+    # Browsers remove tab, CR, and LF anywhere in a URL, so "/\t/evil.example.com"
+    # becomes "//evil.example.com"
     if any(c in url for c in "\t\r\n"):
         return False
     if allowed_views is not None:

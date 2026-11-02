@@ -1688,7 +1688,11 @@ class ReturnToUrlTests(TestCase):
         with self.assertRaises(ValueError):
             parse_ballot_edit_return_point('https://example.com/phishing', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718')
 
-        for path in ("", "//evil.com/doc/search/", "/\\evil.com/doc/search/"):
+        for path in (
+            "",
+            "//evil.example.com/doc/search/",
+            "/\\evil.example.com/doc/search/",
+        ):
             with self.subTest(path=path):
                 with self.assertRaises(ValueError):
                     parse_ballot_edit_return_point(

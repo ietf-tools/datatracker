@@ -982,11 +982,11 @@ class IsSafeNextUrlTests(TestCase):
             "/doc/search/?name=x&rfcs=on",
             "/x#frag",
             "/x?a=1#frag",
-            "/x#//evil.com",
-            "/x#\\evil.com",
+            "/x#//evil.example.com",
+            "/x#\\evil.example.com",
             "/x?",
             "/x#",
-            "/%2F/evil.com",
+            "/%2F/evil.example.com",
         ):
             with self.subTest(url=url):
                 self.assertTrue(is_safe_next_url(url))
@@ -995,10 +995,10 @@ class IsSafeNextUrlTests(TestCase):
         for url in (
             None,
             "",
-            "//evil.com/x",
-            "///evil.com",
-            "/\\evil.com",
-            "/\t/evil.com",
+            "//evil.example.com/x",
+            "///evil.example.com",
+            "/\\evil.example.com",
+            "/\t/evil.example.com",
             "/x\r\nSet-Cookie: a=b",
             "\x00/x",
             " /x",
@@ -1006,7 +1006,7 @@ class IsSafeNextUrlTests(TestCase):
             "../x",
             "#frag",
             "?a=1",
-            "https://evil.com",
+            "https://evil.example.com",
             "javascript:alert(1)",
         ):
             with self.subTest(url=url):
@@ -1035,7 +1035,8 @@ class RedirectTrailingPeriodMiddlewareTests(TestCase):
             lambda request: HttpResponseNotFound()
         )
         request = RequestFactory().get("/")
-        # RequestFactory().get("//evil.com.") would parse evil.com. as the host
+        # RequestFactory().get("//evil.example.com.") would parse evil.example.com. as
+        # the host
         request.path = request.path_info = path
         return middleware(request)
 
@@ -1045,6 +1046,10 @@ class RedirectTrailingPeriodMiddlewareTests(TestCase):
         self.assertEqual(response["Location"], "/doc/draft-foo")
 
     def test_does_not_redirect_off_site(self):
-        for path in ("//evil.com.", "//evil.com/x.", "/\\evil.com."):
+        for path in (
+            "//evil.example.com.",
+            "//evil.example.com/x.",
+            "/\\evil.example.com.",
+        ):
             with self.subTest(path=path):
                 self.assertEqual(self.get_response(path).status_code, 404)

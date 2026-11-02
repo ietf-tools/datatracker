@@ -69,7 +69,7 @@ def redirect_trailing_period_middleware(get_response):
         response = get_response(request)
         if response.status_code == 404 and request.path.endswith("."):
             path = request.path.rstrip(".")
-            # A path such as "//evil.com." would otherwise redirect off-site
+            # A path such as "//evil.example.com." would otherwise redirect off-site
             if is_safe_next_url(path):
                 return HttpResponsePermanentRedirect(path)
         return response
