@@ -63,8 +63,9 @@ from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, s
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose, generate_agenda_data
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
+from ietf.utils.mime import get_mime_type
 from ietf.utils.test_runner import TestBlobstoreManager, disable_coverage
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized, mocked_caches, unicontent
 from ietf.utils.timezone import date_today, time_now
 
 from ietf.person.factories import PersonFactory, PersonalApiKeyFactory
@@ -5471,13 +5472,113 @@ class InterimTests(TestCase):
         last_week = today - datetime.timedelta(days=7)
         ietf = SessionFactory(meeting__type_id='ietf',meeting__date=last_week,group__state_id='active',group__parent=GroupFactory(state_id='active'))
         SessionFactory(meeting__type_id='interim',meeting__date=last_week,status_id='canceled',group__state_id='active',group__parent=GroupFactory(state_id='active'))
+        old_ietf = MeetingFactory(type_id='ietf', number='5', date=last_week - datetime.timedelta(days=365))
         url = urlreverse('ietf.meeting.views.past')
         r = self.client.get(url)
-        self.assertContains(r, 'IETF-%02d'%int(ietf.meeting.number))
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        #id="-%s" % interim.group.acronym
-        #self.assertIn('Cancelled', q('[id*="'+id+'"]').text())
-        self.assertIn('Cancelled', q('tr>td>a+span').text())
+        interims_url = urlreverse('ietf.meeting.views.past_interims')
+        # each tab is its own page
+        self.assertEqual(q('.nav-tabs a.active').attr('href'), url)
+        self.assertEqual(len(q('.nav-tabs a[href="%s"]' % interims_url)), 1)
+        plenary = q('#plenary')
+        self.assertIn('IETF %s' % ietf.meeting.number, plenary('h2').text())
+        self.assertEqual(
+            len(plenary('a[href="%s"]' % urlreverse('ietf.meeting.views.proceedings', kwargs=dict(num=ietf.meeting.number)))),
+            1,
+        )
+        self.assertEqual(len(plenary('a[href="https://www.ietf.org/proceedings/05.pdf"]')), 1)
+        self.assertIn('IETF %s' % old_ietf.number, plenary('h2').text())
+
+        r = self.client.get(interims_url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(q('.nav-tabs a.active').attr('href'), interims_url)
+        self.assertEqual(len(q('.nav-tabs a[href="%s"]' % url)), 1)
+        # the interim tab lists only interims
+        interim = q('#interim')
+        self.assertEqual(len(interim('table.tablesorter tbody tr')), 1)
+        self.assertIn('Cancelled', interim('tr>td>a+span').text())
+        self.assertNotIn('IETF %s' % ietf.meeting.number, interim.text())
+
+    @mocked_caches('django.templatetags.cache.caches')
+    def test_past_meetings_cache_hit_skips_queries(self):
+        MeetingFactory(type_id='ietf', number='120', date=date_today() - datetime.timedelta(days=30))
+        past_url = urlreverse('ietf.meeting.views.past')
+        self.client.get(past_url)  # fills the cache
+        with CaptureQueriesContext(connection) as queries:
+            r = self.client.get(past_url)
+        self.assertContains(r, 'IETF 120')
+        self.assertFalse(
+            [q['sql'] for q in queries.captured_queries if 'meeting_meeting' in q['sql']],
+            'A cached past meetings page should not query meetings',
+        )
+
+    def test_past_attendance(self):
+        today = date_today()
+        legacy = MeetingFactory(type_id='ietf', number='5', date=today - datetime.timedelta(days=4000))
+        legacy_hybrid = MeetingFactory(type_id='ietf', number='91', date=today - datetime.timedelta(days=3000))
+        legacy_online = MeetingFactory(type_id='ietf', number='108', date=today - datetime.timedelta(days=2000))
+        modern = MeetingFactory(type_id='ietf', number='120', date=today - datetime.timedelta(days=1000))
+        RegistrationFactory.create_batch(
+            3, meeting=modern, with_ticket={'attendance_type_id': 'onsite'}, attended=True,
+        )
+        RegistrationFactory.create_batch(
+            2, meeting=modern, with_ticket={'attendance_type_id': 'remote'}, attended=True,
+        )
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        def attendance_text(meeting):
+            entry = q('#plenary .past-plenary').filter(
+                lambda i, el: PyQuery(el)('h2').text() == 'IETF %s' % meeting.number
+            )
+            return ' '.join(entry('.past-attendance').text().split())
+
+        # before remote attendance was reported: a single figure, no onsite/online wording
+        self.assertEqual(attendance_text(legacy), '35 participants')
+        self.assertEqual(attendance_text(legacy_hybrid), '1109 onsite participants, 361 online participants')
+        self.assertEqual(attendance_text(legacy_online), '1102 online participants')
+        # registration data for modern meetings
+        self.assertEqual(attendance_text(modern), '3 onsite participants, 2 online participants')
+
+    def test_past_dates(self):
+        # dates come from the meeting's date and length
+        first = MeetingFactory(type_id='ietf', number='1', date=datetime.date(1986, 1, 16), days=2)
+        seoul = MeetingFactory(type_id='ietf', number='59', date=datetime.date(2004, 2, 29), days=5)
+        online = MeetingFactory(type_id='ietf', number='112', date=datetime.date(2021, 11, 8), days=5)
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        def date_text(meeting):
+            entry = q('#plenary .past-plenary').filter(
+                lambda i, el: PyQuery(el)('h2').text() == 'IETF %s' % meeting.number
+            )
+            return ' '.join(entry('.past-dates').text().split())
+
+        self.assertTrue(date_text(first).startswith('January 16-17, 1986'))
+        self.assertTrue(date_text(seoul).startswith('February 29 - March 4, 2004'))
+        self.assertTrue(date_text(online).startswith('November 8-12, 2021'))
+
+    def test_past_legacy_hosts(self):
+        today = date_today()
+        first = MeetingFactory(type_id='ietf', number='1', date=today - datetime.timedelta(days=4000))
+        no_host = MeetingFactory(type_id='ietf', number='35', date=today - datetime.timedelta(days=3000))
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        def entry(meeting):
+            return q('#plenary .past-plenary').filter(
+                lambda i, el: PyQuery(el)('h2').text() == 'IETF %s' % meeting.number
+            )
+
+        self.assertEqual(' '.join(entry(first)('.past-legacy-host').text().split()), 'Hosted by Linkabit')
+        self.assertEqual(len(entry(first)('img')), 0)
+        self.assertEqual(len(entry(no_host)('.past-legacy-host')), 0)
+        self.assertNotIn('Hosted by', entry(no_host).text())
 
     def do_upcoming_test(self, querystring=None, create_meeting=True):
         if create_meeting:
@@ -6811,7 +6912,7 @@ class MaterialsTests(TestCase):
         test_content = '%PDF-1.4\n%âãÏÓ\nthis is some text for a test'
         test_file = StringIO(test_content)
         test_file.name = "not_really.pdf"
-        r = self.client.post(url,dict(file=test_file))
+        r = self.client.post(url,dict(submission_method="upload",file=test_file))
         self.assertEqual(r.status_code, 302)
         bs_doc = session.presentations.filter(document__type_id='bluesheets').first().document
         self.assertEqual(bs_doc.rev,'00')
@@ -6822,11 +6923,87 @@ class MaterialsTests(TestCase):
         self.assertIn('Revise', str(q("title")))
         test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some different text for a test')
         test_file.name = "also_not_really.pdf"
-        r = self.client.post(url,dict(file=test_file))
+        r = self.client.post(url,dict(submission_method="upload",file=test_file))
         self.assertEqual(r.status_code, 302)
         bs_doc = Document.objects.get(pk=bs_doc.pk)
         self.assertEqual(bs_doc.rev,'01')
-    
+
+    def test_upload_bluesheets_csv_like_txt(self):
+        """A .txt bluesheet that libmagic identifies as text/csv is accepted.
+
+        Comma-separated attendee lines are sniffed as text/csv even though the
+        file has a .txt extension and is uploaded as text/plain.
+        """
+        session = SessionFactory(meeting__type_id='ietf')
+        url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
+        self.client.login(username="secretary", password="secretary+password")
+        test_content = (
+            'Alice Smith, Example Corp, alice@example.com\n'
+            'Bob Jones, Acme Inc, bob@example.org\n'
+            'Carol White, Foo Ltd, carol@example.net\n'
+        )
+        self.assertEqual(get_mime_type(test_content.encode())[0], 'text/csv')
+        test_file = StringIO(test_content)
+        test_file.name = "bluesheet.txt"
+        r = self.client.post(url,dict(submission_method="upload",file=test_file))
+        self.assertEqual(r.status_code, 302)
+        bs_doc = session.presentations.filter(document__type_id='bluesheets').first().document
+        self.assertEqual(retrieve_str("bluesheets", f"{bs_doc.name}-{bs_doc.rev}.txt"), test_content)
+
+    def test_enter_bluesheets(self):
+        session = SessionFactory(meeting__type_id='ietf')
+        url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
+        redirect_url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertIn('Upload', str(q("title")))
+        self.assertEqual(q('[name="submission_method"]:checked').val(), 'upload')
+        self.assertEqual(q('textarea[name="content"]').text().strip(), '')
+
+        r = self.client.post(url,dict(submission_method="enter",content=""))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(PyQuery(r.content)('textarea[name="content"]').hasClass('is-invalid'))
+        r = self.client.post(url,dict(content="Alice Smith, Example Corp"))
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(session.presentations.exists())
+
+        # Entered text is saved as .txt, with line endings normalized, even when it looks like CSV
+        test_text = 'Alice Smith, Example Corp, alice@example.com\nBob Jones, Acme Inc, bob@example.org\n'
+        r = self.client.post(url,dict(submission_method="enter",content=test_text.replace('\n', '\r\n')))
+        self.assertRedirects(r, redirect_url)
+        bs_doc = session.presentations.filter(document__type_id='bluesheets').first().document
+        self.assertEqual(bs_doc.rev,'00')
+        self.assertEqual(bs_doc.uploaded_filename, f"{bs_doc.name}-00.txt")
+        self.assertEqual(retrieve_str("bluesheets", f"{bs_doc.name}-00.txt"), test_text)
+
+        # Revising a .txt bluesheet starts from its current text
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertIn('Revise', str(q("title")))
+        self.assertEqual(q('textarea[name="content"]').text().strip(), test_text.strip())
+
+        test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
+        test_file.name = "not_really.pdf"
+        r = self.client.post(url,dict(submission_method="upload",file=test_file))
+        self.assertRedirects(r, redirect_url)
+        bs_doc = Document.objects.get(pk=bs_doc.pk)
+        self.assertEqual(bs_doc.rev,'01')
+
+        # A PDF bluesheet has no text to start from
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(PyQuery(r.content)('textarea[name="content"]').text().strip(), '')
+
+        test_text = 'Carol White, Foo Ltd\n'
+        r = self.client.post(url,dict(submission_method="enter",content=test_text))
+        self.assertRedirects(r, redirect_url)
+        bs_doc = Document.objects.get(pk=bs_doc.pk)
+        self.assertEqual(bs_doc.rev,'02')
+        self.assertEqual(retrieve_str("bluesheets", f"{bs_doc.name}-02.txt"), test_text)
+
     def test_upload_bluesheets_chair_access(self):
         make_meeting_test_data()
         mars = Group.objects.get(acronym='mars')
@@ -6848,7 +7025,7 @@ class MaterialsTests(TestCase):
         test_content = '%PDF-1.4\n%âãÏÓ\nthis is some text for a test'
         test_file = StringIO(test_content)
         test_file.name = "not_really.pdf"
-        r = self.client.post(url,dict(file=test_file))
+        r = self.client.post(url,dict(submission_method="upload",file=test_file))
         self.assertEqual(r.status_code, 302)
         bs_doc = session.presentations.filter(document__type_id='bluesheets').first().document
         self.assertEqual(bs_doc.rev,'00')
@@ -7233,6 +7410,7 @@ class MaterialsTests(TestCase):
             bad = BytesIO('Minutes: café, hôtel\n'.encode('mac_roman')); bad.name = 'macroman.txt'
             r = self.client.post(url, dict(submission_method='upload', file=bad))
             self.assertContains(r, 'The first invalid byte is on line 1: Minutes: caf[0x8E], h[0x99]tel', msg_prefix=doctype)
+            self.assertNotContains(r, 'You must fill in this field', msg_prefix=doctype)
             self.assertFalse(Document.objects.filter(type_id=doctype).exists(), doctype)
             good = BytesIO(b'\xef\xbb\xbf' + 'Minutes: café\n'.encode()); good.name = 'utf8.txt'
             r = self.client.post(url, dict(submission_method='upload', file=good))
@@ -9959,6 +10137,37 @@ class MeetingHostTests(BaseMeetingTestCase):
             },
         )
 
+    def test_past_meetings_show_host_logos(self):
+        # use a meeting number with no LEGACY_PLENARY_HOSTS entry
+        host = MeetingHostFactory(
+            meeting__number='120',
+            meeting__date=date_today() - datetime.timedelta(days=30),
+        )
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        img = PyQuery(r.content)('#plenary .host-logo img')
+        self.assertEqual(len(img), 1)
+        self.assertEqual(
+            img.attr('src'),
+            urlreverse(
+                'ietf.meeting.views_proceedings.meetinghost_logo',
+                kwargs=dict(num=host.meeting.number, host_id=host.pk),
+            ),
+        )
+        self.assertEqual(img.attr('alt'), host.name)
+
+    def test_past_meetings_legacy_host_overrides_logos(self):
+        host = MeetingHostFactory(
+            meeting__number='96',
+            meeting__date=date_today() - datetime.timedelta(days=30),
+        )
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#plenary .host-logo img')), 0)
+        self.assertIn('Juniper Networks', q('#plenary .past-legacy-host').text())
+        self.assertNotIn(host.name, q('#plenary').text())
+
     def test_permissions(self):
         meeting = MeetingFactory(type_id='ietf')
         url = urlreverse('ietf.meeting.views_proceedings.edit_meetinghosts', kwargs=dict(num=meeting.number))
@@ -10878,6 +11087,57 @@ class ProceedingsTests(BaseMeetingTestCase):
                     {'file': fd, 'external_url': ''},
                 )
                 self.assertEqual(mat.get_href(), f'{mat.document.name}:00')
+
+    def test_past_meetings_show_survey_materials(self):
+        survey = ProceedingsMaterialTypeName.objects.get(slug='meeting_survey')
+        modern = ProceedingsMaterialFactory(
+            meeting__number='123', meeting__date=date_today() - datetime.timedelta(days=30), type=survey,
+        )
+        old = ProceedingsMaterialFactory(
+            meeting__number='90', meeting__date=date_today() - datetime.timedelta(days=4000), type=survey,
+        )
+        ProceedingsMaterialFactory(
+            meeting__number='110', meeting__date=date_today() - datetime.timedelta(days=2000), type=survey,
+            document__states=[('procmaterials', 'removed')],
+        )
+        r = self.client.get(urlreverse('ietf.meeting.views.past'))
+        self.assertEqual(r.status_code, 200)
+        links = [a.attrib['href'] for a in PyQuery(r.content)('#plenary a.past-survey')]
+        self.assertCountEqual(links, [modern.get_href(), old.get_href()])
+        # meetings before 97 link to materials without a revision
+        self.assertTrue(old.get_href().endswith('/meeting/90/materials/proceedings-90-meeting-survey'))
+
+    def test_past_meetings_edit_materials_link(self):
+        meeting = self._procmat_test_meeting()
+        past_url = urlreverse('ietf.meeting.views.past')
+        details_url = urlreverse('ietf.meeting.views_proceedings.material_details', kwargs=dict(num=meeting.number))
+        self.assertEqual(len(PyQuery(self.client.get(past_url).content)('a[href="%s"]' % details_url)), 0)
+        self.client.login(username='secretary', password='secretary+password')
+        self.assertEqual(len(PyQuery(self.client.get(past_url).content)('a[href="%s"]' % details_url)), 1)
+
+    @mocked_caches('django.templatetags.cache.caches', 'ietf.meeting.utils.caches')
+    def test_survey_changes_clear_past_meetings_cache(self):
+        meeting = self._procmat_test_meeting()
+        survey = ProceedingsMaterialTypeName.objects.get(slug='meeting_survey')
+        past_url = urlreverse('ietf.meeting.views.past')
+
+        def survey_links():
+            return len(PyQuery(self.client.get(past_url).content)('#plenary a.past-survey'))
+
+        self.assertEqual(survey_links(), 0)  # caches the public page
+        with self._proceedings_file() as fd:
+            self.upload_proceedings_material_test(meeting, survey, {'file': fd, 'external_url': ''})
+        self.client.logout()
+        self.assertEqual(survey_links(), 1)
+
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.post(urlreverse(
+            'ietf.meeting.views_proceedings.remove_material',
+            kwargs=dict(num=meeting.number, material_type=survey.slug),
+        ))
+        self.assertEqual(r.status_code, 302)
+        self.client.logout()
+        self.assertEqual(survey_links(), 0)
 
     def test_add_proceedings_material_doc_invalid_ext(self):
         """Upload proceedings materials document with disallowed extension"""
