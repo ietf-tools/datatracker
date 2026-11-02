@@ -678,6 +678,21 @@ class MeetingTests(BaseMeetingTestCase):
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         self.do_test_materials(meeting, session)
 
+    def test_materials_after_correction_cutoff(self):
+        """After the correction cutoff, the page closes up to IETF 96 and redirects to the proceedings after it"""
+        meeting = MeetingFactory(type_id='ietf', number='96', date=datetime.date(2016, 7, 17))
+        r = self.client.get(urlreverse('ietf.meeting.views.materials', kwargs={'num': meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        self.assertTemplateUsed(r, 'meeting/materials_upload_closed.html')
+
+        meeting = MeetingFactory(type_id='ietf', number='97', date=datetime.date(2016, 11, 13))
+        r = self.client.get(urlreverse('ietf.meeting.views.materials', kwargs={'num': meeting.number}))
+        self.assertRedirects(
+            r,
+            urlreverse('ietf.meeting.views.proceedings', kwargs={'num': meeting.number}),
+            fetch_redirect_response=False,
+        )
+
     def test_interim_materials(self):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
@@ -6941,6 +6956,19 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
+
+    def test_upload_bluesheets_interim_chair_after_cutoff(self):
+        make_meeting_test_data()
+        mars = Group.objects.get(acronym='mars')
+        session = SessionFactory(meeting__type_id='interim', group=mars, meeting__date=date_today() - datetime.timedelta(days=60))
+        session.meeting.importantdate_set.create(name_id='revsub', date=date_today() - datetime.timedelta(days=1))
+        url = urlreverse('ietf.meeting.views.upload_session_bluesheets', kwargs={'num': session.meeting.number, 'session_id': session.id})
+        self.client.login(username="marschairman", password="marschairman+password")
+        r = self.client.get(url)
+        self.assertContains(r, 'The materials cutoff for this session has passed', status_code=403)
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
         
 
     def test_label_future_sessions(self):
@@ -7950,6 +7978,22 @@ class MaterialsTests(TestCase):
         self.assertEqual(0, session.presentations.count())
         self.assertEqual(2, agenda.docevent_set.count())
         self.assertFalse(mock_slides_manager_cls.called)
+
+    def test_remove_sessionpresentation_after_cutoff(self):
+        session = SessionFactory(meeting__type_id='ietf', meeting__date=date_today() - datetime.timedelta(days=60))
+        session.meeting.importantdate_set.create(name_id='revsub', date=date_today() - datetime.timedelta(days=1))
+        chair = RoleFactory(group=session.group, name_id='chair').person
+        doc = DocumentFactory(type_id='agenda')
+        session.presentations.create(document=doc)
+        url = urlreverse('ietf.meeting.views.remove_sessionpresentation', kwargs={'num': session.meeting.number, 'session_id': session.id, 'name': doc.name})
+        self.client.login(username=chair.user.username, password=f'{chair.user.username}+password')
+        r = self.client.post(url, {'remove_session': ''})
+        self.assertContains(r, 'The materials cutoff for this session has passed', status_code=403)
+        self.assertEqual(1, session.presentations.count())
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.post(url, {'remove_session': ''})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(0, session.presentations.count())
 
     def test_propose_session_slides(self):
         for type_id in ['ietf','interim']:
