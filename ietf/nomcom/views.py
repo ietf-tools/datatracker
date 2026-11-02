@@ -7,6 +7,7 @@ import re
 from collections import Counter
 import csv
 import hmac
+from urllib.parse import urlsplit, urlunsplit
 
 from django.conf import settings
 from django.contrib import messages
@@ -1140,7 +1141,16 @@ def list_templates(request, year):
 @role_required("Nomcom Chair", "Nomcom Advisor")
 def edit_template(request, year, template_id):
     nomcom = get_nomcom_by_year(year)
-    return_url = request.META.get('HTTP_REFERER', None)
+    try:
+        referer = urlsplit(request.META.get("HTTP_REFERER", ""))
+    except ValueError:  # e.g. a malformed IPv6 host
+        referer = None
+    return_url = None
+    if referer and referer.netloc == request.get_host():
+        # Keep only the path and query, so the Back link stays on this site
+        path = urlunsplit(("", "", referer.path, referer.query, ""))
+        if is_safe_next_url(path):
+            return_url = path
 
     if nomcom.group.state_id=='conclude':
         return group_template_show(request, nomcom.group.acronym, template_id,

@@ -89,6 +89,26 @@ def teardown_test_public_keys_dir(obj):
     settings.NOMCOM_PUBLIC_KEYS_DIR = obj.saved_nomcom_public_keys_dir
     shutil.rmtree(obj.nomcom_public_keys_dir)
 
+def check_template_back_link(test_case, url):
+    """Check that the edit_template Back link uses only a same-site Referer"""
+    list_path = reverse(
+        "ietf.nomcom.views.list_templates", kwargs={"year": test_case.nc.year()}
+    )
+    for referer, expected_href in (
+        (f"http://testserver{list_path}?a=1", f"{list_path}?a=1"),
+        ("https://evil.example/", "../"),
+        ("http://testserver//evil.example/", "../"),
+        ("http://[::1/", "../"),
+        (None, "../"),
+    ):
+        with test_case.subTest(referer=referer):
+            extra = {"HTTP_REFERER": referer} if referer else {}
+            response = test_case.client.get(url, **extra)
+            test_case.assertEqual(response.status_code, 200)
+            q = PyQuery(response.content)
+            test_case.assertEqual(q('a:contains("Back")').attr("href"), expected_href)
+
+
 class NomcomViewsTest(TestCase):
     """Tests to create a new nomcom"""
 
@@ -1503,6 +1523,7 @@ class InactiveNomcomTests(TestCase):
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
         self.assertFalse( q('#templateform') )
+        check_template_back_link(self, url)
 
 class FeedbackIndexTests(TestCase):
 
@@ -2016,6 +2037,7 @@ Junk body for testing
         login_testing_unauthorized(self,self.chair.user.username,url)
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
+        check_template_back_link(self, url)
         response = self.client.post(url,{'content': 'more interesting test content'})
         self.assertEqual(response.status_code,302)
         template = DBTemplate.objects.get(id=template.id)
