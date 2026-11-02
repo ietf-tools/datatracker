@@ -140,13 +140,18 @@ class BaseMeetingTestCase(TestCase):
         # files will upload to the locations specified in settings.py.
         # Note that this will affect any use of the storage class in
         # meeting.models - i.e., FloorPlan.image and MeetingHost.logo
-        self.patcher = patch('ietf.meeting.models.BlobShadowFileSystemStorage.base_location',
-                             new_callable=PropertyMock)
-        mocked = self.patcher.start()
-        mocked.return_value = self.storage_dir
+        # Both are mocked because the storage caches location after its first use.
+        self.patchers = [
+            patch(f'ietf.meeting.models.BlobShadowFileSystemStorage.{attr}', new_callable=PropertyMock)
+            for attr in ('base_location', 'location')
+        ]
+        for patcher in self.patchers:
+            mocked = patcher.start()
+            mocked.return_value = self.storage_dir
 
     def tearDown(self):
-        self.patcher.stop()
+        for patcher in self.patchers:
+            patcher.stop()
         #
         shutil.rmtree(self.storage_dir)
         shutil.rmtree(self.materials_dir)
