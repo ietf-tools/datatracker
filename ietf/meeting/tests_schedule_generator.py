@@ -26,7 +26,8 @@ class ScheduleGeneratorTest(TestCase):
         # actually created, but sundays are ignored.
         # Two rooms is a fairly low level of simultaneous schedules, this is needed
         # because the schedule in these tests is much more complex than a real schedule.
-        self.meeting = MeetingFactory(type_id='ietf', days=2, date=datetime.date(2020, 5, 31))
+        # The generator buckets timeslots by their UTC weekday, so keep the local times on the same day in UTC
+        self.meeting = MeetingFactory(type_id='ietf', days=2, date=datetime.date(2020, 5, 31), time_zone='UTC')
         self.rooms = [
             RoomFactory(meeting=self.meeting, capacity=100),
             RoomFactory(meeting=self.meeting, capacity=10)

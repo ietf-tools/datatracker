@@ -225,6 +225,7 @@ class MeetingTests(TestCase):
 class SessionTests(TestCase):
     def test_chat_archive_url(self):
         session = SessionFactory(
+            meeting__type_id="ietf",
             meeting__date=datetime.date.today(),
             meeting__number=120,  # needs to use proceedings_format_version > 1
         )
@@ -241,7 +242,10 @@ class SessionTests(TestCase):
 
         # datatracker 8.8.0 rolled out on 2022-07-15. Before that, chat logs were jabber logs hosted at www.ietf.org.
         session_with_jabber = SessionFactory(
-            group__acronym="fakeacronym", meeting__date=datetime.date(2022, 7, 14)
+            group__acronym="fakeacronym",
+            meeting__type_id="ietf",
+            meeting__number=114,  # needs to use proceedings_format_version > 1
+            meeting__date=datetime.date(2022, 7, 14),
         )
         self.assertEqual(
             session_with_jabber.chat_archive_url(),

@@ -6907,7 +6907,7 @@ class MaterialsTests(TestCase):
     def test_upload_bluesheets_chair_access(self):
         make_meeting_test_data()
         mars = Group.objects.get(acronym='mars')
-        session=SessionFactory(meeting__type_id='ietf',group=mars)
+        session=SessionFactory(meeting__type_id='ietf',group=mars, meeting__date=date_today())
         url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
         self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get(url)
@@ -10056,7 +10056,7 @@ class MeetingHostTests(BaseMeetingTestCase):
 
     def test_add(self):
         """Can add a new meeting host"""
-        meeting = MeetingFactory(type_id='ietf')
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         url = urlreverse('ietf.meeting.views_proceedings.edit_meetinghosts', kwargs=dict(num=meeting.number))
 
         # get the edit page to check that it has the necessary fields
@@ -10132,7 +10132,7 @@ class MeetingHostTests(BaseMeetingTestCase):
         The main complication is checking that the file has been
         renamed to match the new host name.
         """
-        meeting = MeetingFactory(type_id='ietf')
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         url = urlreverse('ietf.meeting.views_proceedings.edit_meetinghosts', kwargs=dict(num=meeting.number))
 
         # create via UI so we don't have to deal with creating storage paths
@@ -10178,7 +10178,7 @@ class MeetingHostTests(BaseMeetingTestCase):
 
     def test_meeting_host_replace_logo(self):
         """Can replace logo of a meeting host"""
-        meeting = MeetingFactory(type_id='ietf')
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         url = urlreverse('ietf.meeting.views_proceedings.edit_meetinghosts', kwargs=dict(num=meeting.number))
 
         # create via UI so we don't have to deal with creating storage paths
@@ -10226,7 +10226,7 @@ class MeetingHostTests(BaseMeetingTestCase):
 
     def test_change_name_and_replace_logo(self):
         """Can simultaneously change name and replace logo"""
-        meeting = MeetingFactory(type_id='ietf')
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         url = urlreverse('ietf.meeting.views_proceedings.edit_meetinghosts', kwargs=dict(num=meeting.number))
 
         # create via UI so we don't have to deal with creating storage paths
@@ -10275,7 +10275,7 @@ class MeetingHostTests(BaseMeetingTestCase):
 
     def test_remove(self):
         """Can delete a meeting host and its logo"""
-        meeting = MeetingFactory(type_id='ietf')
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         url = urlreverse('ietf.meeting.views_proceedings.edit_meetinghosts', kwargs=dict(num=meeting.number))
 
         # create via UI so we don't have to deal with creating storage paths
@@ -10316,7 +10316,7 @@ class MeetingHostTests(BaseMeetingTestCase):
 
     def test_remove_with_selected_logo(self):
         """Can delete a meeting host after selecting a replacement file"""
-        meeting = MeetingFactory(type_id='ietf')
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         url = urlreverse('ietf.meeting.views_proceedings.edit_meetinghosts', kwargs=dict(num=meeting.number))
 
         # create via UI so we don't have to deal with creating storage paths
@@ -10360,7 +10360,7 @@ class MeetingHostTests(BaseMeetingTestCase):
         """Only allowed image types should be accepted"""
         allowed_formats = [('JPEG', 'jpg'), ('JPEG', 'jpeg'), ('PNG', 'png')]
 
-        meeting = MeetingFactory(type_id='ietf')
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         url = urlreverse('ietf.meeting.views_proceedings.edit_meetinghosts', kwargs=dict(num=meeting.number))
         self.client.login(username='secretary', password='secretary+password')
 
@@ -11160,7 +11160,8 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertEqual(sequence,1)
 
     def test_nomcom_eligible_participants_for_meeting(self):
-        m = MeetingFactory.create(type_id='ietf')
+        """Onsite needs a check-in, remote needs a qualifying session (< 110 path)"""
+        m = MeetingFactory.create(type_id='ietf', number='109')
         areg = RegistrationFactory(meeting=m, checkedin=True, with_ticket={'attendance_type_id': 'onsite'})
         breg = RegistrationFactory(meeting=m, checkedin=False, with_ticket={'attendance_type_id': 'onsite'})
         creg = RegistrationFactory(meeting=m, with_ticket={'attendance_type_id': 'remote'})
