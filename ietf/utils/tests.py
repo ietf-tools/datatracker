@@ -30,6 +30,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.forms import Form
+from django.http import HttpResponseNotFound
 from django.template import Context
 from django.template import Template    # pyflakes:ignore
 from django.template.defaulttags import URLNode
@@ -41,6 +42,7 @@ from django.urls import reverse as urlreverse
 import debug                            # pyflakes:ignore
 
 from ietf.admin.sites import AdminSite
+from ietf.middleware import redirect_trailing_period_middleware
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
 from ietf.utils.draft import PlaintextDraft, getmeta
@@ -1025,3 +1027,24 @@ class IsSafeNextUrlTests(TestCase):
         )
         self.assertFalse(is_safe_next_url(f"/{search_url}", allowed_views))
         self.assertFalse(is_safe_next_url(search_url, set()))
+
+
+class RedirectTrailingPeriodMiddlewareTests(TestCase):
+    def get_response(self, path):
+        middleware = redirect_trailing_period_middleware(
+            lambda request: HttpResponseNotFound()
+        )
+        request = RequestFactory().get("/")
+        # RequestFactory().get("//evil.com.") would parse evil.com. as the host
+        request.path = request.path_info = path
+        return middleware(request)
+
+    def test_redirects_without_trailing_period(self):
+        response = self.get_response("/doc/draft-foo.")
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(response["Location"], "/doc/draft-foo")
+
+    def test_does_not_redirect_off_site(self):
+        for path in ("//evil.com.", "//evil.com/x.", "/\\evil.com."):
+            with self.subTest(path=path):
+                self.assertEqual(self.get_response(path).status_code, 404)
