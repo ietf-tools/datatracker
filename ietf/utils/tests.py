@@ -30,6 +30,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.forms import Form
+from django.http import HttpResponseNotFound
 from django.template import Context
 from django.template import Template    # pyflakes:ignore
 from django.template.defaulttags import URLNode
@@ -41,10 +42,12 @@ from django.urls import reverse as urlreverse
 import debug                            # pyflakes:ignore
 
 from ietf.admin.sites import AdminSite
+from ietf.middleware import redirect_trailing_period_middleware
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
 from ietf.utils.draft import PlaintextDraft, getmeta
 from ietf.utils.fields import SearchableField
+from ietf.utils.http import is_safe_next_url
 from ietf.utils.log import unreachable, assertion
 from ietf.utils.mail import (
     send_mail_preformatted,
@@ -971,3 +974,82 @@ class ValidateUtf8TextTests(TestCase):
                 cm.exception.message,
                 f"The file is not valid UTF-8 text. The first invalid byte is on {detail}",
             )
+
+
+class IsSafeNextUrlTests(TestCase):
+    def test_accepts_site_relative_urls(self):
+        for url in (
+            "/doc/search/?name=x&rfcs=on",
+            "/x#frag",
+            "/x?a=1#frag",
+            "/x#//evil.example.com",
+            "/x#\\evil.example.com",
+            "/x?",
+            "/x#",
+            "/%2F/evil.example.com",
+        ):
+            with self.subTest(url=url):
+                self.assertTrue(is_safe_next_url(url))
+
+    def test_rejects_other_urls(self):
+        for url in (
+            None,
+            "",
+            "//evil.example.com/x",
+            "///evil.example.com",
+            "/\\evil.example.com",
+            "/\t/evil.example.com",
+            "/x\r\nSet-Cookie: a=b",
+            "\x00/x",
+            " /x",
+            "x/y",
+            "../x",
+            "#frag",
+            "?a=1",
+            "https://evil.example.com",
+            "javascript:alert(1)",
+        ):
+            with self.subTest(url=url):
+                self.assertFalse(is_safe_next_url(url))
+
+    def test_allowed_views(self):
+        allowed_views = {"ietf.doc.views_search.search"}
+        search_url = urlreverse("ietf.doc.views_search.search")
+        self.assertTrue(is_safe_next_url(search_url, allowed_views))
+        self.assertTrue(
+            is_safe_next_url(f"{search_url}?name=x&rfcs=on#frag", allowed_views)
+        )
+        self.assertFalse(
+            is_safe_next_url(urlreverse("ietf.iesg.views.agenda"), allowed_views)
+        )
+        self.assertFalse(
+            is_safe_next_url("/a-route-that-does-not-exist/", allowed_views)
+        )
+        self.assertFalse(is_safe_next_url(f"/{search_url}", allowed_views))
+        self.assertFalse(is_safe_next_url(search_url, set()))
+
+
+class RedirectTrailingPeriodMiddlewareTests(TestCase):
+    def get_response(self, path):
+        middleware = redirect_trailing_period_middleware(
+            lambda request: HttpResponseNotFound()
+        )
+        request = RequestFactory().get("/")
+        # RequestFactory().get("//evil.example.com.") would parse evil.example.com. as
+        # the host
+        request.path = request.path_info = path
+        return middleware(request)
+
+    def test_redirects_without_trailing_period(self):
+        response = self.get_response("/doc/draft-foo.")
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(response["Location"], "/doc/draft-foo")
+
+    def test_does_not_redirect_off_site(self):
+        for path in (
+            "//evil.example.com.",
+            "//evil.example.com/x.",
+            "/\\evil.example.com.",
+        ):
+            with self.subTest(path=path):
+                self.assertEqual(self.get_response(path).status_code, 404)
