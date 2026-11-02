@@ -45,6 +45,7 @@ from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
 from ietf.utils.draft import PlaintextDraft, getmeta
 from ietf.utils.fields import SearchableField
+from ietf.utils.http import is_safe_next_url
 from ietf.utils.log import unreachable, assertion
 from ietf.utils.mail import (
     send_mail_preformatted,
@@ -971,3 +972,56 @@ class ValidateUtf8TextTests(TestCase):
                 cm.exception.message,
                 f"The file is not valid UTF-8 text. The first invalid byte is on {detail}",
             )
+
+
+class IsSafeNextUrlTests(TestCase):
+    def test_accepts_site_relative_urls(self):
+        for url in (
+            "/doc/search/?name=x&rfcs=on",
+            "/x#frag",
+            "/x?a=1#frag",
+            "/x#//evil.com",
+            "/x#\\evil.com",
+            "/x?",
+            "/x#",
+            "/%2F/evil.com",
+        ):
+            with self.subTest(url=url):
+                self.assertTrue(is_safe_next_url(url))
+
+    def test_rejects_other_urls(self):
+        for url in (
+            None,
+            "",
+            "//evil.com/x",
+            "///evil.com",
+            "/\\evil.com",
+            "/\t/evil.com",
+            "/x\r\nSet-Cookie: a=b",
+            "\x00/x",
+            " /x",
+            "x/y",
+            "../x",
+            "#frag",
+            "?a=1",
+            "https://evil.com",
+            "javascript:alert(1)",
+        ):
+            with self.subTest(url=url):
+                self.assertFalse(is_safe_next_url(url))
+
+    def test_allowed_views(self):
+        allowed_views = {"ietf.doc.views_search.search"}
+        search_url = urlreverse("ietf.doc.views_search.search")
+        self.assertTrue(is_safe_next_url(search_url, allowed_views))
+        self.assertTrue(
+            is_safe_next_url(f"{search_url}?name=x&rfcs=on#frag", allowed_views)
+        )
+        self.assertFalse(
+            is_safe_next_url(urlreverse("ietf.iesg.views.agenda"), allowed_views)
+        )
+        self.assertFalse(
+            is_safe_next_url("/a-route-that-does-not-exist/", allowed_views)
+        )
+        self.assertFalse(is_safe_next_url(f"/{search_url}", allowed_views))
+        self.assertFalse(is_safe_next_url(search_url, set()))
