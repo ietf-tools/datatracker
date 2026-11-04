@@ -1,0 +1,19 @@
+# Copyright The IETF Trust 2024. All Rights Reserved.
+name: Copyright years
+on: [pull_request, push]
+permissions:
+  contents: read
+
+jobs:
+  copyright-notice:
+    runs-on: ubuntu-latest
+    name: Test changed-files
+    steps:
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v44
+    - uses: actions/checkout@v4
+    - name: Check changed files
+      env:
+        ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+      run: perl ./ietf/check-copyright -lv -f ${ALL_CHANGED_FILES};
