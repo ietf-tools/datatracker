@@ -429,6 +429,116 @@ def import_meeting_survey_results_task(meeting_number=None, dry_run=False):
     )
     return counts
 
+RFC_EDITOR_REPORT_URLS = [
+    ("126", "https://www.ietf.org/media/documents/IETF_126_RPC___general.pdf"),
+    ("125", "https://www.ietf.org/media/documents/ietf125rpc.pdf"),
+    ("124", "https://www.ietf.org/media/documents/ietf124rpc.pdf"),
+    ("123", "https://www.ietf.org/media/documents/ietf123rpc.pdf"),
+    ("122", "https://www.ietf.org/media/documents/ietf122rpc.pdf"),
+    ("121", "https://www.ietf.org/media/documents/ietf121rpc.pdf"),
+    ("120", "https://www.ietf.org/media/documents/ietf120rpc.pdf"),
+    ("119", "https://www.ietf.org/media/documents/ietf119rpc.pdf"),
+    ("118", "https://www.ietf.org/media/documents/ietf118rpc.pdf"),
+    ("117", "https://www.ietf.org/media/documents/ietf117rpc.pdf"),
+    ("116", "https://www.ietf.org/media/documents/ietf116rfced.pdf"),
+    ("115", "https://www.ietf.org/media/documents/ietf115rfced.pdf"),
+    ("114", "https://www.ietf.org/media/documents/ietf114rfceditor.pdf"),
+    ("113", "https://www.ietf.org/media/documents/ietf113-RPC.pdf"),
+    ("112", "https://www.ietf.org/media/documents/ietf112-rfc-ed-report.pdf"),
+    ("111", "https://www.ietf.org/media/documents/rfc_editor_111_report.pdf"),
+    ("110", "https://www.ietf.org/media/documents/ietf110rfced3.pdf"),
+    ("109", "https://www.ietf.org/media/documents/RFC_Editor_Report_for_IETF_109.pdf"),
+    ("108", "https://www.ietf.org/media/documents/ietf108.pdf"),
+    ("107", "https://www.ietf.org/media/documents/ietf107.pdf"),
+    ("106", "https://www.ietf.org/media/documents/ietf106.pdf"),
+    ("105", "https://www.ietf.org/media/documents/ietf105.pdf"),
+    ("104", "https://www.ietf.org/media/documents/ietf104.pdf"),
+    ("103", "https://www.ietf.org/media/documents/ietf103.pdf"),
+]
+
+@shared_task
+def import_meeting_rfc_editor_reports_task(meeting_number=None, dry_run=False):
+    """Import RFC editor reports from www.ietf.org as proceedings materials
+
+    Same process as import_meeting_survey_results_task(), but for RFC editor reports.
+    Because these are one-off tasks, this repeats the code rather than factoring it out
+    into a helper.
+    """
+    rfced_report_type = ProceedingsMaterialTypeName.objects.get(
+        slug="rfc_editor_report"
+    )
+    system = Person.objects.get(name="(System)")
+    entries = RFC_EDITOR_REPORT_URLS
+    if meeting_number is not None:
+        entries = [entry for entry in entries if entry[0] == str(meeting_number)]
+    counts = dict(created=0, skipped=0, failed=0)
+    for number, url in entries:
+        meeting = Meeting.objects.filter(type_id="ietf", number=number).first()
+        if meeting is None:
+            log.log(f"RFC Editor report import: no IETF meeting {number}")
+            counts["failed"] += 1
+            continue
+        if meeting.proceedings_materials.filter(type=rfced_report_type).exists():
+            log.log(
+                f"RFC Editor report import: IETF {number} already has survey results, "
+                f"skipping"
+            )
+            counts["skipped"] += 1
+            continue
+        try:
+            response = requests.get(url, timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
+        except requests.RequestException as err:
+            log.log(
+                f"RFC Editor report import: IETF {number}: could not fetch {url}: {err}"
+            )
+            counts["failed"] += 1
+            continue
+        if response.status_code != 200 or not response.content.startswith(b"%PDF-"):
+            log.log(
+                f"RFC Editor report import: IETF {number}: {url} did not return a PDF "
+                f"(status {response.status_code})"
+            )
+            counts["failed"] += 1
+            continue
+        if dry_run:
+            log.log(
+                f"RFC Editor report import: would import {len(response.content)} bytes "
+                f"for IETF {number} from {url}"
+            )
+            counts["created"] += 1
+            continue
+        try:
+            with transaction.atomic():
+                doc = save_proceedings_material_doc(
+                    meeting,
+                    rfced_report_type,
+                    title=rfced_report_type.name,
+                    by=system,
+                    file=ContentFile(response.content, name="rfc-editor-report.pdf"),
+                )
+                meeting.proceedings_materials.create(type=rfced_report_type, document=doc)
+        except Exception as err:
+            log.log(
+                f"RFC Editor report import: IETF {number}: could not save {url}: {err}"
+            )
+            counts["failed"] += 1
+            continue
+        log.log(
+            f"RFC Editor report import: imported {doc.name}-{doc.rev} for IETF "
+            f"{number} from {url}"
+        )
+        counts["created"] += 1
+        # All meetings with RFC Editor reports include proceedings materials in their
+        # proceedings page
+        generate_proceedings_content(meeting, force_refresh=True)
+    if counts["created"] and not dry_run:
+        clear_past_meetings_cache()
+    log.log(
+        f"RFC Editor report import: {'would create' if dry_run else 'created'} "
+        f"{counts['created']}, skipped {counts['skipped']}, failed {counts['failed']}"
+    )
+    return counts
+
 
 @shared_task
 def backfill_meetecho_recording_names_task(dry_run=False):
