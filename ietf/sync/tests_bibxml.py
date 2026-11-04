@@ -14,10 +14,14 @@ from ietf.doc.factories import (
 from ietf.doc.models import StoredObject
 from ietf.doc.storage_utils import retrieve_bytes
 from ietf.sync.bibxml import (
-    build_bcp_bibxml,
-    build_fyi_bibxml,
+    BibXMLException,
     build_rfc_bibxml,
-    build_std_bibxml,
+    build_subseries_bibxml,
+    create_bcp_bibxml,
+    create_fyi_bibxml,
+    create_rfc_bibxml,
+    create_std_bibxml,
+    create_subseries_bibxml,
     get_abstract_bibxml,
     recreate_rfc_bibxml,
     recreate_rfcsubseries_bibxml,
@@ -132,7 +136,7 @@ class BibXmlTests(TestCase):
 
     def test_build_bcp_bibxml(self):
         bcp_number = self.bcp.name[3:]
-        bibxml = build_bcp_bibxml(bcp_number)
+        bibxml = build_subseries_bibxml("bcp", bcp_number)
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
         self.assertIn(f"BCP{bcp_number}", bibxml)
         self.assertIn(f"{settings.RFC_EDITOR_INFO_BASE_URL}bcp{bcp_number}", bibxml)
@@ -144,7 +148,7 @@ class BibXmlTests(TestCase):
 
     def test_build_std_bibxml(self):
         std_number = self.std.name[3:]
-        bibxml = build_std_bibxml(std_number)
+        bibxml = build_subseries_bibxml("std", std_number)
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
         self.assertIn(f"STD{std_number}", bibxml)
         self.assertIn(f"{settings.RFC_EDITOR_INFO_BASE_URL}std{std_number}", bibxml)
@@ -156,7 +160,7 @@ class BibXmlTests(TestCase):
 
     def test_build_fyi_bibxml(self):
         fyi_number = self.fyi.name[3:]
-        bibxml = build_fyi_bibxml(fyi_number)
+        bibxml = build_subseries_bibxml("fyi", fyi_number)
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
         self.assertIn(f"FYI{fyi_number}", bibxml)
         self.assertIn(f"{settings.RFC_EDITOR_INFO_BASE_URL}fyi{fyi_number}", bibxml)
@@ -197,66 +201,85 @@ class BibXmlTests(TestCase):
         )
 
     def test_create_rfc_bibxml(self):
-        bibxml = build_rfc_bibxml(self.rfc)
+        create_rfc_bibxml(self.rfc)
         filename = f"bibxml/reference.RFC.{self.rfc.rfc_number}.xml"
-        save_bibxml(bibxml, filename, doc_name=self.rfc.name)
         bibxml = retrieve_bytes("bibxml", filename).decode("utf-8")
         self.assertIsNotNone(ElementTree.fromstring(bibxml))
-        self.assertIn(f"RFC{self.rfc.rfc_number}", bibxml)
+        self.assertIn(f'anchor="RFC{self.rfc.rfc_number}"', bibxml)
         self.assertIn(
             f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
         )
         self.assertIn('<date month="April" year="2021"/>', bibxml)
+        stored = StoredObject.objects.get(store="bibxml", name=filename)
+        self.assertEqual(stored.doc_name, self.rfc.name)
+
+    @patch("ietf.sync.bibxml.save_bibxml")
+    def test_create_rfc_bibxml_single_form_for_high_number(self, mock_save_bibxml):
+        create_rfc_bibxml(self.rfc)
+        mock_save_bibxml.assert_called_once_with(
+            ANY,
+            f"bibxml/reference.RFC.{self.rfc.rfc_number}.xml",
+            doc_name=self.rfc.name,
+        )
+
+    def test_create_rfc_bibxml_padded_low_number(self):
+        # A sub-1000 RFC is written both unpadded and zero-padded
+        create_rfc_bibxml(self.low_rfc)
+        unpadded = retrieve_bytes("bibxml", "bibxml/reference.RFC.822.xml").decode(
+            "utf-8"
+        )
+        self.assertIsNotNone(ElementTree.fromstring(unpadded))
+        self.assertIn('anchor="RFC822"', unpadded)
+        padded = retrieve_bytes("bibxml", "bibxml/reference.RFC.0822.xml").decode(
+            "utf-8"
+        )
+        self.assertIsNotNone(ElementTree.fromstring(padded))
+        self.assertIn('anchor="RFC0822"', padded)
+
+    def _assert_subseries_bibxml_saved(self, doc, number, prefix):
+        filename = f"bibxml-rfcsubseries/reference.{prefix}.{number}.xml"
+        bibxml = retrieve_bytes("bibxml", filename).decode("utf-8")
+        self.assertIsNotNone(ElementTree.fromstring(bibxml))
+        self.assertIn(f'anchor="{prefix}{number}"', bibxml)
+        self.assertIn(
+            f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
+        )
+        self.assertIn(f'<seriesInfo name="{prefix}" value="{number}"/>', bibxml)
+        self.assertIn('<date month="April" year="2021"/>', bibxml)
+        stored = StoredObject.objects.get(store="bibxml", name=filename)
+        self.assertEqual(stored.doc_name, doc.name)
 
     def test_create_bcp_bibxml(self):
         bcp_number = self.bcp.name[3:]
-        bibxml = build_bcp_bibxml(bcp_number)
-        filename = f"bibxml-rfcsubseries/reference.BCP.{bcp_number}.xml"
-        save_bibxml(bibxml, filename, doc_name=self.bcp.name)
-        bibxml = retrieve_bytes("bibxml", filename).decode("utf-8")
-        self.assertIsNotNone(ElementTree.fromstring(bibxml))
-        self.assertIn(f"BCP{bcp_number}", bibxml)
-        self.assertIn(
-            f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
-        )
-        self.assertIn(f'<seriesInfo name="BCP" value="{bcp_number}"/>', bibxml)
-        self.assertIn('<date month="April" year="2021"/>', bibxml)
+        create_bcp_bibxml(bcp_number)
+        self._assert_subseries_bibxml_saved(self.bcp, bcp_number, "BCP")
 
     def test_create_std_bibxml(self):
         std_number = self.std.name[3:]
-        bibxml = build_std_bibxml(std_number)
-        filename = f"bibxml-rfcsubseries/reference.STD.{std_number}.xml"
-        save_bibxml(bibxml, filename, doc_name=self.std.name)
-        bibxml = retrieve_bytes("bibxml", filename).decode("utf-8")
-        self.assertIsNotNone(ElementTree.fromstring(bibxml))
-        self.assertIn(f"STD{std_number}", bibxml)
-        self.assertIn(
-            f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
-        )
-        self.assertIn(f'<seriesInfo name="STD" value="{std_number}"/>', bibxml)
-        self.assertIn('<date month="April" year="2021"/>', bibxml)
+        create_std_bibxml(std_number)
+        self._assert_subseries_bibxml_saved(self.std, std_number, "STD")
 
     def test_create_fyi_bibxml(self):
         fyi_number = self.fyi.name[3:]
-        bibxml = build_fyi_bibxml(fyi_number)
-        filename = f"bibxml-rfcsubseries/reference.FYI.{fyi_number}.xml"
-        save_bibxml(bibxml, filename, doc_name=self.fyi.name)
-        bibxml = retrieve_bytes("bibxml", filename).decode("utf-8")
-        self.assertIsNotNone(ElementTree.fromstring(bibxml))
-        self.assertIn(f"FYI{fyi_number}", bibxml)
-        self.assertIn(
-            f"{settings.RFC_EDITOR_INFO_BASE_URL}rfc{self.rfc.rfc_number}", bibxml
-        )
-        self.assertIn(f'<seriesInfo name="FYI" value="{fyi_number}"/>', bibxml)
-        self.assertIn('<date month="April" year="2021"/>', bibxml)
+        create_fyi_bibxml(fyi_number)
+        self._assert_subseries_bibxml_saved(self.fyi, fyi_number, "FYI")
 
-    def test_create_rfc_bibxml_padded_low_number(self):
-        bibxml = build_rfc_bibxml(self.low_rfc, four_digits=True)
-        filename = f"bibxml/reference.RFC.{self.low_rfc.rfc_number:04d}.xml"
-        save_bibxml(bibxml, filename, doc_name=self.low_rfc.name)
-        bibxml = retrieve_bytes("bibxml", filename).decode("utf-8")
-        self.assertIsNotNone(ElementTree.fromstring(bibxml))
-        self.assertIn('anchor="RFC0822"', bibxml)
+    def test_create_subseries_bibxml(self):
+        for subseries_type, doc in (
+            ("bcp", self.bcp),
+            ("std", self.std),
+            ("fyi", self.fyi),
+        ):
+            number = doc.name[3:]
+            create_subseries_bibxml(subseries_type, number)
+            self._assert_subseries_bibxml_saved(doc, number, subseries_type.upper())
+
+    @patch("ietf.sync.bibxml.save_bibxml")
+    def test_create_subseries_bibxml_without_rfcs(self, mock_save_bibxml):
+        BcpFactory(name="bcp999").relateddocument_set.all().delete()
+        with self.assertRaises(BibXMLException):
+            create_bcp_bibxml(999)
+        mock_save_bibxml.assert_not_called()
 
     @patch("ietf.sync.bibxml.save_bibxml")
     def test_recreate_rfc_bibxml(self, mock_save_bibxml):
