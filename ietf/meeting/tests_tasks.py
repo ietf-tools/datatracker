@@ -1,22 +1,28 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
 import datetime
-import requests_mock
 from pathlib import Path
-from unittest.mock import patch, call
+from unittest.mock import call, patch
+
+import requests_mock
+from django.test import override_settings
+
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import date_today
+
 from .factories import MeetingFactory, SessionFactory, SlideSubmissionFactory
 from .models import SlideSubmission
-from django.test import override_settings
 from .tasks import (
-    proceedings_content_refresh_task,
-    agenda_data_refresh_task,
     agenda_data_refresh_all_task,
+    agenda_data_refresh_task,
+    backfill_meetecho_recording_names_task,
+    expire_interim_slide_proposals_task,
+    expire_past_ietf_slide_proposals_task,
+    fetch_meeting_attendance_task,
+    import_meeting_rfc_editor_reports_task,
+    import_meeting_survey_results_task,
+    proceedings_content_refresh_task,
 )
-from .tasks import fetch_meeting_attendance_task, expire_interim_slide_proposals_task, expire_past_ietf_slide_proposals_task
-from .tasks import import_meeting_survey_results_task
-from .tasks import backfill_meetecho_recording_names_task
 
 
 class TaskTests(TestCase):
@@ -204,7 +210,7 @@ class TaskTests(TestCase):
         self.assertEqual(named_since.meetecho_recording_name, 'IETF-SENT-20261001-1400', 'a name the API stored is kept')
 
 
-PDF_BYTES = b"%PDF-1.4 survey results"
+PDF_BYTES = b"%PDF-1.4 this is a fake pdf"
 
 
 @patch("ietf.meeting.tasks.clear_past_meetings_cache")
@@ -282,4 +288,89 @@ class SurveyImportTaskTests(TestCase):
         self.assertEqual(counts, dict(created=1, skipped=0, failed=0))
         self.assertIsNotNone(self.survey(self.old))
         self.assertIsNone(self.survey(self.modern))
+
+
+@patch("ietf.meeting.tasks.clear_past_meetings_cache")
+@patch("ietf.meeting.tasks.generate_proceedings_content")
+class RfcEditorReportImportTests(TestCase):
+    # Basically a duplicate of SurveyImportTaskTests - would share code if this were
+    # not a one-off
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ["AGENDA_PATH"]
+
+    def setUp(self):
+        super().setUp()
+        self.modern = MeetingFactory(type_id="ietf", number="120")
+        self.old = MeetingFactory(type_id="ietf", number="103")  # oldest with a report
+        self.urls = [
+            ("120", "https://www.example.com/120.pdf"),
+            ("103", "https://www.example.com/103.pdf"),
+        ]
+
+    def run_task(self, **kwargs):
+        with patch("ietf.meeting.tasks.RFC_EDITOR_REPORT_URLS", self.urls):
+            return import_meeting_rfc_editor_reports_task(**kwargs)
+
+    def report(self, meeting):
+        return meeting.proceedings_materials.filter(type_id="rfc_editor_report").first()
+
+    def test_imports_pdfs(self, mock_generate, mock_clear):
+        with requests_mock.Mocker() as mocker:
+            for _, url in self.urls:
+                mocker.get(url, content=PDF_BYTES)
+            counts = self.run_task()
+        self.assertEqual(counts, dict(created=2, skipped=0, failed=0))
+        for meeting in (self.modern, self.old):
+            material = self.report(meeting)
+            self.assertIsNotNone(material)
+            doc = material.document
+            self.assertEqual(
+                doc.name, f"proceedings-{meeting.number}-rfc-editor-report"
+            )
+            self.assertEqual(doc.rev, "00")
+            self.assertEqual(doc.title, "RFC Editor Report")
+            self.assertEqual(doc.get_state_slug("procmaterials"), "active")
+            self.assertEqual(doc.uploaded_filename, f"{doc.name}-00.pdf")
+            stored = Path(meeting.get_materials_path()) / "procmaterials" / doc.uploaded_filename
+            self.assertEqual(stored.read_bytes(), PDF_BYTES)
+        # only proceedings from IETF 97 on list materials, but all with reports are
+        # post-97
+        self.assertCountEqual(
+            mock_generate.call_args_list,
+            [call(self.modern, force_refresh=True), call(self.old, force_refresh=True)],
+        )
+        self.assertEqual(mock_clear.call_count, 1)
+
+        # a second run skips meetings that already have survey results
+        counts = self.run_task()
+        self.assertEqual(counts, dict(created=0, skipped=2, failed=0))
+
+    def test_rejects_bad_downloads(self, mock_generate, mock_clear):
+        with requests_mock.Mocker() as mocker:
+            mocker.get(self.urls[0][1], content=b"<html>not a pdf</html>")
+            mocker.get(self.urls[1][1], status_code=404)
+            counts = self.run_task()
+        self.assertEqual(counts, dict(created=0, skipped=0, failed=2))
+        self.assertIsNone(self.report(self.modern))
+        self.assertIsNone(self.report(self.old))
+        self.assertFalse(mock_clear.called)
+
+    def test_dry_run_saves_nothing(self, mock_generate, mock_clear):
+        with requests_mock.Mocker() as mocker:
+            for _, url in self.urls:
+                mocker.get(url, content=PDF_BYTES)
+            counts = self.run_task(dry_run=True)
+        self.assertEqual(counts, dict(created=2, skipped=0, failed=0))
+        self.assertIsNone(self.report(self.modern))
+        self.assertIsNone(self.report(self.old))
+        self.assertFalse(mock_generate.called)
+        self.assertFalse(mock_clear.called)
+
+    def test_one_meeting(self, mock_generate, mock_clear):
+        with requests_mock.Mocker() as mocker:
+            for _, url in self.urls:
+                mocker.get(url, content=PDF_BYTES)
+            counts = self.run_task(meeting_number=103)
+        self.assertEqual(counts, dict(created=1, skipped=0, failed=0))
+        self.assertIsNotNone(self.report(self.old))
+        self.assertIsNone(self.report(self.modern))
 
