@@ -13746,11 +13746,21 @@
     "fields": {
       "desc": "Results of the post-meeting survey",
       "name": "Post-Meeting Survey Results",
-      "order": 5,
+      "order": 6,
       "used": true
     },
     "model": "name.proceedingsmaterialtypename",
     "pk": "meeting_survey"
+  },
+  {
+    "fields": {
+      "desc": "Report from the RFC Editor",
+      "name": "RFC Editor Report",
+      "order": 5,
+      "used": true
+    },
+    "model": "name.proceedingsmaterialtypename",
+    "pk": "rfc_editor_report"
   },
   {
     "fields": {
