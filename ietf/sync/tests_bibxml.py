@@ -1,5 +1,5 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
-from unittest.mock import call, patch, ANY
+from unittest.mock import ANY, call, patch
 from xml.etree import ElementTree
 
 from django.conf import settings
