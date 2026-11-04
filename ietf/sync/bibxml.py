@@ -179,46 +179,18 @@ def build_rfc_bibxml(rfc, four_digits=False):
     return f"""<reference anchor="RFC{anchor}" target="{link}"><front><title>{esc(rfc.title)}</title>{authors}{date}{get_abstract_bibxml(rfc.abstract)}</front>{subseries_info}<seriesInfo name="RFC" value="{rfc_number}"/><seriesInfo name="DOI" value="{rfc.doi}"/></reference>"""
 
 
-def build_bcp_bibxml(bcp_number):
-    """Return BibXML entry for the given bcp"""
-    bcp = Document.objects.get(type_id="bcp", name=f"bcp{bcp_number}")
-    bcp_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"bcp{bcp_number}")
-    rfc_bibxml = ""
-    rfcs = sorted(bcp.contains(), key=lambda x: x.rfc_number)
+def build_subseries_bibxml(subseries_type, number):
+    """Return BibXML for the given RFC subseries type."""
+    subseries = Document.objects.get(
+        type_id=subseries_type, name=f"{subseries_type}{number}"
+    )
+    link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"{subseries_type}{number}")
+    rfcs = sorted(subseries.contains(), key=lambda x: x.rfc_number)
     if not rfcs:
-        raise BibXMLException(f"No RFCs found for BCP {bcp_number}.")
-    for rfc in rfcs:
-        rfc_bibxml += build_rfc_bibxml(rfc)
+        raise BibXMLException(f"No RFCs found for {subseries_type.upper()} {number}.")
+    rfc_bibxml = "".join(build_rfc_bibxml(rfc) for rfc in rfcs)
 
-    return f"""<referencegroup anchor="BCP{bcp_number}" target="{bcp_link}">{rfc_bibxml}</referencegroup>"""
-
-
-def build_std_bibxml(std_number):
-    """Return BibXML entry for the given std"""
-    std = Document.objects.get(type_id="std", name=f"std{std_number}")
-    std_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"std{std_number}")
-    rfc_bibxml = ""
-    rfcs = sorted(std.contains(), key=lambda x: x.rfc_number)
-    if not rfcs:
-        raise BibXMLException(f"No RFCs found for STD {std_number}.")
-    for rfc in rfcs:
-        rfc_bibxml += build_rfc_bibxml(rfc)
-
-    return f"""<referencegroup anchor="STD{std_number}" target="{std_link}">{rfc_bibxml}</referencegroup>"""
-
-
-def build_fyi_bibxml(fyi_number):
-    """Return BibXML entry for the given fyi"""
-    fyi = Document.objects.get(type_id="fyi", name=f"fyi{fyi_number}")
-    fyi_link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"fyi{fyi_number}")
-    rfc_bibxml = ""
-    rfcs = sorted(fyi.contains(), key=lambda x: x.rfc_number)
-    if not rfcs:
-        raise BibXMLException(f"No RFCs found for FYI {fyi_number}.")
-    for rfc in rfcs:
-        rfc_bibxml += build_rfc_bibxml(rfc)
-
-    return f"""<referencegroup anchor="FYI{fyi_number}" target="{fyi_link}">{rfc_bibxml}</referencegroup>"""
+    return f"""<referencegroup anchor="{subseries_type.upper()}{number}" target="{link}">{rfc_bibxml}</referencegroup>"""
 
 
 def save_bibxml(bibxml, filename, doc_name=None):
@@ -247,78 +219,62 @@ def save_bibxml(bibxml, filename, doc_name=None):
     log(f"Saved {filename} in bibxml storage")
 
 
+def create_rfc_bibxml(rfc):
+    """Create BibXML for the given RFC"""
+    rfc_number = rfc.rfc_number
+    filename = f"bibxml/reference.RFC.{rfc_number}.xml"
+    save_bibxml(build_rfc_bibxml(rfc), filename, doc_name=rfc.name)
+
+    if rfc_number < 1000:
+        padded_filename = f"bibxml/reference.RFC.{rfc_number:04d}.xml"
+        padded_bibxml = build_rfc_bibxml(rfc, four_digits=True)
+        save_bibxml(padded_bibxml, padded_filename, doc_name=rfc.name)
+
+
+def create_subseries_bibxml(subseries_type, number):
+    """Create BibXML for the given RFC subseries type."""
+    filename = f"bibxml-rfcsubseries/reference.{subseries_type.upper()}.{number}.xml"
+    bibxml = build_subseries_bibxml(subseries_type, number)
+    save_bibxml(bibxml, filename, doc_name=f"{subseries_type}{number}")
+
+
+def create_bcp_bibxml(bcp_number):
+    """Create BibXML for the given BCP."""
+    create_subseries_bibxml("bcp", bcp_number)
+
+
+def create_std_bibxml(std_number):
+    """Create BibXML for the given STD."""
+    create_subseries_bibxml("std", std_number)
+
+
+def create_fyi_bibxml(fyi_number):
+    """Create BibXML for the given FYI."""
+    create_subseries_bibxml("fyi", fyi_number)
+
+
 def recreate_rfc_bibxml():
     """Creates BibXML for all RFCs."""
     for rfc in Document.objects.filter(type_id="rfc"):
-        rfc_number = rfc.rfc_number
-        filename = f"bibxml/reference.RFC.{rfc_number}.xml"
-        bibxml = build_rfc_bibxml(rfc)
-        save_bibxml(bibxml, filename, doc_name=rfc.name)
-
-        # Save 4 digit RFCs for < 1000 for backward compatibility
-        if rfc_number < 1000:
-            padded_filename = f"bibxml/reference.RFC.{rfc_number:04d}.xml"
-            padded_bibxml = build_rfc_bibxml(rfc, four_digits=True)
-            save_bibxml(padded_bibxml, padded_filename, doc_name=rfc.name)
+        create_rfc_bibxml(rfc)
 
 
 def recreate_rfcsubseries_bibxml():
     """Creates BibXML for all RFC subseries."""
-    # BCPs
-    bcps = (
-        Document.objects.filter(type_id="bcp")
-        .annotate(
-            number=Cast(
-                Substr("name", 4, None),
-                output_field=models.IntegerField(),
+    for subseries_type in ("bcp", "std", "fyi"):
+        numbers = (
+            Document.objects.filter(type_id=subseries_type)
+            .annotate(
+                number=Cast(
+                    Substr("name", 4, None),
+                    output_field=models.IntegerField(),
+                )
             )
+            .order_by("-number")
+            .values_list("number", flat=True)
         )
-        .order_by("-number")
-        .values_list("number", flat=True)
-    )
-    for bcp_number in bcps:
-        try:
-            filename = f"bibxml-rfcsubseries/reference.BCP.{bcp_number}.xml"
-            bibxml = build_bcp_bibxml(bcp_number)
-            save_bibxml(bibxml, filename, doc_name=f"bcp{bcp_number}")
-        except BibXMLException as e:
-            log(f"{e}")
-    # STDs
-    stds = (
-        Document.objects.filter(type_id="std")
-        .annotate(
-            number=Cast(
-                Substr("name", 4, None),
-                output_field=models.IntegerField(),
-            )
-        )
-        .order_by("-number")
-        .values_list("number", flat=True)
-    )
-    for std_number in stds:
-        filename = f"bibxml-rfcsubseries/reference.STD.{std_number}.xml"
-        try:
-            bibxml = build_std_bibxml(std_number)
-            save_bibxml(bibxml, filename, doc_name=f"std{std_number}")
-        except BibXMLException as e:
-            log(f"{e}")
-
-    # FYIs
-    fyis = (
-        Document.objects.filter(type_id="fyi")
-        .annotate(
-            number=Cast(
-                Substr("name", 4, None),
-                output_field=models.IntegerField(),
-            )
-        )
-        .order_by("-number")
-        .values_list("number", flat=True)
-    )
-    for fyi_number in fyis:
-        filename = f"bibxml-rfcsubseries/reference.FYI.{fyi_number}.xml"
-        try:
-            bibxml = build_fyi_bibxml(fyi_number)
-            save_bibxml(bibxml, filename, doc_name=f"fyi{fyi_number}")
-        except BibXMLException as e:
-            log(f"{e}")
+        for number in numbers:
+            try:
+                create_subseries_bibxml(subseries_type, number)
+            except BibXMLException as e:
+                log(f"{e}")
