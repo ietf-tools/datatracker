@@ -321,5 +321,6 @@ class BibXmlTests(TestCase):
                 call(ANY, bcp_filename, doc_name=self.bcp.name),
                 call(ANY, std_filename, doc_name=self.std.name),
                 call(ANY, fyi_filename, doc_name=self.fyi.name),
-            ]
+            ],
+            any_order=True,
         )

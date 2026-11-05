@@ -10,7 +10,7 @@ from django.db.models.functions import Cast, Substr
 from django.utils import timezone
 from lxml import etree
 
-from ietf.doc.models import Document
+from ietf.doc.models import SUBSERIES_DOC_TYPE_IDS, Document
 from ietf.doc.storage_utils import store_bytes
 from ietf.utils.log import log
 
@@ -261,7 +261,7 @@ def recreate_rfc_bibxml():
 
 def recreate_rfcsubseries_bibxml():
     """Creates BibXML for all RFC subseries."""
-    for subseries_type in ("bcp", "std", "fyi"):
+    for subseries_type in SUBSERIES_DOC_TYPE_IDS:
         numbers = (
             Document.objects.filter(type_id=subseries_type)
             .annotate(
