@@ -181,9 +181,12 @@ def build_rfc_bibxml(rfc, four_digits=False):
 
 def build_subseries_bibxml(subseries_type, number):
     """Return BibXML for the given RFC subseries type."""
-    subseries = Document.objects.get(
-        type_id=subseries_type, name=f"{subseries_type}{number}"
-    )
+    try:
+        subseries = Document.objects.get(
+            type_id=subseries_type, name=f"{subseries_type}{number}"
+        )
+    except Document.DoesNotExist:
+        raise BibXMLException(f"{subseries_type}{number} does not exist.")
     link = urljoin(settings.RFC_EDITOR_INFO_BASE_URL + "/", f"{subseries_type}{number}")
     rfcs = sorted(subseries.contains(), key=lambda x: x.rfc_number)
     if not rfcs:
