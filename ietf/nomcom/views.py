@@ -15,7 +15,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.forms.models import modelformset_factory, inlineformset_factory 
-from django.http import Http404, HttpResponseRedirect, HttpResponse, HttpResponseForbidden
+from django.http import Http404, HttpResponseRedirect, HttpResponse, HttpResponseForbidden, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -167,7 +167,7 @@ def private_key(request, year):
         form = PrivateKeyForm(data=request.POST)
         if form.is_valid():
             try:
-                store_nomcom_private_key(request, year, force_bytes(form.cleaned_data.get('key', '')))
+                store_nomcom_private_key(request, year, force_bytes(form.cleaned_data.get('key') or ''))
             except UnicodeError:
                 form.add_error(
                     None, 
@@ -507,11 +507,11 @@ def feedback(request, year, public):
         selected_nominee = request.GET.get('nominee')
         selected_position = request.GET.get('position')
         if selected_nominee and selected_position:
-            nominee = get_object_or_404(Nominee, id=selected_nominee)
-            position = get_object_or_404(Position, id=selected_position)
+            nominee = get_object_or_404(Nominee, id=selected_nominee, nomcom=nomcom)
+            position = get_object_or_404(Position, id=selected_position, nomcom=nomcom)
         selected_topic = request.GET.get('topic')
         if selected_topic:
-            topic = get_object_or_404(Topic,id=selected_topic)
+            topic = get_object_or_404(Topic, id=selected_topic, nomcom=nomcom)
             if topic.audience_id == 'nomcom' and not nomcom.group.has_role(request.user, ['chair','advisor','liaison','member']):
                 raise Http404()
             if topic.audience_id == 'nominees' and not nomcom.nominee_set.filter(person=person).exists():
@@ -720,7 +720,9 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
     nomcom = get_nomcom_by_year(year)
     if nomcom.group.state_id == 'conclude':
         permission_denied(request, "This nomcom is concluded.")
-    nominee_position = get_object_or_404(NomineePosition, id=nominee_position_id)
+    nominee_position = get_object_or_404(
+        NomineePosition, id=nominee_position_id, position__nomcom=nomcom
+    )
     if nominee_position.state.slug != "pending":
         permission_denied(request, "The nomination already was %s" % nominee_position.state)
 
@@ -855,21 +857,35 @@ def view_feedback_pending(request, year):
     if request.method == 'POST' and request.POST.get('end'):
         extra_ids = request.POST.get('extra_ids', None)
         extra_step = True
-        formset = FullFeedbackFormSet(request.POST)
+        formset = FullFeedbackFormSet(request.POST, queryset=Feedback.objects.filter(nomcom=nomcom))
         # workaround -- why isn't formset_factory() being used?
         formset.absolute_max = 2000     
         formset.validate_max = False
+        # An id not in the queryset creates a new unsaved Feedback instance. Turn that
+        # into an error instead.
+        if any(form.instance.pk is None for form in formset.initial_forms):
+            raise Http404()
         for form in formset.forms:
             form.set_nomcom(nomcom, person)
         if formset.is_valid():
-            formset.save()
+            extra = []
             if extra_ids:
-                extra = []
                 for key in extra_ids.split(','):
-                    id, pk_type = key.split(':')
-                    feedback = Feedback.objects.get(id=id)
-                    feedback.type_id = pk_type
+                    try:
+                        id, pk_type = key.split(':')
+                        id = int(id)
+                    except ValueError:
+                        return HttpResponseBadRequest(f"Malformed extra_ids entry {key!r}")
+                    feedback = get_object_or_404(Feedback, id=id, nomcom=nomcom)
+                    try:
+                        feedback.type = FeedbackTypeName.objects.get(slug=pk_type)
+                    except FeedbackTypeName.DoesNotExist:
+                        return HttpResponseBadRequest(
+                            f"Unknown feedback type {pk_type}"
+                        )
                     extra.append(feedback)
+            formset.save()
+            if extra:
                 formset = FullFeedbackFormSet(queryset=Feedback.objects.filter(id__in=[i.id for i in extra]))
                 for form in formset.forms:
                     form.set_nomcom(nomcom, person, extra)
@@ -878,7 +894,9 @@ def view_feedback_pending(request, year):
                 messages.success(request, 'Feedback saved')
                 return redirect('ietf.nomcom.views.view_feedback_pending', year=year)
     elif request.method == 'POST':
-        formset = FeedbackFormSet(request.POST)
+        formset = FeedbackFormSet(request.POST, queryset=Feedback.objects.filter(nomcom=nomcom))
+        if any(form.instance.pk is None for form in formset.initial_forms):
+            raise Http404()
         for form in formset.forms:
             form.set_nomcom(nomcom, person)
         if formset.is_valid():
@@ -936,7 +954,7 @@ def view_feedback_unrelated(request, year):
         if not nomcom.group.has_role(request.user, ['chair','advisor']):
             return HttpResponseForbidden('Restricted to roles: Nomcom Chair, Nomcom Advisor')
         feedback_id = request.POST.get('feedback_id', None)
-        feedback = get_object_or_404(Feedback, id=feedback_id)
+        feedback = get_object_or_404(Feedback, id=feedback_id, nomcom=nomcom)
         type = request.POST.get('type', None)
         if type:
             if type == 'unclassified':
@@ -971,19 +989,18 @@ def view_feedback_topic(request, year, topic_id):
     # At present, the only feedback type for topics is 'comment'.
     # Reclassifying from 'comment' to 'comment' is a no-op,
     # so the only meaningful action is to de-classify it.
+    nomcom = get_nomcom_by_year(year)
+    topic = get_object_or_404(Topic, id=topic_id, nomcom=nomcom)
     if request.method == 'POST':
-        nomcom = get_nomcom_by_year(year)
         if not nomcom.group.has_role(request.user, ['chair','advisor']):
             return HttpResponseForbidden('Restricted to roles: Nomcom Chair, Nomcom Advisor')
         feedback_id = request.POST.get('feedback_id', None)
-        feedback = get_object_or_404(Feedback, id=feedback_id)
+        feedback = get_object_or_404(Feedback, id=feedback_id, nomcom=nomcom, topics=topic)
         feedback.type = None
         feedback.topics.clear()
         feedback.save()
         messages.success(request, 'The selected feedback has been de-classified. Please reclassify it in the Pending emails tab.')
 
-    topic = get_object_or_404(Topic, id=topic_id)
-    nomcom = get_nomcom_by_year(year)
     feedback_types = FeedbackTypeName.objects.filter(slug__in=['comment',])
     reviewer = request.user.person
 
@@ -1006,14 +1023,14 @@ def view_feedback_topic(request, year, topic_id):
 @nomcom_private_key_required
 def view_feedback_nominee(request, year, nominee_id):
     nomcom = get_nomcom_by_year(year)
-    nominee = get_object_or_404(Nominee, id=nominee_id)
+    nominee = get_object_or_404(Nominee, id=nominee_id, nomcom=nomcom)
     feedback_types = FeedbackTypeName.objects.filter(used=True, slug__in=settings.NOMINEE_FEEDBACK_TYPES)
     reviewer = request.user.person
     if request.method == 'POST':
         if not nomcom.group.has_role(request.user, ['chair','advisor']):
             return HttpResponseForbidden('Restricted to roles: Nomcom Chair, Nomcom Advisor')
         feedback_id = request.POST.get('feedback_id', None)
-        feedback = get_object_or_404(Feedback, id=feedback_id)
+        feedback = get_object_or_404(Feedback, id=feedback_id, nomcom=nomcom, nominees=nominee)
         submit = request.POST.get('submit', None)
         if submit == 'download':
             fn = f'questionnaire-{slugify(nominee.name())}-{feedback.time.date()}.txt'
@@ -1069,7 +1086,7 @@ def view_feedback_nominee(request, year, nominee_id):
 @role_required("Nomcom Chair", "Nomcom Advisor")
 def edit_nominee(request, year, nominee_id):
     nomcom = get_nomcom_by_year(year)
-    nominee = get_object_or_404(Nominee, id=nominee_id)
+    nominee = get_object_or_404(Nominee, id=nominee_id, nomcom=nomcom)
 
     if request.method == 'POST':
         form = EditNomineeForm(request.POST,
