@@ -1,9 +1,7 @@
 // Copyright The IETF Trust 2026, All Rights Reserved
 import Chart from 'chart.js/auto'
-import autocolors from 'chartjs-plugin-autocolors'
 
 document.addEventListener('DOMContentLoaded', () => {
-    Chart.register(autocolors)
     // ── Safely parse JSON data injected from Django view ──
     const totalChartData = JSON.parse(document.getElementById('total-chart-data').textContent)
     const inPersonChartData = JSON.parse(document.getElementById('in-person-chart-data').textContent)
@@ -16,9 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
             options: {
                 responsive: true,
                 plugins: {
-                    autocolors: {
-                        mode: 'data' // Required for Pie charts to color individual slices
-                    },
                     legend: {
                         position: 'bottom',
                         labels: {

@@ -26,21 +26,33 @@ class AffiliationAlias(models.Model):
     def __str__(self):
         return "{} -> {}".format(self.alias, self.name)
 
-    def save(self, *args, **kwargs):
-        self.alias = self.alias.lower()
-        update_fields = {"alias"}.union(kwargs.pop("update_fields", set()))
-        super(AffiliationAlias, self).save(update_fields=update_fields, *args, **kwargs)
 
     class Meta:
         verbose_name_plural = "affiliation aliases"
 
+
 class AffiliationIgnoredEnding(models.Model):
     """Records that ending should be stripped from the affiliation for statistical purposes."""
 
-    ending = models.CharField(max_length=255, help_text="Regexp with ending, e.g. 'Inc\\.?' - remember to escape .!")
+    ending = models.CharField(max_length=255, help_text="Records that ending will be matched case-insensitive and should be stripped from the affiliation for statistical purposes.")
 
     def __str__(self):
-        return self.ending
+        return str(self.ending)
+
+class AffiliationMainName(models.Model):
+    """Records that this start of an affiliation is what matters (for statistical purposes)."""
+    main_name = models.CharField(
+        max_length=255, 
+        unique=True,
+        help_text="Main leading part of an affiliation will be matched case-insensitive, the remaining part can be ignored for statistical purposes.")
+
+    class Meta:
+        verbose_name_plural = 'affiliation main names'
+
+
+    def __str__(self):
+        return str(self.main_name)
+
 
 class CountryAlias(models.Model):
     """Records that alias should be treated as country for statistical
@@ -55,6 +67,7 @@ class CountryAlias(models.Model):
     class Meta:
         verbose_name_plural = "country aliases"
     
+
 class MeetingRegistration(models.Model):
     """Registration attendee records from the IETF registration system"""
     meeting = ForeignKey(Meeting)
