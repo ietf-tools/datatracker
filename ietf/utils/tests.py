@@ -27,8 +27,10 @@ from xml2rfc.util.date import extract_date as xml2rfc_extract_date
 
 from django.apps import apps
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.forms import Form
+from django.http import HttpResponseNotFound
 from django.template import Context
 from django.template import Template    # pyflakes:ignore
 from django.template.defaulttags import URLNode
@@ -40,10 +42,12 @@ from django.urls import reverse as urlreverse
 import debug                            # pyflakes:ignore
 
 from ietf.admin.sites import AdminSite
+from ietf.middleware import redirect_trailing_period_middleware
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
 from ietf.utils.draft import PlaintextDraft, getmeta
 from ietf.utils.fields import SearchableField
+from ietf.utils.http import is_safe_next_url
 from ietf.utils.log import unreachable, assertion
 from ietf.utils.mail import (
     send_mail_preformatted,
@@ -60,7 +64,9 @@ from ietf.utils.test_runner import (
     set_url_coverage,
 )
 from ietf.utils.test_utils import TestCase, unicontent
+from ietf.utils.text import wordwrap, wrap_text_if_unwrapped
 from ietf.utils.timezone import timezone_not_near_midnight
+from ietf.utils.validators import validate_utf8_text
 from ietf.utils.xmldraft import XMLDraft, InvalidMetadataError, capture_xml2rfc_output
 
 class SendingMail(TestCase):
@@ -517,6 +523,115 @@ class PlaintextDraftTests(TestCase):
         self.assertEqual(getmeta(filename)['docdeststatus'],'Informational')
         shutil.rmtree(tempdir)
 
+    def test_long_line_is_not_a_page_footer(self):
+        footer = "Doe                     Expires 1 May 2027                [Page 1]"
+        long_line = "x" * 300 + " [Page 1]"
+        draft = PlaintextDraft(text=f"body\n{footer}\n{long_line}\nmore\n", source="x.txt")
+        self.assertNotIn(footer, draft.lines)
+        self.assertIn(long_line, draft.lines)
+
+    def test_oversized_abstract_is_left_as_found(self):
+        draft = PlaintextDraft(text="x\n", source="x.txt")
+        boilerplate = "\nStatus of This Memo\nBoilerplate."
+        self.assertEqual(draft._clean_abstract("An abstract." + boilerplate), "An abstract.")
+        oversized = "word " * 7000 + boilerplate
+        self.assertEqual(draft._clean_abstract(oversized), oversized)
+
+    def test_abstract_with_very_long_line_is_not_wrapped(self):
+        draft = PlaintextDraft(text="x\n", source="x.txt")
+        self.assertIn("\n", draft._clean_abstract(("word " * 30).strip()))
+        very_long = ("word " * 300).strip()
+        self.assertEqual(draft._clean_abstract(very_long), very_long)
+
+    _title_block = "\n\n                     A Title for Testing\n                       draft-doe-test-00\n\n"
+
+    def test_title_is_found_near_top_of_first_page(self):
+        draft = PlaintextDraft(
+            text="Network Working Group\n" + self._title_block + "Abstract\n\n   Text.\n",
+            source="draft-doe-test-00.txt",
+        )
+        self.assertEqual(draft.get_title(), "A Title for Testing")
+
+    def test_title_is_not_searched_for_far_down_a_long_first_page(self):
+        footer = "Doe                     Expires 1 May 2027                [Page %d]"
+        text = (
+            "Network Working Group\n" + "   filler line\n" * 150 + self._title_block
+            + "Abstract\n\n   Text.\n" + footer % 1 + "\n" + "   more text\n" * 10 + footer % 2 + "\n"
+        )
+        draft = PlaintextDraft(text=text, source="draft-doe-test-00.txt")
+        self.assertGreater(draft.pages[0].count("\n"), 100)
+        self.assertIsNone(draft.get_title())
+        self.assertIn("title", draft.errors)
+
+    def test_title_is_not_searched_for_in_oversized_first_lines(self):
+        draft = PlaintextDraft(
+            text="x" * 25000 + "\n" + self._title_block + "Abstract\n\n   Text.\n",
+            source="draft-doe-test-00.txt",
+        )
+        self.assertIsNone(draft.get_title())
+        self.assertIn("title", draft.errors)
+
+    def test_long_author_entry_is_not_rewritten(self):
+        def draft_with(email_line):
+            return PlaintextDraft(
+                text=(
+                    "Network Working Group                                           J. Doe\n"
+                    "Internet-Draft                                                   Example\n"
+                    "Intended status: Informational                           1 November 2026\n"
+                    "Expires: 5 May 2027\n\n\n"
+                    "                          A Title for Testing\n"
+                    "                           draft-doe-test-00\n\n"
+                    "Abstract\n\n   This is a test abstract.\n\n"
+                    "1.  Introduction\n\n   Text.\n\n"
+                    "Author's Address\n\n   Jane Doe\n   Example\n" + email_line + "\n"
+                ),
+                source="draft-doe-test-00.txt",
+            )
+        email_line = "   Email: jdoe at example dot com"
+        email = lambda d: [a[5] for a in d.get_author_list()]
+        self.assertEqual(email(draft_with(email_line)), ["jdoe@example.com"])
+        self.assertEqual(email(draft_with(email_line + "    (" + "y" * 250 + ")")), [None])
+
+    @staticmethod
+    def _refs(heading, body):
+        return PlaintextDraft(
+            text=(
+                "Network Working Group\n\n                     A Title for Testing\n"
+                "                       draft-doe-test-00\n\n" + "   filler text\n" * 20
+                + "\n" + heading + "\n\n" + body + "\n"
+            ),
+            source="draft-doe-test-00.txt",
+        ).get_refs()
+
+    def test_refs_are_found_in_references_section(self):
+        self.assertEqual(
+            self._refs("10.  References", "   [RFC2119]  Bradner, S., RFC 2119."),
+            {"rfc2119": PlaintextDraft.REF_TYPE_INFORMATIVE},
+        )
+
+    def test_refs_are_not_searched_for_in_very_long_lines(self):
+        long_line = "   [RFC2119]  Bradner, S., RFC 2119, " + "x" * 1100
+        self.assertEqual(self._refs("10.  References", long_line), {})
+
+    def test_refs_are_not_searched_for_in_very_long_rejoined_lines(self):
+        split_ref = "   see RFC\n   2119 " + "x" * 1100
+        self.assertEqual(self._refs("10.  References", split_ref), {})
+
+    def test_very_long_line_does_not_start_references_section(self):
+        heading = "10.  " + "Z" * 250 + " References"
+        self.assertEqual(self._refs(heading, "   [RFC2119]  Bradner, S., RFC 2119."), {})
+
+
+class WordwrapTests(TestCase):
+    def test_normalizes_line_endings(self):
+        self.assertEqual(wordwrap("a  \r\nb  \rc"), "a\nb\nc")
+        self.assertEqual(wrap_text_if_unwrapped("a  \r\nb  \rc"), "a\nb\nc")
+
+    def test_collapses_blank_lines(self):
+        self.assertEqual(wordwrap("a\n\nb"), "a\n\nb")
+        self.assertEqual(wordwrap("a\n\n\n\nb"), "a\n\nb")
+        self.assertEqual(wordwrap("a  \n  \n \n\nb"), "a\n\nb")
+
 
 class XMLDraftTests(TestCase):
     def test_get_refs_v3(self):
@@ -946,3 +1061,105 @@ class HealthTests(TestCase):
             200,
         )
             
+
+
+class ValidateUtf8TextTests(TestCase):
+    def test_accepts_utf8(self):
+        for raw in (b"plain ascii\n", "“curly” café\n".encode()):
+            self.assertEqual(validate_utf8_text(raw), raw)
+        self.assertEqual(validate_utf8_text(b"\xef\xbb\xbf# caf\xc3\xa9\n"), b"# caf\xc3\xa9\n")
+
+    def test_rejects_other_encodings(self):
+        cases = [
+            ("ok\ncafé, hôtel\n".encode("mac_roman"), "line 2: caf[0x8E], h[0x99]tel"),
+            ("“curly”\n".encode("cp1252"), "line 1: [0x93]curly[0x94]"),
+            ("Łódź\n".encode("iso8859_2"), "line 1: [0xA3][0xF3]d[0xBC]"),  # libmagic calls this iso-8859-1
+            (b"x\n" * 600000 + b"caf\x8e\n", "line 600001: caf[0x8E]"),  # beyond what libmagic samples
+            (b"a" * 100 + b"\x8e" + b"b" * 100, "line 1: ..." + "a" * 30 + "[0x8E]" + "b" * 44 + "..."),
+        ]
+        for raw, detail in cases:
+            with self.assertRaises(ValidationError) as cm:
+                validate_utf8_text(raw)
+            self.assertEqual(
+                cm.exception.message,
+                f"The file is not valid UTF-8 text. The first invalid byte is on {detail}",
+            )
+
+
+class IsSafeNextUrlTests(TestCase):
+    def test_accepts_site_relative_urls(self):
+        for url in (
+            "/doc/search/?name=x&rfcs=on",
+            "/x#frag",
+            "/x?a=1#frag",
+            "/x#//evil.example.com",
+            "/x#\\evil.example.com",
+            "/x?",
+            "/x#",
+            "/%2F/evil.example.com",
+        ):
+            with self.subTest(url=url):
+                self.assertTrue(is_safe_next_url(url))
+
+    def test_rejects_other_urls(self):
+        for url in (
+            None,
+            "",
+            "//evil.example.com/x",
+            "///evil.example.com",
+            "/\\evil.example.com",
+            "/\t/evil.example.com",
+            "/x\r\nSet-Cookie: a=b",
+            "\x00/x",
+            " /x",
+            "x/y",
+            "../x",
+            "#frag",
+            "?a=1",
+            "https://evil.example.com",
+            "javascript:alert(1)",
+        ):
+            with self.subTest(url=url):
+                self.assertFalse(is_safe_next_url(url))
+
+    def test_allowed_views(self):
+        allowed_views = {"ietf.doc.views_search.search"}
+        search_url = urlreverse("ietf.doc.views_search.search")
+        self.assertTrue(is_safe_next_url(search_url, allowed_views))
+        self.assertTrue(
+            is_safe_next_url(f"{search_url}?name=x&rfcs=on#frag", allowed_views)
+        )
+        self.assertFalse(
+            is_safe_next_url(urlreverse("ietf.iesg.views.agenda"), allowed_views)
+        )
+        self.assertFalse(
+            is_safe_next_url("/a-route-that-does-not-exist/", allowed_views)
+        )
+        self.assertFalse(is_safe_next_url(f"/{search_url}", allowed_views))
+        self.assertFalse(is_safe_next_url(search_url, set()))
+
+
+class RedirectTrailingPeriodMiddlewareTests(TestCase):
+    def get_response(self, path):
+        middleware = redirect_trailing_period_middleware(
+            lambda request: HttpResponseNotFound()
+        )
+        request = RequestFactory().get("/")
+        # RequestFactory().get("//evil.example.com.") would parse evil.example.com. as
+        # the host
+        request.path = request.path_info = path
+        return middleware(request)
+
+    def test_redirects_without_trailing_period(self):
+        response = self.get_response("/doc/draft-foo.")
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(response["Location"], "/doc/draft-foo")
+
+    def test_does_not_redirect_off_site(self):
+        for path in (
+            "//evil.example.com.",
+            "//evil.example.com/x.",
+            "/\\evil.example.com.",
+        ):
+            with self.subTest(path=path):
+                self.assertEqual(self.get_response(path).status_code, 404)

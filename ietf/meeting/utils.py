@@ -19,6 +19,7 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib import messages
 from django.core.cache import caches
+from django.core.cache.utils import make_template_fragment_key
 from django.core.files.base import ContentFile
 from django.db import IntegrityError
 from django.db.models import Exists, OuterRef, Subquery, TextField, Q, Value, Max
@@ -315,6 +316,21 @@ def expire_pending_slide_proposals(meeting, dry_run=False):
         count += 1
     return count
 
+def backfill_meetecho_recording_names(rows, dry_run=False):
+    """Store recording names from (session id, expected current name, new name) rows; returns how many sessions (would) change
+
+    A session changes only while its name is still the expected current value, so a name the
+    recording-name API has stored since the rows were prepared is kept.
+    """
+    count = 0
+    for session_id, current, name in rows:
+        matching = Session.objects.filter(pk=session_id, meetecho_recording_name=current)
+        if dry_run:
+            count += matching.count()
+        else:
+            count += matching.update(meetecho_recording_name=name)
+    return count
+
 def sort_accept_tuple(accept):
     tup = []
     if accept:
@@ -377,6 +393,16 @@ def add_event_info_to_session_qs(qs, current_status=True, requested_by=False, re
 #        p.group_list.sort(key=lambda g: g.acronym)
 #
 #    return group_parents
+
+
+def clear_past_meetings_cache():
+    """Drop the cached content of the past meetings page
+
+    meeting/past.html caches its list of plenary meetings in "slowpages", varying
+    on whether the viewer is secretariat.
+    """
+    for is_secretariat in (True, False):
+        caches["slowpages"].delete(make_template_fragment_key("pastmeetings-plenaries", [is_secretariat]))
 
 
 def data_for_meetings_overview(meetings, interim_status=None):

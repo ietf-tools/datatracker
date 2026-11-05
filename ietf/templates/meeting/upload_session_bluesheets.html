@@ -29,6 +29,9 @@
     <form enctype="multipart/form-data" method="post" class="my-3">
         {% csrf_token %}
         {% bootstrap_form form %}
-        <button type="submit" class="btn btn-primary">Upload</button>
+        <button type="submit" class="btn btn-primary">Save</button>
     </form>
+{% endblock %}
+{% block js %}
+    <script src="{% static 'ietf/js/upload-or-enter-material.js' %}"></script>
 {% endblock %}

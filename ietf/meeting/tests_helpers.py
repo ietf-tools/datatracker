@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2020-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 import datetime
+import os
 
 import debug    # pyflakes:ignore
 
@@ -11,13 +12,15 @@ from django.contrib.messages.storage.fallback import FallbackStorage
 from django.db import connection
 from django.test import override_settings, RequestFactory
 from django.test.utils import CaptureQueriesContext
+from tempfile import TemporaryDirectory
 
 from ietf.group.factories import GroupFactory, GroupHistoryFactory
 from ietf.group.models import Group
 from ietf.meeting.factories import SessionFactory, MeetingFactory, TimeSlotFactory
 from ietf.meeting.helpers import (AgendaFilterOrganizer, AgendaKeywordTagger,
     delete_interim_session_conferences, sessions_post_save, sessions_post_cancel,
-    create_interim_session_conferences, get_ietf_meeting, set_order_in_meeting)
+    create_interim_session_conferences, get_ietf_meeting, set_order_in_meeting,
+    convert_draft_to_pdf)
 from ietf.meeting.models import Meeting, SchedTimeSessAssignment, Session
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.utils.meetecho import Conference
@@ -694,3 +697,35 @@ class HelperTests(TestCase):
         set_order_in_meeting(meeting, [other])
         self.assertFalse(hasattr(other, '_order_in_meeting'))
         self.assertEqual(other.order_in_meeting(), 1)
+
+
+class ConvertDraftToPdfTests(TestCase):
+    footer = "Doe                     Expires 1 May 2027                [Page 1]"
+    header = "Internet-Draft               Example               November 2026"
+
+    def converted_text(self, text):
+        """Return the text that convert_draft_to_pdf passes to enscript"""
+        converted = []
+
+        def fake_pipe(cmd):
+            if cmd.startswith("enscript"):
+                with open(cmd.split()[-1]) as f:
+                    converted.append(f.read())
+            return 0, b"", b""
+
+        with TemporaryDirectory() as repo, TemporaryDirectory() as pdfdir:
+            with open(os.path.join(repo, "draft-x-00.txt"), "w") as f:
+                f.write(text)
+            with override_settings(IDSUBMIT_REPOSITORY_PATH=repo, INTERNET_DRAFT_PDF_PATH=pdfdir):
+                with patch("ietf.meeting.helpers.pipe", side_effect=fake_pipe):
+                    convert_draft_to_pdf("draft-x-00")
+        return converted[0]
+
+    def test_inserts_page_break_between_footer_and_header(self):
+        text = self.converted_text(f"body\n{self.footer}\n\n{self.header}\nmore\n")
+        self.assertIn(f"\f{self.header}", text)
+
+    def test_long_line_is_not_a_page_footer(self):
+        long_line = "x" * 300 + " [Page 1]"
+        text = self.converted_text(f"body\n{long_line}\n{self.header}\nmore\n")
+        self.assertNotIn("\f", text)

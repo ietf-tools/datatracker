@@ -14,6 +14,7 @@ from django import forms
 from django.conf import settings
 from django.core import validators
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.forms import BaseInlineFormSet
 from django.template.defaultfilters import pluralize
 from django.utils.functional import cached_property
@@ -42,7 +43,7 @@ from ietf.utils.fields import (
 )
 from ietf.utils.html import clean_text_field
 from ietf.utils.validators import ( validate_file_size, validate_mime_type,
-    validate_file_extension, validate_no_html_frame)
+    validate_file_extension, validate_no_html_frame, validate_utf8_text)
 
 NUM_SESSION_CHOICES = (('', '--Please select'), ('1', '1'), ('2', '2'))
 SESSION_TIME_RELATION_CHOICES = (('', 'No preference'),) + Constraint.TIME_RELATION_CHOICES
@@ -430,17 +431,21 @@ class FileUploadForm(forms.Form):
     file = forms.FileField(label='File to upload')
 
     doc_type = ''  # subclasses must set this
+    require_utf8 = False  # subclasses set this to reject text files that are not UTF-8
 
     def __init__(self, *args, **kwargs):
         assert self.doc_type in settings.MEETING_VALID_UPLOAD_EXTENSIONS
         self.extensions = settings.MEETING_VALID_UPLOAD_EXTENSIONS[self.doc_type]
         self.mime_types = settings.MEETING_VALID_UPLOAD_MIME_TYPES[self.doc_type]
         super(FileUploadForm, self).__init__(*args, **kwargs)
+        self.file_encoding = {}
         label = '%s file to upload.  ' % (self.doc_type.capitalize(), )
         if self.doc_type == "slides":
             label += 'Did you remember to put in slide numbers? '
         if self.mime_types:
             label += 'Note that you can only upload files with these formats: %s.' % (', '.join(self.mime_types, ))
+        if self.require_utf8:
+            label += ' Files other than PDF must be UTF-8 encoded.' if '.pdf' in self.extensions else ' Files must be UTF-8 encoded.'
         self.fields['file'].label=label
 
     def clean_file(self):
@@ -457,8 +462,6 @@ class FileUploadForm(forms.Form):
                 self.cleaned_data['file'] = file
 
         mime_type, encoding = validate_mime_type(file, self.mime_types)
-        if not hasattr(self, 'file_encoding'):
-            self.file_encoding = {}
         self.file_encoding[file.name] = encoding or None
         if self.mime_types:
             if not file.content_type in settings.MEETING_VALID_UPLOAD_MIME_FOR_OBSERVED_MIME[mime_type]:
@@ -469,6 +472,17 @@ class FileUploadForm(forms.Form):
             if file.content_type in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS:
                 if not ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS[file.content_type]:
                     raise ValidationError('Upload Content-Type (%s) does not match the extension (%s)' % (file.content_type, ext))
+        text_extensions = set()
+        for content_type, extensions in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS.items():
+            if content_type.startswith('text/'):
+                text_extensions.update(extensions)
+        if self.require_utf8 and ext in text_extensions:
+            file.seek(0)
+            raw = file.read()
+            text = validate_utf8_text(raw)
+            if text != raw:
+                file = SimpleUploadedFile(file.name, text, content_type=file.content_type)
+            self.file_encoding[file.name] = 'utf-8'
         if (file.content_type in ['text/html', ]
                 or ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS.get('text/html', [])):
             # We'll do html sanitization later, but for frames, we fail here,
@@ -477,8 +491,77 @@ class FileUploadForm(forms.Form):
         return file
 
 
+class UploadOrEnterFormMixin:
+    """Adds a choice between uploading a file and entering its text directly.
+
+    For forms derived from FileUploadForm. Entered text is wrapped as a UTF-8 file named
+    entered_file_name with entered_content_type, so callers can handle both methods alike
+    through get_file() and file_encoding.
+    """
+    entered_file_name = ''  # subclasses must set this
+    entered_content_type = ''  # subclasses must set this
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        kind = DocTypeName.objects.get(slug=self.doc_type).name
+        self.fields["submission_method"] = forms.ChoiceField(
+            choices=[("upload", f"Upload {kind.lower()}"), ("enter", f"Enter {kind.lower()}")],
+            widget=forms.RadioSelect,
+        )
+        self.fields["content"] = forms.CharField(
+            widget=forms.Textarea, required=False, strip=False, label=f"{kind} text"
+        )
+        self.fields["file"].required = False
+        self.order_fields(["scope", "submission_method", "file", "content"])
+
+    def clean_content(self):
+        return self.cleaned_data["content"].replace("\r", "")
+
+    def clean_file(self):
+        submission_method = self.cleaned_data.get("submission_method")
+        if submission_method == "upload":
+            if self.cleaned_data.get("file", None) is not None:
+                return super().clean_file()
+        return None
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        def require_field(f):
+            if not self.cleaned_data.get(f) and f not in self.errors:
+                self.add_error(f, ValidationError("You must fill in this field."))
+
+        submission_method = self.cleaned_data.get("submission_method")
+        if submission_method == "upload":
+            require_field("file")
+        elif submission_method == "enter":
+            require_field("content")
+            self.file_encoding[self.entered_file_name] = "utf-8"
+        return cleaned_data
+
+    def get_file(self):
+        """Get the submission as a file-like object.
+
+        Returns the uploaded file, or the entered text wrapped as a file.
+        """
+        if self.cleaned_data.get("submission_method") == "upload":
+            return self.cleaned_data["file"]
+        else:
+            return SimpleUploadedFile(
+                name=self.entered_file_name,
+                content=self.cleaned_data["content"].encode("utf-8"),
+                content_type=self.entered_content_type,
+            )
+
+
 class UploadBlueSheetForm(FileUploadForm):
     doc_type = 'bluesheets'
+    require_utf8 = True
+
+
+class UploadOrEnterBlueSheetForm(UploadOrEnterFormMixin, UploadBlueSheetForm):
+    entered_file_name = "entered.txt"
+    entered_content_type = "text/plain;charset=utf-8"
 
 
 class ApplyToSessionsFormMixin:
@@ -543,14 +626,22 @@ class ApplyToSessionsFileUploadForm(ApplyToSessionsFormMixin, FileUploadForm):
 
 class UploadMinutesForm(ApplyToSessionsFileUploadForm):
     doc_type = 'minutes'
+    require_utf8 = True
 
 
 class UploadNarrativeMinutesForm(ApplyToSessionsFileUploadForm):
     doc_type = 'narrativeminutes'
+    require_utf8 = True
 
 
 class UploadAgendaForm(ApplyToSessionsFileUploadForm):
     doc_type = 'agenda'
+    require_utf8 = True
+
+
+class UploadOrEnterAgendaForm(UploadOrEnterFormMixin, UploadAgendaForm):
+    entered_file_name = "uploaded.md"
+    entered_content_type = "text/markdown;charset=utf-8"
 
 
 class UploadSlidesForm(ApplyToSessionsFileUploadForm):
