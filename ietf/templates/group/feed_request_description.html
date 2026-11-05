@@ -1,0 +1,9 @@
+{% load tz %}<div>
+Date: {{ obj.history_date|utc|date:"Y-m-d H:i:s" }} <br>
+By: {{ obj.history_user.person }} <br>
+Document: {% if obj.reviewed_rev %}<a href="{% url "ietf.doc.views_doc.document_main" name=obj.review_request.doc.name rev=obj.reviewed_rev %}">{{ obj.review_request.doc.name }}-{{ obj.reviewed_rev }}</a>{% else %}<a href="{% url "ietf.doc.views_doc.document_main" name=obj.review_request.doc.name %}">{{ obj.review_request.doc.name }}</a>{% endif %} <br>
+State: <a href="{% url "ietf.doc.views_review.review_request" name=obj.review_request.doc.name request_id=obj.review_request.pk %}">{{ obj.state }} </a> <br>
+Reviewer: {{ obj.reviewer.person }} <br>
+Result: {% if obj.review %}<a href="{{ obj.review.get_absolute_url }}"> {{ obj.result }}</a> {% else %} {{ obj.result }} {% endif %} <br>
+Description: {{ obj.history_change_reason }} <br>
+</div>
