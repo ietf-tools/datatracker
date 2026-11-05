@@ -4499,6 +4499,7 @@
       ],
       "session_purposes": [
         "coding",
+        "officehours",
         "open_meeting",
         "presentation",
         "social",
@@ -8927,7 +8928,7 @@
     "fields": {
       "continent": "europe",
       "desc": "",
-      "in_eu": true,
+      "in_eu": false,
       "name": "United Kingdom",
       "order": 0,
       "used": true
