@@ -93,7 +93,7 @@ class DraftIdnitsChecker(object):
             
         else:
             message = out
-            if re.search(r"\s+Summary:\s+0\s+|No nits found", out):
+            if re.search(r"(?<!\s)\s+Summary:\s+0\s+|No nits found", out):  # lookbehind keeps this linear
                 passed  = True
             else:
                 passed  = False

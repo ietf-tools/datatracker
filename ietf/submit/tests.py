@@ -19,6 +19,8 @@ from typing import Tuple
 
 from pathlib import Path
 
+from celery.exceptions import SoftTimeLimitExceeded
+
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
@@ -44,11 +46,13 @@ from ietf.meeting.factories import MeetingFactory
 from ietf.name.models import DraftSubmissionStateName, FormalLanguageName
 from ietf.person.models import Person
 from ietf.person.factories import UserFactory, PersonFactory, EmailFactory
-from ietf.submit.checkers import DraftIdnits3Checker
+from ietf.submit.checkers import DraftIdnitsChecker, DraftIdnits3Checker
 from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactory
 from ietf.submit.forms import SubmissionBaseUploadForm, SubmissionAutoUploadForm
 from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
-from ietf.submit.tasks import cancel_stale_submissions, process_and_accept_uploaded_submission_task
+from ietf.submit.parsers.plain_parser import PlainParser
+from ietf.submit.tasks import (cancel_stale_submissions, process_and_accept_uploaded_submission_task,
+                               process_uploaded_submission_task)
 from ietf.submit.utils import (expirable_submissions, expire_submission, find_submission_filenames,
                                post_submission, validate_submission_name, validate_submission_rev,
                                process_and_accept_uploaded_submission, SubmissionError, process_submission_text,
@@ -2568,6 +2572,27 @@ class ApiSubmissionTests(BaseSubmitTestCase):
 
  
 
+class PlainParserTests(TestCase):
+    @override_settings(IDSUBMIT_MAX_DRAFT_SIZE={"txt": 10})
+    def test_oversized_file_is_not_parsed_further(self):
+        f = SimpleUploadedFile("draft-x-00.txt", b"draft-x-00\n" * 10, content_type="text/plain")
+        with mock.patch.object(PlainParser, "parse_name") as parse_name:
+            info = PlainParser(f).critical_parse()
+        self.assertTrue(any("File size is larger" in e for e in info.errors))
+        parse_name.assert_not_called()
+
+
+class DraftIdnitsCheckerTests(TestCase):
+    def passed(self, output):
+        with mock.patch("ietf.submit.checkers.pipe", return_value=(0, output.encode(), b"")):
+            return DraftIdnitsChecker().check_file_txt("draft-x-00.txt")[0]
+
+    def test_passed_follows_summary(self):
+        self.assertTrue(self.passed("\n  No nits found.\n"))
+        self.assertTrue(self.passed("\n  Summary: 0 errors (**), 0 flaws (~~), 1 warning (==), 0 comments (--).\n"))
+        self.assertFalse(self.passed("\n  Summary: 1 error (**), 0 flaws (~~), 0 warnings (==), 0 comments (--).\n"))
+
+
 class SubmissionUploadFormTests(BaseSubmitTestCase):
     def test_check_submission_thresholds(self):
         today = date_today()
@@ -3237,6 +3262,34 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertEqual(submission.first_two_pages, text_data["first_two_pages"])
         self.assertEqual(submission.file_size, text_data["file_size"])
         self.assertEqual(submission.xml_version, xml_data["xml_version"])
+
+    def test_process_uploaded_submission_soft_time_limit(self):
+        """A submission whose validation times out is cancelled, not left validating"""
+        submission = SubmissionFactory(state_id="validating", file_types=".xml,.txt")
+        with mock.patch(
+            "ietf.submit.utils.process_submission_xml", side_effect=SoftTimeLimitExceeded
+        ):
+            process_uploaded_submission(submission)
+        submission = Submission.objects.get(pk=submission.pk)
+        self.assertEqual(submission.state_id, "cancel")
+
+    def test_submission_tasks_have_time_limits(self):
+        """Both submission tasks are bounded, and the bound precedes the stale sweeper"""
+        self.assertLess(
+            settings.IDSUBMIT_TASK_SOFT_TIME_LIMIT, settings.IDSUBMIT_TASK_TIME_LIMIT
+        )
+        self.assertLess(
+            settings.IDSUBMIT_TASK_TIME_LIMIT,
+            settings.IDSUBMIT_MAX_VALIDATION_TIME.total_seconds(),
+        )
+        for task in (
+            process_uploaded_submission_task,
+            process_and_accept_uploaded_submission_task,
+        ):
+            self.assertEqual(task.time_limit, settings.IDSUBMIT_TASK_TIME_LIMIT)
+            self.assertEqual(
+                task.soft_time_limit, settings.IDSUBMIT_TASK_SOFT_TIME_LIMIT
+            )
 
     def test_status_of_validating_submission(self):
         s = SubmissionFactory(state_id='validating')

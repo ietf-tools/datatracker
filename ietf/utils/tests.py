@@ -64,6 +64,7 @@ from ietf.utils.test_runner import (
     set_url_coverage,
 )
 from ietf.utils.test_utils import TestCase, unicontent
+from ietf.utils.text import wordwrap, wrap_text_if_unwrapped
 from ietf.utils.timezone import timezone_not_near_midnight
 from ietf.utils.validators import validate_utf8_text
 from ietf.utils.xmldraft import XMLDraft, InvalidMetadataError, capture_xml2rfc_output
@@ -521,6 +522,115 @@ class PlaintextDraftTests(TestCase):
             file.write(self.draft.text)
         self.assertEqual(getmeta(filename)['docdeststatus'],'Informational')
         shutil.rmtree(tempdir)
+
+    def test_long_line_is_not_a_page_footer(self):
+        footer = "Doe                     Expires 1 May 2027                [Page 1]"
+        long_line = "x" * 300 + " [Page 1]"
+        draft = PlaintextDraft(text=f"body\n{footer}\n{long_line}\nmore\n", source="x.txt")
+        self.assertNotIn(footer, draft.lines)
+        self.assertIn(long_line, draft.lines)
+
+    def test_oversized_abstract_is_left_as_found(self):
+        draft = PlaintextDraft(text="x\n", source="x.txt")
+        boilerplate = "\nStatus of This Memo\nBoilerplate."
+        self.assertEqual(draft._clean_abstract("An abstract." + boilerplate), "An abstract.")
+        oversized = "word " * 7000 + boilerplate
+        self.assertEqual(draft._clean_abstract(oversized), oversized)
+
+    def test_abstract_with_very_long_line_is_not_wrapped(self):
+        draft = PlaintextDraft(text="x\n", source="x.txt")
+        self.assertIn("\n", draft._clean_abstract(("word " * 30).strip()))
+        very_long = ("word " * 300).strip()
+        self.assertEqual(draft._clean_abstract(very_long), very_long)
+
+    _title_block = "\n\n                     A Title for Testing\n                       draft-doe-test-00\n\n"
+
+    def test_title_is_found_near_top_of_first_page(self):
+        draft = PlaintextDraft(
+            text="Network Working Group\n" + self._title_block + "Abstract\n\n   Text.\n",
+            source="draft-doe-test-00.txt",
+        )
+        self.assertEqual(draft.get_title(), "A Title for Testing")
+
+    def test_title_is_not_searched_for_far_down_a_long_first_page(self):
+        footer = "Doe                     Expires 1 May 2027                [Page %d]"
+        text = (
+            "Network Working Group\n" + "   filler line\n" * 150 + self._title_block
+            + "Abstract\n\n   Text.\n" + footer % 1 + "\n" + "   more text\n" * 10 + footer % 2 + "\n"
+        )
+        draft = PlaintextDraft(text=text, source="draft-doe-test-00.txt")
+        self.assertGreater(draft.pages[0].count("\n"), 100)
+        self.assertIsNone(draft.get_title())
+        self.assertIn("title", draft.errors)
+
+    def test_title_is_not_searched_for_in_oversized_first_lines(self):
+        draft = PlaintextDraft(
+            text="x" * 25000 + "\n" + self._title_block + "Abstract\n\n   Text.\n",
+            source="draft-doe-test-00.txt",
+        )
+        self.assertIsNone(draft.get_title())
+        self.assertIn("title", draft.errors)
+
+    def test_long_author_entry_is_not_rewritten(self):
+        def draft_with(email_line):
+            return PlaintextDraft(
+                text=(
+                    "Network Working Group                                           J. Doe\n"
+                    "Internet-Draft                                                   Example\n"
+                    "Intended status: Informational                           1 November 2026\n"
+                    "Expires: 5 May 2027\n\n\n"
+                    "                          A Title for Testing\n"
+                    "                           draft-doe-test-00\n\n"
+                    "Abstract\n\n   This is a test abstract.\n\n"
+                    "1.  Introduction\n\n   Text.\n\n"
+                    "Author's Address\n\n   Jane Doe\n   Example\n" + email_line + "\n"
+                ),
+                source="draft-doe-test-00.txt",
+            )
+        email_line = "   Email: jdoe at example dot com"
+        email = lambda d: [a[5] for a in d.get_author_list()]
+        self.assertEqual(email(draft_with(email_line)), ["jdoe@example.com"])
+        self.assertEqual(email(draft_with(email_line + "    (" + "y" * 250 + ")")), [None])
+
+    @staticmethod
+    def _refs(heading, body):
+        return PlaintextDraft(
+            text=(
+                "Network Working Group\n\n                     A Title for Testing\n"
+                "                       draft-doe-test-00\n\n" + "   filler text\n" * 20
+                + "\n" + heading + "\n\n" + body + "\n"
+            ),
+            source="draft-doe-test-00.txt",
+        ).get_refs()
+
+    def test_refs_are_found_in_references_section(self):
+        self.assertEqual(
+            self._refs("10.  References", "   [RFC2119]  Bradner, S., RFC 2119."),
+            {"rfc2119": PlaintextDraft.REF_TYPE_INFORMATIVE},
+        )
+
+    def test_refs_are_not_searched_for_in_very_long_lines(self):
+        long_line = "   [RFC2119]  Bradner, S., RFC 2119, " + "x" * 1100
+        self.assertEqual(self._refs("10.  References", long_line), {})
+
+    def test_refs_are_not_searched_for_in_very_long_rejoined_lines(self):
+        split_ref = "   see RFC\n   2119 " + "x" * 1100
+        self.assertEqual(self._refs("10.  References", split_ref), {})
+
+    def test_very_long_line_does_not_start_references_section(self):
+        heading = "10.  " + "Z" * 250 + " References"
+        self.assertEqual(self._refs(heading, "   [RFC2119]  Bradner, S., RFC 2119."), {})
+
+
+class WordwrapTests(TestCase):
+    def test_normalizes_line_endings(self):
+        self.assertEqual(wordwrap("a  \r\nb  \rc"), "a\nb\nc")
+        self.assertEqual(wrap_text_if_unwrapped("a  \r\nb  \rc"), "a\nb\nc")
+
+    def test_collapses_blank_lines(self):
+        self.assertEqual(wordwrap("a\n\nb"), "a\n\nb")
+        self.assertEqual(wordwrap("a\n\n\n\nb"), "a\n\nb")
+        self.assertEqual(wordwrap("a  \n  \n \n\nb"), "a\n\nb")
 
 
 class XMLDraftTests(TestCase):

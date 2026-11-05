@@ -991,6 +991,12 @@ IDSUBMIT_CHECKER_CLASSES = (
 # Max time to allow for validation before a submission is subject to cancellation
 IDSUBMIT_MAX_VALIDATION_TIME = datetime.timedelta(minutes=20)
 
+# Time limits for the Celery tasks that validate an uploaded submission. The soft limit cancels
+# the submission; the hard limit kills the worker child if the soft limit does not take effect. Both sit below IDSUBMIT_MAX_VALIDATION_TIME so a timed-out
+# submission is cancelled before cancel_stale_submissions would sweep it.
+IDSUBMIT_TASK_SOFT_TIME_LIMIT = 840
+IDSUBMIT_TASK_TIME_LIMIT = 900
+
 # Age at which a submission expires if not posted
 IDSUBMIT_EXPIRATION_AGE = datetime.timedelta(days=14)
 

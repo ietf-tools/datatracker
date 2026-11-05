@@ -15,7 +15,10 @@ from ietf.submit.utils import (cancel_submission, create_submission_event, proce
 from ietf.utils import log
 
 
-@shared_task
+@shared_task(
+    time_limit=settings.IDSUBMIT_TASK_TIME_LIMIT,
+    soft_time_limit=settings.IDSUBMIT_TASK_SOFT_TIME_LIMIT,
+)
 def process_uploaded_submission_task(submission_id):
     try:
         submission = Submission.objects.get(pk=submission_id)
@@ -25,7 +28,10 @@ def process_uploaded_submission_task(submission_id):
         process_uploaded_submission(submission)
 
 
-@shared_task
+@shared_task(
+    time_limit=settings.IDSUBMIT_TASK_TIME_LIMIT,
+    soft_time_limit=settings.IDSUBMIT_TASK_SOFT_TIME_LIMIT,
+)
 def process_and_accept_uploaded_submission_task(submission_id):
     try:
         submission = Submission.objects.get(pk=submission_id)

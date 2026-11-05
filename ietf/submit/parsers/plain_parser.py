@@ -5,6 +5,8 @@ import re
 
 import debug                            # pyflakes:ignore
 
+from django.conf import settings
+
 from ietf.submit.parsers.base import FileParser
 
 
@@ -18,7 +20,9 @@ class PlainParser(FileParser):
     # no other file parsing is recommended
     def critical_parse(self):
         super(PlainParser, self).critical_parse()
-        self.parse_name()
+        # Don't read the contents of a file already rejected as too large
+        if self.fd.size <= settings.IDSUBMIT_MAX_DRAFT_SIZE[self.ext]:
+            self.parse_name()
         return self.parsed_info
 
     def parse_name(self):
@@ -37,7 +41,7 @@ class PlainParser(FileParser):
                 continue
             name = match.group(1)
             name = re.sub(r'^[^\w]+', '', name)
-            name = re.sub(r'[^\w]+$', '', name)
+            name = re.sub(r'(?<!\W)\W+$', '', name)  # lookbehind keeps this linear
             name = re.sub(r'\.txt$', '', name)
             extra_chars = re.sub(r'[0-9a-z\-]', '', name)
             if extra_chars:

@@ -122,9 +122,11 @@ def wordwrap(text, width=80):
         chars = set(ss)
         return len(chars) == 1 and len(ss) >= 3 and ss[0] in set('#*+-.=_~')
     width = int(width)                  # ensure we have an int, if this is used as a template filter
-    text = re.sub(" *\r\n", "\n", text) # get rid of DOS line endings
-    text = re.sub(" *\r", "\n", text)   # get rid of MAC line endings
-    text = re.sub("( *\n){3,}", "\n\n", text) # get rid of excessive vertical whitespace
+    # The (?<! ) lookbehinds keep these linear on long runs of spaces; a match
+    # never starts mid-run anyway, so the results are unchanged.
+    text = re.sub(r"(?<! ) *\r\n", "\n", text) # get rid of DOS line endings
+    text = re.sub(r"(?<! ) *\r", "\n", text)   # get rid of MAC line endings
+    text = re.sub(r"(?<! )( *\n){3,}", "\n\n", text) # get rid of excessive vertical whitespace
     lines = text.split("\n")
     filled = []
     wrapped = False
@@ -169,8 +171,8 @@ def wordwrap(text, width=80):
 #     return text
 
 def wrap_text_if_unwrapped(text, width=80, max_tolerated_line_length=100):
-    text = re.sub(" *\r\n", "\n", text) # get rid of DOS line endings 
-    text = re.sub(" *\r", "\n", text)   # get rid of MAC line endings 
+    text = re.sub(r"(?<! ) *\r\n", "\n", text) # get rid of DOS line endings (see wordwrap)
+    text = re.sub(r"(?<! ) *\r", "\n", text)   # get rid of MAC line endings
 
     width = int(width)                  # ensure we have an int, if this is used as a template filter
     max_tolerated_line_length = int(max_tolerated_line_length)
