@@ -146,6 +146,12 @@ class BibXmlTests(TestCase):
         )
         self.assertIn('<date month="April" year="2021"/>', bibxml)
 
+    def test_build_subseries_bibxml_missing_document(self):
+        # A subseries document that does not exist raises BibXMLException
+        # rather than Document.DoesNotExist.
+        with self.assertRaises(BibXMLException):
+            build_subseries_bibxml("bcp", 999)
+
     def test_build_std_bibxml(self):
         std_number = self.std.name[3:]
         bibxml = build_subseries_bibxml("std", std_number)
