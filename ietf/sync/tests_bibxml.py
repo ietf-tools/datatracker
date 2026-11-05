@@ -150,7 +150,7 @@ class BibXmlTests(TestCase):
         # A subseries document that does not exist raises BibXMLException
         # rather than Document.DoesNotExist.
         with self.assertRaises(BibXMLException):
-            build_subseries_bibxml("bcp", 999)
+            build_subseries_bibxml("bcp", 67676767676767)
 
     def test_build_std_bibxml(self):
         std_number = self.std.name[3:]
