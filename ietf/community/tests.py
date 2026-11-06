@@ -727,6 +727,78 @@ class CommunityListTests(TestCase):
         self.assertEqual(len(contents), 1)
         self.assertIn(clist.long_name(), contents.pop())
 
+    def make_notification_setup(self, count=3):
+        """Create a draft tracked by a community list with `count` subscribers.
+
+        Returns (event, addresses) where addresses are the subscriber email
+        addresses in subscription creation order. The event is a non-significant
+        state change, so only subscriptions with notify_on="all" are notified.
+        """
+        person = PersonFactory(user__username="plain")
+        draft = WgDraftFactory()
+        clist = CommunityList.objects.create(person=person)
+        if draft not in clist.added_docs.all():
+            clist.added_docs.add(draft)
+        addresses = []
+        for idx in range(count):
+            subscriber = PersonFactory(user__username=f"subscriber{idx}")
+            email = Email.objects.filter(person=subscriber).first()
+            EmailSubscription.objects.create(
+                community_list=clist,
+                email=email,
+                notify_on="all",
+            )
+            addresses.append(email.address)
+        active_state = State.objects.get(type="draft", slug="active")
+        system = Person.objects.get(name="(System)")
+        event = add_state_change_event(draft, system, None, active_state)
+        return event, addresses
+
+    @mock.patch("ietf.utils.mail.send_mail_text")
+    def test_notify_event_to_subscribers_all_succeed(self, mock_send_mail_text):
+        event, addresses = self.make_notification_setup(3)
+        notify_event_to_subscribers(event)
+        self.assertEqual(mock_send_mail_text.call_count, 3)
+        attempted = [
+            call_args[0][1] for call_args in mock_send_mail_text.call_args_list
+        ]
+        self.assertCountEqual(attempted, addresses)
+
+    @mock.patch("ietf.utils.mail.send_mail_text")
+    def test_notify_event_to_subscribers_one_failure(self, mock_send_mail_text):
+        event, addresses = self.make_notification_setup(3)
+        failing = addresses[1]
+
+        def fail_for_one(request, to, *args, **kwargs):
+            if to == failing:
+                raise Exception("SMTP server unavailable")
+
+        mock_send_mail_text.side_effect = fail_for_one
+        with self.assertRaises(Exception) as cm:
+            notify_event_to_subscribers(event)
+        # every subscriber was attempted, including those after the failure
+        self.assertEqual(mock_send_mail_text.call_count, 3)
+        attempted = [
+            call_args[0][1] for call_args in mock_send_mail_text.call_args_list
+        ]
+        self.assertCountEqual(attempted, addresses)
+        # the failure is reported for the failed recipient, not as the raw error
+        self.assertIn(failing, str(cm.exception))
+
+    @mock.patch("ietf.utils.mail.send_mail_text")
+    def test_notify_event_to_subscribers_all_fail(self, mock_send_mail_text):
+        event, addresses = self.make_notification_setup(3)
+        mock_send_mail_text.side_effect = Exception("SMTP server unavailable")
+        with self.assertRaises(Exception) as cm:
+            notify_event_to_subscribers(event)
+        self.assertEqual(mock_send_mail_text.call_count, 3)
+        attempted = [
+            call_args[0][1] for call_args in mock_send_mail_text.call_args_list
+        ]
+        self.assertCountEqual(attempted, addresses)
+        for address in addresses:
+            self.assertIn(address, str(cm.exception))
+
     @mock.patch("ietf.community.utils.notify_event_to_subscribers")
     def test_notify_event_to_subscribers_task(self, mock_notify):
         d = DocEventFactory()
