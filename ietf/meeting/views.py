@@ -1956,9 +1956,11 @@ def generate_agenda_data(num=None, force_refresh=False):
         if is_current_meeting
         else settings.AGENDA_CACHE_TIMEOUT_DEFAULT
     )
-    cache_format = "1"  # bump this on backward-incompatible data format changes
+    # bump this to force a cache rebuild
+    # (e.g., on a backward-incompatible data format change)
+    cache_version = "2"
 
-    cache_key = f"generate_agenda_data:{meeting.number}:v{cache_format}"
+    cache_key = f"generate_agenda_data:{meeting.number}:v{cache_version}"
     if not force_refresh:
         cached_value = cache.get(cache_key)
         if cached_value is not None:
