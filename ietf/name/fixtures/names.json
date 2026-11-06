@@ -4499,6 +4499,7 @@
       ],
       "session_purposes": [
         "coding",
+        "officehours",
         "open_meeting",
         "presentation",
         "social",
@@ -8927,7 +8928,7 @@
     "fields": {
       "continent": "europe",
       "desc": "",
-      "in_eu": true,
+      "in_eu": false,
       "name": "United Kingdom",
       "order": 0,
       "used": true
@@ -13746,11 +13747,21 @@
     "fields": {
       "desc": "Results of the post-meeting survey",
       "name": "Post-Meeting Survey Results",
-      "order": 5,
+      "order": 6,
       "used": true
     },
     "model": "name.proceedingsmaterialtypename",
     "pk": "meeting_survey"
+  },
+  {
+    "fields": {
+      "desc": "Report from the RFC Editor",
+      "name": "RFC Editor Report",
+      "order": 5,
+      "used": true
+    },
+    "model": "name.proceedingsmaterialtypename",
+    "pk": "rfc_editor_report"
   },
   {
     "fields": {
