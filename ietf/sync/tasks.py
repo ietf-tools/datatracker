@@ -3,6 +3,7 @@
 # Celery task definitions
 #
 import datetime
+from itertools import batched
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 import requests
@@ -612,3 +613,28 @@ def process_rpc_queue_task(data: list):
 def recreate_rfc_related_bibxml_task():
     recreate_rfc_bibxml()
     recreate_rfcsubseries_bibxml()
+
+
+# Number of RFCs handed to each update_rfc_bibxml_task when recreating in batches.
+DEFAULT_BIBXML_BATCH_SIZE = 500
+
+
+@shared_task
+def recreate_all_rfc_bibxml_task(batch_size: int = DEFAULT_BIBXML_BATCH_SIZE) -> None:
+    """Fan out BibXML regeneration for every RFC in batches.
+
+    The RFC numbers are split into batches of ``batch_size`` and each batch is
+    dispatched to ``update_rfc_bibxml_task``, which regenerates those RFCs and
+    the subseries (BCP/STD/FYI) that contain them. Batches run in parallel
+    across Celery workers rather than in a single long-running task.
+
+    A subseries whose member RFCs fall in more than one batch is regenerated
+    once per such batch; this is redundant but harmless (last write wins).
+    """
+    rfc_numbers = (
+        Document.objects.filter(type_id="rfc")
+        .values_list("rfc_number", flat=True)
+        .iterator()
+    )
+    for batch in batched(rfc_numbers, batch_size):
+        update_rfc_bibxml_task.delay(list(batch))
