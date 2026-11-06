@@ -491,11 +491,12 @@ class MeetingTests(BaseMeetingTestCase):
         r = self.client.get(url)
         q = PyQuery(r.content)
         # debug.show("q(f'#notes_and_recordings_{session.pk}')")
-        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 2)
+        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 1)
         links = q(f"#notes_and_recordings_{session.pk} tr a")
-        self.assertEqual(len(links), 2)
+        self.assertEqual(len(links), 1)
         self.assertEqual(links[0].attrib['href'], str(session.notes_url()))
-        self.assertEqual(links[1].attrib['href'], str(session.session_recording_url()))
+        self.assertNotContains(r, "Meetecho session recording")
+        self.assertEqual(len(q('a[title="Session recording"]')), 0)
 
         session.meetecho_recording_name = 'my_test_session_name'
         session.save()
@@ -506,6 +507,11 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertEqual(len(links), 2)
         self.assertEqual(links[0].attrib['href'], str(session.notes_url()))
         self.assertEqual(links[1].attrib['href'], str(session.session_recording_url()))
+        self.assertIn("my_test_session_name", links[1].attrib["href"])
+        self.assertEqual(
+            [a.attrib["href"] for a in q('a[title="Session recording"]')],
+            [str(session.session_recording_url())],
+        )
 
         new_recording_url = "https://www.youtube.com/watch?v=jNQXAC9IVRw"
         new_recording_title = "Me at the zoo"
