@@ -8,6 +8,7 @@ import io
 import os
 from functools import cached_property
 
+import locale
 import pycountry
 import pytz
 import random
@@ -54,6 +55,8 @@ from ietf.utils.fields import MissingOkImageField
 
 # Set up countries / timezones, including an empty choice for fields. After moving to
 # Django 5.x, the choices can become a runtime callable.
+_stashed_locale = locale.setlocale(locale.LC_ALL)  # save locale settings
+locale.setlocale(locale.LC_COLLATE, "en_US.UTF-8")  # UTF-8-aware collation
 EMPTY_CHOICE = ("", "-" * 9)
 COUNTRIES = (EMPTY_CHOICE,) + tuple(
     sorted(
@@ -62,9 +65,10 @@ COUNTRIES = (EMPTY_CHOICE,) + tuple(
             (country.alpha_2, getattr(country, "common_name", country.name))
             for country in pycountry.countries
         ],
-        key=lambda x: x[1],
+        key=lambda x: locale.strxfrm(x[1]),  # locale-aware sort
     )
 )
+locale.setlocale(locale.LC_ALL, _stashed_locale)  # restore original settings
 
 _tzdata_ics_path = Path(settings.TZDATA_ICS_PATH)
 TIMEZONES = (EMPTY_CHOICE,) + tuple(
