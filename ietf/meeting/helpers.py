@@ -752,8 +752,10 @@ def convert_draft_to_pdf(doc_name):
     formfeed = 0;
     for line in infile:
         line = re.sub("\r","",line)
-        line = re.sub("[ \t]+$","",line)
-        if re.search(r"\[?[Pp]age [0-9ivx]+\]?[ \t]*$",line):
+        line = re.sub(r"(?<![ \t])[ \t]+$","",line)  # lookbehind keeps this linear
+        # Page headers and footers are short; don't test long lines against them
+        maybe_header = len(line) <= 200
+        if maybe_header and re.search(r"\[?[Pp]age [0-9ivx]+\]?[ \t]*$",line):
             pageend=1
             tempfile.write(line)
             continue
@@ -761,7 +763,7 @@ def convert_draft_to_pdf(doc_name):
             formfeed=1
             tempfile.write(line)
             continue
-        if re.search("^ *INTERNET.DRAFT.+[0-9]+ *$",line) or re.search("^ *Internet.Draft.+[0-9]+ *$",line) or re.search("^draft-[-a-z0-9_.]+.*[0-9][0-9][0-9][0-9]$",line) or re.search("^RFC.+[0-9]+$",line):
+        if maybe_header and (re.search("^ *INTERNET.DRAFT.+[0-9]+ *$",line) or re.search("^ *Internet.Draft.+[0-9]+ *$",line) or re.search("^draft-[-a-z0-9_.]+.*[0-9][0-9][0-9][0-9]$",line) or re.search("^RFC.+[0-9]+$",line)):
             newpage=1
         if re.search("^[ \t]*$",line) and pageend and not newpage:
             continue
