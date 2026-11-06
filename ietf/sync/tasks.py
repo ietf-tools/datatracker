@@ -3,6 +3,7 @@
 # Celery task definitions
 #
 import datetime
+from itertools import batched
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 import requests
@@ -10,10 +11,13 @@ import requests
 from celery import shared_task
 
 from django.conf import settings
+from django.db.models import F, IntegerField
+from django.db.models.functions import Cast, Substr
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
 from ietf.doc.models import (
+    SUBSERIES_DOC_TYPE_IDS,
     DocEvent,
     DocTagName,
     Document,
@@ -298,6 +302,18 @@ def update_rfc_bibxml_task(rfc_numbers: list[int]) -> None:
             create_subseries_bibxml(doc.type_id, doc.name[3:])
         except Exception as e:
             log.log(f"update_rfc_bibxml_task: failed for {doc.name}: {e}")
+
+
+@shared_task
+def update_subseries_bibxml_task(subseries_type: str, numbers: list[int]) -> None:
+    """Regenerate BibXML for the given BCPs, STDs or FYIs"""
+    for number in numbers:
+        try:
+            create_subseries_bibxml(subseries_type, number)
+        except Exception as e:
+            log.log(
+                f"update_subseries_bibxml_task: failed for {subseries_type}{number}: {e}"
+            )
 
 
 @shared_task
@@ -612,3 +628,54 @@ def process_rpc_queue_task(data: list):
 def recreate_rfc_related_bibxml_task():
     recreate_rfc_bibxml()
     recreate_rfcsubseries_bibxml()
+
+
+# Number of RFCs handed to each update_rfc_bibxml_task when recreating in batches.
+DEFAULT_BIBXML_BATCH_SIZE = 500
+
+
+@shared_task
+def recreate_all_rfc_bibxml_task(
+    doc_type: str = "rfc",
+    batch_size: int = DEFAULT_BIBXML_BATCH_SIZE,
+    start: int | None = None,
+    end: int | None = None,
+) -> None:
+    """Fan out BibXML regeneration for every RFC, BCP, STD or FYI in batches.
+
+    ``doc_type`` is one of ``rfc``, ``bcp``, ``std`` or ``fyi``. The document
+    numbers of that type are split into batches of ``batch_size``, and the
+    batches run in parallel across Celery workers rather than in a single
+    long-running task:
+
+    * RFC batches are dispatched to ``update_rfc_bibxml_task``, which
+      regenerates those RFCs and the subseries (BCP/STD/FYI) that contain them.
+      A subseries whose member RFCs fall in more than one batch is regenerated
+      once per such batch; this is redundant but harmless (last write wins).
+    * BCP, STD and FYI batches are dispatched to
+      ``update_subseries_bibxml_task``, which regenerates only those subseries.
+
+    ``start`` and ``end`` optionally limit the run to document numbers in that
+    inclusive range; either may be omitted to leave that side open.
+    """
+    if doc_type == "rfc":
+        docs = Document.objects.filter(type_id="rfc").annotate(
+            number=F("rfc_number")
+        )
+    elif doc_type in SUBSERIES_DOC_TYPE_IDS:
+        # Subseries are named e.g. bcp14; the number is not stored separately
+        docs = Document.objects.filter(type_id=doc_type).annotate(
+            number=Cast(Substr("name", 4), output_field=IntegerField())
+        )
+    else:
+        raise ValueError(f"Unsupported doc_type {doc_type!r}")
+    if start is not None:
+        docs = docs.filter(number__gte=start)
+    if end is not None:
+        docs = docs.filter(number__lte=end)
+    numbers = docs.order_by("number").values_list("number", flat=True).iterator()
+    for batch in batched(numbers, batch_size):
+        if doc_type == "rfc":
+            update_rfc_bibxml_task.delay(list(batch))
+        else:
+            update_subseries_bibxml_task.delay(doc_type, list(batch))

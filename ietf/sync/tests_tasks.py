@@ -4,7 +4,13 @@ import datetime
 import mock
 from django.test.utils import override_settings
 
-from ietf.doc.factories import BcpFactory, RfcFactory, StdFactory, WgDraftFactory
+from ietf.doc.factories import (
+    BcpFactory,
+    FyiFactory,
+    RfcFactory,
+    StdFactory,
+    WgDraftFactory,
+)
 from ietf.doc.models import (
     DocEvent,
     DocTagName,
@@ -881,6 +887,88 @@ class UpdateRfcJsonTaskTests(TestCase):
         tasks.update_rfc_json_task([9000])
         mock_bibxml_delay.assert_called_once_with([9000])
         mock_generate_json.assert_not_called()
+
+
+class RecreateAllRfcBibxmlTaskTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        for number in (9003, 9000, 9004, 9001, 9002):
+            RfcFactory(rfc_number=number)
+
+    @mock.patch("ietf.sync.tasks.update_rfc_bibxml_task.delay")
+    def test_dispatches_all_rfcs_in_batches(self, mock_delay):
+        tasks.recreate_all_rfc_bibxml_task(batch_size=2)
+        self.assertEqual(
+            mock_delay.call_args_list,
+            [mock.call([9000, 9001]), mock.call([9002, 9003]), mock.call([9004])],
+        )
+
+    @mock.patch("ietf.sync.tasks.update_rfc_bibxml_task.delay")
+    def test_start_and_end_are_inclusive(self, mock_delay):
+        tasks.recreate_all_rfc_bibxml_task(batch_size=2, start=9001, end=9003)
+        self.assertEqual(
+            mock_delay.call_args_list,
+            [mock.call([9001, 9002]), mock.call([9003])],
+        )
+
+    @mock.patch("ietf.sync.tasks.update_rfc_bibxml_task.delay")
+    def test_start_or_end_alone(self, mock_delay):
+        tasks.recreate_all_rfc_bibxml_task(start=9003)
+        mock_delay.assert_called_once_with([9003, 9004])
+        mock_delay.reset_mock()
+        tasks.recreate_all_rfc_bibxml_task(end=9001)
+        mock_delay.assert_called_once_with([9000, 9001])
+
+    @mock.patch("ietf.sync.tasks.update_rfc_bibxml_task.delay")
+    def test_empty_range_dispatches_nothing(self, mock_delay):
+        tasks.recreate_all_rfc_bibxml_task(start=9003, end=9001)
+        mock_delay.assert_not_called()
+
+    @mock.patch("ietf.sync.tasks.update_rfc_bibxml_task.delay")
+    @mock.patch("ietf.sync.tasks.update_subseries_bibxml_task.delay")
+    def test_subseries_types(self, mock_subseries_delay, mock_rfc_delay):
+        rfc = Document.objects.get(type_id="rfc", rfc_number=9000)
+        # numbered so that numeric and lexical order differ
+        for number in (2, 10, 1, 3):
+            BcpFactory(name=f"bcp{number}", contains=[rfc])
+        StdFactory(name="std5", contains=[rfc])
+        FyiFactory(name="fyi7", contains=[rfc])
+
+        tasks.recreate_all_rfc_bibxml_task("bcp", batch_size=2)
+        self.assertEqual(
+            mock_subseries_delay.call_args_list,
+            [mock.call("bcp", [1, 2]), mock.call("bcp", [3, 10])],
+        )
+        mock_subseries_delay.reset_mock()
+
+        tasks.recreate_all_rfc_bibxml_task("bcp", start=2, end=3)
+        mock_subseries_delay.assert_called_once_with("bcp", [2, 3])
+        mock_subseries_delay.reset_mock()
+
+        tasks.recreate_all_rfc_bibxml_task("std")
+        mock_subseries_delay.assert_called_once_with("std", [5])
+        mock_subseries_delay.reset_mock()
+
+        tasks.recreate_all_rfc_bibxml_task("fyi")
+        mock_subseries_delay.assert_called_once_with("fyi", [7])
+
+        mock_rfc_delay.assert_not_called()
+
+    def test_unsupported_doc_type(self):
+        with self.assertRaises(ValueError):
+            tasks.recreate_all_rfc_bibxml_task("draft")
+
+
+class UpdateSubseriesBibxmlTaskTests(TestCase):
+    @mock.patch("ietf.sync.tasks.log.log")
+    @mock.patch("ietf.sync.tasks.create_subseries_bibxml")
+    def test_creates_each_subseries_and_logs_failures(self, mock_create, mock_log):
+        mock_create.side_effect = [RuntimeError("boom"), None]
+        tasks.update_subseries_bibxml_task("bcp", [14, 15])
+        self.assertEqual(
+            mock_create.call_args_list, [mock.call("bcp", 14), mock.call("bcp", 15)]
+        )
+        mock_log.assert_called_once()
 
 
 class UpdateRfcBibxmlTaskTests(TestCase):
