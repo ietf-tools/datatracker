@@ -140,13 +140,18 @@ class BaseMeetingTestCase(TestCase):
         # files will upload to the locations specified in settings.py.
         # Note that this will affect any use of the storage class in
         # meeting.models - i.e., FloorPlan.image and MeetingHost.logo
-        self.patcher = patch('ietf.meeting.models.BlobShadowFileSystemStorage.base_location',
-                             new_callable=PropertyMock)
-        mocked = self.patcher.start()
-        mocked.return_value = self.storage_dir
+        # Both are mocked because the storage caches location after its first use.
+        self.patchers = [
+            patch(f'ietf.meeting.models.BlobShadowFileSystemStorage.{attr}', new_callable=PropertyMock)
+            for attr in ('base_location', 'location')
+        ]
+        for patcher in self.patchers:
+            mocked = patcher.start()
+            mocked.return_value = self.storage_dir
 
     def tearDown(self):
-        self.patcher.stop()
+        for patcher in self.patchers:
+            patcher.stop()
         #
         shutil.rmtree(self.storage_dir)
         shutil.rmtree(self.materials_dir)
@@ -683,6 +688,21 @@ class MeetingTests(BaseMeetingTestCase):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         self.do_test_materials(meeting, session)
+
+    def test_materials_after_correction_cutoff(self):
+        """After the correction cutoff, the page closes up to IETF 96 and redirects to the proceedings after it"""
+        meeting = MeetingFactory(type_id='ietf', number='96', date=datetime.date(2016, 7, 17))
+        r = self.client.get(urlreverse('ietf.meeting.views.materials', kwargs={'num': meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        self.assertTemplateUsed(r, 'meeting/materials_upload_closed.html')
+
+        meeting = MeetingFactory(type_id='ietf', number='97', date=datetime.date(2016, 11, 13))
+        r = self.client.get(urlreverse('ietf.meeting.views.materials', kwargs={'num': meeting.number}))
+        self.assertRedirects(
+            r,
+            urlreverse('ietf.meeting.views.proceedings', kwargs={'num': meeting.number}),
+            fetch_redirect_response=False,
+        )
 
     def test_interim_materials(self):
         make_meeting_test_data()
@@ -7052,7 +7072,7 @@ class MaterialsTests(TestCase):
     def test_upload_bluesheets_chair_access(self):
         make_meeting_test_data()
         mars = Group.objects.get(acronym='mars')
-        session=SessionFactory(meeting__type_id='ietf',group=mars)
+        session=SessionFactory(meeting__type_id='ietf',group=mars, meeting__date=date_today())
         url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
         self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get(url)
@@ -7086,6 +7106,19 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
+
+    def test_upload_bluesheets_interim_chair_after_cutoff(self):
+        make_meeting_test_data()
+        mars = Group.objects.get(acronym='mars')
+        session = SessionFactory(meeting__type_id='interim', group=mars, meeting__date=date_today() - datetime.timedelta(days=60))
+        session.meeting.importantdate_set.create(name_id='revsub', date=date_today() - datetime.timedelta(days=1))
+        url = urlreverse('ietf.meeting.views.upload_session_bluesheets', kwargs={'num': session.meeting.number, 'session_id': session.id})
+        self.client.login(username="marschairman", password="marschairman+password")
+        r = self.client.get(url)
+        self.assertContains(r, 'The materials cutoff for this session has passed', status_code=403)
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
         
 
     def test_label_future_sessions(self):
@@ -8095,6 +8128,22 @@ class MaterialsTests(TestCase):
         self.assertEqual(0, session.presentations.count())
         self.assertEqual(2, agenda.docevent_set.count())
         self.assertFalse(mock_slides_manager_cls.called)
+
+    def test_remove_sessionpresentation_after_cutoff(self):
+        session = SessionFactory(meeting__type_id='ietf', meeting__date=date_today() - datetime.timedelta(days=60))
+        session.meeting.importantdate_set.create(name_id='revsub', date=date_today() - datetime.timedelta(days=1))
+        chair = RoleFactory(group=session.group, name_id='chair').person
+        doc = DocumentFactory(type_id='agenda')
+        session.presentations.create(document=doc)
+        url = urlreverse('ietf.meeting.views.remove_sessionpresentation', kwargs={'num': session.meeting.number, 'session_id': session.id, 'name': doc.name})
+        self.client.login(username=chair.user.username, password=f'{chair.user.username}+password')
+        r = self.client.post(url, {'remove_session': ''})
+        self.assertContains(r, 'The materials cutoff for this session has passed', status_code=403)
+        self.assertEqual(1, session.presentations.count())
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.post(url, {'remove_session': ''})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(0, session.presentations.count())
 
     def test_propose_session_slides(self):
         for type_id in ['ietf','interim']:
@@ -10232,7 +10281,7 @@ class MeetingHostTests(BaseMeetingTestCase):
 
     def test_add(self):
         """Can add a new meeting host"""
-        meeting = MeetingFactory(type_id='ietf')
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         url = urlreverse('ietf.meeting.views_proceedings.edit_meetinghosts', kwargs=dict(num=meeting.number))
 
         # get the edit page to check that it has the necessary fields
@@ -10308,7 +10357,7 @@ class MeetingHostTests(BaseMeetingTestCase):
         The main complication is checking that the file has been
         renamed to match the new host name.
         """
-        meeting = MeetingFactory(type_id='ietf')
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         url = urlreverse('ietf.meeting.views_proceedings.edit_meetinghosts', kwargs=dict(num=meeting.number))
 
         # create via UI so we don't have to deal with creating storage paths
@@ -10354,7 +10403,7 @@ class MeetingHostTests(BaseMeetingTestCase):
 
     def test_meeting_host_replace_logo(self):
         """Can replace logo of a meeting host"""
-        meeting = MeetingFactory(type_id='ietf')
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         url = urlreverse('ietf.meeting.views_proceedings.edit_meetinghosts', kwargs=dict(num=meeting.number))
 
         # create via UI so we don't have to deal with creating storage paths
@@ -10402,7 +10451,7 @@ class MeetingHostTests(BaseMeetingTestCase):
 
     def test_change_name_and_replace_logo(self):
         """Can simultaneously change name and replace logo"""
-        meeting = MeetingFactory(type_id='ietf')
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         url = urlreverse('ietf.meeting.views_proceedings.edit_meetinghosts', kwargs=dict(num=meeting.number))
 
         # create via UI so we don't have to deal with creating storage paths
@@ -10451,7 +10500,7 @@ class MeetingHostTests(BaseMeetingTestCase):
 
     def test_remove(self):
         """Can delete a meeting host and its logo"""
-        meeting = MeetingFactory(type_id='ietf')
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         url = urlreverse('ietf.meeting.views_proceedings.edit_meetinghosts', kwargs=dict(num=meeting.number))
 
         # create via UI so we don't have to deal with creating storage paths
@@ -10492,7 +10541,7 @@ class MeetingHostTests(BaseMeetingTestCase):
 
     def test_remove_with_selected_logo(self):
         """Can delete a meeting host after selecting a replacement file"""
-        meeting = MeetingFactory(type_id='ietf')
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         url = urlreverse('ietf.meeting.views_proceedings.edit_meetinghosts', kwargs=dict(num=meeting.number))
 
         # create via UI so we don't have to deal with creating storage paths
@@ -10536,7 +10585,7 @@ class MeetingHostTests(BaseMeetingTestCase):
         """Only allowed image types should be accepted"""
         allowed_formats = [('JPEG', 'jpg'), ('JPEG', 'jpeg'), ('PNG', 'png')]
 
-        meeting = MeetingFactory(type_id='ietf')
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
         url = urlreverse('ietf.meeting.views_proceedings.edit_meetinghosts', kwargs=dict(num=meeting.number))
         self.client.login(username='secretary', password='secretary+password')
 
@@ -11387,7 +11436,8 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertEqual(sequence,1)
 
     def test_nomcom_eligible_participants_for_meeting(self):
-        m = MeetingFactory.create(type_id='ietf')
+        """Onsite needs a check-in, remote needs a qualifying session (< 110 path)"""
+        m = MeetingFactory.create(type_id='ietf', number='109')
         areg = RegistrationFactory(meeting=m, checkedin=True, with_ticket={'attendance_type_id': 'onsite'})
         breg = RegistrationFactory(meeting=m, checkedin=False, with_ticket={'attendance_type_id': 'onsite'})
         creg = RegistrationFactory(meeting=m, with_ticket={'attendance_type_id': 'remote'})
