@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("meeting", "0020_slidesubmission_time_default"),
+        ("meeting", "0021_correct_ietf_meeting_dates"),
     ]
 
     operations = [
