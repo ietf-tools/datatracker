@@ -27,6 +27,12 @@ from ietf.doc.utils import add_state_change_event, new_state_change_event, updat
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_text
 from ietf.sync import iana
+from ietf.sync.bibxml import (
+    create_rfc_bibxml,
+    create_subseries_bibxml,
+    recreate_rfc_bibxml,
+    recreate_rfcsubseries_bibxml,
+)
 from ietf.sync.errata import (
     errata_are_dirty,
     mark_errata_as_processed,
@@ -256,6 +262,9 @@ def update_rfc_json_task(rfc_numbers: list[int]) -> None:
     from ietf.doc.utils_rfc_json import generate_rfc_json
     from ietf.sync.rfcindex import get_publication_std_levels
 
+    # BibXML is built from the same RFC metadata as the JSON, so refresh it too
+    update_rfc_bibxml_task.delay(rfc_numbers)
+
     try:
         pub_levels = get_publication_std_levels()
     except Exception as e:
@@ -266,6 +275,29 @@ def update_rfc_json_task(rfc_numbers: list[int]) -> None:
             generate_rfc_json(rfc_number, pub_levels=pub_levels)
         except Exception as e:
             log.log(f"update_rfc_json_task: failed for RFC {rfc_number}: {e}")
+
+
+@shared_task
+def update_rfc_bibxml_task(rfc_numbers: list[int]) -> None:
+    """Regenerate BibXML for the given RFCs and the subseries that contain them
+
+    A subseries BibXML file embeds the BibXML of each RFC it contains, so every
+    BCP, STD or FYI that one of these RFCs is part of is regenerated as well.
+    """
+    subseries: set[Document] = set()
+    for rfc in Document.objects.filter(type_id="rfc", rfc_number__in=rfc_numbers):
+        try:
+            create_rfc_bibxml(rfc)
+        except Exception as e:
+            log.log(f"update_rfc_bibxml_task: failed for RFC {rfc.rfc_number}: {e}")
+        subseries.update(
+            d for d in rfc.part_of() if d.type_id in ("bcp", "std", "fyi")
+        )
+    for doc in sorted(subseries, key=lambda d: d.name):
+        try:
+            create_subseries_bibxml(doc.type_id, doc.name[3:])
+        except Exception as e:
+            log.log(f"update_rfc_bibxml_task: failed for {doc.name}: {e}")
 
 
 @shared_task
@@ -574,3 +606,9 @@ def process_rpc_queue_task(data: list):
         d.tags.remove(*iana_ref_tags)
         d.unset_state("draft-rfceditor")
         RpcActionHolderOpenEntry.objects.filter(document=d).delete()
+
+
+@shared_task
+def recreate_rfc_related_bibxml_task():
+    recreate_rfc_bibxml()
+    recreate_rfcsubseries_bibxml()
