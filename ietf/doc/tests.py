@@ -2538,6 +2538,15 @@ class DocTestCase(TestCase):
             [f"{n}-{v:02d}" for n in [wg_doc.name, ind_doc.name] for v in [1, 0]],
         )
 
+    def test_history_diff_form_not_raw_for_draft(self):
+        doc = WgDraftFactory(create_revisions=range(2))
+        url = urlreverse("ietf.doc.views_doc.document_history", kwargs=dict(name=doc.name))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q("form.diff-form"))
+        self.assertFalse(q("form.diff-form input[name=raw]"))
+
     def test_history(self):
         doc = IndividualDraftFactory()
 
@@ -3622,6 +3631,74 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
         self.assertEqual(q('#materials-content .card-body a').attr['href'],'https://unusual.example')
+
+    def _create_minutes_with_revisions(self):
+        minutes = DocumentFactory(type_id='minutes', rev='00', group=self.doc.group, newrevisiondocevent=None, name=f'minutes-111-{self.doc.group.acronym}', uploaded_filename=f'minutes-111-{self.doc.group.acronym}-00.txt')
+        e = NewRevisionDocEventFactory(doc=minutes, rev='00')
+        minutes.save_with_history([e])
+        minutes.rev = '01'
+        minutes.uploaded_filename = f'minutes-111-{self.doc.group.acronym}-01.md'
+        e = NewRevisionDocEventFactory(doc=minutes, rev='01')
+        minutes.save_with_history([e])
+        SessionPresentationFactory(session=self.doc.session_set.first(), document=minutes)
+        return minutes
+
+    def test_minutes_diff_revisions(self):
+        minutes = self._create_minutes_with_revisions()
+        diff_revisions = get_diff_revisions(HttpRequest(), minutes.name, minutes)
+        self.assertEqual(len(diff_revisions), 2)
+        self.assertEqual([t[1] for t in diff_revisions], ["01", "00"])
+        # urls point to the versioned materials for each revision
+        self.assertTrue(diff_revisions[0][3].endswith(f"/materials/{minutes.name}-01"))
+        self.assertTrue(diff_revisions[1][3].endswith(f"/materials/{minutes.name}-00"))
+        # is_this_doc / is_previous_doc
+        self.assertEqual([(t[4], t[5]) for t in diff_revisions], [(True, False), (False, True)])
+
+    def test_minutes_history_diff_form(self):
+        minutes = self._create_minutes_with_revisions()
+        url = urlreverse("ietf.doc.views_doc.document_history", kwargs=dict(name=minutes.name))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("form.diff-form select[name=url1] option")), 2)
+        self.assertEqual(len(q("form.diff-form select[name=url2] option")), 2)
+        # minutes are not RFCXML, so iddiff must diff them as raw text
+        self.assertEqual(q("form.diff-form input[name=raw]").attr("value"), "1")
+
+    def test_minutes_diff_revisions_without_history(self):
+        """A rev with a DocEvent but no DocHistory must not break the history tab
+        
+        Some minutes are in this situation, probably where revision history was fixed up
+        but the individual docs were not available.
+        """
+        now = timezone.now()
+        minutes = DocumentFactory(
+            type_id="minutes",
+            rev="01",
+            group=self.doc.group,
+            name=f"minutes-111-{self.doc.group.acronym}",
+            uploaded_filename=f"minutes-111-{self.doc.group.acronym}-01.md",
+            time=now,
+        )
+        minutes.docevent_set.all().delete()  # discard the factory-generated event
+        # rev 00 predates the Document and has no DocHistory
+        NewRevisionDocEventFactory(
+            doc=minutes, rev="00", time=now - datetime.timedelta(days=1)
+        )
+        NewRevisionDocEventFactory(doc=minutes, rev="01", time=now)
+        SessionPresentationFactory(
+            session=self.doc.session_set.first(), document=minutes
+        )
+        self.assertFalse(minutes.history_set.exists())
+        diff_revisions = get_diff_revisions(HttpRequest(), minutes.name, minutes)
+        self.assertEqual([t[1] for t in diff_revisions], ["01"])
+        self.assertTrue(diff_revisions[0][3].endswith(f"/materials/{minutes.name}-01"))
+        url = urlreverse(
+            "ietf.doc.views_doc.document_history", kwargs=dict(name=minutes.name)
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
 
 class Idnits2SupportTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['DERIVED_DIR']

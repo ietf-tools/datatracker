@@ -44,14 +44,16 @@ import shutil
 import sys
 
 from urllib.parse import unquote
+from unittest import mock
 from unittest.util import strclass
 from bs4 import BeautifulSoup
-from contextlib import contextmanager
+from contextlib import contextmanager, ExitStack
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import django.test
 from django.conf import settings
+from django.core.cache.backends.base import BaseCache
 from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
@@ -113,6 +115,38 @@ def name_of_file_containing(contents, mode='w'):
     f.close()
     yield f.name  # hand the filename to the context
     Path(f.name).unlink()  # clean up after context exits
+
+
+class _MockCaches(dict):
+    """Cache handler stand-in that makes a mock cache for each alias it is asked for"""
+    def __missing__(self, alias):
+        store = {}
+        cache = mock.create_autospec(BaseCache, instance=True)
+        cache.get.side_effect = lambda key, default=None, *args, **kwargs: store.get(key, default)
+        cache.set.side_effect = lambda key, value, *args, **kwargs: store.update({key: value})
+        cache.delete.side_effect = lambda key, *args, **kwargs: store.pop(key, None) is not None
+        cache.clear.side_effect = store.clear
+        self[alias] = cache
+        return cache
+
+
+@contextmanager
+def mocked_caches(*targets):
+    """Patch in mock caches that start empty, for tests that rely on caching
+
+    Each target names an imported "caches" to replace, such as
+    "ietf.api.ietf_utils.caches", or "django.templatetags.cache.caches" for the
+    {% cache %} template tag. The targets share the mocks, so what one module
+    stores, another reads. Yields the mocks, keyed by cache alias.
+
+    Overriding CACHES with LocMemCache backends instead would couple tests:
+    LocMemCache instances with the same LOCATION share their contents.
+    """
+    caches = _MockCaches()
+    with ExitStack() as stack:
+        for target in targets:
+            stack.enter_context(mock.patch(target, caches))
+        yield caches
 
 
 def assert_ical_response_is_valid(test_inst, response, expected_event_summaries=None,
