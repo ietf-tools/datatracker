@@ -314,6 +314,16 @@ class PersonTests(TestCase):
         # Maybe use ietf.person.cjk.*
         self.assertEqual(person.ascii_name(), "Wu Jian Ping")
 
+        phd_person = PersonFactory(name="Dane Foster, Ph.D.")
+        self.assertEqual(phd_person.first_name(), "Dane")
+        self.assertEqual(phd_person.last_name(), "Foster")
+        self.assertEqual(phd_person.plain_name(), "Dane Foster")
+        self.assertEqual(phd_person.plain_ascii(), "Dane Foster")
+
+        phd_person2 = PersonFactory(name="Dane Foster, PhD")
+        self.assertEqual(phd_person2.last_name(), "Foster")
+        self.assertEqual(phd_person2.plain_name(), "Dane Foster")
+
     def test_duplicate_person_name(self):
         empty_outbox()
         p = PersonFactory(name="Föö Bär")
