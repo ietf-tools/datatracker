@@ -2652,6 +2652,12 @@ class DocTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, State.objects.get(type="draft-iesg", slug="lc").name)
 
+    def test_shepherd_writeup_state_help_title(self):
+        url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type="shepwrit"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Shepherd Writeup States")
+
     def test_rfceditor_state_help_has_queue_status_and_legacy_sections(self):
         url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type="draft-rfceditor"))
         r = self.client.get(url)
