@@ -10855,6 +10855,25 @@ class ProceedingsTests(BaseMeetingTestCase):
             self.assertFalse(plain_row.find(f'a[href="{expected_url}"]'))
             self.assertTrue(named_row.find(f'a[href="{expected_url}"]'))
 
+    def test_irtf_not_meeting_group_materials(self):
+        """Materials of an IRTF group that is not meeting should appear in the proceedings"""
+        meeting = MeetingFactory(type_id='ietf', number='100', proceedings_final=True)
+        irtf = GroupFactory(acronym='irtf', type_id='irtf')
+        SessionFactory(meeting=meeting, group__type_id='rg', group__parent=irtf)
+        not_meeting = SessionFactory(
+            meeting=meeting,
+            group__type_id='rg',
+            group__parent=irtf,
+            status_id='notmeet',
+            add_to_schedule=False,
+        )
+        slides = SessionPresentationFactory(session=not_meeting, document__type_id='slides').document
+
+        r = self.client.get(urlreverse('ietf.meeting.views.proceedings', kwargs={'num': meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q(f'a[href="{slides.get_href(meeting)}"]'))
+
     def test_proceedings_no_agenda(self):
         # Meeting number must be larger than the last special-cased proceedings (currently 96)
         meeting = MeetingFactory(type_id='ietf',populate_schedule=False,date=date_today(), number='100')
