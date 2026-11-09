@@ -767,6 +767,26 @@ class MeetingTests(BaseMeetingTestCase):
             self.assertFalse(plain_row.find(f'a[href="{expected_url}"]'))
             self.assertTrue(named_row.find(f'a[href="{expected_url}"]'))
 
+    def test_materials_attendance_links(self):
+        """Sessions with recorded attendance should link to it on the materials page"""
+        meeting = MeetingFactory(type_id='ietf', number='100')
+        meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
+        attended = SessionFactory(meeting=meeting)
+        not_attended = SessionFactory(meeting=meeting)
+        AttendedFactory(session=attended)
+
+        r = self.client.get(urlreverse('ietf.meeting.views.materials', kwargs={'num': meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        for session, expect_link in ((attended, True), (not_attended, False)):
+            row = q(f'div#{session.group.acronym}').closest('tr')
+            self.assertTrue(row)
+            attendance_url = urlreverse(
+                'ietf.meeting.views.session_attendance',
+                kwargs={'num': meeting.number, 'session_id': session.pk},
+            )
+            self.assertEqual(bool(row.find(f'a[href="{attendance_url}"]')), expect_link)
+
     @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
     def test_meeting_materials_non_utf8(self):
         meeting = make_meeting_test_data()

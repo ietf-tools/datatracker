@@ -1926,6 +1926,16 @@ def generate_proceedings_content(meeting, force_refresh=False):
     return rendered_content
 
 
+def _session_has_attendance(session):
+    """Whether any attendance is recorded for the session
+
+    Uses the has_attendance annotation from SessionQuerySet.with_has_attendance() when present.
+    """
+    if hasattr(session, 'has_attendance'):
+        return session.has_attendance
+    return Attended.objects.filter(session=session).exists()
+
+
 def organize_proceedings_sessions(sessions):
     # Collect sessions by Group, then bin by session name (including sessions with blank names).
     # If all of a group's sessions are 'notmeet', the processed data goes in not_meeting_sessions.
@@ -1994,7 +2004,7 @@ def organize_proceedings_sessions(sessions):
                 'last_update': session.last_update if hasattr(session, 'last_update') else None
             }
             if session and session.meeting.type_id == 'ietf' and not session.meeting.proceedings_final:
-                entry['attendances'] = _format_materials((s, s) for s in ss if Attended.objects.filter(session=s).exists())
+                entry['attendances'] = _format_materials((s, s) for s in ss if _session_has_attendance(s))
             if is_meeting:
                 meeting_groups.append(entry)
             else:

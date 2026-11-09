@@ -280,6 +280,17 @@ class SessionTests(TestCase):
             [d.get_href(session.meeting) for d in unprefetched.slides()],
         )
 
+    def test_with_has_attendance(self):
+        attended = SessionFactory()
+        AttendedFactory(session=attended)
+        not_attended = SessionFactory(meeting=attended.meeting)
+        self.assertEqual(
+            dict(Session.objects.with_has_attendance().filter(
+                pk__in=[attended.pk, not_attended.pk]
+            ).values_list('pk', 'has_attendance')),
+            {attended.pk: True, not_attended.pk: False},
+        )
+
     def test_chat_room_name(self):
         session = SessionFactory(group__acronym="xyzzy")
         self.assertEqual(session.chat_room_name(), "xyzzy")

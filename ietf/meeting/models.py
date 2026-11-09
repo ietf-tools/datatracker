@@ -21,7 +21,7 @@ import debug                            # pyflakes:ignore
 
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-from django.db.models import F, Max, Prefetch, Subquery, OuterRef, TextField, Value, Q, Case, When
+from django.db.models import Exists, F, Max, Prefetch, Subquery, OuterRef, TextField, Value, Q, Case, When
 from django.db.models.functions import Coalesce
 from django.conf import settings
 from django.urls import reverse as urlreverse
@@ -1057,6 +1057,12 @@ class SessionQuerySet(models.QuerySet):
                     ).values('status')[:1]),
                 Value(''), 
                 output_field=TextField()),
+        )
+
+    def with_has_attendance(self):
+        """Annotate session with has_attendance, True if any attendance is recorded for it"""
+        return self.annotate(
+            has_attendance=Exists(Attended.objects.filter(session=OuterRef('pk'))),
         )
 
     def with_requested_by(self):
