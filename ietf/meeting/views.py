@@ -298,7 +298,7 @@ def materials(request, num=None):
     sessions_by_group = defaultdict(list)
     for s in sessions:
         sessions_by_group[s.group_id].append(s)
-    for topic in [plenaries, ietf, training, irtf, iab, editorial]:
+    for topic in [plenaries, ietf, training, irtf, iab, editorial, other]:
         for event in topic:
             group_sessions = sessions_by_group[event.group_id] if has_meetings.get(event.group.type_id) else [event]
             date_list = [d.time for gs in group_sessions for d in gs.slides()]

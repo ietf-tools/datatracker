@@ -816,6 +816,25 @@ class MeetingTests(BaseMeetingTestCase):
         no_materials_row = q(f'div#{no_materials.group.acronym}').closest('tr')
         self.assertNotIn('UTC', no_materials_row.text())
 
+    def test_materials_last_update_other(self):
+        """Rows in the Other table also show their Updated time"""
+        meeting = MeetingFactory(type_id='ietf', number='100')
+        meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
+        session = SessionFactory(meeting=meeting, group__type_id='adhoc')
+        SessionPresentationFactory(
+            session=session,
+            document__type_id='slides',
+            document__time=datetime.datetime(2017, 11, 2, 11, 30, 15, tzinfo=datetime.UTC),
+        )
+
+        r = self.client.get(urlreverse('ietf.meeting.views.materials', kwargs={'num': meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        row = q(f'h2#other ~ table div#{session.group.acronym}').closest('tr')
+        self.assertTrue(row)
+        self.assertIn('2017-11-02', row.text())
+        self.assertIn('11:30:15', row.text())
+
     def test_materials_query_count(self):
         """The number of queries for the materials page does not grow with the number of sessions"""
         meeting = MeetingFactory(type_id='ietf', number='100')
