@@ -8,7 +8,7 @@ import re
 from tempfile import mkstemp
 
 from django.http import Http404
-from django.db.models import F, Prefetch
+from django.db.models import Prefetch
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import AnonymousUser
@@ -26,7 +26,7 @@ from ietf.ietfauth.utils import has_role, user_is_person
 from ietf.liaisons.utils import get_person_for_user
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.person.models  import Person
-from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment, ImportantDate, SchedulingEvent, Session
+from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment, ImportantDate, SchedulingEvent, Session, active_materials_prefetch
 from ietf.meeting.utils import session_requested_by, add_event_info_to_session_qs, data_for_meetings_overview
 from ietf.name.models import ImportantDateName, SessionPurposeName
 from ietf.utils import log, meetecho
@@ -151,10 +151,7 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
                 "session",
                 queryset=add_event_info_to_session_qs(Session.objects.all().prefetch_related(
                     'group', 'group__charter', 'group__charter__group', 'purpose',
-                    Prefetch('materials',
-                             queryset=Document.objects.exclude(states__type=F("type"), states__slug='deleted').order_by('presentations__order').prefetch_related('states'),
-                             to_attr='prefetched_active_materials'
-                    )
+                    active_materials_prefetch(),
                 ))
             ),
             *extra_prefetches
