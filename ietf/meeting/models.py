@@ -1202,6 +1202,9 @@ class Session(models.Model):
     
 
     def drafts(self):
+        if hasattr(self, "prefetched_active_materials"):
+            # drafts have no "deleted" state, so the active materials include all of them
+            return [d for d in self.prefetched_active_materials if d.type_id == "draft"]
         return list(self.materials.filter(type='draft'))
 
     # The utilities below are used in the proceedings and materials

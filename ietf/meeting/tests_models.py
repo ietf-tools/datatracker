@@ -261,11 +261,16 @@ class SessionTests(TestCase):
         deleted = SessionPresentationFactory(session=session, document__type_id="slides", order=3).document
         deleted.set_state(State.objects.get(type_id="slides", slug="deleted"))
         agenda = SessionPresentationFactory(session=session, document__type_id="agenda").document
+        drafts = [
+            SessionPresentationFactory(session=session, document__type_id="draft").document
+            for _ in range(2)
+        ]
 
         prefetched = Session.objects.with_active_materials().get(pk=session.pk)
         with self.assertNumQueries(0):
             self.assertEqual(prefetched.slides(), [first, second])
             self.assertEqual(prefetched.agenda(), agenda)
+            self.assertCountEqual(prefetched.drafts(), drafts)
         unprefetched = Session.objects.get(pk=session.pk)
         self.assertEqual(unprefetched.slides(), prefetched.slides())
         self.assertEqual(unprefetched.agenda(), prefetched.agenda())
