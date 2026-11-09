@@ -53,10 +53,10 @@ def get_meeting(num=None, type_in=('ietf',), days=28):
         ).order_by('date')
     else:
         meetings = meetings.filter(number=num)
-    if meetings.exists():
-        return meetings.first()
-    else:
+    meeting = meetings.first()
+    if meeting is None:
         raise Http404("No such meeting found: %s" % num)
+    return meeting
 
 def get_current_ietf_meeting():
     meetings = Meeting.objects.filter(type='ietf',date__gte=timezone.now()-datetime.timedelta(days=31)).order_by('date')

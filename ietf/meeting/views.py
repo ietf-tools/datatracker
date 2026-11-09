@@ -271,7 +271,7 @@ def materials(request, num=None):
                     'cor_cut_off_date': cor_cut_off_date
                 })
 
-    past_cutoff_date = today_utc > meeting.get_submission_correction_date()
+    past_cutoff_date = today_utc > cor_cut_off_date
 
     schedule = get_schedule(meeting, None)
 
@@ -314,8 +314,12 @@ def materials(request, num=None):
         [s for ss in [plenaries, ietf, training, irtf, iab, editorial, other] for s in ss],
     )
 
+    materials_by_type = {
+        pm.type_id: pm
+        for pm in meeting.proceedings_materials.select_related('document').prefetch_related('document__states')
+    }  # at most one per type
     proceedings_materials = [
-        (type_name, meeting.proceedings_materials.filter(type=type_name).first())
+        (type_name, materials_by_type.get(type_name.pk))
         for type_name in ProceedingsMaterialTypeName.objects.all()
     ]
 

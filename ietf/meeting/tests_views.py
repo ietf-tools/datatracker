@@ -10745,6 +10745,23 @@ class ProceedingsTests(BaseMeetingTestCase):
             'Correct title and link for each ProceedingsMaterial should appear in the correct order'
         )
 
+    def test_materials_page_proceedings_materials(self):
+        """The materials page lists the active proceedings materials, one row per type"""
+        meeting = MeetingFactory(type_id='ietf', number='100')
+        meeting.importantdate_set.create(name_id='revsub', date=date_today() + datetime.timedelta(days=20))
+        self._create_proceedings_materials(meeting)
+        r = self.client.get(urlreverse('ietf.meeting.views.materials', kwargs={'num': meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        rows = PyQuery(r.content)('h2#proceedings-materials + table tbody tr')
+        self.assertEqual(len(rows), 3, 'three of the five materials are active')
+        self.assertEqual(
+            [(row.find('td').eq(0).text(), row.find('a').text(), row.find('a').attr('href')) for row in rows.items()],
+            [
+                (str(pm.type), pm.document.title, pm.get_href())
+                for pm in meeting.proceedings_materials.order_by('type__order') if pm.active()
+            ],
+        )
+
     def _assertGroupSessions(self,  pq: PyQuery):
         """Checks that group/sessions are present"""
         sections = ["plenaries", "gen", "iab", "editorial", "irtf", "training"]
