@@ -132,6 +132,7 @@ from ietf.meeting.helpers import (
     get_schedule,
     schedule_permissions,
     preprocess_assignments_for_agenda,
+    set_official_timeslotassignments,
     read_agenda_file,
     AgendaFilterOrganizer,
     AgendaKeywordTagger,
@@ -299,6 +300,10 @@ def materials(request, num=None):
     for session_list in [plenaries, ietf, training, irtf, iab, editorial, other]:
         for session in session_list:
             session.past_cutoff_date = past_cutoff_date
+    set_official_timeslotassignments(
+        meeting,
+        [s for ss in [plenaries, ietf, training, irtf, iab, editorial, other] for s in ss],
+    )
 
     proceedings_materials = [
         (type_name, meeting.proceedings_materials.filter(type=type_name).first())
