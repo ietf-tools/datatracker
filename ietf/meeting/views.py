@@ -69,7 +69,7 @@ from ietf.doc.storage_utils import (
     store_file,
 )
 from ietf.doc.templatetags.ietf_filters import absurl
-from ietf.group.models import Group, Role
+from ietf.group.models import Group, GroupFeatures, Role
 from ietf.group.utils import (
     can_manage_session_materials,
     can_manage_some_groups,
@@ -291,12 +291,20 @@ def materials(request, num=None):
     session_pks = [s.pk for ss in [plenaries, ietf, irtf, training, iab, editorial] for s in ss]
     other     = sessions.filter(type__in=['regular'], group__type__features__has_meetings=True).exclude(pk__in=session_pks)
 
+    # A row's last update is the newest agenda or slides among all of its group's
+    # scheduled sessions, as Session.all_meeting_agendas() and all_meeting_slides()
+    # would find them. Those sessions are exactly the ones in the sessions queryset.
+    has_meetings = dict(GroupFeatures.objects.values_list("type_id", "has_meetings"))
+    sessions_by_group = defaultdict(list)
+    for s in sessions:
+        sessions_by_group[s.group_id].append(s)
     for topic in [plenaries, ietf, training, irtf, iab, editorial]:
         for event in topic:
-            date_list = []
-            for slide_event in event.all_meeting_slides(): date_list.append(slide_event.time)
-            for agenda_event in event.all_meeting_agendas(): date_list.append(agenda_event.time)
-            if date_list: setattr(event, 'last_update', sorted(date_list, reverse=True)[0])
+            group_sessions = sessions_by_group[event.group_id] if has_meetings.get(event.group.type_id) else [event]
+            date_list = [d.time for gs in group_sessions for d in gs.slides()]
+            date_list += [gs.agenda().time for gs in group_sessions if gs.agenda()]
+            if date_list:
+                event.last_update = max(date_list)
 
     for session_list in [plenaries, ietf, training, irtf, iab, editorial, other]:
         for session in session_list:

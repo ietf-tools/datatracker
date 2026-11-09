@@ -787,6 +787,62 @@ class MeetingTests(BaseMeetingTestCase):
             )
             self.assertEqual(bool(row.find(f'a[href="{attendance_url}"]')), expect_link)
 
+    def test_materials_last_update(self):
+        """Each row's Updated time is the newest agenda or slides among its group's sessions"""
+        meeting = MeetingFactory(type_id='ietf', number='100')
+        meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
+        group = GroupFactory()
+        plain_session = SessionFactory(meeting=meeting, group=group)
+        named_session = SessionFactory(meeting=meeting, group=group, name='I Got a Name')
+        SessionPresentationFactory(
+            session=plain_session,
+            document__type_id='slides',
+            document__time=datetime.datetime(2017, 11, 1, 10, 0, 0, tzinfo=datetime.UTC),
+        )
+        SessionPresentationFactory(
+            session=named_session,
+            document__type_id='agenda',
+            document__time=datetime.datetime(2017, 11, 2, 11, 30, 15, tzinfo=datetime.UTC),
+        )
+        no_materials = SessionFactory(meeting=meeting)
+
+        r = self.client.get(urlreverse('ietf.meeting.views.materials', kwargs={'num': meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        for label in (f'div#{group.acronym}', f'div#{slugify(named_session.name)}'):
+            row = q(label).closest('tr')
+            self.assertIn('2017-11-02', row.text())
+            self.assertIn('11:30:15', row.text())
+        no_materials_row = q(f'div#{no_materials.group.acronym}').closest('tr')
+        self.assertNotIn('UTC', no_materials_row.text())
+
+    def test_materials_query_count(self):
+        """The number of queries for the materials page does not grow with the number of sessions"""
+        meeting = MeetingFactory(type_id='ietf', number='100')
+        meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
+        area = GroupFactory(type_id='area')
+        url = urlreverse('ietf.meeting.views.materials', kwargs={'num': meeting.number})
+
+        def add_groups(count):
+            for _ in range(count):
+                group = GroupFactory(parent=area)
+                for _ in range(2):
+                    session = SessionFactory(meeting=meeting, group=group)
+                    for doc_type_id in ('agenda', 'minutes', 'slides', 'draft'):
+                        SessionPresentationFactory(session=session, document__type_id=doc_type_id)
+                    AttendedFactory(session=session)
+
+        def count_queries():
+            with CaptureQueriesContext(connection) as context:
+                r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            return len(context.captured_queries)
+
+        add_groups(2)
+        queries_for_few = count_queries()
+        add_groups(3)
+        self.assertEqual(count_queries(), queries_for_few)
+
     @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
     def test_meeting_materials_non_utf8(self):
         meeting = make_meeting_test_data()
