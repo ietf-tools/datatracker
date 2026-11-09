@@ -14,7 +14,7 @@ from django.test import override_settings
 from ietf.meeting.factories import MeetingFactory, RegistrationFactory, RegistrationTicketFactory, SessionPresentationFactory, SessionFactory
 from ietf.doc.models import Document
 from ietf.doc.storage_utils import store_bytes, retrieve_bytes, remove_from_storage
-from ietf.meeting.models import Registration
+from ietf.meeting.models import Registration, Session
 from ietf.meeting.tests_views import make_group_sessions
 from ietf.meeting.utils import (
     process_single_registration,
@@ -27,6 +27,7 @@ from ietf.meeting.utils import (
     group_wide_material_name,
     material_document_name,
     reclaim_material_name,
+    organize_proceedings_sessions,
 )
 from ietf.nomcom.models import Volunteer
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
@@ -388,6 +389,28 @@ class GroupWideMaterialNameTests(TestCase):
         first.type_id = 'other'
         first.save()
         self.assertFalse(group_wide_material_name(first, []))
+
+
+class OrganizeProceedingsSessionsTests(TestCase):
+    def test_has_materials_reflects_each_entrys_own_sessions(self):
+        with_materials = SessionFactory(name='First', status_id='notmeet', add_to_schedule=False)
+        SessionFactory(
+            meeting=with_materials.meeting,
+            group=with_materials.group,
+            name='Second',
+            status_id='notmeet',
+            add_to_schedule=False,
+        )
+        SessionPresentationFactory(session=with_materials)
+        sessions = Session.objects.with_current_status().filter(
+            meeting=with_materials.meeting,
+        ).order_by('pk')
+        meeting_groups, not_meeting_groups = organize_proceedings_sessions(sessions)
+        self.assertEqual(meeting_groups, [])
+        self.assertEqual(
+            {entry['name']: entry['has_materials'] for entry in not_meeting_groups},
+            {'First': True, 'Second': False},
+        )
 
 
 class ReclaimMaterialNameTests(TestCase):
