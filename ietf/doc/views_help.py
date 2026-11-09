@@ -84,7 +84,7 @@ def state_help(request, type=None):
         "reuse_policy": ("reuse_policy", "Reuse Policy States"),
         "review": ("review", "Review States"),
         "liaison": ("liaison", "Liaison States"),
-        "shepwrit": ("shepwrit", "Shapherd Writeup States"),
+        "shepwrit": ("shepwrit", "Shepherd Writeup States"),
         "bofreq": ("bofreq", "BOF Request States"),
         "procmaterials": ("procmaterials", "Proceedings Materials States"),
         "chatlog": ("chatlog", "Chat Log States"),
