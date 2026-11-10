@@ -1260,7 +1260,7 @@ def request_publication(request, name):
     been through the IESG ballot process."""
 
     class PublicationForm(forms.Form):
-        subject = forms.CharField(max_length=200, required=True)
+        subject = forms.CharField(max_length=250, required=True)
         body = forms.CharField(widget=forms.Textarea, required=True, strip=False)
 
     doc = get_object_or_404(Document, type="draft", name=name, stream__in=("iab", "ise", "irtf", "editorial"))

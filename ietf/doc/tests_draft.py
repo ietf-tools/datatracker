@@ -1576,6 +1576,41 @@ class RequestPublicationTests(TestCase):
 
         self.assertTrue("Document Action" in draft.message_set.order_by("-time")[0].subject)
 
+    def test_request_publication_long_subject(self):
+        draft = IndividualDraftFactory(
+            name="draft-iab-long-title-test",
+            title=(
+                "Considerations for Operating a Very Long Example Title "
+                "That Pushes the Generated Publication Request Subject "
+                "Past the Old Limit of Two Hundred Characters"
+            ),
+            stream_id="iab",
+            group__acronym="iab",
+            intended_std_level_id="inf",
+            states=[("draft-stream-iab", "approved")],
+        )
+        url = urlreverse("ietf.doc.views_draft.request_publication", kwargs=dict(name=draft.name))
+        self.client.login(username="iab-chair", password="iab-chair+password")
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        subject = q("input#id_subject")[0].get("value")
+        body = q("#id_body").text()
+        self.assertEqual(len(subject), 228)
+
+        # too long
+        r = self.client.post(url, dict(subject="x" * 251, body=body))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(len(PyQuery(r.content)("form .is-invalid")) > 0)
+
+        # the generated subject is accepted
+        r = self.client.post(url, dict(subject=subject, body=body))
+        self.assertEqual(r.status_code, 302)
+        draft = Document.objects.get(name=draft.name)
+        self.assertEqual(draft.get_state_slug("draft-stream-iab"), "rfc-edit")
+        self.assertEqual(draft.message_set.order_by("-time")[0].subject, subject)
+
 class ReleaseDraftTests(TestCase):
     def test_release_wg_draft(self):
         chair_role = RoleFactory(group__type_id='wg',name_id='chair') 
