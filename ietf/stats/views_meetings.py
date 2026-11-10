@@ -245,8 +245,8 @@ def get_country_data_for_meetings(attendance_type: str | None = None,
 
     """
     cache_key = f"stats:get_country_data_for_meetings:{attendance_type}"
-    sorted_meetings, sorted_countries = cache.get(cache_key, (None, None))
-    if (sorted_meetings, sorted_countries) == (None, None):
+    sorted_meetings, sorted_countries, country_totals, data_map = cache.get(cache_key, (None, None, None, None))
+    if (sorted_meetings, sorted_countries, country_totals, data_map) == (None, None, None, None):
         # Get registration status counts, aggregated by country_code
         if attendance_type:
             base_registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
@@ -293,7 +293,7 @@ def get_country_data_for_meetings(attendance_type: str | None = None,
         )
         cache.set(
             cache_key,
-            (sorted_meetings, sorted_countries),
+            (sorted_meetings, sorted_countries, country_totals, data_map),
             settings.STATS_TIMELINE_CACHE_TIMEOUT,
         )
 
