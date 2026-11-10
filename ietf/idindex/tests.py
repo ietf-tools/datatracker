@@ -9,6 +9,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.conf import settings
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 import debug    # pyflakes:ignore
@@ -18,7 +20,7 @@ from ietf.doc.models import Document, RelatedDocument, State, LastCallDocEvent, 
 from ietf.doc.storage_utils import retrieve_str
 from ietf.group.factories import GroupFactory
 from ietf.name.models import DocRelationshipName
-from ietf.idindex.index import all_id_txt, all_id2_txt, id_index_txt
+from ietf.idindex.index import active_drafts_index_by_group, all_id_txt, all_id2_txt, id_index_txt
 from ietf.idindex.tasks import idindex_update_task, TempFileManager
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.utils.test_utils import TestCase
@@ -155,6 +157,23 @@ class IndexTests(TestCase):
         txt = id_index_txt(with_abstracts=True)
 
         self.assertTrue(draft.abstract[:20] in txt)
+
+    def test_active_drafts_index_by_group_query_count(self):
+        def count_queries():
+            with CaptureQueriesContext(connection) as context:
+                groups = active_drafts_index_by_group()
+            return len(context.captured_queries), groups
+
+        WgDraftFactory.create_batch(2, authors=[PersonFactory(), PersonFactory()])
+        baseline, _ = count_queries()
+        drafts = WgDraftFactory.create_batch(4, authors=[PersonFactory(), PersonFactory()])
+        doubled, groups = count_queries()
+
+        # A per-author lookup would add a query for each of the 8 new author rows
+        self.assertEqual(doubled, baseline)
+        listed = {d["name"]: d for g in groups for d in g.active_drafts}
+        for draft in drafts:
+            self.assertEqual(len(listed[draft.name]["authors"]), 2)
 
 
 class TaskTests(TestCase):

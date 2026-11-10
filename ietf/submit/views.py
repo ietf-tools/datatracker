@@ -34,6 +34,7 @@ from ietf.submit.forms import (
     EditSubmissionForm,
     PreapprovalForm,
     ReplacesForm,
+    SubmissionExtResourceForm,
     SubmissionManualUploadForm,
     SubmissionSearchForm,
 )
@@ -209,7 +210,7 @@ def api_submission(request):
 
 @csrf_exempt
 def api_submission_status(request, submission_id):
-    submission = get_submission_or_404(submission_id)
+    submission = get_object_or_404(Submission, pk=submission_id)
     return JsonResponse(
         {
             'id': str(submission.pk),
@@ -263,9 +264,7 @@ def search_submission(request):
 def access_token_is_valid(submission: Submission, access_token: str):
     """Check whether access_token is valid for submission, in constant time"""
     token_matched = compare_digest(submission.access_token(), access_token)
-    # also compare key directly for backwards compatibility
-    key_matched = compare_digest(submission.access_key, access_token)
-    return token_matched or key_matched
+    return token_matched
 
 
 def auth_token_is_valid(submission: Submission, auth_token: str):
@@ -275,13 +274,9 @@ def auth_token_is_valid(submission: Submission, auth_token: str):
         # Make the same calls as the other branch to keep constant time, then
         # return False because there is no auth key
         compare_digest(generate_access_token("fake"), auth_token)
-        compare_digest("fake", auth_token)
         return False
     else:
-        token_matched = compare_digest(generate_access_token(auth_key), auth_token)
-        # also compare key directly for backwards compatibility
-        key_matched = compare_digest(auth_key, auth_token)
-        return token_matched or key_matched
+        return compare_digest(generate_access_token(auth_key), auth_token)
 
 
 def can_edit_submission(user, submission: Submission, access_token: str | None):
@@ -418,7 +413,7 @@ def submission_status(request, submission_id, access_token=None):
     replaces_form = ReplacesForm(name=submission.name,initial=Document.objects.filter(name__in=submission.replaces.split(",")))
     extresources_form = ExtResourceForm(
         initial=dict(resources=[er['res'] for er in external_resources]),
-        extresource_model=SubmissionExtResource,
+        extresource_form_class=SubmissionExtResourceForm,
     )
 
     if request.method == 'POST':
@@ -430,7 +425,7 @@ def submission_status(request, submission_id, access_token=None):
             submitter_form = SubmitterForm(request.POST, prefix="submitter")
             replaces_form = ReplacesForm(request.POST, name=submission.name)
             extresources_form = ExtResourceForm(
-                request.POST, extresource_model=SubmissionExtResource
+                request.POST, extresource_form_class=SubmissionExtResourceForm
             )
             validations = [
                 submitter_form.is_valid(),
@@ -773,17 +768,6 @@ def manualpost(request):
             'selected': 'manual_posts'
         }
     )
-
-
-def get_submission_or_404(submission_id, access_token=None):
-    submission = get_object_or_404(Submission, pk=submission_id)
-
-    key_matched = access_token and submission.access_token() == access_token
-    if not key_matched: key_matched = submission.access_key == access_token # backwards-compat
-    if access_token and not key_matched:
-        raise Http404
-
-    return submission
 
 
 def async_poke_test(request):

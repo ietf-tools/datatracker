@@ -43,7 +43,7 @@ from ietf.doc.utils import ( add_state_change_event, can_adopt_draft, can_unadop
     update_doc_extresources )
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.fields import SearchableDocumentsField
-from ietf.doc.forms import ExtResourceForm
+from ietf.doc.forms import DocExtResourceForm, ExtResourceForm
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person
@@ -55,6 +55,7 @@ from ietf.person.fields import SearchableEmailField
 from ietf.person.models import Person, Email
 from ietf.utils.mail import send_mail, send_mail_message, on_behalf_of, send_mail_text
 from ietf.utils.textupload import get_cleaned_text_file_content
+from ietf.utils.text import render_txt_as_unsafe
 from ietf.utils import log
 from ietf.utils.fields import DatepickerDateField, ModelMultipleChoiceField, MultiEmailField
 from ietf.utils.response import permission_denied
@@ -972,7 +973,7 @@ def edit_shepherd_writeup(request, name):
             else:
                 generate_type = "group"           
             init = {
-                "content": render_to_string(
+                "content": render_txt_as_unsafe(
                     "doc/shepherd_writeup.txt",
                     dict(
                         doc=doc,
@@ -1004,7 +1005,7 @@ def edit_shepherd_writeup(request, name):
                 generate_type = "individ"
             else:
                 generate_type = "group"
-            init["content"] = render_to_string(
+            init["content"] = render_txt_as_unsafe(
                 "doc/shepherd_writeup.txt",
                 dict(
                     doc=doc,
@@ -1235,7 +1236,7 @@ def edit_doc_extresources(request, name):
         permission_denied(request, "You do not have the necessary permissions to view this page.")
 
     if request.method == 'POST':
-        form = ExtResourceForm(request.POST)
+        form = ExtResourceForm(request.POST, extresource_form_class=DocExtResourceForm)
         if form.is_valid():
             if update_doc_extresources(doc, form.cleaned_data['resources'], by=request.user.person):
                 messages.success(request,"Document resources updated.")
@@ -1243,7 +1244,10 @@ def edit_doc_extresources(request, name):
                 messages.info(request,"No change in Document resources.")
             return redirect('ietf.doc.views_doc.document_main', name=doc.name)
     else:
-        form = ExtResourceForm(initial={'resources': doc.docextresource_set.all()})
+        form = ExtResourceForm(
+            initial={"resources": doc.docextresource_set.all()},
+            extresource_form_class=DocExtResourceForm,
+        )
 
     info = "Valid tags:<br><br> %s" % ', '.join(form.valid_resource_tags())
     # May need to explain the tags more - probably more reason to move to a formset.

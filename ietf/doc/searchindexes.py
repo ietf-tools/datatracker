@@ -1,72 +1,24 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
-"""Search indexing utilities"""
+"""Search indexing for documents"""
 
 import re
-from itertools import batched
+from collections.abc import Callable
 from math import floor
-from typing import Iterable
-from urllib.parse import urljoin
+from typing import Any, Iterable
 
-import httpx  # just for exceptions
-import requests
-import typesense
-import typesense.exceptions
-from django.conf import settings
 from typesense.types.document import DocumentSchema
 
-from ietf.doc.models import Document, StoredObject
-from ietf.doc.storage_utils import retrieve_str
+from ietf.utils import search_provider
 from ietf.utils.log import log
 
-# Error classes that might succeed just by retrying a failed attempt.
-# Must be a tuple for use with isinstance()
-RETRYABLE_ERROR_CLASSES = (
-    httpx.ConnectError,
-    httpx.ConnectTimeout,
-    typesense.exceptions.Timeout,
-    typesense.exceptions.ServerError,
-    typesense.exceptions.ServiceUnavailable,
-)
-
-DEFAULT_SETTINGS = {
-    "TYPESENSE_API_URL": "",
-    "TYPESENSE_API_KEY": "",
-    "TYPESENSE_COLLECTION_NAME": "docs",
-    "TASK_RETRY_DELAY": 10,
-    "TASK_MAX_RETRIES": 12,
-}
-
-
-def get_settings():
-    return DEFAULT_SETTINGS | getattr(settings, "SEARCHINDEX_CONFIG", {})
-
-
-def enabled():
-    _settings = get_settings()
-    return _settings["TYPESENSE_API_URL"] != ""
-
-
-def get_typesense_client() -> typesense.Client:
-    _settings = get_settings()
-    client = typesense.Client(
-        {
-            "api_key": _settings["TYPESENSE_API_KEY"],
-            "nodes": [_settings["TYPESENSE_API_URL"]],
-        }
-    )
-    return client
-
-
-def get_collection_name() -> str:
-    _settings = get_settings()
-    collection_name = _settings["TYPESENSE_COLLECTION_NAME"]
-    assert isinstance(collection_name, str)
-    return collection_name
+from .models import Document, StoredObject
+from .storage_utils import retrieve_str
+from .utils_reef import cached_popularity_scores, refresh_popularity_scores
 
 
 def _sanitize_text(content: str):
     """Sanitize content text for search
-    
+
     Aggressively simplifies whitespace, removes most punctuation
     """
     # REs (with approximate names)
@@ -89,7 +41,7 @@ def _sanitize_text(content: str):
 
 def _sanitize_abstract(abstract: str):
     """Sanitize abstract text for search
-    
+
     Simplifies whitespace but mostly leaves text intact. Abstract text will be
     displayed in search results, so a light touch is needed.
     """
@@ -99,7 +51,23 @@ def _sanitize_abstract(abstract: str):
     return abstract
 
 
-def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
+def _get_popularity_scores() -> dict[int, float] | None:
+    """Get cached popularity scores, or None if they are unavailable"""
+    try:
+        return cached_popularity_scores()
+    except Exception as err:
+        log(f"Unable to load popularity scores: {err}")
+        return None
+
+
+def typesense_doc_from_rfc(
+    rfc: Document, popularity_scores: dict[int, float] | None
+) -> DocumentSchema:
+    """Build the typesense document for an RFC
+
+    popularity_scores maps rfc_number to popularity score, or is None if scores are
+    unavailable.
+    """
     assert rfc.type_id == "rfc"
     assert rfc.rfc_number is not None
     assert rfc.pages is not None
@@ -159,11 +127,14 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
         "obsoletedBy": [str(doc.rfc_number) for doc in obsoleted_by],
         "updatedBy": [str(doc.rfc_number) for doc in updated_by],
         "ranking": rfc.rfc_number,
+        "popularity": (
+            None if popularity_scores is None else popularity_scores.get(rfc.rfc_number)
+        ),
     }
     if subseries is not None:
         ts_document["subseries"] = {
             "acronym": subseries.type.slug,
-            "number": int(subseries.name[len(subseries.type.slug):]),
+            "number": int(subseries.name[len(subseries.type.slug) :]),
             "total": len(subseries.contains()),
         }
     if rfc.group is not None:
@@ -191,40 +162,46 @@ def typesense_doc_from_rfc(rfc: Document) -> DocumentSchema:
 
 def update_or_create_rfc_entry(rfc: Document):
     """Update/create index entries for one RFC"""
-    ts_document = typesense_doc_from_rfc(rfc)
-    client = get_typesense_client()
-    client.collections[get_collection_name()].documents.upsert(ts_document)
+    ts_document = typesense_doc_from_rfc(rfc, _get_popularity_scores())
+    DOCS_INDEX.upsert_document(ts_document)
 
 
-def update_or_create_rfc_entries(
-    rfcs: Iterable[Document], batchsize: int | None = None
+def partial_update_rfc_entries(
+    rfcs: Iterable[Document],
+    fields: dict[str, Callable[[Document], Any]],
+    batchsize: int | None = None,
 ):
-    """Update/create index entries for RFCs in bulk
+    result = DOCS_INDEX.update_documents(
+        (
+            {"id": f"doc-{rfc.pk}"}  # required
+            | {
+                field_name: field_extractor(rfc)
+                for field_name, field_extractor in fields.items()
+            }
+            for rfc in rfcs
+        ),
+        batchsize=batchsize,
+    )
+    for failure in result.failures:
+        log(f"Failed to update {failure.document['id']}: {failure.error}")
+    log(
+        f"Updated {result.written} RFCs in the index, "
+        f"failed to update {len(result.failures)}"
+    )
 
-    If batchsize is set, computes index data in batches of batchsize and adds to the
-    index. Will make a total of (len(rfcs) // batchsize) + 1 API calls.
 
-    N.b. that typesense has a server-side batch size that defaults to 40, which should
-    "almost never be changed from the default." This does not change that. Further,
-    the python client library's import_ method has a batch_size parameter that does
-    client-side batching. We don't use that, either.
-    """
-    success_count = 0
-    fail_count = 0
-    client = get_typesense_client()
-    batches = [rfcs] if batchsize is None else batched(rfcs, batchsize)
-    for batch in batches:
-        tdoc_batch = [typesense_doc_from_rfc(rfc) for rfc in batch]
-        results = client.collections[get_collection_name()].documents.import_(
-            tdoc_batch, {"action": "upsert"}
-        )
-        for tdoc, result in zip(tdoc_batch, results):
-            if result["success"]:
-                success_count += 1
-            else:
-                fail_count += 1
-                log(f"Failed to index RFC {tdoc['rfcNumber']}: {result['error']}")
-    log(f"Added {success_count} RFCs to the index, failed to add {fail_count}")
+def update_rfc_popularities(rfcs: Iterable[Document], batchsize: int | None = None):
+    # Load fresh scores once rather than per RFC. This also refreshes the cache.
+    scores = refresh_popularity_scores()
+    partial_update_rfc_entries(
+        rfcs,
+        {
+            "popularity": lambda rfc: (
+                None if rfc.rfc_number is None else scores.get(rfc.rfc_number)
+            )
+        },
+        batchsize,
+    )
 
 
 DOCS_SCHEMA = {
@@ -371,55 +348,87 @@ DOCS_SCHEMA = {
         # This ensures newer RFCs get listed first in the default search results
         # (without a query)
         {"name": "ranking", "type": "int32", "facet": False},
+        # Popularity score. Unscored will sort after those with any score, regardless of
+        # sort direction, unless the sort_by field explicity specifies different
+        # missing_values behavior.
+        {
+            "name": "popularity",
+            "type": "float",
+            "facet": False,
+            "optional": True,
+        },
     ],
 }
 
-SEARCH_PRESETS = {
+DOCS_INDEX = search_provider.SearchIndex(name="docs", schema=DOCS_SCHEMA)
+
+# Search parameters for the red frontend's searches of the docs index. They belong
+# to red but are configured here for operational convenience.
+RED_SEARCH_PRESETS = {
     "red": {
-        "collection": "docs",
+        "collection": DOCS_INDEX.name,
         "infix": "off,always,off,off,off,off,off,off",
         "query_by": "rfc,filename,title,abstract,keywords,authors,group,area",
-        "query_by_weights": "127,50,50,20,20,5,2,1"
+        "query_by_weights": "127,50,50,20,20,5,2,1",
     },
     "red-content": {
-      "collection": "docs",
-      "infix": "off,always,off,off,off,off,off,off,off",
-      "query_by": "rfc,filename,title,abstract,keywords,authors,group,area,content",
-      "query_by_weights": "127,50,50,20,20,5,2,1,1"
+        "collection": DOCS_INDEX.name,
+        "infix": "off,always,off,off,off,off,off,off,off",
+        "query_by": "rfc,filename,title,abstract,keywords,authors,group,area,content",
+        "query_by_weights": "127,50,50,20,20,5,2,1,1",
     },
 }
 
 
-def create_collection():
-    collection_name = get_collection_name()
-    log(f"Creating '{collection_name}' collection")
-    client = get_typesense_client()
-    client.collections.create({"name": get_collection_name()} | DOCS_SCHEMA)
+def update_rfc_searchindex(rfc_number: int):
+    """Update the search index for one RFC"""
+    rfc = Document.objects.filter(type_id="rfc", rfc_number=rfc_number).first()
+    if rfc is None:
+        log(f"ERROR: Document for rfc{rfc_number} not found, not updating search index")
+        return
+    update_or_create_rfc_entry(rfc)
 
 
-def delete_collection():
-    collection_name = get_collection_name()
-    log(f"Deleting '{collection_name}' collection")
-    client = get_typesense_client()
+def rebuild_searchindex(
+    *, batchsize=40, ignore_errors=False, upsert_presets=True, transition=False
+):
+    """Rebuild the entire search index
+
+    batchsize is the number of RFCs to load per API call. If ignore_errors is set,
+    the rebuilt index goes live even if some RFCs fail to load.
+
+    If transition is set, builds the collection for converting the index to an alias
+    instead (temporary; see SearchIndex.transition_build_collection()).
+    """
+    rebuild_context = (
+        DOCS_INDEX.transition_build_collection(ignore_errors=ignore_errors)
+        if transition
+        else DOCS_INDEX.rebuild_collection(ignore_errors=ignore_errors)
+    )
     try:
-        client.collections[collection_name].delete()
-    except typesense.exceptions.ObjectNotFound:
-        pass
+        with rebuild_context as rebuild:
+            popularity_scores = _get_popularity_scores()
+            rfcs = Document.objects.filter(type_id="rfc").order_by("-rfc_number")
+            rebuild.load(
+                (typesense_doc_from_rfc(rfc, popularity_scores) for rfc in rfcs),
+                batchsize=batchsize,
+            )
+    except search_provider.RebuildFailedError:
+        _log_load_failures(rebuild.result)
+        raise
+    _log_load_failures(rebuild.result)
+    if upsert_presets:
+        search_provider.upsert_presets(RED_SEARCH_PRESETS)  # ok if they already exist
 
 
-def upsert_presets():
-    # typesense-python does not support presets, so use requests
-    _settings = get_settings()
-    api_base = _settings["TYPESENSE_API_URL"]
-    api_key = _settings["TYPESENSE_API_KEY"]
-    for preset_name, payload in SEARCH_PRESETS.items():
-        log(f"Upserting '{preset_name}' preset")
-        response = requests.put(
-            urljoin(api_base, f"/presets/{preset_name}"),
-            json={"value": payload},
-            headers={
-                "X-TYPESENSE-API-KEY": api_key,
-            },
-            timeout=3,
-        )
-        response.raise_for_status()
+def _log_load_failures(result: search_provider.RebuildResult):
+    for failure in result.failures:
+        log(f"Failed to index RFC {failure.document['rfcNumber']}: {failure.error}")
+
+
+def update_rfc_searchindex_popularities(*, batchsize=200):
+    """Update the search index popularities for all RFCs
+
+    batchsize is the number of RFCs to update per API call.
+    """
+    update_rfc_popularities(Document.objects.filter(type_id="rfc"), batchsize=batchsize)

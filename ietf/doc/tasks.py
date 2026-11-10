@@ -3,40 +3,43 @@
 # Celery task definitions
 #
 import datetime
-
-import debug  # pyflakes:ignore
+from pathlib import Path
 
 from celery import shared_task
 from celery.exceptions import MaxRetriesExceededError
-from pathlib import Path
-
 from django.conf import settings
 from django.utils import timezone
 
+import debug  # pyflakes:ignore
 from ietf.doc.utils_r2 import rfcs_are_in_r2
 from ietf.doc.utils_red import trigger_red_precomputer
-from ietf.utils import log, searchindex
+from ietf.utils import log, search_provider
 from ietf.utils.timezone import datetime_today
 
 from .expire import (
-    in_draft_expire_freeze,
-    get_expired_drafts,
-    expirable_drafts,
-    send_expire_notice_for_draft,
-    expire_draft,
     clean_up_draft_files,
+    expirable_drafts,
+    expire_draft,
+    get_expired_drafts,
     get_soon_to_expire_drafts,
+    in_draft_expire_freeze,
+    send_expire_notice_for_draft,
     send_expire_warning_for_draft,
 )
-from .lastcall import get_expired_last_calls, expire_last_call
+from .lastcall import expire_last_call, get_expired_last_calls
 from .models import Document, NewRevisionDocEvent
+from .searchindexes import (
+    rebuild_searchindex,
+    update_rfc_searchindex,
+    update_rfc_searchindex_popularities,
+)
 from .utils import (
+    ensure_draft_bibxml_path_exists,
     generate_idnits2_rfc_status,
     generate_idnits2_rfcs_obsoleted,
+    investigate_fragment,
     rebuild_reference_relations,
     update_or_create_draft_bibxml_file,
-    ensure_draft_bibxml_path_exists,
-    investigate_fragment,
 )
 from .utils_bofreq import fixup_bofreq_timestamps
 from .utils_errata import signal_update_rfc_metadata
@@ -189,22 +192,16 @@ def trigger_red_precomputer_task(self, rfc_number_list=()):
 @shared_task(bind=True)
 def update_rfc_searchindex_task(self, rfc_number: int):
     """Update the search index for one RFC"""
-    if not searchindex.enabled():
+    if not search_provider.enabled():
         log.log("Search indexing is not enabled, skipping")
         return
 
-    rfc = Document.objects.filter(type_id="rfc", rfc_number=rfc_number).first()
-    if rfc is None:
-        log.log(
-            f"ERROR: Document for rfc{rfc_number} not found, not updating search index"
-        )
-        return
     try:
-        searchindex.update_or_create_rfc_entry(rfc)
+        update_rfc_searchindex(rfc_number)
     except Exception as err:
-        log.log(f"Search index update for {rfc.name} failed ({err})")
-        if isinstance(err, searchindex.RETRYABLE_ERROR_CLASSES):
-            searchindex_settings = searchindex.get_settings()
+        log.log(f"Search index update for rfc{rfc_number} failed ({repr(err)})")
+        if isinstance(err, search_provider.RETRYABLE_ERROR_CLASSES):
+            searchindex_settings = search_provider.get_settings()
             self.retry(
                 countdown=searchindex_settings["TASK_RETRY_DELAY"],
                 max_retries=searchindex_settings["TASK_MAX_RETRIES"],
@@ -213,14 +210,45 @@ def update_rfc_searchindex_task(self, rfc_number: int):
 
 @shared_task
 def rebuild_searchindex_task(
-    *, batchsize=40, drop_collection=False, upsert_presets=True
+    *, batchsize=40, ignore_errors=False, upsert_presets=True, transition=False
 ):
-    if drop_collection:
-        searchindex.delete_collection()
-        searchindex.create_collection()
-    if upsert_presets:
-        searchindex.upsert_presets()  # ok if they already exist
-    searchindex.update_or_create_rfc_entries(
-        Document.objects.filter(type_id="rfc").order_by("-rfc_number"),
-        batchsize=batchsize,
-    )
+    """Rebuild the entire searchindex
+
+    batchsize is the number of RFCs to load per API call. It is not the Typesense
+    server-side batch size, which is left at its default of 40.
+
+    transition is temporary; see rebuild_searchindex().
+    """
+    try:
+        rebuild_searchindex(
+            batchsize=batchsize,
+            ignore_errors=ignore_errors,
+            upsert_presets=upsert_presets,
+            transition=transition,
+        )
+    except (search_provider.IndexStateError, search_provider.RebuildFailedError) as err:
+        log.log(f"Search index rebuild failed: {err}")
+        raise
+
+
+@shared_task(bind=True)
+def update_rfc_searchindex_popularities_task(self, *, batchsize=200):
+    """Update the search index popularities for all RFCs
+
+    batchsize is the number of RFCs to update per API call. It is not the Typesense
+    server-side batch size, which is left at its default of 40.
+    """
+    if not search_provider.enabled():
+        log.log("Search indexing is not enabled, skipping")
+        return
+
+    try:
+        update_rfc_searchindex_popularities(batchsize=batchsize)
+    except Exception as err:
+        log.log(f"Search index popularities update failed ({repr(err)})")
+        if isinstance(err, search_provider.RETRYABLE_ERROR_CLASSES):
+            searchindex_settings = search_provider.get_settings()
+            self.retry(
+                countdown=searchindex_settings["TASK_RETRY_DELAY"],
+                max_retries=searchindex_settings["TASK_MAX_RETRIES"],
+            )

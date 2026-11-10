@@ -4499,6 +4499,7 @@
       ],
       "session_purposes": [
         "coding",
+        "officehours",
         "open_meeting",
         "presentation",
         "social",
@@ -8927,7 +8928,7 @@
     "fields": {
       "continent": "europe",
       "desc": "",
-      "in_eu": true,
+      "in_eu": false,
       "name": "United Kingdom",
       "order": 0,
       "used": true
@@ -12883,7 +12884,7 @@
   {
     "fields": {
       "default_offset_days": -43,
-      "desc": "Cut-off date for revised BOF proposal requests to Area Directors at UTC 23:59. To request a BOF, please see instructions at https://www.ietf.org/how/bofs/bof-procedures on Requesting a BOF.",
+      "desc": "Cut-off date for revised BOF proposal requests to Area Directors at UTC 23:59. To request a BOF, please see the [instructions for submitting a BOF proposal](https://www.ietf.org/process/bofs/).",
       "name": "Cut-off revised BOF requests",
       "order": 0,
       "used": true
@@ -13741,6 +13742,26 @@
     },
     "model": "name.proceedingsmaterialtypename",
     "pk": "host_speaker_series"
+  },
+  {
+    "fields": {
+      "desc": "Results of the post-meeting survey",
+      "name": "Post-Meeting Survey Results",
+      "order": 6,
+      "used": true
+    },
+    "model": "name.proceedingsmaterialtypename",
+    "pk": "meeting_survey"
+  },
+  {
+    "fields": {
+      "desc": "Report from the RFC Editor",
+      "name": "RFC Editor Report",
+      "order": 5,
+      "used": true
+    },
+    "model": "name.proceedingsmaterialtypename",
+    "pk": "rfc_editor_report"
   },
   {
     "fields": {
@@ -14940,6 +14961,16 @@
   },
   {
     "fields": {
+      "desc": "Expired: the meeting's materials closed with the proposal still pending",
+      "name": "expired",
+      "order": 3,
+      "used": true
+    },
+    "model": "name.slidesubmissionstatusname",
+    "pk": "expired"
+  },
+  {
+    "fields": {
       "desc": "Pending",
       "name": "pending",
       "order": 0,
@@ -14957,6 +14988,16 @@
     },
     "model": "name.slidesubmissionstatusname",
     "pk": "rejected"
+  },
+  {
+    "fields": {
+      "desc": "Withdrawn by the proposer",
+      "name": "withdrawn",
+      "order": 4,
+      "used": true
+    },
+    "model": "name.slidesubmissionstatusname",
+    "pk": "withdrawn"
   },
   {
     "fields": {

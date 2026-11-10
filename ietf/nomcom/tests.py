@@ -8,7 +8,7 @@ import random
 import shutil
 
 from pyquery import PyQuery
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
 from itertools import combinations
 from zoneinfo import ZoneInfo
 
@@ -88,6 +88,26 @@ def setup_test_public_keys_dir(obj):
 def teardown_test_public_keys_dir(obj):
     settings.NOMCOM_PUBLIC_KEYS_DIR = obj.saved_nomcom_public_keys_dir
     shutil.rmtree(obj.nomcom_public_keys_dir)
+
+def check_template_back_link(test_case, url):
+    """Check that the edit_template Back link uses only a same-site Referer"""
+    list_path = reverse(
+        "ietf.nomcom.views.list_templates", kwargs={"year": test_case.nc.year()}
+    )
+    for referer, expected_href in (
+        (f"http://testserver{list_path}?a=1", f"{list_path}?a=1"),
+        ("https://evil.example/", "../"),
+        ("http://testserver//evil.example/", "../"),
+        ("http://[::1/", "../"),
+        (None, "../"),
+    ):
+        with test_case.subTest(referer=referer):
+            extra = {"HTTP_REFERER": referer} if referer else {}
+            response = test_case.client.get(url, **extra)
+            test_case.assertEqual(response.status_code, 200)
+            q = PyQuery(response.content)
+            test_case.assertEqual(q('a:contains("Back")').attr("href"), expected_href)
+
 
 class NomcomViewsTest(TestCase):
     """Tests to create a new nomcom"""
@@ -1503,6 +1523,7 @@ class InactiveNomcomTests(TestCase):
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
         self.assertFalse( q('#templateform') )
+        check_template_back_link(self, url)
 
 class FeedbackIndexTests(TestCase):
 
@@ -1755,6 +1776,46 @@ class NewActiveNomComTests(TestCase):
         response = self.client.post(url,{'key': force_str(key)})
         self.assertEqual(response.status_code,302)
 
+    def test_provide_private_key_back_to(self):
+        year = self.nc.year()
+        url = reverse("ietf.nomcom.views.private_key", kwargs={"year": year})
+        default_url = reverse("ietf.nomcom.views.private_index", kwargs={"year": year})
+        feedback_url = reverse("ietf.nomcom.views.view_feedback", kwargs={"year": year})
+        login_testing_unauthorized(self, self.chair.user.username, url)
+
+        # nomcom_private_key_required sends the user here, and back once the key is set
+        response = self.client.get(feedback_url)
+        self.assertEqual(response.status_code, 302)
+        response = self.client.post(response["Location"], {"key": force_str(key)})
+        self.assertRedirects(response, feedback_url, fetch_redirect_response=False)
+
+        for back_to, expected_url in (
+            (f"{feedback_url}?a=1#frag", f"{feedback_url}?a=1#frag"),
+            ("https://evil.example/", default_url),
+            ("//evil.example/", default_url),
+            ("javascript:alert(1)", default_url),
+            (reverse("ietf.doc.views_search.search"), default_url),
+        ):
+            with self.subTest(back_to=back_to):
+                response = self.client.post(
+                    url + "?" + urlencode({"back_to": back_to}), {"key": force_str(key)}
+                )
+                self.assertRedirects(
+                    response, expected_url, fetch_redirect_response=False
+                )
+
+    def test_provide_empty_private_key(self):
+        nominee = self.nc.nominee_set.first()
+        FeedbackFactory(nomcom=self.nc, type_id="comment").nominees.add(nominee)
+        url = reverse("ietf.nomcom.views.private_key", kwargs={"year": self.nc.year()})
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        response = self.client.post(url, {"key": ""})
+        self.assertEqual(response.status_code, 302)
+        url = reverse("ietf.nomcom.views.view_feedback_nominee", kwargs={"year": self.nc.year(), "nominee_id": nominee.pk})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No private key provided")
+
     def test_email_pasting(self):
         url = reverse('ietf.nomcom.views.private_feedback_email',kwargs={'year':self.nc.year()})
         login_testing_unauthorized(self,self.chair.user.username,url)
@@ -1884,6 +1945,74 @@ Junk body for testing
         self.assertEqual(fb.type_id,'questio')
         self.assertEqual(np.nominee.feedback_set.count(),fb_count_before+1)
 
+    def test_feedback_pending_unknown_extra_type(self):
+        url = reverse(
+            "ietf.nomcom.views.view_feedback_pending", kwargs={"year": self.nc.year()}
+        )
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        provide_private_key_to_test_client(self)
+
+        # extra_ids carries the types chosen for feedback still to be classified
+        fb = FeedbackFactory(nomcom=self.nc, type_id=None)
+        extra_fb = FeedbackFactory(nomcom=self.nc, type_id=None)
+        np = NomineePosition.objects.filter(
+            position__nomcom=self.nc, state="accepted"
+        ).first()
+        response = self.client.post(
+            url,
+            {
+                "form-TOTAL_FORMS": 1,
+                "form-INITIAL_FORMS": 1,
+                "end": "Save feedback",
+                "form-0-id": fb.id,
+                "form-0-type": "comment",
+                "form-0-nominee": "%s_%s" % (np.position.id, np.nominee.id),
+                "extra_ids": "%s:bogus" % extra_fb.id,
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+        fb = Feedback.objects.get(id=fb.id)
+        self.assertIsNone(fb.type_id)
+        extra_fb = Feedback.objects.get(id=extra_fb.id)
+        self.assertIsNone(extra_fb.type_id)
+
+    def test_feedback_pending_malformed_extra_ids(self):
+        url = reverse(
+            "ietf.nomcom.views.view_feedback_pending", kwargs={"year": self.nc.year()}
+        )
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        provide_private_key_to_test_client(self)
+
+        fb = FeedbackFactory(nomcom=self.nc, type_id=None)
+        extra_fb = FeedbackFactory(nomcom=self.nc, type_id=None)
+        np = NomineePosition.objects.filter(
+            position__nomcom=self.nc, state="accepted"
+        ).first()
+        for extra_ids in (
+            f"{extra_fb.id}",
+            f"{extra_fb.id}:comment:comment",
+            f"{extra_fb.id}:comment,",
+            "abc:comment",
+        ):
+            with self.subTest(extra_ids=extra_ids):
+                response = self.client.post(
+                    url,
+                    {
+                        "form-TOTAL_FORMS": 1,
+                        "form-INITIAL_FORMS": 1,
+                        "end": "Save feedback",
+                        "form-0-id": fb.id,
+                        "form-0-type": "comment",
+                        "form-0-nominee": f"{np.position.id}_{np.nominee.id}",
+                        "extra_ids": extra_ids,
+                    },
+                )
+                self.assertEqual(response.status_code, 400)
+                fb.refresh_from_db()
+                self.assertIsNone(fb.type_id)
+                extra_fb.refresh_from_db()
+                self.assertIsNone(extra_fb.type_id)
+
     def test_complicated_feedback_pending(self):
         url = reverse('ietf.nomcom.views.view_feedback_pending',kwargs={'year':self.nc.year() })
         login_testing_unauthorized(self, self.chair.user.username, url)
@@ -1988,6 +2117,7 @@ Junk body for testing
         login_testing_unauthorized(self,self.chair.user.username,url)
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
+        check_template_back_link(self, url)
         response = self.client.post(url,{'content': 'more interesting test content'})
         self.assertEqual(response.status_code,302)
         template = DBTemplate.objects.get(id=template.id)
@@ -3186,6 +3316,190 @@ class ReclassifyFeedbackTests(TestCase):
         self.assertEqual(Feedback.objects.filter(type='read').count(), 0)
         self.assertEqual(Feedback.objects.filter(type='junk').count(), 1)
 
+
+
+class OtherNomcomRecordTests(TestCase):
+    """Views act only on records belonging to the nomcom in the URL"""
+
+    def setUp(self):
+        super().setUp()
+        setup_test_public_keys_dir(self)
+        self.nc = NomComFactory(**nomcom_kwargs_for_year(2030))
+        self.other_nc = NomComFactory(**nomcom_kwargs_for_year(2031))
+        # Chair of one nomcom who is also advisor of the other, as when a
+        # chair stays on as the following year's advisor
+        self.person = self.nc.group.role_set.get(name="chair").person
+        self.other_nc.group.role_set.filter(name="advisor").delete()
+        self.other_nc.group.role_set.create(name_id="advisor", person=self.person, email=self.person.email())
+        self.other_nominee = self.other_nc.nominee_set.order_by("pk").first()
+        self.other_topic = self.other_nc.topic_set.first()
+        self.client.login(username=self.person.user.username, password=self.person.user.username + "+password")
+        session = self.client.session
+        for year in (self.nc.year(), self.other_nc.year()):
+            session[f"NOMCOM_PRIVATE_KEY_{year}"] = key.decode("utf8")
+        session.save()
+
+    def tearDown(self):
+        teardown_test_public_keys_dir(self)
+        super().tearDown()
+
+    def test_view_feedback_nominee(self):
+        fb = FeedbackFactory(nomcom=self.other_nc, type_id="comment")
+        fb.nominees.add(self.other_nominee)
+        own_nominee = self.nc.nominee_set.first()
+        post = {"feedback_id": fb.pk, "type": "obe", "submit": "reclassify"}
+
+        url = reverse("ietf.nomcom.views.view_feedback_nominee", kwargs={"year": self.nc.year(), "nominee_id": self.other_nominee.pk})
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.assertEqual(self.client.post(url, post).status_code, 404)
+        url = reverse("ietf.nomcom.views.view_feedback_nominee", kwargs={"year": self.nc.year(), "nominee_id": own_nominee.pk})
+        self.assertEqual(self.client.post(url, post).status_code, 404)
+        url = reverse("ietf.nomcom.views.view_feedback_nominee", kwargs={"year": self.other_nc.year(), "nominee_id": self.other_nc.nominee_set.exclude(pk=self.other_nominee.pk).first().pk})
+        self.assertEqual(self.client.post(url, post).status_code, 404)
+        fb.refresh_from_db()
+        self.assertEqual(fb.type_id, "comment")
+
+        url = reverse("ietf.nomcom.views.view_feedback_nominee", kwargs={"year": self.other_nc.year(), "nominee_id": self.other_nominee.pk})
+        self.assertEqual(self.client.post(url, post).status_code, 200)
+        fb.refresh_from_db()
+        self.assertEqual(fb.type_id, "obe")
+
+    def test_view_feedback_topic(self):
+        fb = FeedbackFactory(nomcom=self.other_nc, type_id="comment")
+        fb.topics.add(self.other_topic)
+        own_topic = self.nc.topic_set.first()
+
+        url = reverse("ietf.nomcom.views.view_feedback_topic", kwargs={"year": self.nc.year(), "topic_id": self.other_topic.pk})
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.assertEqual(self.client.post(url, {"feedback_id": fb.pk}).status_code, 404)
+        url = reverse("ietf.nomcom.views.view_feedback_topic", kwargs={"year": self.nc.year(), "topic_id": own_topic.pk})
+        self.assertEqual(self.client.post(url, {"feedback_id": fb.pk}).status_code, 404)
+        url = reverse("ietf.nomcom.views.view_feedback_topic", kwargs={"year": self.other_nc.year(), "topic_id": self.other_nc.topic_set.exclude(pk=self.other_topic.pk).first().pk})
+        self.assertEqual(self.client.post(url, {"feedback_id": fb.pk}).status_code, 404)
+        fb.refresh_from_db()
+        self.assertEqual(fb.type_id, "comment")
+
+        url = reverse("ietf.nomcom.views.view_feedback_topic", kwargs={"year": self.other_nc.year(), "topic_id": self.other_topic.pk})
+        self.assertEqual(self.client.post(url, {"feedback_id": fb.pk}).status_code, 200)
+        fb.refresh_from_db()
+        self.assertIsNone(fb.type_id)
+
+    def test_view_feedback_unrelated(self):
+        fb = FeedbackFactory(nomcom=self.other_nc, type_id="read")
+        post = {"feedback_id": fb.pk, "type": "junk"}
+
+        url = reverse("ietf.nomcom.views.view_feedback_unrelated", kwargs={"year": self.nc.year()})
+        self.assertEqual(self.client.post(url, post).status_code, 404)
+        fb.refresh_from_db()
+        self.assertEqual(fb.type_id, "read")
+
+        url = reverse("ietf.nomcom.views.view_feedback_unrelated", kwargs={"year": self.other_nc.year()})
+        self.assertEqual(self.client.post(url, post).status_code, 200)
+        fb.refresh_from_db()
+        self.assertEqual(fb.type_id, "junk")
+
+    def test_edit_nominee(self):
+        original_email = self.other_nominee.email
+        new_email = EmailFactory(person=self.other_nominee.person, active=True)
+
+        url = reverse("ietf.nomcom.views.edit_nominee", kwargs={"year": self.nc.year(), "nominee_id": self.other_nominee.pk})
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.assertEqual(self.client.post(url, {"nominee_email": new_email.address}).status_code, 404)
+        self.other_nominee.refresh_from_db()
+        self.assertEqual(self.other_nominee.email, original_email)
+
+        url = reverse("ietf.nomcom.views.edit_nominee", kwargs={"year": self.other_nc.year(), "nominee_id": self.other_nominee.pk})
+        self.assertEqual(self.client.post(url, {"nominee_email": new_email.address}).status_code, 302)
+        self.other_nominee.refresh_from_db()
+        self.assertEqual(self.other_nominee.email, new_email)
+
+    def test_view_feedback_pending(self):
+        fb = FeedbackFactory(nomcom=self.other_nc, type_id=None)
+        np = NomineePosition.objects.filter(position__nomcom=self.nc, state="accepted").first()
+        own_fb = FeedbackFactory(nomcom=self.nc, type_id=None)
+        url = reverse("ietf.nomcom.views.view_feedback_pending", kwargs={"year": self.nc.year()})
+        formset = {"form-TOTAL_FORMS": 1, "form-INITIAL_FORMS": 1}
+
+        response = self.client.post(url, {**formset, "form-0-id": fb.pk, "form-0-type": "junk"})
+        self.assertEqual(response.status_code, 404)
+        response = self.client.post(url, {**formset, "form-0-id": fb.pk, "form-0-type": "comment"})
+        self.assertEqual(response.status_code, 404)
+        response = self.client.post(url, {**formset, "end": "Save feedback", "form-0-id": fb.pk, "form-0-type": "comment",
+                                          "form-0-nominee": f"{np.position.pk}_{np.nominee.pk}"})
+        self.assertEqual(response.status_code, 404)
+        fb.refresh_from_db()
+        self.assertEqual(fb.nomcom, self.other_nc)
+        self.assertIsNone(fb.type_id)
+        self.assertFalse(fb.nominees.exists())
+        # No blank feedback created in place of the other nomcom's
+        self.assertEqual(Feedback.objects.count(), 2)
+        response = self.client.post(url, {**formset, "end": "Save feedback", "form-0-id": own_fb.pk, "form-0-type": "comment",
+                                          "form-0-nominee": f"{np.position.pk}_{np.nominee.pk}", "extra_ids": f"{fb.pk}:comment"})
+        self.assertEqual(response.status_code, 404)
+        # The nomcom's own feedback in the same submission was not saved either
+        own_fb.refresh_from_db()
+        self.assertIsNone(own_fb.type_id)
+        self.assertFalse(own_fb.nominees.exists())
+
+        url = reverse("ietf.nomcom.views.view_feedback_pending", kwargs={"year": self.other_nc.year()})
+        response = self.client.post(url, {**formset, "form-0-id": fb.pk, "form-0-type": "junk"})
+        self.assertEqual(response.status_code, 302)
+        fb.refresh_from_db()
+        self.assertEqual(fb.type_id, "junk")
+
+    def test_process_nomination_status(self):
+        np = self.other_nominee.nomineeposition_set.order_by("pk").first()
+        np.state_id = "pending"
+        np.save()
+        date_str = np.time.astimezone(ZoneInfo(settings.TIME_ZONE)).strftime("%Y%m%d")
+        kwargs = {
+            "nominee_position_id": np.pk,
+            "state": "accepted",
+            "date": date_str,
+            "hash": get_hash_nominee_position(date_str, np.pk),
+        }
+
+        # A valid link for the other nomcom's nomination, with this nomcom's year in the URL
+        url = reverse(
+            "ietf.nomcom.views.process_nomination_status",
+            kwargs={"year": self.nc.year(), **kwargs},
+        )
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.assertEqual(
+            self.client.post(url, {"comments": "A comment"}).status_code, 404
+        )
+        np.refresh_from_db()
+        self.assertEqual(np.state_id, "pending")
+        self.assertFalse(Feedback.objects.exists())
+
+        url = reverse(
+            "ietf.nomcom.views.process_nomination_status",
+            kwargs={"year": self.other_nc.year(), **kwargs},
+        )
+        self.assertEqual(
+            self.client.post(url, {"comments": "A comment"}).status_code, 200
+        )
+        np.refresh_from_db()
+        self.assertEqual(np.state_id, "accepted")
+        self.assertEqual(Feedback.objects.get().nomcom, self.other_nc)
+
+    def test_feedback(self):
+        np = NomineePosition.objects.filter(position__nomcom=self.other_nc, state="accepted").first()
+        selections = [
+            {"nominee": np.nominee.pk, "position": np.position.pk},
+            {"topic": self.other_topic.pk},
+        ]
+        for view in ("ietf.nomcom.views.public_feedback", "ietf.nomcom.views.private_feedback"):
+            for selection in selections:
+                with self.subTest(view=view, selection=selection):
+                    url = reverse(view, kwargs={"year": self.nc.year()}) + "?" + urlencode(selection)
+                    self.assertEqual(self.client.get(url).status_code, 404)
+                    self.assertEqual(self.client.post(url, {"comment_text": "A comment"}).status_code, 404)
+                    self.assertFalse(Feedback.objects.exists())
+
+        url = reverse("ietf.nomcom.views.public_feedback", kwargs={"year": self.other_nc.year()}) + "?" + urlencode(selections[0])
+        self.assertEqual(self.client.post(url, {"comment_text": "A comment"}).status_code, 200)
+        self.assertEqual(np.nominee.feedback_set.get().nomcom, self.other_nc)
 
 class TaskTests(TestCase):
     @mock.patch("ietf.nomcom.tasks.send_reminders")

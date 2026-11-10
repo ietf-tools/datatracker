@@ -93,4 +93,7 @@
         </div>
     </div>
 {% endif %}
+{% if doc.type_id == "minutes" %}
+    <input type="hidden" name="raw" value="1">
+{% endif %}
 </form>

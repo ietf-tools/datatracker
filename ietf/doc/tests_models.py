@@ -3,8 +3,11 @@
 
 import itertools
 
-from ietf.doc.factories import WgRfcFactory
+from django.conf import settings
+
+from ietf.doc.factories import DocumentFactory, WgRfcFactory
 from ietf.doc.models import RelatedDocument
+from ietf.meeting.factories import MeetingFactory
 from ietf.utils.test_utils import TestCase
 
 
@@ -111,3 +114,26 @@ class RelatedDocumentTests(TestCase):
                     desired_result = f"Possible {desired_result}"
 
                 self.assertEqual(desired_result, result)
+
+
+class MeetingMaterialHrefTests(TestCase):
+    def test_bluesheets_href(self):
+        """Bluesheets link to datatracker's materials URLs, like other meeting materials"""
+        meetings = {
+            "120": MeetingFactory(type_id="ietf", number="120"),
+            # IETF 96 and earlier use proceedings format version 1
+            "96": MeetingFactory(type_id="ietf", number="96"),
+            "interim-2026-mars-01": MeetingFactory(type_id="interim", number="interim-2026-mars-01"),
+        }
+        for number, versioned, expected_path in [
+            ("120", True, "/meeting/120/materials/bluesheets-x-01"),
+            ("120", False, "/meeting/120/materials/bluesheets-x"),
+            ("96", True, "/meeting/96/materials/bluesheets-x"),
+            ("interim-2026-mars-01", True, "/meeting/interim-2026-mars-01/materials/bluesheets-x-01"),
+        ]:
+            with self.subTest(number=number, versioned=versioned):
+                doc = DocumentFactory(type_id="bluesheets", name="bluesheets-x", rev="01")
+                meeting = meetings[number]
+                href = doc.get_href(meeting) if versioned else doc.get_versionless_href(meeting)
+                self.assertEqual(href, settings.IDTRACKER_BASE_URL + expected_path)
+                doc.delete()

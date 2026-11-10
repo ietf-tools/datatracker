@@ -337,11 +337,14 @@ def get_dots(person):
         return dots
 
 def lookup_persons(email_or_name):
-    aliases = Alias.objects.filter(name__iexact=email_or_name)
+    aliases = Alias.objects.filter(name__iexact=email_or_name).select_related("person")
     persons = set(a.person for a in aliases)
 
     if '@' in email_or_name:
-        emails = Email.objects.filter(address__iexact=email_or_name)
+        # Email.address is a citext column, so an exact match is already
+        # case-insensitive and can use the index on it. Asking for iexact wraps the
+        # column in UPPER() and costs a scan of the table.
+        emails = Email.objects.filter(address=email_or_name).select_related("person")
         persons.update(e.person for e in emails)
 
     persons = [p for p in persons if p and p.id]

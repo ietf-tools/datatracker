@@ -92,7 +92,7 @@ from ietf.group.utils import (can_manage_all_groups_of_type,
 #
 from ietf.ietfauth.utils import has_role, is_authorized_in_group
 from ietf.mailtrigger.utils import gather_relevant_expansions
-from ietf.meeting.helpers import get_meeting
+from ietf.meeting.helpers import get_meeting, has_pending_interim
 from ietf.meeting.models import ImportantDate, SchedTimeSessAssignment, SchedulingEvent
 from ietf.meeting.utils import group_sessions
 from ietf.name.models import GroupTypeName, StreamName
@@ -126,6 +126,7 @@ from ietf.mailtrigger.utils import gather_address_lists
 from ietf.mailtrigger.models import Recipient
 from ietf.settings import MAILING_LIST_INFO_URL
 from ietf.utils.decorators import ignore_view_kwargs
+from ietf.utils.http import is_safe_next_url
 from ietf.utils.response import permission_denied
 from ietf.utils.text import strip_suffix
 from ietf.utils import markdown
@@ -953,6 +954,8 @@ def meetings(request, acronym, group_type=None):
 
     future, in_progress, recent, past = group_sessions(sessions)
 
+    pending_interims_flag = has_pending_interim(group.acronym)
+
     can_edit = group.has_role(request.user, group.features.groupman_roles)
     can_always_edit = has_role(request.user, ["Secretariat", "Area Director"])
 
@@ -996,6 +999,7 @@ def meetings(request, acronym, group_type=None):
                 "can_edit": can_edit,
                 "can_always_edit": can_always_edit,
                 "cal_actions": cal_actions,
+                "pending_interims": pending_interims_flag,
             },
         ),
     )
@@ -1878,8 +1882,7 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
                 
                 return redirect(manage_review_requests, **kwargs)
             else:
-                import ietf.group.views
-                return redirect(ietf.group.views.review_requests, **kwargs)
+                return redirect("ietf.group.views.review_requests", **kwargs)
 
     other_assignment_status = {
         "unassigned": "assigned",
@@ -1942,15 +1945,11 @@ def email_open_review_assignments(request, acronym, group_type=None):
     review_assignments.sort(key=lambda r: r.section_order + r.reviewer.person.last_name() + 
                                           r.reviewer.person.first_name())
 
-    back_url = request.GET.get("next")
-    if not back_url:
-        kwargs = { "acronym": group.acronym }
-        if group_type:
-            kwargs["group_type"] = group_type
+    kwargs = {"acronym": group.acronym}
+    if group_type:
+        kwargs["group_type"] = group_type
 
-        import ietf.group.views
-        back_url = urlreverse(ietf.group.views.review_requests, kwargs=kwargs)
-
+    back_url = urlreverse("ietf.group.views.review_requests", kwargs=kwargs)
     if request.method == "POST" and request.POST.get("action") == "email":
         form = EmailOpenAssignmentsForm(request.POST)
         if form.is_valid():
@@ -2025,12 +2024,11 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
         settings.filter_re = get_default_filter_re(reviewer)
 
     back_url = request.GET.get("next")
-    if not back_url:
-        import ietf.group.views
+    if not is_safe_next_url(back_url, {"ietf.ietfauth.views.review_overview"}):
         kwargs = { "acronym": group.acronym}
         if group_type:
             kwargs["group_type"] = group_type
-        back_url = urlreverse(ietf.group.views.reviewer_overview, kwargs=kwargs)
+        back_url = urlreverse("ietf.group.views.reviewer_overview", kwargs=kwargs)
 
     # settings
     if request.method == "POST" and request.POST.get("action") == "change_settings":
@@ -2175,8 +2173,7 @@ def change_review_secretary_settings(request, acronym, group_type=None):
     settings = (ReviewSecretarySettings.objects.filter(person=person, team=group).first()
                 or ReviewSecretarySettings(person=person, team=group))
 
-    import ietf.group.views
-    back_url = urlreverse(ietf.group.views.review_requests, kwargs={ "acronym": acronym, "group_type": group.type_id })
+    back_url = urlreverse("ietf.group.views.review_requests", kwargs={ "acronym": acronym, "group_type": group.type_id })
 
     # settings
     if request.method == "POST":

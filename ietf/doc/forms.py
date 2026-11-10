@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2025, All Rights Reserved
+# Copyright The IETF Trust 2013-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -6,7 +6,7 @@ import datetime
 import debug #pyflakes:ignore
 from django import forms
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db.models.functions import Collate
 
@@ -19,7 +19,6 @@ from ietf.person.models import Email, Person
 
 from ietf.name.models import ExtResourceName
 from ietf.utils.timezone import date_today
-from ietf.utils.validators import validate_external_resource_value
 
 class TelechatForm(forms.Form):
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, help_text="Page counts are the current page counts for the telechat, before this telechat date edit is made.")
@@ -202,21 +201,48 @@ class AddDownrefForm(forms.Form):
                 raise forms.ValidationError(v_err_refnorm_prefix  + v_err_refnorm)
 
 
+class BaseExtResourceForm(forms.ModelForm):
+    """Validates a single external resource
+
+    ExtResource is abstract, so a ModelForm cannot be built on it. Subclasses must set
+    Meta.model to a concrete subclass; this class cannot be instantiated on its own.
+    """
+
+    class Meta:
+        fields = ["name", "display_name", "value"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Replace `invalid_choice` error with the error we've historically returned
+        name_field = self.fields["name"]
+        name_field.error_messages["invalid_choice"] = (
+            "Bad tag: Expected one of %s"
+            % ", ".join(
+                name_field.queryset.order_by("slug").values_list("slug", flat=True)
+            )
+        )
+
+
+class DocExtResourceForm(BaseExtResourceForm):
+    class Meta(BaseExtResourceForm.Meta):
+        model = DocExtResource
+
+
 class ExtResourceForm(forms.Form):
     resources = forms.CharField(widget=forms.Textarea, label="Additional Resources", required=False,
                                 help_text=("Format: 'tag value (Optional description)'."
                                            " Separate multiple entries with newline. When the value is a URL, use https:// where possible.") )
 
-    def __init__(self, *args, initial=None, extresource_model=None, **kwargs):
-        self.extresource_model = extresource_model
+    def __init__(self, *args, extresource_form_class, initial=None, **kwargs):
+        self.extresource_form_class = extresource_form_class
         if initial:
             kwargs = kwargs.copy()
-            resources = initial.get('resources')
+            resources = initial.get("resources")
             if resources is not None and not isinstance(resources, str):
                 initial = initial.copy()
                 # Convert objects to string representation
-                initial['resources'] = self.format_resources(resources)
-            kwargs['initial'] = initial
+                initial["resources"] = self.format_resources(resources)
+            kwargs["initial"] = initial
         super(ExtResourceForm, self).__init__(*args, **kwargs)
 
     @staticmethod
@@ -228,48 +254,42 @@ class ExtResourceForm(forms.Form):
         """Clean the resources field
 
         The resources field is a newline-separated set of resource entries. Each entry
-        should be "<tag> <value>" or "<tag> <value> (<display name>)" with any whitespace
-        delimiting the components. This clean only validates that the tag and value are
-        present and valid - tag must be a recognized ExtResourceName and value is
-        validated using validate_external_resource_value(). Further interpretation of
-        the resource is performed int he clean() method.
+        should be "<tag> <value>" or "<tag> <value> (<display name>)" with any
+        whitespace delimiting the components. This parsing needs to be kept up to date
+        with ExtResource.to_form_entry_str(). Each entry is validated by an
+        extresource_form_class instance and the result is a list of unsaved, validated
+        model instances.
         """
-        lines = [x.strip() for x in self.cleaned_data["resources"].splitlines() if x.strip()]
+        resources = []
         errors = []
-        for l in lines:
-            parts = l.split()
-            if len(parts) == 1:
-                errors.append("Too few fields: Expected at least tag and value: '%s'" % l)
-            elif len(parts) >= 2:
-                name_slug = parts[0]
-                try:
-                    name = ExtResourceName.objects.get(slug=name_slug)
-                except ObjectDoesNotExist:
-                    errors.append("Bad tag in '%s': Expected one of %s" % (l, ', '.join([ o.slug for o in ExtResourceName.objects.all() ])))
-                    continue
-                value = parts[1]
-                try:
-                    validate_external_resource_value(name, value)
-                except ValidationError as e:
-                    e.message += " : " + value
-                    errors.append(e)
+        lines = [
+            x.strip() for x in self.cleaned_data["resources"].splitlines() if x.strip()
+        ]
+        for line in lines:
+            parts = line.split(None, 2)
+            if len(parts) < 2:
+                errors.append(
+                    f"Too few fields: Expected at least tag and value: '{line}'"
+                )
+                continue
+            form = self.extresource_form_class(
+                data=dict(
+                    name=parts[0],
+                    value=parts[1],
+                    display_name=" ".join(parts[2:]).strip("()"),
+                )
+            )
+            if form.is_valid():
+                resources.append(form.instance)
+            else:
+                errors.extend(
+                    "%s: %s" % (line, message)
+                    for messages in form.errors.values()
+                    for message in messages
+                )
         if errors:
             raise ValidationError(errors)
-        return lines
-
-    def clean(self):
-        """Clean operations after all other fields are cleaned by clean_<field> methods
-
-        Converts resource strings into ExtResource model instances.
-        """
-        cleaned_data = super(ExtResourceForm, self).clean()
-        cleaned_resources = []
-        cls = self.extresource_model or DocExtResource
-        for crs in cleaned_data.get('resources', []):
-            cleaned_resources.append(
-                cls.from_form_entry_str(crs)
-            )
-        cleaned_data['resources'] = cleaned_resources
+        return resources
 
     @staticmethod
     def valid_resource_tags():

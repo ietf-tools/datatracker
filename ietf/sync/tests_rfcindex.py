@@ -27,6 +27,7 @@ from ietf.sync.rfcindex import (
     format_rfc_number,
     get_april1_rfc_numbers,
     get_publication_std_levels,
+    get_rfc_text_index_entries,
     get_unusable_rfc_numbers,
     red_bucket_input_path,
     red_bucket_output_path,
@@ -151,6 +152,28 @@ class RfcIndexTests(TestCase):
         )
         self.assertIn("April 2021", stripped_contents)  # from the non-April 1 RFC
         self.assertNotIn("1 April 2021", stripped_contents)
+
+    @override_settings(RFCINDEX_INPUT_PATH="input/")
+    def test_rfc_text_index_entry_continuation_indent(self):
+        """Continuation lines line up with the start of the title"""
+        short_rfc = PublishedRfcDocEventFactory(
+            time="1971-01-01T12:00:00Z",
+            doc__name="rfc99",
+            doc__rfc_number=99,
+            doc__std_level_id="inf",
+        ).doc
+        entries = {
+            entry.split(" ", 1)[0]: entry for entry in get_rfc_text_index_entries()
+        }
+        for rfc in (short_rfc, self.april_fools_rfc, self.rfc):
+            number = str(rfc.rfc_number)
+            lines = entries[number].splitlines()
+            self.assertGreater(len(lines), 1)  # entries always wrap
+            self.assertTrue(lines[0].startswith(f"{number} "))
+            indent = " " * (len(number) + 1)
+            for line in lines[1:]:
+                self.assertTrue(line.startswith(indent), repr(line))
+                self.assertNotEqual(line[len(indent)], " ", repr(line))
 
     @override_settings(RFCINDEX_INPUT_PATH="input/")
     @mock.patch("ietf.sync.rfcindex.save_to_filesystem")

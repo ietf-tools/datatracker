@@ -5,16 +5,21 @@
 import datetime
 import email
 import io
+import json
 from unittest import mock
 import os
 import re
+import shutil
 import sys
+import tempfile
 
 from io import StringIO
 from pyquery import PyQuery
 from typing import Tuple
 
 from pathlib import Path
+
+from celery.exceptions import SoftTimeLimitExceeded
 
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -41,10 +46,13 @@ from ietf.meeting.factories import MeetingFactory
 from ietf.name.models import DraftSubmissionStateName, FormalLanguageName
 from ietf.person.models import Person
 from ietf.person.factories import UserFactory, PersonFactory, EmailFactory
+from ietf.submit.checkers import DraftIdnitsChecker, DraftIdnits3Checker
 from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactory
 from ietf.submit.forms import SubmissionBaseUploadForm, SubmissionAutoUploadForm
 from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
-from ietf.submit.tasks import cancel_stale_submissions, process_and_accept_uploaded_submission_task
+from ietf.submit.parsers.plain_parser import PlainParser
+from ietf.submit.tasks import (cancel_stale_submissions, process_and_accept_uploaded_submission_task,
+                               process_uploaded_submission_task)
 from ietf.submit.utils import (expirable_submissions, expire_submission, find_submission_filenames,
                                post_submission, validate_submission_name, validate_submission_rev,
                                process_and_accept_uploaded_submission, SubmissionError, process_submission_text,
@@ -2564,6 +2572,27 @@ class ApiSubmissionTests(BaseSubmitTestCase):
 
  
 
+class PlainParserTests(TestCase):
+    @override_settings(IDSUBMIT_MAX_DRAFT_SIZE={"txt": 10})
+    def test_oversized_file_is_not_parsed_further(self):
+        f = SimpleUploadedFile("draft-x-00.txt", b"draft-x-00\n" * 10, content_type="text/plain")
+        with mock.patch.object(PlainParser, "parse_name") as parse_name:
+            info = PlainParser(f).critical_parse()
+        self.assertTrue(any("File size is larger" in e for e in info.errors))
+        parse_name.assert_not_called()
+
+
+class DraftIdnitsCheckerTests(TestCase):
+    def passed(self, output):
+        with mock.patch("ietf.submit.checkers.pipe", return_value=(0, output.encode(), b"")):
+            return DraftIdnitsChecker().check_file_txt("draft-x-00.txt")[0]
+
+    def test_passed_follows_summary(self):
+        self.assertTrue(self.passed("\n  No nits found.\n"))
+        self.assertTrue(self.passed("\n  Summary: 0 errors (**), 0 flaws (~~), 1 warning (==), 0 comments (--).\n"))
+        self.assertFalse(self.passed("\n  Summary: 1 error (**), 0 flaws (~~), 0 warnings (==), 0 comments (--).\n"))
+
+
 class SubmissionUploadFormTests(BaseSubmitTestCase):
     def test_check_submission_thresholds(self):
         today = date_today()
@@ -3234,6 +3263,34 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertEqual(submission.file_size, text_data["file_size"])
         self.assertEqual(submission.xml_version, xml_data["xml_version"])
 
+    def test_process_uploaded_submission_soft_time_limit(self):
+        """A submission whose validation times out is cancelled, not left validating"""
+        submission = SubmissionFactory(state_id="validating", file_types=".xml,.txt")
+        with mock.patch(
+            "ietf.submit.utils.process_submission_xml", side_effect=SoftTimeLimitExceeded
+        ):
+            process_uploaded_submission(submission)
+        submission = Submission.objects.get(pk=submission.pk)
+        self.assertEqual(submission.state_id, "cancel")
+
+    def test_submission_tasks_have_time_limits(self):
+        """Both submission tasks are bounded, and the bound precedes the stale sweeper"""
+        self.assertLess(
+            settings.IDSUBMIT_TASK_SOFT_TIME_LIMIT, settings.IDSUBMIT_TASK_TIME_LIMIT
+        )
+        self.assertLess(
+            settings.IDSUBMIT_TASK_TIME_LIMIT,
+            settings.IDSUBMIT_MAX_VALIDATION_TIME.total_seconds(),
+        )
+        for task in (
+            process_uploaded_submission_task,
+            process_and_accept_uploaded_submission_task,
+        ):
+            self.assertEqual(task.time_limit, settings.IDSUBMIT_TASK_TIME_LIMIT)
+            self.assertEqual(
+                task.soft_time_limit, settings.IDSUBMIT_TASK_SOFT_TIME_LIMIT
+            )
+
     def test_status_of_validating_submission(self):
         s = SubmissionFactory(state_id='validating')
         url = urlreverse('ietf.submit.views.submission_status', kwargs={'submission_id': s.pk})
@@ -3460,6 +3517,325 @@ class SubmissionStatusTests(BaseSubmitTestCase):
                 status_code=200,
             )
 
+    def test_advisory_submission_checks(self):
+        """An advisory check reports its result but does not block the submission"""
+        submission = SubmissionFactory(state_id="uploaded")
+        url = urlreverse(
+            "ietf.submit.views.submission_status",
+            kwargs={"submission_id": submission.pk},
+        )
+        check = submission.checks.create(
+            checker="idnits3 check",
+            passed=True,
+            message="idnits3 message",
+            errors=2,
+            warnings=1,
+            items={"advisory": True, "would_block_in_future": True},
+        )
+        r = self.client.get(url)
+        # The submission still passes - the advisory check does not block it ...
+        self.assertContains(
+            r, "Your Internet-Draft has been verified to pass the submission checks."
+        )
+        # ... but the submitter is warned that it would in the future
+        self.assertContains(r, "The idnits3 check returned 2 errors")
+        self.assertContains(r, "and 1 warning.")
+        self.assertContains(r, "would then be rejected")
+        self.assertContains(r, "idnits3 message")
+        alert = " ".join(PyQuery(r.content)("p.alert-warning").text().split())
+        self.assertIn("so those errors have not stopped it", alert)
+        self.assertIn("please fix them before you submit again", alert)
+
+        # A single error is referred to in the singular
+        check.errors = 1
+        check.save()
+        r = self.client.get(url)
+        alert = " ".join(PyQuery(r.content)("p.alert-warning").text().split())
+        self.assertIn("returned 1 error and 1 warning.", alert)
+        self.assertIn("so that error has not stopped it", alert)
+        self.assertIn("please fix it before you submit again", alert)
+
+        # Warnings only - nothing that would block later
+        check.errors = 0
+        check.items = {"advisory": True, "would_block_in_future": False}
+        check.save()
+        r = self.client.get(url)
+        self.assertNotContains(r, "would then be rejected")
+        self.assertContains(r, "The idnits3 check returned 1 warning.")
+        self.assertContains(r, "None of them would stop this submission.")
+
+        # Nothing at all to report
+        check.warnings = 0
+        check.save()
+        r = self.client.get(url)
+        self.assertNotContains(r, "would then be rejected")
+        self.assertNotContains(r, "None of them would stop this submission.")
+
+    def test_advisory_submission_check_comments(self):
+        """Comments from an advisory check are reported as comments, not warnings"""
+        submission = SubmissionFactory(state_id="uploaded")
+        url = urlreverse(
+            "ietf.submit.views.submission_status",
+            kwargs={"submission_id": submission.pk},
+        )
+        check = submission.checks.create(
+            checker="idnits3 check",
+            passed=True,
+            message="idnits3 message",
+            errors=2,
+            warnings=1,
+            items={"advisory": True, "would_block_in_future": True, "comments": 3},
+        )
+
+        def alert_text(r):
+            return " ".join(PyQuery(r.content)("p.alert").text().split())
+
+        def button_classes(r):
+            return PyQuery(r.content)(f'button[data-bs-target="#check-{check.pk}"]').attr("class")
+
+        # Errors, warnings and comments are each counted
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("returned 2 errors, 1 warning, and 3 comments.", alert_text(r))
+
+        # Warnings and comments
+        check.errors = 0
+        check.items = {"advisory": True, "would_block_in_future": False, "comments": 1}
+        check.save()
+        r = self.client.get(url)
+        self.assertIn("returned 1 warning and 1 comment. None of them", alert_text(r))
+        self.assertIn("btn-warning", button_classes(r))
+
+        # Comments only - an informational note, not a warning
+        check.warnings = 0
+        check.items = {"advisory": True, "would_block_in_future": False, "comments": 2}
+        check.save()
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("p.alert-info:contains('returned 2 comments.')")), 1)
+        self.assertNotIn("warning", alert_text(r))
+        self.assertIn("btn-success", button_classes(r))
+
+
+class Idnits3CheckerTests(TestCase):
+    """Tests of DraftIdnits3Checker
+
+    Most of these run the checker against a stand-in for the idnits3 binary so that
+    they neither depend on idnits3 being installed nor on network access.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.tempdir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tempdir)
+        self.draft_path = self.tempdir / "draft-somebody-test-00.txt"
+        self.draft_path.write_text("Not really an Internet-Draft\n")
+        self.args_path = self.tempdir / "args"
+
+    def fake_idnits3(self, stdout="", returncode=0):
+        """Write a stand-in for the idnits3 binary and return its path
+
+        The stand-in records the arguments it was called with in self.args_path.
+        """
+        path = self.tempdir / "idnits3"
+        path.write_text(
+            "#!/bin/sh\n"
+            'if [ "$1" = "--version" ]; then echo "3.1.0"; exit 0; fi\n'
+            f'echo "$@" > {self.args_path}\n'
+            "cat <<'IDNITS3_EOF'\n"
+            f"{stdout}\n"
+            "IDNITS3_EOF\n"
+            f"exit {returncode}\n"
+        )
+        path.chmod(0o755)
+        return str(path)
+
+    @staticmethod
+    def idnits3_output(nits):
+        counts = {"error": 0, "warning": 0, "comment": 0}
+        for nit in nits:
+            counts[nit["severity"].replace("Validation", "").lower()] += 1
+        return json.dumps(
+            {
+                "result": "fail" if nits else "pass",
+                "file": {"path": "draft-somebody-test-00.txt", "size": 29},
+                "nitsBySeverity": counts,
+                "nits": nits,
+            }
+        )
+
+    def test_reports_nits_without_blocking(self):
+        output = self.idnits3_output(
+            [
+                {
+                    "severity": "ValidationError",
+                    "code": "MISSING_ABSTRACT_SECTION",
+                    "desc": "The abstract section is missing.",
+                    "ref": "https://authors.ietf.org/required-content#abstract",
+                    "path": "rfc.front.abstract",
+                },
+                {
+                    "severity": "ValidationWarning",
+                    "code": "LINE_TOO_LONG",
+                    "desc": "The document contains 1 over-long line.",
+                    "line": [{"line": 7, "pos": 80}],
+                },
+                {
+                    "severity": "ValidationComment",
+                    "code": "SOME_COMMENT",
+                    "desc": "Just a comment.",
+                },
+            ]
+        )
+        with override_settings(IDSUBMIT_IDNITS3_BINARY=self.fake_idnits3(output)):
+            passed, message, errors, warnings, info = DraftIdnits3Checker().check_file_txt(
+                self.draft_path
+            )
+        # The check must not fail the submission, even though idnits3 found errors
+        self.assertTrue(passed)
+        self.assertEqual(errors, 1)
+        self.assertEqual(warnings, 1)
+        self.assertEqual(info["comments"], 1)
+        self.assertTrue(info["advisory"])
+        self.assertTrue(info["would_block_in_future"])
+        self.assertEqual(len(info["items"]), 3)
+        self.assertIn("MISSING_ABSTRACT_SECTION", message)
+        self.assertIn("The abstract section is missing.", message)
+        self.assertIn("rfc.front.abstract", message)
+        self.assertIn("https://authors.ietf.org/required-content#abstract", message)
+        self.assertIn("line 7 column 80", message)
+        self.assertIn("SOME_COMMENT", message)
+        self.assertIn("3.1.0", message)
+
+    def test_would_not_block_without_errors(self):
+        output = self.idnits3_output(
+            [
+                {
+                    "severity": "ValidationWarning",
+                    "code": "LINE_TOO_LONG",
+                    "desc": "The document contains 1 over-long line.",
+                }
+            ]
+        )
+        with override_settings(IDSUBMIT_IDNITS3_BINARY=self.fake_idnits3(output)):
+            passed, message, errors, warnings, info = DraftIdnits3Checker().check_file_txt(
+                self.draft_path
+            )
+        self.assertTrue(passed)
+        self.assertEqual(errors, 0)
+        self.assertEqual(warnings, 1)
+        self.assertEqual(info["comments"], 0)
+        self.assertFalse(info["would_block_in_future"])
+
+    def test_comments_are_not_warnings(self):
+        output = self.idnits3_output(
+            [
+                {
+                    "severity": "ValidationComment",
+                    "code": "SOME_COMMENT",
+                    "desc": "Just a comment.",
+                },
+                {
+                    "severity": "ValidationComment",
+                    "code": "ANOTHER_COMMENT",
+                    "desc": "Another comment.",
+                },
+            ]
+        )
+        with override_settings(IDSUBMIT_IDNITS3_BINARY=self.fake_idnits3(output)):
+            passed, message, errors, warnings, info = DraftIdnits3Checker().check_file_txt(
+                self.draft_path
+            )
+        self.assertTrue(passed)
+        self.assertEqual((errors, warnings), (0, 0))
+        self.assertEqual(info["comments"], 2)
+        self.assertFalse(info["would_block_in_future"])
+        self.assertIn("0 errors, 0 warnings, 2 comments", message)
+        self.assertIn("Comments:", message)
+
+    def test_clean_document(self):
+        with override_settings(
+            IDSUBMIT_IDNITS3_BINARY=self.fake_idnits3(self.idnits3_output([]))
+        ):
+            passed, message, errors, warnings, info = DraftIdnits3Checker().check_file_txt(
+                self.draft_path
+            )
+        self.assertTrue(passed)
+        self.assertEqual((errors, warnings), (0, 0))
+        self.assertFalse(info["would_block_in_future"])
+        self.assertIn("No nits found.", message)
+
+    def test_runs_in_submission_mode(self):
+        with override_settings(
+            IDSUBMIT_IDNITS3_BINARY=self.fake_idnits3(self.idnits3_output([]))
+        ):
+            DraftIdnits3Checker().check_file_xml(self.draft_path)
+        args = self.args_path.read_text().split()
+        self.assertEqual(args[:2], ["--mode", "submission"])
+        self.assertIn("--output", args)
+        self.assertIn("json", args)
+        self.assertNotIn("--offline", args)
+        self.assertEqual(args[-1], str(self.draft_path))
+
+    def test_offline_setting(self):
+        with override_settings(IDSUBMIT_IDNITS3_OFFLINE=True):
+            self.assertIn("--offline", DraftIdnits3Checker().options)
+        with override_settings(IDSUBMIT_IDNITS3_OFFLINE=False):
+            self.assertNotIn("--offline", DraftIdnits3Checker().options)
+
+    def test_missing_binary_does_not_apply(self):
+        with override_settings(
+            IDSUBMIT_IDNITS3_BINARY=str(self.tempdir / "there-is-no-idnits3")
+        ):
+            passed, message, errors, warnings, info = DraftIdnits3Checker().check_file_txt(
+                self.draft_path
+            )
+        self.assertIsNone(passed)  # "did not apply", so the submitter is not shown it
+        self.assertEqual((errors, warnings), (0, 0))
+        self.assertFalse(info["would_block_in_future"])
+        self.assertIn("idnits3 error", message)
+
+    def test_failed_run_does_not_apply(self):
+        with override_settings(
+            IDSUBMIT_IDNITS3_BINARY=self.fake_idnits3("boom", returncode=1)
+        ):
+            passed, message, __, __, info = DraftIdnits3Checker().check_file_txt(
+                self.draft_path
+            )
+        self.assertIsNone(passed)
+        self.assertFalse(info["would_block_in_future"])
+        self.assertIn("idnits3 error", message)
+
+    def test_unparsable_output_does_not_apply(self):
+        with override_settings(
+            IDSUBMIT_IDNITS3_BINARY=self.fake_idnits3("this is not json")
+        ):
+            passed, message, __, __, info = DraftIdnits3Checker().check_file_txt(
+                self.draft_path
+            )
+        self.assertIsNone(passed)
+        self.assertFalse(info["would_block_in_future"])
+        self.assertIn("Could not parse the idnits3 output", message)
+
+    @override_settings(IDSUBMIT_IDNITS3_OFFLINE=True)
+    def test_real_idnits3(self):
+        """The real idnits3 produces output this checker can make sense of"""
+        if not os.path.exists(settings.IDSUBMIT_IDNITS3_BINARY):
+            # idnits3 is installed into the datatracker and celery images, and
+            # into the CI test container by dev/tests/prepare.sh - but it is not
+            # in the base image, so a bare base container will not have it
+            self.skipTest(f"idnits3 is not installed at {settings.IDSUBMIT_IDNITS3_BINARY}")
+        name = "draft-somebody-test-idnits3-00"
+        text, __ = submission_file_contents(name, None, "test_submission.txt")
+        path = self.tempdir / f"{name}.txt"
+        path.write_text(text)
+        passed, message, errors, warnings, info = DraftIdnits3Checker().check_file_txt(path)
+        self.assertTrue(passed)  # idnits3 never blocks a submission
+        self.assertTrue(info["advisory"])
+        self.assertEqual(info["would_block_in_future"], errors > 0)
+        self.assertEqual(len(info["items"]), errors + warnings)
+        self.assertIn("submission mode", message)
+
 
 class YangCheckerTests(TestCase):
     @mock.patch("ietf.submit.utils.apply_yang_checker_to_draft")
@@ -3516,20 +3892,24 @@ class HelperTests(TestCase):
     def test_access_token_is_valid(self):
         submission: Submission = SubmissionFactory()  # type: ignore
         valid_token = submission.access_token()
-        access_key = submission.access_key  # accept this for backwards compat
+        # The key itself used to be accepted in place of a derived token. Ensure that
+        # is no longer the case.
+        access_key = submission.access_key
         invalid_token = "not the valid token"
         self.assertTrue(access_token_is_valid(submission, valid_token))
-        self.assertTrue(access_token_is_valid(submission, access_key))
+        self.assertFalse(access_token_is_valid(submission, access_key))
         self.assertFalse(access_token_is_valid(submission, invalid_token))
 
     def test_auth_token_is_valid(self):
         auth_key = generate_random_key()
         submission: Submission = SubmissionFactory(auth_key = auth_key)  # type: ignore
         valid_token = generate_access_token(submission.auth_key)
-        auth_key = submission.auth_key  # accept this for backwards compat
+        # The key itself used to be accepted in place of a derived token. Ensure that
+        # is no longer the case.
+        auth_key = submission.auth_key
         invalid_token = "not the valid token"
         self.assertTrue(auth_token_is_valid(submission, valid_token))
-        self.assertTrue(auth_token_is_valid(submission, auth_key))
+        self.assertFalse(auth_token_is_valid(submission, auth_key))
         self.assertFalse(auth_token_is_valid(submission, invalid_token))
 
         submission.auth_key = ""

@@ -25,7 +25,6 @@ warnings.filterwarnings("ignore", message="The django.utils.datetime_safe module
 warnings.filterwarnings("ignore", message="The USE_DEPRECATED_PYTZ setting,")  # https://github.com/ietf-tools/datatracker/issues/5635
 warnings.filterwarnings("ignore", message="The is_dst argument to make_aware\\(\\)")  # caused by django-filters when USE_DEPRECATED_PYTZ is true 
 warnings.filterwarnings("ignore", message="The USE_L10N setting is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5648
-warnings.filterwarnings("ignore", message="django.contrib.auth.hashers.CryptPasswordHasher is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5663
 
 # Other DeprecationWarnings
 warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API", module="pyang.plugin")
@@ -70,11 +69,10 @@ ADMINS = [
 BUG_REPORT_EMAIL = "tools-help@ietf.org"
 
 PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.Argon2PasswordHasher',
-    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
-    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
-    'django.contrib.auth.hashers.SHA1PasswordHasher',
-    'django.contrib.auth.hashers.CryptPasswordHasher',
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.SHA1PasswordHasher",
 ]
 
 
@@ -577,6 +575,13 @@ INTERNAL_IPS = (
         '::1',
 )
 
+# Tracebacks mailed to ADMINS carry request.META and every frame local. The default
+# filter does not recognise the Authorization header, which the OIDC provider takes
+# client credentials and bearer access tokens in.
+DEFAULT_EXCEPTION_REPORTER_FILTER = (
+    "ietf.utils.exception_filter.AuthorizationAwareReporterFilter"
+)
+
 # django-rest-framework configuration
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -811,10 +816,18 @@ MATERIALS_TYPES_SERVED_BY_WORKER = [
 ]
 
 # Other storages
-STORAGES["red_bucket"] = {
-    "BACKEND": "django.core.files.storage.InMemoryStorage",
-    "OPTIONS": {"location": "red_bucket"},
-}
+STORAGES.update(
+    {
+        "red_bucket": {
+            "BACKEND": "django.core.files.storage.InMemoryStorage",
+            "OPTIONS": {"location": "red_bucket"},
+        },
+        "reef_bucket": {
+            "BACKEND": "django.core.files.storage.InMemoryStorage",
+            "OPTIONS": {"location": "reef_bucket"},
+        }
+    }
+)
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
@@ -888,6 +901,10 @@ HTMLIZER_CACHE_TIME = 60*60*24*14       # 14 days
 PDFIZER_CACHE_TIME = HTMLIZER_CACHE_TIME
 PDFIZER_URL_PREFIX = IDTRACKER_BASE_URL+"/doc/pdf"
 
+# How long a rendered person profile section is served from the slowpages cache.
+# This is how stale a profile's roles and documents can be.
+PERSON_PROFILE_CACHE_SECONDS = 60*15    # 15 minutes
+
 # Email settings
 IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
 AUDIO_IMPORT_EMAIL = ['ietf@meetecho.com']
@@ -919,10 +936,6 @@ OPENSSL_COMMAND = '/usr/bin/openssl'
 DAYS_TO_EXPIRE_NOMINATION_LINK = ''
 NOMINEE_FEEDBACK_TYPES = ['comment', 'questio', 'nomina', 'obe']
 
-# SlideSubmission settings
-SLIDE_STAGING_PATH = '/a/www/www6s/staging/'
-SLIDE_STAGING_URL = 'https://www.ietf.org/staging/'
-
 # ID Submission Tool settings
 IDSUBMIT_FROM_EMAIL = 'IETF I-D Submission Tool <idsubmission@ietf.org>'
 IDSUBMIT_ANNOUNCE_FROM_EMAIL = 'internet-drafts@ietf.org'
@@ -952,6 +965,11 @@ IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 IDSUBMIT_STAGING_PATH = '/a/www/www6s/staging/'
 IDSUBMIT_STAGING_URL = '//www.ietf.org/staging/'
 IDSUBMIT_IDNITS_BINARY = '/a/www/ietf-datatracker/scripts/idnits'
+IDSUBMIT_IDNITS3_BINARY = '/usr/local/bin/idnits3'
+# Set True to skip the idnits3 checks that need to fetch remote documents
+IDSUBMIT_IDNITS3_OFFLINE = False
+# Seconds to allow an idnits3 run before giving up on it
+IDSUBMIT_IDNITS3_TIMEOUT = 300
 SUBMIT_PYANG_COMMAND = 'pyang --verbose --ietf -p {libs} {model}'
 SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -p {tmplib} -p {rfclib} -p {draftlib} -p {ianalib} -p {cataloglib} {model} -i'
 
@@ -965,12 +983,19 @@ SUBMIT_YANG_CATALOG_CHECKER_URL = "https://yangcatalog.org/yangvalidator/api/v1/
 
 IDSUBMIT_CHECKER_CLASSES = (
     "ietf.submit.checkers.DraftIdnitsChecker",
+    "ietf.submit.checkers.DraftIdnits3Checker",
     "ietf.submit.checkers.DraftYangChecker",
 #    "ietf.submit.checkers.DraftYangvalidatorChecker",    
 )
 
 # Max time to allow for validation before a submission is subject to cancellation
 IDSUBMIT_MAX_VALIDATION_TIME = datetime.timedelta(minutes=20)
+
+# Time limits for the Celery tasks that validate an uploaded submission. The soft limit cancels
+# the submission; the hard limit kills the worker child if the soft limit does not take effect. Both sit below IDSUBMIT_MAX_VALIDATION_TIME so a timed-out
+# submission is cancelled before cancel_stale_submissions would sweep it.
+IDSUBMIT_TASK_SOFT_TIME_LIMIT = 840
+IDSUBMIT_TASK_TIME_LIMIT = 900
 
 # Age at which a submission expires if not posted
 IDSUBMIT_EXPIRATION_AGE = datetime.timedelta(days=14)
@@ -987,6 +1012,9 @@ RFC_FILE_TYPES = IDSUBMIT_FILE_TYPES
 # Paths in the red bucket
 RFCINDEX_INPUT_PATH = "other/"
 RFCINDEX_OUTPUT_PATH = "other/"
+
+# Paths in the reef bucket
+POPULARITY_JSON_PATH = "popularity.json"
 
 IDSUBMIT_MAX_DRAFT_SIZE =  {
     'txt':  2*1024*1024,  # Max size of txt draft file in bytes
@@ -1022,7 +1050,7 @@ MEETING_DOC_LOCAL_HREFS = {
     "chatlog": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "polls": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "recording": "{doc.external_url}",
-    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
+    "bluesheets": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "procmaterials": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
 }
 
@@ -1044,7 +1072,8 @@ MEETING_DOC_OLD_HREFS = {
     "narrativeminutes" : "/meeting/{meeting.number}/materials/{doc.name}",
     "slides": "/meeting/{meeting.number}/materials/{doc.name}",
     "recording": "{doc.external_url}",
-    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
+    "bluesheets": "/meeting/{meeting.number}/materials/{doc.name}",
+    "procmaterials": "/meeting/{meeting.number}/materials/{doc.name}",
 }
 
 # For http references to documents without a version number (that is, to the current version at the time of reference)
@@ -1054,13 +1083,15 @@ MEETING_DOC_GREFS = {
     "narrativeminutes": "/meeting/{meeting.number}/materials/{doc.name}",
     "slides": "/meeting/{meeting.number}/materials/{doc.name}",
     "recording": "{doc.external_url}",
-    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
+    "bluesheets": "/meeting/{meeting.number}/materials/{doc.name}",
     "procmaterials": "/meeting/{meeting.number}/materials/{doc.name}",
 }
 
 MEETING_MATERIALS_DEFAULT_SUBMISSION_START_DAYS = 90
 MEETING_MATERIALS_DEFAULT_SUBMISSION_CUTOFF_DAYS = 26
 MEETING_MATERIALS_DEFAULT_SUBMISSION_CORRECTION_DAYS = 50
+# Slide proposals still pending this long after an interim ends are expired; IETF meetings expire theirs when proceedings are finalized
+INTERIM_SLIDE_PROPOSAL_EXPIRY_DAYS = 14
 
 MEETING_VALID_UPLOAD_EXTENSIONS = {
     'agenda':       ['.txt','.html','.htm', '.md', ],
@@ -1077,7 +1108,7 @@ MEETING_VALID_UPLOAD_MIME_TYPES = {
     'minutes':      ['text/plain', 'text/html', 'application/pdf', 'text/markdown', 'text/x-markdown', ],
     'narrativeminutes': ['text/plain', 'text/html', 'application/pdf', 'text/markdown', 'text/x-markdown', ],
     'slides':       [],
-    'bluesheets':   ['application/pdf', 'text/plain', ],
+    'bluesheets':   ['application/pdf', 'text/plain', 'text/csv', ],
     'procmaterials':['application/pdf', ],
     'meetinghostlogo':  ['image/jpeg', 'image/png', ],
 }
@@ -1099,6 +1130,7 @@ MEETING_APPLICATION_OCTET_STREAM_OVERRIDES = {
 MEETING_VALID_UPLOAD_MIME_FOR_OBSERVED_MIME = {
     'text/plain':   ['text/plain', 'text/markdown', 'text/x-markdown', ],
     'text/html':    ['text/html', ],
+    'text/csv':     ['text/plain', 'text/csv', ],  # libmagic sniffs comma-separated text (e.g., bluesheets) as text/csv
     'application/pdf': ['application/pdf', ],
 }
 
@@ -1339,6 +1371,13 @@ MEETECHO_SESSION_RECORDING_URL = "https://meetecho-player.ietf.org/playout/?sess
 # ERRATA_METADATA_NOTIFICATION_URL
 # ERRATA_METADATA_NOTIFICATION_API_KEY
 
+
+# Set this for non-production mode only. For production, set it to a secret value in
+# settings_local
+if SERVER_MODE != "production":
+    APP_API_TOKEN_PEPPER_BYTES = b"it-was-twenty-years-ago-today"
+
+
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from ietf.settings_local import *            # pyflakes:ignore pylint: disable=wildcard-import
@@ -1430,8 +1469,8 @@ if "CACHES" not in locals():
         CACHES = {
             "default": {
                 "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-                #'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
-                #'LOCATION': '127.0.0.1:11211',
+                # 'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
+                # 'LOCATION': '127.0.0.1:11211',
                 #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
                 "VERSION": __version__,
                 "KEY_PREFIX": "ietf:dt",

@@ -16,17 +16,10 @@ from django.views.decorators.csrf import csrf_exempt
 from ietf.doc.models import DeletedEvent, StateDocEvent, DocEvent
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.sync import tasks
-from ietf.sync.discrepancies import find_discrepancies
 from ietf.utils.serialize import object_as_shallow_dict
 from ietf.utils.log import log
 from ietf.utils.response import permission_denied
 
-
-#@role_required('Secretariat', 'IANA', 'RFC Editor')
-def discrepancies(request):
-    sections = find_discrepancies()
-
-    return render(request, "sync/discrepancies.html", dict(sections=sections))
 
 @csrf_exempt # external API so we can't expect the other end to have a token
 def notify(request, org, notification):

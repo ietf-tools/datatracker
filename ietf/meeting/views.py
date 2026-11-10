@@ -1,6 +1,4 @@
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
-# -*- coding: utf-8 -*-
-
+# Copyright The IETF Trust 2007-2026, All Rights Reserved
 
 import csv
 import datetime
@@ -8,18 +6,19 @@ import io
 import itertools
 import json
 import math
+import mimetypes
 import os
 
 import pytz
 import re
 import tarfile
 import tempfile
-import shutil
 
 from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
 from functools import partialmethod
 import jsonschema
+from icalendar import Calendar, Event
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit, urlparse
 from tempfile import mkstemp
@@ -30,24 +29,31 @@ from django import forms
 from django.core.cache import caches
 from django.core.files.storage import storages
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import (HttpResponse, HttpResponseRedirect, HttpResponseForbidden,
-                         HttpResponseNotFound, Http404, HttpResponseBadRequest,
-                         JsonResponse, HttpResponseGone, HttpResponseNotAllowed,
-                         FileResponse)
+from django.http import (
+    HttpResponse,
+    HttpResponseRedirect,
+    HttpResponseForbidden,
+    HttpResponseNotFound,
+    Http404,
+    HttpResponseBadRequest,
+    JsonResponse,
+    HttpResponseGone,
+    HttpResponseNotAllowed,
+    FileResponse,
+)
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.validators import URLValidator
 from django.urls import reverse, reverse_lazy, NoReverseMatch
-from django.db.models import F, Max, Q
+from django.db.models import F, Prefetch, Q
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.encoding import force_str
-from django.utils.text import slugify
+from django.utils.functional import SimpleLazyObject
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import RedirectView
@@ -55,64 +61,155 @@ from rest_framework.status import HTTP_404_NOT_FOUND
 
 import debug                            # pyflakes:ignore
 
+from ietf.api.ietf_utils import requires_api_token
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent
 from ietf.doc.storage_utils import (
-    remove_from_storage,
     retrieve_bytes,
     store_file,
 )
-from ietf.group.models import Group
-from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
+from ietf.doc.templatetags.ietf_filters import absurl
+from ietf.group.models import Group, Role
+from ietf.group.utils import (
+    can_manage_session_materials,
+    can_manage_some_groups,
+    can_manage_group,
+)
 from ietf.person.models import Person, User
 from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, \
-    SessionPresentation, TimeSlot, SlideSubmission, Attended
-from ..blobdb.models import ResolvedMaterial
-from ietf.meeting.models import ImportantDate, SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
-from ietf.meeting.models import Registration
-from ietf.meeting.forms import ( CustomDurationField, SwapDaysForm, SwapTimeslotsForm, ImportMinutesForm,
-                                 TimeSlotCreateForm, TimeSlotEditForm, SessionCancelForm, SessionEditForm )
-from ietf.meeting.helpers import get_person_by_email, get_schedule_by_name
-from ietf.meeting.helpers import get_meeting, get_ietf_meeting, get_current_ietf_meeting_num
-from ietf.meeting.helpers import get_schedule, schedule_permissions
-from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
-from ietf.meeting.helpers import AgendaFilterOrganizer, AgendaKeywordTagger
-from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session_date
-from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
-from ietf.meeting.helpers import can_edit_interim_request
-from ietf.meeting.helpers import can_request_interim_meeting, get_announcement_initial
-from ietf.meeting.helpers import sessions_post_save, is_interim_meeting_approved
-from ietf.meeting.helpers import send_interim_meeting_cancellation_notice, send_interim_session_cancellation_notice
-from ietf.meeting.helpers import send_interim_approval
-from ietf.meeting.helpers import send_interim_approval_request
-from ietf.meeting.helpers import send_interim_announcement_request, sessions_post_cancel
+from ietf.meeting.models import (
+    Constraint,
+    Meeting,
+    Session,
+    Schedule,
+    FloorPlan,
+    SessionPresentation,
+    TimeSlot,
+    SlideSubmission,
+    Attended,
+    ProceedingsMaterial,
+)
+from ietf.blobdb.models import ResolvedMaterial
+from ietf.blobdb.storage import BlobdbStorage, BlobFile
+from ietf.meeting.models import (
+    ImportantDate,
+    SessionStatusName,
+    SchedulingEvent,
+    SchedTimeSessAssignment,
+    Room,
+    TimeSlotTypeName,
+    Registration,
+)
+from ietf.meeting.forms import (
+    CustomDurationField,
+    SwapDaysForm,
+    SwapTimeslotsForm,
+    ImportMinutesForm,
+    TimeSlotCreateForm,
+    TimeSlotEditForm,
+    SessionCancelForm,
+    SessionEditForm,
+    InterimMeetingModelForm,
+    InterimAnnounceForm,
+    InterimSessionModelForm,
+    InterimCancelForm,
+    InterimSessionInlineFormSet,
+    RequestMinutesForm,
+    UploadOrEnterAgendaForm,
+    UploadOrEnterBlueSheetForm,
+    UploadMinutesForm,
+    UploadSlidesForm,
+    validate_slides_title,
+    UploadNarrativeMinutesForm,
+)
+from ietf.meeting.helpers import (
+    get_person_by_email,
+    get_schedule_by_name,
+    get_meeting,
+    get_ietf_meeting,
+    get_current_ietf_meeting_num,
+    get_schedule,
+    schedule_permissions,
+    preprocess_assignments_for_agenda,
+    read_agenda_file,
+    AgendaFilterOrganizer,
+    AgendaKeywordTagger,
+    convert_draft_to_pdf,
+    get_earliest_session_date,
+    can_view_interim_request,
+    can_approve_interim_request,
+    can_edit_interim_request,
+    can_request_interim_meeting,
+    get_announcement_initial,
+    sessions_post_save,
+    is_interim_meeting_approved,
+    send_interim_meeting_cancellation_notice,
+    send_interim_session_cancellation_notice,
+    send_interim_approval,
+    send_interim_approval_request,
+    send_interim_announcement_request,
+    sessions_post_cancel,
+    PENDING_INTERIM_MAX_LOOKBACK,
+)
 from ietf.meeting.utils import (
     condition_slide_order,
     finalize,
     generate_proceedings_content,
     organize_proceedings_sessions,
     resolve_uploaded_material,
-    sort_accept_tuple, store_blobs_for_one_material_doc,
+    sort_accept_tuple,
+    store_blobs_for_one_material_doc,
 )
-from ietf.meeting.utils import add_event_info_to_session_qs
-from ietf.meeting.utils import session_time_for_sorting
-from ietf.meeting.utils import session_requested_by, SaveMaterialsError
-from ietf.meeting.utils import current_session_status, get_meeting_sessions, SessionNotScheduledError
-from ietf.meeting.utils import data_for_meetings_overview, handle_upload_file, save_session_minutes_revision
-from ietf.meeting.utils import preprocess_constraints_for_meeting_schedule_editor
-from ietf.meeting.utils import diff_meeting_schedules, prefetch_schedule_diff_objects
-from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments, bulk_create_timeslots
-from ietf.meeting.utils import preprocess_meeting_important_dates
-from ietf.meeting.utils import new_doc_for_session, write_doc_for_session
-from ietf.meeting.utils import get_activity_stats, post_process, create_recording, delete_recording
-from ietf.meeting.utils import generate_bluesheet, bluesheet_data, save_bluesheet
+from ietf.meeting.utils import (
+    add_event_info_to_session_qs,
+    session_requested_by,
+    SaveMaterialsError,
+    current_session_status,
+    get_meeting_sessions,
+    scheduled_only,
+    sessions_covered_by_apply_to_all,
+    session_is_inactive,
+    material_upload_choices,
+    group_wide_material_name,
+    link_material_to_sessions,
+    material_document_name,
+    material_session_label,
+    reclaim_material_name,
+    link_slides_to_sessions,
+    tell_meetecho_about_slides,
+    sessions_linked_to,
+    sort_sessions,
+    SessionNotScheduledError,
+    data_for_meetings_overview,
+    handle_upload_file,
+    save_session_minutes_revision,
+    preprocess_constraints_for_meeting_schedule_editor,
+    diff_meeting_schedules,
+    prefetch_schedule_diff_objects,
+    swap_meeting_schedule_timeslot_assignments,
+    bulk_create_timeslots,
+    preprocess_meeting_important_dates,
+    get_activity_stats,
+    post_process,
+    create_recording,
+    delete_recording,
+    generate_bluesheet,
+    bluesheet_data,
+    save_bluesheet,
+    save_session_json_doc,
+    save_session_video_url,
+)
 from ietf.message.utils import infer_message
-from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName, CountryName
+from ietf.name.models import (
+    ProceedingsMaterialTypeName,
+    SessionPurposeName,
+    CountryName,
+)
 from ietf.utils import markdown
 from ietf.utils.decorators import require_api_key
 from ietf.utils.hedgedoc import Note, NoteError
+from ietf.utils.http import is_safe_next_url
 from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
 from ietf.utils.log import assertion, log
 from ietf.utils.mail import send_mail_message, send_mail_text
@@ -124,15 +221,6 @@ from ietf.utils.text import xslugify
 from ietf.utils.timezone import datetime_today, date_today
 from ietf.settings import YOUTUBE_DOMAINS
 
-from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
-    InterimCancelForm, InterimSessionInlineFormSet, RequestMinutesForm,
-    UploadAgendaForm, UploadBlueSheetForm, UploadMinutesForm, UploadSlidesForm,
-    UploadNarrativeMinutesForm)
-
-from icalendar import Calendar, Event
-from ietf.doc.templatetags.ietf_filters import absurl
-from ..api.ietf_utils import requires_api_token
-from ..blobdb.storage import BlobdbStorage, BlobFile
 
 request_summary_exclude_group_types = ['team']
 
@@ -1608,8 +1696,9 @@ def edit_schedule_properties(request, num, owner, name):
         form = SchedulePropertiesForm(meeting, instance=Schedule.objects.get(pk=schedule.pk), data=request.POST)
         if form.is_valid():
             form.save()
-            if request.GET.get('next'):
-                return HttpResponseRedirect(request.GET.get('next'))
+            next_url = request.GET.get("next")
+            if is_safe_next_url(next_url, {"ietf.meeting.views.list_schedules"}):
+                return HttpResponseRedirect(next_url)
             return redirect('ietf.meeting.views.edit_meeting_schedule', num=num, owner=owner, name=form.instance.name)
     else:
         form = SchedulePropertiesForm(meeting, instance=schedule)
@@ -1797,13 +1886,10 @@ def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, 
         get_assignments_for_agenda(schedule),
         meeting
     )
-    AgendaKeywordTagger(assignments=filtered_assignments).apply()
 
     # Done processing for CSV output
     if ext == ".csv":
         return agenda_csv(schedule, filtered_assignments, utc=utc is not None)
-
-    filter_organizer = AgendaFilterOrganizer(assignments=filtered_assignments)
 
     is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
 
@@ -1817,8 +1903,6 @@ def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, 
                 "schedule": schedule,
                 "filtered_assignments": filtered_assignments,
                 "updated": updated,
-                "filter_categories": filter_organizer.get_filter_categories(),
-                "non_area_keywords": filter_organizer.get_non_area_keywords(),
                 "now": timezone.now().astimezone(meeting.tz()),
                 "display_timezone": display_timezone,
                 "is_current_meeting": is_current_meeting,
@@ -1872,9 +1956,11 @@ def generate_agenda_data(num=None, force_refresh=False):
         if is_current_meeting
         else settings.AGENDA_CACHE_TIMEOUT_DEFAULT
     )
-    cache_format = "1"  # bump this on backward-incompatible data format changes
+    # bump this to force a cache rebuild
+    # (e.g., on a backward-incompatible data format change)
+    cache_version = "2"
 
-    cache_key = f"generate_agenda_data:{meeting.number}:v{cache_format}"
+    cache_key = f"generate_agenda_data:{meeting.number}:v{cache_version}"
     if not force_refresh:
         cached_value = cache.get(cache_key)
         if cached_value is not None:
@@ -2027,6 +2113,7 @@ def agenda_extract_schedule(item):
             "chatArchive" : item.session.chat_archive_url(),
             "recordings": list(map(agenda_extract_recording, item.session.recordings())),
             "videoStream": item.session.video_stream_url() or "",
+            "sessionRecording": item.session.session_recording_url() or "",
             "audioStream": item.session.audio_stream_url() or "",
             "webex": item.timeslot.location.webex_url() if item.timeslot.location else "",
             "onsiteTool": item.session.onsite_tool_url() or "",
@@ -2883,17 +2970,38 @@ def meeting_requests(request, num=None):
             purpose__in=('admin', 'social'),
         ).with_current_status().with_requested_by().exclude(
             requested_by=0
+        ).select_related(
+            "group__parent__type", "group__state", "group__type", "purpose"
         ).prefetch_related(
-            "group", "group__ad_role__person", "group__type"
+            "joint_with_groups",
+            Prefetch(
+                "group__role_set",
+                queryset=Role.objects.filter(name="ad").select_related("person"),
+                to_attr="ad_roles",
+            ),
         )
     )
 
     status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
     session_requesters = {p.pk: p for p in Person.objects.filter(pk__in=[s.requested_by for s in sessions if s.requested_by is not None])}
 
+    # Same constraints and order as Session.constraints(), fetched for all sessions at once
+    constraints_by_group = defaultdict(list)
+    for c in Constraint.objects.filter(
+        meeting=meeting,
+        source__in={s.group_id for s in sessions},
+    ).order_by(
+        "name__name", "target__acronym", "person__name"
+    ).select_related(
+        "name", "person", "source__parent", "target__parent"
+    ).prefetch_related("timeranges"):
+        constraints_by_group[c.source_id].append(c)
+
     for s in sessions:
         s.current_status_name = status_names.get(s.current_status, s.current_status)
         s.requested_by_person = session_requesters.get(s.requested_by)
+        s.ad_role = s.group.ad_roles[0] if s.group.ad_roles else None
+        s.constraint_list = constraints_by_group[s.group_id]
         if s.group.parent and s.group.parent.type.slug in ('area', 'irtf'):
             s.display_area = s.group.parent
         else:
@@ -2929,22 +3037,26 @@ def meeting_requests(request, num=None):
     )
 
 
-def get_sessions(num, acronym):
-    return sorted(
-        get_meeting_sessions(num, acronym).with_current_status(),
-        key=lambda s: session_time_for_sorting(s, use_meeting_date=False)
-    )
-
-
 def session_details(request, num, acronym):
     meeting = get_meeting(num=num,type_in=None)
-    sessions = get_sessions(num, acronym)
+    sessions = get_meeting_sessions(num, acronym)
 
     if not sessions:
         raise Http404
 
+    scheduled_sessions = scheduled_only(sessions)
+
     status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
     for session in sessions:
+        session.inactive = session_is_inactive(session)
+        # Numbered the same way as the material upload pages, so "Session 2" means the same thing on both
+        session.session_number = (
+            1 + scheduled_sessions.index(session)
+            if session in scheduled_sessions and len(scheduled_sessions) > 1
+            else None
+        )
+        session.cancelled = session.current_status in Session.CANCELED_STATUSES
+        session.status = '' if session in scheduled_sessions else status_names.get(session.current_status, session.current_status)
 
         session.type_counter = Counter()
         ss = session.timeslotassignments.filter(schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None]).order_by('timeslot__time')
@@ -2953,16 +3065,10 @@ def session_details(request, num, acronym):
                 session.times = [ x.timeslot.utc_start_time() for x in ss ]                
             else:
                 session.times = [ x.timeslot.local_start_time() for x in ss ]
-            session.cancelled = session.current_status in Session.CANCELED_STATUSES
-            session.status = ''
         elif meeting.type_id=='interim':
             session.times = [ meeting.date ]
-            session.cancelled = session.current_status in Session.CANCELED_STATUSES
-            session.status = ''
         else:
             session.times = []
-            session.cancelled = session.current_status in Session.CANCELED_STATUSES
-            session.status = status_names.get(session.current_status, session.current_status)
 
         if session.meeting.type_id == 'ietf' and not session.meeting.proceedings_final:
             artifact_types = ['agenda','minutes','narrativeminutes']
@@ -2989,17 +3095,22 @@ def session_details(request, num, acronym):
         for qs in [session.filtered_artifacts,session.filtered_slides,session.filtered_drafts]:
             qs = [p for p in qs if p.document.get_state_slug(p.document.type_id)!='deleted']
             session.type_counter.update([p.document.type.slug for p in qs])
+        session.has_materials = bool(
+            session.type_counter or filtered_chatlogs.exists() or filtered_polls.exists() or session.recordings()
+        )
 
         session.order_number = session.order_in_meeting()
 
+    # A session that will not happen is shown only for the materials it still holds
+    unscheduled_sessions = [s for s in sessions if s not in scheduled_sessions and not s.inactive]
+    cancelled_sessions = [s for s in sessions if s.inactive and s.cancelled and s.has_materials]
+    rescheduled_sessions = [s for s in sessions if s.inactive and not s.cancelled and s.has_materials]
+
     # we somewhat arbitrarily use the group of the last session we get from
-    # get_sessions() above when checking can_manage_session_materials()
+    # get_meeting_sessions() above when checking can_manage_session_materials()
     group = session.group
     can_manage = can_manage_session_materials(request.user, group, session)
     can_view_request = can_view_interim_request(meeting, request.user)
-
-    scheduled_sessions = [s for s in sessions if s.current_status == 'sched']
-    unscheduled_sessions = [s for s in sessions if s.current_status != 'sched']
 
     # Start with all the pending suggestions for all the group's sessions
     pending_suggestions = SlideSubmission.objects.filter(session__in=sessions, status__slug='pending')
@@ -3015,6 +3126,8 @@ def session_details(request, num, acronym):
     return render(request, "meeting/session_details.html",
                   { 'scheduled_sessions':scheduled_sessions ,
                     'unscheduled_sessions':unscheduled_sessions , 
+                    'cancelled_sessions': cancelled_sessions,
+                    'rescheduled_sessions': rescheduled_sessions,
                     'pending_suggestions' : pending_suggestions,
                     'meeting' :meeting ,
                     'group': group,
@@ -3046,13 +3159,12 @@ def add_session_drafts(request, session_id, num):
         raise Http404
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         raise Http404
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
 
     already_linked = [sp.document for sp in session.presentations.filter(document__type_id='draft')]
 
-    session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
+    _, session_number = sessions_covered_by_apply_to_all(session)
 
     if request.method == 'POST':
         form = SessionDraftsForm(request.POST,already_linked=already_linked)
@@ -3096,8 +3208,9 @@ def add_session_recordings(request, session_id, num):
         request.user, "Secretariat"
     ):
         raise Http404
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
 
-    session_number = None
     official_timeslotassignment = session.official_timeslotassignment()
     assertion("official_timeslotassignment is not None")
     initial = {
@@ -3109,10 +3222,7 @@ def add_session_recordings(request, session_id, num):
         )
     }
 
-    # find session number if WG has more than one session at the meeting
-    sessions = get_sessions(session.meeting.number, session.group.acronym)
-    if len(sessions) > 1:
-        session_number = 1 + sessions.index(session)
+    _, session_number = sessions_covered_by_apply_to_all(session)
 
     presentations = session.presentations.filter(
         document__in=session.get_material("recording", only_one=False),
@@ -3225,19 +3335,19 @@ def upload_session_bluesheets(request, session_id, num):
         permission_denied(request, "You don't have permission to upload bluesheets for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
 
     if session.meeting.type.slug == 'ietf' and not has_role(request.user, 'Secretariat'):
         permission_denied(request, 'Restricted to role Secretariat')
         
-    session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
+    _, session_number = sessions_covered_by_apply_to_all(session)
+    bluesheet_sp = session.presentations.filter(document__type='bluesheets').first()
 
     if request.method == 'POST':
-        form = UploadBlueSheetForm(request.POST,request.FILES)
+        form = UploadOrEnterBlueSheetForm(request.POST,request.FILES)
         if form.is_valid():
-            file = request.FILES['file']
+            file = form.get_file()
 
             ota = session.official_timeslotassignment()
             sess_time = ota and ota.timeslot.time
@@ -3248,16 +3358,18 @@ def upload_session_bluesheets(request, session_id, num):
                 )
 
 
-            save_error = save_bluesheet(request, session, file, encoding=form.file_encoding[file.name])
-            if save_error:
-                form.add_error(None, save_error)
+            try:
+                save_bluesheet(request, session, file, request.user.person, encoding=form.file_encoding[file.name])
+            except SaveMaterialsError as err:
+                form.add_error(None, str(err))
             else:
                 messages.success(request, 'Successfully uploaded bluesheets.')
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
-        form = UploadBlueSheetForm()
-
-    bluesheet_sp = session.presentations.filter(document__type='bluesheets').first()
+        initial = {'submission_method': 'upload'}
+        if bluesheet_sp and Path(bluesheet_sp.document.uploaded_filename).suffix == '.txt':
+            initial['content'] = bluesheet_sp.document.text()
+        form = UploadOrEnterBlueSheetForm(initial=initial)
 
     return render(request, "meeting/upload_session_bluesheets.html", 
                   {'session': session,
@@ -3275,29 +3387,25 @@ def upload_session_minutes(request, session_id, num):
         permission_denied(request, "You don't have permission to upload minutes for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
 
-    session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
-    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
-
+    _, session_number = sessions_covered_by_apply_to_all(session)
     minutes_sp = session.presentations.filter(document__type='minutes').first()
-    
+    choices, select_all, shared_with = material_upload_choices(session, 'minutes', minutes_sp)
+
     if request.method == 'POST':
-        form = UploadMinutesForm(show_apply_to_all_checkbox,request.POST,request.FILES)
+        form = UploadMinutesForm(choices, select_all, request.POST, request.FILES, shared_with=shared_with)
         if form.is_valid():
-            file = request.FILES['file']
+            file = form.cleaned_data['file']
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type_id == 'regular'
-            if show_apply_to_all_checkbox:
-                apply_to_all = form.cleaned_data['apply_to_all']
 
             # Set up the new revision
             try:
-                save_session_minutes_revision(
+                warnings = save_session_minutes_revision(
                     session=session,
-                    apply_to_all=apply_to_all,
+                    also_sessions=form.sessions_to_apply(),
+                    replace=form.replace_shared(),
                     file=file,
                     ext=ext,
                     encoding=form.file_encoding[file.name],
@@ -3312,11 +3420,13 @@ def upload_session_minutes(request, session_id, num):
                 form.add_error(None, str(err))
             else:
                 # no exception -- success!
+                for warning in warnings:
+                    messages.warning(request, warning)
                 resolve_uploaded_material(meeting=session.meeting, doc=session.minutes())
                 messages.success(request, f'Successfully uploaded minutes as revision {session.minutes().rev}.')
                 return redirect('ietf.meeting.views.session_details', num=num, acronym=session.group.acronym)
     else:
-        form = UploadMinutesForm(show_apply_to_all_checkbox)
+        form = UploadMinutesForm(choices, select_all, shared_with=shared_with)
 
     tsa = session.official_timeslotassignment()
     future = tsa is not None and timezone.now() < tsa.timeslot.end_time()
@@ -3334,29 +3444,25 @@ def upload_session_narrativeminutes(request, session_id, num):
     session = get_object_or_404(Session,pk=session_id)
     if session.group.acronym != "iesg":
         raise Http404()
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
     
-    session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
-    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
-
+    _, session_number = sessions_covered_by_apply_to_all(session)
     narrativeminutes_sp = session.presentations.filter(document__type='narrativeminutes').first()
-    
+    choices, select_all, shared_with = material_upload_choices(session, 'narrativeminutes', narrativeminutes_sp)
+
     if request.method == 'POST':
-        form = UploadNarrativeMinutesForm(show_apply_to_all_checkbox,request.POST,request.FILES)
+        form = UploadNarrativeMinutesForm(choices, select_all, request.POST, request.FILES, shared_with=shared_with)
         if form.is_valid():
-            file = request.FILES['file']
+            file = form.cleaned_data['file']
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type_id == 'regular'
-            if show_apply_to_all_checkbox:
-                apply_to_all = form.cleaned_data['apply_to_all']
 
             # Set up the new revision
             try:
-                save_session_minutes_revision(
+                warnings = save_session_minutes_revision(
                     session=session,
-                    apply_to_all=apply_to_all,
+                    also_sessions=form.sessions_to_apply(),
+                    replace=form.replace_shared(),
                     file=file,
                     ext=ext,
                     encoding=form.file_encoding[file.name],
@@ -3372,11 +3478,13 @@ def upload_session_narrativeminutes(request, session_id, num):
                 form.add_error(None, str(err))
             else:
                 # no exception -- success!
+                for warning in warnings:
+                    messages.warning(request, warning)
                 resolve_uploaded_material(meeting=session.meeting, doc=session.narrative_minutes())
                 messages.success(request, f'Successfully uploaded narrative minutes as revision {session.narrative_minutes().rev}.')
                 return redirect('ietf.meeting.views.session_details', num=num, acronym=session.group.acronym)
     else:
-        form = UploadMinutesForm(show_apply_to_all_checkbox)
+        form = UploadNarrativeMinutesForm(choices, select_all, shared_with=shared_with)
 
     return render(request, "meeting/upload_session_narrativeminutes.html", 
                   {'session': session,
@@ -3385,51 +3493,6 @@ def upload_session_narrativeminutes(request, session_id, num):
                    'form': form,
                   })
 
-class UploadOrEnterAgendaForm(UploadAgendaForm):
-    ACTIONS = [
-        ("upload", "Upload agenda"),
-        ("enter", "Enter agenda"),
-    ]
-    submission_method = forms.ChoiceField(choices=ACTIONS, widget=forms.RadioSelect)
-
-    content = forms.CharField(widget=forms.Textarea, required=False, strip=False, label="Agenda text")
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["file"].required=False
-        self.order_fields(["submission_method", "file", "content"])
-
-    def clean_content(self):
-        return self.cleaned_data["content"].replace("\r", "")
-
-    def clean_file(self):
-        submission_method = self.cleaned_data.get("submission_method")
-        if submission_method == "upload":
-            if self.cleaned_data.get("file", None) is not None:
-                return super().clean_file()
-        return None
-
-    def clean(self):
-        def require_field(f):
-            if not self.cleaned_data.get(f):
-                self.add_error(f, ValidationError("You must fill in this field."))
-
-        submission_method = self.cleaned_data.get("submission_method")
-        if submission_method == "upload":
-            require_field("file")
-        elif submission_method == "enter":
-            require_field("content")
-
-    def get_file(self):
-        """Get content as a file-like object"""
-        if self.cleaned_data.get("submission_method") == "upload":
-            return self.cleaned_data["file"]
-        else:
-            return SimpleUploadedFile(
-                name="uploaded.md",
-                content=self.cleaned_data["content"].encode("utf-8"),
-                content_type="text/markdown;charset=utf-8",
-            )
 
 def upload_session_agenda(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
@@ -3439,29 +3502,25 @@ def upload_session_agenda(request, session_id, num):
         permission_denied(request, "You don't have permission to upload an agenda for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
 
-    session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
-    show_apply_to_all_checkbox = len(sessions) > 1 if session.type.slug == 'regular' else False
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
-
+    _, session_number = sessions_covered_by_apply_to_all(session)
     agenda_sp = session.presentations.filter(document__type='agenda').first()
-    
+    choices, select_all, shared_with = material_upload_choices(session, 'agenda', agenda_sp)
+
     if request.method == 'POST':
-        form = UploadOrEnterAgendaForm(show_apply_to_all_checkbox,request.POST,request.FILES)
+        form = UploadOrEnterAgendaForm(choices, select_all, request.POST, request.FILES, shared_with=shared_with)
         if form.is_valid():
             file = form.get_file()
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type.slug == 'regular'
-            if show_apply_to_all_checkbox:
-                apply_to_all = form.cleaned_data['apply_to_all']
-            if agenda_sp:
+            also_sessions = form.sessions_to_apply()
+            reclaim = False
+            if agenda_sp and not form.replace_shared():
                 doc = agenda_sp.document
-                doc.rev = '%02d' % (int(doc.rev)+1)
-                agenda_sp.rev = doc.rev
-                agenda_sp.save()
+                name, title = doc.name, doc.title
             else:
+                apply_to_all = group_wide_material_name(session, also_sessions) and not form.replace_shared()
                 ota = session.official_timeslotassignment()
                 sess_time = ota and ota.timeslot.time
                 if not sess_time:
@@ -3469,65 +3528,42 @@ def upload_session_agenda(request, session_id, num):
                         "Cannot receive uploads for an unscheduled session.  Please check the session ID.",
                         content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
                     )
-                if session.meeting.type_id=='ietf':
-                    name = 'agenda-%s-%s' % (session.meeting.number, 
-                                                 session.group.acronym) 
-                    title = 'Agenda IETF%s: %s' % (session.meeting.number, 
-                                                         session.group.acronym) 
-                    if not apply_to_all:
-                        name += '-%s' % (session.docname_token(),)
-                        if sess_time:
-                            title += ': %s' % (sess_time.strftime("%a %H:%M"),)
-                else:
-                    name = 'agenda-%s-%s' % (session.meeting.number, session.docname_token())
-                    title = 'Agenda %s' % (session.meeting.number, )
-                    if sess_time:
-                        title += ': %s' % (sess_time.strftime("%a %H:%M"),)
-                if Document.objects.filter(name=name).exists():
-                    doc = Document.objects.get(name=name)
-                    doc.rev = '%02d' % (int(doc.rev)+1)
-                else:
-                    doc = Document.objects.create(
-                              name = name,
-                              type_id = 'agenda',
-                              title = title,
-                              group = session.group,
-                              rev = '00',
-                          )
-                doc.states.add(State.objects.get(type_id='agenda',slug='active'))
-            if session.presentations.filter(document=doc).exists():
-                sp = session.presentations.get(document=doc)
-                sp.rev = doc.rev
-                sp.save()
-            else:
-                session.presentations.create(document=doc,rev=doc.rev)
-            if apply_to_all:
-                for other_session in sessions:
-                    if other_session != session:
-                        other_session.presentations.filter(document__type='agenda').delete()
-                        other_session.presentations.create(document=doc,rev=doc.rev)
-            filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
-            doc.uploaded_filename = filename
-            e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
+                name, title = material_document_name(session, 'agenda', group_wide=apply_to_all)
+                doc = Document.objects.filter(name=name).first()
+                # A document carrying this session's own name belongs to it, whatever the reason the name came up
+                reclaim = doc is not None and name == material_document_name(session, 'agenda', group_wide=False)[0]
+            rev = '%02d' % (int(doc.rev)+1) if doc is not None else '00'
+            filename = '%s-%s%s' % (name, rev, ext)
+            encoding = form.file_encoding[file.name]
+            # Store the file before changing any record, so a rejected upload changes nothing.
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
             try:
-                encoding=form.file_encoding[file.name]
-            except AttributeError:
-                encoding=None
-            save_error = handle_upload_file(file, filename, session.meeting, 'agenda', request=request, encoding=encoding)
-            if save_error:
-                form.add_error(None, save_error)
+                handle_upload_file(file, filename, session.meeting, 'agenda', request=request, encoding=encoding)
+            except SaveMaterialsError as err:
+                form.add_error(None, str(err))
             else:
+                if reclaim:
+                    warnings, _ = reclaim_material_name(doc, session, request.user.person, keep=also_sessions)
+                    for warning in warnings:
+                        messages.warning(request, warning)
+                if doc is None:
+                    doc = Document.objects.create(name=name, type_id='agenda', title=title, group=session.group, rev=rev)
+                    doc.set_state(State.objects.get(type_id='agenda',slug='active'))
+                else:
+                    doc.rev = rev
+                doc.uploaded_filename = filename
+                e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
                 doc.save_with_history([e])
+                link_material_to_sessions(doc, session, also_sessions)
                 resolve_uploaded_material(meeting=session.meeting, doc=doc)
                 messages.success(request, f'Successfully uploaded agenda as revision {doc.rev}.')
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
-        initial={'apply_to_all':session.type_id=='regular', 'submission_method':'upload'}
+        initial={'submission_method':'upload'}
         if agenda_sp:
             doc = agenda_sp.document
             initial['content'] = doc.text()
-        form = UploadOrEnterAgendaForm(show_apply_to_all_checkbox, initial=initial)
+        form = UploadOrEnterAgendaForm(choices, select_all, initial=initial, shared_with=shared_with)
 
     return render(request, "meeting/upload_session_agenda.html", 
                   {'session': session,
@@ -3553,6 +3589,8 @@ def upload_session_slides(request, session_id, num, name=None):
             request,
             "The materials cutoff for this session has passed. Contact the secretariat for further action.",
         )
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
 
     if session.is_past() and not can_manage:
         permission_denied(
@@ -3560,29 +3598,30 @@ def upload_session_slides(request, session_id, num, name=None):
             "This meeting has already occurred. Contact a chair or the secretariat for further action.",
         )
 
-    session_number = None
-    sessions = get_sessions(session.meeting.number, session.group.acronym)
-    show_apply_to_all_checkbox = (
-        len(sessions) > 1 if session.type_id == "regular" else False
-    )
-    if len(sessions) > 1:
-        session_number = 1 + sessions.index(session)
+    scheduled_sessions, session_number = sessions_covered_by_apply_to_all(session)
 
-    doc = None
+    slides_sp = None
     if name:
-        doc = get_object_or_404(
+        slides_sp = get_object_or_404(
             session.presentations, document__name=name, document__type_id="slides"
-        ).document
+        )
+    doc = slides_sp.document if slides_sp else None
+    choices, select_all, also_linked = material_upload_choices(session, "slides", slides_sp)
 
-    if request.method == "POST":
+    def pending_revision_of(deck):
+        return SlideSubmission.objects.filter(doc=deck, status_id="pending").select_related("submitter").first() if deck else None
+
+    blocked_by = None if can_manage else pending_revision_of(doc)
+    if request.method == "POST" and blocked_by is None:
         form = UploadSlidesForm(
-            session, show_apply_to_all_checkbox, can_manage, request.POST, request.FILES
+            session, can_manage, choices if can_manage or doc is None else [], select_all, request.POST, request.FILES
         )
         if form.is_valid():
             file = request.FILES["file"]
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type_id == "regular"
-            if show_apply_to_all_checkbox:
+            also_sessions = form.sessions_to_apply()
+            apply_to_all = group_wide_material_name(session, also_sessions)
+            if "apply_to_all" in form.fields:  # a proposal keeps a plain yes/no
                 apply_to_all = form.cleaned_data["apply_to_all"]
             if can_manage:
                 approved = form.cleaned_data["approved"]
@@ -3592,22 +3631,28 @@ def upload_session_slides(request, session_id, num, name=None):
             # Propose slides if not auto-approved
             if not approved:
                 title = form.cleaned_data['title']
-                submission = SlideSubmission.objects.create(session = session, title = title, filename = '', apply_to_all = apply_to_all, submitter=request.user.person)
-
-                if session.meeting.type_id=='ietf':
-                    name = 'slides-%s-%s' % (session.meeting.number, 
-                                         session.group.acronym) 
-                    if not apply_to_all:
-                        name += '-%s' % (session.docname_token(),)
+                if doc is None:
+                    # the same title makes a revision at approval, so say so from the start
+                    name, _ = material_document_name(session, "slides", group_wide=apply_to_all, title=title)
+                    doc = Document.objects.filter(name=name).first()
+                blocked_by = pending_revision_of(doc)
+                if blocked_by is not None:
+                    form.add_error(None, f'A revision of "{doc.title}" is already awaiting approval; there can be only one proposed revision at a time.')
+                    doc = slides_sp.document if slides_sp else None
+                    return render(request, "meeting/upload_session_slides.html", {
+                        "session": session, "session_number": session_number, "also_linked": also_linked,
+                        "slides_sp": slides_sp, "manage": can_manage, "form": form, "blocked_by": blocked_by,
+                        "show_form": True,  # the refusal is the form's own error
+                        "decks": [], "own_pending": [],
+                    })
+                submission = SlideSubmission.objects.create(session=session, title=title, filename='', submitter=request.user.person, doc=doc)
+                if doc is not None:
+                    submission.sessions.set(sessions_linked_to(doc, session.meeting) or [session])
+                    name = doc.name
                 else:
-                    name = 'slides-%s-%s' % (session.meeting.number, session.docname_token())
-                name = name + '-' + slugify(title).replace('_', '-')[:128]
+                    submission.sessions.set(scheduled_sessions if apply_to_all else [session, *also_sessions])
                 filename = '%s-ss%d%s'% (name, submission.id, ext)
-                destination = io.open(os.path.join(settings.SLIDE_STAGING_PATH, filename),'wb+')
-                for chunk in file.chunks():
-                    destination.write(chunk)
-                destination.close()
-                file.seek(0)
+                file.seek(0)  # validation read it
                 store_file("staging", filename, file)
 
                 submission.filename = filename
@@ -3627,106 +3672,63 @@ def upload_session_slides(request, session_id, num, name=None):
                 messages.success(request, 'Successfully submitted proposed slides.')
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
 
-            # Handle creation / update of the Document (but do not save yet)
-            if doc is not None:
-                # This is a revision - bump the version and update the title.
-                doc.rev = "%02d" % (int(doc.rev) + 1)
-                doc.title = form.cleaned_data["title"]
+            # Work out the document and revision, but change nothing until the file is stored
+            title = form.cleaned_data["title"]
+            reclaim = False
+            if doc is None:
+                name, _ = material_document_name(session, "slides", group_wide=apply_to_all, title=title)
+                # A new deck reuses an existing document of that name as a revision
+                doc = Document.objects.filter(name=name).first()
+                # A document carrying this session's own name belongs to it, whatever the reason the name came up
+                reclaim = doc is not None and name == material_document_name(session, "slides", group_wide=False, title=title)[0]
+            rev = "%02d" % (int(doc.rev) + 1) if doc is not None else "00"
+            filename = "%s-%s%s" % (doc.name if doc is not None else name, rev, ext)
+            # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
+            try:
+                handle_upload_file(
+                    file,
+                    filename,
+                    session.meeting,
+                    "slides",
+                    request=request,
+                    encoding=form.file_encoding[file.name],
+                )
+            except SaveMaterialsError as err:
+                form.add_error(None, str(err))
             else:
-                # This is a new slide deck - create a new doc unless one exists with that name
-                title = form.cleaned_data["title"]
-                if session.meeting.type_id == "ietf":
-                    name = "slides-%s-%s" % (
-                        session.meeting.number,
-                        session.group.acronym,
-                    )
-                    if not apply_to_all:
-                        name += "-%s" % (session.docname_token(),)
-                else:
-                    name = "slides-%s-%s" % (
-                        session.meeting.number,
-                        session.docname_token(),
-                    )
-                name = name + "-" + slugify(title).replace("_", "-")[:128]
-                if Document.objects.filter(name=name).exists():
-                    doc = Document.objects.get(name=name)
-                    doc.rev = "%02d" % (int(doc.rev) + 1)
-                    doc.title = form.cleaned_data["title"]
-                else:
+                relinked = []
+                if reclaim:
+                    warnings, relinked = reclaim_material_name(doc, session, request.user.person, keep=also_sessions)
+                    for warning in warnings:
+                        messages.warning(request, warning)
+                if doc is None:
                     doc = Document.objects.create(
                         name=name,
                         type_id="slides",
                         title=title,
                         group=session.group,
-                        rev="00",
+                        rev=rev,
                     )
-                doc.states.add(State.objects.get(type_id="slides", slug="active"))
-                doc.states.add(State.objects.get(type_id="reuse_policy", slug="single"))
-
-            # Now handle creation / update of the SessionPresentation(s)
-            sessions_to_apply = sessions if apply_to_all else [session]
-            added_presentations = []
-            revised_presentations = []
-            for sess in sessions_to_apply:
-                sp = sess.presentations.filter(document=doc).first()
-                if sp is not None:
-                    sp.rev = doc.rev
-                    sp.save()
-                    revised_presentations.append(sp)
+                    doc.set_state(State.objects.get(type_id="slides", slug="active"))
+                    doc.set_state(State.objects.get(type_id="reuse_policy", slug="single"))
                 else:
-                    max_order = (
-                        sess.presentations.filter(document__type="slides").aggregate(
-                            Max("order")
-                        )["order__max"]
-                        or 0
-                    )
-                    sp = sess.presentations.create(
-                        document=doc, rev=doc.rev, order=max_order + 1
-                    )
-                    added_presentations.append(sp)
-
-            # Now handle the uploaded file
-            filename = "%s-%s%s" % (doc.name, doc.rev, ext)
-            doc.uploaded_filename = filename
-            e = NewRevisionDocEvent.objects.create(
-                doc=doc,
-                by=request.user.person,
-                type="new_revision",
-                desc="New revision available: %s" % doc.rev,
-                rev=doc.rev,
-            )
-            # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
-            save_error = handle_upload_file(
-                file,
-                filename,
-                session.meeting,
-                "slides",
-                request=request,
-                encoding=form.file_encoding[file.name],
-            )
-            if save_error:
-                form.add_error(None, save_error)
-            else:
+                    doc.rev = rev
+                    doc.title = title
+                doc.uploaded_filename = filename
+                e = NewRevisionDocEvent.objects.create(
+                    doc=doc,
+                    by=request.user.person,
+                    type="new_revision",
+                    desc="New revision available: %s" % doc.rev,
+                    rev=doc.rev,
+                )
                 doc.save_with_history([e])
+
+                added, revised = link_slides_to_sessions(doc, session, also_sessions)
                 post_process(doc)
                 resolve_uploaded_material(meeting=session.meeting, doc=doc)
+                tell_meetecho_about_slides(session, doc, added, revised, relinked)
 
-            # Send MeetEcho updates even if we had a problem saving - that will keep it in sync with the
-            # SessionPresentation, which was already saved regardless of problems saving the file.
-            if hasattr(settings, "MEETECHO_API_CONFIG"):
-                sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
-                for sp in added_presentations:
-                    try:
-                        sm.add(session=sp.session, slides=doc, order=sp.order)
-                    except MeetechoAPIError as err:
-                        log(f"Error in SlidesManager.add(): {err}")
-                for sp in revised_presentations:
-                    try:
-                        sm.revise(session=sp.session, slides=doc)
-                    except MeetechoAPIError as err:
-                        log(f"Error in SlidesManager.revise(): {err}")
-
-            if not save_error:
                 messages.success(
                     request,
                     f"Successfully uploaded slides as revision {doc.rev} of {doc.name}.",
@@ -3740,7 +3742,19 @@ def upload_session_slides(request, session_id, num, name=None):
         initial = {}
         if doc is not None:
             initial = {"title": doc.title}
-        form = UploadSlidesForm(session, show_apply_to_all_checkbox, can_manage, initial=initial)
+        form = UploadSlidesForm(session, can_manage, choices if can_manage or doc is None else [], select_all, initial=initial)
+
+    decks = []
+    if not (can_manage or doc):
+        decks = [
+            sp for sp in session.presentations.filter(document__type_id="slides").order_by("order")
+            if sp.document.get_state_slug("slides") != "deleted"
+        ]
+    own_pending = []
+    if not can_manage and hasattr(request.user, "person"):
+        own_pending = SlideSubmission.objects.filter(
+            session=session, submitter=request.user.person, status_id="pending", **({"doc": doc} if doc else {})
+        ).order_by("time")
 
     return render(
         request,
@@ -3748,9 +3762,14 @@ def upload_session_slides(request, session_id, num, name=None):
         {
             "session": session,
             "session_number": session_number,
-            "slides_sp": session.presentations.filter(document=doc).first() if doc else None,
-            "manage": session.can_manage_materials(request.user),
+            "also_linked": also_linked,
+            "slides_sp": slides_sp,
+            "manage": can_manage,
             "form": form,
+            "blocked_by": blocked_by,
+            "show_form": blocked_by is None,
+            "decks": decks,
+            "own_pending": own_pending,
         },
     )
 
@@ -3771,6 +3790,8 @@ def remove_sessionpresentation(request, session_id, num, name):
             request,
             "The materials cutoff for this session has passed. Contact the secretariat for further action.",
         )
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
     if request.method == "POST":
         session.presentations.filter(pk=sp.pk).delete()
         c = DocEvent(
@@ -3812,6 +3833,8 @@ def ajax_add_slides_to_session(request, session_id, num):
             request,
             "The materials cutoff for this session has passed. Contact the secretariat for further action.",
         )
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
 
     if request.method != "POST" or not request.POST:
         return HttpResponse(
@@ -3967,6 +3990,8 @@ def ajax_reorder_slides_in_session(request, session_id, num):
             request,
             "The materials cutoff for this session has passed. Contact the secretariat for further action.",
         )
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
 
     if request.method != "POST" or not request.POST:
         return HttpResponse(
@@ -4110,15 +4135,25 @@ def delete_schedule(request, num, owner, name):
 # Interim Views
 # -------------------------------------------------
 def interim_announce(request):
-    '''View which shows interim meeting requests awaiting announcement'''
-    meetings = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='scheda')
+    """View which shows interim meeting requests awaiting announcement"""
+    meetings = data_for_meetings_overview(
+        Meeting.objects.filter(
+            type="interim", date__gte=date_today() - PENDING_INTERIM_MAX_LOOKBACK
+        ).order_by("date"),
+        interim_status="scheda",
+    )
     menu_entries = get_interim_menu_entries(request)
-    selected_menu_entry = 'announce'
+    selected_menu_entry = "announce"
 
-    return render(request, "meeting/interim_announce.html", {
-        'menu_entries': menu_entries,
-        'selected_menu_entry': selected_menu_entry,
-        'meetings': meetings})
+    return render(
+        request,
+        "meeting/interim_announce.html",
+        {
+            "menu_entries": menu_entries,
+            "selected_menu_entry": selected_menu_entry,
+            "meetings": meetings,
+        },
+    )
 
 
 @role_required('Secretariat',)
@@ -4173,21 +4208,30 @@ def interim_skip_announcement(request, number):
 
 
 def interim_pending(request):
-
-    '''View which shows interim meeting requests pending approval'''
-    meetings = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='apprw')
+    """View which shows interim meeting requests pending approval"""
+    meetings = data_for_meetings_overview(
+        Meeting.objects.filter(
+            type="interim", date__gte=date_today() - PENDING_INTERIM_MAX_LOOKBACK
+        ).order_by("date"),
+        interim_status="apprw",
+    )
 
     menu_entries = get_interim_menu_entries(request)
-    selected_menu_entry = 'pending'
+    selected_menu_entry = "pending"
 
     for meeting in meetings:
         if can_approve_interim_request(meeting, request.user):
             meeting.can_approve = True
 
-    return render(request, "meeting/interim_pending.html", {
-        'menu_entries': menu_entries,
-        'selected_menu_entry': selected_menu_entry,
-        'meetings': meetings})
+    return render(
+        request,
+        "meeting/interim_pending.html",
+        {
+            "menu_entries": menu_entries,
+            "selected_menu_entry": selected_menu_entry,
+            "meetings": meetings,
+        },
+    )
 
 
 @login_required
@@ -4492,14 +4536,275 @@ def interim_request_edit(request, number):
         "form": form,
         "formset": formset})
 
+# Attendance for IETF meetings that predate the registration data used by
+# Meeting.get_attendance() (IETF 110 and later), as published on
+# https://www.ietf.org/meeting/past/ in October 2026. Remote attendance was
+# first reported for IETF 91; earlier entries have no "remote" key.
+LEGACY_PLENARY_ATTENDANCE = {
+    "1": {"onsite": 21},
+    "2": {"onsite": 21},
+    "3": {"onsite": 18},
+    "4": {"onsite": 35},
+    "5": {"onsite": 35},
+    "6": {"onsite": 88},
+    "7": {"onsite": 101},
+    "8": {"onsite": 56},
+    "9": {"onsite": 82},
+    "10": {"onsite": 112},
+    "11": {"onsite": 114},
+    "12": {"onsite": 120},
+    "13": {"onsite": 114},
+    "14": {"onsite": 217},
+    "15": {"onsite": 138},
+    "16": {"onsite": 196},
+    "17": {"onsite": 244},
+    "18": {"onsite": 293},
+    "19": {"onsite": 292},
+    "20": {"onsite": 348},
+    "21": {"onsite": 387},
+    "22": {"onsite": 372},
+    "23": {"onsite": 530},
+    "24": {"onsite": 677},
+    "25": {"onsite": 633},
+    "26": {"onsite": 638},
+    "27": {"onsite": 493},
+    "28": {"onsite": 636},
+    "29": {"onsite": 785},
+    "30": {"onsite": 710},
+    "31": {"onsite": 1079},
+    "32": {"onsite": 983},
+    "33": {"onsite": 617},
+    "34": {"onsite": 1007},
+    "35": {"onsite": 1038},
+    "36": {"onsite": 1283},
+    "37": {"onsite": 1993},
+    "38": {"onsite": 1321},
+    "39": {"onsite": 1308},
+    "40": {"onsite": 1897},
+    "41": {"onsite": 1775},
+    "42": {"onsite": 2106},
+    "43": {"onsite": 2124},
+    "44": {"onsite": 1705},
+    "45": {"onsite": 1710},
+    "46": {"onsite": 2379},
+    "47": {"onsite": 1431},
+    "48": {"onsite": 2344},
+    "49": {"onsite": 2810},
+    "50": {"onsite": 1822},
+    "51": {"onsite": 2226},
+    "52": {"onsite": 1691},
+    "53": {"onsite": 1656},
+    "54": {"onsite": 1885},
+    "55": {"onsite": 1570},
+    "56": {"onsite": 1679},
+    "57": {"onsite": 1304},
+    "58": {"onsite": 1233},
+    "59": {"onsite": 1390},
+    "60": {"onsite": 1460},
+    "61": {"onsite": 1311},
+    "62": {"onsite": 1133},
+    "63": {"onsite": 1450},
+    "64": {"onsite": 1240},
+    "65": {"onsite": 1264},
+    "66": {"onsite": 1257},
+    "67": {"onsite": 1245},
+    "68": {"onsite": 1193},
+    "69": {"onsite": 1175},
+    "70": {"onsite": 1128},
+    "71": {"onsite": 1174},
+    "72": {"onsite": 1181},
+    "73": {"onsite": 962},
+    "74": {"onsite": 1185},
+    "75": {"onsite": 1124},
+    "76": {"onsite": 1152},
+    "77": {"onsite": 1248},
+    "78": {"onsite": 1192},
+    "79": {"onsite": 1207},
+    "80": {"onsite": 1231},
+    "81": {"onsite": 1127},
+    "82": {"onsite": 948},
+    "83": {"onsite": 1395},
+    "84": {"onsite": 1199},
+    "85": {"onsite": 1157},
+    "86": {"onsite": 1115},
+    "87": {"onsite": 1435},
+    "88": {"onsite": 1189},
+    "89": {"onsite": 1400},
+    "90": {"onsite": 1237},
+    "91": {"onsite": 1109, "remote": 361},
+    "92": {"onsite": 1221, "remote": 421},
+    "93": {"onsite": 1387, "remote": 387},
+    "94": {"onsite": 1319, "remote": 358},
+    "95": {"onsite": 1043, "remote": 614},
+    "96": {"onsite": 1423, "remote": 368},
+    "97": {"onsite": 1042, "remote": 367},
+    "98": {"onsite": 1127, "remote": 315},
+    "99": {"onsite": 1230, "remote": 506},
+    "100": {"onsite": 1018, "remote": 468},
+    "101": {"onsite": 1235, "remote": 575},
+    "102": {"onsite": 1078, "remote": 547},
+    "103": {"onsite": 879, "remote": 521},
+    "104": {"onsite": 1213, "remote": 864},
+    "105": {"onsite": 1103, "remote": 861},
+    "106": {"onsite": 1004, "remote": 607},
+    "107": {"onsite": 0, "remote": 701},
+    "108": {"onsite": 0, "remote": 1102},
+    "109": {"onsite": 0, "remote": 1061}
+}
+
+
+# Hosts for IETF meetings that have no MeetingHost records, as named on
+# https://www.ietf.org/meeting/past/ (October 2026). Shown as text, without logos.
+LEGACY_PLENARY_HOSTS = {
+    "1": "Linkabit",
+    "2": "Army Ballistics Research Lab",
+    "3": "University of Michigan",
+    "4": "SRI",
+    "5": "NASA Ames Research Center",
+    "6": "BBN",
+    "7": "MITRE",
+    "8": "NCAR",
+    "9": "San Diego Supercomputer Center",
+    "10": "US Naval Academy",
+    "11": "University of Michigan",
+    "12": "University of Texas",
+    "13": "Kennedy Space Center",
+    "14": "Stanford University",
+    "15": "University of Hawaii",
+    "16": "Florida State University Supercomputer Center",
+    "17": "Pittsburgh Supercomputer Center",
+    "18": "University of British Columbia",
+    "19": "University of Colorado",
+    "20": "Washington University",
+    "21": "BellSouth",
+    "22": "Los Alamos National Laboratory",
+    "23": "San Diego Supercomputer Center",
+    "24": "NEARnet",
+    "25": "US Sprint",
+    "26": "OARnet and The Ohio State University",
+    "27": "Surfnet and RARE",
+    "28": "SESQUINET and Rice University",
+    "29": "NorthWestNet",
+    "30": "University of Toronto",
+    "31": "Sun Microsystems",
+    "32": "FTP Software and NEARnet",
+    "33": "the Royal Institute of Technology and NORDUnet",
+    "34": "MCI",
+    "37": "Cisco Systems",
+    "38": "Federal Express",
+    "39": "ISOC-Germany Chapter",
+    "40": "Newbridge Networks, Inc",
+    "42": "Motorola",
+    "43": "Microsoft Corporation",
+    "44": "Ascend Communications",
+    "45": "Uninett",
+    "46": "Nortel Networks, Inc",
+    "47": "connect.com.au",
+    "48": "Marconi",
+    "49": "Cisco Systems and Qualcomm",
+    "50": "Lucent Technologies",
+    "51": "BTexact Technologies",
+    "52": "Novell",
+    "53": "Cable & Wireless",
+    "54": "Fujitsu and The WIDE Project",
+    "55": "Nokia",
+    "57": "Austria Telekom",
+    "59": "KT (Korea Telcom) and Samsung",
+    "61": "Alcatel",
+    "63": "France Telecom",
+    "64": "Nortel",
+    "65": "Nokia",
+    "66": "Ericsson",
+    "67": "Siemens",
+    "68": "NeuStar",
+    "69": "Motorola",
+    "70": "Cisco Research and Microsoft",
+    "71": "Comcast",
+    "72": "Alcatel-Lucent",
+    "73": "Google",
+    "74": "Juniper",
+    "75": ".SE",
+    "76": "WIDE",
+    "78": "SIDN",
+    "79": "Tsinghua University",
+    "80": "CZ.NIC",
+    "81": "RIM",
+    "82": "TWNIC",
+    "83": "Cisco",
+    "84": "Google",
+    "85": "North American Cable Industry",
+    "86": "Comcast and NBC Universal",
+    "87": "DENIC, EURid, Deutsche Telekom, Dyn and eco",
+    "88": "Huawei",
+    "89": "ICANN",
+    "90": "Ericsson",
+    "91": "Cisco",
+    "92": "Google",
+    "93": "Brocade and CZ.NIC",
+    "94": "WIDE",
+    "95": "LACNIC and the Internet Society",
+    "96": "Juniper Networks"
+}
+
+
+def _past_plenaries(today):
+    """Past IETF meetings with the extra data the past meetings page shows"""
+    plenaries = list(
+        Meeting.objects.filter(type_id='ietf', date__lte=today)
+        .prefetch_related(
+            'meetinghosts',
+            Prefetch(
+                'proceedings_materials',
+                queryset=ProceedingsMaterial.objects.filter(
+                    type_id='meeting_survey',
+                    document__states__type_id='procmaterials',
+                    document__states__slug='active',
+                ).select_related('document'),
+                to_attr='surveys',
+            ),
+        )
+        .order_by('-date')
+    )
+    # remote is None for meetings before remote attendance was reported
+    PastAttendance = namedtuple('PastAttendance', 'onsite remote')
+    for meeting in plenaries:
+        meeting.attendance = meeting.get_attendance()
+        meeting.legacy_host = LEGACY_PLENARY_HOSTS.get(meeting.number)
+        if meeting.attendance is None and meeting.number in LEGACY_PLENARY_ATTENDANCE:
+            legacy = LEGACY_PLENARY_ATTENDANCE[meeting.number]
+            meeting.attendance = PastAttendance(onsite=legacy['onsite'], remote=legacy.get('remote'))
+    return plenaries
+
+
 def past(request):
     '''List of past meetings'''
     today = timezone.now()
 
-    meetings = data_for_meetings_overview(Meeting.objects.filter(date__lte=today).order_by('-date'))
+    # past.html caches its content, so only build this when the template
+    # actually renders it
+    plenaries = SimpleLazyObject(lambda: _past_plenaries(today))
 
     return render(request, 'meeting/past.html', {
-                  'meetings': meetings,
+                  'plenaries': plenaries,
+                  'selected_tab': 'plenary',
+                  })
+
+
+def past_interims(request):
+    '''List of past interim meetings, the second tab of the past meetings pages'''
+    today = timezone.now()
+
+    # past_interims.html caches its content, so only build this when the
+    # template actually renders it
+    interims = SimpleLazyObject(
+        lambda: data_for_meetings_overview(
+            Meeting.objects.filter(type_id='interim', date__lte=today).order_by('-date')
+        )
+    )
+
+    return render(request, 'meeting/past_interims.html', {
+                  'interims': interims,
+                  'selected_tab': 'interim',
                   })
 
 def upcoming(request):
@@ -4838,19 +5143,14 @@ def proceedings_attendees(request, num=None):
         onsite_pks = frozenset(p.pk for p in onsite)
         remote_pks = frozenset(p.pk for p in remote)
 
+        regs_to_consider = (
+            Registration.objects.filter(meeting__number=num)
+            .with_plenary_ticket_details()
+            .select_related("person")
+        )
         regs = [
-            reg
-            for reg in Registration.objects.onsite()
-            .filter(meeting__number=num)
-            .select_related("person")
-            if reg.person.pk in onsite_pks
-        ] + [
-            reg
-            for reg in Registration.objects.remote()
-            .filter(meeting__number=num)
-            .select_related("person")
-            if reg.person.pk in remote_pks
-        ]
+            reg for reg in regs_to_consider.onsite() if reg.person.pk in onsite_pks
+        ] + [reg for reg in regs_to_consider.remote() if reg.person.pk in remote_pks]
         registrations = sorted(regs, key=lambda x: (x.last_name, x.first_name))
 
         country_codes = [r.country_code for r in registrations if r.country_code]
@@ -5015,18 +5315,10 @@ def api_set_session_video_url(request):
     except ValidationError:
         return err(400, f"Invalid url value: '{incoming_url}'")
 
-    recordings = [(r.name, r.title, r) for r in session.recordings() if 'video' in r.title.lower()]
-    if recordings:
-        r = recordings[-1][-1]
-        if r.external_url != incoming_url:
-            e = DocEvent.objects.create(doc=r, rev=r.rev, type="added_comment", by=request.user.person,
-                                        desc="External url changed from %s to %s" % (r.external_url, incoming_url))
-            r.external_url = incoming_url
-            r.save_with_history([e])
-    else:
-        time = session.official_timeslotassignment().timeslot.time
-        title = 'Video recording for %s on %s at %s' % (session.group.acronym, time.date(), time.time())
-        create_recording(session, incoming_url, title=title, user=request.user.person)
+    try:
+        save_session_video_url(session, incoming_url, request.user.person)
+    except SaveMaterialsError as save_err:
+        return err(400, str(save_err))
     return HttpResponse(
         "Done",
         status=200,
@@ -5207,9 +5499,10 @@ def api_add_session_attendees(request):
             Attended.objects.bulk_create(to_create, ignore_conflicts=True)
 
     if session.meeting.type_id == "interim":
-        save_error = generate_bluesheet(request, session)
-        if save_error:
-            return err(400, save_error)
+        try:
+            generate_bluesheet(request, session, request.user.person)
+        except SaveMaterialsError as save_err:
+            return err(400, str(save_err))
 
     return HttpResponse(
         "Done",
@@ -5245,22 +5538,12 @@ def api_upload_chatlog(request):
     session = Session.objects.filter(pk=session_id).first()
     if not session:
         return err(400, "Invalid session")
-    chatlog_sp = session.presentations.filter(document__type='chatlog').first()
-    if chatlog_sp:
-        doc = chatlog_sp.document
-        doc.rev = f"{(int(doc.rev)+1):02d}"
-        chatlog_sp.rev = doc.rev
-        chatlog_sp.save()
-    else:
-        doc = new_doc_for_session('chatlog', session)
-        if doc is None:
-            return err(400, "Could not find official timeslot for session")
-    filename = f"{doc.name}-{doc.rev}.json"
-    doc.uploaded_filename = filename
-    write_doc_for_session(session, 'chatlog', filename, json.dumps(apidata['chatlog']))
-    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
-    doc.save_with_history([e])
-    resolve_uploaded_material(meeting=session.meeting, doc=doc)
+    try:
+        save_session_json_doc(
+            session, 'chatlog', apidata['chatlog'], request.user.person
+        )
+    except SaveMaterialsError as save_err:
+        return err(400, str(save_err))
     return HttpResponse(
         "Done",
         status=200,
@@ -5294,22 +5577,12 @@ def api_upload_polls(request):
     session = Session.objects.filter(pk=session_id).first()
     if not session:
         return err(400, "Invalid session")
-    polls_sp = session.presentations.filter(document__type='polls').first()
-    if polls_sp:
-        doc = polls_sp.document
-        doc.rev = f"{(int(doc.rev)+1):02d}"
-        polls_sp.rev = doc.rev
-        polls_sp.save()
-    else:
-        doc = new_doc_for_session('polls', session)
-        if doc is None:
-            return err(400, "Could not find official timeslot for session")
-    filename = f"{doc.name}-{doc.rev}.json"
-    doc.uploaded_filename = filename
-    write_doc_for_session(session, 'polls', filename, json.dumps(apidata['polls']))
-    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
-    doc.save_with_history([e])
-    resolve_uploaded_material(meeting=session.meeting, doc=doc)
+    try:
+        save_session_json_doc(
+            session, 'polls', apidata['polls'], request.user.person
+        )
+    except SaveMaterialsError as save_err:
+        return err(400, str(save_err))
     return HttpResponse(
         "Done",
         status=200,
@@ -5370,10 +5643,11 @@ def api_upload_bluesheet(request):
     os.close(fd)
     with open(name, "w") as file:
         file.write(text)
-    with open(name, "br") as file:
-        save_err = save_bluesheet(request, session, file)
-    if save_err:
-        return err(400, save_err)
+    try:
+        with open(name, "br") as file:
+            save_bluesheet(request, session, file, request.user.person)
+    except SaveMaterialsError as save_err:
+        return err(400, str(save_err))
     return HttpResponse(
         "Done",
         status=200,
@@ -5609,107 +5883,142 @@ def request_minutes(request, num=None):
     return render(request, 'meeting/request_minutes.html', context)
 
 class ApproveSlidesForm(forms.Form):
-    title = forms.CharField(max_length=255)
-    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=False,required=False)
+    """Approve a proposal, choosing which further sessions the deck goes to
 
-    def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
-        super(ApproveSlidesForm, self).__init__(*args, **kwargs )
-        if not show_apply_to_all_checkbox:
-            self.fields.pop('apply_to_all')
-            
+    linked are the sessions the deck is already on: they get the new revision regardless, so they are
+    not offered. The proposal's own choice preselects the boxes for a new deck; for a revision the boxes
+    mean "also add it here", so nothing is preselected.
+    """
+    title = forms.CharField(max_length=255)
+    sessions = forms.TypedMultipleChoiceField(
+        coerce=int, required=False, widget=forms.CheckboxSelectMultiple, label="Also link the deck to",
+    )
+
+    def __init__(self, submission, linked, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.meeting = submission.session.meeting
+        self.linked = list(linked)
+        scheduled = scheduled_only(get_meeting_sessions(submission.session.meeting.number, submission.session.group.acronym))
+        if not scheduled:
+            scheduled = [submission.session]
+        self.offered = [s for s in scheduled if s not in self.linked]
+        if self.offered == scheduled and len(scheduled) == 1:
+            self.fields.pop("sessions")  # nowhere else it could go
+            return
+        if not self.offered:
+            self.fields.pop("sessions")
+            return
+        field = self.fields["sessions"]
+        field.label = "Also link the deck to" if self.linked else "Link the deck to"
+        field.required = not self.linked
+        field.error_messages["required"] = "Choose at least one session."
+        requested = set(submission.sessions.values_list("pk", flat=True))
+        field.choices = [
+            (s.pk, material_session_label(s, n) + (" (requested)" if s.pk in requested else ""))
+            for n, s in enumerate(scheduled, start=1) if s in self.offered
+        ]
+        if not submission.doc_id:
+            field.initial = [s.pk for s in self.offered if s.pk in requested]
+
+    def clean_title(self):
+        return validate_slides_title(self.cleaned_data["title"], self.meeting)
+
+    def chosen_sessions(self):
+        if "sessions" not in self.fields:
+            return list(self.offered)
+        chosen = self.cleaned_data["sessions"]
+        return [s for s in self.offered if s.pk in chosen]
+
 @login_required
 def approve_proposed_slides(request, slidesubmission_id, num):
     submission = get_object_or_404(SlideSubmission,pk=slidesubmission_id)
     if not submission.session.can_manage_materials(request.user):
+        if user_is_person(request.user, submission.submitter):
+            return render(request, "meeting/proposed_slides_status.html", {
+                "submission": submission,
+                "proposed_for": [material_session_label(s) for s in sort_sessions(submission.sessions.all())],
+            })
         permission_denied(request, "You don't have permission to manage slides for this session.")
     if submission.session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")   
     
-    session_number = None
-    sessions = get_sessions(submission.session.meeting.number,submission.session.group.acronym)
-    show_apply_to_all_checkbox = len(sessions) > 1 if submission.session.type_id == 'regular' else False
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(submission.session)
-    name, _ = os.path.splitext(submission.filename)
-    name = name[:name.rfind('-ss')]
-    existing_doc = Document.objects.filter(name=name).first()
+    _, session_number = sessions_covered_by_apply_to_all(submission.session)
+
+    # the document approving would revise, if there is one: the deck proposed against, or whatever
+    # the posted (or proposed) title would name for the proposed sessions
+    if submission.doc_id:
+        existing_doc = submission.doc
+    else:
+        proposed = list(submission.sessions.all()) or [submission.session]
+        home = submission.session if submission.session in proposed else proposed[0]
+        name, _ = material_document_name(
+            home, 'slides',
+            group_wide=group_wide_material_name(home, [s for s in proposed if s != home]),
+            title=request.POST.get('title') or submission.title,
+        )
+        existing_doc = Document.objects.filter(name=name).first()
+    linked = sort_sessions(sessions_linked_to(existing_doc, submission.session.meeting)) if existing_doc else []
+
     if request.method == 'POST' and submission.status.slug == 'pending':
-        form = ApproveSlidesForm(show_apply_to_all_checkbox, request.POST)
+        form = ApproveSlidesForm(submission, linked, request.POST)
         if form.is_valid():
-            apply_to_all = submission.session.type_id == 'regular'
-            if show_apply_to_all_checkbox:
-                apply_to_all = form.cleaned_data['apply_to_all']
             if request.POST.get('approve'):
-                # Ensure that we have a file to approve.  The system gets cranky otherwise.
-                if submission.filename is None or submission.filename == '' or not os.path.isfile(submission.staged_filepath()):
+                content = b""
+                if submission.filename:
+                    try:
+                        content = retrieve_bytes("staging", submission.filename)
+                    except FileNotFoundError:
+                        pass
+                if not content:
                     return HttpResponseNotFound("The slides you attempted to approve could not be found.  Please decline and delete them instead.")
                 title = form.cleaned_data['title']
-                if existing_doc:
-                   doc = Document.objects.get(name=name)
-                   doc.rev = '%02d' % (int(doc.rev)+1)
-                   doc.title = form.cleaned_data['title']
+                chosen = form.chosen_sessions()
+                where = chosen + [s for s in linked if s not in chosen]
+                home = submission.session if submission.session in where else where[0]
+                also_sessions = [s for s in chosen if s != home]
+                if existing_doc is not None:
+                    # the deck the page said would be revised, whichever sessions were added
+                    doc = existing_doc
+                    name = doc.name
+                    reclaim = False
                 else:
-                    doc = Document.objects.create(
-                              name = name,
-                              type_id = 'slides',
-                              title = title,
-                              group = submission.session.group,
-                              rev = '00',
-                          )
-                doc.states.add(State.objects.get(type_id='slides',slug='active'))
-                doc.states.add(State.objects.get(type_id='reuse_policy',slug='single'))
-                added_presentations = []
-                revised_presentations = []
-                if submission.session.presentations.filter(document=doc).exists():
-                    sp = submission.session.presentations.get(document=doc)
-                    sp.rev = doc.rev
-                    sp.save()
-                    revised_presentations.append(sp)
+                    group_wide = group_wide_material_name(home, also_sessions)
+                    name, _ = material_document_name(home, 'slides', group_wide=group_wide, title=title)
+                    doc = Document.objects.filter(name=name).first()
+                    reclaim = doc is not None and name == material_document_name(home, 'slides', group_wide=False, title=title)[0]
+                rev = '%02d' % (int(doc.rev) + 1) if doc is not None else '00'
+                _, ext = os.path.splitext(submission.filename)
+                target_filename = f'{name}-{rev}{ext}'
+                path = Path(submission.session.meeting.get_materials_path()) / 'slides'
+                path.mkdir(parents=True, exist_ok=True)
+                (path / target_filename).write_bytes(content)
+
+                relinked = []
+                if reclaim:
+                    warnings, relinked = reclaim_material_name(doc, home, request.user.person, keep=also_sessions)
+                    for warning in warnings:
+                        messages.warning(request, warning)
+                if doc is None:
+                    doc = Document.objects.create(name=name, type_id='slides', title=title, group=submission.session.group, rev=rev)
+                    doc.set_state(State.objects.get(type_id='slides', slug='active'))
+                    doc.set_state(State.objects.get(type_id='reuse_policy', slug='single'))
                 else:
-                    max_order = submission.session.presentations.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
-                    added_presentations.append(
-                        submission.session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
-                    )
-                if apply_to_all:
-                    for other_session in sessions:
-                        if other_session != submission.session and not other_session.presentations.filter(document=doc).exists():
-                            max_order = other_session.presentations.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
-                            added_presentations.append(
-                                other_session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
-                            )
-                sub_name, sub_ext = os.path.splitext(submission.filename)
-                target_filename = '%s-%s%s' % (sub_name[:sub_name.rfind('-ss')],doc.rev,sub_ext)
+                    doc.rev = rev
+                    doc.title = title
+                    if doc.get_state_slug('slides') == 'deleted':  # revised back into use
+                        doc.set_state(State.objects.get(type_id='slides', slug='active'))
                 doc.uploaded_filename = target_filename
                 e = NewRevisionDocEvent.objects.create(doc=doc,by=submission.submitter,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
                 doc.save_with_history([e])
-                path = os.path.join(submission.session.meeting.get_materials_path(),'slides')
-                if not os.path.exists(path):
-                    os.makedirs(path)
-                shutil.move(submission.staged_filepath(), os.path.join(path, target_filename))
-                doc.store_bytes(target_filename, retrieve_bytes("staging", submission.filename))
-                remove_from_storage("staging", submission.filename)
+                doc.store_bytes(target_filename, content)
+                added, revised = link_slides_to_sessions(doc, home, also_sessions)
                 post_process(doc)
                 resolve_uploaded_material(meeting=submission.session.meeting, doc=doc)
                 DocEvent.objects.create(type="approved_slides", doc=doc, rev=doc.rev, by=request.user.person, desc="Slides approved")
-
-                # update meetecho slide info if configured
-                if hasattr(settings, "MEETECHO_API_CONFIG"):
-                    sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
-                    for sp in added_presentations:
-                        try:
-                            sm.add(session=sp.session, slides=doc, order=sp.order)
-                        except MeetechoAPIError as err:
-                            log(f"Error in SlidesManager.add(): {err}")
-                    for sp in revised_presentations:
-                        try:
-                            sm.revise(session=sp.session, slides=doc)
-                        except MeetechoAPIError as err:
-                            log(f"Error in SlidesManager.revise(): {err}")
+                tell_meetecho_about_slides(home, doc, added, revised, relinked)
 
                 acronym = submission.session.group.acronym
-                submission.status = SlideSubmissionStatusName.objects.get(slug='approved')
-                submission.doc = doc
-                submission.save()
+                submission.approve(doc, request.user.person)
                 (to, cc) = gather_address_lists('slides_approved', group=submission.session.group, proposer=submission.submitter).as_strings()
                 subject = f"Slides approved for {submission.session.meeting} : {submission.session.group.acronym}{' : '+submission.session.name if submission.session.name else ''}"
                 body = render_to_string("meeting/slides_approved.txt", {
@@ -5722,40 +6031,69 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 send_mail_text(request, to, None, subject, body, cc=cc)
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=acronym)
             elif request.POST.get('disapprove'):
-                # Errors in processing a submit request sometimes result
-                # in a SlideSubmission object without a file.  Handle
-                # this case and keep processing the 'disapprove' even if
-                # the filename doesn't exist.
-
-                if submission.filename != None and submission.filename != '':
-                    try:
-                        os.unlink(submission.staged_filepath())
-                    except (FileNotFoundError, IsADirectoryError):
-                        pass
-                    remove_from_storage("staging", submission.filename)
-
-                acronym = submission.session.group.acronym
-                submission.status = SlideSubmissionStatusName.objects.get(slug='rejected')
-                submission.save()
-                return redirect('ietf.meeting.views.session_details',num=num,acronym=acronym)
+                submission.decline(request.user.person)
+                return redirect('ietf.meeting.views.session_details',num=num,acronym=submission.session.group.acronym)
             else:
                 pass
     elif not submission.status.slug == 'pending':
         return render(request, "meeting/previously_approved_slides.html",
                       {'submission': submission })
     else:
-        initial = {
-            'title': submission.title,
-            'apply_to_all' : submission.apply_to_all,
-        }
-        form = ApproveSlidesForm(show_apply_to_all_checkbox, initial=initial )
+        form = ApproveSlidesForm(submission, linked, initial={'title': submission.title})
+
+    moved_on = None
+    if submission.doc_id and submission.status_id == "pending":
+        moved_on = NewRevisionDocEvent.objects.filter(doc=submission.doc, time__gt=submission.time).order_by("time").first()
 
     return render(request, "meeting/approve_proposed_slides.html",
                   {'submission': submission,
                    'session_number': session_number,
-                   'existing_doc' : existing_doc,
+                   'existing_doc' : None if submission.doc_id else existing_doc,
+                   'moved_on': moved_on,
+                   'linked': [material_session_label(s) for s in linked],
+                   'requested': [material_session_label(s) for s in sort_sessions(submission.sessions.all())],
                    'form': form,
                   })
+
+
+@login_required
+def withdraw_proposed_slides(request, slidesubmission_id, num):
+    submission = get_object_or_404(SlideSubmission, pk=slidesubmission_id)
+    if not user_is_person(request.user, submission.submitter):
+        permission_denied(request, "Only the person who proposed these slides can withdraw them.")
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    if submission.status_id == "pending":
+        submission.withdraw()
+        messages.success(request, f"Withdrew the proposed slides '{submission.title}'.")
+    if request.POST.get("return_to") == "revise" and submission.doc_id:
+        return redirect(
+            "ietf.meeting.views.upload_session_slides", session_id=submission.session_id, num=num, name=submission.doc.name
+        )
+    return redirect("ietf.meeting.views.session_details", num=num, acronym=submission.session.group.acronym)
+
+
+@login_required
+def proposed_slides_file(request, slidesubmission_id, num):
+    """The staged file of a slide proposal, for those who approve it and the one who proposed it"""
+    submission = get_object_or_404(SlideSubmission, pk=slidesubmission_id)
+    if not (
+        submission.session.can_manage_materials(request.user)
+        or user_is_person(request.user, submission.submitter)
+    ):
+        permission_denied(request, "You don't have permission to see these proposed slides.")
+    if not submission.filename:
+        raise Http404
+    try:
+        content = retrieve_bytes("staging", submission.filename)
+    except FileNotFoundError:
+        raise Http404
+    if not content:
+        raise Http404
+    content_type, _ = mimetypes.guess_type(submission.filename)
+    response = HttpResponse(content, content_type=content_type or "application/octet-stream")
+    response["Content-Disposition"] = f'attachment; filename="{submission.filename}"'
+    return response
 
 
 @role_required("Secretariat")
@@ -5772,11 +6110,7 @@ def notify_meetecho_of_all_slides(request, num, acronym):
             content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
             permitted_methods=("POST",),
         )
-    scheduled_sessions = [
-        session
-        for session in get_sessions(meeting.number, acronym)
-        if session.current_status == "sched"
-    ]
+    scheduled_sessions = scheduled_only(get_meeting_sessions(meeting.number, acronym))
     sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
     updated = []
     for session in scheduled_sessions:
@@ -5829,16 +6163,23 @@ def import_session_minutes(request, session_id, num):
         permission_denied(request, "You don't have permission to import minutes for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
+    if session_is_inactive(session):
+        permission_denied(request, "This session was cancelled or rescheduled, so its materials can no longer be changed.")
+
+    minutes_sp = session.presentations.filter(document__type='minutes').first()
+    choices, select_all, shared_with = material_upload_choices(session, 'minutes', minutes_sp)
 
     if request.method == 'POST':
-        form = ImportMinutesForm(request.POST)
+        form = ImportMinutesForm(choices, select_all, request.POST, shared_with=shared_with)
         if not form.is_valid():
             import_contents = form.data['markdown_text']
         else:
             import_contents = form.cleaned_data['markdown_text']
             try:
-                save_session_minutes_revision(
+                warnings = save_session_minutes_revision(
                     session=session,
+                    also_sessions=form.sessions_to_apply(),
+                    replace=form.replace_shared(),
                     file=io.BytesIO(import_contents.encode('utf8')),
                     ext='.md',
                     request=request,
@@ -5851,6 +6192,8 @@ def import_session_minutes(request, session_id, num):
             except SaveMaterialsError as err:
                 form.add_error(None, str(err))
             else:
+                for warning in warnings:
+                    messages.warning(request, warning)
                 resolve_uploaded_material(meeting=session.meeting, doc=session.minutes())
                 messages.success(request, f'Successfully imported minutes as revision {session.minutes().rev}.')
                 return redirect('ietf.meeting.views.session_details', num=num, acronym=session.group.acronym)
@@ -5860,7 +6203,7 @@ def import_session_minutes(request, session_id, num):
         except NoteError as err:
             messages.error(request, f'Could not import notes with id {note.id}: {err}.')
             return redirect('ietf.meeting.views.session_details', num=num, acronym=session.group.acronym)
-        form = ImportMinutesForm(initial={'markdown_text': import_contents})
+        form = ImportMinutesForm(choices, select_all, initial={'markdown_text': import_contents}, shared_with=shared_with)
 
     # Try to prevent pointless revision creation. Note that we do not block replacing
     # a document with an identical copy in the validation above. We cannot entirely

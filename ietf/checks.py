@@ -54,6 +54,9 @@ def check_id_submission_files(app_configs, **kwargs):
         return []
     #
     errors = []
+    hint = ("Please either update the local settings to point at the correct\n"
+        "\tfile, or if the setting is correct, make sure the file is in place and\n"
+        "\thas the right permissions.\n")
     for s in ("IDSUBMIT_IDNITS_BINARY", ):
         p = getattr(settings, s)
         if not os.path.exists(p):
@@ -61,10 +64,21 @@ def check_id_submission_files(app_configs, **kwargs):
                 "A file used by the I-D submission tool does not exist\n"
                 "at the path given in the settings file.  The setting is:\n"
                 "    %s = %s" % (s, p),
-                hint = ("Please either update the local settings to point at the correct\n"
-                    "\tfile, or if the setting is correct, make sure the file is in place and\n"
-                    "\thas the right permissions.\n"),
+                hint = hint,
                 id = "datatracker.E0007",
+            ))
+    # The idnits3 check is advisory - a submission is not blocked by it, and is
+    # not blocked by its absence either, so only warn if it is not installed.
+    for s in ("IDSUBMIT_IDNITS3_BINARY", ):
+        p = getattr(settings, s)
+        if not os.path.exists(p):
+            errors.append(checks.Warning(
+                "A file used by the I-D submission tool does not exist\n"
+                "at the path given in the settings file.  The advisory checks it\n"
+                "provides will be skipped.  The setting is:\n"
+                "    %s = %s" % (s, p),
+                hint = hint,
+                id = "datatracker.W0007",
             ))
     return errors
 

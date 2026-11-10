@@ -30,4 +30,4 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Please do not report issues with the content of Internet-Drafts or RFCs using this repository. Send email to the relevant group instead. Some Internet-Drafts have their own github repositories where issues can be reported. See the datatracker's page for the I-D for links and email addresses. Errata for published RFCs are submitted at https://www.rfc-editor.org/errata.php#reportnew**
+        **Please do not report issues with the content of Internet-Drafts or RFCs using this repository. Send email to the relevant group instead. Some Internet-Drafts have their own github repositories where issues can be reported. See the datatracker's page for the I-D for links and email addresses. Errata for published RFCs are submitted at https://errata.rfc-editor.org/new/entry-instructions/**

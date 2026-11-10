@@ -4,8 +4,7 @@
 
 
 from ietf.api import ModelResource
-from ietf.api import ToOneField
-from tastypie.fields import ToManyField     # pyflakes:ignore
+from tastypie.fields import ToOneField, ToManyField  # pyflakes:ignore
 from tastypie.constants import ALL, ALL_WITH_RELATIONS  # pyflakes:ignore
 from tastypie.cache import SimpleCache
 

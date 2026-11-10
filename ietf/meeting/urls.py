@@ -32,6 +32,8 @@ safe_for_all_meeting_types = [
     url(r'^session/(?P<session_id>\d+)\.ics$',    views.agenda_ical),
     url(r'^sessions/(?P<acronym>[-a-z0-9]+)\.ics$', views.agenda_ical),
     url(r'^slidesubmission/(?P<slidesubmission_id>\d+)$', views.approve_proposed_slides),
+    url(r'^slidesubmission/(?P<slidesubmission_id>\d+)/file$', views.proposed_slides_file),
+    url(r'^slidesubmission/(?P<slidesubmission_id>\d+)/withdraw$', views.withdraw_proposed_slides),
 ]
 
 
@@ -127,6 +129,7 @@ urlpatterns = [
     url(r'^interim/pending/?$', views.interim_pending),
     url(r'^requests.html$', RedirectView.as_view(url='/meeting/requests', permanent=True)),
     url(r'^past/?$', views.past),
+    url(r'^past/interim/?$', views.past_interims),
     url(r'^upcoming/?$', views.upcoming),
     url(r'^upcoming\.ics/?$', views.upcoming_ical),
     url(r'^upcoming\.json/?$', views.upcoming_json),

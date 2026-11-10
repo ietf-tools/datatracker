@@ -1,5 +1,4 @@
-# Copyright The IETF Trust 2013-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2013-2026, All Rights Reserved
 
 import datetime
 import json
@@ -9,6 +8,7 @@ from django.urls import reverse as urlreverse
 from django.db.models import Q
 from django.test import Client
 from django.utils import timezone
+from django.utils.html import escape
 
 import debug                             # pyflakes:ignore
 
@@ -86,10 +86,10 @@ class GroupLeadershipTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Group Leadership")
-        self.assertContains(r, bof_role.person.last_name())
-        self.assertContains(r, proposed_role.person.last_name())
-        self.assertContains(r, active_role.person.last_name())
-        self.assertNotContains(r, conclude_role.person.last_name())
+        self.assertContains(r, escape(bof_role.person.last_name()))
+        self.assertContains(r, escape(proposed_role.person.last_name()))
+        self.assertContains(r, escape(active_role.person.last_name()))
+        self.assertNotContains(r, escape(conclude_role.person.last_name()))
 
     def test_leadership_wg_csv(self):
         url = urlreverse(
@@ -108,7 +108,7 @@ class GroupLeadershipTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Group Leadership")
-        self.assertContains(r, role.person.last_name())
+        self.assertContains(r, escape(role.person.last_name()))
         self.assertNotContains(r, "Chairman, Sops")
 
 

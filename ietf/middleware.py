@@ -6,6 +6,7 @@ from django.db import connection
 from django.db.utils import OperationalError
 from django.shortcuts import render
 from django.http import HttpResponsePermanentRedirect
+from ietf.utils.http import is_safe_next_url
 from ietf.utils.log import log, exc_parts
 from ietf.utils.mail import log_smtp_exception
 from opentelemetry.propagate import inject
@@ -67,7 +68,10 @@ def redirect_trailing_period_middleware(get_response):
     def redirect_trailing_period(request):
         response = get_response(request)
         if response.status_code == 404 and request.path.endswith("."):
-            return HttpResponsePermanentRedirect(request.path.rstrip("."))
+            path = request.path.rstrip(".")
+            # A path such as "//evil.example.com." would otherwise redirect off-site
+            if is_safe_next_url(path):
+                return HttpResponsePermanentRedirect(path)
         return response
 
     return redirect_trailing_period

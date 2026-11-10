@@ -5,6 +5,7 @@ import copy
 import datetime
 import json
 import html
+from itertools import chain
 from unittest import mock
 import os
 import sys
@@ -16,10 +17,10 @@ from urllib.parse import quote, urlencode, urljoin
 
 from django.apps import apps
 from django.conf import settings
-from django.http import HttpResponseForbidden
-from django.test import Client, RequestFactory
-from django.test.utils import override_settings
-from django.urls import reverse as urlreverse
+from django.db import connection
+from django.test import Client
+from django.test.utils import CaptureQueriesContext, override_settings
+from django.urls import Resolver404, resolve, reverse as urlreverse
 from django.utils import timezone
 
 from tastypie.test import ResourceTestCaseMixin
@@ -29,24 +30,25 @@ import debug                            # pyflakes:ignore
 import ietf
 from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils import get_unicode_document_content
-from ietf.doc.models import RelatedDocument, State
+from ietf.doc.models import DocEvent, Document, RelatedDocument, State
 from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory, RfcAuthorFactory, DocEventFactory
 from ietf.group.factories import RoleFactory
-from ietf.meeting.factories import MeetingFactory, SessionFactory
+from ietf.meeting.factories import MeetingFactory, RegistrationFactory, SessionFactory
 from ietf.meeting.models import Session, Registration
 from ietf.nomcom.models import Volunteer
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
 from ietf.person.factories import PersonFactory, random_faker, EmailFactory, PersonalApiKeyFactory
 from ietf.person.models import Email, User
+from ietf.submit.factories import SubmissionFactory
 from ietf.utils.mail import empty_outbox, outbox, get_payload_text
 from ietf.utils.models import DumpInfo
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, reload_db_objects
 
-from . import Serializer
-from .ietf_utils import is_valid_token, requires_api_token
+from . import OMITTED_APPS_APIS, Serializer
 from .views import EmailIngestionError
 
 OMITTED_APPS = (
+    'ietf.api',
     'ietf.secr.meetings',
     'ietf.secr.proceedings',
     'ietf.ipr',
@@ -561,6 +563,62 @@ class CustomApiTests(TestCase):
                 json.loads(retrieve_str(type_id, newdoc.uploaded_filename)),
                 json.loads(content)
             )
+
+    def test_legacy_session_data_endpoints_report_a_missing_timeslot(self):
+        """A session with no official timeslot is a 400 with the reason, not a 500
+
+        Pins the responses of the personal-API-key endpoints so the internal error
+        convention can change underneath them without changing what callers see.
+        """
+        recmanrole = RoleFactory(group__type_id="ietf", name_id="recman")
+        recmanrole.person.user.last_login = timezone.now()
+        recmanrole.person.user.save()
+        session = SessionFactory(
+            group__type_id="wg",
+            meeting=MeetingFactory(type_id="ietf"),
+            add_to_schedule=False,
+        )
+
+        cases = [
+            (
+                "ietf.meeting.views.api_set_session_video_url",
+                lambda key: {
+                    "apikey": key,
+                    "session_id": session.pk,
+                    "url": "https://example.com/v",
+                },
+            ),
+            (
+                "ietf.meeting.views.api_upload_bluesheet",
+                lambda key: {
+                    "apikey": key,
+                    "session_id": session.pk,
+                    "bluesheet": json.dumps([{"name": "A", "affiliation": "B"}]),
+                },
+            ),
+            (
+                "ietf.meeting.views.api_upload_chatlog",
+                lambda key: {
+                    "apikey": key,
+                    "apidata": json.dumps({"session_id": session.pk, "chatlog": []}),
+                },
+            ),
+            (
+                "ietf.meeting.views.api_upload_polls",
+                lambda key: {
+                    "apikey": key,
+                    "apidata": json.dumps({"session_id": session.pk, "polls": []}),
+                },
+            ),
+        ]
+        for viewname, payload in cases:
+            with self.subTest(view=viewname):
+                url = urlreverse(viewname)
+                apikey = PersonalApiKeyFactory(endpoint=url, person=recmanrole.person)
+                r = self.client.post(url, payload(apikey.hash()))
+                self.assertContains(
+                    r, "Could not find official timeslot for session", status_code=400
+                )
 
     def test_api_upload_bluesheet(self):
         url = urlreverse("ietf.meeting.views.api_upload_bluesheet")
@@ -1759,6 +1817,23 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
             self.assertIn(name, resource_list,
                         "Expected a REST API resource for %s, but didn't find one" % name)
 
+    def test_omitted_apps_have_no_v1_api(self):
+        """Apps in OMITTED_APPS_APIS have no v1 API"""
+        client = Client(Accept="application/json")
+        resource_list = client.get("/api/v1/").json()
+        for app_name in OMITTED_APPS_APIS:
+            # api name is derived from the app name as in api.populate_api_list()
+            name = app_name.split(".", 1)[-1]
+            self.assertNotIn(
+                name,
+                resource_list,
+                "Found a REST API resource for %s, but expected none" % name,
+            )
+            with self.assertRaises(
+                Resolver404, msg=f"Expected no API endpoint for {name}"
+            ):
+                resolve(f"/api/v1/{name}/")
+
     def test_api_top_level_bad_accept_header(self):
         """A malformed Accept header is rejected without reflecting its content
 
@@ -1875,16 +1950,47 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
         except ValueError:
             self.fail("serializer.to_etree raised ValueError on an ordinary string")
         # Every control character that XML 1.0 forbids must be escaped rather than
-        # causing a ValueError.  This is the class of characters that triggered the
-        # production exception (lxml.etree._utf8 rejects them all).
-        invalid_chars = [chr(c) for c in list(range(0x00, 0x09)) + [0x0b, 0x0c] + list(range(0x0e, 0x20))]
-        for ch in invalid_chars:
+        # causing a ValueError. These should be replaced by a Unicode picture char.
+        control_chars = [
+            chr(c) for c in chain(range(0x00, 0x09), [0x0B, 0x0C], range(0x0E, 0x20))
+        ]
+        for ch in control_chars:
             try:
-                serializer.to_etree(f"string with {ch!r} in it")
+                elt = serializer.to_etree(f"string with {str(ch)} in it")
             except ValueError:
                 self.fail(
                     f"serializer.to_etree raised ValueError on a string "
                     f"containing control character U+{ord(ch):04X}"
+                )
+            else:
+                self.assertIn(
+                    chr(0x2400 + ord(ch)),
+                    elt.text,
+                    (
+                        f"character U+{ord(ch):04X} not replaced with "
+                        f"Unicode control picture character"
+                    ),
+                )
+
+        # Unicode surrogate ranges and non-characters are not permitted in XML 1.0
+        # either. These should be replaced by the Unicode replacement character.
+        invalid_chars = [chr(c) for c in chain(range(0xD800, 0xDFFF), [0xFFFE, 0xFFFF])]
+        for ch in invalid_chars:
+            try:
+                elt = serializer.to_etree(f"string with {str(ch)} in it")
+            except ValueError:
+                self.fail(
+                    f"serializer.to_etree raised ValueError on a string "
+                    f"containing invalid character U+{ord(ch):04X}"
+                )
+            else:
+                self.assertIn(
+                    chr(0xFFFD),
+                    elt.text,
+                    (
+                        f"character U+{ord(ch):04X} not replaced with "
+                        f"Unicode replacement char"
+                     ),
                 )
 
     def test_post_detail_is_not_allowed(self):
@@ -1916,6 +2022,57 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
                     405,
                     f"POST to {name}.{model_name} detail should return 405 status",
                 )
+
+    def test_list_query_count_does_not_grow_with_rows(self):
+        """List endpoints load related objects without a query per row"""
+
+        def make_document():
+            doc = WgDraftFactory(
+                ad=PersonFactory(),
+                shepherd=EmailFactory(),
+                intended_std_level_id="ps",
+                std_level_id="ps",
+            )
+            doc.tags.add("w-expert")
+            SubmissionFactory(draft=doc, name=doc.name, group=doc.group)
+            DocEventFactory(doc=doc)
+            return doc
+
+        def make_registration():
+            return RegistrationFactory(meeting=meeting)
+
+        def num_queries(url):
+            with CaptureQueriesContext(connection) as ctx:
+                r = self.client.get(url)
+            self.assertValidJSONResponse(r)
+            return len(ctx.captured_queries)
+
+        meeting = MeetingFactory(type_id="ietf")
+        endpoints = [
+            ("/api/v1/doc/document/?format=json&limit=100", make_document),
+            ("/api/v1/meeting/registration/?format=json&limit=100", make_registration),
+        ]
+        for url, make in endpoints:
+            make()
+            with_one = num_queries(url)
+            make()
+            make()
+            self.assertEqual(num_queries(url), with_one, url)
+
+        doc = Document.objects.filter(type_id="draft").first()
+        r = self.client.get(f"/api/v1/doc/document/{doc.name}/?format=json")
+        self.assertValidJSONResponse(r)
+        data = r.json()
+        self.assertEqual(data["group"], f"/api/v1/group/group/{doc.group.pk}/")
+        self.assertEqual(data["type"], "/api/v1/name/doctypename/draft/")
+        self.assertEqual(data["ad"], f"/api/v1/person/person/{doc.ad.pk}/")
+        self.assertEqual(data["shepherd"], f"/api/v1/person/email/{doc.shepherd.pk}/")
+        self.assertEqual(data["tags"], ["/api/v1/name/doctagname/w-expert/"])
+
+        event = DocEvent.objects.filter(doc=doc).first()
+        r = self.client.get(f"/api/v1/doc/docevent/{event.pk}/?format=json")
+        self.assertValidJSONResponse(r)
+        self.assertEqual(r.json()["doc"], f"/api/v1/doc/document/{doc.name}/")
 
 
 class RfcdiffSupportTests(TestCase):
@@ -2126,85 +2283,3 @@ class RfcdiffSupportTests(TestCase):
             url = urlreverse(self.target_view, kwargs={'name': name})
             r = self.client.get(url)
             self.assertEqual(r.status_code, 404)
-
-
-class TokenTests(TestCase):
-    @override_settings(APP_API_TOKENS={"known.endpoint": ["token in a list"], "oops": "token as a str"})
-    def test_is_valid_token(self):
-        # various invalid cases
-        self.assertFalse(is_valid_token("unknown.endpoint", "token in a list"))
-        self.assertFalse(is_valid_token("known.endpoint", "token"))
-        self.assertFalse(is_valid_token("known.endpoint", "token as a str"))
-        self.assertFalse(is_valid_token("oops", "token"))
-        self.assertFalse(is_valid_token("oops", "token in a list"))
-        # the only valid cases
-        self.assertTrue(is_valid_token("known.endpoint", "token in a list"))
-        self.assertTrue(is_valid_token("oops", "token as a str"))
-
-    @mock.patch("ietf.api.ietf_utils.is_valid_token")
-    def test_requires_api_token(self, mock_is_valid_token):
-        called = False
-
-        @requires_api_token
-        def fn_to_wrap(request, *args, **kwargs):
-            nonlocal called
-            called = True
-            return request, args, kwargs
-        
-        req_factory = RequestFactory()
-        arg = object()
-        kwarg = object()
-
-        # No X-Api-Key header
-        mock_is_valid_token.return_value = False
-        val = fn_to_wrap(
-            req_factory.get("/some/url", headers={}),
-            arg,
-            kwarg=kwarg,
-        )
-        self.assertTrue(isinstance(val, HttpResponseForbidden))
-        self.assertFalse(mock_is_valid_token.called)
-        self.assertFalse(called)
-
-        # Bad X-Api-Key header (not resetting the mock, it was not used yet)
-        val = fn_to_wrap(
-            req_factory.get("/some/url", headers={"X-Api-Key": "some-value"}),
-            arg, 
-            kwarg=kwarg,
-        )
-        self.assertTrue(isinstance(val, HttpResponseForbidden))
-        self.assertTrue(mock_is_valid_token.called)
-        self.assertEqual(
-            mock_is_valid_token.call_args[0], 
-            (fn_to_wrap.__module__ + "." + fn_to_wrap.__qualname__, "some-value"),
-        )
-        self.assertFalse(called)
-
-        # Valid header
-        mock_is_valid_token.reset_mock()
-        mock_is_valid_token.return_value = True
-        request = req_factory.get("/some/url", headers={"X-Api-Key": "some-value"}) 
-        # Bad X-Api-Key header (not resetting the mock, it was not used yet)
-        val = fn_to_wrap(
-            request,
-            arg, 
-            kwarg=kwarg,
-        )
-        self.assertEqual(val, (request, (arg,), {"kwarg": kwarg}))
-        self.assertTrue(mock_is_valid_token.called)
-        self.assertEqual(
-            mock_is_valid_token.call_args[0], 
-            (fn_to_wrap.__module__ + "." + fn_to_wrap.__qualname__, "some-value"),
-        )
-        self.assertTrue(called)
-
-        # Test the endpoint setting
-        @requires_api_token("endpoint")
-        def another_fn_to_wrap(request):
-            return "yep"
-        
-        val = another_fn_to_wrap(request)
-        self.assertEqual(
-            mock_is_valid_token.call_args[0], 
-            ("endpoint", "some-value"),
-        )

@@ -278,9 +278,21 @@ class Person(models.Model):
         # When RfcAuthors are populated, this may over-return if an author is dropped
         # from the author list between the final draft and the published RFC. Should
         # ignore DocumentAuthors when an RfcAuthor exists for a draft.
-        rfcs = list(Document.objects.filter(type="rfc").filter(models.Q(documentauthor__person=self)|models.Q(rfcauthor__person=self)).distinct())
-        rfcs.sort(key=lambda d: d.name )
-        return rfcs
+        #
+        # The two authorship tables are queried separately and combined here. As a
+        # single ORed queryset, neither person_id index is usable and the join has to
+        # be materialized in full before being deduplicated.
+        ids = set(
+            Document.objects.filter(
+                type="rfc", documentauthor__person=self
+            ).values_list("pk", flat=True)
+        )
+        ids.update(
+            Document.objects.filter(
+                type="rfc", rfcauthor__person=self
+            ).values_list("pk", flat=True)
+        )
+        return sorted(Document.objects.filter(pk__in=ids), key=lambda d: d.name)
 
     def active_drafts(self):
         from ietf.doc.models import Document

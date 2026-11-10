@@ -10,6 +10,7 @@ import unicodedata
 
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
+from django.template.loader import render_to_string
 from django.utils.functional import keep_lazy
 from django.utils.safestring import mark_safe
 
@@ -121,9 +122,11 @@ def wordwrap(text, width=80):
         chars = set(ss)
         return len(chars) == 1 and len(ss) >= 3 and ss[0] in set('#*+-.=_~')
     width = int(width)                  # ensure we have an int, if this is used as a template filter
-    text = re.sub(" *\r\n", "\n", text) # get rid of DOS line endings
-    text = re.sub(" *\r", "\n", text)   # get rid of MAC line endings
-    text = re.sub("( *\n){3,}", "\n\n", text) # get rid of excessive vertical whitespace
+    # The (?<! ) lookbehinds keep these linear on long runs of spaces; a match
+    # never starts mid-run anyway, so the results are unchanged.
+    text = re.sub(r"(?<! ) *\r\n", "\n", text) # get rid of DOS line endings
+    text = re.sub(r"(?<! ) *\r", "\n", text)   # get rid of MAC line endings
+    text = re.sub(r"(?<! )( *\n){3,}", "\n\n", text) # get rid of excessive vertical whitespace
     lines = text.split("\n")
     filled = []
     wrapped = False
@@ -168,8 +171,8 @@ def wordwrap(text, width=80):
 #     return text
 
 def wrap_text_if_unwrapped(text, width=80, max_tolerated_line_length=100):
-    text = re.sub(" *\r\n", "\n", text) # get rid of DOS line endings 
-    text = re.sub(" *\r", "\n", text)   # get rid of MAC line endings 
+    text = re.sub(r"(?<! ) *\r\n", "\n", text) # get rid of DOS line endings (see wordwrap)
+    text = re.sub(r"(?<! ) *\r", "\n", text)   # get rid of MAC line endings
 
     width = int(width)                  # ensure we have an int, if this is used as a template filter
     max_tolerated_line_length = int(max_tolerated_line_length)
@@ -281,3 +284,15 @@ def decode_document_content(content: bytes) -> str:
         except UnicodeDecodeError:
             pass
     return content.decode("latin-1")  # everything is legal in latin-1
+
+
+def render_txt_as_unsafe(*args, **kwargs) -> str:
+    """Render a plain text template to a str that is not marked safe
+
+    Takes the same arguments as render_to_string(). That function marks its
+    output safe for HTML, so Django will not escape it where it is later shown
+    in a page, e.g. as a form field's initial value. Use this instead when
+    rendering a .txt template whose output is text, not HTML.
+    """
+    # str(SafeString) returns the SafeString itself; str.__str__ makes a plain str
+    return str.__str__(render_to_string(*args, **kwargs))

@@ -760,9 +760,9 @@ class AnyEmailAuthenticationForm(AuthenticationForm):
             except ValueError:
                 self.add_error(
                     "password",
-                    'Your password has been cleared because of possible password leakage. '
-                    'Please use the "Forgot your password?" button below to set a new password '
-                    'for your account.',
+                    'Your password has been reset due to inactivity. Please use the '
+                    '"Forgot your password?" button below to set a new password for '
+                    'your account.',
                 )
         return super().clean()
 

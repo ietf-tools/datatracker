@@ -120,6 +120,7 @@
         "ietf/static/images/irtf-logo-white.svg",
         "ietf/static/images/irtf-logo.svg",
         "ietf/static/js/add_session_recordings.js",
+        "ietf/static/js/api/admin-token-copy.js",
         "ietf/static/js/attendees-chart.js",
         "ietf/static/js/agenda_filter.js",
         "ietf/static/js/agenda_materials.js",
@@ -174,7 +175,7 @@
         "ietf/static/js/timezone.js",
         "ietf/static/js/upcoming.js",
         "ietf/static/js/upload-material.js",
-        "ietf/static/js/upload-session-agenda.js",
+        "ietf/static/js/upload-or-enter-material.js",
         "ietf/static/js/upload_bofreq.js",
         "ietf/static/js/upload_statement.js",
         "ietf/static/js/zxcvbn.js"

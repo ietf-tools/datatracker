@@ -1,3 +1,31 @@
+FROM debian:trixie AS builder
+
+# Update to the desired release tag
+ARG LIBYANG_TAG=v5.8.6
+
+# Build-time dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        cmake \
+        build-essential \
+        pkg-config \
+        ca-certificates \
+        libpcre2-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+RUN git clone --branch ${LIBYANG_TAG} --depth 1 \
+    https://github.com/CESNET/libyang.git libyang
+
+WORKDIR /src/libyang/build
+RUN cmake \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/opt/libyang \
+        -DBUILD_SHARED_LIBS=ON \
+        .. \
+    && make -j"$(nproc)" \
+    && make install
+
 FROM python:3.12-trixie
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
@@ -8,6 +36,13 @@ ENV NODE_MAJOR=26
 RUN apt-get update \
     && apt-get -qy upgrade \
     && apt-get -y install --no-install-recommends dialog 2>&1
+
+COPY --from=builder /opt/libyang /opt/libyang
+
+RUN echo /opt/libyang/lib > /etc/ld.so.conf.d/libyang.conf \
+    && ldconfig \
+    && ln -s /opt/libyang/bin/yanglint  /usr/bin/yanglint \
+    && ln -s /opt/libyang/bin/yangre    /usr/bin/yangre
 
 # Add Node.js Source
 RUN apt-get install -y --no-install-recommends ca-certificates curl gnupg \
@@ -59,7 +94,6 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 	libmagic-dev \
 	libmariadb-dev \
 	libmemcached-tools \
-	libyang3-tools \
 	locales \
 	make \
 	mariadb-client \
@@ -144,6 +178,12 @@ RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 # Fetch wait-for utility
 ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
 RUN chmod +rx /usr/local/bin/wait-for
+
+# Update to a patched pip without trusting pip's own CA bundle. Can be dropped if the
+# Python 3.12 base image ships with a safe pip or when we move to Python 3.13+, which
+# already ships with 26.2.2. Then, using the safe pip, upgrade to the current version.
+RUN python3 -m pip install --root-user-action=ignore "pip @ https://files.pythonhosted.org/packages/3f/06/3e4420302363fbb71be3c7f35ce042f54bfca330e3e66b3a2e3c4cca579f/pip-26.2.2-py3-none-any.whl#sha256=fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70" \
+    && python3 -m pip install --root-user-action=ignore --upgrade pip
 
 # Create assets directory
 RUN mkdir -p /assets

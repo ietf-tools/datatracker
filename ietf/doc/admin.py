@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2025, All Rights Reserved
+# Copyright The IETF Trust 2010-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -18,7 +18,6 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
     EditedRfcAuthorsDocEvent, RpcAssignmentDocEvent, RpcActionHolderOpenEntry)
 
 from ietf.utils.admin import SaferTabularInline
-from ietf.utils.validators import validate_external_resource_value
 from .storage_utils import force_replication
 from .utils import replicate_stored_objects_for_document
 
@@ -259,12 +258,7 @@ class DocumentUrlAdmin(admin.ModelAdmin):
     raw_id_fields = ['doc', ]
 admin.site.register(DocumentURL, DocumentUrlAdmin)
 
-class DocExtResourceAdminForm(forms.ModelForm):
-    def clean(self):
-        validate_external_resource_value(self.cleaned_data['name'],self.cleaned_data['value'])
-
 class DocExtResourceAdmin(admin.ModelAdmin):
-    form = DocExtResourceAdminForm
     list_display = ['id', 'doc', 'name', 'display_name', 'value',]
     search_fields = ['doc__name', 'value', 'display_name', 'name__slug',]
     raw_id_fields = ['doc', ]

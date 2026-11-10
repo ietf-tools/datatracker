@@ -1,99 +1,89 @@
-# Copyright The IETF Trust 2019-2020, All Rights Reserved
-#!/usr/bin/python
+# Copyright The IETF Trust 2019-2026, All Rights Reserved
+"""Management command for exporting name related base data for the tests"""
 
-# simple script for exporting name related base data for the tests
-
-import inspect
-import io
-import os, sys
-
-from typing import Any, List        # pyflakes:ignore
-
+import json
+import os
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.core.serializers import serialize
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db import models
 
-import debug                            # pyflakes:ignore
+from ietf.dbtemplate.models import DBTemplate
+from ietf.doc.models import BallotType, State, StateType
+from ietf.group.models import GroupFeatures
+from ietf.mailtrigger.models import MailTrigger, Recipient
+from ietf.meeting.models import BusinessConstraint
+from ietf.name.models import NameModel
+from ietf.stats.models import CountryAlias
 
-class SortedJsonEncoder(DjangoJSONEncoder):
-    def __init__(self, *args, **kwargs):
-        kwargs['sort_keys'] = True
-        return super(SortedJsonEncoder, self).__init__(*args, **kwargs)
 
 class Command(BaseCommand):
     help = """
     Generate a custom fixture for all objects needed by the datatracker test suite.
 
-    The recommended way to use this is unfortunately not the default, as the ordering
-    of the resulting fixture isn't quite stable.  Instead use:
-
-      "ietf/manage.py generate_name_fixture --stdout | jq --sort-keys 'sort_by(.model, .pk)' > ietf/name/fixtures/names.json"
+    Defaults to overwriting `ietf/name/fixtures/names.json`, which is the actual fixture
+    location. Modify this with the `--file` option.
     """
 
     def add_arguments(self, parser):
-        parser.add_argument('--stdout', action='store_true', default=False, help="Send fixture to stdout instead of ietf/name/fixtures/names.json")
-
-    def say(self, msg):
-        if self.verbosity > 0:
-            sys.stdout.write(msg)
-            sys.stdout.write('\n')
-
-    def note(self, msg):
-        if self.verbosity > 1:
-            sys.stdout.write(msg)
-            sys.stdout.write('\n')
-
-    def mutter(self, msg):
-        if self.verbosity > 2:
-            sys.stdout.write(msg)
-            sys.stdout.write('\n')
+        parser.add_argument(
+            "--file",
+            default=os.path.join(settings.BASE_DIR, "name/fixtures/names.json"),
+            help='file to write the fixture to, or "-" for stdout (default: %(default)s)',
+        )
 
     def handle(self, *args, **options):
-        self.output = sys.stdout if options.get('stdout') else io.open(os.path.join(settings.BASE_DIR, "name/fixtures/names.json"), 'w')
-
-        def model_name(m):
-            return '%s.%s' % (m._meta.app_label, m.__name__)
-
-        def output(seq):
-            try:
-                f = self.output
-                f.write(serialize("json", seq, cls=SortedJsonEncoder, indent=2))
-                f.close()
-            except:
-                from django.db import connection
-                from pprint import pprint
-                pprint(connection.queries)
-                raise
-
-        objects: List[object] = []  # type: ignore[annotation-unchecked]
-        model_objects = {}
-
-        import ietf.name.models
-        from ietf.dbtemplate.models import DBTemplate
-        from ietf.doc.models import BallotType, State, StateType
-        from ietf.group.models import GroupFeatures
-        from ietf.mailtrigger.models import MailTrigger, Recipient
-        from ietf.meeting.models import BusinessConstraint
-        from ietf.stats.models import CountryAlias
+        objects: list[models.Model] = []  # type: ignore[annotation-unchecked]
 
         # Grab all ietf.name.models
-        for n in dir(ietf.name.models):
-            item = getattr(ietf.name.models, n)
-            if inspect.isclass(item) and issubclass(item, ietf.name.models.NameModel):
-                if not item._meta.abstract:
-                    model_objects[model_name(item)] = list(item.objects.all().order_by('pk'))
+        for name_model in NameModel.__subclasses__():
+            if not name_model._meta.abstract:
+                objects.extend(name_model.objects.all())
 
-        for m in ( BallotType, State, StateType, GroupFeatures, MailTrigger, Recipient,
-                    CountryAlias, BusinessConstraint ):
-            model_objects[model_name(m)] = list(m.objects.all().order_by('pk'))
+        # Grab some name-like models, too
+        for m in (
+            BallotType,
+            State,
+            StateType,
+            GroupFeatures,
+            MailTrigger,
+            Recipient,
+            CountryAlias,
+            BusinessConstraint,
+        ):
+            objects.extend(m.objects.all())
 
-        for m in ( DBTemplate, ):
-            model_objects[model_name(m)] = [ m.objects.get(pk=354) ]
+        # This specific DBTemplate was needed as of 2019
+        for m in (DBTemplate,):
+            objects.append(m.objects.get(pk=354))
 
-        for model_name in sorted(model_objects.keys()):
-            objects += model_objects[model_name]
+        # Sort the serialized dicts rather than the querysets: "model" is the lowercased
+        # "app_label.modelname", which does not order the same way as the model class
+        # names, and string pks must compare by code point, not by DB collation.
+        data = sorted(serialize("python", objects), key=lambda d: (d["model"], d["pk"]))
 
-        output(objects)
+        # These options reproduce the formatting of "jq --sort-keys", which historically
+        # post-processed this command's output.
+        text = (
+            json.dumps(
+                data,
+                cls=DjangoJSONEncoder,
+                indent=2,
+                sort_keys=True,
+                ensure_ascii=False,
+            )
+            + "\n"
+        )
 
+        # ensure_ascii=False keeps non-ASCII characters (e.g., "Åland Islands") as UTF-8,
+        # so the destination has to be able to encode them whatever the locale says.
+        if options["file"] == "-":
+            reconfigure = getattr(self.stdout, "reconfigure", None)
+            if reconfigure is not None:
+                reconfigure(encoding="utf-8")
+            self.stdout.write(text)  # text already ends with a newline
+        else:
+            with open(options["file"], "w", encoding="utf-8", newline="\n") as f:
+                f.write(text)

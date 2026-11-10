@@ -7,9 +7,12 @@ from django.test import override_settings, RequestFactory
 
 from ietf.group.factories import GroupFactory
 from ietf.meeting.factories import SessionFactory
-from ietf.meeting.forms import (FileUploadForm, ApplyToAllFileUploadForm, InterimSessionModelForm,
+from ietf.meeting.forms import (FileUploadForm, ApplyToSessionsFileUploadForm, InterimSessionModelForm,
                                 InterimMeetingModelForm)
 from ietf.person.factories import PersonFactory
+from ietf.doc.factories import DocumentFactory
+from ietf.meeting.tests_views import make_group_sessions
+from ietf.meeting.utils import MaterialSessionChoice
 from ietf.utils.test_utils import TestCase
 
 
@@ -96,17 +99,53 @@ class FileUploadFormTests(TestCase):
         self.assertEqual(test_file.content_type, 'application/octet-stream', 'Uploaded Content-Type should not be changed')
 
 
-class ApplyToAllFileUploadFormTests(TestCase):
-    class TestClass(ApplyToAllFileUploadForm):
+class ApplyToSessionsFileUploadFormTests(TestCase):
+    class TestClass(ApplyToSessionsFileUploadForm):
         doc_type = 'minutes'
 
-    def test_has_apply_to_all_field_by_default(self):
-        form = ApplyToAllFileUploadFormTests.TestClass(show_apply_to_all_checkbox=True)
-        self.assertIn('apply_to_all', form.fields)
+    def test_fields_follow_the_choices(self):
+        first, last = make_group_sessions(['sched', 'sched'])
+        choice = MaterialSessionChoice(last, 'Session 2: Tue 11:00', None)
 
-    def test_no_show_apply_to_all_field(self):
-        form = ApplyToAllFileUploadFormTests.TestClass(show_apply_to_all_checkbox=False)
-        self.assertNotIn('apply_to_all', form.fields)
+        form = self.TestClass([choice], True)
+        field = form.fields['apply_to_sessions']
+        self.assertEqual(field.choices, [(last.pk, 'Session 2: Tue 11:00')])
+        self.assertEqual(field.initial, [last.pk])
+        self.assertNotIn('scope', form.fields)
+        self.assertEqual(list(form.fields)[-1], 'apply_to_sessions')
+
+        form = self.TestClass([choice], False)
+        self.assertEqual(form.fields['apply_to_sessions'].initial, [])
+
+        form = self.TestClass([], False)
+        self.assertNotIn('apply_to_sessions', form.fields)
+        self.assertNotIn('scope', form.fields)
+
+        old = DocumentFactory(type_id='minutes', title='Their own minutes')
+        form = self.TestClass([MaterialSessionChoice(last, 'Session 2: Tue 11:00', old)], False)
+        label = form.fields['apply_to_sessions'].choices[0][1]
+        self.assertIn('Their own minutes', label)
+        self.assertIn('would be unlinked', label)
+
+    def test_shared_document_offers_revise_or_replace(self):
+        first, last = make_group_sessions(['sched', 'sched'])
+        form = self.TestClass([], False, shared_with=['Session 2: Tue 11:00'])
+        self.assertEqual(list(form.fields)[0], 'scope')
+        self.assertEqual(form.fields['scope'].initial, form.SCOPE_REVISE)
+        labels = [label for _, label in form.fields['scope'].choices]
+        self.assertIn('Session 2: Tue 11:00', labels[0])
+        self.assertIn('minutes', labels[1])
+
+        form = self.TestClass(
+            [MaterialSessionChoice(last, 'Session 2: Tue 11:00', None)],
+            False,
+            data={'apply_to_sessions': [str(last.pk)], 'scope': 'replace'},
+            files={'file': SimpleUploadedFile('minutes.txt', b'minutes', content_type='text/plain')},
+            shared_with=['Session 2: Tue 11:00'],
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.sessions_to_apply(), [last])
+        self.assertTrue(form.replace_shared())
 
 
 class InterimSessionModelFormTests(TestCase):

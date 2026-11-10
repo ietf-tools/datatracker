@@ -6,6 +6,8 @@
 import datetime
 import io
 import os
+from functools import cached_property
+
 import pytz
 import random
 import re
@@ -19,7 +21,7 @@ import debug                            # pyflakes:ignore
 
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-from django.db.models import Max, Subquery, OuterRef, TextField, Value, Q
+from django.db.models import Max, Subquery, OuterRef, TextField, Value, Q, Case, When
 from django.db.models.functions import Coalesce
 from django.conf import settings
 from django.urls import reverse as urlreverse
@@ -28,6 +30,7 @@ from django.utils.text import slugify
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.models import Document
+from ietf.doc.storage_utils import remove_from_storage
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import (
@@ -491,7 +494,7 @@ class Meeting(models.Model):
             all_group_pks.update(self.session_set.values_list('group__parent__pk', flat=True))
             all_group_pks.discard(None)
             self.cached_groups_at_the_time = find_history_replacements_active_at(
-                Group.objects.filter(pk__in=all_group_pks),
+                Group.objects.filter(pk__in=all_group_pks).select_related("parent"),
                 self.meeting_start(),
             )
         return self.cached_groups_at_the_time
@@ -1207,6 +1210,9 @@ class Session(models.Model):
             return [self]
 
     def order_in_meeting(self):
+        # The _order_in_meeting memo may also be set in bulk by
+        # ietf.meeting.helpers.set_order_in_meeting(), which repeats the filter and sort in
+        # all_meeting_sessions_for_group(). Keep the two in step.
         if not hasattr(self, '_order_in_meeting'):
             session_list = self.all_meeting_sessions_for_group()
             self._order_in_meeting = session_list.index(self) + 1 if self in session_list else 0
@@ -1305,6 +1311,9 @@ class Session(models.Model):
         return "".join(chars[::-1])
 
     def docname_token(self):
+        # Position in pk order, so the token never changes for the life of the session. It is an
+        # identifier, not a sequence number: sessions get reordered, cancelled and moved after
+        # documents carrying the token exist, so "sessb" says nothing about when the session meets.
         sess_mtg = Session.objects.filter(meeting=self.meeting, group=self.group).order_by('pk')
         index = list(sess_mtg).index(self)
         return f"sess{self._alpha_str(index)}"
@@ -1416,23 +1425,12 @@ class Session(models.Model):
             return url.format(session=self)
         return None
 
-    def _session_recording_url_label(self):
-        otsa = self.official_timeslotassignment()
-        if otsa is None:
-            return None
-        if self.meeting.type.slug == "ietf" and self.has_onsite_tool:
-            session_label = f"IETF{self.meeting.number}-{self.group.acronym.upper()}-{otsa.timeslot.time.strftime('%Y%m%d-%H%M')}"
-        else:
-            session_label = f"IETF-{self.group.acronym.upper()}-{otsa.timeslot.time.strftime('%Y%m%d-%H%M')}"
-        return session_label
-
     def session_recording_url(self):
+        """Meetecho player URL, or None until Meetecho has reported a recording name"""
         url_formatter = getattr(settings, "MEETECHO_SESSION_RECORDING_URL", "")
         url = None
         name = self.meetecho_recording_name
-        if name is None or name.strip() == "":
-            name = self._session_recording_url_label()
-        if url_formatter.strip() != "" and name is not None:
+        if url_formatter.strip() != "" and name is not None and name.strip() != "":
             url = url_formatter.format(session_label=name)
         return url
 
@@ -1457,20 +1455,40 @@ class ImportantDate(models.Model):
         return u'%s : %s : %s' % ( self.meeting, self.name, self.date )
 
 class SlideSubmission(models.Model):
-    time = models.DateTimeField(auto_now=True)
+    time = models.DateTimeField(default=timezone.now)  # when proposed; before auto_now was dropped, when last saved
     session = ForeignKey(Session)
+    sessions = models.ManyToManyField(Session, blank=True, related_name="proposed_slides", help_text="Sessions the deck is proposed for")
     title = models.CharField(max_length=255)
     filename = models.CharField(max_length=255)
-    apply_to_all = models.BooleanField(default=False)
     submitter = ForeignKey(Person)
     status      = ForeignKey(SlideSubmissionStatusName, null=True, default='pending', on_delete=models.SET_NULL)
     doc         = ForeignKey(Document, blank=True, null=True, on_delete=models.SET_NULL)
+    resolved    = models.DateTimeField(null=True, blank=True, help_text="When the proposal stopped being pending")
+    resolved_by = ForeignKey(Person, null=True, blank=True, related_name="resolved_slide_proposals", on_delete=models.SET_NULL,
+                             help_text="Who approved, declined or withdrew it; (System) when it expired")
 
-    def staged_filepath(self):
-        return os.path.join(settings.SLIDE_STAGING_PATH , self.filename)
+    def expire(self):
+        """Close a proposal nobody acted on before the meeting's materials closed, dropping its staged file"""
+        self._resolve("expired", Person.objects.get(name="(System)"))
 
-    def staged_url(self):
-        return "".join([settings.SLIDE_STAGING_URL, self.filename])
+    def withdraw(self):
+        """The proposer takes the proposal back; its staged file goes with it"""
+        self._resolve("withdrawn", self.submitter)
+
+    def approve(self, doc, by):
+        SlideSubmission.objects.filter(pk=self.pk).update(doc=doc)
+        self.doc = doc
+        self._resolve("approved", by)
+
+    def decline(self, by):
+        self._resolve("rejected", by)
+
+    def _resolve(self, status, by):
+        now = timezone.now()
+        SlideSubmission.objects.filter(pk=self.pk).update(status_id=status, resolved=now, resolved_by=by)
+        self.status_id, self.resolved, self.resolved_by = status, now, by
+        if self.filename:  # last, so a failure above leaves a proposal that can still be acted on
+            remove_from_storage("staging", self.filename, warn_if_missing=False)
 
 
 class ProceedingsMaterial(models.Model):
@@ -1564,15 +1582,53 @@ class Attended(models.Model):
         return f'{self.person} at {self.session}'
 
 
-class RegistrationManager(models.Manager):
+class RegistrationQuerySet(models.QuerySet):
     def onsite(self):
-        return self.get_queryset().filter(tickets__attendance_type__slug='onsite')
+        """Only registrations with at least one `onsite` ticket
+        
+        Includes any ticket type. In particular, may be a hackathon-only registration.
+        """
+        return self.filter(tickets__attendance_type__slug="onsite")
 
     def remote(self):
-        return self.get_queryset().filter(tickets__attendance_type__slug='remote').exclude(tickets__attendance_type__slug='onsite')
+        """Only registrations with no `onsite` and at least one `remote` ticket
+
+        Includes any ticket type. In particular, may be a hackathon-only registration.
+        """
+        return (
+            self.filter(tickets__attendance_type__slug="remote")
+            .exclude(tickets__attendance_type__slug="onsite")
+        )
+
+    def onsite_or_remote(self):
+        """Registrations that were onsite or remote
+        
+        I.e., was a registration for the plenary meeting, not e.g. hackathon-only.
+        """
+        return self.filter(
+            tickets__attendance_type__slug__in=["onsite", "remote"]
+        ).distinct()
+
+    def with_plenary_ticket_details(self):
+        """Annotate with ticket details
+
+        Adds private annotations accessible via @properties
+        """
+        most_representative = RegistrationTicket.objects.filter(
+            registration=OuterRef("pk")
+        ).order_by_most_representative()
+        return self.annotate(
+            _attendance_type=Subquery(
+                most_representative.values("attendance_type")[:1]
+            ),
+            _ticket_type=Subquery(most_representative.values("ticket_type")[:1]),
+        )
+
 
 class Registration(models.Model):
     """Registration attendee records from the IETF registration system"""
+    objects = RegistrationQuerySet.as_manager()  # custom manager
+
     meeting = ForeignKey(Meeting)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
@@ -1586,21 +1642,74 @@ class Registration(models.Model):
     # checkedin indicates that the badge was picked up
     checkedin = models.BooleanField(default=False)
 
-    # custom manager
-    objects = RegistrationManager()
-
     def __str__(self):
         return "{} {}".format(self.first_name, self.last_name)
 
+    @cached_property
+    def _plenary_ticket(self):
+        return self.tickets.order_by_most_representative().first()
+
     @property
-    def attendance_type(self):
-        if self.tickets.filter(attendance_type__slug='onsite').exists():
-            return 'onsite'
-        elif self.tickets.filter(attendance_type__slug='remote').exists():
-            return 'remote'
-        return None
+    def plenary_attendance_type(self):
+        """Attendance type for the plenary meeting
+
+        Attendance type for the plenary meeting. Ignores hackathon/anrw or any other
+        types of registration that are tracked through tickets.
+        """
+        if hasattr(self, "_attendance_type"):
+            return self._attendance_type  # added via with_plenary_ticket_details()
+        return (
+            self._plenary_ticket.attendance_type_id if self._plenary_ticket else None
+        )
+
+    @property
+    def plenary_ticket_type(self):
+        """Ticket type for the plenary meeting
+
+        Ticket type for the plenary meeting. Ignores hackathon/anrw or any other types
+        of registration that are tracked through tickets.
+        """
+        if hasattr(self, "_ticket_type"):
+            return self._ticket_type  # added via with_plenary_ticket_details()
+        return (
+            self._plenary_ticket.ticket_type_id if self._plenary_ticket else None
+        )
+
+
+class RegistrationTicketQuerySet(models.QuerySet):
+    def order_by_most_representative(self):
+        """Order-by clause for representative tickets for plenary attendance
+        
+        Filters out tickets not applicable to the plenary IETF meeting
+        """
+        # ordered lists of interesting types
+        interesting_attendance_types = ["onsite", "remote"]
+        interesting_ticket_types = ["student", "week_pass", "one_day", "unknown"]
+        case_ranking_attendance_types = Case(
+            *[
+                When(attendance_type=att_type, then=index)
+                for index, att_type in enumerate(interesting_attendance_types)
+            ]
+        )
+        case_ranking_ticket_types = Case(
+            *[
+                When(ticket_type=tkt_type, then=index)
+                for index, tkt_type in enumerate(interesting_ticket_types)
+            ]
+        )
+        return self.filter(
+            attendance_type__in=interesting_attendance_types,
+            ticket_type__in=interesting_ticket_types,
+        ).order_by(
+            case_ranking_attendance_types,
+            case_ranking_ticket_types,
+            "pk",  # deterministic tie-break
+        )
+
 
 class RegistrationTicket(models.Model):
+    objects = RegistrationTicketQuerySet.as_manager()  # custom manager
+
     registration = ForeignKey(Registration, related_name='tickets')
     attendance_type = ForeignKey(AttendanceTypeName, on_delete=models.PROTECT)
     ticket_type = ForeignKey(RegistrationTicketTypeName, on_delete=models.PROTECT)
