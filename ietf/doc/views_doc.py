@@ -45,7 +45,7 @@ from celery.result import AsyncResult
 from django.core.cache import caches
 from django.core.files.base import ContentFile
 from django.core.exceptions import PermissionDenied
-from django.db.models import Max
+from django.db.models import Case, IntegerField, Max, Value, When
 from django.http import FileResponse, HttpResponse, Http404, HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
@@ -1490,6 +1490,10 @@ REFERENCE_LIST_RELATED_FIELDS = (
     "target__intended_std_level",
 )
 
+# Referenced-by rows are listed by reference type in this order, then by source name
+REFERENCED_BY_TYPE_ORDER = ("refnorm", "refinfo", "refunk", "refold")
+REFERENCED_BY_LIMIT = 250
+
 
 def document_references(request, name):
     doc = get_object_or_404(Document,name=name)
@@ -1524,18 +1528,26 @@ def document_referenced_by(request, name):
     if doc.type_id in ["bcp","std","fyi"]:
         for rfc in doc.contains():
             refs |= rfc.referenced_by()
-    refs = refs.select_related(*REFERENCE_LIST_RELATED_FIELDS)
+    refs = refs.select_related(*REFERENCE_LIST_RELATED_FIELDS).annotate(
+        type_order=Case(
+            *[
+                When(relationship_id=slug, then=Value(position))
+                for position, slug in enumerate(REFERENCED_BY_TYPE_ORDER)
+            ],
+            output_field=IntegerField(),
+        )
+    ).order_by("type_order", "source__name")
     full = ( request.GET.get('full') is not None )
     numdocs = refs.count()
-    if not full and numdocs>250:
-       refs=refs[:250]
+    if not full and numdocs > REFERENCED_BY_LIMIT:
+       refs = refs[:REFERENCED_BY_LIMIT]
     else:
        numdocs=None
-    refs=sorted(refs,key=lambda x:(['refnorm','refinfo','refunk','refold'].index(x.relationship.slug),x.source.name))
     return render(request, "doc/document_referenced_by.html",
                dict(name=name,
                     doc=doc,
                     numdocs=numdocs,
+                    limit=REFERENCED_BY_LIMIT,
                     refs=refs,
                     ))
 

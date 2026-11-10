@@ -3006,6 +3006,32 @@ class ReferencesTest(TestCase):
         add_references()
         self.assertEqual((query_count(referenced_by_url), query_count(references_url)), baseline)
 
+    @mock.patch("ietf.doc.views_doc.REFERENCED_BY_LIMIT", 3)
+    def test_referenced_by_truncates_after_ordering(self):
+        """A truncated referenced-by page shows the first rows of the full ordering"""
+        rfc = WgRfcFactory()
+        # Created in the reverse of display order, so insertion order is not display order
+        for slug, name in [
+            ("refinfo", "draft-a-informative"),
+            ("refnorm", "draft-c-normative"),
+            ("refnorm", "draft-b-normative"),
+            ("refnorm", "draft-a-normative"),
+        ]:
+            RelatedDocument.objects.create(
+                source=WgDraftFactory(name=name),
+                target=rfc,
+                relationship_id=slug,
+            )
+        url = urlreverse("ietf.doc.views_doc.document_referenced_by", kwargs=dict(name=rfc.name))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Showing only the first 3 of 4 documents.")
+        q = PyQuery(r.content)
+        self.assertEqual(
+            [a.text for a in q("table tbody tr td:first-child a")],
+            ["draft-a-normative", "draft-b-normative", "draft-c-normative"],
+        )
+
 class GenerateDraftAliasesTests(TestCase):
     @override_settings(TOOLS_SERVER="tools.example.org", DRAFT_ALIAS_DOMAIN="draft.example.org")
     def test_generator_class(self):
