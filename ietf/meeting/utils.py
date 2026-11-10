@@ -1982,7 +1982,7 @@ def organize_proceedings_sessions(sessions):
                 'name': sess_name,
                 'session': session,
                 'canceled': all_canceled,
-                'has_materials': any(sess.presentations.exists() for sess in ss),
+                'has_materials': any(s.presentations.exists() for s in ss),
                 'agendas': _format_materials((s, s.agenda()) for s in ss),
                 'minutes': _format_materials((s, s.minutes()) for s in ss),
                 'bluesheets': _format_materials((s, s.bluesheets()) for s in ss),
