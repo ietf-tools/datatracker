@@ -767,6 +767,101 @@ class MeetingTests(BaseMeetingTestCase):
             self.assertFalse(plain_row.find(f'a[href="{expected_url}"]'))
             self.assertTrue(named_row.find(f'a[href="{expected_url}"]'))
 
+    def test_materials_attendance_links(self):
+        """Sessions with recorded attendance should link to it on the materials page"""
+        meeting = MeetingFactory(type_id='ietf', number='100')
+        meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
+        attended = SessionFactory(meeting=meeting)
+        not_attended = SessionFactory(meeting=meeting)
+        AttendedFactory(session=attended)
+
+        r = self.client.get(urlreverse('ietf.meeting.views.materials', kwargs={'num': meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        for session, expect_link in ((attended, True), (not_attended, False)):
+            row = q(f'div#{session.group.acronym}').closest('tr')
+            self.assertTrue(row)
+            attendance_url = urlreverse(
+                'ietf.meeting.views.session_attendance',
+                kwargs={'num': meeting.number, 'session_id': session.pk},
+            )
+            self.assertEqual(bool(row.find(f'a[href="{attendance_url}"]')), expect_link)
+
+    def test_materials_last_update(self):
+        """Each row's Updated time is the newest agenda or slides among its group's sessions"""
+        meeting = MeetingFactory(type_id='ietf', number='100')
+        meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
+        group = GroupFactory()
+        plain_session = SessionFactory(meeting=meeting, group=group)
+        named_session = SessionFactory(meeting=meeting, group=group, name='I Got a Name')
+        SessionPresentationFactory(
+            session=plain_session,
+            document__type_id='slides',
+            document__time=datetime.datetime(2017, 11, 1, 10, 0, 0, tzinfo=datetime.UTC),
+        )
+        SessionPresentationFactory(
+            session=named_session,
+            document__type_id='agenda',
+            document__time=datetime.datetime(2017, 11, 2, 11, 30, 15, tzinfo=datetime.UTC),
+        )
+        no_materials = SessionFactory(meeting=meeting)
+
+        r = self.client.get(urlreverse('ietf.meeting.views.materials', kwargs={'num': meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        for label in (f'div#{group.acronym}', f'div#{slugify(named_session.name)}'):
+            row = q(label).closest('tr')
+            self.assertIn('2017-11-02', row.text())
+            self.assertIn('11:30:15', row.text())
+        no_materials_row = q(f'div#{no_materials.group.acronym}').closest('tr')
+        self.assertNotIn('UTC', no_materials_row.text())
+
+    def test_materials_last_update_other(self):
+        """Rows in the Other table also show their Updated time"""
+        meeting = MeetingFactory(type_id='ietf', number='100')
+        meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
+        session = SessionFactory(meeting=meeting, group__type_id='adhoc')
+        SessionPresentationFactory(
+            session=session,
+            document__type_id='slides',
+            document__time=datetime.datetime(2017, 11, 2, 11, 30, 15, tzinfo=datetime.UTC),
+        )
+
+        r = self.client.get(urlreverse('ietf.meeting.views.materials', kwargs={'num': meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        row = q(f'h2#other ~ table div#{session.group.acronym}').closest('tr')
+        self.assertTrue(row)
+        self.assertIn('2017-11-02', row.text())
+        self.assertIn('11:30:15', row.text())
+
+    def test_materials_query_count(self):
+        """The number of queries for the materials page does not grow with the number of sessions"""
+        meeting = MeetingFactory(type_id='ietf', number='100')
+        meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
+        area = GroupFactory(type_id='area')
+        url = urlreverse('ietf.meeting.views.materials', kwargs={'num': meeting.number})
+
+        def add_groups(count):
+            for _ in range(count):
+                group = GroupFactory(parent=area)
+                for _ in range(2):
+                    session = SessionFactory(meeting=meeting, group=group)
+                    for doc_type_id in ('agenda', 'minutes', 'slides', 'draft'):
+                        SessionPresentationFactory(session=session, document__type_id=doc_type_id)
+                    AttendedFactory(session=session)
+
+        def count_queries():
+            with CaptureQueriesContext(connection) as context:
+                r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            return len(context.captured_queries)
+
+        add_groups(2)
+        queries_for_few = count_queries()
+        add_groups(3)
+        self.assertEqual(count_queries(), queries_for_few)
+
     @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
     def test_meeting_materials_non_utf8(self):
         meeting = make_meeting_test_data()
@@ -10648,6 +10743,23 @@ class ProceedingsTests(BaseMeetingTestCase):
             [(link.eq(0).text(), link.eq(0).attr('href')) for link in links.items()],
             [(str(pm), pm.get_href()) for pm in expected_materials],
             'Correct title and link for each ProceedingsMaterial should appear in the correct order'
+        )
+
+    def test_materials_page_proceedings_materials(self):
+        """The materials page lists the active proceedings materials, one row per type"""
+        meeting = MeetingFactory(type_id='ietf', number='100')
+        meeting.importantdate_set.create(name_id='revsub', date=date_today() + datetime.timedelta(days=20))
+        self._create_proceedings_materials(meeting)
+        r = self.client.get(urlreverse('ietf.meeting.views.materials', kwargs={'num': meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        rows = PyQuery(r.content)('h2#proceedings-materials + table tbody tr')
+        self.assertEqual(len(rows), 3, 'three of the five materials are active')
+        self.assertEqual(
+            [(row.find('td').eq(0).text(), row.find('a').text(), row.find('a').attr('href')) for row in rows.items()],
+            [
+                (str(pm.type), pm.document.title, pm.get_href())
+                for pm in meeting.proceedings_materials.order_by('type__order') if pm.active()
+            ],
         )
 
     def _assertGroupSessions(self,  pq: PyQuery):

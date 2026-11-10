@@ -9,6 +9,7 @@ from unittest.mock import patch
 from django.conf import settings
 from django.test import override_settings
 
+from ietf.doc.models import State
 from ietf.group.factories import GroupFactory, GroupHistoryFactory
 from ietf.meeting.factories import (
     MeetingFactory,
@@ -250,6 +251,45 @@ class SessionTests(TestCase):
             session=session_with_jabber, document__type_id="chatlog"
         ).document
         self.assertEqual(session_with_jabber.chat_archive_url(), chatlog.get_href())
+
+    def test_with_active_materials(self):
+        session = SessionFactory()
+        other_session = SessionFactory(meeting=session.meeting, group=session.group)
+        second = SessionPresentationFactory(session=session, document__type_id="slides", order=2).document
+        first = SessionPresentationFactory(session=session, document__type_id="slides", order=1).document
+        SessionPresentationFactory(session=other_session, document=second, order=1)
+        deleted = SessionPresentationFactory(session=session, document__type_id="slides", order=3).document
+        deleted.set_state(State.objects.get(type_id="slides", slug="deleted"))
+        agenda = SessionPresentationFactory(session=session, document__type_id="agenda").document
+        drafts = [
+            SessionPresentationFactory(session=session, document__type_id="draft").document
+            for _ in range(2)
+        ]
+
+        prefetched = Session.objects.with_active_materials().get(pk=session.pk)
+        with self.assertNumQueries(0):
+            self.assertEqual(prefetched.slides(), [first, second])
+            self.assertEqual(prefetched.agenda(), agenda)
+            self.assertCountEqual(prefetched.drafts(), drafts)
+        unprefetched = Session.objects.get(pk=session.pk)
+        self.assertEqual(unprefetched.slides(), prefetched.slides())
+        self.assertEqual(unprefetched.agenda(), prefetched.agenda())
+        # links do not depend on whether the materials were prefetched
+        self.assertEqual(
+            [d.get_href(session.meeting) for d in prefetched.slides()],
+            [d.get_href(session.meeting) for d in unprefetched.slides()],
+        )
+
+    def test_with_has_attendance(self):
+        attended = SessionFactory()
+        AttendedFactory(session=attended)
+        not_attended = SessionFactory(meeting=attended.meeting)
+        self.assertEqual(
+            dict(Session.objects.with_has_attendance().filter(
+                pk__in=[attended.pk, not_attended.pk]
+            ).values_list('pk', 'has_attendance')),
+            {attended.pk: True, not_attended.pk: False},
+        )
 
     def test_chat_room_name(self):
         session = SessionFactory(group__acronym="xyzzy")

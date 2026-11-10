@@ -8,7 +8,7 @@ import re
 from tempfile import mkstemp
 
 from django.http import Http404
-from django.db.models import F, Prefetch
+from django.db.models import Prefetch
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import AnonymousUser
@@ -26,7 +26,7 @@ from ietf.ietfauth.utils import has_role, user_is_person
 from ietf.liaisons.utils import get_person_for_user
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.person.models  import Person
-from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment, ImportantDate, SchedulingEvent, Session
+from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment, ImportantDate, SchedulingEvent, Session, active_materials_prefetch
 from ietf.meeting.utils import session_requested_by, add_event_info_to_session_qs, data_for_meetings_overview
 from ietf.name.models import ImportantDateName, SessionPurposeName
 from ietf.utils import log, meetecho
@@ -53,10 +53,10 @@ def get_meeting(num=None, type_in=('ietf',), days=28):
         ).order_by('date')
     else:
         meetings = meetings.filter(number=num)
-    if meetings.exists():
-        return meetings.first()
-    else:
+    meeting = meetings.first()
+    if meeting is None:
         raise Http404("No such meeting found: %s" % num)
+    return meeting
 
 def get_current_ietf_meeting():
     meetings = Meeting.objects.filter(type='ietf',date__gte=timezone.now()-datetime.timedelta(days=31)).order_by('date')
@@ -93,6 +93,35 @@ def get_schedule_by_name(meeting, owner, name):
     else:
         return meeting.schedule_set.filter(name = name).first()
 
+def official_timeslotassignments(meeting, select_related=("timeslot",)):
+    """Map session pk to its official assignment, for every scheduled session of a meeting
+
+    Each value is what Session.official_timeslotassignment() returns for that session.
+    """
+    official = {}
+    for a in SchedTimeSessAssignment.objects.filter(
+        session__meeting=meeting,
+        schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None],
+    ).select_related(*select_related):
+        # default ordering matches the .first() in official_timeslotassignment()
+        official.setdefault(a.session_id, a)
+    return official
+
+
+def set_official_timeslotassignments(meeting, sessions):
+    """Precompute Session.official_timeslotassignment() for sessions of a meeting
+
+    Uses one query in total rather than one per session. Sessions with no official
+    assignment are left alone, so official_timeslotassignment() still queries for them.
+    """
+    official = official_timeslotassignments(meeting)
+    for s in sessions:
+        a = official.get(s.pk)
+        if a is not None and s.meeting_id == meeting.pk:
+            a.session = s
+            s._cache_official_timeslotassignment = a
+
+
 def set_order_in_meeting(meeting, sessions):
     """Precompute Session.order_in_meeting() for sessions of a meeting
 
@@ -100,13 +129,7 @@ def set_order_in_meeting(meeting, sessions):
     with a few queries in total rather than several per session.
     """
     has_meetings = dict(GroupFeatures.objects.values_list("type_id", "has_meetings"))
-    official = {}
-    for a in SchedTimeSessAssignment.objects.filter(
-        session__meeting=meeting,
-        schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None],
-    ).select_related("timeslot", "session__group__parent"):
-        # default ordering matches the .first() in official_timeslotassignment()
-        official.setdefault(a.session_id, a)
+    official = official_timeslotassignments(meeting, select_related=("timeslot", "session__group__parent"))
 
     assignments_by_group = defaultdict(list)
     for a in sorted(official.values(), key=lambda a: a.session_id):  # pk order breaks ties below
@@ -151,10 +174,7 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
                 "session",
                 queryset=add_event_info_to_session_qs(Session.objects.all().prefetch_related(
                     'group', 'group__charter', 'group__charter__group', 'purpose',
-                    Prefetch('materials',
-                             queryset=Document.objects.exclude(states__type=F("type"), states__slug='deleted').order_by('presentations__order').prefetch_related('states'),
-                             to_attr='prefetched_active_materials'
-                    )
+                    active_materials_prefetch(),
                 ))
             ),
             *extra_prefetches

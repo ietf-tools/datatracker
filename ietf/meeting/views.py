@@ -69,7 +69,7 @@ from ietf.doc.storage_utils import (
     store_file,
 )
 from ietf.doc.templatetags.ietf_filters import absurl
-from ietf.group.models import Group, Role
+from ietf.group.models import Group, GroupFeatures, Role
 from ietf.group.utils import (
     can_manage_session_materials,
     can_manage_some_groups,
@@ -132,6 +132,7 @@ from ietf.meeting.helpers import (
     get_schedule,
     schedule_permissions,
     preprocess_assignments_for_agenda,
+    set_official_timeslotassignments,
     read_agenda_file,
     AgendaFilterOrganizer,
     AgendaKeywordTagger,
@@ -270,14 +271,15 @@ def materials(request, num=None):
                     'cor_cut_off_date': cor_cut_off_date
                 })
 
-    past_cutoff_date = today_utc > meeting.get_submission_correction_date()
+    past_cutoff_date = today_utc > cor_cut_off_date
 
     schedule = get_schedule(meeting, None)
 
     sessions  = add_event_info_to_session_qs(Session.objects.filter(
         meeting__number=meeting.number,
         timeslotassignments__schedule__in=[schedule, schedule.base if schedule else None]
-    ).distinct().select_related('meeting__schedule', 'group__state', 'group__parent')).order_by('group__acronym')
+    ).distinct().select_related('meeting__schedule', 'group__state', 'group__parent').with_active_materials(
+    ).with_has_attendance().prefetch_related('presentations')).order_by('group__acronym')
 
     plenaries = sessions.filter(name__icontains='plenary')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu').order_by('group__parent__acronym', 'group__acronym')
@@ -289,19 +291,35 @@ def materials(request, num=None):
     session_pks = [s.pk for ss in [plenaries, ietf, irtf, training, iab, editorial] for s in ss]
     other     = sessions.filter(type__in=['regular'], group__type__features__has_meetings=True).exclude(pk__in=session_pks)
 
-    for topic in [plenaries, ietf, training, irtf, iab, editorial]:
+    # A row's last update is the newest agenda or slides among all of its group's
+    # scheduled sessions, as Session.all_meeting_agendas() and all_meeting_slides()
+    # would find them. Those sessions are exactly the ones in the sessions queryset.
+    has_meetings = dict(GroupFeatures.objects.values_list("type_id", "has_meetings"))
+    sessions_by_group = defaultdict(list)
+    for s in sessions:
+        sessions_by_group[s.group_id].append(s)
+    for topic in [plenaries, ietf, training, irtf, iab, editorial, other]:
         for event in topic:
-            date_list = []
-            for slide_event in event.all_meeting_slides(): date_list.append(slide_event.time)
-            for agenda_event in event.all_meeting_agendas(): date_list.append(agenda_event.time)
-            if date_list: setattr(event, 'last_update', sorted(date_list, reverse=True)[0])
+            group_sessions = sessions_by_group[event.group_id] if has_meetings.get(event.group.type_id) else [event]
+            date_list = [d.time for gs in group_sessions for d in gs.slides()]
+            date_list += [gs.agenda().time for gs in group_sessions if gs.agenda()]
+            if date_list:
+                event.last_update = max(date_list)
 
     for session_list in [plenaries, ietf, training, irtf, iab, editorial, other]:
         for session in session_list:
             session.past_cutoff_date = past_cutoff_date
+    set_official_timeslotassignments(
+        meeting,
+        [s for ss in [plenaries, ietf, training, irtf, iab, editorial, other] for s in ss],
+    )
 
+    materials_by_type = {
+        pm.type_id: pm
+        for pm in meeting.proceedings_materials.select_related('document').prefetch_related('document__states')
+    }  # at most one per type
     proceedings_materials = [
-        (type_name, meeting.proceedings_materials.filter(type=type_name).first())
+        (type_name, materials_by_type.get(type_name.pk))
         for type_name in ProceedingsMaterialTypeName.objects.all()
     ]
 
