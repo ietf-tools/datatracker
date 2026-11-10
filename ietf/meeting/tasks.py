@@ -54,16 +54,6 @@ def agenda_data_refresh_task(num=None):
 
 
 @shared_task
-def agenda_data_refresh():
-    """Deprecated. Use agenda_data_refresh_task() instead.
-    
-    TODO remove this after switching the periodic task to the new name
-    """
-    log.log("Deprecated agenda_data_refresh task called!")
-    agenda_data_refresh_task()
-
-
-@shared_task
 def agenda_data_refresh_all_task(*, batch_size=10):
     """Refresh agenda data for all plenary meetings
 
