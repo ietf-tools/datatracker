@@ -18,6 +18,7 @@ from django.utils.encoding import smart_str, force_str
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import NewRevisionDocEvent, WriteupDocEvent, State, StateDocEvent
+from ietf.doc.storage_utils import store_file
 from ietf.doc.utils import close_open_ballots
 from ietf.group.models import ChangeStateGroupEvent
 from ietf.name.models import GroupStateName
@@ -117,6 +118,17 @@ def fix_charter_revision_after_approval(charter, by):
             "There was an error creating a hardlink at %s pointing to %s: %s"
             % (ftp_filepath, new, ex)
         )
+    try:
+        with open(new, "rb") as f:
+            store_file(
+                "charter",
+                os.path.basename(new),
+                f,
+                doc_name=charter.name,
+                doc_rev=next_approved_revision(charter.rev),
+            )
+    except IOError as ex:
+        log("There was an error reading %s to store it: %s" % (new, ex))
 
     events = []
     e = NewRevisionDocEvent(doc=charter, by=by, type="new_revision")
