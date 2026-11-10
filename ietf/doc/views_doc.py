@@ -1481,12 +1481,23 @@ def document_shepherd_writeup_template(request, type):
     )
 
 
+# Fields the reference list templates and RelatedDocument.is_downref() read on every row
+REFERENCE_LIST_RELATED_FIELDS = (
+    "relationship",
+    "source__std_level",
+    "source__intended_std_level",
+    "target__std_level",
+    "target__intended_std_level",
+)
+
+
 def document_references(request, name):
     doc = get_object_or_404(Document,name=name)
     refs = doc.references()
     if doc.type_id in ["bcp","std","fyi"]:
         for rfc in doc.contains():
             refs |= rfc.references()    
+    refs = refs.select_related(*REFERENCE_LIST_RELATED_FIELDS)
     return render(request, "doc/document_references.html",dict(doc=doc,refs=sorted(refs,key=lambda x:x.target.name),))
 
 def document_referenced_by(request, name):
@@ -1513,6 +1524,7 @@ def document_referenced_by(request, name):
     if doc.type_id in ["bcp","std","fyi"]:
         for rfc in doc.contains():
             refs |= rfc.referenced_by()
+    refs = refs.select_related(*REFERENCE_LIST_RELATED_FIELDS)
     full = ( request.GET.get('full') is not None )
     numdocs = refs.count()
     if not full and numdocs>250:
