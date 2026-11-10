@@ -459,7 +459,7 @@ svg :is([stroke="black"], [stroke^="#000"]) {
 svg :is([stroke="white"], [stroke^="#fff"]) {
     stroke: var(--bs-body-bg);
 }
-svg :is([fill="black"], [fill^="#000"], :not([fill])) {
+svg :is([fill="black"], [fill^="#000"], :not([fill], [fill] *)) {
     fill: var(--bs-body-color);
 }
 svg :is([fill="white"], [fill^="#fff"]) {

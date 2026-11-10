@@ -316,11 +316,12 @@ test.describe('past - desktop', () => {
                 await expect(eventButtons.locator(`#btn-lnk-${event.id}-video-${rec.id} > i.bi`)).toBeVisible()
               }
             }
-            // Video Stream
-            if (event.links.videoStream) {
-              const videoStreamLink = `https://www.meetecho.com/ietf${meetingData.meeting.number}/recordings#${event.acronym.toUpperCase()}`
-              await expect(eventButtons.locator(`#btn-lnk-${event.id}-rec`)).toHaveAttribute('href', videoStreamLink)
+            // Session recording
+            if (event.links.sessionRecording) {
+              await expect(eventButtons.locator(`#btn-lnk-${event.id}-rec`)).toHaveAttribute('href', event.links.sessionRecording)
               await expect(eventButtons.locator(`#btn-lnk-${event.id}-rec > i.bi`)).toBeVisible()
+            } else {
+              await expect(eventButtons.locator(`#btn-lnk-${event.id}-rec`)).toHaveCount(0)
             }
           } else {
             await expect(row.locator('.agenda-table-cell-links > .agenda-table-cell-links-buttons')).not.toBeVisible()
