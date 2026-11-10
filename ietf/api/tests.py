@@ -43,6 +43,7 @@ from ietf.submit.factories import SubmissionFactory
 from ietf.utils.mail import empty_outbox, outbox, get_payload_text
 from ietf.utils.models import DumpInfo
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, reload_db_objects
+from ietf.utils.timezone import date_today
 
 from . import OMITTED_APPS_APIS, Serializer
 from .views import EmailIngestionError
@@ -983,6 +984,25 @@ class CustomApiTests(TestCase):
         url = urlreverse('ietf.meeting.views.api_get_session_materials', kwargs={'session_id': session.pk})
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+
+    def test_api_get_session_materials_slides_actions_after_cutoff(self):
+        """Once a session is past, only the Secretariat can upload slides after the correction cutoff"""
+        session = SessionFactory(meeting__type_id='ietf', meeting__date=date_today() - datetime.timedelta(days=60))
+        revsub = session.meeting.importantdate_set.create(name_id='revsub', date=date_today() + datetime.timedelta(days=1))
+        chair = RoleFactory(group=session.group, name_id='chair').person
+        url = urlreverse('ietf.meeting.views.api_get_session_materials', kwargs={'session_id': session.pk})
+        self.client.login(username=chair.user.username, password=f'{chair.user.username}+password')
+        r = self.client.get(url)
+        self.assertEqual([a['label'] for a in r.json()['slides']['actions']], ['Upload slides'])
+
+        revsub.date = date_today() - datetime.timedelta(days=1)
+        revsub.save()
+        r = self.client.get(url)
+        self.assertEqual(r.json()['slides']['actions'], [])
+
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.get(url)
+        self.assertEqual([a['label'] for a in r.json()['slides']['actions']], ['Upload slides'])
     
     @override_settings(APP_API_TOKENS={"ietf.api.views.draft_aliases": ["valid-token"]})
     @mock.patch("ietf.api.views.DraftAliasGenerator")
