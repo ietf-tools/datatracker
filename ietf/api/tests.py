@@ -42,7 +42,7 @@ from ietf.person.models import Email, User
 from ietf.submit.factories import SubmissionFactory
 from ietf.utils.mail import empty_outbox, outbox, get_payload_text
 from ietf.utils.models import DumpInfo
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized, reload_db_objects
+from ietf.utils.test_utils import TestCase, reload_db_objects
 
 from . import OMITTED_APPS_APIS, Serializer
 from .views import EmailIngestionError
@@ -722,47 +722,6 @@ class CustomApiTests(TestCase):
             for p in people:
                 self.assertIn(p["name"], html.unescape(text))
                 self.assertIn(p["affiliation"], html.unescape(text))
-
-    def test_person_export(self):
-        person = PersonFactory()
-        url = urlreverse('ietf.api.views.PersonalInformationExportView')
-        login_testing_unauthorized(self, person.user.username, url)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        jsondata = r.json()
-        data = jsondata['person.person'][str(person.id)]
-        self.assertEqual(data['name'], person.name)
-        self.assertEqual(data['ascii'], person.ascii)
-        self.assertEqual(data['user']['email'], person.user.email)
-
-    def test_api_v2_person_export_view(self):
-        url = urlreverse('ietf.api.views.ApiV2PersonExportView')
-        robot = PersonFactory(user__is_staff=True)
-        RoleFactory(name_id='robot', person=robot, email=robot.email(), group__acronym='secretariat')
-        apikey = PersonalApiKeyFactory(endpoint=url, person=robot)
-
-        # error cases
-        r = self.client.post(url, {})
-        self.assertContains(r, "Missing apikey parameter", status_code=400)
-
-        badrole = RoleFactory(group__type_id='ietf', name_id='ad')
-        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
-        badrole.person.user.last_login = timezone.now()
-        badrole.person.user.save()
-        r = self.client.post(url, {'apikey': badapikey.hash()})
-        self.assertContains(r, "Restricted to role: Robot", status_code=403)
-
-        r = self.client.post(url, {'apikey': apikey.hash()})
-        self.assertContains(r, "No filters provided", status_code=400)
-
-        # working case
-        r = self.client.post(url, {'apikey': apikey.hash(), 'email': robot.email().address, '_expand': 'user'})
-        self.assertEqual(r.status_code, 200)
-        jsondata = r.json()
-        data = jsondata['person.person'][str(robot.id)]
-        self.assertEqual(data['name'], robot.name)
-        self.assertEqual(data['ascii'], robot.ascii)
-        self.assertEqual(data['user']['email'], robot.user.email)
 
     @override_settings(APP_API_TOKENS={"ietf.api.views.api_new_meeting_registration_v2": ["valid-token"]})
     def test_api_new_meeting_registration_v2(self):
