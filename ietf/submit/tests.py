@@ -10,6 +10,7 @@ from unittest import mock
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -46,7 +47,8 @@ from ietf.meeting.factories import MeetingFactory
 from ietf.name.models import DraftSubmissionStateName, FormalLanguageName
 from ietf.person.models import Person
 from ietf.person.factories import UserFactory, PersonFactory, EmailFactory
-from ietf.submit.checkers import DraftIdnitsChecker, DraftIdnits3Checker
+from ietf.submit.checkers import (DraftIdnitsChecker, DraftIdnits3Checker, DraftYangChecker,
+                                  is_model_file_name)
 from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactory
 from ietf.submit.forms import SubmissionBaseUploadForm, SubmissionAutoUploadForm
 from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
@@ -2603,6 +2605,212 @@ class DraftIdnitsCheckerTests(TestCase):
         self.assertTrue(self.passed("\n  No nits found.\n"))
         self.assertTrue(self.passed("\n  Summary: 0 errors (**), 0 flaws (~~), 1 warning (==), 0 comments (--).\n"))
         self.assertFalse(self.passed("\n  Summary: 1 error (**), 0 flaws (~~), 0 warnings (==), 0 comments (--).\n"))
+
+
+class DraftYangCheckerTests(TestCase):
+    @staticmethod
+    def fake_extractor(model_name):
+        """Stand-in for xym's extractor that "extracts" one module with the given file name"""
+        class FakeExtractor:
+            def __init__(self, path, workdir, **kwargs):
+                self.workdir = workdir
+                self.placeholders = {}
+
+            def extract_yang_model_text(self, text):
+                (Path(self.workdir) / model_name).write_text("module x {}\n")
+
+            def get_extracted_models(self, *args):
+                return [model_name]
+
+        return FakeExtractor
+
+    def run_checker(self, model_name, run_mock):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            draft = Path(tmpdir) / "draft-x-00.txt"
+            draft.write_text("irrelevant, the extractor is faked")
+            with (
+                mock.patch("ietf.submit.checkers.ModelExtractor", self.fake_extractor(model_name)),
+                mock.patch("ietf.submit.checkers.subprocess.run", run_mock),
+                mock.patch("ietf.submit.checkers.shutil.move") as move_mock,
+                mock.patch("ietf.submit.checkers.os.link"),
+            ):
+                result = DraftYangChecker().check_file_txt(str(draft))
+        return result, move_mock
+
+    def test_bad_model_name_is_not_used(self):
+        """A module file name that fails validation is reported and goes no further"""
+        bad_name = "not a valid;name.yang"
+        # wraps: record the calls but let them through, so tool version lookups still work
+        run_mock = mock.Mock(wraps=subprocess.run)
+        (passed, message, errors, warnings, info), move_mock = self.run_checker(bad_name, run_mock)
+        for call in run_mock.call_args_list:
+            self.assertFalse(any(bad_name in str(arg) for arg in call.args[0]))
+        move_mock.assert_not_called()
+        self.assertIn("Bad extracted model name", message)
+        self.assertEqual(errors, 1)
+        self.assertEqual(info["code"]["yang"], [])
+
+    def test_tools_are_run_without_a_shell(self):
+        """pyang / yanglint get the model path as a single argument, with no shell involved"""
+        good_name = "ietf-test@2024-01-01.yang"
+        real_run = subprocess.run
+        tool_calls = []
+
+        def fake_run(cmd, *args, **kwargs):
+            if list(cmd[1:]) == ["--version"]:
+                return real_run(cmd, *args, **kwargs)  # tool version lookup
+            tool_calls.append((cmd, kwargs))
+            return mock.Mock(returncode=0, stdout=b"", stderr=b"")
+
+        (passed, message, errors, warnings, info), move_mock = self.run_checker(good_name, fake_run)
+        self.assertGreaterEqual(len(tool_calls), 1)
+        for cmd, kwargs in tool_calls:
+            self.assertIsInstance(cmd, list)
+            self.assertNotIn("shell", kwargs)
+            self.assertEqual(len([arg for arg in cmd if arg.endswith("/" + good_name)]), 1)
+        move_mock.assert_called_once()
+        self.assertEqual(info["code"]["yang"], [good_name])
+
+
+class DraftYangCheckerModelFileTests(TestCase):
+    """How the checker treats the file names a draft gives its models, using the real extractor"""
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [
+        "SUBMIT_YANG_RFC_MODEL_DIR",
+        "SUBMIT_YANG_DRAFT_MODEL_DIR",
+        "SUBMIT_YANG_IANA_MODEL_DIR",
+        "SUBMIT_YANG_CATALOG_MODEL_DIR",
+    ]
+
+    MODEL_TEMPLATE = """
+1.  A model
+
+   <CODE BEGINS> file "{file_name}"
+   {module_statement}
+     namespace "urn:example:test-model";
+     prefix tm;
+     {revision}
+   }}
+   <CODE ENDS>
+"""
+
+    def setUp(self):
+        super().setUp()
+        (Path(settings.FTP_DIR) / "yang" / "draftmod").mkdir(parents=True, exist_ok=True)
+        # Everything the checker does with files should stay under these
+        self.scratch = Path(tempfile.mkdtemp())
+        self.workdir = self.scratch / "inner" / "work"
+        self.addCleanup(shutil.rmtree, self.scratch, ignore_errors=True)
+
+    def check(self, file_name, module_statement="module test-model {", revision=""):
+        # the checker removes its working directory when it is done
+        self.workdir.mkdir(parents=True)
+        draft_path = self.scratch / "draft-test-model-00.txt"
+        draft_path.write_text(
+            self.MODEL_TEMPLATE.format(
+                file_name=file_name, module_statement=module_statement, revision=revision
+            )
+        )
+        real_run = subprocess.run
+        models_checked = set()
+
+        def fake_run(cmd, *args, **kwargs):
+            if list(cmd[1:]) == ["--version"]:
+                return real_run(cmd, *args, **kwargs)  # tool version lookup
+            models_checked.update(Path(arg).name for arg in cmd if str(arg).endswith(".yang"))
+            return mock.Mock(returncode=0, stdout=b"", stderr=b"")
+
+        with (
+            mock.patch("ietf.submit.checkers.tempfile.mkdtemp", return_value=str(self.workdir)),
+            mock.patch("ietf.submit.checkers.subprocess.run", fake_run),
+        ):
+            result = DraftYangChecker().check_file_txt(str(draft_path))
+        self.assertFalse(self.workdir.exists())
+        return result, sorted(models_checked)
+
+    def stray_files(self):
+        """Files left anywhere under the scratch directory, other than the draft itself"""
+        return sorted(
+            str(p.relative_to(self.scratch))
+            for p in self.scratch.rglob("*")
+            if p.is_file() and p.name != "draft-test-model-00.txt"
+        )
+
+    def test_plain_model_file_name_is_used(self):
+        (passed, message, errors, warnings, info), models_checked = self.check("test-model.yang")
+        self.assertTrue(passed)
+        self.assertEqual(models_checked, ["test-model.yang"])
+        self.assertEqual(info["code"]["yang"], ["test-model.yang"])
+        self.assertTrue((Path(settings.SUBMIT_YANG_DRAFT_MODEL_DIR) / "test-model.yang").exists())
+        self.assertEqual(self.stray_files(), [])
+
+    def test_model_file_name_is_normalized_from_module(self):
+        """A file name that is not a plain model name is replaced using the module's own name"""
+        (passed, message, errors, warnings, info), models_checked = self.check(
+            "not a model name.yang",
+            revision='revision 2024-01-01 { description "x"; }',
+        )
+        self.assertEqual(models_checked, ["test-model@2024-01-01.yang"])
+        self.assertEqual(info["code"]["yang"], ["test-model@2024-01-01.yang"])
+        self.assertNotIn("Bad extracted model name", message)
+        self.assertEqual(self.stray_files(), [])
+
+        # The same happens when the model has no revision, whatever the file name looks like
+        for file_name in [
+            "test-model./../outside.yang",
+            "test-model.with space.yang",
+            "test-model.semi;colon.yang",
+            "test-model.$(printf x).yang",
+            "test-model.yang.txt",
+            "../test-model.yang",
+        ]:
+            with self.subTest(file_name=file_name):
+                (passed, message, errors, warnings, info), models_checked = self.check(file_name)
+                self.assertEqual(models_checked, ["test-model.yang"])
+                self.assertEqual(info["code"]["yang"], ["test-model.yang"])
+                self.assertNotIn(file_name, message)
+                self.assertEqual(
+                    sorted(os.listdir(settings.SUBMIT_YANG_DRAFT_MODEL_DIR)),
+                    ["test-model.yang", "test-model@2024-01-01.yang"],
+                )
+                self.assertEqual(self.stray_files(), [])
+                (Path(settings.SUBMIT_YANG_DRAFT_MODEL_DIR) / "test-model.yang").unlink()
+                (Path(settings.FTP_DIR) / "yang" / "draftmod" / "test-model.yang").unlink(missing_ok=True)
+
+    def test_unusable_model_file_names_are_reported_and_not_used(self):
+        """Without a module name to fall back on, a model with an unusable file name is dropped"""
+        for file_name in [
+            "../outside.yang",
+            "../../outside.yang",
+            "sub/dir.yang",
+            "with space.yang",
+            "semi;colon.yang",
+            "$(printf x).yang",
+            "model.yang.txt",
+            "-p.yang",
+        ]:
+            with self.subTest(file_name=file_name):
+                draftmod_before = sorted(os.listdir(settings.SUBMIT_YANG_DRAFT_MODEL_DIR))
+                (passed, message, errors, warnings, info), models_checked = self.check(
+                    file_name, "module {"
+                )
+                self.assertIn(f"Bad extracted model name: '{file_name}'", message)
+                self.assertGreater(errors, 0)
+                # the model is neither checked nor kept
+                self.assertEqual(models_checked, [])
+                self.assertEqual(info["code"]["yang"], [])
+                self.assertEqual(
+                    sorted(os.listdir(settings.SUBMIT_YANG_DRAFT_MODEL_DIR)), draftmod_before
+                )
+                self.assertEqual(self.stray_files(), [])
+
+    def test_is_model_file_name(self):
+        for good in ["a.yang", "_a.yang", "ietf-foo.yang", "ietf-foo@2024-01-01.yang", "a.b-c_d.yang"]:
+            self.assertTrue(is_model_file_name(good), good)
+        for bad in [
+            "", None, ".yang", "a", "a.yang\n", "a.yang ", " a.yang", "1a.yang", "-a.yang",
+            "a/b.yang", "../a.yang", "a b.yang", "a;b.yang", "a@2024-1-1.yang", "a@b.yang",
+        ]:
+            self.assertFalse(is_model_file_name(bad), repr(bad))
 
 
 class SubmissionUploadFormTests(BaseSubmitTestCase):

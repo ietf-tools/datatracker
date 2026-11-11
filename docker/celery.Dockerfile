@@ -52,6 +52,11 @@ RUN npm install -g --prefix /usr/local/idnits3 @ietf-tools/idnits@3.3.0 && \
 # Switch to local dev user
 USER dev:dev
 
+# The pip --user installs below put the tools that tasks run by name (pyang,
+# xym, ...) in ~/.local/bin. Put it on PATH for every process in this dev image;
+# the production image (dev/build/Dockerfile) installs them system-wide instead.
+ENV PATH=/home/${USERNAME}/.local/bin:${PATH}
+
 # Install current datatracker python dependencies
 COPY requirements.txt /tmp/pip-tmp/
 RUN pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location -r /tmp/pip-tmp/requirements.txt
