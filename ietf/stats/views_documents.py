@@ -11,7 +11,14 @@ from django.shortcuts import render
 from django.urls import reverse as urlreverse
 
 from ietf.doc.models import DocEvent, Document
-from ietf.stats.utils import color_from_hash, get_top_n_choices, get_valid_top_n
+from ietf.stats.utils import (
+    color_from_hash,
+    complete_periods,
+    get_top_n_choices,
+    get_valid_monthly,
+    get_valid_top_n,
+    period_of,
+)
 from ietf.utils.timezone import RPC_TZINFO
 
 
@@ -140,13 +147,15 @@ def get_timeline_data_for_documents(
     doc_type: str = "rfc",
     group_by: str = "stream",
     top_n: int = 10,
-) -> tuple[list[int], list[dict[str, Any]]]:
+    monthly: bool = False,
+) -> tuple[list[int] | list[str], list[dict[str, Any]]]:
     """Get timeline data for documents grouped by field over years.
 
     Args:
         doc_type: Document type filter ('rfc', 'draft').
         group_by: Field to group by (e.g., 'stream', 'group', 'intended_std_level').
         top_n: Number of top groups to display.
+        monthly: Bucket by month ("YYYY-MM" labels) instead of by year.
 
     Returns:
         Tuple of (sorted_years, datasets) for Chart.js timeline chart.
@@ -154,11 +163,11 @@ def get_timeline_data_for_documents(
     """
 
     # Initialize variables with proper types
-    years_set: list[int]
+    years_set: list[int] | list[str]
     documents_totals: dict[str, int]
-    data_map: dict[int, dict[str, int]]
+    data_map: dict[int | str, dict[str, int]]
 
-    cache_key = f"stats:get_timeline_data_for_documents:{doc_type}-{group_by}"
+    cache_key = f"stats:get_timeline_data_for_documents:{doc_type}-{group_by}-{'monthly' if monthly else 'yearly'}"
     result = cache.get(cache_key, None)
     if result is not None:
         years_set, documents_totals, data_map = result
@@ -181,14 +190,14 @@ def get_timeline_data_for_documents(
         )
 
         # ── Step 1: Collect all years and document totals ──
-        years_set_temp: set[int] = set()
+        years_set_temp: set[int | str] = set()
         documents_totals = defaultdict(int)
         data_map = defaultdict(dict)  # {year: {group: count}}
 
         for row in queryset:
             if row.pub_datetime is None:
                 continue
-            year = row.pub_datetime.astimezone(RPC_TZINFO).year
+            year = period_of(row.pub_datetime.astimezone(RPC_TZINFO), monthly)
             if group_by == "stream":
                 group = row.stream.name if row.stream else "Unspecified"
             elif group_by == "group":
@@ -205,8 +214,8 @@ def get_timeline_data_for_documents(
             documents_totals[group] += 1
             data_map[year][group] = data_map[year].get(group, 0) + 1
 
-        # ── Step 2: Sort years numerically ──
-        years_set = sorted(years_set_temp)
+        # ── Step 2: Sort periods chronologically (and fill the gaps when monthly) ──
+        years_set = complete_periods(years_set_temp, monthly)
         cache.set(
             cache_key,
             (years_set, documents_totals, data_map),
@@ -219,11 +228,11 @@ def get_timeline_data_for_documents(
         reverse=True,
     )[:top_n]
     non_top_groups = set(documents_totals.keys()) - set(top_groups)
-    other_totals: dict[int, int] = defaultdict(int)
+    other_totals: dict[int | str, int] = defaultdict(int)
     other_bin_is_empty = True
     for y in years_set:
         for g in non_top_groups:
-            count = int(data_map[y].get(g, 0))
+            count = int(data_map.get(y, {}).get(g, 0))
             other_totals[y] += count
             if count > 0:
                 other_bin_is_empty = False
@@ -234,7 +243,7 @@ def get_timeline_data_for_documents(
         color = color_from_hash(group)
         datasets.append({
             "label": group,
-            "data": [data_map[year].get(group, 0) for year in years_set],
+            "data": [data_map.get(year, {}).get(group, 0) for year in years_set],
             "borderColor": color,
             "backgroundColor": color + "99",  # 60% opacity fill
             "fill": False,
@@ -278,14 +287,19 @@ def documents_timeline(request: Any, doc_type: str = "rfc", stats_type: str = "l
     if error_response is not None:
         return error_response
 
+    monthly, error_response = get_valid_monthly(request)
+
+    if error_response is not None:
+        return error_response
+
     if stats_type == "stream":
-        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "stream", top_n)
+        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "stream", top_n, monthly)
     elif stats_type == "level" and doc_type == "draft":
-        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "intended_std_level", top_n)
+        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "intended_std_level", top_n, monthly)
     elif stats_type == "level" and doc_type == "rfc":
-        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "std_level", top_n)
+        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "std_level", top_n, monthly)
     elif stats_type == "wg":
-        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "group", top_n)
+        total_labels, total_data_sets = get_timeline_data_for_documents(doc_type, "group", top_n, monthly)
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
@@ -299,6 +313,7 @@ def documents_timeline(request: Any, doc_type: str = "rfc", stats_type: str = "l
 
     return render(request, "stats/documents_timeline.html", {
         "top_n": top_n,
+        "monthly": monthly,
         "top_n_choices": get_top_n_choices(),
         "objects": "documents",
         "possible_docs_types": possible_docs_types,

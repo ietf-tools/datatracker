@@ -77,6 +77,44 @@ def get_valid_top_n(request):
 
     return top_n, None
     
+def get_valid_monthly(request):
+    """Return (monthly, error_response) from the optional ``monthly`` query parameter.
+
+    Disabled by default; ``monthly=1`` enables it, ``monthly=0`` (or absent) disables it.
+    Any other value is rejected with an HTTP 400 response.
+    """
+    from django.shortcuts import render
+
+    value = request.GET.get("monthly", "0")
+    if value not in ("0", "1"):
+        return False, render(
+            request,
+            "stats/error.html",
+            {"message": f"Invalid monthly choice: {value}. Valid choices are: 0, 1"},
+            status=400,
+        )
+    return value == "1", None
+
+
+def period_of(dt, monthly):
+    """Timeline bucket of an (RPC time zone) datetime: the year (int) or a "YYYY-MM" string."""
+    return f"{dt.year:04d}-{dt.month:02d}" if monthly else dt.year
+
+
+def complete_periods(periods, monthly):
+    """Sorted timeline buckets; monthly buckets are made contiguous so the X-axis is uniform."""
+    periods = sorted(periods)
+    if not monthly or not periods:
+        return periods
+    first_year, first_month = (int(x) for x in periods[0].split("-"))
+    last_year, last_month = (int(x) for x in periods[-1].split("-"))
+    total = (last_year * 12 + last_month - 1) - (first_year * 12 + first_month - 1)
+    return [
+        f"{(first_year * 12 + first_month - 1 + i) // 12:04d}-{(first_year * 12 + first_month - 1 + i) % 12 + 1:02d}"
+        for i in range(total + 1)
+    ]
+
+
 def compile_affiliation_ending_stripping_regexp():
     parts = []
     for ending_re in AffiliationIgnoredEnding.objects.values_list("ending", flat=True):

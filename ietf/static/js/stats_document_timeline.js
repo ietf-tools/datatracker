@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const chartData = JSON.parse(document.getElementById('chart_data').textContent) ;
     const objects = JSON.parse(document.getElementById('objects').textContent) ;
     const stackedLines = false ;
+    // Monthly timelines use "YYYY-MM" labels, yearly ones use plain years
+    const monthly = chartData.labels.length > 0 && String(chartData.labels[0]).includes('-') ;
 
     function displayChart (id, data) {
         const ctx = document.getElementById(id).getContext('2d') ;
@@ -26,6 +28,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             display: true,
                             text: 'Year',
                         },
+                        ticks: monthly ? {
+                            // Only label the year (on its first month) to save space
+                            autoSkip: false,
+                            maxRotation: 0,
+                            callback: function(value) {
+                                const label = String(this.getLabelForValue(value)) ;
+                                return label.endsWith('-01') ? label.slice(0, 4) : '' ;
+                            },
+                        } : {},
                     },
                 },
                 plugins: {

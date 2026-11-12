@@ -456,6 +456,32 @@ class StatisticsTests(TestCase):
         by_label = {ds["label"]: ds["data"] for ds in datasets}
         self.assertEqual(by_label.get("Dedupe Org"), [1], msg=by_label)
 
+    def test_monthly_timelines(self):
+        from django.core.cache import cache
+
+        cache.clear()  # the timeline data is cached
+        for months_ago in (0, 100):
+            rfc = WgRfcFactory()
+            DocEventFactory(type="published_rfc", doc=rfc, time=timezone.now() - datetime.timedelta(days=30 * months_ago))
+            RfcAuthorFactory(document=rfc, affiliation="Monthly Org")
+        for view, kwargs in (
+            (ietf.stats.views_documents.documents_timeline, {"doc_type": "rfc", "stats_type": "stream"}),
+            (ietf.stats.views_authors.authors_timeline, {"doc_type": "rfc", "stats_type": "affiliation"}),
+        ):
+            url = urlreverse(view, kwargs=kwargs)
+            r = self.client.get(url)  # yearly by default
+            self.assertEqual(r.status_code, 200)
+            labels = json.loads(PyQuery(r.content).find("script#chart_data").text())["labels"]
+            self.assertTrue(all(isinstance(label, int) for label in labels), msg=labels)
+            r = self.client.get(url, {"monthly": "1"})
+            self.assertEqual(r.status_code, 200)
+            self.assertContains(r, "monthly=1")
+            labels = json.loads(PyQuery(r.content).find("script#chart_data").text())["labels"]
+            self.assertTrue(labels and all(re.fullmatch(r"\d{4}-\d{2}", label) for label in labels), msg=labels)
+            self.assertEqual(len(labels), len(set(labels)))
+            self.assertGreater(len(labels), 90, msg="gaps between months must be filled")
+            self.assertEqual(self.client.get(url, {"monthly": "yes"}).status_code, 400)
+
     def test_meeting_stats(self):
         meeting124 = MeetingFactory(type_id="ietf", number="124", date=timezone.now())
         meeting125 = MeetingFactory(

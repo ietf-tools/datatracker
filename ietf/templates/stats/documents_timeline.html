@@ -17,7 +17,7 @@
         <label class="fw-bold col-sm-1 col-form-label">Format:</label>
         <div class="btn-group col-sm-2">
                 <a class="btn btn-outline-primary active"
-                    href="{{ timeline_url }}?top={{ top_n }}">Timeline</a>
+                    href="{{ timeline_url }}?top={{ top_n }}{% if monthly %}&amp;monthly=1{% endif %}">Timeline</a>
                 <a class="btn btn-outline-primary"
                     href="{{ total_url }}?top={{ top_n }}">Total</a>
         </div>
@@ -28,7 +28,7 @@
                             {% if slug == stats_type %}
                                 active
                             {% endif %}"
-                    href="{{ url }}?top={{ top_n }}">{{ label }}</a>
+                    href="{{ url }}?top={{ top_n }}{% if monthly %}&amp;monthly=1{% endif %}">{{ label }}</a>
             {% endfor %}
         </div>
         <label class="fw-bold col-sm-1 col-form-label">Documents:</label>
@@ -38,7 +38,7 @@
                             {% if slug == doc_type %}
                                 active
                             {% endif %}"
-                    href="{{ url }}?top={{ top_n }}">{{ label }}</a>
+                    href="{{ url }}?top={{ top_n }}{% if monthly %}&amp;monthly=1{% endif %}">{{ label }}</a>
             {% endfor %}
         </div>
         <form method="GET">
@@ -49,16 +49,20 @@
                     {% endfor %}
                 </select>
             </label>
+            <label class="fw-bold col-sm-2 col-form-label">
+                <input type="checkbox" name="monthly" value="1" {% if monthly %}checked{% endif %} onchange="this.form.submit()">
+                Monthly timeline
+            </label>
             <button class="visually-hidden" type="submit">Submit</button>
         </form>
     </div>
     <p>
         This page provides a timeline of IETF {{ doc_type|upper }} documents {{ objects }} by {{ stats_type }}. Only the top-{{ top_n }} categories are listed,
-        the remaining ones are aggregated into 'Other'. The year is the actual publication date for a RFC and the
+        the remaining ones are aggregated into 'Other'. The {% if monthly %}month{% else %}year{% endif %} is the actual publication date for a RFC and the
         submission date of the latest revision for a draft (i.e., only the authors of latest revision).
         {% if objects == 'authors' %}
-            Note: within each year and category, an author is counted only once, even when they authored several
-            documents (e.g., a draft and the resulting RFC published in the same year).
+            Note: within each {% if monthly %}month{% else %}year{% endif %} and category, an author is counted only once, even when they authored several
+            documents (e.g., a draft and the resulting RFC published in the same {% if monthly %}month{% else %}year{% endif %}).
         {% endif %}
     </p>
     <div class="row">

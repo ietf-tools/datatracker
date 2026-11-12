@@ -14,8 +14,11 @@ from ietf.stats.utils import (
     color_from_hash,
     get_aliased_affiliations,
     get_aliased_countries,
+    complete_periods,
     get_top_n_choices,
+    get_valid_monthly,
     get_valid_top_n,
+    period_of,
 )
 from ietf.utils.timezone import RPC_TZINFO
 
@@ -205,19 +208,21 @@ def authors_total(request: HttpRequest, doc_type: str = "all",
     })
 
 
-def get_authors_timeline_data_for_documents(doc_type: str = "all", group_by: str = "country", top_n: int = 10) -> tuple[list[int], list[dict[str, object]]]:
+def get_authors_timeline_data_for_documents(doc_type: str = "all", group_by: str = "country", top_n: int = 10,
+                                            monthly: bool = False) -> tuple[list[int] | list[str], list[dict[str, object]]]:
     """Build timeline datasets for author statistics.
 
     Args:
         doc_type: Document category to filter on: all, draft, wg-draft, rfc,
         group_by: Field used to group authors, e.g., "country" or "affiliation".
         top_n: Maximum number of top groups to include before aggregating into Other.
+        monthly: Bucket by month ("YYYY-MM" labels) instead of by year.
 
     Returns:
         A tuple containing the ordered years list and Chart.js datasets.
 
     """
-    cache_key = f"stats:get_authors_timeline_data_for_documents:{doc_type}-{group_by}"
+    cache_key = f"stats:get_authors_timeline_data_for_documents:{doc_type}-{group_by}-{'monthly' if monthly else 'yearly'}"
     result = cache.get(cache_key, None)
     if result is not None:
         years_list, documents_totals, data_map = result
@@ -247,7 +252,7 @@ def get_authors_timeline_data_for_documents(doc_type: str = "all", group_by: str
         # Collect (year, author identity, raw group) so that an author is counted
         # only once per year and group (e.g., a draft and its RFC in the same
         # year do not count twice), consistently with the totals view.
-        raw_rows: set[tuple[int, object, str]] = set()
+        raw_rows: set[tuple[int | str, object, str]] = set()
         if doc_type != "rfc":
             for person_id, group, pub_datetime in (
                 _draft_author_rows(doc_type)
@@ -255,7 +260,7 @@ def get_authors_timeline_data_for_documents(doc_type: str = "all", group_by: str
                 .values_list("person_id", group_by, "pub_datetime")
             ):
                 if pub_datetime is not None:
-                    raw_rows.add((pub_datetime.astimezone(RPC_TZINFO).year, person_id, group))
+                    raw_rows.add((period_of(pub_datetime.astimezone(RPC_TZINFO), monthly), person_id, group))
         if doc_type in ("rfc", "all"):
             for person_id, name, group, pub_datetime in (
                 RfcAuthor.objects
@@ -264,7 +269,7 @@ def get_authors_timeline_data_for_documents(doc_type: str = "all", group_by: str
             ):
                 if pub_datetime is not None:
                     raw_rows.add((
-                        pub_datetime.astimezone(RPC_TZINFO).year,
+                        period_of(pub_datetime.astimezone(RPC_TZINFO), monthly),
                         _author_key(person_id, name),
                         group,
                     ))
@@ -289,8 +294,8 @@ def get_authors_timeline_data_for_documents(doc_type: str = "all", group_by: str
             data_map[year][aliased_group] = data_map[year].get(aliased_group, 0) + 1
             documents_totals[aliased_group] += 1
 
-        # ── Step 2: Sort years numerically rather than alphabetically  ──
-        years_list = sorted(years_set)
+        # ── Step 2: Sort periods chronologically (and fill the gaps when monthly) ──
+        years_list = complete_periods(years_set, monthly)
         cache.set(
             cache_key,
             (years_list, documents_totals, data_map),
@@ -304,11 +309,11 @@ def get_authors_timeline_data_for_documents(doc_type: str = "all", group_by: str
         reverse=True,
     )[:top_n]
     non_top_groups = documents_totals.keys() - set(top_groups)
-    other_totals: dict[int, int] = defaultdict(int)
+    other_totals: dict[int | str, int] = defaultdict(int)
     other_bin_is_empty = True
     for y in years_list:
         for g in non_top_groups:
-            count = int(data_map[y].get(g, 0))
+            count = int(data_map.get(y, {}).get(g, 0))
             other_totals[y] += count
             if count > 0:
                 other_bin_is_empty = False
@@ -320,7 +325,7 @@ def get_authors_timeline_data_for_documents(doc_type: str = "all", group_by: str
         color = color_from_hash(group)
         datasets.append({
             "label": group,
-            "data": [data_map[year].get(group, 0) for year in years_list],
+            "data": [data_map.get(year, {}).get(group, 0) for year in years_list],
             "borderColor": color,
             "backgroundColor": color + "99", # 60% opacity fill
             "fill": False,
@@ -367,13 +372,18 @@ def authors_timeline(request: HttpRequest, doc_type: str = "all", stats_type: st
     if error_response is not None:
         return error_response
 
+    monthly, error_response = get_valid_monthly(request)
+
+    if error_response is not None:
+        return error_response
+
     if stats_type == "affiliation":
-        total_labels, total_data_sets = get_authors_timeline_data_for_documents(doc_type, "affiliation", top_n)
+        total_labels, total_data_sets = get_authors_timeline_data_for_documents(doc_type, "affiliation", top_n, monthly)
     elif stats_type == "country":
         error_response = _country_not_available_error(request, doc_type)
         if error_response is not None:
             return error_response
-        total_labels, total_data_sets = get_authors_timeline_data_for_documents(doc_type, "country", top_n)
+        total_labels, total_data_sets = get_authors_timeline_data_for_documents(doc_type, "country", top_n, monthly)
     else:
         return HttpResponseRedirect(urlreverse("ietf.stats.views.stats_index"))
 
@@ -387,6 +397,7 @@ def authors_timeline(request: HttpRequest, doc_type: str = "all", stats_type: st
 
     return render(request, "stats/documents_timeline.html", {
         "top_n": top_n,
+        "monthly": monthly,
         "top_n_choices": get_top_n_choices(),
         "objects": "authors",
         "possible_docs_types": possible_docs_types,
