@@ -270,8 +270,8 @@ def get_country_data_for_meetings(attendance_type: str | None = None,
 
         # ── Step 1: Collect all meetings and country totals ──
         meetings_set: set[str] = set()
-        country_totals: dict[str, int] = defaultdict(int)
-        data_map: dict[str, dict[str, int]] = defaultdict(dict)  # {country: {meeting: count}}
+        country_totals = defaultdict(int)
+        data_map = defaultdict(dict)  # {country: {meeting: count}}
 
         for row in queryset:
             meeting = row["meeting__number"]
