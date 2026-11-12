@@ -19,11 +19,16 @@ def _redirect_old_meetings_timeline(request, stats_type=None):
         kwargs["stats_type"] = _OLD_MEETING_STATS_TYPE_MAP.get(stats_type, stats_type)
     return redirect(urlreverse(views_meetings.meetings_timeline, kwargs=kwargs), permanent=True)
 
-def _redirect_old_documents_timeline(request, doc_type, stats_type):
-    return redirect(
-        urlreverse(views_documents.documents_timeline, kwargs={"doc_type": doc_type, "stats_type": stats_type}),
-        permanent=True,
-    )
+def _redirect_old_document_stats(request):
+    """Redirect any old /stats/document/... URL to the stats index.
+
+    On main, document_stats() was a deprecated view that redirected everything
+    under /stats/document/ (/, authors/, pages/, author/affiliation/,
+    yearly/country/, ...) to the stats index. The per-document-type pages now
+    live under /stats/documents/ and /stats/authors/, with different URL shapes,
+    so there is no 1:1 mapping: send the visitor to the index to pick a chart.
+    """
+    return redirect(urlreverse(views.stats_index))
 
 def _redirect_old_meeting_stats(request, meeting_number, stats_type):
     return redirect(
@@ -38,7 +43,7 @@ urlpatterns = [
     url(r"^annual_report_inputs/(?:(?P<year>\d{4})/)?$", views.annual_report_inputs),
     url(r"^authors/(?P<doc_type>all|draft|wg-draft|rfc)/(?P<stats_type>affiliation|country)/total/$", views_authors.authors_total),
     url(r"^authors/(?P<doc_type>all|draft|wg-draft|rfc)/(?P<stats_type>affiliation|country)/$", views_authors.authors_timeline),
-    url(r"^document/(?P<doc_type>draft|rfc)/(?P<stats_type>level|stream|wg)/$", _redirect_old_documents_timeline),
+    url(r"^document/", _redirect_old_document_stats),
     url(r"^documents/(?P<doc_type>draft|rfc)/(?P<stats_type>level|stream|wg)/total/$", views_documents.documents_total),
     url(r"^documents/(?P<doc_type>draft|rfc)/(?P<stats_type>level|stream|wg)/$", views_documents.documents_timeline),
     url(r"^knowncountries/$", views.known_countries_list),

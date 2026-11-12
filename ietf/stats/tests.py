@@ -627,20 +627,31 @@ class StatisticsTests(TestCase):
 
 
 class LegacyUrlRedirectTests(TestCase):
-    """The old /stats/document/... and /stats/meeting/... URLs should permanently
-    redirect to their new /stats/documents/... and /stats/meetings/... equivalents."""
+    """The old /stats/document/... URLs redirect to the stats index and the old
+    /stats/meeting/... URLs permanently redirect to their new /stats/meetings/... equivalents."""
 
-    def test_document_timeline_redirect(self):
-        for doc_type in ["draft", "rfc"]:
-            for stats_type in ["level", "stream", "wg"]:
-                old_url = f"/stats/document/{doc_type}/{stats_type}/"
-                new_url = urlreverse(
-                    ietf.stats.views_documents.documents_timeline,
-                    kwargs={"doc_type": doc_type, "stats_type": stats_type},
-                )
+    def test_document_stats_redirect(self):
+        """Every old /stats/document/... URL (as served by main) goes to the stats index."""
+        index_url = urlreverse(ietf.stats.views.stats_index)
+        for old_url in [
+            "/stats/document/",
+            "/stats/document/authors/",
+            "/stats/document/pages/",
+            "/stats/document/words/",
+            "/stats/document/format/",
+            "/stats/document/formlang/",
+            "/stats/document/author/documents/",
+            "/stats/document/author/affiliation/",
+            "/stats/document/author/hindex/",
+            "/stats/document/yearly/affiliation/",
+            "/stats/document/yearly/country/",
+            # shape used during the development of the new pages
+            "/stats/document/rfc/level/",
+        ]:
+            with self.subTest(old_url=old_url):
                 r = self.client.get(old_url)
                 self.assertRedirects(
-                    r, new_url, status_code=301, fetch_redirect_response=False
+                    r, index_url, status_code=302, fetch_redirect_response=False
                 )
 
     def test_meeting_timeline_redirect(self):
