@@ -10,7 +10,7 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.stats.models import CountryAlias, AffiliationIgnoredEnding, AffiliationAlias, MeetingRegistration
+from ietf.stats.models import CountryAlias, AffiliationIgnoredEnding, AffiliationAlias, AffiliationMainName, MeetingRegistration
 
 
 from ietf.name.resources import CountryNameResource
@@ -20,7 +20,6 @@ class CountryAliasResource(ModelResource):
         queryset = CountryAlias.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'countryalias'
         ordering = ['id', ]
         filtering = { 
             "id": ALL,
@@ -34,7 +33,6 @@ class AffiliationIgnoredEndingResource(ModelResource):
         queryset = AffiliationIgnoredEnding.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'affiliationignoredending'
         ordering = ['id', ]
         filtering = { 
             "id": ALL,
@@ -47,7 +45,6 @@ class AffiliationAliasResource(ModelResource):
         queryset = AffiliationAlias.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'affiliationalias'
         ordering = ['id', ]
         filtering = { 
             "id": ALL,
@@ -55,6 +52,18 @@ class AffiliationAliasResource(ModelResource):
             "name": ALL,
         }
 api.stats.register(AffiliationAliasResource())
+
+class AffiliationMainNameResource(ModelResource):
+    class Meta:
+        queryset = AffiliationMainName.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "main_name": ALL,
+        }
+api.stats.register(AffiliationMainNameResource())
 
 from ietf.meeting.resources import MeetingResource
 from ietf.person.resources import PersonResource

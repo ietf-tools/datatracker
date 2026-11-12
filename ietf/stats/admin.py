@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, CountryAlias, MeetingRegistration
+from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, AffiliationMainName, CountryAlias, MeetingRegistration
 
 
 class AffiliationAliasAdmin(admin.ModelAdmin):
@@ -13,6 +13,11 @@ class AffiliationIgnoredEndingAdmin(admin.ModelAdmin):
     list_display = ["ending"]
     search_fields = ["ending"]
 admin.site.register(AffiliationIgnoredEnding, AffiliationIgnoredEndingAdmin)
+
+class AffiliationMainNameAdmin(admin.ModelAdmin):
+    list_display = ('main_name',)
+    search_fields = ('main_name',)
+admin.site.register(AffiliationMainName, AffiliationMainNameAdmin)
 
 class CountryAliasAdmin(admin.ModelAdmin):
     list_filter = ["country"]
