@@ -12,9 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const stackedLines = statsType === 'total'
 
     function displayChart (id, data) {
-        const ctx = document.getElementById(id).getContext('2d')
+        const canvas = document.getElementById(id)
+        if (!canvas) { return null }
+        const ctx = canvas.getContext('2d')
         return new Chart(ctx, {
-            type: 'line',   // Change to 'doughnut' for a donut chart
+            type: 'line',
             data: data,
             options: {
                 responsive: true,
@@ -56,21 +58,22 @@ document.addEventListener('DOMContentLoaded', () => {
                             wheel: {
                                 enabled: true,
                                 modifierKey: 'alt'   // Alt + scroll wheel to zoom
-                            },      // scroll to zoom
+                            },
                             pinch: {
                                 enabled: true,
                                 modifierKey: 'alt'
-                            },      // pinch on mobile
-                            drag: {                        // drag to select range 
+                            },
+                            drag: {                        // drag to select range
                                 enabled: true,
                                 modifierKey: 'alt'
                             },
-                            mode: 'xy',                     // zoom X-axis and Y-axis
+                            mode: 'xy',
                         },
                         pan: {
                             enabled: true,
-                            modifierKey: 'alt', 
-                            mode: 'xy',                     // pan X-axis and Y-axis
+                            // must differ from the drag-zoom key, otherwise the plugin rejects both
+                            modifierKey: 'shift',
+                            mode: 'xy',
                         },
                     },
                 }
@@ -79,21 +82,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const totalChart = displayChart('totalRegistrationChart', totalChartData)
-    if (inPersonChartData !== null) {
-        inPersonChart = displayChart('inPersonRegistrationChart', inPersonChartData)
+    const inPersonChart = inPersonChartData
+        ? displayChart('inPersonRegistrationChart', inPersonChartData)
+        : null
+
+    function resetZoom () {
+        if (totalChart) { totalChart.resetZoom() }
+        if (inPersonChart) { inPersonChart.resetZoom() }
     }
+
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            totalChart.resetZoom()
-            if (inPersonChart !== null) {
-                inPersonChart.resetZoom()
-            }
-        }
+        if (event.key === 'Escape') { resetZoom() }
     })
-    document.getElementById('resetButton').addEventListener('click', () => {
-        totalChart.resetZoom()
-        if (inPersonChart !== null) {
-            inPersonChart.resetZoom()
-        }
-    })
+    const resetButton = document.getElementById('resetButton')
+    if (resetButton) { resetButton.addEventListener('click', resetZoom) }
 })

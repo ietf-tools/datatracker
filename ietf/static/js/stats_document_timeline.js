@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         },
                         pan: {
                             enabled: true,
-                            modifierKey: 'alt',
+                            modifierKey: 'shift',
                             mode: 'xy',                     // pan X-axis and Y-axis
                         },
                     },
