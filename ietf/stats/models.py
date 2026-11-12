@@ -34,7 +34,7 @@ class AffiliationAlias(models.Model):
 class AffiliationIgnoredEnding(models.Model):
     """Records that ending should be stripped from the affiliation for statistical purposes."""
 
-    ending = models.CharField(max_length=255, help_text="Records that ending will be matched case-insensitive and should be stripped from the affiliation for statistical purposes.")
+    ending = models.CharField(max_length=255, help_text="Records that ending will be matched case-insensitive and should be stripped from the affiliation for statistical purposes. Regexp with ending, e.g. 'Inc\\.?' - remember to escape .!")
 
     def __str__(self):
         return str(self.ending)

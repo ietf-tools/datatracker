@@ -145,7 +145,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='affiliationignoredending',
             name='ending',
-            field=models.CharField(help_text='Records that ending will be matched case-insensitive and should be stripped from the affiliation for statistical purposes.', max_length=255),
+            field=models.CharField(help_text="Records that ending will be matched case-insensitive and should be stripped from the affiliation for statistical purposes. Regexp with ending, e.g. 'Inc\\.?' - remember to escape .!", max_length=255),
         ),
         migrations.RunPython(forward, backward),
     ]
