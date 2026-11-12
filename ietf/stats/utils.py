@@ -69,7 +69,7 @@ def compile_affiliation_ending_stripping_regexp():
         try:
             re.compile(ending_re)
         except re.error:
-            pass
+            continue
 
         parts.append(ending_re)
 
