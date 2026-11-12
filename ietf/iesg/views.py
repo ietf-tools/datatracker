@@ -68,6 +68,7 @@ from ietf.name.models import TelechatAgendaSectionName
 from ietf.person.models import Person
 from ietf.meeting.utils import get_activity_stats
 from ietf.doc.utils_search import fill_in_document_table_attributes, fill_in_telechat_date
+from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, datetime_from_date
 from ietf.utils.unicodenormalize import normalize_for_sorting
 
@@ -353,13 +354,19 @@ class RescheduleForm(forms.Form):
 
         self.fields['telechat_date'].choices = choices
 
+def form_field_name(doc, field):
+    """Name of a RescheduleForm field for doc, as it appears in a request"""
+    return "%s-%s" % (doc.name, field)
+
 def handle_reschedule_form(request, doc, dates, status):
     initial = dict(telechat_date=doc.telechat_date())
 
     formargs = dict(telechat_dates=dates,
                     prefix="%s" % doc.name,
                     initial=initial)
-    if request.method == 'POST':
+    # A POST changes only the documents it names. A document that was not on the
+    # page when the form was drawn has no field in the POST, and is left alone.
+    if request.method == 'POST' and form_field_name(doc, "telechat_date") in request.POST:
         form = RescheduleForm(request.POST, **formargs)
         if form.is_valid():
             e = update_telechat(request, doc, request.user.person,
@@ -376,6 +383,11 @@ def handle_reschedule_form(request, doc, dates, status):
     return form
 
 def agenda_documents(request):
+    # Anyone can view this page. Only the secretariat reschedules from it.
+    can_reschedule = has_role(request.user, "Secretariat")
+    if request.method == "POST" and not can_reschedule:
+        permission_denied(request, "Restricted to role: Secretariat.")
+
     ad = request.user.person if has_role(request.user, "Area Director") else None
 
     dates = list(TelechatDate.objects.active().order_by('date').values_list("date", flat=True)[:4])
@@ -395,8 +407,9 @@ def agenda_documents(request):
 
     reschedule_status = { "changed": False }
 
-    for i in itertools.chain(*list(docs_by_date.values())):
-        i.reschedule_form = handle_reschedule_form(request, i, dates, reschedule_status)
+    if can_reschedule:
+        for i in itertools.chain(*list(docs_by_date.values())):
+            i.reschedule_form = handle_reschedule_form(request, i, dates, reschedule_status)
 
     if reschedule_status["changed"]:
         # if any were changed, redirect so the browser history is preserved
