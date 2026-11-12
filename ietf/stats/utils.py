@@ -5,6 +5,7 @@
 import re
 import hashlib
 from collections import Counter, defaultdict
+from collections.abc import Iterable
 
 import debug                            # pyflakes:ignore
 
@@ -94,7 +95,7 @@ def compile_affiliation_ending_stripping_regexp():
     return re.compile(re_str, re.IGNORECASE)
 
 
-def get_aliased_affiliations(affiliations):
+def get_aliased_affiliations(affiliations: Iterable[str]) -> dict[str, str]:
     """Given non-unique sequence of affiliations, returns dictionary with
     aliases needed.
 
@@ -111,7 +112,7 @@ def get_aliased_affiliations(affiliations):
       A spelling coming from the database (alias or main name) always wins
       over other spellings, as the database is the authority."""
 
-    res = {}
+    res: dict[str, str] = {}
     # What each distinct input ends up as, how often each final value occurs,
     # and which final values come from the database (alias or main name)
     final_value: dict[str, str] = {}
@@ -144,9 +145,9 @@ def get_aliased_affiliations(affiliations):
             is_from_database = True
 
         # strip ending
-        name = ending_re.sub("", affiliation)
-        if name != affiliation:
-            affiliation = name
+        stripped = ending_re.sub("", affiliation)
+        if stripped != affiliation:
+            affiliation = stripped
             res[original_affiliation] = affiliation
 
         # check again aliases from Aliases DB after stripping the ending
