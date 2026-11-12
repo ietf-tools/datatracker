@@ -12,6 +12,7 @@ from django.core.validators import validate_email
 from django.db.models import Q, Prefetch
 from django.http import Http404, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
+from django.views.decorators.http import require_POST
 
 import debug                            # pyflakes:ignore
 
@@ -500,6 +501,7 @@ def liaison_reply(request,object_id):
     return liaison_add(request,type=reply_type,initial=initial)
 
 @role_required('Secretariat',)
+@require_POST
 def liaison_resend(request, object_id):
     '''Resend the liaison statement notification email'''
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)

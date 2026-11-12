@@ -238,10 +238,12 @@
                    name="dead">Mark as dead</button>
         {% endif %}
         {% if liaison.state.slug == 'posted' and  user|has_role:"Secretariat" %}
-            <a class="btn btn-primary"
-               href="{% url "ietf.liaisons.views.liaison_resend" object_id=liaison.pk %}">
-                Resend statement
-            </a>
+            <form method="post"
+                  class="d-inline"
+                  action="{% url "ietf.liaisons.views.liaison_resend" object_id=liaison.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">Resend statement</button>
+            </form>
         {% endif %}
         {% if liaison.state.slug == 'dead' and can_edit %}
             <button class="btn btn-primary"

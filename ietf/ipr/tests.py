@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.db.models import Max
+from django.test import Client
 from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
@@ -659,6 +660,40 @@ I would like to revoke this declaration.
         ipr = HolderIprDisclosure.objects.get(id=ipr.id)
         self.assertTrue(ipr.iprevent_set.filter(type='posted').exists())
 
+    def test_post_view_requires_post_method(self):
+        ipr = HolderIprDisclosureFactory(state_id='pending')
+        url = urlreverse('ietf.ipr.views.post', kwargs={'id': ipr.id})
+        login_testing_unauthorized(self, "secretary", url)
+
+        # only a POST acts
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 405)
+        ipr = IprDisclosureBase.objects.get(pk=ipr.pk)
+        self.assertEqual(ipr.state_id, 'pending')
+        self.assertFalse(ipr.iprevent_set.filter(type='posted').exists())
+
+        # the button on the disclosure's page posts
+        r = self.client.get(urlreverse('ietf.ipr.views.show', kwargs={'id': ipr.id}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        form = q('form[method=post][action="%s"]' % url)
+        self.assertEqual(len(form), 1)
+        self.assertEqual(len(form.find('input[name=csrfmiddlewaretoken]')), 1)
+        self.assertEqual(len(q('a[href="%s"]' % url)), 0)
+
+        # and the POST needs the CSRF token
+        client = Client(enforce_csrf_checks=True)
+        client.login(username="secretary", password="secretary+password")
+        r = client.post(url)
+        self.assertEqual(r.status_code, 403)
+        self.assertEqual(IprDisclosureBase.objects.get(pk=ipr.pk).state_id, 'pending')
+
+        r = self.client.post(url)
+        self.assertRedirects(r, urlreverse('ietf.ipr.views.notify', kwargs={'id': ipr.id, 'type': 'posted'}))
+        ipr = IprDisclosureBase.objects.get(pk=ipr.pk)
+        self.assertEqual(ipr.state_id, 'posted')
+        self.assertTrue(ipr.iprevent_set.filter(type='posted').exists())
+
     def test_notify(self):
         doc = WgDraftFactory(group__acronym='mars-wg', name='draft-ietf-mars-test')
         old_ipr = HolderIprDisclosureFactory(docs=[doc,], submitter_email='george@acme.com')
@@ -670,12 +705,12 @@ I would like to revoke this declaration.
         url = urlreverse('ietf.ipr.views.post', kwargs={ "id": ipr.id })
         login_testing_unauthorized(self, "secretary", url)
 
-        r = self.client.get(url,follow=True)
+        r = self.client.post(url,follow=True)
         self.assertEqual(r.status_code,200)
         len_before = len(outbox)
         # successful post
         self.client.login(username="secretary", password="secretary+password")
-        r = self.client.get(url,follow=True)
+        r = self.client.post(url,follow=True)
         self.assertEqual(r.status_code,200)
         ipr = IprDisclosureBase.objects.get(pk=ipr.pk)
         self.assertEqual(ipr.state.slug,'posted')

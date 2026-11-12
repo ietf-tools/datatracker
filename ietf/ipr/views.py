@@ -15,6 +15,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.utils.html import escape
+from django.views.decorators.http import require_POST
 
 import debug                            # pyflakes:ignore
 
@@ -610,6 +611,7 @@ def notify(request, id, type):
     })
 
 @role_required('Secretariat',)
+@require_POST
 def post(request, id):
     """Post the disclosure and redirect to notification view"""
     ipr = get_object_or_404(IprDisclosureBase, id=id).get_child()
