@@ -35,6 +35,17 @@ def color_from_hash(s):
     hash = int.from_bytes(full_hash[:2])
     return colors[hash % len(colors)]
 
+def csv_safe(value):
+    """Neutralize spreadsheet formula injection in a CSV cell.
+
+    Free-text values (e.g., affiliations) starting with =, +, - or @ (or a tab or
+    carriage return) would be interpreted as formulas by Excel/LibreOffice, so they
+    are prefixed with a single quote. Non-string values are returned unchanged.
+    """
+    if isinstance(value, str) and value.startswith(("=", "+", "-", "@", "\t", "\r")):
+        return "'" + value
+    return value
+
 top_n_choices = [5, 10, 20, 50, 100]
 
 def get_top_n_choices():

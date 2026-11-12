@@ -6,16 +6,17 @@ import csv
 
 from django.conf import settings
 from django.core.cache import cache
-from django.db.models import Count, IntegerField
+from django.db.models import Count, Exists, IntegerField, OuterRef
 from django.db.models.functions import Cast
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse as urlreverse
 
 from ietf.meeting.helpers import get_current_ietf_meeting_num
-from ietf.meeting.models import Meeting, Registration
+from ietf.meeting.models import Meeting, Registration, RegistrationTicket
 from ietf.stats.utils import (
     color_from_hash,
+    csv_safe,
     get_aliased_affiliations,
     get_aliased_countries,
     get_top_n_choices,
@@ -24,6 +25,22 @@ from ietf.stats.utils import (
 
 # Constants
 FIRST_MEETING_WITH_REGISTRATION_DATA = 72
+
+
+def _with_attendance_type(registrations, attendance_type: str):
+    """Restrict registrations to those having a ticket of the given attendance type.
+
+    An EXISTS subquery is used rather than filtering through the tickets join:
+    a registration with several tickets of the same attendance type would
+    otherwise appear (and be counted) several times.
+    """
+    return registrations.filter(
+        Exists(
+            RegistrationTicket.objects.filter(
+                registration=OuterRef("pk"), attendance_type=attendance_type
+            )
+        )
+    )
 
 
 def get_meeting_stats_type_choices(view, stats_type: str, meeting_number: str | None = None) -> list[tuple[str, str, str]]:
@@ -178,7 +195,7 @@ def get_affiliation_data_for_meetings(attendance_type: str | None = None,
 
         # Get registration status details
         if attendance_type:
-            base_registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
+            base_registrations = _with_attendance_type(Registration.objects.all(), attendance_type)
         else:
             base_registrations = Registration.objects.all()
         registrations = list(
@@ -249,7 +266,7 @@ def get_country_data_for_meetings(attendance_type: str | None = None,
     if (sorted_meetings, sorted_countries, country_totals, data_map) == (None, None, None, None):
         # Get registration status counts, aggregated by country_code
         if attendance_type:
-            base_registrations = Registration.objects.filter(tickets__attendance_type=attendance_type)
+            base_registrations = _with_attendance_type(Registration.objects.all(), attendance_type)
         else:
             base_registrations = Registration.objects.all()
         queryset = (
@@ -322,7 +339,7 @@ def get_data_for_meetings(top_n: int = 20) -> tuple[list[str], list[dict[str, An
         Tuple of (sorted_meetings, datasets) for Chart.js.
 
     """
-    cache_key = f"stats:get_data_for_meetings"
+    cache_key = "stats:get_data_for_meetings"
     sorted_meetings, datasets = cache.get(cache_key, (None, None))
     if (sorted_meetings, datasets) == (None, None):
         # Get registration status counts, aggregated by ticket types
@@ -336,7 +353,7 @@ def get_data_for_meetings(top_n: int = 20) -> tuple[list[str], list[dict[str, An
                 "meeting__number",      # e.g. "118", "119", "120"
                 "tickets__attendance_type",
             )
-            .annotate(participant_count=Count("id"))
+            .annotate(participant_count=Count("id", distinct=True))
             .order_by("meeting__number")  # chronological order
         )
 
@@ -415,7 +432,7 @@ def meetings_timeline(request: Any, stats_type: str = "country") -> Any:
         for meeting_nr in labels:
             for ds in data_sets:
                 count = ds["data"][labels.index(meeting_nr)]
-                writer.writerow([int(meeting_nr), ds["label"], count])
+                writer.writerow([int(meeting_nr), csv_safe(ds["label"]), count])
         return response
 
     # Not for download, prepare the chart data for rendering in the template
@@ -466,7 +483,7 @@ def get_affiliation_data_for_meeting(meeting_number: str, top_n: int = 20,
     # Get registration status details
     base_registrations = Registration.objects.filter(meeting__number=meeting_number)
     if attendance_type:
-        base_registrations = base_registrations.filter(tickets__attendance_type=attendance_type)
+        base_registrations = _with_attendance_type(base_registrations, attendance_type)
     registrations = base_registrations.values("affiliation")
 
     alias_map = get_aliased_affiliations(affiliation for affiliation
@@ -501,10 +518,7 @@ def get_country_data_for_meeting(meeting_number: str, top_n: int = 20,
     # Get registration status counts, aggregated by country_code
     base_registration_counts = Registration.objects.filter(meeting__number=meeting_number)
     if attendance_type:
-        base_registration_counts = (
-            base_registration_counts
-            .filter(tickets__attendance_type=attendance_type)
-        )
+        base_registration_counts = _with_attendance_type(base_registration_counts, attendance_type)
     registration_counts = (
         base_registration_counts
         .values("country_code")
@@ -569,7 +583,7 @@ def meeting_stats(request: Any, meeting_number: str | None = None, stats_type: s
         writer = csv.writer(response, quoting=csv.QUOTE_NONNUMERIC, lineterminator="\n", dialect="excel")
         writer.writerow([stats_type, "count"])
         for label, count in zip(labels, data):
-            writer.writerow([label, count])
+            writer.writerow([csv_safe(label), count])
         return response
     
     # Not for download, prepare the chart data for rendering in the template

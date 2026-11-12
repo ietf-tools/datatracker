@@ -28,6 +28,7 @@ from ietf.doc.factories import (
 )
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.meeting.models import Meeting
+from ietf.meeting.factories import RegistrationTicketFactory
 from ietf.meeting.tests_models import MeetingFactory, RegistrationFactory
 from ietf.person.factories import EmailFactory, PersonFactory
 from ietf.review.factories import (
@@ -39,6 +40,7 @@ from ietf.stats.factories import (
     AffiliationIgnoredEndingFactory,
     AffiliationMainNameFactory,
 )
+from ietf.stats.utils import csv_safe
 from ietf.submit.factories import SubmissionFactory
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 
@@ -602,6 +604,76 @@ class StatisticsTests(TestCase):
         self.assertTrue(csv_lines[0].startswith('"IETF meeting","affiliation","count"'))
         self.assertTrue(csv_lines[1].startswith('124,"Example",0'))
         self.assertIn('125,"Test",15', body)
+
+    def test_meeting_stats_count_registrations_once(self):
+        """A registration with several tickets of one attendance type counts once."""
+        from django.core.cache import cache
+
+        cache.clear()  # timeline data is cached
+        meeting = MeetingFactory(type_id="ietf", number="124", date=timezone.now())
+        multi_ticket = RegistrationFactory(
+            meeting=meeting, affiliation="Dup Org", with_ticket={"attendance_type_id": "onsite"}
+        )
+        RegistrationTicketFactory(
+            registration=multi_ticket, attendance_type_id="onsite", ticket_type_id="one_day"
+        )
+        RegistrationFactory(
+            meeting=meeting, affiliation="Dup Org", with_ticket={"attendance_type_id": "onsite"}
+        )
+
+        for attendance_type in (None, "onsite"):
+            labels, data, total = ietf.stats.views_meetings.get_affiliation_data_for_meeting(
+                "124", attendance_type=attendance_type
+            )
+            self.assertEqual((labels, data, total), (["Dup Org"], [2], 2), msg=attendance_type)
+            labels, data, total = ietf.stats.views_meetings.get_country_data_for_meeting(
+                "124", attendance_type=attendance_type
+            )
+            self.assertEqual(total, 2, msg=attendance_type)
+
+        for attendance_type in (None, "onsite"):
+            _, datasets = ietf.stats.views_meetings.get_affiliation_data_for_meetings(attendance_type)
+            self.assertEqual(
+                {ds["label"]: ds["data"] for ds in datasets}, {"Dup Org": [2]}, msg=attendance_type
+            )
+            _, datasets = ietf.stats.views_meetings.get_country_data_for_meetings(attendance_type)
+            self.assertEqual(sum(sum(ds["data"]) for ds in datasets), 2, msg=attendance_type)
+
+        _, datasets = ietf.stats.views_meetings.get_data_for_meetings()
+        self.assertEqual({ds["label"]: ds["data"] for ds in datasets}, {"onsite": [2]})
+
+    def test_meeting_stats_csv_formula_injection(self):
+        """Free-text labels cannot be interpreted as spreadsheet formulas."""
+        from django.core.cache import cache
+
+        cache.clear()
+        meeting = MeetingFactory(type_id="ietf", number="124", date=timezone.now())
+        RegistrationFactory(
+            meeting=meeting,
+            affiliation="=HYPERLINK(\"http://evil.example\")",
+            with_ticket={"attendance_type_id": "onsite"},
+        )
+        for url in (
+            urlreverse(
+                ietf.stats.views_meetings.meeting_stats,
+                kwargs={"meeting_number": "124", "stats_type": "affiliation"},
+            ),
+            urlreverse(
+                ietf.stats.views_meetings.meetings_timeline,
+                kwargs={"stats_type": "affiliation"},
+            ),
+        ):
+            r = self.client.get(url + "?download=total")
+            self.assertEqual(r.status_code, 200)
+            body = r.content.decode()
+            self.assertIn("\"'=HYPERLINK(", body, msg=body)
+            self.assertNotIn(",\"=HYPERLINK(", body, msg=body)
+
+    def test_csv_safe(self):
+        for value in ("=1+1", "+1", "-1", "@SUM(A1)", "\tx", "\rx"):
+            self.assertEqual(csv_safe(value), "'" + value)
+        for value in ("Cisco", "a=b", "", 5, None):
+            self.assertEqual(csv_safe(value), value)
 
     def test_meeting_stats_for_bad_meeting(self):
         self.assertFalse(Meeting.objects.filter(number=676767).exists())
