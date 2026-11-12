@@ -377,6 +377,26 @@ def _get_materials_doc(name, meeting=None):
     raise Document.DoesNotExist
 
 
+# Content-Type that materials_document() sends for a file, by extension.
+# A file with any other extension is sent as a download.
+MATERIALS_CONTENT_TYPES = {
+    ".txt": "text/plain",
+    ".md": "text/plain",  # or text/markdown or rendered HTML, depending on Accept
+    ".html": "text/html",
+    ".htm": "text/html",
+    ".json": "application/json",
+    ".pdf": "application/pdf",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".doc": "application/msword",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".ppt": "application/vnd.ms-powerpoint",
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+}
+
+
 @cache_page(1 * 60)
 def materials_document(request, document, num=None, ext=None):
     """Materials document view
@@ -417,10 +437,22 @@ def materials_document(request, document, num=None, ext=None):
     old_proceedings_format = meeting.number.isdigit() and int(meeting.number) <= 96
     if settings.MEETING_MATERIALS_SERVE_LOCALLY or old_proceedings_format:
         bytes = filename.read_bytes()
-        mtype, chset = get_mime_type(bytes)  # chset does not consider entire file!
-        content_type = "%s; charset=%s" % (mtype, chset)
+        # The type comes from the extension. The content is only used to guess the
+        # charset of text.
+        suffix = filename.suffix.lower()
+        mtype = MATERIALS_CONTENT_TYPES.get(suffix)
+        if mtype is None:
+            response = HttpResponse(bytes, content_type="application/octet-stream")
+            response["Content-Disposition"] = f'attachment; filename="{filename.name}"'
+            return response
+        if mtype.startswith("text/") or mtype == "application/json":
+            _, chset = get_mime_type(bytes)  # chset does not consider entire file!
+            content_type = "%s; charset=%s" % (mtype, chset)
+        else:
+            content_type = mtype
+        stored_html = mtype == "text/html"
 
-        if filename.suffix == ".md" and mtype == "text/plain":
+        if suffix == ".md":
             sorted_accept = sort_accept_tuple(request.META.get("HTTP_ACCEPT"))
             for atype in sorted_accept:
                 if atype[0] == "text/markdown":
@@ -432,7 +464,7 @@ def materials_document(request, document, num=None, ext=None):
                         md_src = bytes.decode(
                             "utf-8" if chset in ["ascii", "us-ascii"] else chset
                         )
-                    except UnicodeDecodeError:
+                    except (UnicodeDecodeError, LookupError):
                         # latin-1, aka iso8859-1, accepts all 8-bit code points
                         md_src = bytes.decode("latin-1")
                     content = markdown.markdown(md_src)  # a string
@@ -451,6 +483,10 @@ def materials_document(request, document, num=None, ext=None):
 
         response = HttpResponse(bytes, content_type=content_type)
         response["Content-Disposition"] = f'inline; filename="{filename.name}"'
+        if stored_html:
+            # An uploaded HTML file is cleaned when it is saved. This also stops
+            # scripts in a file that was saved before that cleaning existed.
+            response["Content-Security-Policy"] = "sandbox"
         return response
     else:
         return HttpResponseRedirect(redirect_to=doc.get_href(meeting=meeting))

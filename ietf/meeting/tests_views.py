@@ -939,6 +939,88 @@ class MeetingTests(BaseMeetingTestCase):
         )
         self.assertEqual(len(q(f'a[href^="{edit_url}#session"]')), 1, f'Link to session_details page for {acro}')
 
+    @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
+    def test_materials_document_content_type(self):
+        presentation = SessionPresentationFactory(
+            session__meeting__type_id="interim",
+            document__rev="00",
+            document__name="slides-content-type",
+            document__uploaded_filename="slides-content-type-00.txt",
+            document__type_id="slides",
+            document__states=(("reuse_policy", "single"),)
+        )
+        doc = presentation.document
+        meeting = presentation.session.meeting
+        html = "<!DOCTYPE html>\n<html><head><title>A page</title></head><body><p>Some text</p></body></html>\n"
+        files = {
+            # extension: (content, expected Content-Type, expected disposition)
+            ".txt": (html, "text/plain", "inline"),
+            ".md": (html, "text/plain", "inline"),
+            ".json": ('{"key": "<p>value</p>"}', "application/json", "inline"),
+            ".html": (html, "text/html", "inline"),
+            ".htm": (html, "text/html", "inline"),
+            ".pdf": (b"%PDF-1.4\n" + html.encode(), "application/pdf", "inline"),
+            ".pptx": (html, "application/vnd.openxmlformats-officedocument.presentationml.presentation", "inline"),
+            ".svg": ('<svg xmlns="http://www.w3.org/2000/svg"><text>Some text</text></svg>', "application/octet-stream", "attachment"),
+            ".xyz": (html, "application/octet-stream", "attachment"),
+        }
+        for ext, (content, _, _) in files.items():
+            self.write_materials_file(meeting, doc, content, with_ext=ext)
+
+        for ext, (content, content_type, disposition) in files.items():
+            url = urlreverse(
+                "ietf.meeting.views.materials_document",
+                kwargs={"num": meeting.number, "document": "slides-content-type-00", "ext": ext},
+            )
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200, ext)
+            # the type follows the extension, whatever the content looks like
+            self.assertEqual(r["Content-Type"].split(";")[0], content_type, ext)
+            self.assertEqual(r["Content-Disposition"], f'{disposition}; filename="slides-content-type-00{ext}"', ext)
+            self.assertEqual(r.content, content if isinstance(content, bytes) else content.encode(), ext)
+            if content_type == "text/html":
+                self.assertEqual(r["Content-Security-Policy"], "sandbox", ext)
+            else:
+                self.assertNotIn("Content-Security-Policy", r, ext)
+
+        # with no extension in the URL the uploaded file is used, and typed the same way
+        url = urlreverse(
+            "ietf.meeting.views.materials_document",
+            kwargs={"num": meeting.number, "document": "slides-content-type"},
+        )
+        r = self.client.get(url)
+        self.assertEqual(r["Content-Type"].split(";")[0], "text/plain")
+
+    @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
+    def test_materials_document_markdown_as_html(self):
+        presentation = SessionPresentationFactory(
+            session__meeting__type_id="interim",
+            document__rev="00",
+            document__name="agenda-markdown",
+            document__uploaded_filename="agenda-markdown-00.md",
+            document__type_id="agenda",
+        )
+        meeting = presentation.session.meeting
+        self.write_materials_file(
+            meeting,
+            presentation.document,
+            "# Agenda\n\n1. An item\n\n<p onclick=\"this.remove()\">A paragraph</p>\n\n<script>document.title = 1</script>\n",
+        )
+        url = urlreverse(
+            "ietf.meeting.views.materials_document",
+            kwargs={"num": meeting.number, "document": "agenda-markdown"},
+        )
+        r = Client(HTTP_ACCEPT="text/html").get(url)
+        self.assertEqual(r["Content-Type"], "text/html; charset=utf-8")
+        q = PyQuery(r.content)
+        self.assertEqual(q("body h1").text(), "Agenda")
+        self.assertEqual(len(q("body p[onclick]")), 0)
+        self.assertEqual(len(q("body script")), 0)
+        # the source is still available as text
+        r = Client(HTTP_ACCEPT="text/plain").get(url)
+        self.assertEqual(r["Content-Type"].split(";")[0], "text/plain")
+        self.assertContains(r, "<script>document.title = 1</script>")
+
     def test_materials_document_extension_choice(self):
         def _url(**kwargs):
             return urlreverse("ietf.meeting.views.materials_document", kwargs=kwargs)
