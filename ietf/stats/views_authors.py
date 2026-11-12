@@ -60,6 +60,25 @@ def _get_stats_type_choices(view, doc_type: str, stats_type: str) -> list[tuple[
     return possible_stats_types
 
 
+def _rfc_author_pairs(group_by: str) -> set[tuple[object, str]]:
+    """Return the set of distinct (author identity, group) pairs for RFC authors.
+
+    RfcAuthor.person is nullable (authors without a datatracker Person, mostly
+    from early RFCs), so Count("person", distinct=True) or a plain
+    values_list("person_id", ...).distinct() would drop or collapse them.
+    Instead, identify an author by person_id when there is one, and otherwise
+    by the normalized title-page name. Two person-less authors with the same
+    name are assumed to be the same individual (this is a best-effort identity).
+    """
+    pairs: set[tuple[object, str]] = set()
+    for person_id, name, group in RfcAuthor.objects.values_list(
+        "person_id", "titlepage_name", group_by
+    ):
+        key = person_id if person_id is not None else ("name", name.strip().casefold())
+        pairs.add((key, group))
+    return pairs
+
+
 def get_authors_total_data_for_documents(doc_type: str = "all",
                                          group_by: str = "country",
                                          top_n: int = 20) -> dict[str, object]:
@@ -96,15 +115,9 @@ def get_authors_total_data_for_documents(doc_type: str = "all",
             for row in queryset
         ]
     elif doc_type == "rfc":
-        queryset = (
-            RfcAuthor.objects
-            .values(group_by)
-            .annotate(author_count=Count("person", distinct=True))
-        )
-        group_count_set = [
-            (row.get(group_by), row.get("author_count", 0))
-            for row in queryset
-        ]
+        group_count_set = list(Counter(
+            group for _, group in _rfc_author_pairs(group_by)
+        ).items())
     else:
         # Cannot using COUNT() and then UNION else a draft/rfc author will be double counted.
         draft_queryset = (
@@ -113,13 +126,7 @@ def get_authors_total_data_for_documents(doc_type: str = "all",
             .values_list("person_id", group_by)
             .distinct()
         )
-        rfc_queryset = (
-            RfcAuthor.objects
-            .values_list("person_id", group_by)
-            .distinct()
-        )
-
-        author_groups = set(draft_queryset) | set(rfc_queryset)
+        author_groups = set(draft_queryset) | _rfc_author_pairs(group_by)
         group_count_set = list(Counter(
             group for _, group in author_groups
         ).items())
