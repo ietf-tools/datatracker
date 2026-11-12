@@ -16,13 +16,17 @@ from ietf.ipr.models import ( IprDisclosureBase, IprDocRel, HolderIprDisclosure,
 from ietf.person.resources import PersonResource
 from ietf.name.resources import IprDisclosureStateNameResource
 from ietf.doc.resources import DocumentResource
+
+# This API has no roles: everything it serves is served to anyone. So it serves
+# only disclosures that have been posted, and nothing private about those.
+
 class IprDisclosureBaseResource(ModelResource):
     by               = ToOneField(PersonResource, 'by')
     state            = ToOneField(IprDisclosureStateNameResource, 'state')
     docs             = ToManyField(DocumentResource, 'docs', null=True)
     rel              = ToManyField('ietf.ipr.resources.IprDisclosureBaseResource', 'rel', null=True)
     class Meta:
-        queryset = IprDisclosureBase.objects.all()
+        queryset = IprDisclosureBase.objects.filter(state="posted")
         cache = SimpleCache()
         serializer = api.Serializer()
         #resource_name = 'iprdisclosurebase'
@@ -49,7 +53,7 @@ class IprDocRelResource(ModelResource):
     document         = ToOneField(DocumentResource, 'document')
     class Meta:
         cache = SimpleCache()
-        queryset = IprDocRel.objects.all()
+        queryset = IprDocRel.objects.filter(disclosure__state="posted")
         serializer = api.Serializer()
         #resource_name = 'iprdocrel'
         ordering = ['id', ]
@@ -73,7 +77,7 @@ class HolderIprDisclosureResource(ModelResource):
     rel              = ToManyField(IprDisclosureBaseResource, 'rel', null=True)
     class Meta:
         cache = SimpleCache()
-        queryset = HolderIprDisclosure.objects.all()
+        queryset = HolderIprDisclosure.objects.filter(state="posted")
         serializer = api.Serializer()
         #resource_name = 'holderiprdisclosure'
         ordering = ['id', ]
@@ -116,7 +120,7 @@ class ThirdPartyIprDisclosureResource(ModelResource):
     rel              = ToManyField(IprDisclosureBaseResource, 'rel', null=True)
     class Meta:
         cache = SimpleCache()
-        queryset = ThirdPartyIprDisclosure.objects.all()
+        queryset = ThirdPartyIprDisclosure.objects.filter(state="posted")
         serializer = api.Serializer()
         #resource_name = 'thirdpartyiprdisclosure'
         ordering = ['id', ]
@@ -150,7 +154,7 @@ class RelatedIprResource(ModelResource):
     relationship     = ToOneField(DocRelationshipNameResource, 'relationship')
     class Meta:
         cache = SimpleCache()
-        queryset = RelatedIpr.objects.all()
+        queryset = RelatedIpr.objects.filter(source__state="posted", target__state="posted")
         serializer = api.Serializer()
         #resource_name = 'relatedipr'
         ordering = ['id', ]
@@ -172,7 +176,7 @@ class NonDocSpecificIprDisclosureResource(ModelResource):
     rel              = ToManyField(IprDisclosureBaseResource, 'rel', null=True)
     class Meta:
         cache = SimpleCache()
-        queryset = NonDocSpecificIprDisclosure.objects.all()
+        queryset = NonDocSpecificIprDisclosure.objects.filter(state="posted")
         serializer = api.Serializer()
         #resource_name = 'nondocspecificiprdisclosure'
         ordering = ['id', ]
@@ -210,7 +214,7 @@ class GenericIprDisclosureResource(ModelResource):
     rel              = ToManyField(IprDisclosureBaseResource, 'rel', null=True)
     class Meta:
         cache = SimpleCache()
-        queryset = GenericIprDisclosure.objects.all()
+        queryset = GenericIprDisclosure.objects.filter(state="posted")
         serializer = api.Serializer()
         #resource_name = 'genericiprdisclosure'
         ordering = ['id', ]
@@ -247,7 +251,7 @@ class IprEventResource(ModelResource):
     in_reply_to      = ToOneField(MessageResource, 'in_reply_to', null=True)
     class Meta:
         cache = SimpleCache()
-        queryset = IprEvent.objects.all()
+        queryset = IprEvent.objects.filter(disclosure__state="posted").exclude(type="private_comment")
         serializer = api.Serializer()
         #resource_name = 'iprevent'
         ordering = ['id', ]
@@ -276,7 +280,7 @@ class LegacyMigrationIprEventResource(ModelResource):
     iprevent_ptr     = ToOneField(IprEventResource, 'iprevent_ptr')
     class Meta:
         cache = SimpleCache()
-        queryset = LegacyMigrationIprEvent.objects.all()
+        queryset = LegacyMigrationIprEvent.objects.filter(disclosure__state="posted").exclude(type="private_comment")
         serializer = api.Serializer()
         #resource_name = 'legacymigrationiprevent'
         ordering = ['id', ]
