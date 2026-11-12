@@ -83,6 +83,9 @@
     "msgpackr-extract": false,
     "vue-demi": false
   },
+  "alias": {
+    "hammerjs": "./ietf/static/js/hammer.js"
+  },
   "targets": {
     "ietf": {
       "distDir": "ietf/static/dist/ietf",
