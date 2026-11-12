@@ -44,11 +44,13 @@ from ietf.doc.utils import (add_state_change_event, rebuild_reference_relations,
 from ietf.doc.mails import send_review_possibly_replaces_request, send_external_resource_change_request
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
+from ietf.mailtrigger.utils import gather_address_lists
 from ietf.name.models import StreamName, FormalLanguageName
 from ietf.person.models import Person, Email
 from ietf.community.utils import update_name_contains_indexes_with_new_doc
 from ietf.submit.mail import ( announce_to_lists, announce_new_version, announce_to_authors,
-    send_approval_request, send_submission_confirmation, announce_new_wg_00, send_manual_post_request )
+    send_approval_request, send_submission_confirmation, announce_new_wg_00, send_manual_post_request,
+    send_possible_duplicate_person_notice )
 from ietf.submit.checkers import DraftYangChecker
 from ietf.submit.models import ( Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName,
     SubmissionCheck, SubmissionExtResource )
@@ -99,6 +101,10 @@ def validate_submission(submission):
     # author email addresses
     author_error_count = 0
     seen = set()
+    if submission.state_id not in ("cancel", "posted"):
+        unattached = {a.lower() for a in unattached_addresses([a["email"] for a in submission.authors])}
+    else:
+        unattached = set()
     for author in submission.authors:
         email = author['email']
         author['errors'] = []
@@ -110,6 +116,13 @@ def validate_submission(submission):
                 validate_email(email)
             except ValidationError:
                 author['errors'].append("Invalid email address. A valid email address is required.")
+                author_error_count += 1
+            if email.lower() in unattached:
+                author['errors'].append(
+                    "This address is in the Datatracker but not associated with any person, so it "
+                    "cannot be used as an author address. Use a different address, or ask the "
+                    "Secretariat to associate it with the author."
+                )
                 author_error_count += 1
         if email in seen:
             author['errors'].append("Duplicate email address.  A unique email address is required.")
@@ -241,11 +254,19 @@ def docevent_from_submission(submission, desc, who=None):
     if who:
         by = who
     else:
+        # This can run before the submission is confirmed. Look up the submitter,
+        # but do not create or change Person or Email records.
         submitter_parsed = submission.submitter_parsed()
+        submitter = None
         if submitter_parsed["name"] and submitter_parsed["email"]:
-            by, _ = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"], submission.name)
-        else:
+            submitter = person_for_submission_entry(submitter_parsed["name"], submitter_parsed["email"])
+        if submitter is None:
             by = Person.objects.get(name="(System)")
+            if submitter_parsed["name"]:
+                # No Person matched, so record the submitter's name in the description
+                desc = "%s (unvalidated submitter: %s)" % (desc, submitter_parsed["name"])
+        else:
+            by = submitter
 
     e = SubmissionDocEvent.objects.create(
             doc=draft,
@@ -307,12 +328,23 @@ def find_submission_filenames(draft):
 
 @transaction.atomic
 def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
+    """Post a submission
+
+    Raises UnattachedAddress if the submission names an address that is in the
+    database with no Person. The check comes first, so that the refusal does not
+    depend on which file moves or mail come before update_authors(); the
+    transaction undoes database changes either way.
+    """
+    check_submission_addresses(submission)
     # This is very chatty into the logs, but these could still be useful for quick diagnostics
     log.log(f"{submission.name}: start")
     system = Person.objects.get(name="(System)")
+    acting_person = person_acting_in_request(request)
     submitter_parsed = submission.submitter_parsed()
     if submitter_parsed["name"] and submitter_parsed["email"]:
-        submitter, _ = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"], submission.name)
+        submitter, _ = ensure_person_email_info_exists(
+            submitter_parsed["name"], submitter_parsed["email"], submission.name, acting_person
+        )
         submitter_info = '%s <%s>' % (submitter_parsed["name"], submitter_parsed["email"])
     else:
         submitter = system
@@ -390,7 +422,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
 
     draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
 
-    update_authors(draft, submission)
+    update_authors(draft, submission, acting_person)
 
     draft.formal_languages.set(submission.formal_languages.all())
 
@@ -560,6 +592,11 @@ def update_docextresources_from_submission(request, submission, draft):
     update_doc_extresources(draft, doc_resources, by)
 
 def get_person_from_name_email(name, email):
+    """Return an existing Person matching the email address, or else the name
+
+    The name match is not verified. Do not use the result to decide which
+    Person or Email records to change. Use person_for_submission_entry() for that.
+    """
     # try email
     if email and (email.startswith('unknown-email-') or is_valid_email(email)):
         persons = Person.objects.filter(email__address__iexact=email).distinct()
@@ -578,18 +615,127 @@ def get_person_from_name_email(name, email):
 
     return None
 
-def ensure_person_email_info_exists(name, email, docname):
+
+def person_acting_in_request(request):
+    """The Person logged in on request, or None"""
+    user = getattr(request, "user", None)
+    if user is None or not user.is_authenticated:
+        return None
+    try:
+        return user.person
+    except Person.DoesNotExist:
+        return None
+
+
+class UnattachedAddress(Exception):
+    """A submission names an address that is in the database with no Person
+
+    Such an address cannot be attributed to anybody from a submission, so the
+    submission cannot be posted while it names one.
+    """
+
+    def __init__(self, addresses):
+        self.addresses = list(addresses)
+        super().__init__(", ".join(self.addresses))
+
+    def describe(self):
+        """An explanation for the person submitting"""
+        return (
+            f"{'This address is' if len(self.addresses) == 1 else 'These addresses are'} "
+            f"in the Datatracker but not associated with any person, so "
+            f"{'it' if len(self.addresses) == 1 else 'they'} cannot be used as an author or "
+            f"submitter address: {', '.join(self.addresses)}. Use a different address, or ask "
+            f"the Secretariat to associate {'it' if len(self.addresses) == 1 else 'them'} "
+            f"with the right person."
+        )
+
+
+def unattached_addresses(addresses):
+    """Return those of addresses that are in the database with no Person, in the given order"""
+    wanted = [a for a in addresses if a]
+    if not wanted:
+        return []
+    # Email.address is case-insensitive, so this matches regardless of case
+    found = {
+        a.lower()
+        for a in Email.objects.filter(address__in=wanted, person__isnull=True).values_list(
+            "address", flat=True
+        )
+    }
+    result = []
+    for a in wanted:
+        if a.lower() in found and a.lower() not in {r.lower() for r in result}:
+            result.append(a)
+    return result
+
+
+def check_submission_addresses(submission):
+    """Raise UnattachedAddress if the submitter or an author address is in the database with no Person"""
+    addresses = [author.get("email") for author in submission.authors]
+    addresses.append(submission.submitter_parsed()["email"])
+    found = unattached_addresses(addresses)
+    if found:
+        raise UnattachedAddress(found)
+
+
+def person_for_submission_entry(name, email, acting_person=None):
+    """Return the existing Person for a name and email address from a submission, or None
+
+    If the address is in the database, return the Person it belongs to, or None
+    if it belongs to no Person. Such an address cannot be used in a submission;
+    see unattached_addresses().
+
+    If the address is not in the database, return acting_person when name is
+    one of acting_person's aliases. acting_person is the logged-in Person making
+    the request, or None.
+
+    Otherwise return None. A name alone never matches a Person.
+    """
+    if email:
+        # Email.address is case-insensitive and unique, so at most one Email matches
+        existing = Email.objects.filter(address=email).select_related("person").first()
+        if existing is not None:
+            return existing.person
+
+    if acting_person is not None and acting_person.alias_set.filter(name=name).exists():
+        return acting_person
+
+    return None
+
+
+def ensure_person_email_info_exists(name, email, docname, acting_person=None):
+    """Return (Person, Email) for a name and email address from a submission
+
+    Uses person_for_submission_entry() to find an existing Person. acting_person
+    is passed through to it.
+
+    If no existing Person is found, creates a new Person. If other Persons have
+    an alias equal to name, sends the secretariat a possible-duplicate notice.
+
+    Creates the Email if it does not exist. Does not move an Email that already
+    belongs to another Person.
+
+    Raises UnattachedAddress, before changing anything, if the address is in the
+    database with no Person. Naming an address does not make it the namer's.
+    """
     addr = email
     email = None
-    person = get_person_from_name_email(name, addr)
+    if unattached_addresses([addr]):
+        raise UnattachedAddress([addr])
+    person = person_for_submission_entry(name, addr, acting_person)
+    existing_persons = []
 
     # make sure we have a person
     if not person:
+        existing_persons = list(Person.objects.filter(alias__name=name).distinct().order_by("pk"))
         person = Person()
         person.name = name
         person.name_from_draft = name
         log.assertion('isinstance(person.name, str)')
         person.ascii = unidecode_name(person.name)
+        if len(existing_persons) > 0:
+            # A more specific notice is sent below
+            person.skip_possible_duplicates_notice = True
         # Atomic so a Person is never left without the primary UUID that external
         # systems need to name them by.
         with transaction.atomic():
@@ -608,28 +754,28 @@ def ensure_person_email_info_exists(name, email, docname):
         email.origin = "author: %s" % docname          # overwrite earlier origin
         email.save()
     except Email.DoesNotExist:
-        try:
-            # An Email object pointing to some other person will not exist
-            # at this point, because get_person_from_name_email would have
-            # returned that person, but it's possible that an Email record
-            # not associated with any Person exists
-            email = Email.objects.get(address=addr,person__isnull=True)
-        except Email.DoesNotExist:
-            # most likely we just need to create it
-            email = Email(address=addr)
-            email.active = active
-        email.person = person
-        if email.time is None:
-            email.time = timezone.now()
-        email.origin = "author: %s" % docname
-        email.save()
+        # person_for_submission_entry() returns the owner of an address that has
+        # one, and an address with no owner was refused above, so the address is
+        # not in the database. create() inserts. It raises IntegrityError if the
+        # address exists, and never changes the Person of an existing Email.
+        email = Email.objects.create(
+            address=addr,
+            person=person,
+            active=active,
+            origin="author: %s" % docname,
+        )
+
+    if len(existing_persons) > 0:
+        send_possible_duplicate_person_notice(person, existing_persons, docname, addr)
 
     return person, email
 
-def update_authors(draft, submission):
+def update_authors(draft, submission, acting_person=None):
     docauthors = []
     for author in submission.authors:
-        person, email = ensure_person_email_info_exists(author["name"], author.get("email"), submission.name)
+        person, email = ensure_person_email_info_exists(
+            author["name"], author.get("email"), submission.name, acting_person
+        )
         docauthors.append(
             DocumentAuthor(
                 # update_documentauthors() will fill in document and order for us
@@ -871,6 +1017,10 @@ def accept_submission_requires_group_approval(submission):
     )
 
 
+class NoConfirmationAddress(Exception):
+    """A submission has to be confirmed by mail and there is no address to mail"""
+
+
 class SubmissionError(Exception):
     """Exception for errors during submission processing
     
@@ -1037,21 +1187,26 @@ def accept_submission(submission: Submission, request: Optional[HttpRequest] = N
     """Accept a submission and post or put in correct state to await approvals
 
     If autopost is True, will post draft if submitter is authorized to do so.
+
+    Raises NoConfirmationAddress if the submission has to be confirmed by mail
+    and there is no address to mail. Raises UnattachedAddress if the submission
+    names an address that is in the database with no Person. Nothing has been
+    recorded or changed then.
     """
+    check_submission_addresses(submission)
     doc = submission.existing_document()
     prev_authors = [] if not doc else [ author.person for author in doc.documentauthor_set.all() ]
-    curr_authors = [ get_person_from_name_email(author["name"], author.get("email"))
-                     for author in submission.authors ]
     # Is the user authenticated as an author who can approve this submission?
     requester = None
     requester_is_author = False
     if request is not None and request.user.is_authenticated:
         requester = request.user.person
+    # The Person that posting would use for each author. None means posting
+    # would create a new Person for that author.
+    curr_authors = [ person_for_submission_entry(author["name"], author.get("email"), requester)
+                     for author in submission.authors ]
+    if requester is not None:
         requester_is_author = requester in (prev_authors if submission.rev != '00' else curr_authors)
-
-    # If "who" is None, docevent_from_submission will pull it out of submission
-    docevent_from_submission(submission, desc="Uploaded new revision",
-                             who=requester if requester_is_author else None)
 
     replaces = Document.objects.filter(name__in=submission.replaces_names)
     pretty_replaces = '(none)' if not replaces else (
@@ -1071,6 +1226,24 @@ def accept_submission(submission: Submission, request: Optional[HttpRequest] = N
     else:
         requires_prev_group_approval = False
         requires_prev_ad_approval = False
+
+    # The last branch below asks for confirmation by mail. Check that there is
+    # somebody to mail before anything is recorded.
+    confirmed_by_mail = not (
+        requires_ad_approval
+        or requires_prev_ad_approval
+        or requires_group_approval
+        or requires_prev_group_approval
+        or (requester_is_author and autopost)
+    )
+    if confirmed_by_mail:
+        confirmers = gather_address_lists("sub_confirmation_requested", submission=submission)
+        if len(confirmers.to) == 0 and len(confirmers.cc) == 0:
+            raise NoConfirmationAddress()
+
+    # If "who" is None, docevent_from_submission will pull it out of submission
+    docevent_from_submission(submission, desc="Uploaded new revision",
+                             who=requester if requester_is_author else None)
 
     # Partial message for submission event
     sub_event_desc = 'Set submitter to \"%s\", replaces to %s' % (parse_unicode(submission.submitter), pretty_replaces)
@@ -1128,8 +1301,7 @@ def accept_submission(submission: Submission, request: Optional[HttpRequest] = N
         doc = submission.existing_document()
         if doc and doc.group:
             old_authors = [ author.person for author in doc.documentauthor_set.all() ]
-            new_authors = [ get_person_from_name_email(author["name"], author.get("email")) for author in submission.authors ]
-            group_authors_changed = set(old_authors)!=set(new_authors)
+            group_authors_changed = set(old_authors)!=set(curr_authors)
 
         address_list = send_submission_confirmation(
             request,
@@ -1450,6 +1622,13 @@ def process_and_accept_uploaded_submission(submission):
             "Submission rejected: Email address not found for all authors"
         )
         return
+
+    try:
+        check_submission_addresses(submission)
+    except UnattachedAddress as err:
+        cancel_submission(submission)  # changes Submission.state
+        create_submission_event(None, submission, f"Submission rejected: {err.describe()}")
+        return
         
     if not submitter_is_author(submission):
         cancel_submission(submission)  # changes Submission.state
@@ -1461,7 +1640,18 @@ def process_and_accept_uploaded_submission(submission):
         return
 
     create_submission_event(None, submission, desc="Completed submission validation checks")
-    accept_submission(submission)
+    try:
+        accept_submission(submission)
+    except NoConfirmationAddress:
+        cancel_submission(submission)  # changes Submission.state
+        create_submission_event(
+            None,
+            submission,
+            "Submission rejected: There is no active email address to send the confirmation request to",
+        )
+    except UnattachedAddress as err:
+        cancel_submission(submission)  # changes Submission.state
+        create_submission_event(None, submission, f"Submission rejected: {err.describe()}")
 
 
 def process_uploaded_submission(submission):

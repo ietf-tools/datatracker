@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 
+from email.utils import parseaddr
 from io import StringIO
 from pyquery import PyQuery
 from typing import Tuple
@@ -42,6 +43,7 @@ from ietf.doc.utils import create_ballot_if_not_open, can_edit_docextresources, 
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group
 from ietf.group.utils import setup_default_community_list_for_group
+from ietf.mailtrigger.models import Recipient, active_email_for, address_for_mail
 from ietf.meeting.models import Meeting
 from ietf.meeting.factories import MeetingFactory
 from ietf.name.models import DraftSubmissionStateName, FormalLanguageName
@@ -60,11 +62,13 @@ from ietf.submit.utils import (expirable_submissions, expire_submission, find_su
                                process_and_accept_uploaded_submission, SubmissionError, process_submission_text,
                                process_submission_xml, process_uploaded_submission, 
                                process_and_validate_submission, apply_yang_checker_to_draft, 
-                               run_all_yang_model_checks)
+                               run_all_yang_model_checks, ensure_person_email_info_exists,
+                               person_for_submission_entry, unattached_addresses, UnattachedAddress)
 from ietf.submit.views import access_token_is_valid, auth_token_is_valid
 from ietf.utils import tool_version
 from ietf.utils.accesstoken import generate_access_token, generate_random_key
-from ietf.utils.mail import outbox, get_payload_text
+from ietf.utils.mail import outbox, empty_outbox, get_payload_text
+from ietf.person.models import Email
 from ietf.utils.test_runner import TestBlobstoreManager
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.timezone import date_today
@@ -778,7 +782,8 @@ class SubmitTests(BaseSubmitTestCase):
         # Assert event content in chronological order:
         if draft.stream_id == 'ietf':
             expected_docevents = [
-                ("new_submission", "Uploaded new revision", "Submitter Name"),
+                # The submitter's address is new, and nothing is recorded about them until posting
+                ("new_submission", "Uploaded new revision (unvalidated submitter: Submitter Name)", "(System)"),
                 ("new_submission", "Request for posting confirmation", "(System)"),
                 ("new_submission", "New version approved", "(System)"),
                 ("new_revision", "New version available", "Submitter Name"),
@@ -788,7 +793,8 @@ class SubmitTests(BaseSubmitTestCase):
             ]
         elif draft.stream_id in ('ise', 'irtf', 'iab'):
             expected_docevents = [
-                ("new_submission", "Uploaded new revision", "Submitter Name"),
+                # The submitter's address is new, and nothing is recorded about them until posting
+                ("new_submission", "Uploaded new revision (unvalidated submitter: Submitter Name)", "(System)"),
                 ("new_submission", "Request for posting confirmation", "(System)"),
                 ("new_submission", "New version approved", "(System)"),
                 ("new_revision", "New version available", "Submitter Name"),
@@ -1312,7 +1318,7 @@ class SubmitTests(BaseSubmitTestCase):
         group = orig_draft.group
         new_rev = '%02d' % (int(orig_draft.rev) + 1)
         author: Person = PersonFactory()  # type: ignore[annotation-unchecked]
-        DocumentAuthor.objects.create(person=author, document=orig_draft)
+        DocumentAuthor.objects.create(person=author, email=author.email(), document=orig_draft)
         orig_draft.docextresource_set.create(name_id='faq', value='https://faq.example.com/')
         orig_draft.docextresource_set.create(name_id='wiki', value='https://wiki.example.com', display_name='Test Wiki')
         orig_extresources = list(orig_draft.docextresource_set.all())
@@ -4079,6 +4085,783 @@ class YangCheckerTests(TestCase):
         checker.check_file_txt.return_value = (True, "whee", None, None, {})
         apply_yang_checker_to_draft(checker, draft)
         self.assertEqual(checker.check_file_txt.call_args, mock.call(draft.get_file_name()))
+
+
+class SubmissionPersonMatchingTests(BaseSubmitTestCase):
+    """Tests of how a name and email address from a submission are matched to a Person"""
+
+    def setUp(self):
+        super().setUp()
+        (Path(settings.FTP_DIR) / "internet-drafts").mkdir()
+        MeetingFactory(type_id='ietf', date=date_today()+datetime.timedelta(days=180))
+        self.existing = PersonFactory(name="Existing Person")
+        self.existing_addresses = sorted(self.existing.email_set.values_list("address", flat=True))
+        self.new_address = "new.address@example.org"
+
+    def assert_existing_person_unchanged(self):
+        self.existing.refresh_from_db()
+        self.assertEqual(
+            sorted(self.existing.email_set.values_list("address", flat=True)),
+            self.existing_addresses,
+        )
+
+    def duplicate_notices(self):
+        return [m for m in outbox if "duplicate" in m["Subject"].lower()]
+
+    # --- ensure_person_email_info_exists() ---
+
+    def test_known_address_identifies_its_person(self):
+        known = self.existing.email().address
+        empty_outbox()
+        person, email = ensure_person_email_info_exists("Some Other Name", known.upper(), "draft-foo-bar")
+        self.assertEqual(person, self.existing)
+        self.assertEqual(email.address, known)
+        self.assertEqual(Person.objects.filter(name="Some Other Name").count(), 0)
+        self.assertEqual(len(outbox), 0)
+
+    def test_known_address_that_is_not_a_valid_address(self):
+        Email.objects.create(address="not a valid address", person=self.existing, origin="test")
+        person_count = Person.objects.count()
+        empty_outbox()
+        person, email = ensure_person_email_info_exists(
+            self.existing.name, "not a valid address", "draft-foo-bar"
+        )
+        self.assertEqual(person, self.existing)
+        self.assertEqual(email.person, self.existing)
+        self.assertEqual(Person.objects.count(), person_count)
+        self.assertEqual(len(outbox), 0)
+
+    def test_new_address_and_new_name_creates_person(self):
+        empty_outbox()
+        person, email = ensure_person_email_info_exists("Brand New Name", self.new_address, "draft-foo-bar")
+        self.assertEqual(person.name, "Brand New Name")
+        self.assertEqual(email.person, person)
+        self.assertEqual(email.origin, "author: draft-foo-bar")
+        self.assertTrue(person.uuids.exists())
+        self.assertEqual(len(outbox), 0)
+
+    def test_new_address_is_not_added_to_person_with_same_name(self):
+        for acting_person in (None, PersonFactory()):
+            with self.subTest(acting_person=acting_person):
+                Email.objects.filter(address=self.new_address).delete()
+                Person.objects.filter(name=self.existing.name).exclude(pk=self.existing.pk).delete()
+                empty_outbox()
+                person, email = ensure_person_email_info_exists(
+                    self.existing.name, self.new_address.upper(), "draft-foo-bar", acting_person
+                )
+                self.assertNotEqual(person, self.existing)
+                self.assertEqual(person.name, self.existing.name)
+                self.assertIsNone(person.user)
+                self.assertEqual(email.address, self.new_address)
+                self.assertEqual(email.person, person)
+                self.assert_existing_person_unchanged()
+                # only the submission-specific notice is sent
+                self.assertEqual(len(outbox), 1)
+                notice = outbox[0]
+                self.assertIn("iesg-secretary@ietf.org", notice["To"])
+                self.assertIn("draft-foo-bar", notice["Subject"])
+                body = get_payload_text(notice)
+                self.assertIn(self.new_address, body)
+                self.assertIn(f"(pk={person.pk})", body)
+                self.assertIn(f"(pk={self.existing.pk})", body)
+                self.assertIn(f"?source={person.pk}&target={self.existing.pk}", body)
+
+    def test_new_address_matches_alias_of_another_person(self):
+        """The name in the submission matches an alias of the existing Person"""
+        self.existing.alias_set.create(name="E. Person")
+        empty_outbox()
+        person, email = ensure_person_email_info_exists("E. Person", self.new_address, "draft-foo-bar")
+        self.assertNotEqual(person, self.existing)
+        self.assert_existing_person_unchanged()
+        self.assertEqual(len(outbox), 1)
+        self.assertIn(f"(pk={self.existing.pk})", get_payload_text(outbox[0]))
+
+    def test_new_address_is_added_to_acting_person(self):
+        empty_outbox()
+        person, email = ensure_person_email_info_exists(
+            self.existing.name, self.new_address, "draft-foo-bar", self.existing
+        )
+        self.assertEqual(person, self.existing)
+        self.assertEqual(email.person, self.existing)
+        self.assertTrue(email.active)
+        self.assertEqual(email.origin, "author: draft-foo-bar")
+        self.assertEqual(Person.objects.filter(name=self.existing.name).count(), 1)
+        self.assertEqual(len(outbox), 0)
+
+    def test_acting_person_must_go_by_the_name(self):
+        """A logged-in user is not matched to an entry whose name is not one of their aliases"""
+        acting_person = PersonFactory(name="Acting Person")
+        empty_outbox()
+        person, email = ensure_person_email_info_exists(
+            "Brand New Name", self.new_address, "draft-foo-bar", acting_person
+        )
+        self.assertNotEqual(person, acting_person)
+        self.assertEqual(person.name, "Brand New Name")
+        self.assertFalse(acting_person.email_set.filter(address=self.new_address).exists())
+
+    def test_acting_person_preferred_among_same_named_persons(self):
+        other_person = PersonFactory(name=self.existing.name)
+        empty_outbox()
+        person, email = ensure_person_email_info_exists(
+            self.existing.name, self.new_address, "draft-foo-bar", other_person
+        )
+        self.assertEqual(person, other_person)
+        self.assert_existing_person_unchanged()
+        self.assertEqual(self.duplicate_notices(), [])
+
+    def test_unattached_address_is_refused(self):
+        """An address in the database with no Person is not given to anybody who names it"""
+        unattached = Email.objects.create(address=self.new_address, person=None, origin="test")
+        for acting_person in (None, self.existing):
+            with self.subTest(acting_person=acting_person):
+                person_count = Person.objects.count()
+                empty_outbox()
+                with self.assertRaises(UnattachedAddress) as cm:
+                    ensure_person_email_info_exists(
+                        self.existing.name, self.new_address.upper(), "draft-foo-bar", acting_person
+                    )
+                self.assertEqual(cm.exception.addresses, [self.new_address.upper()])
+                unattached.refresh_from_db()
+                self.assertIsNone(unattached.person)
+                self.assertEqual(unattached.origin, "test")
+                self.assertEqual(Person.objects.count(), person_count)
+                self.assert_existing_person_unchanged()
+                self.assertEqual(len(outbox), 0)
+
+    def test_unattached_addresses(self):
+        Email.objects.create(address="role@example.org", person=None, origin="test")
+        known = self.existing.email().address
+        self.assertEqual(unattached_addresses([]), [])
+        self.assertEqual(unattached_addresses([None, "", known, self.new_address]), [])
+        self.assertEqual(
+            unattached_addresses([known, "ROLE@example.org", None, "role@example.org"]),
+            ["ROLE@example.org"],
+        )
+
+    def test_person_for_submission_entry(self):
+        known = self.existing.email().address
+        self.assertEqual(person_for_submission_entry("Whoever", known), self.existing)
+        self.assertIsNone(person_for_submission_entry(self.existing.name, self.new_address))
+        self.assertIsNone(person_for_submission_entry(self.existing.name, None))
+        self.assertIsNone(person_for_submission_entry(self.existing.name, "not an address"))
+        self.assertEqual(person_for_submission_entry("Whoever", known.upper()), self.existing)
+        self.assertEqual(
+            person_for_submission_entry(self.existing.name, self.new_address, self.existing), self.existing
+        )
+        self.assertIsNone(
+            person_for_submission_entry(self.existing.name, self.new_address, PersonFactory())
+        )
+        # An address with no Person matches nobody, not even the acting person
+        Email.objects.create(address=self.new_address, person=None, origin="test")
+        self.assertIsNone(
+            person_for_submission_entry(self.existing.name, self.new_address, self.existing)
+        )
+
+    def test_generic_duplicate_notice_still_sent_elsewhere(self):
+        empty_outbox()
+        PersonFactory(name=self.existing.name)
+        self.assertGreaterEqual(len(self.duplicate_notices()), 1)
+        self.assertTrue(
+            all("Possible duplicate Person objects" in m["Subject"] for m in self.duplicate_notices())
+        )
+
+    # --- through the submission views ---
+
+    def upload(self, name, rev, author, author_address):
+        file, __ = submission_file(
+            f"{name}-{rev}", f"{name}-{rev}.txt", None, "test_submission.txt",
+            author=author, email=author_address,
+        )
+        r = self.post_to_upload_submission(urlreverse("ietf.submit.views.upload_submission"), {"txt": file})
+        self.assertEqual(r.status_code, 302)
+        submission = Submission.objects.get(name=name, rev=rev)
+        process_uploaded_submission(submission)
+        return submission, r["Location"]
+
+    def supply_submitter(self, status_url, submitter_name, submitter_address):
+        r = self.client.post(status_url, {
+            "action": "autopost",
+            "submitter-name": submitter_name,
+            "submitter-email": submitter_address,
+            "replaces": [],
+            "resources": "",
+        })
+        self.assertEqual(r.status_code, 302)
+        return r
+
+    def confirmation_url(self):
+        text = get_payload_text(outbox[-1])
+        urls = [line.strip() for line in text.split("\n") if line.strip().startswith("http")]
+        self.assertTrue(urls)
+        return urls[-1]
+
+    def test_confirming_without_login_does_not_add_address_to_existing_person(self):
+        name = "draft-newname-testing-tests"
+        submission, status_url = self.upload(name, "00", self.existing, self.new_address)
+        self.assertEqual(submission.authors[0]["email"], self.new_address)
+        self.supply_submitter(status_url, "Some Submitter", "some.submitter@example.org")
+        self.assertFalse(Email.objects.filter(address=self.new_address).exists())
+        self.assertFalse(Email.objects.filter(address="some.submitter@example.org").exists())
+        confirmation_url = self.confirmation_url()
+        empty_outbox()
+        r = self.client.post(confirmation_url, {"action": "confirm"})
+        self.assertEqual(r.status_code, 302)
+
+        draft = Document.objects.get(name=name)
+        author = draft.documentauthor_set.get()
+        self.assertNotEqual(author.person, self.existing)
+        self.assertEqual(author.person.name, self.existing.name)
+        self.assertEqual(author.email.address, self.new_address)
+        self.assertIsNone(author.person.user)
+        self.assert_existing_person_unchanged()
+        self.assertEqual(len(self.duplicate_notices()), 1)
+        self.assertIn(name, self.duplicate_notices()[0]["Subject"])
+
+        # A password reset for the new address does not reach the existing account
+        empty_outbox()
+        r = self.client.post(urlreverse("ietf.ietfauth.views.password_reset"), {"username": self.new_address})
+        self.assertEqual(r.status_code, 200)
+        for message in outbox:
+            for address in self.existing_addresses:
+                self.assertNotIn(address, message["To"])
+        self.existing.user.refresh_from_db()
+        self.assertFalse(Email.objects.filter(person=self.existing, address=self.new_address).exists())
+
+    def test_confirming_while_logged_in_adds_address_to_own_person(self):
+        name = "draft-newname-testing-tests"
+        submission, status_url = self.upload(name, "00", self.existing, self.new_address)
+        self.supply_submitter(status_url, "Some Submitter", "some.submitter@example.org")
+        confirmation_url = self.confirmation_url()
+        self.client.login(
+            username=self.existing.user.username, password=self.existing.user.username + "+password"
+        )
+        empty_outbox()
+        r = self.client.post(confirmation_url, {"action": "confirm"})
+        self.assertEqual(r.status_code, 302)
+
+        draft = Document.objects.get(name=name)
+        author = draft.documentauthor_set.get()
+        self.assertEqual(author.person, self.existing)
+        self.assertEqual(author.email.address, self.new_address)
+        self.assertTrue(self.existing.email_set.filter(address=self.new_address, active=True).exists())
+        self.assertEqual(Person.objects.filter(name=self.existing.name).count(), 1)
+        self.assertEqual(self.duplicate_notices(), [])
+
+    def test_logged_in_author_with_new_address_can_post_directly(self):
+        name = "draft-newname-testing-tests"
+        self.client.login(
+            username=self.existing.user.username, password=self.existing.user.username + "+password"
+        )
+        submission, status_url = self.upload(name, "00", self.existing, self.new_address)
+        empty_outbox()
+        self.supply_submitter(status_url, self.existing.name, self.new_address)
+        submission.refresh_from_db()
+        self.assertEqual(submission.state_id, "posted")
+        author = Document.objects.get(name=name).documentauthor_set.get()
+        self.assertEqual(author.person, self.existing)
+        self.assertEqual(Person.objects.filter(name=self.existing.name).count(), 1)
+        self.assertEqual(self.duplicate_notices(), [])
+
+    def test_submitter_is_not_recorded_before_confirmation(self):
+        """Posting submitter details for a new revision does not create or change Person or Email records"""
+        author = PersonFactory()
+        draft = IndividualDraftFactory(name="draft-somebody-testing-tests", rev="00", authors=[author])
+        submission, status_url = self.upload(draft.name, "01", author, None)
+        persons_before = Person.objects.count()
+        emails_before = Email.objects.count()
+        empty_outbox()
+        self.supply_submitter(status_url, self.existing.name, self.new_address)
+        submission.refresh_from_db()
+        self.assertEqual(submission.state_id, "aut-appr")
+        self.assertEqual(Person.objects.count(), persons_before)
+        self.assertEqual(Email.objects.count(), emails_before)
+        self.assertFalse(Email.objects.filter(address=self.new_address).exists())
+        self.assert_existing_person_unchanged()
+        self.assertEqual(self.duplicate_notices(), [])
+        event = draft.docevent_set.filter(type="new_submission", desc__startswith="Uploaded new revision").get()
+        self.assertEqual(event.by.name, "(System)")
+        self.assertIn(self.existing.name, event.desc)
+
+        # A submitter whose address is in the database is recorded as the event's author
+        other = PersonFactory()
+        draft2 = IndividualDraftFactory(name="draft-somebody-other-tests", rev="00", authors=[author])
+        submission2, status_url2 = self.upload(draft2.name, "01", author, None)
+        self.supply_submitter(status_url2, other.name, other.email().address)
+        event = draft2.docevent_set.filter(type="new_submission", desc__startswith="Uploaded new revision").get()
+        self.assertEqual(event.by, other)
+
+    # --- an address in the database with no Person ---
+
+    def assert_not_posted(self, submission, state_id, unattached):
+        submission.refresh_from_db()
+        self.assertEqual(submission.state_id, state_id)
+        self.assertFalse(Document.objects.filter(name=submission.name).exists())
+        unattached.refresh_from_db()
+        self.assertIsNone(unattached.person)
+        self.assert_existing_person_unchanged()
+
+    def test_unattached_author_address_is_reported_before_submitting(self):
+        name = "draft-newname-testing-tests"
+        submission, status_url = self.upload(name, "00", self.existing, self.new_address)
+        Email.objects.create(address=self.new_address, person=None, origin="test")
+        r = self.client.get(status_url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertIn("not associated with any person", q(".alert-danger").text() + q(".text-danger").text())
+        # no button to submit
+        self.assertEqual(len(q('input[name="action"][value="autopost"]')), 0)
+
+    def test_logged_in_author_cannot_claim_unattached_address(self):
+        name = "draft-newname-testing-tests"
+        self.client.login(
+            username=self.existing.user.username, password=self.existing.user.username + "+password"
+        )
+        submission, status_url = self.upload(name, "00", self.existing, self.new_address)
+        unattached = Email.objects.create(address=self.new_address, person=None, origin="test")
+        empty_outbox()
+        r = self.client.post(status_url, {
+            "action": "autopost",
+            "submitter-name": self.existing.name,
+            "submitter-email": self.existing.email().address,
+            "replaces": [],
+            "resources": "",
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "not associated with any person")
+        self.assert_not_posted(submission, "uploaded", unattached)
+        self.assertEqual(len(outbox), 0)
+
+    def test_unattached_submitter_address_is_refused(self):
+        name = "draft-newname-testing-tests"
+        submission, status_url = self.upload(name, "00", self.existing, None)
+        unattached = Email.objects.create(address=self.new_address, person=None, origin="test")
+        empty_outbox()
+        r = self.client.post(status_url, {
+            "action": "autopost",
+            "submitter-name": self.existing.name,
+            "submitter-email": self.new_address,
+            "replaces": [],
+            "resources": "",
+        })
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertIn("not associated with any person", q("#id_submitter-email").parent().text())
+        self.assert_not_posted(submission, "uploaded", unattached)
+        self.assertEqual(len(outbox), 0)
+
+    def test_confirming_with_unattached_address_does_not_post(self):
+        """The address loses its Person after the confirmation request is sent"""
+        name = "draft-newname-testing-tests"
+        submission, status_url = self.upload(name, "00", self.existing, self.new_address)
+        self.supply_submitter(status_url, "Some Submitter", "some.submitter@example.org")
+        submission.refresh_from_db()
+        self.assertEqual(submission.state_id, "auth")
+        confirmation_url = self.confirmation_url()
+        unattached = Email.objects.create(address=self.new_address, person=None, origin="test")
+
+        r = self.client.post(confirmation_url, {"action": "confirm"}, follow=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "not associated with any person")
+        self.assert_not_posted(submission, "auth", unattached)
+
+    def test_forced_post_with_unattached_address_does_not_post(self):
+        unattached = Email.objects.create(address=self.new_address, person=None, origin="test")
+        submission = SubmissionFactory(
+            name="draft-newname-testing-tests",
+            rev="00",
+            state_id="manual",
+            submitter="Some Submitter <some.submitter@example.org>",
+            authors=[{"name": self.existing.name, "email": self.new_address, "affiliation": "", "country": ""}],
+        )
+        self.client.login(username="secretary", password="secretary+password")
+        status_url = urlreverse("ietf.submit.views.submission_status", kwargs=dict(submission_id=submission.pk))
+        r = self.client.post(status_url, {"action": "forcepost"})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "not associated with any person")
+        self.assert_not_posted(submission, "manual", unattached)
+
+    def test_api_submission_with_unattached_address_is_rejected(self):
+        unattached = Email.objects.create(address=self.new_address, person=None, origin="test")
+        TestBlobstoreManager().emptyTestBlobstores()
+        xml, author = submission_file(
+            "draft-somebody-test-00", "draft-somebody-test-00.xml", None, "test_submission.xml",
+            author=self.existing, email=self.new_address,
+        )
+        xml_data = xml.read()
+        xml.close()
+        submission = SubmissionFactory(
+            name="draft-somebody-test",
+            rev="00",
+            file_types=".xml",
+            submitter=self.existing.formatted_email(),
+            state_id="validating",
+        )
+        xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / "draft-somebody-test-00.xml"
+        with xml_path.open("w") as f:
+            f.write(xml_data)
+        store_str("staging", "draft-somebody-test-00.xml", xml_data)
+        empty_outbox()
+        # The submitter's addresses do not include the unattached one, so let the
+        # submitter count as an author in order to get as far as accepting
+        with mock.patch("ietf.submit.utils.submitter_is_author", return_value=True):
+            process_and_accept_uploaded_submission(submission)
+        self.assert_not_posted(submission, "cancel", unattached)
+        self.assertTrue(
+            submission.submissionevent_set.filter(desc__contains="not associated with any person").exists()
+        )
+        # rejected with the other author checks, before validation is complete
+        self.assertFalse(
+            submission.submissionevent_set.filter(desc__contains="Completed submission validation checks").exists()
+        )
+        self.assertEqual(len(outbox), 0)
+
+    def test_post_submission_refuses_unattached_address(self):
+        unattached = Email.objects.create(address=self.new_address, person=None, origin="test")
+        submission = SubmissionFactory(
+            name="draft-newname-testing-tests",
+            rev="00",
+            state_id="auth",
+            submitter=f"{self.existing.name} <{self.existing.email().address}>",
+            authors=[{"name": self.existing.name, "email": self.new_address, "affiliation": "", "country": ""}],
+        )
+        request = RequestFactory().post("/")
+        request.user = self.existing.user
+        events_before = DocEvent.objects.count()
+        with self.assertRaises(UnattachedAddress):
+            post_submission(request, submission, "desc", "desc")
+        self.assertEqual(DocEvent.objects.count(), events_before)
+        self.assert_not_posted(submission, "auth", unattached)
+
+
+class SubmissionInactiveAddressTests(BaseSubmitTestCase):
+    """Tests that mail about a submission is not sent to an address that is marked inactive"""
+
+    def setUp(self):
+        super().setUp()
+        (Path(settings.FTP_DIR) / "internet-drafts").mkdir()
+        MeetingFactory(type_id='ietf', date=date_today()+datetime.timedelta(days=180))
+        self.person = PersonFactory(name="Known Person")
+        self.active_address = self.person.email_set.get().address
+        self.inactive_address = "old.address@example.org"
+        self.inactive_email = EmailFactory(
+            person=self.person, address=self.inactive_address, active=False, origin=self.person.user.username
+        )
+
+    def deactivate_all_addresses(self):
+        self.person.email_set.update(active=False)
+
+    def upload(self, name, rev, author, author_address):
+        file, __ = submission_file(
+            f"{name}-{rev}", f"{name}-{rev}.txt", None, "test_submission.txt",
+            author=author, email=author_address,
+        )
+        r = self.post_to_upload_submission(urlreverse("ietf.submit.views.upload_submission"), {"txt": file})
+        self.assertEqual(r.status_code, 302)
+        submission = Submission.objects.get(name=name, rev=rev)
+        process_uploaded_submission(submission)
+        return submission, r["Location"]
+
+    def supply_submitter(self, status_url, submitter_name, submitter_address):
+        return self.client.post(status_url, {
+            "action": "autopost",
+            "submitter-name": submitter_name,
+            "submitter-email": submitter_address,
+            "replaces": [],
+            "resources": "",
+        })
+
+    def confirmation_url(self, message):
+        text = get_payload_text(message)
+        urls = [line.strip() for line in text.split("\n") if line.strip().startswith("http")]
+        self.assertTrue(urls)
+        return urls[-1]
+
+    def existing_draft(self, name):
+        """A posted draft whose author address is the inactive one"""
+        draft = IndividualDraftFactory(name=name, rev="00", authors=[self.person])
+        author = draft.documentauthor_set.get()
+        author.email = self.inactive_email
+        author.save()
+        return draft
+
+    def recipients(self, message):
+        return (message["To"] or "") + (message["Cc"] or "")
+
+    # --- the helpers ---
+
+    def test_active_email_for(self):
+        self.assertEqual(active_email_for(self.person.email_set.get(address=self.active_address)).address, self.active_address)
+        self.assertEqual(active_email_for(self.inactive_email).address, self.active_address)
+        # The primary address is used if it is active, otherwise the newest active one
+        self.assertTrue(self.person.email_set.get(address=self.active_address).primary)
+        EmailFactory(person=self.person, address="newer.address@example.org", origin="test")
+        newest = EmailFactory(person=self.person, address="newest.address@example.org", origin="test")
+        self.assertEqual(active_email_for(self.inactive_email).address, self.active_address)
+        Email.objects.filter(address=self.active_address).update(active=False)
+        self.assertEqual(active_email_for(self.inactive_email), newest)
+        # No active address, or no Person
+        self.deactivate_all_addresses()
+        self.assertIsNone(active_email_for(self.inactive_email))
+        self.assertIsNone(active_email_for(Email.objects.create(address="nobody@example.org", active=False, origin="test")))
+
+    def test_address_for_mail(self):
+        self.assertEqual(address_for_mail("not.in.database@example.org"), "not.in.database@example.org")
+        self.assertEqual(address_for_mail(self.active_address), self.active_address)
+        self.assertEqual(address_for_mail(self.inactive_address), self.active_address)
+        self.assertEqual(address_for_mail(self.inactive_address.upper()), self.active_address)
+        self.deactivate_all_addresses()
+        self.assertIsNone(address_for_mail(self.inactive_address))
+
+    def test_submission_recipients(self):
+        other = PersonFactory(name="Other Person")
+        submission = SubmissionFactory(
+            authors=[
+                {"name": "Known Person", "email": self.inactive_address},
+                {"name": other.name, "email": other.email().address},
+                {"name": "New Author", "email": "new.author@example.org"},
+            ],
+            submitter=f"Known Person <{self.inactive_address}>",
+        )
+        def gather(slug):
+            return Recipient.objects.get(slug=slug).gather(submission=submission)
+
+        self.assertEqual(
+            gather("submission_authors"),
+            [
+                f"Known Person <{self.active_address}>",
+                f"Other Person <{other.email().address}>",
+                "New Author <new.author@example.org>",
+            ],
+        )
+        self.assertEqual(
+            [parseaddr(a)[1] for a in gather("submission_confirmers")],
+            [self.active_address, other.email().address, "new.author@example.org"],
+        )
+
+        self.deactivate_all_addresses()
+        self.assertEqual(
+            [parseaddr(a)[1] for a in gather("submission_authors")],
+            [other.email().address, "new.author@example.org"],
+        )
+        self.assertEqual(
+            [parseaddr(a)[1] for a in gather("submission_confirmers")],
+            [other.email().address, "new.author@example.org"],
+        )
+
+        # A submitter address that is active or not in the database is used as it was given
+        submission.submitter = "Some Submitter <some.submitter@example.org>"
+        self.assertEqual(gather("submission_confirmers")[-1], "Some Submitter <some.submitter@example.org>")
+
+    # --- a new draft ---
+
+    def test_new_draft_confirmation_goes_to_active_address(self):
+        name = "draft-known-testing-tests"
+        submission, status_url = self.upload(name, "00", self.person, self.inactive_address)
+        empty_outbox()
+        r = self.supply_submitter(status_url, self.person.name, self.inactive_address)
+        self.assertEqual(r.status_code, 302)
+        submission.refresh_from_db()
+        self.assertEqual(submission.state_id, "auth")
+        self.assertEqual(len(outbox), 1)
+        self.assertIn(self.active_address, outbox[0]["To"])
+        self.assertNotIn(self.inactive_address, self.recipients(outbox[0]))
+
+        # The status page names the address the mail went to
+        r = self.client.get(status_url)
+        self.assertContains(r, self.active_address)
+
+        confirmation_url = self.confirmation_url(outbox[0])
+        empty_outbox()
+        r = self.client.post(confirmation_url, {"action": "confirm"})
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(Document.objects.filter(name=name).exists())
+        self.assertTrue(len(outbox) > 0)
+        for message in outbox:
+            self.assertNotIn(self.inactive_address, self.recipients(message))
+        self.assertTrue(any(self.active_address in self.recipients(message) for message in outbox))
+
+    def test_new_draft_with_no_address_to_mail(self):
+        self.deactivate_all_addresses()
+        name = "draft-known-testing-tests"
+        submission, status_url = self.upload(name, "00", self.person, self.inactive_address)
+        empty_outbox()
+        r = self.supply_submitter(status_url, self.person.name, self.inactive_address)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "No confirmation email can be sent")
+        self.assertContains(r, "manual posting")
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('input[name=action][value=edit]')), 1)
+        self.assertEqual(q('input[name=submitter-email]').val(), self.inactive_address)
+        submission.refresh_from_db()
+        self.assertEqual(submission.state_id, "uploaded")
+        self.assertEqual(submission.submitter, "")
+        self.assertEqual(len(outbox), 0)
+        self.assertFalse(submission.submissionevent_set.filter(desc__contains="confirmation").exists())
+
+        # Manual posting can still be requested
+        r = self.client.post(status_url, {"action": "edit"})
+        self.assertEqual(r.status_code, 302)
+        r = self.client.get(r["Location"])
+        self.assertEqual(r.status_code, 200)
+
+        # A submitter address that can be mailed is enough for a new draft
+        r = self.supply_submitter(status_url, "Some Submitter", "some.submitter@example.org")
+        self.assertEqual(r.status_code, 302)
+        submission.refresh_from_db()
+        self.assertEqual(submission.state_id, "auth")
+        self.assertEqual(len(outbox), 1)
+        self.assertEqual(parseaddr(outbox[0]["To"])[1], "some.submitter@example.org")
+
+    # --- a new revision ---
+
+    def test_new_revision_confirmation_goes_to_active_address(self):
+        draft = self.existing_draft("draft-known-testing-tests")
+        submission, status_url = self.upload(draft.name, "01", self.person, self.inactive_address)
+        empty_outbox()
+        r = self.supply_submitter(status_url, "Some Submitter", "some.submitter@example.org")
+        self.assertEqual(r.status_code, 302)
+        submission.refresh_from_db()
+        self.assertEqual(submission.state_id, "aut-appr")
+        self.assertEqual(len(outbox), 1)
+        self.assertEqual(parseaddr(outbox[0]["To"])[1], self.active_address)
+        self.assertNotIn(self.inactive_address, self.recipients(outbox[0]))
+
+        # The link to manage the submission goes to the same address
+        empty_outbox()
+        r = self.client.post(
+            urlreverse("ietf.submit.views.submission_status", kwargs={"submission_id": submission.pk}),
+            {"action": "sendfullurl"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(outbox), 1)
+        self.assertEqual(parseaddr(outbox[0]["To"])[1], self.active_address)
+
+    def test_new_revision_with_no_address_to_mail(self):
+        draft = self.existing_draft("draft-known-testing-tests")
+        self.deactivate_all_addresses()
+        submission, status_url = self.upload(draft.name, "01", self.person, self.inactive_address)
+        empty_outbox()
+        r = self.supply_submitter(status_url, "Some Submitter", "some.submitter@example.org")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "No confirmation email can be sent")
+        self.assertContains(r, "manual posting")
+        self.assertEqual(len(PyQuery(r.content)('input[name=action][value=edit]')), 1)
+        submission.refresh_from_db()
+        self.assertEqual(submission.state_id, "uploaded")
+        self.assertEqual(len(outbox), 0)
+        # Nothing was recorded on the existing draft
+        self.assertFalse(draft.docevent_set.filter(type="new_submission").exists())
+        draft.refresh_from_db()
+        self.assertEqual(draft.rev, "00")
+
+        # A request for the link to manage the submission sends nothing and says so
+        r = self.client.post(
+            urlreverse("ietf.submit.views.submission_status", kwargs={"submission_id": submission.pk}),
+            {"action": "sendfullurl"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "No email was sent")
+        self.assertEqual(len(outbox), 0)
+        self.assertFalse(submission.submissionevent_set.filter(desc__contains="full access URL").exists())
+
+    def test_logged_in_previous_author_needs_no_address_to_mail(self):
+        draft = self.existing_draft("draft-known-testing-tests")
+        self.deactivate_all_addresses()
+        self.client.login(username=self.person.user.username, password=self.person.user.username + "+password")
+        submission, status_url = self.upload(draft.name, "01", self.person, self.inactive_address)
+        r = self.supply_submitter(status_url, self.person.name, self.inactive_address)
+        self.assertEqual(r.status_code, 302)
+        submission.refresh_from_db()
+        self.assertEqual(submission.state_id, "posted")
+        draft.refresh_from_db()
+        self.assertEqual(draft.rev, "01")
+
+    def test_group_approval_needs_no_address_to_mail(self):
+        self.deactivate_all_addresses()
+        group = GroupFactory(type_id="wg")
+        RoleFactory(group=group, name_id="chair")
+        name = f"draft-ietf-{group.acronym}-testing-tests"
+        file, __ = submission_file(
+            f"{name}-00", f"{name}-00.txt", group, "test_submission.txt",
+            author=self.person, email=self.inactive_address,
+        )
+        r = self.post_to_upload_submission(urlreverse("ietf.submit.views.upload_submission"), {"txt": file})
+        self.assertEqual(r.status_code, 302)
+        submission = Submission.objects.get(name=name)
+        process_uploaded_submission(submission)
+        r = self.supply_submitter(r["Location"], self.person.name, self.inactive_address)
+        self.assertEqual(r.status_code, 302)
+        submission.refresh_from_db()
+        self.assertEqual(submission.state_id, "grp-appr")
+
+    def test_api_submission_with_no_address_to_mail(self):
+        draft = self.existing_draft("draft-somebody-test")
+        self.deactivate_all_addresses()
+        TestBlobstoreManager().emptyTestBlobstores()
+        xml, author = submission_file("draft-somebody-test-01", "draft-somebody-test-01.xml", None, "test_submission.xml")
+        xml_data = xml.read()
+        xml.close()
+        submission = SubmissionFactory(
+            name=draft.name,
+            rev="01",
+            file_types=".xml",
+            submitter=author.formatted_email(),
+            state_id="validating",
+        )
+        xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / "draft-somebody-test-01.xml"
+        with xml_path.open("w") as f:
+            f.write(xml_data)
+        store_str("staging", "draft-somebody-test-01.xml", xml_data)
+        empty_outbox()
+        process_and_accept_uploaded_submission(submission)
+        submission = Submission.objects.get(pk=submission.pk)
+        self.assertEqual(submission.state_id, "cancel")
+        self.assertTrue(submission.submissionevent_set.filter(desc__contains="no active email address").exists())
+        self.assertEqual(len(outbox), 0)
+        self.assertFalse(draft.docevent_set.filter(type="new_submission").exists())
+
+    # --- a request for manual posting ---
+
+    def request_manual_posting(self, name, submitter_address):
+        """Upload a new draft, request manual posting and return the mail that was sent"""
+        submission, status_url = self.upload(name, "00", self.person, self.active_address)
+        r = self.client.post(status_url, {"action": "edit"})
+        self.assertEqual(r.status_code, 302)
+        empty_outbox()
+        r = self.client.post(r["Location"], {
+            "edit-title": "some title",
+            "edit-rev": "00",
+            "edit-document_date": date_today().strftime("%Y-%m-%d"),
+            "edit-abstract": "some abstract",
+            "edit-pages": "123",
+            "submitter-name": "Some Submitter",
+            "submitter-email": submitter_address,
+            "authors-0-name": self.person.name,
+            "authors-0-email": self.active_address,
+            "authors-prefix": ["authors-", "authors-0"],
+        })
+        self.assertNoFormPostErrors(r, ".invalid-feedback,.alert-danger")
+        submission.refresh_from_db()
+        self.assertEqual(submission.state_id, "manual")
+        self.assertEqual(len(outbox), 1)
+        self.assertIn("Manual Post Requested", outbox[0]["Subject"])
+        return outbox[0]
+
+    def test_manual_post_request_notes_inactive_submitter_address(self):
+        message = self.request_manual_posting("draft-known-testing-tests", self.inactive_address)
+        self.assertIn(
+            f"{self.inactive_address} is marked as inactive in the Datatracker",
+            get_payload_text(message),
+        )
+        # The copy for the submitter still goes to the address they gave
+        self.assertIn(self.inactive_address, message["Cc"])
+
+    def test_manual_post_request_has_no_note_for_other_submitter_addresses(self):
+        for number, submitter_address in enumerate([self.active_address, "not.in.database@example.org"]):
+            with self.subTest(submitter_address=submitter_address):
+                message = self.request_manual_posting(f"draft-known-testing-tests{number}", submitter_address)
+                self.assertNotIn("marked as inactive", get_payload_text(message))
+                self.assertIn(submitter_address, message["Cc"])
 
 
 @override_settings(IDSUBMIT_REPOSITORY_PATH="/some/path/", IDSUBMIT_STAGING_PATH="/some/other/path")
