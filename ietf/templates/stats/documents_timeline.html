@@ -56,6 +56,10 @@
         This page provides a timeline of IETF {{ doc_type|upper }} documents {{ objects }} by {{ stats_type }}. Only the top-{{ top_n }} categories are listed,
         the remaining ones are aggregated into 'Other'. The year is the actual publication date for a RFC and the
         submission date of the latest revision for a draft (i.e., only the authors of latest revision).
+        {% if objects == 'authors' %}
+            Note: within each year and category, an author is counted only once, even when they authored several
+            documents (e.g., a draft and the resulting RFC published in the same year).
+        {% endif %}
     </p>
     <div class="row">
         <div class="col-md-12">

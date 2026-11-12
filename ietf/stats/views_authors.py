@@ -4,7 +4,7 @@ from collections import Counter, defaultdict
 
 from django.conf import settings
 from django.core.cache import cache
-from django.db.models import Count, DateTimeField, OuterRef, Q, Subquery
+from django.db.models import DateTimeField, OuterRef, Q, Subquery
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse as urlreverse
@@ -60,29 +60,43 @@ def _get_stats_type_choices(view, doc_type: str, stats_type: str) -> list[tuple[
     return possible_stats_types
 
 
-def _rfc_author_pairs(group_by: str) -> set[tuple[object, str]]:
-    """Return the set of distinct (author identity, group) pairs for RFC authors.
+def _author_key(person_id: int | None, titlepage_name: str) -> object:
+    """Return an identity for an author, usable to avoid counting them twice.
 
     RfcAuthor.person is nullable (authors without a datatracker Person, mostly
-    from early RFCs), so Count("person", distinct=True) or a plain
-    values_list("person_id", ...).distinct() would drop or collapse them.
-    Instead, identify an author by person_id when there is one, and otherwise
-    by the normalized title-page name. Two person-less authors with the same
-    name are assumed to be the same individual (this is a best-effort identity).
+    from early RFCs). Such authors are identified by their normalized title-page
+    name, which is a best-effort identity: two different people with the same
+    name and no Person are assumed to be the same individual.
     """
-    pairs: set[tuple[object, str]] = set()
-    for person_id, name, group in RfcAuthor.objects.values_list(
-        "person_id", "titlepage_name", group_by
-    ):
-        key = person_id if person_id is not None else ("name", name.strip().casefold())
-        pairs.add((key, group))
-    return pairs
+    if person_id is not None:
+        return person_id
+    return ("name", titlepage_name.strip().casefold())
+
+
+def _draft_author_rows(doc_type: str):
+    """Return a DocumentAuthor queryset for the draft-based doc_types."""
+    filters = Q(document__type_id="draft")
+    if doc_type == "wg-draft":
+        filters &= Q(document__group__type_id="wg")
+    return DocumentAuthor.objects.filter(filters)
+
+
+def _alias_groups(groups, group_by: str) -> dict:
+    """Map raw country/affiliation values to their canonical value."""
+    if group_by == "affiliation":
+        return get_aliased_affiliations(groups)
+    if group_by == "country":
+        return get_aliased_countries(groups)
+    return {}
 
 
 def get_authors_total_data_for_documents(doc_type: str = "all",
                                          group_by: str = "country",
                                          top_n: int = 20) -> dict[str, object]:
     """Build chart data for author totals.
+
+    Each author is counted once per group, no matter how many documents they
+    have authored, and no matter how many raw spellings of the group they used.
 
     Args:
         doc_type: Document category to filter on: all, draft, wg-draft, rfc,
@@ -93,57 +107,32 @@ def get_authors_total_data_for_documents(doc_type: str = "all",
         A Chart.js-compatible data dictionary.
 
     """
-    # Build a dynamic query set filter to get country/affiliation
-    # using the appropriate model based on doc_type.
-    # RfcAuthor  for RFC
-    # DocumentAuthor for other documents (i.e., drafts)
-
-    # Using distinct=True in Count to avoid double counting authors
-    # who may have multiple entries in the database
-    if doc_type in ("draft", "wg-draft"):
-        filters = Q(document__type_id="draft")
-        if doc_type == "wg-draft":
-            filters &= Q(document__group__type_id="wg")
-        queryset = (
-            DocumentAuthor.objects
-            .filter(filters)
-            .values(group_by)
-            .annotate(author_count=Count("person", distinct=True))
-        )
-        group_count_set = [
-            (row.get(group_by), row.get("author_count", 0))
-            for row in queryset
-        ]
-    elif doc_type == "rfc":
-        group_count_set = list(Counter(
-            group for _, group in _rfc_author_pairs(group_by)
-        ).items())
-    else:
-        # Cannot using COUNT() and then UNION else a draft/rfc author will be double counted.
-        draft_queryset = (
-            DocumentAuthor.objects
-            .filter(document__type_id="draft")
+    # DocumentAuthor for drafts, RfcAuthor for RFCs; "all" is the union of both.
+    # Collect (author identity, raw group) pairs and de-duplicate them in Python:
+    # a SQL COUNT() would double count an author present in both models.
+    raw_pairs: set[tuple[object, str]] = set()
+    if doc_type != "rfc":
+        raw_pairs |= set(
+            _draft_author_rows(doc_type)
             .values_list("person_id", group_by)
             .distinct()
         )
-        author_groups = set(draft_queryset) | _rfc_author_pairs(group_by)
-        group_count_set = list(Counter(
-            group for _, group in author_groups
-        ).items())
+    if doc_type in ("rfc", "all"):
+        for person_id, name, group in (
+            RfcAuthor.objects
+            .values_list("person_id", "titlepage_name", group_by)
+            .distinct()
+        ):
+            raw_pairs.add((_author_key(person_id, name), group))
 
-
-    if group_by == "affiliation":
-        alias_map = get_aliased_affiliations(group for group, _ in group_count_set)
-    elif group_by == "country":
-        alias_map = get_aliased_countries(group for group, _ in group_count_set)
-    else:
-        alias_map = {}
-
-    group_count_dict: dict[str, int] = {}
-    for group, count in group_count_set:
-        aliased_group = alias_map.get(group, group)
-        aliased_group = "Unspecified" if not aliased_group else str(aliased_group)
-        group_count_dict[aliased_group] = group_count_dict.get(aliased_group, 0) + count
+    # Alias *before* de-duplicating, so that an author using several spellings
+    # of the same organization is only counted once.
+    alias_map = _alias_groups({group for _, group in raw_pairs}, group_by)
+    author_groups = {
+        (author, "Unspecified" if not alias_map.get(group, group) else str(alias_map.get(group, group)))
+        for author, group in raw_pairs
+    }
+    group_count_dict: dict[str, int] = dict(Counter(group for _, group in author_groups))
 
     group_count_sorted = sorted(group_count_dict.items(),
                                 key=lambda x: x[1], reverse=True)
@@ -252,69 +241,48 @@ def get_authors_timeline_data_for_documents(doc_type: str = "all", group_by: str
                 output_field=DateTimeField(),
             )
 
-        # Build a dynamic query set filter to get country/affiliation using the appropriate model based on doc_type.
-        # RfcAuthor  for RFC
-        # DocumentAuthor for other documents (i.e., drafts)
-        draft_queryset = None
-        rfc_queryset = None
-        if doc_type in ("draft", "wg-draft"):
-            filters = Q(document__type_id="draft")
-            if doc_type == "wg-draft":
-                filters &= Q(document__group__type_id="wg")
-            draft_queryset = (
-                DocumentAuthor.objects
-                .filter(filters)
+        # DocumentAuthor for drafts, RfcAuthor for RFCs; "all" is both.
+        # Collect (year, author identity, raw group) so that an author is counted
+        # only once per year and group (e.g., a draft and its RFC in the same
+        # year do not count twice), consistently with the totals view.
+        raw_rows: set[tuple[int, object, str]] = set()
+        if doc_type != "rfc":
+            for person_id, group, pub_datetime in (
+                _draft_author_rows(doc_type)
                 .annotate(pub_datetime=new_revision_time)
-            )
-        elif doc_type == "rfc":
-            rfc_queryset = (
+                .values_list("person_id", group_by, "pub_datetime")
+            ):
+                if pub_datetime is not None:
+                    raw_rows.add((pub_datetime.astimezone(RPC_TZINFO).year, person_id, group))
+        if doc_type in ("rfc", "all"):
+            for person_id, name, group, pub_datetime in (
                 RfcAuthor.objects
                 .annotate(pub_datetime=published_rfc_time)
-            )
-        else:
-            draft_queryset = (
-                DocumentAuthor.objects
-                .filter(document__type_id="draft")
-                .annotate(pub_datetime=new_revision_time)
-            )
-            rfc_queryset = (
-                RfcAuthor.objects
-                .annotate(pub_datetime=published_rfc_time)
-            )
+                .values_list("person_id", "titlepage_name", group_by, "pub_datetime")
+            ):
+                if pub_datetime is not None:
+                    raw_rows.add((
+                        pub_datetime.astimezone(RPC_TZINFO).year,
+                        _author_key(person_id, name),
+                        group,
+                    ))
 
-    # ── Step 1: Collect all authors publication dates ──
+    # ── Step 1: Alias the groups, then de-duplicate authors per year and group ──
         years_set = set()
         documents_totals = defaultdict(int)
         data_map = defaultdict(dict)
-        year_group_list = []
-        if draft_queryset is not None:
-            year_group_list += [
-                (row.pub_datetime.astimezone(RPC_TZINFO).year, getattr(row, group_by))
-                for row in draft_queryset
-                if row.pub_datetime is not None
-            ]
-        if rfc_queryset is not None:
-            year_group_list += [
-                (row.pub_datetime.astimezone(RPC_TZINFO).year, getattr(row, group_by))
-                for row in rfc_queryset
-                if row.pub_datetime is not None
-            ]
 
-        if group_by == "affiliation":
-            alias_map = get_aliased_affiliations(group for _, group in year_group_list)
-            year_group_list = [(year, alias_map.get(group, group)) for year, group in year_group_list]
-        elif group_by == "country":
-            alias_map = get_aliased_countries(group for _, group in year_group_list)
-            year_group_list = [(year, alias_map.get(group, group)) for year, group in year_group_list]
-        else:
-            alias_map = {}
+        alias_map = _alias_groups({group for _, _, group in raw_rows}, group_by)
         # Let us define a value when there is none...
         alias_map[""] = "Unspecified"
+        year_author_groups = {
+            (year, author, alias_map.get(group, group))
+            for year, author, group in raw_rows
+        }
 
-        years_set = {year for year, _ in year_group_list}
+        years_set = {year for year, _, _ in year_author_groups}
 
-        for year, group in year_group_list:
-            aliased_group = alias_map.get(group, group)
+        for year, _, aliased_group in year_author_groups:
             data_map[year][aliased_group] = data_map[year].get(aliased_group, 0) + 1
             documents_totals[aliased_group] += 1
 
