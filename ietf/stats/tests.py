@@ -149,6 +149,12 @@ class StatisticsTests(TestCase):
         RfcAuthorFactory(
             document=rfcExpGroup1, affiliation=affiliation + ", LLC", country=country
         )
+        # Two distinct person-less authors; the third row repeats the first name
+        # (different case / padding) and must not be counted again.
+        for name in ("A. Smith", "B. Jones", "  a. SMITH "):
+            RfcAuthorFactory(
+                document=rfcExpGroup1, person=None, titlepage_name=name, affiliation=affiliation, country=country
+            )
         RfcAuthorFactory(
             document=rfcExpGroup1,
             affiliation=factory.Faker("company"),
@@ -312,7 +318,7 @@ class StatisticsTests(TestCase):
         self.assertTrue(
             any(
                 ds["label"].casefold() == affiliation.casefold()
-                and ds["data"] == [3, 0]
+                and ds["data"] == [6, 0]
                 for ds in chart_data["datasets"]
             ),
         )
