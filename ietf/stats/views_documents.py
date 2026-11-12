@@ -35,7 +35,7 @@ def _get_stats_type_choices(view, doc_type: str, stats_type: str) -> list[tuple[
         )
     elif doc_type == "rfc":
         possible_stats_types.append(
-            ("level", "Category", urlreverse(view, kwargs={"doc_type": doc_type, "stats_type": "level"})),
+            ("level", "Level", urlreverse(view, kwargs={"doc_type": doc_type, "stats_type": "level"})),
         )
     return possible_stats_types
 
