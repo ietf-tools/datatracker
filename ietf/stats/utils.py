@@ -4,6 +4,7 @@
 
 import re
 import hashlib
+from collections import Counter, defaultdict
 
 import debug                            # pyflakes:ignore
 
@@ -102,9 +103,20 @@ def get_aliased_affiliations(affiliations):
     - Stripping company endings like Inc., GmbH etc. from database
     - Using a leading name from the database, like "Google Analytics" -> "Google"
     - Looking up aliases stored directly in the database, like
-      "Examplar International" -> "Examplar" """
+      "Examplar International" -> "Examplar"
+
+    - Case-folding so Examplar and EXAMPLAR are merged, with the winner being
+      the spelling with most occurrences (so the input should not be made
+      unique) or, in case of ties, the one with most upper case letters.
+      A spelling coming from the database (alias or main name) always wins
+      over other spellings, as the database is the authority."""
 
     res = {}
+    # What each distinct input ends up as, how often each final value occurs,
+    # and which final values come from the database (alias or main name)
+    final_value: dict[str, str] = {}
+    occurrences: Counter[str] = Counter()
+    from_database: set[str] = set()
 
     ending_re = compile_affiliation_ending_stripping_regexp()
 
@@ -122,12 +134,14 @@ def get_aliased_affiliations(affiliations):
 
     for affiliation in affiliations:
         original_affiliation = affiliation
+        is_from_database = False
 
         # check aliases from Aliases DB
         name = known_aliases.get(affiliation.lower())
         if name is not None:
             affiliation = name
             res[original_affiliation] = affiliation
+            is_from_database = True
 
         # strip ending
         name = ending_re.sub("", affiliation)
@@ -140,6 +154,7 @@ def get_aliased_affiliations(affiliations):
         if name is not None:
             affiliation = name
             res[original_affiliation] = affiliation
+            is_from_database = True
 
         # check aliases from Main Names DB 
         affiliation_plus_space = affiliation.strip(" ") + " " # to match main names with a single space added to the end of them
@@ -147,6 +162,38 @@ def get_aliased_affiliations(affiliations):
         if name is not None:
             affiliation = name
             res[original_affiliation] = affiliation
+            is_from_database = True
+
+        final_value[original_affiliation] = affiliation
+        occurrences[affiliation] += 1
+        if is_from_database:
+            from_database.add(affiliation)
+
+    # Merge the spellings that only differ by case
+    spellings_by_case: dict[str, set[str]] = defaultdict(set)
+    for affiliation in occurrences:
+        spellings_by_case[affiliation.casefold()].add(affiliation)
+
+    def spelling_sort_key(spelling: str) -> tuple[bool, int, int, str]:
+        # database spelling first, then most frequent, then most upper case
+        # letters; the spelling itself only makes the choice deterministic
+        return (
+            spelling in from_database,
+            occurrences[spelling],
+            sum(1 for c in spelling if c.isupper()),
+            spelling,
+        )
+
+    winners = {
+        spelling: max(spellings, key=spelling_sort_key)
+        for spellings in spellings_by_case.values()
+        if len(spellings) > 1
+        for spelling in spellings
+    }
+    for original_affiliation, affiliation in final_value.items():
+        winner = winners.get(affiliation)
+        if winner is not None and winner != affiliation:
+            res[original_affiliation] = winner
 
     return res
 

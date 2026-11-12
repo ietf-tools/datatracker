@@ -40,7 +40,8 @@ from ietf.stats.factories import (
     AffiliationIgnoredEndingFactory,
     AffiliationMainNameFactory,
 )
-from ietf.stats.utils import csv_safe
+from ietf.stats.models import AffiliationAlias
+from ietf.stats.utils import csv_safe, get_aliased_affiliations
 from ietf.submit.factories import SubmissionFactory
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 
@@ -765,6 +766,53 @@ class LegacyUrlRedirectTests(TestCase):
             self.assertRedirects(
                 r, new_url, status_code=301, fetch_redirect_response=False
             )
+
+
+class AffiliationAliasingTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        AffiliationIgnoredEndingFactory(ending="corp\\.?")
+
+    def test_case_variants_are_merged_on_most_frequent_spelling(self):
+        res = get_aliased_affiliations(
+            ["Acme Widgets Corp", "ACME WIDGETS CORP", "Acme Widgets", "Acme Widgets"]
+        )
+        self.assertEqual(res["ACME WIDGETS CORP"], "Acme Widgets")
+        self.assertEqual(res["Acme Widgets Corp"], "Acme Widgets")
+        self.assertNotIn("Acme Widgets", res)  # the winner is left alone
+
+    def test_case_variants_tie_goes_to_most_upper_case_letters(self):
+        res = get_aliased_affiliations(["Zorg", "ZORG"])
+        self.assertEqual(res, {"Zorg": "ZORG"})
+
+    def test_uniqueness_of_the_input_does_not_matter_for_the_merge_itself(self):
+        # all variants end up under one spelling, whatever the input order
+        for inputs in (["Zorg", "ZORG", "zorg"], ["zorg", "ZORG", "Zorg"]):
+            res = get_aliased_affiliations(inputs)
+            self.assertEqual({res.get(i, i) for i in inputs}, {"ZORG"})
+
+    def test_database_spelling_wins_over_more_frequent_variant(self):
+        AffiliationAlias.objects.create(alias="foo", name="FooBar")
+        res = get_aliased_affiliations(["foo", "FOOBAR", "FOOBAR", "FOOBAR"])
+        self.assertEqual(res["FOOBAR"], "FooBar")
+        self.assertEqual(res["foo"], "FooBar")
+
+    def test_main_name_spelling_wins_over_more_frequent_variant(self):
+        AffiliationMainNameFactory(main_name="Cisco")
+        res = get_aliased_affiliations(["CISCO", "CISCO", "Cisco Systems", "CISCO SYSTEMS"])
+        self.assertEqual({res.get(i, i) for i in ["CISCO", "Cisco Systems", "CISCO SYSTEMS"]}, {"Cisco"})
+
+    def test_unrelated_affiliations_are_untouched(self):
+        self.assertEqual(get_aliased_affiliations(["Alpha", "Beta", "Gamma"]), {})
+
+    def test_authors_total_merges_case_variants(self):
+        from ietf.stats.views_authors import get_authors_total_data_for_documents
+
+        for affiliation in ("Acme Widgets", "Acme Widgets", "ACME WIDGETS"):
+            DocumentAuthorFactory(document=DocumentFactory(type_id="draft"), affiliation=affiliation)
+        data = get_authors_total_data_for_documents("draft", "affiliation", 50)
+        counts = dict(zip(data["labels"], data["datasets"][0]["data"]))
+        self.assertEqual(counts, {"Acme Widgets": 3})
 
 
 class KnownCountriesTests(TestCase):

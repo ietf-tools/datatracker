@@ -36,7 +36,11 @@ def used_affiliations_list(request):
     rows = list(qs)
     # One batched call: get_aliased_affiliations() runs a few queries per call,
     # so calling it for each row would issue tens of thousands of queries.
-    aliases_map = get_aliased_affiliations(row["affiliation"] for row in rows)
+    # Each affiliation is repeated once per author using it: the most used spelling
+    # represents its case variants.
+    aliases_map = get_aliased_affiliations(
+        row["affiliation"] for row in rows for _ in range(row["author_count"])
+    )
 
     affiliations = []
     for row in rows:

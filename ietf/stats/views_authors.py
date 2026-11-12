@@ -128,7 +128,8 @@ def get_authors_total_data_for_documents(doc_type: str = "all",
 
     # Alias *before* de-duplicating, so that an author using several spellings
     # of the same organization is only counted once.
-    alias_map = _alias_groups({group for _, group in raw_pairs}, group_by)
+    # (not a set: the number of authors using each spelling decides which case variant wins)
+    alias_map = _alias_groups([group for _, group in raw_pairs], group_by)
     author_groups = {
         (author, "Unspecified" if not alias_map.get(group, group) else str(alias_map.get(group, group)))
         for author, group in raw_pairs
@@ -273,7 +274,8 @@ def get_authors_timeline_data_for_documents(doc_type: str = "all", group_by: str
         documents_totals = defaultdict(int)
         data_map = defaultdict(dict)
 
-        alias_map = _alias_groups({group for _, _, group in raw_rows}, group_by)
+        # (not a set: the number of rows using each spelling decides which case variant wins)
+        alias_map = _alias_groups([group for _, _, group in raw_rows], group_by)
         # Let us define a value when there is none...
         alias_map[""] = "Unspecified"
         year_author_groups = {
