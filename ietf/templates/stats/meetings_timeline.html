@@ -57,10 +57,11 @@
     </p>
     <div class="row">
         <div class="col-md-12">
+            <h2>
             {% if stats_type == 'reg_type' %}
-              <h2>Total Registrations by Registration Type</h2>
+              Total Registrations by Registration Type
             {% else %}
-              <h2>Total Registrations by {{ stats_type|title }}
+              Total Registrations by {{ stats_type|title }}
             {% endif %}
                 <a href="{% url 'ietf.stats.views_meetings.meetings_timeline' stats_type=stats_type %}?top={{ top_n }}&amp;download=total" class="btn btn-outline-primary"
                 download="{{ stats_type }}-total-all.csv" aria-label="Download CSV">
