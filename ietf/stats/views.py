@@ -33,22 +33,20 @@ def used_affiliations_list(request):
         .annotate(author_count=Count("person", distinct=True))
     )
 
+    rows = list(qs)
+    # One batched call: get_aliased_affiliations() runs a few queries per call,
+    # so calling it for each row would issue tens of thousands of queries.
+    aliases_map = get_aliased_affiliations(row["affiliation"] for row in rows)
+
     affiliations = []
-    for row in qs:
-        affiliation = row['affiliation']
-        author_count = row['author_count']
-        aliases_map = get_aliased_affiliations([affiliation])
-        if affiliation in aliases_map:
-            if aliases_map[affiliation] != affiliation:
-                canonical = aliases_map[affiliation]
-            else:
-                canonical = '' # affiliation is already canonical
-        else:
-            canonical = '' # Nothing was found, affiliation is assumed to be canonical
+    for row in rows:
+        affiliation = row["affiliation"]
+        canonical = aliases_map.get(affiliation, affiliation)
         affiliations.append({
             "affiliation": affiliation,
-            "author_count": author_count,
-            "canonical": canonical,
+            "author_count": row["author_count"],
+            # empty when the affiliation is already canonical (or nothing was found)
+            "canonical": "" if canonical == affiliation else canonical,
         })
 
     return render(request, "stats/used_affiliations_list.html", {
