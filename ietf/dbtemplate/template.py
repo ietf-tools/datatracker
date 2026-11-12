@@ -10,9 +10,10 @@ import debug                            # pyflakes:ignore
 
 from django.template import Origin, TemplateDoesNotExist, Template as DjangoTemplate
 from django.template.loaders.base import Loader as BaseLoader
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 
 from ietf.dbtemplate.models import DBTemplate
+from ietf.utils.html import clean_html
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -39,11 +40,18 @@ class PlainTemplate(Template):
 
 
 class RSTTemplate(PlainTemplate):
+    """A template written in reStructuredText, rendered to HTML
+
+    The people who edit these are not site administrators, and the result is
+    put into pages as it is. So the text cannot pull in files or URLs, cannot
+    carry HTML of its own, and what comes out is cleaned like any other HTML
+    that somebody typed in.
+    """
 
     def render(self, context):
         interpolated_string = super(RSTTemplate, self).render(context)
         try:
-            return publish_string(source=interpolated_string,
+            html = publish_string(source=interpolated_string,
                                   writer_name='html',
                                   settings_overrides={
                                       'input_encoding': 'unicode',
@@ -52,10 +60,15 @@ class RSTTemplate(PlainTemplate):
                                       'xml_declaration': False,
                                       'template': RST_TEMPLATE,
                                       'halt_level': 2,
+                                      # No include, csv-table from a file or URL, or raw
+                                      # directives. Using one is reported as an error.
+                                      'file_insertion_enabled': False,
+                                      'raw_enabled': False,
                                   })
+            return clean_html(html)
         except SystemMessage as e:
             args = list(e.args)
-            args[0] = mark_safe('<div class="danger preformatted">%s</div>' % args[0].replace('<string>:', 'line '))
+            args[0] = format_html('<div class="danger preformatted">{}</div>', args[0].replace('<string>:', 'line '))
             e.args = tuple(args)
             raise e
 
