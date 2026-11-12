@@ -15,7 +15,7 @@
             Statistics for IETF Meeting Registrations
         {% endblock %}
     </h1>
-    
+
     <div class="row my-3">
         <label class="fw-bold col-sm-1 col-form-label">Show:</label>
         <div class="btn-group col-sm-4">
@@ -57,8 +57,12 @@
     </p>
     <div class="row">
         <div class="col-md-12">
-            <h2>Total Registrations by {{ stats_type|title }}
-                <a href="{% url 'ietf.stats.views_meetings.meetings_timeline' stats_type=stats_type %}?top={{ top_n }}&amp;download=total" class="btn btn-outline-primary" 
+            {% if stats_type == 'reg_type' %}
+              <h2>Total Registrations by Registration Type</h2>
+            {% else %}
+              <h2>Total Registrations by {{ stats_type|title }}
+            {% endif %}
+                <a href="{% url 'ietf.stats.views_meetings.meetings_timeline' stats_type=stats_type %}?top={{ top_n }}&amp;download=total" class="btn btn-outline-primary"
                 download="{{ stats_type }}-total-all.csv" aria-label="Download CSV">
                 <i class="bi bi-filetype-csv" aria-hidden="true" title="Download CSV file"></i>
                 </a>
@@ -70,7 +74,7 @@
         {% if stats_type != 'reg_type' %}
         <div class="col-md-12">
             <h2>In Person Registrations by {{ stats_type|title }}
-                <a href="{% url 'ietf.stats.views_meetings.meetings_timeline' stats_type=stats_type %}?top={{ top_n }}&amp;download=in_person" class="btn btn-outline-primary" 
+                <a href="{% url 'ietf.stats.views_meetings.meetings_timeline' stats_type=stats_type %}?top={{ top_n }}&amp;download=in_person" class="btn btn-outline-primary"
                 download="{{ stats_type }}-in_person-all.csv" aria-label="Download CSV">
                 <i class="bi bi-filetype-csv" aria-hidden="true" title="Download CSV file"></i>
                 </a>
@@ -83,10 +87,10 @@
     </div><!-- row -->
     <div class="row">
         <p>
-            Specific lines can be removed by clicking on their legend at the bottom of the graphic. 
-            Hold <kbd>Alt</kbd> (or <kbd>⌥</kbd> on Mac) and scroll or drag to zoom; hold <kbd>Shift</kbd> and drag to pan. 
-            Panning can be done via the mouse or with a finger. 
-            Zooming is done via the mouse wheel or via a pinch gesture. Press <kbd>ESC</kbd> 
+            Specific lines can be removed by clicking on their legend at the bottom of the graphic.
+            Hold <kbd>Alt</kbd> (or <kbd>⌥</kbd> on Mac) and scroll or drag to zoom; hold <kbd>Shift</kbd> and drag to pan.
+            Panning can be done via the mouse or with a finger.
+            Zooming is done via the mouse wheel or via a pinch gesture. Press <kbd>ESC</kbd>
             or click <button type="button" class="btn btn-primary" id="resetButton">Reset</button> to reset panning/zooming.
             Click on <i class="bi bi-filetype-csv" aria-hidden="true" title="Download CSV file"></i> to download the data as a CSV file.
         </p>
