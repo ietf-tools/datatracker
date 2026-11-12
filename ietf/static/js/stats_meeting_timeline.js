@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalChartData = JSON.parse(document.getElementById('total-chart-data').textContent)
     const inPersonChartData = JSON.parse(document.getElementById('in-person-chart-data').textContent)
     const statsType = JSON.parse(document.getElementById('stats-type-data').textContent)
-    const stackedLines = statsType === 'total'
+    const stackedLines = statsType === 'reg_type'
 
     function displayChart (id, data) {
         const canvas = document.getElementById(id)
