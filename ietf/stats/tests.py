@@ -73,12 +73,12 @@ class StatisticsTests(TestCase):
             kwargs={"doc_type": "draft", "stats_type": "country"},
         )
         r = self.client.get(url + "?top=3")
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "There was an error in your request")
-        self.assertContains(r, "Invalid top_n choice: 3")
+        self.assertEqual(r.status_code, 400)
+        self.assertContains(r, "There was an error in your request", status_code=400)
+        self.assertContains(r, "Invalid top_n choice: 3", status_code=400)
         r = self.client.get(url + "?top=eric")
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "There was an error in your request")
+        self.assertEqual(r.status_code, 400)
+        self.assertContains(r, "There was an error in your request", status_code=400)
 
     def test_document_stats(self):
         timeNow = timezone.now()
@@ -264,8 +264,8 @@ class StatisticsTests(TestCase):
                 kwargs={"doc_type": "all", "stats_type": "country"},
             )
         )
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Country information not (yet) available")
+        self.assertEqual(r.status_code, 400)
+        self.assertContains(r, "Country information not (yet) available", status_code=400)
         # Test#4.bis the authors specific statistics: for all docs about the countries
         r = self.client.get(
             urlreverse(
@@ -403,7 +403,7 @@ class StatisticsTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertIn("/accounts/login", r["Location"])
 
-        # Test#10-bis, check the used affiliations list view while being logged in as a non-LLC staff member, which should return 403
+        # Test#10-bis, check the used affiliations list view while being logged in as a non-LLC staff member
         self._member_login()
         r = self.client.get(urlreverse(ietf.stats.views.used_affiliations_list))
         self.assertEqual(r.status_code, 200)

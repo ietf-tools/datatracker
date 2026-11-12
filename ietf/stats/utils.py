@@ -41,7 +41,7 @@ def get_top_n_choices():
     return top_n_choices
 
 def get_valid_top_n(request):
-    """Return a valid top-N value or the corresponding error response."""
+    """Return a valid top-N value or the corresponding error response (HTTP 400)."""
     from django.shortcuts import render
 
     try:
@@ -51,6 +51,7 @@ def get_valid_top_n(request):
             request,
             "stats/error.html",
             {"message": f"Invalid top_n choice: {request.GET.get('top')}. Valid choices are: {get_top_n_choices()}"},
+            status=400,
         )
 
     if top_n not in top_n_choices:
@@ -58,6 +59,7 @@ def get_valid_top_n(request):
             request,
             "stats/error.html",
             {"message": f"Invalid top_n choice: {top_n}. Valid choices are: {get_top_n_choices()}"},
+            status=400,
         )
 
     return top_n, None

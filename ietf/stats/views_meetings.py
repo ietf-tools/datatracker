@@ -322,7 +322,7 @@ def get_data_for_meetings(top_n: int = 20) -> tuple[list[str], list[dict[str, An
         Tuple of (sorted_meetings, datasets) for Chart.js.
 
     """
-    cache_key = f"stats:get_data_for_meetings:{top_n}"
+    cache_key = f"stats:get_data_for_meetings"
     sorted_meetings, datasets = cache.get(cache_key, (None, None))
     if (sorted_meetings, datasets) == (None, None):
         # Get registration status counts, aggregated by ticket types

@@ -21,7 +21,7 @@ from ietf.utils.timezone import RPC_TZINFO
 
 
 def _country_not_available_error(request: HttpRequest, doc_type: str) -> HttpResponse | None:
-    """Return the country-stat error response when the selected doc set cannot provide it."""
+    """Return the country-stat error response (HTTP 400) when the selected doc set cannot provide it."""
     if doc_type in ["all", "rfc"]:
         return render(
             request,
@@ -29,6 +29,7 @@ def _country_not_available_error(request: HttpRequest, doc_type: str) -> HttpRes
             {
                 "message": f"Country information not (yet) available for {doc_type} documents from the RFC Editor.",
             },
+            status=400,
         )
     return None
 
