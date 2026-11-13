@@ -122,7 +122,7 @@ spec:
               cpu: 10m
               memory: 50Mi
       volumes:
-        # To be overriden with the actual shared volume
+        # To be overridden with the actual shared volume
         - name: dt-vol
         - name: dt-tmp
           emptyDir:
