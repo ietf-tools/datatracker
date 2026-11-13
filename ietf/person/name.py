@@ -35,9 +35,11 @@ def name_parts(name):
         parts = parts[1:]
     prefix = " ".join(prefix)
     if len(parts) > 2:
-        if parts[-1] in ["Jr", "Jr.", "II", "2nd", "III", "3rd", "Ph.D."]:
+        if parts[-1] in ["Jr", "Jr.", "II", "2nd", "III", "3rd", "Ph.D.", "Ph.D", "PhD"]:
             suffix = parts[-1]
             parts = parts[:-1]
+            if parts and parts[-1].endswith(","):
+                parts[-1] = parts[-1][:-1]
     if len(parts) > 2:
         # Check if we have a surname with nobiliary particle
         full = " ".join(parts)
