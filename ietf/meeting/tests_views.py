@@ -1400,7 +1400,7 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertNotIn('STATUS:CONFIRMED',unicontent(r))
 
     def test_rescheduled_ics(self):
-        meeting = MeetingFactory(type_id='ietf')
+        meeting = MeetingFactory(type_id='ietf', time_zone='Europe/Madrid')
         live = SessionFactory(meeting=meeting, status_id='sched')
         tombstone = SessionFactory(meeting=meeting, group=live.group, status_id='resched')
         tombstone.tombstone_for = live
@@ -1411,8 +1411,10 @@ class MeetingTests(BaseMeetingTestCase):
         events = {str(e['status']): e for e in Calendar.from_ical(r.content).walk('VEVENT')}
         self.assertCountEqual(events, ['CANCELLED', 'CONFIRMED'])
         live_slot = live.official_timeslotassignment().timeslot
+        local_start = live_slot.time.astimezone(meeting.tz())
+        local_end = live_slot.end_time().astimezone(meeting.tz())
         self.assertIn(
-            f"Rescheduled to {live_slot.time.strftime('%A %H:%M')}-{live_slot.end_time().strftime('%H:%M')}",
+            f"Rescheduled to {local_start.strftime('%A %H:%M')}-{local_end.strftime('%H:%M')} ({meeting.time_zone})",
             str(events['CANCELLED']['description']),
         )
 

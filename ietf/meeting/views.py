@@ -2392,9 +2392,11 @@ def ical_rescheduled_note(assignment):
     if assignment.session.tombstone_for_id is not None:
         other_assignment = SchedTimeSessAssignment.objects.filter(schedule=assignment.schedule_id, session=assignment.session.tombstone_for_id).first()
         if other_assignment:
-            note = "Rescheduled to {}-{}".format(
-                other_assignment.timeslot.time.strftime("%A %H:%M"),
-                other_assignment.timeslot.end_time().strftime("%H:%M")
+            meeting_tz = assignment.schedule.meeting.tz()
+            note = "Rescheduled to {}-{} ({})".format(
+                other_assignment.timeslot.time.astimezone(meeting_tz).strftime("%A %H:%M"),
+                other_assignment.timeslot.end_time().astimezone(meeting_tz).strftime("%H:%M"),
+                assignment.schedule.meeting.time_zone,
             )
     return note
 
@@ -2453,12 +2455,12 @@ def generate_agenda_ical_precomp(agenda_data):
             else:
                 resched_start = datetime.datetime.fromisoformat(
                     resched_to["startDateTime"]
-                )
+                ).astimezone(pytz.timezone(meeting_data["timezone"]))
                 dur = datetime.timedelta(seconds=resched_to["duration"])
                 resched_end = resched_start + dur
                 formatted_start = resched_start.strftime("%A %H:%M")
                 formatted_end = resched_end.strftime("%H:%M")
-                rescheduled_note = f"Rescheduled to {formatted_start}-{formatted_end}"
+                rescheduled_note = f"Rescheduled to {formatted_start}-{formatted_end} ({meeting_data["timezone"]})"
         else:
             status = "CONFIRMED"
         event.add("status", status)
