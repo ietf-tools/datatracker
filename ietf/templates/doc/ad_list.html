@@ -8,8 +8,8 @@
 {% endblock %}
 {% block morecss %}
     table .border-bottom { border-bottom-color: var(--highcharts-neutral-color-80) !important; }
-    .highcharts-container .highcharts-axis-labels { 
-        font-size: .7rem; 
+    .highcharts-container .highcharts-axis-labels {
+        font-size: .7rem;
         fill: var(--bs-body-color)
     }
     .highcharts-container .highcharts-graph { stroke-width: 2.5; }
@@ -37,6 +37,29 @@
         <a class="btn btn-primary" href="{% url 'ietf.doc.views_search.docs_for_iesg' %}">Documents in IESG Processing</a>
         <a class="btn btn-primary" href="{% url 'ietf.iesg.views.working_groups' %}">IESG view of Working Groups</a>
     </p>
+    {% if rpc_pending %}
+        <h2 class="mt-5" id="rpc-pending">RPC decisions pending</h2>
+        <p class="text-body-secondary">
+            Documents in the RFC Editor queue for which the RPC is currently waiting on a
+            decision from an Area Director.
+        </p>
+        <table class="table table-sm table-striped table-bordered tablesorter navskip">
+            <thead class="wrap-anywhere">
+                <tr>
+                    <th scope="col" data-sort="name">Area Director</th>
+                    <th scope="col" data-sort="num">Decisions pending</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rpc_pending %}
+                    <tr>
+                        <td><a href="{{ row.ad.dashboard }}">{{ row.ad.plain_name }}</a></td>
+                        <td>{{ row.count }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
     {% for dt in metadata %}
         <h2 class="mt-5" id="{{ dt.type.0 }}">{{ dt.type.1 }} State Counts</h2>
         <table class="table table-sm table-striped table-bordered tablesorter navskip">
@@ -45,7 +68,7 @@
                     <th scope="col" data-sort="name">Area Director</th>
                     {% if dt.type.1 == "Internet-Draft" %}
                         <th scope="col" data-sort="pre-pubreq">Pre pubreq</th>
-                    {% endif %}                    
+                    {% endif %}
                     {% for state, state_name in dt.states %}
                         <th scope="col" class="col-1" data-sort="{{ state }}-num"
                         >
@@ -72,7 +95,7 @@
                             >
                                 {{ ad.pre_pubreq }}
                             </td>
-                        {% endif %}            
+                        {% endif %}
                         {% for state, state_name in dt.states %}
                         <td class="col-1 align-bottom"
                             id="{{ dt.type.0 }}-{{ ad|slugify }}-{{ state }}">
@@ -130,7 +153,8 @@
                     renderTo: element,
                     panning: { enabled: false },
                     spacing: [4, 0, 5, 0],
-                    height: "45%"
+                    height: "45%",
+                    reflow: false // reflow causes panels to grow on Firefox
                 },
                 scrollbar: { enabled: false },
                 tooltip: { enabled: false },
@@ -201,7 +225,7 @@
                 const sums = Array.from(table.querySelectorAll("[data-sum]")).reduce((
                     sumsAccumulator,
                     cell
-                ) => {                    
+                ) => {
                     const key = cell.dataset.sum
                     const value = safeParseFloat(cell.textContent)
                     if(key && !isNaN(value)) {
@@ -289,5 +313,27 @@
                 })
             })
         })
+    </script>
+    <script>
+      // Because we disabled reflow for the charts to prevent them from growing on
+      // their own (in some environments on Firefox, at least), manually reflow them
+      // on window resize events that affect width. Height is proportional.
+      (function () {
+          const RESIZE_DEBOUNCE_MS = 200;
+          let reflowTimer = null;
+          let lastWidth = window.innerWidth;
+
+          window.addEventListener("resize", function () {
+              if (window.innerWidth === lastWidth) return;
+              lastWidth = window.innerWidth;
+
+              clearTimeout(reflowTimer);
+              reflowTimer = setTimeout(function () {
+                  Highcharts.charts.forEach(function (chart) {
+                      if (chart) chart.reflow();
+                  });
+              }, RESIZE_DEBOUNCE_MS);
+          });
+      })();
     </script>
 {% endblock %}

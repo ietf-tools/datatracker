@@ -4,7 +4,6 @@
 
 import os
 import time
-from textwrap import dedent
 from typing import List, Tuple      # pyflakes:ignore
 
 import debug                            # pyflakes:ignore
@@ -55,6 +54,9 @@ def check_id_submission_files(app_configs, **kwargs):
         return []
     #
     errors = []
+    hint = ("Please either update the local settings to point at the correct\n"
+        "\tfile, or if the setting is correct, make sure the file is in place and\n"
+        "\thas the right permissions.\n")
     for s in ("IDSUBMIT_IDNITS_BINARY", ):
         p = getattr(settings, s)
         if not os.path.exists(p):
@@ -62,10 +64,21 @@ def check_id_submission_files(app_configs, **kwargs):
                 "A file used by the I-D submission tool does not exist\n"
                 "at the path given in the settings file.  The setting is:\n"
                 "    %s = %s" % (s, p),
-                hint = ("Please either update the local settings to point at the correct\n"
-                    "\tfile, or if the setting is correct, make sure the file is in place and\n"
-                    "\thas the right permissions.\n"),
+                hint = hint,
                 id = "datatracker.E0007",
+            ))
+    # The idnits3 check is advisory - a submission is not blocked by it, and is
+    # not blocked by its absence either, so only warn if it is not installed.
+    for s in ("IDSUBMIT_IDNITS3_BINARY", ):
+        p = getattr(settings, s)
+        if not os.path.exists(p):
+            errors.append(checks.Warning(
+                "A file used by the I-D submission tool does not exist\n"
+                "at the path given in the settings file.  The advisory checks it\n"
+                "provides will be skipped.  The setting is:\n"
+                "    %s = %s" % (s, p),
+                hint = hint,
+                id = "datatracker.W0007",
             ))
     return errors
 
@@ -270,40 +283,3 @@ def maybe_patch_library(app_configs, **kwargs):
             )
             pass
     return errors
-
-@checks.register('security')
-def check_api_key_in_local_settings(app_configs, **kwargs):
-    errors = []
-    import ietf.settings_local
-    if settings.SERVER_MODE == 'production':
-        if not (    hasattr(ietf.settings_local, 'API_PUBLIC_KEY_PEM')
-                and hasattr(ietf.settings_local, 'API_PRIVATE_KEY_PEM')):
-            errors.append(checks.Critical(
-                "There are no API key settings in your settings_local.py",
-                hint = dedent("""
-                    You are running in production mode, and need API key settings that are
-                    different than the default settings.  Please add settings for
-                    API_PUBLIC_KEY_PEM and API_PRIVATE_KEY_PEM to your settings local.  The
-                    content should be matching public and private keys in PEM format.  You
-                    can generate a suitable keypair with 'ssh-keygen -f apikey.pem', and then
-                    extract the public key with 'openssl rsa -in apikey.pem -pubout > apikey.pub'.
-                    
-                    """).replace('\n', '\n   ').rstrip(),
-                id = "datatracker.E0020",
-            ))
-        elif not ( ietf.settings_local.API_PUBLIC_KEY_PEM == settings.API_PUBLIC_KEY_PEM
-                    and ietf.settings_local.API_PRIVATE_KEY_PEM == settings.API_PRIVATE_KEY_PEM ):
-            errors.append(checks.Critical(
-                "Your API key settings in your settings_local.py are not picked up in settings.",
-                hint = dedent("""
-                    You are running in production mode, and need API key settings which are
-                    different than the default settings.  You seem to have  API key settings
-                    in settings_local.py, but they don't seem to propagate to django.conf.settings.
-                    Please check if you have multiple settings_local.py files.
-
-                    """).replace('\n', '\n   ').rstrip(),
-                id = "datatracker.E0021",
-            ))
-
-    return errors
-    

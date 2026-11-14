@@ -16,17 +16,10 @@ from django.views.decorators.csrf import csrf_exempt
 from ietf.doc.models import DeletedEvent, StateDocEvent, DocEvent
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.sync import tasks
-from ietf.sync.discrepancies import find_discrepancies
 from ietf.utils.serialize import object_as_shallow_dict
 from ietf.utils.log import log
 from ietf.utils.response import permission_denied
 
-
-#@role_required('Secretariat', 'IANA', 'RFC Editor')
-def discrepancies(request):
-    sections = find_discrepancies()
-
-    return render(request, "sync/discrepancies.html", dict(sections=sections))
 
 @csrf_exempt # external API so we can't expect the other end to have a token
 def notify(request, org, notification):
@@ -35,7 +28,6 @@ def notify(request, org, notification):
 
     known_orgs = {
         "iana": "IANA",
-        "rfceditor": "RFC Editor",
         }
 
     if org not in known_orgs:
@@ -67,29 +59,13 @@ def notify(request, org, notification):
     known_notifications = {
         "protocols": "an added reference to an RFC at <a href=\"%s\">the IANA protocols page</a>" % settings.IANA_SYNC_PROTOCOLS_URL,
         "changes": "new changes at <a href=\"%s\">the changes JSON dump</a>" % settings.IANA_SYNC_CHANGES_URL,
-        "queue": "new changes to <a href=\"%s\">queue2.xml</a>" % settings.RFC_EDITOR_QUEUE_URL,
-        "index": "new changes to <a href=\"%s\">rfc-index.xml</a>" % settings.RFC_EDITOR_INDEX_URL,
         }
 
     if notification not in known_notifications:
         raise Http404
 
     if request.method == "POST":
-        if notification == "index":
-            log("Queuing RFC Editor index sync from notify view POST")
-            # Wrap in on_commit in case a transaction is open
-            # (As of 2024-11-08, this only runs in a transaction during tests)
-            transaction.on_commit(
-                lambda: tasks.rfc_editor_index_update_task.delay()
-            )
-        elif notification == "queue":
-            log("Queuing RFC Editor queue sync from notify view POST")
-            # Wrap in on_commit in case a transaction is open
-            # (As of 2024-11-08, this only runs in a transaction during tests)
-            transaction.on_commit(
-                lambda: tasks.rfc_editor_queue_updates_task.delay()
-            )
-        elif notification == "changes":
+        if notification == "changes":
             log("Queuing IANA changes sync from notify view POST")
             # Wrap in on_commit in case a transaction is open
             # (As of 2024-11-08, this only runs in a transaction during tests)

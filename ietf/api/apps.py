@@ -3,6 +3,7 @@ from . import populate_api_list
 
 
 class ApiConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
     name = "ietf.api"
 
     def ready(self):

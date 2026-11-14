@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2025, All Rights Reserved
+# Copyright The IETF Trust 2010-2026, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -15,10 +15,9 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
     ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
     BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject, RfcAuthor,
-    EditedRfcAuthorsDocEvent, RpcAssignmentDocEvent)
+    EditedRfcAuthorsDocEvent, RpcAssignmentDocEvent, RpcActionHolderOpenEntry)
 
 from ietf.utils.admin import SaferTabularInline
-from ietf.utils.validators import validate_external_resource_value
 from .storage_utils import force_replication
 from .utils import replicate_stored_objects_for_document
 
@@ -233,18 +232,33 @@ class RpcAssignmentDocEventAdmin(DocEventAdmin):
     search_fields = DocEventAdmin.search_fields + ["assignments"]
 admin.site.register(RpcAssignmentDocEvent, RpcAssignmentDocEventAdmin)
 
+class RpcActionHolderOpenEntryAdmin(admin.ModelAdmin):
+    """Read-only view of the open action holder entries from the RPC tool
+
+    The RPC tool owns these - every queue push replaces them - so editing them
+    here would accomplish nothing.
+    """
+    list_display = ['id', 'purple_id', 'document', 'name', 'since_when', 'deadline', ]
+    search_fields = ['document__name', 'person__name', 'body', ]
+    raw_id_fields = ['document', 'person', ]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+admin.site.register(RpcActionHolderOpenEntry, RpcActionHolderOpenEntryAdmin)
+
 class DocumentUrlAdmin(admin.ModelAdmin):
     list_display = ['id', 'doc', 'tag', 'url', 'desc', ]
     search_fields = ['doc__name', 'url', ]
     raw_id_fields = ['doc', ]
 admin.site.register(DocumentURL, DocumentUrlAdmin)
 
-class DocExtResourceAdminForm(forms.ModelForm):
-    def clean(self):
-        validate_external_resource_value(self.cleaned_data['name'],self.cleaned_data['value'])
-
 class DocExtResourceAdmin(admin.ModelAdmin):
-    form = DocExtResourceAdminForm
     list_display = ['id', 'doc', 'name', 'display_name', 'value',]
     search_fields = ['doc__name', 'value', 'display_name', 'name__slug',]
     raw_id_fields = ['doc', ]

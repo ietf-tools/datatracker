@@ -198,33 +198,55 @@ def generate_last_call_announcement(request, doc):
         group = "an individual submitter"
         expiration_date += datetime.timedelta(days=14)
     else:
-        group = "the %s %s (%s)" % (doc.group.name, doc.group.type.name, doc.group.acronym)
+        group = f"the {doc.group.name} {doc.group.type.name} ({doc.group.acronym})"
 
     doc.filled_title = textwrap.fill(doc.title, width=70, subsequent_indent=" " * 3)
-    
+
     iprs = iprs_from_docs(related_docs(Document.objects.get(name=doc.name)))
     if iprs:
-        ipr_links = [ urlreverse("ietf.ipr.views.show", kwargs=dict(id=i.id)) for i in iprs]
-        ipr_links = [ settings.IDTRACKER_BASE_URL+url if not url.startswith("http") else url for url in ipr_links ]
+        ipr_links = [
+            urlreverse("ietf.ipr.views.show", kwargs={"id": i.id}) for i in iprs
+        ]
+        ipr_links = [
+            settings.IDTRACKER_BASE_URL + url if not url.startswith("http") else url
+            for url in ipr_links
+        ]
     else:
         ipr_links = None
 
-    downrefs = [rel for rel in doc.relateddocument_set.all() if rel.is_downref() and not rel.is_approved_downref()]
+    downrefs = [
+        rel
+        for rel in doc.relateddocument_set.all()
+        if rel.is_downref() and not rel.is_approved_downref()
+    ]
 
-    addrs = gather_address_lists('last_call_issued',doc=doc).as_strings()
-    mail = render_to_string("doc/mail/last_call_announcement.txt",
-                            dict(doc=doc,
-                                 doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url() + "ballot/",
-                                 expiration_date=expiration_date.strftime("%Y-%m-%d"), #.strftime("%B %-d, %Y"),
-                                 to=addrs.to,
-                                 cc=addrs.cc,
-                                 group=group,
-                                 docs=[ doc ],
-                                 urls=[ settings.IDTRACKER_BASE_URL + doc.get_absolute_url() ],
-                                 ipr_links=ipr_links,
-                                 downrefs=downrefs,
-                                 )
-                            )
+    # individual submissions, and groups with no list of their own, take replies
+    # at the document's own alias instead
+    doc_alias = f"{doc.name}@{settings.DRAFT_ALIAS_DOMAIN}"
+    if doc.group.type_id == "individ" or not doc.group.list_email:
+        copy_address = doc_alias
+    else:
+        copy_address = doc.group.list_email
+    reply_to = ["last-call@ietf.org", copy_address]
+
+    addrs = gather_address_lists("last_call_issued", doc=doc).as_strings()
+    mail = render_to_string(
+        "doc/mail/last_call_announcement.txt",
+        {
+            "doc": doc,
+            "expiration_date": expiration_date.strftime(
+                "%Y-%m-%d"
+            ),  # .strftime("%B %-d, %Y"),
+            "to": addrs.to,
+            "cc": addrs.cc,
+            "reply_to": ", ".join(reply_to),
+            "copy_address": copy_address,
+            "group": group,
+            "url": settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+            "ipr_links": ipr_links,
+            "downrefs": downrefs,
+        },
+    )
 
     e = WriteupDocEvent()
     e.type = "changed_last_call_text"
@@ -236,7 +258,7 @@ def generate_last_call_announcement(request, doc):
 
     # caller is responsible for saving, if necessary
     return e
-    
+
 
 DO_NOT_PUBLISH_IESG_STATES = ("nopubadw", "nopubanw")
 

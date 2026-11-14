@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2023, All Rights Reserved
+# Copyright The IETF Trust 2023-2026, All Rights Reserved
 
 # This is not utils.py because Tastypie implicitly consumes ietf.api.utils.
 # See ietf.api.__init__.py for details.
@@ -6,17 +6,61 @@ from functools import wraps
 from typing import Callable, Optional, Union
 
 from django.conf import settings
+from django.core import signing
+from django.core.cache import caches
 from django.http import HttpResponseForbidden
+
+from ietf.utils.log import log
+
+from .models import AppApiToken
+
+
+def cached_hashed_token_store(force_update=False):
+    CACHE_SECONDS = 86400  # one day
+    cache = caches["default"]
+    cache_key = "ietf.api.ietf_utils.cached_hashed_token_store"
+
+    if not force_update:
+        cached_value = cache.get(cache_key)
+        if cached_value is None:
+            pass  # no cached value, that's ok
+        elif isinstance(cached_value, str):
+            try:
+                # Return the cached value if the signature passes. Allow a 1 second
+                # grace period to ensure this never fails because the signature
+                # timestamp is added very slightly before the value is cached.
+                return signing.loads(
+                    cached_value, salt=cache_key, max_age=CACHE_SECONDS + 1
+                )
+            except signing.BadSignature:
+                log("WARNING: Bad or expired signature on API token cache!")
+        else:
+            log("WARNING: Invalid data found in API token cache!")
+
+    # need to compute the token store
+    hashed_token_store = AppApiToken.objects.as_hashed_token_dict()
+    cache.set(
+        cache_key, signing.dumps(hashed_token_store, salt=cache_key), CACHE_SECONDS
+    )
+    return hashed_token_store
 
 
 def is_valid_token(endpoint, token):
-    # This is where we would consider integration with vault
-    # Settings implementation for now.
+    if token is None or token == "":
+        return False
+
+    hashed_token_store = cached_hashed_token_store()
+    hashed_token = AppApiToken.hash(token)
+    if endpoint in hashed_token_store and hashed_token in hashed_token_store[endpoint]:
+        return True
+
+    # Settings-based tokens
     if hasattr(settings, "APP_API_TOKENS"):
         token_store = settings.APP_API_TOKENS
         if endpoint in token_store:
             endpoint_tokens = token_store[endpoint]
-            # Be sure endpoints is a list or tuple so we don't accidentally use substring matching!
+            # Be sure endpoints is a list or tuple so we don't accidentally use
+            # substring matching!
             if not isinstance(endpoint_tokens, (list, tuple)):
                 endpoint_tokens = [endpoint_tokens]
             if token in endpoint_tokens:

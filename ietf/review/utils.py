@@ -73,8 +73,13 @@ def can_access_review_stats_for_team(user, team):
             or has_role(user, ["Secretariat", "Area Director"]))
 
 def review_assignments_to_list_for_docs(docs):
+    # The document table renders the request's doc, team and type, and links to the
+    # review itself, for every assignment it shows -- fetch them with the assignment
+    # rather than one query per attribute per row.
     assignment_qs = ReviewAssignment.objects.filter(
         state__in=["assigned", "accepted", "part-completed", "completed"],
+    ).select_related(
+        "review_request__doc", "review_request__team", "review_request__type", "review"
     ).prefetch_related("result")
 
     doc_names = [d.name for d in docs]

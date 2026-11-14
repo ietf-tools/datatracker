@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2026, All Rights Reserved #}
+{# Tabs shared by the past meetings pages. Each tab is its own page, as on the group pages. #}
+{% load origin %}
+{% block title %}Past Meetings{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>Past Meetings</h1>
+    <ul class="nav nav-tabs my-3">
+        <li class="nav-item">
+            <a class="nav-link {% if selected_tab == "plenary" %}active{% endif %}"
+               {% if selected_tab == "plenary" %}aria-current="page"{% endif %}
+               href="{% url 'ietf.meeting.views.past' %}">IETF plenary meetings</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if selected_tab == "interim" %}active{% endif %}"
+               {% if selected_tab == "interim" %}aria-current="page"{% endif %}
+               href="{% url 'ietf.meeting.views.past_interims' %}">Interim meetings</a>
+        </li>
+    </ul>
+    {% block past_content %}{% endblock %}
+{% endblock %}

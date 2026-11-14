@@ -84,30 +84,22 @@ class Command(BaseCommand):
         )
 
         PeriodicTask.objects.get_or_create(
-            name="Partial sync with RFC Editor index",
-            task="ietf.sync.tasks.rfc_editor_index_update_task",
-            kwargs=json.dumps(dict(full_index=False)),
+            name="Expire interim slide proposals",
+            task="ietf.meeting.tasks.expire_interim_slide_proposals_task",
             defaults=dict(
                 enabled=False,
-                crontab=self.crontabs["every_15m_except_midnight"],  # don't collide with full sync
-                description=(
-                    "Reparse the last _year_ of RFC index entries until "
-                    "https://github.com/ietf-tools/datatracker/issues/3734 is addressed. "
-                    "This takes about 20s on production as of 2022-08-11."
-                )
+                crontab=self.crontabs["daily"],
+                description="Expire slide proposals still pending two weeks after an interim ended",
             ),
         )
 
         PeriodicTask.objects.get_or_create(
-            name="Full sync with RFC Editor index",
-            task="ietf.sync.tasks.rfc_editor_index_update_task",
-            kwargs=json.dumps(dict(full_index=True)),
+            name="Expire slide proposals for past IETF meetings",
+            task="ietf.meeting.tasks.expire_past_ietf_slide_proposals_task",
             defaults=dict(
                 enabled=False,
                 crontab=self.crontabs["daily"],
-                description=(
-                    "Run an extended version of the rfc editor update to catch changes with backdated timestamps"
-                ),
+                description="One-time clean-up, run by hand: expire proposals still pending for IETF meetings past their corrections cutoff (revsub)",
             ),
         )
 
@@ -271,6 +263,17 @@ class Command(BaseCommand):
                 crontab=self.crontabs["daily"],
                 description="Purge PersonApiKeyEvent instances older than 14 days",
             ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Check Person UUIDs",
+            task="ietf.person.tasks.check_person_uuids_task",
+            kwargs=json.dumps({"fix": False}),
+            defaults={
+                "enabled": False,
+                "crontab": self.crontabs["daily"],
+                "description": "Report Persons with no primary UUID",
+            },
         )
 
         PeriodicTask.objects.get_or_create(

@@ -9,6 +9,17 @@ from django.urls import reverse
 from django.http import HttpResponseRedirect
 
 
+# Views that use nomcom_private_key_required, which private_key may return to
+NOMCOM_PRIVATE_KEY_RETURN_VIEWS = frozenset(
+    {
+        "ietf.nomcom.views.view_feedback",
+        "ietf.nomcom.views.view_feedback_pending",
+        "ietf.nomcom.views.view_feedback_unrelated",
+        "ietf.nomcom.views.view_feedback_topic",
+        "ietf.nomcom.views.view_feedback_nominee",
+    }
+)
+
 
 def nomcom_private_key_required(view_func):
     def inner(request, *args, **kwargs):

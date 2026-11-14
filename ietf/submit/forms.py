@@ -26,11 +26,12 @@ from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.doc.fields import SearchableDocumentsField
+from ietf.doc.forms import BaseExtResourceForm
 from ietf.ipr.mail import utc_from_string
 from ietf.meeting.models import Meeting
 from ietf.message.models import Message
 from ietf.name.models import FormalLanguageName, GroupTypeName
-from ietf.submit.models import Submission, Preapproval
+from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
 from ietf.submit.utils import validate_submission_name, validate_submission_rev, validate_submission_document_date, remote_ip
 from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.xml_parser import XMLParser
@@ -38,6 +39,11 @@ from ietf.utils.draft import PlaintextDraft
 from ietf.utils.fields import ModelMultipleChoiceField
 from ietf.utils.timezone import date_today
 from ietf.utils.xmldraft import InvalidXMLError, XMLDraft, XMLParseError
+
+
+class SubmissionExtResourceForm(BaseExtResourceForm):
+    class Meta(BaseExtResourceForm.Meta):
+        model = SubmissionExtResource
 
 
 class SubmissionBaseUploadForm(forms.Form):

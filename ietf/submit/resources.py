@@ -46,9 +46,6 @@ class SubmissionResource(ModelResource):
         ordering = ['id', ]
         filtering = { 
             "id": ALL,
-            "remote_ip": ALL,
-            "access_key": ALL,
-            "auth_key": ALL,
             "name": ALL,
             "title": ALL,
             "abstract": ALL,
@@ -68,7 +65,7 @@ class SubmissionResource(ModelResource):
             "group": ALL_WITH_RELATIONS,
             "draft": ALL_WITH_RELATIONS,
         }
-        excludes = ('first_two_pages',)
+        excludes = ("first_two_pages", "remote_ip", "access_key", "auth_key")
 api.submit.register(SubmissionResource())
 
 from ietf.person.resources import PersonResource

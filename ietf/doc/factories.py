@@ -14,7 +14,8 @@ from django.utils import timezone
 
 from ietf.doc.models import ( Document, DocEvent, NewRevisionDocEvent, State, DocumentAuthor,
     StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType, IRSGBallotDocEvent, TelechatDocEvent,
-    DocumentActionHolder, BofreqEditorDocEvent, BofreqResponsibleDocEvent, DocExtResource, RfcAuthor )
+    DocumentActionHolder, BofreqEditorDocEvent, BofreqResponsibleDocEvent, DocExtResource, RfcAuthor,
+    RpcActionHolderOpenEntry )
 from ietf.group.models import Group
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import RoleFactory
@@ -127,6 +128,13 @@ class RfcFactory(BaseDocumentFactory):
                 obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
         else:
             obj.set_state(State.objects.get(type_id='rfc',slug='published'))
+
+    @factory.post_generation
+    def authors(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
+        # Override base class, creating RfcAuthor instead of DocumentAuthor
+        if create and extracted:
+            for person in extracted:
+                RfcAuthorFactory(document=obj, person=person)
 
 
 class IndividualDraftFactory(BaseDocumentFactory):
@@ -376,6 +384,17 @@ class DocumentActionHolderFactory(factory.django.DjangoModelFactory):
         
     document = factory.SubFactory(WgDraftFactory)
     person = factory.SubFactory('ietf.person.factories.PersonFactory')
+
+class RpcActionHolderOpenEntryFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = RpcActionHolderOpenEntry
+
+    purple_id = factory.Sequence(lambda n: n + 1)
+    document = factory.SubFactory(WgDraftFactory)
+    person = factory.SubFactory('ietf.person.factories.PersonFactory')
+    display_name = factory.LazyAttribute(lambda o: o.person.plain_name() if o.person else '')
+    comment = factory.Faker('sentence')
+    since_when = factory.LazyFunction(timezone.now)
 
 class DocumentAuthorFactory(factory.django.DjangoModelFactory):
     class Meta:

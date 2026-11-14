@@ -38,47 +38,25 @@ if _NOMCOM_APP_SECRET_B64 is not None:
 else:
     raise RuntimeError("DATATRACKER_NOMCOM_APP_SECRET_B64 must be set")
 
+_ACCOUNT_MIGRATION_PRIVATE_KEY_B64 = os.environ.get(
+    "DATATRACKER_ACCOUNT_MIGRATION_PRIVATE_KEY_B64", None
+)
+if _ACCOUNT_MIGRATION_PRIVATE_KEY_B64 is not None:
+    ACCOUNT_MIGRATION_PRIVATE_KEY = b64decode(_ACCOUNT_MIGRATION_PRIVATE_KEY_B64)
+else:
+    raise RuntimeError("DATATRACKER_ACCOUNT_MIGRATION_PRIVATE_KEY_B64 must be set")
+
 _IANA_SYNC_PASSWORD = os.environ.get("DATATRACKER_IANA_SYNC_PASSWORD", None)
 if _IANA_SYNC_PASSWORD is not None:
     IANA_SYNC_PASSWORD = _IANA_SYNC_PASSWORD
 else:
     raise RuntimeError("DATATRACKER_IANA_SYNC_PASSWORD must be set")
 
-_RFC_EDITOR_SYNC_PASSWORD = os.environ.get("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD", None)
-if _RFC_EDITOR_SYNC_PASSWORD is not None:
-    RFC_EDITOR_SYNC_PASSWORD = os.environ.get("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD")
-else:
-    raise RuntimeError("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD must be set")
-
 _YOUTUBE_API_KEY = os.environ.get("DATATRACKER_YOUTUBE_API_KEY", None)
 if _YOUTUBE_API_KEY is not None:
     YOUTUBE_API_KEY = _YOUTUBE_API_KEY
 else:
     raise RuntimeError("DATATRACKER_YOUTUBE_API_KEY must be set")
-
-_GITHUB_BACKUP_API_KEY = os.environ.get("DATATRACKER_GITHUB_BACKUP_API_KEY", None)
-if _GITHUB_BACKUP_API_KEY is not None:
-    GITHUB_BACKUP_API_KEY = _GITHUB_BACKUP_API_KEY
-else:
-    raise RuntimeError("DATATRACKER_GITHUB_BACKUP_API_KEY must be set")
-
-_API_KEY_TYPE = os.environ.get("DATATRACKER_API_KEY_TYPE", None)
-if _API_KEY_TYPE is not None:
-    API_KEY_TYPE = _API_KEY_TYPE
-else:
-    raise RuntimeError("DATATRACKER_API_KEY_TYPE must be set")
-
-_API_PUBLIC_KEY_PEM_B64 = os.environ.get("DATATRACKER_API_PUBLIC_KEY_PEM_B64", None)
-if _API_PUBLIC_KEY_PEM_B64 is not None:
-    API_PUBLIC_KEY_PEM = b64decode(_API_PUBLIC_KEY_PEM_B64)
-else:
-    raise RuntimeError("DATATRACKER_API_PUBLIC_KEY_PEM_B64 must be set")
-
-_API_PRIVATE_KEY_PEM_B64 = os.environ.get("DATATRACKER_API_PRIVATE_KEY_PEM_B64", None)
-if _API_PRIVATE_KEY_PEM_B64 is not None:
-    API_PRIVATE_KEY_PEM = b64decode(_API_PRIVATE_KEY_PEM_B64)
-else:
-    raise RuntimeError("DATATRACKER_API_PRIVATE_KEY_PEM_B64 must be set")
 
 _RED_PRECOMPUTER_TRIGGER_RETRY_DELAY = os.environ.get(
     "DATATRACKER_RED_PRECOMPUTER_TRIGGER_RETRY_DELAY", None
@@ -155,6 +133,17 @@ USING_DEBUG_EMAIL_SERVER = (
 EMAIL_HOST = os.environ.get("DATATRACKER_EMAIL_HOST", "localhost")
 EMAIL_PORT = int(os.environ.get("DATATRACKER_EMAIL_PORT", "2025"))
 
+_email_host_user = os.environ.get("DATATRACKER_EMAIL_HOST_USER", None)
+_email_host_password = os.environ.get("DATATRACKER_EMAIL_HOST_PASSWORD", None)
+if _email_host_user is not None or _email_host_password is not None:
+    if _email_host_user is None or _email_host_password is None:
+        raise RuntimeError(
+            "DATATRACKER_EMAIL_HOST_USER and ..._PASSWORD must BOTH or NEITHER be set"
+        )
+    EMAIL_HOST_USER = _email_host_user
+    EMAIL_HOST_PASSWORD = _email_host_password
+    EMAIL_USE_TLS = True
+
 _broker_url = os.environ.get("DATATRACKER_BROKER_URL", None)
 _celery_password = os.environ.get("CELERY_PASSWORD", None)
 if _broker_url is not None:
@@ -223,6 +212,9 @@ if _MEETECHO_CLIENT_ID is not None and _MEETECHO_CLIENT_SECRET is not None:
         "client_id": _MEETECHO_CLIENT_ID,
         "client_secret": _MEETECHO_CLIENT_SECRET,
         "request_timeout": 3.01,  # python-requests doc recommend slightly > a multiple of 3 seconds
+        "slides_notify_time": int(
+            os.environ.get("DATATRACKER_MEETECHO_SLIDES_NOTIFY_TIME_MINUTES", "15")
+        ),
     }
 else:
     raise RuntimeError(
@@ -236,26 +228,43 @@ else:
 # to leave a copy lying around. When done editing, copy/paste the final JSON through
 #    jq -c | base64
 # and copy/paste the output into the secret store.
-if "DATATRACKER_APP_API_TOKENS_JSON_B64" in os.environ:
-    if "DATATRACKER_APP_API_TOKENS_JSON" in os.environ:
+_app_api_tokens_json_b64 = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON_B64")
+_app_api_tokens_json = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON")
+if _app_api_tokens_json_b64 is not None:
+    if _app_api_tokens_json is not None:
         raise RuntimeError(
             "Only one of DATATRACKER_APP_API_TOKENS_JSON and DATATRACKER_APP_API_TOKENS_JSON_B64 may be set"
         )
-    _APP_API_TOKENS_JSON = b64decode(
-        os.environ.get("DATATRACKER_APP_API_TOKENS_JSON_B64")
+    _app_api_tokens_json = b64decode(
+        _app_api_tokens_json_b64
     )
-else:
-    _APP_API_TOKENS_JSON = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON", None)
 
-if _APP_API_TOKENS_JSON is not None:
-    APP_API_TOKENS = json.loads(_APP_API_TOKENS_JSON)
+if _app_api_tokens_json is not None:
+    APP_API_TOKENS = json.loads(_app_api_tokens_json)
 else:
     APP_API_TOKENS = {}
 
+_APP_API_TOKEN_PEPPER_B64 = os.environ.get("DATATRACKER_APP_API_TOKEN_PEPPER_B64", None)
+if _APP_API_TOKEN_PEPPER_B64 is None:
+    raise RuntimeError("DATATRACKER_APP_API_TOKEN_PEPPER_B64 must be set")
+else:
+    APP_API_TOKEN_PEPPER_BYTES = b64decode(_APP_API_TOKEN_PEPPER_B64)
+
 EMAIL_COPY_TO = ""
 
-# Until we teach the datatracker to look beyond cloudflare for this check
-IDSUBMIT_MAX_DAILY_SAME_SUBMITTER = 5000
+# I-D Submission settings
+
+# Until we teach the datatracker to look beyond cloudflare for this check, it needs
+# to be very large. 5000 has been working without complaint.
+IDSUBMIT_MAX_DAILY_SAME_SUBMITTER = int(
+    os.environ.get("DATATRACKER_IDSUBMIT_MAX_DAILY_SAME_SUBMITTER", "5000")
+)
+
+# Default is 20 minutes. Allow override via environment.
+if "DATATRACKER_IDSUBMIT_MAX_VALIDATION_TIME" in os.environ:
+    IDSUBMIT_MAX_VALIDATION_TIME = datetime.timedelta(
+        minutes=int(os.environ.get("DATATRACKER_IDSUBMIT_MAX_VALIDATION_TIME"))
+    )
 
 # Leave DATATRACKER_MATOMO_SITE_ID unset to disable Matomo reporting
 if "DATATRACKER_MATOMO_SITE_ID" in os.environ:
@@ -309,6 +318,7 @@ DJANGO_VITE["default"]["manifest_path"] = os.path.join(
 # Binaries that are different in the docker image
 DE_GFM_BINARY = "/usr/local/bin/de-gfm"
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
+IDSUBMIT_IDNITS3_BINARY = "/usr/local/bin/idnits3"
 
 # Duplicating production cache from settings.py and using it whether we're in production mode or not
 MEMCACHED_HOST = os.environ.get("DT_MEMCACHED_SERVICE_HOST", "127.0.0.1")
@@ -380,6 +390,12 @@ CACHES = {
     },
 }
 
+_person_profile_cache_seconds = os.environ.get(
+    "DATATRACKER_PERSON_PROFILE_CACHE_SECONDS", None
+)
+if _person_profile_cache_seconds is not None:
+    PERSON_PROFILE_CACHE_SECONDS = int(_person_profile_cache_seconds)
+
 _csrf_trusted_origins_str = os.environ.get("DATATRACKER_CSRF_TRUSTED_ORIGINS")
 if _csrf_trusted_origins_str is not None:
     CSRF_TRUSTED_ORIGINS = _multiline_to_list(_csrf_trusted_origins_str)
@@ -441,34 +457,54 @@ for storagename in ARTIFACT_STORAGE_NAMES:
         ),
     }
 
-# Configure storage for the red bucket - assume it uses the same credentials as
-# other blobs
+# Configure storage for the red and reef buckets - assume they use the same credentials
+# as other blobs
 _red_bucket_name = os.environ.get("DATATRACKER_BLOB_STORE_RED_BUCKET_NAME", "").strip()
 if _red_bucket_name == "":
     raise RuntimeError("DATATRACKER_BLOB_STORE_RED_BUCKET_NAME must be set")
 
-STORAGES["red_bucket"] = {
-    "BACKEND": "storages.backends.s3.S3Storage",
-    "OPTIONS": dict(
-        endpoint_url=_blob_store_endpoint_url,
-        access_key=_blob_store_access_key,
-        secret_key=_blob_store_secret_key,
-        security_token=None,
-        client_config=botocore.config.Config(
-            request_checksum_calculation="when_required",
-            response_checksum_validation="when_required",
-            signature_version="s3v4",
-            connect_timeout=_blob_store_connect_timeout,
-            read_timeout=_blob_store_read_timeout,
-            retries={"total_max_attempts": _blob_store_max_attempts},
-        ),
-        verify=False,
-        bucket_name=_red_bucket_name,
-    ),
-}
+_reef_bucket_name = os.environ.get(
+    "DATATRACKER_BLOB_STORE_REEF_BUCKET_NAME", ""
+).strip()
+if _reef_bucket_name == "":
+    raise RuntimeError("DATATRACKER_BLOB_STORE_REEF_BUCKET_NAME must be set")
+
+STORAGES.update(
+    {
+        bucket_label: {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": dict(
+                endpoint_url=_blob_store_endpoint_url,
+                access_key=_blob_store_access_key,
+                secret_key=_blob_store_secret_key,
+                security_token=None,
+                client_config=botocore.config.Config(
+                    request_checksum_calculation="when_required",
+                    response_checksum_validation="when_required",
+                    signature_version="s3v4",
+                    connect_timeout=_blob_store_connect_timeout,
+                    read_timeout=_blob_store_read_timeout,
+                    retries={"total_max_attempts": _blob_store_max_attempts},
+                ),
+                verify=False,
+                bucket_name=bucket_name,
+            ),
+        }
+        for (bucket_label, bucket_name) in [
+            ("red_bucket", _red_bucket_name),
+            ("reef_bucket", _reef_bucket_name),
+        ]
+    }
+)
+
 RFCINDEX_DELETE_THEN_WRITE = False  # S3Storage allows file_overwrite by default
-RFCINDEX_OUTPUT_PATH = os.environ.get("DATATRACKER_RFCINDEX_OUTPUT_PATH", "other/")
-RFCINDEX_INPUT_PATH = os.environ.get("DATATRACKER_RFCINDEX_INPUT_PATH", "")
+if "DATATRACKER_RFCINDEX_OUTPUT_PATH" in os.environ:
+    RFCINDEX_OUTPUT_PATH = os.environ.get("DATATRACKER_RFCINDEX_OUTPUT_PATH")
+if "DATATRACKER_RFCINDEX_INPUT_PATH" in os.environ:
+    RFCINDEX_INPUT_PATH = os.environ.get("DATATRACKER_RFCINDEX_INPUT_PATH")
+
+if "DATATRACKER_POPULARITY_JSON_PATH" in os.environ:
+    POPULARITY_JSON_PATH = os.environ.get("DATATRACKER_POPULARITY_JSON_PATH")
 
 # Configure the blobdb app for artifact storage
 _blobdb_replication_enabled = (
@@ -493,7 +529,7 @@ PASSWORD_POLICY_ENFORCE_AT_LOGIN = (
 )
 
 # Typesense search indexing
-SEARCHINDEX_CONFIG = {
+SEARCH_PROVIDER_CONFIG = {
     "TYPESENSE_API_URL": os.environ.get("DATATRACKER_TYPESENSE_API_URL", ""),
     "TYPESENSE_API_KEY": os.environ.get("DATATRACKER_TYPESENSE_API_KEY", ""),
     "TASK_RETRY_DELAY": int(

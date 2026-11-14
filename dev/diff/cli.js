@@ -10,7 +10,7 @@ import { pipeline } from 'stream/promises'
 import { PassThrough } from 'stream'
 import prettyBytes from 'pretty-bytes'
 import extract from 'extract-zip'
-import tar from 'tar'
+import * as tar from 'tar'
 import { kebabCase } from 'lodash-es'
 import { Listr } from 'listr2'
 import { performance } from 'perf_hooks'
@@ -18,9 +18,8 @@ import { Duration } from 'luxon'
 import keypress from 'keypress'
 
 let dock = null
-let diffOutput = []
 const diffStack = []
-const config = {  
+const config = {
   options: [],
   source: process.cwd(),
   target: null,
@@ -39,20 +38,20 @@ const sha1reg = /^[0-9a-f]{5,40}$/
 
 /**
  * Prompt the user for a path
- * 
+ *
  * @param {Task} task Listr task instance
  * @param {String} msg Prompt message
  * @param {Boolean} mustExist Whether the path must already exist
  * @returns path
  */
-async function promptForPath (task, msg, mustExist = true, initial) {
+async function promptForPath(task, msg, mustExist = true, initial) {
   return task.prompt([
     {
       type: 'input',
       name: 'path',
       message: msg,
       initial,
-      async validate (input) {
+      async validate(input) {
         if (!input) {
           return 'You must provide a valid path!'
         }
@@ -60,7 +59,7 @@ async function promptForPath (task, msg, mustExist = true, initial) {
         if (proposedPath.includes(config.source)) {
           return 'Path must be different than the current datatracker project path!'
         } else if (mustExist && !(await fs.pathExists(proposedPath))) {
-          return 'Path is invalid or doesn\'t exist!'
+          return "Path is invalid or doesn't exist!"
         } else {
           return true
         }
@@ -71,24 +70,21 @@ async function promptForPath (task, msg, mustExist = true, initial) {
 
 /**
  * Download and Extract a zip archive
- * 
+ *
  * @param {Task} task Listr task instance
  * @param {Object} param1 Options
  */
-async function downloadExtractZip (task, { msg, url, ext = 'zip', branch }) {
+async function downloadExtractZip(task, { msg, url, ext = 'zip', branch }) {
   const archivePath = path.join(config.target, `archive.${ext}`)
   await fs.emptyDir(config.target)
   // Download zip
   try {
     task.title = msg
     const downloadBranchStream = got.stream(url)
-    downloadBranchStream.on('downloadProgress', progress => {
+    downloadBranchStream.on('downloadProgress', (progress) => {
       task.output = `${prettyBytes(progress.transferred)} downloaded.`
     })
-    await pipeline(
-      downloadBranchStream,
-      fs.createWriteStream(archivePath)
-    )
+    await pipeline(downloadBranchStream, fs.createWriteStream(archivePath))
     task.title = `Downloaded ${ext} archive successfully.`
   } catch (err) {
     throw new Error(`Failed to download ${ext} archive from GitHub. ${err.message}`)
@@ -102,20 +98,22 @@ async function downloadExtractZip (task, { msg, url, ext = 'zip', branch }) {
       await fs.ensureDir(tmpDir)
       await extract(archivePath, {
         dir: tmpDir,
-        onEntry (entry) {
+        onEntry(entry) {
           task.output = entry.fileName
         }
       })
       task.title = 'Moving extracted files to final location...'
       task.output = config.target
-      await fs.move(path.join(tmpDir, kebabCase(`datatracker-${branch}`)), config.target, { overwrite: true })
+      await fs.move(path.join(tmpDir, kebabCase(`datatracker-${branch}`)), config.target, {
+        overwrite: true
+      })
       await fs.remove(tmpDir)
     } else if (ext === 'tgz') {
       await tar.x({
         strip: 1,
         file: archivePath,
         cwd: config.target,
-        filter (path) {
+        filter(path) {
           task.output = path
           return true
         }
@@ -130,29 +128,29 @@ async function downloadExtractZip (task, { msg, url, ext = 'zip', branch }) {
 
 /**
  * Run a command on a running container
- * 
+ *
  * @param {Task} task Listr task instance
  * @param {Docker.Container} container Docker container instance
  * @param {Array<String>} cmd Command to execute
  * @param {Boolean} collectOutput Whether to collect and return the command output
  */
-async function executeCommand (task, container, cmd, collectOutput = false, silent = false) {
+async function executeCommand(task, container, cmd, collectOutput = false, silent = false) {
   const logStack = []
   const errStack = []
   let logFStream = null
   return new Promise(async (resolve, reject) => {
     // Handle stream output
     const logStream = new PassThrough()
-    logStream.on('data', chunk => {
+    logStream.on('data', (chunk) => {
       const logLine = chunk.toString('utf8').trim()
       if (logLine && !silent) {
         task.output = logLine
         if (collectOutput) {
-          logStack.push(...logLine.split('\n').filter(l => l))
+          logStack.push(...logLine.split('\n').filter((l) => l))
         }
       }
     })
-    logStream.on('error', chunk => {
+    logStream.on('error', (chunk) => {
       task.output = chunk.toString('utf8')
       errStack.push(chunk.toString('utf8'))
     })
@@ -176,7 +174,6 @@ async function executeCommand (task, container, cmd, collectOutput = false, sile
         reject(new Error(errStack))
       } else {
         if (!silent) {
-          
         }
         task.output = ''
         resolve(logStack)
@@ -189,80 +186,82 @@ async function executeCommand (task, container, cmd, collectOutput = false, sile
 
 /**
  * Run cleanup tasks (e.g. stop/remove docker resources)
- * 
+ *
  * @param {Boolean} exitAfter Whether to exit the process at the end
  */
-async function cleanup (exitAfter = false) {
+async function cleanup(exitAfter = false) {
   try {
-    const cleanupTasks = new Listr([
-      // ------------------------
-      // Stop + Remove Containers
-      // ------------------------
-      {
-        title: 'Stop + remove docker containers',
-        task: async (ctx, task) => {
-          task.output = 'Stopping containers...'
-          try {
-            await Promise.allSettled([
-              containers.dbSource && containers.dbSource.stop(),
-              containers.dbTarget && containers.dbTarget.stop(),
-              containers.appSource && containers.appSource.stop(),
-              containers.appTarget && containers.appTarget.stop()
-            ])
-          } catch (err) { }
-          task.output = 'Removing containers...'
-          try {
-            await Promise.allSettled([
-              containers.dbSource && containers.dbSource.remove({ v: true }),
-              containers.dbTarget && containers.dbTarget.remove({ v: true }),
-              containers.appSource && containers.appSource.remove({ v: true }),
-              containers.appTarget && containers.appTarget.remove({ v: true })
-            ])
-          } catch (err) { }
-          task.output = 'Removing network...'
-          try {
-            await containers.net.remove()
-          } catch (err) {}
-        }
-      },
-      // --------------------
-      // Restore config files
-      // --------------------
-      {
-        title: 'Restore original source settings file',
-        task: async (ctx, task) => {
-          const sourceSettingsPath = path.join(config.source, 'ietf/settings_local.py')
-          if (await fs.pathExists(`${sourceSettingsPath}.bak`)) {
-            await fs.move(`${sourceSettingsPath}.bak`, sourceSettingsPath, { overwrite: true })
-            task.title = 'Restored original source settings file.'
-          } else {
-            task.skip('Nothing to restore.')
+    const cleanupTasks = new Listr(
+      [
+        // ------------------------
+        // Stop + Remove Containers
+        // ------------------------
+        {
+          title: 'Stop + remove docker containers',
+          task: async (ctx, task) => {
+            task.output = 'Stopping containers...'
+            try {
+              await Promise.allSettled([
+                containers.dbSource && containers.dbSource.stop(),
+                containers.dbTarget && containers.dbTarget.stop(),
+                containers.appSource && containers.appSource.stop(),
+                containers.appTarget && containers.appTarget.stop()
+              ])
+            } catch {}
+            task.output = 'Removing containers...'
+            try {
+              await Promise.allSettled([
+                containers.dbSource && containers.dbSource.remove({ v: true }),
+                containers.dbTarget && containers.dbTarget.remove({ v: true }),
+                containers.appSource && containers.appSource.remove({ v: true }),
+                containers.appTarget && containers.appTarget.remove({ v: true })
+              ])
+            } catch {}
+            task.output = 'Removing network...'
+            try {
+              await containers.net.remove()
+            } catch {}
+          }
+        },
+        // --------------------
+        // Restore config files
+        // --------------------
+        {
+          title: 'Restore original source settings file',
+          task: async (ctx, task) => {
+            const sourceSettingsPath = path.join(config.source, 'ietf/settings_local.py')
+            if (await fs.pathExists(`${sourceSettingsPath}.bak`)) {
+              await fs.move(`${sourceSettingsPath}.bak`, sourceSettingsPath, { overwrite: true })
+              task.title = 'Restored original source settings file.'
+            } else {
+              task.skip('Nothing to restore.')
+            }
+          }
+        },
+        {
+          title: 'Restore original target settings file',
+          task: async (ctx, task) => {
+            const targetSettingsPath = path.join(config.target, 'ietf/settings_local.py')
+            if (await fs.pathExists(`${targetSettingsPath}.bak`)) {
+              await fs.move(`${targetSettingsPath}.bak`, targetSettingsPath, { overwrite: true })
+              task.title = 'Restored original target settings file.'
+            } else {
+              task.skip('Nothing to restore.')
+            }
           }
         }
-      },
+      ],
       {
-        title: 'Restore original target settings file',
-        task: async (ctx, task) => {
-          const targetSettingsPath = path.join(config.target, 'ietf/settings_local.py')
-          if (await fs.pathExists(`${targetSettingsPath}.bak`)) {
-            await fs.move(`${targetSettingsPath}.bak`, targetSettingsPath, { overwrite: true })
-            task.title = 'Restored original target settings file.'
-          } else {
-            task.skip('Nothing to restore.')
-          }
-        }
+        registerSignalListeners: false
       }
-    ], {
-      registerSignalListeners: false
-    })
-  
+    )
+
     await cleanupTasks.run()
 
     // Cleanup
     if (config.tmpDir) {
       await fs.remove(config.tmpDir)
     }
-
   } catch (err) {
     console.error(chalk.redBright(err.message))
     process.exit(1)
@@ -273,7 +272,7 @@ async function cleanup (exitAfter = false) {
   }
 }
 
-async function main () {
+async function main() {
   console.clear()
   console.info('╔════════════════════════════╗')
   console.info('║ IETF DATATRACKER DIFF TOOL ║')
@@ -299,7 +298,7 @@ async function main () {
         title: 'Find base datatracker instance base path',
         task: async (ctx, task) => {
           let parentIdx = 0
-          while(!(await fs.pathExists(path.join(config.source, 'requirements.txt')))) {
+          while (!(await fs.pathExists(path.join(config.source, 'requirements.txt')))) {
             config.source = path.resolve(config.source, '..')
             parentIdx++
             if (parentIdx > 2) {
@@ -340,7 +339,10 @@ async function main () {
             // ------------------------------------------------
             case 'local': {
               task.title = 'Waiting for diff target path input'
-              config.target = await promptForPath(task, 'Enter the local path to the datatracker project to compare against:')
+              config.target = await promptForPath(
+                task,
+                'Enter the local path to the datatracker project to compare against:'
+              )
               task.title = `Using path ${config.target} for target datatracker instance.`
               break
             }
@@ -352,16 +354,18 @@ async function main () {
               let branch = 'main'
               try {
                 task.title = 'Fetching available remote branches...'
-                const branchesResp = await got('https://api.github.com/repos/ietf-tools/datatracker/branches?per_page=100').json()
+                const branchesResp = await got(
+                  'https://api.github.com/repos/ietf-tools/datatracker/branches?per_page=100'
+                ).json()
                 if (branchesResp?.length < 1) {
                   throw new Error('No remote branches available.')
                 }
-                branches.push(...branchesResp.map(b => b.name))
+                branches.push(...branchesResp.map((b) => b.name))
                 task.output = `Fetched ${branches.length} remote branches.`
               } catch (err) {
                 throw new Error(`Failed to fetch branches! ${err.message}`)
               }
-              
+
               branch = await task.prompt([
                 {
                   type: 'select',
@@ -369,11 +373,15 @@ async function main () {
                   choices: branches
                 }
               ])
-        
+
               // Prompt for local path where to download branch contents
-              config.target = await promptForPath(task, 'Enter a local path where the branch contents will be downloaded to:', false)
+              config.target = await promptForPath(
+                task,
+                'Enter a local path where the branch contents will be downloaded to:',
+                false
+              )
               await fs.ensureDir(config.target)
-        
+
               // Download / Extract branch zip
               await downloadExtractZip(task, {
                 msg: `Downloading ${branch} branch contents...`,
@@ -387,18 +395,22 @@ async function main () {
             // MODE: REMOTE TAG
             // ------------------------------------------------
             case 'tag': {
-              // Prompt for tag             
+              // Prompt for tag
               const tag = await task.prompt([
                 {
                   type: 'input',
                   message: 'Enter the remote repository tag to compare against:'
                 }
               ])
-        
+
               // Prompt for local path where to download tag contents
-              config.target = await promptForPath(task, 'Enter a local path where the tag contents will be downloaded to:', false)
+              config.target = await promptForPath(
+                task,
+                'Enter a local path where the tag contents will be downloaded to:',
+                false
+              )
               await fs.ensureDir(config.target)
-        
+
               // Download / Extract tag tarball
               await downloadExtractZip(task, {
                 msg: `Downloading tag ${tag} contents...`,
@@ -412,12 +424,12 @@ async function main () {
             // MODE: REMOTE COMMIT
             // ------------------------------------------------
             case 'commit': {
-              // Prompt for commit hash             
+              // Prompt for commit hash
               const commit = await task.prompt([
                 {
                   type: 'input',
                   message: 'Enter the FULL commit hash to compare against:',
-                  async validate (input) {
+                  async validate(input) {
                     if (!input) {
                       return 'You must provide a hash!'
                     } else if (!sha1reg.test(input)) {
@@ -427,11 +439,15 @@ async function main () {
                   }
                 }
               ])
-        
+
               // Prompt for local path where to download commit contents
-              config.target = await promptForPath(task, 'Enter a local path where the commit contents will be downloaded to:', false)
+              config.target = await promptForPath(
+                task,
+                'Enter a local path where the commit contents will be downloaded to:',
+                false
+              )
               await fs.ensureDir(config.target)
-        
+
               // Download / Extract commit tarball
               await downloadExtractZip(task, {
                 msg: `Downloading commit ${commit} contents...`,
@@ -447,9 +463,13 @@ async function main () {
             case 'release': {
               task.title = 'Waiting for diff target download location'
               // Prompt for local path where to download release
-              config.target = await promptForPath(task, 'Enter a local path where the latest release will be downloaded to:', false)
+              config.target = await promptForPath(
+                task,
+                'Enter a local path where the latest release will be downloaded to:',
+                false
+              )
               await fs.ensureDir(config.target)
-        
+
               // Download / extract latest release
               await downloadExtractZip(task, {
                 msg: 'Downloading latest release...',
@@ -469,8 +489,14 @@ async function main () {
           if (!(await fs.pathExists(path.join(config.target, 'dev/diff')))) {
             task.output = `Add missing diff tool files...`
             await fs.ensureDir(path.join(config.target, 'dev/diff'))
-            await fs.copy(path.join(config.source, 'dev/diff/prepare.sh'), path.join(config.target, 'dev/diff/prepare.sh'))
-            await fs.copy(path.join(config.source, 'dev/diff/settings_local.py'), path.join(config.target, 'dev/diff/settings_local.py'))
+            await fs.copy(
+              path.join(config.source, 'dev/diff/prepare.sh'),
+              path.join(config.target, 'dev/diff/prepare.sh')
+            )
+            await fs.copy(
+              path.join(config.source, 'dev/diff/settings_local.py'),
+              path.join(config.target, 'dev/diff/settings_local.py')
+            )
           }
         }
       },
@@ -489,14 +515,54 @@ async function main () {
               message: 'Select additional options to enable:',
               hint: '(use <SPACE> to toggle, <ENTER> to confirm)',
               choices: [
-                { message: 'Skip HTML Validation', name: '--skip-html-validation', hint: 'Skip HTML Validation', indicator: toggleIndicatorFn },
-                { message: 'Fail-fast', name: '--failfast', hint: 'Stop the crawl on the first page failure', indicator: toggleIndicatorFn },
-                { message: 'No-Follow', name: '--no-follow', hint: 'Do not follow URLs found in fetched pages, just check the given URLs', indicator: toggleIndicatorFn },
-                { message: 'No-Revisit', name: '--no-revisit', hint: 'Don\'t revisit already visited URLs', indicator: toggleIndicatorFn },
-                { message: 'Pedantic', name: '--pedantic', hint: 'Stop the crawl on the first error or warning', indicator: toggleIndicatorFn },
-                { message: 'Random', name: '--random', hint: 'Crawl URLs randomly', indicator: toggleIndicatorFn },
-                { message: 'Validate All', name: '--validate-all', hint: 'Run html 5 validation on all pages, without skipping similar urls', indicator: toggleIndicatorFn },
-                { message: 'Verbose', name: '--verbose', hint: 'Be more verbose', indicator: toggleIndicatorFn }
+                {
+                  message: 'Skip HTML Validation',
+                  name: '--skip-html-validation',
+                  hint: 'Skip HTML Validation',
+                  indicator: toggleIndicatorFn
+                },
+                {
+                  message: 'Fail-fast',
+                  name: '--failfast',
+                  hint: 'Stop the crawl on the first page failure',
+                  indicator: toggleIndicatorFn
+                },
+                {
+                  message: 'No-Follow',
+                  name: '--no-follow',
+                  hint: 'Do not follow URLs found in fetched pages, just check the given URLs',
+                  indicator: toggleIndicatorFn
+                },
+                {
+                  message: 'No-Revisit',
+                  name: '--no-revisit',
+                  hint: "Don't revisit already visited URLs",
+                  indicator: toggleIndicatorFn
+                },
+                {
+                  message: 'Pedantic',
+                  name: '--pedantic',
+                  hint: 'Stop the crawl on the first error or warning',
+                  indicator: toggleIndicatorFn
+                },
+                {
+                  message: 'Random',
+                  name: '--random',
+                  hint: 'Crawl URLs randomly',
+                  indicator: toggleIndicatorFn
+                },
+                {
+                  message: 'Validate All',
+                  name: '--validate-all',
+                  hint: 'Run html 5 validation on all pages, without skipping similar urls',
+                  indicator: toggleIndicatorFn
+                },
+                {
+                  message: 'Verbose',
+                  name: '--verbose',
+                  hint: 'Be more verbose',
+                  indicator: toggleIndicatorFn
+                }
               ]
             }
           ])
@@ -517,7 +583,12 @@ async function main () {
           })
 
           if (saveToDisk) {
-            config.savePath = await promptForPath(task, 'Enter the path where the crawl output will be saved:', false, path.join(os.homedir(), 'Desktop/crawl-out.txt'))
+            config.savePath = await promptForPath(
+              task,
+              'Enter the path where the crawl output will be saved:',
+              false,
+              path.join(os.homedir(), 'Desktop/crawl-out.txt')
+            )
             task.title = `Crawl output will be saved to ${config.savePath}`
           } else {
             config.tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dt-'))
@@ -531,21 +602,33 @@ async function main () {
       // ----------------------------
       {
         title: 'Set datatracker config files',
-        task: async (ctx, task) => {
+        task: async (_ctx, _task) => {
           // Source
           const sourceSettingsPath = path.join(config.source, 'ietf/settings_local.py')
           if (await fs.pathExists(sourceSettingsPath)) {
             await fs.move(sourceSettingsPath, `${sourceSettingsPath}.bak`, { overwrite: true })
           }
-          const cfgSourceRaw = await fs.readFile(path.join(config.source, 'dev/diff/settings_local.py'), 'utf8')
-          await fs.outputFile(sourceSettingsPath, cfgSourceRaw.replace('__DBHOST__', 'dt-diff-db-source'))
+          const cfgSourceRaw = await fs.readFile(
+            path.join(config.source, 'dev/diff/settings_local.py'),
+            'utf8'
+          )
+          await fs.outputFile(
+            sourceSettingsPath,
+            cfgSourceRaw.replace('__DBHOST__', 'dt-diff-db-source')
+          )
           // Target
           const targetSettingsPath = path.join(config.target, 'ietf/settings_local.py')
           if (await fs.pathExists(targetSettingsPath)) {
             await fs.move(targetSettingsPath, `${targetSettingsPath}.bak`, { overwrite: true })
           }
-          const cfgTargetRaw = await fs.readFile(path.join(config.target, 'dev/diff/settings_local.py'), 'utf8')
-          await fs.outputFile(targetSettingsPath, cfgTargetRaw.replace('__DBHOST__', 'dt-diff-db-target'))
+          const cfgTargetRaw = await fs.readFile(
+            path.join(config.target, 'dev/diff/settings_local.py'),
+            'utf8'
+          )
+          await fs.outputFile(
+            targetSettingsPath,
+            cfgTargetRaw.replace('__DBHOST__', 'dt-diff-db-target')
+          )
         }
       },
       // ------------------
@@ -553,33 +636,45 @@ async function main () {
       // ------------------
       {
         title: 'Pull latest docker images',
-        task: (ctx, task) => task.newListr([
-          {
-            title: 'Pulling latest DB docker image...',
-            task: async (subctx, subtask) => {
-              const dbImagePullStream = await dock.pull('ghcr.io/ietf-tools/datatracker-db:latest')
-              await new Promise((resolve, reject) => {
-                dock.modem.followProgress(dbImagePullStream, (err, res) => err ? reject(err) : resolve(res))
-              })
-              subtask.title = `Pulled latest DB docker image successfully.`
+        task: (ctx, task) =>
+          task.newListr(
+            [
+              {
+                title: 'Pulling latest DB docker image...',
+                task: async (subctx, subtask) => {
+                  const dbImagePullStream = await dock.pull(
+                    'ghcr.io/ietf-tools/datatracker-db:latest'
+                  )
+                  await new Promise((resolve, reject) => {
+                    dock.modem.followProgress(dbImagePullStream, (err, res) =>
+                      err ? reject(err) : resolve(res)
+                    )
+                  })
+                  subtask.title = `Pulled latest DB docker image successfully.`
+                }
+              },
+              {
+                title: 'Pulling latest Datatracker base docker image...',
+                task: async (subctx, subtask) => {
+                  const appImagePullStream = await dock.pull(
+                    'ghcr.io/ietf-tools/datatracker-app-base:latest'
+                  )
+                  await new Promise((resolve, reject) => {
+                    dock.modem.followProgress(appImagePullStream, (err, res) =>
+                      err ? reject(err) : resolve(res)
+                    )
+                  })
+                  subtask.title = `Pulled latest Datatracker base docker image successfully.`
+                }
+              }
+            ],
+            {
+              concurrent: true,
+              rendererOptions: {
+                collapse: false
+              }
             }
-          },
-          {
-            title: 'Pulling latest Datatracker base docker image...',
-            task: async (subctx, subtask) => {
-              const appImagePullStream = await dock.pull('ghcr.io/ietf-tools/datatracker-app-base:latest')
-              await new Promise((resolve, reject) => {
-                dock.modem.followProgress(appImagePullStream, (err, res) => err ? reject(err) : resolve(res))
-              })
-              subtask.title = `Pulled latest Datatracker base docker image successfully.`
-            }
-          }
-        ], {
-          concurrent: true,
-          rendererOptions: {
-            collapse: false
-          }
-        })
+          )
       },
       // --------------
       // Create network
@@ -600,178 +695,226 @@ async function main () {
       // ----------------------------
       {
         title: 'Create DB docker containers',
-        task: (ctx, task) => task.newListr([
-          {
-            title: 'Creating source DB docker container...',
-            task: async (subctx, subtask) => {
-              containers.dbSource = await dock.createContainer({
-                Image: 'ghcr.io/ietf-tools/datatracker-db:latest',
-                name: 'dt-diff-db-source',
-                Hostname: 'dbsource',
-                HostConfig: {
-                  NetworkMode: 'dt-diff-net'
+        task: (ctx, task) =>
+          task.newListr(
+            [
+              {
+                title: 'Creating source DB docker container...',
+                task: async (subctx, subtask) => {
+                  containers.dbSource = await dock.createContainer({
+                    Image: 'ghcr.io/ietf-tools/datatracker-db:latest',
+                    name: 'dt-diff-db-source',
+                    Hostname: 'dbsource',
+                    HostConfig: {
+                      NetworkMode: 'dt-diff-net'
+                    }
+                  })
+                  await containers.dbSource.start()
+                  subtask.title = `Created source DB docker container (dt-diff-db-source) successfully.`
                 }
-              })
-              await containers.dbSource.start()
-              subtask.title = `Created source DB docker container (dt-diff-db-source) successfully.`
-            }
-          },
-          {
-            title: 'Creating target DB docker container...',
-            task: async (subctx, subtask) => {
-              containers.dbTarget = await dock.createContainer({
-                Image: 'ghcr.io/ietf-tools/datatracker-db:latest',
-                name: 'dt-diff-db-target',
-                Hostname: 'dbtarget',
-                HostConfig: {
-                  NetworkMode: 'dt-diff-net'
+              },
+              {
+                title: 'Creating target DB docker container...',
+                task: async (subctx, subtask) => {
+                  containers.dbTarget = await dock.createContainer({
+                    Image: 'ghcr.io/ietf-tools/datatracker-db:latest',
+                    name: 'dt-diff-db-target',
+                    Hostname: 'dbtarget',
+                    HostConfig: {
+                      NetworkMode: 'dt-diff-net'
+                    }
+                  })
+                  await containers.dbTarget.start()
+                  subtask.title = `Created target DB docker container (dt-diff-db-target) successfully.`
                 }
-              })
-              await containers.dbTarget.start()
-              subtask.title = `Created target DB docker container (dt-diff-db-target) successfully.`
+              }
+            ],
+            {
+              concurrent: true,
+              rendererOptions: {
+                collapse: false
+              }
             }
-          }
-        ], {
-          concurrent: true,
-          rendererOptions: {
-            collapse: false
-          }
-        })
+          )
       },
       // -------------------------------------
       // Create + Start Datatracker containers
       // -------------------------------------
       {
         title: 'Create Datatracker docker containers',
-        task: (ctx, task) => task.newListr([
-          {
-            title: 'Creating source Datatracker docker container...',
-            task: async (subctx, subtask) => {
-              containers.appSource = await dock.createContainer({
-                Image: 'ghcr.io/ietf-tools/datatracker-app-base:latest',
-                name: 'dt-diff-app-source',
-                Tty: true,
-                Hostname: 'appsource',
-                HostConfig: {
-                  NetworkMode: 'dt-diff-net'
+        task: (ctx, task) =>
+          task.newListr(
+            [
+              {
+                title: 'Creating source Datatracker docker container...',
+                task: async (subctx, subtask) => {
+                  containers.appSource = await dock.createContainer({
+                    Image: 'ghcr.io/ietf-tools/datatracker-app-base:latest',
+                    name: 'dt-diff-app-source',
+                    Tty: true,
+                    Hostname: 'appsource',
+                    HostConfig: {
+                      NetworkMode: 'dt-diff-net'
+                    }
+                  })
+                  await containers.appSource.start()
+                  subtask.title = `Created source Datatracker docker container (dt-diff-app-source) successfully.`
                 }
-              })
-              await containers.appSource.start()
-              subtask.title = `Created source Datatracker docker container (dt-diff-app-source) successfully.`
-            }
-          },
-          {
-            title: 'Creating target Datatracker docker container...',
-            task: async (subctx, subtask) => {
-              containers.appTarget = await dock.createContainer({
-                Image: 'ghcr.io/ietf-tools/datatracker-app-base:latest',
-                name: 'dt-diff-app-target',
-                Tty: true,
-                Hostname: 'apptarget',
-                HostConfig: {
-                  NetworkMode: 'dt-diff-net'
+              },
+              {
+                title: 'Creating target Datatracker docker container...',
+                task: async (subctx, subtask) => {
+                  containers.appTarget = await dock.createContainer({
+                    Image: 'ghcr.io/ietf-tools/datatracker-app-base:latest',
+                    name: 'dt-diff-app-target',
+                    Tty: true,
+                    Hostname: 'apptarget',
+                    HostConfig: {
+                      NetworkMode: 'dt-diff-net'
+                    }
+                  })
+                  await containers.appTarget.start()
+                  subtask.title = `Created target Datatracker docker container (dt-diff-app-target) successfully.`
                 }
-              })
-              await containers.appTarget.start()
-              subtask.title = `Created target Datatracker docker container (dt-diff-app-target) successfully.`
+              }
+            ],
+            {
+              concurrent: true,
+              rendererOptions: {
+                collapse: false
+              }
             }
-          }
-        ], {
-          concurrent: true,
-          rendererOptions: {
-            collapse: false
-          }
-        })
+          )
       },
       // --------------------------------------------
       // Copy working files to Datatracker containers
       // --------------------------------------------
       {
         title: 'Copy working files to Datatracker docker containers',
-        task: (ctx, task) => task.newListr([
-          {
-            title: 'Copying workfing files into source Datatracker docker container...',
-            task: async (subctx, subtask) => {
-              const tgzPath = path.join(config.source, 'diff-import.tgz')
-              await tar.c({
-                gzip: true,
-                file: tgzPath,
-                cwd: config.source,
-                filter (path) {
-                  if (path.includes('.git') || path.includes('node_modules')) { return false }
-                  subtask.output = path
-                  return true
+        task: (ctx, task) =>
+          task.newListr(
+            [
+              {
+                title: 'Copying workfing files into source Datatracker docker container...',
+                task: async (subctx, subtask) => {
+                  const tgzPath = path.join(config.source, 'diff-import.tgz')
+                  await tar.c(
+                    {
+                      gzip: true,
+                      file: tgzPath,
+                      cwd: config.source,
+                      filter(path) {
+                        if (path.includes('.git') || path.includes('node_modules')) {
+                          return false
+                        }
+                        subtask.output = path
+                        return true
+                      }
+                    },
+                    ['.']
+                  )
+                  subtask.output = 'Injecting into container...'
+                  await containers.appSource.putArchive(tgzPath, {
+                    path: '/workspace'
+                  })
+                  await fs.remove(tgzPath)
+                  subtask.title = `Imported working files into source Datatracker docker container (dt-diff-app-source) successfully.`
                 }
-              }, ['.'])
-              subtask.output = 'Injecting into container...'
-              await containers.appSource.putArchive(tgzPath, {
-                path: '/workspace'
-              })
-              await fs.remove(tgzPath)
-              subtask.title = `Imported working files into source Datatracker docker container (dt-diff-app-source) successfully.`
-            }
-          },
-          {
-            title: 'Copying working files into target Datatracker docker container...',
-            task: async (subctx, subtask) => {
-              const tgzPath = path.join(config.target, 'diff-import.tgz')
-              await tar.c({
-                gzip: true,
-                file: tgzPath,
-                cwd: config.target,
-                filter (path) {
-                  if (path.includes('.git') || path.includes('node_modules')) { return false }
-                  subtask.output = path
-                  return true
+              },
+              {
+                title: 'Copying working files into target Datatracker docker container...',
+                task: async (subctx, subtask) => {
+                  const tgzPath = path.join(config.target, 'diff-import.tgz')
+                  await tar.c(
+                    {
+                      gzip: true,
+                      file: tgzPath,
+                      cwd: config.target,
+                      filter(path) {
+                        if (path.includes('.git') || path.includes('node_modules')) {
+                          return false
+                        }
+                        subtask.output = path
+                        return true
+                      }
+                    },
+                    ['.']
+                  )
+                  subtask.output = 'Injecting into container...'
+                  await containers.appTarget.putArchive(tgzPath, {
+                    path: '/workspace'
+                  })
+                  await fs.remove(tgzPath)
+                  subtask.title = `Imported working files into target Datatracker docker container (dt-diff-app-target) successfully.`
                 }
-              }, ['.'])
-              subtask.output = 'Injecting into container...'
-              await containers.appTarget.putArchive(tgzPath, {
-                path: '/workspace'
-              })
-              await fs.remove(tgzPath)
-              subtask.title = `Imported working files into target Datatracker docker container (dt-diff-app-target) successfully.`
+              }
+            ],
+            {
+              concurrent: true,
+              rendererOptions: {
+                collapse: false
+              }
             }
-          }
-        ], {
-          concurrent: true,
-          rendererOptions: {
-            collapse: false
-          }
-        })
+          )
       },
       // -------------------
       // Run prepare scripts
       // -------------------
       {
         title: 'Prepare Datatracker instances',
-        task: (ctx, task) => task.newListr([
-          {
-            title: 'Preparing source Datatracker instance...',
-            task: async (subctx, subtask) => {
-              await executeCommand(subtask, containers.appSource, ['bash', '-c', 'chmod +x ./dev/diff/prepare.sh'])
-              await executeCommand(subtask, containers.appSource, ['bash', './dev/diff/prepare.sh'])
-              subtask.title = `Source Datatracker instance is now ready.`
+        task: (ctx, task) =>
+          task.newListr(
+            [
+              {
+                title: 'Preparing source Datatracker instance...',
+                task: async (subctx, subtask) => {
+                  await executeCommand(subtask, containers.appSource, [
+                    'bash',
+                    '-c',
+                    'chmod +x ./dev/diff/prepare.sh'
+                  ])
+                  await executeCommand(subtask, containers.appSource, [
+                    'bash',
+                    './dev/diff/prepare.sh'
+                  ])
+                  subtask.title = `Source Datatracker instance is now ready.`
+                }
+              },
+              {
+                title: 'Preparing target Datatracker instance...',
+                task: async (subctx, subtask) => {
+                  await executeCommand(subtask, containers.appTarget, [
+                    'bash',
+                    '-c',
+                    'chmod +x ./dev/diff/prepare.sh'
+                  ])
+                  await executeCommand(subtask, containers.appTarget, [
+                    'bash',
+                    './dev/diff/prepare.sh'
+                  ])
+                  subtask.title = `Run target Datatracker instance - Starting server...`
+                  executeCommand(subtask, containers.appTarget, [
+                    'bash',
+                    '-c',
+                    './ietf/manage.py runserver 0.0.0.0:8000 --settings=settings_local'
+                  ])
+                  subtask.title = `Run target Datatracker instance - Waiting for server to accept connections...`
+                  await executeCommand(subtask, containers.appTarget, [
+                    'bash',
+                    '-c',
+                    '/usr/local/bin/wait-for localhost:8000 -t 300'
+                  ])
+                  subtask.title = `Target Datatracker instance is now ready and accepting connections.`
+                }
+              }
+            ],
+            {
+              concurrent: true,
+              rendererOptions: {
+                collapse: false
+              }
             }
-          },
-          {
-            title: 'Preparing target Datatracker instance...',
-            task: async (subctx, subtask) => {
-              await executeCommand(subtask, containers.appTarget, ['bash', '-c', 'chmod +x ./dev/diff/prepare.sh'])
-              await executeCommand(subtask, containers.appTarget, ['bash', './dev/diff/prepare.sh'])
-              subtask.title = `Run target Datatracker instance - Starting server...`
-              executeCommand(subtask, containers.appTarget, ['bash', '-c', './ietf/manage.py runserver 0.0.0.0:8000 --settings=settings_local'])
-              subtask.title = `Run target Datatracker instance - Waiting for server to accept connections...`
-              await executeCommand(subtask, containers.appTarget, ['bash', '-c', '/usr/local/bin/wait-for localhost:8000 -t 300'])
-              subtask.title = `Target Datatracker instance is now ready and accepting connections.`
-            }
-          }
-        ], {
-          concurrent: true,
-          rendererOptions: {
-            collapse: false
-          }
-        })
+          )
       },
       // --------------
       // Run crawl tool
@@ -781,7 +924,7 @@ async function main () {
         task: async (ctx, task) => {
           task.title = 'Running crawl... (Press F10 to cancel)'
           task.output = 'Starting ./bin/test-crawl... (Results will start appearing soon)'
-          
+
           const startMs = performance.now()
 
           config.options.push('--settings=ietf.settings_testcrawl')
@@ -794,8 +937,12 @@ async function main () {
           const execPromise = new Promise(async (resolve, reject) => {
             // Handle stream output
             const logStream = new PassThrough()
-            logStream.on('data', chunk => {
-              const logLines = chunk.toString('utf8').trim().split('\n').filter(l => l.trim())
+            logStream.on('data', (chunk) => {
+              const logLines = chunk
+                .toString('utf8')
+                .trim()
+                .split('\n')
+                .filter((l) => l.trim())
               // Check for DIFF mentions
               if (logLines.length > 0) {
                 linesScanned += logLines.length
@@ -809,7 +956,7 @@ async function main () {
               }
             })
             // Handle error stream
-            logStream.on('error', chunk => {
+            logStream.on('error', (chunk) => {
               task.output = chunk.toString('utf8')
               errStack.push(chunk.toString('utf8'))
             })
@@ -856,7 +1003,6 @@ async function main () {
     ])
 
     await tasks.run()
-
   } catch (err) {
     console.error(chalk.redBright(err.message))
   }

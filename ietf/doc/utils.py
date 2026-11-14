@@ -15,12 +15,13 @@ from dataclasses import dataclass
 from hashlib import sha384
 from pathlib import Path
 from typing import Iterator, Optional, Union, Iterable
+from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib import messages
 from django.core.cache import caches
-from django.db.models import OuterRef
+from django.db.models import Max, OuterRef, Prefetch, Subquery
 from django.forms import ValidationError
 from django.http import Http404
 from django.template.loader import render_to_string
@@ -51,7 +52,7 @@ from ietf.doc.storage_utils import force_replication
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role, Group, GroupFeatures
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author, is_bofreq_editor
-from ietf.person.models import Email, Person
+from ietf.person.models import Person
 from ietf.person.utils import get_active_balloters
 from ietf.review.models import ReviewWish
 from ietf.utils import draft, log
@@ -455,6 +456,24 @@ def add_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_t
     return e
 
 
+def show_rpc_action_holder_comments(user, entries):
+    """Should this user be shown the RPC's requests to these action holders?
+
+    Controls whether a view renders the comment the RPC attached to an action
+    holder. Only the document main page views ask: they show it to the IESG, the
+    Secretariat and the RPC, and to whoever is being asked for the decision.
+    Views that do not call this show the comments to everyone, as the AD
+    document list does. The text is not confidential either way - the queue site
+    publishes it on its public final-review pages - so this is a choice about
+    what belongs on a given page.
+    """
+    if has_role(user, ["Area Director", "Secretariat", "RFC Editor"]):
+        return True
+    if not (user.is_authenticated and hasattr(user, "person")):
+        return False
+    return any(entry.person_id == user.person.pk for entry in entries)
+
+
 def add_action_holder_change_event(doc, by, prev_set, reason=None):
     set_changed = False
     if doc.documentactionholder_set.exclude(person__in=prev_set).exists():
@@ -806,6 +825,18 @@ def prettify_std_name(n, spacing=" "):
         return n[:3].upper() + spacing + n[3:]
     else:
         return n
+
+def external_canonical_url(doc):
+    """Authoritative external URL for doc, or None if the datatracker is authoritative
+
+    The authoritative home of an RFC, and of a bcp/std/fyi subseries document, is the
+    RFC Editor's info page, so we point search engines there rather than at our own
+    rendering of the same thing. Documents of other types are ours.
+    """
+    if doc.type_id in ["rfc", "bcp", "std", "fyi"]:
+        # trailing slash matches the form the RFC Editor serves
+        return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f"{doc.name}/")
+    return None
 
 def default_consensus(doc):
     # if someone edits the consensus return that, otherwise
@@ -1355,8 +1386,6 @@ def update_doc_extresources(doc, new_resources, by):
 
 def generate_idnits2_rfc_status():
 
-    blob=['N']*10000
-
     symbols={
         'ps': 'P',
         'inf': 'I',
@@ -1368,10 +1397,17 @@ def generate_idnits2_rfc_status():
         'unkn': 'U',
     }
 
-    rfcs = Document.objects.filter(type_id='rfc')
+    rfcs = Document.objects.filter(type_id='rfc').exclude(rfc_number=None)
+
+    # One character per RFC number, indexed by that number, so the array has to reach the
+    # highest RFC published. The floor keeps the fixed offsets in the workarounds below in
+    # range when only a few RFCs exist, as is the case under test.
+    highest = rfcs.aggregate(Max('rfc_number'))['rfc_number__max'] or 0
+    blob=['N']*max(highest, 6312)
+
     for rfc in rfcs:
         offset = int(rfc.rfc_number)-1
-        blob[offset] = symbols[rfc.std_level_id]
+        blob[offset] = symbols.get(rfc.std_level_id, 'U')
         if rfc.related_that('obs'):
             blob[offset] = 'O'
 
@@ -1390,6 +1426,17 @@ def generate_idnits2_rfc_status():
 
     # RFC200 is an old RFC List by Number
     blob[200 -1] = 'O' 
+
+    # !! Do not remove: idnits2 rejects this entire file if RFC16 is not 'O' !!
+    #
+    # This deliberately contradicts both the datatracker and the RFC Editor, which
+    # record RFC16 as updated rather than obsoleted. idnits2 validates its download
+    # of this file by matching the first 64 characters against a literal pattern that
+    # asserts 'O' here, inherited from a tools.ietf.org curation that disagreed with
+    # the RFC Editor. A mismatch makes idnits2 discard the file as corrupt and fall
+    # back to whatever stale copy it has, silently performing no RFC status checks at
+    # all. Removing this line therefore breaks every idnits2 client, not just RFC16.
+    blob[16 - 1] = 'O'
 
     # End Workarounds
 
@@ -1489,30 +1536,67 @@ def bibxml_for_draft(doc, rev=None):
 class DraftAliasGenerator:
     days = 2 * 365
 
+    # Followed for every draft, so fetch them with the draft rather than one query apiece.
+    # group__parent/type/state are read by get_group_ad_emails(), shepherd__person by
+    # Email.email_address() when the shepherd address is inactive.
+    related_fields = (
+        "group",
+        "group__parent",
+        "group__type",
+        "group__state",
+        "ad",
+        "shepherd",
+        "shepherd__person",
+    )
+
     def __init__(self, draft_queryset=None):
+        from ietf.group.utils import GroupEmailCache  # avoid circular import
         if draft_queryset is not None:
             self.draft_queryset = draft_queryset.filter(type_id="draft")  # only drafts allowed
         else:
             self.draft_queryset = Document.objects.filter(type_id="draft")
+        # Authors are read for every draft, and each one needs its Email and that Email's
+        # Person to decide which address to use. Built per instance rather than on the
+        # class so that no Prefetch state is shared between generator runs.
+        self.prefetch_fields = (
+            Prefetch(
+                "documentauthor_set",
+                queryset=DocumentAuthor.objects.select_related("email", "email__person"),
+            ),
+        )
+        # Memos for the lookups repeated across drafts. Both are scoped to this generator
+        # instance - see GroupEmailCache for why that matters.
+        self.email_cache = GroupEmailCache()
+        self._person_email_address = {}
+
+    def _email_address_for_person(self, person):
+        """Memoized Person.email_address()
+
+        Person.email_address() caches per instance, but each draft brings its own Person
+        instance, so without this the same AD is looked up once per draft they hold.
+        """
+        if person.pk not in self._person_email_address:
+            self._person_email_address[person.pk] = person.email_address()
+        return self._person_email_address[person.pk]
 
     def get_draft_ad_emails(self, doc):
         """Get AD email addresses for the given draft, if any."""
-        from ietf.group.utils import get_group_ad_emails  # avoid circular import
         ad_emails = set()
         # If working group document, return current WG ADs
         if doc.group and doc.group.acronym != "none":
-            ad_emails.update(get_group_ad_emails(doc.group))
+            ad_emails.update(self.email_cache.ad_emails(doc.group))
         # Document may have an explicit AD set
         if doc.ad:
-            ad_emails.add(doc.ad.email_address())
+            ad_emails.add(self._email_address_for_person(doc.ad))
         return ad_emails
 
     def get_draft_chair_emails(self, doc):
         """Get chair email addresses for the given draft, if any."""
-        from ietf.group.utils import get_group_role_emails  # avoid circular import
         chair_emails = set()
         if doc.group:
-            chair_emails.update(get_group_role_emails(doc.group, ["chair", "secr"]))
+            chair_emails.update(
+                self.email_cache.role_emails(doc.group, ["chair", "secr"])
+            )
         return chair_emails
 
     def get_draft_shepherd_email(self, doc):
@@ -1525,11 +1609,17 @@ class DraftAliasGenerator:
     def get_draft_authors_emails(self, doc):
         """Get list of authors for the given draft."""
         author_emails = set()
-        for email in Email.objects.filter(documentauthor__document=doc):
+        # Walk documentauthor_set rather than querying Email directly so that the
+        # prefetch in prefetch_fields can serve this without a query per draft. Authors
+        # with no recorded email are skipped, as the old Email-side join did.
+        for author in doc.documentauthor_set.all():
+            email = author.email
+            if email is None:
+                continue
             if email.active:
                 author_emails.add(email.address)
             elif email.person:
-                person_email = email.person.email_address()
+                person_email = self._email_address_for_person(email.person)
                 if person_email:
                     author_emails.add(person_email)
         return author_emails
@@ -1613,7 +1703,11 @@ class DraftAliasGenerator:
         # works, but it does not work as expected in `exclude()`.
         active_state = State.objects.get(type_id="draft", slug="active")
         active_pks = []  # build a static list of the drafts we actually returned as "active"
-        active_drafts = drafts.filter(states=active_state)
+        active_drafts = (
+            drafts.filter(states=active_state)
+            .select_related(*self.related_fields)
+            .prefetch_related(*self.prefetch_fields)
+        )
         for this_draft in active_drafts:
             active_pks.append(this_draft.pk)
             for alias, addresses in self._yield_aliases_for_draft(this_draft):
@@ -1624,6 +1718,8 @@ class DraftAliasGenerator:
         inactive_recent_drafts = (
             drafts.exclude(pk__in=active_pks)  # don't re-filter by state, states may have changed during the run!
             .filter(expires__gte=show_since)
+            .select_related(*self.related_fields)
+            .prefetch_related(*self.prefetch_fields)
             .annotate(
                 # Why _default_manager instead of objects? See:
                 # https://docs.djangoproject.com/en/4.2/topics/db/managers/#django.db.models.Model._default_manager
@@ -1631,14 +1727,29 @@ class DraftAliasGenerator:
                     document__pk=OuterRef("pk"),
                     state__type_id="draft"
                 ).values("state__slug"),
+                # Publication time of the RFC this draft became, for the window check
+                # below. Annotated rather than fetched per draft: doing it with
+                # became_rfc() + latest_event() costs two queries for every draft that
+                # reached RFC, which is most of them.
+                became_rfc_published=Subquery(
+                    DocEvent.objects.filter(
+                        type="published_rfc",
+                        doc__targets_related__source=OuterRef("pk"),
+                        doc__targets_related__relationship_id="became_rfc",
+                    )
+                    .order_by("-time", "-id")
+                    .values("time")[:1]
+                ),
             )
         )
         for this_draft in inactive_recent_drafts:
             # Omit drafts that became RFCs, unless they were published in the last DEFAULT_YEARS
             if this_draft.draft_state_slug == "rfc":
-                rfc = this_draft.became_rfc()
-                log.assertion("rfc is not None")
-                if rfc.latest_event(type='published_rfc').time < show_since:
+                published = this_draft.became_rfc_published
+                # None means either no became_rfc relation or no published_rfc event.
+                # Neither should happen; keep the draft rather than dropping it silently.
+                log.assertion("published is not None")
+                if published is not None and published < show_since:
                     continue
             for alias, addresses in self._yield_aliases_for_draft(this_draft):
                 yield alias, addresses

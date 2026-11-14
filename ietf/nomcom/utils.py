@@ -18,6 +18,7 @@ from email.iterators import typed_subpart_iterator
 from email.utils import parseaddr
 from textwrap import dedent
 
+from django.db import transaction
 from django.db.models import Q, Count, F, QuerySet
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -32,11 +33,11 @@ from ietf.group.models import Group, Role
 from ietf.person.models import Email, Person
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting
-from ietf.meeting.utils import participants_for_meeting
 from ietf.utils.pipe import pipe
 from ietf.utils.mail import send_mail_text, send_mail, get_payload_text
 from ietf.utils.log import log
 from ietf.person.name import unidecode_name
+from ietf.person.utils import assign_primary_uuid
 from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
 
 import debug                            # pyflakes:ignore
@@ -417,13 +418,17 @@ def make_nomineeposition(nomcom, candidate, position, author):
 
 def make_nomineeposition_for_newperson(nomcom, candidate_name, candidate_email, position, author):
 
-    # This is expected to fail if called with an existing email address
-    email = Email.objects.create(address=candidate_email, origin="nominee: %s" % nomcom.group.acronym)
-    person = Person.objects.create(name=candidate_name,
-                                   ascii=unidecode_name(candidate_name),
-                                   )
-    email.person = person
-    email.save()
+    # This is expected to fail if called with an existing email address.
+    # Atomic so a Person is never left without the primary UUID that external systems
+    # need to name them by, and so a failure part way leaves no half-built nominee.
+    with transaction.atomic():
+        email = Email.objects.create(address=candidate_email, origin="nominee: %s" % nomcom.group.acronym)
+        person = Person.objects.create(name=candidate_name,
+                                       ascii=unidecode_name(candidate_name),
+                                       )
+        assign_primary_uuid(person)
+        email.person = person
+        email.save()
 
     # send email to secretariat and nomcomchair to warn about the new person
     subject = 'New person is created'
@@ -743,8 +748,8 @@ def three_of_five_eligible_9389(previous_five, queryset=None):
 
     counts = defaultdict(lambda: 0)
     for meeting in previous_five:
-        checked_in, attended = participants_for_meeting(meeting)
-        for id in set(checked_in) | set(attended):
+        onsite_pks, remote_pks = meeting.nomcom_eligible_participants()
+        for id in onsite_pks | remote_pks:
             counts[id] += 1
     return queryset.filter(pk__in=[id for id, count in counts.items() if count >= 3])
 

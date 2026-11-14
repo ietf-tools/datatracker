@@ -6,6 +6,7 @@ import datetime
 import debug      # pyflakes:ignore
 
 from pyquery import PyQuery
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
@@ -678,7 +679,58 @@ class ReviewTests(TestCase):
             self.assertEqual(r.status_code, 302)
             settings = ReviewerSettings.objects.get(person=reviewer, team=review_req.team)
             self.assertEqual(settings.skip_next, int(skip_next_val))
-            
+
+    def test_change_reviewer_settings_next(self):
+        reviewer = ReviewerSettingsFactory(person__user__username="reviewer").person
+        review_req = ReviewRequestFactory()
+        assignment = ReviewAssignmentFactory(
+            review_request=review_req, reviewer=reviewer.email()
+        )
+        RoleFactory(
+            name_id="reviewer", group=review_req.team, person=assignment.reviewer.person
+        )
+        url = urlreverse(
+            ietf.group.views.change_reviewer_settings,
+            kwargs={
+                "group_type": review_req.team.type_id,
+                "acronym": review_req.team.acronym,
+                "reviewer_email": assignment.reviewer_id,
+            },
+        )
+        default_url = urlreverse(
+            ietf.group.views.reviewer_overview,
+            kwargs={
+                "group_type": review_req.team.type_id,
+                "acronym": review_req.team.acronym,
+            },
+        )
+        overview_url = urlreverse("ietf.ietfauth.views.review_overview")
+        self.client.login(username="reviewer", password="reviewer+password")
+        for next_url, expected_url in (
+            (f"{overview_url}?a=1#frag", f"{overview_url}?a=1#frag"),
+            ("https://evil.example/", default_url),
+            ("//evil.example/", default_url),
+            ("javascript:alert(1)", default_url),
+            (urlreverse("ietf.doc.views_search.search"), default_url),
+        ):
+            with self.subTest(next_url=next_url):
+                query_url = url + "?" + urlencode({"next": next_url})
+                r = self.client.get(query_url)
+                self.assertEqual(r.status_code, 200)
+                q = PyQuery(r.content)
+                self.assertEqual(
+                    q("form.change-reviewer-settings a").attr("href"), expected_url
+                )
+                r = self.client.post(
+                    query_url,
+                    {
+                        "action": "change_settings",
+                        "min_interval": "7",
+                        "filter_re": "test-[regexp]",
+                        "remind_days_before_deadline": "6",
+                    },
+                )
+                self.assertRedirects(r, expected_url, fetch_redirect_response=False)
 
     def test_change_review_secretary_settings(self):
         review_req = ReviewRequestFactory()

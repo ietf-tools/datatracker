@@ -6,7 +6,7 @@ The source instance will use the code from where it is run. The target instance 
 
 ## Requirements
 
-- Node `16.x` or later
+- Node `26.x` or later
 - Docker
 
 ## Usage

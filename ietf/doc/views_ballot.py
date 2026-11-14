@@ -41,7 +41,7 @@ from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName, DocTypeName
 from ietf.person.models import Person
 from ietf.utils.fields import ModelMultipleChoiceField, MultiEmailField
-from ietf.utils.http import validate_return_to_path
+from ietf.utils.http import is_safe_next_url
 from ietf.utils.mail import decode_header_value, send_mail_text, send_mail_preformatted
 from ietf.utils.decorators import require_api_key
 from ietf.utils.response import permission_denied
@@ -425,7 +425,10 @@ def build_position_email_from_dict(pos_dict):
                                  pos=pos_name,
                                  blocking_name=blocking_name,
                                  settings=settings))
-    frm = balloter.role_email("ad").formatted_email()
+    if doc.stream_id == "ietf":
+        frm = balloter.role_email("ad").formatted_email()
+    else:
+        frm = balloter.formatted_email()
 
     if doc.stream_id == "irtf":
         addrs = gather_address_lists('irsg_ballot_saved',doc=doc)
@@ -939,16 +942,6 @@ def approve_ballot(request, name):
         if ballot_writeup_event.pk == None:
             ballot_writeup_event.save()
 
-        if new_state.slug == "ann" and new_state.slug != prev_state.slug:
-            # start by notifying the RFC Editor
-            import ietf.sync.rfceditor
-            response, error = ietf.sync.rfceditor.post_approved_draft(settings.RFC_EDITOR_SYNC_NOTIFICATION_URL, doc.name)
-            if error:
-                return render(request, 'doc/draft/rfceditor_post_approved_draft_failed.html',
-                              dict(name=doc.name,
-                                   response=response,
-                                   error=error))
-
         doc.set_state(new_state)
         doc.tags.remove(*prev_tags)
         
@@ -1360,9 +1353,8 @@ def rsab_ballot_status(request):
     # Maybe the view isn't actually needed at all...
 
 
-def parse_ballot_edit_return_point(path, doc_name, ballot_id):
-    get_default_path = lambda: urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc_name, ballot_id=ballot_id))
-    allowed_path_handlers = {
+BALLOT_EDIT_RETURN_POINT_VIEWS = frozenset(
+    {
         "ietf.community.views.view_list",
         "ietf.doc.views_doc.document_ballot",
         "ietf.doc.views_doc.document_irsg_ballot",
@@ -1381,4 +1373,15 @@ def parse_ballot_edit_return_point(path, doc_name, ballot_id):
         "ietf.iesg.views.discusses",
         "ietf.iesg.views.past_documents",
     }
-    return validate_return_to_path(path, get_default_path, allowed_path_handlers)
+)
+
+
+def parse_ballot_edit_return_point(path, doc_name, ballot_id):
+    if path is None:
+        return urlreverse(
+            "ietf.doc.views_doc.document_ballot",
+            kwargs=dict(name=doc_name, ballot_id=ballot_id),
+        )
+    if not is_safe_next_url(path, BALLOT_EDIT_RETURN_POINT_VIEWS):
+        raise ValueError("Invalid ballot edit return point")
+    return path

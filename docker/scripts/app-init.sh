@@ -21,7 +21,6 @@ echo "Fixing volumes ownership..."
 sudo chown -R dev:dev "$WORKSPACEDIR/.parcel-cache"
 sudo chown -R dev:dev "$WORKSPACEDIR/__pycache__"
 sudo chown -R dev:dev "$WORKSPACEDIR/.vite"
-sudo chown -R dev:dev "$WORKSPACEDIR/.yarn/unplugged"
 sudo chown dev:dev "/assets"
 
 # Run nginx
@@ -30,15 +29,15 @@ sudo nginx
 
 # Build node packages that requrie native compilation
 echo "Compiling native node packages..."
-yarn rebuild
+npm install
 
 # Silence Browserlist warnings
 export BROWSERSLIST_IGNORE_OLD_DATA=1
 
 # Generate static assets
 echo "Building static assets... (this could take a minute or two)"
-yarn build
-yarn legacy:build
+npm run build
+npm run legacy:build
 
 # Copy config files if needed
 cp $WORKSPACEDIR/docker/configs/settings_postgresqldb.py $WORKSPACEDIR/ietf/settings_postgresqldb.py

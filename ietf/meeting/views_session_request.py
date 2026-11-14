@@ -200,6 +200,9 @@ def get_requester_text(person, group):
     in the session request notification email, ie. Joe Smith, a Chair of the ancp
     working group
     """
+    group_type = group.type.verbose_name
+    if group_type == "Working Group" and group.state_id == "bof":
+        group_type = group.state_id.upper()
     roles = group.role_set.filter(name__in=("chair", "secr", "ad"), person=person)
     if roles:
         rolename = str(roles[0].name)
@@ -207,13 +210,13 @@ def get_requester_text(person, group):
             person.name,
             inflect.engine().a(rolename),
             group.acronym.upper(),
-            group.type.verbose_name,
+            group_type,
         )
     if person.role_set.filter(name="secr", group__acronym="secretariat"):
         return "%s, on behalf of the %s %s" % (
             person.name,
             group.acronym.upper(),
-            group.type.verbose_name,
+            group_type,
         )
 
 

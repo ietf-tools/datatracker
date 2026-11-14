@@ -1,35 +1,32 @@
 # This docker-compose replicates the test workflow happening on GitHub during a PR / build check.
 # To be used from the debug.sh script.
-
-version: '3.8'
-
 services:
-    app:
-        image: ghcr.io/ietf-tools/datatracker-app-base:latest
-        command: -f /dev/null
-        working_dir: /__w/datatracker/datatracker
-        entrypoint: tail
-        hostname: app
-        volumes:
-            - /var/run/docker.sock:/var/run/docker.sock
-        environment:
-            CI: 'true'
-            GITHUB_ACTIONS: 'true'
-            HOME: /github/home
-        deploy:    
-            resources:
-                limits:
-                    cpus: '2'
-                    memory: '7GB'
+  app:
+    image: ghcr.io/ietf-tools/datatracker-app-base:latest
+    command: -f /dev/null
+    working_dir: /__w/datatracker/datatracker
+    entrypoint: tail
+    hostname: app
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      CI: 'true'
+      GITHUB_ACTIONS: 'true'
+      HOME: /github/home
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: '16GB'
 
-    db:
-        image: ghcr.io/ietf-tools/datatracker-db:latest
-        restart: unless-stopped
-        volumes:
-            - postgresdb-data:/var/lib/postgresql/data
+  db:
+    image: ghcr.io/ietf-tools/datatracker-db:latest
+    restart: unless-stopped
+    volumes:
+      - postgresdb-data:/var/lib/postgresql/data
 
-    blobstore:
-      image: ghcr.io/ietf-tools/datatracker-devblobstore:latest
+  blobstore:
+    image: ghcr.io/ietf-tools/datatracker-devblobstore:latest
 
 volumes:
-    postgresdb-data:
+  postgresdb-data:

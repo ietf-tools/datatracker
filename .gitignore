@@ -31,6 +31,7 @@ datatracker.sublime-workspace
 *.swp
 *.pyc
 __pycache__
+tmp/
 .yarn/*
 !.yarn/cache
 !.yarn/patches

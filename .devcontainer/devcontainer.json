@@ -18,21 +18,20 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "arcanis.vscode-zipfs",
+                "vue.volar",
                 "batisteo.vscode-django",
-                "dbaeumer.vscode-eslint",
                 "eamodio.gitlens",
                 "editorconfig.editorconfig",
-                "vue.volar@2.2.10",
                 "mrmlnc.vscode-duplicate",
                 "ms-azuretools.vscode-docker",
                 "ms-playwright.playwright",
                 "ms-python.python",
+                "ms-python.pylint",
                 "ms-python.vscode-pylance",
                 "mutantdino.resourcemonitor",
                 "oderwat.indent-rainbow",
+                "oxc.oxc-vscode",
                 "redhat.vscode-yaml",
-                "ms-python.pylint",
                 "charliermarsh.ruff"
             ],
             "settings": {

@@ -179,7 +179,7 @@
                                 {% endfor %}
                             {% endif %}
                         {% endwith %}
-                        {% if session.video_stream_url %}
+                        {% if session.session_recording_url %}
                             <a class="btn btn-outline-primary"
                                 role="button"
                                 href="{{ session.session_recording_url }}"
@@ -349,7 +349,7 @@
                                     {% endfor %}
                                 {% endif %}
                             {% endwith %}
-                            {% if session.video_stream_url %}
+                            {% if session.session_recording_url %}
                                 <li>
                                     <a class="dropdown-item"
                                         href="{{ session.session_recording_url }}">

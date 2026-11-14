@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
+import codecs
 import os
 import re
 from email.utils import parseaddr
@@ -107,6 +108,42 @@ def validate_mime_type(file, valid, missing_ok=False):
         raise ValidationError('Found content with unexpected mime type: %s.  Expected one of %s.' %
                                     (mime_type, ', '.join(valid) ))
     return mime_type, encoding
+
+
+def _hex_mark_invalid(err):
+    return "".join(f"[0x{b:02X}]" for b in err.object[err.start:err.end]), err.end
+
+
+codecs.register_error("ietf.hexmark", _hex_mark_invalid)
+
+
+def validate_utf8_text(raw):
+    """Check that raw bytes are UTF-8 text and return them without a byte order mark.
+
+    The whole content is decoded, as libmagic only samples the start of a file and
+    cannot tell single byte encodings apart. Raises ValidationError naming the line
+    of the first invalid byte, with the invalid bytes in that line shown in hex.
+    """
+    try:
+        raw.decode("utf-8")
+    except UnicodeDecodeError as err:
+        pos = err.start
+        lineno = raw.count(b"\n", 0, pos) + 1
+        start = raw.rfind(b"\n", 0, pos) + 1
+        end = raw.find(b"\n", pos)
+        line = raw[start:] if end == -1 else raw[start:end]
+        col = len(raw[start:pos].decode("utf-8"))  # the line is valid up to the first invalid byte
+        marked = line.decode("utf-8", errors="ietf.hexmark").rstrip("\r")
+        excerpt = marked[max(0, col - 30):col + 50]
+        if col > 30:
+            excerpt = "..." + excerpt
+        if col + 50 < len(marked):
+            excerpt += "..."
+        raise ValidationError(
+            f"The file is not valid UTF-8 text. The first invalid byte is on line {lineno}: {excerpt}"
+        )
+    return raw.removeprefix(codecs.BOM_UTF8)
+
 
 @deconstructible
 class WrappedValidator:

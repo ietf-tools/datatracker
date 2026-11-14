@@ -9,14 +9,91 @@ import sys
 from django.contrib import admin
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 from django.db.models import Q
 from django.http import Http404
+from kombu.exceptions import OperationalError as KombuOperationalError
 
 import debug                            # pyflakes:ignore
 
-from ietf.person.models import Person, Alias, Email
+from ietf.person.models import Person, Alias, Email, PersonUUID
 from ietf.utils import log
 from ietf.utils.mail import send_mail
+
+
+def get_person_uuid_object(uuid_value):
+    """Look up a UUID currently issued for a Person
+
+    Returns the PersonUUID object, whose `person` is the Person it identifies and whose
+    `primary` says whether it is that Person's current identifier, or None if no such
+    UUID exists.
+    """
+    return PersonUUID.objects.select_related("person").filter(uuid=uuid_value).first()
+
+
+def queue_person_uuid_push(person):
+    """Enqueue an Authentik attribute push for this Person's UUID set
+
+    Called explicitly by every site that changes the set for a Person that may already
+    have an Authentik account. Deferred to commit so a rolled-back transaction never
+    pushes state that does not exist.
+
+    Queueing is best-effort: an unreachable broker is logged and ignored rather than
+    failing the datatracker operation that changed the UUID set. Celery's default retry
+    policy applies - three attempts over well under a second, enough to ride out a blip
+    or a broker failover without meaningfully delaying the caller. An outright outage
+    still cannot fail the operation, and the reconcile job is the backstop for a push
+    that never got queued.
+    """
+    from ietf.person.tasks import push_person_uuids_task  # avoid a circular import
+
+    person_pk = person.pk
+
+    def enqueue():
+        try:
+            push_person_uuids_task.apply_async(kwargs={"person_pk": person_pk})
+        except (KombuOperationalError, OSError) as err:
+            log.log(f"Could not queue UUID push for Person {person_pk}: {err}")
+
+    transaction.on_commit(enqueue)
+
+
+def assign_primary_uuid(person):
+    """Give a newly created Person its primary UUID
+
+    Idempotent: returns the existing primary if the Person already has one, so a caller
+    that is unsure whether an earlier step already ran can call it safely.
+
+    Deliberately does not queue an Authentik push. A Person that has just been created
+    has no Authentik account, so there would be nothing to push to; its UUID reaches
+    Authentik when the account is linked.
+    """
+    existing = person.uuids.filter(primary=True).first()
+    if existing is not None:
+        return existing
+    return PersonUUID.objects.create(person=person, primary=True)
+
+
+def ensure_primary_uuid(person):
+    """Make sure a Person has exactly one primary UUID
+
+    Promotes the earliest existing UUID if there are any but none is primary, otherwise
+    creates one. Returns the primary PersonUUID.
+    """
+    existing = person.uuids.filter(primary=True).first()
+    if existing is not None:
+        return existing
+    oldest = person.uuids.order_by("time", "uuid").first()
+    if oldest is None:
+        row = assign_primary_uuid(person)
+    else:
+        oldest.primary = True
+        oldest.save(update_fields=["primary"])
+        row = oldest
+    # Unlike a brand-new Person, this one already existed and may be linked.
+    queue_person_uuid_push(person)
+    return row
+
 
 def merge_persons(request, source, target, file=sys.stdout, verbose=False):
     changes = []
@@ -49,6 +126,15 @@ def merge_persons(request, source, target, file=sys.stdout, verbose=False):
     if reviewer_changes:
         changes.extend(reviewer_changes)
     merge_nominees(source, target)
+
+    # Move the source's UUIDs to the target, demoting the source's primary. The target's
+    # primary survives; the source's identifiers keep resolving, to the target. This runs
+    # before move_related_objects(), which would otherwise carry the UUIDs across still
+    # flagged primary and trip the one-primary-per-person constraint.
+    ensure_primary_uuid(target)
+    source.uuids.update(person=target, primary=False)
+    queue_person_uuid_push(target)
+
     move_related_objects(source, target, file=file, verbose=verbose)
     dedupe_aliases(target)
 
@@ -131,6 +217,10 @@ def move_related_objects(source, target, file, verbose=False):
         and f.auto_created and not f.concrete ]
     for related_object in related_objects:
         accessor = related_object.get_accessor_name()
+        if accessor == "uuids":
+            # PersonUUIDs move by their own rule - the source's primary has to be
+            # demoted on the way, or the target ends up with two. See merge_persons().
+            continue
         field_name = related_object.field.name
         queryset = getattr(source, accessor).all()
         if verbose:
@@ -247,11 +337,14 @@ def get_dots(person):
         return dots
 
 def lookup_persons(email_or_name):
-    aliases = Alias.objects.filter(name__iexact=email_or_name)
+    aliases = Alias.objects.filter(name__iexact=email_or_name).select_related("person")
     persons = set(a.person for a in aliases)
 
     if '@' in email_or_name:
-        emails = Email.objects.filter(address__iexact=email_or_name)
+        # Email.address is a citext column, so an exact match is already
+        # case-insensitive and can use the index on it. Asking for iexact wraps the
+        # column in UPPER() and costs a scan of the table.
+        emails = Email.objects.filter(address=email_or_name).select_related("person")
         persons.update(e.person for e in emails)
 
     persons = [p for p in persons if p and p.id]

@@ -14,6 +14,7 @@ from django import forms
 from django.conf import settings
 from django.core import validators
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.forms import BaseInlineFormSet
 from django.template.defaultfilters import pluralize
 from django.utils.functional import cached_property
@@ -29,7 +30,7 @@ from ietf.meeting.models import (Session, Meeting, Schedule, COUNTRIES, TIMEZONE
 from ietf.meeting.helpers import get_next_interim_number, make_materials_directories
 from ietf.meeting.helpers import is_interim_meeting_approved, get_next_agenda_name
 from ietf.message.models import Message
-from ietf.name.models import TimeSlotTypeName, SessionPurposeName, TimerangeName, ConstraintName
+from ietf.name.models import TimeSlotTypeName, SessionPurposeName, TimerangeName, ConstraintName, DocTypeName
 from ietf.person.fields import SearchablePersonsField
 from ietf.person.models import Person
 from ietf.utils import log
@@ -42,7 +43,7 @@ from ietf.utils.fields import (
 )
 from ietf.utils.html import clean_text_field
 from ietf.utils.validators import ( validate_file_size, validate_mime_type,
-    validate_file_extension, validate_no_html_frame)
+    validate_file_extension, validate_no_html_frame, validate_utf8_text)
 
 NUM_SESSION_CHOICES = (('', '--Please select'), ('1', '1'), ('2', '2'))
 SESSION_TIME_RELATION_CHOICES = (('', 'No preference'),) + Constraint.TIME_RELATION_CHOICES
@@ -430,17 +431,21 @@ class FileUploadForm(forms.Form):
     file = forms.FileField(label='File to upload')
 
     doc_type = ''  # subclasses must set this
+    require_utf8 = False  # subclasses set this to reject text files that are not UTF-8
 
     def __init__(self, *args, **kwargs):
         assert self.doc_type in settings.MEETING_VALID_UPLOAD_EXTENSIONS
         self.extensions = settings.MEETING_VALID_UPLOAD_EXTENSIONS[self.doc_type]
         self.mime_types = settings.MEETING_VALID_UPLOAD_MIME_TYPES[self.doc_type]
         super(FileUploadForm, self).__init__(*args, **kwargs)
+        self.file_encoding = {}
         label = '%s file to upload.  ' % (self.doc_type.capitalize(), )
         if self.doc_type == "slides":
             label += 'Did you remember to put in slide numbers? '
         if self.mime_types:
             label += 'Note that you can only upload files with these formats: %s.' % (', '.join(self.mime_types, ))
+        if self.require_utf8:
+            label += ' Files other than PDF must be UTF-8 encoded.' if '.pdf' in self.extensions else ' Files must be UTF-8 encoded.'
         self.fields['file'].label=label
 
     def clean_file(self):
@@ -457,8 +462,6 @@ class FileUploadForm(forms.Form):
                 self.cleaned_data['file'] = file
 
         mime_type, encoding = validate_mime_type(file, self.mime_types)
-        if not hasattr(self, 'file_encoding'):
-            self.file_encoding = {}
         self.file_encoding[file.name] = encoding or None
         if self.mime_types:
             if not file.content_type in settings.MEETING_VALID_UPLOAD_MIME_FOR_OBSERVED_MIME[mime_type]:
@@ -469,6 +472,17 @@ class FileUploadForm(forms.Form):
             if file.content_type in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS:
                 if not ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS[file.content_type]:
                     raise ValidationError('Upload Content-Type (%s) does not match the extension (%s)' % (file.content_type, ext))
+        text_extensions = set()
+        for content_type, extensions in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS.items():
+            if content_type.startswith('text/'):
+                text_extensions.update(extensions)
+        if self.require_utf8 and ext in text_extensions:
+            file.seek(0)
+            raw = file.read()
+            text = validate_utf8_text(raw)
+            if text != raw:
+                file = SimpleUploadedFile(file.name, text, content_type=file.content_type)
+            self.file_encoding[file.name] = 'utf-8'
         if (file.content_type in ['text/html', ]
                 or ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS.get('text/html', [])):
             # We'll do html sanitization later, but for frames, we fail here,
@@ -477,65 +491,195 @@ class FileUploadForm(forms.Form):
         return file
 
 
-class UploadBlueSheetForm(FileUploadForm):
-    doc_type = 'bluesheets'
+class UploadOrEnterFormMixin:
+    """Adds a choice between uploading a file and entering its text directly.
 
-
-class ApplyToAllFileUploadForm(FileUploadForm):
-    """FileUploadField that adds an apply_to_all checkbox
-
-    Checkbox can be disabled by passing show_apply_to_all_checkbox=False to the constructor.
-    This entirely removes the field from the form.
+    For forms derived from FileUploadForm. Entered text is wrapped as a UTF-8 file named
+    entered_file_name with entered_content_type, so callers can handle both methods alike
+    through get_file() and file_encoding.
     """
-    # Note: subclasses must set doc_type for FileUploadForm
-    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=True,required=False)
+    entered_file_name = ''  # subclasses must set this
+    entered_content_type = ''  # subclasses must set this
 
-    def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not show_apply_to_all_checkbox:
-            self.fields.pop('apply_to_all')
+        kind = DocTypeName.objects.get(slug=self.doc_type).name
+        self.fields["submission_method"] = forms.ChoiceField(
+            choices=[("upload", f"Upload {kind.lower()}"), ("enter", f"Enter {kind.lower()}")],
+            widget=forms.RadioSelect,
+        )
+        self.fields["content"] = forms.CharField(
+            widget=forms.Textarea, required=False, strip=False, label=f"{kind} text"
+        )
+        self.fields["file"].required = False
+        self.order_fields(["scope", "submission_method", "file", "content"])
+
+    def clean_content(self):
+        return self.cleaned_data["content"].replace("\r", "")
+
+    def clean_file(self):
+        submission_method = self.cleaned_data.get("submission_method")
+        if submission_method == "upload":
+            if self.cleaned_data.get("file", None) is not None:
+                return super().clean_file()
+        return None
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        def require_field(f):
+            if not self.cleaned_data.get(f) and f not in self.errors:
+                self.add_error(f, ValidationError("You must fill in this field."))
+
+        submission_method = self.cleaned_data.get("submission_method")
+        if submission_method == "upload":
+            require_field("file")
+        elif submission_method == "enter":
+            require_field("content")
+            self.file_encoding[self.entered_file_name] = "utf-8"
+        return cleaned_data
+
+    def get_file(self):
+        """Get the submission as a file-like object.
+
+        Returns the uploaded file, or the entered text wrapped as a file.
+        """
+        if self.cleaned_data.get("submission_method") == "upload":
+            return self.cleaned_data["file"]
         else:
-            self.order_fields(
-                sorted(
-                    self.fields.keys(),
-                    key=lambda f: 'zzzzzz' if f == 'apply_to_all' else f
-                )
+            return SimpleUploadedFile(
+                name=self.entered_file_name,
+                content=self.cleaned_data["content"].encode("utf-8"),
+                content_type=self.entered_content_type,
             )
 
-class UploadMinutesForm(ApplyToAllFileUploadForm):
+
+class UploadBlueSheetForm(FileUploadForm):
+    doc_type = 'bluesheets'
+    require_utf8 = True
+
+
+class UploadOrEnterBlueSheetForm(UploadOrEnterFormMixin, UploadBlueSheetForm):
+    entered_file_name = "entered.txt"
+    entered_content_type = "text/plain;charset=utf-8"
+
+
+class ApplyToSessionsFormMixin:
+    """Adds a checkbox for each other session a material change can also apply to
+
+    For forms with a doc_type. choices and select_all come from apply_to_choices(); with no choices
+    there is no field. shared_with names the other sessions linked to the document being revised.
+    When given, the form also asks whether to revise that shared document or replace it for this
+    session alone.
+    """
+    SCOPE_REVISE = "revise"
+    SCOPE_REPLACE = "replace"
+
+    def __init__(self, choices, select_all, *args, shared_with=(), **kwargs):
+        super().__init__(*args, **kwargs)
+        self.session_choices = list(choices)
+        kind = DocTypeName.objects.get(slug=self.doc_type).name.lower()
+        if self.session_choices:
+            self.fields["apply_to_sessions"] = forms.TypedMultipleChoiceField(
+                coerce=int,
+                required=False,
+                widget=forms.CheckboxSelectMultiple,
+                label="Also apply to",
+                choices=[(c.session.pk, self._choice_label(c, kind)) for c in self.session_choices],
+                initial=[c.session.pk for c in self.session_choices] if select_all else [],
+            )
+        if shared_with:
+            self.fields["scope"] = forms.ChoiceField(
+                label="",
+                required=False,  # absent means revise, which is what an upload always meant before
+                widget=forms.RadioSelect,
+                initial=self.SCOPE_REVISE,
+                choices=[
+                    (self.SCOPE_REVISE, f"Revise the shared {kind}, which also updates {', '.join(shared_with)}"),
+                    (self.SCOPE_REPLACE, f"Upload a new {kind} for this session, unlinking the shared one here"),
+                ],
+            )
+        self.order_fields(
+            sorted(
+                self.fields.keys(),
+                key=lambda f: {"scope": "", "apply_to_sessions": "zzzzzz"}.get(f, f),
+            )
+        )
+
+    @staticmethod
+    def _choice_label(choice, kind):
+        if choice.current_doc is None:
+            return choice.label
+        return f"{choice.label} (its {kind}, {choice.current_doc.title}, would be unlinked)"
+
+    def sessions_to_apply(self):
+        chosen = self.cleaned_data.get("apply_to_sessions", [])
+        return [c.session for c in self.session_choices if c.session.pk in chosen]
+
+    def replace_shared(self):
+        return self.cleaned_data.get("scope") == self.SCOPE_REPLACE
+
+
+class ApplyToSessionsFileUploadForm(ApplyToSessionsFormMixin, FileUploadForm):
+    pass
+
+
+class UploadMinutesForm(ApplyToSessionsFileUploadForm):
     doc_type = 'minutes'
+    require_utf8 = True
 
-class UploadNarrativeMinutesForm(ApplyToAllFileUploadForm):
+
+class UploadNarrativeMinutesForm(ApplyToSessionsFileUploadForm):
     doc_type = 'narrativeminutes'
+    require_utf8 = True
 
 
-class UploadAgendaForm(ApplyToAllFileUploadForm):
+class UploadAgendaForm(ApplyToSessionsFileUploadForm):
     doc_type = 'agenda'
+    require_utf8 = True
 
 
-class UploadSlidesForm(ApplyToAllFileUploadForm):
+class UploadOrEnterAgendaForm(UploadOrEnterFormMixin, UploadAgendaForm):
+    entered_file_name = "uploaded.md"
+    entered_content_type = "text/markdown;charset=utf-8"
+
+
+class UploadSlidesForm(ApplyToSessionsFileUploadForm):
     doc_type = 'slides'
     title = forms.CharField(max_length=255)
     approved = forms.BooleanField(label='Auto-approve', initial=True, required=False)
+    # Proposals record a single yes/no; the approver decides where the deck goes
+    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting', initial=True, required=False)
 
-    def __init__(self, session, show_apply_to_all_checkbox, can_manage, *args, **kwargs):
-        super().__init__(show_apply_to_all_checkbox, *args, **kwargs)
-        if not can_manage:
-            self.fields.pop('approved')
+    def __init__(self, session, can_manage, choices, select_all, *args, **kwargs):
+        super().__init__(choices if can_manage else [], select_all, *args, **kwargs)
         self.session = session
+        if can_manage:
+            self.fields.pop('apply_to_all')
+        else:
+            self.fields.pop('approved')
+            if choices:
+                self.order_fields([f for f in self.fields if f != 'apply_to_all'] + ['apply_to_all'])
+            else:
+                self.fields.pop('apply_to_all')
 
     def clean_title(self):
-        title = self.cleaned_data['title']
-        # The current tables only handles Unicode BMP:
-        if ord(max(title)) > 0xffff:
-            raise forms.ValidationError("The title contains characters outside the Unicode BMP, which is not currently supported")
-        if self.session.meeting.type_id=='interim':
-            if re.search(r'-\d{2}$', title):
-                raise forms.ValidationError("Interim slides currently may not have a title that ends with something that looks like a revision number (-nn)")
-        return title
+        return validate_slides_title(self.cleaned_data['title'], self.session.meeting)
 
 
-class ImportMinutesForm(forms.Form):
+def validate_slides_title(title, meeting):
+    """The title a slide deck is named from, or a ValidationError; shared by uploading and approving"""
+    # The current tables only handles Unicode BMP:
+    if ord(max(title)) > 0xffff:
+        raise forms.ValidationError("The title contains characters outside the Unicode BMP, which is not currently supported")
+    if meeting.type_id == 'interim':
+        if re.search(r'-\d{2}$', title):
+            raise forms.ValidationError("Interim slides currently may not have a title that ends with something that looks like a revision number (-nn)")
+    return title
+
+
+class ImportMinutesForm(ApplyToSessionsFormMixin, forms.Form):
+    doc_type = 'minutes'
     markdown_text = forms.CharField(strip=False, widget=forms.HiddenInput)
 
 

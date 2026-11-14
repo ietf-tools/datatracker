@@ -12,9 +12,12 @@ from django.db.models import (
 )
 from django.db.models.functions import TruncDate
 from django_filters import rest_framework as filters
+from drf_spectacular.utils import extend_schema
 from rest_framework import filters as drf_filters
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from ietf.group.models import Group
@@ -33,6 +36,7 @@ from .serializers import (
     RfcSerializer,
     SubseriesDocSerializer,
 )
+from .tasks import update_rfc_searchindex_popularities_task
 
 
 class RfcLimitOffsetPagination(LimitOffsetPagination):
@@ -211,3 +215,21 @@ class SubseriesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     )
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = SubseriesFilter
+
+
+class RfcPopularityView(APIView):
+    api_key_endpoint = "ietf.api.reef_api"
+
+    @extend_schema(
+        operation_id="refresh_rfc_popularity",
+        summary="Refresh RFC popularity data",
+        description=(
+            "Notifies Datatracker that RFC popularity has changed and dependent data "
+            "should be updated appropriately"
+        ),
+        responses={202: None},
+        request=None,
+    )
+    def post(self, request):
+        update_rfc_searchindex_popularities_task.delay()
+        return Response(status=202)

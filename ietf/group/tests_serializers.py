@@ -1,10 +1,11 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
-from ietf.group.factories import RoleFactory, GroupFactory
+from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.serializers import (
     AreaDirectorSerializer,
     AreaSerializer,
     GroupSerializer,
 )
+from ietf.name.models import GroupStateName
 from ietf.person.factories import EmailFactory
 from ietf.utils.test_utils import TestCase
 
@@ -12,15 +13,39 @@ from ietf.utils.test_utils import TestCase
 class GroupSerializerTests(TestCase):
     def test_serializes(self):
         wg = GroupFactory()
-        serialized = GroupSerializer(wg).data
+        partial_expected_json = {
+            "acronym": wg.acronym,
+            "name": wg.name,
+            "type": "wg",
+            "list_email": wg.list_email,
+        }
+
         self.assertEqual(
-            serialized,
-            {
-                "acronym": wg.acronym,
-                "name": wg.name,
-                "type": "wg",
-                "list_email": wg.list_email,
-            },
+            GroupSerializer(wg).data,
+            partial_expected_json | {"state": "active"},
+        )
+        for slug in ["bof-conc", "conclude"]:
+            wg.state_id = slug
+            wg.save()
+            self.assertEqual(
+                GroupSerializer(wg).data,
+                partial_expected_json | {"state": "concluded"},
+            )
+        for state in GroupStateName.objects.filter(used=True).exclude(
+            slug__in=["active", "bof-conc", "conclude"]
+        ):
+            wg.state_id = state.slug
+            wg.save()
+            self.assertEqual(
+                GroupSerializer(wg).data,
+                partial_expected_json | {"state": "other"},
+            )
+        # Group.state is nullable, so test that, too
+        wg.state = None
+        wg.save()
+        self.assertEqual(
+            GroupSerializer(wg).data,
+            partial_expected_json | {"state": "other"},
         )
 
 

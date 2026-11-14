@@ -14,7 +14,12 @@ from ietf.meeting.forms import FileUploadForm
 from ietf.meeting.models import Meeting, MeetingHost
 from ietf.meeting.helpers import get_meeting
 from ietf.name.models import ProceedingsMaterialTypeName
-from ietf.meeting.utils import handle_upload_file, resolve_uploaded_material
+from ietf.meeting.utils import (
+    SaveMaterialsError,
+    handle_upload_file,
+    clear_past_meetings_cache,
+    resolve_uploaded_material,
+)
 from ietf.utils.text import xslugify
 
 class UploadProceedingsMaterialForm(FileUploadForm):
@@ -70,9 +75,8 @@ class EditProceedingsMaterialForm(forms.Form):
     )
 
 
-def save_proceedings_material_doc(meeting, material_type, title, request, file=None, external_url=None, state=None):
+def save_proceedings_material_doc(meeting, material_type, title, by, file=None, external_url=None, state=None):
     events = []
-    by = request.user.person
 
     if not (file is None or external_url is None):
         raise ValueError('One of file or external_url must be None')
@@ -102,9 +106,10 @@ def save_proceedings_material_doc(meeting, material_type, title, request, file=N
         if not created:
             doc.rev = '{:02}'.format(int(doc.rev) + 1)
         filename = f'{doc.name}-{doc.rev}{Path(file.name).suffix}'
-        save_error = handle_upload_file(file, filename, meeting, 'procmaterials', )
-        if save_error is not None:
-            raise RuntimeError(save_error)
+        try:
+            handle_upload_file(file, filename, meeting, 'procmaterials', )
+        except SaveMaterialsError as err:
+            raise RuntimeError(str(err))
 
         doc.uploaded_filename = filename
         doc.external_url = ''
@@ -169,13 +174,14 @@ def upload_material(request, num, material_type):
             doc = save_proceedings_material_doc(
                 meeting,
                 material_type,
-                request=request,
+                by=request.user.person,
                 file=form.cleaned_data.get('file', None),
                 external_url=form.cleaned_data.get('external_url', None),
                 title=str(material if material is not None else material_type),
             )
             if material is None:
                 meeting.proceedings_materials.create(type=material_type, document=doc)
+            clear_past_meetings_cache()
             return redirect('ietf.meeting.views_proceedings.material_details', num=num)
     else:
         initial = dict()
@@ -222,7 +228,7 @@ def edit_material(request, num, material_type):
             save_proceedings_material_doc(
                 meeting,
                 material_type,
-                request=request,
+                by=request.user.person,
                 title=form.cleaned_data['title'],
             )
             return redirect("ietf.meeting.views_proceedings.material_details", num=meeting.number)
@@ -258,6 +264,7 @@ def remove_restore_material(request, num, material_type, action):
         if new_state != prev_state:
             material.document.set_state(new_state)
             add_state_change_event(material.document, request.user.person, prev_state, new_state)
+            clear_past_meetings_cache()
         return redirect('ietf.meeting.views_proceedings.material_details', num=num)
 
     return render(

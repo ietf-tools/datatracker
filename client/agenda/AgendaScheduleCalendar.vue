@@ -4,7 +4,7 @@ n-drawer(v-model:show='isShown', placement='bottom', :height='state.drawerHeight
     template(#header)
       span Calendar View
       .agenda-calendar-actions
-        template(v-if='siteStore.viewport > 990')
+        template(v-if='agendaStore.containerWidth > 990')
           i.bi.bi-globe.me-2
           small.me-2: strong Timezone:
           n-button-group

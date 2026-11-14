@@ -338,31 +338,34 @@ class PlaintextDraft(Draft):
         for line in self.rawlines:
             linecount += 1
             line = line.rstrip()
-            if re.search(r"\[?page [0-9ivx]+\]?[ \t\f]*$", line, re.I):
+            # Page headers and footers are short; testing the header patterns
+            # against arbitrarily long lines only costs time.
+            maybe_header = len(line) <= 200
+            if maybe_header and re.search(r"\[?page [0-9ivx]+\]?[ \t\f]*$", line, re.I):
                 pages, page, newpage = endpage(pages, page, newpage, line)
                 continue
             if re.search(r"\f", line, re.I):
                 pages, page, newpage = begpage(pages, page, newpage)
                 continue
-            if re.search(r"^ *Internet.Draft.+  .+[12][0-9][0-9][0-9] *$", line, re.I):
+            if maybe_header and re.search(r"^ *Internet.Draft.+  .+[12][0-9][0-9][0-9] *$", line, re.I):
                 pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
     #        if re.search("^ *Internet.Draft  +", line, re.I):
     #            newpage = True
     #            continue
-            if re.search(r"^ *Draft.+[12][0-9][0-9][0-9] *$", line, re.I):
+            if maybe_header and re.search(r"^ *Draft.+[12][0-9][0-9][0-9] *$", line, re.I):
                 pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
-            if re.search(r"^RFC[ -]?[0-9]+.*(  +)[12][0-9][0-9][0-9]$", line, re.I):
+            if maybe_header and re.search(r"^RFC[ -]?[0-9]+.*(  +)[12][0-9][0-9][0-9]$", line, re.I):
                 pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
-            if re.search(r"^draft-[-a-z0-9_.]+.*[0-9][0-9][0-9][0-9]$", line, re.I):
+            if maybe_header and re.search(r"^draft-[-a-z0-9_.]+.*[0-9][0-9][0-9][0-9]$", line, re.I):
                 pages, page, newpage = endpage(pages, page, newpage, line)
                 continue
-            if linecount > 15 and re.search(r".{58,}(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec) (19[89][0-9]|20[0-9][0-9]) *$", line, re.I):
+            if maybe_header and linecount > 15 and re.search(r".{58,}(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec) (19[89][0-9]|20[0-9][0-9]) *$", line, re.I):
                 pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
-            if newpage and re.search(r"^ *draft-[-a-z0-9_.]+ *$", line, re.I):
+            if maybe_header and newpage and re.search(r"^ *draft-[-a-z0-9_.]+ *$", line, re.I):
                 pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
             if re.search(r"^[^ \t]+", line):
@@ -568,12 +571,18 @@ class PlaintextDraft(Draft):
 
 
     def _clean_abstract(self, text):
+        # No real abstract has exceeded 25,000 characters; leave a larger one as found rather
+        # than run the clean-up patterns over it.
+        if len(text) > 30000:
+            return text
         text = re.sub("(?s)(Conventions [Uu]sed in this [Dd]ocument|Requirements [Ll]anguage)?[\n ]*The key words \"MUST\", \"MUST NOT\",.*$", "", text)
         # Get rid of status/copyright boilerplate
         text = re.sub("(?s)\nStatus of [tT]his Memo\n.*$", "", text)
-        # wrap long lines without messing up formatting of Ok paragraphs:
-        while re.match("([^\n]{72,}?) +", text):
-            text = re.sub("([^\n]{72,}?) +([^\n ]*)(\n|$)", "\\1\n\\2 ", text)
+        # wrap long lines without messing up formatting of Ok paragraphs (abstract lines are a
+        # few hundred characters at most, so don't try to wrap an abstract with longer ones):
+        if all(len(line) <= 1000 for line in text.split("\n")):
+            while re.match("([^\n]{72,}?) +", text):
+                text = re.sub("([^\n]{72,}?) +([^\n ]*)(\n|$)", "\\1\n\\2 ", text)
         return text
 
 
@@ -1024,8 +1033,11 @@ class PlaintextDraft(Draft):
                             column = l.replace('\t', 8 * ' ')[max(0, beg - 1):end].strip()
                         except:
                             column = l
-                        column = re.sub(r" *(?:\(at\)| <at> | at ) *", "@", column)
-                        column = re.sub(r" *(?:\(dot\)| <dot> | dot ) *", ".", column)
+                        # Author entries are short; leave a long one as found rather than run
+                        # the address rewrites over it.
+                        if len(column) <= 200:
+                            column = re.sub(r" *(?:\(at\)| <at> | at ) *", "@", column)
+                            column = re.sub(r" *(?:\(dot\)| <dot> | dot ) *", ".", column)
                         column = re.sub(r"&cisco.com", "@cisco.com", column)
                         column = column.replace("\xa0", " ")
                         return column
@@ -1112,13 +1124,18 @@ class PlaintextDraft(Draft):
     def get_title(self):
         if self._title:
             return self._title
-        match = re.search(r'(?:\n\s*\n\s*)((.+\n){0,2}(.+\n*))(\s+<?draft-\S+\s*\n)\s*\n', self.pages[0])
+        # The title is near the top of the first page, so search only its first lines, and not
+        # at all if those are far too long for a real first page.
+        head = "\n".join(self.pages[0].split("\n")[:100])
+        if len(head) > 20000:
+            head = ""
+        match = re.search(r'(?:\n\s*\n\s*)((.+\n){0,2}(.+\n*))(\s+<?draft-\S+\s*\n)\s*\n', head)
         if not match:
-            match = re.search(r'(?:\n\s*\n\s*)<?draft-\S+\s*\n*((.+\n){1,3})\s*\n', self.pages[0])
+            match = re.search(r'(?:\n\s*\n\s*)<?draft-\S+\s*\n*((.+\n){1,3})\s*\n', head)
         if not match:
-            match = re.search(r'(?:\n\s*\n\s*)((.+\n){0,2}(.+\n*))(\s*\n){2}', self.pages[0])
+            match = re.search(r'(?:\n\s*\n\s*)((.+\n){0,2}(.+\n*))(\s*\n){2}', head)
         if not match:
-            match = re.search(r'(?i)(.+\n|.+\n.+\n)(\s*status of this memo\s*\n)', self.pages[0])
+            match = re.search(r'(?i)(.+\n|.+\n.+\n)(\s*status of this memo\s*\n)', head)
         if match:
             title = match.group(1)
             title = title.strip()
@@ -1163,9 +1180,12 @@ class PlaintextDraft(Draft):
 
         for i in range( 15, len( self.lines ) ):
             line = self.lines[ i ].strip()
+            # Section headings are short; testing the heading patterns against arbitrarily long
+            # lines only costs time.
+            maybe_heading = len( line ) <= 200
 
             # skip over lines until we find the start of the reference section
-            if not in_ref_sect:
+            if not in_ref_sect and maybe_heading:
                 m = sectionre.match( line )
                 if not m:
                     m = sectionre2.match( line )
@@ -1181,7 +1201,7 @@ class PlaintextDraft(Draft):
                             refType = self.REF_TYPE_NORMATIVE
 
             # might be subsections within a references section
-            if in_ref_sect and not in_norm_ref_sect:
+            if in_ref_sect and not in_norm_ref_sect and maybe_heading:
                 m = sectionre.match( line )
                 if not m:
                     m = sectionre2.match( line )
@@ -1195,7 +1215,7 @@ class PlaintextDraft(Draft):
                         refType = self.REF_TYPE_NORMATIVE
 
             # look for the end of the normative reference section
-            if in_norm_ref_sect:
+            if in_norm_ref_sect and maybe_heading:
                 m = sectionre.match( line )
                 if not m:
                     m = sectionre2.match( line )
@@ -1206,11 +1226,15 @@ class PlaintextDraft(Draft):
                     in_norm_ref_sect = False
                     refType = self.REF_TYPE_INFORMATIVE
 
-            # find references within the section
-            if in_ref_sect:
+            # find references within the section. Reference lines can carry long URLs, but none
+            # comes near 1,000 characters, so don't search longer ones -- checking again after
+            # each rejoin, since that lengthens the line.
+            if in_ref_sect and len( line ) <= 1000:
                 # If something got split badly, rejoin it.
                 if eol.search( line ) and i < len( self.lines ) - 1:
                     line += self.lines[ i + 1 ].lstrip()
+                    if len( line ) > 1000:
+                        continue
 
                 m = idref.search( line )
                 if m:
@@ -1223,7 +1247,7 @@ class PlaintextDraft(Draft):
                     ( series, number ) = m.groups()
                     if series.lower()=='std' and std_start.search(line) and i > 15:
                         line = self.lines[i-1].rstrip()+line
-                    if series.lower()!='std' or not not_our_std_ref.search( line ):
+                    if series.lower()!='std' or ( len( line ) <= 1000 and not not_our_std_ref.search( line ) ):
                         name = series.lower() + number.lstrip( '0' )
                         if name not in refs:
                             refs[ name ] = refType

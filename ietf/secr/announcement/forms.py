@@ -9,6 +9,7 @@ from ietf.utils.html import unescape
 from ietf.ietfauth.utils import has_role
 from ietf.message.models import Message, AnnouncementFrom
 from ietf.utils.fields import MultiEmailField
+from ietf.utils.mail import is_valid_email
 
 # ---------------------------------------------
 # Globals
@@ -145,13 +146,31 @@ class AnnounceForm(forms.ModelForm):
             for key in list(self.fields.keys()):
                 self.fields[key].widget = forms.HiddenInput()
 
+    def clean_cc(self):
+        cc_data = self.cleaned_data["cc"]
+        cc = [addr.strip() for addr in cc_data.split(",") if addr.strip()]
+        errors = [
+            forms.ValidationError(
+                "Invalid address: %(addr)s", "invalid_cc", {"addr": addr}
+            )
+            for addr in cc
+            if not is_valid_email(addr)
+        ]
+        if errors:
+            raise forms.ValidationError(errors)
+        return cc_data
+
     def clean(self):
         super(AnnounceForm, self).clean()
         data = self.cleaned_data
         if self.errors:
             return self.cleaned_data
-        if data["to"] == "Other..." and not data["to_custom"]:
-            raise forms.ValidationError('You must enter a "To" email address')
+
+        if data.get("to") == "Other..." and data.get("to_custom", []) == []:
+            self.add_error(
+                None, forms.ValidationError('Must specify a "To" address', "empty_to")
+            )
+
         for k in [
             "to",
             "frm",

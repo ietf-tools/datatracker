@@ -1,54 +1,53 @@
 # Copyright The IETF Trust 2023-2026, All Rights Reserved
 import os
 import shutil
+from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.conf import settings
-from django.db import IntegrityError
-from drf_spectacular.utils import OpenApiParameter
-from rest_framework import mixins, parsers, serializers, viewsets, status
-from rest_framework.decorators import action
-from rest_framework.exceptions import APIException
-from rest_framework.views import APIView
-from rest_framework.response import Response
-
-from django.db.models import CharField as ModelCharField, OuterRef, Subquery, Q
+from django.db import IntegrityError, transaction
+from django.db.models import CharField as ModelCharField
+from django.db.models import OuterRef, Q, Subquery
 from django.db.models.functions import Coalesce
 from django.http import Http404
-from drf_spectacular.utils import extend_schema_view, extend_schema
-from rest_framework import generics
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from rest_framework import generics, mixins, parsers, serializers, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import APIException
 from rest_framework.fields import CharField as DrfCharField
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from ietf.api.serializers_rpc import (
-    PersonSerializer,
-    FullDraftSerializer,
     DraftSerializer,
-    SubmittedToQueueSerializer,
-    OriginalStreamSerializer,
-    ReferenceSerializer,
-    EmailPersonSerializer,
-    RfcWithAuthorsSerializer,
     DraftWithAuthorsSerializer,
-    NotificationAckSerializer,
-    RfcPubSerializer,
-    RfcFileSerializer,
     EditableRfcSerializer,
+    EmailPersonSerializer,
+    FullDraftSerializer,
+    NotificationAckSerializer,
+    OriginalStreamSerializer,
+    PersonSerializer,
+    ReferenceSerializer,
+    RfcFileSerializer,
+    RfcPubSerializer,
+    RfcWithAuthorsSerializer,
+    SubmittedToQueueSerializer,
 )
-from ietf.doc.models import Document, DocHistory, RfcAuthor, DocEvent
+from ietf.doc.models import DocEvent, DocHistory, Document, RfcAuthor
 from ietf.doc.serializers import RfcAuthorSerializer
-from ietf.doc.storage_utils import remove_from_storage, store_file, exists_in_storage
+from ietf.doc.storage_utils import exists_in_storage, remove_from_storage, store_file
 from ietf.doc.tasks import (
-    signal_update_rfc_metadata_task,
     rebuild_reference_relations_task,
+    signal_update_rfc_metadata_task,
     trigger_red_precomputer_task,
     update_rfc_searchindex_task,
 )
 from ietf.person.models import Email, Person
 from ietf.sync.rfcindex import mark_rfcindex_as_dirty
-from ietf.sync.tasks import process_rpc_queue_task
+from ietf.sync.tasks import process_rpc_queue_task, update_rfc_json_task
 
 
 class Conflict(APIException):
@@ -297,6 +296,8 @@ class RfcViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
             desc="Metadata update from RFC Editor",
         )
         super().perform_update(serializer)
+        rfc_number = serializer.instance.rfc_number
+        transaction.on_commit(lambda: update_rfc_json_task.delay([rfc_number]))
 
     @action(detail=False, serializer_class=OriginalStreamSerializer)
     def rfc_original_stream(self, request):
@@ -457,6 +458,13 @@ class RfcPubNotificationView(DestinationHelperMixin, APIView):
         )
         rfc_number_list = sorted(set(rfc_number_list))
         signal_update_rfc_metadata_task.delay(rfc_number_list=rfc_number_list)
+        related_numbers = sorted(
+            {d.rfc_number for d in rfc.related_that_doc(("updates", "obs"))}
+        )
+        if related_numbers:
+            # Only update json for related rfcs. We can't generate json for _this_ rfc
+            # until we receive the files and know what formats we have.
+            transaction.on_commit(partial(update_rfc_json_task.delay, related_numbers))
         return Response(NotificationAckSerializer().data)
 
 
@@ -516,6 +524,10 @@ class RfcPubFilesView(DestinationHelperMixin, APIView):
             for upfile in uploaded_files:
                 uploaded_filename = Path(upfile.name)  # name supplied by request
                 uploaded_ext = "".join(uploaded_filename.suffixes)
+                # Ignore json files, which are deprecated. Remove this when purple no
+                # longer tries to send them.
+                if uploaded_ext == ".json":
+                    continue
                 tempfile_path = tmpfile_stem.with_suffix(uploaded_ext)
                 with tempfile_path.open("wb") as dest:
                     for chunk in upfile.chunks():
@@ -558,9 +570,10 @@ class RfcPubFilesView(DestinationHelperMixin, APIView):
         trigger_red_precomputer_task.delay(rfc_number_list=sorted(needs_updating))
         # Trigger search index update
         update_rfc_searchindex_task.delay(rfc.rfc_number)
-        # Trigger reference relation srebuild
+        # Trigger reference relations rebuild
         rebuild_reference_relations_task.delay(doc_names=[rfc.name])
-
+        # Build rfc json (json for related rfcs was updated in RfcPubNotificationView) 
+        transaction.on_commit(partial(update_rfc_json_task.delay, [rfc.rfc_number]))
         return Response(NotificationAckSerializer().data)
 
 
@@ -589,7 +602,10 @@ class ProcessRpcQueueView(APIView):
     @extend_schema(
         operation_id="process_rpc_queue",
         summary="Process the provided RPC queue",
-        description="Schedules parsing the provided queue to update documents with change dqueue data",
+        description=(
+                "Schedules parsing the provided queue to update documents with changed "
+                "queue data"
+        ),
         responses={202: None},
         request=RpcQueueDataSerializer,
     )
