@@ -483,6 +483,55 @@ class GroupPagesTests(TestCase):
             self.assertContains(r, milestone.desc)
             self.assertContains(r, milestone.docs.all()[0].name)
 
+    def test_not_active_groups(self):
+        active_group = GroupFactory(state_id='active')
+        concluded_group = GroupFactory(state_id='conclude')
+        dormant_group = GroupFactory(state_id='dormant')
+        replaced_group = GroupFactory(state_id='replaced')
+        proposed_group = GroupFactory(state_id='proposed')
+
+        url = group_urlreverse_list(active_group, 'ietf.group.views.group_about')[0]
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, active_group.acronym)
+        q = PyQuery(r.content)
+        self.assertGreaterEqual(len(q('#content a:contains("%s")' % active_group.acronym)), 1)
+        self.assertEqual(len(q('#content :contains("Concluded")')), 0)
+        self.assertEqual(len(q('#content :contains("Dormant")')), 0)
+        self.assertEqual(len(q('#content :contains("Replaced")')), 0)
+        self.assertEqual(len(q('#content :contains("Proposed")')), 0)
+
+        url = group_urlreverse_list(concluded_group, 'ietf.group.views.group_about')[0]
+        r = self.client.get(url)
+        self.assertContains(r, concluded_group.acronym)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertGreaterEqual(len(q('#content a:contains("%s")' % concluded_group.acronym)), 1)
+        self.assertGreaterEqual(len(q('#content :contains("Concluded")')), 1)
+
+        url = group_urlreverse_list(dormant_group, 'ietf.group.views.group_about')[0]
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, dormant_group.acronym)
+        q = PyQuery(r.content)
+        self.assertGreaterEqual(len(q('#content a:contains("%s")' % dormant_group.acronym)), 1)
+        self.assertGreaterEqual(len(q('#content :contains("Dormant")')), 1)
+
+        url = group_urlreverse_list(replaced_group, 'ietf.group.views.group_about')[0]
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, replaced_group.acronym)
+        q = PyQuery(r.content)
+        self.assertGreaterEqual(len(q('#content a:contains("%s")' % replaced_group.acronym)), 1)
+        self.assertGreaterEqual(len(q('#content :contains("Replaced")')), 1)
+
+        url = group_urlreverse_list(proposed_group, 'ietf.group.views.group_about')[0]
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, proposed_group.acronym)
+        q = PyQuery(r.content)
+        self.assertGreaterEqual(len(q('#content a:contains("%s")' % proposed_group.acronym)), 1)
+        self.assertGreaterEqual(len(q('#content :contains("Proposed")')), 1)
 
     def test_group_about(self):
 
