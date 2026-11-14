@@ -16,7 +16,7 @@
         <a href="{% url 'ietf.doc.views_help.relationship_help' subset='reference' %}">reference type</a>,
         then document name.
     </p>
-    {% if numdocs %}
+    {% if numdocs and not full %}
         <div class="alert alert-warning my-3">
             <p>
                 Showing only the first 250 of {{ numdocs }} documents.
