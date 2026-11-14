@@ -438,12 +438,12 @@ def clean_helper(form, formtype):
         rfc_fields = {}
         status_fields={}
         for k in sorted(form.data.keys()):
-            v = form.data[k].lower()
-            if k.startswith('new_relation_row'):
-                if re.match(r'\d{1,4}',v):
-                    v = 'rfc'+v
+            v = form.data[k].lower().strip()
+            if k.startswith("new_relation_row"):
+                if re.fullmatch(r"[0-9]+", v):
+                    v = f"rfc{int(v)}"
                 rfc_fields[k[17:]]=v
-            elif k.startswith('statchg_relation_row'):
+            elif k.startswith("statchg_relation_row"):
                 status_fields[k[21:]]=v
         for key in rfc_fields:
             if rfc_fields[key]!="":
@@ -457,7 +457,7 @@ def clean_helper(form, formtype):
         errors=[]
         for key in new_relations:
 
-           if not re.match(r'(?i)rfc\d{1,4}',key):
+           if not re.fullmatch(r"(?i)rfc[0-9]+", key):
               errors.append(key+" is not a valid RFC - please use the form RFCn\n")
            elif not Document.objects.filter(name=key):
               errors.append(key+" does not exist\n")
@@ -561,7 +561,7 @@ def start_rfc_status_change(request, name=None):
     """Start the RFC status change review process, setting the initial shepherding AD, and possibly putting the review on a telechat."""
 
     if name:
-       if not re.match("(?i)rfc[0-9]{1,4}",name):
+       if not re.fullmatch(r"(?i)rfc[0-9]+", name):
            raise Http404
        seed_rfc = get_object_or_404(Document, type="rfc", name=name)
 
