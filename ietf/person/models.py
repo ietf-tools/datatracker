@@ -4,6 +4,7 @@
 
 import email.utils
 import email.header
+import hashlib
 import uuid
 
 from hashids import Hashids
@@ -371,6 +372,11 @@ class Person(models.Model):
                 datatracker_photo_url = settings.IDTRACKER_BASE_URL + datatracker_photo_path
             return datatracker_photo_url
         else:
+            # Gravatar fallback for users without uploaded photos
+            email_addr = self.email_address()
+            if email_addr:
+                email_hash = hashlib.md5(email_addr.lower().encode()).hexdigest()
+                return f'https://www.gravatar.com/avatar/{email_hash}?s={size}&d=mp'
             return ''
 
 
