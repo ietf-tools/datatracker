@@ -2379,20 +2379,24 @@ def session_draft_pdf(request, num, acronym):
     return HttpResponse(pdf_contents, content_type="application/pdf")
 
 def ical_session_status(assignment):
-    if assignment.session.current_status == 'canceled':
+    if assignment.session.current_status in ('canceled', 'resched'):
         return "CANCELLED"
-    elif assignment.session.current_status == 'resched':
-        t = "RESCHEDULED"
-        if assignment.session.tombstone_for_id is not None:
-            other_assignment = SchedTimeSessAssignment.objects.filter(schedule=assignment.schedule_id, session=assignment.session.tombstone_for_id).first()
-            if other_assignment:
-                t = "RESCHEDULED TO {}-{}".format(
-                    other_assignment.timeslot.time.strftime("%A %H:%M").upper(),
-                    other_assignment.timeslot.end_time().strftime("%H:%M")
-                )
-        return t
     else:
         return "CONFIRMED"
+
+
+def ical_rescheduled_note(assignment):
+    if getattr(assignment.session, "current_status", None) != 'resched':
+        return None
+    note = "Rescheduled"
+    if assignment.session.tombstone_for_id is not None:
+        other_assignment = SchedTimeSessAssignment.objects.filter(schedule=assignment.schedule_id, session=assignment.session.tombstone_for_id).first()
+        if other_assignment:
+            note = "Rescheduled to {}-{}".format(
+                other_assignment.timeslot.time.strftime("%A %H:%M"),
+                other_assignment.timeslot.end_time().strftime("%H:%M")
+            )
+    return note
 
 
 def render_icalendar_precomp(agenda_data):
@@ -2436,21 +2440,25 @@ def generate_agenda_ical_precomp(agenda_data):
         if item["room"]:
             event.add("location", item["room"])  # room name
 
+        # RFC 5545 allows only TENTATIVE, CONFIRMED or CANCELLED on a VEVENT, so the
+        # vacated slot of a rescheduled session has to be CANCELLED for calendars to drop it
+        rescheduled_note = None
         if item["status"] == "canceled":
             status = "CANCELLED"
         elif item["status"] == "resched":
+            status = "CANCELLED"
             resched_to = item["rescheduledTo"]
-            if resched_to is None:
-                status = "RESCHEDULED"
+            if not resched_to:
+                rescheduled_note = "Rescheduled"
             else:
                 resched_start = datetime.datetime.fromisoformat(
                     resched_to["startDateTime"]
                 )
                 dur = datetime.timedelta(seconds=resched_to["duration"])
                 resched_end = resched_start + dur
-                formatted_start = resched_start.strftime("%A %H:%M").upper()
+                formatted_start = resched_start.strftime("%A %H:%M")
                 formatted_end = resched_end.strftime("%H:%M")
-                status = f"RESCHEDULED TO {formatted_start}-{formatted_end}"
+                rescheduled_note = f"Rescheduled to {formatted_start}-{formatted_end}"
         else:
             status = "CONFIRMED"
         event.add("status", status)
@@ -2467,6 +2475,9 @@ def generate_agenda_ical_precomp(agenda_data):
         event.add("dtstamp", datetime.datetime.fromisoformat(item["slotModified"]))
 
         description_parts = [item["slotName"]]
+
+        if rescheduled_note:
+            description_parts.append(rescheduled_note)
 
         if item["note"]:
             description_parts.append(f"Note: {item["note"]}")
@@ -2566,6 +2577,10 @@ def generate_agenda_ical(schedule, assignments):
         event.add("dtstamp", dtstamp)
 
         description_parts = [item.timeslot.name]
+
+        rescheduled_note = ical_rescheduled_note(item)
+        if rescheduled_note:
+            description_parts.append(rescheduled_note)
 
         if item.session.agenda_note:
             description_parts.append(f"Note: {item.session.agenda_note}")
