@@ -290,6 +290,8 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         entries.append(("Reviews History", urlreverse(ietf.group.views.review_requests_history, kwargs=kwargs)))
     if group.features.has_meetings:
         entries.append(("Meetings", urlreverse("ietf.group.views.meetings", kwargs=kwargs)))
+    if group.type_id == "wg":
+        entries.append(("Liaison Statements", urlreverse("ietf.group.views.liaison_statements", kwargs=kwargs)))
     if group.acronym in ["iesg"]:
         entries.append(("Working Groups", urlreverse("ietf.iesg.views.working_groups")))
         entries.append(("Decisions", urlreverse("ietf.iesg.views.review_decisions")))
