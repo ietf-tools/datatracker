@@ -2,6 +2,7 @@
 
 
 import datetime
+import hashlib
 import json
 import uuid
 from unittest import mock
@@ -365,6 +366,18 @@ class PersonTests(TestCase):
     def test_cdn_photo_url_cdn_off(self):
         p = PersonFactory(with_bio=True)
         self.assertNotIn('cdn-cgi/photo',p.cdn_photo_url())
+
+    def test_cdn_photo_url_gravatar_fallback(self):
+        # Person without photo should get Gravatar URL
+        p = PersonFactory()  # no with_bio=True, so no photo
+        self.assertFalse(p.photo)
+        email_addr = p.email_address()
+        self.assertTrue(email_addr)
+        expected_hash = hashlib.md5(email_addr.lower().encode()).hexdigest()
+        url = p.cdn_photo_url()
+        self.assertIn('gravatar.com/avatar/', url)
+        self.assertIn(expected_hash, url)
+        self.assertIn('d=mp', url)  # default silhouette parameter
 
     def test_invalid_name_characters_rejected(self):
         for disallowed in "/:@":
