@@ -1399,6 +1399,25 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertIn('STATUS:CANCELLED',unicontent(r))
         self.assertNotIn('STATUS:CONFIRMED',unicontent(r))
 
+    def test_rescheduled_ics(self):
+        meeting = MeetingFactory(type_id='ietf', time_zone='Europe/Madrid')
+        live = SessionFactory(meeting=meeting, status_id='sched')
+        tombstone = SessionFactory(meeting=meeting, group=live.group, status_id='resched')
+        tombstone.tombstone_for = live
+        tombstone.save()
+        url = urlreverse('ietf.meeting.views.agenda_ical', kwargs=dict(num=meeting.number))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        events = {str(e['status']): e for e in Calendar.from_ical(r.content).walk('VEVENT')}
+        self.assertCountEqual(events, ['CANCELLED', 'CONFIRMED'])
+        live_slot = live.official_timeslotassignment().timeslot
+        local_start = live_slot.time.astimezone(meeting.tz())
+        local_end = live_slot.end_time().astimezone(meeting.tz())
+        self.assertIn(
+            f"Rescheduled to {local_start.strftime('%A %H:%M')}-{local_end.strftime('%H:%M')} ({meeting.time_zone})",
+            str(events['CANCELLED']['description']),
+        )
+
     def test_session_materials(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
