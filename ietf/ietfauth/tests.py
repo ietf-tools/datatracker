@@ -223,6 +223,59 @@ class IetfAuthTests(TestCase):
         self.assertIn("A datatracker account for that email already exists", note)
         self.assertIn(urlreverse("ietf.ietfauth.views.password_reset"), note)
 
+    def test_create_account_with_duplicate_name(self):
+        """Creating an account with an existing name sends one duplicate notice and no duplicate aliases."""
+        PersonFactory(name="Jane Doe", ascii="Jane Doe")
+        email = "jane-doe-2@example.com"
+        self.register(email)
+        confirm_url = self.extract_confirm_url(outbox[-1])
+
+        empty_outbox()
+        r = self.client.post(
+            confirm_url,
+            {
+                "name": "Jane Doe",
+                "ascii": "Jane Doe",
+                "password": "secret-and-secure",
+                "password_confirmation": "secret-and-secure",
+            },
+        )
+        self.assertEqual(r.status_code, 200)
+        person = Person.objects.get(user__username=email)
+        self.assertEqual(
+            sorted(person.alias_set.values_list("name", flat=True)),
+            ["Jane Doe"],
+        )
+        duplicate_notices = [
+            m for m in outbox if m["Subject"].startswith("Possible duplicate Person objects")
+        ]
+        self.assertEqual(len(duplicate_notices), 1)
+        self.assertEqual(Person.objects.filter(name="Jane Doe").count(), 2)
+
+    def test_create_account_aliases(self):
+        """A new account gets one alias for each form of its name, including the plain forms."""
+        email = "new-account@example.com"
+        self.register(email)
+        confirm_url = self.extract_confirm_url(outbox[-1])
+
+        empty_outbox()
+        r = self.client.post(
+            confirm_url,
+            {
+                "name": "Dr. Jöhn Q. Smïth Jr.",
+                "ascii": "Dr. John Q. Smith Jr.",
+                "password": "secret-and-secure",
+                "password_confirmation": "secret-and-secure",
+            },
+        )
+        self.assertEqual(r.status_code, 200)
+        person = Person.objects.get(user__username=email)
+        self.assertEqual(
+            sorted(person.alias_set.values_list("name", flat=True)),
+            sorted(["Dr. Jöhn Q. Smïth Jr.", "Dr. John Q. Smith Jr.", "Jöhn Smïth", "John Smith"]),
+        )
+        self.assertEqual(len(outbox), 0)
+
     def test_ietfauth_profile(self):
         EmailFactory(person__user__username='plain')
         GroupFactory(acronym='mars')
@@ -277,6 +330,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(person.ascii, "Test Name")
         self.assertEqual(Person.objects.filter(alias__name="Test Name", user__username=username).count(), 1)
         self.assertEqual(Person.objects.filter(alias__name="Test Nãme", user__username=username).count(), 1)
+        self.assertEqual(Person.objects.filter(alias__name="T. Name", user__username=username).count(), 1)
         self.assertEqual(Email.objects.filter(address=email_address, person__user__username=username, active=True).count(), 1)
 
         # deactivate address

@@ -68,7 +68,7 @@ from ietf.ietfauth.forms import ( RegistrationForm, PasswordForm, ResetPasswordF
 from ietf.ietfauth.utils import has_role, send_new_email_confirmation_request
 from ietf.name.models import ExtResourceName
 from ietf.nomcom.models import NomCom
-from ietf.person.models import Person, Email, Alias, PersonalApiKey, PERSON_API_KEY_VALUES
+from ietf.person.models import Person, Email, PersonalApiKey, PERSON_API_KEY_VALUES
 from ietf.person.utils import assign_primary_uuid
 from ietf.review.models import ReviewerSettings, ReviewWish, ReviewAssignment
 from ietf.review.utils import unavailable_periods_to_list, get_default_filter_re
@@ -237,11 +237,9 @@ def confirm_account(request, auth):
                 # Atomic so a Person is never left without the primary UUID that
                 # external systems need to name them by.
                 with transaction.atomic():
+                    # Person.save() also creates the person's aliases.
                     person = Person.objects.create(user=user, name=name, ascii=ascii)
                     assign_primary_uuid(person)
-
-                    for name in set([ person.name, person.ascii, person.plain_name(), person.plain_ascii(), ]):
-                        Alias.objects.create(person=person, name=name)
 
             if not email_obj:
                 email_obj = Email.objects.create(address=email, person=person, origin=user.username)
@@ -294,7 +292,7 @@ def profile(request):
         email_confirmations = []
 
         if all(forms_valid):
-            updated_person = person_form.save()
+            person_form.save()
 
             for f in new_email_forms:
                 to_email = f.cleaned_data["new_email"]
@@ -319,13 +317,6 @@ def profile(request):
                 if not email.origin:
                     email.origin = person.user.username
                 email.save()
-
-            # Make sure the alias table contains any new and/or old names.
-            existing_aliases = set(Alias.objects.filter(person=person).values_list("name", flat=True))
-            curr_names = set(x for x in [updated_person.name, updated_person.ascii, updated_person.ascii_short, updated_person.plain_name(), updated_person.plain_ascii(), ] if x)
-            new_aliases = curr_names - existing_aliases
-            for name in new_aliases:
-                Alias.objects.create(person=updated_person, name=name)
 
             return render(request, 'registration/confirm_profile_update.html', {
                 'email_confirmations': email_confirmations,

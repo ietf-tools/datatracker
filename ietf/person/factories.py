@@ -106,16 +106,6 @@ class PersonFactory(factory.django.DjangoModelFactory):
             PersonUUIDFactory(person=obj, primary=True)
 
     @factory.post_generation
-    def default_aliases(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
-        make_alias = getattr(AliasFactory, 'create' if create else 'build')
-        make_alias(person=obj,name=obj.name)
-        make_alias(person=obj,name=obj.ascii)
-        if obj.name != obj.plain_name():
-            make_alias(person=obj,name=obj.plain_name())
-        if obj.ascii != obj.plain_ascii():
-            make_alias(person=obj,name=obj.plain_ascii())
-
-    @factory.post_generation
     def default_emails(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         if extracted is None:
             extracted = True

@@ -322,24 +322,41 @@ class Person(models.Model):
             .order_by("-time")
         )
 
+    def alias_names(self):
+        """Return the non-blank name forms (full, ASCII, short ASCII and plain) that should exist as aliases."""
+        names = [self.name, self.ascii, self.ascii_short, self.plain_name(), self.plain_ascii()]
+        return {n for n in names if n}
+
     def save(self, *args, **kwargs):
         created = not self.pk
+        # The name fields may have changed; drop what the name methods memoized.
+        for attr in ('_cached_plain_name', '_cached_ascii_name', '_cached_plain_ascii'):
+            self.__dict__.pop(attr, None)
         super(Person, self).save(*args, **kwargs)
-        if created:
-            if Person.objects.filter(name=self.name).count() > 1 :
+
+        existing = set(self.alias_set.values_list('name', flat=True))
+        new_names = self.alias_names() - existing
+        for name in new_names:
+            Alias(person=self, name=name).save(notify_duplicates=False)
+        # The aliases just changed; drop what has_alias_for_name() memoized about them.
+        self.__dict__.pop('_cached_has_alias_for_name', None)
+
+        # Report possible duplicates once, however many of the new names match.
+        check_names = (new_names | {self.name}) if created else new_names
+        if check_names:
+            others = Person.objects.exclude(pk=self.pk).filter(
+                models.Q(name__in=check_names) | models.Q(alias__name__in=check_names)
+            )
+            if others.exists():
+                persons = Person.objects.filter(
+                    models.Q(pk=self.pk) | models.Q(pk__in=others.values('pk'))
+                ).order_by('pk')
                 msg = render_to_string('person/mail/possible_duplicates.txt',
                                        dict(name=self.name,
-                                            persons=Person.objects.filter(name=self.name),
+                                            persons=persons,
                                             settings=settings
                                             ))
                 send_mail_preformatted(None, msg)
-        if not self.name in [ a.name for a in self.alias_set.filter(name=self.name) ]:
-            self.alias_set.create(name=self.name)
-        if self.ascii and self.name != self.ascii:
-            if not self.ascii in [ a.name for a in self.alias_set.filter(name=self.ascii) ]:
-                self.alias_set.create(name=self.ascii)
-        # The aliases just changed; drop what has_alias_for_name() memoized about them.
-        self.__dict__.pop('_cached_has_alias_for_name', None)
 
     #this variable, if not None, may be used by url() to keep the sitefqdn.
     default_hostscheme = None
@@ -392,10 +409,11 @@ class Alias(models.Model):
     person = ForeignKey(Person)
     name = models.CharField(max_length=255, db_index=True)
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, notify_duplicates=True, **kwargs):
+        """Save the alias and, unless notify_duplicates is False, report it if another person already has it."""
         created = not self.pk
         super(Alias, self).save(*args, **kwargs)
-        if created:
+        if created and notify_duplicates:
             if Alias.objects.filter(name=self.name).exclude(person=self.person).count() > 0 :
                 msg = render_to_string('person/mail/possible_duplicates.txt',
                                        dict(name=self.name,

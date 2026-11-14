@@ -315,10 +315,12 @@ class PersonTests(TestCase):
         self.assertEqual(person.ascii_name(), "Wu Jian Ping")
 
     def test_duplicate_person_name(self):
-        empty_outbox()
         p = PersonFactory(name="Föö Bär")
+        empty_outbox()
         PersonFactory(name=p.name)
-        self.assertTrue("possible duplicate" in str(outbox[0]["Subject"]).lower())
+        self.assertEqual(len(outbox), 1)
+        self.assertIn("possible duplicate", str(outbox[0]["Subject"]).lower())
+        self.assertIn("There are now 2 Person objects sharing that name.", str(outbox[0]))
 
     def test_merge(self):
         url = urlreverse("ietf.person.views.merge")
