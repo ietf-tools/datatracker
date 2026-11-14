@@ -99,6 +99,43 @@ class StatusChangeTests(TestCase):
         status_change = Document.objects.get(name='status-change-imaginary-new3')
         self.assertTrue(status_change.relateddocument_set.filter(relationship__slug='tois',target__name='rfc9999'))
 
+    def test_start_review_five_digit_rfc(self):
+        url = urlreverse('ietf.doc.views_status_change.start_rfc_status_change')
+        login_testing_unauthorized(self, "secretary", url)
+        state_strpk = str(State.objects.get(slug='adrev',type__slug='statchg').pk)
+
+        # Seeding the form from a five-digit RFC
+        seeded_url = urlreverse('ietf.doc.views_status_change.start_rfc_status_change', kwargs=dict(name='rfc10001'))
+        r = self.client.get(seeded_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'rfc10001-to-CHANGETHIS')
+
+        # Five-digit RFC given as name, uppercase name, bare number, and bare number with leading zero
+        for i, value in enumerate(["rfc10001", "RFC10001", "10001", "010001"]):
+            name = f"imaginary-five-digit-{i}"
+            r = self.client.post(url,dict(
+                document_name=name,title="A new imaginary status change",
+                create_in_state=state_strpk,notify='ipu@ietf.org',new_relation_row_blah=value,
+                statchg_relation_row_blah="tois")
+            )
+            self.assertEqual(r.status_code, 302, msg=f"value={value}")
+            status_change = Document.objects.get(name=f"status-change-{name}")
+            self.assertTrue(
+                status_change.relateddocument_set.filter(relationship__slug='tois',target__name='rfc10001'),
+                msg=f"value={value}",
+            )
+
+        # Values that only start with a valid RFC are rejected
+        for value in ["10001abc", "rfc10001abc"]:
+            r = self.client.post(url,dict(
+                document_name="imaginary-five-digit-bad",title="A new imaginary status change",
+                create_in_state=state_strpk,notify='ipu@ietf.org',new_relation_row_blah=value,
+                statchg_relation_row_blah="tois")
+            )
+            self.assertEqual(r.status_code, 200, msg=f"value={value}")
+            self.assertContains(r, "is not a valid RFC", msg_prefix=f"value={value}")
+        self.assertFalse(Document.objects.filter(name="status-change-imaginary-five-digit-bad").exists())
+
 
     def test_change_state(self):
 
@@ -487,6 +524,31 @@ class StatusChangeTests(TestCase):
         verify_relations(doc,'rfc14'  ,'tohist')
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Affected RFC list changed.'))       
 
+    def test_edit_relations_five_digit_rfc(self):
+        doc = Document.objects.get(name='status-change-imaginary-mid-review')
+        url = urlreverse('ietf.doc.views_status_change.edit_relations',kwargs=dict(name=doc.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # A five-digit RFC that doesn't exist
+        r = self.client.post(url,dict(new_relation_row_blah="rfc10002",
+                                      statchg_relation_row_blah="tois"))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "rfc10002 does not exist")
+
+        # Five-digit RFC given as a bare number, next to four-digit ones
+        r = self.client.post(url,dict(new_relation_row_blah="10001",
+                                      statchg_relation_row_blah="tois",
+                                      new_relation_row_foo="RFC9999",
+                                      statchg_relation_row_foo="toexp",
+                                      new_relation_row_nob="9998",
+                                      statchg_relation_row_nob="tohist"))
+        self.assertEqual(r.status_code, 302)
+        doc = Document.objects.get(name='status-change-imaginary-mid-review')
+        self.assertEqual(doc.relateddocument_set.count(),3)
+        self.assertEqual(doc.relateddocument_set.get(target__name='rfc10001').relationship.slug, 'tois')
+        self.assertEqual(doc.relateddocument_set.get(target__name='rfc9999').relationship.slug, 'toexp')
+        self.assertEqual(doc.relateddocument_set.get(target__name='rfc9998').relationship.slug, 'tohist')
+
     def test_clear_ballot(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         url = urlreverse('ietf.doc.views_ballot.clear_ballot',kwargs=dict(name=doc.name, ballot_type_slug="statchg"))
@@ -538,6 +600,8 @@ class StatusChangeTests(TestCase):
         rfc = WgRfcFactory(rfc_number=9998,std_level_id='inf')
         draft = WgDraftFactory(name='draft-ietf-random-other-thing')
         draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+
+        WgRfcFactory(rfc_number=10001,std_level_id='ps')
 
         DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review',notify='notify@example.org')
 
