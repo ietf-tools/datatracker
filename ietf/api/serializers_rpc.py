@@ -258,6 +258,36 @@ def _update_authors(rfc, authors_data):
     return change_events
 
 
+def _log_relation_change(relation, added, by):
+    """Record an added or removed relation in the history of both documents
+
+    Returns the event on the source document.
+    """
+    relationship = relation.relationship
+    source = relation.source
+    target = relation.target
+    source_name = prettify_std_name(source.name)
+    target_name = prettify_std_name(target.name)
+    if added:
+        target_desc = f"{relationship.revname} {source_name}"
+    else:
+        target_desc = f"No longer {relationship.revname.lower()} {source_name}"
+    DocEvent.objects.create(
+        doc=target,
+        rev=target.rev,
+        type="sync_from_rfc_editor",
+        by=by,
+        desc=target_desc,
+    )
+    return DocEvent.objects.create(
+        doc=source,
+        rev=source.rev,
+        type="sync_from_rfc_editor",
+        by=by,
+        desc=f"{'Added' if added else 'Removed'} {relationship.name.lower()} relationship to {target_name}",
+    )
+
+
 class SubseriesNameField(serializers.RegexField):
 
     def __init__(self, **kwargs):
@@ -416,13 +446,17 @@ class RfcPubSerializer(serializers.ModelSerializer):
     
             # create updates / obsoletes relations
             for obsoleted_rfc_pk in obsoletes:
-                RelatedDocument.objects.get_or_create(
+                relation, created = RelatedDocument.objects.get_or_create(
                     source=rfc, target=obsoleted_rfc_pk, relationship_id="obs"
                 )
+                if created:
+                    _log_relation_change(relation, added=True, by=system_person)
             for updated_rfc_pk in updates:
-                RelatedDocument.objects.get_or_create(
+                relation, created = RelatedDocument.objects.get_or_create(
                     source=rfc, target=updated_rfc_pk, relationship_id="updates"
                 )
+                if created:
+                    _log_relation_change(relation, added=True, by=system_person)
         
             # create subseries relations
             for subseries_doc_name in subseries:
@@ -705,65 +739,25 @@ class EditableRfcSerializer(serializers.ModelSerializer):
                                 )
                             )
                         )
-            if updates is not omitted:
-                stale_updates = RelatedDocument.objects.filter(
-                    source=rfc, relationship_id="updates"
-                ).exclude(target__rfc_number__in=updates)
-                for stale in stale_updates:
+            for relationship_id, rfc_numbers in (("updates", updates), ("obs", obsoletes)):
+                if rfc_numbers is omitted:
+                    continue
+                stale_relations = RelatedDocument.objects.filter(
+                    source=rfc, relationship_id=relationship_id
+                ).exclude(target__rfc_number__in=rfc_numbers)
+                for stale in stale_relations:
                     rfc_events.append(
-                        DocEvent.objects.create(
-                            doc=rfc,
-                            rev=rfc.rev,
-                            type="sync_from_rfc_editor",
-                            by=system_person,
-                            desc=f"Removed updates relationship to {prettify_std_name(stale.target.name)}",
-                        )
+                        _log_relation_change(stale, added=False, by=system_person)
                     )
-                stale_updates.delete()
-                for rfc_num in updates:
+                stale_relations.delete()
+                for rfc_num in rfc_numbers:
                     target = Document.objects.get(rfc_number=rfc_num, type_id="rfc")
-                    _, created = RelatedDocument.objects.get_or_create(
-                        source=rfc, relationship_id="updates", target=target
+                    relation, created = RelatedDocument.objects.get_or_create(
+                        source=rfc, relationship_id=relationship_id, target=target
                     )
                     if created:
                         rfc_events.append(
-                            DocEvent.objects.create(
-                                doc=rfc,
-                                rev=rfc.rev,
-                                type="sync_from_rfc_editor",
-                                by=system_person,
-                                desc=f"Added updates relationship to {prettify_std_name(target.name)}",
-                            )
-                        )
-            if obsoletes is not omitted:
-                stale_obsoletes = RelatedDocument.objects.filter(
-                    source=rfc, relationship_id="obs"
-                ).exclude(target__rfc_number__in=obsoletes)
-                for stale in stale_obsoletes:
-                    rfc_events.append(
-                        DocEvent.objects.create(
-                            doc=rfc,
-                            rev=rfc.rev,
-                            type="sync_from_rfc_editor",
-                            by=system_person,
-                            desc=f"Removed obsoletes relationship to {prettify_std_name(stale.target.name)}",
-                        )
-                    )
-                stale_obsoletes.delete()
-                for rfc_num in obsoletes:
-                    target = Document.objects.get(rfc_number=rfc_num, type_id="rfc")
-                    _, created = RelatedDocument.objects.get_or_create(
-                        source=rfc, relationship_id="obs", target=target
-                    )
-                    if created:
-                        rfc_events.append(
-                            DocEvent.objects.create(
-                                doc=rfc,
-                                rev=rfc.rev,
-                                type="sync_from_rfc_editor",
-                                by=system_person,
-                                desc=f"Added obsoletes relationship to {prettify_std_name(target.name)}",
-                            )
+                            _log_relation_change(relation, added=True, by=system_person)
                         )
 
             # update subseries relations
