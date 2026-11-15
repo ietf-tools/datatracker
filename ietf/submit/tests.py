@@ -400,7 +400,15 @@ class SubmitTests(BaseSubmitTestCase):
         rev = "00"
         group = "mars"
 
-        status_url, author = self.do_submission(name, rev, group, formats)
+        # tests assume these checkers run, override in case config is different
+        with override_settings(
+            IDSUBMIT_CHECKER_CLASSES=[
+                "ietf.submit.checkers.DraftIdnitsChecker",
+                "ietf.submit.checkers.DraftIdnits3Checker",
+                "ietf.submit.checkers.DraftYangChecker",
+            ]
+        ):
+            status_url, author = self.do_submission(name, rev, group, formats)
 
         # supply submitter info, then draft should be in and ready for approval
         mailbox_before = len(outbox)
@@ -1895,7 +1903,11 @@ class SubmitTests(BaseSubmitTestCase):
         name = "draft-yang-testing-invalid"
         rev = "00"
 
-        status_url, _ = self.do_submission(name=name, rev=rev, base_filename="test_submission_invalid_yang")
+        # test assumes this checker runs, override in case config is different
+        with override_settings(
+            IDSUBMIT_CHECKER_CLASSES=["ietf.submit.checkers.DraftYangChecker"]
+        ):
+            status_url, _ = self.do_submission(name=name, rev=rev, base_filename="test_submission_invalid_yang")
         r = self.client.get(status_url)
         q = PyQuery(r.content)
         #
