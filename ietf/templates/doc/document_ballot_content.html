@@ -93,6 +93,11 @@
                         <div class="flex-fill text-end">
                             {% if p.old_positions %}<span class="text-body-secondary small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
                             <span class="badge rounded-pill {{ p.pos|pos_to_label_format }}">{{ p.pos }}</span>
+                            {% if p.send_email %}
+                            <a href="https://mailarchive.ietf.org/arch/search/?q=subject:{{ p.balloter.plain_name|urlencode }}+AND+subject:{{ doc.name }}+AND+subject:(discuss+OR+comment+OR+review+OR+concern)" class="btn btn-info btn-sm">
+                                Email archive
+                            </a>
+                            {% endif %}
                             {% if user|has_role:"Secretariat" %}
                                 <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}"
                                    title="Click to edit the position of {{ p.balloter.plain_name }}"
@@ -185,6 +190,11 @@
                         <div class="flex-fill text-end">
                             {% if p.old_positions %}<span class="text-body-secondary small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
                             <span class="badge rounded-pill {{ p.pos|pos_to_label_format }}">{{ p.pos }}</span>
+                            {% if p.send_email %}
+                            <a href="https://mailarchive.ietf.org/arch/search/?q=subject:{{ p.balloter.plain_name|urlencode }}+AND+subject:{{ doc.name }}+AND+subject:(discuss+OR+comment+OR+review+OR+concern)" class="btn btn-info btn-sm">
+                                Email archive
+                            </a>
+                            {% endif %}
                             {% if user|has_role:"Secretariat" %}
                                 <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}"
                                    title="Click to edit the position of {{ p.balloter.plain_name }}"
