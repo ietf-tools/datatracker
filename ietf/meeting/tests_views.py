@@ -5531,7 +5531,8 @@ class InterimTests(TestCase):
         last_week = today - datetime.timedelta(days=7)
         ietf = SessionFactory(meeting__type_id='ietf',meeting__date=last_week,group__state_id='active',group__parent=GroupFactory(state_id='active'))
         SessionFactory(meeting__type_id='interim',meeting__date=last_week,status_id='canceled',group__state_id='active',group__parent=GroupFactory(state_id='active'))
-        old_ietf = MeetingFactory(type_id='ietf', number='5', date=last_week - datetime.timedelta(days=365))
+        old_ietf = MeetingFactory(type_id='ietf', number='6', date=last_week - datetime.timedelta(days=365))
+        no_proceedings_ietf = MeetingFactory(type_id='ietf', number='5', date=last_week - datetime.timedelta(days=730))
         url = urlreverse('ietf.meeting.views.past')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -5546,8 +5547,14 @@ class InterimTests(TestCase):
             len(plenary('a[href="%s"]' % urlreverse('ietf.meeting.views.proceedings', kwargs=dict(num=ietf.meeting.number)))),
             1,
         )
-        self.assertEqual(len(plenary('a[href="https://www.ietf.org/proceedings/05.pdf"]')), 1)
+        self.assertEqual(len(plenary('a[href="https://www.ietf.org/proceedings/06.pdf"]')), 1)
         self.assertIn('IETF %s' % old_ietf.number, plenary('h2').text())
+        # IETF 5 is listed, but has no proceedings to link to
+        no_proceedings_entry = plenary('.past-plenary').filter(
+            lambda i, el: PyQuery(el)('h2').text() == 'IETF %s' % no_proceedings_ietf.number
+        )
+        self.assertEqual(len(no_proceedings_entry), 1)
+        self.assertNotIn('Proceedings', no_proceedings_entry.text())
 
         r = self.client.get(interims_url)
         self.assertEqual(r.status_code, 200)
