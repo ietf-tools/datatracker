@@ -82,6 +82,7 @@
             <thead>
                 <tr>
                     <th scope="col" data-sort="rfc">RFC</th>
+                    <th scope="col" data-sort="rfc"></th>
                     <th scope="col" data-sort="date">Date</th>
                     <th scope="col" data-sort="title">Title</th>
                     <th scope="col" data-sort="citedby">Cited by</th>
@@ -91,7 +92,9 @@
                 {% for row in profile.rfcs %}
                     <tr>
                         <td>
-                            <a class="text-nowrap" href="{{ row.doc.get_absolute_url }}">RFC {{ row.doc.rfc_number }}</a>
+                            <a class="text-nowrap" href="https://www.rfc-editor.org/info/rfc{{ row.doc.rfc_number }}/">RFC {{ row.doc.rfc_number }}</a>
+                        </td>
+                        <td> <a class="text-nowrap" href="{{ row.doc.get_absolute_url }}">(datatracker)</a>
                         </td>
                         <td data-sort-number="{{ row.pub_date|date:"U" }}">{{ row.pub_date|date:"b Y"|title }}</td>
                         <td>{{ row.doc.title|urlize_ietf_docs }}</td>
