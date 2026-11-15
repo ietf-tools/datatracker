@@ -7,7 +7,8 @@ from django.core.exceptions import ValidationError
 from django.template import Context
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.dbtemplate.template import PlainTemplate, RSTTemplate, DjangoTemplate
+from ietf.dbtemplate.template import (PlainTemplate, RSTTemplate, DjangoTemplate,
+                                      group_template_engine, is_group_template)
 
 import debug                            # pyflakes:ignore
 
@@ -19,7 +20,10 @@ class DBTemplateForm(forms.ModelForm):
             if   self.instance.type.slug == 'rst':
                 RSTTemplate(content).render(Context({}))
             elif self.instance.type.slug == 'django':
-                DjangoTemplate(content).render(Context({}))
+                if is_group_template(self.instance):
+                    group_template_engine.from_string(content).render(Context({}))
+                else:
+                    DjangoTemplate(content).render(Context({}))
             elif self.instance.type.slug == 'plain':
                 PlainTemplate(content).render(Context({}))
             else:

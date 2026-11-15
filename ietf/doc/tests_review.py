@@ -21,13 +21,14 @@ from pyquery import PyQuery
 
 import debug                            # pyflakes:ignore
 
+from ietf.dbtemplate.factories import DBTemplateFactory
 from ietf.doc.storage_utils import retrieve_str
 import ietf.review.mailarch
 
 from ietf.doc.factories import ( NewRevisionDocEventFactory, IndividualDraftFactory, WgDraftFactory,
                             WgRfcFactory, ReviewFactory, DocumentFactory)
 from ietf.doc.models import ( DocumentAuthor, RelatedDocument, DocEvent, ReviewRequestDocEvent,
-                            ReviewAssignmentDocEvent, )
+                            ReviewAssignmentDocEvent, LastCallDocEvent, )
 from ietf.group.factories import RoleFactory, ReviewTeamFactory
 from ietf.group.models import Group
 from ietf.message.models import Message
@@ -808,6 +809,61 @@ class ReviewTests(TestCase):
         url = urlreverse('ietf.doc.views_review.complete_review', kwargs={ "name": doc.name, "assignment_id": assignment.pk })
 
         return assignment, url
+
+    def test_complete_review_content_template(self):
+        assignment, url = self.setup_complete_review_test()
+        doc = assignment.review_request.doc
+        login_testing_unauthorized(self, "reviewer", url)
+
+        # The team has no template for this type of review
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(PyQuery(r.content)("[name=review_content]").text().strip(), "")
+
+        # A name that is not one of the values for this template gives no output
+        DBTemplateFactory(
+            group=assignment.review_request.team,
+            path="/group/reviewteam/review/content_templates/early.txt",
+            type_id="django",
+            content=(
+                "{% autoescape off %}"
+                "Document: {{ assignment.review_request.doc.name }}-??\n"
+                "Reviewer: {{ assignment.reviewer.person.plain_name }}\n"
+                "Review Date: {{ today|date:'Y-m-d' }}\n"
+                "IETF LC End Date: {% if assignment.review_request.doc.most_recent_ietflc %}"
+                "{{ assignment.review_request.doc.most_recent_ietflc.expires|date:'Y-m-d' }}"
+                "{% else %}None{% endif %}\n"
+                "IESG Telechat date: "
+                "{{ assignment.review_request.doc.telechat_date|default:'Not scheduled for a telechat' }}\n"
+                "Team: [{{ assignment.review_request.team }}]\n"
+                "{% endautoescape %}"
+            ),
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        content = PyQuery(r.content)("[name=review_content]").text()
+        self.assertIn(f"Document: {doc.name}-??", content)
+        self.assertIn(f"Reviewer: {assignment.reviewer.person.plain_name()}", content)
+        self.assertIn(f"Review Date: {date_today(settings.TIME_ZONE).isoformat()}", content)
+        self.assertIn("IETF LC End Date: None", content)
+        self.assertIn("IESG Telechat date: Not scheduled for a telechat", content)
+        self.assertIn("Team: []", content)
+
+        expires = timezone.now() + datetime.timedelta(days=10)
+        LastCallDocEvent.objects.create(
+            doc=doc,
+            rev=doc.rev,
+            type="sent_last_call",
+            by=Person.objects.get(name="(System)"),
+            expires=expires,
+            desc="Last call sent",
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertIn(
+            "IETF LC End Date: {}".format(timezone.localtime(expires).date().isoformat()),
+            PyQuery(r.content)("[name=review_content]").text(),
+        )
 
     def test_complete_review_upload_content(self):
         assignment, url = self.setup_complete_review_test()
