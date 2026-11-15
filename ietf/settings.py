@@ -984,7 +984,7 @@ SUBMIT_YANG_CATALOG_CHECKER_URL = "https://yangcatalog.org/yangvalidator/api/v1/
 IDSUBMIT_CHECKER_CLASSES = (
     "ietf.submit.checkers.DraftIdnitsChecker",
     "ietf.submit.checkers.DraftIdnits3Checker",
-    "ietf.submit.checkers.DraftYangChecker",
+#    "ietf.submit.checkers.DraftYangChecker",
 #    "ietf.submit.checkers.DraftYangvalidatorChecker",    
 )
 
