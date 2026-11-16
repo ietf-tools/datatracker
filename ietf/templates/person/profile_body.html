@@ -138,9 +138,26 @@
                 </li>
             {% endfor %}
         </ul>
-        (Excluding replaced Internet-Drafts.)
     {% else %}
         {{ person.first_name }} has no expired Internet-Drafts.
+    {% endif %}
+    <h2 class="mt-5">
+        Replaced Internet-Drafts <small class="text-body-secondary">({{ profile.replaced_drafts|length }})</small>
+    </h2>
+    {% if profile.replaced_drafts %}
+        <ul>
+            {% for row in profile.replaced_drafts %}
+                <li>
+                    <a href="{{ row.doc.get_absolute_url }}">{{ row.doc.name }}</a>,
+                    replaced by
+                    {% for name in row.replaced_by %}
+                        <a href="{% url "ietf.doc.views_doc.document_main" name=name %}">{{ name }}</a>{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        {{ person.first_name }} has no replaced Internet-Drafts.
     {% endif %}
     {% if profile.has_drafts %}
         <h2 class="mt-5">
