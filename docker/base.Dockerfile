@@ -1,7 +1,7 @@
 FROM debian:trixie AS builder
 
 # Update to the desired release tag
-ARG LIBYANG_TAG=v5.8.6
+ARG LIBYANG_TAG=v6.4.13
 
 # Build-time dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \

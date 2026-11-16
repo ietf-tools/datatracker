@@ -971,7 +971,7 @@ IDSUBMIT_IDNITS3_OFFLINE = False
 # Seconds to allow an idnits3 run before giving up on it
 IDSUBMIT_IDNITS3_TIMEOUT = 300
 SUBMIT_PYANG_COMMAND = 'pyang --verbose --ietf -p {libs} {model}'
-SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -p {tmplib} -p {rfclib} -p {draftlib} -p {ianalib} -p {cataloglib} {model} -i'
+SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -D -p {tmplib} -p {rfclib} -p {draftlib} -p {ianalib} -p {cataloglib} {model} -i'
 
 SUBMIT_YANG_CATALOG_MODULEARG = "modules[]={module}"
 SUBMIT_YANG_CATALOG_IMPACT_URL = "https://www.yangcatalog.org/yang-search/impact_analysis.php?{moduleargs}&recurse=0&rfcs=1&show_subm=1&show_dir=both"
