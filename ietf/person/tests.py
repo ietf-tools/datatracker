@@ -168,6 +168,10 @@ class PersonTests(TestCase):
             RelatedDocument.objects.create(
                 source=replacement, target=replaced, relationship_id="replaces"
             )
+        # Nothing stops the same relationship being recorded twice
+        RelatedDocument.objects.create(
+            source=replacements[0], target=replaced, relationship_id="replaces"
+        )
 
         r = self.client.get(
             urlreverse(

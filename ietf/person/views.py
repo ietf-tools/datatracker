@@ -147,6 +147,7 @@ def profile_data(persons):
         )
         .order_by("source__name")
         .values_list("target_id", "source__name")
+        .distinct()
     ):
         replaced_by.setdefault(target_id, []).append(source_name)
 
