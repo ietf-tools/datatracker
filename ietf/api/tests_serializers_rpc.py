@@ -225,6 +225,45 @@ class EditableRfcSerializerTests(TestCase):
             mock.call(rfc.rfc_number),
         )
 
+    @mock.patch("ietf.api.serializers_rpc.update_rfc_searchindex_task")
+    @mock.patch("ietf.api.serializers_rpc.trigger_red_precomputer_task")
+    def test_update_relations_logged(self, mock_trigger_red_task, mock_update_searchindex_task):
+        """Added and removed updates/obsoletes relations appear in both documents' history"""
+        kept, added, removed = WgRfcFactory.create_batch(3)
+        rfc = WgRfcFactory()
+        rfc.relateddocument_set.create(relationship_id="obs", target=kept)
+        rfc.relateddocument_set.create(relationship_id="updates", target=removed)
+        kept_event_count = kept.docevent_set.count()
+        serializer = EditableRfcSerializer(
+            instance=rfc,
+            data={
+                "obsoletes": [kept.rfc_number, added.rfc_number],
+                "updates": [],
+            },
+            partial=True,
+        )
+        self.assertTrue(serializer.is_valid())
+        serializer.save()
+        self.assertTrue(
+            rfc.docevent_set.filter(
+                desc=f"Added obsoletes relationship to RFC {added.rfc_number}"
+            ).exists()
+        )
+        self.assertTrue(
+            rfc.docevent_set.filter(
+                desc=f"Removed updates relationship to RFC {removed.rfc_number}"
+            ).exists()
+        )
+        self.assertTrue(
+            added.docevent_set.filter(desc=f"Obsoleted by RFC {rfc.rfc_number}").exists()
+        )
+        self.assertTrue(
+            removed.docevent_set.filter(
+                desc=f"No longer updated by RFC {rfc.rfc_number}"
+            ).exists()
+        )
+        self.assertEqual(kept.docevent_set.count(), kept_event_count)
+
     def test_unknown_rfc_number_rejected(self):
         """Unknown RFC numbers in updates/obsoletes should cause validation failure."""
         from django.db.models import Max

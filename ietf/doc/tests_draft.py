@@ -2471,6 +2471,7 @@ class ChangeReplacesTests(TestCase):
         self.assertEqual(RelatedDocument.objects.filter(relationship__slug='replaces',source=self.replacea).count(),1) 
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
         self.assertTrue(not RelatedDocument.objects.filter(relationship='possibly-replaces', source=self.replacea))
+        self.assertEqual(self.basea.latest_event(type='changed_document').desc, f"Replaced by {self.replacea.name}")
         self.assertEqual(len(outbox), 1)
         self.assertTrue('replacement status updated' in outbox[-1]['Subject'])
         self.assertTrue('replacea_author@' in outbox[-1]['To'])
@@ -2495,6 +2496,7 @@ class ChangeReplacesTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl') # Because A is still also replaced by replacea
         self.assertEqual(Document.objects.get(name='draft-test-base-b').get_state().slug,'expired')
+        self.assertEqual(self.baseb.latest_event(type='changed_document').desc, f"No longer replaced by {self.replaceboth.name}")
         self.assertEqual(len(outbox), 1)
         self.assertTrue('basea_author@' in outbox[-1]['To'])
         self.assertTrue('baseb_author@' in outbox[-1]['To'])

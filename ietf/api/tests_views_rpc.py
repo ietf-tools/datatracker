@@ -210,6 +210,16 @@ class RpcApiTests(APITestCase):
         self.assertEqual(
             set(rfc.related_that_doc("updates")), set([o for o in updates])
         )
+        for target, relationship_name, target_desc in (
+            [(o, "obsoletes", f"Obsoleted by RFC {rfc.rfc_number}") for o in obsoletes]
+            + [(u, "updates", f"Updated by RFC {rfc.rfc_number}") for u in updates]
+        ):
+            self.assertTrue(target.docevent_set.filter(desc=target_desc).exists())
+            self.assertTrue(
+                rfc.docevent_set.filter(
+                    desc=f"Added {relationship_name} relationship to RFC {target.rfc_number}"
+                ).exists()
+            )
         self.assertEqual(rfc.part_of(), [])
         self.assertEqual(draft.get_state().slug, "rfc")
         # todo test non-empty relationships

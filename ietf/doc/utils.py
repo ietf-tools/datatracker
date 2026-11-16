@@ -1105,6 +1105,8 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, com
             to.update(other_addrs.to)
             cc.update(other_addrs.cc)
             RelatedDocument.objects.filter(source=doc, target=d, relationship=relationship).delete()
+            DocEvent.objects.create(doc=d, rev=d.rev, by=by, type='changed_document',
+                                    desc="No longer %s %s" % (relationship.revname.lower(), doc.name))
             if not RelatedDocument.objects.filter(target=d, relationship=relationship):
                 s = 'active' if d.expires > timezone.now() else 'expired'
                 d.set_state(State.objects.get(type='draft', slug=s))
@@ -1115,6 +1117,8 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, com
             to.update(other_addrs.to)
             cc.update(other_addrs.cc)
             RelatedDocument.objects.create(source=doc, target=d, relationship=relationship)
+            DocEvent.objects.create(doc=d, rev=d.rev, by=by, type='changed_document',
+                                    desc="%s %s" % (relationship.revname, doc.name))
             d.set_state(State.objects.get(type='draft', slug='repl'))
             
             if d.stream_id in ('irtf','ise','iab'):
