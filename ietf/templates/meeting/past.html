@@ -56,7 +56,8 @@
                         {% if meeting.get_number > 28 %}
                             <a class="btn btn-sm btn-outline-primary"
                                href="{% url 'ietf.meeting.views.proceedings' num=meeting.number %}">Proceedings</a>
-                        {% else %}
+                        {% elif meeting.get_number != 5 %}
+                            {# there are no proceedings for IETF 5 #}
                             <a class="btn btn-sm btn-outline-primary"
                                href="https://www.ietf.org/proceedings/{{ meeting.get_number|stringformat:'02d' }}.pdf">Proceedings (PDF)</a>
                         {% endif %}
