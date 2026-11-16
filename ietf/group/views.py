@@ -49,7 +49,7 @@ from simple_history.utils import update_change_reason
 from django import forms
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, F, OuterRef, Prefetch, Q, Subquery, TextField, Value
+from django.db.models import Count, F, OuterRef, Q, Subquery, TextField, Value
 from django.db.models.functions import Coalesce
 from django.http import (
     HttpResponse,
@@ -93,7 +93,7 @@ from ietf.group.utils import (can_manage_all_groups_of_type,
 from ietf.ietfauth.utils import has_role, is_authorized_in_group
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.helpers import get_meeting, has_pending_interim
-from ietf.meeting.models import ImportantDate, SchedTimeSessAssignment, SchedulingEvent
+from ietf.meeting.models import ImportantDate, SchedTimeSessAssignment, SchedulingEvent, active_materials_prefetch
 from ietf.meeting.utils import group_sessions
 from ietf.name.models import GroupTypeName, StreamName
 from ietf.person.models import Email, Person
@@ -909,10 +909,7 @@ def meetings(request, acronym, group_type=None):
     ).prefetch_related(
         "session__materials",
         "session__materials__states",
-        Prefetch("session__materials",
-            queryset=Document.objects.exclude(states__type=F("type"), states__slug='deleted').order_by('presentations__order').prefetch_related('states'),
-            to_attr="prefetched_active_materials"
-        ),
+        active_materials_prefetch("session__materials"),
     )
 
     stsas = list(stsas)

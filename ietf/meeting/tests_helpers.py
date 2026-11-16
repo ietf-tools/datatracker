@@ -20,6 +20,7 @@ from ietf.meeting.factories import SessionFactory, MeetingFactory, TimeSlotFacto
 from ietf.meeting.helpers import (AgendaFilterOrganizer, AgendaKeywordTagger,
     delete_interim_session_conferences, sessions_post_save, sessions_post_cancel,
     create_interim_session_conferences, get_ietf_meeting, set_order_in_meeting,
+    set_official_timeslotassignments,
     convert_draft_to_pdf)
 from ietf.meeting.models import Meeting, SchedTimeSessAssignment, Session
 from ietf.meeting.test_data import make_meeting_test_data
@@ -697,6 +698,32 @@ class HelperTests(TestCase):
         set_order_in_meeting(meeting, [other])
         self.assertFalse(hasattr(other, '_order_in_meeting'))
         self.assertEqual(other.order_in_meeting(), 1)
+
+    def test_set_official_timeslotassignments(self):
+        """set_official_timeslotassignments() should give the same results as official_timeslotassignment()"""
+        meeting = MeetingFactory(type_id='ietf')
+        scheduled = SessionFactory(meeting=meeting)
+        unscheduled = SessionFactory(meeting=meeting, add_to_schedule=False)
+        other_meeting = SessionFactory(meeting=MeetingFactory(type_id='ietf'))
+        expected = Session.objects.get(pk=scheduled.pk).official_timeslotassignment()
+        self.assertIsNotNone(expected)
+        expected_timeslot = expected.timeslot
+
+        fresh = list(Session.objects.filter(pk__in=[scheduled.pk, unscheduled.pk, other_meeting.pk]).select_related('meeting__schedule'))
+        with self.assertNumQueries(1):
+            set_official_timeslotassignments(meeting, fresh)
+        fresh_scheduled, fresh_unscheduled, fresh_other = sorted(
+            fresh, key=lambda s: [scheduled.pk, unscheduled.pk, other_meeting.pk].index(s.pk)
+        )
+        with self.assertNumQueries(0):
+            self.assertEqual(fresh_scheduled.official_timeslotassignment(), expected)
+            self.assertEqual(fresh_scheduled.official_timeslotassignment().timeslot, expected_timeslot)
+        # sessions it has no assignment for are left for official_timeslotassignment() to work out
+        self.assertIsNone(fresh_unscheduled.official_timeslotassignment())
+        self.assertEqual(
+            fresh_other.official_timeslotassignment(),
+            Session.objects.get(pk=other_meeting.pk).official_timeslotassignment(),
+        )
 
 
 class ConvertDraftToPdfTests(TestCase):
