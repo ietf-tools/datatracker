@@ -447,12 +447,6 @@ class SessionRequestTestCase(TestCase):
 
 
 class SubmitRequestCase(TestCase):
-    def setUp(self):
-        super(SubmitRequestCase, self).setUp()
-        # Ensure meeting numbers are predictable. Temporarily needed while basing
-        # constraint types on meeting number, expected to go away when #2770 is resolved.
-        MeetingFactory.reset_sequence(0)
-
     def test_submit_request(self):
         meeting = MeetingFactory(type_id='ietf', date=date_today())
         ad = Person.objects.get(user__username='ad')
