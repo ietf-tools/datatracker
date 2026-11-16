@@ -80,7 +80,7 @@ class RequestReviewForm(forms.ModelForm):
         self.doc = doc
 
         f = self.fields["team"]
-        f.queryset = active_review_teams()
+        f.queryset = active_review_teams().order_by('name')
         f.initial = [group.pk for group in f.queryset if can_manage_review_requests_for_team(user, group, allow_personnel_outside_team=False)]
 
         self.fields['type'].queryset = self.fields['type'].queryset.filter(used=True, reviewteamsettings__group__in=self.fields["team"].queryset).distinct()
