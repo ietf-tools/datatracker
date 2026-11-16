@@ -139,12 +139,16 @@ def profile_data(persons):
     """Build everything person/profile.html renders for each of persons"""
     rfcs = rfc_rows(persons)
     expired = {p.pk: list(p.expired_drafts().prefetch_related("states")) for p in persons}
-    replaced = set(
+    replaced_by = {}
+    for target_id, source_name in (
         RelatedDocument.objects.filter(
             target_id__in={d.pk for docs in expired.values() for d in docs},
             relationship="replaces",
-        ).values_list("target_id", flat=True)
-    )
+        )
+        .order_by("source__name")
+        .values_list("target_id", "source__name")
+    ):
+        replaced_by.setdefault(target_id, []).append(source_name)
 
     profiles = []
     for person in persons:
@@ -171,7 +175,12 @@ def profile_data(persons):
                     person.active_drafts().prefetch_related("states")
                 ),
                 "expired_drafts": [
-                    d for d in expired[person.pk] if d.pk not in replaced
+                    d for d in expired[person.pk] if d.pk not in replaced_by
+                ],
+                "replaced_drafts": [
+                    {"doc": d, "replaced_by": replaced_by[d.pk]}
+                    for d in expired[person.pk]
+                    if d.pk in replaced_by
                 ],
                 "has_drafts": person.has_drafts(),
             }
