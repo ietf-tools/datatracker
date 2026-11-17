@@ -22,19 +22,21 @@
                 {% for recipient in recipients %}
                     <tr>
                         <td>
-                            <a href="{% url 'ietf.mailtrigger.views.show_recipients' recipient.slug %}" title="{{ recipient.desc }}">{{ recipient.slug }}</a>
+                            <a href="{% url 'ietf.mailtrigger.views.show_recipients' recipient.slug %}" title="{{ recipient.desc }}">{{ recipient.slug }}</a><br />{{ recipient.desc }}
                         </td>
                         <td>
                             {% for mailtrigger in recipient.used_in_to.all %}
                                 <a href="{% url 'ietf.mailtrigger.views.show_triggers' mailtrigger.slug %}"
                                    title="{{ mailtrigger.desc }}">
-                                    {{ mailtrigger.slug }}</a>{% if not forloop.last %},{% endif %}
+                                    {{ mailtrigger.slug }}</a>{% if recipients.count == 1 %}<br />{{ mailtrigger.desc }}{% endif %}
+                                    {% if not forloop.last %}<br />{% endif %}
                             {% endfor %}
-                            {% if recipient.used_in_to.exists and recipient.used_in_cc.exists %},{% endif %}
+                            {% if recipient.used_in_to.exists and recipient.used_in_cc.exists %}<br />{% endif %}
                             {% for mailtrigger in recipient.used_in_cc.all %}
                                 <a href="{% url 'ietf.mailtrigger.views.show_triggers' mailtrigger.slug %}"
                                    title="{{ mailtrigger.desc }}">
-                                    {{ mailtrigger.slug }}</a>{% if not forloop.last %},{% endif %}
+                                    {{ mailtrigger.slug }}</a>{% if recipients.count == 1 %}<br />{{ mailtrigger.desc }}{% endif %}
+                                    {% if not forloop.last %}<br />{% endif %}
                             {% endfor %}
                         </td>
                         <td>
