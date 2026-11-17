@@ -15,6 +15,7 @@ from ietf.group.models import Role
 from ietf.person.models import Person
 from ietf.ietfauth.utils import has_role
 
+from ietf.utils.log import log
 from ietf.utils.mail import send_mail
 
 def states_of_significant_change():
@@ -199,12 +200,34 @@ def notify_event_to_subscribers(event):
     if not significant:
         subscriptions = subscriptions.filter(notify_on="all")
 
+    failures = []
     for sub in subscriptions.select_related("community_list", "email"):
         clist = sub.community_list
         subject = '%s notification: Changes to %s' % (clist.long_name(), event.doc.name)
 
-        send_mail(None, sub.email.address, settings.DEFAULT_FROM_EMAIL, subject, 'community/notification_email.txt',
-                  context = {
-                      'event': event,
-                      'clist': clist,
-                  })
+        try:
+            send_mail(None, sub.email.address, settings.DEFAULT_FROM_EMAIL, subject, 'community/notification_email.txt',
+                      context = {
+                          'event': event,
+                          'clist': clist,
+                      })
+        except Exception as e:
+            # Log and continue so that one failed send does not prevent
+            # attempting the remaining subscribers. The failures are
+            # collected and reported after the loop, below.
+            failures.append((sub.email.address, e))
+            log("Failed to send notification to %s about %s: %s" % (sub.email.address, event.doc.name, e), e=e)
+
+    if failures:
+        # Some subscribers were notified and some were not. Raise so the
+        # calling task is marked as failed and the partial failure is not
+        # silently lost; a retry will re-attempt all subscribers, so
+        # subscribers who already received a notification may receive a
+        # duplicate.
+        raise Exception(
+            "Failed to send notification to %d subscriber(s): %s"
+            % (
+                len(failures),
+                ", ".join("%s (%s)" % (address, err) for address, err in failures),
+            )
+        ) from failures[0][1]
