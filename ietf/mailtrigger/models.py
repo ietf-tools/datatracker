@@ -217,12 +217,12 @@ class Recipient(models.Model):
     def gather_submission_authors(self, **kwargs):
         """
         Returns a list of name and email, e.g.: [ 'Ano Nymous <ano@nymous.org>' ]
-        Is intended for display use, not in email context.
         """
         addrs = []
         if 'submission' in kwargs:
             submission = kwargs['submission']
-            addrs.extend(["%s <%s>" % (author["name"], author["email"]) for author in submission.authors if author.get("email")])
+            emails = [ Email.objects.filter(address=author['email']).first() or author for author in submission.authors if author.get('email') ]
+            addrs.extend([ e.formatted_email() if isinstance(e, Email) else formataddr((e["name"], e["email"])) for e in emails ])
         return addrs
 
     def gather_submission_submitter(self, **kwargs):
@@ -238,7 +238,7 @@ class Recipient(models.Model):
                 try:
                     submitter = Alias.objects.get(name=submission.submitter).person
                     if submitter and submitter.email():
-                        addrs.append(f"{submitter.name} <{submitter.email().address}>")
+                        addrs.append(submitter.email().formatted_email())
                 except (Alias.DoesNotExist, Alias.MultipleObjectsReturned):
                     pass
         return addrs
