@@ -29,6 +29,7 @@ info_detail_urls = [
     url(r'^email/$', views.email),
     url(r'^deps\.json$', views.dependencies),
     url(r'^meetings/$', views.meetings),
+    url(r'^liaisons/$', views.liaison_statements),
     url(r'^edit/$', views.edit, {'action': "edit"}),
     url(r'^edit/(?P<field>[-a-z0-9_]+)/?$', views.edit, {'action': "edit"}),
     url(r'^conclude/$', views.conclude),

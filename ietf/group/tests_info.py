@@ -39,6 +39,7 @@ from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTrans
 from ietf.group.tasks import generate_wg_charters_files_task, generate_wg_summary_files_task
 from ietf.group.views import response_from_file
 from ietf.group.utils import save_group_in_history, setup_default_community_list_for_group
+from ietf.liaisons.factories import LiaisonStatementFactory, LiaisonStatementEventFactory
 from ietf.meeting.factories import SessionFactory
 from ietf.name.models import DocTagName, GroupStateName, GroupTypeName, ExtResourceName, RoleName
 from ietf.person.models import Person, Email
@@ -483,6 +484,52 @@ class GroupPagesTests(TestCase):
             self.assertContains(r, milestone.desc)
             self.assertContains(r, milestone.docs.all()[0].name)
 
+
+    def test_group_liaison_statements(self):
+        wg = GroupFactory(type_id="wg", acronym="lsgrp")
+        other_wg = GroupFactory(type_id="wg")
+        sdo = GroupFactory(type_id="sdo")
+
+        def make_liaison_statement(state="posted", **kwargs):
+            statement = LiaisonStatementFactory(state_id=state, **kwargs)
+            LiaisonStatementEventFactory(statement=statement, type_id="posted" if state == "posted" else "submitted")
+            return statement
+
+        to_wg = make_liaison_statement(from_groups=[sdo], to_groups=[wg])
+        from_wg = make_liaison_statement(from_groups=[wg], to_groups=[sdo])
+        unrelated = make_liaison_statement(from_groups=[sdo], to_groups=[other_wg])
+        pending = make_liaison_statement(state="pending", from_groups=[sdo], to_groups=[wg])
+
+        url = urlreverse("ietf.group.views.liaison_statements", kwargs=dict(acronym=wg.acronym, group_type="wg"))
+        self.assertEqual(url, "/wg/lsgrp/liaisons/")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, to_wg.title)
+        self.assertContains(r, from_wg.title)
+        self.assertNotContains(r, unrelated.title)
+        self.assertNotContains(r, pending.title)
+
+        # statement from and to the same group is listed only once
+        both = make_liaison_statement(from_groups=[wg], to_groups=[wg])
+        r = self.client.get(url)
+        self.assertEqual(r.content.decode().count(both.title), 1)
+
+        # tab is present after "Meetings" and is selected
+        q = PyQuery(r.content)
+        tabs = [a.text().strip() for a in q("ul.nav-tabs a.nav-link").items()]
+        self.assertIn("Liaison Statements", tabs)
+        self.assertEqual(tabs.index("Liaison Statements"), tabs.index("Meetings") + 1)
+        self.assertEqual(q("ul.nav-tabs a.nav-link.active").text().strip(), "Liaison Statements")
+
+        # empty state
+        empty = GroupFactory(type_id="wg")
+        r = self.client.get(urlreverse("ietf.group.views.liaison_statements", kwargs=dict(acronym=empty.acronym, group_type="wg")))
+        self.assertContains(r, "No liaison statements found")
+
+        # the tab is only offered for working groups
+        rg = GroupFactory(type_id="rg")
+        r = self.client.get(urlreverse("ietf.group.views.group_about", kwargs=dict(acronym=rg.acronym, group_type="rg")))
+        self.assertNotContains(r, "Liaison Statements")
 
     def test_group_about(self):
 
