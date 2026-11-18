@@ -120,7 +120,7 @@ class GroupForm(forms.Form):
             }
             if fieldname == 'delegate_roles':
                 field_args['max_entries'] = MAX_GROUP_DELEGATES
-                field_args['help_text'] = mark_safe("Chairs can delegate the authority to update the state of group documents - at most %s persons at a given time." % MAX_GROUP_DELEGATES)
+                field_args['help_text'] = mark_safe("Chairs can delegate authority to up to %d persons at a given time. Delegated privileges include updating the state of group documents and taking Chair actions in Meetecho." % MAX_GROUP_DELEGATES)
             if role_slug == "ad":
                 field_args['extra_prefetch'] = Email.objects.filter(Q(role__name__in=('pre-ad', 'ad'), role__group__type='area', role__group__state='active')).distinct()
                 field_args['disable_ajax'] = True  # only use the prefetched options
