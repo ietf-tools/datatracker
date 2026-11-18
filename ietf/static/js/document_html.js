@@ -86,6 +86,20 @@ document.addEventListener("DOMContentLoaded", function (event) {
     defpane.show();
     document.activeElement.blur();
 
+    // keep RFC links within the datatracker
+    const rfclink = /^https?:\/\/[^\/\.]*.(?:rfc-editor|ietf).org\/.*\/((?:rfc|std|bcp)\d+)$/;
+    const docbase = document.location.origin + "/doc/html/";
+    [...document.querySelectorAll(".references dd a:not([href='']:last-of-type)"),
+     ...document.querySelectorAll("#identifiers a.eref")]
+        .forEach(ref => {
+            const docnum = ref.href.match(rfclink);
+            if (!doccnum) { return; }
+            if (ref.textContent === ref.href) {
+                ref.textContent = docbase + docnum[1];
+            }
+            ref.href = docbase + docnum[1];
+        });
+
     if (localStorage.getItem("reflinks") != "refsection") {
         // make links to references go directly to the referenced doc
         document.querySelectorAll("a[href^='#'].xref")
@@ -103,16 +117,6 @@ document.addEventListener("DOMContentLoaded", function (event) {
                 const url = loc.querySelector(
                     "a:not([href='']:last-of-type)");
                 if (url) {
-                    const rfc = url.href.match(/(rfc\d+)$/i);
-                    if (rfc) {
-                        // keep RFC links within the datatracker
-                        const base = ref.href.match(
-                            /^(.*\/)rfc\d+.*$/i);
-                        if (base) {
-                            ref.href = base[1] + rfc[1];
-                            return;
-                        }
-                    }
                     ref.href = url.href;
                 }
             });
