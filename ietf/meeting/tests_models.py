@@ -9,7 +9,6 @@ from unittest.mock import patch
 from django.conf import settings
 from django.test import override_settings
 
-import ietf.meeting.models
 from ietf.group.factories import GroupFactory, GroupHistoryFactory
 from ietf.meeting.factories import (
     MeetingFactory,
@@ -268,30 +267,18 @@ class SessionTests(TestCase):
         self.assertEqual(Session._alpha_str(27 * 26 - 1), "zz")
         self.assertEqual(Session._alpha_str(27 * 26), "aaa")
 
-    @patch.object(
-        ietf.meeting.models.Session,
-        "_session_recording_url_label",
-        return_value="LABEL",
-    )
-    def test_session_recording_url(self, mock):
+    def test_session_recording_url(self):
         for session_type in ["ietf", "interim"]:
             session = SessionFactory(meeting__type_id=session_type)
             with override_settings():
-                if hasattr(settings, "MEETECHO_SESSION_RECORDING_URL"):
-                    del settings.MEETECHO_SESSION_RECORDING_URL
-                self.assertIsNone(session.session_recording_url())
-
-                settings.MEETECHO_SESSION_RECORDING_URL = "http://player.example.com"
-                self.assertEqual(
-                    session.session_recording_url(), "http://player.example.com"
-                )
-
                 settings.MEETECHO_SESSION_RECORDING_URL = (
                     "http://player.example.com?{session_label}"
                 )
-                self.assertEqual(
-                    session.session_recording_url(), "http://player.example.com?LABEL"
-                )
+                self.assertIsNone(session.session_recording_url())
+
+                session.meetecho_recording_name = "   "
+                session.save()
+                self.assertIsNone(session.session_recording_url())
 
                 session.meetecho_recording_name = "actualname"
                 session.save()
@@ -300,30 +287,13 @@ class SessionTests(TestCase):
                     "http://player.example.com?actualname",
                 )
 
-    def test_session_recording_url_label_ietf(self):
-        session = SessionFactory(
-            meeting__type_id="ietf",
-            meeting__date=date_today(),
-            meeting__number="123",
-            group__acronym="acro",
-        )
-        session_time = session.official_timeslotassignment().timeslot.time
-        self.assertEqual(
-            f"IETF123-ACRO-{session_time:%Y%m%d-%H%M}",  # n.b., time in label is UTC
-            session._session_recording_url_label(),
-        )
+                settings.MEETECHO_SESSION_RECORDING_URL = "http://player.example.com"
+                self.assertEqual(
+                    session.session_recording_url(), "http://player.example.com"
+                )
 
-    def test_session_recording_url_label_interim(self):
-        session = SessionFactory(
-            meeting__type_id="interim",
-            meeting__date=date_today(),
-            group__acronym="acro",
-        )
-        session_time = session.official_timeslotassignment().timeslot.time
-        self.assertEqual(
-            f"IETF-ACRO-{session_time:%Y%m%d-%H%M}",  # n.b., time in label is UTC
-            session._session_recording_url_label(),
-        )
+                del settings.MEETECHO_SESSION_RECORDING_URL
+                self.assertIsNone(session.session_recording_url())
 
 
 class RegistrationTests(TestCase):

@@ -246,6 +246,20 @@ class AgendaApiTests(TestCase):
         self.assertEqual(extracted[pk_with['neither named']]['name'], '')
         self.assertEqual(extracted[pk_with['neither named']]['slotName'], '')
 
+    @override_settings(MEETECHO_SESSION_RECORDING_URL="http://player.example.com?{session_label}")
+    def test_agenda_extract_schedule_session_recording(self):
+        meeting = MeetingFactory(type_id='ietf')
+        unnamed = SessionFactory(meeting=meeting)
+        named = SessionFactory(meeting=meeting, meetecho_recording_name='IETF123-NAMED-20250101-0900')
+        processed = preprocess_assignments_for_agenda(meeting.schedule.assignments.all(), meeting)
+        AgendaKeywordTagger(assignments=processed).apply()
+        extracted = {item.session.pk: agenda_extract_schedule(item) for item in processed}
+        self.assertEqual(extracted[unnamed.pk]['links']['sessionRecording'], '')
+        self.assertEqual(
+            extracted[named.pk]['links']['sessionRecording'],
+            'http://player.example.com?IETF123-NAMED-20250101-0900',
+        )
+
 
 class MeetingTests(BaseMeetingTestCase):
     def test_agenda_txt_query_count(self):
@@ -491,11 +505,12 @@ class MeetingTests(BaseMeetingTestCase):
         r = self.client.get(url)
         q = PyQuery(r.content)
         # debug.show("q(f'#notes_and_recordings_{session.pk}')")
-        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 2)
+        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 1)
         links = q(f"#notes_and_recordings_{session.pk} tr a")
-        self.assertEqual(len(links), 2)
+        self.assertEqual(len(links), 1)
         self.assertEqual(links[0].attrib['href'], str(session.notes_url()))
-        self.assertEqual(links[1].attrib['href'], str(session.session_recording_url()))
+        self.assertNotContains(r, "Meetecho session recording")
+        self.assertEqual(len(q('a[title="Session recording"]')), 0)
 
         session.meetecho_recording_name = 'my_test_session_name'
         session.save()
@@ -506,6 +521,11 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertEqual(len(links), 2)
         self.assertEqual(links[0].attrib['href'], str(session.notes_url()))
         self.assertEqual(links[1].attrib['href'], str(session.session_recording_url()))
+        self.assertIn("my_test_session_name", links[1].attrib["href"])
+        self.assertEqual(
+            [a.attrib["href"] for a in q('a[title="Session recording"]')],
+            [str(session.session_recording_url())],
+        )
 
         new_recording_url = "https://www.youtube.com/watch?v=jNQXAC9IVRw"
         new_recording_title = "Me at the zoo"
