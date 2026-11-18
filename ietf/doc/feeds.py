@@ -180,7 +180,7 @@ class RfcFeed(Feed):
     feed_type = Rss201WithNamespacesFeed
     title = "RFCs"
     author_name = "RFC Editor"
-    link = "https://www.rfc-editor.org/rfc-index2.html"
+    link = "https://www.rfc-editor.org/rfc-index/"
 
     def get_object(self, request, year=None):
         self.year = year
@@ -214,7 +214,7 @@ class RfcFeed(Feed):
         return item.abstract
 
     def item_link(self, item):
-        return "https://rfc-editor.org/info/%s" % item.name
+        return "https://www.rfc-editor.org/info/%s/" % item.name
 
     def item_pubdate(self, item):
         return item.publication_time
@@ -229,7 +229,7 @@ class RfcFeed(Feed):
                 for fmt, media_type in [("txt", "text/plain"), ("html", "text/html")]:
                     media_contents.append(
                         {
-                            "url": f"https://rfc-editor.org/rfc/{item.name}.{fmt}",
+                            "url": f"https://www.rfc-editor.org/rfc/{item.name}.{fmt}",
                             "media_type": media_type,
                             "is_format_of": self.item_link(item),
                         }
@@ -248,7 +248,7 @@ class RfcFeed(Feed):
             ]:
                 media_contents.append(
                     {
-                        "url": f"https://rfc-editor.org/rfc/{item.name}.{fmt}",
+                        "url": f"https://www.rfc-editor.org/rfc/{item.name}.{fmt}",
                         "media_type": media_type,
                         "is_format_of": f"https://www.rfc-editor.org/rfc/{item.name}.xml",
                     }
@@ -263,7 +263,7 @@ class RfcFeed(Feed):
         )
 
         # R104 Publisher (Mandatory - but we need a string from them first)
-        extra.update({"dcterms_publisher": "rfc-editor.org"})
+        extra.update({"dcterms_publisher": "www.rfc-editor.org"})
 
         # TODO MAYBE (Optional stuff)
         # R108 License
