@@ -35,8 +35,9 @@ def role_person_link(role, **kwargs):
     cls = kwargs.get('class', '')
     name = role.person.name
     plain_name = role.person.plain_name()
-    email = role.email.address
-    return {'name': name, 'plain_name': plain_name, 'email': email, 'title': title, 'class': cls}
+    email = role.email.address if role.email else ""
+    with_email = kwargs.get("with_email", True)
+    return {'name': name, 'plain_name': plain_name, 'email': email, 'title': title, 'class': cls, "with_email": with_email}
 
 @register.filter
 def name_with_conditional_acronym(group):
