@@ -1484,10 +1484,11 @@ def document_shepherd_writeup_template(request, type):
 def document_references(request, name):
     doc = get_object_or_404(Document,name=name)
     refs = doc.references()
+    numdocs=refs.count()
     if doc.type_id in ["bcp","std","fyi"]:
         for rfc in doc.contains():
             refs |= rfc.references()    
-    return render(request, "doc/document_references.html",dict(doc=doc,refs=sorted(refs,key=lambda x:x.target.name),))
+    return render(request, "doc/document_references.html",dict(doc=doc,numdocs=numdocs,refs=sorted(refs,key=lambda x:x.target.name),))
 
 def document_referenced_by(request, name):
     """View documents that reference the named document
@@ -1517,8 +1518,6 @@ def document_referenced_by(request, name):
     numdocs = refs.count()
     if not full and numdocs>250:
        refs=refs[:250]
-    else:
-       numdocs=None
     refs=sorted(refs,key=lambda x:(['refnorm','refinfo','refunk','refold'].index(x.relationship.slug),x.source.name))
     return render(request, "doc/document_referenced_by.html",
                dict(name=name,

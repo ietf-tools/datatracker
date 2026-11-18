@@ -7,7 +7,7 @@
 {% block title %}References to {{ name|prettystdname }}{% endblock %}
 {% block content %}
     {% origin %}
-    <h1>References to {{ name|prettystdname }}</h1>
+    <h1>{{ numdocs }} Reference{% if numdocs != 1 %}s{% endif %} to {{ name|prettystdname }}</h1>
     <p class="alert alert-info my-3">
         These dependencies are extracted using heuristics looking for strings with particular prefixes. Notably, this means that references to I-Ds by title only are not reflected here. If it's really important, please inspect the documents' references sections directly.
     </p>
@@ -16,7 +16,7 @@
         <a href="{% url 'ietf.doc.views_help.relationship_help' subset='reference' %}">reference type</a>,
         then document name.
     </p>
-    {% if numdocs %}
+    {% if numdocs > 250 %}
         <div class="alert alert-warning my-3">
             <p>
                 Showing only the first 250 of {{ numdocs }} documents.
