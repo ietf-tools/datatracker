@@ -1680,6 +1680,33 @@ class MilestoneTests(TestCase):
         self.assertEqual(m.state_id, "deleted")
         self.assertTrue("Deleted milestone" in m.milestonegroupevent_set.all()[0].desc)
 
+    def test_delete_milestone_in_review_as_chair(self):
+        m1, m2, group = self.create_test_milestones()
+        m1.state_id = "review"
+        m1.save()
+
+        url = urlreverse('ietf.group.milestones.edit_milestones;current', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+        login_testing_unauthorized(self, "marschairman", url)
+
+        # delete
+        mailbox_before = len(outbox)
+        mstr = f"m{m1.id}"
+        r = self.client.post(url, { 'prefix': mstr,
+                                    f'{mstr}-id': m1.id,
+                                    f'{mstr}-desc': m1.desc,
+                                    f'{mstr}-due': m1.due.strftime("%B %Y"),
+                                    f'{mstr}-resolved': "",
+                                    f'{mstr}-docs': pklist(m1.docs),
+                                    f'{mstr}-delete': "checked",
+                                    'action': "save",
+                                    })
+        self.assertEqual(r.status_code, 302)
+
+        m = GroupMilestone.objects.get(pk=m1.pk)
+        self.assertEqual(m.state_id, "deleted")
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertFalse(group.list_email in outbox[-1]['To'])
+
     def test_edit_milestone(self):
         m1, m2, group = self.create_test_milestones()
 
