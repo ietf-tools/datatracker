@@ -2385,6 +2385,10 @@ def ical_session_status(assignment):
         return "CONFIRMED"
 
 
+# Marks the vacated slot in the event title
+RESCHEDULED_SUMMARY_PREFIX = "Rescheduled: "
+
+
 def ical_rescheduled_note(assignment):
     if getattr(assignment.session, "current_status", None) != 'resched':
         return None
@@ -2436,6 +2440,9 @@ def generate_agenda_ical_precomp(agenda_data):
 
         if item["note"]:
             summary += f" ({item["note"]})"
+
+        if item["status"] == "resched":
+            summary = f"{RESCHEDULED_SUMMARY_PREFIX}{summary}"
 
         event.add("summary", summary)
 
@@ -2557,6 +2564,9 @@ def generate_agenda_ical(schedule, assignments):
 
         if item.session.agenda_note:
             summary += f" ({item.session.agenda_note})"
+
+        if getattr(item.session, "current_status", None) == "resched":
+            summary = f"{RESCHEDULED_SUMMARY_PREFIX}{summary}"
 
         event.add("summary", summary)
 

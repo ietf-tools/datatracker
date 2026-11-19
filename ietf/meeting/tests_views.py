@@ -61,6 +61,7 @@ from ietf.meeting.utils import add_event_info_to_session_qs, material_document_n
 from ietf.meeting.utils import create_recording, delete_recording, get_next_sequence, bluesheet_data
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose, generate_agenda_data
+from ietf.meeting.views import generate_agenda_ical
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.mime import get_mime_type
@@ -1417,6 +1418,21 @@ class MeetingTests(BaseMeetingTestCase):
             f"Rescheduled to {local_start.strftime('%A %H:%M')}-{local_end.strftime('%H:%M')} ({meeting.time_zone})",
             str(events['CANCELLED']['description']),
         )
+        self.assertTrue(str(events['CANCELLED']['summary']).startswith('Rescheduled: '))
+        self.assertFalse(str(events['CONFIRMED']['summary']).startswith('Rescheduled: '))
+
+    def test_rescheduled_ics_from_assignments(self):
+        meeting = MeetingFactory(type_id='ietf')
+        live = SessionFactory(meeting=meeting, status_id='sched')
+        tombstone = SessionFactory(meeting=meeting, group=live.group, status_id='resched')
+        tombstone.tombstone_for = live
+        tombstone.save()
+        assignments = preprocess_assignments_for_agenda(meeting.schedule.assignments.all(), meeting)
+        ical = generate_agenda_ical(meeting.schedule, assignments)
+        events = {str(e['status']): e for e in Calendar.from_ical(ical).walk('VEVENT')}
+        self.assertCountEqual(events, ['CANCELLED', 'CONFIRMED'])
+        self.assertTrue(str(events['CANCELLED']['summary']).startswith('Rescheduled: '))
+        self.assertFalse(str(events['CONFIRMED']['summary']).startswith('Rescheduled: '))
 
     def test_session_materials(self):
         meeting = make_meeting_test_data()
