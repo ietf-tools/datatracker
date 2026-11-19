@@ -26,7 +26,7 @@ from simple_history.models import HistoricalRecords
 import debug                            # pyflakes:ignore
 
 from ietf.name.models import ExtResourceName
-from ietf.person.name import name_parts, initials, plain_name
+from ietf.person.name import name_parts, initials, plain_name, plain_ascii, alias_names
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.storage import BlobShadowFileSystemStorage
 from ietf.utils.mail import formataddr
@@ -84,6 +84,10 @@ class PersonUUID(models.Model):
 
     def __str__(self):
         return str(self.uuid)
+
+
+# The Person fields the name forms in alias_names() are computed from.
+NAME_FIELDS = ("name", "ascii", "ascii_short", "plain")
 
 
 class Person(models.Model):
@@ -151,15 +155,7 @@ class Person(models.Model):
         return self._cached_ascii_name
     def plain_ascii(self):
         if not hasattr(self, '_cached_plain_ascii'):
-            if self.ascii:
-                if isinstance(self.ascii, bytes):
-                    ascii = unidecode_name(self.ascii.decode('utf-8'))
-                else:
-                    ascii = unidecode_name(self.ascii)
-            else:
-                ascii = unidecode_name(self.name)
-            prefix, first, middle, last, suffix = name_parts(ascii)
-            self._cached_plain_ascii = (" ".join([first, last])).strip()
+            self._cached_plain_ascii = plain_ascii(self.name, self.ascii)
         return self._cached_plain_ascii
     def initials(self):
         return initials(self.ascii or self.name)
@@ -324,11 +320,13 @@ class Person(models.Model):
 
     def alias_names(self):
         """Return the non-blank name forms (full, ASCII, short ASCII and plain) that should exist as aliases."""
-        names = [self.name, self.ascii, self.ascii_short, self.plain_name(), self.plain_ascii()]
-        return {n for n in names if n}
+        return alias_names(self.name, self.ascii, self.ascii_short, self.plain)
 
     def save(self, *args, **kwargs):
         created = not self.pk
+        names_changed = created or not Person.objects.filter(
+            pk=self.pk, **{field: getattr(self, field) for field in NAME_FIELDS}
+        ).exists()
         # The name fields may have changed; drop what the name methods memoized.
         for attr in ('_cached_plain_name', '_cached_ascii_name', '_cached_plain_ascii'):
             self.__dict__.pop(attr, None)
@@ -336,27 +334,23 @@ class Person(models.Model):
 
         existing = set(self.alias_set.values_list('name', flat=True))
         new_names = self.alias_names() - existing
-        for name in new_names:
-            Alias(person=self, name=name).save(notify_duplicates=False)
+        # A concurrent save may have written some of these already; skip those.
+        Alias.objects.bulk_create(
+            [Alias(person=self, name=name) for name in new_names], ignore_conflicts=True
+        )
         # The aliases just changed; drop what has_alias_for_name() memoized about them.
         self.__dict__.pop('_cached_has_alias_for_name', None)
 
-        # Report possible duplicates once, however many of the new names match.
-        check_names = (new_names | {self.name}) if created else new_names
-        if check_names:
-            others = Person.objects.exclude(pk=self.pk).filter(
-                models.Q(name__in=check_names) | models.Q(alias__name__in=check_names)
+        # Report possible duplicates once, however many of the new names match. Restoring
+        # a missing alias for an unchanged name is not a new duplicate, so stay quiet then.
+        if names_changed and new_names:
+            shared = set(
+                Alias.objects.filter(name__in=new_names).exclude(person=self).values_list('name', flat=True)
+            ) | set(
+                Person.objects.filter(name__in=new_names).exclude(pk=self.pk).values_list('name', flat=True)
             )
-            if others.exists():
-                persons = Person.objects.filter(
-                    models.Q(pk=self.pk) | models.Q(pk__in=others.values('pk'))
-                ).order_by('pk')
-                msg = render_to_string('person/mail/possible_duplicates.txt',
-                                       dict(name=self.name,
-                                            persons=persons,
-                                            settings=settings
-                                            ))
-                send_mail_preformatted(None, msg)
+            if shared:
+                send_possible_duplicates_notice(self, shared)
 
     #this variable, if not None, may be used by url() to keep the sitefqdn.
     default_hostscheme = None
@@ -400,6 +394,24 @@ class PersonExtResource(models.Model):
         priority = self.display_name or self.name.name
         return u"%s (%s) %s" % (priority, self.name.slug, self.value)
 
+def send_possible_duplicates_notice(person, names):
+    """Email the secretariat that person now has names that other persons also have."""
+    others = Person.objects.exclude(pk=person.pk).filter(
+        models.Q(name__in=names) | models.Q(alias__name__in=names)
+    ).distinct().order_by('pk')
+    persons = Person.objects.filter(
+        models.Q(pk=person.pk) | models.Q(pk__in=others.values('pk'))
+    ).order_by('pk')
+    msg = render_to_string('person/mail/possible_duplicates.txt', dict(
+        person=person,
+        names=sorted(names),
+        other=others.first(),
+        persons=persons,
+        settings=settings,
+    ))
+    send_mail_preformatted(None, msg)
+
+
 class Alias(models.Model):
     """This is used for alternative forms of a name.  This is the
     primary lookup point for names, and should always contain the
@@ -409,24 +421,21 @@ class Alias(models.Model):
     person = ForeignKey(Person)
     name = models.CharField(max_length=255, db_index=True)
 
-    def save(self, *args, notify_duplicates=True, **kwargs):
-        """Save the alias and, unless notify_duplicates is False, report it if another person already has it."""
+    def save(self, *args, **kwargs):
         created = not self.pk
         super(Alias, self).save(*args, **kwargs)
-        if created and notify_duplicates:
-            if Alias.objects.filter(name=self.name).exclude(person=self.person).count() > 0 :
-                msg = render_to_string('person/mail/possible_duplicates.txt',
-                                       dict(name=self.name,
-                                            persons=Person.objects.filter(alias__name=self.name).distinct(),
-                                            settings=settings
-                                            ))
-                send_mail_preformatted(None, msg)
+        if created:
+            if Alias.objects.filter(name=self.name).exclude(person=self.person).exists():
+                send_possible_duplicates_notice(self.person, {self.name})
 
 
     def __str__(self):
         return self.name
     class Meta:
         verbose_name_plural = "Aliases"
+        constraints = [  # noqa: RUF012
+            models.UniqueConstraint(fields=["person", "name"], name="unique_alias_name_per_person"),
+        ]
 
 class Email(models.Model):
     history = HistoricalRecords()

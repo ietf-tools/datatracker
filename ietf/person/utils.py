@@ -135,8 +135,10 @@ def merge_persons(request, source, target, file=sys.stdout, verbose=False):
     source.uuids.update(person=target, primary=False)
     queue_person_uuid_push(target)
 
+    # Drop the source's aliases the target already has, so moving the rest can't
+    # violate the one-alias-name-per-person constraint.
+    source.alias_set.filter(name__in=target.alias_set.values("name")).delete()
     move_related_objects(source, target, file=file, verbose=verbose)
-    dedupe_aliases(target)
 
     # copy other attributes
     for field in ('ascii','ascii_short', 'biography', 'photo', 'photo_thumb', 'name_from_draft'):
@@ -227,15 +229,6 @@ def move_related_objects(source, target, file, verbose=False):
             print("Merging {}:{}".format(accessor,queryset.count()), file=file)
         kwargs = { field_name:target }
         queryset.update(**kwargs)
-
-def dedupe_aliases(person):
-    '''Check person for duplicate aliases and purge'''
-    seen = []
-    for alias in person.alias_set.all():
-        if alias.name in seen:
-            alias.delete()
-        else:
-            seen.append(alias.name)
 
 def merge_nominees(source, target):
     '''Move nominees and feedback to target'''

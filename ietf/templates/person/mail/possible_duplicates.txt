@@ -1,21 +1,23 @@
 {% load ietf_filters %}{% load mail_filters %}{% autoescape off %}From: {{settings.SERVER_EMAIL}}
 To: <iesg-secretary@ietf.org>
-Subject: Possible duplicate Person objects for {{name}}
+Subject: Possible duplicate Person objects for {{ names|join:", " }}
 
-A new Person and/or Alias object was just created for {{name}}.
+{{ person.name }} (pk={{ person.pk }}) now has {{ names|length|pluralize:"this name,these names" }}, which other Person objects also have:
 
-There are now {{persons|length}} Person objects sharing that name.
+{% for name in names %}    {{ name }}
+{% endfor %}
+There are now {{ persons|length }} Person objects sharing {{ names|length|pluralize:"that name,at least one of those names" }}.
 
 Please check to see if they represent the same actual person, and if so, merge the objects as appropriate.
 
-{% for person in persons %}Person {{forloop.counter}} {{ person.name }} (pk={{person.pk}})
-    time:     {{person.time}}
-    ascii:    {{person.ascii}}
-    email:    {% for email in person.email_set.all %}{{ email.address }} {% endfor %}
-    aliases:  {{ person.aliases|join:", " }}
-    username: {% if person.user %}{{person.user.username}}{% else %}None{% endif %}
+{% for p in persons %}Person {{forloop.counter}} {{ p.name }} (pk={{p.pk}})
+    time:     {{p.time}}
+    ascii:    {{p.ascii}}
+    email:    {% for email in p.email_set.all %}{{ email.address }} {% endfor %}
+    aliases:  {{ p.aliases|join:", " }}
+    username: {% if p.user %}{{p.user.username}}{% else %}None{% endif %}
 
 {% endfor %} {% endautoescape %}
 
 Merge Link:
-{% url "ietf.person.views.merge" %}?source={{ persons.0.pk}}&target={{ persons.1.pk }}
+{{ settings.IDTRACKER_BASE_URL }}{% url "ietf.person.views.merge" %}?source={{ other.pk }}&target={{ person.pk }}
