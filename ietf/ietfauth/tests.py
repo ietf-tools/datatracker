@@ -277,6 +277,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(person.ascii, "Test Name")
         self.assertEqual(Person.objects.filter(alias__name="Test Name", user__username=username).count(), 1)
         self.assertEqual(Person.objects.filter(alias__name="Test Nãme", user__username=username).count(), 1)
+        self.assertEqual(Person.objects.filter(alias__name="T. Name", user__username=username).count(), 1)
         self.assertEqual(Email.objects.filter(address=email_address, person__user__username=username, active=True).count(), 1)
 
         # deactivate address
