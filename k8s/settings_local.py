@@ -221,6 +221,32 @@ else:
         "DATATRACKER_MEETECHO_CLIENT_ID and DATATRACKER_MEETECHO_CLIENT_SECRET must be set"
     )
 
+# Meetecho URLs have their session object available for interpolation using .format()
+# (e.g., "https://some-url/{session.pk}")
+_MEETECHO_ONSITE_TOOL_URL = os.environ.get("DATATRACKER_MEETECHO_ONSITE_TOOL_URL", None)
+if _MEETECHO_ONSITE_TOOL_URL is not None:
+    MEETECHO_ONSITE_TOOL_URL = _MEETECHO_ONSITE_TOOL_URL
+
+_MEETECHO_VIDEO_STREAM_URL = os.environ.get(
+    "DATATRACKER_MEETECHO_VIDEO_STREAM_URL", None
+)
+if _MEETECHO_VIDEO_STREAM_URL is not None:
+    MEETECHO_VIDEO_STREAM_URL = _MEETECHO_VIDEO_STREAM_URL
+
+_MEETECHO_AUDIO_STREAM_URL = os.environ.get(
+    "DATATRACKER_MEETECHO_AUDIO_STREAM_URL", None
+)
+if _MEETECHO_AUDIO_STREAM_URL is not None:
+    MEETECHO_AUDIO_STREAM_URL = _MEETECHO_AUDIO_STREAM_URL
+
+# The SESSION_RECORDING_URL only gets session_label for interpolation (i.e., not the
+# actual session object, so eg "https://some-url/{session_label}")
+_MEETECHO_SESSION_RECORDING_URL = os.environ.get(
+    "DATATRACKER_MEETECHO_SESSION_RECORDING_URL", None
+)
+if _MEETECHO_SESSION_RECORDING_URL is not None:
+    MEETECHO_SESSION_RECORDING_URL = _MEETECHO_SESSION_RECORDING_URL
+
 # For APP_API_TOKENS, accept either base64-encoded JSON or raw JSON, but not both.
 # To decode / pretty-print the encoded form, run:
 #    base64 -d | jq .
