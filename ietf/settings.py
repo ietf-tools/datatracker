@@ -1364,7 +1364,7 @@ CELERY_TASK_ROUTES = {
 MEETECHO_ONSITE_TOOL_URL = "https://meetings.conf.meetecho.com/onsite{session.meeting.number}/?session={session.pk}"
 MEETECHO_VIDEO_STREAM_URL = "https://meetings.conf.meetecho.com/ietf{session.meeting.number}/?session={session.pk}"
 MEETECHO_AUDIO_STREAM_URL = "https://mp3.conf.meetecho.com/ietf{session.meeting.number}/{session.pk}.m3u"
-MEETECHO_SESSION_RECORDING_URL = "https://meetecho-player.ietf.org/playout/?session={session_label}"
+MEETECHO_SESSION_RECORDING_URL = "https://meetecho-meetings.ietf.org/recordings/{session_label}"
 
 # Errata system api configuration
 # settings should provide
