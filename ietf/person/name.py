@@ -82,6 +82,16 @@ def plain_name(name):
     prefix, first, middle, last, suffix = name_parts(name)
     return " ".join( n for n in (first, last) if n)
 
+def plain_ascii(name, ascii):
+    """Return the first and last name, in ASCII, of a person with these name fields."""
+    prefix, first, middle, last, suffix = name_parts(unidecode_name(ascii or name))
+    return " ".join([first, last]).strip()
+
+def alias_names(name, ascii, ascii_short, plain):
+    """Return the non-blank name forms that a person with these name fields should have as aliases."""
+    names = [name, ascii, ascii_short, plain or plain_name(name), plain_ascii(name, ascii)]
+    return {n for n in names if n}
+
 def capfirst(s):
     # Capitalize the first word character, skipping non-word characters and
     # leaving following word characters untouched:

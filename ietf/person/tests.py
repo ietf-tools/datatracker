@@ -12,6 +12,7 @@ from django.utils.html import escape
 from pyquery import PyQuery
 
 import django.core.signing
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection, transaction
 from django.db.utils import IntegrityError
@@ -39,18 +40,18 @@ from ietf.person.factories import (
     PersonApiKeyEventFactory,
     PersonUUIDFactory,
 )
-from ietf.person.models import Person, Alias, PersonApiKeyEvent, PersonUUID
+from ietf.person.models import Person, PersonApiKeyEvent, PersonUUID
 from ietf.person.tasks import (purge_personal_api_key_events_task, push_person_uuids_task,
     check_person_uuids_task)
 from ietf.person.utils import (merge_persons, determine_merge_order, send_merge_notification,
-    handle_users, get_extra_primary, dedupe_aliases, move_related_objects, merge_nominees,
+    handle_users, get_extra_primary, move_related_objects, merge_nominees,
     handle_reviewer_settings, get_dots, assign_primary_uuid, ensure_primary_uuid,
     get_person_uuid_object)
 from ietf.submit.utils import ensure_person_email_info_exists
 from kombu.exceptions import OperationalError as KombuOperationalError
 from ietf.review.models import ReviewerSettings
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 
 
 def get_person_no_user():
@@ -315,10 +316,38 @@ class PersonTests(TestCase):
         self.assertEqual(person.ascii_name(), "Wu Jian Ping")
 
     def test_duplicate_person_name(self):
-        empty_outbox()
         p = PersonFactory(name="Föö Bär")
+        empty_outbox()
         PersonFactory(name=p.name)
-        self.assertTrue("possible duplicate" in str(outbox[0]["Subject"]).lower())
+        self.assertEqual(len(outbox), 1)
+        self.assertIn("Possible duplicate Person objects for Foo Bar, ", str(outbox[0]["Subject"]))
+        self.assertIn("There are now 2 Person objects sharing at least one of those names.", get_payload_text(outbox[0]))
+
+    def test_duplicate_notice_names_the_shared_name(self):
+        """The duplicate notice names the name that matched, not the new person's full name."""
+        existing = PersonFactory(name="John Smith", ascii="John Smith")
+        third = PersonFactory(name="John Smith", ascii="John Smith")
+        empty_outbox()
+        person = PersonFactory(name="Dr. John Q. Smith Jr.", ascii="Dr. John Q. Smith Jr.")
+        self.assertEqual(len(outbox), 1)
+        self.assertEqual(str(outbox[0]["Subject"]), "Possible duplicate Person objects for John Smith")
+        body = get_payload_text(outbox[0])
+        self.assertIn(f"Dr. John Q. Smith Jr. (pk={person.pk}) now has this name, which other Person objects also have:", body)
+        self.assertIn("There are now 3 Person objects sharing that name.", body)
+        for p in (existing, third, person):
+            self.assertIn(f"(pk={p.pk})", body)
+        self.assertIn(f"{settings.IDTRACKER_BASE_URL}/person/merge?source={existing.pk}&target={person.pk}", body)
+
+    def test_save_fills_missing_alias_without_duplicate_notice(self):
+        """A save that doesn't change a name restores a missing alias without a duplicate notice."""
+        PersonFactory(name="Föö Bär")
+        person = PersonFactory(name="Föö Bär")
+        person.alias_set.filter(name="Föö Bär").delete()
+        empty_outbox()
+        person.biography = "Unrelated change."
+        person.save()
+        self.assertTrue(person.alias_set.filter(name="Föö Bär").exists())
+        self.assertEqual(len(outbox), 0)
 
     def test_merge(self):
         url = urlreverse("ietf.person.views.merge")
@@ -481,14 +510,20 @@ class PersonUtilsTests(TestCase):
         extra = get_extra_primary(source, target)
         self.assertEqual(set(extra), set(source.email_set.filter(primary=True)))
 
-    def test_dedupe_aliases(self):
-        person = PersonFactory()
-        Alias.objects.create(person=person, name='Joe')
-        Alias.objects.create(person=person, name='Joe')
-        self.assertEqual(person.alias_set.filter(name='Joe').count(),2)
-        dedupe_aliases(person)
-        self.assertEqual(person.alias_set.filter(name='Joe').count(),1)
-      
+    def test_merge_persons_with_shared_alias(self):
+        """Merging persons that share an alias leaves the target with one alias of each name."""
+        source = PersonFactory(name="Jane Doe", ascii="Jane Doe")
+        target = PersonFactory(name="Jane Doe", ascii="Jane Doe")
+        source.alias_set.create(name="J. Doe-Former")
+        request = HttpRequest()
+        request.user = RoleFactory(group__acronym="secretariat", name_id="secr").person.user
+        success, _ = merge_persons(request, source, target, file=StringIO())
+        self.assertTrue(success)
+        self.assertCountEqual(
+            target.alias_set.values_list("name", flat=True),
+            ["Jane Doe", "J. Doe-Former"],
+        )
+
     def test_merge_nominees(self):
         nomcom_test_data()
         nomcom = NomCom.objects.first()

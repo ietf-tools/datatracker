@@ -164,14 +164,7 @@ def edit(request, id):
         person_form = EditPersonForm(request.POST, instance=person)
         email_formset = EmailFormset(request.POST, instance=person, prefix='email')
         if person_form.is_valid() and email_formset.is_valid():
-            # handle aliases
-            for field in ('name','ascii','ascii_short'):
-                if field in person_form.changed_data:
-                    person.alias_set.filter(name=getattr(person,field)).delete()
-                    alias = person_form.cleaned_data[field]
-                    if alias:
-                        Alias.objects.get_or_create(person=person,name=alias)
-                    
+            # Person.save() also creates aliases for the new name
             person_form.save()
             email_formset.save()
             
