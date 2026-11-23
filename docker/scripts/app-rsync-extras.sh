@@ -70,6 +70,7 @@ rfc[0-9]
 rfc[0-9][0-9]
 rfc[0-9][0-9][0-9]
 rfc[0-9][0-9][0-9][0-9]
+rfc[0-9][0-9][0-9][0-9][0-9]
 EOF
 
 OPTS="-asz --no-owner --no-group --partial ${PROGRESS:+--info=progress2} --exclude-from=$EXCLUDE --del --delete-excluded"
