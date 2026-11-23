@@ -100,35 +100,13 @@ class PersonalInformationExportView(DetailView, JsonExportMixin):
         expand = ['searchrule', 'documentauthor', 'rfcauthor', 'ad_document_set', 'ad_dochistory_set', 'docevent',
             'ballotpositiondocevent', 'deletedevent', 'email_set', 'groupevent', 'role', 'rolehistory', 'iprdisclosurebase',
             'iprevent', 'liaisonstatementevent', 'allowlisted', 'schedule', 'constraint', 'schedulingevent', 'message',
-            'sendqueue', 'nominee', 'topicfeedbacklastseen', 'alias', 'email', 'apikeys', 'personevent',
+            'sendqueue', 'nominee', 'topicfeedbacklastseen', 'alias', 'email', 'personevent',
             'reviewersettings', 'reviewsecretarysettings', 'unavailableperiod', 'reviewwish',
             'nextreviewerinteam', 'reviewrequest', 'meetingregistration', 'submissionevent', 'preapproval',
             'user', 'communitylist', 'personextresource_set', ]
 
 
         return self.json_view(request, filter={'id':person.id}, expand=expand)
-
-
-# @require_api_key
-# @csrf_exempt
-# def person_access_token(request):
-#     person = get_object_or_404(Person, user=request.user)
-#     
-#     if request.method == 'POST':
-#         client_id = request.POST.get('client_id', None)
-#         client_secret = request.POST.get('client_secret', None)
-#         client = get_object_or_404(ClientRecord, client_id=client_id, client_secret=client_secret)
-# 
-#         return HttpResponse(json.dumps({
-#                 'name' : person.plain_name(),
-#                 'email': person.email().address,
-#                 'roles': {
-#                         'chair': list(person.role_set.filter(name='chair', group__state__in=['active', 'bof', 'proposed']).values_list('group__acronym', flat=True)),
-#                         'secr': list(person.role_set.filter(name='secr', group__state__in=['active', 'bof', 'proposed']).values_list('group__acronym', flat=True)),
-#                     }
-#             }), content_type='application/json')
-#     else:
-#         return HttpResponse(status=405)
 
 
 @requires_api_token

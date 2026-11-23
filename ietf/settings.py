@@ -1320,7 +1320,6 @@ STATS_TIMELINE_CACHE_TIMEOUT = 86400
 
 UTILS_MEETING_CONFERENCE_DOMAINS = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', 'gather.town', ]
 UTILS_TEST_RANDOM_STATE_FILE = '.factoryboy_random_state'
-UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS = 30
 
 
 # Default timeout for HTTP requests via the requests library
