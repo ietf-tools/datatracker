@@ -41,7 +41,6 @@ from ietf.api.serializer import JsonExportMixin
 from ietf.doc.models import Document
 from ietf.doc.utils import DraftAliasGenerator, fuzzy_find_documents
 from ietf.group.utils import GroupAliasGenerator, role_holder_emails
-from ietf.ietfauth.utils import role_required
 from ietf.ipr.utils import ingest_response_email as ipr_ingest_response_email
 from ietf.meeting.models import Meeting
 from ietf.meeting.utils import import_registration_json_validator, process_single_registration
@@ -49,7 +48,6 @@ from ietf.nomcom.utils import ingest_feedback_email as nomcom_ingest_feedback_em
 from ietf.person.models import Person, Email
 from ietf.sync.iana import ingest_review_email as iana_ingest_review_email
 from ietf.utils import log
-from ietf.utils.decorators import require_api_key
 from ietf.utils.mail import send_smtp
 from ietf.utils.models import DumpInfo
 
@@ -110,26 +108,6 @@ class PersonalInformationExportView(DetailView, JsonExportMixin):
 
         return self.json_view(request, filter={'id':person.id}, expand=expand)
 
-
-@method_decorator((csrf_exempt, require_api_key, role_required('Robot')), name='dispatch')
-class ApiV2PersonExportView(DetailView, JsonExportMixin):
-    model = Person
-
-    def err(self, code, text):
-        return HttpResponse(
-            text,
-            status=code,
-            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-        )
-
-    def post(self, request):
-        querydict = request.POST.copy()
-        querydict.pop('apikey', None)
-        expand = querydict.pop('_expand', [])
-        if not querydict:
-            return self.err(400, "No filters provided")
-
-        return self.json_view(request, filter=querydict.dict(), expand=expand)
 
 # @require_api_key
 # @csrf_exempt

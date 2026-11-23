@@ -50,8 +50,6 @@ urlpatterns = [
     url(r'^$', api_views.api_help),
     # Top endpoint for Tastypie's REST API (this isn't standard Tastypie):
     url(r'^v1/?$', api_views.top_level),
-    # For mailarchive use, requires secretariat role
-    url(r'^v2/person/person', api_views.ApiV2PersonExportView.as_view()),
     # --- DRF API ---
     # path("core/", include(core_router.urls)),
     path("purple/", include("ietf.api.urls_rpc")),
