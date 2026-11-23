@@ -98,10 +98,6 @@ urlpatterns = [
     # Find the blob to store for a given materials document path
     url(r'^meeting/(?:(?P<num>(?:interim-)?[a-z0-9-]+)/)?materials/%(document)s(?P<ext>\.[A-Za-z0-9]+)?/resolve-cached/$' % settings.URL_REGEXPS, meeting_views.api_resolve_materials_name_cached),
     url(r'^meeting/blob/(?P<bucket>[a-z0-9-]+)/(?P<name>[a-z][a-z0-9.-]+)$', meeting_views.api_retrieve_materials_blob),
-    # Let Meetecho set session video URLs
-    url(r'^meeting/session/video/url$', meeting_views.api_set_session_video_url),
-    # Let Meetecho tell us the name of its recordings
-    url(r'^meeting/session/recording-name$', meeting_views.api_set_meetecho_recording_name),
     # Meeting agenda + floorplan data
     url(r'^meeting/(?P<num>[A-Za-z0-9._+-]+)/agenda-data$', meeting_views.api_get_agenda_data),
     # Meeting session materials
@@ -113,14 +109,6 @@ urlpatterns = [
         name="ietf.api.meeting.registration.attended_by_uuid",
     ),
     url(r'^meeting/registration/attended/(?P<email>[^/\x00]+)/?$', meeting_api.MeetingsAttendedByEmail.as_view(), name="ietf.api.meeting.registration.attended"),
-    # Let MeetEcho upload bluesheets
-    url(r'^notify/meeting/bluesheet/?$', meeting_views.api_upload_bluesheet),
-    # Let MeetEcho tell us about session attendees
-    url(r'^notify/session/attendees/?$', meeting_views.api_add_session_attendees),
-    # Let MeetEcho upload session chatlog
-    url(r'^notify/session/chatlog/?$', meeting_views.api_upload_chatlog),    
-    # Let MeetEcho upload session polls
-    url(r'^notify/session/polls/?$', meeting_views.api_upload_polls),    
     # Let the registration system notify us about registrations
     url(r'^notify/meeting/registration/v2/?', api_views.api_new_meeting_registration_v2),
     # OpenID authentication provider

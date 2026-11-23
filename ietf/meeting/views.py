@@ -12,12 +12,10 @@ import os
 import pytz
 import re
 import tarfile
-import tempfile
 
 from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
 from functools import partialmethod
-import jsonschema
 from icalendar import Calendar, Event
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit, urlparse
@@ -44,8 +42,6 @@ from django.http import (
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
-from django.core.validators import URLValidator
 from django.urls import reverse, reverse_lazy, NoReverseMatch
 from django.db.models import F, Prefetch, Q
 from django.forms.models import modelform_factory, inlineformset_factory
@@ -55,7 +51,7 @@ from django.utils import timezone
 from django.utils.encoding import force_str
 from django.utils.functional import SimpleLazyObject
 from django.views.decorators.cache import cache_page
-from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import RedirectView
 from rest_framework.status import HTTP_404_NOT_FOUND
 
@@ -75,7 +71,7 @@ from ietf.group.utils import (
     can_manage_some_groups,
     can_manage_group,
 )
-from ietf.person.models import Person, User
+from ietf.person.models import Person
 from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import (
@@ -194,11 +190,8 @@ from ietf.meeting.utils import (
     post_process,
     create_recording,
     delete_recording,
-    generate_bluesheet,
     bluesheet_data,
     save_bluesheet,
-    save_session_json_doc,
-    save_session_video_url,
 )
 from ietf.message.utils import infer_message
 from ietf.name.models import (
@@ -207,7 +200,6 @@ from ietf.name.models import (
     CountryName,
 )
 from ietf.utils import markdown
-from ietf.utils.decorators import require_api_key
 from ietf.utils.hedgedoc import Note, NoteError
 from ietf.utils.http import is_safe_next_url
 from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
@@ -5243,443 +5235,6 @@ def proceedings_activity_report(request, num=None):
 class OldUploadRedirect(RedirectView):
     def get_redirect_url(self, **kwargs):
         return reverse_lazy('ietf.meeting.views.session_details',kwargs=self.kwargs)
-
-
-@require_api_key
-@role_required("Recording Manager")
-@csrf_exempt
-def api_set_meetecho_recording_name(request):
-    """Set name for meetecho recording
-
-    parameters:
-        apikey: the poster's personal API key
-        session_id: id of the session to update
-        name: the name to use for the recording at meetecho player
-    """
-    def err(code, text):
-        return HttpResponse(
-            text,
-            status=code,
-            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-        )
-
-    if request.method != "POST":
-        return HttpResponseNotAllowed(
-            content="Method not allowed",
-            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-            permitted_methods=('POST',),
-        )
-
-    session_id = request.POST.get('session_id', None)
-    if session_id is None:
-        return err(400, 'Missing session_id parameter')
-    name = request.POST.get('name', None)
-    if name is None:
-        return err(400, 'Missing name parameter')
-
-    try:
-        session = Session.objects.get(pk=session_id)
-    except Session.DoesNotExist:
-        return err(400, f"Session not found with session_id '{session_id}'")
-    except ValueError:
-        return err(400, "Invalid session_id: {session_id}")
-
-    session.meetecho_recording_name = name
-    session.save()
-
-    return HttpResponse(
-        "Done",
-        status=200,
-        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-    )
-
-@require_api_key
-@role_required('Recording Manager')
-@csrf_exempt
-def api_set_session_video_url(request):
-    """Set video URL for session
-
-    parameters:
-      apikey: the poster's personal API key
-      session_id: id of session to update
-      url: The recording url (on YouTube, or whatever)
-    """
-    def err(code, text):
-        return HttpResponse(
-            text,
-            status=code,
-            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-        )
-
-    if request.method != 'POST':
-        return HttpResponseNotAllowed(
-            content="Method not allowed",
-            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-            permitted_methods=('POST',),
-        )
-
-    # Temporary: fall back to deprecated interface if we have old-style parameters.
-    # Do away with this once meetecho is using the new pk-based interface.
-    if any(k in request.POST for k in ['meeting', 'group', 'item']):
-        return deprecated_api_set_session_video_url(request)
-
-    session_id = request.POST.get('session_id', None)
-    if session_id is None:
-        return err(400, 'Missing session_id parameter')
-    incoming_url = request.POST.get('url', None)
-    if incoming_url is None:
-        return err(400, 'Missing url parameter')
-
-    try:
-        session = Session.objects.get(pk=session_id)
-    except Session.DoesNotExist:
-        return err(400, f"Session not found with session_id '{session_id}'")
-    except ValueError:
-        return err(400, "Invalid session_id: {session_id}")
-
-    try:
-        URLValidator()(incoming_url)
-    except ValidationError:
-        return err(400, f"Invalid url value: '{incoming_url}'")
-
-    try:
-        save_session_video_url(session, incoming_url, request.user.person)
-    except SaveMaterialsError as save_err:
-        return err(400, str(save_err))
-    return HttpResponse(
-        "Done",
-        status=200,
-        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-    )
-
-
-def deprecated_api_set_session_video_url(request):
-    """Set video URL for session (deprecated)
-
-    Uses meeting/group/item to identify session.
-    """
-    def err(code, text):
-        return HttpResponse(
-            text,
-            status=code,
-            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-        )
-    if request.method == 'POST':
-        # parameters:
-        #   apikey: the poster's personal API key
-        #   meeting: '101', or 'interim-2018-quic-02'
-        #   group: 'quic' or 'plenary'
-        #   item: '1', '2', '3' (the group's first, second, third etc.
-        #                           session during the week)
-        #   url: The recording url (on YouTube, or whatever)
-        user = request.user.person
-        for item in ['meeting', 'group', 'item', 'url',]:
-            value = request.POST.get(item)
-            if not value:
-                return err(400, "Missing %s parameter" % item)
-        number = request.POST.get('meeting')
-        sessions = Session.objects.filter(meeting__number=number)
-        if not sessions.exists():
-            return err(400, "No sessions found for meeting '%s'" % (number, ))
-        acronym = request.POST.get('group')
-        sessions = sessions.filter(group__acronym=acronym)
-        if not sessions.exists():
-            return err(400, "No sessions found in meeting '%s' for group '%s'" % (number, acronym))
-        session_times = [ (s.official_timeslotassignment().timeslot.time, s.id, s) for s in sessions if s.official_timeslotassignment() ]
-        session_times.sort()
-        item = request.POST.get('item')
-        if not item.isdigit():
-            return err(400, "Expected a numeric value for 'item', found '%s'" % (item, ))
-        n = int(item)-1              # change 1-based to 0-based
-        try:
-            time, __, session = session_times[n]
-        except IndexError:
-            return err(400, "No item '%s' found in list of sessions for group" % (item, ))
-        url = request.POST.get('url')
-        try:
-            URLValidator()(url)
-        except ValidationError:
-            return err(400, "Invalid url value: '%s'" % (url, ))
-        recordings = [ (r.name, r.title, r) for r in session.recordings() if 'video' in r.title.lower() ]
-        if recordings:
-            r = recordings[-1][-1]
-            if r.external_url != url:
-                e = DocEvent.objects.create(doc=r, rev=r.rev, type="added_comment", by=request.user.person,
-                    desc="External url changed from %s to %s" % (r.external_url, url))
-                r.external_url = url
-                r.save_with_history([e])
-            else:
-                return err(400, "URL is the same")
-        else:
-            time = session.official_timeslotassignment().timeslot.time
-            title = 'Video recording for %s on %s at %s' % (acronym, time.date(), time.time())
-            create_recording(session, url, title=title, user=user)
-    else:
-        return err(405, "Method not allowed")
-
-    return HttpResponse(
-        "Done",
-        status=200,
-        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-    )
-
-
-@require_api_key
-@role_required('Recording Manager') # TODO : Rework how Meetecho interacts via APIs. There may be better paths to pursue than Personal API keys as they are currently defined.
-@csrf_exempt
-def api_add_session_attendees(request):
-    """Upload attendees for one or more sessions
-
-    parameters:
-        apikey: the poster's personal API key
-        attended: json blob with
-            {
-                "session_id": session pk,
-                "attendees": [
-                    {"user_id": user-pk-1, "join_time": "2024-02-21T18:00:00Z"},
-                    {"user_id": user-pk-2, "join_time": "2024-02-21T18:00:01Z"},
-                    {"user_id": user-pk-3, "join_time": "2024-02-21T18:00:02Z"},
-                    ...
-                ]
-            }
-    """
-    json_validator = jsonschema.Draft202012Validator(
-        schema={
-            "type": "object",
-            "properties": {
-                "session_id": {"type": "integer"},
-                "attendees": {
-                    # Allow either old or new format until after IETF 119
-                    "anyOf": [
-                        {"type": "array", "items": {"type": "integer"}},  # old: array of user PKs
-                        {
-                            # new: array of user_id / join_time objects
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "user_id": {"type": "integer", },
-                                    "join_time": {"type": "string", "format": "date-time"}
-                                },
-                                "required": ["user_id", "join_time"],
-                            },
-                        },
-                    ],
-                }
-            },
-            "required": ["session_id", "attendees"],
-        },
-        format_checker=jsonschema.Draft202012Validator.FORMAT_CHECKER,  # format-checks disabled by default
-    )
-
-    def err(code, text):
-        return HttpResponse(
-            text,
-            status=code,
-            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-        )
-
-    if request.method != "POST":
-        return err(405, "Method not allowed")
-    attended_post = request.POST.get("attended")
-    if not attended_post:
-        return err(400, "Missing attended parameter")
-
-    # Validate the request payload
-    try:
-        payload = json.loads(attended_post)
-        json_validator.validate(payload)
-    except (json.decoder.JSONDecodeError, jsonschema.exceptions.ValidationError):
-        return err(400, "Malformed post")
-
-    session_id = payload["session_id"]
-    session = Session.objects.filter(pk=session_id).first()
-    if not session:
-        return err(400, "Invalid session")
-
-    attendees = payload["attendees"]
-    if len(attendees) > 0:
-        # Check whether we have old or new format
-        if type(attendees[0]) == int:
-            # it's the old format
-            users = User.objects.filter(pk__in=attendees)
-            if users.count() != len(payload["attendees"]):
-                return err(400, "Invalid attendee")
-            for user in users:
-                session.attended_set.get_or_create(person=user.person)
-        else:
-            # it's the new format
-            join_time_by_pk = {
-                att["user_id"]: datetime.datetime.fromisoformat(
-                    att["join_time"].replace("Z", "+00:00")  # Z not understood until py311
-                )
-                for att in attendees
-            }
-            persons = list(Person.objects.filter(user__pk__in=join_time_by_pk))
-            if len(persons) != len(join_time_by_pk):
-                return err(400, "Invalid attendee")
-            to_create = [
-                Attended(session=session, person=person, time=join_time_by_pk[person.user_id])
-                for person in persons
-            ]
-            # Create in bulk, ignoring any that already exist
-            Attended.objects.bulk_create(to_create, ignore_conflicts=True)
-
-    if session.meeting.type_id == "interim":
-        try:
-            generate_bluesheet(request, session, request.user.person)
-        except SaveMaterialsError as save_err:
-            return err(400, str(save_err))
-
-    return HttpResponse(
-        "Done",
-        status=200,
-        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-    )
-
-
-@require_api_key
-@role_required('Recording Manager')
-@csrf_exempt
-def api_upload_chatlog(request):
-    def err(code, text):
-        return HttpResponse(
-            text,
-            status=code,
-            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-        )
-    if request.method != 'POST':
-        return err(405, "Method not allowed")
-    apidata_post = request.POST.get('apidata')
-    if not apidata_post:
-        return err(400, "Missing apidata parameter")
-    try:
-        apidata = json.loads(apidata_post)
-    except json.decoder.JSONDecodeError:
-        return err(400, "Malformed post")
-    if not ( 'session_id' in apidata and type(apidata['session_id']) is int ):
-        return err(400, "Malformed post")
-    session_id = apidata['session_id']
-    if not ( 'chatlog' in apidata and type(apidata['chatlog']) is list and all([type(el) is dict for el in apidata['chatlog']]) ):
-        return err(400, "Malformed post")
-    session = Session.objects.filter(pk=session_id).first()
-    if not session:
-        return err(400, "Invalid session")
-    try:
-        save_session_json_doc(
-            session, 'chatlog', apidata['chatlog'], request.user.person
-        )
-    except SaveMaterialsError as save_err:
-        return err(400, str(save_err))
-    return HttpResponse(
-        "Done",
-        status=200,
-        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-    )
-
-@require_api_key
-@role_required('Recording Manager')
-@csrf_exempt
-def api_upload_polls(request):
-    def err(code, text):
-        return HttpResponse(
-            text,
-            status=code,
-            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-        )
-    if request.method != 'POST':
-        return err(405, "Method not allowed")
-    apidata_post = request.POST.get('apidata')
-    if not apidata_post:
-        return err(400, "Missing apidata parameter")
-    try:
-        apidata = json.loads(apidata_post)
-    except json.decoder.JSONDecodeError:
-        return err(400, "Malformed post")
-    if not ( 'session_id' in apidata and type(apidata['session_id']) is int ):
-        return err(400, "Malformed post")
-    session_id = apidata['session_id']
-    if not ( 'polls' in apidata and type(apidata['polls']) is list and all([type(el) is dict for el in apidata['polls']]) ):
-        return err(400, "Malformed post")
-    session = Session.objects.filter(pk=session_id).first()
-    if not session:
-        return err(400, "Invalid session")
-    try:
-        save_session_json_doc(
-            session, 'polls', apidata['polls'], request.user.person
-        )
-    except SaveMaterialsError as save_err:
-        return err(400, str(save_err))
-    return HttpResponse(
-        "Done",
-        status=200,
-        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-    )
-
-@require_api_key
-@role_required('Recording Manager', 'Secretariat')
-@csrf_exempt
-def api_upload_bluesheet(request):
-    """Upload bluesheet for a session
-
-    parameters:
-      apikey: the poster's personal API key
-      session_id: id of session to update
-      bluesheet: json blob with
-          [{'name': 'Name', 'affiliation': 'Organization', }, ...]
-    """
-    def err(code, text):
-        return HttpResponse(
-            text,
-            status=code,
-            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-        )
-
-    if request.method != 'POST':
-        return HttpResponseNotAllowed(
-            content="Method not allowed",
-            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-            permitted_methods=('POST',),
-        )
-
-    session_id = request.POST.get('session_id', None)
-    if session_id is None:
-        return err(400, 'Missing session_id parameter')
-    bjson = request.POST.get('bluesheet', None)
-    if bjson is None:
-        return err(400, 'Missing bluesheet parameter')
-
-    try:
-        session = Session.objects.get(pk=session_id)
-    except Session.DoesNotExist:
-        return err(400, f"Session not found with session_id '{session_id}'")
-    except ValueError:
-        return err(400, f"Invalid session_id '{session_id}'")
-
-    try:
-        data = json.loads(bjson)
-    except json.decoder.JSONDecodeError:
-        return err(400, f"Invalid json value: '{bjson}'")
-
-    text = render_to_string('meeting/bluesheet.txt', {
-            'data': data,
-            'session': session,
-        })
-
-    fd, name = tempfile.mkstemp(suffix=".txt", text=True)
-    os.close(fd)
-    with open(name, "w") as file:
-        file.write(text)
-    try:
-        with open(name, "br") as file:
-            save_bluesheet(request, session, file, request.user.person)
-    except SaveMaterialsError as save_err:
-        return err(400, str(save_err))
-    return HttpResponse(
-        "Done",
-        status=200,
-        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-    )
 
 
 def important_dates(request, num=None, output_format=None):
