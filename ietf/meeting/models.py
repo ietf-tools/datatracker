@@ -21,7 +21,7 @@ import debug                            # pyflakes:ignore
 
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-from django.db.models import Max, Subquery, OuterRef, TextField, Value, Q, Case, When
+from django.db.models import Exists, F, Max, Prefetch, Subquery, OuterRef, TextField, Value, Q, Case, When
 from django.db.models.functions import Coalesce
 from django.conf import settings
 from django.urls import reverse as urlreverse
@@ -1017,7 +1017,28 @@ class SessionPresentation(models.Model):
         return u"%s -> %s-%s" % (self.session, self.document.name, self.rev)
 
 
+def active_materials_prefetch(lookup="materials"):
+    """Prefetch a session's materials that are not deleted, in presentation order
+
+    The documents land in the session's prefetched_active_materials attribute, with their
+    states prefetched. Session.get_material() and Session.chat_archive_url() use that list
+    instead of querying when it is present. Pass a longer lookup, such as
+    "session__materials", to prefetch through a related object.
+    """
+    return Prefetch(
+        lookup,
+        queryset=Document.objects.exclude(
+            states__type=F("type"), states__slug="deleted"
+        ).order_by("presentations__order").prefetch_related("states"),
+        to_attr="prefetched_active_materials",
+    )
+
+
 class SessionQuerySet(models.QuerySet):
+    def with_active_materials(self):
+        """Prefetch each session's active materials; see active_materials_prefetch()"""
+        return self.prefetch_related(active_materials_prefetch())
+
     def with_current_status(self):
         """Annotate session with its current status
         
@@ -1036,6 +1057,12 @@ class SessionQuerySet(models.QuerySet):
                     ).values('status')[:1]),
                 Value(''), 
                 output_field=TextField()),
+        )
+
+    def with_has_attendance(self):
+        """Annotate session with has_attendance, True if any attendance is recorded for it"""
+        return self.annotate(
+            has_attendance=Exists(Attended.objects.filter(session=OuterRef('pk'))),
         )
 
     def with_requested_by(self):
@@ -1139,8 +1166,6 @@ class Session(models.Model):
     def get_material(self, material_type, only_one):
         if hasattr(self, "prefetched_active_materials"):
             l = [d for d in self.prefetched_active_materials if d.type_id == material_type]
-            for d in l:
-                d.meeting_related = lambda: True
         else:
             l = self.materials.filter(type=material_type).exclude(states__type=material_type, states__slug='deleted').order_by('presentations__order')
 
@@ -1183,6 +1208,9 @@ class Session(models.Model):
     
 
     def drafts(self):
+        if hasattr(self, "prefetched_active_materials"):
+            # drafts have no "deleted" state, so the active materials include all of them
+            return [d for d in self.prefetched_active_materials if d.type_id == "draft"]
         return list(self.materials.filter(type='draft'))
 
     # The utilities below are used in the proceedings and materials
