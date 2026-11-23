@@ -88,7 +88,7 @@ from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text, texescape
 from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO, RPC_TZINFO
-from ietf.doc.utils_search import (AD_WORKLOAD, fill_in_rfc_editor_queue_status,
+from ietf.doc.utils_search import (AD_WORKLOAD, fill_in_document_sessions, fill_in_rfc_editor_queue_status,
     fill_in_telechat_date, prepare_document_table)
 
 
@@ -464,6 +464,43 @@ class SearchTests(TestCase):
         # the two ends of the range, so the test would fail if everything came back None
         self.assertIsNotNone(expected[future.name])
         self.assertIsNone(expected[past.name])
+
+    def test_fill_in_document_sessions(self):
+        """Documents get the sessions of nearby meetings they are linked to, at a fixed cost.
+
+        Every document table runs this, and it used to load every presentation of every
+        meeting in the window and then fetch each one's session separately, so the
+        tables slowed down as a meeting's materials piled up.
+        """
+        today = date_today()
+        near = MeetingFactory(type_id="ietf", date=today + datetime.timedelta(days=10))
+        far = MeetingFactory(type_id="ietf", date=today + datetime.timedelta(days=90))
+        near_session = SessionFactory(meeting=near)
+        far_session = SessionFactory(meeting=far)
+
+        on_agenda = WgDraftFactory()
+        SessionPresentationFactory(session=near_session, document=on_agenda)
+        only_far = WgDraftFactory()
+        SessionPresentationFactory(session=far_session, document=only_far)
+        not_presented = WgDraftFactory()
+        # Materials for the same meeting belonging to documents not in the table.
+        for _ in range(5):
+            SessionPresentationFactory(session=SessionFactory(meeting=near))
+
+        docs = list(Document.objects.filter(
+            pk__in=[on_agenda.pk, only_far.pk, not_presented.pk]
+        ))
+        doc_dict = {d.pk: d for d in docs}
+        with self.assertNumQueries(1):
+            fill_in_document_sessions(docs, doc_dict, list(doc_dict))
+            # what search_result_row.html renders for each session
+            for d in docs:
+                for s in d.sessions:
+                    (s.meeting.number, str(s.meeting), s.group.acronym)
+
+        self.assertEqual(doc_dict[on_agenda.pk].sessions, [near_session])
+        self.assertEqual(doc_dict[only_far.pk].sessions, [])
+        self.assertEqual(doc_dict[not_presented.pk].sessions, [])
 
     def test_fill_in_rfc_editor_queue_status_matches_the_method(self):
         """The precomputed value has to equal what Document.rfc_editor_queue_status() returns.

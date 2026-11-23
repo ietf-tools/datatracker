@@ -14,7 +14,7 @@ from ietf.doc.models import (Document, RelatedDocument, DocEvent, TelechatDocEve
     DocTypeName, RpcAssignmentDocEvent)
 from ietf.doc.expire import expirable_drafts
 from ietf.doc.utils import augment_docs_and_person_with_person_info
-from ietf.meeting.models import SessionPresentation, Meeting, Session
+from ietf.meeting.models import SessionPresentation
 from ietf.person.models import Alias
 from ietf.review.utils import review_assignments_to_list_for_docs
 from ietf.utils.timezone import date_today
@@ -267,17 +267,18 @@ def fill_in_document_sessions(docs, doc_dict, doc_ids):
     today = date_today()
     beg_date = today-datetime.timedelta(days=7)
     end_date = today+datetime.timedelta(days=30)
-    meetings = Meeting.objects.filter(date__gte=beg_date, date__lte=end_date).prefetch_related('session_set')
-    # get sessions
-    sessions = Session.objects.filter(meeting_id__in=[ m.id for m in meetings ])
-    # get presentations
-    presentations = SessionPresentation.objects.filter(session_id__in=[ s.id for s in sessions ])
-    session_list = [ (p.document_id, p.session) for p in presentations ]
-    for d in list(doc_dict.values()):
+    for d in doc_dict.values():
         d.sessions = []
-    for (i, s) in session_list:
-        if i in doc_ids:
-            doc_dict[i].sessions.append(s)
+    # Fetch only the presentations of documents on this page, with the session, meeting
+    # and group the template renders, so the cost does not grow with the number of
+    # materials linked to sessions of nearby meetings.
+    presentations = SessionPresentation.objects.filter(
+        document_id__in=doc_ids,
+        session__meeting__date__gte=beg_date,
+        session__meeting__date__lte=end_date,
+    ).select_related("session__meeting", "session__group")
+    for p in presentations:
+        doc_dict[p.document_id].sessions.append(p.session)
 
 def fill_in_document_table_attributes(docs, have_telechat_date=False):
     # fill in some attributes for the document table results to save
