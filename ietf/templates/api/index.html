@@ -148,8 +148,7 @@ $ curl '{{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.api.views.top_level' %}/do
             available at <code>{% url 'ietf.doc.views_ballot.api_set_position' %}</code>.  Access is limited to area directors.
         </p>
         <p>
-            The interface requires the use of a personal API key, which can be created at
-            <a href="{% url 'ietf.ietfauth.views.apikey_index' %}">{% url 'ietf.ietfauth.views.apikey_index' %}</a>
+            The interface requires the use of a personal API key.
         </p>
         <p>
             The ballot position API takes the following parameters:
@@ -191,8 +190,7 @@ $ curl -S -F "apikey=AwAAABVR3D5GHkVMhspKSxBCVknGMmqikNIhT85kSnghjaV_pYy26WV92mm
             Access is limited to recording managers.
         </p>
         <p>
-            The interface requires the use of a personal API key, which can be created at
-            <a href="{% url 'ietf.ietfauth.views.apikey_index' %}">{% url 'ietf.ietfauth.views.apikey_index' %}</a>
+            The interface requires the use of a personal API key.
         </p>
         <p>
             The ballot position API takes the following parameters:
@@ -241,42 +239,5 @@ $ curl -S -F "apikey=DgAAAMLSi3coaE5TjrRs518xO8eBRlCmFF3eQcC8_SjUTtRGLGiJh7-1SYP
                 </a>
             </code>.
         </p>
-        <h2 id="personal-api-keys">
-            Personal API Keys
-        </h2>
-        <p>
-            The datatracker has some API endpoints that uses Personal API keys,
-            rather than having general access or requiring username/password
-            login, see for example details for
-            <code>{% url 'ietf.doc.views_ballot.api_set_position' %}</code>
-            <a href="#iesg-position-api">above</a>.
-            Personal API keys are available from your
-            <a href="{% url 'ietf.ietfauth.views.apikey_index' %}">
-                Account API Keys
-            </a>
-            page when you are logged in.
-        </p>
-        <p>
-            Personal API keys have some characteristics you should be aware of:
-        </p>
-        <ul>
-            <li>
-                Each API key is valid only for a specific endpoint.  If you try to use a key for
-                a different API endpoint than it's created for, it will not work.
-            </li>
-            <li>
-                The API keys will cause you to be given access with the datatracker
-                roles you have, thus giving you appropriate access to the various
-                API endpoints according to the role limitations indicated for each
-                endpoint.
-            </li>
-            <li>
-                An API key will only give you access to its related endpoint if you have logged
-                in to the datatracker using your regular login and password during the last
-                {{ settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS }} days.  If you receive the
-                error message "<code>Too long since last regular login</code>" you should do
-                a regular login in order to activate access.
-            </li>
-        </ul>
     </div>
 {% endblock %}

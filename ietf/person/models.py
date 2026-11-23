@@ -348,10 +348,6 @@ class Person(models.Model):
     def defurl(self):
         return urljoin(self.default_hostscheme,self.json_url())
 
-    def available_api_endpoints(self):
-        from ietf.ietfauth.utils import has_role
-        return list(set([ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES if r==None or has_role(self.user, r) ]))
-
     def cdn_photo_url(self, size=80):
         if self.photo:
             if settings.SERVE_CDN_PHOTOS:
