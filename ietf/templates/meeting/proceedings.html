@@ -176,7 +176,7 @@
             </tr>
             </thead>
             <tbody>
-            {% for entry in irtf.not_meeting %}{% if entry.has_materials %}
+            {% for entry in irtf.not_meeting_groups %}{% if entry.has_materials %}
                 {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting show_agenda=True only %}
             {% endif %}{% endfor %}
             </tbody>
