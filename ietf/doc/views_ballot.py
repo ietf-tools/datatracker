@@ -11,7 +11,6 @@ from django import forms
 from django.conf import settings
 from django.http import HttpResponse, HttpResponseNotAllowed, HttpResponseRedirect, Http404, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
-from django.template.defaultfilters import striptags
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.views.decorators.csrf import csrf_exempt
@@ -43,7 +42,6 @@ from ietf.person.models import Person
 from ietf.utils.fields import ModelMultipleChoiceField, MultiEmailField
 from ietf.utils.http import is_safe_next_url
 from ietf.utils.mail import decode_header_value, send_mail_text, send_mail_preformatted
-from ietf.utils.decorators import require_api_key
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
 
@@ -272,55 +270,6 @@ def edit_position(request, name, ballot_id):
                                    show_discuss_text=old_pos and old_pos.pos.blocking,
                                    blocking_positions=json.dumps(blocking_positions),
                                    ))
-
-@require_api_key
-@role_required('Area Director')
-@csrf_exempt
-def api_set_position(request):
-    def err(code, text):
-        return HttpResponse(
-            text,
-            status=code,
-            content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-        )
-    if request.method == 'POST':
-        ad = request.user.person
-        name = request.POST.get('doc')
-        if not name:
-            return err(400, "Missing document name")
-        try:
-            doc = Document.objects.get(name=name)
-        except Document.DoesNotExist:
-            return err(400, "Document not found")
-        position_names = BallotPositionName.objects.values_list('slug', flat=True)
-        position = request.POST.get('position')
-        if not position:
-            return err(400, "Missing parameter: position, one of: %s " % ','.join(position_names))
-        if not position in position_names:
-            return err(400, "Bad position name, must be one of: %s " % ','.join(position_names))
-        ballot = doc.active_ballot()
-        if not ballot:
-            return err(400, "No open ballot found")
-        form = EditPositionForm(request.POST, ballot_type=ballot.ballot_type)
-        if form.is_valid():
-            pos = save_position(form, doc, ballot, ad, send_email=True)
-        else:
-            errors = form.errors
-            summary = ','.join([ "%s: %s" % (f, striptags(errors[f])) for f in errors ])
-            return err(400, "Form not valid: %s" % summary)
-    else:
-        return err(405, "Method not allowed")
-
-    # send position email
-    addrs, frm, subject, body = build_position_email(ad, doc, pos)
-    send_mail_text(request, addrs.to, frm, subject, body, cc=addrs.cc)
-
-    return HttpResponse(
-        "Done",
-        status=200,
-        content_type=f"text/plain; charset={settings.DEFAULT_CHARSET}",
-    )
-
 
 @role_required("Area Director", "Secretariat")
 @csrf_exempt
