@@ -3,7 +3,7 @@
 
 
 import factory
-import random
+import factory.random
 import datetime
 
 from django.core.files.base import ContentFile
@@ -19,6 +19,22 @@ from ietf.doc.factories import ProceedingsMaterialDocFactory
 from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory
 from ietf.utils.text import xslugify
+from ietf.utils.timezone import date_today
+
+
+def ietf_meeting_date(number):
+    """Approximate date of IETF meeting number, with three meetings a year since 1985"""
+    year = (number - 2) // 3 + 1985
+    month = ((number - 2) % 3 + 1) * 4 - 1
+    return datetime.date(year, month, 15)
+
+
+def future_ietf_meeting_number():
+    """Lowest IETF meeting number whose date is about a year away"""
+    number = 100
+    while ietf_meeting_date(number) < date_today() + datetime.timedelta(days=300):
+        number += 1
+    return number
 
 
 class MeetingFactory(factory.django.DjangoModelFactory):
@@ -26,11 +42,13 @@ class MeetingFactory(factory.django.DjangoModelFactory):
         model = Meeting
         skip_postgeneration_save = True
 
-    type_id = factory.Iterator(['ietf','interim'])
+    # Defaults give a modern IETF meeting one to ten years away, whatever the test order or the date.
+    # Pin number, date or type when a test depends on one.
+    type_id = 'ietf'
 
     city = factory.Faker('city')
     country = factory.Faker('country_code')
-    time_zone = factory.Faker('timezone')
+    time_zone = 'Europe/Amsterdam'
     idsubmit_cutoff_day_offset_00 = 13
     idsubmit_cutoff_day_offset_01 = 13
     idsubmit_cutoff_time_utc = datetime.timedelta(0, 86399)
@@ -43,11 +61,10 @@ class MeetingFactory(factory.django.DjangoModelFactory):
     @factory.lazy_attribute_sequence
     def number(self,n):
         if self.type_id == 'ietf':
-            if Meeting.objects.filter(type='ietf').exists():
-                so_far = max([int(x.number) for x in Meeting.objects.filter(type='ietf')])
-                return '%02d'%(so_far+1)
-            else:
-                return '%02d'%(n+80)
+            so_far = max([int(x.number) for x in Meeting.objects.filter(type='ietf')], default=0)
+            # Vary the number without crossing any threshold the code tests for
+            number = future_ietf_meeting_number() + factory.random.randgen.randrange(31)
+            return '%02d'%max(number, so_far+1)
         else:
             return 'interim-%d-%s-%02d'%(self.date.year,GroupFactory().acronym,n)
 
@@ -61,13 +78,9 @@ class MeetingFactory(factory.django.DjangoModelFactory):
     @factory.lazy_attribute
     def date(self):
         if self.type_id == 'ietf':
-            num = int(self.number)
-            year = (num-2)//3+1985
-            month = ((num-2)%3+1)*4-1
-            day = random.randint(1,28)
-            return datetime.date(year, month, day)
+            return ietf_meeting_date(int(self.number))
         else:
-            return datetime.date(2010,1,1)+datetime.timedelta(days=random.randint(0,3652))
+            return date_today() + datetime.timedelta(days=365)
 
 
     @factory.post_generation
@@ -146,7 +159,7 @@ class SessionFactory(factory.django.DjangoModelFactory):
             extracted = True
         if create and extracted:
             ts = obj.meeting.timeslot_set.all()
-            obj.timeslotassignments.create(timeslot=ts[random.randrange(len(ts))],schedule=obj.meeting.schedule)
+            obj.timeslotassignments.create(timeslot=ts[factory.random.randgen.randrange(len(ts))],schedule=obj.meeting.schedule)
 
 class ScheduleFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -199,7 +212,7 @@ class TimeSlotFactory(factory.django.DjangoModelFactory):
 
     @factory.lazy_attribute
     def duration(self):
-        return datetime.timedelta(minutes=30+random.randrange(9)*15)
+        return datetime.timedelta(minutes=30+factory.random.randgen.randrange(9)*15)
 
 class SessionPresentationFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -262,7 +275,7 @@ class ConstraintFactory(factory.django.DjangoModelFactory):
               Q(slug__in=['bethere','timerange','time_relation','wg_adjacent'])
             | Q(meeting=obj.meeting)
         ))
-        return random.choice(constraint_list)
+        return factory.random.randgen.choice(constraint_list)
 
     @factory.post_generation
     def timeranges(self, create, extracted, **kwargs):
