@@ -9,9 +9,10 @@ from collections import defaultdict
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
+from django.db.models import OuterRef, Subquery
 
 from ietf.doc.models import (Document, RelatedDocument, DocEvent, TelechatDocEvent, BallotDocEvent,
-    DocTypeName, RpcAssignmentDocEvent)
+    DocTypeName, DocumentURL, RpcAssignmentDocEvent)
 from ietf.doc.expire import expirable_drafts
 from ietf.doc.utils import augment_docs_and_person_with_person_info
 from ietf.meeting.models import SessionPresentation, Meeting, Session
@@ -161,36 +162,31 @@ def fill_in_related_ipr(docs, doc_dict, doc_ids):
 
 
 def fill_in_rfc_editor_queue_status(docs, doc_dict, doc_ids):
-    """Attach each document's RFC Editor publication queue status.
+    """Load the latest queue status and stored Final Review URL in one query.
 
-    The status column shows it for every document sitting in the RFC Editor queue, and
-    Document.rfc_editor_queue_status() costs a query per such row to find the latest
-    RpcAssignmentDocEvent. Here they take one query between them.
-
-    Finding which documents are queued reads each document's states, which this assumes
-    is free -- either prefetched by the caller, as prepare_document_table() does, or
-    already cached on the instances by an earlier get_state(). Absent both, that read
-    costs a query per document, which is the sort of per-row cost this exists to avoid.
+    Callers should prefetch states or cache them with get_state() before this step.
     """
     queued_ids = [
         d.pk
         for d in docs
         if d.get_state_slug("draft-rfceditor") in ("in_progress", "blocked")
     ]
-    # Wrapped rather than assigned bare so the attribute stays callable, like the
-    # Document.rfc_editor_queue_status method it shadows.
     for d in docs:
         d.rfc_editor_queue_status = wrap_value(None)
     if not queued_ids:
         return
 
-    # DISTINCT ON fetches only the newest event per document; a document that has moved
-    # through the queue has one for every status it has held.
+    final_review_urls = DocumentURL.objects.filter(
+        doc_id=OuterRef("doc_id"), tag_id="auth48",
+    ).order_by("pk").values("url")[:1]
     for e in (RpcAssignmentDocEvent.objects
               .filter(doc_id__in=queued_ids, type="changed_rpc_assignments")
+              .annotate(final_review_url=Subquery(final_review_urls))
               .order_by("doc_id", "-time", "-id")
               .distinct("doc_id")):
-        doc_dict[e.doc_id].rfc_editor_queue_status = wrap_value(e.assignments)
+        doc = doc_dict[e.doc_id]
+        doc.rfc_editor_queue_status = wrap_value(e.assignments)
+        doc.rfc_editor_final_review_url = e.final_review_url
 
 
 def fill_in_person_caches(docs):
