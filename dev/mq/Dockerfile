@@ -1,6 +1,6 @@
 # Dockerfile for RabbitMQ worker
 #
-ARG RABBITMQ_VERSION=3.11-alpine
+ARG RABBITMQ_VERSION=3.13-alpine
 
 FROM rabbitmq:${RABBITMQ_VERSION}
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
