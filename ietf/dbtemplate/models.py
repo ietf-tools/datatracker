@@ -30,12 +30,16 @@ class DBTemplate(models.Model):
         return self.title
 
     def clean(self):
-        from ietf.dbtemplate.template import PlainTemplate, RSTTemplate, DjangoTemplate
+        from ietf.dbtemplate.template import (PlainTemplate, RSTTemplate, DjangoTemplate,
+                                              group_template_engine, is_group_template)
         try:
             if   self.type.slug == 'rst':
                 RSTTemplate(self.content).render(Context({}))
             elif self.type.slug == 'django':
-                DjangoTemplate(self.content).render(Context({}))
+                if is_group_template(self):
+                    group_template_engine.from_string(self.content).render(Context({}))
+                else:
+                    DjangoTemplate(self.content).render(Context({}))
             elif self.type.slug == 'plain':
                 PlainTemplate(self.content).render(Context({}))
             else:

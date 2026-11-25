@@ -45,9 +45,15 @@
 
       <button type="button" name="edit" class="btn btn-primary me-2" onclick="window.location='{% url 'ietf.meeting.views_session_request.edit_request' acronym=group.acronym num=meeting.number %}'"{% if not can_edit %} disabled{% endif %}>Edit</button>
       {% if show_approve_button %}
-        <a href="{% url 'ietf.meeting.views_session_request.approve_request' acronym=group.acronym %}" class="btn btn-primary me-2">Approve Third Session</a>
+        <form method="post" class="d-inline" action="{% url 'ietf.meeting.views_session_request.approve_request' acronym=group.acronym %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primary me-2">Approve Third Session</button>
+        </form>
       {% endif %}
-      <button type="button" class="btn btn-primary me-2" onclick="if (window.confirm('Do you really want to cancel this session?')) { window.location='{% url 'ietf.meeting.views_session_request.cancel_request' acronym=group.acronym %}' };" {% if not can_cancel %} disabled{% endif %}>Cancel this Request</button>
+      <form method="post" class="d-inline" action="{% url 'ietf.meeting.views_session_request.cancel_request' acronym=group.acronym %}" onsubmit="return window.confirm('Do you really want to cancel this session?');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary me-2"{% if not can_cancel %} disabled{% endif %}>Cancel this Request</button>
+      </form>
       <a href="{% url 'ietf.meeting.views_session_request.list_view' %}" class="btn btn-secondary float-end">Back</a>
   
     </div> <!-- view-container -->

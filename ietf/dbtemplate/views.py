@@ -7,9 +7,23 @@ import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.forms import DBTemplateForm
+from ietf.dbtemplate.template import is_group_template, value_names
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
+from ietf.review.template_values import values_class_for_path
 from ietf.utils.response import permission_denied
+
+
+def template_value_names(template):
+    """List the names that a group template of type "django" can use.
+
+    The list is empty for other templates, and for a path that no code renders.
+    """
+    if template.type_id == 'django' and is_group_template(template):
+        values_class = values_class_for_path(template.path)
+        if values_class is not None:
+            return value_names(values_class)
+    return []
 
 
 def group_template_list(request, acronym):
@@ -45,6 +59,7 @@ def group_template_edit(request, acronym, template_id, base_template='dbtemplate
     context = {'template': template,
         'group': group,
         'form': form,
+        'value_names': template_value_names(template),
     }
     context.update(extra_context)
     return render(request, base_template, context)
@@ -61,6 +76,7 @@ def group_template_show(request, acronym, template_id, base_template='dbtemplate
 
     context = {'template': template,
         'group': group,
+        'value_names': template_value_names(template),
     }
     context.update(extra_context)
     return render(request, base_template, context)

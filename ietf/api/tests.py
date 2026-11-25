@@ -30,16 +30,18 @@ from ietf.doc.models import DocEvent, Document, RelatedDocument, State
 from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory, RfcAuthorFactory, DocEventFactory
 from ietf.meeting.factories import MeetingFactory, RegistrationFactory, SessionFactory
 from ietf.meeting.models import Registration
+from ietf.message.factories import SendQueueFactory
 from ietf.nomcom.models import Volunteer
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
 from ietf.person.factories import PersonFactory, EmailFactory
-from ietf.person.models import Email, User
+from ietf.person.models import Email, Person, User
+from ietf.person.resources import PersonResource
 from ietf.submit.factories import SubmissionFactory
 from ietf.utils.mail import empty_outbox, outbox, get_payload_text
 from ietf.utils.models import DumpInfo
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized, reload_db_objects
+from ietf.utils.test_utils import TestCase, reload_db_objects
 
-from . import OMITTED_APPS_APIS, Serializer
+from . import OMITTED_APPS_APIS, Serializer, _api_list
 from .views import EmailIngestionError
 
 OMITTED_APPS = (
@@ -63,18 +65,6 @@ class CustomApiTests(TestCase):
         url = urlreverse('ietf.api.urls.oidc_issuer')
         r = self.client.get(url)
         self.assertContains(r, 'OpenID Connect Issuer', status_code=200)
-
-    def test_person_export(self):
-        person = PersonFactory()
-        url = urlreverse('ietf.api.views.PersonalInformationExportView')
-        login_testing_unauthorized(self, person.user.username, url)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        jsondata = r.json()
-        data = jsondata['person.person'][str(person.id)]
-        self.assertEqual(data['name'], person.name)
-        self.assertEqual(data['ascii'], person.ascii)
-        self.assertEqual(data['user']['email'], person.user.email)
 
     @override_settings(APP_API_TOKENS={"ietf.api.views.api_new_meeting_registration_v2": ["valid-token"]})
     def test_api_new_meeting_registration_v2(self):
@@ -1207,6 +1197,94 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
         # but not a value that string_to_python() turns into a bool
         r = self.client.get("/api/v1/doc/document/?format=json&limit=1&rev__in=true")
         self.assertEqual(r.status_code, 400)
+
+    def test_filter_through_relation_to_rows_not_served(self):
+        """A filter cannot follow a relation to rows the related resource does not serve
+
+        See ietf.api.ModelResource.check_filtering.
+        """
+        send_queue = SendQueueFactory()
+        message = send_queue.message
+        url = f"/api/v1/message/sendqueue/?format=json&id={send_queue.pk}&"
+
+        # The message resource serves no rows
+        r = self.client.get(f"/api/v1/message/message/?format=json&id={message.pk}")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["meta"]["total_count"], 0)
+
+        # so a filter on another resource cannot use the fields of a message
+        for q in (
+            "message__subject=" + quote(message.subject),
+            "message__id__gte=0",
+            "message__by__id__gte=0",
+        ):
+            r = self.client.get(url + q)
+            self.assertEqual(r.status_code, 400, "Expected 400 for %s" % q)
+
+        # The relation itself can still be filtered on
+        for q in (f"message={message.pk}", "message__isnull=false"):
+            r = self.client.get(url + q)
+            self.assertEqual(r.status_code, 200, "Expected 200 for %s" % q)
+            self.assertEqual(r.json()["meta"]["total_count"], 1)
+
+        # and so can the fields of a related resource that does serve rows
+        r = self.client.get(url + f"by__id={send_queue.by.pk}")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["meta"]["total_count"], 1)
+
+        # unless that resource's queryset is restricted
+        with mock.patch.object(
+            PersonResource._meta,
+            "queryset",
+            Person.objects.exclude(pk=send_queue.by.pk),
+        ):
+            r = self.client.get(url + f"by__id={send_queue.by.pk}")
+        self.assertEqual(r.status_code, 400)
+
+        # Every relation to a resource with a restricted or empty queryset
+        # refuses a lookup through it
+        checked = set()
+        for _, app_api in _api_list:
+            for resource in app_api._registry.values():
+                for field_name, field in resource.fields.items():
+                    if not getattr(field, "is_related", False):
+                        continue
+                    queryset = field.get_related_resource(None)._meta.queryset
+                    if queryset is None or not queryset.query.where:
+                        continue
+                    r = self.client.get(
+                        f"{resource.get_resource_uri()}?format=json&{field_name}__id=1"
+                    )
+                    self.assertEqual(
+                        r.status_code,
+                        400,
+                        f"Expected 400 for {field_name}__id on "
+                        f"{resource._meta.resource_name}",
+                    )
+                    checked.add((resource._meta.resource_name, field_name))
+        self.assertIn(("sendqueue", "message"), checked)
+
+    def test_order_by_through_relation(self):
+        """A list can be ordered only by a field of its own resource
+
+        See ietf.api.ModelResource.apply_sorting.
+        """
+        SessionFactory()
+        url = "/api/v1/meeting/session/?format=json&limit=1&"
+        for q in (
+            "order_by=meeting__number",
+            "order_by=-meeting__number",
+            "order_by=id&order_by=meeting__number",
+            "sort_by=meeting__number",
+        ):
+            r = self.client.get(url + q)
+            self.assertEqual(r.status_code, 400, "Expected 400 for %s" % q)
+
+        # Ordering by the resource's own fields still works, relations included
+        for q in ("order_by=meeting", "order_by=-modified", "order_by=id&order_by=meeting"):
+            r = self.client.get(url + q)
+            self.assertEqual(r.status_code, 200, "Expected 200 for %s" % q)
+            self.assertEqual(r.json()["meta"]["total_count"], 1)
 
     def test_all_model_resources_exist(self):
         client = Client(Accept='application/json')

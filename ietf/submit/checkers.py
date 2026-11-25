@@ -3,6 +3,7 @@
 
 
 import io
+import itertools
 import json
 import os
 from pathlib import Path
@@ -120,15 +121,83 @@ class DraftIdnitsChecker(object):
 
         return passed, message, errors, warnings, info
 
+# The only file names that are accepted for extracted yang models
+MODEL_NAME_RE = r'[A-Za-z_][A-Za-z0-9_.-]*(@\d\d\d\d-\d\d-\d\d)?\.yang'
+
+
+def is_model_file_name(name):
+    return isinstance(name, str) and re.fullmatch(MODEL_NAME_RE, name) is not None
+
+
+class ModelExtractor(xym.YangModuleExtractor):
+    """YangModuleExtractor that chooses the names of the files it writes
+
+    A document names the file each of its models should be extracted to, and xym
+    writes the model to that name inside the destination directory before anything
+    else has looked at it. Here that name is only used when it is a plain model
+    file name. Otherwise the model is written to a placeholder name in the
+    destination directory, and the name the document asked for is kept in
+    placeholders so that it can be reported.
+
+    get_extracted_models() will still rename a placeholder to match the module name
+    and revision found in the model when it can determine them.
+    """
+
+    PLACEHOLDER = "unnamed-model-%d.yang"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.placeholders = {}
+
+    def write_model_to_file(self, mdl, fn):
+        if fn and not is_model_file_name(fn):
+            placeholder = self.PLACEHOLDER % (len(self.placeholders) + 1)
+            self.placeholders[placeholder] = fn
+            fn = placeholder
+        super().write_model_to_file(mdl, fn)
+
+
 class DraftYangChecker(object):
 
     name = "yang validation"
     symbol = '<i class="bi bi-yin-yang"></i>'
 
+    @staticmethod
+    def _build_pyang_command(model: str, workdir: str) -> list[str]:
+        modpath = ":".join(
+            [
+                workdir,
+                settings.SUBMIT_YANG_RFC_MODEL_DIR,
+                settings.SUBMIT_YANG_DRAFT_MODEL_DIR,
+                settings.SUBMIT_YANG_IANA_MODEL_DIR,
+                settings.SUBMIT_YANG_CATALOG_MODEL_DIR,
+            ]
+        )
+        return ["pyang", "--verbose", "--ietf", "-p", modpath, model]
+
+    @staticmethod
+    def _build_yanglint_command(model: str, workdir: str) -> list[str]:
+        import_paths = [
+            settings.SUBMIT_YANG_RFC_MODEL_DIR,
+            workdir,
+            settings.SUBMIT_YANG_DRAFT_MODEL_DIR,
+            settings.SUBMIT_YANG_IANA_MODEL_DIR,
+            settings.SUBMIT_YANG_CATALOG_MODEL_DIR,
+        ]
+        path_args = [("-p", path) for path in import_paths]
+        return (
+            [
+                settings.YANGLINT_BINARY,
+                "--verbose",
+                "-D",
+            ]
+            + list(itertools.chain(*path_args))
+            + [model, "-i"]
+        )
+
     def check_file_txt(self, path):
         name = os.path.basename(path)
         workdir = tempfile.mkdtemp()
-        model_name_re = r'^[A-Za-z_][A-Za-z0-9_.-]*(@\d\d\d\d-\d\d-\d\d)?\.yang$'
         errors = 0
         warnings = 0
         message = ""
@@ -137,7 +206,7 @@ class DraftYangChecker(object):
         model_list = []
         info = {'checker': self.name, 'items': [], 'code': {}}
 
-        extractor = xym.YangModuleExtractor(path, workdir, strict=True, strict_examples=False, debug_level=1)
+        extractor = ModelExtractor(path, workdir, strict=True, strict_examples=False, debug_level=1)
         if not os.path.exists(path):
             return None, "%s: No such file or directory: '%s'"%(name.capitalize(), path), errors, warnings, info
         with open(path) as file:
@@ -169,15 +238,23 @@ class DraftYangChecker(object):
             # Found no yang models, don't deliver any YangChecker result
             return None, "", 0, 0, info
 
-        for m in model_list:
-            if not re.search(model_name_re, m):
-                code += 1
-                err += "Error: Bad extracted model name: '%s'\n" % m
+        # A model that is still on a placeholder had an unusable name in the draft
+        # and could not be renamed from its own module name. Report the name the
+        # draft gave it.
+        bad_names = {
+            m for m in model_list
+            if m in extractor.placeholders or not is_model_file_name(m)
+        }
+        for m in sorted(bad_names):
+            code += 1
+            err += "Error: Bad extracted model name: '%s'\n" % extractor.placeholders.get(m, m)
         if len(set(model_list)) != len(model_list):
             code += 1
             err += "Error: Multiple models with the same name:\n  %s\n" % ("\n  ".join(model_list))
 
-        model_list = list(set(model_list))
+        # Names come from the draft text. Only names that passed validation may
+        # be used to build commands or file paths below.
+        model_list = [m for m in set(model_list) if m not in bad_names]
 
         command = "xym"
         message = "{version}:\n{output}\n\n".format(
@@ -201,27 +278,25 @@ class DraftYangChecker(object):
             errors = 0
             warnings = 0
             items = []
-            modpath = ':'.join([
-                                workdir,
-                                settings.SUBMIT_YANG_RFC_MODEL_DIR,
-                                settings.SUBMIT_YANG_DRAFT_MODEL_DIR,
-                                settings.SUBMIT_YANG_IANA_MODEL_DIR,
-                                settings.SUBMIT_YANG_CATALOG_MODEL_DIR,
-                            ])
             if os.path.exists(path):
                 with io.open(path) as file:
                     text = file.readlines()
                 # pyang
                 cmd_template = settings.SUBMIT_PYANG_COMMAND
                 command = [ w for w in cmd_template.split() if not '=' in w ][0]
-                cmd = cmd_template.format(libs=modpath, model=path)
+                cmd = self._build_pyang_command(path, workdir)
                 venv_path = os.environ.get('VIRTUAL_ENV') or os.path.join(os.getcwd(), 'env')
                 venv_bin = os.path.join(venv_path, 'bin')
                 if not venv_bin in os.environ.get('PATH', '').split(':'):
                     os.environ['PATH'] = os.environ.get('PATH', '') + ":" + venv_bin
-                code, out, err = pipe(cmd)
-                out = out.decode('utf-8')
-                err = err.decode('utf-8')
+                try:
+                    result = subprocess.run(cmd, capture_output=True)
+                    code = result.returncode
+                    out = result.stdout.decode('utf-8', errors='replace')
+                    err = result.stderr.decode('utf-8', errors='replace')
+                except (OSError, subprocess.SubprocessError) as exc:
+                    log("pyang error: %s:\n  %s" % (" ".join(cmd), exc))
+                    code, out, err = 1, "", "%s\n" % exc
                 if code > 0 or len(err.strip()) > 0 :
                     error_lines = err.splitlines()
                     assertion('len(error_lines) > 0')
@@ -253,12 +328,15 @@ class DraftYangChecker(object):
                     if settings.SUBMIT_YANGLINT_COMMAND and os.path.exists(settings.YANGLINT_BINARY):
                         cmd_template = settings.SUBMIT_YANGLINT_COMMAND
                         command = [ w for w in cmd_template.split() if not '=' in w ][0]
-                        cmd = cmd_template.format(model=path, rfclib=settings.SUBMIT_YANG_RFC_MODEL_DIR, tmplib=workdir,
-                            draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR, ianalib=settings.SUBMIT_YANG_IANA_MODEL_DIR,
-                            cataloglib=settings.SUBMIT_YANG_CATALOG_MODEL_DIR, )
-                        code, out, err = pipe(cmd)
-                        out = out.decode('utf-8')
-                        err = err.decode('utf-8')
+                        cmd = self._build_yanglint_command(path, workdir)
+                        try:
+                            result = subprocess.run(cmd, capture_output=True)
+                            code = result.returncode
+                            out = result.stdout.decode('utf-8', errors='replace')
+                            err = result.stderr.decode('utf-8', errors='replace')
+                        except (OSError, subprocess.SubprocessError) as exc:
+                            log("yanglint error: %s:\n  %s" % (" ".join(cmd), exc))
+                            code, out, err = 1, "", "%s\n" % exc
                         if code > 0 or len(err.strip()) > 0:
                             err_lines = err.splitlines()
                             for line in err_lines:

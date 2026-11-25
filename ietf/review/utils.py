@@ -9,7 +9,6 @@ from collections import defaultdict, namedtuple
 
 from django.db.models import Q, Max, F
 from django.template.defaultfilters import pluralize
-from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.contrib.sites.models import Site
 from django.utils import timezone
@@ -18,6 +17,7 @@ from simple_history.utils import update_change_reason
 
 import debug                            # pyflakes:ignore
 from ietf.dbtemplate.models import DBTemplate
+from ietf.dbtemplate.template import render_group_template
 
 from ietf.group.models import Group, Role
 from ietf.doc.models import (Document, ReviewRequestDocEvent, ReviewAssignmentDocEvent, State,
@@ -29,6 +29,8 @@ from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
 from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewRequestStateName, ReviewTypeName, 
                                 ReviewerSettings, UnavailablePeriod, ReviewSecretarySettings,
                                 ReviewTeamSettings)
+from ietf.review.template_values import (ReviewAssignedValues, assignment_values, document_values,
+                                         person_values, reviewer_values)
 from ietf.utils.mail import send_mail
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 from ietf.utils import log
@@ -442,8 +444,12 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
     except DBTemplate.DoesNotExist:
         template = DBTemplate.objects.get(path="/group/defaults/email/review_assigned.txt")
 
-    context = {'assigner': request.user.person, 'reviewer': reviewer, 'prev_team_reviews': prev_team_reviews}
-    msg = render_to_string(template.path, context, request=request)
+    doc_values = document_values(review_req.doc)
+    msg = render_group_template(template, ReviewAssignedValues(
+        assigner=person_values(request.user.person),
+        reviewer=reviewer_values(reviewer),
+        prev_team_reviews=[assignment_values(a, doc_values) for a in prev_team_reviews],
+    ))
 
     email_review_request_change(
         request, review_req,

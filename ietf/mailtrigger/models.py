@@ -17,6 +17,32 @@ from ietf.review.models import ReviewTeamSettings
 
 import debug                            # pyflakes:ignore
 
+def active_email_for(email):
+    """Return the Email to send to in place of `email`, or None if there is none.
+
+    Mail is not sent to an address that is marked inactive. It is sent to an
+    active address of the same Person instead: the primary one if it is active,
+    otherwise the newest.
+    """
+    if email.active:
+        return email
+    if email.person_id is None:
+        return None
+    return email.person.email_set.filter(active=True).order_by("-primary", "-time").first()
+
+
+def address_for_mail(address):
+    """Return the address to send to in place of `address`, or None if there is none.
+
+    An address that is not in the database is returned as it is.
+    """
+    email = Email.objects.filter(address=address).first()
+    if email is None or email.active:
+        return address
+    replacement = active_email_for(email)
+    return None if replacement is None else replacement.address
+
+
 def clean_duplicates(addrlist):
     address_info = {}
     for a in addrlist:
@@ -222,7 +248,11 @@ class Recipient(models.Model):
         addrs = []
         if 'submission' in kwargs:
             submission = kwargs['submission']
-            addrs.extend(["%s <%s>" % (author["name"], author["email"]) for author in submission.authors if author.get("email")])
+            for author in submission.authors:
+                if author.get("email"):
+                    address = address_for_mail(author["email"])
+                    if address is not None:
+                        addrs.append("%s <%s>" % (author["name"], address))
         return addrs
 
     def gather_submission_submitter(self, **kwargs):
@@ -276,7 +306,10 @@ class Recipient(models.Model):
         """If a submitted document is revising an existing document, the confirmers 
            are the authors of that existing document, and the chairs if the document is
            a working group document and the author list has changed. Otherwise, the confirmers
-           are the authors and submitter of the submitted document."""
+           are the authors and submitter of the submitted document.
+
+           An address that is marked inactive is not used. An active address of the same
+           Person is used instead, if there is one."""
 
         addrs=[]
         if 'submission' in kwargs:
@@ -285,7 +318,13 @@ class Recipient(models.Model):
             if doc:
                 old_authors = [ author for author in doc.documentauthor_set.all() if author.email ]
 
-                addrs.extend([ author.formatted_email() for author in old_authors])
+                for author in old_authors:
+                    if author.email.active:
+                        addrs.append(author.formatted_email())
+                    else:
+                        email = active_email_for(author.email)
+                        if email is not None:
+                            addrs.append(email.formatted_ascii_email())
 
                 old_author_email_set = set(author.email.address for author in old_authors)
                 new_author_email_set = set(author["email"] for author in submission.authors if author.get("email"))
@@ -304,10 +343,17 @@ class Recipient(models.Model):
                 # email names for known persons, without relying on the name parsed from the
                 # draft (which might be ascii, also for persons with non-ascii names)
                 emails = [ Email.objects.filter(address=author['email']).first() or author for author in submission.authors if author.get('email') ]
-                addrs.extend([ e.formatted_email() if isinstance(e, Email) else formataddr((e["name"], e["email"])) for e in emails ] )
-                submitter_email = submission.submitter_parsed()["email"]
-                if submitter_email and not submitter_email in [ parseaddr(a)[1] for a in addrs ]:
-                    addrs.append(submission.submitter)
+                emails = [ active_email_for(e) if isinstance(e, Email) else e for e in emails ]
+                addrs.extend([ e.formatted_email() if isinstance(e, Email) else formataddr((e["name"], e["email"])) for e in emails if e is not None ] )
+                submitter_parsed = submission.submitter_parsed()
+                submitter_email = submitter_parsed["email"]
+                if submitter_email:
+                    usable = address_for_mail(submitter_email)
+                    if usable is not None and not usable in [ parseaddr(a)[1] for a in addrs ]:
+                        if usable == submitter_email:
+                            addrs.append(submission.submitter)
+                        else:
+                            addrs.append(formataddr((submitter_parsed["name"], usable)))
         return addrs
 
     def gather_submission_group_mail_list(self, **kwargs):

@@ -530,6 +530,34 @@ class ReviewTests(TestCase):
         self.assertEqual(generated_text.count('(-0 lc reviewed)'), 2)  # previous completed assignment
         self.assertTrue(str(Person.objects.get(user__username="marschairman")) in generated_text)
 
+        # A template that belongs to the team is used in place of the default.
+        # A name that is not one of the values for this template gives no output.
+        DBTemplateFactory.create(
+            group=group,
+            path=f"/group/{group.acronym}/email/open_assignments.txt",
+            type_id="django",
+            content=(
+                "{% autoescape off %}Subject: Assignments in {{ group.acronym }}\n\n"
+                "{% for r in review_assignments %}"
+                "{{ r.reviewer.person.plain_name }}|{{ r.earlier_review|yesno:'R,N' }}|"
+                "{{ r.review_request.type.name }}|{{ r.review_request.doc.name }}|{{ r.section }}|"
+                "[{{ r.review_request.team }}]\n"
+                "{% endfor %}{% endautoescape %}"
+            ),
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(q("[name=subject]").val(), f"Assignments in {group.acronym}")
+        self.assertIn(
+            "{}|R|{}|{}|Last calls:|[]".format(
+                Person.objects.get(user__username="marschairman").plain_name(),
+                review_req1.type.name,
+                review_req1.doc.name,
+            ),
+            q("[name=body]").text(),
+        )
+
         empty_outbox()
         r = self.client.post(url, {
             "to": 'toaddr@bogus.test',
