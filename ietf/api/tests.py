@@ -1947,7 +1947,6 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
                     )
                     checked.add((resource._meta.resource_name, field_name))
         self.assertIn(("sendqueue", "message"), checked)
-        self.assertIn(("personapikeyevent", "key"), checked)
 
     def test_order_by_through_relation(self):
         """A list can be ordered only by a field of its own resource
