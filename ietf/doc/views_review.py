@@ -24,9 +24,11 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.html import mark_safe # type:ignore
 from django.core.exceptions import ValidationError
-from django.template.loader import render_to_string, TemplateDoesNotExist
+from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 
+from ietf.dbtemplate.models import DBTemplate
+from ietf.dbtemplate.template import render_group_template
 from ietf.doc.models import (Document, NewRevisionDocEvent, State,
                              LastCallDocEvent, ReviewRequestDocEvent, ReviewAssignmentDocEvent, DocumentAuthor)
 from ietf.name.models import (ReviewRequestStateName, ReviewAssignmentStateName, ReviewResultName, 
@@ -39,6 +41,7 @@ from ietf.message.models import Message
 from ietf.message.utils import infer_message
 from ietf.person.fields import PersonEmailChoiceField, SearchablePersonField
 from ietf.review.policies import get_reviewer_queue_policy
+from ietf.review.template_values import ReviewContentValues, assignment_values
 from ietf.review.utils import (active_review_teams, assign_review_request_to_reviewer,
                                can_request_review_of_doc, can_manage_review_requests_for_team,
                                email_review_assignment_change, email_review_request_change,
@@ -945,16 +948,18 @@ def complete_review(request, name, assignment_id=None, acronym=None):
             "cc": ", ".join(cc),
         }
 
-        try:
-            initial['review_content'] = render_to_string(
-                f'/group/{assignment.review_request.team.acronym}/review/content_templates/{request_type.slug}.txt',
-                {
-                    'assignment': assignment,
-                    'today': date_today(settings.TIME_ZONE),
-                },
-            )
-        except (TemplateDoesNotExist, AttributeError):
-            pass
+        if assignment:
+            content_template = DBTemplate.objects.filter(
+                path=f'/group/{team.acronym}/review/content_templates/{request_type.slug}.txt'
+            ).first()
+            if content_template:
+                initial['review_content'] = render_group_template(
+                    content_template,
+                    ReviewContentValues(
+                        assignment=assignment_values(assignment),
+                        today=date_today(settings.TIME_ZONE),
+                    ),
+                )
 
         form = CompleteReviewForm(assignment, doc, team, is_reviewer, initial=initial)
 

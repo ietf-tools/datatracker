@@ -322,10 +322,14 @@ class Person(models.Model):
             .order_by("-time")
         )
 
+    # Set to True on an instance before saving to skip the possible-duplicates
+    # notice that save() sends. Used when the caller sends its own notice.
+    skip_possible_duplicates_notice = False
+
     def save(self, *args, **kwargs):
         created = not self.pk
         super(Person, self).save(*args, **kwargs)
-        if created:
+        if created and not self.skip_possible_duplicates_notice:
             if Person.objects.filter(name=self.name).count() > 1 :
                 msg = render_to_string('person/mail/possible_duplicates.txt',
                                        dict(name=self.name,
@@ -334,12 +338,17 @@ class Person(models.Model):
                                             ))
                 send_mail_preformatted(None, msg)
         if not self.name in [ a.name for a in self.alias_set.filter(name=self.name) ]:
-            self.alias_set.create(name=self.name)
+            self._create_alias(self.name)
         if self.ascii and self.name != self.ascii:
             if not self.ascii in [ a.name for a in self.alias_set.filter(name=self.ascii) ]:
-                self.alias_set.create(name=self.ascii)
+                self._create_alias(self.ascii)
         # The aliases just changed; drop what has_alias_for_name() memoized about them.
         self.__dict__.pop('_cached_has_alias_for_name', None)
+
+    def _create_alias(self, name):
+        alias = Alias(person=self, name=name)
+        alias.skip_possible_duplicates_notice = self.skip_possible_duplicates_notice
+        alias.save()
 
     #this variable, if not None, may be used by url() to keep the sitefqdn.
     default_hostscheme = None
@@ -392,10 +401,13 @@ class Alias(models.Model):
     person = ForeignKey(Person)
     name = models.CharField(max_length=255, db_index=True)
 
+    # See Person.skip_possible_duplicates_notice
+    skip_possible_duplicates_notice = False
+
     def save(self, *args, **kwargs):
         created = not self.pk
         super(Alias, self).save(*args, **kwargs)
-        if created:
+        if created and not self.skip_possible_duplicates_notice:
             if Alias.objects.filter(name=self.name).exclude(person=self.person).count() > 0 :
                 msg = render_to_string('person/mail/possible_duplicates.txt',
                                        dict(name=self.name,

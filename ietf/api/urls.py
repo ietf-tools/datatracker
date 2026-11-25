@@ -50,8 +50,6 @@ urlpatterns = [
     url(r'^$', api_views.api_help),
     # Top endpoint for Tastypie's REST API (this isn't standard Tastypie):
     url(r'^v1/?$', api_views.top_level),
-    # For mailarchive use, requires secretariat role
-    url(r'^v2/person/person', api_views.ApiV2PersonExportView.as_view()),
     # --- DRF API ---
     # path("core/", include(core_router.urls)),
     path("purple/", include("ietf.api.urls_rpc")),
@@ -87,8 +85,6 @@ urlpatterns = [
     url(r'email/$', api_views.ingest_email),
     # email ingestor
     url(r'email/test/$', api_views.ingest_email_test),
-    # GDPR: export of personal information for the logged-in person
-    url(r'^export/personal-information/$', api_views.PersonalInformationExportView.as_view()),
     # Email alias information for groups
     url(r'^group/group-aliases/$', api_views.group_aliases),
     # Email addresses belonging to role holders

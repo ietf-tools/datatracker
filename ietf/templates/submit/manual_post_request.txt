@@ -26,7 +26,8 @@ I-D Submission Tool URL:
   Pages           : {{ submission.pages }}
   File size       : {{ submission.file_size|filesizeformat }}
 
-  Submitter       : {{ submission.submitter }}
+  Submitter       : {{ submission.submitter }}{% if inactive_submitter_address %}
+                    *Please note: {{ inactive_submitter_address }} is marked as inactive in the Datatracker*{% endif %}
 
   Abstract        : 
 {{ submission.abstract }}

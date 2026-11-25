@@ -188,6 +188,65 @@ class GroupMaterialTests(TestCase):
         )
         self.assertEqual(titles_sent, ["Newer title"])
 
+    def test_revise_checks_file_extension(self):
+        """A file is refused unless its extension is accepted for the type of document"""
+        doc = self.create_slides()
+
+        url = urlreverse('ietf.doc.views_material.edit_material', kwargs=dict(name=doc.name, action="revise"))
+        login_testing_unauthorized(self, "secretary", url)
+
+        test_file = io.StringIO("<html><body><h1>Title</h1></body></html>")
+        test_file.name = "unnamed.html"
+        r = self.client.post(url, dict(title="New title",
+                                       abstract="New abstract",
+                                       state=State.objects.get(type="slides", slug="active").pk,
+                                       material=test_file))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q('.is-invalid')) > 0)
+        doc = Document.objects.get(name=doc.name)
+        self.assertEqual(doc.rev, "01")
+        self.assertEqual(list(self.slides_dir.iterdir()), [])
+
+    def test_revise_cleans_html(self):
+        """An HTML file is cleaned before it is stored, as on the session upload forms"""
+        session = SessionFactory(meeting__type_id="ietf", meeting__number="42")
+        doc = Document.objects.create(name="agenda-42-test", rev="00", type_id="agenda", group=session.group)
+        doc.set_state(State.objects.get(type="agenda", slug="active"))
+        SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
+        agenda_dir = Path(doc.get_file_path())
+        agenda_dir.mkdir(parents=True)
+
+        url = urlreverse('ietf.doc.views_material.edit_material', kwargs=dict(name=doc.name, action="revise"))
+        login_testing_unauthorized(self, "secretary", url)
+
+        content = "<html><head><title>Title</title></head><body><h1>Title</h1><section>Some text</section></body></html>"
+        for rev, filename in (("01", "unnamed.html"), ("02", "unnamed.HTML"), ("03", "unnamed.htm")):
+            test_file = io.StringIO(content)
+            test_file.name = filename
+            r = self.client.post(url, dict(title="New title",
+                                           abstract="New abstract",
+                                           state=State.objects.get(type="agenda", slug="active").pk,
+                                           material=test_file))
+            self.assertEqual(r.status_code, 302)
+            doc = Document.objects.get(name=doc.name)
+            self.assertEqual(doc.rev, rev)
+            basename = f"{doc.name}-{doc.rev}{Path(filename).suffix}"
+            for text in ((agenda_dir / basename).read_text(), retrieve_str("agenda", basename)):
+                self.assertIn("Some text", text)
+                self.assertNotIn("<section>", text)
+
+        # A file with frames is refused, as it would be of no use once cleaned
+        test_file = io.StringIO('<html><frameset><frame src="foo.html"></frame></frameset></html>')
+        test_file.name = "unnamed.html"
+        r = self.client.post(url, dict(title="New title",
+                                       abstract="New abstract",
+                                       state=State.objects.get(type="agenda", slug="active").pk,
+                                       material=test_file))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(len(PyQuery(r.content)('.is-invalid')) > 0)
+        self.assertEqual(Document.objects.get(name=doc.name).rev, "03")
+
     @override_settings(MEETECHO_API_CONFIG="fake settings")
     @patch("ietf.doc.views_material.SlidesManager")
     def test_revise(self, mock_slides_manager_cls):

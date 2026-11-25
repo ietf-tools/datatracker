@@ -12,6 +12,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.test import Client
 from django.urls import reverse as urlreverse
 from django.db.models import Q
 from django.utils import timezone
@@ -994,7 +995,30 @@ class LiaisonManagementTests(TestCase):
         login_testing_unauthorized(self, "secretary", url)
 
         mailbox_before = len(outbox)
+
+        # only a POST acts
         r = self.client.get(url)
+        self.assertEqual(r.status_code, 405)
+        self.assertEqual(len(outbox), mailbox_before)
+        self.assertFalse(liaison.liaisonstatementevent_set.filter(type='resent'))
+
+        # the button on the statement's page posts
+        r = self.client.get(urlreverse('ietf.liaisons.views.liaison_detail', kwargs=dict(object_id=liaison.pk)))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        form = q('form[method=post][action="%s"]' % url)
+        self.assertEqual(len(form), 1)
+        self.assertEqual(len(form.find('input[name=csrfmiddlewaretoken]')), 1)
+        self.assertEqual(len(q('a[href="%s"]' % url)), 0)
+
+        # and the POST needs the CSRF token
+        client = Client(enforce_csrf_checks=True)
+        client.login(username="secretary", password="secretary+password")
+        r = client.post(url)
+        self.assertEqual(r.status_code, 403)
+        self.assertEqual(len(outbox), mailbox_before)
+
+        r = self.client.post(url)
         self.assertEqual(r.status_code, 302)
 
         self.assertEqual(len(outbox), mailbox_before + 1)

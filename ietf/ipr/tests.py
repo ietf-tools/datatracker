@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.db.models import Max
+from django.test import Client
 from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
@@ -38,6 +39,7 @@ from ietf.ipr.models import (
     GenericIprDisclosure,
     HolderIprDisclosure,
     IprDisclosureBase,
+    RelatedIpr,
     RemovedIprDisclosure,
     ThirdPartyIprDisclosure,
 )
@@ -659,6 +661,40 @@ I would like to revoke this declaration.
         ipr = HolderIprDisclosure.objects.get(id=ipr.id)
         self.assertTrue(ipr.iprevent_set.filter(type='posted').exists())
 
+    def test_post_view_requires_post_method(self):
+        ipr = HolderIprDisclosureFactory(state_id='pending')
+        url = urlreverse('ietf.ipr.views.post', kwargs={'id': ipr.id})
+        login_testing_unauthorized(self, "secretary", url)
+
+        # only a POST acts
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 405)
+        ipr = IprDisclosureBase.objects.get(pk=ipr.pk)
+        self.assertEqual(ipr.state_id, 'pending')
+        self.assertFalse(ipr.iprevent_set.filter(type='posted').exists())
+
+        # the button on the disclosure's page posts
+        r = self.client.get(urlreverse('ietf.ipr.views.show', kwargs={'id': ipr.id}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        form = q('form[method=post][action="%s"]' % url)
+        self.assertEqual(len(form), 1)
+        self.assertEqual(len(form.find('input[name=csrfmiddlewaretoken]')), 1)
+        self.assertEqual(len(q('a[href="%s"]' % url)), 0)
+
+        # and the POST needs the CSRF token
+        client = Client(enforce_csrf_checks=True)
+        client.login(username="secretary", password="secretary+password")
+        r = client.post(url)
+        self.assertEqual(r.status_code, 403)
+        self.assertEqual(IprDisclosureBase.objects.get(pk=ipr.pk).state_id, 'pending')
+
+        r = self.client.post(url)
+        self.assertRedirects(r, urlreverse('ietf.ipr.views.notify', kwargs={'id': ipr.id, 'type': 'posted'}))
+        ipr = IprDisclosureBase.objects.get(pk=ipr.pk)
+        self.assertEqual(ipr.state_id, 'posted')
+        self.assertTrue(ipr.iprevent_set.filter(type='posted').exists())
+
     def test_notify(self):
         doc = WgDraftFactory(group__acronym='mars-wg', name='draft-ietf-mars-test')
         old_ipr = HolderIprDisclosureFactory(docs=[doc,], submitter_email='george@acme.com')
@@ -670,12 +706,12 @@ I would like to revoke this declaration.
         url = urlreverse('ietf.ipr.views.post', kwargs={ "id": ipr.id })
         login_testing_unauthorized(self, "secretary", url)
 
-        r = self.client.get(url,follow=True)
+        r = self.client.post(url,follow=True)
         self.assertEqual(r.status_code,200)
         len_before = len(outbox)
         # successful post
         self.client.login(username="secretary", password="secretary+password")
-        r = self.client.get(url,follow=True)
+        r = self.client.post(url,follow=True)
         self.assertEqual(r.status_code,200)
         ipr = IprDisclosureBase.objects.get(pk=ipr.pk)
         self.assertEqual(ipr.state.slug,'posted')
@@ -888,6 +924,151 @@ I would like to revoke this declaration.
             no_revisions_message(iprdocrel),
             "No revisions for this Internet-Draft were specified in this disclosure. However, there is only one revision of this Internet-Draft."
         )
+
+
+class IprVisibilityTests(TestCase):
+    """Only posted disclosures, and the fact that a disclosure was removed, are public"""
+
+    NOT_POSTED = ["pending", "parked", "rejected", "removed", "removed_objfalse"]
+
+    def setUp(self):
+        super().setUp()
+        self.draft = WgDraftFactory()
+        self.posted = HolderIprDisclosureFactory(
+            docs=[self.draft], title="Visibility check posted statement", holder_legal_name="Visibility Check Holder"
+        )
+        self.others = {
+            state: HolderIprDisclosureFactory(
+                docs=[self.draft],
+                state_id=state,
+                title="Visibility check %s statement" % state.replace("_", " "),
+                holder_legal_name="Visibility Check Holder",
+            )
+            for state in self.NOT_POSTED
+        }
+
+    def login_secretary(self):
+        self.assertTrue(self.client.login(username="secretary", password="secretary+password"))
+
+    def test_update(self):
+        for ipr in self.others.values():
+            url = urlreverse("ietf.ipr.views.update", kwargs={"id": ipr.pk})
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 404, ipr.state_id)
+            self.assertNotContains(r, ipr.submitter_email, status_code=404)
+            ipr_count = IprDisclosureBase.objects.count()
+            r = self.client.post(url, {"updates": [ipr.pk]})
+            self.assertEqual(r.status_code, 404, ipr.state_id)
+            self.assertEqual(IprDisclosureBase.objects.count(), ipr_count)
+        r = self.client.get(urlreverse("ietf.ipr.views.update", kwargs={"id": self.posted.pk}))
+        self.assertContains(r, self.posted.title)
+
+        self.login_secretary()
+        for ipr in self.others.values():
+            r = self.client.get(urlreverse("ietf.ipr.views.update", kwargs={"id": ipr.pk}))
+            self.assertContains(r, ipr.title)
+
+    def test_updates_field(self):
+        url = urlreverse("ietf.ipr.views.new", kwargs={"_type": "specific"})
+        for ipr in self.others.values():
+            r = self.client.post(url, {"updates": [ipr.pk]})
+            self.assertEqual(r.status_code, 200)
+            self.assertNotContains(r, ipr.title)
+            self.assertFalse(RelatedIpr.objects.filter(target=ipr).exists())
+        # a posted disclosure can be named
+        r = self.client.post(url, {"updates": [self.posted.pk]})
+        self.assertContains(r, self.posted.title)
+
+    def test_search_states(self):
+        url = urlreverse("ietf.ipr.views.search")
+        public = [self.posted, self.others["removed"], self.others["removed_objfalse"]]
+        private = [self.others[state] for state in ("pending", "parked", "rejected")]
+        queries = [
+            "?submit=holder&holder=Visibility+Check",
+            "?submit=iprtitle&iprtitle=Visibility+check",
+            "?submit=draft&id=%s" % self.draft.name,
+            "?submit=group&group=%s" % self.draft.group.pk,
+            "?submit=doctitle&doctitle=%s" % quote(self.draft.title),
+        ]
+        state_args = ["", "&state=all", "&state=pending&state=parked&state=rejected"] + [
+            "&state=%s" % state for state in self.NOT_POSTED
+        ]
+        for query in queries:
+            for state_arg in state_args:
+                r = self.client.get(url + query + state_arg)
+                self.assertEqual(r.status_code, 200)
+                for ipr in private:
+                    self.assertNotContains(r, ipr.title, msg_prefix=query + state_arg)
+            # asking for nothing in particular finds what is public
+            r = self.client.get(url + query)
+            for ipr in public:
+                self.assertContains(r, ipr.title, msg_prefix=query)
+
+        self.login_secretary()
+        # (the group and document title searches list only public disclosures for everyone)
+        for query in queries[:3]:
+            r = self.client.get(url + query + "&state=all")
+            for ipr in public + private:
+                self.assertContains(r, ipr.title, msg_prefix=query)
+            r = self.client.get(url + query + "&state=pending")
+            self.assertContains(r, self.others["pending"].title, msg_prefix=query)
+            self.assertNotContains(r, self.posted.title, msg_prefix=query)
+
+    def test_ajax_search(self):
+        url = urlreverse("ietf.ipr.views.ajax_search") + "?q=visibility+check"
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual([d["id"] for d in r.json()], [self.posted.pk])
+
+        self.login_secretary()
+        r = self.client.get(url)
+        self.assertEqual(
+            sorted(d["id"] for d in r.json()),
+            sorted([self.posted.pk] + [ipr.pk for ipr in self.others.values()]),
+        )
+
+    def test_api(self):
+        other_pks = [ipr.pk for ipr in self.others.values()]
+        update = HolderIprDisclosureFactory(state_id="pending", updates=[self.posted])
+        posted_update = HolderIprDisclosureFactory(updates=[self.posted])
+        for ipr in [self.posted] + list(self.others.values()):
+            IprEventFactory(disclosure=ipr, type_id="comment", desc="Visibility check comment")
+            IprEventFactory(disclosure=ipr, type_id="private_comment", desc="Visibility check private comment")
+
+        def objects(resource, **params):
+            r = self.client.get("/api/v1/ipr/%s/" % resource, dict(params, format="json", limit=0))
+            self.assertEqual(r.status_code, 200, resource)
+            return r.json()["objects"]
+
+        for login in (False, True):
+            if login:
+                # there are no roles in the API: the secretariat sees what everyone sees
+                self.login_secretary()
+
+            for resource in ("iprdisclosurebase", "holderiprdisclosure"):
+                found = objects(resource)
+                self.assertEqual(sorted(o["id"] for o in found), sorted([self.posted.pk, posted_update.pk]))
+                self.assertEqual(objects(resource, state="pending"), [])
+                self.assertEqual(objects(resource, title__startswith="Visibility check pending"), [])
+                for pk in other_pks:
+                    r = self.client.get("/api/v1/ipr/%s/%d/?format=json" % (resource, pk))
+                    self.assertEqual(r.status_code, 404, resource)
+
+            found = objects("iprdocrel")
+            self.assertEqual(len(found), 1)
+            self.assertTrue(found[0]["disclosure"].endswith("/%d/" % self.posted.pk))
+
+            found = objects("relatedipr")
+            self.assertEqual(len(found), 1)
+            self.assertTrue(found[0]["source"].endswith("/%d/" % posted_update.pk))
+            self.assertFalse(any(o["source"].endswith("/%d/" % update.pk) for o in found))
+
+            found = objects("iprevent")
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0]["desc"], "Visibility check comment")
+            self.assertTrue(found[0]["disclosure"].endswith("/%d/" % self.posted.pk))
+            self.assertEqual(objects("iprevent", type="private_comment"), [])
+            self.client.logout()
 
 
 class DraftFormTests(TestCase):

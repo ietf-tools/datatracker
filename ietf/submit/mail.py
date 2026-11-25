@@ -10,9 +10,9 @@ from django.template.loader import render_to_string
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.mail import send_mail, send_mail_message
+from ietf.utils.mail import send_mail, send_mail_message, send_mail_preformatted
 from ietf.doc.models import Document
-from ietf.person.models import Person
+from ietf.person.models import Email, Person
 from ietf.message.models import Message
 from ietf.utils.accesstoken import generate_access_token
 from ietf.mailtrigger.utils import gather_address_lists
@@ -107,11 +107,18 @@ def send_manual_post_request(request, submission, errors):
     checker = DraftIdnitsChecker(options=[]) # don't use the default --submitcheck limitation
     file_name = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (submission.name, submission.rev))
     nitspass, nitsmsg, nitserr, nitswarn, nitsresult = checker.check_file_txt(file_name)
+    # The copy for the submitter goes to the address they gave, whether or not
+    # that address is marked inactive. The mail says so when it is.
+    inactive_submitter_address = ""
+    submitter_address = submission.submitter_parsed()["email"]
+    if submitter_address and Email.objects.filter(address=submitter_address, active=False).exists():
+        inactive_submitter_address = submitter_address
     send_mail(request, to_email, from_email, subject, 'submit/manual_post_request.txt', {
         'submission': submission,
         'url': settings.IDTRACKER_BASE_URL + urlreverse('ietf.submit.views.submission_status', kwargs=dict(submission_id=submission.pk)),
         'errors': errors,
         'idnits': nitsmsg,
+        'inactive_submitter_address': inactive_submitter_address,
     }, cc=cc)
 
 
@@ -185,3 +192,22 @@ def announce_to_authors(request, submission):
                'group': group},
               cc=cc)
 
+
+def send_possible_duplicate_person_notice(person, existing_persons, docname, address):
+    """Send the secretariat a possible-duplicate notice for a Person created while posting docname
+
+    person: the new Person.
+    existing_persons: Persons that already had an alias equal to the new Person's name.
+    address: the email address the new Person was created for.
+    """
+    msg = render_to_string(
+        "submit/possible_duplicate_person.txt",
+        dict(
+            person=person,
+            existing_persons=existing_persons,
+            docname=docname,
+            address=address,
+            settings=settings,
+        ),
+    )
+    send_mail_preformatted(None, msg)
