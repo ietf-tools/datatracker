@@ -31,7 +31,7 @@ from ietf.group.factories import GroupFactory, RoleFactory, ReviewTeamFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
-from ietf.person.factories import PersonFactory, PersonalApiKeyFactory
+from ietf.person.factories import PersonFactory
 from ietf.person.utils import get_active_ads
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
@@ -141,88 +141,6 @@ class EditPositionTests(TestCase):
         self.assertEqual(draft.docevent_set.count(), events_before + 2)
         self.assertTrue("Ballot comment text updated" in pos.desc)
         
-    def test_api_set_position(self):
-        ad = Person.objects.get(name="Areað Irector")
-        draft = WgDraftFactory(ad=ad)
-        url = urlreverse('ietf.doc.views_ballot.api_set_position')
-        create_ballot_if_not_open(None, draft, ad, 'approve')
-        ad.user.last_login = timezone.now()
-        ad.user.save()
-        apikey = PersonalApiKeyFactory(endpoint=url, person=ad)
-
-        # vote
-        events_before = draft.docevent_set.count()
-        mailbox_before = len(outbox)
-
-        r = self.client.post(url, dict(
-                                        apikey=apikey.hash(),
-                                        doc=draft.name,
-                                        position="discuss",
-                                        discuss=" This is a discussion test. \n ",
-                                        comment=" This is a test. \n ")
-            )
-        self.assertContains(r, "Done")
-
-        pos = draft.latest_event(BallotPositionDocEvent, balloter=ad)
-        self.assertEqual(pos.pos.slug, "discuss")
-        self.assertTrue(" This is a discussion test." in pos.discuss)
-        self.assertTrue(pos.discuss_time != None)
-        self.assertTrue(" This is a test." in pos.comment)
-        self.assertTrue(pos.comment_time != None)
-        self.assertTrue("New position" in pos.desc)
-        self.assertEqual(draft.docevent_set.count(), events_before + 3)
-        self.assertEqual(len(outbox), mailbox_before + 1)
-
-        # recast vote
-        events_before = draft.docevent_set.count()
-        mailbox_before = len(outbox)
-        r = self.client.post(url, dict(apikey=apikey.hash(), doc=draft.name, position="noobj"))
-        self.assertEqual(r.status_code, 200)
-
-        draft = Document.objects.get(name=draft.name)
-        pos = draft.latest_event(BallotPositionDocEvent, balloter=ad)
-        self.assertEqual(pos.pos.slug, "noobj")
-        self.assertEqual(draft.docevent_set.count(), events_before + 1)
-        self.assertTrue("Position for" in pos.desc)
-        self.assertEqual(len(outbox), mailbox_before + 1)
-        m = outbox[-1]
-        self.assertIn('No Objection', m['Subject'])
-        self.assertIn('iesg@', m['To'])
-        self.assertIn(draft.name, m['Cc'])
-        self.assertIn(draft.group.acronym+'-chairs@', m['Cc'])
-
-        # clear vote
-        events_before = draft.docevent_set.count()
-        mailbox_before = len(outbox)
-        r = self.client.post(url, dict(apikey=apikey.hash(), doc=draft.name, position="norecord"))
-        self.assertEqual(r.status_code, 200)
-
-        draft = Document.objects.get(name=draft.name)
-        pos = draft.latest_event(BallotPositionDocEvent, balloter=ad)
-        self.assertEqual(pos.pos.slug, "norecord")
-        self.assertEqual(draft.docevent_set.count(), events_before + 1)
-        self.assertTrue("Position for" in pos.desc)
-        self.assertEqual(len(outbox), mailbox_before + 1)
-        m = outbox[-1]
-        self.assertIn('No Record', m['Subject'])
-
-        # change comment
-        events_before = draft.docevent_set.count()
-        mailbox_before = len(outbox)
-        r = self.client.post(url, dict(apikey=apikey.hash(), doc=draft.name, position="norecord", comment="New comment."))
-        self.assertEqual(r.status_code, 200)
-
-        draft = Document.objects.get(name=draft.name)
-        pos = draft.latest_event(BallotPositionDocEvent, balloter=ad)
-        self.assertEqual(pos.pos.slug, "norecord")
-        self.assertEqual(draft.docevent_set.count(), events_before + 2)
-        self.assertTrue("Ballot comment text updated" in pos.desc)
-        self.assertEqual(len(outbox), mailbox_before + 1)
-        m = outbox[-1]
-        self.assertIn('COMMENT', m['Subject'])
-        self.assertIn('New comment', get_payload_text(m))
-
-
     def test_edit_position_as_secretary(self):
         draft = IndividualDraftFactory()
         ad = Person.objects.get(user__username="ad")

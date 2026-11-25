@@ -28,7 +28,7 @@ from tastypie.utils import is_valid_jsonp_callback_value
 from tastypie.utils.mime import determine_format, build_content_type
 from textwrap import dedent
 from traceback import format_exception, extract_tb
-from typing import Iterable, Optional, Literal
+from typing import Iterable, Optional
 
 import ietf
 from ietf.api import _api_list
@@ -43,7 +43,6 @@ from ietf.nomcom.utils import ingest_feedback_email as nomcom_ingest_feedback_em
 from ietf.person.models import Email
 from ietf.sync.iana import ingest_review_email as iana_ingest_review_email
 from ietf.utils import log
-from ietf.utils.decorators import require_api_key
 from ietf.utils.mail import send_smtp
 from ietf.utils.models import DumpInfo
 
@@ -86,28 +85,6 @@ def api_help(request):
     key = JWK()
     return render(request, "api/index.html", {'key': key, 'settings':settings, })
     
-
-# @require_api_key
-# @csrf_exempt
-# def person_access_token(request):
-#     person = get_object_or_404(Person, user=request.user)
-#     
-#     if request.method == 'POST':
-#         client_id = request.POST.get('client_id', None)
-#         client_secret = request.POST.get('client_secret', None)
-#         client = get_object_or_404(ClientRecord, client_id=client_id, client_secret=client_secret)
-# 
-#         return HttpResponse(json.dumps({
-#                 'name' : person.plain_name(),
-#                 'email': person.email().address,
-#                 'roles': {
-#                         'chair': list(person.role_set.filter(name='chair', group__state__in=['active', 'bof', 'proposed']).values_list('group__acronym', flat=True)),
-#                         'secr': list(person.role_set.filter(name='secr', group__state__in=['active', 'bof', 'proposed']).values_list('group__acronym', flat=True)),
-#                     }
-#             }), content_type='application/json')
-#     else:
-#         return HttpResponse(status=405)
-
 
 @requires_api_token
 @csrf_exempt
@@ -188,13 +165,6 @@ def version(request):
                 content_type='application/json',
             )
     
-
-@require_api_key
-@csrf_exempt
-def app_auth(request, app: Literal["authortools", "bibxml"]):
-    return HttpResponse(
-            json.dumps({'success': True}),
-            content_type='application/json')
 
 @requires_api_token
 @csrf_exempt

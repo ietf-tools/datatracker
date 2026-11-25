@@ -14,9 +14,7 @@ from ietf.person.models import (  # type: ignore
     Person,
     Email,
     Alias,
-    PersonalApiKey,
     PersonEvent,
-    PersonApiKeyEvent,
     HistoricalPerson,
     HistoricalEmail,
     PersonExtResource,
@@ -97,28 +95,6 @@ class AliasResource(ModelResource):
         }
 api.person.register(AliasResource())
 
-class PersonalApiKeyResource(ModelResource):
-    person           = ToOneField(PersonResource, 'person')
-    class Meta:
-        queryset = PersonalApiKey.objects.none()
-        serializer = api.Serializer()
-        cache = SimpleCache()
-        excludes = ['salt', ]
-        #resource_name = 'personalapikey'
-        ordering = ['id', ]
-        filtering = { 
-            "id": ALL,
-            "endpoint": ALL,
-            "created": ALL,
-            "valid": ALL,
-            "salt": ALL,
-            "count": ALL,
-            "latest": ALL,
-            "person": ALL_WITH_RELATIONS,
-        }
-api.person.register(PersonalApiKeyResource())
-
-
 class PersonEventResource(ModelResource):
     person           = ToOneField(PersonResource, 'person')
     class Meta:
@@ -137,26 +113,6 @@ class PersonEventResource(ModelResource):
 api.person.register(PersonEventResource())
 
 
-class PersonApiKeyEventResource(ModelResource):
-    person           = ToOneField(PersonResource, 'person')
-    personevent_ptr  = ToOneField(PersonEventResource, 'personevent_ptr')
-    key              = ToOneField(PersonalApiKeyResource, 'key')
-    class Meta:
-        queryset = PersonApiKeyEvent.objects.all()
-        serializer = api.Serializer()
-        cache = SimpleCache()
-        #resource_name = 'personapikeyevent'
-        ordering = ['id', ]
-        filtering = { 
-            "id": ALL,
-            "time": ALL,
-            "type": ALL,
-            "desc": ALL,
-            "person": ALL_WITH_RELATIONS,
-            "personevent_ptr": ALL_WITH_RELATIONS,
-            "key": ALL_WITH_RELATIONS,
-        }
-api.person.register(PersonApiKeyEventResource())
 
 
 from ietf.utils.resources import UserResource

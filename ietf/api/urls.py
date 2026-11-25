@@ -7,7 +7,7 @@ from django.urls import include, path
 from django.views.generic import TemplateView
 
 from ietf import api
-from ietf.doc import views_ballot, api as doc_api
+from ietf.doc import api as doc_api
 from ietf.ietfauth import api_migration
 from ietf.meeting import api as meeting_api
 from ietf.meeting import views as meeting_views
@@ -89,15 +89,9 @@ urlpatterns = [
     url(r'^group/group-aliases/$', api_views.group_aliases),
     # Email addresses belonging to role holders
     url(r'^group/role-holder-addresses/$', api_views.role_holder_addresses),
-    # Let IESG members set positions programmatically
-    url(r'^iesg/position', views_ballot.api_set_position),
     # Find the blob to store for a given materials document path
     url(r'^meeting/(?:(?P<num>(?:interim-)?[a-z0-9-]+)/)?materials/%(document)s(?P<ext>\.[A-Za-z0-9]+)?/resolve-cached/$' % settings.URL_REGEXPS, meeting_views.api_resolve_materials_name_cached),
     url(r'^meeting/blob/(?P<bucket>[a-z0-9-]+)/(?P<name>[a-z][a-z0-9.-]+)$', meeting_views.api_retrieve_materials_blob),
-    # Let Meetecho set session video URLs
-    url(r'^meeting/session/video/url$', meeting_views.api_set_session_video_url),
-    # Let Meetecho tell us the name of its recordings
-    url(r'^meeting/session/recording-name$', meeting_views.api_set_meetecho_recording_name),
     # Meeting agenda + floorplan data
     url(r'^meeting/(?P<num>[A-Za-z0-9._+-]+)/agenda-data$', meeting_views.api_get_agenda_data),
     # Meeting session materials
@@ -109,14 +103,6 @@ urlpatterns = [
         name="ietf.api.meeting.registration.attended_by_uuid",
     ),
     url(r'^meeting/registration/attended/(?P<email>[^/\x00]+)/?$', meeting_api.MeetingsAttendedByEmail.as_view(), name="ietf.api.meeting.registration.attended"),
-    # Let MeetEcho upload bluesheets
-    url(r'^notify/meeting/bluesheet/?$', meeting_views.api_upload_bluesheet),
-    # Let MeetEcho tell us about session attendees
-    url(r'^notify/session/attendees/?$', meeting_views.api_add_session_attendees),
-    # Let MeetEcho upload session chatlog
-    url(r'^notify/session/chatlog/?$', meeting_views.api_upload_chatlog),    
-    # Let MeetEcho upload session polls
-    url(r'^notify/session/polls/?$', meeting_views.api_upload_polls),    
     # Let the registration system notify us about registrations
     url(r'^notify/meeting/registration/v2/?', api_views.api_new_meeting_registration_v2),
     # OpenID authentication provider
@@ -144,8 +130,6 @@ urlpatterns = [
     url(r'^submission/(?P<submission_id>[0-9]+)/status/?', submit_views.api_submission_status),
     # Datatracker version
     url(r'^version/?$', api_views.version),
-    # Application authentication API key
-    url(r'^appauth/(?P<app>authortools|bibxml)$', api_views.app_auth),
     # NFS metrics endpoint
     url(r'^metrics/nfs/?$', api_views.nfs_metrics),
     # latest versions

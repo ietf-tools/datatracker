@@ -69,7 +69,7 @@ from ietf.utils.test_runner import TestBlobstoreManager, disable_coverage
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, mocked_caches, unicontent
 from ietf.utils.timezone import date_today, time_now
 
-from ietf.person.factories import PersonFactory, PersonalApiKeyFactory
+from ietf.person.factories import PersonFactory
 from ietf.group.factories import GroupFactory, GroupEventFactory, RoleFactory
 from ietf.meeting.factories import (SessionFactory, ScheduleFactory,
     SessionPresentationFactory, MeetingFactory, FloorPlanFactory,
@@ -11544,6 +11544,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertNotIn(no_session_reg.person.pk, remote_pks)
         self.assertIn(session_reg.person.pk, remote_pks)
 
+    @override_settings(APP_API_TOKENS={"ietf.api.meeting.session.attendees": "valid-token"})
     def test_session_attendance(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2023, 11, 4), number='118')
         make_meeting_test_data(meeting=meeting)
@@ -11563,14 +11564,23 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertContains(r, '0 attendees')
 
         # Add some attendees
-        add_attendees_url = urlreverse('ietf.meeting.views.api_add_session_attendees')
-        recmanrole = RoleFactory(group__type_id='ietf', name_id='recman', person__user__last_login=timezone.now())
-        recman = recmanrole.person
-        apikey = PersonalApiKeyFactory(endpoint=add_attendees_url, person=recman)
-        attendees = [person.user.pk for person in persons]
-        self.client.login(username='recman', password='recman+password')
-        r = self.client.post(add_attendees_url, {'apikey':apikey.hash(), 'attended':f'{{"session_id":{session.pk},"attendees":{attendees}}}'})
-        self.assertEqual(r.status_code, 200)  
+        def add_attendees(session, persons):
+            return self.client.post(
+                urlreverse("ietf.api.meeting.session-attendees", kwargs={"pk": session.pk}),
+                data=json.dumps(
+                    {
+                        "attendees": [
+                            {"person_uuid": str(p.primary_uuid), "join_time": "2023-11-04T18:00:00Z"}
+                            for p in persons
+                        ]
+                    }
+                ),
+                content_type="application/json",
+                headers={"X-Api-Key": "valid-token"},
+            )
+        unregistered = PersonFactory()
+        r = add_attendees(session, persons)
+        self.assertEqual(r.status_code, 200)
         self.assertEqual(session.attended_set.count(), 3)
 
         # Before a meeting is finalized, session_attendance renders a live
@@ -11589,8 +11599,8 @@ class ProceedingsTests(BaseMeetingTestCase):
             self.client.login(username=username, password=f'{username}+password')
             r = self.client.get(attendance_url)
             self.assertEqual(b"I was there" in r.content, expected)
-        # recman isn't registered for the meeting
-        _test_button(recman, False)
+        # a person not registered for the meeting gets no button
+        _test_button(unregistered, False)
         # person0 is already on the bluesheet
         _test_button(persons[0], False)
         # person3 attests he was there
@@ -11635,10 +11645,8 @@ class ProceedingsTests(BaseMeetingTestCase):
         session = Session.objects.filter(meeting=meeting, group__acronym='mars').first()
         attendance_url = urlreverse('ietf.meeting.views.session_attendance', kwargs={'num':meeting.number, 'session_id':session.id})
         self.assertEqual(session.attended_set.count(), 0)
-        self.client.login(username='recman', password='recman+password')
-        attendees = [person.user.pk for person in persons]
-        r = self.client.post(add_attendees_url, {'apikey':apikey.hash(), 'attended':f'{{"session_id":{session.pk},"attendees":{attendees}}}'})
-        self.assertEqual(r.status_code, 200)  
+        r = add_attendees(session, persons)
+        self.assertEqual(r.status_code, 200)
         self.assertEqual(session.attended_set.count(), 4)
         doc = session.presentations.filter(document__type_id='bluesheets').first().document
         self.assertEqual(doc.rev,'00')
