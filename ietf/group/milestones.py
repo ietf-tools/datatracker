@@ -350,6 +350,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                 changes = []
                 states = []
                 for f in forms:
+                    initial_state = f.milestone.state_id if f.milestone else None
                     change = save_milestone_form(f)
 
                     if not change:
@@ -363,7 +364,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                                                            by=request.user.person, desc=change, milestone=f.milestone)
 
                     changes.append(change)
-                    states.append(f.milestone.state_id)
+                    states.append(initial_state if f.milestone.state_id == "deleted" else f.milestone.state_id)
 
 
                 if milestone_set == "current":
