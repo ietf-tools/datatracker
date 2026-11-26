@@ -15,7 +15,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.factories import CharterFactory, NewRevisionDocEventFactory, TelechatDocEventFactory
 from ietf.doc.models import ( Document, State, BallotDocEvent, BallotType, NewRevisionDocEvent,
-    TelechatDocEvent, WriteupDocEvent )
+    StoredObject, TelechatDocEvent, WriteupDocEvent )
 from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils_charter import ( next_revision, default_review_text, default_action_text,
     charter_name_for_group )
@@ -826,6 +826,10 @@ class EditCharterTests(TestCase):
         self.assertTrue(charter_path.exists())
         self.assertTrue(charter_ftp_path.exists())
         self.assertTrue(charter_path.samefile(charter_ftp_path))
+        self.assertEqual(retrieve_str("charter", charter_path.name), "This is a charter.")
+        stored_object = StoredObject.objects.get(store="charter", name=charter_path.name)
+        self.assertEqual(stored_object.doc_name, charter.name)
+        self.assertEqual(stored_object.doc_rev, "01")
 
         self.assertEqual(len(outbox), 2)
         #
