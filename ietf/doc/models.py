@@ -664,7 +664,7 @@ class DocumentInfo(models.Model):
         return self.related_that_doc("replaces")
 
     def replaced_by(self):
-        return set([ r.document for r in self.related_that("replaces") ])
+        return set(self.related_that("replaces"))
 
     def _text_path(self):
         path = self.get_file_name()
