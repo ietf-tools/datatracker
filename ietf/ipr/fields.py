@@ -28,6 +28,10 @@ class SearchableIprDisclosuresField(SearchableField):
     model = IprDisclosureBase
     default_hint_text = "Type in terms to search disclosure title"
 
+    # The states a disclosure must be in to be chosen or shown. None means any.
+    # A form sets this on its own copy of the field.
+    states = None
+
     def validate_pks(self, pks):
         for pk in pks:
             if not pk.isdigit():
@@ -37,7 +41,10 @@ class SearchableIprDisclosuresField(SearchableField):
         for key in item_ids:
             if not key.isdigit():
                 item_ids.remove(key)
-        return super(SearchableIprDisclosuresField, self).get_model_instances(item_ids)
+        instances = super(SearchableIprDisclosuresField, self).get_model_instances(item_ids)
+        if self.states is not None:
+            instances = instances.filter(state__in=self.states)
+        return instances
 
     def make_select2_data(self, model_instances):
         return select2_id_ipr_title(model_instances)

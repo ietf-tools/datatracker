@@ -6,8 +6,7 @@ from django import forms
 from django.contrib import messages
 from django.db import transaction
 
-from ietf.person.models import Email, Alias, Person, PersonalApiKey, PersonEvent, \
-    PersonApiKeyEvent, PersonExtResource, PersonUUID
+from ietf.person.models import Email, Alias, Person, PersonEvent, PersonExtResource, PersonUUID
 from ietf.person.name import name_parts
 from ietf.person.utils import queue_person_uuid_push
 
@@ -96,24 +95,11 @@ class PersonAdmin(simple_history.admin.SimpleHistoryAdmin):
 #    actions = None
 admin.site.register(Person, PersonAdmin)
 
-class PersonalApiKeyAdmin(admin.ModelAdmin):
-    list_display = ['id', 'person', 'created', 'endpoint', 'valid', 'count', 'latest', ]
-    list_filter = ['endpoint', 'created', ]
-    raw_id_fields = ['person', ]
-    search_fields = ['person__name', ]
-admin.site.register(PersonalApiKey, PersonalApiKeyAdmin)
-
 class PersonEventAdmin(admin.ModelAdmin):
     list_display = ["id", "person", "time", "type", ]
     search_fields = ["person__name", ]
     raw_id_fields = ['person', ]
 admin.site.register(PersonEvent, PersonEventAdmin)
-
-class PersonApiKeyEventAdmin(admin.ModelAdmin):
-    list_display = ["id", "person", "time", "type", "key"]
-    search_fields = ["person__name", ]
-    raw_id_fields = ['person', ]
-admin.site.register(PersonApiKeyEvent, PersonApiKeyEventAdmin)
 
 
 

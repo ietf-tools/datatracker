@@ -985,7 +985,7 @@ SUBMIT_YANG_CATALOG_CHECKER_URL = "https://yangcatalog.org/yangvalidator/api/v1/
 IDSUBMIT_CHECKER_CLASSES = (
     "ietf.submit.checkers.DraftIdnitsChecker",
     "ietf.submit.checkers.DraftIdnits3Checker",
-#    "ietf.submit.checkers.DraftYangChecker",
+    "ietf.submit.checkers.DraftYangChecker",
 #    "ietf.submit.checkers.DraftYangvalidatorChecker",    
 )
 
@@ -1321,7 +1321,6 @@ STATS_TIMELINE_CACHE_TIMEOUT = 86400
 
 UTILS_MEETING_CONFERENCE_DOMAINS = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', 'gather.town', ]
 UTILS_TEST_RANDOM_STATE_FILE = '.factoryboy_random_state'
-UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS = 30
 
 
 # Default timeout for HTTP requests via the requests library
@@ -1365,7 +1364,7 @@ CELERY_TASK_ROUTES = {
 MEETECHO_ONSITE_TOOL_URL = "https://meetings.conf.meetecho.com/onsite{session.meeting.number}/?session={session.pk}"
 MEETECHO_VIDEO_STREAM_URL = "https://meetings.conf.meetecho.com/ietf{session.meeting.number}/?session={session.pk}"
 MEETECHO_AUDIO_STREAM_URL = "https://mp3.conf.meetecho.com/ietf{session.meeting.number}/{session.pk}.m3u"
-MEETECHO_SESSION_RECORDING_URL = "https://meetecho-player.ietf.org/playout/?session={session_label}"
+MEETECHO_SESSION_RECORDING_URL = "https://meetecho-meetings.ietf.org/recordings/{session_label}"
 
 # Errata system api configuration
 # settings should provide

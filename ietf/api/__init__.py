@@ -12,6 +12,7 @@ from django.apps import apps as django_apps
 from django.core.exceptions import FieldDoesNotExist
 from django.db import DataError, transaction
 from django.db.models import Prefetch
+from django.db.models.constants import LOOKUP_SEP
 from django.db.models.fields.related_descriptors import (
     ManyToManyDescriptor,
     ReverseManyToOneDescriptor,
@@ -19,7 +20,12 @@ from django.db.models.fields.related_descriptors import (
 from django.http import HttpResponseNotAllowed
 from django.utils.module_loading import autodiscover_modules
 from tastypie.api import Api
-from tastypie.exceptions import ApiFieldError, BadRequest, InvalidFilterError
+from tastypie.exceptions import (
+    ApiFieldError,
+    BadRequest,
+    InvalidFilterError,
+    InvalidSortError,
+)
 from tastypie.fields import ApiField
 
 import debug  # noqa: F401  (pyflakes:ignore)
@@ -72,6 +78,9 @@ class ModelResource(tastypie.resources.ModelResource):
       Datetime filter values without a timezone are treated as UTC.
     - POST to a detail URL returns 405. Tastypie raises NotImplementedError
       there, which would be a 500.
+    - A filter cannot follow a relation into a resource whose queryset is
+      restricted or empty, and a list can be ordered only by a field of its
+      own resource. See check_filtering() and apply_sorting().
     - Cache keys are built with urlencode(), so query arguments containing
       spaces don't produce invalid memcached keys. Not needed by production any
       more because we hash keys before they reach memcached, but harmless.
@@ -113,6 +122,55 @@ class ModelResource(tastypie.resources.ModelResource):
 
     def post_detail(self, request, **kwargs):
         return HttpResponseNotAllowed(["GET"])
+
+    def check_filtering(self, field_name, filter_type="exact", filter_bits=None):
+        """Refuse a filter that follows a relation to rows that are not served
+
+        A resource whose queryset is restricted serves only some of its
+        model's rows. One whose queryset is empty, such as the one for Message,
+        serves none. Tastypie checks a filter like "message__body" against the
+        filtering declared on the related resource, but never against that
+        resource's queryset, so the filter would also reach the rows the
+        related resource does not serve. The number of rows it matched would
+        say whether a field of such a row has a given value.
+
+        A filter that follows a relation into a resource serving all of its
+        model's rows is not affected.
+        """
+        if filter_bits:
+            field = self.fields.get(field_name)
+            if getattr(field, "is_related", False):
+                queryset = field.get_related_resource(None)._meta.queryset
+                if queryset is not None and queryset.query.where:
+                    raise InvalidFilterError(
+                        f"Lookups are not allowed through the '{field_name}' field."
+                    )
+        return super().check_filtering(field_name, filter_type, filter_bits)
+
+    def apply_sorting(self, obj_list, options=None):
+        """Refuse to order a list by anything but a field of its own resource
+
+        Tastypie checks the first part of an order_by value against
+        Meta.ordering and passes the rest to the database as it is. A value
+        like "meeting__number" would order the list by any column that can be
+        reached from the first field, whether or not the API serves that column.
+        """
+        if options is not None:
+            for parameter_name in ("order_by", "sort_by"):
+                if hasattr(options, "getlist"):
+                    values = options.getlist(parameter_name)
+                else:
+                    values = options.get(parameter_name, [])
+                    if not isinstance(values, (list, tuple)):
+                        values = [values]
+                for value in values:
+                    if LOOKUP_SEP in value:
+                        # The value is not quoted back: this response body
+                        # is not escaped.
+                        raise InvalidSortError(
+                            "Ordering through a relation is not allowed."
+                        )
+        return super().apply_sorting(obj_list, options)
 
     def _related_fields(self):
         """Find the related fields whose objects can be loaded with the queryset

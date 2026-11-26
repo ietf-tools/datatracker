@@ -68,6 +68,10 @@ from ietf.submit.utils import (
     accept_submission_requires_group_approval,
     accept_submission_requires_prev_auth_approval,
     update_submission_external_resources,
+    NoConfirmationAddress,
+    UnattachedAddress,
+    check_submission_addresses,
+    unattached_addresses,
 )
 from ietf.stats.utils import clean_country_name
 from ietf.utils.accesstoken import generate_access_token
@@ -432,6 +436,14 @@ def submission_status(request, submission_id, access_token=None):
                 replaces_form.is_valid(),
                 extresources_form.is_valid(),
             ]
+            if validations[0] and unattached_addresses([submitter_form.cleaned_data["email"]]):
+                submitter_form.add_error(
+                    "email",
+                    "This address is in the Datatracker but not associated with any person, so it "
+                    "cannot be used as a submitter address. Use a different address, or ask the "
+                    "Secretariat to associate it with the right person.",
+                )
+                validations[0] = False
 
             if all(validations):
                 submission.submitter = submitter_form.cleaned_line()
@@ -446,23 +458,49 @@ def submission_status(request, submission_id, access_token=None):
                 if submission.rev == '00' and submission.group and not submission.group.is_active:
                     permission_denied(request, 'Posting a new Internet-Draft for an inactive group is not permitted.')
 
+                accepted = True
                 if approvals_received:
                     if not is_secretariat:
                         permission_denied(request, 'You do not have permission to perform this action')
 
-                    # go directly to posting submission
-                    docevent_from_submission(submission, desc="Uploaded new revision")
+                    try:
+                        check_submission_addresses(submission)
+                    except UnattachedAddress as err:
+                        accepted = False
+                        message = ("error", err.describe())
+                    else:
+                        # go directly to posting submission
+                        docevent_from_submission(submission, desc="Uploaded new revision")
 
-                    desc = "Secretariat manually posting. Approvals already received"
-                    post_submission(request, submission, desc, desc)
+                        desc = "Secretariat manually posting. Approvals already received"
+                        post_submission(request, submission, desc, desc)
 
                 else:
-                    accept_submission(submission, request, autopost=True)
+                    try:
+                        accept_submission(submission, request, autopost=True)
+                    except UnattachedAddress as err:
+                        accepted = False
+                        message = ("error", err.describe())
+                    except NoConfirmationAddress:
+                        # The submission stays as it was uploaded, so that manual
+                        # posting can still be requested from this page.
+                        accepted = False
+                        message = (
+                            "error",
+                            "No confirmation email can be sent for this submission: none of the addresses "
+                            "that it would go to is an active address in the Datatracker. "
+                            "To have the Internet-Draft posted, you can request manual posting by the Secretariat, "
+                            'using the "Adjust meta-data" button. '
+                            "Or you can cancel this submission, update your Datatracker account so that it "
+                            "includes the address as an active address, and log in to that account before you "
+                            "submit the Internet-Draft again.",
+                        )
 
-                if access_token:
-                    return redirect("ietf.submit.views.submission_status", submission_id=submission.pk, access_token=access_token)
-                else:
-                    return redirect("ietf.submit.views.submission_status", submission_id=submission.pk)
+                if accepted:
+                    if access_token:
+                        return redirect("ietf.submit.views.submission_status", submission_id=submission.pk, access_token=access_token)
+                    else:
+                        return redirect("ietf.submit.views.submission_status", submission_id=submission.pk)
 
         elif action == "edit" and submission.state_id == "uploaded":
             if access_token:
@@ -471,11 +509,14 @@ def submission_status(request, submission_id, access_token=None):
                 return redirect("ietf.submit.views.edit_submission", submission_id=submission.pk)
 
         elif action == "sendfullurl" and submission.state_id not in ("cancel", "posted"):
-            sent_to = send_full_url(request, submission)
+            if len(confirmation_list) == 0:
+                message = ('error', 'No email was sent: there is no active address to send the full access URL to.')
+            else:
+                sent_to = send_full_url(request, submission)
 
-            message = ('success', 'An email has been sent with the full access URL to: %s' % ",".join(confirmation_list))
+                message = ('success', 'An email has been sent with the full access URL to: %s' % ",".join(confirmation_list))
 
-            create_submission_event(request, submission, "Sent full access URL to: %s" % ", ".join(sent_to))
+                create_submission_event(request, submission, "Sent full access URL to: %s" % ", ".join(sent_to))
 
         elif action == "cancel" and submission.state.next_states.filter(slug="cancel"):
             if not can_cancel:
@@ -491,17 +532,23 @@ def submission_status(request, submission_id, access_token=None):
             if not can_ad_approve:
                 permission_denied(request, 'You do not have permission to perform this action.')
 
-            post_submission(request, submission, "WG -00 approved", "Approved and posted submission")
-
-            return redirect("ietf.doc.views_doc.document_main", name=submission.name)
+            try:
+                post_submission(request, submission, "WG -00 approved", "Approved and posted submission")
+            except UnattachedAddress as err:
+                message = ("error", err.describe())
+            else:
+                return redirect("ietf.doc.views_doc.document_main", name=submission.name)
 
         elif action == "approve" and submission.state_id == "grp-appr":
             if not can_group_approve:
                 permission_denied(request, 'You do not have permission to perform this action.')
 
-            post_submission(request, submission, "WG -00 approved", "Approved and posted submission")
-
-            return redirect("ietf.doc.views_doc.document_main", name=submission.name)
+            try:
+                post_submission(request, submission, "WG -00 approved", "Approved and posted submission")
+            except UnattachedAddress as err:
+                message = ("error", err.describe())
+            else:
+                return redirect("ietf.doc.views_doc.document_main", name=submission.name)
 
         elif action == "forcepost" and submission.state.next_states.filter(slug="posted"):
             if not can_force_post:
@@ -512,9 +559,12 @@ def submission_status(request, submission_id, access_token=None):
             else:
                 desc = "Forced post of submission"
 
-            post_submission(request, submission, desc, desc)
-
-            return redirect("ietf.doc.views_doc.document_main", name=submission.name)
+            try:
+                post_submission(request, submission, desc, desc)
+            except UnattachedAddress as err:
+                message = ("error", err.describe())
+            else:
+                return redirect("ietf.doc.views_doc.document_main", name=submission.name)
 
 
         else:
@@ -653,6 +703,7 @@ def confirm_submission(request, submission_id, auth_token):
     key_matched = submission.auth_key and auth_token_is_valid(submission, auth_token)
 
     if request.method == 'POST' and submission.state_id in ("auth", "aut-appr") and key_matched:
+        state_before_confirming = submission.state
         # Set a temporary state 'confirmed' to avoid entering this code
         # multiple times to confirm.
         submission.state = DraftSubmissionStateName.objects.get(slug="confirmed")
@@ -669,7 +720,15 @@ def confirm_submission(request, submission_id, auth_token):
             else:
                 desc = "New version approved by previous author"
 
-            post_submission(request, submission, desc, "Confirmed and posted submission")
+            try:
+                post_submission(request, submission, desc, "Confirmed and posted submission")
+            except UnattachedAddress as err:
+                # Nothing was posted. Let the submission be confirmed again once
+                # the address has been dealt with.
+                submission.state = state_before_confirming
+                submission.save()
+                messages.error(request, err.describe())
+                return redirect("ietf.submit.views.submission_status", submission_id=submission_id)
 
             return redirect("ietf.doc.views_doc.document_main", name=submission.name)
 

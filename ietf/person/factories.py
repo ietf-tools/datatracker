@@ -3,7 +3,6 @@
 
 
 import factory
-from factory.fuzzy import FuzzyChoice
 import faker 
 import faker.config
 import os
@@ -20,8 +19,7 @@ from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 
-from ietf.person.models import Person, Alias, Email, PersonalApiKey, PersonApiKeyEvent, \
-    PERSON_API_KEY_ENDPOINTS, PersonUUID
+from ietf.person.models import Person, Alias, Email, PersonUUID
 from ietf.person.name import normalize_name, unidecode_name
 
 
@@ -184,30 +182,3 @@ class EmailFactory(factory.django.DjangoModelFactory):
     origin = factory.LazyAttribute(lambda obj: obj.person.user.username if obj.person.user else '')
 
 
-class PersonalApiKeyFactory(factory.django.DjangoModelFactory):
-    person = factory.SubFactory(PersonFactory)
-    endpoint = FuzzyChoice(v for v, n in PERSON_API_KEY_ENDPOINTS)
-    
-    class Meta:
-        model = PersonalApiKey
-        skip_postgeneration_save = True
-
-    @factory.post_generation
-    def validate_model(obj, create, extracted, **kwargs):
-        """Validate the model after creation
-        
-        Passing validate_model=False will disable the validation.
-        """
-        do_clean =  True if extracted is None else extracted
-        if do_clean:
-            obj.full_clean()
-
-
-class PersonApiKeyEventFactory(factory.django.DjangoModelFactory):
-    key = factory.SubFactory(PersonalApiKeyFactory)
-    person = factory.LazyAttribute(lambda o: o.key.person)
-    type = 'apikey_login'
-    desc = factory.Faker('sentence', nb_words=6)
-
-    class Meta:
-        model = PersonApiKeyEvent

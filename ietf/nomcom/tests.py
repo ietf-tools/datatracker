@@ -3,6 +3,7 @@
 
 import datetime
 import io
+import os
 from unittest import mock
 import random
 import shutil
@@ -2180,6 +2181,46 @@ Junk body for testing
         self.assertEqual(response.status_code, 302)
         nominee = self.nc.nominee_set.order_by('pk').first()
         self.assertEqual(nominee.email,new_email)
+
+    def test_edit_nominee_error_escapes_names(self):
+        nominee = self.nc.nominee_set.order_by('pk').first()
+        nominee.person.name = "Nominee <b>%d</b>" % nominee.pk
+        nominee.person.save()
+        url = reverse('ietf.nomcom.views.edit_nominee',kwargs={'year':self.nc.year(),'nominee_id':nominee.id})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        # an address that a nominee of this nomcom already has
+        response = self.client.post(url,{'nominee_email':nominee.email.address})
+        self.assertEqual(response.status_code, 200)
+        content = unicontent(response)
+        self.assertIn("There already exists a nominee", content)
+        self.assertIn("&lt;b&gt;%d&lt;/b&gt;" % nominee.pk, content)
+        self.assertNotIn("<b>%d</b>" % nominee.pk, content)
+        # the link in the message is still a link
+        q = PyQuery(response.content)
+        merge_url = reverse('ietf.nomcom.views.private_merge_nominee', kwargs={'year':self.nc.year()})
+        self.assertEqual(len(q('form a[href="%s"]' % merge_url)), 1)
+
+    def test_edit_template_rst(self):
+        template = DBTemplate.objects.get(group=self.nc.group, path__endswith='home.rst')
+        self.assertEqual(template.type_id, 'rst')
+        original = template.content
+        url = reverse('ietf.nomcom.views.edit_template',kwargs={'year':self.nc.year(),'template_id':template.id})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        for content in (
+            ".. include:: %s\n   :encoding: utf-8\n" % os.path.abspath(__file__),
+            ".. raw:: html\n\n   <b>bold</b>\n",
+        ):
+            response = self.client.post(url, {'content': content})
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(response.context['form'].errors)
+            template.refresh_from_db()
+            self.assertEqual(template.content, original)
+        response = self.client.post(url, {'content': "A new heading\n=============\n\nSome *new* text.\n"})
+        self.assertEqual(response.status_code, 302)
+        self.client.logout()
+        response = self.client.get(reverse('ietf.nomcom.views.year_index', kwargs={'year': self.nc.year()}))
+        self.assertContains(response, "<h1>A new heading</h1>")
+        self.assertContains(response, "Some <em>new</em> text.")
 
     def test_request_merge(self):
         nominee1, nominee2 = self.nc.nominee_set.all()[:2]

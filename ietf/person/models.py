@@ -18,7 +18,6 @@ from django.db import models
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.utils import timezone
-from django.utils.encoding import smart_bytes
 from django.utils.text import slugify
 
 from simple_history.models import HistoricalRecords
@@ -322,10 +321,14 @@ class Person(models.Model):
             .order_by("-time")
         )
 
+    # Set to True on an instance before saving to skip the possible-duplicates
+    # notice that save() sends. Used when the caller sends its own notice.
+    skip_possible_duplicates_notice = False
+
     def save(self, *args, **kwargs):
         created = not self.pk
         super(Person, self).save(*args, **kwargs)
-        if created:
+        if created and not self.skip_possible_duplicates_notice:
             if Person.objects.filter(name=self.name).count() > 1 :
                 msg = render_to_string('person/mail/possible_duplicates.txt',
                                        dict(name=self.name,
@@ -334,12 +337,17 @@ class Person(models.Model):
                                             ))
                 send_mail_preformatted(None, msg)
         if not self.name in [ a.name for a in self.alias_set.filter(name=self.name) ]:
-            self.alias_set.create(name=self.name)
+            self._create_alias(self.name)
         if self.ascii and self.name != self.ascii:
             if not self.ascii in [ a.name for a in self.alias_set.filter(name=self.ascii) ]:
-                self.alias_set.create(name=self.ascii)
+                self._create_alias(self.ascii)
         # The aliases just changed; drop what has_alias_for_name() memoized about them.
         self.__dict__.pop('_cached_has_alias_for_name', None)
+
+    def _create_alias(self, name):
+        alias = Alias(person=self, name=name)
+        alias.skip_possible_duplicates_notice = self.skip_possible_duplicates_notice
+        alias.save()
 
     #this variable, if not None, may be used by url() to keep the sitefqdn.
     default_hostscheme = None
@@ -347,10 +355,6 @@ class Person(models.Model):
     @property
     def defurl(self):
         return urljoin(self.default_hostscheme,self.json_url())
-
-    def available_api_endpoints(self):
-        from ietf.ietfauth.utils import has_role
-        return list(set([ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES if r==None or has_role(self.user, r) ]))
 
     def cdn_photo_url(self, size=80):
         if self.photo:
@@ -392,10 +396,13 @@ class Alias(models.Model):
     person = ForeignKey(Person)
     name = models.CharField(max_length=255, db_index=True)
 
+    # See Person.skip_possible_duplicates_notice
+    skip_possible_duplicates_notice = False
+
     def save(self, *args, **kwargs):
         created = not self.pk
         super(Alias, self).save(*args, **kwargs)
-        if created:
+        if created and not self.skip_possible_duplicates_notice:
             if Alias.objects.filter(name=self.name).exclude(person=self.person).count() > 0 :
                 msg = render_to_string('person/mail/possible_duplicates.txt',
                                        dict(name=self.name,
@@ -468,75 +475,11 @@ class Email(models.Model):
             log.assertion('self.origin')
         super(Email, self).save(*args, **kwargs)
 
-# "{key.id}{salt}{hash}
-KEY_STRUCT = "i12s32s"
-
+# Referenced by migration 0001_initial
 def salt():
     return uuid.uuid4().bytes[:12]
 
-# Manual maintenance: List all endpoints that use @require_api_key here
-PERSON_API_KEY_VALUES = [
-    ("/api/iesg/position", "/api/iesg/position", "Area Director"),
-    ("/api/v2/person/person", "/api/v2/person/person", "Robot"),
-    ("/api/meeting/session/video/url", "/api/meeting/session/video/url", "Recording Manager"),
-    ("/api/meeting/session/recording-name", "/api/meeting/session/recording-name", "Recording Manager"),
-    ("/api/notify/meeting/registration", "/api/notify/meeting/registration", "Robot"),
-    ("/api/notify/meeting/bluesheet", "/api/notify/meeting/bluesheet", "Recording Manager"),
-    ("/api/notify/session/attendees", "/api/notify/session/attendees", "Recording Manager"),
-    ("/api/notify/session/chatlog", "/api/notify/session/chatlog", "Recording Manager"),
-    ("/api/notify/session/polls", "/api/notify/session/polls", "Recording Manager"),
-    ("/api/appauth/authortools", "/api/appauth/authortools", None),
-    ("/api/appauth/bibxml", "/api/appauth/bibxml", None),
-]
-PERSON_API_KEY_ENDPOINTS = sorted(list(set([ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES ])))
-
-class PersonalApiKey(models.Model):
-    person   = ForeignKey(Person, related_name='apikeys')
-    endpoint = models.CharField(max_length=128, null=False, blank=False, choices=PERSON_API_KEY_ENDPOINTS)
-    created  = models.DateTimeField(default=timezone.now, null=False)
-    valid    = models.BooleanField(default=True)
-    salt     = models.BinaryField(default=salt, max_length=12, null=False, blank=False)
-    count    = models.IntegerField(default=0, null=False, blank=False)
-    latest   = models.DateTimeField(blank=True, null=True)
-
-    @classmethod
-    def validate_key(cls, s):
-        import struct, hashlib, base64
-        assert isinstance(s, bytes)
-        try:
-            key = base64.urlsafe_b64decode(s)
-            id, salt, hash = struct.unpack(KEY_STRUCT, key)
-        except Exception:
-            return None
-        k = cls.objects.filter(id=id)
-        if not k.exists():
-            return None
-        k = k.first()
-        if not k.valid:
-            return None
-        check = hashlib.sha256()
-        for v in (str(id), str(k.person.id), k.created.isoformat(), k.endpoint, str(k.valid), salt, settings.SECRET_KEY):
-            v = smart_bytes(v)
-            check.update(v)
-        return k if check.digest() == hash else None
-
-    def hash(self):
-        import struct, hashlib, base64
-        if not hasattr(self, '_cached_hash'):
-            hash = hashlib.sha256()
-            # Hash over: ( id, person, created, endpoint, valid, salt, secret )
-            for v in (str(self.id), str(self.person.id), self.created.isoformat(), self.endpoint, str(self.valid), self.salt, settings.SECRET_KEY):
-                v = smart_bytes(v)
-                hash.update(v)
-            key = struct.pack(KEY_STRUCT, self.id, bytes(self.salt), hash.digest())
-            self._cached_hash =  base64.urlsafe_b64encode(key).decode('ascii')
-        return self._cached_hash
-
-    def __str__(self):
-        return "%s %-24s %-32s(%6d): %s ..." % (self.created.strftime("%Y-%m-%d %H:%M"), self.person.name, self.endpoint, self.count, self.hash()[:16])
-
 PERSON_EVENT_CHOICES = [
-    ("apikey_login", "API key login"),
     ("email_address_deactivated", "Email address deactivated"),
     ]
 
@@ -554,7 +497,3 @@ class PersonEvent(models.Model):
         indexes = [
             models.Index(fields=['-time', '-id']),
         ]
-
-class PersonApiKeyEvent(PersonEvent):
-    key = ForeignKey(PersonalApiKey)
-

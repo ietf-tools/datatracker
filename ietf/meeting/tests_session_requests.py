@@ -4,6 +4,7 @@
 
 import datetime
 
+from django.test import Client
 from django.urls import reverse
 
 import debug                            # pyflakes:ignore
@@ -50,7 +51,19 @@ class SessionRequestTestCase(TestCase):
         session = SessionFactory(meeting=meeting, group=mars, status_id='apprw')
         url = reverse('ietf.meeting.views_session_request.approve_request', kwargs={'acronym': 'mars'})
         self.client.login(username="ad", password="ad+password")
+        # only a POST acts
         r = self.client.get(url)
+        self.assertEqual(r.status_code, 405)
+        self.assertEqual(SchedulingEvent.objects.filter(session=session).order_by('-id')[0].status_id, 'apprw')
+        # the button on the request page posts
+        r = self.client.get(reverse('ietf.meeting.views_session_request.view_request', kwargs={'acronym': 'mars'}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        form = q('form[method=post][action="%s"]' % url)
+        self.assertEqual(len(form), 1)
+        self.assertEqual(len(form.find('input[name=csrfmiddlewaretoken]')), 1)
+        self.assertEqual(len(q('a[href="%s"]' % url)), 0)
+        r = self.client.post(url)
         self.assertRedirects(r, reverse('ietf.meeting.views_session_request.view_request', kwargs={'acronym': 'mars'}))
         self.assertEqual(SchedulingEvent.objects.filter(session=session).order_by('-id')[0].status_id, 'appr')
 
@@ -61,9 +74,41 @@ class SessionRequestTestCase(TestCase):
         session = SessionFactory(meeting=meeting, group__parent=area, group__acronym='mars', status_id='sched')
         url = reverse('ietf.meeting.views_session_request.cancel_request', kwargs={'acronym': 'mars'})
         self.client.login(username="ad", password="ad+password")
+        # only a POST acts
+        empty_outbox()
         r = self.client.get(url)
+        self.assertEqual(r.status_code, 405)
+        self.assertEqual(SchedulingEvent.objects.filter(session=session).order_by('-id')[0].status_id, 'sched')
+        self.assertEqual(len(outbox), 0)
+        # the button on the request page posts
+        r = self.client.get(reverse('ietf.meeting.views_session_request.view_request', kwargs={'acronym': 'mars'}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        form = q('form[method=post][action="%s"]' % url)
+        self.assertEqual(len(form), 1)
+        self.assertEqual(len(form.find('input[name=csrfmiddlewaretoken]')), 1)
+        self.assertNotIn(url, q('button').outer_html() or '')
+        r = self.client.post(url)
         self.assertRedirects(r, reverse('ietf.meeting.views_session_request.list_view'))
         self.assertEqual(SchedulingEvent.objects.filter(session=session).order_by('-id')[0].status_id, 'deleted')
+        self.assertEqual(len(outbox), 1)
+
+    def test_actions_need_csrf_token(self):
+        meeting = MeetingFactory(type_id='ietf', date=date_today())
+        ad = Person.objects.get(user__username='ad')
+        area = RoleFactory(name_id='ad', person=ad, group__type_id='area').group
+        mars = GroupFactory(parent=area, acronym='mars')
+        session = SessionFactory(meeting=meeting, group=mars, status_id='apprw')
+        client = Client(enforce_csrf_checks=True)
+        client.login(username="ad", password="ad+password")
+        empty_outbox()
+        for view in ('approve_request', 'cancel_request', 'no_session'):
+            url = reverse('ietf.meeting.views_session_request.%s' % view, kwargs={'acronym': 'mars'})
+            r = client.post(url)
+            self.assertEqual(r.status_code, 403, view)
+        self.assertEqual(SchedulingEvent.objects.filter(session=session).order_by('-id')[0].status_id, 'apprw')
+        self.assertEqual(Session.objects.filter(meeting=meeting, group=mars).count(), 1)
+        self.assertEqual(len(outbox), 0)
 
     def test_cancel_notification_msg(self):
         to = "<iesg-secretary@ietf.org>"
@@ -959,16 +1004,26 @@ class NotMeetingCase(TestCase):
 
         empty_outbox()
 
-        r = self.client.get(url, follow=True)
-        # If the view invoked by that get throws an exception (such as an integrity error),
-        # the traceback from this test will talk about a TransactionManagementError and
-        # yell about executing queries before the end of an 'atomic' block
+        # only a POST acts
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 405)
+        self.assertEqual(Session.objects.filter(group=group).count(), 0)
+        self.assertEqual(len(outbox), 0)
 
-        # This is a sign of a problem - a get shouldn't have a side-effect like this one does
+        # the button on the new request page posts
+        r = self.client.get(reverse('ietf.meeting.views_session_request.new_request', kwargs={'acronym': group.acronym}))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        form = q('form[method=post][action="%s"]' % url)
+        self.assertEqual(len(form), 1)
+        self.assertEqual(len(form.find('input[name=csrfmiddlewaretoken]')), 1)
+        self.assertEqual(len(q('a[href="%s"]' % url)), 0)
+
+        r = self.client.post(url, follow=True)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'A message was sent to notify not having a session')
 
-        r = self.client.get(url, follow=True)
+        r = self.client.post(url, follow=True)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'is already marked as not meeting')
 

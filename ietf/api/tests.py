@@ -4,14 +4,12 @@ import base64
 import copy
 import datetime
 import json
-import html
 from itertools import chain
 from unittest import mock
 import os
 import sys
 
 from importlib import import_module
-from pathlib import Path
 from random import randrange
 from urllib.parse import quote, urlencode, urljoin
 
@@ -28,23 +26,22 @@ from tastypie.test import ResourceTestCaseMixin
 import debug                            # pyflakes:ignore
 
 import ietf
-from ietf.doc.storage_utils import retrieve_str
-from ietf.doc.utils import get_unicode_document_content
 from ietf.doc.models import DocEvent, Document, RelatedDocument, State
 from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory, RfcAuthorFactory, DocEventFactory
-from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, RegistrationFactory, SessionFactory
-from ietf.meeting.models import Session, Registration
+from ietf.meeting.models import Registration
+from ietf.message.factories import SendQueueFactory
 from ietf.nomcom.models import Volunteer
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
-from ietf.person.factories import PersonFactory, random_faker, EmailFactory, PersonalApiKeyFactory
-from ietf.person.models import Email, User
+from ietf.person.factories import PersonFactory, EmailFactory
+from ietf.person.models import Email, Person, User
+from ietf.person.resources import PersonResource
 from ietf.submit.factories import SubmissionFactory
 from ietf.utils.mail import empty_outbox, outbox, get_payload_text
 from ietf.utils.models import DumpInfo
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized, reload_db_objects
+from ietf.utils.test_utils import TestCase, reload_db_objects
 
-from . import OMITTED_APPS_APIS, Serializer
+from . import OMITTED_APPS_APIS, Serializer, _api_list
 from .views import EmailIngestionError
 
 OMITTED_APPS = (
@@ -68,701 +65,6 @@ class CustomApiTests(TestCase):
         url = urlreverse('ietf.api.urls.oidc_issuer')
         r = self.client.get(url)
         self.assertContains(r, 'OpenID Connect Issuer', status_code=200)
-
-    def test_deprecated_api_set_session_video_url(self):
-        url = urlreverse('ietf.meeting.views.api_set_session_video_url')
-        recmanrole = RoleFactory(group__type_id='ietf', name_id='recman')
-        recman = recmanrole.person
-        meeting = MeetingFactory(type_id='ietf')
-        session = SessionFactory(group__type_id='wg', meeting=meeting)
-        group = session.group
-        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
-        video = 'https://foo.example.com/bar/beer/'
-
-        # error cases
-        r = self.client.post(url, {})
-        self.assertContains(r, "Missing apikey parameter", status_code=400)
-
-        badrole  = RoleFactory(group__type_id='ietf', name_id='ad')
-        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
-        badrole.person.user.last_login = timezone.now()
-        badrole.person.user.save()
-        r = self.client.post(url, {'apikey': badapikey.hash()} )
-        self.assertContains(r, "Restricted to role: Recording Manager", status_code=403)
-
-        r = self.client.post(url, {'apikey': apikey.hash()} )
-        self.assertContains(r, "Too long since last regular login", status_code=400)
-        recman.user.last_login = timezone.now()
-        recman.user.save()
-
-        r = self.client.get(url, {'apikey': apikey.hash()} )
-        self.assertContains(r, "Method not allowed", status_code=405)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'group': group.acronym} )
-        self.assertContains(r, "Missing meeting parameter", status_code=400)
-
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, } )
-        self.assertContains(r, "Missing group parameter", status_code=400)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym} )
-        self.assertContains(r, "Missing item parameter", status_code=400)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym, 'item': '1'} )
-        self.assertContains(r, "Missing url parameter", status_code=400)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': '1', 'group': group.acronym,
-                                    'item': '1', 'url': video, })
-        self.assertContains(r, "No sessions found for meeting", status_code=400)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': 'bogous',
-                                    'item': '1', 'url': video, })
-        self.assertContains(r, "No sessions found in meeting '%s' for group 'bogous'"%meeting.number, status_code=400)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
-                                    'item': '1', 'url': "foobar", })
-        self.assertContains(r, "Invalid url value: 'foobar'", status_code=400)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
-                                    'item': '5', 'url': video, })
-        self.assertContains(r, "No item '5' found in list of sessions for group", status_code=400)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
-                                    'item': 'foo', 'url': video, })
-        self.assertContains(r, "Expected a numeric value for 'item', found 'foo'", status_code=400)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
-                                    'item': '1', 'url': video+'/rum', })
-        self.assertContains(r, "Done", status_code=200)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
-                                    'item': '1', 'url': video+'/rum', })
-        self.assertContains(r, "URL is the same", status_code=400)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
-                                    'item': '1', 'url': video, })
-        self.assertContains(r, "Done", status_code=200)
-
-        recordings = session.recordings()
-        self.assertEqual(len(recordings), 1)
-        doc = recordings[0]
-        self.assertEqual(doc.external_url, video)
-        event = doc.latest_event()
-        self.assertEqual(event.by, recman)
-
-    def test_api_set_session_video_url(self):
-        url = urlreverse("ietf.meeting.views.api_set_session_video_url")
-        recmanrole = RoleFactory(group__type_id="ietf", name_id="recman")
-        recman = recmanrole.person
-        meeting = MeetingFactory(type_id="ietf")
-        session = SessionFactory(group__type_id="wg", meeting=meeting)
-        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
-        video = "https://foo.example.com/bar/beer/"
-
-        # error cases
-        r = self.client.post(url, {})
-        self.assertContains(r, "Missing apikey parameter", status_code=400)
-
-        badrole = RoleFactory(group__type_id="ietf", name_id="ad")
-        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
-        badrole.person.user.last_login = timezone.now()
-        badrole.person.user.save()
-        r = self.client.post(url, {"apikey": badapikey.hash()})
-        self.assertContains(r, "Restricted to role: Recording Manager", status_code=403)
-
-        r = self.client.post(url, {"apikey": apikey.hash()})
-        self.assertContains(r, "Too long since last regular login", status_code=400)
-        recman.user.last_login = timezone.now()
-        recman.user.save()
-
-        r = self.client.get(url, {"apikey": apikey.hash()})
-        self.assertContains(r, "Method not allowed", status_code=405)
-
-        r = self.client.post(url, {"apikey": apikey.hash()})
-        self.assertContains(r, "Missing session_id parameter", status_code=400)
-
-        r = self.client.post(url, {"apikey": apikey.hash(), "session_id": session.pk})
-        self.assertContains(r, "Missing url parameter", status_code=400)
-
-        bad_pk = int(Session.objects.order_by("-pk").first().pk) + 1
-        r = self.client.post(
-            url,
-            {
-                "apikey": apikey.hash(),
-                "session_id": bad_pk,
-                "url": video,
-            },
-        )
-        self.assertContains(r, "Session not found", status_code=400)
-
-        r = self.client.post(
-            url,
-            {
-                "apikey": apikey.hash(),
-                "session_id": "foo",
-                "url": video,
-            },
-        )
-        self.assertContains(r, "Invalid session_id", status_code=400)
-
-        r = self.client.post(
-            url,
-            {
-                "apikey": apikey.hash(),
-                "session_id": session.pk,
-                "url": "foobar",
-            },
-        )
-        self.assertContains(r, "Invalid url value: 'foobar'", status_code=400)
-
-        r = self.client.post(
-            url, {"apikey": apikey.hash(), "session_id": session.pk, "url": video}
-        )
-        self.assertContains(r, "Done", status_code=200)
-
-        recordings = session.recordings()
-        self.assertEqual(len(recordings), 1)
-        doc = recordings[0]
-        self.assertEqual(doc.external_url, video)
-        event = doc.latest_event()
-        self.assertEqual(event.by, recman)
-
-    def test_api_set_meetecho_recording_name(self):
-        url = urlreverse("ietf.meeting.views.api_set_meetecho_recording_name")
-        recmanrole = RoleFactory(group__type_id="ietf", name_id="recman")
-        recman = recmanrole.person
-        meeting = MeetingFactory(type_id="ietf")
-        session = SessionFactory(group__type_id="wg", meeting=meeting)
-        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
-        name = "testname"
-
-        # error cases
-        r = self.client.post(url, {})
-        self.assertContains(r, "Missing apikey parameter", status_code=400)
-
-        badrole = RoleFactory(group__type_id="ietf", name_id="ad")
-        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
-        badrole.person.user.last_login = timezone.now()
-        badrole.person.user.save()
-        r = self.client.post(url, {"apikey": badapikey.hash()})
-        self.assertContains(r, "Restricted to role: Recording Manager", status_code=403)
-
-        r = self.client.post(url, {"apikey": apikey.hash()})
-        self.assertContains(r, "Too long since last regular login", status_code=400)
-        recman.user.last_login = timezone.now()
-        recman.user.save()
-
-        r = self.client.get(url, {"apikey": apikey.hash()})
-        self.assertContains(r, "Method not allowed", status_code=405)
-
-        r = self.client.post(url, {"apikey": apikey.hash()})
-        self.assertContains(r, "Missing session_id parameter", status_code=400)
-
-        r = self.client.post(url, {"apikey": apikey.hash(), "session_id": session.pk})
-        self.assertContains(r, "Missing name parameter", status_code=400)
-
-        bad_pk = int(Session.objects.order_by("-pk").first().pk) + 1
-        r = self.client.post(
-            url,
-            {
-                "apikey": apikey.hash(),
-                "session_id": bad_pk,
-                "name": name,
-            },
-        )
-        self.assertContains(r, "Session not found", status_code=400)
-
-        r = self.client.post(
-            url,
-            {
-                "apikey": apikey.hash(),
-                "session_id": "foo",
-                "name": name,
-            },
-        )
-        self.assertContains(r, "Invalid session_id", status_code=400)
-
-        r = self.client.post(
-            url, {"apikey": apikey.hash(), "session_id": session.pk, "name": name}
-        )
-        self.assertContains(r, "Done", status_code=200)
-
-        session.refresh_from_db()
-        self.assertEqual(session.meetecho_recording_name, name)
-
-
-    def test_api_add_session_attendees_deprecated(self):
-        # Deprecated test - should be removed when we stop accepting a simple list of user PKs in
-        # the add_session_attendees() view
-        url = urlreverse('ietf.meeting.views.api_add_session_attendees')
-        otherperson = PersonFactory()
-        recmanrole = RoleFactory(group__type_id='ietf', name_id='recman')
-        recman = recmanrole.person
-        meeting = MeetingFactory(type_id='ietf')
-        session = SessionFactory(group__type_id='wg', meeting=meeting)  
-        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
-
-        badrole  = RoleFactory(group__type_id='ietf', name_id='ad')
-        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
-        badrole.person.user.last_login = timezone.now()
-        badrole.person.user.save()
-
-        # Improper credentials, or method
-        r = self.client.post(url, {})
-        self.assertContains(r, "Missing apikey parameter", status_code=400)
-
-        r = self.client.post(url, {'apikey': badapikey.hash()} )
-        self.assertContains(r, "Restricted to role: Recording Manager", status_code=403)
-
-        r = self.client.post(url, {'apikey': apikey.hash()} )
-        self.assertContains(r, "Too long since last regular login", status_code=400)
-
-        recman.user.last_login = timezone.now()-datetime.timedelta(days=365)
-        recman.user.save()        
-        r = self.client.post(url, {'apikey': apikey.hash()} )
-        self.assertContains(r, "Too long since last regular login", status_code=400)
-
-        recman.user.last_login = timezone.now()
-        recman.user.save()
-        r = self.client.get(url, {'apikey': apikey.hash()} )
-        self.assertContains(r, "Method not allowed", status_code=405)
-
-        recman.user.last_login = timezone.now()
-        recman.user.save()
-
-        # Malformed requests
-        r = self.client.post(url, {'apikey': apikey.hash()} )
-        self.assertContains(r, "Missing attended parameter", status_code=400)
-
-        for baddict in (
-            '{}',
-            '{"bogons;drop table":"bogons;drop table"}',
-            '{"session_id":"Not an integer;drop table"}',
-            f'{{"session_id":{session.pk},"attendees":"not a list;drop table"}}',
-            f'{{"session_id":{session.pk},"attendees":"not a list;drop table"}}',
-            f'{{"session_id":{session.pk},"attendees":[1,2,"not an int;drop table",4]}}',
-        ):
-            r = self.client.post(url, {'apikey': apikey.hash(), 'attended': baddict})
-            self.assertContains(r, "Malformed post", status_code=400)
-
-        bad_session_id = Session.objects.order_by('-pk').first().pk + 1
-        r = self.client.post(url, {'apikey': apikey.hash(), 'attended': f'{{"session_id":{bad_session_id},"attendees":[]}}'})
-        self.assertContains(r, "Invalid session", status_code=400)
-        bad_user_id = User.objects.order_by('-pk').first().pk + 1
-        r = self.client.post(url, {'apikey': apikey.hash(), 'attended': f'{{"session_id":{session.pk},"attendees":[{bad_user_id}]}}'})
-        self.assertContains(r, "Invalid attendee", status_code=400)
-
-        # Reasonable request
-        r = self.client.post(url, {'apikey':apikey.hash(), 'attended': f'{{"session_id":{session.pk},"attendees":[{recman.user.pk}, {otherperson.user.pk}]}}'})
-
-        self.assertEqual(session.attended_set.count(),2)
-        self.assertTrue(session.attended_set.filter(person=recman).exists())
-        self.assertTrue(session.attended_set.filter(person=otherperson).exists())
-
-    def test_api_add_session_attendees(self):
-        url = urlreverse("ietf.meeting.views.api_add_session_attendees")
-        otherperson = PersonFactory()
-        recmanrole = RoleFactory(group__type_id="ietf", name_id="recman")
-        recman = recmanrole.person
-        meeting = MeetingFactory(type_id="ietf")
-        session = SessionFactory(group__type_id="wg", meeting=meeting)
-        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
-
-        badrole = RoleFactory(group__type_id="ietf", name_id="ad")
-        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
-        badrole.person.user.last_login = timezone.now()
-        badrole.person.user.save()
-
-        # Improper credentials, or method
-        r = self.client.post(url, {})
-        self.assertContains(r, "Missing apikey parameter", status_code=400)
-
-        r = self.client.post(url, {"apikey": badapikey.hash()})
-        self.assertContains(r, "Restricted to role: Recording Manager", status_code=403)
-
-        r = self.client.post(url, {"apikey": apikey.hash()})
-        self.assertContains(r, "Too long since last regular login", status_code=400)
-
-        recman.user.last_login = timezone.now() - datetime.timedelta(days=365)
-        recman.user.save()
-        r = self.client.post(url, {"apikey": apikey.hash()})
-        self.assertContains(r, "Too long since last regular login", status_code=400)
-
-        recman.user.last_login = timezone.now()
-        recman.user.save()
-        r = self.client.get(url, {"apikey": apikey.hash()})
-        self.assertContains(r, "Method not allowed", status_code=405)
-
-        recman.user.last_login = timezone.now()
-        recman.user.save()
-
-        # Malformed requests
-        r = self.client.post(url, {"apikey": apikey.hash()})
-        self.assertContains(r, "Missing attended parameter", status_code=400)
-
-        for baddict in (
-            "{}",
-            '{"bogons;drop table":"bogons;drop table"}',
-            '{"session_id":"Not an integer;drop table"}',
-            f'{{"session_id":{session.pk},"attendees":"not a list;drop table"}}',
-            f'{{"session_id":{session.pk},"attendees":"not a list;drop table"}}',
-            f'{{"session_id":{session.pk},"attendees":[1,2,"not an int;drop table",4]}}',
-            f'{{"session_id":{session.pk},"attendees":["user_id":{recman.user.pk}]}}',  # no join_time
-            f'{{"session_id":{session.pk},"attendees":["user_id":{recman.user.pk},"join_time;drop table":"2024-01-01T00:00:00Z]}}',
-            f'{{"session_id":{session.pk},"attendees":["user_id":{recman.user.pk},"join_time":"not a time;drop table"]}}',
-            # next has no time zone indicator
-            f'{{"session_id":{session.pk},"attendees":["user_id":{recman.user.pk},"join_time":"2024-01-01T00:00:00"]}}',
-            f'{{"session_id":{session.pk},"attendees":["user_id":"not an int; drop table","join_time":"2024-01-01T00:00:00Z"]}}',
-            # Uncomment the next one when the _deprecated version of this test is retired
-            # f'{{"session_id":{session.pk},"attendees":[{recman.user.pk}, {otherperson.user.pk}]}}',
-        ):
-            r = self.client.post(url, {"apikey": apikey.hash(), "attended": baddict})
-            self.assertContains(r, "Malformed post", status_code=400)
-
-        bad_session_id = Session.objects.order_by("-pk").first().pk + 1
-        r = self.client.post(
-            url,
-            {
-                "apikey": apikey.hash(),
-                "attended": f'{{"session_id":{bad_session_id},"attendees":[]}}',
-            },
-        )
-        self.assertContains(r, "Invalid session", status_code=400)
-        bad_user_id = User.objects.order_by("-pk").first().pk + 1
-        r = self.client.post(
-            url,
-            {
-                "apikey": apikey.hash(),
-                "attended": f'{{"session_id":{session.pk},"attendees":[{{"user_id":{bad_user_id}, "join_time":"2024-01-01T00:00:00Z"}}]}}',
-            },
-        )
-        self.assertContains(r, "Invalid attendee", status_code=400)
-
-        # Reasonable request
-        r = self.client.post(
-            url,
-            {
-                "apikey": apikey.hash(),
-                "attended": json.dumps(
-                    {
-                        "session_id": session.pk,
-                        "attendees": [
-                            {
-                                "user_id": recman.user.pk,
-                                "join_time": "2023-09-03T12:34:56Z",
-                            },
-                            {
-                                "user_id": otherperson.user.pk,
-                                "join_time": "2023-09-03T03:00:19Z",
-                            },
-                        ],
-                    }
-                ),
-            },
-        )
-
-        self.assertEqual(session.attended_set.count(), 2)
-        self.assertTrue(session.attended_set.filter(person=recman).exists())
-        self.assertEqual(
-            session.attended_set.get(person=recman).time,
-            datetime.datetime(2023, 9, 3, 12, 34, 56, tzinfo=datetime.UTC),
-        )
-        self.assertTrue(session.attended_set.filter(person=otherperson).exists())
-        self.assertEqual(
-            session.attended_set.get(person=otherperson).time,
-            datetime.datetime(2023, 9, 3, 3, 0, 19, tzinfo=datetime.UTC),
-        )
-
-    def test_api_upload_polls_and_chatlog(self):
-        recmanrole = RoleFactory(group__type_id='ietf', name_id='recman')
-        recmanrole.person.user.last_login = timezone.now()
-        recmanrole.person.user.save()
-
-        badrole  = RoleFactory(group__type_id='ietf', name_id='ad')
-        badrole.person.user.last_login = timezone.now()
-        badrole.person.user.save()
-
-        meeting = MeetingFactory(type_id='ietf')
-        session = SessionFactory(group__type_id='wg', meeting=meeting)
-
-        for type_id, content in (
-            (
-                "chatlog",
-                """[
-                    {
-                        "author": "Raymond Lutz",
-                        "text": "<p>Yes I like that comment just made</p>",
-                        "time": "2022-07-28T19:26:16Z"
-                    },
-                    {
-                        "author": "Carsten Bormann",
-                        "text": "<p>But software is not a thing.</p>",
-                        "time": "2022-07-28T19:26:45Z"
-                    }
-                ]"""
-            ),
-            (
-                "polls",
-                """[
-                    {
-                        "start_time": "2022-07-28T19:19:54Z",
-                        "end_time": "2022-07-28T19:20:23Z",
-                        "text": "Are you willing to review the documents?",
-                        "raise_hand": 57,
-                        "do_not_raise_hand": 11
-                    },
-                    {
-                        "start_time": "2022-07-28T19:20:56Z",
-                        "end_time": "2022-07-28T19:21:30Z",
-                        "text": "Would you be willing to edit or coauthor a document?",
-                        "raise_hand": 31,
-                        "do_not_raise_hand": 31
-                    }
-                ]"""
-            ),
-        ):
-            url = urlreverse(f"ietf.meeting.views.api_upload_{type_id}")
-            apikey = PersonalApiKeyFactory(endpoint=url, person=recmanrole.person)
-            badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
-
-            r = self.client.post(url, {})
-            self.assertContains(r, "Missing apikey parameter", status_code=400)
-
-            r = self.client.post(url, {'apikey': badapikey.hash()} )
-            self.assertContains(r, "Restricted to role: Recording Manager", status_code=403)
-
-            r = self.client.get(url, {'apikey': apikey.hash()} )
-            self.assertContains(r, "Method not allowed", status_code=405)
-
-            r = self.client.post(url, {'apikey': apikey.hash()} )
-            self.assertContains(r, "Missing apidata parameter", status_code=400)
-
-            for baddict in (
-                '{}',
-                '{"bogons;drop table":"bogons;drop table"}',
-                '{"session_id":"Not an integer;drop table"}',
-                f'{{"session_id":{session.pk},"{type_id}":"not a list;drop table"}}',
-                f'{{"session_id":{session.pk},"{type_id}":"not a list;drop table"}}',
-                f'{{"session_id":{session.pk},"{type_id}":[{{}}, {{}}, "not an int;drop table", {{}}]}}',
-            ):
-                r = self.client.post(url, {'apikey': apikey.hash(), 'apidata': baddict})
-                self.assertContains(r, "Malformed post", status_code=400)
-
-            bad_session_id = Session.objects.order_by('-pk').first().pk + 1
-            r = self.client.post(url, {'apikey': apikey.hash(), 'apidata': f'{{"session_id":{bad_session_id},"{type_id}":[]}}'})
-            self.assertContains(r, "Invalid session", status_code=400)
-
-            # Valid POST
-            r = self.client.post(url,{'apikey':apikey.hash(),'apidata': f'{{"session_id":{session.pk}, "{type_id}":{content}}}'})
-            self.assertEqual(r.status_code, 200)
-
-            newdoc = session.presentations.get(document__type_id=type_id).document
-            newdoccontent = get_unicode_document_content(newdoc.name, Path(session.meeting.get_materials_path()) / type_id / newdoc.uploaded_filename)
-            self.assertEqual(json.loads(content), json.loads(newdoccontent))
-            self.assertEqual(
-                json.loads(retrieve_str(type_id, newdoc.uploaded_filename)),
-                json.loads(content)
-            )
-
-    def test_legacy_session_data_endpoints_report_a_missing_timeslot(self):
-        """A session with no official timeslot is a 400 with the reason, not a 500
-
-        Pins the responses of the personal-API-key endpoints so the internal error
-        convention can change underneath them without changing what callers see.
-        """
-        recmanrole = RoleFactory(group__type_id="ietf", name_id="recman")
-        recmanrole.person.user.last_login = timezone.now()
-        recmanrole.person.user.save()
-        session = SessionFactory(
-            group__type_id="wg",
-            meeting=MeetingFactory(type_id="ietf"),
-            add_to_schedule=False,
-        )
-
-        cases = [
-            (
-                "ietf.meeting.views.api_set_session_video_url",
-                lambda key: {
-                    "apikey": key,
-                    "session_id": session.pk,
-                    "url": "https://example.com/v",
-                },
-            ),
-            (
-                "ietf.meeting.views.api_upload_bluesheet",
-                lambda key: {
-                    "apikey": key,
-                    "session_id": session.pk,
-                    "bluesheet": json.dumps([{"name": "A", "affiliation": "B"}]),
-                },
-            ),
-            (
-                "ietf.meeting.views.api_upload_chatlog",
-                lambda key: {
-                    "apikey": key,
-                    "apidata": json.dumps({"session_id": session.pk, "chatlog": []}),
-                },
-            ),
-            (
-                "ietf.meeting.views.api_upload_polls",
-                lambda key: {
-                    "apikey": key,
-                    "apidata": json.dumps({"session_id": session.pk, "polls": []}),
-                },
-            ),
-        ]
-        for viewname, payload in cases:
-            with self.subTest(view=viewname):
-                url = urlreverse(viewname)
-                apikey = PersonalApiKeyFactory(endpoint=url, person=recmanrole.person)
-                r = self.client.post(url, payload(apikey.hash()))
-                self.assertContains(
-                    r, "Could not find official timeslot for session", status_code=400
-                )
-
-    def test_api_upload_bluesheet(self):
-        url = urlreverse("ietf.meeting.views.api_upload_bluesheet")
-        recmanrole = RoleFactory(group__type_id="ietf", name_id="recman")
-        recman = recmanrole.person
-        meeting = MeetingFactory(type_id="ietf")
-        session = SessionFactory(group__type_id="wg", meeting=meeting)
-        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
-
-        people = [
-            {"name": "Andrea Andreotti", "affiliation": "Azienda"},
-            {"name": "Bosse Bernadotte", "affiliation": "Bolag"},
-            {"name": "Charles Charlemagne", "affiliation": "Compagnie"},
-        ]
-        for i in range(3):
-            faker = random_faker()
-            people.append(dict(name=faker.name(), affiliation=faker.company()))
-        bluesheet = json.dumps(people)
-
-        # error cases
-        r = self.client.post(url, {})
-        self.assertContains(r, "Missing apikey parameter", status_code=400)
-
-        badrole = RoleFactory(group__type_id="ietf", name_id="ad")
-        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
-        badrole.person.user.last_login = timezone.now()
-        badrole.person.user.save()
-        r = self.client.post(url, {"apikey": badapikey.hash()})
-        self.assertContains(
-            r, "Restricted to roles: Recording Manager, Secretariat", status_code=403
-        )
-
-        r = self.client.post(url, {"apikey": apikey.hash()})
-        self.assertContains(r, "Too long since last regular login", status_code=400)
-        recman.user.last_login = timezone.now()
-        recman.user.save()
-
-        r = self.client.get(url, {"apikey": apikey.hash()})
-        self.assertContains(r, "Method not allowed", status_code=405)
-
-        r = self.client.post(url, {"apikey": apikey.hash()})
-        self.assertContains(r, "Missing session_id parameter", status_code=400)
-
-        r = self.client.post(url, {"apikey": apikey.hash(), "session_id": session.pk})
-        self.assertContains(r, "Missing bluesheet parameter", status_code=400)
-
-        bad_session_pk = int(Session.objects.order_by("-pk").first().pk) + 1
-        r = self.client.post(
-            url,
-            {
-                "apikey": apikey.hash(),
-                "session_id": bad_session_pk,
-                "bluesheet": bluesheet,
-            },
-        )
-        self.assertContains(r, "Session not found", status_code=400)
-
-        r = self.client.post(
-            url,
-            {
-                "apikey": apikey.hash(),
-                "session_id": "foo",
-                "bluesheet": bluesheet,
-            },
-        )
-        self.assertContains(r, "Invalid session_id", status_code=400)
-
-        r = self.client.post(
-            url,
-            {
-                "apikey": apikey.hash(),
-                "session_id": session.pk,
-                "bluesheet": bluesheet,
-            },
-        )
-        self.assertContains(r, "Done", status_code=200)
-
-        # Submit again, with slightly different content, as an updated version
-        people[1]["affiliation"] = "Bolaget AB"
-        bluesheet = json.dumps(people)
-        r = self.client.post(
-            url,
-            {
-                "apikey": apikey.hash(),
-                "session_id": session.pk,
-                "bluesheet": bluesheet,
-            },
-        )
-        self.assertContains(r, "Done", status_code=200)
-
-        bluesheet = (
-            session.presentations.filter(document__type__slug="bluesheets")
-            .first()
-            .document
-        )
-        # We've submitted an update; check that the rev is right
-        self.assertEqual(bluesheet.rev, "01")
-        # Check the content
-        with open(bluesheet.get_file_name()) as file:
-            text = file.read()
-            for p in people:
-                self.assertIn(p["name"], html.unescape(text))
-                self.assertIn(p["affiliation"], html.unescape(text))
-
-    def test_person_export(self):
-        person = PersonFactory()
-        url = urlreverse('ietf.api.views.PersonalInformationExportView')
-        login_testing_unauthorized(self, person.user.username, url)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        jsondata = r.json()
-        data = jsondata['person.person'][str(person.id)]
-        self.assertEqual(data['name'], person.name)
-        self.assertEqual(data['ascii'], person.ascii)
-        self.assertEqual(data['user']['email'], person.user.email)
-
-    def test_api_v2_person_export_view(self):
-        url = urlreverse('ietf.api.views.ApiV2PersonExportView')
-        robot = PersonFactory(user__is_staff=True)
-        RoleFactory(name_id='robot', person=robot, email=robot.email(), group__acronym='secretariat')
-        apikey = PersonalApiKeyFactory(endpoint=url, person=robot)
-
-        # error cases
-        r = self.client.post(url, {})
-        self.assertContains(r, "Missing apikey parameter", status_code=400)
-
-        badrole = RoleFactory(group__type_id='ietf', name_id='ad')
-        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
-        badrole.person.user.last_login = timezone.now()
-        badrole.person.user.save()
-        r = self.client.post(url, {'apikey': badapikey.hash()})
-        self.assertContains(r, "Restricted to role: Robot", status_code=403)
-
-        r = self.client.post(url, {'apikey': apikey.hash()})
-        self.assertContains(r, "No filters provided", status_code=400)
-
-        # working case
-        r = self.client.post(url, {'apikey': apikey.hash(), 'email': robot.email().address, '_expand': 'user'})
-        self.assertEqual(r.status_code, 200)
-        jsondata = r.json()
-        data = jsondata['person.person'][str(robot.id)]
-        self.assertEqual(data['name'], robot.name)
-        self.assertEqual(data['ascii'], robot.ascii)
-        self.assertEqual(data['user']['email'], robot.user.email)
 
     @override_settings(APP_API_TOKENS={"ietf.api.views.api_new_meeting_registration_v2": ["valid-token"]})
     def test_api_new_meeting_registration_v2(self):
@@ -943,31 +245,6 @@ class CustomApiTests(TestCase):
         data = r.json()        
         self.assertEqual(data['dumptime'], "2022-08-31 07:10:01 -0700")
 
-
-    def test_api_appauth(self):
-        for app in ["authortools", "bibxml"]:
-            url = urlreverse('ietf.api.views.app_auth', kwargs={"app": app})
-            person = PersonFactory()
-            apikey = PersonalApiKeyFactory(endpoint=url, person=person)
-    
-            self.client.login(username=person.user.username,password=f'{person.user.username}+password')
-            self.client.logout()
-    
-            # error cases
-            # missing apikey
-            r = self.client.post(url, {})
-            self.assertContains(r, 'Missing apikey parameter', status_code=400)
-    
-            # invalid apikey
-            r = self.client.post(url, {'apikey': 'foobar'})
-            self.assertContains(r, 'Invalid apikey', status_code=403)
-    
-            # working case
-            r = self.client.post(url, {'apikey': apikey.hash()})
-            self.assertEqual(r.status_code, 200)
-            jsondata = r.json()
-            self.assertEqual(jsondata['success'], True)
-            self.client.logout()
 
     @override_settings(APP_API_TOKENS={"ietf.api.views.nfs_metrics": ["valid-token"]})
     def test_api_nfs_metrics(self):
@@ -1920,6 +1197,94 @@ class TastypieApiTests(ResourceTestCaseMixin, TestCase):
         # but not a value that string_to_python() turns into a bool
         r = self.client.get("/api/v1/doc/document/?format=json&limit=1&rev__in=true")
         self.assertEqual(r.status_code, 400)
+
+    def test_filter_through_relation_to_rows_not_served(self):
+        """A filter cannot follow a relation to rows the related resource does not serve
+
+        See ietf.api.ModelResource.check_filtering.
+        """
+        send_queue = SendQueueFactory()
+        message = send_queue.message
+        url = f"/api/v1/message/sendqueue/?format=json&id={send_queue.pk}&"
+
+        # The message resource serves no rows
+        r = self.client.get(f"/api/v1/message/message/?format=json&id={message.pk}")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["meta"]["total_count"], 0)
+
+        # so a filter on another resource cannot use the fields of a message
+        for q in (
+            "message__subject=" + quote(message.subject),
+            "message__id__gte=0",
+            "message__by__id__gte=0",
+        ):
+            r = self.client.get(url + q)
+            self.assertEqual(r.status_code, 400, "Expected 400 for %s" % q)
+
+        # The relation itself can still be filtered on
+        for q in (f"message={message.pk}", "message__isnull=false"):
+            r = self.client.get(url + q)
+            self.assertEqual(r.status_code, 200, "Expected 200 for %s" % q)
+            self.assertEqual(r.json()["meta"]["total_count"], 1)
+
+        # and so can the fields of a related resource that does serve rows
+        r = self.client.get(url + f"by__id={send_queue.by.pk}")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["meta"]["total_count"], 1)
+
+        # unless that resource's queryset is restricted
+        with mock.patch.object(
+            PersonResource._meta,
+            "queryset",
+            Person.objects.exclude(pk=send_queue.by.pk),
+        ):
+            r = self.client.get(url + f"by__id={send_queue.by.pk}")
+        self.assertEqual(r.status_code, 400)
+
+        # Every relation to a resource with a restricted or empty queryset
+        # refuses a lookup through it
+        checked = set()
+        for _, app_api in _api_list:
+            for resource in app_api._registry.values():
+                for field_name, field in resource.fields.items():
+                    if not getattr(field, "is_related", False):
+                        continue
+                    queryset = field.get_related_resource(None)._meta.queryset
+                    if queryset is None or not queryset.query.where:
+                        continue
+                    r = self.client.get(
+                        f"{resource.get_resource_uri()}?format=json&{field_name}__id=1"
+                    )
+                    self.assertEqual(
+                        r.status_code,
+                        400,
+                        f"Expected 400 for {field_name}__id on "
+                        f"{resource._meta.resource_name}",
+                    )
+                    checked.add((resource._meta.resource_name, field_name))
+        self.assertIn(("sendqueue", "message"), checked)
+
+    def test_order_by_through_relation(self):
+        """A list can be ordered only by a field of its own resource
+
+        See ietf.api.ModelResource.apply_sorting.
+        """
+        SessionFactory()
+        url = "/api/v1/meeting/session/?format=json&limit=1&"
+        for q in (
+            "order_by=meeting__number",
+            "order_by=-meeting__number",
+            "order_by=id&order_by=meeting__number",
+            "sort_by=meeting__number",
+        ):
+            r = self.client.get(url + q)
+            self.assertEqual(r.status_code, 400, "Expected 400 for %s" % q)
+
+        # Ordering by the resource's own fields still works, relations included
+        for q in ("order_by=meeting", "order_by=-modified", "order_by=id&order_by=meeting"):
+            r = self.client.get(url + q)
+            self.assertEqual(r.status_code, 200, "Expected 200 for %s" % q)
+            self.assertEqual(r.json()["meta"]["total_count"], 1)
 
     def test_all_model_resources_exist(self):
         client = Client(Accept='application/json')

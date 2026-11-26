@@ -36,12 +36,10 @@ from ietf.nomcom.utils import make_nomineeposition_for_newperson
 from ietf.person.factories import (
     EmailFactory,
     PersonFactory,
-    PersonApiKeyEventFactory,
     PersonUUIDFactory,
 )
-from ietf.person.models import Person, Alias, PersonApiKeyEvent, PersonUUID
-from ietf.person.tasks import (purge_personal_api_key_events_task, push_person_uuids_task,
-    check_person_uuids_task)
+from ietf.person.models import Person, Alias, PersonUUID
+from ietf.person.tasks import push_person_uuids_task, check_person_uuids_task
 from ietf.person.utils import (merge_persons, determine_merge_order, send_merge_notification,
     handle_users, get_extra_primary, dedupe_aliases, move_related_objects, merge_nominees,
     handle_reviewer_settings, get_dots, assign_primary_uuid, ensure_primary_uuid,
@@ -1073,16 +1071,3 @@ class PersonUUIDApiTests(TestCase):
             headers={"X-Api-Key": "by-pk-token"},
         )
         self.assertEqual(r.status_code, 400)
-
-
-class TaskTests(TestCase):
-    @mock.patch("ietf.person.tasks.log.log")
-    def test_purge_personal_api_key_events_task(self, mock_log):
-        now = timezone.now()
-        old_event = PersonApiKeyEventFactory(time=now - datetime.timedelta(days=1, minutes=1))
-        young_event = PersonApiKeyEventFactory(time=now - datetime.timedelta(days=1, minutes=-1))
-        purge_personal_api_key_events_task(keep_days=1)
-        self.assertFalse(PersonApiKeyEvent.objects.filter(pk=old_event.pk).exists())
-        self.assertTrue(PersonApiKeyEvent.objects.filter(pk=young_event.pk).exists())
-        self.assertTrue(mock_log.called)
-        self.assertIn("Deleted 1", mock_log.call_args[0][0])
