@@ -1,0 +1,18 @@
+{# Copyright The IETF Trust 2026, All Rights Reserved #}
+{% extends "group/group_base.html" %}
+{% load origin static %}
+{% block title %}Liaison Statements for {{ group.acronym }}{% endblock %}
+{% block group_content %}
+    {% origin %}
+    <h2 class="mt-3">Liaison Statements</h2>
+    <p>Posted liaison statements sent to or from {{ group.acronym }}.</p>
+    {% if liaisons %}
+        {% include "liaisons/liaison_table.html" %}
+        <p>Total Statements: {{ liaisons|length }}</p>
+    {% else %}
+        <div class="alert alert-info my-3">No liaison statements found for {{ group.acronym }}.</div>
+    {% endif %}
+{% endblock %}
+{% block js %}
+    <script src="{% static 'ietf/js/list.js' %}"></script>
+{% endblock %}

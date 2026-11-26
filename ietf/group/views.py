@@ -91,6 +91,7 @@ from ietf.group.utils import (can_manage_all_groups_of_type,
 #
 from ietf.ietfauth.utils import has_role, is_authorized_in_group
 from ietf.mailtrigger.utils import gather_relevant_expansions
+from ietf.liaisons.models import LiaisonStatement, LiaisonStatementEvent
 from ietf.meeting.helpers import get_meeting, has_pending_interim
 from ietf.meeting.models import ImportantDate, SchedTimeSessAssignment, SchedulingEvent
 from ietf.meeting.utils import group_sessions
@@ -1002,6 +1003,35 @@ def meetings(request, acronym, group_type=None):
                 "cal_actions": cal_actions,
                 "pending_interims": pending_interims_flag,
             },
+        ),
+    )
+
+
+def liaison_statements(request, acronym, group_type=None):
+    """Posted liaison statements sent to or from the group"""
+    group = get_group_or_404(acronym, group_type)
+
+    liaisons = (
+        LiaisonStatement.objects.filter(state="posted")
+        .filter(Q(from_groups=group) | Q(to_groups=group))
+        .distinct()
+        .prefetch_related(
+            Prefetch("from_groups", queryset=Group.objects.order_by("acronym").select_related("type"), to_attr="prefetched_from_groups"),
+            Prefetch("to_groups", queryset=Group.objects.order_by("acronym").select_related("type"), to_attr="prefetched_to_groups"),
+            Prefetch("liaisonstatementevent_set", queryset=LiaisonStatementEvent.objects.filter(type="posted"), to_attr="prefetched_posted_events"),
+        )
+    )
+    liaisons = sorted(liaisons, key=lambda l: l.sort_date, reverse=True)
+
+    return render(
+        request,
+        "group/liaison_statements.html",
+        construct_group_menu_context(
+            request,
+            group,
+            "liaison statements",
+            group_type,
+            {"group": group, "liaisons": liaisons},
         ),
     )
 
