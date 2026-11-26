@@ -23,3 +23,10 @@ table .sort.asc:after {
 table .sort.desc:after {
     content: '\f286'; // chevron-up
 }
+
+// The list.js search box has its own reset button, which also re-runs the search.
+// Hide the browser's built-in clear button, which only empties the field.
+input.search::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+}
