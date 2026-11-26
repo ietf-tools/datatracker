@@ -252,7 +252,12 @@ class Recipient(models.Model):
                 if author.get("email"):
                     address = address_for_mail(author["email"])
                     if address is not None:
-                        addrs.append("%s <%s>" % (author["name"], address))
+                        email = Email.objects.filter(address=address).first()
+                        addrs.append(
+                            email.formatted_email()
+                            if email is not None
+                            else formataddr((author["name"], address))
+                        )
         return addrs
 
     def gather_submission_submitter(self, **kwargs):
@@ -268,7 +273,7 @@ class Recipient(models.Model):
                 try:
                     submitter = Alias.objects.get(name=submission.submitter).person
                     if submitter and submitter.email():
-                        addrs.append(f"{submitter.name} <{submitter.email().address}>")
+                        addrs.append(submitter.email().formatted_email())
                 except (Alias.DoesNotExist, Alias.MultipleObjectsReturned):
                     pass
         return addrs
