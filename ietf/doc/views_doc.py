@@ -1524,6 +1524,7 @@ def document_referenced_by(request, name):
                dict(name=name,
                     doc=doc,
                     numdocs=numdocs,
+                    full=full,
                     refs=refs,
                     ))
 
