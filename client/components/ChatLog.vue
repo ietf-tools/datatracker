@@ -160,17 +160,23 @@ onMounted(() => {
   }
 }
 
-[data-bs-theme="dark"] .chatlog {
-  .n-timeline-item-content__title {
-    color: #d63384 !important;
+[data-bs-theme='light'] .chatlog {
+  .n-timeline-item-content__meta {
+    color: var(--n-content-text-color) !important;
   }
-  
+}
+
+[data-bs-theme='dark'] .chatlog {
+  .n-timeline-item-content__title {
+    color: #d2bcc6 !important;
+  }
+
   .n-timeline-item-content__content {
     color: #fff !important;
   }
 
   .n-timeline-item-content__meta {
-    color: #0569ffd9 !important;
+    color: #fff !important;
   }
 }
 </style>
