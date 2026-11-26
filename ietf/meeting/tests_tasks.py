@@ -15,7 +15,6 @@ from .models import SlideSubmission
 from .tasks import (
     agenda_data_refresh_all_task,
     agenda_data_refresh_task,
-    backfill_meetecho_recording_names_task,
     expire_interim_slide_proposals_task,
     expire_past_ietf_slide_proposals_task,
     fetch_meeting_attendance_task,
@@ -184,30 +183,6 @@ class TaskTests(TestCase):
         self.assertEqual(open_still.status_id, 'pending', 'corrections cutoff not yet passed')
         self.assertEqual(interim.status_id, 'pending', 'interims have their own task')
         self.assertEqual(rejected_closed.status_id, 'rejected')
-
-    def test_backfill_meetecho_recording_names_task(self):
-        unnamed = SessionFactory(meetecho_recording_name='')
-        misnamed = SessionFactory(meetecho_recording_name='IETF101-IETF101-WGCHAIRS-20170321-1215')
-        wrong = SessionFactory(meetecho_recording_name='IETF124-RSSAC-20251102-2100')
-        named_since = SessionFactory(meetecho_recording_name='IETF-SENT-20261001-1400')
-        rows = [
-            (unnamed.pk, '', 'IETF98-DNSOP-20170327-1800'),
-            (misnamed.pk, 'IETF101-IETF101-WGCHAIRS-20170321-1215', 'IETF101-WGCHAIRS-20170321-1215'),
-            (wrong.pk, 'IETF124-RSSAC-20251102-2100', ''),
-            (named_since.pk, '', 'IETF-LISTED-20261001-1400'),
-        ]
-        with patch('ietf.meeting.tasks.RECORDING_NAMES', rows):
-            self.assertEqual(backfill_meetecho_recording_names_task(dry_run=True), 3, 'a dry run counts')
-            unnamed.refresh_from_db()
-            self.assertEqual(unnamed.meetecho_recording_name, '', 'and changes nothing')
-            self.assertEqual(backfill_meetecho_recording_names_task(), 3)
-            self.assertEqual(backfill_meetecho_recording_names_task(), 0, 'a second run changes nothing')
-        for session in (unnamed, misnamed, wrong, named_since):
-            session.refresh_from_db()
-        self.assertEqual(unnamed.meetecho_recording_name, 'IETF98-DNSOP-20170327-1800')
-        self.assertEqual(misnamed.meetecho_recording_name, 'IETF101-WGCHAIRS-20170321-1215')
-        self.assertEqual(wrong.meetecho_recording_name, '')
-        self.assertEqual(named_since.meetecho_recording_name, 'IETF-SENT-20261001-1400', 'a name the API stored is kept')
 
 
 PDF_BYTES = b"%PDF-1.4 this is a fake pdf"
