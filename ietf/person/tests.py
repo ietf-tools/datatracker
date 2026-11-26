@@ -26,6 +26,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList
 from ietf.doc.factories import WgDraftFactory, WgRfcFactory
+from ietf.doc.models import RelatedDocument
 from ietf.group.factories import RoleFactory
 from ietf.group.models import Group
 from ietf.message.models import Message
@@ -125,7 +126,7 @@ class PersonTests(TestCase):
     def test_person_profile_query_count(self):
         """The page's cost must not scale with how much a person has written"""
 
-        def profile_queries(rfcs, active, expired):
+        def profile_queries(rfcs, active, expired, replaced):
             person = PersonFactory()
             RoleFactory(person=person, name_id="chair")
             WgRfcFactory.create_batch(rfcs, authors=[person])
@@ -133,6 +134,12 @@ class PersonTests(TestCase):
             WgDraftFactory.create_batch(
                 expired, authors=[person], states=[("draft", "expired")]
             )
+            for old in WgDraftFactory.create_batch(
+                replaced, authors=[person], states=[("draft", "repl")]
+            ):
+                RelatedDocument.objects.create(
+                    source=WgDraftFactory(), target=old, relationship_id="replaces"
+                )
             url = urlreverse(
                 "ietf.person.views.profile",
                 kwargs={"email_or_name": person.plain_name()},
@@ -142,12 +149,47 @@ class PersonTests(TestCase):
             self.assertEqual(r.status_code, 200)
             return len(context.captured_queries)
 
-        few = profile_queries(1, 1, 1)
-        many = profile_queries(6, 4, 5)
+        few = profile_queries(1, 1, 1, 1)
+        many = profile_queries(6, 4, 5, 3)
         self.assertEqual(
             many,
             few,
-            f"{many} queries for 15 documents vs {few} for 3 - a query per row crept in",
+            f"{many} queries for 18 documents vs {few} for 4 - a query per row crept in",
+        )
+
+    def test_person_profile_replaced_drafts(self):
+        person = PersonFactory()
+        expired = WgDraftFactory(authors=[person], states=[("draft", "expired")])
+        replaced = WgDraftFactory(authors=[person], states=[("draft", "repl")])
+        replacements = WgDraftFactory.create_batch(2)
+        for replacement in replacements:
+            RelatedDocument.objects.create(
+                source=replacement, target=replaced, relationship_id="replaces"
+            )
+        # Nothing stops the same relationship being recorded twice
+        RelatedDocument.objects.create(
+            source=replacements[0], target=replaced, relationship_id="replaces"
+        )
+
+        r = self.client.get(
+            urlreverse(
+                "ietf.person.views.profile",
+                kwargs={"email_or_name": person.plain_name()},
+            )
+        )
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        lists = {
+            PyQuery(h).text().split(" (")[0]: PyQuery(h).next("ul")
+            for h in q("h2")
+        }
+        self.assertEqual(
+            [a.text.strip() for a in lists["Expired Internet-Drafts"]("a")],
+            [expired.name],
+        )
+        self.assertEqual(
+            [a.text.strip() for a in lists["Replaced Internet-Drafts"]("a")],
+            [replaced.name] + sorted(d.name for d in replacements),
         )
 
     @override_settings(
