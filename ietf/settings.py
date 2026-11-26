@@ -971,7 +971,7 @@ IDSUBMIT_IDNITS3_OFFLINE = False
 # Seconds to allow an idnits3 run before giving up on it
 IDSUBMIT_IDNITS3_TIMEOUT = 300
 SUBMIT_PYANG_COMMAND = 'pyang --verbose --ietf -p {libs} {model}'
-SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -p {tmplib} -p {rfclib} -p {draftlib} -p {ianalib} -p {cataloglib} {model} -i'
+SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -D -p {tmplib} -p {rfclib} -p {draftlib} -p {ianalib} -p {cataloglib} {model} -i'
 
 SUBMIT_YANG_CATALOG_MODULEARG = "modules[]={module}"
 SUBMIT_YANG_CATALOG_IMPACT_URL = "https://www.yangcatalog.org/yang-search/impact_analysis.php?{moduleargs}&recurse=0&rfcs=1&show_subm=1&show_dir=both"
@@ -984,7 +984,7 @@ SUBMIT_YANG_CATALOG_CHECKER_URL = "https://yangcatalog.org/yangvalidator/api/v1/
 IDSUBMIT_CHECKER_CLASSES = (
     "ietf.submit.checkers.DraftIdnitsChecker",
     "ietf.submit.checkers.DraftIdnits3Checker",
-#    "ietf.submit.checkers.DraftYangChecker",
+    "ietf.submit.checkers.DraftYangChecker",
 #    "ietf.submit.checkers.DraftYangvalidatorChecker",    
 )
 
@@ -1320,7 +1320,6 @@ STATS_TIMELINE_CACHE_TIMEOUT = 86400
 
 UTILS_MEETING_CONFERENCE_DOMAINS = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', 'gather.town', ]
 UTILS_TEST_RANDOM_STATE_FILE = '.factoryboy_random_state'
-UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS = 30
 
 
 # Default timeout for HTTP requests via the requests library
@@ -1364,7 +1363,7 @@ CELERY_TASK_ROUTES = {
 MEETECHO_ONSITE_TOOL_URL = "https://meetings.conf.meetecho.com/onsite{session.meeting.number}/?session={session.pk}"
 MEETECHO_VIDEO_STREAM_URL = "https://meetings.conf.meetecho.com/ietf{session.meeting.number}/?session={session.pk}"
 MEETECHO_AUDIO_STREAM_URL = "https://mp3.conf.meetecho.com/ietf{session.meeting.number}/{session.pk}.m3u"
-MEETECHO_SESSION_RECORDING_URL = "https://meetecho-player.ietf.org/playout/?session={session_label}"
+MEETECHO_SESSION_RECORDING_URL = "https://meetecho-meetings.ietf.org/recordings/{session_label}"
 
 # Errata system api configuration
 # settings should provide

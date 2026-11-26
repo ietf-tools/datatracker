@@ -15,6 +15,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.utils.html import escape
+from django.views.decorators.http import require_POST
 
 import debug                            # pyflakes:ignore
 
@@ -196,6 +197,8 @@ def ajax_search(request):
             query &= Q(title__icontains=t)
 
         objs = IprDisclosureBase.objects.filter(query)
+        if not has_role(request.user, "Secretariat"):
+            objs = objs.filter(state="posted")
 
     objs = objs.distinct()[:10]
     
@@ -447,6 +450,12 @@ def history(request, id):
     })
 
 
+def limit_updates_field(request, form):
+    """Let only the secretariat name a disclosure that is not posted as one being updated"""
+    if "updates" in form.fields and not has_role(request.user, "Secretariat"):
+        form.fields["updates"].states = ["posted"]
+
+
 def new(request, _type, updates=None):
     """Submit a new IPR Disclosure.  If the updates field != None, this disclosure
     updates one or more other disclosures."""
@@ -474,6 +483,7 @@ def new(request, _type, updates=None):
 
     if request.method == "POST":
         form = ipr_form_mapping[_type](request.POST)
+        limit_updates_field(request, form)
         if _type != "generic":
             draft_formset = DraftFormset(request.POST, instance=IprDisclosureBase())
         else:
@@ -556,6 +566,7 @@ def new(request, _type, updates=None):
             form = ipr_form_mapping[_type](initial=initial)
         else:
             form = ipr_form_mapping[_type]()
+        limit_updates_field(request, form)
         disclosure = IprDisclosureBase()  # dummy disclosure for inlineformset
         draft_formset = DraftFormset(instance=disclosure)
 
@@ -610,6 +621,7 @@ def notify(request, id, type):
     })
 
 @role_required('Secretariat',)
+@require_POST
 def post(request, id):
     """Post the disclosure and redirect to notification view"""
     ipr = get_object_or_404(IprDisclosureBase, id=id).get_child()
@@ -661,6 +673,10 @@ def search(request):
             return HttpResponseBadRequest("Null characters are not allowed")
         if states == ['all']:
             states = IprDisclosureStateName.objects.values_list('slug',flat=True)
+        if not has_role(request.user, "Secretariat"):
+            # Only the secretariat is offered the state filter, and only the
+            # secretariat finds disclosures in states that are not public.
+            states = [state for state in states if state in settings.PUBLISH_IPR_STATES]
         
         # get query field
         if request.GET.get(search_type):
@@ -906,6 +922,9 @@ def update(request, id):
     """Calls the 'new' view with updates parameter = ipd.id"""
     # determine disclosure type
     ipr = get_object_or_404(IprDisclosureBase,id=id)
+    if ipr.state_id != "posted" and not has_role(request.user, "Secretariat"):
+        # The form starts out filled in from the disclosure being updated
+        raise Http404
     child = ipr.get_child()
     type = class_to_type[child.__class__.__name__]
     return new(request, type, updates=id)

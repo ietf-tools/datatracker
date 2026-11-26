@@ -59,7 +59,6 @@ from django.http import (
     HttpResponseBadRequest,
 )
 from django.shortcuts import render, redirect, get_object_or_404
-from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.utils import timezone
 from django.utils.html import escape
@@ -100,6 +99,8 @@ from ietf.person.models import Email, Person
 from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewerSettings, 
                                 ReviewSecretarySettings, UnavailablePeriod )
 from ietf.review.policies import get_reviewer_queue_policy
+from ietf.review.template_values import (OpenAssignmentsValues, document_values, group_values,
+                                         open_assignment_values, person_values)
 from ietf.review.utils import (can_manage_review_requests_for_team,
                                can_access_review_stats_for_team,
                                extract_revision_ordered_review_requests_for_documents_and_replaced,
@@ -114,7 +115,6 @@ from ietf.review.utils import (can_manage_review_requests_for_team,
                                get_default_filter_re,
                                days_needed_to_fulfill_min_interval_for_reviewers,
                               )
-from ietf.doc.models import LastCallDocEvent
 
 
 from ietf.name.models import ReviewAssignmentStateName
@@ -122,6 +122,7 @@ from ietf.utils.mail import send_mail_text, parse_preformatted
 
 from ietf.ietfauth.utils import user_is_person, role_required
 from ietf.dbtemplate.models import DBTemplate
+from ietf.dbtemplate.template import render_group_template
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.mailtrigger.models import Recipient
 from ietf.settings import MAILING_LIST_INFO_URL
@@ -1915,8 +1916,9 @@ def email_open_review_assignments(request, acronym, group_type=None):
     ).prefetch_related("reviewer", "review_request__type", "state", "review_request__doc").distinct().order_by("reviewer","-review_request__deadline"))
 
     for r in review_assignments:
-        if r.review_request.doc.telechat_date():
-            r.section = 'For telechat %s' % r.review_request.doc.telechat_date().isoformat()
+        r.doc_values = document_values(r.review_request.doc)
+        if r.doc_values.telechat_date:
+            r.section = 'For telechat %s' % r.doc_values.telechat_date.isoformat()
             r.section_order='0'+r.section
         elif r.review_request.type_id == 'early':
             r.section = 'Early review requests:'
@@ -1924,7 +1926,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
         else:
             r.section = 'Last calls:'
             r.section_order='1'
-        e = r.review_request.doc.latest_event(LastCallDocEvent, type="sent_last_call")
+        e = r.doc_values.most_recent_ietflc
         r.lastcall_ends = e and e.expires.astimezone(DEADLINE_TZINFO).date().isoformat()
         r.earlier_review = ReviewAssignment.objects.filter(review_request__doc=r.review_request.doc,reviewer__in=r.reviewer.person.email_set.all(),state="completed")
         if r.earlier_review:
@@ -1973,11 +1975,14 @@ def email_open_review_assignments(request, acronym, group_type=None):
         else:
             template = DBTemplate.objects.get(path="/group/defaults/email/open_assignments.txt")
 
-        partial_msg = render_to_string(template.path, {
-            "review_assignments": review_assignments,
-            "rotation_list": get_reviewer_queue_policy(group).default_reviewer_rotation_list()[:10],
-            "group" : group,
-        })
+        partial_msg = render_group_template(template, OpenAssignmentsValues(
+            group=group_values(group),
+            review_assignments=[open_assignment_values(r, r.doc_values) for r in review_assignments],
+            rotation_list=[
+                person_values(p)
+                for p in get_reviewer_queue_policy(group).default_reviewer_rotation_list()[:10]
+            ],
+        ))
         
         (msg,_,_) = parse_preformatted(partial_msg)
 

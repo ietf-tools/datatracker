@@ -51,7 +51,7 @@ RUN groupmod --gid $USER_GID $USERNAME \
 # definitions - grep for @ietf-tools/idnits to bump them together.
 # It goes in its own npm prefix so that it can never disturb the idnits2 script
 # at /usr/local/bin/idnits that comes from the base image.
-RUN npm install -g --prefix /usr/local/idnits3 @ietf-tools/idnits@3.1.0 && \
+RUN npm install -g --prefix /usr/local/idnits3 @ietf-tools/idnits@3.3.0 && \
     ln -sf /usr/local/idnits3/bin/idnits /usr/local/bin/idnits3 && \
     idnits3 --version
 

@@ -61,6 +61,7 @@ from ietf.meeting.utils import add_event_info_to_session_qs, material_document_n
 from ietf.meeting.utils import create_recording, delete_recording, get_next_sequence, bluesheet_data
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose, generate_agenda_data
+from ietf.meeting.views import generate_agenda_ical
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.mime import get_mime_type
@@ -68,7 +69,7 @@ from ietf.utils.test_runner import TestBlobstoreManager, disable_coverage
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, mocked_caches, unicontent
 from ietf.utils.timezone import date_today, time_now
 
-from ietf.person.factories import PersonFactory, PersonalApiKeyFactory
+from ietf.person.factories import PersonFactory
 from ietf.group.factories import GroupFactory, GroupEventFactory, RoleFactory
 from ietf.meeting.factories import (SessionFactory, ScheduleFactory,
     SessionPresentationFactory, MeetingFactory, FloorPlanFactory,
@@ -938,6 +939,88 @@ class MeetingTests(BaseMeetingTestCase):
         )
         self.assertEqual(len(q(f'a[href^="{edit_url}#session"]')), 1, f'Link to session_details page for {acro}')
 
+    @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
+    def test_materials_document_content_type(self):
+        presentation = SessionPresentationFactory(
+            session__meeting__type_id="interim",
+            document__rev="00",
+            document__name="slides-content-type",
+            document__uploaded_filename="slides-content-type-00.txt",
+            document__type_id="slides",
+            document__states=(("reuse_policy", "single"),)
+        )
+        doc = presentation.document
+        meeting = presentation.session.meeting
+        html = "<!DOCTYPE html>\n<html><head><title>A page</title></head><body><p>Some text</p></body></html>\n"
+        files = {
+            # extension: (content, expected Content-Type, expected disposition)
+            ".txt": (html, "text/plain", "inline"),
+            ".md": (html, "text/plain", "inline"),
+            ".json": ('{"key": "<p>value</p>"}', "application/json", "inline"),
+            ".html": (html, "text/html", "inline"),
+            ".htm": (html, "text/html", "inline"),
+            ".pdf": (b"%PDF-1.4\n" + html.encode(), "application/pdf", "inline"),
+            ".pptx": (html, "application/vnd.openxmlformats-officedocument.presentationml.presentation", "inline"),
+            ".svg": ('<svg xmlns="http://www.w3.org/2000/svg"><text>Some text</text></svg>', "application/octet-stream", "attachment"),
+            ".xyz": (html, "application/octet-stream", "attachment"),
+        }
+        for ext, (content, _, _) in files.items():
+            self.write_materials_file(meeting, doc, content, with_ext=ext)
+
+        for ext, (content, content_type, disposition) in files.items():
+            url = urlreverse(
+                "ietf.meeting.views.materials_document",
+                kwargs={"num": meeting.number, "document": "slides-content-type-00", "ext": ext},
+            )
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200, ext)
+            # the type follows the extension, whatever the content looks like
+            self.assertEqual(r["Content-Type"].split(";")[0], content_type, ext)
+            self.assertEqual(r["Content-Disposition"], f'{disposition}; filename="slides-content-type-00{ext}"', ext)
+            self.assertEqual(r.content, content if isinstance(content, bytes) else content.encode(), ext)
+            if content_type == "text/html":
+                self.assertEqual(r["Content-Security-Policy"], "sandbox", ext)
+            else:
+                self.assertNotIn("Content-Security-Policy", r, ext)
+
+        # with no extension in the URL the uploaded file is used, and typed the same way
+        url = urlreverse(
+            "ietf.meeting.views.materials_document",
+            kwargs={"num": meeting.number, "document": "slides-content-type"},
+        )
+        r = self.client.get(url)
+        self.assertEqual(r["Content-Type"].split(";")[0], "text/plain")
+
+    @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
+    def test_materials_document_markdown_as_html(self):
+        presentation = SessionPresentationFactory(
+            session__meeting__type_id="interim",
+            document__rev="00",
+            document__name="agenda-markdown",
+            document__uploaded_filename="agenda-markdown-00.md",
+            document__type_id="agenda",
+        )
+        meeting = presentation.session.meeting
+        self.write_materials_file(
+            meeting,
+            presentation.document,
+            "# Agenda\n\n1. An item\n\n<p onclick=\"this.remove()\">A paragraph</p>\n\n<script>document.title = 1</script>\n",
+        )
+        url = urlreverse(
+            "ietf.meeting.views.materials_document",
+            kwargs={"num": meeting.number, "document": "agenda-markdown"},
+        )
+        r = Client(HTTP_ACCEPT="text/html").get(url)
+        self.assertEqual(r["Content-Type"], "text/html; charset=utf-8")
+        q = PyQuery(r.content)
+        self.assertEqual(q("body h1").text(), "Agenda")
+        self.assertEqual(len(q("body p[onclick]")), 0)
+        self.assertEqual(len(q("body script")), 0)
+        # the source is still available as text
+        r = Client(HTTP_ACCEPT="text/plain").get(url)
+        self.assertEqual(r["Content-Type"].split(";")[0], "text/plain")
+        self.assertContains(r, "<script>document.title = 1</script>")
+
     def test_materials_document_extension_choice(self):
         def _url(**kwargs):
             return urlreverse("ietf.meeting.views.materials_document", kwargs=kwargs)
@@ -1398,6 +1481,40 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertEqual(r.status_code,200)
         self.assertIn('STATUS:CANCELLED',unicontent(r))
         self.assertNotIn('STATUS:CONFIRMED',unicontent(r))
+
+    def test_rescheduled_ics(self):
+        meeting = MeetingFactory(type_id='ietf', time_zone='Europe/Madrid')
+        live = SessionFactory(meeting=meeting, status_id='sched')
+        tombstone = SessionFactory(meeting=meeting, group=live.group, status_id='resched')
+        tombstone.tombstone_for = live
+        tombstone.save()
+        url = urlreverse('ietf.meeting.views.agenda_ical', kwargs=dict(num=meeting.number))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        events = {str(e['status']): e for e in Calendar.from_ical(r.content).walk('VEVENT')}
+        self.assertCountEqual(events, ['CANCELLED', 'CONFIRMED'])
+        live_slot = live.official_timeslotassignment().timeslot
+        local_start = live_slot.time.astimezone(meeting.tz())
+        local_end = live_slot.end_time().astimezone(meeting.tz())
+        self.assertIn(
+            f"Rescheduled to {local_start.strftime('%A %H:%M')}-{local_end.strftime('%H:%M')} ({meeting.time_zone})",
+            str(events['CANCELLED']['description']),
+        )
+        self.assertTrue(str(events['CANCELLED']['summary']).startswith('Rescheduled: '))
+        self.assertFalse(str(events['CONFIRMED']['summary']).startswith('Rescheduled: '))
+
+    def test_rescheduled_ics_from_assignments(self):
+        meeting = MeetingFactory(type_id='ietf')
+        live = SessionFactory(meeting=meeting, status_id='sched')
+        tombstone = SessionFactory(meeting=meeting, group=live.group, status_id='resched')
+        tombstone.tombstone_for = live
+        tombstone.save()
+        assignments = preprocess_assignments_for_agenda(meeting.schedule.assignments.all(), meeting)
+        ical = generate_agenda_ical(meeting.schedule, assignments)
+        events = {str(e['status']): e for e in Calendar.from_ical(ical).walk('VEVENT')}
+        self.assertCountEqual(events, ['CANCELLED', 'CONFIRMED'])
+        self.assertTrue(str(events['CANCELLED']['summary']).startswith('Rescheduled: '))
+        self.assertFalse(str(events['CONFIRMED']['summary']).startswith('Rescheduled: '))
 
     def test_session_materials(self):
         meeting = make_meeting_test_data()
@@ -11427,6 +11544,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertNotIn(no_session_reg.person.pk, remote_pks)
         self.assertIn(session_reg.person.pk, remote_pks)
 
+    @override_settings(APP_API_TOKENS={"ietf.api.meeting.session.attendees": "valid-token"})
     def test_session_attendance(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2023, 11, 4), number='118')
         make_meeting_test_data(meeting=meeting)
@@ -11446,14 +11564,23 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertContains(r, '0 attendees')
 
         # Add some attendees
-        add_attendees_url = urlreverse('ietf.meeting.views.api_add_session_attendees')
-        recmanrole = RoleFactory(group__type_id='ietf', name_id='recman', person__user__last_login=timezone.now())
-        recman = recmanrole.person
-        apikey = PersonalApiKeyFactory(endpoint=add_attendees_url, person=recman)
-        attendees = [person.user.pk for person in persons]
-        self.client.login(username='recman', password='recman+password')
-        r = self.client.post(add_attendees_url, {'apikey':apikey.hash(), 'attended':f'{{"session_id":{session.pk},"attendees":{attendees}}}'})
-        self.assertEqual(r.status_code, 200)  
+        def add_attendees(session, persons):
+            return self.client.post(
+                urlreverse("ietf.api.meeting.session-attendees", kwargs={"pk": session.pk}),
+                data=json.dumps(
+                    {
+                        "attendees": [
+                            {"person_uuid": str(p.primary_uuid), "join_time": "2023-11-04T18:00:00Z"}
+                            for p in persons
+                        ]
+                    }
+                ),
+                content_type="application/json",
+                headers={"X-Api-Key": "valid-token"},
+            )
+        unregistered = PersonFactory()
+        r = add_attendees(session, persons)
+        self.assertEqual(r.status_code, 200)
         self.assertEqual(session.attended_set.count(), 3)
 
         # Before a meeting is finalized, session_attendance renders a live
@@ -11472,8 +11599,8 @@ class ProceedingsTests(BaseMeetingTestCase):
             self.client.login(username=username, password=f'{username}+password')
             r = self.client.get(attendance_url)
             self.assertEqual(b"I was there" in r.content, expected)
-        # recman isn't registered for the meeting
-        _test_button(recman, False)
+        # a person not registered for the meeting gets no button
+        _test_button(unregistered, False)
         # person0 is already on the bluesheet
         _test_button(persons[0], False)
         # person3 attests he was there
@@ -11518,10 +11645,8 @@ class ProceedingsTests(BaseMeetingTestCase):
         session = Session.objects.filter(meeting=meeting, group__acronym='mars').first()
         attendance_url = urlreverse('ietf.meeting.views.session_attendance', kwargs={'num':meeting.number, 'session_id':session.id})
         self.assertEqual(session.attended_set.count(), 0)
-        self.client.login(username='recman', password='recman+password')
-        attendees = [person.user.pk for person in persons]
-        r = self.client.post(add_attendees_url, {'apikey':apikey.hash(), 'attended':f'{{"session_id":{session.pk},"attendees":{attendees}}}'})
-        self.assertEqual(r.status_code, 200)  
+        r = add_attendees(session, persons)
+        self.assertEqual(r.status_code, 200)
         self.assertEqual(session.attended_set.count(), 4)
         doc = session.presentations.filter(document__type_id='bluesheets').first().document
         self.assertEqual(doc.rev,'00')

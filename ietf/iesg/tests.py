@@ -2326,6 +2326,84 @@ class RescheduleOnAgendaTests(TestCase):
         self.assertTrue(not draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").returning_item)
         self.assertEqual(draft.docevent_set.count(), events_before + 1)
 
+    def _draft_on_agenda(self, telechat_date):
+        draft = WgDraftFactory()
+        TelechatDocEvent.objects.create(
+            type="scheduled_for_telechat",
+            doc=draft,
+            rev=draft.rev,
+            by=Person.objects.get(name="Areað Irector"),
+            telechat_date=telechat_date,
+            returning_item=False,
+        )
+        return draft
+
+    def test_reschedule_restricted_to_secretariat(self):
+        dates = [t.date for t in TelechatDate.objects.active()[:4]]
+        draft = self._draft_on_agenda(dates[0])
+        field = "%s-telechat_date" % draft.name
+        url = urlreverse("ietf.iesg.views.agenda_documents")
+
+        def scheduled_for():
+            return draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date
+
+        no_roles = PersonFactory().user.username
+        chair = RoleFactory(name_id="chair", group__type_id="wg").person.user.username
+        for username in (None, no_roles, chair, "ad"):
+            if username is None:
+                self.client.logout()
+            else:
+                self.assertTrue(
+                    self.client.login(username=username, password="%s+password" % username)
+                )
+            events_before = draft.docevent_set.count()
+
+            # the page is readable, and offers no reschedule controls
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q("select[name=%s]" % field)), 0)
+            self.assertNotContains(r, "Save reschedules")
+
+            # naming a document, moving it or taking it off the agenda
+            for data in ({field: dates[3].isoformat()}, {field: ""}, {}):
+                r = self.client.post(url, data)
+                self.assertEqual(r.status_code, 403, "user: %s, data: %s" % (username, data))
+                self.assertEqual(scheduled_for(), dates[0])
+                self.assertEqual(draft.docevent_set.count(), events_before)
+
+    def test_reschedule_changes_only_named_documents(self):
+        dates = [t.date for t in TelechatDate.objects.active()[:4]]
+        named = self._draft_on_agenda(dates[0])
+        removed = self._draft_on_agenda(dates[0])
+        unnamed = self._draft_on_agenda(dates[1])
+        url = urlreverse("ietf.iesg.views.agenda_documents")
+        self.client.login(username="secretary", password="secretary+password")
+
+        def scheduled_for(draft):
+            return draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date
+
+        unnamed_events_before = unnamed.docevent_set.count()
+        r = self.client.post(
+            url,
+            {
+                "%s-telechat_date" % named.name: dates[2].isoformat(),
+                "%s-telechat_date" % removed.name: "",
+            },
+        )
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(scheduled_for(named), dates[2])
+        self.assertIsNone(scheduled_for(removed))
+        # a document the request does not mention stays where it was
+        self.assertEqual(scheduled_for(unnamed), dates[1])
+        self.assertEqual(unnamed.docevent_set.count(), unnamed_events_before)
+
+        # a request that names no documents changes nothing
+        r = self.client.post(url, {})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(scheduled_for(named), dates[2])
+        self.assertEqual(scheduled_for(unnamed), dates[1])
+
 
 class TelechatAgendaContentTests(TestCase):
     def test_telechat_agenda_content_view(self):

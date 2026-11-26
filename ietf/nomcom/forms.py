@@ -7,7 +7,7 @@ from typing import List, Tuple      # pyflakes:ignore
 from django.conf import settings
 from django import forms
 from django.urls import reverse
-from django.utils.html import mark_safe # type:ignore
+from django.utils.html import format_html
 from django.forms.widgets import FileInput
 
 from ietf.dbtemplate.forms import DBTemplateForm
@@ -394,12 +394,14 @@ class NominateNewPersonForm(forms.ModelForm):
         candidate_email = self.cleaned_data['candidate_email']
         if Email.objects.filter(address=candidate_email).exists():
             normal_url_name = 'ietf.nomcom.views.%s_nominate' % ('public' if self.public else 'private')
-            msg = (('%s is already in the datatracker. '
-                    'Use the <a href="%s">normal nomination form</a> to nominate the person '
-                    'with this address. ') % 
-                        (candidate_email, reverse(normal_url_name, kwargs={'year':self.nomcom.year()}) )
-                  )
-            raise forms.ValidationError(mark_safe(msg))
+            msg = format_html(
+                '{} is already in the datatracker. '
+                'Use the <a href="{}">normal nomination form</a> to nominate the person '
+                'with this address. ',
+                candidate_email,
+                reverse(normal_url_name, kwargs={'year':self.nomcom.year()}),
+            )
+            raise forms.ValidationError(msg)
         return candidate_email
 
     def save(self, commit=True):
@@ -821,17 +823,18 @@ class EditNomineeForm(forms.ModelForm):
         nominee_email = self.cleaned_data.get("nominee_email")
         others = Nominee.objects.filter(email=nominee_email, nomcom=self.instance.nomcom)
         if others.exists():
-            msg = ( "Changing email address for %s (#%s): There already exists a nominee "
-                    "with email address &lt;%s&gt;: %s -- please use the "
-                    "<a href=\"%s\">Merge Nominee</a> "
-                    "form instead." % (
-                        self.instance.name(),
-                        self.instance.pk,
-                        nominee_email,
-                        (", ".join( "%s (#%s)" %( n.name(), n.pk) for n in others)),
-                        reverse('ietf.nomcom.views.private_merge_nominee', kwargs={'year':self.instance.nomcom.year()}),
-                    ) )
-            raise forms.ValidationError(mark_safe(msg))
+            msg = format_html(
+                "Changing email address for {} (#{}): There already exists a nominee "
+                "with email address &lt;{}&gt;: {} -- please use the "
+                "<a href=\"{}\">Merge Nominee</a> "
+                "form instead.",
+                self.instance.name(),
+                self.instance.pk,
+                nominee_email,
+                ", ".join( "%s (#%s)" %( n.name(), n.pk) for n in others),
+                reverse('ietf.nomcom.views.private_merge_nominee', kwargs={'year':self.instance.nomcom.year()}),
+            )
+            raise forms.ValidationError(msg)
         return self.cleaned_data
 
     def save(self, commit=True):

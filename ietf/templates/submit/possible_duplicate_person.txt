@@ -1,0 +1,32 @@
+{% load ietf_filters %}{% load mail_filters %}{% autoescape off %}From: {{settings.SERVER_EMAIL}}
+To: <iesg-secretary@ietf.org>
+Subject: Possible duplicate Person created from the submission of {{ docname }}
+
+Posting {{ docname }} created a new Person named {{ person.name }}.
+
+The submission lists {{ person.name }} with the address {{ address }}.
+That address was not in the Datatracker. {% if existing_persons|length == 1 %}One existing Person has{% else %}{{ existing_persons|length }} existing Persons have{% endif %} the same name.
+The Datatracker cannot verify from a submission that the address belongs to
+{% if existing_persons|length == 1 %}that Person{% else %}any of them{% endif %}, so it created a new Person for the address.
+
+Please check whether the new Person is the same actual person as {% if existing_persons|length == 1 %}the existing one{% else %}one of the existing ones{% endif %}.
+Before merging, confirm with the existing Person using an address the Datatracker
+already had for them (not {{ address }}). After a merge, whoever controls
+{{ address }} can reset the password of the existing account.
+
+New Person {{ person.name }} (pk={{ person.pk }})
+    time:     {{ person.time }}
+    ascii:    {{ person.ascii }}
+    email:    {% for email in person.email_set.all %}{{ email.address }} {% endfor %}
+    aliases:  {{ person.aliases|join:", " }}
+    username: {% if person.user %}{{ person.user.username }}{% else %}None{% endif %}
+
+{% for other in existing_persons %}Existing Person {{ forloop.counter }} {{ other.name }} (pk={{ other.pk }})
+    time:     {{ other.time }}
+    ascii:    {{ other.ascii }}
+    email:    {% for email in other.email_set.all %}{{ email.address }} {% endfor %}
+    aliases:  {{ other.aliases|join:", " }}
+    username: {% if other.user %}{{ other.user.username }}{% else %}None{% endif %}
+    merge:    {{ settings.IDTRACKER_BASE_URL }}{% url "ietf.person.views.merge" %}?source={{ person.pk }}&target={{ other.pk }}
+
+{% endfor %}{% endautoescape %}

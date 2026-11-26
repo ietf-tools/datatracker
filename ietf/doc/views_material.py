@@ -9,7 +9,9 @@ import re
 
 from django import forms
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.html import mark_safe # type:ignore
@@ -25,8 +27,15 @@ from ietf.group.utils import can_manage_materials
 from ietf.meeting.utils import resolve_uploaded_material
 from ietf.utils import log
 from ietf.utils.decorators import ignore_view_kwargs
+from ietf.utils.html import clean_html
 from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
 from ietf.utils.response import permission_denied
+from ietf.utils.validators import (
+    validate_file_extension,
+    validate_file_size,
+    validate_mime_type,
+    validate_no_html_frame,
+)
 
 @login_required
 @ignore_view_kwargs("group_type")
@@ -55,6 +64,7 @@ class UploadMaterialForm(forms.Form):
         self.doc_type = doc_type
         self.action = action
         self.group = group
+        self.material_changed_by_cleaning = False
 
         if action == "new":
             self.fields["state"].widget = forms.HiddenInput()
@@ -95,6 +105,39 @@ class UploadMaterialForm(forms.Form):
             raise forms.ValidationError(mark_safe("Can't upload: %s with name %s already exists. Choose another title and name for what you're uploading or <a href=\"%s\">revise the existing %s</a>." % (self.doc_type.name, name, url, name)))
 
         return name
+
+    def clean_material(self):
+        """Check the file as the session upload forms check a file of this type
+
+        The file is stored, and later served, under the extension it was
+        uploaded with. So the extension has to be one that is accepted for the
+        type of document, and HTML is cleaned before it is stored, as
+        handle_upload_file() does for the session upload forms.
+        """
+        file = self.cleaned_data["material"]
+        doc_type = self.doc_type.slug
+        validate_file_size(file)
+        ext = validate_file_extension(
+            file, settings.MEETING_VALID_UPLOAD_EXTENSIONS.get(doc_type, [])
+        ).lower()
+        _, encoding = validate_mime_type(
+            file, settings.MEETING_VALID_UPLOAD_MIME_TYPES.get(doc_type, [])
+        )
+        if ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS["text/html"]:
+            validate_no_html_frame(file)
+            file.seek(0)
+            try:
+                text = file.read().decode(encoding or "utf-8")
+            except (UnicodeDecodeError, LookupError):
+                raise forms.ValidationError(
+                    "Could not read the file as text. Try uploading it as UTF-8."
+                )
+            clean = clean_html(text)
+            self.material_changed_by_cleaning = clean != text
+            file = SimpleUploadedFile(
+                file.name, clean.encode("utf-8"), content_type=file.content_type
+            )
+        return file
 
 @login_required
 @ignore_view_kwargs("group_type")
@@ -161,6 +204,13 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                     doc.rev = "%02d" % (int(doc.rev) + 1)
 
                 f = form.cleaned_data["material"]
+                if form.material_changed_by_cleaning:
+                    messages.warning(
+                        request,
+                        "Uploaded html content is sanitized to prevent unsafe content. "
+                        f"Your upload {f.name} was changed by the sanitization; "
+                        "please check the resulting content.",
+                    )
                 file_ext = os.path.splitext(f.name)[1]
 
                 basename = f"{doc.name}-{doc.rev}{file_ext}" # Note the lack of a . before file_ext - see os.path.splitext

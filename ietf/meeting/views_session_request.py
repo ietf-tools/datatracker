@@ -11,6 +11,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import Http404
+from django.views.decorators.http import require_POST
 
 from ietf.group.models import Group, GroupFeatures
 from ietf.ietfauth.utils import has_role, role_required
@@ -810,6 +811,7 @@ def edit_request(request, acronym, num=None):
 
 
 @check_permissions
+@require_POST
 def approve_request(request, acronym):
     '''
     This view approves the third session.  For use by ADs or Secretariat.
@@ -838,6 +840,7 @@ def approve_request(request, acronym):
 
 
 @check_permissions
+@require_POST
 def no_session(request, acronym):
     '''
     The user has indicated that the named group will not be having a session this IETF meeting.
@@ -892,6 +895,7 @@ def no_session(request, acronym):
 
 
 @check_permissions
+@require_POST
 def cancel_request(request, acronym):
     '''
     This view cancels a session request and sends a notification.

@@ -33,10 +33,14 @@
                 </a>
             {% endif %}
             {% if ipr.updates and ipr.state_id == 'pending' and ipr.update_notified_date or not ipr.updates and ipr.state_id == 'pending' %}
-                <a class="btn btn-primary"
-                   href="{% url 'ietf.ipr.views.post' id=ipr.id %}">
-                    <i class="bi bi-check" aria-hidden="true"></i> Post
-                </a>
+                <form method="post"
+                      class="d-inline"
+                      action="{% url 'ietf.ipr.views.post' id=ipr.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check" aria-hidden="true"></i> Post
+                    </button>
+                </form>
             {% endif %}
             <a class="btn btn-primary"
                href="{% url 'ietf.ipr.views.email' id=ipr.id %}"

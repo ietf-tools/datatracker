@@ -11,9 +11,10 @@
 
     {% if is_create %}
     <div class="buttonlist mb-3">
-        <a class="btn btn-primary me-3"
-           onclick="if (window.confirm('A message will be sent to agenda@ietf.com as well as to the area director(s).\n\nContinue?')) { window.location='{% url "ietf.meeting.views_session_request.no_session" acronym=group.acronym %}'};"
-           href="{% url 'ietf.meeting.views_session_request.no_session' acronym=group.acronym %}">Send a notification that the group does not plan to hold a session at IETF {{ meeting.number }}</a>
+        <form method="post" class="d-inline" action="{% url 'ietf.meeting.views_session_request.no_session' acronym=group.acronym %}" onsubmit="return window.confirm('A message will be sent to agenda@ietf.com as well as to the area director(s).\n\nContinue?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary me-3">Send a notification that the group does not plan to hold a session at IETF {{ meeting.number }}</button>
+        </form>
         <a class="btn btn-primary"
            href="{% url 'ietf.meeting.views_session_request.new_request' acronym=group.acronym %}?previous">Retrieve all information from previous meeting</a>
     </div>
