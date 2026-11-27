@@ -244,8 +244,9 @@ class IetfAuthTests(TestCase):
             "ascii_short": "T. Name",
             "pronouns_freetext": "foo/bar",
             "affiliation": "Test Org",
-            "active_emails": email_address,
         }
+        email_data = {"section": "emails", "active_emails": email_address}
+        base_data["section"] = "profile"
 
         # edit details - faulty ASCII
         faulty_ascii = base_data.copy()
@@ -267,6 +268,8 @@ class IetfAuthTests(TestCase):
         # edit details
         r = self.client.post(url, base_data)
         self.assertEqual(r.status_code, 200)
+        r = self.client.post(url, email_data)
+        self.assertEqual(r.status_code, 200)
         person = Person.objects.get(user__username=username)
 
         self.assertEqual(person.name, "Test Nãme")
@@ -276,9 +279,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(Email.objects.filter(address=email_address, person__user__username=username, active=True).count(), 1)
 
         # deactivate address
-        without_email_address = { k: v for k, v in base_data.items() if k != "active_emails" }
-
-        r = self.client.post(url, without_email_address)
+        r = self.client.post(url, {"section": "emails"})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(Email.objects.filter(address=email_address, person__user__username="plain", active=True).count(), 0)
 
@@ -290,7 +291,7 @@ class IetfAuthTests(TestCase):
         # add email address
         empty_outbox()
         new_email_address = "plain2@example.com"
-        with_new_email_address = base_data.copy()
+        with_new_email_address = {"section": "emails"}
         with_new_email_address["new_email"] = new_email_address
         r = self.client.post(url, with_new_email_address)
         self.assertEqual(r.status_code, 200)
@@ -365,8 +366,7 @@ class IetfAuthTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('[name="%s"]' % role_email_input_name)), 1)
         
-        with_changed_role_email = base_data.copy()
-        with_changed_role_email["active_emails"] = new_email_address
+        with_changed_role_email = {"section": "roles"}
         with_changed_role_email[role_email_input_name] = new_email_address
         r = self.client.post(url, with_changed_role_email)
         self.assertEqual(r.status_code, 200)
@@ -381,9 +381,7 @@ class IetfAuthTests(TestCase):
         login_testing_unauthorized(self, person.user.username, url)
 
         data = {
-            "name": person.name,
-            "plain": person.plain,
-            "ascii": person.ascii,
+            "section": "emails",
             "active_emails": [e.address for e in person.email_set.filter(active=True)],
             "new_email": "testaddress@example.net",
         }

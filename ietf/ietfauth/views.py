@@ -280,33 +280,39 @@ def profile(request):
     else:
         volunteer_status = 'deny'
 
-    if request.method == 'POST':
-        person_form = get_person_form(request.POST, instance=person)
-        for r in roles:
-            r.email_form = RoleEmailForm(r, request.POST, prefix="role_%s" % r.pk)
+    section = request.POST.get("section") if request.method == "POST" else None
+    person_form = get_person_form(instance=person)
+    for r in roles:
+        r.email_form = RoleEmailForm(r, prefix="role_%s" % r.pk)
 
+    if section == "profile":
+        person_form = get_person_form(request.POST, instance=person)
+        if person_form.is_valid():
+            updated_person = person_form.save()
+
+            # Make sure the alias table contains any new and/or old names.
+            existing_aliases = set(Alias.objects.filter(person=person).values_list("name", flat=True))
+            curr_names = set(x for x in [updated_person.name, updated_person.ascii, updated_person.ascii_short, updated_person.plain_name(), updated_person.plain_ascii(), ] if x)
+            new_aliases = curr_names - existing_aliases
+            for name in new_aliases:
+                Alias.objects.create(person=updated_person, name=name)
+
+            return render(request, 'registration/confirm_profile_update.html', {
+                'email_confirmations': [],
+            })
+
+    elif section == "emails":
         for e in request.POST.getlist("new_email", []):
             new_email_forms.append(NewEmailForm({ "new_email": e }))
 
-        forms_valid = [person_form.is_valid()] + [r.email_form.is_valid() for r in roles] + [f.is_valid() for f in new_email_forms]
-
-        email_confirmations = []
-
-        if all(forms_valid):
-            updated_person = person_form.save()
-
+        if all(f.is_valid() for f in new_email_forms):
+            email_confirmations = []
             for f in new_email_forms:
                 to_email = f.cleaned_data["new_email"]
                 if not to_email:
                     continue
                 email_confirmations.append(to_email)
                 send_new_email_confirmation_request(person, to_email)
-
-            for r in roles:
-                e = r.email_form.cleaned_data["email"]
-                if r.email_id != e.pk:
-                    r.email = e
-                    r.save()
 
             primary_email = request.POST.get("primary_email", None)
             active_emails = request.POST.getlist("active_emails", [])
@@ -319,21 +325,23 @@ def profile(request):
                     email.origin = person.user.username
                 email.save()
 
-            # Make sure the alias table contains any new and/or old names.
-            existing_aliases = set(Alias.objects.filter(person=person).values_list("name", flat=True))
-            curr_names = set(x for x in [updated_person.name, updated_person.ascii, updated_person.ascii_short, updated_person.plain_name(), updated_person.plain_ascii(), ] if x)
-            new_aliases = curr_names - existing_aliases
-            for name in new_aliases:
-                Alias.objects.create(person=updated_person, name=name)
-
             return render(request, 'registration/confirm_profile_update.html', {
                 'email_confirmations': email_confirmations,
             })
-    else:
-        for r in roles:
-            r.email_form = RoleEmailForm(r, prefix="role_%s" % r.pk)
 
-        person_form = get_person_form(instance=person)
+    elif section == "roles":
+        for r in roles:
+            r.email_form = RoleEmailForm(r, request.POST, prefix="role_%s" % r.pk)
+
+        if all(r.email_form.is_valid() for r in roles):
+            for r in roles:
+                e = r.email_form.cleaned_data["email"]
+                if r.email_id != e.pk:
+                    r.email = e
+                    r.save()
+            return render(request, 'registration/confirm_profile_update.html', {
+                'email_confirmations': [],
+            })
 
     return render(request, 'registration/edit_profile.html', {
         'person': person,
