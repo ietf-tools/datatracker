@@ -2,33 +2,35 @@
 
 var data;
 var x_scale;
-var bar_y;
 var bar_height;
 var y_label_width;
+var y_labels;
 var x_axis;
 var width;
 var now;
+
+// Layout constants (px)
+var min_bar_width = 24; // WCAG 2.5.8 minimum target size
+var label_padding = 6; // space around a revision label inside its bar
+var lane_gap = 2; // vertical gap between lanes within a document's row
+var row_gap = 6; // vertical gap between documents' rows
+
+// Layout state, recomputed by layout()
+var label_w = {}; // measured width of each revision label
+var row_y = {}; // top of each document's row
+var row_h = {}; // height of each document's row
+var total_height; // height of all rows
 
 function expiration_date(d) {
     return new Date(d.published.getTime() + 1000 * 60 * 60 * 24 * 185);
 }
 
-function max(arr) {
-    return Math.max.apply(null, Object.keys(arr)
-        .map(function (e) {
-            return arr[e];
-        }));
-}
-
 function offset(d) {
-    if (bar_y[d.name] === undefined) {
-        var m = Object.keys(bar_y)
-            .length === 0 ? -bar_height : max(bar_y);
-        bar_y[d.name] = m + bar_height;
-    }
-    return "translate(" + x_scale(d.published) + ", " + bar_y[d.name] + ")";
+    return "translate(" + x_scale(d.published) + ", " +
+        (row_y[d.name] + d.lane * (bar_height + lane_gap)) + ")";
 }
 
+// The width a bar has if it is strictly proportional to time.
 function bar_width(d, i) {
     // check for next rev of this name, or published RFC
     for (i++; i < data.length; i++) {
@@ -47,18 +49,45 @@ function bar_width(d, i) {
     return x_scale(w) - x_scale(d.published);
 }
 
-function scale_x() {
+// Measure the rendered width of each revision label, using the same styling as
+// the labels inside the bars.
+function measure_labels(chart) {
+    var g = chart.append("g")
+        .attr("class", "bar");
+    data.forEach(function (d) {
+        if (label_w[d.rev] === undefined) {
+            g.append("text")
+                .text(d.rev)
+                .each(function () {
+                    label_w[d.rev] = this.getBBox()
+                        .width;
+                })
+                .remove();
+        }
+    });
+    g.remove();
+}
+
+function scale_x(right) {
+    var domain_end = d3.max(data, function (d) { return d.published; });
+    now = Date.now();
+
+    // documents that don't expire (e.g., RFCs) have a bar that runs up to now
+    var last = data[data.length - 2];
+    if (last && !last.name.match(/^draft-/) && domain_end < now) {
+        domain_end = new Date(now);
+    }
+
     // scale data to width of container minus y label width
     x_scale = d3.scaleTime()
         .domain([
             d3.min(data, function (d) { return d.published; }),
-            d3.max(data, function (d) { return d.published; })
+            domain_end
         ])
-        .range([y_label_width, width]);
+        .range([y_label_width, right]);
 
     // if the end of the timeline is past the current date, show it
     var tv = data.slice(0, -1);
-    now = Date.now();
     if (tv[tv.length - 1].published > now) { tv.push(new Date(now)); }
 
     // x label format
@@ -85,6 +114,47 @@ function scale_x() {
         });
 }
 
+// Give each bar a width that fits its label and is a usable click target, then
+// pack the bars of each document into lanes so that bars made wider than their
+// time span don't overlap their neighbours. Returns the rightmost edge used.
+function layout() {
+    var items = data.slice(0, -1);
+    var right = 0;
+    var y = 0;
+
+    items.forEach(function (d, i) {
+        d.w = Math.max(bar_width(d, i), label_w[d.rev] + label_padding,
+            min_bar_width);
+        right = Math.max(right, x_scale(d.published) + d.w);
+    });
+
+    row_y = {};
+    row_h = {};
+    y_labels.forEach(function (name) {
+        var lane_end = [];
+        items
+            .filter(function (d) { return d.name === name; })
+            .sort(function (a, b) { return a.published - b.published; })
+            .forEach(function (d) {
+                var x0 = x_scale(d.published);
+                // first lane in which this bar doesn't overlap the previous
+                // one (a small tolerance lets exactly adjacent bars share one)
+                var lane = lane_end.findIndex(function (end) {
+                    return x0 + 0.5 >= end;
+                });
+                if (lane < 0) { lane = lane_end.length; }
+                lane_end[lane] = x0 + d.w;
+                d.lane = lane;
+            });
+        var lanes = Math.max(1, lane_end.length);
+        row_y[name] = y;
+        row_h[name] = lanes * bar_height + (lanes - 1) * lane_gap;
+        y += row_h[name] + row_gap;
+    });
+    total_height = Math.max(0, y - row_gap);
+    return right;
+}
+
 function update_x_axis() {
     d3.select("#doc-timeline svg .x.axis")
         .call(x_axis)
@@ -94,17 +164,57 @@ function update_x_axis() {
 }
 
 function update_timeline() {
-    bar_y = {};
-    scale_x();
     var chart = d3.select("#doc-timeline svg")
         .attr("width", width);
-    // enter data (skip the last pseudo entry)
-    var bar = chart.selectAll("g")
-        .data(data.slice(0, -1));
-    bar.attr("transform", offset)
+
+    scale_x(width);
+    var right = layout();
+    var limit = width;
+    for (var tries = 0; right > width && tries < 5; tries++) {
+        // bars at the end are wider than the room left; squeeze the scale
+        limit -= right - width + 0.5;
+        scale_x(limit);
+        right = layout();
+    }
+
+    chart.selectAll("g.bar")
+        .data(data.slice(0, -1))
+        .attr("transform", offset)
         .select("rect")
-        .attr("width", bar_width);
+        .attr("width", function (d) { return d.w; });
+
+    // vertical line from each date on the x axis
+    chart.select(".date-lines")
+        .selectAll("line")
+        .data(x_axis.tickValues(), function (d) { return d.getTime(); })
+        .join("line")
+        .attr("y1", 0)
+        .attr("y2", total_height)
+        .attr("x1", function (d) { return x_scale(d); })
+        .attr("x2", function (d) { return x_scale(d); });
+
+    // border centered in the gap above each row except the first
+    chart.selectAll(".row-borders line")
+        .attr("x1", 0)
+        .attr("x2", width)
+        .attr("y1", function (name) { return row_y[name] - row_gap / 2; })
+        .attr("y2", function (name) { return row_y[name] - row_gap / 2; });
+
+    chart.select(".x.axis")
+        .attr("transform", "translate(0, " + total_height + ")");
     update_x_axis();
+
+    chart.selectAll(".y.axis text")
+        .attr("y", function (name) { return row_y[name] + row_h[name] / 2; });
+
+    // set height of timeline
+    var x_label_height = 0;
+    chart.select(".x.axis")
+        .each(function () {
+            x_label_height = this.getBBox()
+                .height;
+        });
+    chart.attr("height", total_height + x_label_height);
 }
 
 function draw_timeline() {
@@ -139,7 +249,9 @@ function draw_timeline() {
         .attr("width", 1)
         .attr("fill", "url(#maskGradient)");
 
-    var y_labels = data
+    // document names, in order of first appearance (excluding the pseudo entry)
+    y_labels = data
+        .slice(0, -1)
         .map(function (d) { return d.name; })
         .filter(function (val, i, self) { return self.indexOf(val) === i; });
 
@@ -162,8 +274,7 @@ function draw_timeline() {
         return lw;
     });
 
-    // update
-    update_timeline();
+    measure_labels(chart);
 
     // re-order data by document name, for CSS background color alternation
     var ndata = [];
@@ -173,10 +284,15 @@ function draw_timeline() {
                 l;
         }));
     });
-    data = ndata;
+    // keep the pseudo entry last
+    data = ndata.concat(data.slice(-1));
+
+    // compute the layout so the bars can be positioned when entered
+    scale_x(width);
+    layout();
 
     // enter data (skip the last pseudo entry)
-    var bar = chart.selectAll("g")
+    var bar = chart.selectAll("g.bar")
         .data(data.slice(0, -1));
     var g = bar.enter()
         .append("g");
@@ -184,9 +300,14 @@ function draw_timeline() {
         .attr("transform", offset);
     var a = g.append("a");
     a.attr("xlink:href", function (d) { return d.url; });
-    var rect = a.append("rect")
+    a.append("title")
+        .text(function (d) {
+            return d.name + "-" + d.rev + ", " +
+                d3.timeFormat("%Y-%m-%d")(d.published);
+        });
+    a.append("rect")
         .attr("height", bar_height)
-        .attr("width", bar_width)
+        .attr("width", function (d) { return d.w; })
         .attr("class", "btn")
         .attr("type", "button")
         .attr("mask", function (d, i) {
@@ -203,35 +324,41 @@ function draw_timeline() {
         .attr("y", bar_height / 2);
     text.text(function (d) { return d.rev; });
 
-    var y_scale = d3.scalePoint()
-        .domain(y_labels)
-        .range([0, max(bar_y) + bar_height]);
+    // faint vertical lines at each date (on top of the bars, so keep them
+    // subtle and let clicks pass through)
+    chart.append("g")
+        .attr("class", "date-lines")
+        .style("pointer-events", "none")
+        .style("stroke", "var(--bs-body-color)")
+        .style("stroke-opacity", 0.25)
+        .style("stroke-dasharray", "2 2");
 
-    var y_axis = d3.axisLeft(y_scale)
-        .tickValues(y_labels);
+    // borders between rows (appended after the bars so as not to disturb the
+    // :nth-child coloring of the bars)
+    chart.append("g")
+        .attr("class", "row-borders")
+        .selectAll("line")
+        .data(y_labels.slice(1))
+        .enter()
+        .append("line")
+        .style("stroke", "var(--bs-border-color)")
+        .style("stroke-width", 1);
 
     chart.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0, " + (max(bar_y) + bar_height) + ")");
-    update_x_axis();
+        .attr("class", "x axis");
 
-    var g = chart.append("g");
-    g
+    // one label per document, centered on its row
+    chart.append("g")
         .attr("class", "y axis")
-        .attr("transform", "translate(10, " + bar_height / 2 + ")");
-    g
-        .call(y_axis)
         .selectAll("text")
-        .style("text-anchor", "start");
+        .data(y_labels)
+        .enter()
+        .append("text")
+        .attr("x", 1)
+        .attr("dy", "0.32em")
+        .text(function (name) { return name; });
 
-    // set height of timeline
-    var x_label_height;
-    d3.select(".x.axis")
-        .each(function () {
-            x_label_height = this.getBBox()
-                .height;
-        });
-    chart.attr("height", max(bar_y) + bar_height + x_label_height);
+    update_timeline();
 }
 
 d3.json("doc.json")
@@ -258,6 +385,7 @@ d3.json("doc.json")
 $(window)
     .on({
         resize: function () {
+            if (!data) { return; }
             var g = $("#doc-timeline svg");
             g.remove();
             width = $("#doc-timeline")
