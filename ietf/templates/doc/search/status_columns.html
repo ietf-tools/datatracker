@@ -1,7 +1,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% origin %}
-{% load ietf_filters ballot_icon person_filters %}
+{% load ietf_filters ballot_icon person_filters rfc_editor_queue %}
 <td class="status bg-transparent">
     <div class="float-end ms-1 mb-1" id="ballot-icon-{{ doc.name }}">{% ballot_icon doc %}</div>
     {% if not doc.type_id == "rfc" %}
@@ -13,7 +13,8 @@
             {% if rfc_editor_state %}
                 <br>
                 RFC Editor:
-                <a href="https://queue.rfc-editor.org/#{{ doc.name }}">{{ doc.rfc_editor_queue_status|default:rfc_editor_state }}</a>
+                {% rfc_editor_queue_link doc as queue_link %}
+                <a href="{{ queue_link.url }}">{{ queue_link.status|default:rfc_editor_state }}</a>
             {% endif %}
         {% endwith %}
         {% if doc.telechat_date %}
