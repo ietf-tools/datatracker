@@ -2749,6 +2749,50 @@ class DraftYangCheckerModelFileTests(TestCase):
         self.assertTrue((Path(settings.SUBMIT_YANG_DRAFT_MODEL_DIR) / "test-model.yang").exists())
         self.assertEqual(self.stray_files(), [])
 
+    def test_ftp_link(self):
+        """Model is hard-linked in FTP_DIR, overwriting an existing file"""
+        dest = Path(settings.SUBMIT_YANG_DRAFT_MODEL_DIR) / "test-model.yang"
+        ftp_dest = Path(settings.FTP_DIR) / "yang" / "draftmod" / "test-model.yang"
+
+        def hardlink_logs(log_mock):
+            """Helper to extract logs referring to the hardlink dest file"""
+            return [
+                c for c in log_mock.call_args_list if str(ftp_dest) in str(c.args[0])
+            ]
+
+        with mock.patch("ietf.submit.checkers.log") as log_mock:
+            # No file in FTP_DIR yet
+            self.assertFalse(ftp_dest.exists())
+            self.check("test-model.yang")
+            self.assertTrue(ftp_dest.samefile(dest))
+            self.assertEqual(hardlink_logs(log_mock), [])
+
+            # Re-run and confirm the new model is linked and no logs were emitted 
+            log_mock.reset_mock()
+            self.check("test-model.yang")
+            self.assertTrue(ftp_dest.samefile(dest))
+            self.assertEqual(hardlink_logs(log_mock), [])
+
+            # Unrelated file in place should be overwritten, again without logs
+            log_mock.reset_mock()
+            ftp_dest.unlink()
+            ftp_dest.write_text("not the model")
+            self.check("test-model.yang")
+            self.assertTrue(ftp_dest.samefile(dest))
+            self.assertNotEqual(ftp_dest.read_text(), "not the model")
+            self.assertEqual(hardlink_logs(log_mock), [])
+
+            # If link creation fails, a log is emitted
+            log_mock.reset_mock()
+            with mock.patch(
+                "ietf.submit.checkers.os.link", side_effect=OSError("link failed")
+            ):
+                self.check("test-model.yang")
+            logs = hardlink_logs(log_mock)
+            self.assertEqual(len(logs), 1)
+            self.assertIn("link failed", logs[0].args[0])
+            self.assertFalse(ftp_dest.exists())
+
     def test_model_file_name_is_normalized_from_module(self):
         """A file name that is not a plain model name is replaced using the module's own name"""
         (passed, message, errors, warnings, info), models_checked = self.check(
