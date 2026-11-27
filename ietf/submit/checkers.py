@@ -358,17 +358,22 @@ class DraftYangChecker(object):
                 errors += 1
                 message += "No such file: %s\nPossible mismatch between extracted xym file name and returned module name?\n" % (path)
 
+            # Move model file into place
             dest = os.path.join(settings.SUBMIT_YANG_DRAFT_MODEL_DIR, model)
             shutil.move(path, dest)
+
+            # Create a hard link in FTP_DIR, removing a file in the way. This happens
+            # e.g., on the periodic re-run of Yang checks on active documents, when
+            # the "file in the way" is the previous model file.
             ftp_dest = Path(settings.FTP_DIR) / "yang" / "draftmod" / model
+            ftp_dest.unlink(missing_ok=True)
             try:
                 os.link(dest, ftp_dest)
-            except IOError as ex:
+            except IOError as err:
                 log(
-                    "There was an error creating a hardlink at %s pointing to %s: %s"
-                    % (ftp_dest, dest, ex)
+                    f"There was an error creating a hardlink at {ftp_dest} "
+                    f"pointing to {dest}: {err}"
                 )
-
 
             # summary result
             results.append({
