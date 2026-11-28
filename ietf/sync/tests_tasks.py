@@ -4,7 +4,7 @@ import datetime
 import mock
 from django.test.utils import override_settings
 
-from ietf.doc.factories import WgDraftFactory
+from ietf.doc.factories import BcpFactory, RfcFactory, StdFactory, WgDraftFactory
 from ietf.doc.models import (
     DocEvent,
     DocTagName,
@@ -857,3 +857,74 @@ class UpdateRfcJsonByRangeListTaskTests(TestCase):
     def test_empty_input_does_not_call_update(self, mock_update):
         tasks.update_rfc_json_by_range_list_task("[]")
         mock_update.assert_not_called()
+
+
+class UpdateRfcJsonTaskTests(TestCase):
+    @mock.patch("ietf.sync.tasks.update_rfc_bibxml_task.delay")
+    @mock.patch("ietf.doc.utils_rfc_json.generate_rfc_json")
+    @mock.patch("ietf.sync.rfcindex.get_publication_std_levels")
+    def test_dispatches_bibxml_task(
+        self, mock_pub_levels, mock_generate_json, mock_bibxml_delay
+    ):
+        tasks.update_rfc_json_task([9000, 9001])
+        mock_bibxml_delay.assert_called_once_with([9000, 9001])
+        self.assertEqual(mock_generate_json.call_count, 2)
+
+    @mock.patch("ietf.sync.tasks.update_rfc_bibxml_task.delay")
+    @mock.patch("ietf.doc.utils_rfc_json.generate_rfc_json")
+    @mock.patch("ietf.sync.rfcindex.get_publication_std_levels")
+    def test_dispatches_bibxml_task_when_json_cannot_be_built(
+        self, mock_pub_levels, mock_generate_json, mock_bibxml_delay
+    ):
+        """BibXML does not depend on publication std levels"""
+        mock_pub_levels.side_effect = RuntimeError("boom")
+        tasks.update_rfc_json_task([9000])
+        mock_bibxml_delay.assert_called_once_with([9000])
+        mock_generate_json.assert_not_called()
+
+
+class UpdateRfcBibxmlTaskTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.rfc = RfcFactory(rfc_number=9000)
+        self.other_rfc = RfcFactory(rfc_number=9001)
+        self.untouched_rfc = RfcFactory(rfc_number=9002)
+        self.bcp = BcpFactory(name="bcp14", contains=[self.rfc])
+        self.std = StdFactory(name="std1", contains=[self.rfc, self.other_rfc])
+        self.other_bcp = BcpFactory(name="bcp15", contains=[self.untouched_rfc])
+
+    @mock.patch("ietf.sync.tasks.create_subseries_bibxml")
+    @mock.patch("ietf.sync.tasks.create_rfc_bibxml")
+    def test_creates_rfc_and_containing_subseries_bibxml(
+        self, mock_create_rfc, mock_create_subseries
+    ):
+        tasks.update_rfc_bibxml_task([9000, 9001])
+        self.assertCountEqual(
+            [c.args[0] for c in mock_create_rfc.call_args_list],
+            [self.rfc, self.other_rfc],
+        )
+        # each containing subseries is regenerated once, others are left alone
+        self.assertEqual(
+            mock_create_subseries.call_args_list,
+            [mock.call("bcp", "14"), mock.call("std", "1")],
+        )
+
+    @mock.patch("ietf.sync.tasks.create_subseries_bibxml")
+    @mock.patch("ietf.sync.tasks.create_rfc_bibxml")
+    def test_ignores_unknown_rfc_numbers(self, mock_create_rfc, mock_create_subseries):
+        tasks.update_rfc_bibxml_task([99999])
+        mock_create_rfc.assert_not_called()
+        mock_create_subseries.assert_not_called()
+
+    @mock.patch("ietf.sync.tasks.log.log")
+    @mock.patch("ietf.sync.tasks.create_subseries_bibxml")
+    @mock.patch("ietf.sync.tasks.create_rfc_bibxml")
+    def test_failures_are_logged_and_skipped(
+        self, mock_create_rfc, mock_create_subseries, mock_log
+    ):
+        mock_create_rfc.side_effect = [RuntimeError("rfc boom"), None]
+        mock_create_subseries.side_effect = [RuntimeError("subseries boom"), None]
+        tasks.update_rfc_bibxml_task([9000, 9001])
+        self.assertEqual(mock_create_rfc.call_count, 2)
+        self.assertEqual(mock_create_subseries.call_count, 2)
+        self.assertEqual(mock_log.call_count, 2)
